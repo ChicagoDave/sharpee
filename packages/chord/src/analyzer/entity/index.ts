@@ -22,6 +22,7 @@ import { clausesBuilder } from './clauses.js';
 import { compositionsBuilder } from './compositions.js';
 import { countersBuilder } from './counters.js';
 import { holdsBuilder } from './holds.js';
+import { pushingBuilder } from './pushing.js';
 import { exitsBuilder } from './exits.js';
 import { hostGatesBuilder } from './host-gates.js';
 import { identityBuilder } from './identity.js';
@@ -36,7 +37,7 @@ import { expanseBuilder } from './expanse.js';
 import { sailingBuilder } from './sailing.js';
 
 export { assembleEntity } from './assemble.js';
-export { lowerExit } from './exits.js';
+export { lowerExit, passageKeyOfForm } from './exits.js';
 export { isPersonDecl, isPlayableDecl, newEntityDraft } from './context.js';
 export type { EntityBuildContext, EntityDraft, EntityLineBuilder } from './context.js';
 
@@ -55,6 +56,7 @@ export const ENTITY_LINE_BUILDERS: ReadonlyArray<EntityLineBuilder> = [
   statesBuilder,
   countersBuilder,
   holdsBuilder,
+  pushingBuilder,
   vehicleBuilder,
   expanseBuilder,
   sailingBuilder,

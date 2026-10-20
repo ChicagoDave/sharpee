@@ -217,3 +217,23 @@ describe('TraversalBehavior', () => {
     });
   });
 });
+
+describe("the thing's own way (ADR-378 D6b)", () => {
+  it('a pushed thing is admitted by its id on the exit when the way carries no class word', () => {
+    const world = new WorldModel();
+    const a = world.createEntity('A', EntityType.ROOM);
+    a.add(new RoomTrait());
+    const b = world.createEntity('B', EntityType.ROOM);
+    b.add(new RoomTrait());
+    world.connectRooms(a.id, b.id, Direction.NORTH);
+    const cart = world.createEntity('cart', EntityType.OBJECT);
+    const crate = world.createEntity('crate', EntityType.OBJECT);
+    const exit = RoomBehavior.getExit(a, Direction.NORTH)!;
+    exit.admitsPushed = [cart.id];
+
+    expect(TraversalBehavior.wayFor(world, a, Direction.NORTH, { kind: 'pushed', thing: cart })).toMatchObject({ kind: 'exit' });
+    expect(TraversalBehavior.wayFor(world, a, Direction.NORTH, { kind: 'pushed', thing: crate })).toMatchObject({ kind: 'refused', reason: 'pushing_not_admitted' });
+    // The reverse carries no stamp of its own.
+    expect(TraversalBehavior.wayFor(world, b, Direction.SOUTH, { kind: 'pushed', thing: cart })).toMatchObject({ reason: 'pushing_not_admitted' });
+  });
+});

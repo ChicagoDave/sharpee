@@ -10,55 +10,36 @@ import { type EntityId } from '@sharpee/core';
 export interface PushedEventData {
   /** The entity that was pushed */
   target: EntityId;
-  
+
   /** Name of the target */
   targetName: string;
-  
-  /** Direction of push (optional) */
+
+  /** Direction of a push between rooms (ADR-378 D6); absent on a press */
   direction?: string;
-  
-  /** Type of push from PushableTrait */
-  pushType?: 'button' | 'heavy' | 'moveable';
-  
-  /** Whether the push activated something */
-  activated?: boolean;
-  
-  /** Whether the push will toggle a switch */
+
+  /** Whether the press toggled a switchable thing */
   willToggle?: boolean;
-  
+
   /** Current state of switchable */
   currentState?: boolean;
-  
+
   /** New state after toggle */
   newState?: boolean;
-  
-  /** Sound made when pushed */
-  sound?: string;
-  
-  /** Whether the object moved */
+
+  /** Whether the thing moved to the next room */
   moved?: boolean;
-  
-  /** Direction of movement */
-  moveDirection?: string;
-  
-  /** Whether the object was just nudged */
-  nudged?: boolean;
-  
-  /** Whether pushing reveals a passage */
-  revealsPassage?: boolean;
-  
-  /** Required strength to push */
-  requiresStrength?: number;
+
+  /** The room the thing (and the actor) arrived in */
+  destinationId?: EntityId;
 }
 
 /**
  * Error data for pushing failures
  */
 export interface PushingErrorData {
-  reason: 'no_target' | 'not_visible' | 'not_reachable' | 'too_heavy' | 
-          'wearing_it' | 'pushing_does_nothing' | 'fixed_in_place' | 'wont_budge';
+  reason: 'no_target' | 'not_visible' | 'not_reachable' |
+          'wearing_it' | 'carrying_it' | 'cannot_push_that_way' | 'pushing_does_nothing' | 'fixed_in_place';
   target?: string;
-  requiresStrength?: number;
 }
 
 /**

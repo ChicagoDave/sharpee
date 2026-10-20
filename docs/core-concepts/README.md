@@ -736,6 +736,10 @@ case 'if.event.perception.blocked':
 
 **The one recorded exception**: `CharacterModelTrait` keeps its own mutators (mood, threat, goals, lucidity, influences, pressure, the told record) on the trait, called by the character tick's sub-steps, because the model is one stateful object whose invariants span those fields together and a behavior would hold no state of its own (ADR-338 D3; ADR-310 D17 Amendment).
 
+### Systems (ADR-379)
+
+A **system** is a rule over the whole world that answers one question for every entity and belongs to none of them: "may this mover take this way now?" (`TraversalBehavior.wayFor`), "can this actor see here?" (`VisibilityBehavior`). It lives in `packages/world-model/src/world/` as static functions over `WorldModel`, and it has **one home**: every mover (the walking player, a steered vehicle, a pushed thing, an NPC) and every action that asks the question reads that one answer, and none keeps a copy of the gates. The test for when a rule is a system: it is consulted by more than one mover, more than one action, or by both an action and a Chord condition. A structural test (`traversal-readers.test.ts`) enumerates the allowed readers of the raw data and fails on any other, so a second copy cannot creep back in.
+
 ## Capability Dispatch (ADR-090)
 
 Capability dispatch allows entities to handle generic actions (like "lower" or "raise") with entity-specific behaviors. Instead of having fixed action semantics, these actions delegate to behaviors registered for specific traits.

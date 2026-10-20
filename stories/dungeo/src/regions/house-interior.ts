@@ -273,7 +273,7 @@ function createLivingRoomObjects(world: WorldModel, livingRoomId: string, cellar
     properName: false,
     article: 'a'
   }));
-  rug.add(new PushableTrait({ pushType: 'moveable', repeatable: false, state: 'default' }));
+  rug.add(new PushableTrait());
   // RugTrait stores entity references for the RugPushInterceptor (ISSUE-068 Phase 4)
   if (cellarId) {
     rug.add(new RugTrait({ trapdoorId: trapdoor.id, cellarId }));

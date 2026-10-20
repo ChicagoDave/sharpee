@@ -15,7 +15,7 @@
  * Public interface: MESSAGE_OVERRIDE_ALIASES.
  * Owner context: @sharpee/chord (language frontend; browser-safe; generated artifact).
  *
- * 879 aliases across 78 actions.
+ * 878 aliases across 78 actions.
  *
  * References:
  * - ADR-255 D2 — one hand-maintained table; Interface Contract 3 — names
@@ -486,7 +486,6 @@ export const MESSAGE_OVERRIDE_ALIASES: ReadonlySet<string> = new Set([
   // if.action.looking
   'looking-container-contents',
   'looking-contents-list',
-  'looking-exits',
   'looking-nothing-special',
   'looking-room-dark',
   'looking-room-description',
@@ -536,15 +535,15 @@ export const MESSAGE_OVERRIDE_ALIASES: ReadonlySet<string> = new Set([
   // if.action.pushing
   'pushing-button-clicks',
   'pushing-button-pushed',
+  'pushing-cannot-push-that-way',
+  'pushing-carrying-it',
   'pushing-fixed-in-place',
   'pushing-no-target',
   'pushing-not-reachable',
   'pushing-not-visible',
   'pushing-pushed-direction',
   'pushing-pushed-nudged',
-  'pushing-pushed-with-effort',
   'pushing-pushing-does-nothing',
-  'pushing-reveals-passage',
   'pushing-switch-toggled',
   'pushing-too-heavy',
   'pushing-wearing-it',

@@ -1,8 +1,13 @@
 /**
  * Going action - movement through exits
  *
- * This action handles movement in cardinal directions and through named exits.
- * It validates all conditions and returns appropriate events.
+ * This action handles movement by a way out of the actor's room: a compass
+ * direction, or a passage key (ADR-378 D1) that a gated story rule put in
+ * `extras.direction`. Whether the way may be taken is one question with one
+ * answer — `TraversalBehavior.wayFor` (ADR-378 D0, ADR-379) — and this
+ * action turns that answer into its refusals; it keeps no gate of its own.
+ * The computed-exit resolution (ADR-295) and the first-visit, region and
+ * arrival narration are this action's.
  *
  * Uses four-phase pattern with interceptor support (ADR-118):
  * 1. validate: preValidate hook → standard checks → postValidate hook
@@ -20,9 +25,10 @@ import {
   RoomTrait,
   RoomBehavior,
   OpenableBehavior,
-  LockableBehavior,
   VisibilityBehavior,
-  Direction,
+  TraversalBehavior,
+  type ExitKey,
+  type TraversalMover,
   type DirectionType,
   goingFromVehicle,
   admitsVehicle,
@@ -63,7 +69,8 @@ export interface GoingSharedData {
   isFirstVisit?: boolean;
   previousLocation?: string;  // Room we came from
   currentLocation?: string;   // Room we're now in
-  direction?: DirectionType;
+  /** The way taken: a compass direction or a passage key (ADR-378 D1a). */
+  direction?: ExitKey;
   vehicleId?: string;         // The vehicle the player steers by GO, if any
   /** Region boundary crossings computed during execute (ADR-149) */
   regionCrossings?: RegionCrossings;
@@ -86,17 +93,29 @@ export function getGoingSharedData(context: ActionContext): GoingSharedData {
 // apply (no exit, blocked-only direction, not in a room).
 // ============================================================================
 
-/** The direction of travel, from extras or a direction-named direct object. */
-function resolveDirection(context: ActionContext): DirectionType | undefined {
-  let direction = context.command.parsed.extras?.direction as DirectionType;
+/**
+ * The way of travel, from extras or a direction-named direct object. The
+ * parser leaves a non-compass value untouched, so a passage key arrives
+ * here exactly as the story's gated rule registered it (ADR-378 D1a, D2).
+ */
+function resolveWay(context: ActionContext): ExitKey | undefined {
+  let direction = context.command.parsed.extras?.direction as ExitKey;
   if (!direction && context.command.directObject?.entity) {
     const entityName = context.command.directObject.entity.name ||
       context.command.directObject.entity.attributes?.name;
     if (entityName) {
-      direction = entityName as DirectionType;
+      direction = entityName as ExitKey;
     }
   }
   return direction || undefined;
+}
+
+/** Who is taking the way: the actor on foot, or the vehicle they steer (ADR-366 D5). */
+function resolveMover(context: ActionContext): TraversalMover {
+  const vehicleGoing = goingFromVehicle(context.world, context.actor.id);
+  return vehicleGoing.kind === 'steers'
+    ? { kind: 'steered', vehicle: vehicleGoing.vehicle }
+    : { kind: 'walker', entity: context.actor };
 }
 
 /** The room movement starts from (the containing room when steering a vehicle). */
@@ -109,20 +128,6 @@ function resolveSourceRoom(context: ActionContext): IFEntity | undefined {
     }
   }
   return currentRoom?.has(TraitType.ROOM) ? currentRoom : undefined;
-}
-
-/**
- * ADR-240 evaluator keys for a room exit's derived blocking. Owned by this
- * read point; registrars (the story-loader's blocked-exit lines) build
- * the keys with these functions, never by hand.
- */
-export function exitBlockedKey(roomId: string, direction: string): string {
-  return `exit.blocked.${roomId}.${direction}`;
-}
-
-/** Key for the blocked exit's refusal message, resolved AT REFUSAL TIME. */
-export function exitMessageKey(roomId: string, direction: string): string {
-  return `exit.message.${roomId}.${direction}`;
 }
 
 /**
@@ -146,32 +151,17 @@ function doorOpeningVeto(context: ActionContext, door: IFEntity): ValidationResu
 }
 
 /**
- * The live answer to "is this exit blocked?" (ADR-240): a registered
- * `exit.blocked.*` evaluator is authoritative (point-of-use truth); with
- * nothing registered, the stamped RoomTrait.blockedExits map applies
- * unchanged (hand-written TS stories).
+ * The exit's door (via) and destination room, when the way exists: the
+ * interceptor slots are consulted whatever state the door is in, so this
+ * reads existence and blocking from the home and stops there.
  */
-function isExitBlockedLive(context: ActionContext, room: IFEntity, direction: DirectionType): boolean {
-  const derived = context.world.evaluate(exitBlockedKey(room.id, direction));
-  if (typeof derived === 'boolean') return derived;
-  return RoomBehavior.isExitBlocked(room, direction);
-}
-
-/** The blocked exit's message: registered evaluator first, trait map fallback. */
-function blockedMessageLive(context: ActionContext, room: IFEntity, direction: DirectionType): string | undefined {
-  const derived = context.world.evaluate(exitMessageKey(room.id, direction));
-  if (typeof derived === 'string') return derived;
-  return RoomBehavior.getBlockedMessage(room, direction);
-}
-
-/** The exit's door (via) and destination room, when the exit exists. */
 function resolveExitEntities(context: ActionContext): { door?: IFEntity; destination?: IFEntity } {
   const sourceRoom = resolveSourceRoom(context);
-  const direction = resolveDirection(context);
+  const direction = resolveWay(context);
   if (!sourceRoom || !direction) return {};
   // A blocked-only direction has no traversable exit (Chord `north is blocked:`)
-  if (isExitBlockedLive(context, sourceRoom, direction)) return {};
-  const exitConfig = RoomBehavior.getExit(sourceRoom, direction);
+  if (TraversalBehavior.isExitBlocked(context.world, sourceRoom, direction)) return {};
+  const exitConfig = TraversalBehavior.exitOf(context.world, sourceRoom, direction);
   const computedExit = RoomBehavior.getComputedExitDeclaration(sourceRoom, direction);
   if (!exitConfig && !computedExit) return {};
   const door = exitConfig?.via ? (context.world.getEntity(exitConfig.via) ?? undefined) : undefined;
@@ -200,14 +190,14 @@ export const goingLifecycle: ActionLifecycleDescriptor = {
       id: 'source',
       actionIds: [IFActions.GOING],
       resolve: resolveSourceRoom,
-      seedData: (ctx) => ({ direction: resolveDirection(ctx) })
+      seedData: (ctx) => ({ direction: resolveWay(ctx) })
     },
     {
       id: 'destination',
       actionIds: [IFActions.ENTERING_ROOM],
       resolve: (ctx) => resolveExitEntities(ctx).destination,
       seedData: (ctx, entity) => ({
-        direction: resolveDirection(ctx),
+        direction: resolveWay(ctx),
         sourceRoomId: resolveSourceRoom(ctx)?.id,
         destinationRoomId: entity.id
       })
@@ -217,7 +207,7 @@ export const goingLifecycle: ActionLifecycleDescriptor = {
       actionIds: [IFActions.GOING],
       resolve: (ctx) => resolveExitEntities(ctx).door,
       seedData: (ctx) => ({
-        direction: resolveDirection(ctx),
+        direction: resolveWay(ctx),
         sourceRoomId: resolveSourceRoom(ctx)?.id,
         destinationRoomId: resolveExitEntities(ctx).destination?.id
       })
@@ -251,19 +241,7 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
     const actor = context.actor;
     const sharedData = getGoingSharedData(context);
 
-    // Get the direction from the parsed command (should already be a Direction constant)
-    // Direction can come from extras or from directObject name
-    let direction = context.command.parsed.extras?.direction as DirectionType;
-
-    // If no direction in extras, check if directObject has a name that could be a direction
-    if (!direction && context.command.directObject?.entity) {
-      const entityName = context.command.directObject.entity.name ||
-                        context.command.directObject.entity.attributes?.name;
-      if (entityName) {
-        direction = entityName as DirectionType;
-      }
-    }
-
+    const direction = resolveWay(context);
     if (!direction) {
       return {
         valid: false,
@@ -311,103 +289,69 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
     // Resolve the interceptor surface (ADR-228): source room, destination
     // room, and door — the engine owns hook order and veto semantics.
 
-    // Check if the direction is blocked BEFORE requiring an exit config:
-    // a blockedExits entry means "this direction is deliberately refused
-    // with this message" whether or not an exit exists (a blocked-only
-    // direction has no destination — e.g. Chord's `north is blocked:`,
-    // ADR-210).
-    if (isExitBlockedLive(context, currentRoom, direction)) {
-      const blockedMessage = blockedMessageLive(context, currentRoom, direction) || "You can't go that way.";
-      return {
-        valid: false,
-        error: GoingMessages.MOVEMENT_BLOCKED,
-        params: { direction: direction, message: blockedMessage }
-      };
-    }
-
-    // Existence (ADR-295 D3): a static exit OR a computed-exit declaration.
-    // The declaration is pure trait data — no resolver code runs and no draw
-    // happens here; which candidate the actor reaches is decided in execute.
-    const exitConfig = RoomBehavior.getExit(currentRoom, direction);
-    const computedExit = RoomBehavior.getComputedExitDeclaration(currentRoom, direction);
-    if (!exitConfig && !computedExit) {
-      // Check if we have exits at all
-      const allExits = RoomBehavior.getAllExits(currentRoom);
-      if (allExits.size === 0) {
-        return {
-          valid: false,
-          error: GoingMessages.NO_EXITS
-        };
-      }
-      return {
-        valid: false,
-        error: GoingMessages.NO_EXIT_THAT_WAY,
-        params: { direction: direction }
-      };
-    }
-
-    // Check if there's a door/portal
-    if (exitConfig?.via) {
-      const door = context.world.getEntity(exitConfig.via);
-      if (door) {
-        // Use behaviors to check door state
-        const isLocked = door.has(TraitType.LOCKABLE) && LockableBehavior.isLocked(door);
-        const isClosed = door.has(TraitType.OPENABLE) && !OpenableBehavior.isOpen(door);
-
-        if (isLocked) {
+    // One question, one answer (ADR-378 D0): may this mover take this way
+    // now? The home reads existence (a hidden way is absent), blocking,
+    // the door and admittance in that order; this action only words the
+    // refusal. No gate is re-derived here.
+    const way = TraversalBehavior.wayFor(context.world, currentRoom, direction, resolveMover(context));
+    if (way.kind === 'refused') {
+      switch (way.reason) {
+        case 'hidden':
+        case 'no_exit': {
+          // A room whose every way is hidden has no obvious exits either.
+          const anyExit = [...RoomBehavior.getAllExits(currentRoom).keys()]
+            .some((key) => !TraversalBehavior.isExitHidden(context.world, currentRoom, key as ExitKey));
+          return anyExit
+            ? { valid: false, error: GoingMessages.NO_EXIT_THAT_WAY, params: { direction } }
+            : { valid: false, error: GoingMessages.NO_EXITS };
+        }
+        case 'blocked':
+          return {
+            valid: false,
+            error: GoingMessages.MOVEMENT_BLOCKED,
+            params: { direction, message: way.message || "You can't go that way." }
+          };
+        case 'door_locked':
           return {
             valid: false,
             error: GoingMessages.DOOR_LOCKED,
             params: {
-              door: nounPhraseFor(door),
-              direction: direction,
-              isClosed: isClosed,
+              door: nounPhraseFor(way.door!),
+              direction,
+              isClosed: way.door!.has(TraitType.OPENABLE) && !OpenableBehavior.isOpen(way.door!),
               isLocked: true
             }
           };
-        }
-
-        if (isClosed) {
+        case 'door_closed': {
           // GH #245 (5): the natural command surfaces the door's authored
           // opening refusal — the story's `on the player opening … refuse`
           // hint — instead of the stock line, by consulting the door's
           // opening interceptor's validation vetoes (no implicit opening).
-          const doorVeto = doorOpeningVeto(context, door);
+          const doorVeto = doorOpeningVeto(context, way.door!);
           if (doorVeto) return doorVeto;
           return {
             valid: false,
             error: GoingMessages.DOOR_CLOSED,
-            params: { door: nounPhraseFor(door), direction: direction }
+            params: { door: nounPhraseFor(way.door!), direction }
           };
         }
+        case 'destination_missing':
+          return { valid: false, error: GoingMessages.DESTINATION_NOT_FOUND, params: { direction } };
+        case 'not_admitted':
+        case 'pushing_not_admitted':
+          return {
+            valid: false,
+            error: GoingMessages.VEHICLE_CANNOT_GO,
+            params: { vehicle: nounPhraseFor((resolveMover(context) as { vehicle: IFEntity }).vehicle), direction }
+          };
       }
     }
 
-    // Get destination — static exits only. A computed direction's destination
-    // is unknown until the execute-phase resolution (ADR-295 D5); its
-    // candidates were declared as data and are not re-validated here.
-    if (!computedExit) {
-      const destinationId = exitConfig!.destination;
-      const destination = context.world.getEntity(destinationId);
-
-      if (!destination) {
-        // Destination doesn't exist
-        return {
-          valid: false,
-          error: GoingMessages.DESTINATION_NOT_FOUND,
-          params: { direction: direction }
-        };
-      }
-    }
-
-    // A steered vehicle lands only where it is admitted (ADR-366 D6). A
-    // computed exit's destination is drawn in execute, so every declared
-    // candidate has to admit it.
-    if (vehicleGoing.kind === 'steers') {
-      const landings = computedExit
-        ? computedExit.declaration.candidates
-        : [exitConfig!.destination];
-      const admitted = landings.every(id => {
+    // A computed way (ADR-295 D5) draws its destination in execute, so a
+    // steered vehicle must be admitted by every declared candidate (ADR-366
+    // D6); the home answers admittance only for a destination it knows.
+    if (way.kind === 'computed' && vehicleGoing.kind === 'steers') {
+      const admitted = way.declaration.candidates.every(id => {
         const room = context.world.getEntity(id);
         return room !== undefined && admitsVehicle(room, vehicleGoing.vehicle);
       });
@@ -415,7 +359,7 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
         return {
           valid: false,
           error: GoingMessages.VEHICLE_CANNOT_GO,
-          params: { vehicle: nounPhraseFor(vehicleGoing.vehicle), direction: direction }
+          params: { vehicle: nounPhraseFor(vehicleGoing.vehicle), direction }
         };
       }
     }
@@ -445,23 +389,12 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
       }
     }
 
-    // Get direction from parsed command (should already be a Direction constant)
-    // Direction can come from extras or from directObject name
-    let direction = context.command.parsed.extras?.direction as DirectionType;
-
-    // If no direction in extras, check if directObject has a name that could be a direction
-    if (!direction && context.command.directObject?.entity) {
-      const entityName = context.command.directObject.entity.name ||
-                        context.command.directObject.entity.attributes?.name;
-      if (entityName) {
-        direction = entityName as DirectionType;
-      }
-    }
+    const direction = resolveWay(context)!;
 
     // Resolve the traversal EXACTLY ONCE (ADR-295 D5). The resolver may draw
     // on the session random service, so this call must not repeat; every
     // later consumer (report, data builders) reads sharedData instead.
-    const exitConfig = RoomBehavior.getExit(sourceRoom, direction);
+    const exitConfig = TraversalBehavior.exitOf(context.world, sourceRoom, direction);
     const resolution = RoomBehavior.resolveExit(sourceRoom, direction, {
       world: context.world,
       actorId: actor.id,
@@ -569,7 +502,11 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
     // asks who holds the role this turn.
     const isProtagonist = context.actor.id === context.player.id;
     const announces = !isProtagonist && (context.actor.get(NpcTrait)?.announcesMovement ?? false);
-    const direction = sharedData.direction as DirectionType | undefined;
+    // A passage has no bearing to narrate: a witnessed mover by a passage
+    // departs and arrives with no direction word (ADR-378 D1).
+    const direction = sharedData.direction && !sharedData.direction.startsWith('passage:')
+      ? sharedData.direction as DirectionType
+      : undefined;
     const witnessed = (messageId: string, dir: DirectionType | undefined) => announces
       ? { messageId, params: { ...(dir ? { direction: dir.toLowerCase() } : {}) } }
       : {};

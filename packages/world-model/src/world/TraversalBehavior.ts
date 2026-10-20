@@ -144,7 +144,10 @@ export class TraversalBehavior {
   static admitsMover(exit: IExitInfo, destination: IFEntity, mover: TraversalMover): boolean {
     if (mover.kind === 'walker' || mover.kind === 'npc') return true;
     const list = exit.admits ?? destination.get(RoomTrait)?.admits ?? [];
-    return mover.kind === 'steered' ? list.includes(mover.vehicle.id) : list.includes(PUSHING);
+    if (mover.kind === 'steered') return list.includes(mover.vehicle.id);
+    // ADR-378 D6b: the way admits every pushable by the class word, or this
+    // one thing by its own `pushing` block.
+    return list.includes(PUSHING) || (exit.admitsPushed ?? []).includes(mover.thing.id);
   }
 
   /**

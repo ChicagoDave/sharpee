@@ -32,6 +32,12 @@ export interface IExitInfo {
    * room's own `admits` list; absent means the room's list decides.
    */
   admits?: string[];
+  /**
+   * The pushable things that may be pushed this way by their own word
+   * (ADR-378 D6b, the thing's `pushing` block): entity ids. Read beside the
+   * class word `pushing` in `admits`; either admits the push.
+   */
+  admitsPushed?: string[];
 }
 
 export interface IRoomData {

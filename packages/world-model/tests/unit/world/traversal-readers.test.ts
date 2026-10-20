@@ -37,8 +37,8 @@ const ALLOWED_READERS: Record<string, { role: Role; reads: string; why: string }
   'world-model/src/traits/room/roomTrait.ts': { role: 'data', reads: 'declares exits and blockedExits', why: 'the data' },
   'world-model/src/traits/room/roomBehavior.ts': { role: 'data', reads: 'getExit, setExit, isExitBlocked, getAllExits, computed-exit lookup', why: 'the accessors the home calls; static accessors, no live gate' },
   'world-model/src/world/WorldModel.ts': { role: 'writer', reads: 'connectRooms writes exits; the BFS path-finder walks them for findPath', why: 'writing is construction; the path-finder is a lister (ADR-378 AC-0 names it)' },
-  'stdlib/src/actions/standard/going/going.ts': { role: 'consumer', reads: 'resolveDirection, the blocked/message keys, getExit, the door, admits', why: 'reads the home from ADR-378 Slice 4; its own key builders and inline gates retire then' },
-  'stdlib/src/actions/standard/climbing/climbing.ts': { role: 'consumer', reads: 'roomTrait.exits[direction] exists before delegating to going', why: 'ADR-378 Slice 4 moves the existence check onto the home' },
+  // going, climbing and pushing read the home (ADR-378 Slice 4, 2026-10-19):
+  // no raw read remains in them, so they are not listed.
   'stdlib/src/actions/base/snapshot-utils.ts': { role: 'lister', reads: 'exits by direction into a room snapshot for event data', why: 'event payload, decides no traversal' },
   'stdlib/src/actions/helpers/exit-legality.ts': { role: 'copy', reads: 'hasTraversableExit: blocked key, getExit, the door lock', why: 'COPY of the rule (its header says so); GH #601 — onto wayFor' },
   'stdlib/src/actions/standard/steering/steering.ts': { role: 'key-reader', reads: 'exitMessageKey(expanse, side) for an expanse edge\'s phrase', why: 'ADR-376 D8: the edge borrows the message key for its text' },

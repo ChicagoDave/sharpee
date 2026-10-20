@@ -150,6 +150,8 @@ import {
   HoldsDecl,
   VehicleLine,
   PositionBlockDecl,
+  PushingBlockDecl,
+  PushingRowDecl,
   LandmarksBlockDecl,
   SailingBlockDecl,
   SailingPace,
@@ -247,6 +249,8 @@ const DIRECTIONS = new Set([
   'up', 'down',
   'in', 'out', // ADR-369 D3: `in to <room>` is an exit; `in the <room>` stays placement (the article decides)
 ]);
+/** The words that end an exit's destination name: the door tail, and ADR-378's `admits` and `while` tails. */
+const EXIT_TAIL_WORDS: ReadonlySet<string> = new Set(['through', 'admits', 'while', 'during']);
 /** The kind-noun settings the loader once read (ADR-369 D2a) — each a parse error naming `holds <n>`. */
 const REMOVED_CAPACITY_SETTINGS = new Set(['max items', 'max weight', 'capacity']);
 /** The vehicle colon-line keys (ADR-366) and the room's `admits:` key; `boarded through:` is matched by its two words. */
@@ -453,6 +457,7 @@ function newCreateDecl(name: NameRef, span: Span): CreateDecl {
     holds: [],
     vehicleLines: [],
     positionBlock: null,
+    pushingBlock: null,
     landmarksBlock: null,
     sailingBlock: null,
     description: null,
@@ -2034,6 +2039,48 @@ class Parser {
   }
 
   /**
+   * `pushing … end pushing` (ADR-378 D6b): the ways a pushable thing may be
+   * pushed along, one row per way — `between <room> and <room>` for both
+   * ways, `from <room> to <room>` for one. A row of any other shape is
+   * `parse.pushing-row`. Whether the rooms are rooms, and connected, is the
+   * analyzer's gate.
+   * @param headLine the `pushing` line, already consumed
+   */
+  private parsePushingBlock(headLine: Line): PushingBlockDecl {
+    const rows: PushingRowDecl[] = [];
+    while (this.pos < this.lines.length) {
+      const line = this.lines[this.pos];
+      if (line.indent <= headLine.indent) break;
+      if (looksLikeComment(line)) {
+        this.skipCommentInsideBlock(line);
+        continue;
+      }
+      this.pos++;
+      const c = new Cursor(line.tokens, line);
+      const bothWays = c.isWord('between');
+      if (!bothWays && !c.isWord('from')) {
+        this.diagnostics.error('parse.pushing-row', 'A `pushing` row is `between <room> and <room>` or `from <room> to <room>`.', lineSpan(line));
+        continue;
+      }
+      c.next();
+      const joiner = bothWays ? 'and' : 'to';
+      const from = this.parseNameRef(c, (t) => t.kind === 'word' && t.text === joiner);
+      if (from.words.length === 0 || !c.matchWord(joiner)) {
+        this.diagnostics.error('parse.pushing-row', `Expected \`${bothWays ? 'between' : 'from'} <room> ${joiner} <room>\` in this \`pushing\` row.`, lineSpan(line));
+        continue;
+      }
+      const to = this.parseNameRef(c, () => false);
+      if (to.words.length === 0 || !c.atEnd()) {
+        this.diagnostics.error('parse.pushing-row', `Expected one room name after \`${joiner}\` in this \`pushing\` row.`, c.atEnd() ? lineSpan(line) : c.restSpan());
+        continue;
+      }
+      rows.push({ from, to, bothWays, span: lineSpan(line) });
+    }
+    const endSpan = this.consumeEnd('pushing', headLine);
+    return { kind: 'pushing-block', rows, span: mergeSpans(lineSpan(headLine), endSpan) };
+  }
+
+  /**
    * `landmarks … end landmarks` (ADR-376 D2): `<Room>: <x>, <y>` rows. A row
    * of any other shape is `parse.landmark-row`. That each room exists, lies
    * inside the size and is named once is the analyzer's gate.
@@ -2520,6 +2567,15 @@ class Parser {
         } else {
           decl.positionBlock = block;
         }
+      } else if (word === 'pushing' && line.tokens.length === 1) {
+        // ADR-378 D6b: the `pushing … end pushing` block of a pushable thing.
+        this.pos++;
+        const block = this.parsePushingBlock(line);
+        if (decl.pushingBlock) {
+          this.diagnostics.error('parse.pushing-duplicate', 'A thing has one `pushing` block — this is the second.', block.span);
+        } else {
+          decl.pushingBlock = block;
+        }
       } else if (word === 'holds') {
         // ADR-369 D2: the item capacity of a container or supporter.
         this.pos++;
@@ -2656,20 +2712,15 @@ class Parser {
           cur.next();
           oneWay = true;
         }
-        // ADR-362 D5 (GH #573): the exit line ends at its destination, door
-        // and `, one-way`. Words left over used to be dropped, so `, one way`
-        // compiled as a two-way exit.
-        if (!cur.atEnd()) {
-          const leftover = restText(cur);
-          const hint = nearOneWay(leftover)
-            ? ' Did you mean `, one-way`?'
-            : ' An exit line is `<direction> to <room>`, optionally followed by `through <door>` and `, one-way`.';
-          this.diagnostics.error(
-            'parse.exit-trailing',
-            `Unexpected words at the end of this exit line: \`${leftover}\`.${hint}`,
-            cur.restSpan(),
-          );
-        }
+        // ADR-378 D6/D3: the `admits <list>` and `while <condition>` tails.
+        // ADR-362 D5 (GH #573): the exit line ends there. Words left over
+        // used to be dropped, so `, one way` compiled as a two-way exit.
+        const tails = this.parseExitLineTails(
+          cur,
+          line,
+          true,
+          'An exit line is `<direction> to <room>`, optionally followed by `through <door>`, `, one-way`, `admits <list>` and `while <condition>`.',
+        );
         decl.exits.push({
           kind: 'exit',
           direction: word,
@@ -2677,8 +2728,15 @@ class Parser {
           via,
           ...(oneWay ? { oneWay: true as const } : {}),
           ...(toOutside ? { toOutside: true as const } : {}),
+          ...(tails.admits ? { admits: tails.admits } : {}),
+          ...(tails.condition ? { condition: tails.condition } : {}),
           span: lineSpan(line),
         } as ExitDecl);
+      } else if (word === 'passage' && line.tokens[1]?.kind !== 'colon') {
+        // ADR-378 D1: a passage line; the colon tells it from a flight
+        // vehicle's `passage: <n> turns`.
+        this.pos++;
+        this.parsePassageLine(line, decl);
       } else if (word === 'exits' && isExitsLineHead(line)) {
         // ADR-362 D2: a room's exits on one line; room-only is the analyzer's gate.
         this.pos++;
@@ -2747,19 +2805,35 @@ class Parser {
   private parseExitCore(c: Cursor, line: Line): { direction: string; to: NameRef; via: NameRef | null; toOutside?: true; span: Span } {
     const dirTok = c.next()!;
     c.next(); // to
+    const tail = this.parseExitDestination(c, line, dirTok.span);
+    return { direction: dirTok.text, ...tail };
+  }
+
+  /**
+   * The destination half of the shared `exit` production, after `to`:
+   * `( <room> | outside ) [ through <door> ]`. A compass exit and a passage
+   * line (ADR-378 D1) both end this way, so the door tail is parsed once.
+   * @param c positioned just after `to`
+   * @param line the line, for spans and diagnostics
+   * @param headSpan the span of what came before `to` (the direction, or the passage's words)
+   */
+  private parseExitDestination(c: Cursor, line: Line, headSpan: Span): { to: NameRef; via: NameRef | null; toOutside?: true; span: Span } {
     // ADR-366 D7: `to outside` — the containing vehicle's current room. The
     // word stands alone before `through`, a comma or the end of the line.
     let toOutside: true | undefined;
     let to: NameRef;
+    // The words that end a destination name: the door tail, and (ADR-378)
+    // the `admits` and `while` tails of a single exit line.
+    const endsName = (t: Token): boolean => t.kind === 'word' && EXIT_TAIL_WORDS.has(t.text);
     const after = c.peek(1);
-    if (c.isWord('outside') && (after === null || after.kind === 'comma' || (after.kind === 'word' && after.text === 'through'))) {
+    if (c.isWord('outside') && (after === null || after.kind === 'comma' || endsName(after))) {
       const outsideTok = c.next()!;
       to = { kind: 'name', article: null, words: ['outside'], span: outsideTok.span };
       toOutside = true;
     } else {
-      to = this.parseNameRef(c, (t) => t.kind === 'word' && t.text === 'through');
+      to = this.parseNameRef(c, endsName);
     }
-    let span = mergeSpans(dirTok.span, to.span);
+    let span = mergeSpans(headSpan, to.span);
     let via: NameRef | null = null;
     if (c.matchWord('through')) {
       const doorRef = this.parseNameRef(c, () => false);
@@ -2774,7 +2848,149 @@ class Parser {
         span = mergeSpans(span, doorRef.span);
       }
     }
-    return { direction: dirTok.text, to, via, ...(toOutside ? { toOutside } : {}), span };
+    return { to, via, ...(toOutside ? { toOutside } : {}), span };
+  }
+
+  /**
+   * The tails a single exit line takes after its destination, door and
+   * `, one-way` (ADR-378): `admits <name>, …` (D6; a compass exit only — a
+   * passage is not a direction, so nothing is pushed through it) and
+   * `while <condition>` (D3), in that order, the condition running to the
+   * end of the line. Leftover words are `parse.exit-trailing`, as on any
+   * exit line.
+   * @param c positioned after the exit's destination (and `, one-way`)
+   * @param line the exit line
+   * @param admitsAllowed false on a passage line
+   * @param shape the line's shape, for the trailing-words hint
+   */
+  private parseExitLineTails(
+    c: Cursor,
+    line: Line,
+    admitsAllowed: boolean,
+    shape: string,
+  ): { admits?: NameRef[]; condition?: ConditionNode } {
+    const out: { admits?: NameRef[]; condition?: ConditionNode } = {};
+    if (c.isWord('admits') && admitsAllowed) {
+      c.next(); // admits
+      const admits: NameRef[] = [];
+      for (;;) {
+        const ref = this.parseNameRef(c, (t) => t.kind === 'word' && (t.text === 'while' || t.text === 'during'));
+        if (ref.words.length === 0) {
+          this.diagnostics.error(
+            'parse.exit-admits',
+            '`admits` on an exit line names who may take this way: a steered vehicle, or `pushing` for a pushed thing (`east to the Dock admits the car, pushing`).',
+            c.atEnd() ? lineSpan(line) : c.restSpan(),
+          );
+          return out;
+        }
+        admits.push(ref);
+        if (c.peek()?.kind !== 'comma') break;
+        c.next(); // comma
+      }
+      out.admits = admits;
+    }
+    if (c.matchWord('while') || c.isWord('during')) {
+      const condTokens: Token[] = [];
+      while (!c.atEnd()) condTokens.push(c.next()!);
+      out.condition = this.parseCondition(new Cursor(condTokens, line), line);
+    }
+    if (!c.atEnd()) {
+      const leftover = restText(c);
+      const hint = nearOneWay(leftover)
+        ? ' Did you mean `, one-way`?'
+        : c.isWord('admits')
+          ? ' A passage is not a direction, so nothing is pushed through it and it takes no `admits`.'
+          : ` ${shape}`;
+      this.diagnostics.error(
+        'parse.exit-trailing',
+        `Unexpected words at the end of this exit line: \`${leftover}\`.${hint}`,
+        c.restSpan(),
+      );
+    }
+    return out;
+  }
+
+  /**
+   * A passage line (ADR-378 D1): `passage <words> { or <words> } to <room>
+   * [ through <door> ] [ while <condition> ]`, or `passage <words> is
+   * blocked …` / `is deadly …` naming a passage the room declares. Each
+   * form is one or more words the player types; `to` and `or` are the
+   * separators, so a form holding neither — and holding only words — is
+   * `parse.passage-words`. The key is `passage:<first form, hyphenated>`;
+   * a `, one-way` is carried for the analyzer to refuse (a passage is
+   * one-way by construction).
+   * @param line the `passage` line, already consumed
+   * @param decl the room block the line belongs to
+   */
+  private parsePassageLine(line: Line, decl: CreateDecl): void {
+    const c = new Cursor(line.tokens, line);
+    const headTok = c.next()!; // passage
+    const forms: string[] = [];
+    let current: string[] = [];
+    const bad = (message: string, span?: Span): void => {
+      this.diagnostics.error('parse.passage-words', message, span ?? lineSpan(line));
+    };
+    const closeForm = (): boolean => {
+      if (current.length === 0) {
+        bad('A passage\'s words are what the player types — one or more words before `to`, and between the `or`s: `passage climb the rope or climb up to the Loft`.');
+        return false;
+      }
+      forms.push(current.join(' '));
+      current = [];
+      return true;
+    };
+    let stop: 'to' | 'is' | null = null;
+    while (!c.atEnd()) {
+      const t = c.peek()!;
+      if (t.kind !== 'word') {
+        bad(`A passage's words are plain words — \`${t.text}\` cannot be part of one.`, t.span);
+        return;
+      }
+      if (t.text === 'to') { stop = 'to'; break; }
+      if (t.text === 'is' && (c.isWord('blocked', 1) || c.isWord('deadly', 1))) { stop = 'is'; break; }
+      if (t.text === 'or') {
+        c.next();
+        if (!closeForm()) return;
+        continue;
+      }
+      current.push(c.next()!.text);
+    }
+    if (!closeForm()) return;
+    if (stop === null) {
+      bad('A passage line names where it leads: `passage <words> to <room>`, or `passage <words> is blocked: <phrase>`.');
+      return;
+    }
+    const key = `passage:${forms[0].toLowerCase().split(' ').join('-')}`;
+    if (stop === 'is') {
+      if (c.isWord('blocked', 1)) {
+        const blocked = this.parseBlockedExit(key, line, c);
+        if (blocked) decl.blockedExits.push(blocked);
+      } else {
+        const deadly = this.parseDeadlyExit(key, line, c);
+        if (deadly) decl.deadlyExits.push(deadly);
+      }
+      return;
+    }
+    const toTok = c.next()!; // to
+    const { to, via, toOutside, span } = this.parseExitDestination(c, line, mergeSpans(headTok.span, toTok.span));
+    let oneWay = false;
+    if (c.peek()?.kind === 'comma' && c.isWord('one-way', 1)) {
+      c.next();
+      c.next();
+      oneWay = true;
+    }
+    const tails = this.parseExitLineTails(c, line, false, 'A passage line is `passage <words> to <room>`, optionally followed by `through <door>` and `while <condition>`.');
+    decl.exits.push({
+      kind: 'exit',
+      direction: key,
+      passage: forms,
+      to,
+      via,
+      ...(oneWay ? { oneWay: true as const } : {}),
+      ...(toOutside ? { toOutside: true as const } : {}),
+      ...(tails.condition ? { condition: tails.condition } : {}),
+      span: mergeSpans(span, lineSpan(line)),
+    } as ExitDecl);
   }
 
   /**
@@ -2842,6 +3058,24 @@ class Parser {
         this.diagnostics.error(
           'parse.exits-line-one-way',
           'An exit on an `exits:` line takes no `, one-way` of its own — a comma there separates exits. Put the one-way exits on an `exits, one-way:` line instead.',
+          c.restSpan(),
+        );
+        return;
+      }
+      // ADR-378 D3/D6: the `while` and `admits` tails belong to a single
+      // exit line, where the condition and the list have a line to run to.
+      if (c.isWord('while') || c.isWord('during')) {
+        this.diagnostics.error(
+          'parse.exits-line-while',
+          `An exit on an \`exits:\` line takes no \`while\` of its own — the condition would run into the next exit. Give \`${core.direction} to ${core.to.words.join(' ')}\` a line of its own and write \`while\` there.`,
+          c.restSpan(),
+        );
+        return;
+      }
+      if (c.isWord('admits')) {
+        this.diagnostics.error(
+          'parse.exits-line-admits',
+          `An exit on an \`exits:\` line takes no \`admits\` of its own — the list would run into the next exit. Give \`${core.direction} to ${core.to.words.join(' ')}\` a line of its own and write \`admits\` there.`,
           c.restSpan(),
         );
         return;
@@ -2941,6 +3175,16 @@ class Parser {
         this.diagnostics.error(
           'parse.exit-row-one-way',
           'An exit in a table row takes no `, one-way` of its own — put the row in an `exits, one-way` table instead.',
+          c.restSpan(),
+        );
+        return null;
+      }
+      // ADR-378 D3/D6: as on an `exits:` line, the tails need a line of their own.
+      if (c.isWord('while') || c.isWord('during') || c.isWord('admits')) {
+        const tail = c.isWord('admits') ? 'admits' : 'while';
+        this.diagnostics.error(
+          tail === 'admits' ? 'parse.exit-row-admits' : 'parse.exit-row-while',
+          `An exit in a table row takes no \`${tail}\` of its own. Give the room a block with \`in the <region>\` and write \`${core.direction} to ${core.to.words.join(' ')} ${tail} …\` there.`,
           c.restSpan(),
         );
         return null;
@@ -3764,11 +4008,17 @@ class Parser {
     return placement;
   }
 
-  private parseBlockedExit(direction: string, line: Line): BlockedExitDecl | null {
-    // <direction> is blocked [while <condition>]: <phrase-key>
-    // (conditional form: grammar log 2026-07-10, Phase B)
-    const c = new Cursor(line.tokens, line);
-    c.next(); // direction
+  /**
+   * `<direction> is blocked [while <condition>]: <phrase-key>` (conditional
+   * form: grammar log 2026-07-10, Phase B). A passage line (ADR-378 D1)
+   * hands in its key and a cursor already at `is`.
+   * @param direction the compass word, or a passage key
+   * @param line the line
+   * @param at a cursor positioned at `is`; omitted, the line's first token is the direction
+   */
+  private parseBlockedExit(direction: string, line: Line, at?: Cursor): BlockedExitDecl | null {
+    const c = at ?? new Cursor(line.tokens, line);
+    if (!at) c.next(); // direction
     c.next(); // is
     c.next(); // blocked
     let condition: ConditionNode | null = null;
@@ -3790,11 +4040,16 @@ class Parser {
     return { kind: 'blocked-exit', direction, phraseKey: key, condition, span: lineSpan(line) };
   }
 
-  private parseDeadlyExit(direction: string, line: Line): DeadlyExitDecl | null {
-    // <direction> is deadly [while <condition>]: <phrase-key> (ADR-227) —
-    // mirrors the blocked-exit grammar exactly.
-    const c = new Cursor(line.tokens, line);
-    c.next(); // direction
+  /**
+   * `<direction> is deadly [while <condition>]: <phrase-key>` (ADR-227) —
+   * mirrors the blocked-exit grammar exactly, passage keys included.
+   * @param direction the compass word, or a passage key
+   * @param line the line
+   * @param at a cursor positioned at `is`; omitted, the line's first token is the direction
+   */
+  private parseDeadlyExit(direction: string, line: Line, at?: Cursor): DeadlyExitDecl | null {
+    const c = at ?? new Cursor(line.tokens, line);
+    if (!at) c.next(); // direction
     c.next(); // is
     c.next(); // deadly
     let condition: ConditionNode | null = null;
@@ -5356,10 +5611,19 @@ class Parser {
       this.pos++;
       return null;
     }
+    // ADR-378 D5 (ADR-370 D7): `define action <name> while <condition>` —
+    // the action's grammar is a rule only while the condition holds.
+    let condition: ConditionNode | undefined;
+    if (c.isWord('while') || c.isWord('during')) {
+      if (c.isWord('while')) c.next();
+      const condTokens: Token[] = [];
+      while (!c.atEnd()) condTokens.push(c.next()!);
+      condition = this.parseCondition(new Cursor(condTokens, headLine), headLine);
+    }
     this.pos++;
 
     const parts = this.parseActionBlockParts(headLine);
-    return { kind: 'define-action', name: nameTok.text, ...parts };
+    return { kind: 'define-action', name: nameTok.text, ...(condition ? { condition } : {}), ...parts };
   }
 
   /**

@@ -191,7 +191,14 @@ const PINNED = {
   // `sailing-block`; `commands:` admits `naval`; `set … wind` and `set …
   // sails`; `predicate` gains `in irons` and `are WORD` on a sails subject.
   // Additive, on the unpublished 4.0 surface — no bump.
-  ebnfSha256: 'ac5e72db324da577ce1838fb9b7408c9cde2bf2611ee787cab07fe7bb2258b9e',
+  // Re-pinned 2026-10-19 (session d4875a; Chord 4.0 Phase 14, Slice 3):
+  // ADR-378 — the `passage` room line (D1), `while` and `admits` tails on
+  // a single exit line (D3, D6), `pushing` in an `admits` list, blocked and
+  // deadly lines by `exit-key`, and `define action … while` (D5). Additive,
+  // on the unpublished 4.0 surface — no bump. Re-pinned 2026-10-20 (same
+  // session) for ADR-378 D6b, the thing's `pushing … end pushing` block of
+  // room pairs — additive, no bump.
+  ebnfSha256: 'f12d98529ddbf622f843d53cae723eee73dd0367824354f480d951fe37ae410e',
 };
 
 // Colocated with the version pin it gates (2026-08-14). It previously lived at

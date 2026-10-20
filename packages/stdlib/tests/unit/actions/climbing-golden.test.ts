@@ -11,7 +11,7 @@
 import { describe, test, expect, beforeEach } from 'vitest';
 import { climbingAction } from '../../../src/actions/standard/climbing';
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType, WorldModel, EntityType, RoomTrait } from '@sharpee/world-model';
+import { TraitType, WorldModel, EntityType, RoomTrait, Direction } from '@sharpee/world-model';
 import {
   createRealTestContext,
   expectEvent,
@@ -123,7 +123,7 @@ describe('climbingAction (Golden Pattern)', () => {
       room.add({
         type: TraitType.ROOM,
         exits: {
-          north: { to: 'room2' }  // No up/down exits
+          [Direction.NORTH]: { destination: 'room2' }  // No up/down exits
         }
       });
 
@@ -178,7 +178,7 @@ describe('climbingAction (Golden Pattern)', () => {
       groundFloor.add({
         type: TraitType.ROOM,
         exits: {
-          up: { to: 'attic' }
+          [Direction.UP]: { destination: 'attic' }
         }
       });
       
@@ -186,13 +186,13 @@ describe('climbingAction (Golden Pattern)', () => {
       attic.add({
         type: TraitType.ROOM,
         exits: {
-          down: { to: groundFloor.id }
+          [Direction.DOWN]: { destination: groundFloor.id }
         }
       });
       
       // Update ground floor exit to use actual ID
       const roomTrait = groundFloor.getTrait(RoomTrait)!;
-      roomTrait.exits.up.to = attic.id;
+      roomTrait.exits[Direction.UP]!.destination = attic.id;
       
       const player = world.createEntity('yourself', EntityType.ACTOR);
       player.add({ type: TraitType.ACTOR, isPlayer: true });
@@ -233,7 +233,7 @@ describe('climbingAction (Golden Pattern)', () => {
       attic.add({
         type: TraitType.ROOM,
         exits: {
-          down: { to: groundFloor.id }
+          [Direction.DOWN]: { destination: groundFloor.id }
         }
       });
 
@@ -387,7 +387,7 @@ describe('climbingAction (Golden Pattern)', () => {
       room1.add({
         type: TraitType.ROOM,
         exits: {
-          up: { to: 'room2' }
+          [Direction.UP]: { destination: 'room2' }
         }
       });
       
@@ -396,7 +396,7 @@ describe('climbingAction (Golden Pattern)', () => {
       
       // Update exit to use actual ID
       const roomTrait = room1.getTrait(RoomTrait)!;
-      roomTrait.exits.up.to = room2.id;
+      roomTrait.exits[Direction.UP]!.destination = room2.id;
       
       const player = world.createEntity('yourself', EntityType.ACTOR);
       player.add({ type: TraitType.ACTOR, isPlayer: true });
@@ -461,7 +461,7 @@ describe('climbingAction (Golden Pattern)', () => {
       attic.add({ type: TraitType.ROOM });
 
       const roomTrait = groundFloor.get(TraitType.ROOM);
-      roomTrait.exits = { up: { to: attic.id } };
+      roomTrait.exits = { [Direction.UP]: { destination: attic.id } };
 
       const player = world.createEntity('yourself', EntityType.ACTOR);
       player.add({ type: TraitType.ACTOR, isPlayer: true });
@@ -493,7 +493,7 @@ describe('climbingAction (Golden Pattern)', () => {
       attic.add({ type: TraitType.ROOM });
 
       const atticRoom = attic.get(TraitType.ROOM);
-      atticRoom.exits = { down: { to: groundFloor.id } };
+      atticRoom.exits = { [Direction.DOWN]: { destination: groundFloor.id } };
 
       const player = world.createEntity('yourself', EntityType.ACTOR);
       player.add({ type: TraitType.ACTOR, isPlayer: true });

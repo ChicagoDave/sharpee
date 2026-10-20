@@ -73,6 +73,7 @@ import type {
   IRTimerClause,
   IRVehicle,
   IRExpanse,
+  IRPushingWay,
 } from '../../ir.js';
 import type { Span } from '../../span.js';
 import type { EntitySymbol, Scope } from '../../analyzer.js';
@@ -136,6 +137,8 @@ export interface EntityDraft {
   vehicle?: IRVehicle;
   /** `admits:` (ADR-366 D6) as entity ids; undefined when the block has no line. */
   admits?: string[];
+  /** The `pushing` block (ADR-378 D6b) as directed room pairs; undefined when the block has none. */
+  pushing?: IRPushingWay[];
   /** The expanse's declaration (ADR-376 D2); undefined off an `expanse` block. */
   expanse?: IRExpanse;
   /** `sight: <n>` on a landmark room or an instrument (ADR-376 D6); undefined when absent. */

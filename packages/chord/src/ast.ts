@@ -354,6 +354,29 @@ export interface PositionBlockDecl {
   span: Span;
 }
 
+/**
+ * One row of a thing's `pushing` block (ADR-378 D6b): `between <room> and
+ * <room>` (two-way) or `from <room> to <room>` (one-way).
+ */
+export interface PushingRowDecl {
+  from: NameRef;
+  to: NameRef;
+  /** `between … and …`: the row holds both ways. */
+  bothWays: boolean;
+  span: Span;
+}
+
+/**
+ * `pushing … end pushing` on a pushable thing (ADR-378 D6b): the ways the
+ * thing may be pushed along, as room pairs the analyzer checks against the
+ * map. One block per thing (the parser's gate).
+ */
+export interface PushingBlockDecl {
+  kind: 'pushing-block';
+  rows: PushingRowDecl[];
+  span: Span;
+}
+
 /** `holds <n>` (ADR-369 D2) — the item capacity of a container or supporter. */
 export interface HoldsDecl {
   kind: 'holds';
@@ -968,6 +991,8 @@ export interface CreateDecl {
   vehicleLines: VehicleLine[];
   /** The `position … end position` block (ADR-366 D5a), or null. */
   positionBlock: PositionBlockDecl | null;
+  /** The `pushing … end pushing` block (ADR-378 D6b), or null. */
+  pushingBlock: PushingBlockDecl | null;
   /** The `landmarks … end landmarks` block (ADR-376 D2), or null. */
   landmarksBlock: LandmarksBlockDecl | null;
   /** `sailing … end sailing` on a vehicle (ADR-375 D5), or null. */
@@ -1401,7 +1426,31 @@ export interface Placement {
 
 export interface ExitDecl {
   kind: 'exit';
+  /**
+   * The exit's key: a compass word, or for a passage line (ADR-378 D1) the
+   * key `passage:<first form, words hyphenated>` — `passage:climb-the-rope`.
+   */
   direction: string;
+  /**
+   * `passage <words> { or <words> } to <room>` (ADR-378 D1): the forms the
+   * player types, as written, the first one canonical. A passage is one-way
+   * by construction; its words are grammar only where it is (D2). Present
+   * only on a passage line.
+   */
+  passage?: string[];
+  /**
+   * `while <condition>` tail on a single exit line (ADR-378 D3): the exit
+   * exists only while the condition holds — hidden, for every reader,
+   * which is not the same as blocked. Present only when written.
+   */
+  condition?: ConditionNode;
+  /**
+   * `admits <name>, …` tail on a single exit line (ADR-378 D6): the steered
+   * vehicles and, as the class word `pushing`, the pushed things that may
+   * take this way. The same list a room's `admits:` line takes. Present
+   * only when written.
+   */
+  admits?: NameRef[];
   to: NameRef;
   /**
    * `through the <door>` tail (ADR-234 D1, ratchet R2) — the one door
@@ -1460,6 +1509,7 @@ export interface ExitTableDecl {
 
 export interface BlockedExitDecl {
   kind: 'blocked-exit';
+  /** A compass word, or a passage key (`passage <words> is blocked …`, ADR-378 D1). */
   direction: string;
   /** Phrase key emitted when the exit is tried. */
   phraseKey: string;
@@ -1479,6 +1529,7 @@ export interface BlockedExitDecl {
  */
 export interface DeadlyExitDecl {
   kind: 'deadly-exit';
+  /** A compass word, or a passage key (`passage <words> is deadly …`, ADR-378 D1). */
   direction: string;
   /** Phrase key carrying the death text (also the derived cause). */
   phraseKey: string;
@@ -1791,6 +1842,13 @@ export interface DefineAction {
   kind: 'define-action';
   /** The action name as written (gerund), e.g. `petting`. */
   name: string;
+  /**
+   * `define action <name> while <condition>` (ADR-378 D5, ADR-370 D7): the
+   * action's grammar is a rule only while the condition holds — elsewhere
+   * the input parses as though the action did not exist. Read before any
+   * slot binds, so the condition names no slot. Present only when written.
+   */
+  condition?: ConditionNode;
   /** `grammar` block pattern lines. */
   patterns: ActionPattern[];
   /** `the <slot> must be <requirement>` lines (scope kit, no phrase key). */

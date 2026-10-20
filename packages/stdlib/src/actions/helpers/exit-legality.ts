@@ -24,8 +24,10 @@ import {
   RoomBehavior,
   LockableBehavior,
   type DirectionType,
+  type ExitKey,
+  exitBlockedKey,
 } from '@sharpee/world-model';
-import { exitBlockedKey, goingAction } from '../standard/going/going.js';
+import { goingAction } from '../standard/going/going.js';
 import { createActionContext } from '../enhanced-context.js';
 import { IFActions } from '../constants.js';
 import type { ValidatedCommand } from '../../validation/types.js';
@@ -102,7 +104,7 @@ export function hasTraversableExit(world: WorldModel, roomId: string): boolean {
   if (!room || !room.has(TraitType.ROOM)) return false;
 
   for (const direction of exitDirections(room)) {
-    const derived = world.evaluate(exitBlockedKey(room.id, direction));
+    const derived = world.evaluate(exitBlockedKey(room.id, direction as ExitKey));
     const blocked =
       typeof derived === 'boolean'
         ? derived

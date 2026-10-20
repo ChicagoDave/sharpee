@@ -86,7 +86,7 @@ A vehicle on a heading drives through a blocked exit. An NPC walks through a clo
 
 ## Acceptance criteria
 
-- **AC-1 (D1–D3, D7)**: `docs/core-concepts/README.md` and `CLAUDE.md`'s *Logic Location* table carry the system row and the one-home test, in one sentence each; the row cites this record.
+- **AC-1 (D1–D3, D7)**: `docs/core-concepts/README.md` and `CLAUDE.md`'s *Logic Location* table carry the system row and the one-home test, in one sentence each; the row cites this record. *(Landed 2026-10-20, session d4875a, ADR-378 Slice 6: the row in `CLAUDE.md`'s table and a Systems section under Behaviors vs Actions in the core concepts, both naming the test and this record.)*
 - **AC-2 (D6)**: the inventory table's "home today" column cites a file for every row, read at drafting (this record); a reader can open each.
 - **AC-3 (D8)**: the NPC traversal issue exists, labelled, citing this record and the Context table row.
 - **AC-4 (D2, structural, lands with ADR-378)**: a world-model test scans `packages/` source and fails on any read of `RoomTrait.exits` or the `exit.*` keys outside traversal's home, with the known consumers enumerated as the allowed set; the test is the template the next system copies.

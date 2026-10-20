@@ -146,6 +146,10 @@ import {
   type VehicleModelConfig,
   type TemperamentDef,
   TraitType,
+  TraversalBehavior,
+  PUSHING,
+  isPassageKey,
+  type ExitKey,
   WeaponTrait,
   WearableTrait,
   WorldModel,
@@ -418,12 +422,65 @@ export class ChordStory implements Story {
   }
 
   /**
+   * ADR-378 D6: an exit line's own `admits` rides the exit, on both sides of
+   * a two-way connection as the connection itself does. Stamped in a pass
+   * after every exit is wired, because a far room's own line back is a
+   * later `connectRooms` that rewrites both entries and would drop a stamp
+   * made as the first side was wired. A far room that writes its own line
+   * back keeps that line's list (or none): only an inferred reverse carries
+   * this one.
+   */
+  private stampExitAdmits(world: WorldModel): void {
+    for (const irEntity of this.ir.entities) {
+      for (const exit of irEntity.exits) {
+        if (!exit.admits || exit.toOutside) continue;
+        const entity = world.getEntity(this.requireWorldId(irEntity.id, irEntity));
+        if (!entity) continue;
+        const direction = toDirection(exit.direction, irEntity);
+        const admits = exit.admits.map((id) => (id === PUSHING ? PUSHING : this.requireWorldId(id, irEntity)));
+        const forward = RoomBehavior.getExit(entity, direction);
+        if (forward) forward.admits = [...admits];
+        if (exit.oneWay || isPassageKey(direction)) continue;
+        const reverseDirection = getOppositeDirection(direction as DirectionType);
+        const far = this.ir.entities.find((e) => e.id === exit.to);
+        if (far?.exits.some((e) => toDirection(e.direction, far) === reverseDirection)) continue;
+        const reverse = RoomBehavior.getExit(world.getEntity(this.requireWorldId(exit.to, irEntity))!, reverseDirection);
+        if (reverse && reverse.destination === entity.id) reverse.admits = [...admits];
+      }
+    }
+  }
+
+  /**
+   * ADR-378 D6b: a thing's `pushing` block stamps the thing's id onto each
+   * named way's `admitsPushed` — the compass exit from the first room to the
+   * second, which the compiler has checked exists. Runs after every exit is
+   * wired, as the exit-line stamp does.
+   */
+  private stampPushingWays(world: WorldModel): void {
+    for (const irEntity of this.ir.entities) {
+      if (!irEntity.pushing?.length) continue;
+      const thingId = this.requireWorldId(irEntity.id, irEntity);
+      for (const way of irEntity.pushing) {
+        const from = world.getEntity(this.requireWorldId(way.from, irEntity));
+        const toId = this.requireWorldId(way.to, irEntity);
+        if (!from) continue;
+        for (const [key, exit] of RoomBehavior.getAllExits(from)) {
+          if (isPassageKey(key) || exit.destination !== toId) continue;
+          if (!exit.admitsPushed) exit.admitsPushed = [];
+          if (!exit.admitsPushed.includes(thingId)) exit.admitsPushed.push(thingId);
+        }
+      }
+    }
+  }
+
+  /**
    * ADR-366 D6: `admits:` lands on RoomTrait.admits — the room's own, or
    * every member room's when written on a region. A room admits no vehicle
    * unless it names it, so the list only ever grows.
    */
   private wireAdmits(world: WorldModel, irEntity: IREntity, entity: IFEntity): void {
-    const vehicleIds = (irEntity.admits ?? []).map((id) => this.requireWorldId(id, irEntity));
+    // ADR-378 D6: the class word `pushing` passes through as itself.
+    const vehicleIds = (irEntity.admits ?? []).map((id) => (id === PUSHING ? PUSHING : this.requireWorldId(id, irEntity)));
     const rooms = entity.has(TraitType.ROOM)
       ? [entity]
       : (irEntity.containing ?? []).map((member) => world.getEntity(this.requireWorldId(member.id, irEntity))!);
@@ -660,8 +717,9 @@ export class ChordStory implements Story {
         const direction = toDirection(exit.direction, irEntity);
         // `, one-way` (ADR-234 D4, GH #327): the written direction only —
         // no reverse exit is inferred, so a room reached by an authorial
-        // move and left by walking has no back door.
-        const oneWay = exit.oneWay === true;
+        // move and left by walking has no back door. A passage is one-way
+        // by construction (ADR-378 D1): there is no opposite of its words.
+        const oneWay = exit.oneWay === true || isPassageKey(direction);
         if (exit.via === null) {
           // Defensive (Phase 8 #6, belt-and-suspenders with the analyzer's
           // door-plain-mirror gate): connectRooms stamps BOTH directions, so
@@ -670,7 +728,7 @@ export class ChordStory implements Story {
           // here means rogue IR. A one-way exit stamps nothing on the far
           // room, so it cannot unwire anything.
           const targetRoomTrait = world.getEntity(toId)?.get(TraitType.ROOM) as RoomTrait | undefined;
-          const reverseExit = targetRoomTrait?.exits?.[getOppositeDirection(direction)];
+          const reverseExit = oneWay ? undefined : targetRoomTrait?.exits?.[getOppositeDirection(direction as DirectionType)];
           if (!oneWay && reverseExit?.via && reverseExit.destination === entity.id) {
             throw new LoadError(
               `\`${irEntity.name}\`: plain \`${exit.direction}\` exit mirrors a door-wired exit on \`${exit.to}\` — rogue IR (the compiler's door-plain-mirror gate refuses this).`,
@@ -754,6 +812,10 @@ export class ChordStory implements Story {
       // and every other described entity alike (GH #364).
       this.compileDescriptionSnippets(world, irEntity, entity);
     }
+
+    // ADR-378 D6: every exit is wired, so a stamp cannot be rewritten now.
+    this.stampExitAdmits(world);
+    this.stampPushingWays(world);
 
     // ADR-234 D3 backstop (rogue IR — the compiler's `door-unconnected`
     // gate refuses this): a door no `through` exit wired has no room pair
@@ -1493,6 +1555,8 @@ export class ChordStory implements Story {
       this.registerActionGrammar(grammar, `chord.action.${action.name}`, action, { bareVerbForms: true });
     }
 
+    this.registerPassageGrammar(grammar);
+
     // ADR-270 D2: `extend action` — grammar lines onto an EXISTING action.
     // Story-first resolution (a story-defined action of the name wins, the
     // shadowing semantic); else the name derives `if.action.<name>`,
@@ -1568,6 +1632,7 @@ export class ChordStory implements Story {
       greedy?: string[];
       slotTypes?: Array<{ slot: string; type: 'instrument' | 'topic' }>;
       directions?: Array<{ canonical: string; aliases: string[] }>;
+      condition?: IRCondition;
     },
     opts: { bareVerbForms: boolean },
   ): void {
@@ -1575,6 +1640,14 @@ export class ChordStory implements Story {
       const action = def;
       const greedy = action.greedy ?? [];
       const directions = action.directions ?? [];
+      // ADR-378 D5 (ADR-370 D7, GH #317): `define action … while` gates
+      // every rule the action registers, bare-verb prefixes included — where
+      // the condition is false the input parses as though the action did
+      // not exist. Read against the live world at match time.
+      const condition = action.condition;
+      const gate = condition
+        ? (ctx: { world: unknown }) => this.evaluator.evalCondition(condition, { world: ctx.world as WorldModel })
+        : undefined;
 
       // ADR-267 D12: collect the emitted pattern strings first, each with
       // its per-pattern semantic defaults (`means` lines; the `directions`
@@ -1643,6 +1716,7 @@ export class ChordStory implements Story {
         // registers 'story', which outranks the standard grammar outright —
         // the old 150/140 priorities collapsed into that single tier.
         const slotted = grammar.forAction(actionId);
+        if (gate) slotted.when(gate);
         if (group.defaults) {
           // The cast is deliberate: `means` keys are author vocabulary and
           // direction words are per-action vocabulary (ship directions,
@@ -1668,9 +1742,52 @@ export class ChordStory implements Story {
       // forms; specificity orders them below the slotted forms anyway.
       if (bareForms.size > 0) {
         const bare = grammar.forAction(actionId);
+        if (gate) bare.when(gate);
         for (const form of bareForms) bare.fullPattern(form);
         bare.build();
       }
+    }
+  }
+
+  /**
+   * ADR-378 D2: a passage's words are grammar only where the passage is.
+   * Each form a room's passage line wrote registers as a story-tier rule
+   * for `if.action.going` with the passage key as its direction — as
+   * written, and with its articles removed, so `climb rope` reaches `climb
+   * the rope` — gated on the actor's room having that way live: hidden
+   * (D3) or absent, the words are not a rule and the input falls through
+   * to the standard grammar or the parser's own not-understood. Two rooms
+   * writing the same first form share the key and the rule.
+   */
+  private registerPassageGrammar(grammar: GrammarBuilder): void {
+    const formsByKey = new Map<string, Set<string>>();
+    for (const irEntity of this.ir.entities) {
+      for (const exit of irEntity.exits) {
+        if (!exit.passage) continue;
+        const forms = formsByKey.get(exit.direction) ?? new Set<string>();
+        for (const form of exit.passage) {
+          forms.add(form.toLowerCase());
+          const bare = form.toLowerCase().split(' ').filter((w) => !ARTICLES.has(w)).join(' ');
+          if (bare) forms.add(bare);
+        }
+        formsByKey.set(exit.direction, forms);
+      }
+    }
+    for (const [key, forms] of formsByKey) {
+      const gate = (ctx: { world: unknown; actorId: string }): boolean => {
+        const world = ctx.world as WorldModel;
+        const actor = world.getEntity(ctx.actorId);
+        const room = world.getContainingRoom(ctx.actorId);
+        if (!actor || !room) return false;
+        const way = TraversalBehavior.wayFor(world, room, key as ExitKey, { kind: 'walker', entity: actor });
+        return !(way.kind === 'refused' && (way.reason === 'hidden' || way.reason === 'no_exit'));
+      };
+      const rule = grammar.forAction('if.action.going');
+      // The cast is deliberate: a passage key is wider than the compass-typed union.
+      rule.withDefaultSemantics({ direction: key } as unknown as Partial<SemanticProperties>);
+      rule.when(gate);
+      for (const form of forms) rule.fullPattern(form);
+      rule.build();
     }
   }
 
@@ -2141,8 +2258,9 @@ export class ChordStory implements Story {
         case 'pushable':
           // Defect D1 fix (2026-07-17): the catalog accepted these two but
           // the loader had no case — `--check` passed stories that load
-          // rejected. Default config (button-style, repeatable).
-          if (!entity.has(TraitType.PUSHABLE)) entity.add(new PushableTrait({}));
+          // rejected. A marker (ADR-378 D6a): the way says whether a push
+          // moves the thing.
+          if (!entity.has(TraitType.PUSHABLE)) entity.add(new PushableTrait());
           break;
         case 'pullable':
           if (!entity.has(TraitType.PULLABLE)) entity.add(new PullableTrait({}));
@@ -2924,7 +3042,13 @@ const STARTS_STATE_TRAIT_FIELDS: ReadonlyMap<
 ]);
 
 /** Chord direction word → world-model DirectionType. */
-function toDirection(word: string, at?: IREntity): DirectionType {
+/** The articles a passage form is registered without, beside the form as written (ADR-378 D2). */
+const ARTICLES: ReadonlySet<string> = new Set(['a', 'an', 'the']);
+
+function toDirection(word: string, at?: IREntity): ExitKey {
+  // ADR-378 D1a: a passage key is an exit key as written; only a compass
+  // word is mapped onto the Direction constant.
+  if (isPassageKey(word)) return word;
   const dir = (Direction as Record<string, DirectionType>)[word.toUpperCase()];
   // ADR-276 census 16: pre-gated by the PARSER — chord's closed exit
   // DIRECTIONS set (parser.ts) is a strict subset of the Direction enum, so

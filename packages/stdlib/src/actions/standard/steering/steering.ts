@@ -48,7 +48,7 @@ import { ScopeLevel } from '../../../scope/types.js';
 import { nounPhraseFor } from '../../../utils/index.js';
 import { ActionLifecycleDescriptor, blockedMessageId } from '../../lifecycle/index.js';
 import { SteeringMessages } from './steering-messages.js';
-import { exitMessageKey } from '../going/going.js';
+import { exitMessageKey } from '@sharpee/world-model';
 
 /** The command set this action speaks for (ADR-366 D5i). */
 export const COMPASS_COMMAND_SET = 'compass';

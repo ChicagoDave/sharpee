@@ -13,46 +13,22 @@ import { IFEvents } from '@sharpee/if-domain';
  * Handle PUSHED event - process pushing objects/buttons
  */
 export const handlePushed: EventHandler = (event: ISemanticEvent, world: any) => {
-  const { target, location } = event.entities;
+  const { target } = event.entities;
   const data = getUntypedEventData(event);
-  const pushType = String(data?.pushType || '');
-  
+
   if (!target) return;
-  
+
   // Get the actual entity from the world model
   const targetEntity = world.getEntity(target);
   if (!targetEntity) return;
-  
-  switch (pushType) {
-    case 'button':
-      // If it's a switchable button, toggle its state
-      if (targetEntity.has(TraitType.SWITCHABLE) && data?.willToggle) {
-        const switchable = targetEntity.get(TraitType.SWITCHABLE) as { isOn?: boolean };
-        switchable.isOn = data?.newState as boolean;
-        
-        // This might trigger other device activations
-        // Future: Add support for linked devices
-      }
-      break;
-      
-    case 'moveable':
-    case 'heavy':
-      // If the object moved in a direction
-      if (data?.moved && data?.moveDirection && location) {
-        // Future: Actually move the object to adjacent location
-        // For now, we just record that it moved
-        
-        // If it reveals a passage
-        if (data?.revealsPassage) {
-          // Future: Add new exit to room or reveal hidden object
-          // This would require modifying room exits or revealing concealed items
-        }
-      }
-      break;
-      
-    case 'fixed':
-      // No state changes for fixed objects
-      break;
+
+  // A press that toggled a switchable thing settles its state on the event
+  // (ADR-378 D6a: the pushable is a marker; the press is the only mutation
+  // this handler mirrors). A push between rooms moved the thing in the
+  // action's execute, through the world, and needs nothing here.
+  if (targetEntity.has(TraitType.SWITCHABLE) && data?.willToggle) {
+    const switchable = targetEntity.get(TraitType.SWITCHABLE) as { isOn?: boolean };
+    switchable.isOn = data?.newState as boolean;
   }
 };
 

@@ -76,6 +76,7 @@ Be deliberate about where logic belongs:
 | ------------------- | --------------------------------------------- | ----------------------------------- |
 | **engine**          | Turn cycle, command execution, event dispatch | SchedulerService, NPC turn phase    |
 | **world-model**     | Traits, behaviors, entity state               | LightSourceBehavior, ContainerTrait |
+| **world-model/src/world** (systems) | One rule over the whole world with one home, consulted by every mover and action that asks its question (ADR-379); a rule is a system once more than one mover, action, or Chord condition asks it | TraversalBehavior.wayFor, VisibilityBehavior |
 | **stdlib**          | Standard actions, common patterns             | Opening action, guard behavior      |
 | **parser-{locale}** | Grammar patterns, command parsing             | `core-grammar.ts`, verb patterns    |
 | **lang-{locale}**   | All user-facing text                          | Error messages, descriptions        |

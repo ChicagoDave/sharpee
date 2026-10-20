@@ -566,7 +566,7 @@ landmarks-block = "landmarks" NL
                                                               `while` (analysis.expanse-
                                                               exit, analysis.edge-while);
                                                               it has no exits (D8) *)
-admits-line  = "admits" ":" name { "," name } NL ;         (* ADR-366 D6: on a room, a
+admits-line  = "admits" ":" admits-list NL ;               (* ADR-366 D6: on a room, a
                                                               `rooms` group or a region
                                                               — the steered vehicles
                                                               (`streets`, `compass`)
@@ -575,6 +575,29 @@ admits-line  = "admits" ":" name { "," name } NL ;         (* ADR-366 D6: on a r
                                                               steered-vehicle); a block
                                                               that is none of those is
                                                               analysis.admits-owner *)
+admits-list  = admits-word { "," admits-word } ;
+admits-word  = name | "pushing" ;                          (* ADR-378 D6: a steered
+                                                              vehicle, or the class word
+                                                              for a thing pushed along
+                                                              the way; any other word is
+                                                              analysis.admits-not-
+                                                              steered-vehicle *)
+pushing-block = "pushing" NL
+               >>> { ( "between" name "and" name | "from" name "to" name ) NL }
+                 "end" "pushing" NL ;                      (* ADR-378 D6b: on a pushable
+                                                              thing, the ways it may be
+                                                              pushed along as room pairs
+                                                              — `between` both ways,
+                                                              `from … to` one way. A row
+                                                              naming no compass exit the
+                                                              first room has to the second
+                                                              is analysis.pushing-no-exit;
+                                                              on a thing that is not
+                                                              pushable, analysis.pushing-
+                                                              not-pushable; a second block
+                                                              is parse.pushing-duplicate;
+                                                              any other row shape is
+                                                              parse.pushing-row *)
 position-block = "position" NL
                >>> { "when" condition ":" name NL }
                    "otherwise" ":" name NL
@@ -778,6 +801,7 @@ create-line  = "aka" alias { "," alias } NL
              | vehicle-line                                (* ADR-366 D2, D5, D7 *)
              | admits-line                                 (* ADR-366 D6 *)
              | position-block                              (* ADR-366 D5a *)
+             | pushing-block                               (* ADR-378 D6b *)
              | expanse-line                                (* ADR-376 D2, D6, D10: under
                                                               `use expanses` *)
              | sight-line | seen-from-afar-line            (* ADR-376 D6: on a landmark
@@ -829,7 +853,22 @@ create-line  = "aka" alias { "," alias } NL
                                                               owner); one of each kind
                                                               (analysis.exit-table-
                                                               duplicate) *)
-             | exit [ "," "one-way" ] NL
+             | exit [ "," "one-way" ]
+               [ "admits" admits-list ] [ "while" condition ] NL
+                                                           (* ADR-378 D6, D3: on a single
+                                                              exit line only, `admits` says
+                                                              who may take this way (a
+                                                              steered vehicle, `pushing`)
+                                                              and `while` makes the exit
+                                                              exist only while the
+                                                              condition holds — hidden, for
+                                                              every reader, which is not
+                                                              blocked. On an `exits:` line
+                                                              they are parse.exits-line-
+                                                              admits / parse.exits-line-
+                                                              while; in a table row
+                                                              parse.exit-row-admits /
+                                                              parse.exit-row-while *)
                                                            (* exit; `through the <door>`
                                                               tail (ADR-234 D1, ratchet
                                                               R2) is the ONE door
@@ -853,8 +892,14 @@ create-line  = "aka" alias { "," alias } NL
                                                               BOTH rooms, ADR-238) *)
              | exits-line                                  (* ADR-362 D2: the room's
                                                               exits on one line *)
-             | DIRECTION "is" "blocked" [ "while" condition ] ":" phrase-key NL
+             | passage-line                                (* ADR-378 D1: an exit named
+                                                              by its command *)
+             | exit-key "is" "blocked" [ "while" condition ] ":" phrase-key NL
                                                            (* blocked exit *)
+             | exit-key "is" "deadly" ":" phrase-key NL    (* deadly exit (ADR-227); the
+                                                              `while` form is parsed and
+                                                              refused (analysis.deadly-
+                                                              while-unsupported) *)
              | phrase-override                             (* per-entity override, CP3/Z3b *)
              | room-name-block                             (* the authored location
                                                               heading *)
@@ -1327,6 +1372,28 @@ exits-line   = "exits" [ "," "one-way" ] ":" exit { "," exit } NL ;
                      (analysis.exit-line-owner); in a `rooms` group body it is
                      analysis.room-group-line. The colon tells it from ADR-360's table. A
                      blocked line beside it guards that exit as it would a single line. *)
+passage-line = "passage" passage-words { "or" passage-words }
+               "to" name [ "through" name ] [ "while" condition ] NL ;
+                  (* ADR-378 D1–D3: an exit the player takes by typing its words
+                     (`passage climb the rope or climb up to the Loft`), one line
+                     per way, the first form its name and the key
+                     `passage:<first form, hyphenated>`. One-way by construction:
+                     `, one-way` is analysis.passage-one-way. The words are grammar
+                     only where the passage is and while it exists (D2, D3). Not a
+                     direction, so it takes no `admits` (parse.exit-trailing). Two
+                     passages on one room sharing a form are analysis.duplicate-
+                     exit. Rooms only (analysis.exit-non-room). *)
+passage-words = WORD { WORD } ;                            (* the words the player types;
+                                                              none `to` or `or`, which
+                                                              separate; an empty or non-
+                                                              word form is parse.passage-
+                                                              words *)
+exit-key     = DIRECTION | "passage" passage-words ;       (* what a blocked or deadly
+                                                              line names: a compass
+                                                              direction, or a passage the
+                                                              room declares by any of its
+                                                              forms (analysis.passage-
+                                                              unknown) *)
 exit         = DIRECTION "to" ( name | "outside" )
                [ "through" name ] ;                        (* the one exit production: a
                                                               room's exit line, a table
@@ -1516,7 +1583,17 @@ trait-field    = field-words ":" [ "optional" ]
                  (* the `flag` field type is a parse error pointing at
                     trait `states` *)
 
-define-action  = "define" "action" WORD NL action-line* ;  (* dedent-terminated *)
+define-action  = "define" "action" WORD [ "while" condition ] NL action-line* ;
+                                                           (* dedent-terminated. ADR-378
+                                                              D5 (ADR-370 D7, GH #317):
+                                                              `while` gates every rule
+                                                              the action registers —
+                                                              where it is false the input
+                                                              parses as though the action
+                                                              did not exist. Story tier
+                                                              only: in a grammar file it
+                                                              is analysis.grammar-file-
+                                                              behavior *)
 action-line    = "grammar" NL >>> { pattern-line }
                | "the" WORD "must" "be" WORD NL            (* scope constraint (no colon) *)
                | "the" WORD "takes" "the" "rest" "of" "the" "line" NL

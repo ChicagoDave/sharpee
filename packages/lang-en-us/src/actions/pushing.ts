@@ -22,17 +22,20 @@ export const pushingLanguage = {
     'not_reachable': "{You} {can't} reach {the target}.",
     'too_heavy': "{capitalize the target} {verb:is target} far too heavy to push (weighs {weight}kg).",
     'wearing_it': "{You} {can't} push {the target} while wearing it.",
+    'carrying_it': "{You} {can't} push {the target} while carrying it.",
+    // ADR-378 D6: the way does not admit a pushed thing (or the target is
+    // not in the room, or the thing cannot go that way at all).
+    'cannot_push_that_way': "{You} {can't} push {the target} that way.",
 
     // Success messages - buttons/switches
     'button_pushed': "{You} {push} {the target}.",
     'button_clicks': "{You} {press} {the target}. Click!",
     'switch_toggled': "{You} {push} {the target}, toggling it {newState}.",
 
-    // Success messages - moveable objects
+    // Success messages - a push between rooms (ADR-378 D6); going's
+    // arrival narration follows this line.
     'pushed_direction': "{You} {push} {the target} {verbatim:direction}.",
     'pushed_nudged': "{You} {give} {the target} a push, but it doesn't move far.",
-    'pushed_with_effort': "With considerable effort, {you} {push} {the target} {verbatim:direction}.",
-    'reveals_passage': "As {you} {push} {the target} {verbatim:direction}, it slides aside, revealing a hidden passage!",
 
     // Success messages - fixed objects
     'wont_budge': "{capitalize the target} won't budge.",

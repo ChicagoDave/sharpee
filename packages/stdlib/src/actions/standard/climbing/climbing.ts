@@ -18,7 +18,7 @@ import { Action, ActionContext, ValidationResult } from '../../enhanced-types.js
 import { ActionMetadata } from '../../../validation/index.js';
 import { ScopeLevel } from '../../../scope/types.js';
 import { type ISemanticEvent } from '@sharpee/core';
-import { TraitType, ClimbableBehavior } from '@sharpee/world-model';
+import { TraitType, ClimbableBehavior, TraversalBehavior, Direction } from '@sharpee/world-model';
 import { IFActions } from '../../constants.js';
 import { ClimbedEventData } from './climbing-events.js';
 import { nounPhraseFor } from '../../../utils/index.js';
@@ -119,15 +119,11 @@ export const climbingAction: Action & { metadata: ActionMetadata } = {
       sharedData.mode = 'directional';
       sharedData.direction = normalizedDirection;
 
-      // Get destination from room exits
-      const room = context.currentLocation;
-      const roomTrait = room.get(TraitType.ROOM) as { exits?: Record<string, any> } | undefined;
-      const exits = roomTrait?.exits || {};
-
-      if (normalizedDirection === 'up' && exits.up) {
-        sharedData.destinationId = exits.up.to || exits.up.destination;
-      } else if (normalizedDirection === 'down' && exits.down) {
-        sharedData.destinationId = exits.down.to || exits.down.destination;
+      // The destination is the way's, read from traversal's home (ADR-378
+      // D0): a hidden way is absent here as everywhere.
+      if (normalizedDirection === 'up' || normalizedDirection === 'down') {
+        const key = normalizedDirection === 'up' ? Direction.UP : Direction.DOWN;
+        sharedData.destinationId = TraversalBehavior.exitOf(context.world, context.currentLocation, key)?.destination;
       }
 
       // Perform the move if there's a destination
@@ -268,9 +264,9 @@ function validateDirectionalClimbing(
     return { valid: false, error: 'cant_go_that_way', params: { direction: normalizedDirection } };
   }
 
-  // Check if there's an exit in that direction
-  const roomTrait = currentLocation.get(TraitType.ROOM) as { exits?: Record<string, any> };
-  if (!roomTrait.exits || !roomTrait.exits[normalizedDirection]) {
+  // Existence is the home's answer (ADR-378 D0): a hidden way is absent.
+  const key = normalizedDirection === 'up' ? Direction.UP : Direction.DOWN;
+  if (!TraversalBehavior.exitOf(context.world, currentLocation, key)) {
     return { valid: false, error: 'cant_go_that_way', params: { direction: normalizedDirection } };
   }
 

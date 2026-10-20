@@ -23,6 +23,7 @@
 import {
   PLATFORM_STATE_PAIRS,
   STARTS_STATE_PAIRINGS,
+  type IRCondition,
   type IREntity,
 } from '@sharpee/chord';
 
@@ -216,6 +217,14 @@ export interface WiredEdge {
   via: string | null;
   /** False when this edge is the loader's mirror rather than an authored row. */
   authored: boolean;
+  /** A passage's first form (ADR-378 D8): the edge's label; absent on a compass exit. */
+  label?: string;
+  /**
+   * The exit's `while` condition (ADR-378 D3, D8): the way exists only while
+   * it holds. A mirror carries its row's condition, as the loader's inferred
+   * reverse does. Absent on an unconditional exit.
+   */
+  condition?: IRCondition;
 }
 
 /**
@@ -239,13 +248,17 @@ export function wiredEdges(
   for (const room of rooms) {
     for (const exit of room.exits ?? []) {
       if (!isKnownRoom(exit.to)) continue;
+      const condition = exit.condition !== undefined ? { condition: exit.condition } : {};
       edges.push({
         from: room.id,
         to: exit.to,
         direction: exit.direction,
         via: exit.via,
         authored: true,
+        ...(exit.passage !== undefined ? { label: exit.passage[0] } : {}),
+        ...condition,
       });
+      // A passage has no opposite (ADR-378 D1), so no mirror follows it.
       const back = oppositeDirection(exit.direction);
       if (back === undefined) continue;
       edges.push({
@@ -254,6 +267,7 @@ export function wiredEdges(
         direction: back,
         via: exit.via,
         authored: false,
+        ...condition,
       });
     }
   }

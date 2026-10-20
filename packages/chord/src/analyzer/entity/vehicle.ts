@@ -11,7 +11,7 @@
  * slice is written only on a `vehicle` block, and only from lines the table
  * admits, so the loader reads it as true.
  *
- * Public interface: vehicleBuilder.
+ * Public interface: vehicleBuilder, resolveAdmitsWord().
  * Owner context: @sharpee/chord analyzer (language frontend; browser-safe).
  *
  * References:
@@ -20,6 +20,7 @@
  * - ADR-366 D5, D5a–D5d, D5i — the table, each type's lines and sets.
  * - ADR-366 D6 — `admits:` on a room or region, steered vehicles only.
  * - ADR-366 D7 — rooms aboard, the boarding room, the `outside` exit.
+ * - ADR-378 D6 — `pushing` in an `admits` list; the same list on an exit line.
  */
 import type { CreateDecl, NameRef, VehicleLine } from '../../ast.js';
 import type { IRPositionRow, IRVehicle } from '../../ir.js';
@@ -38,6 +39,35 @@ const PLACE_LINE_KEYS: ReadonlySet<VehicleLine['key']> = new Set(['admits', 'siz
 
 /** The movement types whose vehicles a room's `admits:` line may name (D6). */
 const STEERED: ReadonlySet<string> = new Set(['streets', 'compass']);
+
+/** The class word an `admits` list takes beside vehicle names (ADR-378 D6): a pushed thing. */
+export const ADMITS_PUSHING = 'pushing';
+
+/**
+ * One word of an `admits` list — a room's `admits:` line (ADR-366 D6) or an
+ * exit line's `admits` tail (ADR-378 D6) — as the loader reads it: a steered
+ * vehicle's entity id, or the class word `pushing`. Anything else is
+ * `analysis.admits-not-steered-vehicle` (widened by ADR-378 to name
+ * `pushing`); an unresolved name is already reported by the resolver.
+ * @param ref the word as written
+ * @param context the build context
+ * @returns the entity id or `pushing`; null when the word is refused
+ */
+export function resolveAdmitsWord(ref: NameRef, context: EntityBuildContext): string | null {
+  if (ref.article === null && ref.words.length === 1 && ref.words[0].toLowerCase() === ADMITS_PUSHING) return ADMITS_PUSHING;
+  const id = context.resolveEntityId(ref);
+  if (id === null) return null;
+  const vehicle = context.vehicles.get(id);
+  if (!vehicle || !vehicle.movement || !STEERED.has(vehicle.movement)) {
+    context.diagnostics.error(
+      'analysis.admits-not-steered-vehicle',
+      `\`${ref.words.join(' ')}\` is not a steered vehicle or \`pushing\` — \`admits\` lists \`movement: streets\` and \`movement: compass\` vehicles, the ones that choose where to go, and the word \`pushing\` for a thing pushed along the way. A line's stops and a flight's destinations admit it by being named.`,
+      ref.span,
+    );
+    return null;
+  }
+  return id;
+}
 
 export const vehicleBuilder: EntityLineBuilder = {
   name: 'vehicle',
@@ -382,18 +412,8 @@ function buildAdmits(decl: CreateDecl, entity: EntityDraft, context: EntityBuild
   const admits: string[] = [];
   for (const line of lines) {
     for (const ref of line.names) {
-      const id = context.resolveEntityId(ref);
-      if (id === null) continue;
-      const vehicle = context.vehicles.get(id);
-      if (!vehicle || !vehicle.movement || !STEERED.has(vehicle.movement)) {
-        context.diagnostics.error(
-          'analysis.admits-not-steered-vehicle',
-          `\`${ref.words.join(' ')}\` is not a steered vehicle — \`admits:\` lists \`movement: streets\` and \`movement: compass\` vehicles, the ones that choose where to go. A line's stops and a flight's destinations admit it by being named.`,
-          ref.span,
-        );
-        continue;
-      }
-      if (!admits.includes(id)) admits.push(id);
+      const word = resolveAdmitsWord(ref, context);
+      if (word !== null && !admits.includes(word)) admits.push(word);
     }
   }
   entity.admits = admits;

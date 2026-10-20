@@ -25,7 +25,6 @@ export const lookingLanguage = {
     'examine_surroundings': "{name}\n{verbatim:description}",
     'hidden_at': "({You're} hiding {verbatim:position} {the spot}.)",
     'room_dark': "It's pitch dark, and {you} {can't} see a thing.",
-    'exits': "Exits: {exits}",
     'you_see': "{You} can {see} {items} here.",
     'contents_list': "{You} can {see} {items} here.",
     'nothing_special': "{You} {see} nothing special.",

@@ -1,0 +1,72 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "You can't go that way."
+        ]
+      },
+      "command": "north",
+      "id": "1h8ma3t6",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Sorting Room",
+          "Pigeonholes climb every wall"
+        ]
+      },
+      "command": "follow cables",
+      "id": "8graxrn1",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "I don't understand that."
+        ],
+        "notContains": [
+          "Cable Trench"
+        ]
+      },
+      "command": "follow the cables",
+      "id": "krk5eoe1",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Loading Dock"
+        ]
+      },
+      "command": "east",
+      "id": "yvadacvr",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Cable Trench",
+          "Lit, the cables can be seen"
+        ]
+      },
+      "command": "down",
+      "id": "64kr7lv0",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Sorting Room"
+        ]
+      },
+      "command": "crawl along the cables",
+      "id": "uw3cd0zb",
+      "type": "turn"
+    }
+  ],
+  "id": "rwic30b2",
+  "ordinal": 1,
+  "parent": "tsor14bd"
+}

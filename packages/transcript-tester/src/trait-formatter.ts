@@ -212,12 +212,9 @@ function formatNpc(p: Record<string, any>): string {
   return `npc: ${parts.join(', ')}`;
 }
 
-function formatPushable(p: Record<string, any>): string {
-  const parts: string[] = [];
-  if (p.pushType) parts.push(p.pushType);
-  if (p.pushCount > 0) parts.push(`pushed ${p.pushCount}x`);
-  if (p.state && p.state !== 'default') parts.push(p.state);
-  return `pushable: ${parts.join(', ') || 'moveable'}`;
+/** A marker (ADR-378 D6a): the trait carries no fields to show. */
+function formatPushable(_p: Record<string, any>): string {
+  return 'pushable';
 }
 
 function formatTreasure(p: Record<string, any>): string {

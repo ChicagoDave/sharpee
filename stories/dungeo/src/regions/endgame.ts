@@ -299,7 +299,7 @@ function createStoneButton(world: WorldModel, roomId: string): IFEntity {
   }));
 
   button.add(new SceneryTrait());
-  button.add(new PushableTrait({ pushType: 'button' }));
+  button.add(new PushableTrait());
 
   world.moveEntity(button.id, roomId);
 

@@ -435,10 +435,17 @@ export interface IREntity {
    */
   vehicle?: IRVehicle;
   /**
+   * The thing's `pushing` block (ADR-378 D6b) as directed room pairs, by
+   * entity id — a `between` row contributes both. The loader stamps the
+   * thing's id onto the exit from `from` to `to`. Present only when written.
+   */
+  pushing?: IRPushingWay[];
+  /**
    * `admits: <vehicle>, …` (ADR-366 D6): the steered vehicles that may enter
-   * this room, as entity ids. Rooms only (a region's line is copied to each
-   * member room; a group's to each room it creates). Absent means the room
-   * admits no vehicle.
+   * this room, as entity ids, and (ADR-378 D6) the class word `pushing` when
+   * a pushed thing may arrive by any of its ways. Rooms only (a region's line
+   * is copied to each member room; a group's to each room it creates). Absent
+   * means the room admits no vehicle and no pushed thing.
    */
   admits?: string[];
   /**
@@ -1013,8 +1020,39 @@ export interface IRPlacement {
   span: Span;
 }
 
+/** One way a thing may be pushed along (ADR-378 D6b): from one room to the next, by id. */
+export interface IRPushingWay {
+  from: string;
+  to: string;
+  span: Span;
+}
+
 export interface IRExit {
+  /**
+   * The exit's key: a compass word, or a passage key
+   * `passage:<first form, hyphenated>` (ADR-378 D1) — the loader wires a
+   * passage under that key and infers no reverse.
+   */
   direction: string;
+  /**
+   * A passage's forms as written, the first canonical (ADR-378 D1, D2): the
+   * loader registers each, with and without its articles, as a gated
+   * `going` rule for the room. Present only on a passage.
+   */
+  passage?: string[];
+  /**
+   * `while <condition>` on the exit line (ADR-378 D3): the exit exists only
+   * while this holds — the loader binds it as the `exit.hidden.<room>.<key>`
+   * evaluator, and the inferred reverse of a two-way exit carries it too.
+   * Present only when written.
+   */
+  condition?: IRCondition;
+  /**
+   * `admits <name>, …` on the exit line (ADR-378 D6): steered vehicles by
+   * entity id, and the class word `pushing` for a pushed thing. The room's
+   * own `admits:` list is `IREntity.admits`. Present only when written.
+   */
+  admits?: string[];
   /** Entity ID of the destination room. */
   to: string;
   /**
@@ -1040,6 +1078,7 @@ export interface IRExit {
 }
 
 export interface IRBlockedExit {
+  /** A compass word, or a passage key the room declares (ADR-378 D1). */
   direction: string;
   phraseKey: string;
   /** `is blocked while <cond>` — null = always blocked (grammar log 2026-07-10). */
@@ -1049,6 +1088,7 @@ export interface IRBlockedExit {
 
 /** `<direction> is deadly: <phrase>` (ADR-227) — a lethal exit. */
 export interface IRDeadlyExit {
+  /** A compass word, or a passage key the room declares (ADR-378 D1). */
   direction: string;
   /** Phrase key carrying the death text (also the derived cause). */
   phraseKey: string;
@@ -1280,6 +1320,13 @@ export interface IRTraitField {
 /** `define action` — grammar, scope constraints, requirements, refusal ladder, body. */
 export interface IRActionDef {
   name: string;
+  /**
+   * `define action <name> while <condition>` (ADR-378 D5): the loader
+   * attaches it as the `.when()` gate on every rule the action registers,
+   * bare-verb prefixes included; where it is false the input parses as
+   * though the action did not exist. Present only when written.
+   */
+  condition?: IRCondition;
   patterns: IRActionPattern[];
   /** Scope constraints (`the <slot> must be <requirement>`) — requirement words are catalog-validated (ADR-271 D1). */
   constraints: Array<{ slot: string; requirement: ScopeRequirementWord }>;

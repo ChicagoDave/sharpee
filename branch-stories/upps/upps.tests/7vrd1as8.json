@@ -1,0 +1,20 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "I don't understand that."
+        ],
+        "notContains": [
+          "Sorting Room"
+        ]
+      },
+      "command": "follow the cables",
+      "id": "d623lswe",
+      "type": "turn"
+    }
+  ],
+  "id": "7vrd1as8",
+  "ordinal": 1,
+  "parent": "jmlo6o6e"
+}

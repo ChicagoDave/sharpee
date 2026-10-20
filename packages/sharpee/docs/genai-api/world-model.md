@@ -2792,6 +2792,12 @@ export interface IExitInfo {
      * room's own `admits` list; absent means the room's list decides.
      */
     admits?: string[];
+    /**
+     * The pushable things that may be pushed this way by their own word
+     * (ADR-378 D6b, the thing's `pushing` block): entity ids. Read beside the
+     * class word `pushing` in `admits`; either admits the push.
+     */
+    admitsPushed?: string[];
 }
 export interface IRoomData {
     /** Whether this room has been visited by the player */
@@ -4935,84 +4941,28 @@ export declare class PullableTrait implements ITrait, IPullableData {
 
 ```typescript
 /**
- * Pushable trait implementation
+ * PushableTrait — the marker for a thing that can be pushed.
+ *
+ * The thing says it can be pushed; the way says whether a push moves it
+ * between rooms (`admits pushing` on the exit line or the room, read by
+ * `TraversalBehavior`), and a switchable thing is toggled by the press. The
+ * trait itself carries no fields, as `SceneryTrait` does not: every field
+ * the old shape carried either moved to the way (`pushDirection`,
+ * `revealsPassage` — now `while` on the exit), or was read by nothing
+ * (`pushType`, `pushSound`, `requiresStrength`, `repeatable`, `state`,
+ * `pushCount`, `maxPushes`, `activates`, `effects`). A story that needs a
+ * fire-once guard keeps it on its own trait.
+ *
+ * Public interface: PushableTrait.
+ * Owner context: world-model — traits.
+ *
+ * References:
+ * - ADR-378 D6, D6a — the marker; the way decides the move.
  */
 import { ITrait } from '../trait.js';
-export interface IPushableData {
-    /**
-     * Type of pushable object - determines behavior
-     */
-    pushType?: 'button' | 'heavy' | 'moveable';
-    /**
-     * Whether pushing reveals a hidden passage
-     */
-    revealsPassage?: boolean;
-    /**
-     * Sound made when pushed
-     */
-    pushSound?: string;
-    /**
-     * Minimum strength required to push (for heavy objects)
-     */
-    requiresStrength?: number;
-    /**
-     * Whether this can be pushed multiple times
-     */
-    repeatable?: boolean;
-    /**
-     * Current state for toggleable pushables
-     */
-    state?: 'default' | 'pushed' | 'activated';
-    /**
-     * Number of times this has been pushed
-     */
-    pushCount?: number;
-    /**
-     * Maximum number of pushes allowed
-     */
-    maxPushes?: number;
-    /**
-     * Direction it can be pushed (for moveable objects)
-     */
-    pushDirection?: 'north' | 'south' | 'east' | 'west' | 'any';
-    /**
-     * Entity ID that this activates when pushed
-     */
-    activates?: string;
-    /**
-     * Custom effects when pushed
-     */
-    effects?: {
-        onPush?: string;
-        onMaxPushes?: string;
-        onMove?: string;
-    };
-}
-/**
- * Pushable trait for objects that can be pushed
- *
- * This trait contains only data - all logic for pushing
- * is handled by the pushing action.
- */
-export declare class PushableTrait implements ITrait, IPushableData {
+export declare class PushableTrait implements ITrait {
     static readonly type: "pushable";
     readonly type: "pushable";
-    pushType: 'button' | 'heavy' | 'moveable';
-    revealsPassage?: boolean;
-    pushSound?: string;
-    requiresStrength?: number;
-    repeatable: boolean;
-    state: 'default' | 'pushed' | 'activated';
-    pushCount: number;
-    maxPushes?: number;
-    pushDirection?: 'north' | 'south' | 'east' | 'west' | 'any';
-    activates?: string;
-    effects?: {
-        onPush?: string;
-        onMaxPushes?: string;
-        onMove?: string;
-    };
-    constructor(data?: IPushableData);
 }
 ```
 

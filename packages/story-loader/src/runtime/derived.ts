@@ -1,20 +1,29 @@
 /**
  * derived.ts — the runtime's derived section.
  *
- * Derived properties: `dark while` rooms and blocked exits registered as
- * live world evaluators consulted at every read — nothing is stamped and
- * nothing recomputes — and the refusal phrase a blocked exit renders at
- * refusal time.
+ * Derived properties: `dark while` rooms, hidden exits (an exit line's
+ * `while`, ADR-378 D3) and blocked exits registered as live world
+ * evaluators consulted at every read — nothing is stamped and nothing
+ * recomputes — and the refusal phrase a blocked exit renders at refusal
+ * time. A hidden two-way exit is hidden from both ends: the inferred
+ * reverse registers the same condition.
  *
  * Public interface: DerivedSection.
  * Owner context: @sharpee/story-loader (one section of the Chord runtime).
  *
  * References:
  * - ADR-335 D1 — one module per runtime section over a shared core.
+ * - ADR-378 D3 — `exit.hidden.<room>.<key>`, read before blocking by the home.
  */
 import type { IREntity } from '@sharpee/chord';
-import { exitBlockedKey, exitMessageKey } from '@sharpee/stdlib';
-import { darkKey, Direction, type DirectionType, WorldModel } from '@sharpee/world-model';
+import { exitBlockedKey, exitHiddenKey, exitMessageKey } from '@sharpee/stdlib';
+import { darkKey, Direction, type DirectionType, type ExitKey, getOppositeDirection, isPassageKey, WorldModel } from '@sharpee/world-model';
+
+/** An IR exit word as the world keys it: a passage key as written, a compass word as its constant. */
+function exitKeyOf(word: string): ExitKey | undefined {
+  if (isPassageKey(word)) return word;
+  return (Direction as Record<string, DirectionType>)[word.toUpperCase()];
+}
 import { CHORD_OCCURRENCE_PREFIX } from '../state-keys.js';
 import type { RuntimeCore } from './core.js';
 
@@ -38,6 +47,32 @@ export class DerivedSection {
       );
     }
 
+    // ADR-378 D3: an exit that exists only while its condition holds. The
+    // key answers "hidden now?", so it is the condition's negation; a
+    // two-way exit's inferred reverse carries the same condition.
+    for (const irEntity of this.core.ir.entities) {
+      const worldId = this.core.host.entityId(irEntity.id);
+      if (!worldId) continue;
+      for (const exit of irEntity.exits) {
+        const condition = exit.condition;
+        if (!condition) continue;
+        const key = exitKeyOf(exit.direction);
+        if (!key) continue;
+        const hidden = (w: WorldModel) => !this.core.evaluator.evalCondition(condition, { world: w, it: irEntity.id });
+        world.registerEvaluator(exitHiddenKey(worldId, key), (w) => hidden(w as WorldModel));
+        if (exit.oneWay || isPassageKey(key)) continue;
+        // Only an INFERRED reverse carries this condition: a far room that
+        // writes its own line back registers that line's own condition (or
+        // none), and this one must not overwrite it.
+        const reverse = getOppositeDirection(key);
+        const far = this.core.ir.entities.find((e) => e.id === exit.to);
+        if (far?.exits.some((e) => exitKeyOf(e.direction) === reverse)) continue;
+        const toId = this.core.host.entityId(exit.to);
+        if (!toId) continue;
+        world.registerEvaluator(exitHiddenKey(toId, reverse), (w) => hidden(w as WorldModel));
+      }
+    }
+
     for (const irEntity of this.core.ir.entities) {
       if (irEntity.blockedExits.length === 0) continue;
       const worldId = this.core.host.entityId(irEntity.id);
@@ -46,9 +81,9 @@ export class DerivedSection {
       // last-wins, ADR-240 D6), so a direction's N blocked lines must compose
       // into ONE registration per key — registering per line silently kept
       // only the last. Group by direction, declaration order preserved.
-      const byDirection = new Map<DirectionType, typeof irEntity.blockedExits>();
+      const byDirection = new Map<ExitKey, typeof irEntity.blockedExits>();
       for (const blocked of irEntity.blockedExits) {
-        const direction = (Direction as Record<string, DirectionType>)[blocked.direction.toUpperCase()];
+        const direction = exitKeyOf(blocked.direction);
         if (!direction) continue;
         const group = byDirection.get(direction);
         if (group) group.push(blocked);

@@ -605,50 +605,6 @@ export declare const standardActionLanguage: ({
     actionId: string;
     patterns: string[];
     messages: {
-        room_description: string;
-        contents_list: string;
-        no_exit: string;
-        no_exit_that_way: string;
-        door_closed: string;
-        door_locked: string;
-        too_dark: string;
-        moved: string;
-        cant_go_through: string;
-        already_there: string;
-        nowhere_to_go: string;
-        no_direction: string;
-        not_in_room: string;
-        vehicle_ride: string;
-        vehicle_cannot_walk: string;
-        vehicle_cannot_go: string;
-        vehicle_under_way: string;
-        vehicle_arrived: string;
-        vehicle_stopped: string;
-        vehicle_at_end: string;
-        expanse_edge: string;
-        vehicle_alongside: string;
-        vehicle_in_irons: string;
-        sailing_edge: string;
-        no_exits: string;
-        movement_blocked: string;
-        destination_not_found: string;
-        need_light: string;
-        went: string;
-        arrived: string;
-        departs: string;
-        arrives: string;
-        cant_go: string;
-        stays_by_vehicle: string;
-    };
-    help: {
-        description: string;
-        examples: string;
-        summary: string;
-    };
-} | {
-    actionId: string;
-    patterns: string[];
-    messages: {
         no_target: string;
         cant_take_self: string;
         already_have: string;
@@ -700,7 +656,6 @@ export declare const standardActionLanguage: ({
         examine_surroundings: string;
         hidden_at: string;
         room_dark: string;
-        exits: string;
         you_see: string;
         contents_list: string;
         nothing_special: string;
@@ -773,6 +728,50 @@ export declare const standardActionLanguage: ({
         worn_by_you: string;
         worn_by_other: string;
         seen_from_afar: string;
+    };
+    help: {
+        description: string;
+        examples: string;
+        summary: string;
+    };
+} | {
+    actionId: string;
+    patterns: string[];
+    messages: {
+        room_description: string;
+        contents_list: string;
+        no_exit: string;
+        no_exit_that_way: string;
+        door_closed: string;
+        door_locked: string;
+        too_dark: string;
+        moved: string;
+        cant_go_through: string;
+        already_there: string;
+        nowhere_to_go: string;
+        no_direction: string;
+        not_in_room: string;
+        vehicle_ride: string;
+        vehicle_cannot_walk: string;
+        vehicle_cannot_go: string;
+        vehicle_under_way: string;
+        vehicle_arrived: string;
+        vehicle_stopped: string;
+        vehicle_at_end: string;
+        expanse_edge: string;
+        vehicle_alongside: string;
+        vehicle_in_irons: string;
+        sailing_edge: string;
+        no_exits: string;
+        movement_blocked: string;
+        destination_not_found: string;
+        need_light: string;
+        went: string;
+        arrived: string;
+        departs: string;
+        arrives: string;
+        cant_go: string;
+        stays_by_vehicle: string;
     };
     help: {
         description: string;
@@ -1228,13 +1227,13 @@ export declare const standardActionLanguage: ({
         not_reachable: string;
         too_heavy: string;
         wearing_it: string;
+        carrying_it: string;
+        cannot_push_that_way: string;
         button_pushed: string;
         button_clicks: string;
         switch_toggled: string;
         pushed_direction: string;
         pushed_nudged: string;
-        pushed_with_effort: string;
-        reveals_passage: string;
         wont_budge: string;
         pushing_does_nothing: string;
         fixed_in_place: string;

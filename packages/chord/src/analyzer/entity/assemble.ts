@@ -84,6 +84,7 @@ export function assembleEntity(draft: EntityDraft): IREntity {
     ...(draft.holds !== undefined ? { holds: draft.holds } : {}),
     ...(draft.vehicle !== undefined ? { vehicle: draft.vehicle } : {}),
     ...(draft.admits !== undefined ? { admits: draft.admits } : {}),
+    ...(draft.pushing !== undefined ? { pushing: draft.pushing } : {}),
     ...(draft.expanse !== undefined ? { expanse: draft.expanse } : {}),
     ...(draft.sight !== undefined ? { sight: draft.sight } : {}),
     ...(draft.seenFromAfar !== undefined ? { seenFromAfar: draft.seenFromAfar } : {}),

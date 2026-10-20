@@ -1,0 +1,125 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "The sorting machine gives a satisfied clunk. On the east wall, the panel beside the dock door flips from red to green, and the door rolls up into the ceiling."
+        ]
+      },
+      "command": "take bundle",
+      "id": "c7h17fr9",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Dropped."
+        ]
+      },
+      "command": "drop bundle",
+      "id": "f0fql18c",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "notContains": [
+          "satisfied clunk"
+        ]
+      },
+      "command": "take bundle",
+      "id": "8n0ep8wz",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Loading Dock",
+          "A hangar of cold air and sodium light. The courier ship squats on its skids in the middle of the bay, its boarding ramp drawn up tight. A loader robot waits beside the ramp, and empty mail crates are stacked along the west wall. The depot is back through the door to the west.",
+          "Your boots ring on the deck plates. Somewhere above, a fan the size of a house turns over once and stops."
+        ]
+      },
+      "command": "east",
+      "id": "qh80o65s",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Dust, a bent staple, and the floor."
+        ],
+        "notContains": [
+          "nothing under"
+        ]
+      },
+      "command": "look under crates",
+      "id": "a370lku2",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The loader's status light goes red, then amber again. It has filed a report."
+        ],
+        "notContains": [
+          "having none of that"
+        ]
+      },
+      "command": "kiss robot",
+      "id": "a370kis2",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The ramp is the loader's to work, and the loader does not take requests from carriers."
+        ]
+      },
+      "command": "lower ramp",
+      "id": "a371low1",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The ramp is the loader's to work, and the loader does not take requests from carriers."
+        ]
+      },
+      "command": "raise ship",
+      "id": "a371rai1",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You can't lower the mail crates."
+        ]
+      },
+      "command": "lower crates",
+      "id": "a371low2",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Sodium lamps hang in rows from girders far overhead"
+        ]
+      },
+      "command": "examine lights",
+      "id": "a374lit1",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "It is pitch dark."
+        ]
+      },
+      "command": "down",
+      "id": "a374dwn1",
+      "type": "turn"
+    }
+  ],
+  "id": "jmlo6o6e",
+  "ordinal": 0,
+  "parent": "opejfh5t"
+}

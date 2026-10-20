@@ -98,7 +98,7 @@ import { levenshtein } from './edit-distance.js';
 import { normalizeTopic } from './analyzer/topic.js';
 import { requiresOrderViolations, type OrderViolation } from './analyzer/requires.js';
 import { windToIR } from './analyzer/sailing.js';
-import { ENTITY_LINE_BUILDERS, assembleEntity, isPersonDecl, isPlayableDecl, lowerExit, newEntityDraft } from './analyzer/entity/index.js';
+import { ENTITY_LINE_BUILDERS, assembleEntity, isPersonDecl, isPlayableDecl, lowerExit, newEntityDraft, passageKeyOfForm } from './analyzer/entity/index.js';
 import type { EntityBuildContext } from './analyzer/entity/context.js';
 import { expandRoomGroups, type RoomGroupOrigin } from './analyzer/room-groups.js';
 import { collectVehicles, MOVEMENT_TABLE, placeIdsOf, type VehicleDecl, vehicleLineOf } from './analyzer/vehicles.js';
@@ -1068,6 +1068,8 @@ export class Analyzer {
     { name: 'applyExitTables', requires: ['collectRegionMembers'], run: (a) => a.applyExitTables(a.builtIR().entities) },
     { name: 'checkDoors', requires: ['applyExitTables'], run: (a) => a.checkDoors(a.builtIR().entities) },
     { name: 'checkDuplicateExits', requires: ['applyExitTables'], run: (a) => a.checkDuplicateExits(a.builtIR().entities) },
+    // A `pushing` row names a way the map already has (ADR-378 D6b), so it reads every room's exits.
+    { name: 'checkPushingWays', requires: ['applyExitTables'], run: (a) => a.checkPushingWays(a.builtIR().entities) },
     { name: 'checkCompositionLegality', requires: ['buildDeclarations'], run: (a) => a.checkCompositionLegality(a.builtIR()) },
     // The influencer may be declared after the resister.
     { name: 'checkInfluenceReferences', requires: ['buildDeclarations'], run: (a) => a.checkInfluenceReferences(a.builtIR()) },
@@ -2268,22 +2270,63 @@ export class Analyzer {
    * direction with no opposite infers nothing.
    * @param entities every built IR entity
    */
+  /**
+   * A thing's `pushing` rows name ways the map already has (ADR-378 D6b):
+   * each directed pair must be a compass exit the first room declares to
+   * the second, or the inferred reverse of one the second declares back. A
+   * passage is not a direction, so it does not count. Reports
+   * `analysis.pushing-no-exit` on the row; the block can never say more than
+   * the map does.
+   * @param entities every built IR entity
+   */
+  private checkPushingWays(entities: IREntity[]): void {
+    const byId = new Map(entities.map((e) => [e.id, e]));
+    const compassExit = (from: IREntity, toId: string): boolean =>
+      from.exits.some((e) => e.to === toId && !e.passage && !e.toOutside);
+    const hasWay = (fromId: string, toId: string): boolean => {
+      const from = byId.get(fromId);
+      const to = byId.get(toId);
+      if (!from || !to) return true; // the unknown entity is already reported
+      if (compassExit(from, toId)) return true;
+      // The inferred reverse of a two-way line the far room wrote.
+      return to.exits.some((e) => e.to === fromId && !e.passage && !e.toOutside && !e.oneWay && OPPOSITE_DIRECTION[e.direction] !== undefined);
+    };
+    for (const thing of entities) {
+      for (const way of thing.pushing ?? []) {
+        if (hasWay(way.from, way.to)) continue;
+        const from = byId.get(way.from)?.name ?? way.from;
+        const to = byId.get(way.to)?.name ?? way.to;
+        this.diagnostics.error(
+          'analysis.pushing-no-exit',
+          `\`${from}\` has no exit to \`${to}\`, so \`${thing.name}\` cannot be pushed that way. A \`pushing\` row names a way the map already has — write the exit on \`${from}\` first.`,
+          way.span,
+        );
+      }
+    }
+  }
+
   private checkDuplicateExits(entities: IREntity[]): void {
     const byId = new Map(entities.map((e) => [e.id, e]));
     const lineOf = (exit: IRExit): string => `line ${exit.span.line}${exit.span.file ? ` of ${exit.span.file}` : ''}`;
 
-    // Two exit lines in one direction on one room.
+    // Two exit lines in one direction on one room — or, for passages
+    // (ADR-378 D1), two passage lines with a form in common: a form names
+    // one way, so the key check is by every form rather than the first.
     for (const room of entities) {
       const seen = new Map<string, IRExit>();
       for (const exit of room.exits) {
-        const earlier = seen.get(exit.direction);
+        const keys = exit.passage ? exit.passage.map((form) => passageKeyOfForm(form)) : [exit.direction];
+        const earlier = keys.map((k) => seen.get(k)).find((e) => e !== undefined);
         if (!earlier) {
-          seen.set(exit.direction, exit);
+          for (const k of keys) seen.set(k, exit);
           continue;
         }
+        const what = exit.passage
+          ? `a passage \`${exit.passage.find((form) => seen.has(passageKeyOfForm(form)))}\``
+          : `a \`${exit.direction}\` exit`;
         this.diagnostics.error(
           'analysis.duplicate-exit',
-          `\`${room.name}\` already has a \`${exit.direction}\` exit (${lineOf(earlier)}) — a room has one exit per direction. Remove one of the two lines.`,
+          `\`${room.name}\` already has ${what} (${lineOf(earlier)}) — a room has one exit per ${exit.passage ? 'passage form' : 'direction'}. Remove one of the two lines.`,
           exit.span,
         );
       }
@@ -3657,8 +3700,14 @@ export class Analyzer {
       };
     });
 
+    // ADR-378 D5: the head's `while` is read by the grammar gate before any
+    // slot binds, so it resolves in a scope with no slots — a slot named
+    // there is the ordinary unknown reference.
+    const headScope: Scope = { owner: null, fields: null, slots: new Set(), ownStates: null, scoreOwner: `action.${decl.name}`, inEach: false, semanticValues: new Map() };
+
     return {
       name: decl.name,
+      ...(decl.condition ? { condition: this.resolveCondition(decl.condition, headScope) } : {}),
       patterns: decl.patterns.map((p) => ({
         parts: p.parts.map(lowerPatternPart),
         cardinality: p.cardinality,
@@ -3704,6 +3753,9 @@ export class Analyzer {
             `A grammar file carries grammar only — ${what} belongs to the action's implementation, not this file (ADR-269).`,
             span,
           );
+        // ADR-378 D5: the gate is a story-tier instrument; the standard
+        // grammar registers none.
+        if (decl.condition) offend('a `while` condition on the head', decl.span);
         if (decl.musts.length > 0) offend('a `must` requirement', decl.musts[0].span);
         if (decl.refusals.length > 0) offend('a refusal line', decl.refusals[0].span);
         if (decl.otherwise) offend('`otherwise refuse`', decl.otherwise.span);

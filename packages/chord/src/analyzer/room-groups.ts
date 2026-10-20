@@ -117,6 +117,7 @@ function refusedBodyLines(body: CreateDecl): Array<{ what: string; span: Span }>
   // ADR-366: a room admits vehicles (D6, copied to each room); every other
   // vehicle line belongs in a vehicle block.
   add('a vehicle line', body.vehicleLines.filter((l) => l.key !== 'admits'));
+  add('a `pushing` block', body.pushingBlock ? [body.pushingBlock] : []);
   if (body.positionBlock) add('a `position` block', [body.positionBlock]);
   add('a character line', [
     ...body.pronouns,

@@ -1,0 +1,288 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "You put out the blackout lantern, and darkness closes in."
+        ]
+      },
+      "command": "blow out lantern",
+      "id": "a374blw1",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Loading Dock"
+        ]
+      },
+      "command": "up",
+      "id": "a374up02",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Taken."
+        ]
+      },
+      "command": "take lamp",
+      "id": "a374tak3",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "no power"
+        ]
+      },
+      "command": "switch on lamp",
+      "id": "a374swn1",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Taken."
+        ]
+      },
+      "command": "take cell",
+      "id": "a374tak4",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "cell"
+        ]
+      },
+      "command": "put cell in lamp",
+      "id": "a374put1",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "work lamp"
+        ]
+      },
+      "command": "switch on lamp",
+      "id": "a374swn2",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Cable Trench"
+        ]
+      },
+      "command": "down",
+      "id": "a374dwn3",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You take the power cell from the work lamp."
+        ]
+      },
+      "command": "take cell",
+      "id": "a374tak5",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "pitch dark"
+        ]
+      },
+      "command": "look",
+      "id": "a374look",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Loading Dock"
+        ]
+      },
+      "command": "up",
+      "id": "a374up03",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Dropped."
+        ]
+      },
+      "command": "drop lantern",
+      "id": "a374drp1",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Dropped."
+        ]
+      },
+      "command": "drop lamp",
+      "id": "a374drp2",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Dropped."
+        ]
+      },
+      "command": "drop striker",
+      "id": "a374drp3",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Dropped."
+        ]
+      },
+      "command": "drop cell",
+      "id": "a374drp4",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The Sparrow's ramp stays up. The loader robot's amber light blinks at you, patient as a clock."
+        ]
+      },
+      "command": "up",
+      "id": "9wa8sg88",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "A snub-nosed UPPS courier, the Sparrow, dented along one flank where some asteroid got the last word. Its boarding ramp is drawn up, and the hull plating is cold to the touch."
+        ]
+      },
+      "command": "examine sparrow",
+      "id": "zd9fll96",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Sorting Room",
+          "Pigeonholes climb every wall of the depot, each one stencilled with the name of a world: Ceres, Titan, Kepler Station, places you have only seen as postmarks. The sorting machine hums in the middle of the floor. East, the loading dock door is shut."
+        ]
+      },
+      "command": "west",
+      "id": "22lyi4nf",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Loading Dock",
+          "A hangar of cold air and sodium light. The courier ship squats on its skids in the middle of the bay, its boarding ramp drawn up tight. A loader robot waits beside the ramp, and empty mail crates are stacked along the west wall. The depot is back through the door to the west."
+        ]
+      },
+      "command": "east",
+      "id": "dmtxmdwc",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The route card is the one thing on this dock that is yours to keep."
+        ]
+      },
+      "command": "give card to robot",
+      "id": "xuuofu0y",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The satchel stays on your shoulder. A carrier without a satchel is just somebody in grey."
+        ]
+      },
+      "command": "give satchel to robot",
+      "id": "m9gen3bs",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The loader robot unfolds its arms, takes the bundle as gently as an egg, and rolls to the Sparrow. The ramp comes down with a hiss of hydraulics, and the robot trundles up it and back out, empty. Its brow light turns green."
+        ]
+      },
+      "command": "give bundle to robot",
+      "id": "9kzb6wpg",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Hold",
+          "The Sparrow's hold, a steel room no wider than a corridor, ribbed with cargo netting. A suit locker stands bolted to the aft bulkhead, and a ladder climbs to the cockpit hatch at the forward end. The ramp slopes down to the dock.",
+          "You can see a suit locker, a specimen jar, a coil of strapping, and a mail bundle here."
+        ]
+      },
+      "command": "up",
+      "id": "w0j072t7",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "notContains": [
+          "Sodium lamps hang"
+        ]
+      },
+      "command": "examine lights",
+      "id": "a374lit9",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The cockpit hatch is dogged shut, and the placard says why."
+        ]
+      },
+      "command": "north",
+      "id": "bbdf10j3",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You open the suit locker.\n\nIn the suit locker you see a space suit."
+        ]
+      },
+      "command": "open locker",
+      "id": "rkqsbidr",
+      "type": "turn"
+    },
+    {
+      "command": "take suit",
+      "id": "ja056ehf",
+      "skip": true,
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You put on the space suit.",
+          "PRE-FLIGHT COMPLETE"
+        ]
+      },
+      "command": "wear suit",
+      "id": "1gbfyy3x",
+      "type": "turn"
+    }
+  ],
+  "id": "a6ekwu94",
+  "ordinal": 0,
+  "parent": "tsor14bd"
+}

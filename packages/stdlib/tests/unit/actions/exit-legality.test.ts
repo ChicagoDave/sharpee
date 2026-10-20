@@ -18,7 +18,7 @@ import {
   type IFEntity,
 } from '@sharpee/world-model';
 import { hasTraversableExit, canActorLeave } from '../../../src/actions/helpers/exit-legality';
-import { exitBlockedKey } from '../../../src/actions/standard/going/going';
+import { exitBlockedKey } from '@sharpee/world-model';
 import { createFixtureRandomService } from '../../test-utils/fixture-random-service';
 import { ActorTrait, EntityType as ET } from '@sharpee/world-model';
 

@@ -153,3 +153,39 @@ describe('`in` and `out` exits (ADR-369 D3b)', () => {
     expect(map.connections.some((c) => c.rooms.includes('bar') && c.rooms.includes('foyer'))).toBe(true);
   });
 });
+
+describe('passages and conditional exits (ADR-378 D8)', () => {
+  it('places a room reachable only by a passage beside its destination and labels the edge with the first form', () => {
+    const faulted = faultable(alderman);
+    const foyer = entity(faulted, 'foyer');
+    const bar = entity(faulted, 'bar');
+    for (const exit of foyer.exits) {
+      if (exit.to === 'bar') {
+        exit.direction = 'passage:follow-the-music';
+        exit.passage = ['follow the music', 'follow the band'];
+      }
+    }
+    bar.exits = bar.exits.filter((exit) => exit.to !== 'foyer');
+    const map = layoutMap(faulted);
+
+    expect(map.unplaced).toEqual([]);
+    expect(distance(map.positions.get('foyer') as Cell, map.positions.get('bar') as Cell)).toBe(1);
+    const connection = map.connections.find((c) => c.rooms.includes('bar') && c.rooms.includes('foyer'));
+    expect(connection?.label).toBe('follow the music');
+    expect(connection?.condition).toBeUndefined();
+  });
+
+  it('records a conditional exit with its condition, on the mirror too', () => {
+    const faulted = faultable(alderman);
+    const foyer = entity(faulted, 'foyer');
+    const condition = { kind: 'predicate', pred: 'is', negated: false, subject: { kind: 'entity', id: 'bar' }, object: { kind: 'symbol', name: 'open' } } as never;
+    for (const exit of foyer.exits) if (exit.to === 'bar') exit.condition = condition;
+    const map = layoutMap(faulted);
+
+    const connection = map.connections.find((c) => c.rooms.includes('bar') && c.rooms.includes('foyer'));
+    expect(connection?.condition).toBe(condition);
+    expect(connection?.label).toBeUndefined();
+    const other = map.connections.find((c) => !c.rooms.includes('bar'));
+    expect(other?.condition).toBeUndefined();
+  });
+});

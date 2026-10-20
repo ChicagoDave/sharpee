@@ -191,6 +191,18 @@ create the disposal torch
   A stubby hand torch for undeliverables, its trigger worn to the
   metal. Depot rules say every dead letter ends in it.
 
+create the mail trolley
+  a thing, pushable
+  in the Sorting Room
+  aka trolley, cart
+
+  A flat-bed trolley on four hard wheels, for shifting sacks between
+  the sorter and the dock.
+
+  pushing
+    between the Sorting Room and the Loading Dock
+  end pushing
+
 create the dock door
   a thing, scenery
   in the Sorting Room
@@ -305,10 +317,12 @@ create the floor grating
 create the Cable Trench
   a room, dark
   up to the Loading Dock
+  passage follow the cables or crawl along the cables to the Sorting Room while the Cable Trench is not dark
 
   A trench under the dock floor, just deep enough to stand in, where
   power cables run in bundles along both walls. The grating is
-  overhead.
+  overhead. Lit, the cables can be seen running off under the depot
+  floor toward the sorting machine.
 
 create the mail sack
   a thing

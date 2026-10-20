@@ -92,3 +92,110 @@ comma there already separates exits. A room that mixes the two writes an
 `exits:` line and an `exits, one-way:` line, or single lines. An
 `exits:` line belongs in a room block; a region lists its rooms' exits
 in an `exits` table instead.
+
+## Passages: an exit named by its command
+
+Some ways out of a room have no compass word. The player types `xyzzy`,
+or `climb the rope`, or `follow the cables`. A `passage` line names such
+an exit by the words the player types, with `or` between alternative
+forms, and leads somewhere exactly as a compass exit does:
+
+```chord
+create the Cable Trench
+  a room, dark
+  up to the Loading Dock
+  passage follow the cables or crawl along the cables to the Sorting Room
+
+  A trench under the dock floor. Lit, the cables can be seen running
+  off toward the sorting machine.
+```
+
+The words are plain words, one or more, with `to` and `or` as the
+separators. Articles are optional for the player: `follow cables` reaches
+`follow the cables`. A passage is one-way by construction, since there is
+no opposite of `xyzzy`: no return exit is inferred, and `, one-way` on the
+line is an error. `through <door>` works as on any exit. A passage is an
+exit, so it appears on the map, `on the player going` fires for it, a
+door on the way is consulted, and the destination's `after the player
+entering` runs. Its words are grammar only in the room that declares it:
+elsewhere `climb the rope` is the standard climbing action, and `xyzzy`
+is not understood, exactly as if the passage had not been written.
+
+A blocked or deadly line names a passage by any of its forms:
+
+```chord
+create the Cable Trench
+  a room, dark
+  passage follow the cables or crawl along the cables to the Sorting Room
+  passage crawl along the cables is blocked while the grating is shut: grating-shut
+```
+
+## Exits that exist while a condition holds
+
+A single exit line, compass or passage, takes a `while <condition>` tail.
+While the condition is false the exit is not there: going refuses as with
+no exit written, a passage's words are not grammar, and the map draws it
+as a conditional exit. This is a *hidden* exit, and it is not the same as
+a blocked one: a blocked exit exists and refuses with your phrase; a
+hidden exit does not exist and refuses with the platform's "You can't go
+that way." An exit that is both hidden and blocked is hidden.
+
+```chord
+create the Crawl
+  a room
+  north to the Passage while the boulder is rolled aside
+
+create the Cable Trench
+  a room, dark
+  passage follow the cables to the Sorting Room while the Cable Trench is not dark
+```
+
+The inferred reverse of a two-way exit carries the same condition: a way
+is there or not from both ends. For a one-sided reveal, write `, one-way`
+on each side. `while` is not allowed on an `exits:` line or in a region's
+exit table, where the condition would run into the next exit; give the
+exit a line of its own.
+
+## Who may take an exit
+
+A room's `admits:` line names the steered vehicles that may enter it
+(see [vehicles](/chord/guide/world/kinds-traits-and-settings)). The same
+list takes the word `pushing` for a thing pushed along the way, and a
+single exit line takes its own `admits` list for that one way:
+
+```chord
+create the Sorting Room
+  a room
+  east to the Loading Dock admits pushing
+  east is blocked while the dock door is sealed: dock-sealed
+
+create the mail trolley
+  a thing, pushable
+  in the Sorting Room
+```
+
+The thing can say its own ways instead, as room pairs, in a `pushing`
+block. `between` is both ways, `from … to` one way, and every row must
+name an exit the first room already has to the second, so the block can
+never disagree with the map. The room's `admits pushing` admits every
+pushable thing; the block admits this one, and the two coexist (a trolley
+with a block beside a boulder without one, on the same door):
+
+```chord
+create the mail trolley
+  a thing, pushable
+  in the Sorting Room
+
+  pushing
+    between the Sorting Room and the Loading Dock
+  end pushing
+```
+
+Either way, `push trolley east` moves the trolley and the player into the
+Loading Dock together, and the dock is described with the trolley in it.
+Every refusal the player's own step would meet refuses the push in the
+same words: no exit, a hidden way, the blocked phrase, a closed or locked
+door, a vehicle the player is riding. A way that exists but does not
+admit pushing refuses with "You can't push the trolley that way." An
+exit line's `admits` comes after the door and `, one-way` and before
+`while`.
