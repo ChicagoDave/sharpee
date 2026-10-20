@@ -1,0 +1,431 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "\"Route 7. Addressee delivery, no proxy signature.\""
+        ]
+      },
+      "command": "show card to quint",
+      "id": "t1500001",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You board the courier ship.",
+          "Hold"
+        ]
+      },
+      "command": "board ship",
+      "id": "t1500002",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Cockpit"
+        ]
+      },
+      "command": "north",
+      "id": "t1500003",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The fold drive powers down with a soft whir."
+        ]
+      },
+      "command": "switch off drive",
+      "id": "t1500004",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The selector clicks home and the console takes a moment to agree."
+        ]
+      },
+      "command": "set selector to titan",
+      "id": "t1500005",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You get into the flight couch."
+        ]
+      },
+      "command": "enter couch",
+      "id": "t1500006",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The fold drive will not light with the outer hatch standing open."
+        ],
+        "notContains": [
+          "hums to life"
+        ]
+      },
+      "command": "switch on drive",
+      "id": "t1500007",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You get out of the flight couch."
+        ]
+      },
+      "command": "exit",
+      "id": "t1500008",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Hold"
+        ]
+      },
+      "command": "south",
+      "id": "t1500009",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Airlock"
+        ]
+      },
+      "command": "west",
+      "id": "t1500010",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You close the outer hatch."
+        ]
+      },
+      "command": "close hatch",
+      "id": "t1500011",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Hold"
+        ]
+      },
+      "command": "east",
+      "id": "t1500012",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Cockpit"
+        ]
+      },
+      "command": "north",
+      "id": "t1500013",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You get into the flight couch."
+        ]
+      },
+      "command": "enter couch",
+      "id": "t1500014",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The fold drive hums to life.",
+          "the hangar folds away like a letter."
+        ]
+      },
+      "command": "switch on drive",
+      "id": "t1500015",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You get out of the flight couch."
+        ],
+        "notContains": [
+          "arrives"
+        ]
+      },
+      "command": "exit",
+      "id": "t1500016",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Hold"
+        ],
+        "notContains": [
+          "arrives"
+        ]
+      },
+      "command": "south",
+      "id": "t1500017",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The ramp has been sealed since the fold."
+        ],
+        "notContains": [
+          "Loading Dock",
+          "Landing Pad",
+          "arrives"
+        ]
+      },
+      "command": "down",
+      "id": "t1500018",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Airlock"
+        ],
+        "notContains": [
+          "arrives"
+        ]
+      },
+      "command": "west",
+      "id": "t1500019",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The outer hatch is shut.",
+          "The courier ship arrives at the Collar Vestibule."
+        ],
+        "notContains": [
+          "Collar Vestibule\n"
+        ]
+      },
+      "command": "exit",
+      "id": "t1500020",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Airlock",
+          "orange haze fills the glass from edge to edge",
+          "Something clamps onto the hull with a clang."
+        ]
+      },
+      "command": "look",
+      "id": "t1500021",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You open the outer hatch.",
+          "CUSTOMS stencilled around it in four languages"
+        ]
+      },
+      "command": "open hatch",
+      "id": "t1500022",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Collar Vestibule",
+          "a voice from nowhere says ARRIVAL LOGGED."
+        ]
+      },
+      "command": "exit",
+      "id": "t1500023",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Collar Vestibule",
+          "The shuttle gate is east."
+        ],
+        "notContains": [
+          "ARRIVAL LOGGED"
+        ]
+      },
+      "command": "look",
+      "id": "t1500024",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Shuttle Gate",
+          "A board over the gate reads KRAKEN SHORE"
+        ]
+      },
+      "command": "east",
+      "id": "t1500025",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You get into the drop shuttle."
+        ]
+      },
+      "command": "enter shuttle",
+      "id": "t1500026",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The cradle lets go, the window fills with orange, and the station is gone."
+        ]
+      },
+      "command": "push lever",
+      "id": "t1500027",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes"
+        ],
+        "notContains": [
+          "haze thins"
+        ]
+      },
+      "command": "wait",
+      "id": "t1500028",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "the haze thins for a moment",
+          "a single light turning at the end of it"
+        ]
+      },
+      "command": "wait",
+      "id": "t1500029",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The drop shuttle arrives at the Kraken Landing."
+        ]
+      },
+      "command": "wait",
+      "id": "t1500030",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You get out of the drop shuttle.",
+          "a lighthouse turns its beam through the murk"
+        ]
+      },
+      "command": "exit",
+      "id": "t1500031",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Kraken Landing",
+          "a shore of black sand and orange haze"
+        ]
+      },
+      "command": "look",
+      "id": "t1500032",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You get into the drop shuttle."
+        ]
+      },
+      "command": "enter shuttle",
+      "id": "t1500033",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "the shore drops away under the window"
+        ]
+      },
+      "command": "push lever",
+      "id": "t1500034",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The lever is already over. The shuttle goes where the track goes."
+        ]
+      },
+      "command": "push lever",
+      "id": "t1500035",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes"
+        ],
+        "notContains": [
+          "arrives"
+        ]
+      },
+      "command": "wait",
+      "id": "t1500036",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The drop shuttle arrives at the Shuttle Gate."
+        ]
+      },
+      "command": "wait",
+      "id": "t1500037",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You get out of the drop shuttle."
+        ],
+        "notContains": [
+          "lighthouse"
+        ]
+      },
+      "command": "exit",
+      "id": "t1500038",
+      "type": "turn"
+    }
+  ],
+  "id": "a366titn",
+  "ordinal": 3,
+  "parent": "w7eqlqnb"
+}

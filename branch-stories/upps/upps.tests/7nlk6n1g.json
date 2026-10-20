@@ -34,10 +34,10 @@
       "assertions": {
         "contains": [
           "Hold",
-          "The Sparrow's hold, a steel room no wider than a corridor, ribbed with cargo netting. A suit locker stands bolted to the aft bulkhead, and a ladder climbs to the cockpit hatch at the forward end. The ramp slopes down to the dock."
+          "The Sparrow's hold, a steel room no wider than a corridor, ribbed with cargo netting. A suit locker stands bolted to the aft bulkhead, and a ladder climbs to the cockpit hatch at the forward end. The ramp is aft."
         ]
       },
-      "command": "up",
+      "command": "board ship",
       "id": "83h47zgf",
       "type": "turn"
     },
@@ -238,9 +238,6 @@
         "contains": [
           "The fold drive hums to life.",
           "the hangar folds away like a letter."
-        ],
-        "states": [
-          "the courier ship is underway"
         ]
       },
       "command": "switch on drive",

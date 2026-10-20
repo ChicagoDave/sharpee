@@ -6,6 +6,18 @@ story
   ifid: 29E1F727-29D4-44A0-9E87-D2BDC6AC021F
   story-version: 0.1.0
 
+  on every turn while the courier ship is at the Landing Pad, once
+    phrase fold-ends-ceres
+  end on
+
+  on every turn while the courier ship is at the Collar Vestibule, once
+    phrase fold-ends-titan
+  end on
+
+## The fold's end is narrated from the story: a clause on the ship would be
+## sourced at the ship's own room, and the carrier aboard is in a room inside
+## it.
+
 before the game starts
   change the player to Postman
 end before
@@ -232,9 +244,7 @@ create the Loading Dock
   a room
   aka dock, loading bay, bay
   west to the Sorting Room
-  up to the Hold
   down to the Cable Trench
-  up is blocked while the courier ship is buttoned: ramp-up
 
   A hangar of cold air and sodium light. The courier ship squats on
   its skids in the middle of the bay, its boarding ramp drawn up
@@ -246,15 +256,29 @@ create the Loading Dock
     phrase dock-arrival
   end after
 
+## The Sparrow is one vehicle. Its rooms are aboard it, the ramp and the
+## hatch each lead outside to wherever the ship is, and the fold drive sends
+## it where the guidance selector points. Boarding is the ramp into the Hold.
+
 create the courier ship
-  a thing, scenery
+  a vehicle, scenery
   in the Loading Dock
   aka ship, courier, sparrow, ramp, skids
-  states: buttoned, boarding, underway, landed
+  movement: flight
+  drive: control
+  destinations: the Loading Dock, the Landing Pad, the Collar Vestibule
+  passage: 5 turns
+  aboard: the Hold, the Cockpit, the Airlock
+  boarded through: the Hold
+  states: buttoned, boarding
 
   A snub-nosed UPPS courier, the Sparrow, dented along one flank where
   some asteroid got the last word. Its boarding ramp is drawn up, and
   the hull plating is cold to the touch.
+
+  on the player entering
+    refuse when the courier ship is buttoned: ramp-up
+  end on
 
   on the player lowering, raising
     phrase ramp-is-the-robots
@@ -377,16 +401,15 @@ create the mail crates
 create the Hold
   a room
   aka cargo hold, sparrow's hold, cargo bay
-  down to the Loading Dock
-  down is blocked while the courier ship is underway: ramp-sealed
-  down is blocked while the courier ship is landed: ramp-sealed
+  down to outside
+  down is blocked while the courier ship is not at the Loading Dock: ramp-sealed
   north to the Cockpit
   north is blocked while the cockpit hatch is dogged: hatch-latched
 
   The Sparrow's hold, a steel room no wider than a corridor, ribbed
   with cargo netting. A suit locker stands bolted to the aft bulkhead,
   and a ladder climbs to the cockpit hatch at the forward end. The
-  ramp slopes down to the dock.
+  ramp is aft.
 
   after the player entering, once
     phrase hold-arrival
@@ -535,15 +558,17 @@ create the fold drive
 
   on the player switching_on
     the player must be in the flight couch: not-strapped-in
+    refuse when the outer hatch is open: fold-hatch-open
   end on
 
-  after the player switching_on, once
-    change the courier ship to underway
+  after the player switching_on
+    send the courier ship to the Landing Pad when the guidance selector is ceres
+    send the courier ship to the Collar Vestibule when the guidance selector is titan
     phrase fold-begins
   end after
 
   on the player switching_off
-    refuse fold-no-abort
+    refuse when the courier ship is under way: fold-no-abort
   end on
 
 create the flight manual
@@ -568,8 +593,8 @@ create the Airlock
   a room
   aka lock, port lock, port airlock
   east to the Hold
-  out to the Landing Pad
-  out is blocked while the outer hatch is closed: hatch-shut
+  west to outside
+  west is blocked while the outer hatch is closed: hatch-shut
 
   A closet of a room in the Sparrow's port side, big enough for one
   carrier in a suit and not much else. The inner door stands open to
@@ -591,13 +616,13 @@ create the outer hatch
   passing through.
 
   on the player opening
-    refuse when the courier ship is buttoned: hatch-in-dock
-    refuse when the courier ship is boarding: hatch-in-dock
+    refuse when the courier ship is at the Loading Dock: hatch-in-dock
   end on
 
-  after the player opening, once
-    kill the player hatch-into-the-fold when the courier ship is underway
-    phrase ceres-outside when the courier ship is landed
+  after the player opening
+    kill the player hatch-into-the-fold when the courier ship is under way
+    phrase ceres-outside when the courier ship is at the Landing Pad
+    phrase titan-outside when the courier ship is at the Collar Vestibule
   end after
 
 create the pressure gauge
@@ -614,19 +639,11 @@ define topics for the flight manual
   about "the selector", "guidance": phrase manual-selector
 end topics
 
-define sequence the fold
-  when the courier ship becomes underway
-  5 turns later
-    change the courier ship to landed
-    phrase fold-ends
-end sequence
-
 ## Room 6 — Ceres, and the first of Vance's hands.
 
 create the Landing Pad
   a room
   aka pad, pad 14, pad fourteen, ceres, cement
-  in to the Airlock
   north is blocked while the pad master is unconvinced: quint-blocks
 
   Pad 14 is a circle of old cement under a black sky, its number
@@ -737,6 +754,114 @@ create the Piazzi Platform
   The tram stops under the lip of the dome at a turnstile that takes
   one brass token and gives nothing back. Beyond it the lit streets of
   Piazzi Town climb away under the glass.
+
+## Titan — the Sparrow's second destination, a docking collar on Huygens
+## Orbital, and the drop shuttle down to Kraken Shore. These rooms are the
+## conveyance's exercisers; customs, the robot and Rask come with their rows.
+
+create the Collar Vestibule
+  a room
+  aka vestibule, collar, docking collar
+  east to the Shuttle Gate
+
+  A ribbed steel throat where the station's collar has clamped onto
+  the Sparrow's port side. The deck plates are warm, the lights are
+  the white of a clinic, and a sign points inward: CUSTOMS. ALL
+  ARRIVALS. The shuttle gate is east.
+
+  after the player entering, once
+    phrase collar-arrival
+  end after
+
+create the Shuttle Gate
+  a room
+  aka gate, shuttle gate, departure gate
+  west to the Collar Vestibule
+
+  A departure gate at the station's rim, one wall all window: Titan
+  below, orange from edge to edge, with the shuttle track dropping
+  away into it like a wire into soup. A board over the gate reads
+  KRAKEN SHORE, and under it the shuttle's bay.
+
+create the drop shuttle
+  a vehicle, scenery
+  in the Shuttle Gate
+  aka shuttle, drop shuttle, capsule
+  movement: line
+  carries: in
+  drive: control
+  stops: the Shuttle Gate, the Kraken Landing
+  direction: both
+  pace: 4 turns
+
+  A blunt capsule on a cradle, six seats and a window, scorched
+  along its underside by a thousand drops through Titan's air. A
+  lever by the hatch is painted DROP.
+
+  after the player exiting
+    phrase kraken-arrival when the drop shuttle is at the Kraken Landing
+  end after
+
+create the drop lever
+  a thing, pushable, scenery
+  in the drop shuttle
+  aka lever, drop, handle
+
+  A lever painted DROP in letters that have been touched up more
+  than once.
+
+  on the player pushing
+    refuse when the drop shuttle is under way: shuttle-already-dropping
+    phrase shuttle-drops when the drop shuttle is at the Shuttle Gate
+    phrase shuttle-rises when the drop shuttle is at the Kraken Landing
+    start the drop shuttle
+  end on
+
+define sequence the drop
+  when the drop shuttle becomes under way
+  2 turns later
+    phrase shuttle-window
+end sequence
+
+create the Kraken Landing
+  a room
+  aka landing, kraken landing, pad
+
+  A landing stage on struts above a shore of black sand and orange
+  haze, the shuttle cradle at one end and a boardwalk running off
+  into the murk. The air is thick enough to lean on, and the cold
+  gets in through the suit at the wrists.
+
+define phrase collar-arrival
+  The collar's inner door rolls aside on an airlock bigger than the
+  Sparrow's whole hold, and a voice from nowhere says ARRIVAL LOGGED.
+end phrase
+
+define phrase shuttle-drops
+  The lever goes over with a thunk you feel in your spine. The cradle
+  lets go, the window fills with orange, and the station is gone.
+end phrase
+
+define phrase shuttle-rises
+  The lever goes over, the cradle lets go, and the shore drops away
+  under the window into its own orange weather.
+end phrase
+
+define phrase shuttle-already-dropping
+  The lever is already over. The shuttle goes where the track goes.
+end phrase
+
+define phrase shuttle-window
+  Through the window the haze thins for a moment: a black sea with a
+  slow swell on it, a line of boardwalk, a single light turning at
+  the end of it. Then the orange closes over again.
+end phrase
+
+define phrase kraken-arrival
+  Your boots come down on the landing stage. Out on the shore, a
+  lighthouse turns its beam through the murk, once, and goes on
+  turning.
+end phrase
 
 define phrase depot-jump
   The sorting machine pauses mid-chuckle, then goes on without you.
@@ -889,11 +1014,29 @@ define phrase hatch-into-the-fold
   be reassigned.
 end phrase
 
-define phrase fold-ends
+define phrase fold-ends-ceres
   The hum drops out of the hull all at once. Through the nearest port,
   grey rock swings up and stops: Ceres, close enough to read the
   painted numbers on its landing pads. The Sparrow settles with a
   thump you feel in your boots.
+end phrase
+
+define phrase fold-ends-titan
+  The hum drops out of the hull all at once. Through the nearest port,
+  orange haze fills the glass from edge to edge, and a ring of lights
+  slides across it: Huygens Orbital, with Titan underneath it like a
+  lamp under a cloth. Something clamps onto the hull with a clang.
+end phrase
+
+define phrase fold-hatch-open
+  The fold drive will not light with the outer hatch standing open.
+  The console is quite firm about it.
+end phrase
+
+define phrase titan-outside
+  The hatch swings out into a docking collar, a ribbed steel throat
+  with CUSTOMS stencilled around it in four languages. The air that
+  comes in smells of cold rubber.
 end phrase
 
 define phrase ceres-outside
@@ -903,8 +1046,8 @@ define phrase ceres-outside
 end phrase
 
 define phrase hatch-shut
-  The outer hatch is shut. Nobody walks through a hatch on Ceres
-  without opening it first.
+  The outer hatch is shut. Nobody walks through a shut hatch without
+  opening it first.
 end phrase
 
 define phrase pad-arrival

@@ -156,7 +156,7 @@
           "The Sparrow's ramp stays up. The loader robot's amber light blinks at you, patient as a clock."
         ]
       },
-      "command": "up",
+      "command": "board ship",
       "id": "9wa8sg88",
       "type": "turn"
     },
@@ -226,11 +226,11 @@
       "assertions": {
         "contains": [
           "Hold",
-          "The Sparrow's hold, a steel room no wider than a corridor, ribbed with cargo netting. A suit locker stands bolted to the aft bulkhead, and a ladder climbs to the cockpit hatch at the forward end. The ramp slopes down to the dock.",
+          "The Sparrow's hold, a steel room no wider than a corridor, ribbed with cargo netting. A suit locker stands bolted to the aft bulkhead, and a ladder climbs to the cockpit hatch at the forward end. The ramp is aft.",
           "You can see a suit locker, a specimen jar, a coil of strapping, and a mail bundle here."
         ]
       },
-      "command": "up",
+      "command": "board ship",
       "id": "w0j072t7",
       "type": "turn"
     },

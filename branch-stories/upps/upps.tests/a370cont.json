@@ -63,10 +63,11 @@
     {
       "assertions": {
         "contains": [
-          "Airlock"
+          "You board the courier ship.",
+          "Hold"
         ]
       },
-      "command": "in",
+      "command": "board ship",
       "id": "ku62m66z",
       "type": "turn"
     },
@@ -74,10 +75,10 @@
       "assertions": {
         "contains": [
           "Hold",
-          "You can see a suit locker, a specimen jar, a coil of strapping, and a mail bundle here."
+          "a mail bundle"
         ]
       },
-      "command": "east",
+      "command": "look",
       "id": "eiunxym5",
       "type": "turn"
     },
@@ -120,7 +121,7 @@
           "Landing Pad"
         ]
       },
-      "command": "out",
+      "command": "exit",
       "id": "1n7gmrah",
       "type": "turn"
     },

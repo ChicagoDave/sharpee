@@ -40,7 +40,7 @@
       "assertions": {
         "contains": [
           "Hold",
-          "The Sparrow's hold, a steel room no wider than a corridor, ribbed with cargo netting. A suit locker stands bolted to the aft bulkhead, and a ladder climbs to the cockpit hatch at the forward end. The ramp slopes down to the dock."
+          "The Sparrow's hold, a steel room no wider than a corridor, ribbed with cargo netting. A suit locker stands bolted to the aft bulkhead, and a ladder climbs to the cockpit hatch at the forward end. The ramp is aft."
         ]
       },
       "command": "south",
@@ -52,10 +52,7 @@
         "contains": [
           "Airlock",
           "The deck plates here are scored where a thousand parcels have been dragged across them. Your boots fit the grooves.",
-          "The Sparrow settles with a thump you feel in your boots."
-        ],
-        "states": [
-          "the courier ship is landed"
+          "The courier ship arrives at the Landing Pad."
         ]
       },
       "command": "west",
@@ -66,7 +63,8 @@
       "assertions": {
         "contains": [
           "Airlock",
-          "A closet of a room in the Sparrow's port side, big enough for one carrier in a suit and not much else. The inner door stands open to the hold. The outer hatch is a slab of grey steel with a wheel at chest height, a pressure gauge beside it, and a placard: CHECK THE GAUGE. THEN THE WINDOW. THEN THE WHEEL."
+          "A closet of a room in the Sparrow's port side, big enough for one carrier in a suit and not much else. The inner door stands open to the hold. The outer hatch is a slab of grey steel with a wheel at chest height, a pressure gauge beside it, and a placard: CHECK THE GAUGE. THEN THE WINDOW. THEN THE WHEEL.",
+          "The Sparrow settles with a thump you feel in your boots."
         ]
       },
       "command": "look",
@@ -129,7 +127,7 @@
           "A woman in a patched suit is already walking toward you from the tram."
         ]
       },
-      "command": "out",
+      "command": "exit",
       "id": "tpyumtv3",
       "type": "turn"
     },

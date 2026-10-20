@@ -54,7 +54,7 @@ Of 40 trait directories, 25 are reached from Chord (22 adjectives, the kind noun
 
 | Trait | What it does on the platform | Chord today | Disposition |
 |---|---|---|---|
-| vehicle | enterable thing that moves with its occupants; half-wired (ADR-350) | none | 4.0 (O-2) |
+| vehicle | enterable thing that moves with its occupants; half-wired (ADR-350) | none | 4.0 (O-2). **Sayable 2026-10-18 (ADR-366)**; UPPS conveyances written as vehicles 2026-10-20 (Phase 15): evidence in section row "vehicle (trait and kind)" below. |
 | acoustic | a thing's sound, read by listening | none | 5.0, with section A's senses row |
 | light-source power (batteries) | `fuelRemaining`/`maxFuel` on the trait, read only by Dungeo's fuses; no notion of a light that needs something inside it | none | 4.0: `powered by <thing>` — a light shines only while every named power source is inside it; taking the battery out darkens it (David, 2026-10-15, ADR-374 D10) |
 | attached | a thing fixed to another (glued, nailed, tied, welded); **read by no action today** | none | 4.0: platform enforcement first (taking refuses, pulling detaches a detachable one), then `attached to <thing>` with optional `detachable`; covers Inform's Tying it to |
@@ -114,7 +114,7 @@ Rows that Inform has and sections A and B do not already carry. "Sharpee" says w
 | direction (as a kind the author extends) | fixed direction set; `in`/`out` landed as exit directions (ADR-369 D3, 2026-10-13) | yes for `in`/`out` | 4.0: `in to <Room>` and `out to <Room>` as exit lines (GH #568); the extensible direction kind stays out, `define action` covers ship vocabulary (David, 2026-10-12). **Sayable 2026-10-13** (ADR-369 D3): UPPS Airlock `out to the Landing Pad`, pad `in to the Airlock` |
 | backdrop (one thing present in many rooms) | none | none; a thing lives in one place | 4.0: a scenery thing `in <Room>, <Room> and <Room>` or `in the <region>`, on ADR-360's room groups; UPPS's sea, sky and the view of Ceres exercise it (David, 2026-10-12) |
 | device | `switchable` | yes | today |
-| vehicle | `VehicleTrait`, half-wired | none | 4.0 (O-2) |
+| vehicle | `VehicleTrait`, half-wired | none | 4.0 (O-2). **Sayable 2026-10-18 (ADR-366)**; UPPS evidence 2026-10-20, see "vehicle (trait and kind)" below. |
 | player's holdall (auto-stowing container) | none | none | out: Sharpee imposes no inventory limit, so there is nothing to soften; a `container, wearable` bag the player fills by hand is the default (David, 2026-10-12) |
 | scene | `SceneTrait`, unexposed | `define sequence`, `define chapters` overlap | 6.0 (with section B's scene row) |
 | man, woman, animal (person subkinds) | `a person` with `pronouns` | yes | today |
@@ -170,7 +170,7 @@ One row per item in the 4.0 slice. The plan phase that makes the row sayable fil
 |---|---|---|
 | lowering, raising (object side) | 6 | UPPS `upps.tests/opejfh5t.json`: `lower ramp` (a371low1) and `raise ship` (a371rai1) fire the courier ship's clause; `lower crates` (a371low2) refuses "You can't lower the mail crates."; derived tests `courier ship · on lowering` / `on raising` pass |
 | throwing (targeted) / Throwing it at | 7 | UPPS `upps.tests/opejfh5t.json`: bare `throw letter` (a372thr1) is the stock toss, neither tailed clause fires; `throw letter at machine` (a372thr2) fires the letter's `on the player throwing at the sorting machine`; `throw letter at bin` (a372thr3) fires the bin's `on the player throwing the dead letter` and the letter lands in the bin; derived tests type the counterpart tails (`packages/branch-tester/tests/derived-counterpart.test.ts`) |
-| vehicle (trait and kind) | 11, 14 | |
+| vehicle (trait and kind) | 11, 14 | UPPS `upps.tests/trampad2.json` (the tram car, a `line` under control: `push brake`, two turns, the Piazzi Platform, and back); `upps.tests/a366titn.json` (the courier ship, a `flight` vehicle with three rooms aboard: `board ship`, `set selector to titan`, `switch on drive` sends it, the ramp and the hatch refused under way, `exit` through one `west to outside` line into the Collar Vestibule; the drop shuttle, a `line` under control: `push lever`, the window phrase, the Kraken Landing, and back); `stories/vehicles` carries the compass and streets fixtures |
 | attached / Tying it to | 8 | UPPS `upps.tests/opejfh5t.json`: `take placard` (a373tak1) refuses "The route placard is fixed to the sorting machine."; `pull placard` (a373pul1) frees the detachable placard and `take placard` (a373tak2) then succeeds; the welded `inspection plate` refuses taking (a373tak3) and pulling, "won't budge" (a373pul2); `tie twine to machine` (a373tie1) fires the twine's `on the player tying to the sorting machine`, after which `take twine` (a373tak6) refuses as fixed, `untie twine` (a373unt1) frees it and `take twine` (a373tak7) succeeds; derived test `parcel twine · on tying` passes |
 | breakable, destructible | 8 | UPPS `upps.tests/opejfh5t.json`: `drop jar` (a373drp1) breaks the fragile sample jar on the depot floor and its `after the player breaking` body runs (the jar is spilled, `jar-spills` speaks); derived test `sample jar · after breaking` passes, reaching the branch by `attack sample jar`. Destructible closes as covered by `breakable` and the breaking clause (ADR-373 D5) |
 | exit (custom-command passages) | 13 | |

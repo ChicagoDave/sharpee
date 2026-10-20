@@ -33,7 +33,7 @@
           "Landing Pad"
         ]
       },
-      "command": "out",
+      "command": "exit",
       "id": "ckvktaj2",
       "type": "turn"
     },
