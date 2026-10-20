@@ -6,6 +6,7 @@
 import { Token } from '../parser-contracts/parser-types.js';
 import {
   GrammarRule,
+  GrammarGate,
   GrammarTier,
   PatternMatch,
   GrammarContext,
@@ -217,6 +218,11 @@ export abstract class GrammarEngine {
             return builder;
           },
 
+          when(predicate: GrammarGate) {
+            rule.when = predicate;
+            return builder;
+          },
+
           // ADR-082: Typed Value Slots
 
           number(slot: string) {
@@ -319,6 +325,7 @@ export abstract class GrammarEngine {
         const slotConstraints: Map<string, { constraint: ScopeConstraintBuilder }[]> = new Map();
         const slotTypes: Map<string, SlotType> = new Map();
         let defaultSemantics: Partial<SemanticProperties> | undefined;
+        let gate: GrammarGate | undefined; // ADR-378 D5: applied to every rule the block emits
 
         const actionBuilder: ActionGrammarBuilder = {
           verbs(verbs: string[]) {
@@ -358,6 +365,11 @@ export abstract class GrammarEngine {
 
           withDefaultSemantics(defaults: Partial<SemanticProperties>) {
             defaultSemantics = defaults;
+            return actionBuilder;
+          },
+
+          when(predicate: GrammarGate) {
+            gate = predicate;
             return actionBuilder;
           },
 
@@ -422,6 +434,7 @@ export abstract class GrammarEngine {
                     builder = applySlotType(builder, slot, type);
                   }
 
+                  if (gate) builder = builder.when(gate);
                   builder.build();
                 }
               }
@@ -459,6 +472,7 @@ export abstract class GrammarEngine {
                 builder = applySlotType(builder, slot, type);
               }
 
+              if (gate) builder = builder.when(gate);
               builder.build();
             }
 
@@ -472,6 +486,7 @@ export abstract class GrammarEngine {
                   builder = builder.withDefaultSemantics(defaultSemantics);
                 }
 
+                if (gate) builder = builder.when(gate);
                 builder.build();
               }
             }
@@ -482,6 +497,7 @@ export abstract class GrammarEngine {
                 let builder = engine.createBuilder(tier).define(alias);
                 builder = builder.mapsTo(actionId);
                 builder = builder.withDefaultSemantics({ direction: canonical as SemanticProperties['direction'] });
+                if (gate) builder = builder.when(gate);
                 builder.build();
               }
             }

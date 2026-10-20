@@ -53,3 +53,37 @@ export function getOppositeDirection(direction: DirectionType): DirectionType {
 export function isDirection(value: unknown): value is DirectionType {
   return typeof value === 'string' && Object.values(Direction).includes(value as DirectionType);
 }
+
+/**
+ * The key of a passage: an exit reached by its own command words rather than
+ * a compass word (ADR-378 D1). `passage:` followed by the passage's first
+ * form, words hyphenated (`passage:climb-the-rope`). A passage has no
+ * opposite, so no reverse exit is ever inferred for one.
+ */
+export type PassageKey = `passage:${string}`;
+
+/**
+ * What a room's exits are keyed by (ADR-378 D1a): a compass direction or a
+ * passage. Every reader of exits takes this, not `DirectionType`.
+ */
+export type ExitKey = DirectionType | PassageKey;
+
+/** The prefix every passage key carries. */
+export const PASSAGE_KEY_PREFIX = 'passage:';
+
+/**
+ * Check if a value is a passage key
+ */
+export function isPassageKey(value: unknown): value is PassageKey {
+  return typeof value === 'string' && value.startsWith(PASSAGE_KEY_PREFIX) && value.length > PASSAGE_KEY_PREFIX.length;
+}
+
+/**
+ * Build a passage key from a passage's first form.
+ *
+ * @param words - The form's words, as the author wrote them
+ * @returns `passage:<words-hyphenated>`, lower-cased
+ */
+export function passageKey(words: readonly string[]): PassageKey {
+  return `${PASSAGE_KEY_PREFIX}${words.map((w) => w.toLowerCase()).join('-')}`;
+}

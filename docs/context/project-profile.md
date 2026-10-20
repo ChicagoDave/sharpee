@@ -1,11 +1,11 @@
 # Project Profile
 
-**Generated**: 2026-10-12
-**Repository**: sharpee (`@sharpee/*` lockstep v5.4.1, unchanged this pass; Chord language versioned independently at v3.6.0, ADR-257, unchanged)
+**Generated**: 2026-10-19
+**Repository**: sharpee (`@sharpee/*` lockstep v5.4.1, unchanged this pass; Chord language versioned independently at v3.6.0, ADR-257, not rechecked; branch `chord-4-0` is the active Chord 4.0 plan line)
 
 ## Domains
 
-- Domain Modeling — `world-model` traits/behaviors/capability dispatch (ADR-090, ADR-346), `if-domain` contracts; recent ADR-347 (ending is explicit), ADR-348 (world authoritative on restore), ADR-350 (vehicles in Chord)
+- Domain Modeling — `world-model` traits/behaviors/capability dispatch (ADR-090, ADR-346), `if-domain` contracts; recent ADR-347 (ending is explicit), ADR-348 (world authoritative on restore), ADR-350 (vehicles in Chord), ADR-375 (`use sailing` extends the vehicle), ADR-376 (`use expanses` extends the vehicle: open-coordinate movement, sight, landmarks, drift)
 - API / Service (Engine) — `engine` turn cycle/scheduler (ADR-342 package contract, ADR-343 StoryEngine role, ADR-344 player role-holder seam, ADR-345 explicit lifecycle phase), `stdlib` validate/execute/report actions (ADR-051), `parser-en-us` grammar
 - Chord Story Language — `packages/chord` (lexer/parser/analyzer/IR, frozen at language v3.6.0), `story-loader`, `bootstrap`; `packages/world-index` derives map/reachability/vocab-gaps from Story IR (ADR-321, on `main`); ADR-349 location-heading composition
 - Normative Character Layer — `packages/character` (goals, influence, propagation, arbiter, dialogue, act-detection, ADR-310/318)
@@ -15,7 +15,7 @@
 - Frontend UI (web) — `platform-browser`, `runtime`, `media`, `website/` (Next.js/React)
 - CLI / Tooling — `devkit` (author tool), `tools/repokit` (in-repo build CLI, ADR-187, now also the protocol-type generator per ADR-352), `bridge`, `helpers`, `queries`, `ide-protocol`
 - Library / Package — publishable `@sharpee/*` packages with generated API docs (`packages/sharpee/docs/genai-api/`)
-- Story Content (branch stories) — `branch-stories/secret-letter` (active port of the 2009 game, structural work only, currently ON HOLD per user direction), `branch-stories/fernhill`, `branch-stories/ides-of-march`, `branch-stories/upps` (new: testing story, room-by-room, Claude authors content within David's premise); `stories/*` in-repo example/test stories (`dungeo`, `cloak-of-darkness`, `family-zoo-tutorial`, `thealderman`, `friendly-zoo`, `armoured` (retired sample), etc.)
+- Story Content (branch stories) — `branch-stories/secret-letter` (active port of the 2009 game, structural work only, currently ON HOLD per user direction), `branch-stories/fernhill`, `branch-stories/ides-of-march`, `branch-stories/upps` (new: testing story, room-by-room, Claude authors content within David's premise); `stories/*` in-repo example/test stories (new: `expanses` and `sailing` fixture stories with `.tests` trees from Chord 4.0 Phase 13, alongside `vehicles` and `nautical`; `dungeo`, `cloak-of-darkness`, `family-zoo-tutorial`, `thealderman`, `friendly-zoo`, `armoured` (retired sample), etc.)
 
 ## Tech Stack
 
@@ -92,3 +92,4 @@
 - ADR count is at least 365 numbered (`adr-365-claims-under-a-necessary-set.md` is the highest-numbered file found), up from 359 in the prior profile. ADRs live at `docs/architecture/adrs/adr-NNN-*.md`, not `docs/adrs/` as DEVARCH.md's generic path implies.
 - Secret Letter port (`branch-stories/secret-letter`) is ON HOLD indefinitely per user direction (2026-09-09) — do not treat it as active work; it appears in domains for completeness only. (It is, however, the corpus story used to measure ADR-353's and ADR-355's testing-surface costs this week — used as fixture data, not as active port work.)
 - `engine`'s file layout (ADR-334/342/343/344/345) is unchanged from the prior profile: `command/`, `install/`, `session/`, `ports/`, `introspection/`, `plugins/`, `turn/`, 31 named exports.
+- Delta since the 2026-10-12 profile (branch `chord-4-0`): Chord 4.0 plan Phase 13 DONE (commit `94bfd167c`) landed ADR-376 `use expanses` and ADR-375 `use sailing` end to end across `world-model`, `stdlib`, `story-loader`, `chord`, `lang-en-us`, `parser-en-us` and `plugin-state-machine` (Slice 1 in `205845fd7` was the Chord front end: manifest kindNouns/movementTypes, expanse kind, `at x, y` placement, sight reads, `within`, EBNF re-pinned, 33 compile tests). Phase 12 added street/flight fixtures to `stories/vehicles` (19 cards, 21 assertions under `./sharpee test`). Phase 14 (passages and pushing between rooms) is CURRENT. New fixture stories `stories/expanses` and `stories/sailing` carry `.tests` trees run via `./sharpee test`. Highest ADR on disk is now `adr-377-state-machines-are-core.md` (up from 365). Chord extensions of this kind (`use <name>` gates) are platform changes needing discussion per CLAUDE.md. Test suites were not re-run this pass; gates unchanged. Package version in `packages/chord/package.json` still reads 5.4.1.

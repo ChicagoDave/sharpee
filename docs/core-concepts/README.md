@@ -243,7 +243,6 @@ Common entity types with auto-generated ID prefixes:
 - `container` (c_) - Objects that can hold other objects
 - `supporter` (s_) - Objects that can support other objects
 - `scenery` (y_) - Fixed decorative objects
-- `exit` (e_) - Room exits
 
 ## Trait System
 

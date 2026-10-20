@@ -36,8 +36,6 @@ import { SceneTrait } from './scene/sceneTrait.js';
 // Basic traits
 import { ActorTrait } from './actor/actorTrait.js';
 
-// New traits
-import { ExitTrait } from './exit/exitTrait.js';
 
 // Manipulation traits
 import { PullableTrait } from './pullable/pullableTrait.js';
@@ -123,8 +121,6 @@ export const TRAIT_IMPLEMENTATIONS: Record<TraitType, ITraitConstructor> = {
   // Basic traits
   [TraitType.ACTOR]: ActorTrait,
 
-  // New traits
-  [TraitType.EXIT]: ExitTrait,
 
   // Manipulation traits
   [TraitType.PULLABLE]: PullableTrait,
@@ -266,8 +262,6 @@ export {
   // Basic
   ActorTrait,
 
-  // New traits
-  ExitTrait,
   ClimbableTrait,
 
   // Manipulation traits

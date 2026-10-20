@@ -180,6 +180,13 @@ export interface PatternBuilder {
    */
   withDefaultSemantics(defaults: Partial<SemanticProperties>): PatternBuilder;
 
+  /**
+   * Gate this rule on the live world (ADR-378 D5): skipped while the
+   * predicate answers false, as though the rule did not exist.
+   * @param predicate Read against the GrammarContext at match time
+   */
+  when(predicate: GrammarGate): PatternBuilder;
+
   // ADR-082: Typed Value Slots
 
   /**
@@ -412,6 +419,15 @@ export interface ActionGrammarBuilder {
   withDefaultSemantics(defaults: Partial<SemanticProperties>): ActionGrammarBuilder;
 
   /**
+   * Gate every rule this block registers on the live world (ADR-378 D5):
+   * each is skipped while the predicate answers false. The Chord loader's
+   * emission for `define action … while <condition>` and for a passage's
+   * command words.
+   * @param predicate Read against the GrammarContext at match time
+   */
+  when(predicate: GrammarGate): ActionGrammarBuilder;
+
+  /**
    * Mark a slot as a specific type (applies to all generated patterns)
    * @param slot The slot name
    * @param slotType The slot type
@@ -437,6 +453,16 @@ export type GrammarTier = 'standard' | 'story';
 /**
  * A compiled grammar rule
  */
+/**
+ * A rule-level gate (ADR-378 D5, GH #317): read against the live world
+ * before matching. A rule whose gate answers false is skipped — neither a
+ * match nor a failure — so the input parses as though the rule did not
+ * exist. Story-tier only in practice: a Chord `define action … while
+ * <condition>` head, or a passage's command words gated to the room that
+ * declares the passage.
+ */
+export type GrammarGate = (context: GrammarContext) => boolean;
+
 export interface GrammarRule {
   id: string;
   pattern: string;
@@ -445,6 +471,8 @@ export interface GrammarRule {
   action: string;
   /** ADR-268 D2: resolution layer — story outranks standard */
   tier: GrammarTier;
+  /** ADR-378 D5: skip the rule while this answers false (absent = always on) */
+  when?: GrammarGate;
   semantics?: SemanticMapping; // Semantic mappings for this rule
   defaultSemantics?: Partial<SemanticProperties>; // Default semantics
   experimentalConfidence?: number; // Multiplier applied to match confidence

@@ -13,7 +13,7 @@
  * Owner: world-model (room domain, ADR-295 D3).
  */
 
-import type { DirectionType } from '../../constants/directions.js';
+import type { ExitKey } from '../../constants/directions.js';
 import type { ITrait } from '../trait.js';
 
 /**
@@ -38,7 +38,7 @@ export interface IComputedExitDeclaration {
  *   exposes statically; contributes no existence beyond the static map.
  */
 export interface IComputedExitCarrier {
-  computedExits?: Partial<Record<DirectionType, IComputedExitDeclaration>>;
+  computedExits?: Partial<Record<ExitKey, IComputedExitDeclaration>>;
   computedExitsAll?: IComputedExitDeclaration;
 }
 

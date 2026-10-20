@@ -52,7 +52,6 @@ export * from './traits/purchasable/index.js';
 export * from './traits/diggable/index.js';
 export * from './traits/readable/index.js';
 export * from './traits/light-source/index.js';
-export * from './traits/exit/index.js';
 export * from './traits/climbable/index.js';
 export * from './traits/scenery/index.js';
 export * from './traits/night-vision/index.js';

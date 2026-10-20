@@ -4,7 +4,7 @@ import { IFEntity } from '../../src/entities/if-entity';
 import { TraitType } from '../../src/traits/trait-types';
 import { RoomTrait } from '../../src/traits/room/roomTrait';
 import { DoorTrait } from '../../src/traits/door/doorTrait';
-import { ExitTrait } from '../../src/traits/exit/exitTrait';
+import { Direction } from '../../src/constants/directions';
 import { ContainerTrait } from '../../src/traits/container/containerTrait';
 
 describe('Entity System with ID Refactor', () => {
@@ -123,22 +123,16 @@ describe('Entity System with ID Refactor', () => {
       expect(trait.room2).toBe('r02');
     });
 
-    it('should use IDs in exit traits', () => {
+    it('should use IDs in room exits', () => {
       const cave = world.createEntity('Cave', 'room');
       const tunnel = world.createEntity('Tunnel', 'room');
-      const exit = world.createEntity('Cave Exit', 'exit');
-      
-      const exitTrait = new ExitTrait({
-        from: cave.id,
-        to: tunnel.id,
-        command: 'north'
-      });
-      
-      exit.add(exitTrait);
-      
-      const trait = exit.get(TraitType.EXIT) as ExitTrait;
-      expect(trait.from).toBe('r01');
-      expect(trait.to).toBe('r02');
+      cave.add(new RoomTrait({}));
+      tunnel.add(new RoomTrait({}));
+
+      world.connectRooms(cave.id, tunnel.id, Direction.NORTH);
+
+      expect(cave.get(RoomTrait)!.exits[Direction.NORTH]?.destination).toBe('r02');
+      expect(tunnel.get(RoomTrait)!.exits[Direction.SOUTH]?.destination).toBe('r01');
     });
   });
 

@@ -9,7 +9,6 @@ export { SceneryBehavior } from '../traits/scenery/sceneryBehavior.js';
 export { WearableBehavior } from '../traits/wearable/wearableBehavior.js';
 export { ReadableBehavior } from '../traits/readable/readableBehavior.js';
 export { LightSourceBehavior } from '../traits/light-source/lightSourceBehavior.js';
-export { ExitBehavior } from '../traits/exit/exitBehavior.js';
 export { ClimbableBehavior } from '../traits/climbable/climbableBehavior.js';
 export { OpenableBehavior } from '../traits/openable/openableBehavior.js';
 export { LockableBehavior } from '../traits/lockable/lockableBehavior.js';

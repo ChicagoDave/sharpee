@@ -16,10 +16,13 @@ import { EnterableTrait } from '../../../src/traits/enterable/enterableTrait';
 import { OpenableTrait } from '../../../src/traits/openable/openableTrait';
 import { DoorTrait } from '../../../src/traits/door/doorTrait';
 import { RoomTrait } from '../../../src/traits/room/roomTrait';
+import { RoomBehavior } from '../../../src/traits/room/roomBehavior';
+import { LockableTrait } from '../../../src/traits/lockable/lockableTrait';
 import { ActorTrait } from '../../../src/traits/actor/actorTrait';
 import { AboardTrait } from '../../../src/traits/vehicle/aboardTrait';
 import { VehicleTrait } from '../../../src/traits/vehicle/vehicleTrait';
 import { Direction } from '../../../src/constants/directions';
+import { exitBlockedKey, exitHiddenKey } from '../../../src/world/TraversalBehavior';
 import {
   isAboardVehicle,
   isUnderWay,
@@ -187,6 +190,59 @@ describe('the vehicle machine (ADR-366 D5e)', () => {
       expect(model<{ kind: 'compass'; heading: string | null; turnsToStep: number }>(ship)).toMatchObject({ heading: null, turnsToStep: 0 });
 
       gate.get(OpenableTrait)!.isOpen = true;
+      startVehicle(world, ship, Direction.NORTH);
+      expect(stepVehicle(world, ship)).toEqual({ kind: 'arrived', roomId: b.id });
+      expect(world.getLocation(ship.id)).toBe(b.id);
+    });
+
+    it('stops at a blocked exit and at a hidden one, reading traversal like every mover (ADR-378 D0)', () => {
+      const ship = vehicle('ship', new VehicleTrait({ model: { kind: 'compass', drive: 'control', pace: 1 } }), a);
+      connect(a, b);
+      b.get(RoomTrait)!.admits = [ship.id];
+
+      // Blocked by a live evaluator (Chord `north is blocked while …`): before
+      // ADR-378 the machine drove through it.
+      world.registerEvaluator(exitBlockedKey(a.id, Direction.NORTH), () => true);
+      startVehicle(world, ship, Direction.NORTH);
+      expect(stepVehicle(world, ship)).toEqual({ kind: 'stopped' });
+      expect(world.getLocation(ship.id)).toBe(a.id);
+      expect(isUnderWay(ship)).toBe(false);
+
+      // Unblocked but hidden (`north to B while …`, false): the way is not there.
+      world.registerEvaluator(exitBlockedKey(a.id, Direction.NORTH), () => false);
+      world.registerEvaluator(exitHiddenKey(a.id, Direction.NORTH), () => true);
+      startVehicle(world, ship, Direction.NORTH);
+      expect(stepVehicle(world, ship)).toEqual({ kind: 'stopped' });
+      expect(world.getLocation(ship.id)).toBe(a.id);
+
+      // Shown again: it goes.
+      world.registerEvaluator(exitHiddenKey(a.id, Direction.NORTH), () => false);
+      startVehicle(world, ship, Direction.NORTH);
+      expect(stepVehicle(world, ship)).toEqual({ kind: 'arrived', roomId: b.id });
+      expect(world.getLocation(ship.id)).toBe(b.id);
+    });
+
+    it('stops at a locked door (new with the shared query) and at an exit blocked by the stamped map', () => {
+      const ship = vehicle('ship', new VehicleTrait({ model: { kind: 'compass', drive: 'control', pace: 1 } }), a);
+      const gate = world.createEntity('gate', EntityType.DOOR);
+      gate.add(new DoorTrait({ room1: a.id, room2: b.id }));
+      gate.add(new OpenableTrait({ isOpen: true }));
+      gate.add(new LockableTrait({ isLocked: true }));
+      connect(a, b, gate.id);
+      b.get(RoomTrait)!.admits = [ship.id];
+
+      startVehicle(world, ship, Direction.NORTH);
+      expect(stepVehicle(world, ship)).toEqual({ kind: 'stopped' });
+      expect(world.getLocation(ship.id)).toBe(a.id);
+      expect(model<{ kind: 'compass'; heading: string | null; turnsToStep: number }>(ship)).toMatchObject({ heading: null, turnsToStep: 0 });
+
+      gate.get(LockableTrait)!.isLocked = false;
+      RoomBehavior.blockExit(a, Direction.NORTH, 'A chain across the way.');
+      startVehicle(world, ship, Direction.NORTH);
+      expect(stepVehicle(world, ship)).toEqual({ kind: 'stopped' });
+      expect(world.getLocation(ship.id)).toBe(a.id);
+
+      RoomBehavior.unblockExit(a, Direction.NORTH);
       startVehicle(world, ship, Direction.NORTH);
       expect(stepVehicle(world, ship)).toEqual({ kind: 'arrived', roomId: b.id });
       expect(world.getLocation(ship.id)).toBe(b.id);

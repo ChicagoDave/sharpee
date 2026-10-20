@@ -419,8 +419,6 @@ export declare const EntityType: {
     readonly SUPPORTER: "supporter";
     /** Fixed decorative objects that can't be taken */
     readonly SCENERY: "scenery";
-    /** A directional exit (rarely used as entity) */
-    readonly EXIT: "exit";
     /** A physical adjacency between two rooms (ADR-173) */
     readonly WALL: "wall";
     /** A geographic grouping of rooms (ADR-149) */
@@ -964,61 +962,6 @@ export declare class LightSourceBehavior extends Behavior {
      * @returns 0-100, or undefined if unlimited fuel
      */
     static getFuelPercentage(source: IFEntity): number | undefined;
-}
-```
-
-### traits/exit/exitBehavior
-
-```typescript
-import { IFEntity } from '../../entities/if-entity.js';
-import { ExitTrait } from './exitTrait.js';
-import { type ISemanticEvent } from '@sharpee/core';
-/**
- * Behavior for exit entities.
- * Handles all logic related to movement through exits.
- */
-export declare class ExitBehavior {
-    static readonly requiredTraits: "exit"[];
-    /**
-     * Check if an exit matches a command
-     */
-    static matchesCommand(exit: IFEntity, command: string): boolean;
-    /**
-     * Check if an exit can be used
-     */
-    static canUse(exit: IFEntity, actor: IFEntity, world?: any): boolean;
-    /**
-     * Use an exit to move between locations
-     */
-    static use(exit: IFEntity, actor: IFEntity, world?: any): ISemanticEvent[];
-    /**
-     * Get reason why exit is blocked
-     */
-    static getBlockedReason(exit: IFEntity): string;
-    /**
-     * Get all exits from a location
-     */
-    static getExitsFrom(locationId: string, world: any): IFEntity[];
-    /**
-     * Get visible exits from a location
-     */
-    static getVisibleExitsFrom(locationId: string, world: any): IFEntity[];
-    /**
-     * Get listed exits from a location (for room descriptions)
-     */
-    static getListedExitsFrom(locationId: string, world: any): IFEntity[];
-    /**
-     * Create a bidirectional exit (creates reverse exit entity)
-     */
-    static createBidirectional(exitData: Partial<ExitTrait>, world?: any): IFEntity[];
-    /**
-     * Get reverse direction for standard directions
-     */
-    static getReverseDirection(direction?: string): string | undefined;
-    /**
-     * Get reverse command for standard commands
-     */
-    static getReverseCommand(command: string): string;
 }
 ```
 
@@ -1728,6 +1671,31 @@ export declare function getOppositeDirection(direction: DirectionType): Directio
  * Check if a value is a valid Direction constant
  */
 export declare function isDirection(value: unknown): value is DirectionType;
+/**
+ * The key of a passage: an exit reached by its own command words rather than
+ * a compass word (ADR-378 D1). `passage:` followed by the passage's first
+ * form, words hyphenated (`passage:climb-the-rope`). A passage has no
+ * opposite, so no reverse exit is ever inferred for one.
+ */
+export type PassageKey = `passage:${string}`;
+/**
+ * What a room's exits are keyed by (ADR-378 D1a): a compass direction or a
+ * passage. Every reader of exits takes this, not `DirectionType`.
+ */
+export type ExitKey = DirectionType | PassageKey;
+/** The prefix every passage key carries. */
+export declare const PASSAGE_KEY_PREFIX = "passage:";
+/**
+ * Check if a value is a passage key
+ */
+export declare function isPassageKey(value: unknown): value is PassageKey;
+/**
+ * Build a passage key from a passage's first form.
+ *
+ * @param words - The form's words, as the author wrote them
+ * @returns `passage:<words-hyphenated>`, lower-cased
+ */
+export declare function passageKey(words: readonly string[]): PassageKey;
 ```
 
 ### commands/parsed-command
@@ -2165,7 +2133,6 @@ export declare const TraitType: {
     readonly REGION: "region";
     readonly SCENE: "scene";
     readonly ACTOR: "actor";
-    readonly EXIT: "exit";
     readonly WEAPON: "weapon";
     readonly BREAKABLE: "breakable";
     readonly DESTRUCTIBLE: "destructible";
@@ -2262,7 +2229,6 @@ import { ClimbableTrait } from './climbable/climbableTrait.js';
 import { RegionTrait } from './region/regionTrait.js';
 import { SceneTrait } from './scene/sceneTrait.js';
 import { ActorTrait } from './actor/actorTrait.js';
-import { ExitTrait } from './exit/exitTrait.js';
 import { PullableTrait } from './pullable/pullableTrait.js';
 import { AttachedTrait } from './attached/attachedTrait.js';
 import { PushableTrait } from './pushable/pushableTrait.js';
@@ -2321,7 +2287,7 @@ export declare function createTrait(type: TraitType, data?: any): InstanceType<I
 export declare function rehydrateTrait(traitData: {
     type: string;
 } & Record<string, unknown>): ITrait;
-export { IdentityTrait, ContainerTrait, SupporterTrait, RoomTrait, WearableTrait, EdibleTrait, SceneryTrait, OpenableTrait, LockableTrait, CuttableTrait, DiggableTrait, FlammableTrait, PurchasableTrait, SwitchableTrait, ReadableTrait, LightSourceTrait, DoorTrait, RegionTrait, SceneTrait, ActorTrait, ExitTrait, ClimbableTrait, PullableTrait, AttachedTrait, PushableTrait, ButtonTrait, MoveableSceneryTrait, WeaponTrait, BreakableTrait, DestructibleTrait, CombatantTrait, EquippedTrait, HealthTrait, DeadlyRoomTrait, NpcTrait, OpenInventoryTrait, CharacterModelTrait, VehicleTrait, AboardTrait, EnterableTrait, ExpanseTrait, FloatingTrait, SightTrait, StoryInfoTrait };
+export { IdentityTrait, ContainerTrait, SupporterTrait, RoomTrait, WearableTrait, EdibleTrait, SceneryTrait, OpenableTrait, LockableTrait, CuttableTrait, DiggableTrait, FlammableTrait, PurchasableTrait, SwitchableTrait, ReadableTrait, LightSourceTrait, DoorTrait, RegionTrait, SceneTrait, ActorTrait, ClimbableTrait, PullableTrait, AttachedTrait, PushableTrait, ButtonTrait, MoveableSceneryTrait, WeaponTrait, BreakableTrait, DestructibleTrait, CombatantTrait, EquippedTrait, HealthTrait, DeadlyRoomTrait, NpcTrait, OpenInventoryTrait, CharacterModelTrait, VehicleTrait, AboardTrait, EnterableTrait, ExpanseTrait, FloatingTrait, SightTrait, StoryInfoTrait };
 ```
 
 ### state-adjectives
@@ -2800,7 +2766,7 @@ export declare function hasContainerProperties(trait: any): trait is IContainerC
 ```typescript
 import { ITrait } from '../trait.js';
 import { type SnippetMap } from '@sharpee/if-domain';
-import { DirectionType } from '../../constants/directions.js';
+import { ExitKey } from '../../constants/directions.js';
 /**
  * Map position hint for an exit (ADR-113).
  * Overrides direction-based positioning in the auto-mapper.
@@ -2820,14 +2786,20 @@ export interface IExitInfo {
     via?: string;
     /** Optional map positioning hint (ADR-113) */
     mapHint?: IExitMapHint;
+    /**
+     * Who may pass this way beyond a walker (ADR-378 D6): steered vehicle ids
+     * and the class word `pushing`. Read by the traversal query before the
+     * room's own `admits` list; absent means the room's list decides.
+     */
+    admits?: string[];
 }
 export interface IRoomData {
     /** Whether this room has been visited by the player */
     visited?: boolean;
-    /** Exits from this room */
-    exits?: Partial<Record<DirectionType, IExitInfo>>;
+    /** Exits from this room, by compass direction or passage key (ADR-378 D1a) */
+    exits?: Partial<Record<ExitKey, IExitInfo>>;
     /** Custom messages for blocked exits */
-    blockedExits?: Partial<Record<DirectionType, string>>;
+    blockedExits?: Partial<Record<ExitKey, string>>;
     /** Whether this is an outdoor location */
     outdoor?: boolean;
     /**
@@ -2872,9 +2844,11 @@ export interface IRoomData {
     /** Tags for categorizing rooms */
     tags?: string[];
     /**
-     * Ids of the vehicles this room admits (ADR-366 D6). Read when a
-     * vehicle steered by GO would land here; a room admits no vehicle by
-     * default.
+     * Who may arrive here beyond a walker (ADR-366 D6, ADR-378 D6): the ids
+     * of the steered vehicles this room admits, and the class word `pushing`
+     * when a pushed thing may be brought in. Read by the traversal query for
+     * every way into this room that carries no `admits` of its own; a room
+     * admits nothing by default.
      */
     admits?: string[];
     /**
@@ -2908,8 +2882,8 @@ export declare class RoomTrait implements ITrait, IRoomData {
     static readonly type: "room";
     readonly type: "room";
     visited: boolean;
-    exits: Partial<Record<DirectionType, IExitInfo>>;
-    blockedExits?: Partial<Record<DirectionType, string>>;
+    exits: Partial<Record<ExitKey, IExitInfo>>;
+    blockedExits?: Partial<Record<ExitKey, string>>;
     outdoor: boolean;
     requiresLight: boolean;
     isOutdoors: boolean;
@@ -2946,7 +2920,7 @@ import { ITrait } from '../trait.js';
 import { IExitInfo } from './roomTrait.js';
 import { IComputedExitDeclaration } from './computedExitContract.js';
 import { type ISemanticEvent } from '@sharpee/core';
-import { DirectionType } from '../../constants/directions.js';
+import { ExitKey } from '../../constants/directions.js';
 import type { ExitResolution, ExitResolverContext } from '../../capabilities/exit-resolver-binding.js';
 /**
  * Behavior for room entities.
@@ -2959,35 +2933,35 @@ export declare class RoomBehavior extends Behavior {
     /**
      * Get the exit in a given direction
      */
-    static getExit(room: IFEntity, direction: DirectionType): IExitInfo | null;
+    static getExit(room: IFEntity, direction: ExitKey): IExitInfo | null;
     /**
      * Check if an exit exists in a direction
      */
-    static hasExit(room: IFEntity, direction: DirectionType): boolean;
+    static hasExit(room: IFEntity, direction: ExitKey): boolean;
     /**
      * Check if an exit is blocked
      */
-    static isExitBlocked(room: IFEntity, direction: DirectionType): boolean;
+    static isExitBlocked(room: IFEntity, direction: ExitKey): boolean;
     /**
      * Get blocked exit message
      */
-    static getBlockedMessage(room: IFEntity, direction: DirectionType): string | undefined;
+    static getBlockedMessage(room: IFEntity, direction: ExitKey): string | undefined;
     /**
      * Add or update an exit in this room
      */
-    static setExit(room: IFEntity, direction: DirectionType, destination: string, via?: string): void;
+    static setExit(room: IFEntity, direction: ExitKey, destination: string, via?: string): void;
     /**
      * Block an exit with a message
      */
-    static blockExit(room: IFEntity, direction: DirectionType, message: string): ISemanticEvent[];
+    static blockExit(room: IFEntity, direction: ExitKey, message: string): ISemanticEvent[];
     /**
      * Unblock an exit
      */
-    static unblockExit(room: IFEntity, direction: DirectionType): ISemanticEvent[];
+    static unblockExit(room: IFEntity, direction: ExitKey): ISemanticEvent[];
     /**
      * Remove an exit from this room
      */
-    static removeExit(room: IFEntity, direction: DirectionType): void;
+    static removeExit(room: IFEntity, direction: ExitKey): void;
     /**
      * Mark room as visited
      */
@@ -2999,11 +2973,11 @@ export declare class RoomBehavior extends Behavior {
     /**
      * Get all exits from the room
      */
-    static getAllExits(room: IFEntity): Map<DirectionType, IExitInfo>;
+    static getAllExits(room: IFEntity): Map<ExitKey, IExitInfo>;
     /**
      * Get available (non-blocked) exits
      */
-    static getAvailableExits(room: IFEntity): Map<DirectionType, IExitInfo>;
+    static getAvailableExits(room: IFEntity): Map<ExitKey, IExitInfo>;
     /**
      * Find the computed-exit declaration governing a direction, if any (ADR-295 D3).
      *
@@ -3020,7 +2994,7 @@ export declare class RoomBehavior extends Behavior {
      * @returns The declaring trait and its declaration, or null when the
      *   direction is not governed by a computed exit
      */
-    static getComputedExitDeclaration(room: IFEntity, direction: DirectionType): {
+    static getComputedExitDeclaration(room: IFEntity, direction: ExitKey): {
         trait: ITrait;
         declaration: IComputedExitDeclaration;
     } | null;
@@ -3040,7 +3014,7 @@ export declare class RoomBehavior extends Behavior {
      *   topology governs (no declaration, no registered resolver — warned as a
      *   story wiring defect, ADR-295 D3 — or the resolver deferred)
      */
-    static resolveExit(room: IFEntity, direction: DirectionType, ctx: ExitResolverContext): ExitResolution;
+    static resolveExit(room: IFEntity, direction: ExitKey, ctx: ExitResolverContext): ExitResolution;
     /**
      * Check if room is outdoors
      */
@@ -3085,7 +3059,7 @@ export declare class RoomBehavior extends Behavior {
  * `isComputedExitCarrier`.
  * Owner: world-model (room domain, ADR-295 D3).
  */
-import type { DirectionType } from '../../constants/directions.js';
+import type { ExitKey } from '../../constants/directions.js';
 import type { ITrait } from '../trait.js';
 /**
  * The declared outcome space of one computed exit (ADR-295 D3).
@@ -3108,7 +3082,7 @@ export interface IComputedExitDeclaration {
  *   exposes statically; contributes no existence beyond the static map.
  */
 export interface IComputedExitCarrier {
-    computedExits?: Partial<Record<DirectionType, IComputedExitDeclaration>>;
+    computedExits?: Partial<Record<ExitKey, IComputedExitDeclaration>>;
     computedExitsAll?: IComputedExitDeclaration;
 }
 /**
@@ -3599,56 +3573,6 @@ export declare class LightSourceTrait implements ITrait {
      */
     detailWhenLit?: string;
     constructor(data?: Partial<LightSourceTrait>);
-}
-```
-
-### traits/exit/exitTrait
-
-```typescript
-import { ITrait } from '../trait.js';
-/**
- * Exit trait for entities that represent passages between locations.
- * Used for doors, passages, portals, and any custom exits like "xyzzy".
- *
- * `from`, `to` and `command` may each be unset while a story is still composing
- * the passage — the trait polices nothing (ADR-346 D7). `ExitBehavior` is where a
- * passage is required to be complete before it is used: `createBidirectional`
- * already refuses incomplete data of its own accord.
- *
- * This trait contains only data - all behavior is in ExitBehavior.
- */
-export declare class ExitTrait implements ITrait {
-    static readonly type: "exit";
-    readonly type: "exit";
-    /** Source location ID (an entity ID, not a name) — unset while unplaced. */
-    from?: string;
-    /** Destination location ID (an entity ID, not a name) — unset until the story supplies it. */
-    to?: string;
-    /** Standard direction (north, south, up, etc.) - optional */
-    direction?: string;
-    /** Command to use this exit (e.g., "go north", "enter portal", "xyzzy") — unset until named. */
-    command?: string;
-    /** Alternative commands that work for this exit */
-    aliases?: string[];
-    /** Whether this exit is visible to players */
-    visible: boolean;
-    /** Whether this exit appears in room descriptions */
-    listed: boolean;
-    /** Whether this exit works in reverse (bidirectional) */
-    bidirectional: boolean;
-    /** The reverse command if bidirectional */
-    reverseCommand?: string;
-    /** The reverse direction if bidirectional */
-    reverseDirection?: string;
-    /** Custom message when using this exit */
-    useMessage?: string;
-    /** Custom message when this exit is blocked */
-    blockedMessage?: string;
-    /** Whether this exit requires special conditions */
-    conditional: boolean;
-    /** Condition identifier (checked by behaviors) */
-    conditionId?: string;
-    constructor(data?: Partial<ExitTrait>);
 }
 ```
 
@@ -8533,7 +8457,7 @@ export declare class DeadlyRoomBehavior extends Behavior {
 import { IFEntity } from '../entities/if-entity.js';
 import { WallEntity, IWallSpec, IWallsSpec } from '../entities/wall-entity.js';
 import { TraitType } from '../traits/trait-types.js';
-import { DirectionType } from '../constants/directions.js';
+import { DirectionType, ExitKey } from '../constants/directions.js';
 import { type ISemanticEvent, type ISemanticEventSource } from '@sharpee/core';
 import { IDataStore } from './AuthorModel.js';
 import { ICapabilityData, ICapabilityRegistration } from './capabilities.js';
@@ -8883,7 +8807,7 @@ export interface IWorldModel {
     setPlayer(entityId: string): void;
     getEnding(): IStoryEnding | undefined;
     setEnding(ending: IStoryEnding): void;
-    connectRooms(room1Id: string, room2Id: string, direction: DirectionType, doorId?: string, options?: ConnectRoomsOptions): void;
+    connectRooms(room1Id: string, room2Id: string, direction: ExitKey, doorId?: string, options?: ConnectRoomsOptions): void;
     createDoor(displayName: string, opts: {
         room1Id: string;
         room2Id: string;
@@ -9242,7 +9166,7 @@ export declare class WorldModel implements IWorldModel {
      * trait's room pair disagrees with the rooms passed — the primitive owns
      * the invariant that DoorTrait and the exits never disagree.
      */
-    connectRooms(room1Id: string, room2Id: string, direction: DirectionType, doorId?: string, options?: ConnectRoomsOptions): void;
+    connectRooms(room1Id: string, room2Id: string, direction: ExitKey, doorId?: string, options?: ConnectRoomsOptions): void;
     /**
      * Create a door entity and wire it into both rooms' exit data.
      * The door is placed in room1 spatially (for scope resolution).
@@ -9702,6 +9626,139 @@ export declare class PresenceBehavior {
      * @returns The entities, doors first
      */
     static presentAt(roomId: string, world: WorldModel): IFEntity[];
+}
+```
+
+### world/TraversalBehavior
+
+```typescript
+/**
+ * TraversalBehavior — the one answer to "may this mover take this way now?"
+ *
+ * A system in ADR-379's sense: one rule over the whole world, consulted by
+ * every mover (the walking player, a steered vehicle, a pushed thing, an NPC)
+ * from one place, so that a gate added here is a gate for all of them. Before
+ * this module each mover carried its own copy of the gates and they
+ * disagreed (ADR-379 Context).
+ *
+ * The gates, in order (ADR-378 D0, D3): the way exists (an exit hidden by its
+ * `while` condition is absent); the way is not blocked (ADR-240's live key,
+ * else the stamped map); any door on the way is open and unlocked; the
+ * destination exists; the way admits the mover (ADR-366 D6 for a steered
+ * vehicle, ADR-378 D6 for a pushed thing), read from the exit's own `admits`
+ * when it has one, else the destination room's.
+ *
+ * Public interface: TraversalBehavior.wayFor, exitOf, isExitHidden,
+ *   isExitBlocked, blockedMessage, admitsMover; the key builders
+ *   exitHiddenKey, exitBlockedKey, exitMessageKey; the types TraversalMover,
+ *   Way, WayRefusal, PUSHING.
+ * Owner context: world-model — traversal (the system's home).
+ */
+import { IFEntity } from '../entities/if-entity.js';
+import { IExitInfo } from '../traits/room/roomTrait.js';
+import { IComputedExitDeclaration } from '../traits/room/computedExitContract.js';
+import type { ExitKey } from '../constants/directions.js';
+import type { WorldModel } from './WorldModel.js';
+/** The class word an `admits` list carries for a pushed thing (ADR-378 D6). */
+export declare const PUSHING = "pushing";
+/** Who is trying to take the way. */
+export type TraversalMover = {
+    kind: 'walker';
+    entity: IFEntity;
+} | {
+    kind: 'steered';
+    vehicle: IFEntity;
+} | {
+    kind: 'pushed';
+    thing: IFEntity;
+} | {
+    kind: 'npc';
+    entity: IFEntity;
+};
+/** Why a way refused. */
+export type WayRefusal = 'hidden' | 'no_exit' | 'blocked' | 'door_closed' | 'door_locked' | 'destination_missing' | 'not_admitted' | 'pushing_not_admitted';
+/** The query's answer. */
+export type Way = {
+    kind: 'exit';
+    key: ExitKey;
+    exit: IExitInfo;
+    destination: IFEntity;
+    door?: IFEntity;
+} | {
+    /** The way is a computed exit (ADR-295): its destination is drawn by the caller's one resolution. */
+    kind: 'computed';
+    key: ExitKey;
+    declaration: IComputedExitDeclaration;
+    exit: IExitInfo | null;
+} | {
+    kind: 'refused';
+    key: ExitKey;
+    reason: WayRefusal;
+    message?: string;
+    door?: IFEntity;
+};
+/** Derived key: is this way hidden now? (ADR-378 D3; registered by the story's `while` on the exit line) */
+export declare function exitHiddenKey(roomId: string, key: ExitKey): string;
+/** Derived key: is this way blocked now? (ADR-240; registered by the story's `is blocked` line) */
+export declare function exitBlockedKey(roomId: string, key: ExitKey): string;
+/** Derived key: the blocked way's refusal message, resolved at refusal time (ADR-240). */
+export declare function exitMessageKey(roomId: string, key: ExitKey): string;
+export declare class TraversalBehavior {
+    /**
+     * Whether the way is hidden: its `while` condition is registered and false.
+     * With nothing registered the way is not hidden.
+     *
+     * @param world - The live world
+     * @param room - The room the way leaves
+     * @param key - The way
+     */
+    static isExitHidden(world: WorldModel, room: IFEntity, key: ExitKey): boolean;
+    /**
+     * The exit for a way, or null when there is none or it is hidden (ADR-378 D3).
+     *
+     * @param world - The live world
+     * @param room - The room the way leaves
+     * @param key - The way
+     */
+    static exitOf(world: WorldModel, room: IFEntity, key: ExitKey): IExitInfo | null;
+    /**
+     * Whether the way is blocked: a registered evaluator is authoritative;
+     * with none, the stamped `RoomTrait.blockedExits` map applies.
+     *
+     * @param world - The live world
+     * @param room - The room the way leaves
+     * @param key - The way
+     */
+    static isExitBlocked(world: WorldModel, room: IFEntity, key: ExitKey): boolean;
+    /**
+     * The blocked way's message: the registered evaluator first, the trait map as fallback.
+     *
+     * @param world - The live world
+     * @param room - The room the way leaves
+     * @param key - The way
+     */
+    static blockedMessage(world: WorldModel, room: IFEntity, key: ExitKey): string | undefined;
+    /**
+     * Whether a way admits a mover that needs admitting: the exit's own
+     * `admits` list when it has one, else the destination room's (ADR-366 D6,
+     * ADR-378 D6). A walker and an NPC need no admitting.
+     *
+     * @param exit - The exit being taken
+     * @param destination - The room it leads to
+     * @param mover - Who is taking it
+     */
+    static admitsMover(exit: IExitInfo, destination: IFEntity, mover: TraversalMover): boolean;
+    /**
+     * The way for a mover out of a room by a key, or the refusal (ADR-378 D0).
+     *
+     * @param world - The live world
+     * @param room - The room the way leaves (must carry RoomTrait)
+     * @param key - The way: a compass direction or a passage key
+     * @param mover - Who is taking it
+     * @returns The exit and its destination; a computed declaration for the
+     *   caller to resolve once; or the refusal with its reason
+     */
+    static wayFor(world: WorldModel, room: IFEntity, key: ExitKey, mover: TraversalMover): Way;
 }
 ```
 
@@ -11191,7 +11248,7 @@ import type { ISemanticEvent, EntityId, RandomService } from '@sharpee/core';
 import type { IFEntity } from '../entities/if-entity.js';
 import type { ITrait } from '../traits/trait.js';
 import type { WorldModel } from '../world/WorldModel.js';
-import type { DirectionType } from '../constants/directions.js';
+import type { ExitKey } from '../constants/directions.js';
 import type { IExitInfo } from '../traits/room/roomTrait.js';
 /**
  * Context handed to an exit resolver at traversal time (ADR-295 D4).
@@ -11243,7 +11300,7 @@ export type ExitResolution = {
  * @param ctx - Live world, actor, and injected random service
  * @returns The resolution, or `undefined` to defer to static topology
  */
-export type ExitResolver = (room: IFEntity, trait: ITrait, direction: DirectionType, staticExit: IExitInfo | null, ctx: ExitResolverContext) => ExitResolution;
+export type ExitResolver = (room: IFEntity, trait: ITrait, direction: ExitKey, staticExit: IExitInfo | null, ctx: ExitResolverContext) => ExitResolution;
 ```
 
 ### capabilities/dialogue-selector-binding

@@ -7,6 +7,7 @@ import { describe, test, expect, beforeEach } from 'vitest';
 import { WorldModel, AuthorModel, TraitType, IFEntity, EntityType, IdentityTrait, RoomTrait, LightSourceTrait } from '@sharpee/world-model';
 import { StandardScopeResolver } from '../../../src/scope/scope-resolver';
 import { ScopeLevel } from '../../../src/scope/types';
+import { TEST_MARKER_TRAIT } from '../../test-utils';
 
 describe('Sensory Extensions', () => {
   let world: WorldModel;
@@ -30,17 +31,10 @@ describe('Sensory Extensions', () => {
     hallway.add({ type: TraitType.ROOM });
     hallway.add({ type: TraitType.IDENTITY, name: 'Hallway' });
 
-    // Connect the rooms
-    room.add({ 
-      type: TraitType.EXIT,
-      direction: 'north',
-      destination: hallway.id
-    });
-    hallway.add({
-      type: TraitType.EXIT,
-      direction: 'south',
-      destination: room.id
-    });
+    // An inert marker on each room (these fixtures never traverse; the
+    // retired exit-as-entity trait used to stand here, ADR-378 D1b)
+    room.add({ type: TEST_MARKER_TRAIT });
+    hallway.add({ type: TEST_MARKER_TRAIT });
 
     player = author.createEntity('Player', EntityType.ACTOR);
     player.add({ type: TraitType.ACTOR, isPlayer: true });

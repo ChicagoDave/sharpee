@@ -41,11 +41,12 @@
 import type { ExitResolver } from '../../capabilities/exit-resolver-binding.js';
 import type { WorldModel } from '../../world/WorldModel.js';
 import type { IFEntity } from '../../entities/if-entity.js';
-import type { DirectionType } from '../../constants/directions.js';
+import { isDirection, type DirectionType } from '../../constants/directions.js';
 import { TraitType } from '../trait-types.js';
 import { RoomTrait } from '../room/roomTrait.js';
 import { RoomBehavior } from '../room/roomBehavior.js';
 import { OpenableBehavior } from '../openable/openableBehavior.js';
+import { TraversalBehavior } from '../../world/TraversalBehavior.js';
 import { AboardTrait } from './aboardTrait.js';
 import { VehicleTrait, VehicleLineModel, VehicleOpenModel } from './vehicleTrait.js';
 import { cellOf, ExpanseTrait, isInsideExpanse, sameCell, type ExpanseSide, type ExpanseWind, type IExpanseCell } from '../expanse/expanseTrait.js';
@@ -480,7 +481,8 @@ export function sendVehicle(world: WorldModel, vehicle: IFEntity, destination: s
  */
 export const vehicleOutsideExitResolver: ExitResolver = (_room, trait, direction, _staticExit, ctx) => {
   const aboard = trait as AboardTrait;
-  const outside = aboard.outside[direction];
+  // A `to outside` exit is written with a compass word; a passage key names none.
+  const outside = isDirection(direction) ? aboard.outside[direction] : undefined;
   if (!outside) return undefined;
   const vehicle = ctx.world.getEntity(aboard.vehicleId);
   const location = ctx.world.getLocation(aboard.vehicleId);
@@ -668,10 +670,11 @@ function stepControlLine(world: WorldModel, vehicle: IFEntity, model: VehicleLin
 }
 
 /**
- * D5c: every `pace` turns on a heading, one room along the exit that way
- * while the exit exists, no closed door bars it, and the destination admits
- * the vehicle (D6); when it cannot, the heading clears and the vehicle is
- * stopped, once.
+ * D5c: every `pace` turns on a heading, one room along the way that way
+ * while traversal grants it to a steered vehicle (ADR-378 D0: the way
+ * exists and is not hidden or blocked, no closed or locked door bars it, and
+ * the destination admits the vehicle, D6); when it cannot, the heading
+ * clears and the vehicle is stopped, once.
  */
 function stepCompass(world: WorldModel, vehicle: IFEntity, model: Extract<NonNullable<VehicleTrait['model']>, { kind: 'compass' }>): VehicleStep | undefined {
   if (model.heading === null) return undefined;
@@ -680,18 +683,17 @@ function stepCompass(world: WorldModel, vehicle: IFEntity, model: Extract<NonNul
 
   const location = world.getLocation(vehicle.id);
   const room = location !== undefined ? world.getEntity(location) : undefined;
-  const exit = room?.has(TraitType.ROOM) ? RoomBehavior.getExit(room, model.heading as DirectionType) : null;
-  const destination = exit ? world.getEntity(exit.destination) : undefined;
-  const door = exit?.via !== undefined ? world.getEntity(exit.via) : undefined;
-  const doorShut = door !== undefined && door.has(TraitType.OPENABLE) && !OpenableBehavior.isOpen(door);
-  if (!destination || doorShut || !admitsVehicle(destination, vehicle)) {
+  const way = room !== undefined
+    ? TraversalBehavior.wayFor(world, room, model.heading as DirectionType, { kind: 'steered', vehicle })
+    : undefined;
+  if (way?.kind !== 'exit') {
     model.heading = null;
     model.turnsToStep = 0;
     return { kind: 'stopped' };
   }
-  world.moveEntity(vehicle.id, destination.id);
+  world.moveEntity(vehicle.id, way.destination.id);
   model.turnsToStep = model.pace;
-  return { kind: 'arrived', roomId: destination.id };
+  return { kind: 'arrived', roomId: way.destination.id };
 }
 
 /**

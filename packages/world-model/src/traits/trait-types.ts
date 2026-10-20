@@ -50,9 +50,6 @@ export const TraitType = {
   // Basic traits
   ACTOR: 'actor',
 
-  // New traits
-  EXIT: 'exit',
-  
   // Combat traits
   WEAPON: 'weapon',
   BREAKABLE: 'breakable',
@@ -151,7 +148,6 @@ export const TRAIT_CATEGORIES: Record<TraitType, TraitCategory> = {
   // Spatial
   [TraitType.DOOR]: TraitCategory.STANDARD,
   [TraitType.CLIMBABLE]: TraitCategory.INTERACTIVE,
-  [TraitType.EXIT]: TraitCategory.STANDARD,
   [TraitType.REGION]: TraitCategory.STANDARD,
   [TraitType.SCENE]: TraitCategory.STANDARD,
 

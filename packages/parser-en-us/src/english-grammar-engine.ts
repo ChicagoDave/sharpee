@@ -72,6 +72,9 @@ export class EnglishGrammarEngine extends GrammarEngine {
     // Try each rule
     for (const rule of orderedRules) {
       if (!rule.compiledPattern) continue;
+      // ADR-378 D5: a gated-off rule is not there — neither a match nor a
+      // failure, so the input falls through to the rules that remain.
+      if (rule.when && !rule.when(context)) continue;
 
       const result = this.tryMatchRuleWithFailure(rule, tokens, context);
 

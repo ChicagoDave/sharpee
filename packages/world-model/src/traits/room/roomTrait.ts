@@ -4,7 +4,7 @@ import { ITrait } from '../trait.js';
 import { TraitType } from '../trait-types.js';
 import { type EntityId } from '@sharpee/core';
 import { type SnippetMap } from '@sharpee/if-domain';
-import { DirectionType } from '../../constants/directions.js';
+import { ExitKey } from '../../constants/directions.js';
 
 /**
  * Map position hint for an exit (ADR-113).
@@ -26,17 +26,23 @@ export interface IExitInfo {
   via?: string;
   /** Optional map positioning hint (ADR-113) */
   mapHint?: IExitMapHint;
+  /**
+   * Who may pass this way beyond a walker (ADR-378 D6): steered vehicle ids
+   * and the class word `pushing`. Read by the traversal query before the
+   * room's own `admits` list; absent means the room's list decides.
+   */
+  admits?: string[];
 }
 
 export interface IRoomData {
   /** Whether this room has been visited by the player */
   visited?: boolean;
   
-  /** Exits from this room */
-  exits?: Partial<Record<DirectionType, IExitInfo>>;
-  
+  /** Exits from this room, by compass direction or passage key (ADR-378 D1a) */
+  exits?: Partial<Record<ExitKey, IExitInfo>>;
+
   /** Custom messages for blocked exits */
-  blockedExits?: Partial<Record<DirectionType, string>>;
+  blockedExits?: Partial<Record<ExitKey, string>>;
   
   /** Whether this is an outdoor location */
   outdoor?: boolean;
@@ -94,9 +100,11 @@ export interface IRoomData {
   tags?: string[];
 
   /**
-   * Ids of the vehicles this room admits (ADR-366 D6). Read when a
-   * vehicle steered by GO would land here; a room admits no vehicle by
-   * default.
+   * Who may arrive here beyond a walker (ADR-366 D6, ADR-378 D6): the ids
+   * of the steered vehicles this room admits, and the class word `pushing`
+   * when a pushed thing may be brought in. Read by the traversal query for
+   * every way into this room that carries no `admits` of its own; a room
+   * admits nothing by default.
    */
   admits?: string[];
 
@@ -140,8 +148,8 @@ export class RoomTrait implements ITrait, IRoomData {
   
   // RoomData properties
   visited: boolean;
-  exits: Partial<Record<DirectionType, IExitInfo>>;
-  blockedExits?: Partial<Record<DirectionType, string>>;
+  exits: Partial<Record<ExitKey, IExitInfo>>;
+  blockedExits?: Partial<Record<ExitKey, string>>;
   outdoor: boolean;
   requiresLight: boolean;
   isOutdoors: boolean;
@@ -173,7 +181,7 @@ export class RoomTrait implements ITrait, IRoomData {
   constructor(data: IRoomData = {}) {
     // Set defaults and merge with provided data
     this.visited = data.visited ?? false;
-    this.exits = data.exits ?? {} as Partial<Record<DirectionType, IExitInfo>>;
+    this.exits = data.exits ?? {} as Partial<Record<ExitKey, IExitInfo>>;
     this.blockedExits = data.blockedExits;
     this.outdoor = data.outdoor ?? false;
     this.requiresLight = data.requiresLight ?? false;  // Default to lit

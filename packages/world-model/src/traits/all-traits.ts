@@ -15,7 +15,6 @@ import { ContainerTrait } from './container/containerTrait.js';
 import { DoorTrait } from './door/doorTrait.js';
 import { ClimbableTrait } from './climbable/climbableTrait.js';
 import { EdibleTrait } from './edible/edibleTrait.js';
-import { ExitTrait } from './exit/exitTrait.js';
 import { IdentityTrait } from './identity/identityTrait.js';
 import { LightSourceTrait } from './light-source/lightSourceTrait.js';
 import { LockableTrait } from './lockable/lockableTrait.js';
@@ -48,7 +47,6 @@ export const Traits = {
   ContainerTrait,
   DoorTrait,
   EdibleTrait,
-  ExitTrait,
   IdentityTrait,
   LightSourceTrait,
   LockableTrait,
@@ -82,7 +80,6 @@ export type {
   ContainerTrait,
   DoorTrait,
   EdibleTrait,
-  ExitTrait,
   IdentityTrait,
   LightSourceTrait,
   LockableTrait,
@@ -116,7 +113,6 @@ export type AnyTrait =
   | ContainerTrait
   | DoorTrait
   | EdibleTrait
-  | ExitTrait
   | IdentityTrait
   | LightSourceTrait
   | LockableTrait
@@ -155,10 +151,6 @@ export function isDoorTrait(trait: any): trait is DoorTrait {
 
 export function isEdibleTrait(trait: any): trait is EdibleTrait {
   return trait?.type === 'edible';
-}
-
-export function isExitTrait(trait: any): trait is ExitTrait {
-  return trait?.type === 'exit';
 }
 
 export function isIdentityTrait(trait: any): trait is IdentityTrait {

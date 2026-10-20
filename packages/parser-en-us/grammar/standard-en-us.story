@@ -154,36 +154,33 @@ define action switching_off
     stop the device
     power off the device
 
+## ADR-378 D6: `push`, `shove` and `move` take a direction through the
+## `directions` block (ADR-267 D12), so the direction reaches the action as
+## `extras.direction`. The former literal lines (`move the target north`)
+## carried no direction at all — the word was consumed and nothing recorded it.
+
 define action pushing
   grammar
     push the target
     press the target
     shove the target
     move the target
-    move the target north
-    move the target n
-    move the target south
-    move the target s
-    move the target east
-    move the target e
-    move the target west
-    move the target w
-    move the target northeast
-    move the target ne
-    move the target northwest
-    move the target nw
-    move the target southeast
-    move the target se
-    move the target southwest
-    move the target sw
-    move the target up
-    move the target u
-    move the target down
-    move the target d
-    move the target in
-    move the target inside
-    move the target out
-    move the target outside
+    push the target the direction
+    shove the target the direction
+    move the target the direction
+  directions
+    north or n
+    south or s
+    east or e
+    west or w
+    northeast or ne
+    northwest or nw
+    southeast or se
+    southwest or sw
+    up or u
+    down or d
+    in or inside
+    out or outside
 
 define action pulling
   grammar

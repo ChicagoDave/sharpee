@@ -18,7 +18,6 @@ export * from './purchasable/index.js';
 export * from './diggable/index.js';
 export * from './readable/index.js';
 export * from './light-source/index.js';
-export * from './exit/index.js';
 export * from './climbable/index.js';
 export * from './scenery/index.js';
 export * from './night-vision/index.js';
