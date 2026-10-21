@@ -1,0 +1,15 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "You get into the coracle."
+        ]
+      },
+      "command": "enter coracle",
+      "id": "wentr001",
+      "type": "turn"
+    }
+  ],
+  "id": "wumproot"
+}

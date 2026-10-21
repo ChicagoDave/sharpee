@@ -1,0 +1,57 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "You set course for the Bottomless Pit."
+        ]
+      },
+      "command": "set course for the Bottomless Pit",
+      "id": "wcrse001",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes..."
+        ],
+        "notContains": [
+          "arrives"
+        ]
+      },
+      "command": "wait",
+      "id": "wwait005",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The coracle arrives at the Bottomless Pit."
+        ]
+      },
+      "command": "wait",
+      "id": "wwait006",
+      "locks": [
+        "the coracle reaches the Bottomless Pit"
+      ],
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The water drops away under the coracle and so do you, for a very long time."
+        ]
+      },
+      "command": "wait",
+      "ending": "pit-death",
+      "id": "wwait007",
+      "locks": [
+        "the hunt can be lost"
+      ],
+      "type": "turn"
+    }
+  ],
+  "id": "wumppitt",
+  "ordinal": 2,
+  "parent": "wumproot"
+}

@@ -1,0 +1,24 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "The arrow goes home. The Wumpus rears once out of the water, enormous, and goes down for good. The caves are quiet."
+        ],
+        "notContains": [
+          "Wumpus has you"
+        ]
+      },
+      "command": "shoot wumpus",
+      "ending": "wumpus-slain",
+      "id": "wshot007",
+      "locks": [
+        "the Wumpus can be slain"
+      ],
+      "type": "turn"
+    }
+  ],
+  "id": "wumpwinn",
+  "ordinal": 0,
+  "parent": "wumpeast"
+}

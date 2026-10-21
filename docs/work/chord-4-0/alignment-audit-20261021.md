@@ -152,4 +152,4 @@ The `eslint-disable-next-line no-console` pair in `roomBehavior.ts:283, 296` pre
 - The three ledger items of §2.
 - GH #601 (NPC movement onto `wayFor`), GH #608 (D4's comment versus ADR-249), GH #603–#607 (the UPPS conveyance findings), GH #609–#610 (the cone and the verb head) — filed, none blocking.
 - The objective's grades (`docs/objectives/chord-4-0.md` stays DRAFT and YELLOW until the window has a date).
-- A Wumpus expanse test story (David, 2026-10-21): a third `use expanses` exerciser, his content.
+- ~~A Wumpus expanse test story (David, 2026-10-21): a third `use expanses` exerciser, his content.~~ Written 2026-10-21 on David's "go" (session d7e942): `branch-stories/wumpus/` — the hunt as an open vehicle on an expanse, `./sharpee test branch-stories/wumpus` 37 cards, 69 assertions, 4 of 4 endings, 4 of 4 claims held at seed 42 (`docs/work/wumpus/`). It surfaced two platform gaps, filed and not fixed: GH #612 (a landmark room's `sight:` outlook is lost aboard the vehicle) and GH #613 (`the player's <counter>` compiles but fails at runtime).

@@ -1,0 +1,61 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "You steer the coracle west."
+        ]
+      },
+      "command": "steer west",
+      "id": "wster003",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Wumpus Caves",
+          "The Landing, close by, to the east."
+        ]
+      },
+      "command": "look",
+      "id": "wlook006",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The west wall of the cavern, running with water. Nothing passes it."
+        ]
+      },
+      "command": "wait",
+      "id": "wwait008",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The west wall of the cavern, running with water. Nothing passes it."
+        ],
+        "notContains": [
+          "You steer"
+        ]
+      },
+      "command": "steer west",
+      "id": "wster004",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You steer the coracle east."
+        ]
+      },
+      "command": "steer east",
+      "id": "wster005",
+      "type": "turn"
+    }
+  ],
+  "id": "wumpedge",
+  "ordinal": 3,
+  "parent": "wumproot"
+}

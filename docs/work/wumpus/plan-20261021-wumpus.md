@@ -45,5 +45,5 @@
 - **Deliverable**: wumpus.tests/ tree with manifest (seed 42) and at least a winning hunt, a pit death and an edge refusal, all derived by probing; wumpus.claims.chord locking the start state, the out-of-sight shot refusal, the win and the pit death; the audit's not-ready line updated
 - **Exit state**: `./sharpee test` on the story is green; claims hold; audit line reflects the story
 - **Demonstration**: run `./sharpee test` on branch-stories/wumpus; it must report all runs passing and all claims held
-- **Demonstrated**: 
-- **Status**: PENDING
+- **Demonstrated**: 2026-10-21 — `./sharpee test branch-stories/wumpus` (seed 42, 6 lines: shore/arrows, hunt, win, eaten, pit, edge, bats): "37 cards passing, 70 assertions passing", "Endings reached: 4 / 4", "claims: 4 of 4 held (seed 42)", every lock "held there" (the Wumpus can be slain at wumpeast turn 9; the coracle reaches the Bottomless Pit at wumppitt turn 4; the hunt can be lost at wumppitt turn 5; the bats carry the coracle to the Bone Hollow at wumpbats turn 11). The audit's line 155 in docs/work/chord-4-0/alignment-audit-20261021.md is struck through and replaced with the story's record. [verified: run this session after the last tree and claims edit]
+- **Status**: DONE

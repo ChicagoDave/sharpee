@@ -1,0 +1,35 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "Wumpus Caves",
+          "You can see a coracle and a Wumpus here.",
+          "The Echo Chamber, close by, to the west.",
+          "The Wumpus, in the distance, to the east.",
+          "The Bottomless Pit, on the horizon, to the northwest.",
+          "The Bone Hollow, on the horizon, to the northeast.",
+          "The Landing, on the horizon, to the west."
+        ]
+      },
+      "command": "look",
+      "id": "wlook004",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The water heaves, the coracle tips, and the Wumpus has you. It does not hurry.",
+          "The coracle comes alongside the Wumpus."
+        ]
+      },
+      "command": "wait",
+      "ending": "eaten",
+      "id": "wwait004",
+      "type": "turn"
+    }
+  ],
+  "id": "wumpeatn",
+  "ordinal": 1,
+  "parent": "wumpeast"
+}
