@@ -1,7 +1,7 @@
 # Session Plan: Wumpus Caves, a third `use expanses` exerciser
 
 **Created**: 2026-10-21
-**Plan Status**: ACTIVE
+**Plan Status**: DONE
 **Overall scope**: Hunt the Wumpus written in Chord at branch-stories/wumpus/ (wumpus.story, wumpus.config.json with a fresh ifid, wumpus.claims.chord, wumpus.tests/ with manifest seed 42), a dedicated test story like branch-stories/upps. Story-level only; any `packages/` change is discussed with David first.
 **Bounded contexts touched**: Chord story language (expanse, open vehicle, define action, kill/win/lose), branch-tester tree documents. No platform code.
 **Key domain language**: expanse, landmark, drift, sight bands (close by / in the distance / on the horizon), open vehicle, `seen from afar`, `floats`
