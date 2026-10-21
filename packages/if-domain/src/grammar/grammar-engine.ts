@@ -496,7 +496,7 @@ export abstract class GrammarEngine {
               for (const alias of aliases) {
                 let builder = engine.createBuilder(tier).define(alias);
                 builder = builder.mapsTo(actionId);
-                builder = builder.withDefaultSemantics({ direction: canonical as SemanticProperties['direction'] });
+                builder = builder.withDefaultSemantics({ direction: canonical });
                 if (gate) builder = builder.when(gate);
                 builder.build();
               }

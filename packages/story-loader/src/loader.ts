@@ -1717,12 +1717,7 @@ export class ChordStory implements Story {
         // the old 150/140 priorities collapsed into that single tier.
         const slotted = grammar.forAction(actionId);
         if (gate) slotted.when(gate);
-        if (group.defaults) {
-          // The cast is deliberate: `means` keys are author vocabulary and
-          // direction words are per-action vocabulary (ship directions,
-          // D12) — both wider than SemanticProperties' compass-typed union.
-          slotted.withDefaultSemantics(group.defaults as unknown as Partial<SemanticProperties>);
-        }
+        if (group.defaults) slotted.withDefaultSemantics(group.defaults);
         for (const text of group.texts) slotted.fullPattern(text);
         for (const constraint of action.constraints) {
           const predicate = SCOPE_REQUIREMENT_PREDICATES[constraint.requirement];
@@ -1783,8 +1778,7 @@ export class ChordStory implements Story {
         return !(way.kind === 'refused' && (way.reason === 'hidden' || way.reason === 'no_exit'));
       };
       const rule = grammar.forAction('if.action.going');
-      // The cast is deliberate: a passage key is wider than the compass-typed union.
-      rule.withDefaultSemantics({ direction: key } as unknown as Partial<SemanticProperties>);
+      rule.withDefaultSemantics({ direction: key });
       rule.when(gate);
       for (const form of forms) rule.fullPattern(form);
       rule.build();

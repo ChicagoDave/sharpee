@@ -198,6 +198,15 @@ const PINNED = {
   // on the unpublished 4.0 surface — no bump. Re-pinned 2026-10-20 (same
   // session) for ADR-378 D6b, the thing's `pushing … end pushing` block of
   // room pairs — additive, no bump.
+  // Ready for the bump (2026-10-21, session ca314d, Chord 4.0 plan Phase
+  // 18): the hash below is the 4.0 surface as the evidence run measured it.
+  // Phases 15–17 (ADR-366's UPPS conveyances, ADR-367's lock and its
+  // gesture) changed no grammar — a locked claim is an ordinary `claim`
+  // block, and the card's `locks` pin is tree data, not Chord. The publish
+  // is David's, with no date: when it comes, raise CHORD_LANGUAGE_VERSION
+  // to 4.0.0 (ADR-359 and ADR-361 make it a MAJOR), set `languageVersion`
+  // below to match, and leave this hash as it stands unless the grammar
+  // moved in between.
   ebnfSha256: 'f12d98529ddbf622f843d53cae723eee73dd0367824354f480d951fe37ae410e',
 };
 

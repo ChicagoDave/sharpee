@@ -2,7 +2,7 @@
 
 Every trait type defined by `@sharpee/world-model`. A trait is a unit of state and
 capability you `add` to an entity. Generated from the platform's public `TraitType`
-map; 40 traits.
+map; 45 traits.
 
 | Trait type | Description |
 |---|---|
@@ -21,12 +21,16 @@ map; 40 traits.
 | `enterable` | The player can get inside or onto it. |
 | `equipped` | Currently equipped or wielded. |
 | `exit` | A directional exit object. |
+| `expanse` | An open space a vehicle moves through by position rather than by exits (`use expanses`). |
+| `flammable` | Can be set alight, with or without a tool. |
 | `identity` | Name, description, aliases, and article — every entity's basic identity. |
+| `if.trait.backdrop` | One scenery thing present in several rooms at once. |
 | `if.trait.acoustic` | Emits or carries sound (acoustic model). |
 | `if.trait.acoustic_dampener` | Dampens sound passing through it. |
 | `if.trait.concealed_state` | Tracks whether the object is currently concealed. |
 | `if.trait.concealment` | Conceals other objects. |
 | `if.trait.listener` | Reacts to sounds it can hear. |
+| `if.trait.night_vision` | Sees in the dark. |
 | `lightSource` | Provides light; banishes darkness when lit. |
 | `lockable` | Can be locked and unlocked with a key. |
 | `moveableScenery` | Scenery that can be moved to reveal something. |
@@ -34,6 +38,7 @@ map; 40 traits.
 | `openInventory` | Its contents are visible without opening it. |
 | `openable` | Can be opened and closed. |
 | `pullable` | Can be pulled. |
+| `purchasable` | Has a price and can be bought. |
 | `pushable` | Can be pushed. |
 | `readable` | Has text the player can read. |
 | `region` | Groups rooms into a named region. |
