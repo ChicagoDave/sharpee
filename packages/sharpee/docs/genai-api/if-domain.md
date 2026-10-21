@@ -1891,8 +1891,16 @@ export interface SemanticProperties {
     manner?: 'normal' | 'careful' | 'careless' | 'forceful' | 'stealthy' | 'quick';
     /** Spatial relationship for placement actions */
     spatialRelation?: 'in' | 'on' | 'under' | 'behind' | 'beside' | 'above' | 'below';
-    /** Direction for movement */
-    direction?: 'north' | 'south' | 'east' | 'west' | 'up' | 'down' | 'northeast' | 'northwest' | 'southeast' | 'southwest' | 'in' | 'out';
+    /**
+     * The direction a movement rule carries, as the action's own vocabulary
+     * names it: a compass word (`world-model`'s `DirectionType`, `in` and
+     * `out` included), a passage key (`passage:<name>`, ADR-378 D1 — a way
+     * answered by a custom command rather than a compass word), or a ship
+     * direction under `use sailing` (`port`, `starboard`, `ahead`, ADR-375).
+     * The word is per action, so the contract does not close the set; the
+     * consumer that reads it resolves it against the ways it knows.
+     */
+    direction?: string;
     /** Whether the preposition was implicit */
     implicitPreposition?: boolean;
     /** Whether a direction was implicit */

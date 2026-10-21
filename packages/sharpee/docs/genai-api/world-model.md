@@ -6104,9 +6104,10 @@ export interface Lookout extends ExpansePlace {
 }
 /**
  * The lookout of an actor (D6, D9): their vehicle's place and sight when
- * aboard an open vehicle in an expanse, their own place beside the open
- * vehicles of their cell when out of it, or their landmark room's row and
- * outlook. Undefined when the actor is positioned in no expanse.
+ * aboard an open vehicle under way in an expanse, their own place beside
+ * the open vehicles of their cell when out of it, or their landmark room's
+ * row and outlook — aboard a vehicle at that landmark too. Undefined when
+ * the actor is positioned in no expanse.
  *
  * @param world - The world model
  * @param actor - The looker
