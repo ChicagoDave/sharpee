@@ -43,6 +43,8 @@ emitted rule **shape** (ADR-235 D2, applied to grammar). Every construct below i
 
 ### D1 — D15 lands: one slot production, `the <name>`, in both constructs
 
+*(Extended by ADR-380 D2/D2a, 2026-10-21: in a passage, which takes no noun, `the` is a literal word; in a block that takes nouns, an article inside `[…]` is a literal (`shoot [the] arrow at the target`), and an unused `define action` slot is `analysis.slot-unused`. `the <name>` stays the one slot spelling.)*
+
 The two EBNF productions converge on one (a simplification — two rules become one):
 
 ```
