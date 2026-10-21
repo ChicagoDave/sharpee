@@ -6,7 +6,8 @@
           "The arrow goes home. The Wumpus rears once out of the water, enormous, and goes down for good. The caves are quiet."
         ],
         "notContains": [
-          "Wumpus has you"
+          "Wumpus has you",
+          "can't see"
         ]
       },
       "command": "shoot wumpus",

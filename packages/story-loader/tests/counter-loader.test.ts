@@ -159,6 +159,47 @@ describe('raise / lower runtime mutation (ADR-264 D2)', () => {
   });
 });
 
+describe("the player's <counter> resolves to the player character's counter (GH #613)", () => {
+  const ROLE_STORY = `story
+  title: Survive
+  authors:
+    T
+  id: survive
+  story-version: 0.0.1
+
+create the Camp
+  a room
+
+  A camp.
+
+  on every turn while the player's arrows is at least 1
+    lower the player's arrows by 1
+  end on
+
+create Alex
+  a person
+  playable
+  starts in the Camp
+  counter arrows starts 3
+
+  You.
+
+before the game starts
+  change the player to Alex
+end before
+`;
+
+  it('reads and lowers the counter on the character holding the role, and the gate stops at zero', () => {
+    const { world, daemons } = loadDaemons(ROLE_STORY);
+    expect(world.getStateValue(counterKey('arrows', 'alex'))).toBe(3);
+    tick(daemons, world, 1); expect(world.getStateValue(counterKey('arrows', 'alex'))).toBe(2);
+    tick(daemons, world, 2); expect(world.getStateValue(counterKey('arrows', 'alex'))).toBe(1);
+    tick(daemons, world, 3); expect(world.getStateValue(counterKey('arrows', 'alex'))).toBe(0);
+    tick(daemons, world, 4); expect(world.getStateValue(counterKey('arrows', 'alex'))).toBe(0); // the gate held it
+    expect(world.getStateValue(counterKey('arrows'))).toBeUndefined(); // never a story-global
+  });
+});
+
 describe('set <tally> to <n> runtime mutation (ADR-325 D4)', () => {
   it('assigns absolutely, regardless of the current value', () => {
     const { world, daemons } = loadDaemons(

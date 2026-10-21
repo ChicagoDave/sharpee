@@ -177,6 +177,71 @@ describe('possessive counter reference — singular and plural owners (GH #305)'
   });
 });
 
+describe("the player's <counter> — the role reads the playable's counter (GH #613)", () => {
+  const errs = (src: string) => compile(src).diagnostics.filter((d) => d.severity === 'error').map((d) => d.code);
+  const lowered = (src: string) => {
+    const r = compile(src);
+    const e = r.diagnostics.filter((d) => d.severity === 'error');
+    if (e.length) throw new Error(e.map((d) => `${d.code}: ${d.message}`).join('\n'));
+    return r.ir!;
+  };
+  // A second story shape: the playable carries the counter, and a camp rule
+  // reads and lowers it through the role.
+  const roleStory = (counterLine: string, secondPlayable = '') => `story
+  title: Survive
+  authors:
+    T
+  id: survive
+  story-version: 0.0.1
+
+create the Camp
+  a room
+
+  A cold camp.
+
+  on every turn while the player's arrows is at least 1
+    lower the player's arrows by 1
+  end on
+
+create Alex
+  a person
+  playable
+  starts in the Camp
+${counterLine}
+  You.
+${secondPlayable}
+before the game starts
+  change the player to Alex
+end before
+`;
+
+  it('lowers a read and a mutation through the role to the counter, not a trait field', () => {
+    const ir = lowered(roleStory('  counter arrows starts 5\n'));
+    const camp = ir.entities.find((e) => e.id === 'camp')!;
+    const json = JSON.stringify(camp);
+    expect(json).toContain('"kind":"counter","name":"arrows","owner":{"kind":"player"}');
+    expect(json).not.toContain('"kind":"field"');
+  });
+
+  it('rejects the role read when no playable declares the counter', () => {
+    const codes = errs(roleStory(''));
+    expect(codes).toContain('analysis.unknown-counter');
+  });
+
+  it('rejects the role read when a second playable lacks the counter the first declares', () => {
+    const second = `
+create Brook
+  a person
+  playable
+  starts in the Camp
+
+  Also you, sometimes.
+`;
+    expect(errs(roleStory('  counter arrows starts 5\n', second))).toContain('analysis.unknown-counter');
+    expect(errs(roleStory('  counter arrows starts 5\n', second.replace('  starts in the Camp\n', '  starts in the Camp\n  counter arrows starts 2\n')))).toEqual([]);
+  });
+});
+
 describe('set <tally> to <n> — the one absolute write (ADR-325 D4)', () => {
   const errs = (src: string) => compile(src).diagnostics.filter((d) => d.severity === 'error').map((d) => d.code);
   const lowered = (src: string) => {

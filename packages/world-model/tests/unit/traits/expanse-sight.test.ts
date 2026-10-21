@@ -135,6 +135,21 @@ describe('sight in an expanse (ADR-376 D6)', () => {
     expect(inSight(world, player, marigold)).toBe(false);
   });
 
+  it('aboard an open vehicle at a landmark, the looker has the landmark room\'s outlook (GH #612)', () => {
+    // At a landmark the vehicle holds no position (D5): the Marigold lies
+    // in Port Royal, the player still aboard her.
+    (marigold.get(VehicleTrait)!.model as VehicleOpenModel).position = null;
+    world.moveEntity(marigold.id, portRoyal.id);
+    const skiff = ship('the skiff', 55, 250, 5);
+    expect(lookoutOf(world, player)).toMatchObject({ cell: { x: 40, y: 250 }, sight: 20 });
+    expect(sightingOf(world, lookoutOf(world, player)!, skiff)).toMatchObject({ distance: 15, band: 'on-the-horizon', direction: 'EAST' });
+    expect(inSight(world, player, skiff)).toBe(true);
+    // Moored at a landmark without `sight:`, the vehicle's own sight does not apply either.
+    world.moveEntity(marigold.id, azores.id);
+    expect(lookoutOf(world, player)).toMatchObject({ sight: 0 });
+    expect(inSight(world, player, skiff)).toBe(false);
+  });
+
   it('a player in an ordinary room has no lookout', () => {
     const inn = room('the inn');
     world.moveEntity(player.id, inn.id);

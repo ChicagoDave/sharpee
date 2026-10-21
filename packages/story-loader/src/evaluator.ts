@@ -663,6 +663,8 @@ export class Evaluator {
         if (value.owner) {
           if (value.owner.kind === 'entity') ownerId = value.owner.id;
           else if (value.owner.kind === 'it') ownerId = ctx.it ?? null;
+          // GH #613: the role reads the current player character's counter.
+          else if (value.owner.kind === 'player') ownerId = this.ids.irIdOf(this.playerId(ctx.world)) ?? null;
         }
         const key = counterKey(value.name, ownerId ?? undefined);
         return Number(ctx.world.getStateValue(key) ?? 0);

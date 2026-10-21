@@ -3,29 +3,53 @@
     {
       "assertions": {
         "contains": [
-          "Wumpus Caves",
-          "You can see a coracle and a Wumpus here.",
-          "The Echo Chamber, close by, to the west.",
+          "Echo Chamber",
+          "Nothing lives here but the echo.",
+          "In the coracle you see a Hunter.",
           "The Wumpus, in the distance, to the east.",
-          "The Bottomless Pit, on the horizon, to the northwest.",
-          "The Bone Hollow, on the horizon, to the northeast.",
-          "The Landing, on the horizon, to the west."
+          "The Bottomless Pit, in the distance, to the northwest.",
+          "The Landing, in the distance, to the west.",
+          "The Bone Hollow, on the horizon, to the northeast."
         ]
       },
       "command": "look",
-      "id": "wlook004",
+      "id": "wlook003",
       "type": "turn"
     },
     {
       "assertions": {
         "contains": [
-          "The water heaves, the coracle tips, and the Wumpus has you. It does not hurry.",
-          "The coracle comes alongside the Wumpus."
+          "The arrow goes out across the water and is gone. Somewhere in the dark, something snorts."
+        ],
+        "notContains": [
+          "can't see",
+          "Wumpus has you"
         ]
       },
-      "command": "wait",
+      "command": "shoot wumpus",
+      "id": "wshot006",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You steer the coracle east."
+        ]
+      },
+      "command": "steer east",
+      "id": "wster002",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The arrow goes out across the water and is gone.",
+          "The water heaves, the coracle tips, and the Wumpus has you. It does not hurry."
+        ]
+      },
+      "command": "shoot wumpus",
       "ending": "eaten",
-      "id": "wwait004",
+      "id": "wshot008",
       "type": "turn"
     }
   ],

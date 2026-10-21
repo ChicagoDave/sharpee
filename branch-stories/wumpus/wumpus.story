@@ -223,11 +223,11 @@ define action shooting
     fire at the target
   the target must be visible
   refuse without target: shoot-what
-  refuse when the Hunter's arrows is 0: no-arrows
-  lower the Hunter's arrows by 1
+  refuse when the player's arrows is 0: no-arrows
+  lower the player's arrows by 1
   win wumpus-slain when the Wumpus is in the distance
   phrase arrow-misses when the Wumpus is not in the distance
-  lose out-of-arrows when the Hunter's arrows is 0
+  lose out-of-arrows when the player's arrows is 0
 
   phrases en-US
     shoot-what:

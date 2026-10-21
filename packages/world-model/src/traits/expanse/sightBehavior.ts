@@ -41,9 +41,10 @@ export interface Lookout extends ExpansePlace {
 
 /**
  * The lookout of an actor (D6, D9): their vehicle's place and sight when
- * aboard an open vehicle in an expanse, their own place beside the open
- * vehicles of their cell when out of it, or their landmark room's row and
- * outlook. Undefined when the actor is positioned in no expanse.
+ * aboard an open vehicle under way in an expanse, their own place beside
+ * the open vehicles of their cell when out of it, or their landmark room's
+ * row and outlook — aboard a vehicle at that landmark too. Undefined when
+ * the actor is positioned in no expanse.
  *
  * @param world - The world model
  * @param actor - The looker
@@ -52,8 +53,12 @@ export function lookoutOf(world: WorldModel, actor: IFEntity): Lookout | undefin
   const vehicle = getVehicleAboard(world, actor.id);
   const model = vehicle?.get(VehicleTrait)?.model;
   if (vehicle && model?.kind === 'open') {
+    // Under way, the vehicle's cell and sight. At a landmark the vehicle
+    // holds no position (D5), so the looker is in the landmark room and
+    // sees from its row with the room's own outlook, as any looker there
+    // does — the room branch below (GH #612).
     const place = placeOf(world, vehicle);
-    return place ? { ...place, sight: model.sight } : undefined;
+    if (place) return { ...place, sight: model.sight };
   }
   const own = placeOf(world, actor);
   if (own) {

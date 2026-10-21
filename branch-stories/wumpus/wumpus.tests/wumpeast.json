@@ -46,41 +46,6 @@
       "command": "wait",
       "id": "wwait003",
       "type": "turn"
-    },
-    {
-      "assertions": {
-        "contains": [
-          "Echo Chamber",
-          "Nothing lives here but the echo."
-        ],
-        "notContains": [
-          "in the distance",
-          "on the horizon"
-        ]
-      },
-      "command": "look",
-      "id": "wlook003",
-      "type": "turn"
-    },
-    {
-      "assertions": {
-        "contains": [
-          "You can't see any such thing."
-        ]
-      },
-      "command": "shoot wumpus",
-      "id": "wshot006",
-      "type": "turn"
-    },
-    {
-      "assertions": {
-        "contains": [
-          "You steer the coracle east."
-        ]
-      },
-      "command": "steer east",
-      "id": "wster002",
-      "type": "turn"
     }
   ],
   "id": "wumpeast",

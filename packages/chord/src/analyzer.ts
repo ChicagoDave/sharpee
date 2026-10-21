@@ -6660,6 +6660,12 @@ export class Analyzer {
               stmt.span,
             );
           }
+        } else if (owner.kind === 'player') {
+          // GH #613: the role may move, so the counter must be on every playable.
+          const lacking = this.playableLackingCounter(counter);
+          if (lacking !== null) {
+            this.diagnostics.error('analysis.unknown-counter', `\`${counter}\` is not a counter of \`${lacking}\`, which can hold the player role.`, stmt.span);
+          }
         } else if (ownerId !== null) {
           const set = this.entityCounterNames.get(ownerId);
           if (!set || !set.has(counter)) {
@@ -7229,9 +7235,9 @@ export class Analyzer {
         const base = this.possessiveBase(expr, scope);
         let ownerId: string | null = null;
         if (base.kind === 'entity') ownerId = base.id;
-        else if (base.kind === 'player') ownerId = 'player';
+        else if (base.kind === 'player') ownerId = 'player'; // the player-owned timer key (ADR-325 D3d)
         else if (base.kind === 'it') ownerId = scope.owner?.id ?? null;
-        if (ownerId !== null && this.entityCounterNames.get(ownerId)?.has(field)) {
+        if (this.ownsCounter(base, ownerId, field)) {
           return { kind: 'counter', name: field, owner: base };
         }
         if (ownerId !== null && this.timers.has(`${ownerId}.${field}`)) {
@@ -7956,6 +7962,30 @@ export class Analyzer {
    * treats as "no location".
    */
   /**
+   * Does this owner value carry the named counter (ADR-264 D3)? An entity
+   * or `it` owner by its registry; the player role (GH #613) when every
+   * `playable` character declares it, since the role may move to any of them.
+   */
+  private ownsCounter(owner: IRValue, ownerId: string | null, counter: string): boolean {
+    if (owner.kind === 'player') return this.playableLackingCounter(counter) === null;
+    return ownerId !== null && (this.entityCounterNames.get(ownerId)?.has(counter) ?? false);
+  }
+
+  /**
+   * The first `playable` character that lacks the named counter, or null
+   * when every one declares it. With no playable character at all the role
+   * has no holder, reported as `player`.
+   */
+  private playableLackingCounter(counter: string): string | null {
+    const playable = [...this.byId.values()].filter((sym) => isPlayableDecl(sym.decl));
+    if (playable.length === 0) return 'player';
+    for (const sym of playable) {
+      if (!this.entityCounterNames.get(sym.id)?.has(counter)) return sym.id;
+    }
+    return null;
+  }
+
+  /**
    * Is this value a declared counter (ADR-264) — a bare name in the story
    * registry, or `<entity>'s <name>` / `its <name>` in the owner's? Returns
    * the counter name and owner value, or null when it names no counter.
@@ -7966,7 +7996,7 @@ export class Analyzer {
       const counter = target.field.join(' ');
       const owner = this.possessiveBase(target, scope);
       const ownerId = owner.kind === 'entity' ? owner.id : owner.kind === 'it' ? scope.owner?.id ?? null : null;
-      if (ownerId !== null && this.entityCounterNames.get(ownerId)?.has(counter)) return { counter, owner };
+      if (this.ownsCounter(owner, ownerId, counter)) return { counter, owner };
       return null;
     }
     const counter = target.kind === 'ref' ? target.ref.words.join(' ') : target.kind === 'bare' ? target.words.join(' ') : null;
