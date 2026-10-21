@@ -40,6 +40,9 @@
       },
       "command": "east",
       "id": "qh80o65s",
+      "locks": [
+        "the player is in the Loading Dock"
+      ],
       "type": "turn"
     },
     {
@@ -116,6 +119,9 @@
       },
       "command": "down",
       "id": "a374dwn1",
+      "locks": [
+        "the player is in the Cable Trench"
+      ],
       "type": "turn"
     }
   ],

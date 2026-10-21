@@ -64,6 +64,11 @@ export type {
   DerivedBranchGap,
   DerivedEndingGap,
   DerivedRunSummaryEvent,
+  ClaimVerdictStatus,
+  ClaimSettledBy,
+  ClaimLockPin,
+  ClaimResultEvent,
+  ClaimsSummaryEvent,
   RunEndEvent,
   RunEvent,
   WorldEntityRef,
@@ -82,6 +87,8 @@ export {
   isCoverageEvent,
   isDerivedBranchEvent,
   isDerivedRunSummaryEvent,
+  isClaimResultEvent,
+  isClaimsSummaryEvent,
   isRunEndEvent,
   isRunEvent,
 } from './run-events.js';
@@ -108,3 +115,15 @@ export {
   isRunEndRecord,
   isTestResultRecord,
 } from './test-results.js';
+
+// `sharpee claim --json` — the lock gesture's wire between the CLI and the
+// Testing tab (ADR-367 D7).
+export type {
+  ClaimJsonWhere,
+  ClaimOfferOutput,
+  ClaimProposalOutput,
+  ClaimWrittenOutput,
+  ClaimErrorOutput,
+  ClaimJsonOutput,
+} from './claim-output.js';
+export { isClaimJsonOutput } from './claim-output.js';

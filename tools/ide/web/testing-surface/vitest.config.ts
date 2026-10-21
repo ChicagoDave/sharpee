@@ -27,6 +27,14 @@ export default defineConfig({
         __dirname,
         '../../../../packages/branch-tester/src/tree-document.ts',
       ),
+      '@sharpee/branch-tester/claim-report': resolve(
+        __dirname,
+        '../../../../packages/branch-tester/src/claims/claim-report.ts',
+      ),
+      '@sharpee/ide-protocol/claim-output': resolve(
+        __dirname,
+        '../../../../packages/ide-protocol/src/claim-output.ts',
+      ),
       '@sharpee/transcript-tester/assertion-core': resolve(
         __dirname,
         '../../../../packages/transcript-tester/src/assertion-core.ts',

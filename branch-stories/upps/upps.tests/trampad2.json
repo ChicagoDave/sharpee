@@ -54,6 +54,9 @@
       },
       "command": "wait",
       "id": "tramwat1",
+      "locks": [
+        "the player is in the Piazzi Platform"
+      ],
       "type": "turn"
     },
     {

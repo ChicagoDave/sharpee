@@ -51,6 +51,9 @@
       },
       "command": "north",
       "id": "axckc2h1",
+      "locks": [
+        "the player is in the Cockpit"
+      ],
       "type": "turn"
     },
     {

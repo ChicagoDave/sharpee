@@ -57,6 +57,9 @@
       },
       "command": "west",
       "id": "ogm92oz8",
+      "locks": [
+        "the player is in the Airlock"
+      ],
       "type": "turn"
     },
     {
@@ -129,6 +132,9 @@
       },
       "command": "exit",
       "id": "tpyumtv3",
+      "locks": [
+        "the player is in the Landing Pad"
+      ],
       "type": "turn"
     },
     {

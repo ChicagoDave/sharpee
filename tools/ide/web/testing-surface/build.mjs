@@ -28,6 +28,8 @@ const autoAssertion = resolve(repoRoot, 'packages/branch-tester/src/auto-asserti
 const runEvents = resolve(repoRoot, 'packages/ide-protocol/src/run-events.ts');
 const btTypes = resolve(repoRoot, 'packages/branch-tester/src/types.ts');
 const btTreeDocument = resolve(repoRoot, 'packages/branch-tester/src/tree-document.ts');
+const btClaimReport = resolve(repoRoot, 'packages/branch-tester/src/claims/claim-report.ts');
+const claimOutput = resolve(repoRoot, 'packages/ide-protocol/src/claim-output.ts');
 // The assertion core the synthesis module re-exports from (ADR-340 D1) —
 // browser-safe by construction, and from source for the same reason.
 const assertionCore = resolve(repoRoot, 'packages/transcript-tester/src/assertion-core.ts');
@@ -54,6 +56,8 @@ const options = {
     '@sharpee/branch-tester/auto-assertion': autoAssertion,
     '@sharpee/branch-tester/types': btTypes,
     '@sharpee/branch-tester/tree-document': btTreeDocument,
+    '@sharpee/branch-tester/claim-report': btClaimReport,
+    '@sharpee/ide-protocol/claim-output': claimOutput,
     '@sharpee/transcript-tester/assertion-core': assertionCore,
     '@sharpee/story-loader/pin-grammar': pinGrammar,
     '@sharpee/ide-protocol/run-events': runEvents,

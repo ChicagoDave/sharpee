@@ -16,7 +16,7 @@ import { compile, compileClaims, type StoryIR } from '@sharpee/chord';
 import { createStory } from '@sharpee/story-loader';
 import { assembleGame } from '@sharpee/bootstrap';
 import { freshFragmentWith, pinLockOnCard, proposeLock, spliceLockIntoFragment, type LockGame } from '../src/claims/claim-lock.js';
-import { emptyTreeDocument, segmentTree, assembleTree, type TreeDocument } from '../src/tree-document.js';
+import { emptyTreeDocument, segmentTree, assembleTree, turnOfCard, type TreeDocument } from '../src/tree-document.js';
 import { flattenTreeLines } from '../src/tree-walker.js';
 
 const SEED = 1209;
@@ -54,7 +54,7 @@ function tree(): TreeDocument {
 }
 
 const compileCandidate = (block: string) => compileClaims(SOURCE, block, { claimsFile: 'claim-bits-fixture.claims.chord' });
-const request = (line: string, extra: { turn?: number; fact?: string; name?: string } = {}) =>
+const request = (line: string, extra: { turn?: number; fact?: string; name?: string; needs?: { rooms?: string[]; things?: string[]; verbs?: string[] } } = {}) =>
   proposeLock({ ir: IR, document: tree(), line, loadGame, compileCandidate, date: '2026-10-20', ...extra });
 
 describe('the lines of the tree carry their prefix turn counts', () => {
@@ -180,5 +180,30 @@ describe('the writer (D4) and the pin (D5)', () => {
     expect(read.status).toBe('ok');
     if (read.status === 'ok') expect(read.document.cards[3].locks).toEqual(['the player is in the Landing']);
     expect(() => pinLockOnCard(document, 'nocard00', 'x')).toThrow(/no card nocard00/);
+  });
+});
+
+describe('turnOfCard — a card\'s turn as a player counts it (ADR-367)', () => {
+  it('counts typed turns from the root through the card on its own line; the boot look and the opening have none', () => {
+    const document = tree();
+    expect(turnOfCard(document, 'card0002')).toBe(1);
+    expect(turnOfCard(document, 'card0003')).toBe(2);
+    expect(turnOfCard(document, 'card0010')).toBe(2);
+    expect(turnOfCard(document, 'card0011')).toBe(3);
+    expect(turnOfCard(document, 'card0001')).toBeUndefined();
+    expect(turnOfCard(document, 'card0000')).toBeUndefined();
+    expect(turnOfCard(document, 'nowhere0')).toBeUndefined();
+  });
+});
+
+describe('the author\'s lists (D7): `needs` replaces the proposal\'s lists, written as given', () => {
+  it('writes the given rooms, things and verbs, names what the cone would trim, and refuses a thing the story lacks', async () => {
+    const proposal = await request('mainline', { fact: 'the player is in the Landing', needs: { rooms: ['the Hall', 'the Landing'], things: ['the note'], verbs: ['read', 'look'] } });
+    expect(proposal.rooms).toEqual(['the Hall', 'the Landing']);
+    expect(proposal.things).toEqual(['the note']);
+    expect(proposal.trimmed).toEqual(['the note']);
+    expect(proposal.verbs).toEqual(['read', 'look']);
+    expect(proposal.block).toBe('  claim the player is in the Landing\n    the player is in the Landing\n    needs rooms: the Hall, the Landing\n    needs things: the note\n    needs verbs: read, look\n');
+    await expect(request('mainline', { fact: 'the player is in the Landing', needs: { things: ['the unicorn'] } } as never)).rejects.toThrow(/does not compile as a claim/);
   });
 });

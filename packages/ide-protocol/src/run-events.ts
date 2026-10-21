@@ -17,12 +17,18 @@
  *   gap lists, before `run-end`. A SKIPPED branch is its own status on the
  *   wire, never a failure in disguise (D5a).
  *
+ *   The claims tier (ADR-365 D6, ADR-367 D5/D6) follows the derived tier:
+ *   one `claim-result` per declared claim with its verdict, how it was
+ *   settled, and every lock the tree run checked on it, then one
+ *   `claims-summary` with the held-over-declared ratio, before `run-end`.
+ *   Verdicts never move the exit code (ADR-365 D9).
+ *
  *   Supersedes `test-results.ts` (ADR-277 D1), whose records were constructed
  *   from a COMPLETED `TranscriptResult` and written together — which made
  *   `transcript-start` ("a transcript is about to run") false by construction.
  *   That module stays until its consumers move; new emitters use this one.
  *
- * Public interface: RUN_EVENT_SCHEMA_VERSION, RunEvent and its nine variants,
+ * Public interface: RUN_EVENT_SCHEMA_VERSION, RunEvent and its twelve variants,
  *   isRunEvent plus one guard per variant.
  * Owner context: @sharpee/ide-protocol — the shared wire contract. TypeScript
  *   producers (the transcript runner, the tree runner, eventually the explorer)
@@ -494,6 +500,76 @@ export interface DerivedRunSummaryEvent extends RunEventEnvelope {
   };
 }
 
+/** A claim's verdict (ADR-365 D6): held, violated (a `never` was reached), or unproven (left open). */
+export type ClaimVerdictStatus = 'held' | 'violated' | 'unproven';
+
+/**
+ * How a claim's verdict was reached (ADR-367 D5): a played line reached the
+ * state, a walk found a witness, the walk exhausted the set, or a budget
+ * stopped the walk with the claim still open.
+ */
+export type ClaimSettledBy = 'line' | 'witness' | 'exhaustion' | 'budget';
+
+/** One lock's check at the card it was taken on (ADR-367 D5, D6). */
+export interface ClaimLockPin {
+  lineId: string;
+  /** The line's derived label, display only. */
+  label: string;
+  /** Typed turns from the root through the card. */
+  turn: number;
+  cardId?: string;
+  outcome: 'held' | 'not-held' | 'unknown-claim';
+  /** What was so instead, in the claim's words, when not held. */
+  message?: string;
+}
+
+/**
+ * One claim's verdict (ADR-365 D6; GH #555's claims row), emitted after the
+ * derived tier and before `claims-summary`. The sentence the Testing tab
+ * shows beside the verdict is built from these fields by one function both
+ * the tab and the CLI report call, so the two cannot drift.
+ */
+export interface ClaimResultEvent extends RunEventEnvelope {
+  type: 'claim-result';
+  name: string;
+  /** A negative claim: violated by the first state that satisfies it. */
+  never: boolean;
+  /** The predicate kind (`room`, `flag`, …). */
+  kind: string;
+  verdict: ClaimVerdictStatus;
+  settledBy: ClaimSettledBy;
+  /** The set the claim was walked under, as the report names it. */
+  set: string;
+  thingsInSet: number;
+  inertInSet: number;
+  /** The line and turn that reached it — present with `settledBy: 'line'`. */
+  line?: { id: string; label: string; turn: number };
+  /** The witness path — present with `settledBy: 'witness'`. */
+  witness?: string[];
+  depth?: number;
+  /** The walk that left it open — present with `settledBy: 'budget'` when a walk ran. */
+  stopped?: { reason: string; states: number };
+  /** A tree run's floor stood under the claims (ADR-367 D5) — the sentence's vocabulary depends on it. */
+  floored: boolean;
+  /** Every lock on this claim the tree run checked, in run order. */
+  locks?: ClaimLockPin[];
+}
+
+/** The claims tier's ratio (ADR-365 D6), once per run, after every `claim-result` and before `run-end`. */
+export interface ClaimsSummaryEvent extends RunEventEnvelope {
+  type: 'claims-summary';
+  /** The fragment the manifest names. */
+  source: string;
+  declared: number;
+  held: number;
+  violated: number;
+  unproven: number;
+  walks: number;
+  totalWalkMs: number;
+  seed?: number;
+  floored: boolean;
+}
+
 /** Last event of every run: the aggregate and the process exit code. */
 export interface RunEndEvent extends RunEventEnvelope {
   type: 'run-end';
@@ -529,6 +605,8 @@ export type RunEvent =
   | CoverageEvent
   | DerivedBranchEvent
   | DerivedRunSummaryEvent
+  | ClaimResultEvent
+  | ClaimsSummaryEvent
   | RunEndEvent;
 
 function isObject(v: unknown): v is Record<string, unknown> {
@@ -814,6 +892,60 @@ export function isDerivedRunSummaryEvent(value: unknown): value is DerivedRunSum
   );
 }
 
+/** Narrow a value to a valid {@link ClaimLockPin}. */
+function isClaimLockPin(value: unknown): value is ClaimLockPin {
+  if (!isObject(value)) return false;
+  return (
+    typeof value.lineId === 'string' &&
+    typeof value.label === 'string' &&
+    typeof value.turn === 'number' &&
+    (value.cardId === undefined || typeof value.cardId === 'string') &&
+    (value.outcome === 'held' || value.outcome === 'not-held' || value.outcome === 'unknown-claim') &&
+    (value.message === undefined || typeof value.message === 'string')
+  );
+}
+
+/** Narrow a value to a valid {@link ClaimResultEvent}. */
+export function isClaimResultEvent(value: unknown): value is ClaimResultEvent {
+  if (!isObject(value)) return false;
+  const line = value.line;
+  const stopped = value.stopped;
+  return (
+    hasEnvelopeAndType(value, 'claim-result') &&
+    typeof value.name === 'string' &&
+    typeof value.never === 'boolean' &&
+    typeof value.kind === 'string' &&
+    (value.verdict === 'held' || value.verdict === 'violated' || value.verdict === 'unproven') &&
+    (value.settledBy === 'line' || value.settledBy === 'witness' || value.settledBy === 'exhaustion' || value.settledBy === 'budget') &&
+    typeof value.set === 'string' &&
+    typeof value.thingsInSet === 'number' &&
+    typeof value.inertInSet === 'number' &&
+    (line === undefined || (isObject(line) && typeof line.id === 'string' && typeof line.label === 'string' && typeof line.turn === 'number')) &&
+    (value.witness === undefined || isStringArray(value.witness)) &&
+    (value.depth === undefined || typeof value.depth === 'number') &&
+    (stopped === undefined || (isObject(stopped) && typeof stopped.reason === 'string' && typeof stopped.states === 'number')) &&
+    typeof value.floored === 'boolean' &&
+    (value.locks === undefined || (Array.isArray(value.locks) && value.locks.every(isClaimLockPin)))
+  );
+}
+
+/** Narrow a value to a valid {@link ClaimsSummaryEvent}. */
+export function isClaimsSummaryEvent(value: unknown): value is ClaimsSummaryEvent {
+  if (!isObject(value)) return false;
+  return (
+    hasEnvelopeAndType(value, 'claims-summary') &&
+    typeof value.source === 'string' &&
+    typeof value.declared === 'number' &&
+    typeof value.held === 'number' &&
+    typeof value.violated === 'number' &&
+    typeof value.unproven === 'number' &&
+    typeof value.walks === 'number' &&
+    typeof value.totalWalkMs === 'number' &&
+    (value.seed === undefined || typeof value.seed === 'number') &&
+    typeof value.floored === 'boolean'
+  );
+}
+
 /** Narrow a value to a valid {@link RunEndEvent}. */
 export function isRunEndEvent(value: unknown): value is RunEndEvent {
   if (!isObject(value)) return false;
@@ -845,6 +977,8 @@ export function isRunEvent(value: unknown): value is RunEvent {
     isCoverageEvent(value) ||
     isDerivedBranchEvent(value) ||
     isDerivedRunSummaryEvent(value) ||
+    isClaimResultEvent(value) ||
+    isClaimsSummaryEvent(value) ||
     isRunEndEvent(value)
   );
 }

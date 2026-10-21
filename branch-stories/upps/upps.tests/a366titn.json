@@ -255,6 +255,9 @@
       },
       "command": "exit",
       "id": "t1500023",
+      "locks": [
+        "the player is in the Collar Vestibule"
+      ],
       "type": "turn"
     },
     {
@@ -280,6 +283,9 @@
       },
       "command": "east",
       "id": "t1500025",
+      "locks": [
+        "the player is in the Shuttle Gate"
+      ],
       "type": "turn"
     },
     {

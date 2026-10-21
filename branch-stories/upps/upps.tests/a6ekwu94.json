@@ -232,6 +232,9 @@
       },
       "command": "board ship",
       "id": "w0j072t7",
+      "locks": [
+        "the player is in the Hold"
+      ],
       "type": "turn"
     },
     {

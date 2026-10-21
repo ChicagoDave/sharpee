@@ -17,8 +17,11 @@
  *   tree's lines: one `derived-branch` row per clause branch in arrival
  *   order, its status kept as the wire's four values (a SKIPPED branch is
  *   never a failure — D5a), and the one `derived-summary` per run, kept as
- *   the latest seen. Decoding goes through the wire's own `isRunEvent`
- *   guard (DEVARCH 8b — the shapes are imported, never mirrored).
+ *   the latest seen. The claims tier (ADR-365 D6, ADR-367 D6; GH #555)
+ *   follows it the same way: one `claim-result` row per declared claim in
+ *   arrival order and the one `claims-summary` per run. Decoding goes
+ *   through the wire's own `isRunEvent` guard (DEVARCH 8b — the shapes are
+ *   imported, never mirrored).
  *
  * Public interface: RunColumnState, TranscriptRunResult, FirstFailure,
  *   createRunState, beginRun, foldRunLine, finishRun, resetRun, runRowsOf,
@@ -28,6 +31,7 @@
  */
 
 import { isRunEvent, type CommandCause, type RunEvent } from '@sharpee/ide-protocol/run-events';
+import { claimRowOf, claimsSummaryOf, type ClaimRow, type ClaimsSummary } from './claims';
 import { derivedRowOf, derivedSummaryOf, type DerivedBranchRow, type DerivedSummary } from './derived';
 import type { RunBaseline } from './staleness';
 
@@ -212,6 +216,10 @@ export interface RunColumnState {
   derived: DerivedBranchRow[];
   /** The run's three ratios — the latest `derived-summary` (one per run). */
   derivedSummary?: DerivedSummary;
+  /** Claims in arrival order (ADR-365 D6; one per `claim-result`). */
+  claims: ClaimRow[];
+  /** The claims tier's ratio — the latest `claims-summary` (one per run). */
+  claimsSummary?: ClaimsSummary;
   /**
    * What the run ran against (ADR-357 D11): captured by the caller at run
    * start, restored with a stored run, cleared by `resetRun`. Absent means
@@ -231,6 +239,7 @@ export function createRunState(): RunColumnState {
     pendingCommands: new Map(),
     replaying: new Set(),
     derived: [],
+    claims: [],
   };
 }
 
@@ -243,6 +252,8 @@ export function beginRun(state: RunColumnState): void {
   state.replaying.clear();
   state.derived = [];
   delete state.derivedSummary;
+  state.claims = [];
+  delete state.claimsSummary;
   delete state.tally;
   delete state.note;
   delete state.baseline;
@@ -434,6 +445,16 @@ function fold(state: RunColumnState, event: RunEvent): void {
       state.derivedSummary = derivedSummaryOf(event);
       return;
     }
+    case 'claim-result': {
+      // One row per declared claim as the tier settles it (ADR-365 D6);
+      // its verdict never touches the tally — claims never gate (D9).
+      state.claims.push(claimRowOf(event));
+      return;
+    }
+    case 'claims-summary': {
+      state.claimsSummary = claimsSummaryOf(event);
+      return;
+    }
     default:
       return;
   }
@@ -454,6 +475,8 @@ export function resetRun(state: RunColumnState): void {
   state.replaying.clear();
   state.derived = [];
   delete state.derivedSummary;
+  state.claims = [];
+  delete state.claimsSummary;
   delete state.tally;
   delete state.note;
   delete state.baseline;

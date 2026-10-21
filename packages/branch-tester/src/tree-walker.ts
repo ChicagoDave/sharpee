@@ -54,9 +54,16 @@
  * are never persisted: synthesized transcripts carry no `filePath`, so the
  * runner's policy write-back cannot fire. The walker never writes anything.
  *
+ * **A broken lock is a failed card** (ADR-367 D6). The line observer's
+ * `onCard` may return the verdict of each lock the card carries; the walker
+ * merges each into the card's result as a `lock-assert` assertion named by
+ * the claim, and a lock that did not hold fails the card in the claim's own
+ * words, so the line fails as any failed card fails it and the run exits 1.
+ *
  * Public interface: `runTreeDocument`, `flattenTreeLines`,
  * `formatTreeDocumentRun`, `TreeLine`, `TreeLineOutcome`,
- * `TreeDocumentRunResult`, `TreeLineObserver`, `TreeWalkerGame`.
+ * `TreeDocumentRunResult`, `TreeLineObserver`, `CardLockVerdict`,
+ * `TreeWalkerGame`.
  * Owner context: @sharpee/branch-tester — the Chord/IDE testing world's
  * harness (transcript-tester's text world is untouched).
  */
@@ -213,8 +220,21 @@ export interface TreeLineObserver {
    * `turn` counts typed turns from the root through this card, prefix
    * included; the boot look is turn 0. Never called for a replayed prefix
    * command — the owning line already saw that state.
+   *
+   * May return the verdict of each lock the card carries (D6): the walker
+   * merges them into the card's result as `lock-assert` assertions, and a
+   * lock that did not hold fails the card as any failed assertion does.
    */
-  onCard?(info: { line: TreeLine; label: string; card: TreeCard; cardIndex: number; turn: number; game: TreeWalkerGame }): void;
+  onCard?(info: { line: TreeLine; label: string; card: TreeCard; cardIndex: number; turn: number; game: TreeWalkerGame }): void | readonly CardLockVerdict[];
+}
+
+/** One lock's verdict at the card it was taken on (ADR-367 D6). */
+export interface CardLockVerdict {
+  /** The claim's name, as the card's `locks` spells it. */
+  readonly name: string;
+  readonly held: boolean;
+  /** What is so instead, in the claim's words, when not held; absent when held. */
+  readonly message?: string;
 }
 
 /**
@@ -500,7 +520,10 @@ export async function runTreeDocument(
             const cardIndex = cardIndexOfCommand[executedRow];
             const card = line.cards[cardIndex];
             if (card?.type === 'turn') turn += 1;
-            if (card !== undefined) options.lineObserver.onCard({ line, label, card, cardIndex, turn, game });
+            if (card !== undefined) {
+              const verdicts = options.lineObserver.onCard({ line, label, card, cardIndex, turn, game });
+              if (verdicts !== undefined) attachLockVerdicts(commandResult, verdicts);
+            }
           }
           if (commandResult.command.input !== '(opening)') executedRow += 1;
           options.observer?.onCommandResult?.(commandResult);
@@ -591,6 +614,22 @@ export function formatTreeDocumentRun(run: TreeDocumentRunResult): string[] {
         // (F-15): the same two sentences the Testing tab shows.
         const cause = firstCauseOf(line.result);
         if (cause !== undefined) rows.push(`  ${cause.says}`, `  ${cause.fix}`);
+        // The story's own words on that turn (GH #584, #585), indented under
+        // the cite: what the failed claim was checked against.
+        const first = firstFailedRowOf(line.result);
+        const output = first?.actualOutput ?? '';
+        for (const said of output.split('\n')) if (said.trim().length > 0) rows.push(`    ${said}`);
+        // Every broken lock on the line, by claim and command (ADR-367 D6),
+        // when it is not already the cite: a line that breaks before its
+        // pinned card still names the lock the break reached.
+        for (const row of line.result?.commands ?? []) {
+          if (row === first || row.passed || row.skipped || row.expectedFailure) continue;
+          for (const entry of row.assertionResults) {
+            if (entry.assertion.type === 'lock-assert' && !entry.passed && entry.message !== undefined) {
+              rows.push(`  ${row.command.input}: ${entry.message}`);
+            }
+          }
+        }
         break;
       }
       case 'blocked': {
@@ -911,14 +950,39 @@ function attachCause(
   if (cause !== undefined) commandResult.cause = cause;
 }
 
+/**
+ * Merge a card's lock verdicts into its result (ADR-367 D6). Each lock is
+ * one more `lock-assert` assertion on the card, named by the claim; a lock
+ * that did not hold fails the card — `passed` false, the first such lock's
+ * sentence as the card's `failure` when no assertion failed before it — so
+ * the line fails as any failed card fails it (ADR-356 D4) and the run exits
+ * 1. A skipped card with a broken lock is no longer skipped: the lock is an
+ * assertion the author took, and `skip` waives only what the card said.
+ * Runs inside the runner's observer, on the same object the runner tallies.
+ */
+function attachLockVerdicts(commandResult: CommandResult, verdicts: readonly CardLockVerdict[]): void {
+  for (const verdict of verdicts) {
+    const message = verdict.held ? undefined : `lock "${verdict.name}" not held here: ${verdict.message ?? 'the claim does not hold'}`;
+    commandResult.assertionResults.push({
+      assertion: { type: 'lock-assert', value: verdict.name },
+      passed: verdict.held,
+      ...(message !== undefined ? { message } : {}),
+    });
+    if (message === undefined) continue;
+    commandResult.passed = false;
+    commandResult.skipped = false;
+    if (commandResult.failure === undefined) commandResult.failure = message;
+  }
+}
+
+/** The first failed row, in run order — the one a line's citation names. */
+function firstFailedRowOf(result: TranscriptResult | undefined): CommandResult | undefined {
+  return result?.commands.find((row) => !row.passed && !row.skipped && !row.expectedFailure);
+}
+
 /** The first failed row's cause, when the walker named one (F-15). */
 function firstCauseOf(result: TranscriptResult | undefined): CommandCause | undefined {
-  if (result === undefined) return undefined;
-  for (const row of result.commands) {
-    if (row.passed || row.skipped || row.expectedFailure) continue;
-    return row.cause;
-  }
-  return undefined;
+  return firstFailedRowOf(result)?.cause;
 }
 
 /** The line's one-line failure citation: the first failed row's own message. */

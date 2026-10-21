@@ -29,9 +29,12 @@
       "@sharpee/branch-tester/auto-assertion": ["../../../../packages/branch-tester/src/auto-assertion.ts"],
       "@sharpee/branch-tester/types": ["../../../../packages/branch-tester/src/types.ts"],
       "@sharpee/branch-tester/tree-document": ["../../../../packages/branch-tester/src/tree-document.ts"],
+      "@sharpee/branch-tester/claim-report": ["../../../../packages/branch-tester/src/claims/claim-report.ts"],
+      "@sharpee/ide-protocol/claim-output": ["../../../../packages/ide-protocol/src/claim-output.ts"],
       "@sharpee/transcript-tester/assertion-core": ["../../../../packages/transcript-tester/src/assertion-core.ts"],
       "@sharpee/story-loader/pin-grammar": ["../../../../packages/story-loader/src/pin-grammar.ts"],
       "@sharpee/ide-protocol/run-events": ["../../../../packages/ide-protocol/src/run-events.ts"],
+      "@sharpee/ide-protocol": ["../../../../packages/ide-protocol/src/index.ts"],
       "@sharpee/branch-tester/coverage": ["../../../../packages/branch-tester/dist/coverage.d.ts"],
       "@sharpee/branch-tester/derived-runner": ["../../../../packages/branch-tester/dist/derived-runner.d.ts"]
     }

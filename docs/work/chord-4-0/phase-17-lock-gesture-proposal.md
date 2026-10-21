@@ -1,6 +1,6 @@
 # Phase 17 proposal — The lock gesture, the broken-claim report, and UPPS claims
 
-**Date**: 2026-10-20 · **Session**: e28264 · **Plan**: `plan-20261013-chord-4-0.md` Phase 17 (Large, 400) · **Status**: PROPOSED — the `packages/` and `tools/ide` items below wait on David's go
+**Date**: 2026-10-20 · **Session**: e28264 · **Plan**: `plan-20261013-chord-4-0.md` Phase 17 (Large, 400) · **Status**: LANDED 2026-10-21 (session ca314d, on David's "go") — landing notes at the end
 
 ADR-367 D6 (the broken claim is a failed card, the report names it), D7 (two surfaces, one path: the Testing tab's lock gesture), AC-4, AC-5's canonical gate, AC-6; GH #584 and #585 (the story's output on a failed claim, CLI and opening); the claims rows on the run-event wire that GH #555 held back; and UPPS's claims at its room commits.
 
@@ -88,3 +88,15 @@ A scratch UPPS where the drop lever no longer sends the shuttle: `sharpee test` 
 
 1. **The sheet, not a mock.** The lock sheet reuses the tab's idioms; I will build it from D7's sentence and show it in the Swift real-path test's run rather than draw it first. Say so if you want an artifact mock before the page is touched.
 2. **Both heads.** The Swift head and the Avalonia head each gain the `lock` post; the Avalonia head's real-path coverage stays at its post reader, as Run's does today.
+
+## Landing notes (2026-10-21, session ca314d)
+
+Built in the order of work above. Where the landing departs from the shape:
+
+- **§1** A pin to a name the fragment no longer declares fails its card too (`lock "<name>" not held here: the fragment declares no claim of that name`): a dangling pin is a broken lock. A held lock is one more passing assertion on its card, so fernhill's tally is 86 cards / 107 assertions with the fragment and 86 / 106 without. A lock on a skipped card un-skips it when broken; a held one leaves it skipped. The miss sentences (`describeClaimMiss`) and the lock's offer sentences share `claim-vocabulary.ts`.
+- **§2** The CLI report also names every broken lock on a line on its own row (`  exit: lock "…" not held here: …`) when it is not the line's first failure: UPPS's breaking edit breaks the `wait` card first, and the lock after it.
+- **§3** The `claim-result` event carries `stopped {reason, states}` for a budget verdict and `floored`, so `claimSentence` needs no walk data; `claim-report.ts` is typed structurally (no runner imports) because the tab bundles it. The tab's `tsconfig` gained a path for `@sharpee/ide-protocol`'s root.
+- **§4** The host seam is `{lock: {args}}`: the page writes the whole `sharpee claim` argument list (`lock.ts`'s `lockArgumentsOf`, one spelling of the flags) and each host only spawns `claim …` with the project appended and relays stdout to `lockResult`. The `--json` shapes are `@sharpee/ide-protocol`'s `claim-output.ts`, imported by the CLI and the page. `--fragment-only` reads an existing fragment from disk whether or not the manifest names it yet, so a second lock before the page writes the key appends rather than overwrites. `turnOfCard` and `pinLockOnCard` live in `tree-document.ts` (browser-safe). The Swift real-path case drives the host's half (post → `startLock` → real CLI on a scratch fernhill → `lockResult`), not the DOM gesture: the fixture page's story is the probe fixture, not a real story with a tree, so the Lock… → picker → sheet → pin path is the web bundle's `lock-gesture-real-path.test.ts` (real CLI, three steps, the model's pin, bytes identical to the CLI's own lock). The Avalonia head's coverage is its post reader (`ReadLock`), as Run's is.
+- **§5** The gate also accepts a shared set at two spaces before the first block, and top-level comments with their own blank lines.
+- **§6** Ten UPPS rooms are reached beyond the boot room — the Piazzi Platform (line `trampad2`) joins the eight listed — so UPPS carries ten locks; all held on the rerun, `0 walks`.
+- **§7** Landed as part of §1 (`claim-broken.test.ts`).

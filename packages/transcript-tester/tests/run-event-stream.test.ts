@@ -105,3 +105,44 @@ describe('RunEventStream — derived-branch and derived-summary', () => {
     expect(endSeq).toBeGreaterThan(summarySeq);
   });
 });
+
+// ── the claims tier on the same stream (ADR-365 D6, ADR-367 D6; GH #555) ───
+
+describe('RunEventStream — claim-result and claims-summary', () => {
+  it('writes each claims event with the envelope and the payload verbatim, omitting absent optionals, seq monotonic after the derived tier', () => {
+    const { events, stream, tick } = recorder();
+    stream.runStart('tree', 1);
+    tick();
+    stream.derivedSummary(summary);
+    tick();
+    stream.claimResult({
+      name: 'the deed box is open', never: false, kind: 'flag', verdict: 'held', settledBy: 'line',
+      set: 'the declared set', thingsInSet: 13, inertInSet: 0,
+      line: { id: 'weefpbmr', label: 'opening-iron-gates', turn: 23 }, floored: true,
+      locks: [{ lineId: 'hpjuaufx', label: 'folly · open deed box with locket', turn: 22, cardId: 'c1', outcome: 'held' }],
+    });
+    tick();
+    stream.claimResult({
+      name: 'the deed box leaves the Folly', never: true, kind: 'placement', verdict: 'violated', settledBy: 'witness',
+      set: 'the set of "the deed box leaves the Folly"', thingsInSet: 6, inertInSet: 0, witness: ['north', 'take deed box'], depth: 2, floored: true,
+    });
+    tick();
+    stream.claimsSummary({ source: 'fernhill.claims.chord', declared: 2, held: 1, violated: 1, unproven: 0, walks: 1, totalWalkMs: 800, seed: 42, floored: true });
+
+    const [, derivedEvent, held, violated, ratio] = events as Array<Record<string, unknown>>;
+    expect(derivedEvent.type).toBe('derived-summary');
+    expect(held.type).toBe('claim-result');
+    expect(held.name).toBe('the deed box is open');
+    expect(held.locks).toEqual([{ lineId: 'hpjuaufx', label: 'folly · open deed box with locket', turn: 22, cardId: 'c1', outcome: 'held' }]);
+    expect('witness' in held).toBe(false);
+    expect(violated.type).toBe('claim-result');
+    expect(violated.witness).toEqual(['north', 'take deed box']);
+    expect('locks' in violated).toBe(false);
+    expect('line' in violated).toBe(false);
+    expect(ratio.type).toBe('claims-summary');
+    expect(ratio).toMatchObject({ source: 'fernhill.claims.chord', declared: 2, held: 1, violated: 1, unproven: 0, walks: 1, seed: 42, floored: true });
+    expect(events.map((event) => event.seq)).toEqual([0, 1, 2, 3, 4]);
+    expect(events.map((event) => event.elapsedMs)).toEqual([0, 250, 500, 750, 1000]);
+    expect(events.every((event) => event.schemaVersion === 2)).toBe(true);
+  });
+});

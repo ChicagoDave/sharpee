@@ -70,7 +70,8 @@
  * createSegmentId, emptyTreeDocument, ensureSegmentIds, segmentTree,
  * assembleTree, diffTreeFiles, checkCanonicalTree, TreeCanonicalCheck,
  * channelIdsReferencedBy, splitChannelClaimId,
- * endingIdsDeclaredBy, roomSlugOf, mainLineLabelOf, branchLineLabelOf.
+ * endingIdsDeclaredBy, roomSlugOf, mainLineLabelOf, branchLineLabelOf,
+ * turnOfCard.
  * Owner context: @sharpee/branch-tester — the Chord/IDE testing world's
  * harness (transcript-tester's text world is a different format and is
  * untouched by this module).
@@ -1051,4 +1052,63 @@ function firstUnknownKey(
   allowed: readonly string[],
 ): string | undefined {
   return Object.keys(value).find((key) => !allowed.includes(key));
+}
+
+/**
+ * A card's turn number as a player counts it (ADR-367's "turn 41"): the
+ * typed turns from the root through the card, the boot look excluded, on
+ * whichever line the card sits. Browser-safe — the Testing tab asks it for
+ * the `--at` a lock takes, and the lock computes the same number from the
+ * line it replays.
+ *
+ * @param document the tree
+ * @param cardId the card's id
+ * @returns the turn, or `undefined` when no card carries the id or the card is not a typed turn
+ */
+export function turnOfCard(document: TreeDocument, cardId: string): number | undefined {
+  const visit = (cards: readonly TreeCard[], before: number): number | undefined => {
+    let typed = before;
+    for (const card of cards) {
+      if (card.type === 'turn') typed += 1;
+      if (card.id === cardId) return card.type === 'turn' ? typed : undefined;
+      for (const branch of card.branches ?? []) {
+        const found = visit(branch.cards, typed);
+        if (found !== undefined) return found;
+      }
+    }
+    return undefined;
+  };
+  return visit(document.cards, 0);
+}
+
+/**
+ * Pin a claim's name on a card (ADR-367 D5): the card gains `locks` or the
+ * name is appended once. Mutates the document the caller then writes
+ * through `segmentTree`. The CLI and the Testing tab both pin through this
+ * one function (D7: two surfaces, one path).
+ *
+ * @param document the tree
+ * @param cardId the card the lock was taken at
+ * @param name the claim's name
+ * @returns true when the document changed
+ * @throws when no card in the tree carries the id
+ */
+export function pinLockOnCard(document: TreeDocument, cardId: string, name: string): boolean {
+  const visit = (cards: TreeCard[]): 'pinned' | 'already' | undefined => {
+    for (const card of cards) {
+      if (card.id === cardId) {
+        if (card.locks?.includes(name)) return 'already';
+        card.locks = [...(card.locks ?? []), name];
+        return 'pinned';
+      }
+      for (const branch of card.branches ?? []) {
+        const found = visit(branch.cards);
+        if (found !== undefined) return found;
+      }
+    }
+    return undefined;
+  };
+  const found = visit(document.cards);
+  if (found === undefined) throw new Error(`no card ${cardId} in the tree`);
+  return found === 'pinned';
 }

@@ -11,16 +11,18 @@
  * Verdicts never change the exit code (D9): a violated or unproven claim is
  * the author's test-first list going red, and the report is the burndown.
  * What does fail the run is a claims file the command cannot run — a path
- * the manifest names that does not exist, a fragment that does not compile,
- * a claim set the gate refuses — each exits 2 with the reason named, like a
+ * the manifest names that does not exist, a fragment not in the lock's
+ * canonical shape (ADR-367 D4, AC-5), a fragment that does not compile, a
+ * claim set the gate refuses — each exits 2 with the reason named, like a
  * tree the command cannot read, and no walk runs. A story that will not
  * boot exits 3.
  *
  * Runs after the derived tier (ADR-356 D5a), at the same seed, and only
  * when the manifest names a file: naming it is the author's opt-in, so
  * there is no flag. Under `--json` the report goes to stderr like the
- * derived report; no claim event rides the wire (GH #555 holds the wire
- * field and the Testing tab row as their own discussion).
+ * derived report, and each claim's verdict rides the wire as a
+ * `claim-result` with the ratio as `claims-summary` (ADR-367 D6; GH #555),
+ * so the Testing tab shows the same claims section the report prints.
  *
  * The fragment is compiled BEFORE the tree runs (`compileClaimsFragment`),
  * because the tree run's floor (ADR-367 D5) evaluates every positive claim
@@ -37,6 +39,7 @@ import * as path from 'node:path';
 import { readFileSync } from 'node:fs';
 import type { ClaimFloorReading, ClaimSet } from '@sharpee/branch-tester';
 import type { StoryIR } from '@sharpee/chord';
+import type { StreamableClaimResult, StreamableClaimsSummary } from '@sharpee/transcript-tester';
 import { findStoryFile, loadAuthorGame, makeFsImportResolver } from '../standalone/author-game.js';
 
 /**
@@ -68,7 +71,7 @@ export interface CompiledClaimsFragment {
 export function compileClaimsFragment(dir: string, claimsFile: string): CompiledClaimsFragment | number {
   // Lazy require (the test.ts pattern): the harness loads only when testing.
   const { compileClaims } = require('@sharpee/chord') as typeof import('@sharpee/chord');
-  const { normalizeClaimSet } = require('@sharpee/branch-tester') as typeof import('@sharpee/branch-tester');
+  const { checkCanonicalFragment, normalizeClaimSet } = require('@sharpee/branch-tester') as typeof import('@sharpee/branch-tester');
 
   let storyFile: string | null;
   try {
@@ -90,6 +93,16 @@ export function compileClaimsFragment(dir: string, claimsFile: string): Compiled
   } catch (error) {
     const reason = (error as NodeJS.ErrnoException).code === 'ENOENT' ? 'not found' : (error instanceof Error ? error.message : String(error));
     console.error(`test: claims file '${claimsFile}' named by manifest.json: ${reason} (${fragmentPath})`);
+    return 2;
+  }
+
+  // The fragment's canonical gate (ADR-367 D4, AC-5): every block must read
+  // back as the lock would write it, so the next lock never fights a second
+  // formatting. Named by block and line; nothing runs. Like the tree's gate.
+  const gate = checkCanonicalFragment(fragment);
+  if (gate.status === 'non-canonical') {
+    const lines = gate.problems.map((problem) => `  ${claimsFile}:${problem.line} · ${problem.where} — ${problem.message}`);
+    console.error(`test: claims file '${claimsFile}' is not in the lock's canonical form (fix the lines named, or re-lock):\n${lines.join('\n')}`);
     return 2;
   }
 
@@ -126,6 +139,18 @@ export interface ClaimsTestOptions {
   /** The run-event stream owns stdout; the claims report goes to stderr. */
   json: boolean;
   verbose: boolean;
+  /**
+   * The run-event stream to carry each claim's verdict and the ratio
+   * (ADR-367 D6; GH #555's claims row). Absent when the caller has no
+   * stream — the text report is the only output.
+   */
+  stream?: ClaimsEventSink;
+}
+
+/** The two stream methods the claims tier writes to — structurally, so the tier never names the stream class. */
+export interface ClaimsEventSink {
+  claimResult(row: StreamableClaimResult): void;
+  claimsSummary(summary: StreamableClaimsSummary): void;
 }
 
 /**
@@ -137,8 +162,8 @@ export interface ClaimsTestOptions {
  *   (D9); 3 the story would not boot. Never calls `process.exit()`.
  */
 export async function runClaimsTests(options: ClaimsTestOptions): Promise<number> {
-  const { runClaims, formatClaimsRun } = require('@sharpee/branch-tester') as typeof import('@sharpee/branch-tester');
-  const { compiled, seed, floor, json, verbose } = options;
+  const { runClaims, formatClaimsRun, claimResultRowOf, claimsSummaryRowOf } = require('@sharpee/branch-tester') as typeof import('@sharpee/branch-tester');
+  const { compiled, seed, floor, json, verbose, stream } = options;
   const { storyFile, claimsFile, ir, claimSet } = compiled;
   const out = (line: string): void => {
     if (json) console.error(line);
@@ -159,6 +184,13 @@ export async function runClaimsTests(options: ClaimsTestOptions): Promise<number
   } catch (error) {
     console.error(`Error running the claims: ${error instanceof Error ? error.message : error}`);
     return 3;
+  }
+
+  // The wire (D6): one row per claim with its locks, then the ratio — after
+  // the derived tier's events and before `run-end`, which the caller writes.
+  if (stream) {
+    for (const claim of result.claims) stream.claimResult(claimResultRowOf(claim, result));
+    stream.claimsSummary(claimsSummaryRowOf(result));
   }
 
   out('');

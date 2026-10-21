@@ -25,6 +25,7 @@ import type { StoryIR } from '@sharpee/chord';
 import { groupClaimsBySet, type ClaimSet } from './claim-set.js';
 import type { ClaimsGameLoader } from './claims-game.js';
 import type { ClaimFloorReading, ClaimPinResult } from './claim-floor.js';
+import { claimHeadline, claimLockLine, claimResultRowOf, claimSentence, claimsRatioLine, claimsSummaryRowOf } from './claim-report.js';
 import { walkClaims, type ClaimVerdict, type ClaimsWalkOptions, type ClaimsWalkReport } from './claims-walk.js';
 
 /** The run's budgets (per walk) and the seed the report names. */
@@ -124,37 +125,19 @@ function seconds(ms: number): string {
  */
 export function formatClaimsRun(result: ClaimsRunResult): string {
   const lines: string[] = [];
-  lines.push(`claims: ${result.held} of ${result.declared} held${result.violated ? `, ${result.violated} violated` : ''}${result.unproven ? `, ${result.unproven} unproven` : ''}${result.seed !== undefined ? ` (seed ${result.seed})` : ''}`);
+  lines.push(claimsRatioLine(claimsSummaryRowOf(result)));
   lines.push(`${result.walks.length} walk${result.walks.length === 1 ? '' : 's'}, ${seconds(result.totalWalkMs)} in all`);
   for (const walk of result.walks) {
     lines.push(`  under ${walk.set}: ${walk.necessary.rooms} rooms, ${walk.necessary.things} things, ${walk.necessary.verbs} verbs — ${walk.statesDiscovered} states, ${walk.commandsExecuted} commands, ${seconds(walk.walkMs)}, stopped: ${walk.stopReason}`);
   }
-  const walkBySet = new Map(result.walks.map((walk) => [walk.set, walk]));
+  // One vocabulary with the Testing tab (ADR-367 D6): every sentence below is
+  // built from the wire's own row, so the tab's claims section reads the same.
   for (const claim of result.claims) {
-    const head = `${claim.verdict.toUpperCase()}  ${claim.name}${claim.never ? ' (never)' : ''}`;
-    // Under a floor, a walked positive claim is one no line reached (ADR-367 D5).
-    const unreached = result.floored && !claim.never ? 'not reached by any line; ' : '';
-    if (claim.settledBy === 'line') {
-      lines.push(`${head} — by line ${claim.line?.id} "${claim.line?.label}" at turn ${claim.line?.turn}`);
-    } else if (claim.settledBy === 'witness') {
-      lines.push(`${head} — ${unreached}${result.floored && !claim.never ? 'by walk ' : ''}at depth ${claim.depth}: ${claim.witness?.join(' / ')}`);
-    } else if (claim.settledBy === 'exhaustion') {
-      lines.push(`${head} — ${unreached}${claim.never ? 'every reachable state under its set was tried' : 'no reachable state under its set satisfies it'} (${claim.set})`);
-    } else {
-      const walk = walkBySet.get(claim.set);
-      const stopped = walk ? `${walk.stopReason} after ${walk.statesDiscovered} states` : 'a budget';
-      const cost =
-        claim.inertInSet > 0
-          ? `its set carries ${claim.thingsInSet} things, ${claim.inertInSet} of which the claim's rules never reach; each independent thing doubles the states to exhaust`
-          : `its set carries ${claim.thingsInSet} things, and each independent thing doubles the states to exhaust`;
-      lines.push(`${head} — ${unreached}the walk stopped at ${stopped}; ${cost}`);
-    }
+    const row = claimResultRowOf(claim, result);
+    lines.push(`${claimHeadline(row)} — ${claimSentence(row)}`);
   }
   for (const pin of result.pins) {
-    const where = `line ${pin.lineId} "${pin.label}" at turn ${pin.turn}`;
-    if (pin.outcome === 'held') lines.push(`  lock "${pin.claim}" at ${where} — held there`);
-    else if (pin.outcome === 'not-held') lines.push(`  lock "${pin.claim}" at ${where} — NOT held there`);
-    else lines.push(`  lock "${pin.claim}" at ${where} — lock-unknown-claim: the fragment declares no claim of that name`);
+    lines.push(claimLockLine(pin.claim, { lineId: pin.lineId, label: pin.label, turn: pin.turn, outcome: pin.outcome, ...(pin.message !== undefined ? { message: pin.message } : {}) }));
   }
   return lines.join('\n');
 }

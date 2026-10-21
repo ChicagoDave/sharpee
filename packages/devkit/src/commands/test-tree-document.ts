@@ -326,7 +326,7 @@ export async function runTreeDocumentCommand(
   const claimsCode =
     compiledClaims === undefined
       ? 0
-      : await runClaimsTests({ compiled: compiledClaims, seed: document.seed, floor: floor?.reading(), json, verbose });
+      : await runClaimsTests({ compiled: compiledClaims, seed: document.seed, floor: floor?.reading(), json, verbose, stream });
   const code = Math.max(treeCode, derivedCode, claimsCode);
 
   const results = run.lines.filter((l) => l.result !== undefined).map((l) => l.result!);

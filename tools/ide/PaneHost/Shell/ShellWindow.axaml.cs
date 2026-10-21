@@ -1135,6 +1135,14 @@ public partial class ShellWindow : Window
             {
                 _ = RevealAsync(new IndexSpan(open.File, open.Line, 1));
             }
+            // One step of the lock gesture (ADR-367 D7): the page's `sharpee claim` arguments,
+            // spawned as Run spawns `sharpee test`; the one object on stdout goes back whole.
+            else if (message.Handler == "testingSurface"
+                && ReferenceEquals(message.View, TestingWeb)
+                && TestingSurfacePosts.ReadLock(message.Body) is { } lockArgs)
+            {
+                _ = RunLockForSurfaceAsync(lockArgs);
+            }
             // The tree changed (ADR-355): the page posts the files it wrote and removed,
             // and they land in the story's tree on disk — what the next open replays and
             // what the Run button tests.
@@ -1205,6 +1213,75 @@ public partial class ShellWindow : Window
         await _door.EvaluateAsync(TestingWeb,
             "window.__sharpeeTestingSurface && window.__sharpeeTestingSurface.runExit"
             + $" && window.__sharpeeTestingSurface.runExit({arguments})");
+    }
+
+    /// <summary>
+    /// Runs one step of the testing surface's lock gesture (ADR-367 D7): `sharpee claim` with
+    /// the arguments the page wrote, the project appended, and hands the CLI's stdout — one
+    /// JSON object — back to the page through `lockResult`. A step that cannot start is handed
+    /// back as an `error` object in the same shape, so the page says why where the author
+    /// clicked. Stderr goes to the log like Run's. The lock is a conversation of up to three
+    /// such runs; each is one spawn.
+    /// </summary>
+    /// <param name="arguments">The page's argument list, `claim` first.</param>
+    private async Task RunLockForSurfaceAsync(IReadOnlyList<string> arguments)
+    {
+        async Task HandBack(string stdout)
+        {
+            await _door.EvaluateAsync(TestingWeb,
+                "window.__sharpeeTestingSurface && window.__sharpeeTestingSurface.lockResult"
+                + " && window.__sharpeeTestingSurface.lockResult(" + System.Text.Json.JsonSerializer.Serialize(stdout) + ")");
+        }
+        static string ErrorObject(string message) =>
+            System.Text.Json.JsonSerializer.Serialize(new { kind = "error", message });
+
+        if (_project is not { } project)
+        {
+            await HandBack(ErrorObject("No story is open, so nothing can be locked."));
+            return;
+        }
+        var shim = HostServices.Current.ToolchainShim;
+        if (shim is null)
+        {
+            await HandBack(ErrorObject("This build carries no toolchain, so it cannot lock a claim."));
+            return;
+        }
+        if (_running)
+        {
+            await HandBack(ErrorObject("Another command is already running."));
+            return;
+        }
+
+        // The CLI reads the tree and the story from disk.
+        await SaveAsync();
+        _running = true;
+        _commandCts = new CancellationTokenSource();
+        var stdout = new System.Text.StringBuilder();
+        try
+        {
+            var args = new List<string>(arguments) { project.StoryFile };
+            await HostServices.Current.RunAsync(
+                shim,
+                args,
+                project.Folder,
+                line => stdout.AppendLine(line),
+                line => Dispatcher.UIThread.Post(() => Report(line)),
+                _commandCts.Token);
+            await HandBack(stdout.ToString());
+        }
+        catch (OperationCanceledException)
+        {
+            await HandBack(ErrorObject("The lock was cancelled."));
+        }
+        catch (Exception ex)
+        {
+            await HandBack(ErrorObject($"{ex.GetType().Name}: {ex.Message}"));
+        }
+        finally
+        {
+            _running = false;
+            _commandCts = null;
+        }
     }
 
     /// <summary>

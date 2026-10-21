@@ -10,9 +10,9 @@
  * Public interface: `RunEventStream`, `ndjsonEventLine`, and the five
  * `Streamable*` result shapes its methods take — kept (ADR-340 D4) because
  * they are the parameter types of public methods; the barrel exports them.
- * The two derived shapes (ADR-356) are the wire's own payloads minus the
- * envelope: `branch-tester` maps its outcomes onto them, this module
- * sequences them.
+ * The two derived shapes (ADR-356) and the two claims shapes (ADR-365 D6,
+ * ADR-367 D6) are the wire's own payloads minus the envelope:
+ * `branch-tester` maps its outcomes onto them, this module sequences them.
  * Owner context: transcript-tester (testing tooling). The wire SHAPES are owned
  *   by `@sharpee/ide-protocol`; this module only builds and sequences them.
  *
@@ -30,6 +30,8 @@ import type {
   CoverageEvent,
   DerivedBranchEvent,
   DerivedRunSummaryEvent,
+  ClaimResultEvent,
+  ClaimsSummaryEvent,
   RunEventEnvelope,
   CommandCause,
 } from '@sharpee/ide-protocol';
@@ -49,6 +51,16 @@ export type StreamableDerivedOutcome = Omit<DerivedBranchEvent, keyof RunEventEn
  * the CLI report prints.
  */
 export type StreamableDerivedSummary = Omit<DerivedRunSummaryEvent, keyof RunEventEnvelope | 'type'>;
+
+/**
+ * One claim's verdict as the wire carries it (ADR-365 D6, ADR-367 D6): the
+ * `claim-result` payload without its envelope, built by `branch-tester`'s
+ * `claimResultRowOf` beside the sentence both surfaces read it in.
+ */
+export type StreamableClaimResult = Omit<ClaimResultEvent, keyof RunEventEnvelope | 'type'>;
+
+/** The claims tier's ratio as the wire carries it: the `claims-summary` payload without its envelope. */
+export type StreamableClaimsSummary = Omit<ClaimsSummaryEvent, keyof RunEventEnvelope | 'type'>;
 
 /**
  * What the stream needs from ONE command's outcome — structurally, not by name.
@@ -411,6 +423,22 @@ export class RunEventStream {
       endings: summary.endings,
       rooms: summary.rooms,
     };
+    this.write(event);
+  }
+
+  /**
+   * One claim's verdict (ADR-365 D6, ADR-367 D5/D6) — emitted after the
+   * derived tier, one per declared claim. `branch-tester`'s
+   * `claimResultRowOf` builds the payload; this only sequences it.
+   */
+  claimResult(row: StreamableClaimResult): void {
+    const event: ClaimResultEvent = { ...this.envelope(), type: 'claim-result', ...row };
+    this.write(event);
+  }
+
+  /** The claims tier's held-over-declared ratio (ADR-365 D6) — once per run, after every `claim-result`. */
+  claimsSummary(summary: StreamableClaimsSummary): void {
+    const event: ClaimsSummaryEvent = { ...this.envelope(), type: 'claims-summary', ...summary };
     this.write(event);
   }
 

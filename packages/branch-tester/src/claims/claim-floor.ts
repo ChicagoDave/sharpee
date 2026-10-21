@@ -11,8 +11,12 @@
  * held. A `never` claim is untouched — exhaustion proves it, never a line
  * (ADR-365 D3).
  *
- * The floor never gates and never writes: its reading is report data the
- * runner folds into its verdicts (`held, by line …`) and its report.
+ * The floor never writes. Its reading is report data the runner folds into
+ * its verdicts (`held, by line …`) and its report; and `onCard` hands the
+ * walker each lock's verdict at its card, which the walker merges into the
+ * card's own result — a lock that does not hold is a failed card, in the
+ * claim's words (ADR-367 D6). That failure is the one place a broken lock
+ * is loud; the claims tier's verdicts still never gate (ADR-365 D9).
  *
  * Public interface: `createClaimFloor`, `ClaimFloor`, `ClaimFloorReading`,
  *   `ClaimFloorReach`, `ClaimPinResult`.
@@ -21,11 +25,11 @@
 
 import type { StoryIR } from '@sharpee/chord';
 import type { Claim, ClaimSet } from './claim-set.js';
-import { claimHolds, clauseKeysByFiredOf, entityIdByIrOf, type ClaimContext } from './claim-predicates.js';
+import { claimHolds, claimNamesOf, clauseKeysByFiredOf, describeClaimMiss, entityIdByIrOf, type ClaimContext } from './claim-predicates.js';
 import type { ClaimsTurnEvent, ClaimsWorld } from './claims-game.js';
 import { readWorldSnapshot } from './claims-game.js';
 import type { TreeCard } from '../tree-document.js';
-import type { TreeLine, TreeLineObserver, TreeWalkerGame } from '../tree-walker.js';
+import type { CardLockVerdict, TreeLine, TreeLineObserver, TreeWalkerGame } from '../tree-walker.js';
 
 /** Where a line first reached a claim. */
 export interface ClaimFloorReach {
@@ -44,6 +48,8 @@ export interface ClaimPinResult {
   readonly cardId?: string;
   /** `held`, `not-held`, or `unknown-claim` when the fragment no longer declares the name. */
   readonly outcome: 'held' | 'not-held' | 'unknown-claim';
+  /** What was so instead, in the claim's words, when not held (ADR-367 D6); absent when held. */
+  readonly message?: string;
 }
 
 /** What the floor saw over one tree run. */
@@ -75,6 +81,7 @@ interface FloorGame {
  */
 export function createClaimFloor(ir: StoryIR, claimSet: ClaimSet): ClaimFloor {
   const clauseKeysByFired = clauseKeysByFiredOf(ir);
+  const names = claimNamesOf(ir);
   const byName = new Map(claimSet.claims.map((claim) => [claim.name, claim]));
   const positive = claimSet.claims.filter((claim) => !claim.never);
   const reached = new Map<number, ClaimFloorReach>();
@@ -94,22 +101,37 @@ export function createClaimFloor(ir: StoryIR, claimSet: ClaimSet): ClaimFloor {
     return { world, snapshot: readWorldSnapshot(world), events: game.lastEvents ?? [], entityIdByIr, clauseKeysByFired };
   };
 
-  const onCard = (info: { line: TreeLine; label: string; card: TreeCard; turn: number; game: TreeWalkerGame }): void => {
+  const onCard = (info: { line: TreeLine; label: string; card: TreeCard; turn: number; game: TreeWalkerGame }): CardLockVerdict[] => {
     const { line, label, card, turn } = info;
     const locks = card.locks ?? [];
     const pending = positive.filter((claim) => !reached.has(claim.index));
-    if (pending.length === 0 && locks.length === 0) return;
+    if (pending.length === 0 && locks.length === 0) return [];
     const ctx = contextOf(info.game as FloorGame);
-    if (!ctx) return;
+    if (!ctx) return [];
     const where = { lineId: line.id, label, turn, ...(card.id !== undefined ? { cardId: card.id } : {}) };
     for (const claim of pending) {
       if (claimHolds(claim, ctx)) reached.set(claim.index, where);
     }
+    // The lock's own proof (D5), and the card's verdict (D6): a pin that
+    // does not hold fails the card it is on, in the claim's own words; a
+    // pin to a name the fragment no longer declares is a broken lock too.
+    const verdicts: CardLockVerdict[] = [];
     for (const name of locks) {
       const claim: Claim | undefined = byName.get(name);
-      const outcome = claim === undefined ? 'unknown-claim' : claimHolds(claim, ctx) ? 'held' : 'not-held';
-      pins.push({ claim: name, ...where, outcome });
+      if (claim === undefined) {
+        const message = 'the fragment declares no claim of that name';
+        pins.push({ claim: name, ...where, outcome: 'unknown-claim', message });
+        verdicts.push({ name, held: false, message });
+      } else if (claimHolds(claim, ctx)) {
+        pins.push({ claim: name, ...where, outcome: 'held' });
+        verdicts.push({ name, held: true });
+      } else {
+        const message = describeClaimMiss(claim, ctx, names);
+        pins.push({ claim: name, ...where, outcome: 'not-held', message });
+        verdicts.push({ name, held: false, message });
+      }
     }
+    return verdicts;
   };
 
   return { onCard, reading: () => ({ reached, pins }) };

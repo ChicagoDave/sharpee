@@ -565,11 +565,14 @@ describe('formatTreeDocumentRun — rows, tally, replay share', () => {
     // meaning (David 2026-08-10).
     expect(rows[0]).toBe('✓ opening-iron-gates');
     expect(rows[1]).toContain('✗ gravel-drive · east — east:');
+    // The story's words on the failed turn, indented under the cite
+    // (GH #584, #585): what the failed claim was checked against.
+    expect(rows[2]).toBe('    did east');
     // Every assertion counts (David 2026-08-10): main's look + north pass
     // one claim each; the branch's east fails its one claim.
-    expect(rows[2]).toBe('2 cards passing, 2 assertions passing, 1 card failing, 1 assertion failing');
+    expect(rows[3]).toBe('2 cards passing, 2 assertions passing, 1 card failing, 1 assertion failing');
     // 4 executed (look, north, look, north... plus east = 5) — replay share shown.
-    expect(rows[3]).toBe(`${run.executedCommands} commands (${run.authoredCommands} authored + ${run.executedCommands - run.authoredCommands} replayed)`);
+    expect(rows[4]).toBe(`${run.executedCommands} commands (${run.authoredCommands} authored + ${run.executedCommands - run.authoredCommands} replayed)`);
   });
 
   it('renders defects alone when nothing ran', () => {

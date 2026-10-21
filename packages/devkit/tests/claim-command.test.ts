@@ -153,3 +153,74 @@ describe('sharpee claim — the lock (D2, D4, D5) and the rerun (AC-1, AC-5)', (
     expect(existsSync(path.join(dir, FRAGMENT))).toBe(false);
   }, 60_000);
 });
+
+describe('sharpee claim — the Testing tab\'s path (ADR-367 D7): --json, the edited lists, --fragment-only', () => {
+  const parse = (stdout: string[]) => JSON.parse(stdout.join('\n')) as Record<string, unknown>;
+
+  it('--json prints the offer as one object and writes nothing', async () => {
+    const dir = project();
+    const { code, stdout, stderr } = await run(() => runClaimCommand(['mainline', '--json', dir]));
+    expect(code).toBe(0);
+    expect(stderr).toEqual([]);
+    expect(stdout).toHaveLength(1);
+    expect(parse(stdout)).toEqual({
+      kind: 'offer', line: { id: 'mainline', label: 'opening-hall' }, turn: 2, cardId: 'card0003',
+      offer: ['the player is in the Landing', 'the note is read', 'the note has been read'],
+    });
+    expect(existsSync(path.join(dir, FRAGMENT))).toBe(false);
+  }, 60_000);
+
+  it('--json --propose with the author\'s lists writes their lists into the block, names what the cone would trim, and writes nothing', async () => {
+    const dir = project();
+    const { code, stdout } = await run(() =>
+      runClaimCommand(['mainline', 'the player is in the Landing', '--propose', '--json', '--rooms', 'the Hall, the Landing', '--things', 'the note', '--verbs', 'read, look', dir]));
+    expect(code).toBe(0);
+    const object = parse(stdout);
+    expect(object).toMatchObject({
+      kind: 'proposal', turn: 2, cardId: 'card0003', name: 'the player is in the Landing', fact: 'the player is in the Landing',
+      rooms: ['the Hall', 'the Landing'], things: ['the note'], trimmed: ['the note'], verbs: ['read', 'look'],
+    });
+    expect(object.block).toBe('  claim the player is in the Landing\n    the player is in the Landing\n    needs rooms: the Hall, the Landing\n    needs things: the note\n    needs verbs: read, look\n');
+    expect(existsSync(path.join(dir, FRAGMENT))).toBe(false);
+  }, 60_000);
+
+  it('a list naming a thing the story lacks is refused as the fact would be, as an error object under --json', async () => {
+    const dir = project();
+    const { code, stdout, stderr } = await run(() => runClaimCommand(['mainline', 'the player is in the Landing', '--json', '--things', 'the unicorn', dir]));
+    expect(code).toBe(2);
+    expect(stderr).toEqual([]);
+    const object = parse(stdout);
+    expect(object.kind).toBe('error');
+    expect(String(object.message)).toContain('does not compile as a claim');
+    expect(existsSync(path.join(dir, FRAGMENT))).toBe(false);
+  }, 60_000);
+
+  it('--fragment-only writes the fragment, touches no tree file, names the manifest key, and the fragment is byte-identical to a full lock\'s', async () => {
+    const page = project();
+    const before = { segment: readFileSync(path.join(page, 'claims-tier.tests', 'mainline.json'), 'utf8'), manifest: readFileSync(path.join(page, 'claims-tier.tests', 'manifest.json'), 'utf8') };
+    const { code, stdout } = await run(() => runClaimCommand(['mainline', 'the player is in the Landing', '--fragment-only', '--json', page]));
+    expect(code).toBe(0);
+    expect(parse(stdout)).toEqual({
+      kind: 'written', line: { id: 'mainline', label: 'opening-hall' }, turn: 2, cardId: 'card0003',
+      name: 'the player is in the Landing', fact: 'the player is in the Landing',
+      claimsFile: FRAGMENT, created: true, pinned: false, manifestKey: FRAGMENT, files: [FRAGMENT],
+    });
+    expect(readFileSync(path.join(page, 'claims-tier.tests', 'mainline.json'), 'utf8')).toBe(before.segment);
+    expect(readFileSync(path.join(page, 'claims-tier.tests', 'manifest.json'), 'utf8')).toBe(before.manifest);
+
+    // The same lock through the CLI alone, on a second copy: one writer, one fragment (AC-6's CLI half).
+    const cli = project();
+    expect((await run(() => runClaimCommand(['mainline', 'the player is in the Landing', cli]))).code).toBe(0);
+    expect(readFileSync(path.join(page, FRAGMENT), 'utf8')).toBe(readFileSync(path.join(cli, FRAGMENT), 'utf8'));
+
+    // A second --fragment-only lock before the page has written the manifest key appends to the fragment
+    // on disk (never overwrites it) and still names the key the tree needs.
+    const second = await run(() => runClaimCommand(['mainline', 'the note is read', '--at', '1', '--fragment-only', '--json', page]));
+    expect(second.code).toBe(0);
+    expect(parse(second.stdout)).toMatchObject({ kind: 'written', cardId: 'card0002', created: false, pinned: false, manifestKey: FRAGMENT });
+    const fragment = readFileSync(path.join(page, FRAGMENT), 'utf8');
+    expect(fragment).toContain('  claim the player is in the Landing\n');
+    expect(fragment).toContain('\n\n  claim the note is read\n    the note is read\n');
+    expect(readFileSync(path.join(page, 'claims-tier.tests', 'mainline.json'), 'utf8')).toBe(before.segment);
+  }, 120_000);
+});

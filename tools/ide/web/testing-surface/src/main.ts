@@ -51,8 +51,10 @@ import {
   type DeleteRef, type TurnSource,
 } from './compose';
 import { TreeSessionModel, type AuthoringMemento } from './model';
-import { diffTreeFiles, type TreeFiles } from '@sharpee/branch-tester/tree-document';
-import { showListPicker, showStatePicker, type StateFact } from './picker';
+import { diffTreeFiles, turnOfCard, type TreeFiles } from '@sharpee/branch-tester/tree-document';
+import { showListPicker, showNotice, showStatePicker, type StateFact } from './picker';
+import { applyLockWritten, decodeLockResult, lockArgumentsOf, type LockStep } from './lock';
+import { showLockSheet } from './lock-sheet';
 import { beginRun, createRunState, finishRun, foldRunLine, type RunVisitTarget } from './run';
 import { captureBaseline, evaluateStaleness as judgeStaleness, restoreRun, storedRunOf, type StoredRun } from './staleness';
 import { busyLabel } from './busy';
@@ -137,6 +139,11 @@ interface DeliverShim {
   runStart?(build: string): void;
   /** The host's current build id changed — a story source file was saved. */
   buildChanged?(build: string): void;
+  /**
+   * The host ran the `sharpee claim` step the page posted (`{lock:{args}}`,
+   * ADR-367 D7) and this is the CLI's stdout — one JSON object.
+   */
+  lockResult?(text: string): void;
 }
 
 const surfaceWindow = window as unknown as {
@@ -369,6 +376,24 @@ const cards = new CardsView(model, {
       if (model.addEvent(ordinal, event)) update();
     });
   },
+  onLock(ordinal, anchor) {
+    // The lock is a conversation with `sharpee claim` (ADR-367 D7): the
+    // host runs the CLI with the arguments the page writes and hands the
+    // one object back through `lockResult`. Step one asks for the offer.
+    if (replayActive || driverBusy || pendingLock !== undefined) return;
+    const card = model.cardAt(ordinal);
+    const cardId = card?.id;
+    const lineId = cardId !== undefined ? model.lineOfCard(cardId) : undefined;
+    const turn = cardId !== undefined ? turnOfCard(model.document, cardId) : undefined;
+    if (card?.type !== 'turn' || cardId === undefined || lineId === undefined || turn === undefined) {
+      showNotice(anchor, 'lock', 'This card is not a typed turn on a saved line, so nothing can be locked here yet.');
+      return;
+    }
+    // The CLI reads the tree from disk, so the page's latest files must be there first.
+    update();
+    pendingLock = { ordinal, anchor, cardId, step: { line: lineId, turn } };
+    postToBridge({ lock: { args: lockArgumentsOf(pendingLock.step) } });
+  },
   onChannelPicker(ordinal, anchor) {
     // The OPENING (ordinal 0) has no record of its own — its channels are
     // the boot flush, riding the boot record's captures.
@@ -504,6 +529,51 @@ function deliverRunLine(text: string): void {
   foldRunLine(runState, text);
   cards.render();
   renderOutline();
+}
+
+/** The lock in flight (ADR-367 D7): which card asked, and the step the host is running. */
+let pendingLock: { ordinal: number; anchor: HTMLElement; cardId: string; step: LockStep } | undefined;
+
+/**
+ * The host ran `sharpee claim` for the pending step and this is its one
+ * object. An offer opens the picker of facts; a proposal opens the sheet;
+ * a write pins the card and the manifest through the model — the page is
+ * the tree's writer while it is open — and posts the changed files; an
+ * error is said where the author clicked. Each next step is another spawn.
+ */
+function deliverLockResult(text: string): void {
+  const pending = pendingLock;
+  pendingLock = undefined;
+  if (pending === undefined) return;
+  const result = decodeLockResult(text);
+  const next = (step: LockStep): void => {
+    pendingLock = { ...pending, step };
+    postToBridge({ lock: { args: lockArgumentsOf(step) } });
+  };
+  switch (result.kind) {
+    case 'offer':
+      if (result.offer.length === 0) {
+        showNotice(pending.anchor, 'lock', 'Nothing this line changed by this turn can be stated as a claim.');
+        return;
+      }
+      showListPicker(pending.anchor, 'true now and not at boot — lock one', result.offer, fact => next({ ...pending.step, fact }));
+      return;
+    case 'proposal':
+      showLockSheet(pending.anchor, result, (name, needs) => next({ ...pending.step, fact: result.fact, name, needs }));
+      return;
+    case 'written': {
+      // The pin and the manifest key, through the same functions the CLI
+      // writes with; `update()` then posts exactly the files that changed.
+      applyLockWritten(model, pending.cardId, result);
+      clearUndo();   // the fragment is written: there is no undo for half of a lock
+      update();
+      trace(`lock: pinned "${result.name}" on card ${pending.cardId} (${result.files.join(', ')})`);
+      return;
+    }
+    case 'error':
+      showNotice(pending.anchor, 'lock refused', result.message);
+      return;
+  }
 }
 
 function deliverRunExit(ok: boolean, note?: string): void {
@@ -1137,6 +1207,7 @@ surfaceWindow.__sharpeeTestingSurface = {
   runExit: deliverRunExit,
   runStart: deliverRunStart,
   buildChanged: deliverBuildChanged,
+  lockResult: deliverLockResult,
 };
 
 cards.ensureLayout();

@@ -26,6 +26,7 @@ import { claimCone, type ClaimsCompileResult, type IREntity, type StoryIR } from
 import { CHORD_STATE_PREFIX, CHORD_STORY_STATE_KEY } from '@sharpee/story-loader';
 import { normalizeClaimSet, type Claim } from './claim-set.js';
 import { claimHolds, clauseKeysByFiredOf, entityIdByIrOf } from './claim-predicates.js';
+import { FLAG_SENTENCES, participleOf, writtenName } from './claim-vocabulary.js';
 import { irIdOf, readWorldSnapshot, type ClaimsTurnEvent, type ClaimsWorld, type WorldSnapshot } from './claims-game.js';
 import { branchLineLabelOf, mainLineLabelOf, roomSlugOf, type TreeCard, type TreeDocument } from '../tree-document.js';
 import { flattenTreeLines, type TreeLine } from '../tree-walker.js';
@@ -57,6 +58,13 @@ export interface LockRequest {
   readonly fact?: string;
   /** The claim's name; defaults to the fact. */
   readonly name?: string;
+  /**
+   * The author's edited lists (D7's chips), written instead of the
+   * proposal's — names as the fragment spells them, each list replacing
+   * the proposed one when present. Compiled and checked like any fact; the
+   * cone trims nothing from a list the author wrote.
+   */
+  readonly needs?: { readonly rooms?: readonly string[]; readonly things?: readonly string[]; readonly verbs?: readonly string[] };
   readonly loadGame: () => Promise<LockGame>;
   /** `compileClaims` bound to the story's source and import resolver. */
   readonly compileCandidate: (fragment: string) => ClaimsCompileResult;
@@ -87,16 +95,6 @@ export interface LockProposal {
   /** The Chord block to splice, two-space indented, ending in a newline. */
   readonly block?: string;
 }
-
-/** A trait flag the offer can name, in the fragment's words (`compileClaims`' table). */
-const FLAG_SENTENCES: ReadonlyArray<{ trait: string; field: string; whenTrue: string; whenFalse: string }> = [
-  { trait: 'openable', field: 'isOpen', whenTrue: 'open', whenFalse: 'closed' },
-  { trait: 'lockable', field: 'isLocked', whenTrue: 'locked', whenFalse: 'unlocked' },
-  { trait: 'switchable', field: 'isOn', whenTrue: 'on', whenFalse: 'off' },
-  { trait: 'lightSource', field: 'isLit', whenTrue: 'lit', whenFalse: 'unlit' },
-  { trait: 'wearable', field: 'worn', whenTrue: 'worn', whenFalse: 'unworn' },
-  { trait: 'readable', field: 'hasBeenRead', whenTrue: 'read', whenFalse: 'unread' },
-];
 
 /** The walk's own stateful traits plus `readable` — what "a thing changed" reads. */
 const CHANGE_TRAITS = new Set([
@@ -186,32 +184,6 @@ function verbOf(input: string, validated: NonNullable<LockGame['lastTurnResult']
   }
   const head = lower.slice(0, cut).trim();
   return head.length > 0 ? head : undefined;
-}
-
-/** `the deed`, `Tobias`, `the Iron Gates` — the name as the story declared it, which the resolver takes exactly. */
-function writtenName(entity: IREntity): string {
-  return entity.article ? `${entity.article} ${entity.name}` : entity.name;
-}
-
-/**
- * Participles whose spelling the gerund does not give, kept to the ones the
- * resolver's stem match still accepts (`taken` and `taking` share `tak`;
- * `worn` and `wearing` share nothing, so `wearing` stays regular).
- */
-const PARTICIPLES: Readonly<Record<string, string>> = {
-  taking: 'taken', giving: 'given', showing: 'shown', throwing: 'thrown', hearing: 'heard',
-  setting: 'set', reading: 'read', seeing: 'seen', eating: 'eaten', breaking: 'broken', knowing: 'known',
-};
-
-/** A gerund as a past participle, loosely — `turning` → `turned`; the resolver's stem match forgives the rest. */
-function participleOf(action: string): string | undefined {
-  if (action.includes('-') || action.includes('_') || !action.endsWith('ing')) return undefined;
-  const known = PARTICIPLES[action];
-  if (known) return known;
-  const stem = action.slice(0, -3);
-  if (stem.length < 2) return undefined;
-  if (stem.endsWith('e')) return `${stem}d`;
-  return `${stem}ed`;
 }
 
 /**
@@ -339,23 +311,27 @@ export async function proposeLock(request: LockRequest): Promise<LockProposal> {
 
   const name = request.name ?? request.fact;
   const nameOf = (id: string) => writtenName(entityById.get(id)!);
+  // The author's lists win over the line's (D7): each present list is
+  // written as given, in the fragment's own spelling.
+  const roomNames = request.needs?.rooms ?? rooms.map(nameOf);
+  const verbNames = request.needs?.verbs ?? verbs;
   // No provenance comment: Chord admits `##` only at the top level, outside
   // every block (ADR-249), so ADR-367 D4's comment line cannot be written
   // inside the block. The card's `locks` pin is the lock's record.
-  const render = (thingIds: readonly string[]): string => {
+  const render = (thingNames: readonly string[]): string => {
     const lines = [
       `  claim ${name}`,
       `    ${request.fact}`,
     ];
-    if (rooms.length) lines.push(`    needs rooms: ${rooms.map(nameOf).join(', ')}`);
-    if (thingIds.length) lines.push(`    needs things: ${thingIds.map(nameOf).join(', ')}`);
-    if (verbs.length) lines.push(`    needs verbs: ${verbs.join(', ')}`);
+    if (roomNames.length) lines.push(`    needs rooms: ${roomNames.join(', ')}`);
+    if (thingNames.length) lines.push(`    needs things: ${thingNames.join(', ')}`);
+    if (verbNames.length) lines.push(`    needs verbs: ${verbNames.join(', ')}`);
     return `${lines.join('\n')}\n`;
   };
 
   // Lower the fact through the compiler: the candidate block is the written
   // block with the untrimmed set, so every name in it is checked too.
-  const compiled = compileCandidate(`claims\n${render(things)}end claims\n`);
+  const compiled = compileCandidate(`claims\n${render(request.needs?.things ?? things.map(nameOf))}end claims\n`);
   if (!compiled.ok || compiled.claims === null) {
     const errors = compiled.diagnostics.filter((d) => d.severity === 'error').map((d) => d.message);
     throw new Error(`the fact "${request.fact}" does not compile as a claim: ${errors.join('; ')}`);
@@ -371,6 +347,23 @@ export async function proposeLock(request: LockRequest): Promise<LockProposal> {
   });
   if (!holds) throw new Error(`"${request.fact}" does not hold at turn ${turn} of line ${line.id}; nothing written`);
 
+  if (request.needs?.things !== undefined) {
+    // The author's things are written as given; the cone's verdict on them
+    // is still reported, so a chip the claim cannot depend on is named.
+    const cone = claimCone(ir, compiled.claims.claims[0], claim.set);
+    const inertNames = new Set(cone.inert.map((id) => (entityById.has(id) ? nameOf(id) : id)));
+    return {
+      ...base,
+      name,
+      fact: request.fact,
+      rooms: [...roomNames],
+      things: [...request.needs.things],
+      trimmed: request.needs.things.filter((thing) => inertNames.has(thing)),
+      kept: cone.kept.map((row) => ({ thing: entityById.has(row.thing) ? nameOf(row.thing) : row.thing, reason: row.reason })),
+      verbs: [...verbNames],
+      block: render(request.needs.things),
+    };
+  }
   const cone = claimCone(ir, compiled.claims.claims[0], claim.set);
   const trimmed = cone.inert;
   const keptThings = things.filter((id) => !trimmed.includes(id));
@@ -378,12 +371,12 @@ export async function proposeLock(request: LockRequest): Promise<LockProposal> {
     ...base,
     name,
     fact: request.fact,
-    rooms: rooms.map(nameOf),
+    rooms: [...roomNames],
     things: keptThings.map(nameOf),
     trimmed: trimmed.map(nameOf),
     kept: cone.kept.map((row) => ({ thing: nameOf(row.thing), reason: row.reason })),
-    verbs,
-    block: render(keptThings),
+    verbs: [...verbNames],
+    block: render(keptThings.map(nameOf)),
   };
 }
 
@@ -509,32 +502,6 @@ export function freshFragmentWith(storyTitle: string, block: string): string {
   ].join('\n');
 }
 
-/**
- * Pin a claim's name on a card (ADR-367 D5): the card gains `locks` or the
- * name is appended once. Mutates the document the caller then writes
- * through `segmentTree`.
- *
- * @param document the tree
- * @param cardId the card the lock was taken at
- * @param name the claim's name
- * @returns true when the document changed
- */
-export function pinLockOnCard(document: TreeDocument, cardId: string, name: string): boolean {
-  const visit = (cards: TreeCard[]): 'pinned' | 'already' | undefined => {
-    for (const card of cards) {
-      if (card.id === cardId) {
-        if (card.locks?.includes(name)) return 'already';
-        card.locks = [...(card.locks ?? []), name];
-        return 'pinned';
-      }
-      for (const branch of card.branches ?? []) {
-        const found = visit(branch.cards);
-        if (found !== undefined) return found;
-      }
-    }
-    return undefined;
-  };
-  const found = visit(document.cards);
-  if (found === undefined) throw new Error(`no card ${cardId} in the tree`);
-  return found === 'pinned';
-}
+// The pin lives with the document it mutates (browser-safe, so the Testing
+// tab pins through the same function the CLI does — ADR-367 D7).
+export { pinLockOnCard } from '../tree-document.js';
