@@ -34,8 +34,8 @@
 - **Deliverable**: story adjusted to whichever form works; a findings note in docs/work/wumpus/ recording each probe and its result; any platform gap filed as a GH issue (devarch label when DevArch's, plain otherwise) and reported to David, never fixed in `packages/`
 - **Exit state**: each of the three mechanics behaves as designed or has a filed finding and a story-level workaround David has seen
 - **Demonstration**: `./sharpee play` sessions (not the bundle `--exec`, GH #352) reaching a pit, a bat roost and an eaten death; each must show the designed outcome or the recorded finding
-- **Demonstrated**: 
-- **Status**: PENDING
+- **Demonstrated**: 2026-10-21 — piped `./sharpee play branch-stories/wumpus` runs and seed-42 probe cards through `./sharpee test branch-stories/wumpus --json --capture-output` (docs/work/wumpus/probes-20261021.md, P1–P8): the pit kills one turn after "The coracle arrives at the Bottomless Pit."; the bat roost's `select randomly` arm moved the coracle (Dripping Gallery / Echo Chamber unseeded, Bone Hollow at seed 42) and it steers on from there; the Wumpus's step into close-by printed `eaten` the same turn; after the story change to `sight: 6` and the in-the-distance hit band, the seed-42 hunt wins on one arrow. Two platform gaps filed, not fixed: GH #612 (a landmark room's `sight:` outlook is lost aboard the vehicle — `lookoutOf` returns undefined) and GH #613 (`the player's <counter>` compiles but fails at runtime; story uses `the Hunter's arrows`). [verified: every run quoted in the probes note was executed this session]
+- **Status**: DONE
 
 ### Phase 3: Pin the tests and close the audit line
 - **Tier**: Small

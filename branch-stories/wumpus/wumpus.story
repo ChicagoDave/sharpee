@@ -88,7 +88,7 @@ end phrase
 create the Landing
   a room
   seen from afar: a smear of grey daylight on the water
-  sight: 3
+  sight: 6
   aka shore, landing, beach
 
   A gravel shore where the daylight gives out. The coracle is drawn up
@@ -97,6 +97,7 @@ create the Landing
 create the Echo Chamber
   a room
   seen from afar: a mouth of rock that throws your own paddle strokes back
+  sight: 6
   aka echo, chamber
 
   A chamber that answers every sound twice. Nothing lives here but
@@ -105,6 +106,7 @@ create the Echo Chamber
 create the Dripping Gallery
   a room
   seen from afar: a glitter of falling water
+  sight: 6
   aka gallery, drips
 
   A long gallery where water falls from the roof in a hundred places
@@ -113,6 +115,7 @@ create the Dripping Gallery
 create the Bone Hollow
   a room
   seen from afar: a pale heap above the waterline
+  sight: 6
   aka hollow, bones
 
   Bones, picked clean, heaped to the height of a man. Something eats
@@ -220,11 +223,11 @@ define action shooting
     fire at the target
   the target must be visible
   refuse without target: shoot-what
-  refuse when the player's arrows is 0: no-arrows
-  lower the player's arrows by 1
-  phrase arrow-misses when the Wumpus is on the horizon
+  refuse when the Hunter's arrows is 0: no-arrows
+  lower the Hunter's arrows by 1
   win wumpus-slain when the Wumpus is in the distance
-  lose out-of-arrows when the player's arrows is 0
+  phrase arrow-misses when the Wumpus is not in the distance
+  lose out-of-arrows when the Hunter's arrows is 0
 
   phrases en-US
     shoot-what:
@@ -232,8 +235,8 @@ define action shooting
     no-arrows:
       Your quiver is empty.
     arrow-misses:
-      The arrow goes out across the water and is gone. Somewhere a
-      long way off, something snorts.
+      The arrow goes out across the water and is gone. Somewhere in
+      the dark, something snorts.
     wumpus-slain:
       The arrow goes home. The Wumpus rears once out of the water,
       enormous, and goes down for good. The caves are quiet.
