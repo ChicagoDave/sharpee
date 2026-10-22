@@ -137,7 +137,7 @@
 - **Exit state**: one declaration of each claim type; claim syntax written only by Chord; the tab composes no claims text of its own.
 - **Demonstration**: branch-tester, chord and devkit suites one run each, green; the Testing tab's `TestingSurfaceRealPathTests` (drives the real page) one run showing the ratio line equal to `claimsRatioLine` for a held, a broken and an unproven claim; `lock-gesture-real-path.test.ts` still byte-identical to the CLI's lock.
 - **Demonstrated**: 
-- **Status**: PENDING
+- **Status**: CURRENT (since 2026-10-22)
 
 ### Phase 9: Small fixes (D5, D6, D7, D10, D20, D22, F17, Older-2, Older-3)
 - **Tier**: Medium
