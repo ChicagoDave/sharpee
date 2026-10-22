@@ -45,7 +45,7 @@ import { ActionMetadata } from '../../../validation/index.js';
 import { ScopeLevel } from '../../../scope/types.js';
 import { nounPhraseFor } from '../../../utils/index.js';
 import { ActionLifecycleDescriptor, blockedMessageId } from '../../lifecycle/index.js';
-import { SettingCourseMessages } from './setting-course-messages.js';
+import { SettingCourseMessages } from './setting_course-messages.js';
 
 /** The command set this action speaks for (ADR-366 D5i). */
 export const DESTINATIONS_COMMAND_SET = 'destinations';

@@ -7,7 +7,8 @@
  * Uses four-phase pattern:
  * 1. validate: Check target exists and can be switched on
  * 2. execute: Delegate state change to SwitchableBehavior
- * 3. report: Generate success events (plus auto-LOOK when illuminating)
+ * 3. report: Generate success events (plus `if.event.lit`, with no message
+ *    of its own, when a light came on, and the auto-LOOK when illuminating)
  * 4. blocked: Generate error events when validation fails
  *
  * Interceptor consultation (ADR-118) runs through the shared lifecycle
@@ -15,6 +16,7 @@
  */
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types.js';
+import type { LitEventData } from '../lighting/lighting.js';
 import { ActionMetadata } from '../../../validation/index.js';
 import { type ISemanticEvent } from '@sharpee/core';
 import {
@@ -61,6 +63,8 @@ interface SwitchingOnSharedData {
   targetName: string;
   // Light source data
   isLightSource?: boolean;
+  /** The light's behavior answered that it gives light now (D20). */
+  cameAlight?: boolean;
   lightRadius?: number;
   lightIntensity?: string;
   willIlluminateLocation?: boolean;
@@ -157,9 +161,10 @@ export const switchingOnAction: Action & { metadata: ActionMetadata } = {
     // Delegate state change to behavior
     const result = SwitchableBehavior.switchOn(noun, context.world);
 
-    // Coordinate with LightSourceBehavior if applicable
-    if (noun.has(TraitType.LIGHT_SOURCE)) {
-      LightSourceBehavior.light(noun);
+    // A light source whose switch went on lights; the light's behavior says
+    // whether it now gives light, which the report records as `lit` (D20).
+    if (result.success && noun.has(TraitType.LIGHT_SOURCE)) {
+      sharedData.cameAlight = LightSourceBehavior.switchedOn(noun, context.world);
     }
 
     // Handle failure cases (defensive checks)
@@ -287,6 +292,13 @@ export const switchingOnAction: Action & { metadata: ActionMetadata } = {
         willOpen: sharedData.willOpen
       })
     ];
+
+    // The light now gives light: the same fact a flame records (D20, Q8).
+    // No message of its own — the player reads the switching line.
+    if (sharedData.cameAlight) {
+      const lit: LitEventData = { targetId: sharedData.targetId, targetName: sharedData.targetName, bySwitch: true };
+      events.push(context.event('if.event.lit', { ...lit }));
+    }
 
     // If we illuminated a dark room, describe it as a look would
     if (sharedData.willIlluminateLocation && sharedData.wasDarkBefore && sharedData.revealed) {

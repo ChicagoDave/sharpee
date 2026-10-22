@@ -22,6 +22,9 @@ export * from './ast.js';
 export * from './ir.js';
 export { CHORD_LANGUAGE_VERSION } from './version.js';
 export { analyze, normalizeTopic } from './analyzer.js';
+// The compass words' bearings: Chord's side of a table world-model also
+// keeps (Chord depends on nothing), pinned equal by a story-loader test.
+export { COMPASS_BEARINGS } from './analyzer/sailing.js';
 export { KIND_NOUNS, TRAIT_ADJECTIVES, STATE_ADJECTIVES, PLATFORM_STATE_PAIRS, STARTS_STATE_PAIRINGS, EVENT_VERBS, CLIENT_CAPABILITY_FLAGS, capabilityKeyOf, PRONOUN_WORDS, PRONOUN_CASES, MESSAGE_OVERRIDE_ALIASES, SCOPE_REQUIREMENT_PREDICATES } from './catalog.js';
 export type { ScopeRequirementWord } from './catalog.js';
 export { STDLIB_MANIFEST } from './stdlib-manifest.js';

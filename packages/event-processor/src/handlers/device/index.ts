@@ -2,35 +2,15 @@
  * Device manipulation event handlers
  * 
  * These handlers process events for device interactions like
- * pushing, pulling, turning, and using objects.
+ * pulling, turning, and using objects. Pushing has no handler: a press
+ * toggles through `SwitchableBehavior` in the action's execute and a push
+ * between rooms moves the thing there, so the behavior is the one writer
+ * and nothing here mirrors the event's prediction over it.
  */
 
 import { type ISemanticEvent, getUntypedEventData } from '@sharpee/core';
 import { WorldModel, TraitType, type EventHandler } from '@sharpee/world-model';
 import { IFEvents } from '@sharpee/if-domain';
-
-/**
- * Handle PUSHED event - process pushing objects/buttons
- */
-export const handlePushed: EventHandler = (event: ISemanticEvent, world: any) => {
-  const { target } = event.entities;
-  const data = getUntypedEventData(event);
-
-  if (!target) return;
-
-  // Get the actual entity from the world model
-  const targetEntity = world.getEntity(target);
-  if (!targetEntity) return;
-
-  // A press that toggled a switchable thing settles its state on the event
-  // (ADR-378 D6a: the pushable is a marker; the press is the only mutation
-  // this handler mirrors). A push between rooms moved the thing in the
-  // action's execute, through the world, and needs nothing here.
-  if (targetEntity.has(TraitType.SWITCHABLE) && data?.willToggle) {
-    const switchable = targetEntity.get(TraitType.SWITCHABLE) as { isOn?: boolean };
-    switchable.isOn = data?.newState as boolean;
-  }
-};
 
 /**
  * Handle PULLED event - process pulling objects
@@ -152,7 +132,6 @@ export const handleUsed: EventHandler = (event: ISemanticEvent, world: any) => {
  * Register all device manipulation handlers
  */
 export function registerDeviceHandlers(world: WorldModel): void {
-  world.registerEventHandler(IFEvents.PUSHED, handlePushed);
   world.registerEventHandler(IFEvents.PULLED, handlePulled);
   world.registerEventHandler(IFEvents.TURNED, handleTurned);
   world.registerEventHandler(IFEvents.USED, handleUsed);

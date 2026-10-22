@@ -25,7 +25,7 @@ import {
   WorldModel,
 } from '@sharpee/world-model';
 import { steeringAction } from '../../../src/actions/standard/steering';
-import { settingCourseAction } from '../../../src/actions/standard/setting-course';
+import { settingCourseAction } from '../../../src/actions/standard/setting_course';
 import { enteringAction } from '../../../src/actions/standard/entering';
 import { exitingAction } from '../../../src/actions/standard/exiting';
 import { goingAction } from '../../../src/actions/standard/going';
@@ -219,6 +219,27 @@ describe('out of the vehicle (D9)', () => {
     expect(messageIds(run(droppingAction, world, anchor))).toContain('if.action.dropping.lost_overboard');
     expect(world.getLocation(anchor.id)).toBeUndefined();
     expect(world.getLocation(skiff.id)).toBe(expanse.id);
+  });
+
+  test('`drop all` out of the vehicle follows the one drop rule per item: the floating thing floats, the rest is lost', () => {
+    const { world, player, belt: expanse } = belt();
+    const buoy = world.createEntity('buoy', 'object');
+    buoy.add(new IdentityTrait({ name: 'buoy' }));
+    buoy.add(new FloatingTrait());
+    world.moveEntity(buoy.id, player.id);
+    const anchor = world.createEntity('anchor', 'object');
+    anchor.add(new IdentityTrait({ name: 'anchor' }));
+    world.moveEntity(anchor.id, player.id);
+    run(exitingAction, world);
+
+    const command = createCommand(IFActions.DROPPING, { entity: buoy, text: 'all' });
+    (command.parsed.structure.directObject as any).isAll = true;
+    const events = executeWithValidation(droppingAction, createRealTestContext(droppingAction, world, command));
+
+    expect(world.getLocation(buoy.id)).toBe(expanse.id);
+    expect(buoy.get(FloatingTrait)!.position).toEqual({ x: 4, y: 3 });
+    expect(world.getLocation(anchor.id)).toBeUndefined();
+    expect(messageIds(events)).toEqual(expect.arrayContaining(['if.action.dropping.dropped_afloat', 'if.action.dropping.lost_overboard']));
   });
 
   test('`take all` alongside hauls the floating thing in with the multi-object line, and its cell is cleared', () => {

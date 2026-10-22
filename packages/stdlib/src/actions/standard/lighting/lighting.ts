@@ -38,6 +38,12 @@ export interface LitEventData {
   targetName: string;
   /** The tool it was lit with, when it needs one */
   toolId?: string;
+  /**
+   * Set when a switch brought it on (switching on, or lighting delegated to
+   * it): the fact is recorded with no message of its own, since the player
+   * reads the switching line (D20, Q8).
+   */
+  bySwitch?: true;
 }
 
 /**

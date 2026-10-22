@@ -28,7 +28,7 @@ import {
   exitMessageKey,
 } from '@sharpee/world-model';
 import { steeringAction } from '../../../src/actions/standard/steering';
-import { settingCourseAction } from '../../../src/actions/standard/setting-course';
+import { settingCourseAction } from '../../../src/actions/standard/setting_course';
 import { enteringAction } from '../../../src/actions/standard/entering';
 import { exitingAction } from '../../../src/actions/standard/exiting';
 import { createVehicleCommandTransformer } from '../../../src/actions/standard/vehicle-command-transformer';

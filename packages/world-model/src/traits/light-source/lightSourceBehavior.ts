@@ -32,6 +32,21 @@ export class LightSourceBehavior extends Behavior {
   }
   
   /**
+   * A switchable light's switch has just gone on: the light lights, if it
+   * has fuel, and the answer is whether it gives light now — the fact
+   * `if.event.lit` records, whatever mechanism (a switch or a flame) made it
+   * so (D20, Q8). Call only after the switch has gone on.
+   *
+   * @param source - The light source whose switch went on
+   * @param world - The world, for a powered device's power sources
+   * @returns true when the light is giving light now
+   */
+  static switchedOn(source: IFEntity, world: WorldModel): boolean {
+    if (!LightSourceBehavior.light(source)) return false;
+    return LightSourceBehavior.givesLight(source, world);
+  }
+
+  /**
    * Turn off the light source
    */
   static extinguish(source: IFEntity): void {

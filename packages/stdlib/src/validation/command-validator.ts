@@ -21,7 +21,7 @@ import type {
   WorldModel,
   IFEntity
 } from '@sharpee/world-model';
-import { IdentityTrait, WallEntity, deriveNameVocabulary, holderOf } from '@sharpee/world-model';
+import { IdentityTrait, WallEntity, deriveNameVocabulary, isLandmark } from '@sharpee/world-model';
 
 import type { ValidatedCommand, ScopeInfo } from './types.js';
 import type { SenseType } from '../scope/types.js';
@@ -709,7 +709,7 @@ export class CommandValidator implements CommandValidator {
   /** A landmark room of an expanse the player is positioned in, seen from outside it (ADR-376 D6). */
   private isLandmarkInSight(room: IFEntity): boolean {
     const player = this.world.getPlayer();
-    if (!player || !holderOf(this.world, room)) return false;
+    if (!player || !isLandmark(this.world, room)) return false;
     if (this.world.getContainingRoom(player.id)?.id === room.id) return false;
     return this.scopeResolver.canSee(player, room);
   }

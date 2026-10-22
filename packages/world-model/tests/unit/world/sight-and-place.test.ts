@@ -30,7 +30,7 @@ import { ExpanseTrait } from '../../../src/traits/expanse/expanseTrait';
 import { FloatingTrait } from '../../../src/traits/expanse/floatingTrait';
 import { LandmarkTrait } from '../../../src/traits/expanse/landmarkTrait';
 import { sendVehicle } from '../../../src/traits/vehicle/vehicleBehavior';
-import { placeOf, holderOf } from '../../../src/world/ExpansePlaceBehavior';
+import { placeOf, holderOf, isLandmark } from '../../../src/world/ExpansePlaceBehavior';
 import { lookoutOf, seenFromAfar, sightingOf } from '../../../src/world/SightBehavior';
 import { VisibilityBehavior } from '../../../src/world/VisibilityBehavior';
 
@@ -112,6 +112,16 @@ describe('an expanse with a moored vehicle', () => {
       expect(sightingOf(world, lookout, sloop)).toBeUndefined();
       expect(sightingOf(world, lookout, port)).toMatchObject({ distance: 2 });
       expect(holderOf(world, sloop)?.id).toBe(port.id);
+    });
+
+    it('isLandmark names an expanse\'s landmark rooms and nothing else (D5)', () => {
+      expect(isLandmark(world, port)).toBe(true);
+      expect(isLandmark(world, isle)).toBe(true);
+      expect(isLandmark(world, ocean)).toBe(false);
+      expect(isLandmark(world, room('Shed'))).toBe(false);
+      // A moored vehicle has a landmark holder but is not itself a landmark.
+      expect(holderOf(world, sloop)?.id).toBe(port.id);
+      expect(isLandmark(world, sloop)).toBe(false);
     });
 
     it('aboard a moored vehicle the looker has the landmark\'s outlook, not the vehicle\'s sight', () => {

@@ -330,7 +330,7 @@ define machine the boiler works
       change the vine to flowering
       phrase pipes-warm
       phrase vine-stirs
-      play sound boiler-thump when client has sound
+      play sound boiler-thump
     end on
 end machine
 

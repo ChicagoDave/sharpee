@@ -89,7 +89,7 @@ import { lightingLifecycle } from '../standard/lighting/lighting.js';
 import { extinguishingLifecycle } from '../standard/extinguishing/extinguishing.js';
 // ADR-366: the vehicle command sets
 import { steeringLifecycle } from '../standard/steering/steering.js';
-import { settingCourseLifecycle } from '../standard/setting-course/setting-course.js';
+import { settingCourseLifecycle } from '../standard/setting_course/setting_course.js';
 
 /**
  * The descriptor table: all 62 entity-keyed standard actions (33 per

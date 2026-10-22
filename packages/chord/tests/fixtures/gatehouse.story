@@ -66,7 +66,7 @@ define machine drawbridge
   state lowering
     on enter
       phrase chains-groan
-      play sound clank when client has sound
+      play sound clank
     end on
     when event gatehouse-bridge-seated: lowered
 

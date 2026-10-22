@@ -138,15 +138,18 @@ function validateSingleEntity(context: ActionContext, noun: IFEntity): Validatio
 }
 
 /**
- * Execute dropping a single entity. Mutation results are written into
- * `scratch` — the single-object sharedData or the item's multi-object
- * itemData (ADR-228 D4).
+ * Execute dropping a single entity — the one drop rule, called once per
+ * item by the multi-object path and once by the single-object path.
+ * Mutation results are written into `scratch` — the single-object
+ * sharedData or the item's multi-object itemData (ADR-228 D4).
+ *
+ * @returns the actor behavior's drop result
  */
 function executeSingleEntity(
   context: ActionContext,
   noun: IFEntity,
   scratch: DroppingItemScratch
-): void {
+): IDropItemResult {
   const actor = context.actor;
 
   // Store the drop location before the move (player's current location)
@@ -154,7 +157,7 @@ function executeSingleEntity(
   scratch.dropLocation = dropLocation;
 
   // Delegate to ActorBehavior for dropping validation
-  ActorBehavior.dropItem(actor, noun, context.world);
+  const result = ActorBehavior.dropItem(actor, noun, context.world);
 
   // Into an expanse (ADR-376 D9, D10): out of the vehicle, the player
   // drops into the expanse at their cell — a floating thing floats there,
@@ -162,7 +165,7 @@ function executeSingleEntity(
   const cell = actor.get(FloatingTrait)?.position;
   if (dropLocation && cell && context.world.getEntity(dropLocation)?.has(TraitType.EXPANSE)) {
     scratch.overboard = receiveInExpanse(context.world, noun, dropLocation, cell);
-    return;
+    return result;
   }
 
   // Actually move the item to the drop location
@@ -170,6 +173,7 @@ function executeSingleEntity(
     context.world.moveEntity(noun.id, dropLocation);
   }
   scratch.brokeOnDrop = breakIfFragileOnFloor(context, noun, dropLocation);
+  return result;
 }
 
 /**
@@ -374,31 +378,10 @@ export const droppingAction: Action & { metadata: ActionMetadata } = {
       return;
     }
 
-    // Single object execution
+    // Single object execution: the same rule as each item above.
     const sharedData = getDroppingSharedData(context);
-    const actor = context.actor;
     const noun = context.command.directObject!.entity!;
-
-    // Delegate to ActorBehavior for dropping validation
-    const result: IDropItemResult = ActorBehavior.dropItem(actor, noun, context.world);
-
-    // Actually move the item to the drop location
-    const dropLocation = context.world.getLocation(actor.id);
-    sharedData.dropLocation = dropLocation;
-    // Into an expanse (ADR-376 D9, D10): as the per-item path above.
-    const cell = actor.get(FloatingTrait)?.position;
-    if (dropLocation && cell && context.world.getEntity(dropLocation)?.has(TraitType.EXPANSE)) {
-      sharedData.overboard = receiveInExpanse(context.world, noun, dropLocation, cell);
-    } else {
-      if (dropLocation) {
-        context.world.moveEntity(noun.id, dropLocation);
-      }
-      sharedData.brokeOnDrop = breakIfFragileOnFloor(context, noun, dropLocation);
-    }
-
-    // Store result for report phase using sharedData
-    sharedData.dropResult = result;
-
+    sharedData.dropResult = executeSingleEntity(context, noun, sharedData);
   },
 
   report(context: ActionContext): ISemanticEvent[] {

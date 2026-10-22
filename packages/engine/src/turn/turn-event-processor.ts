@@ -63,7 +63,9 @@ export interface EventProcessingContext {
  */
 export type TurnEventSource =
   | { readonly kind: 'action' }
-  | { readonly kind: 'plugin'; readonly pluginId: string };
+  | { readonly kind: 'plugin'; readonly pluginId: string }
+  /** The sound stage: what was heard this turn and the world's reactions to it. */
+  | { readonly kind: 'sound' };
 
 /**
  * What the funnel needs from the turn to enrich a batch.
@@ -184,15 +186,21 @@ export function processEvent(
 
 /**
  * The transaction id a source's events carry in a turn: the player action
- * is one transaction, each plugin batch its own.
+ * is one transaction, each plugin batch its own, and the sound stage's
+ * hearings one more.
  *
  * @param turn - The turn number
  * @param source - Who produced the batch
  */
 export function transactionIdFor(turn: number, source: TurnEventSource): string {
-  return source.kind === 'action'
-    ? `txn:${turn}:action`
-    : `txn:${turn}:plugin:${source.pluginId}`;
+  switch (source.kind) {
+    case 'action':
+      return `txn:${turn}:action`;
+    case 'plugin':
+      return `txn:${turn}:plugin:${source.pluginId}`;
+    case 'sound':
+      return `txn:${turn}:sound`;
+  }
 }
 
 /**

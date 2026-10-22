@@ -187,7 +187,7 @@ import { untyingAction } from './untying/index.js';
 import { lightingAction } from './lighting/index.js';
 import { extinguishingAction } from './extinguishing/index.js';
 import { steeringAction } from './steering/index.js';
-import { settingCourseAction } from './setting-course/index.js';
+import { settingCourseAction } from './setting_course/index.js';
 export * from './jumping/index.js';
 export * from './kissing/index.js';
 export * from './waving/index.js';
@@ -207,7 +207,7 @@ export * from './untying/index.js';
 export * from './lighting/index.js';
 export * from './extinguishing/index.js';
 export * from './steering/index.js';
-export * from './setting-course/index.js';
+export * from './setting_course/index.js';
 export * from './vehicle-command-transformer.js';
 
 // Import author/debug actions

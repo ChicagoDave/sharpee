@@ -8,9 +8,11 @@
  * a player out of the vehicle); a landmark room's cell is its row; an open
  * vehicle moored at a landmark holds no cell (ADR-376 D5) and is at that
  * landmark's row. `holderOf` names the positioned thing an entity is in or
- * is, whose place is the entity's for sight and reach.
+ * is, whose place is the entity's for sight and reach. `isLandmark` says
+ * whether a room is one of an expanse's landmarks.
  *
- * Public interface: `placeOf` with its result `ExpansePlace`, `holderOf`.
+ * Public interface: `placeOf` with its result `ExpansePlace`, `holderOf`,
+ *   `isLandmark`.
  * Owner context: world-model — expanse place (the system's home). Nothing
  * here mutates.
  *
@@ -82,6 +84,18 @@ export function placeOf(world: WorldModel, entity: IFEntity): ExpansePlace | und
 }
 
 /**
+ * Whether a room is a landmark: one of an expanse's landmark rooms, which
+ * holds a cell of that expanse and is seen across it (ADR-376 D2, D6).
+ *
+ * @param world - The world model
+ * @param room - Any entity; only a room can be a landmark
+ * @returns true when the entity is a room some expanse names as a landmark
+ */
+export function isLandmark(world: WorldModel, room: IFEntity): boolean {
+  return room.hasTrait(TraitType.ROOM) && expanseOfLandmark(world, room.id) !== undefined;
+}
+
+/**
  * The positioned thing an entity is, or is held in at any depth: an open
  * vehicle, a floating thing, or an actor out of a vehicle with a position;
  * or the landmark room it is in. Undefined when nothing on the way up is
@@ -97,7 +111,7 @@ export function holderOf(world: WorldModel, entity: IFEntity): IFEntity | undefi
   let current: IFEntity | undefined = entity;
   while (current && !seen.has(current.id)) {
     seen.add(current.id);
-    if (current.hasTrait(TraitType.ROOM)) return expanseOfLandmark(world, current.id) ? current : undefined;
+    if (current.hasTrait(TraitType.ROOM)) return isLandmark(world, current) ? current : undefined;
     if (positionHeld(current)) return current;
     const location = world.getLocation(current.id);
     current = location !== undefined ? world.getEntity(location) : undefined;

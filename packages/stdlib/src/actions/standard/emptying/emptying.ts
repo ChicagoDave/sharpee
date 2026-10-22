@@ -171,14 +171,19 @@ export const emptyingAction: Action & { metadata: ActionMetadata } = {
         unmoved.push(item);
         continue;
       }
-      if (!ontoFloor) {
-        if (destination.has(TraitType.CONTAINER)) {
-          ContainerBehavior.addItem(destination, item, context.world);
-        } else {
-          SupporterBehavior.addItem(destination, item, context.world);
-        }
+      // A container or supporter destination moves the item itself
+      // (behaviors own mutations); the floor is the room, which has no
+      // placing behavior.
+      const placed = ontoFloor
+        ? context.world.moveEntity(item.id, destination.id)
+        : destination.has(TraitType.CONTAINER)
+          ? ContainerBehavior.addItem(destination, item, context.world).success
+          : SupporterBehavior.addItem(destination, item, context.world).success;
+      if (!placed) {
+        firstUnmoved = item;
+        unmoved.push(item);
+        continue;
       }
-      context.world.moveEntity(item.id, destination.id);
       moved.push(item);
     }
 

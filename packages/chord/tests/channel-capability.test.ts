@@ -87,6 +87,34 @@ describe('define channel (ADR-216, spelling A)', () => {
   });
 });
 
+describe('play sound is never gated on the client (Q9)', () => {
+  const withSound = (line: string) =>
+    story(`create the lamp
+  a thing
+  in the Hall
+
+  A lamp.
+
+  on every turn
+    ${line}
+  end on
+
+define sound roar from "audio/roar.ogg"
+`);
+
+  it('refuses `when client has sound` on `play sound`, with the fix-it, inside and/or/not too', () => {
+    const plain = compile(withSound('play sound roar when client has sound'));
+    const refusal = plain.diagnostics.find((d) => d.code === 'analysis.play-sound-client-has');
+    expect(refusal?.message).toContain('leave the condition off; a client without audio does not play the cue');
+    expect(errorCodes(withSound('play sound roar when the lamp is in the Hall and not client has images'))).toContain('analysis.play-sound-client-has');
+  });
+
+  it('a play sound with no condition, or a world condition, compiles', () => {
+    expect(errorCodes(withSound('play sound roar'))).toEqual([]);
+    expect(errorCodes(withSound('play sound roar when the lamp is in the Hall'))).toEqual([]);
+  });
+});
+
 describe('client has <capability> (ADR-216)', () => {
   it('lowers to the camelCase platform key, hyphen words included', () => {
     const result = compile(

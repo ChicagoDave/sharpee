@@ -1970,7 +1970,7 @@ export * from './untying/index.js';
 export * from './lighting/index.js';
 export * from './extinguishing/index.js';
 export * from './steering/index.js';
-export * from './setting-course/index.js';
+export * from './setting_course/index.js';
 export * from './vehicle-command-transformer.js';
 import { TraceAction } from '../author/index.js';
 export declare const standardActions: (import("../enhanced-types.js").Action | TraceAction)[];

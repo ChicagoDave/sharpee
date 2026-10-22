@@ -666,6 +666,10 @@ export interface IWorldQuery {
         worn: IFEntity[];
     };
 }
+/** The world operations a behavior that places an item needs: the queries, and the move. */
+export interface IWorldPlacement extends IWorldQuery {
+    moveEntity(entityId: string, targetId: string | null): boolean;
+}
 /**
  * Behavior for entities that can contain other entities.
  *
@@ -715,13 +719,17 @@ export declare class ContainerBehavior extends Behavior {
      */
     static getExcludedTypes(container: IFEntity): string[] | undefined;
     /**
-     * Add an item to a container
+     * Put an item in a container: when the container is open, does not already
+     * hold the item, takes its type and has room for it, the item moves into
+     * the container. Behaviors own mutations, so this is the one place an
+     * item enters a container.
      * @param container The container to add to
      * @param item The item to add
-     * @param world World query interface for getting current state
-     * @returns Result describing what happened
+     * @param world The world, for the checks and the move
+     * @returns What happened; `success` is true only when the item moved, and a
+     *   failure names its reason and leaves the item where it was
      */
-    static addItem(container: IFEntity, item: IFEntity, world: IWorldQuery): IAddItemResult;
+    static addItem(container: IFEntity, item: IFEntity, world: IWorldPlacement): IAddItemResult;
     /**
      * Remove an item from a container
      * @param container The container to remove from
@@ -890,6 +898,17 @@ export declare class LightSourceBehavior extends Behavior {
      * @returns true if successfully lit, false if out of fuel
      */
     static light(source: IFEntity): boolean;
+    /**
+     * A switchable light's switch has just gone on: the light lights, if it
+     * has fuel, and the answer is whether it gives light now — the fact
+     * `if.event.lit` records, whatever mechanism (a switch or a flame) made it
+     * so (D20, Q8). Call only after the switch has gone on.
+     *
+     * @param source - The light source whose switch went on
+     * @param world - The world, for a powered device's power sources
+     * @returns true when the light is giving light now
+     */
+    static switchedOn(source: IFEntity, world: WorldModel): boolean;
     /**
      * Turn off the light source
      */
@@ -3737,7 +3756,7 @@ export declare class SupporterTrait implements ITrait {
 ```typescript
 import { Behavior } from '../../behaviors/behavior.js';
 import { IFEntity } from '../../entities/if-entity.js';
-import { IWorldQuery } from '../container/containerBehavior.js';
+import { IWorldPlacement, IWorldQuery } from '../container/containerBehavior.js';
 /**
  * Result of adding an item to a supporter
  */
@@ -3801,13 +3820,17 @@ export declare class SupporterBehavior extends Behavior {
      */
     static getExcludedTypes(supporter: IFEntity): string[] | undefined;
     /**
-     * Add an item to a supporter
+     * Put an item on a supporter: when the supporter does not already hold the
+     * item, takes its type and has room for it, the item moves onto the
+     * supporter. Behaviors own mutations, so this is the one place an item
+     * lands on a supporter.
      * @param supporter The supporter receiving the item
      * @param item The item being added
-     * @param world World query interface
-     * @returns Result describing what happened
+     * @param world The world, for the checks and the move
+     * @returns What happened; `success` is true only when the item moved, and a
+     *   failure names its reason and leaves the item where it was
      */
-    static addItem(supporter: IFEntity, item: IFEntity, world: IWorldQuery): IAddItemToSupporterResult;
+    static addItem(supporter: IFEntity, item: IFEntity, world: IWorldPlacement): IAddItemToSupporterResult;
     /**
      * Remove an item from a supporter
      * @param supporter The supporter losing the item
@@ -9776,9 +9799,11 @@ export declare function seenFromAfar(world: WorldModel, actor: IFEntity, thing: 
  * a player out of the vehicle); a landmark room's cell is its row; an open
  * vehicle moored at a landmark holds no cell (ADR-376 D5) and is at that
  * landmark's row. `holderOf` names the positioned thing an entity is in or
- * is, whose place is the entity's for sight and reach.
+ * is, whose place is the entity's for sight and reach. `isLandmark` says
+ * whether a room is one of an expanse's landmarks.
  *
- * Public interface: `placeOf` with its result `ExpansePlace`, `holderOf`.
+ * Public interface: `placeOf` with its result `ExpansePlace`, `holderOf`,
+ *   `isLandmark`.
  * Owner context: world-model — expanse place (the system's home). Nothing
  * here mutates.
  *
@@ -9812,6 +9837,15 @@ export interface ExpansePlace {
  * @returns the place, or undefined when the entity is in no expanse
  */
 export declare function placeOf(world: WorldModel, entity: IFEntity): ExpansePlace | undefined;
+/**
+ * Whether a room is a landmark: one of an expanse's landmark rooms, which
+ * holds a cell of that expanse and is seen across it (ADR-376 D2, D6).
+ *
+ * @param world - The world model
+ * @param room - Any entity; only a room can be a landmark
+ * @returns true when the entity is a room some expanse names as a landmark
+ */
+export declare function isLandmark(world: WorldModel, room: IFEntity): boolean;
 /**
  * The positioned thing an entity is, or is held in at any depth: an open
  * vehicle, a floating thing, or an actor out of a vehicle with a position;

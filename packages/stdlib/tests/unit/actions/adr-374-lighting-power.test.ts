@@ -148,6 +148,70 @@ describe('a switchable light is switched (ADR-374 D9 delegation)', () => {
     expect(switchingHooks).toBe(1);
   });
 
+  test('switching on a powered torch records both facts: switched on, and lit with no line of its own (D20, Q8)', () => {
+    const { world, battery, torch } = cellar();
+    world.moveEntity(battery.id, torch.id);
+    const { events } = drive(switchingOnAction, world, createCommand(IFActions.SWITCHING_ON, { entity: torch }));
+    expect(LightSourceBehavior.givesLight(torch, world)).toBe(true);
+    expect(events.map((e) => e.type)).toEqual(expect.arrayContaining(['if.event.switched_on', 'if.event.lit']));
+    const lit = events.find((e) => e.type === 'if.event.lit')!;
+    expect(lit.data).toMatchObject({ targetId: torch.id, bySwitch: true });
+    expect((lit.data as { messageId?: string }).messageId).toBeUndefined();
+    // One line for the player: the switching line, not a second "lit" line.
+    expect(messageIds(events).filter((id) => id!.startsWith(IFActions.SWITCHING_ON))).toHaveLength(1);
+    expect(messageIds(events).some((id) => id!.startsWith(IFActions.LIGHTING))).toBe(false);
+  });
+
+  test('lighting a powered torch records lit too, through switching on (D20)', () => {
+    const { world, battery, torch } = cellar();
+    world.moveEntity(battery.id, torch.id);
+    const { events } = drive(lightingAction, world, createCommand(IFActions.LIGHTING, { entity: torch }));
+    expect(events.filter((e) => e.type === 'if.event.lit')).toHaveLength(1);
+    expect(events.some((e) => e.type === 'if.event.switched_on')).toBe(true);
+  });
+
+  test('a switchable light with no fuel switches on but records no lit (D20)', () => {
+    const { world, battery, torch } = cellar();
+    world.moveEntity(battery.id, torch.id);
+    light(torch).fuelRemaining = 0;
+    const { events } = drive(switchingOnAction, world, createCommand(IFActions.SWITCHING_ON, { entity: torch }));
+    expect(switchOf(torch).isOn).toBe(true);
+    expect(events.some((e) => e.type === 'if.event.lit')).toBe(false);
+  });
+
+  test('a switch that does not go on leaves the light unlit and records no lit (D20)', () => {
+    const { world, torch } = cellar();
+    // No battery inside: the switch refuses for want of power. Execute is
+    // driven directly, past validate, to reach the action's own guard.
+    const context = createRealTestContext(switchingOnAction, world, createCommand(IFActions.SWITCHING_ON, { entity: torch }));
+    runExecutePhase(switchingOnAction, context);
+    const events = runReportPhase(switchingOnAction, context);
+    expect(switchOf(torch).isOn).toBe(false);
+    expect(light(torch).isLit).not.toBe(true);
+    expect(events.some((e) => e.type === 'if.event.lit')).toBe(false);
+  });
+
+  test('switchedOn answers whether the light gives light now: fuelled and powered, yes; no fuel, no (D20)', () => {
+    const { world, battery, torch } = cellar();
+    world.moveEntity(battery.id, torch.id);
+    SwitchableBehavior.switchOn(torch, world);
+    expect(LightSourceBehavior.switchedOn(torch, world)).toBe(true);
+    expect(light(torch).isLit).toBe(true);
+    light(torch).isLit = false;
+    light(torch).fuelRemaining = 0;
+    expect(LightSourceBehavior.switchedOn(torch, world)).toBe(false);
+    expect(light(torch).isLit).toBe(false);
+  });
+
+  test('a flame records lit once, with its own line, unchanged (D20)', () => {
+    const { world, player, match, lantern } = cellar();
+    world.moveEntity(match.id, player.id);
+    const { events } = drive(lightingAction, world, createCommand(IFActions.LIGHTING, { entity: lantern }));
+    const lits = events.filter((e) => e.type === 'if.event.lit');
+    expect(lits).toHaveLength(1);
+    expect((lits[0].data as { bySwitch?: true }).bySwitch).toBeUndefined();
+  });
+
   test('putting out a torch switches it off', () => {
     const { world, battery, torch } = cellar();
     world.moveEntity(battery.id, torch.id);

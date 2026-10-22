@@ -30,6 +30,7 @@
 import {
   ActStmt,
   ActionPattern,
+  ClientHasNode,
   CompositionItem,
   ConditionNode,
   CreateDecl,
@@ -495,6 +496,29 @@ function valueExprText(expr: ValueExpr): string {
 /** True when a name reference is the word `it`. */
 function nameIsIt(ref: NameRef): boolean {
   return ref.words.length === 1 && ref.words[0].toLowerCase() === 'it';
+}
+
+/**
+ * The first `client has <capability>` written in a condition, through its
+ * `and` / `or` / `not`, or undefined. A named condition it refers to is not
+ * opened.
+ */
+function clientHasIn(cond: ConditionNode): ClientHasNode | undefined {
+  switch (cond.kind) {
+    case 'client-has':
+      return cond;
+    case 'or':
+    case 'and':
+      for (const operand of cond.operands) {
+        const found = clientHasIn(operand);
+        if (found) return found;
+      }
+      return undefined;
+    case 'not':
+      return clientHasIn(cond.operand);
+    default:
+      return undefined;
+  }
 }
 
 /**
@@ -7394,7 +7418,17 @@ export class Analyzer {
     };
     switch (stmt.form) {
       case 'play-sound': {
-        // ADR-374 D6: one sound, two sides — its own IR statement.
+        // ADR-374 D6: one sound, two sides — its own IR statement. Its
+        // world side always sounds, so game state never differs by client:
+        // a client-capability condition cannot gate it (Q9).
+        const gated = stmt.stmtWhen ? clientHasIn(stmt.stmtWhen) : undefined;
+        if (gated) {
+          this.diagnostics.error(
+            'analysis.play-sound-client-has',
+            `\`play sound\` cannot depend on \`client has ${gated.capability}\` — leave the condition off; a client without audio does not play the cue, and the sound still happens in the world.`,
+            gated.span,
+          );
+        }
         const found = findAsset('sound');
         return {
           kind: 'play-sound',

@@ -42,6 +42,11 @@ export interface IWorldQuery {
   getCarriedAndWorn(holderId: string): { carried: IFEntity[]; worn: IFEntity[] };
 }
 
+/** The world operations a behavior that places an item needs: the queries, and the move. */
+export interface IWorldPlacement extends IWorldQuery {
+  moveEntity(entityId: string, targetId: string | null): boolean;
+}
+
 /**
  * Behavior for entities that can contain other entities.
  * 
@@ -216,13 +221,17 @@ export class ContainerBehavior extends Behavior {
   }
   
   /**
-   * Add an item to a container
+   * Put an item in a container: when the container is open, does not already
+   * hold the item, takes its type and has room for it, the item moves into
+   * the container. Behaviors own mutations, so this is the one place an
+   * item enters a container.
    * @param container The container to add to
    * @param item The item to add
-   * @param world World query interface for getting current state
-   * @returns Result describing what happened
+   * @param world The world, for the checks and the move
+   * @returns What happened; `success` is true only when the item moved, and a
+   *   failure names its reason and leaves the item where it was
    */
-  static addItem(container: IFEntity, item: IFEntity, world: IWorldQuery): IAddItemResult {
+  static addItem(container: IFEntity, item: IFEntity, world: IWorldPlacement): IAddItemResult {
     const trait = ContainerBehavior.require<ContainerTrait>(container, TraitType.CONTAINER);
     
     // Check if container is accessible (must be open if openable)
@@ -279,12 +288,10 @@ export class ContainerBehavior extends Behavior {
       };
     }
     
-    // All checks passed - this would be where state mutation happens
-    // In our event-driven system, the actual mutation happens via events
-    // The behavior just validates and returns success
+    const moved = world.moveEntity(item.id, container.id);
     return {
-      success: true,
-      stateChanged: true
+      success: moved,
+      stateChanged: moved
     };
   }
   
