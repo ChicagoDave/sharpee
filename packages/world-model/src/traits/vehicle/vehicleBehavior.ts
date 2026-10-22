@@ -54,12 +54,12 @@ import { FloatingTrait } from '../expanse/floatingTrait.js';
 import {
   angleOffWind,
   bearingOf,
-  expanseOfLandmark,
   floatingThingsAt,
   headingVector,
   landmarkAt,
   landmarkCellOf,
 } from '../expanse/expanseBehavior.js';
+import { placeOf } from '../../world/ExpansePlaceBehavior.js';
 import type { SailingPace } from './vehicleTrait.js';
 
 /**
@@ -225,7 +225,7 @@ export function startVehicle(world: WorldModel, vehicle: IFEntity, heading?: str
 export function windOf(world: WorldModel, vehicle: IFEntity): ExpanseWind | undefined {
   const model = vehicle.get(VehicleTrait)?.model;
   if (model?.kind !== 'open') return undefined;
-  return expanseOfVehicle(world, vehicle, model)?.trait.wind;
+  return placeOf(world, vehicle)?.trait.wind;
 }
 
 /**
@@ -366,35 +366,16 @@ function headsIntoEdge(atEdge: ExpanseSide | null, vector: IExpanseCell): boolea
 }
 
 /**
- * The expanse an open vehicle is in or at (D5): the expanse room it is in
- * when positioned, else the expanse its landmark room belongs to. Undefined
- * when the vehicle is in neither — moved somewhere the model has no meaning.
- */
-function expanseOfVehicle(world: WorldModel, vehicle: IFEntity, model: VehicleOpenModel): { expanse: IFEntity; trait: ExpanseTrait } | undefined {
-  const location = world.getLocation(vehicle.id);
-  if (location === undefined) return undefined;
-  const here = world.getEntity(location);
-  const direct = here?.get(ExpanseTrait);
-  if (here && direct) return model.position ? { expanse: here, trait: direct } : undefined;
-  const expanse = model.position ? undefined : expanseOfLandmark(world, location);
-  const trait = expanse?.get(ExpanseTrait);
-  return expanse && trait ? { expanse, trait } : undefined;
-}
-
-/**
  * Leaving a landmark on `start` or `send` (D3, D5): the vehicle takes the
  * landmark's cell as its position and moves into the expanse room, with
  * everything it holds. Nothing to do when already positioned.
  * @returns false when the vehicle is in no expanse
  */
 function departLandmark(world: WorldModel, vehicle: IFEntity, model: VehicleOpenModel): boolean {
-  const found = expanseOfVehicle(world, vehicle, model);
+  const found = placeOf(world, vehicle);
   if (!found) return false;
   if (model.position) return true;
-  const location = world.getLocation(vehicle.id) as string;
-  const cell = landmarkCellOf(found.trait, location);
-  if (!cell) return false;
-  model.position = cell;
+  model.position = { x: found.cell.x, y: found.cell.y };
   world.moveEntity(vehicle.id, found.expanse.id);
   return true;
 }
@@ -457,12 +438,11 @@ export function sendVehicle(world: WorldModel, vehicle: IFEntity, destination: s
     return true;
   }
   if (model?.kind !== 'open') return false;
-  const found = expanseOfVehicle(world, vehicle, model);
+  const found = placeOf(world, vehicle);
   if (!found) return false;
   const target = typeof destination === 'string' ? landmarkCellOf(found.trait, destination) : { x: destination.x, y: destination.y };
   if (!target || !isInsideExpanse(found.trait, target)) return false;
-  const from = model.position ?? landmarkCellOf(found.trait, world.getLocation(vehicle.id) as string);
-  if (!from) return false;
+  const from = found.cell;
   if (headsIntoEdge(model.atEdge, { x: Math.sign(target.x - from.x), y: Math.sign(target.y - from.y) })) return false;
   if (!departLandmark(world, vehicle, model)) return false;
   model.course = target;
@@ -741,7 +721,7 @@ function stepFlight(world: WorldModel, vehicle: IFEntity, model: Extract<NonNull
  */
 function stepOpen(world: WorldModel, vehicle: IFEntity, model: VehicleOpenModel): VehicleStep | undefined {
   if (!model.underWay) return undefined;
-  const found = expanseOfVehicle(world, vehicle, model);
+  const found = placeOf(world, vehicle);
   if (!found || !model.position) {
     halt(model);
     return { kind: 'stopped' };

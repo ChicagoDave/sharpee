@@ -119,13 +119,6 @@ export interface IRoomData {
    */
   admits?: Admittance;
 
-  /**
-   * A landmark room's outlook over its expanse (ADR-376 D6), in expanse
-   * units: from here the player sees what lies within this distance of the
-   * room's cell. Absent means the room sees nothing of the expanse.
-   */
-  sight?: number;
-  
   // Container functionality for rooms
   /** Capacity constraints for the room (optional) */
   capacity?: {
@@ -174,7 +167,6 @@ export class RoomTrait implements ITrait, IRoomData {
   walls: string[];
   tags: string[];
   admits: Admittance;
-  sight?: number;
   
   // Container functionality
   capacity?: {
@@ -207,7 +199,6 @@ export class RoomTrait implements ITrait, IRoomData {
     this.walls = data.walls ?? [];
     this.tags = data.tags ?? [];
     this.admits = data.admits ?? { vehicles: [], pushed: [] };
-    this.sight = data.sight;
     
     // Container properties
     this.capacity = data.capacity;

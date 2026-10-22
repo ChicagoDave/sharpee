@@ -2149,6 +2149,7 @@ export declare const TraitType: {
     readonly EXPANSE: "expanse";
     readonly FLOATING: "floating";
     readonly SIGHT: "sight";
+    readonly LANDMARK: "landmark";
     readonly CONCEALMENT: "if.trait.concealment";
     readonly CONCEALED_STATE: "if.trait.concealed_state";
     readonly ACOUSTIC: "if.trait.acoustic";
@@ -2250,6 +2251,7 @@ import { EnterableTrait } from './enterable/enterableTrait.js';
 import { ExpanseTrait } from './expanse/expanseTrait.js';
 import { FloatingTrait } from './expanse/floatingTrait.js';
 import { SightTrait } from './expanse/sightTrait.js';
+import { LandmarkTrait } from './expanse/landmarkTrait.js';
 import { StoryInfoTrait } from './story-info/storyInfoTrait.js';
 /**
  * Map of trait types to their constructors
@@ -2287,7 +2289,7 @@ export declare function createTrait(type: TraitType, data?: any): InstanceType<I
 export declare function rehydrateTrait(traitData: {
     type: string;
 } & Record<string, unknown>): ITrait;
-export { IdentityTrait, ContainerTrait, SupporterTrait, RoomTrait, WearableTrait, EdibleTrait, SceneryTrait, OpenableTrait, LockableTrait, CuttableTrait, DiggableTrait, FlammableTrait, PurchasableTrait, SwitchableTrait, ReadableTrait, LightSourceTrait, DoorTrait, RegionTrait, SceneTrait, ActorTrait, ClimbableTrait, PullableTrait, AttachedTrait, PushableTrait, ButtonTrait, MoveableSceneryTrait, WeaponTrait, BreakableTrait, DestructibleTrait, CombatantTrait, EquippedTrait, HealthTrait, DeadlyRoomTrait, NpcTrait, OpenInventoryTrait, CharacterModelTrait, VehicleTrait, AboardTrait, EnterableTrait, ExpanseTrait, FloatingTrait, SightTrait, StoryInfoTrait };
+export { IdentityTrait, ContainerTrait, SupporterTrait, RoomTrait, WearableTrait, EdibleTrait, SceneryTrait, OpenableTrait, LockableTrait, CuttableTrait, DiggableTrait, FlammableTrait, PurchasableTrait, SwitchableTrait, ReadableTrait, LightSourceTrait, DoorTrait, RegionTrait, SceneTrait, ActorTrait, ClimbableTrait, PullableTrait, AttachedTrait, PushableTrait, ButtonTrait, MoveableSceneryTrait, WeaponTrait, BreakableTrait, DestructibleTrait, CombatantTrait, EquippedTrait, HealthTrait, DeadlyRoomTrait, NpcTrait, OpenInventoryTrait, CharacterModelTrait, VehicleTrait, AboardTrait, EnterableTrait, ExpanseTrait, FloatingTrait, SightTrait, LandmarkTrait, StoryInfoTrait };
 ```
 
 ### state-adjectives
@@ -2491,13 +2493,6 @@ export declare class IdentityTrait implements ITrait {
      * it is. The Chord loader compiles an entity's `{marker}` phrases here.
      */
     snippets?: SnippetMap;
-    /**
-     * What the entity shows when seen from a distance in an expanse (ADR-376
-     * D6): `seen from afar:` on a landmark room or an open vehicle. Examining
-     * a thing in sight but out of reach shows this instead of `description`.
-     * Absent on anything never seen across an expanse.
-     */
-    seenFromAfar?: string;
     /** Alternative names/aliases the entity can be referred to by */
     aliases: string[];
     /** Brief description shown in room listings */
@@ -2861,12 +2856,6 @@ export interface IRoomData {
      * decide the field itself; a room admits nothing by default.
      */
     admits?: Admittance;
-    /**
-     * A landmark room's outlook over its expanse (ADR-376 D6), in expanse
-     * units: from here the player sees what lies within this distance of the
-     * room's cell. Absent means the room sees nothing of the expanse.
-     */
-    sight?: number;
     /** Capacity constraints for the room (optional) */
     capacity?: {
         /** Maximum total weight the room can hold (in kg) */
@@ -2907,7 +2896,6 @@ export declare class RoomTrait implements ITrait, IRoomData {
     walls: string[];
     tags: string[];
     admits: Admittance;
-    sight?: number;
     capacity?: {
         maxWeight?: number;
         maxVolume?: number;
@@ -5232,8 +5220,10 @@ export interface VehicleOpenModel {
     pace: number;
     /** Units per step, one or more. */
     stride: number;
-    /** How far one sees from aboard, in expanse units (D6). `seen from afar:` is `IdentityTrait.seenFromAfar`. */
+    /** How far one sees from aboard, in expanse units (D6). */
     sight: number;
+    /** What the vehicle shows when seen from a distance (D6, `seen from afar:`). */
+    seenFromAfar?: string;
     /**
      * The `sailing` block (ADR-375 D5): present on a sailing vehicle, whose
      * heading is then a bearing and whose pace is the band's.
@@ -5877,7 +5867,7 @@ export declare function isFloatingTrait(trait: ITrait): trait is FloatingTrait;
  * a trait rather than a field on identity so the verb can dispatch on it
  * (ADR-090): the trait claims `if.action.searching`, where `look through`
  * maps, and the host registers the looking-through behavior per world. A vehicle's sight is on its open model and a landmark room's on
- * `RoomTrait.sight`; this trait is the instrument's alone.
+ * its `LandmarkTrait`; this trait is the instrument's alone.
  *
  * References:
  * - ADR-376 D6 — instruments, and the visibility cap that still applies through one.
@@ -5905,6 +5895,49 @@ export declare class SightTrait implements ITrait, ISightData {
 export declare function isSightTrait(trait: ITrait): trait is SightTrait;
 ```
 
+### traits/expanse/landmarkTrait
+
+```typescript
+/**
+ * Landmark Trait - a room an expanse holds: how far one sees from it, and how it looks from afar
+ *
+ * Public interface: `LandmarkTrait` (data: the room's outlook over its
+ * expanse and its distant prose), `ILandmarkData`, `isLandmarkTrait`.
+ *
+ * Owner context: world-model traits, the expanse extension's own (`use
+ * expanses`). A room named in an expanse's `landmarks` block carries it; no
+ * core trait holds the extension's data. Where the landmark is — its cell —
+ * stays the expanse's `landmarks` record, the one fact.
+ *
+ * References:
+ * - ADR-376 D2 — landmarks occupy their cells.
+ * - ADR-376 D6 — a landmark's outlook (`sight:`) and `seen from afar:`.
+ * - Alignment finding D19, David's Q7 answer A (2026-10-21).
+ */
+import { ITrait } from '../trait.js';
+export interface ILandmarkData {
+    /** How far one sees from the room over its expanse, in expanse units; zero sees nothing. */
+    sight?: number;
+    /** What the room shows when seen from a distance (`seen from afar:`). */
+    seenFromAfar?: string;
+}
+/**
+ * Trait for a landmark room of an expanse.
+ */
+export declare class LandmarkTrait implements ITrait, ILandmarkData {
+    static readonly type: "landmark";
+    readonly type: "landmark";
+    sight: number;
+    seenFromAfar?: string;
+    /** @throws when the sight is not a number of zero or more */
+    constructor(data?: ILandmarkData);
+}
+/**
+ * Type guard for LandmarkTrait
+ */
+export declare function isLandmarkTrait(trait: ITrait): trait is LandmarkTrait;
+```
+
 ### traits/expanse/expanseBehavior
 
 ```typescript
@@ -5914,10 +5947,11 @@ export declare function isSightTrait(trait: ITrait): trait is SightTrait;
  * Public interface: the compass over cells (`COMPASS_HEADINGS`,
  * `headingVector`, `directionOf`), `distance`, the distance bands
  * (`SightBand`, `sightBandOf`), `landmarkAt`, `landmarkCellOf`, `expanseOfLandmark`,
- * `floatingThingsAt`, `placeOf` with its result `ExpansePlace`, `holderOf`
- * (the positioned thing an entity is in or is), `receiveInExpanse` (what
- * becomes of a thing that lands in an expanse), `clearFloatingPosition`,
- * and the drift step `driftExpanse` with its result `DriftStep`.
+ * `floatingThingsAt`, `receiveInExpanse` (what becomes of a thing that
+ * lands in an expanse), `clearFloatingPosition`, and the drift step
+ * `driftExpanse` with its result `DriftStep`. Where a thing is in an
+ * expanse is a system of its own (`world/ExpansePlaceBehavior.ts`), as is
+ * sight across one (`world/SightBehavior.ts`).
  *
  * Owner context: world-model expanse behavior. Every answer is read from the
  * world and the traits; nothing here keeps a position of its own. The
@@ -5986,36 +6020,6 @@ export declare function expanseOfLandmark(world: WorldModel, roomId: string): IF
  * @param cell - The cell to look at
  */
 export declare function floatingThingsAt(world: WorldModel, expanseId: string, cell: IExpanseCell): IFEntity[];
-/**
- * Where something is in an expanse: the expanse room, its trait, and the
- * cell. Answered for an entity directly in an expanse room with a position
- * of its own (an open vehicle, a floating thing, a player out of the
- * vehicle), and for a landmark room, whose cell is its row. Undefined for
- * anything else — the entity is not positioned in any expanse.
- */
-export interface ExpansePlace {
-    expanse: IFEntity;
-    trait: ExpanseTrait;
-    cell: IExpanseCell;
-}
-/**
- * The place of an entity that holds a position, or of a landmark room.
- *
- * @param world - The world model
- * @param entity - A vehicle, a floating thing, an actor out of a vehicle, or a room
- */
-export declare function placeOf(world: WorldModel, entity: IFEntity): ExpansePlace | undefined;
-/**
- * The positioned thing an entity is, or is held in at any depth: an open
- * vehicle, a floating thing, or an actor out of a vehicle with a position.
- * Undefined when nothing on the way up holds one. The holder's place is
- * the entity's place for sight and reach (D6, D10): a lamp in a distant
- * ship is as far off as the ship.
- *
- * @param world - The world model
- * @param entity - Any entity
- */
-export declare function holderOf(world: WorldModel, entity: IFEntity): IFEntity | undefined;
 /** What became of a thing that landed in an expanse (D9, D10). */
 export type ExpanseReceipt = 'floats' | 'lost';
 /**
@@ -6069,100 +6073,6 @@ export type DriftStep = {
  * @returns what moved this turn, empty between drift steps
  */
 export declare function driftExpanse(world: WorldModel, expanse: IFEntity, random: RandomService): DriftStep[];
-```
-
-### traits/expanse/sightBehavior
-
-```typescript
-/**
- * Sight Behavior - where a looker looks from in an expanse, how far they see, and what is in sight
- *
- * Public interface: `lookoutOf` with its result `Lookout` (the place a
- * looker sees from and their naked sight there), `sightOf` (the sight in
- * use, through an instrument or not, capped by the expanse), `sightingOf`
- * with its result `Sighting` (one thing's distance, band and direction from
- * a lookout), `inSight`, and `sightings` (everything in sight from a
- * lookout, nearest first — the looking report's rows and scope's additions).
- *
- * Owner context: world-model expanse behavior. A looker is an actor: aboard
- * an open vehicle they see from its cell with its sight; out of it in the
- * expanse they see from their own floating position with the sight of the
- * open vehicles in that cell, since they are beside one; in a landmark room
- * they see from its row with its `sight:`, and nothing without the line.
- * Scope reads this (sight is scope in an expanse, D6) and so do the sight
- * conditions and the looking report. Nothing here mutates.
- *
- * References:
- * - ADR-376 D6 — sight, bands, instruments, the visibility cap, a landmark's outlook.
- * - ADR-376 D7 — the sight conditions read the same answers.
- * - ADR-376 D9 — the player out of the vehicle sees with the vehicle's sight.
- */
-import type { WorldModel } from '../../world/WorldModel.js';
-import type { IFEntity } from '../../entities/if-entity.js';
-import { type CompassHeading, type ExpansePlace, type SightBand } from './expanseBehavior.js';
-/** Where a looker sees from, and how far with the naked eye. */
-export interface Lookout extends ExpansePlace {
-    /** Naked sight from here, before the expanse's cap; zero from a landmark room without `sight:`. */
-    sight: number;
-}
-/**
- * The lookout of an actor (D6, D9): their vehicle's place and sight when
- * aboard an open vehicle under way in an expanse, their own place beside
- * the open vehicles of their cell when out of it, or their landmark room's
- * row and outlook — aboard a vehicle at that landmark too. Undefined when
- * the actor is positioned in no expanse.
- *
- * @param world - The world model
- * @param actor - The looker
- */
-export declare function lookoutOf(world: WorldModel, actor: IFEntity): Lookout | undefined;
-/**
- * The sight in use from a lookout (D6): the instrument's when looking
- * through one, else the naked sight, either capped by the expanse's
- * `visibility` when it has one.
- *
- * @param lookout - Where the looker looks from
- * @param instrument - A thing with `SightTrait`, when looking through it
- */
-export declare function sightOf(lookout: Lookout, instrument?: IFEntity): number;
-/** One thing seen from a lookout: how far, in which band, which way. */
-export interface Sighting {
-    thing: IFEntity;
-    distance: number;
-    band: SightBand;
-    /** Undefined when the thing shares the looker's cell. */
-    direction: CompassHeading | undefined;
-}
-/**
- * The sighting of a thing from a lookout, or undefined when it is in
- * another expanse, in no expanse, or beyond the sight in use. Rooms never
- * see rooms: a landmark room is a thing here only when the looker is not
- * in one.
- *
- * @param world - The world model
- * @param lookout - Where the looker looks from
- * @param thing - An open vehicle, a floating thing or a landmark room
- * @param instrument - A thing with `SightTrait`, when looking through it
- */
-export declare function sightingOf(world: WorldModel, lookout: Lookout, thing: IFEntity, instrument?: IFEntity): Sighting | undefined;
-/**
- * Everything in sight from a lookout (D6): the expanse's landmark rooms,
- * its open vehicles and its floating things within the sight in use,
- * nearest first, never the looker's own holder. The looking report's rows
- * and scope's additions both read this.
- *
- * @param world - The world model
- * @param lookout - Where the looker looks from
- * @param instrument - A thing with `SightTrait`, when looking through it
- * @param ownHolderId - The vehicle the looker is aboard, or the looker
- *   themself out of it, excluded from the list
- */
-export declare function sightings(world: WorldModel, lookout: Lookout, instrument?: IFEntity, ownHolderId?: string): Sighting[];
-/**
- * Whether a thing is within an actor's sight in their expanse (D6, D7).
- * False when either is positioned in no expanse.
- */
-export declare function inSight(world: WorldModel, actor: IFEntity, thing: IFEntity, instrument?: IFEntity): boolean;
 ```
 
 ### traits/story-info/storyInfoTrait
@@ -9316,18 +9226,6 @@ export declare class VisibilityBehavior extends Behavior {
      * fact applies unchanged (static `dark`, hand-written TS stories).
      */
     private static roomRequiresLight;
-    /**
-     * Determines if a room is effectively dark (no usable light sources).
-     * This is the single source of truth for darkness checking.
-     *
-     * A room is dark if:
-     * 1. It has RoomTrait with requiresLight = true
-     * 2. There are no accessible, active light sources
-     *
-     * @param room - The room entity to check
-     * @param world - The world model
-     * @returns true if the room is dark and has no accessible light sources
-     */
     /** Whether the observer sees without light — carries `NightVisionTrait`. */
     private static seesInDark;
     /**
@@ -9341,6 +9239,19 @@ export declare class VisibilityBehavior extends Behavior {
      * @returns true when the observer cannot see the room
      */
     static isDarkFor(observer: IFEntity, room: IFEntity, world: WorldModel): boolean;
+    /**
+     * Determines if a room is effectively dark (no usable light sources).
+     * This is the single source of truth for darkness checking; whether it
+     * is dark to a given observer is `isDarkFor`.
+     *
+     * A room is dark if:
+     * 1. It has RoomTrait with requiresLight = true
+     * 2. There are no accessible, active light sources
+     *
+     * @param room - The room entity to check
+     * @param world - The world model
+     * @returns true if the room is dark and has no accessible light sources
+     */
     static isDark(room: IFEntity, world: WorldModel): boolean;
     /**
      * Whether an entity is still concealed (hidden until SEARCH or a game event
@@ -9467,9 +9378,13 @@ export declare class VisibilityBehavior extends Behavior {
      * container that is openable, closed and not transparent. Anything held
      * on top (a supporter, a vehicle ridden `on`) never does, nor does an
      * open, lidless or transparent container. The one definition for
-     * scope, reach and the describable location.
+     * scope, reach, the describable location, and every action that asks
+     * whether a container's contents can be seen (searching, examining).
+     *
+     * @param entity - Any entity
+     * @returns true when its inside cannot be seen from outside, nor out from in
      */
-    private static blocksSight;
+    static blocksSight(entity: IFEntity): boolean;
 }
 ```
 
@@ -9532,6 +9447,183 @@ export declare class ReachabilityBehavior extends Behavior {
      */
     static getReachable(observer: IFEntity, world: WorldModel): IFEntity[];
 }
+```
+
+### world/SightBehavior
+
+```typescript
+/**
+ * SightBehavior — where a looker looks from in an expanse, how far they see, and what is in sight
+ *
+ * A system in ADR-379's sense: one rule over the whole world, read by
+ * visibility and reachability, the story's sight conditions and scheduler
+ * constructs, and the looking, examining, throwing and look-through
+ * actions. A looker is an actor: aboard an open vehicle under way they see
+ * from its cell with its sight; out of it in the expanse they see from
+ * their own floating position with the sight of the open vehicles in that
+ * cell, since they are beside one; in a landmark room — aboard a vehicle
+ * moored there too — they see from its row with the landmark's outlook,
+ * and nothing without the line. Nothing here mutates.
+ *
+ * Public interface: `lookoutOf` with its result `Lookout` (the place a
+ * looker sees from and their naked sight there), `sightOf` (the sight in
+ * use, through an instrument or not, capped by the expanse), `sightingOf`
+ * with its result `Sighting` (one thing's distance, band and direction from
+ * a lookout), `inSight`, `sightings` (everything in sight from a lookout,
+ * nearest first — the looking report's rows and scope's additions), and
+ * `seenFromAfar` (the distant prose of a thing seen across the expanse).
+ * Owner context: world-model — sight across an expanse (the system's home).
+ *
+ * References:
+ * - ADR-376 D6 — sight, bands, instruments, the visibility cap, a landmark's outlook.
+ * - ADR-376 D7 — the sight conditions read the same answers.
+ * - ADR-376 D9 — the player out of the vehicle sees with the vehicle's sight.
+ * - GH #612 — aboard at a landmark, the landmark's outlook.
+ */
+import type { WorldModel } from './WorldModel.js';
+import type { IFEntity } from '../entities/if-entity.js';
+import { type CompassHeading, type SightBand } from '../traits/expanse/expanseBehavior.js';
+import { type ExpansePlace } from './ExpansePlaceBehavior.js';
+/** Where a looker sees from, and how far with the naked eye. */
+export interface Lookout extends ExpansePlace {
+    /** Naked sight from here, before the expanse's cap; zero from a landmark room without `sight:`. */
+    sight: number;
+}
+/**
+ * The lookout of an actor (D6, D9): their vehicle's place and sight when
+ * aboard an open vehicle under way in an expanse, their own place beside
+ * the open vehicles of their cell when out of it, or their landmark room's
+ * row and outlook — aboard a vehicle moored at that landmark too. Undefined
+ * when the actor is positioned in no expanse.
+ *
+ * @param world - The world model
+ * @param actor - The looker
+ */
+export declare function lookoutOf(world: WorldModel, actor: IFEntity): Lookout | undefined;
+/**
+ * The sight in use from a lookout (D6): the instrument's when looking
+ * through one, else the naked sight, either capped by the expanse's
+ * `visibility` when it has one.
+ *
+ * @param lookout - Where the looker looks from
+ * @param instrument - A thing with `SightTrait`, when looking through it
+ */
+export declare function sightOf(lookout: Lookout, instrument?: IFEntity): number;
+/** One thing seen from a lookout: how far, in which band, which way. */
+export interface Sighting {
+    thing: IFEntity;
+    distance: number;
+    band: SightBand;
+    /** Undefined when the thing shares the looker's cell. */
+    direction: CompassHeading | undefined;
+}
+/**
+ * The sighting of a thing from a lookout, or undefined when it is in
+ * another expanse, in no expanse, or beyond the sight in use. Rooms never
+ * see rooms: a landmark room is a thing here only when the looker is not
+ * in one. A vehicle moored at a landmark is seen as part of its room, not
+ * on its own.
+ *
+ * @param world - The world model
+ * @param lookout - Where the looker looks from
+ * @param thing - An open vehicle, a floating thing or a landmark room
+ * @param instrument - A thing with `SightTrait`, when looking through it
+ */
+export declare function sightingOf(world: WorldModel, lookout: Lookout, thing: IFEntity, instrument?: IFEntity): Sighting | undefined;
+/**
+ * Everything in sight from a lookout (D6): the expanse's landmark rooms,
+ * its open vehicles and its floating things within the sight in use,
+ * nearest first, never the looker's own holder nor an actor. The looking
+ * report's rows and scope's additions both read this.
+ *
+ * @param world - The world model
+ * @param lookout - Where the looker looks from
+ * @param instrument - A thing with `SightTrait`, when looking through it
+ * @param ownHolderId - The vehicle the looker is aboard, or the looker
+ *   themself out of it, excluded from the list
+ */
+export declare function sightings(world: WorldModel, lookout: Lookout, instrument?: IFEntity, ownHolderId?: string): Sighting[];
+/**
+ * Whether a thing is within an actor's sight in their expanse (D6, D7).
+ * False when either is positioned in no expanse.
+ */
+export declare function inSight(world: WorldModel, actor: IFEntity, thing: IFEntity, instrument?: IFEntity): boolean;
+/**
+ * The distant prose of a thing an actor sees only from afar (D6): a
+ * landmark room or an open vehicle that is placed itself (not held in
+ * another), in sight, and not where the looker is — its `seen from afar:`
+ * line. Undefined when the thing is near, out of sight, carries no such
+ * line (a floating thing), or the looker is in no expanse; examining then
+ * shows the description as ever.
+ *
+ * @param world - The world model
+ * @param actor - The looker
+ * @param thing - The thing looked at
+ */
+export declare function seenFromAfar(world: WorldModel, actor: IFEntity, thing: IFEntity): string | undefined;
+```
+
+### world/ExpansePlaceBehavior
+
+```typescript
+/**
+ * ExpansePlaceBehavior — where a thing is in an expanse.
+ *
+ * A system in ADR-379's sense: one answer to "where is this in an
+ * expanse?", consulted by sight, reach, the vehicle machine, setting a
+ * course and the story's conditions alike. An entity directly in an
+ * expanse room holds a cell of its own (an open vehicle, a floating thing,
+ * a player out of the vehicle); a landmark room's cell is its row; an open
+ * vehicle moored at a landmark holds no cell (ADR-376 D5) and is at that
+ * landmark's row. `holderOf` names the positioned thing an entity is in or
+ * is, whose place is the entity's for sight and reach.
+ *
+ * Public interface: `placeOf` with its result `ExpansePlace`, `holderOf`.
+ * Owner context: world-model — expanse place (the system's home). Nothing
+ * here mutates.
+ *
+ * References: ADR-376 D2 (landmarks occupy their cells), D5 (a vehicle at a
+ * landmark holds no position), D6 and D10 (a held thing's place is its
+ * holder's).
+ */
+import type { WorldModel } from './WorldModel.js';
+import type { IFEntity } from '../entities/if-entity.js';
+import { ExpanseTrait, type IExpanseCell } from '../traits/expanse/expanseTrait.js';
+/**
+ * Where something is in an expanse: the expanse room, its trait, and the
+ * cell — and, when the cell is a landmark's row, that landmark room.
+ */
+export interface ExpansePlace {
+    expanse: IFEntity;
+    trait: ExpanseTrait;
+    cell: IExpanseCell;
+    /**
+     * The landmark room whose row this is: the room itself, or the room an
+     * open vehicle is moored in. Absent for a cell held in the open.
+     */
+    landmark?: IFEntity;
+}
+/**
+ * The place of an entity in an expanse.
+ *
+ * @param world - The world model
+ * @param entity - A landmark room; an open vehicle, positioned or moored at
+ *   a landmark; a floating thing; an actor out of a vehicle
+ * @returns the place, or undefined when the entity is in no expanse
+ */
+export declare function placeOf(world: WorldModel, entity: IFEntity): ExpansePlace | undefined;
+/**
+ * The positioned thing an entity is, or is held in at any depth: an open
+ * vehicle, a floating thing, or an actor out of a vehicle with a position;
+ * or the landmark room it is in. Undefined when nothing on the way up is
+ * placed. The holder's place is the entity's place for sight and reach
+ * (D6, D10): a lamp in a distant ship is as far off as the ship, and a
+ * vehicle moored at a landmark is wherever its room is.
+ *
+ * @param world - The world model
+ * @param entity - Any entity
+ */
+export declare function holderOf(world: WorldModel, entity: IFEntity): IFEntity | undefined;
 ```
 
 ### world/PresenceBehavior

@@ -129,9 +129,10 @@ export const buildExaminingData: ActionDataBuilder<Record<string, unknown>> = (
     } else {
       eventData.isOpen = true; // Containers without openable trait are always open
     }
-    // ADR-369 D1a: a transparent container shows its contents closed — the
-    // same flag VisibilityBehavior and searching read.
+    // ADR-369 D1a: a transparent container shows its contents closed.
     eventData.isTransparent = ContainerBehavior.isTransparent(noun);
+    // Whether its contents can be seen is visibility's one answer.
+    eventData.contentsVisible = !VisibilityBehavior.blocksSight(noun);
   }
 
   // Supporter trait
@@ -290,9 +291,9 @@ export function buildExaminingMessageParams(
       messageId = 'examined_container';
       params.isOpen = eventData.isOpen;
 
-      // Add contents message if the contents can be seen — the container is
-      // open, or transparent (ADR-369 D1a) — and there are any
-      if ((eventData.isOpen || eventData.isTransparent) && eventData.hasContents && eventData.contents) {
+      // Add contents message if the contents can be seen (visibility's
+      // blocksSight, recorded as contentsVisible) and there are any
+      if (eventData.contentsVisible && eventData.hasContents && eventData.contents) {
         contentsMessage = {
           messageId: 'container_contents',
           params: {

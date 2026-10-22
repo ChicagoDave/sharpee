@@ -18,7 +18,8 @@ import { VehicleTrait, type VehicleOpenModel } from '../../../src/traits/vehicle
 import { ExpanseTrait } from '../../../src/traits/expanse/expanseTrait';
 import { FloatingTrait } from '../../../src/traits/expanse/floatingTrait';
 import { SightTrait } from '../../../src/traits/expanse/sightTrait';
-import { inSight, lookoutOf, sightingOf, sightOf } from '../../../src/traits/expanse/sightBehavior';
+import { LandmarkTrait, type ILandmarkData } from '../../../src/traits/expanse/landmarkTrait';
+import { inSight, lookoutOf, sightingOf, sightOf } from '../../../src/world/SightBehavior';
 
 describe('sight in an expanse (ADR-376 D6)', () => {
   let world: WorldModel;
@@ -29,10 +30,12 @@ describe('sight in an expanse (ADR-376 D6)', () => {
   let player: IFEntity;
   let telescope: IFEntity;
 
-  function room(name: string, data: ConstructorParameters<typeof RoomTrait>[0] = {}): IFEntity {
+  /** A room; given landmark data, it carries the landmark's trait (its outlook). */
+  function room(name: string, landmark?: ILandmarkData): IFEntity {
     const r = world.createEntity(name, EntityType.ROOM);
-    r.add(new RoomTrait({ exits: {}, ...data }));
+    r.add(new RoomTrait({ exits: {} }));
     r.add(new IdentityTrait({ name }));
+    if (landmark) r.add(new LandmarkTrait(landmark));
     return r;
   }
 

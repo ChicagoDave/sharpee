@@ -32,7 +32,6 @@ import {
   type WorldModel,
   edgeAhead,
   ExpanseTrait,
-  expanseOfLandmark,
   isInsideExpanse,
   landmarkCellOf,
   placeOf,
@@ -55,26 +54,6 @@ export const COORDINATES_COMMAND_SET = 'coordinates';
 function typedCell(typed: string): IExpanseCell | undefined {
   const m = /^(\d+)\s*,\s*(\d+)$/.exec(typed);
   return m ? { x: Number(m[1]), y: Number(m[2]) } : undefined;
-}
-
-/**
- * An open vehicle's expanse (ADR-376 D5): the expanse room it is in, or the
- * one its landmark room belongs to.
- */
-function expanseOfOpenVehicle(world: WorldModel, vehicle: IFEntity): IFEntity | undefined {
-  const location = world.getLocation(vehicle.id);
-  const here = location !== undefined ? world.getEntity(location) : undefined;
-  if (!here) return undefined;
-  return here.has(ExpanseTrait.type) ? here : expanseOfLandmark(world, here.id);
-}
-
-/** The open vehicle's current cell: its position, or its landmark's row. */
-function cellOfOpenVehicle(world: WorldModel, vehicle: IFEntity, expanse: IFEntity): IExpanseCell | undefined {
-  const place = placeOf(world, vehicle);
-  if (place) return place.cell;
-  const location = world.getLocation(vehicle.id);
-  const trait = expanse.get(ExpanseTrait);
-  return location !== undefined && trait ? landmarkCellOf(trait, location) : undefined;
 }
 
 /** The course an open vehicle is asked for: a cell, or a landmark room with its cell. */
@@ -171,17 +150,19 @@ export const settingCourseAction: Action & { metadata: ActionMetadata } = {
     if (open) {
       // ADR-376 D3, D4, D8: a cell of the vehicle's expanse or one of its
       // landmarks; a course whose first leg heads into the edge it is at
-      // is refused with the edge's phrase.
-      const expanse = expanseOfOpenVehicle(context.world, vehicle);
-      if (!expanse) return { valid: false, error: SettingCourseMessages.NOT_A_DESTINATION, params: { ...params, destination: typed } };
+      // is refused with the edge's phrase. Where the vehicle is — its cell
+      // under way, its landmark's row moored — is the place system's answer.
+      const place = placeOf(context.world, vehicle);
+      if (!place) return { valid: false, error: SettingCourseMessages.NOT_A_DESTINATION, params: { ...params, destination: typed } };
+      const expanse = place.expanse;
       const course = matchOpenCourse(context.world, expanse, typed);
       if (!course) return { valid: false, error: SettingCourseMessages.NOT_A_DESTINATION, params: { ...params, destination: typed } };
       if ('error' in course) return { valid: false, error: course.error, params: { ...params, destination: typed } };
       if (course.room && context.world.getLocation(vehicle.id) === course.room.id) {
         return { valid: false, error: SettingCourseMessages.ALREADY_THERE, params: { ...params, destination: nounPhraseFor(course.room) } };
       }
-      const from = cellOfOpenVehicle(context.world, vehicle, expanse);
-      const side = from ? edgeAhead(vehicle, { x: Math.sign(course.cell.x - from.x), y: Math.sign(course.cell.y - from.y) }) : undefined;
+      const from = place.cell;
+      const side = edgeAhead(vehicle, { x: Math.sign(course.cell.x - from.x), y: Math.sign(course.cell.y - from.y) });
       if (side) {
         const message = context.world.evaluate(exitMessageKey(expanse.id, side));
         return typeof message === 'string' && message.length > 0
@@ -206,7 +187,7 @@ export const settingCourseAction: Action & { metadata: ActionMetadata } = {
     sharedData.vehicleId = vehicle.id;
     const typed = typedDestination(context)!;
     if (vehicle.get(VehicleTrait)?.model?.kind === 'open') {
-      const expanse = expanseOfOpenVehicle(context.world, vehicle)!;
+      const expanse = placeOf(context.world, vehicle)!.expanse;
       const course = matchOpenCourse(context.world, expanse, typed) as OpenCourse;
       if (course.room) {
         sendVehicle(context.world, vehicle, course.room.id);

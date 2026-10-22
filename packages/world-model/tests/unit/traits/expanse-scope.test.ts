@@ -21,7 +21,9 @@ import { FloatingTrait } from '../../../src/traits/expanse/floatingTrait';
 import { VisibilityBehavior } from '../../../src/world/VisibilityBehavior';
 import { ReachabilityBehavior } from '../../../src/world/ReachabilityBehavior';
 import { boardFromExpanse, leaveVehicleIntoExpanse, stepVehicle, startVehicle } from '../../../src/traits/vehicle/vehicleBehavior';
-import { clearFloatingPosition, holderOf, receiveInExpanse } from '../../../src/traits/expanse/expanseBehavior';
+import { clearFloatingPosition, receiveInExpanse } from '../../../src/traits/expanse/expanseBehavior';
+import { holderOf } from '../../../src/world/ExpansePlaceBehavior';
+import { LandmarkTrait, type ILandmarkData } from '../../../src/traits/expanse/landmarkTrait';
 
 describe('scope in an expanse (ADR-376 D6, D10)', () => {
   let world: WorldModel;
@@ -34,10 +36,12 @@ describe('scope in an expanse (ADR-376 D6, D10)', () => {
   let cask: IFEntity;
   let player: IFEntity;
 
-  function room(name: string, data: ConstructorParameters<typeof RoomTrait>[0] = {}): IFEntity {
+  /** A room; given landmark data, it carries the landmark's trait (its outlook). */
+  function room(name: string, landmark?: ILandmarkData): IFEntity {
     const r = world.createEntity(name, EntityType.ROOM);
-    r.add(new RoomTrait({ exits: {}, ...data }));
+    r.add(new RoomTrait({ exits: {} }));
     r.add(new IdentityTrait({ name }));
+    if (landmark) r.add(new LandmarkTrait(landmark));
     return r;
   }
 

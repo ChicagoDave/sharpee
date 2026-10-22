@@ -13,8 +13,8 @@ import { SceneryTrait } from '../traits/scenery/sceneryTrait.js';
 import { IdentityTrait } from '../traits/identity/identityTrait.js';
 import { PresenceBehavior } from './PresenceBehavior.js';
 import { findTraitWithCapability } from '../capabilities/index.js';
-import { holderOf } from '../traits/expanse/expanseBehavior.js';
-import { lookoutOf, sightingOf, sightings } from '../traits/expanse/sightBehavior.js';
+import { holderOf } from './ExpansePlaceBehavior.js';
+import { lookoutOf, sightingOf, sightings } from './SightBehavior.js';
 import { getVehicleAboard } from '../traits/vehicle/vehicleBehavior.js';
 
 /**
@@ -49,18 +49,6 @@ export class VisibilityBehavior extends Behavior {
     return Boolean(roomTrait && roomTrait.requiresLight);
   }
 
-  /**
-   * Determines if a room is effectively dark (no usable light sources).
-   * This is the single source of truth for darkness checking.
-   *
-   * A room is dark if:
-   * 1. It has RoomTrait with requiresLight = true
-   * 2. There are no accessible, active light sources
-   *
-   * @param room - The room entity to check
-   * @param world - The world model
-   * @returns true if the room is dark and has no accessible light sources
-   */
   /** Whether the observer sees without light — carries `NightVisionTrait`. */
   private static seesInDark(observer: IFEntity): boolean {
     return observer.hasTrait(TraitType.NIGHT_VISION);
@@ -80,6 +68,19 @@ export class VisibilityBehavior extends Behavior {
     return !this.seesInDark(observer) && this.isDark(room, world);
   }
 
+  /**
+   * Determines if a room is effectively dark (no usable light sources).
+   * This is the single source of truth for darkness checking; whether it
+   * is dark to a given observer is `isDarkFor`.
+   *
+   * A room is dark if:
+   * 1. It has RoomTrait with requiresLight = true
+   * 2. There are no accessible, active light sources
+   *
+   * @param room - The room entity to check
+   * @param world - The world model
+   * @returns true if the room is dark and has no accessible light sources
+   */
   static isDark(room: IFEntity, world: WorldModel): boolean {
     if (!this.roomRequiresLight(room, world)) {
       return false; // Room isn't dark (live evaluator or static trait fact)
@@ -202,24 +203,13 @@ export class VisibilityBehavior extends Behavior {
       return false;
     }
 
-    // Check if room is dark (live evaluator first — ADR-240). An observer
-    // with night vision needs no light (ADR-328 D5).
-    if (this.roomRequiresLight(observerRoom, world) && !this.seesInDark(observer)) {
-      // In a dark room, need light to see
-      if (!this.hasLightSource(observerRoom, world)) {
-        // Special cases in darkness:
-        // 1. Can see a light that is giving light
-        if (target.hasTrait(TraitType.LIGHT_SOURCE) && LightSourceBehavior.givesLight(target, world)) {
-          return true;
-        }
-        // 2. Can see items you're carrying (by feel)
-        const targetLocation = world.getLocation(target.id);
-        if (targetLocation === observer.id) {
-          return true;
-        }
-        // Otherwise can't see in darkness
-        return false;
+    // Dark to this observer (ADR-240, ADR-328 D5): only a light giving
+    // light, and what you carry (by feel), are seen.
+    if (this.isDarkFor(observer, observerRoom, world)) {
+      if (target.hasTrait(TraitType.LIGHT_SOURCE) && LightSourceBehavior.givesLight(target, world)) {
+        return true;
       }
+      return world.getLocation(target.id) === observer.id;
     }
 
     // A far-side door sits at the room boundary, and a backdrop away from
@@ -273,13 +263,8 @@ export class VisibilityBehavior extends Behavior {
       seen.add(observerRoom.id);
     }
 
-    // Check if room is dark (live evaluator first — ADR-240). An observer
-    // with night vision needs no light (ADR-328 D5).
-    const isDark = this.roomRequiresLight(observerRoom, world) && !this.seesInDark(observer);
-    const hasLight = this.hasLightSource(observerRoom, world);
-    
-    // If it's dark and no light, only see specific things
-    if (isDark && !hasLight) {
+    // Dark to this observer (ADR-240, ADR-328 D5): only specific things
+    if (this.isDarkFor(observer, observerRoom, world)) {
       // Can always see what you're carrying (by feel)
       const carried = world.getContents(observer.id);
       for (const entity of carried) {
@@ -602,9 +587,13 @@ export class VisibilityBehavior extends Behavior {
    * container that is openable, closed and not transparent. Anything held
    * on top (a supporter, a vehicle ridden `on`) never does, nor does an
    * open, lidless or transparent container. The one definition for
-   * scope, reach and the describable location.
+   * scope, reach, the describable location, and every action that asks
+   * whether a container's contents can be seen (searching, examining).
+   *
+   * @param entity - Any entity
+   * @returns true when its inside cannot be seen from outside, nor out from in
    */
-  private static blocksSight(entity: IFEntity): boolean {
+  static blocksSight(entity: IFEntity): boolean {
     if (!entity.hasTrait(TraitType.CONTAINER)) return false;
     if (entity.getTrait(EnterableTrait)?.preposition === 'on') return false;
     if (entity.getTrait(ContainerTrait)?.isTransparent) return false;

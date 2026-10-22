@@ -45,7 +45,9 @@ export interface ExaminedEventData {
   hasContents?: boolean;
   contentCount?: number;
   contents?: Array<{ id: EntityId; name: string }>;
-  
+  /** Whether the container's contents can be seen from outside (VisibilityBehavior.blocksSight). */
+  contentsVisible?: boolean;
+
   /** Openable trait information */
   isOpenable?: boolean;
   isOpen?: boolean;

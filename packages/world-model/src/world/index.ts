@@ -49,6 +49,9 @@ export { bandOf } from './band.js';
 export { SpatialIndex } from './SpatialIndex.js';
 export { VisibilityBehavior, darkKey } from './VisibilityBehavior.js';
 export { ReachabilityBehavior } from './ReachabilityBehavior.js';
+// Sight and place across an expanse (ADR-376 D6; systems by ADR-379)
+export * from './SightBehavior.js';
+export * from './ExpansePlaceBehavior.js';
 export { PresenceBehavior } from './PresenceBehavior.js';
 export {
   TraversalBehavior,

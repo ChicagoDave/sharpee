@@ -135,8 +135,10 @@ export interface VehicleOpenModel {
   pace: number;
   /** Units per step, one or more. */
   stride: number;
-  /** How far one sees from aboard, in expanse units (D6). `seen from afar:` is `IdentityTrait.seenFromAfar`. */
+  /** How far one sees from aboard, in expanse units (D6). */
   sight: number;
+  /** What the vehicle shows when seen from a distance (D6, `seen from afar:`). */
+  seenFromAfar?: string;
   /**
    * The `sailing` block (ADR-375 D5): present on a sailing vehicle, whose
    * heading is then a bearing and whose pace is the band's.
@@ -313,6 +315,7 @@ export class VehicleTrait implements ITrait {
           pace: config.pace,
           stride: config.stride,
           sight: config.sight,
+          ...(config.seenFromAfar !== undefined ? { seenFromAfar: config.seenFromAfar } : {}),
           ...(config.sailing ? { sailing: { bands: config.sailing.bands.map((b) => ({ from: b.from, to: b.to, paces: b.paces.map((p) => ({ ...p })) })), calm: config.sailing.calm } } : {}),
           ...(config.sails ? { sails: { settings: [...config.sails.settings], current: config.sails.current } } : {}),
           heading,

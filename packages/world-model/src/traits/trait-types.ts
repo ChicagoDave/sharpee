@@ -79,6 +79,7 @@ export const TraitType = {
   EXPANSE: 'expanse',
   FLOATING: 'floating',
   SIGHT: 'sight',
+  LANDMARK: 'landmark',
 
   // Concealment traits (ADR-148)
   CONCEALMENT: 'if.trait.concealment',
@@ -185,6 +186,7 @@ export const TRAIT_CATEGORIES: Record<TraitType, TraitCategory> = {
   [TraitType.EXPANSE]: TraitCategory.INTERACTIVE,
   [TraitType.FLOATING]: TraitCategory.INTERACTIVE,
   [TraitType.SIGHT]: TraitCategory.INTERACTIVE,
+  [TraitType.LANDMARK]: TraitCategory.INTERACTIVE,
 
   // Concealment traits (ADR-148)
   [TraitType.CONCEALMENT]: TraitCategory.INTERACTIVE,

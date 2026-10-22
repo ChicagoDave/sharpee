@@ -71,6 +71,7 @@ import { EnterableTrait } from './enterable/enterableTrait.js';
 import { ExpanseTrait } from './expanse/expanseTrait.js';
 import { FloatingTrait } from './expanse/floatingTrait.js';
 import { SightTrait } from './expanse/sightTrait.js';
+import { LandmarkTrait } from './expanse/landmarkTrait.js';
 
 // Concealment traits (ADR-148)
 import { ConcealmentTrait } from './concealment/concealmentTrait.js';
@@ -156,6 +157,7 @@ export const TRAIT_IMPLEMENTATIONS: Record<TraitType, ITraitConstructor> = {
   [TraitType.EXPANSE]: ExpanseTrait,
   [TraitType.FLOATING]: FloatingTrait,
   [TraitType.SIGHT]: SightTrait,
+  [TraitType.LANDMARK]: LandmarkTrait,
 
   // Concealment traits (ADR-148)
   [TraitType.CONCEALMENT]: ConcealmentTrait as unknown as ITraitConstructor,
@@ -300,6 +302,7 @@ export {
   ExpanseTrait,
   FloatingTrait,
   SightTrait,
+  LandmarkTrait,
 
   // System traits
   StoryInfoTrait

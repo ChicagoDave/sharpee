@@ -6,8 +6,8 @@ import { WorldModel } from './WorldModel.js';
 import { TraitType } from '../traits/trait-types.js';
 import { OpenableTrait } from '../traits/openable/openableTrait.js';
 import { VisibilityBehavior } from './VisibilityBehavior.js';
-import { holderOf, placeOf } from '../traits/expanse/expanseBehavior.js';
-import { lookoutOf } from '../traits/expanse/sightBehavior.js';
+import { holderOf, placeOf } from './ExpansePlaceBehavior.js';
+import { lookoutOf } from './SightBehavior.js';
 import { sameCell } from '../traits/expanse/expanseTrait.js';
 import { getVehicleAboard } from '../traits/vehicle/vehicleBehavior.js';
 

@@ -10,7 +10,7 @@
  * a trait rather than a field on identity so the verb can dispatch on it
  * (ADR-090): the trait claims `if.action.searching`, where `look through`
  * maps, and the host registers the looking-through behavior per world. A vehicle's sight is on its open model and a landmark room's on
- * `RoomTrait.sight`; this trait is the instrument's alone.
+ * its `LandmarkTrait`; this trait is the instrument's alone.
  *
  * References:
  * - ADR-376 D6 — instruments, and the visibility cap that still applies through one.

@@ -23,9 +23,9 @@ import {
   distance,
   driftExpanse,
   headingVector,
-  placeOf,
   sightBandOf,
 } from '../../../src/traits/expanse/expanseBehavior';
+import { placeOf } from '../../../src/world/ExpansePlaceBehavior';
 
 /** A RandomService over one seeded stream: `pick` is the only draw drift makes. */
 function seededService(seed: number): RandomService & { points: string[] } {

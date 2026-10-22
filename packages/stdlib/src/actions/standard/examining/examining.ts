@@ -19,7 +19,7 @@ import { ScopeLevel } from '../../../scope/types.js';
 import { captureEntitySnapshot } from '../../base/snapshot-utils.js';
 import { emitIllustrations } from '../../helpers/emit-illustrations.js';
 import { buildEventData } from '../../data-builder-types.js';
-import { getStateClauses, IdentityTrait, lookoutOf, placeOf, holderOf } from '@sharpee/world-model';
+import { getStateClauses, seenFromAfar } from '@sharpee/world-model';
 import {
   ActionLifecycleDescriptor,
   blockedMessageId
@@ -108,11 +108,11 @@ export const examiningAction: Action & { metadata: ActionMetadata } = {
     // report() is only called on success - validation passed
     const noun = context.command.directObject!.entity!;
 
-    // Across an expanse (ADR-376 D6): a thing in sight but out of reach
-    // shows its `seen from afar:` line, the author's distant prose. A
-    // floating thing carries none and shows its description as ever.
-    const afar = noun.get(IdentityTrait)?.seenFromAfar;
-    if (afar !== undefined && !context.canReach(noun) && holderOf(context.world, noun)?.id === noun.id && lookoutOf(context.world, context.actor) && placeOf(context.world, noun)) {
+    // Across an expanse (ADR-376 D6): a thing seen only from afar shows its
+    // `seen from afar:` line, the author's distant prose — sight's answer.
+    // A floating thing carries none and shows its description as ever.
+    const afar = seenFromAfar(context.world, context.actor, noun);
+    if (afar !== undefined) {
       return [
         context.event('if.event.examined', {
           messageId: `${context.action.id}.seen_from_afar`,

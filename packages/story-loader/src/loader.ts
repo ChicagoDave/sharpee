@@ -140,6 +140,7 @@ import {
   RoomTrait,
   SceneryTrait,
   SightTrait,
+  LandmarkTrait,
   SupporterTrait,
   SwitchableTrait,
   registerVehicleExitResolver,
@@ -353,6 +354,7 @@ export class ChordStory implements Story {
           pace: v.pace ?? 1,
           stride: v.stride ?? 1,
           sight: v.sight ?? 0,
+          ...(v.seenFromAfar !== undefined ? { seenFromAfar: v.seenFromAfar } : {}),
           position: this.openVehicleStart(world, irEntity, entity),
           ...(v.sailing ? { sailing: { bands: v.sailing.bands.map((b) => ({ from: b.from, to: b.to, paces: b.paces.map((p) => ({ setting: p.setting, pace: p.pace })) })), calm: v.sailing.calm } } : {}),
           ...(v.sails ? { sails: { settings: [...v.sails.settings], current: v.sails.start } } : {}),
@@ -374,6 +376,11 @@ export class ChordStory implements Story {
         otherwise: this.requireWorldId(v.position.otherwise, irEntity),
       });
     }
+  }
+
+  /** ADR-376 D2: whether some expanse names this room in its `landmarks` block. */
+  private isLandmarkRoom(irId: string): boolean {
+    return this.ir.entities.some((e) => e.expanse?.landmarks.some((row) => row.room === irId));
   }
 
   /**
@@ -2010,17 +2017,18 @@ export class ChordStory implements Story {
     }
 
     // ADR-376 D6: `sight:` off a vehicle is a landmark room's outlook or an
-    // instrument's reach; `seen from afar:` is the one distant-prose field,
-    // whatever the kind (a vehicle's rides `vehicle.seenFromAfar`).
-    if (irEntity.sight !== undefined) {
-      const room = entity.get(RoomTrait);
-      if (room) room.sight = irEntity.sight;
-      else entity.add(new SightTrait({ sight: irEntity.sight }));
-    }
-    const seenFromAfar = irEntity.seenFromAfar ?? irEntity.vehicle?.seenFromAfar;
-    if (seenFromAfar !== undefined) {
-      const identity = entity.get(TraitType.IDENTITY) as IdentityTrait | undefined;
-      if (identity) identity.seenFromAfar = seenFromAfar;
+    // instrument's reach. A room an expanse names in its `landmarks` block
+    // carries the extension's own trait with its outlook and its `seen from
+    // afar:` (D19, Q7); an open vehicle's distant prose rides its model.
+    if (entity.has(TraitType.ROOM)) {
+      if (this.isLandmarkRoom(irEntity.id)) {
+        entity.add(new LandmarkTrait({
+          ...(irEntity.sight !== undefined ? { sight: irEntity.sight } : {}),
+          ...(irEntity.seenFromAfar !== undefined ? { seenFromAfar: irEntity.seenFromAfar } : {}),
+        }));
+      }
+    } else if (irEntity.sight !== undefined) {
+      entity.add(new SightTrait({ sight: irEntity.sight }));
     }
 
     this.applyTraitAdjectives(entity, irEntity, kind);

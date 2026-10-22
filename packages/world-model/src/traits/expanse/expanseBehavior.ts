@@ -4,10 +4,11 @@
  * Public interface: the compass over cells (`COMPASS_HEADINGS`,
  * `headingVector`, `directionOf`), `distance`, the distance bands
  * (`SightBand`, `sightBandOf`), `landmarkAt`, `landmarkCellOf`, `expanseOfLandmark`,
- * `floatingThingsAt`, `placeOf` with its result `ExpansePlace`, `holderOf`
- * (the positioned thing an entity is in or is), `receiveInExpanse` (what
- * becomes of a thing that lands in an expanse), `clearFloatingPosition`,
- * and the drift step `driftExpanse` with its result `DriftStep`.
+ * `floatingThingsAt`, `receiveInExpanse` (what becomes of a thing that
+ * lands in an expanse), `clearFloatingPosition`, and the drift step
+ * `driftExpanse` with its result `DriftStep`. Where a thing is in an
+ * expanse is a system of its own (`world/ExpansePlaceBehavior.ts`), as is
+ * sight across one (`world/SightBehavior.ts`).
  *
  * Owner context: world-model expanse behavior. Every answer is read from the
  * world and the traits; nothing here keeps a position of its own. The
@@ -31,7 +32,6 @@ import type { IFEntity } from '../../entities/if-entity.js';
 import { TraitType } from '../trait-types.js';
 import { ExpanseTrait, isInsideExpanse, sameCell, type IExpanseCell } from './expanseTrait.js';
 import { FloatingTrait } from './floatingTrait.js';
-import { VehicleTrait } from '../vehicle/vehicleTrait.js';
 
 /** The eight compass headings a vehicle or a drift may take, in the world's direction spelling. */
 export const COMPASS_HEADINGS = ['NORTH', 'NORTHEAST', 'EAST', 'SOUTHEAST', 'SOUTH', 'SOUTHWEST', 'WEST', 'NORTHWEST'] as const;
@@ -152,64 +152,6 @@ export function floatingThingsAt(world: WorldModel, expanseId: string, cell: IEx
   });
 }
 
-/**
- * Where something is in an expanse: the expanse room, its trait, and the
- * cell. Answered for an entity directly in an expanse room with a position
- * of its own (an open vehicle, a floating thing, a player out of the
- * vehicle), and for a landmark room, whose cell is its row. Undefined for
- * anything else — the entity is not positioned in any expanse.
- */
-export interface ExpansePlace {
-  expanse: IFEntity;
-  trait: ExpanseTrait;
-  cell: IExpanseCell;
-}
-
-/**
- * The place of an entity that holds a position, or of a landmark room.
- *
- * @param world - The world model
- * @param entity - A vehicle, a floating thing, an actor out of a vehicle, or a room
- */
-export function placeOf(world: WorldModel, entity: IFEntity): ExpansePlace | undefined {
-  if (entity.has(TraitType.ROOM)) {
-    const expanse = expanseOfLandmark(world, entity.id);
-    const trait = expanse?.get(ExpanseTrait);
-    const cell = trait ? landmarkCellOf(trait, entity.id) : undefined;
-    return expanse && trait && cell ? { expanse, trait, cell } : undefined;
-  }
-  const position = positionHeld(entity);
-  if (!position) return undefined;
-  const location = world.getLocation(entity.id);
-  const expanse = location !== undefined ? world.getEntity(location) : undefined;
-  const trait = expanse?.get(ExpanseTrait);
-  return expanse && trait ? { expanse, trait, cell: { x: position.x, y: position.y } } : undefined;
-}
-
-/**
- * The positioned thing an entity is, or is held in at any depth: an open
- * vehicle, a floating thing, or an actor out of a vehicle with a position.
- * Undefined when nothing on the way up holds one. The holder's place is
- * the entity's place for sight and reach (D6, D10): a lamp in a distant
- * ship is as far off as the ship.
- *
- * @param world - The world model
- * @param entity - Any entity
- */
-export function holderOf(world: WorldModel, entity: IFEntity): IFEntity | undefined {
-  const seen = new Set<string>();
-  let current: IFEntity | undefined = entity;
-  while (current && !seen.has(current.id)) {
-    seen.add(current.id);
-    if (current.hasTrait(TraitType.ROOM)) return expanseOfLandmark(world, current.id) ? current : undefined;
-    const position = positionHeld(current);
-    if (position) return current;
-    const location = world.getLocation(current.id);
-    current = location !== undefined ? world.getEntity(location) : undefined;
-  }
-  return undefined;
-}
-
 /** What became of a thing that landed in an expanse (D9, D10). */
 export type ExpanseReceipt = 'floats' | 'lost';
 
@@ -247,14 +189,6 @@ export function clearFloatingPosition(thing: IFEntity): boolean {
   if (!floating?.position) return false;
   floating.position = null;
   return true;
-}
-
-/** The cell an entity's own trait holds: an open vehicle's or a floating trait's. */
-function positionHeld(entity: IFEntity): IExpanseCell | null | undefined {
-  const floating = entity.getTrait(FloatingTrait);
-  if (floating) return floating.position;
-  const vehicle = entity.getTrait(VehicleTrait);
-  return vehicle?.model?.kind === 'open' ? vehicle.model.position : undefined;
 }
 
 /** What one drift step did to one floating thing (D10). */

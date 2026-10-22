@@ -10,7 +10,7 @@
  * anchor; the Dungeo chain is the gate for everything else).
  */
 import { describe, expect, it } from 'vitest';
-import { ExpanseTrait, FloatingTrait, IdentityTrait, RoomTrait, SightTrait, VehicleTrait, WorldModel, type IFEntity, type VehicleOpenModel } from '@sharpee/world-model';
+import { ExpanseTrait, FloatingTrait, IdentityTrait, LandmarkTrait, RoomTrait, SightTrait, VehicleTrait, WorldModel, type IFEntity, type VehicleOpenModel } from '@sharpee/world-model';
 import { bootTurns, type BootedTurns } from './helpers/boot-turns';
 
 const SOURCE = `story
@@ -393,10 +393,13 @@ describe('lowering (D2, D3, D5, D6, D8, D10)', () => {
     expect(where(b, 'skiff')).toBe(named(b, 'Mining Platform').id);
     expect(named(b, 'barge').get(VehicleTrait)!.model).toMatchObject({ kind: 'open', pace: 2, stride: 2, sight: 3, position: { x: 10, y: 2 } });
     expect(where(b, 'barge')).toBe(belt.id);
-    expect(named(b, 'skiff').get(IdentityTrait)!.seenFromAfar).toBe('a glint of hull against the dark');
-    expect(named(b, 'Derelict').get(IdentityTrait)!.seenFromAfar).toBe('a long dead hull, turning slowly end over end');
-    expect(named(b, 'Mining Platform').get(RoomTrait)!.sight).toBe(4);
-    expect(named(b, 'Derelict').get(RoomTrait)!.sight).toBeUndefined();
+    // D19 (Q7 A): the extension's data rides its own trait and the open model, never a core trait.
+    expect(skiff(b).seenFromAfar).toBe('a glint of hull against the dark');
+    expect(named(b, 'Derelict').get(LandmarkTrait)).toMatchObject({ sight: 0, seenFromAfar: 'a long dead hull, turning slowly end over end' });
+    expect(named(b, 'Mining Platform').get(LandmarkTrait)!.sight).toBe(4);
+    expect('sight' in named(b, 'Mining Platform').get(RoomTrait)!).toBe(false);
+    expect('seenFromAfar' in named(b, 'Derelict').get(IdentityTrait)!).toBe(false);
+    expect(named(b, 'telescope').has(LandmarkTrait.type)).toBe(false);
     expect(named(b, 'telescope').get(SightTrait)!.sight).toBe(12);
     expect(named(b, 'cask').get(FloatingTrait)!.position).toEqual({ x: 5, y: 3 });
     expect(where(b, 'cask')).toBe(belt.id);

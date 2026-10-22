@@ -45,14 +45,6 @@ export class IdentityTrait implements ITrait {
    */
   snippets?: SnippetMap;
 
-  /**
-   * What the entity shows when seen from a distance in an expanse (ADR-376
-   * D6): `seen from afar:` on a landmark room or an open vehicle. Examining
-   * a thing in sight but out of reach shows this instead of `description`.
-   * Absent on anything never seen across an expanse.
-   */
-  seenFromAfar?: string;
-
   /** Alternative names/aliases the entity can be referred to by */
   aliases: string[] = [];
   

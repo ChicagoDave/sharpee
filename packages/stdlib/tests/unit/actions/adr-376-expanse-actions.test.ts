@@ -15,6 +15,7 @@ import {
   ExpanseTrait,
   FloatingTrait,
   IdentityTrait,
+  LandmarkTrait,
   RoomTrait,
   SightTrait,
   VehicleTrait,
@@ -50,20 +51,22 @@ interface Belt {
 function belt(): Belt {
   const { world, player } = setupBasicWorld();
   const platform = world.createEntity('Mining Platform', 'room');
-  platform.add(new RoomTrait({ sight: 4 }));
-  platform.add(new IdentityTrait({ name: 'Mining Platform', seenFromAfar: 'a cluster of lights' }));
+  platform.add(new RoomTrait());
+  platform.add(new IdentityTrait({ name: 'Mining Platform' }));
+  platform.add(new LandmarkTrait({ sight: 4, seenFromAfar: 'a cluster of lights' }));
   const derelict = world.createEntity('Derelict', 'room');
   derelict.add(new RoomTrait());
-  derelict.add(new IdentityTrait({ name: 'Derelict', seenFromAfar: 'a long dead hull' }));
+  derelict.add(new IdentityTrait({ name: 'Derelict' }));
+  derelict.add(new LandmarkTrait({ seenFromAfar: 'a long dead hull' }));
   const expanse = world.createEntity('Belt', 'room');
   expanse.add(new RoomTrait());
   expanse.add(new IdentityTrait({ name: 'Belt' }));
   expanse.add(new ExpanseTrait({ width: 20, height: 8, landmarks: { [platform.id]: { x: 3, y: 3 }, [derelict.id]: { x: 14, y: 6 } }, drift: 4, edges: { NORTH: 'ice-fields' } }));
   const skiff = world.createEntity('skiff', 'object');
-  skiff.add(new IdentityTrait({ name: 'skiff', seenFromAfar: 'a glint of hull' }));
+  skiff.add(new IdentityTrait({ name: 'skiff' }));
   skiff.add(new ContainerTrait());
   skiff.add(new EnterableTrait());
-  skiff.add(new VehicleTrait({ model: { kind: 'open', drive: 'player', pace: 1, stride: 1, sight: 6, position: { x: 4, y: 3 } }, commands: ['compass', 'coordinates'] }));
+  skiff.add(new VehicleTrait({ model: { kind: 'open', drive: 'player', pace: 1, stride: 1, sight: 6, seenFromAfar: 'a glint of hull', position: { x: 4, y: 3 } }, commands: ['compass', 'coordinates'] }));
   world.moveEntity(skiff.id, expanse.id);
   const cask = world.createEntity('cask', 'object');
   cask.add(new IdentityTrait({ name: 'cask' }));
@@ -272,6 +275,26 @@ describe('seeing (D6)', () => {
     const near = run(examiningAction, world, cask);
     expect(messageIds(near)).toEqual(['if.action.examining.examined']);
     expect(near[0].data.params.description).toBe('A tarred cask.');
+  });
+
+  test('examining a far open vehicle shows the distant prose its model carries (D19)', () => {
+    const { world, player, platform, skiff } = belt();
+    world.moveEntity(player.id, platform.id);
+    model(skiff).position = { x: 6, y: 3 };
+    const afar = run(examiningAction, world, skiff);
+    expect(messageIds(afar)).toEqual(['if.action.examining.seen_from_afar']);
+    expect(afar[0].data.params.description).toBe('a glint of hull');
+  });
+
+  test('moored at a landmark, a course departs from the landmark\'s row (F8)', () => {
+    const { world, belt: expanse, platform, skiff } = belt();
+    model(skiff).position = null;
+    world.moveEntity(skiff.id, platform.id);
+
+    expect(messageIds(setCourse(world, '9, 3'))).toEqual(['if.action.setting_course.course_set_cell']);
+
+    expect(world.getLocation(skiff.id)).toBe(expanse.id);
+    expect(model(skiff)).toMatchObject({ position: { x: 3, y: 3 }, course: { x: 9, y: 3 }, underWay: true });
   });
 
   test('look through an instrument sights with its reach, through the visibility cap', () => {

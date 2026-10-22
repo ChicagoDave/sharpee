@@ -268,9 +268,9 @@ export class Evaluator {
       case 'vehicle-within': {
         // ADR-376 D7: an open vehicle's straight-line distance from a
         // landmark's cell or a literal cell of its expanse. A vehicle at a
-        // landmark measures from that landmark's row.
+        // landmark measures from that landmark's row (the place system's answer).
         const vehicle = ctx.world.getEntity(this.entityValue(cond.vehicle, ctx));
-        const place = vehicle ? placeOf(ctx.world, vehicle) ?? landmarkPlaceOf(ctx.world, vehicle) : undefined;
+        const place = vehicle ? placeOf(ctx.world, vehicle) : undefined;
         if (!place) return false;
         const target = 'kind' in cond.of
           ? landmarkCellOf(place.trait, this.entityValue(cond.of, ctx))
@@ -998,12 +998,3 @@ export class Evaluator {
   }
 }
 
-/**
- * The place of an open vehicle sitting in a landmark room (ADR-376 D5): its
- * position is null there, so the landmark's row stands for it.
- */
-function landmarkPlaceOf(world: WorldModel, vehicle: IFEntity): ReturnType<typeof placeOf> {
-  const location = world.getLocation(vehicle.id);
-  const room = location !== undefined ? world.getEntity(location) : undefined;
-  return room ? placeOf(world, room) : undefined;
-}
