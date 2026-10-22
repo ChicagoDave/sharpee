@@ -55,10 +55,10 @@ export {
   exitHiddenKey,
   exitBlockedKey,
   exitMessageKey,
-  PUSHING,
   type TraversalMover,
   type Way,
-  type WayRefusal
+  type WayRefusal,
+  type ResolvedWay
 } from './TraversalBehavior.js';
 
 // The per-turn location-heading projection (ADR-349 D3/D11)

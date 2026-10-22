@@ -155,7 +155,7 @@ describe('the vehicle machine (ADR-366 D5e)', () => {
       const ship = vehicle('ship', new VehicleTrait({ model: { kind: 'compass', drive: 'control', pace: 2 } }), a);
       connect(a, b);
       connect(b, c);
-      b.get(RoomTrait)!.admits = [ship.id];
+      b.get(RoomTrait)!.admits.vehicles = [ship.id];
       world.moveEntity(player.id, ship.id);
       expect(startVehicle(world, ship, Direction.NORTH)).toBe(true);
 
@@ -183,7 +183,7 @@ describe('the vehicle machine (ADR-366 D5e)', () => {
       gate.add(new DoorTrait({ room1: a.id, room2: b.id }));
       gate.add(new OpenableTrait({ isOpen: false }));
       connect(a, b, gate.id);
-      b.get(RoomTrait)!.admits = [ship.id];
+      b.get(RoomTrait)!.admits.vehicles = [ship.id];
       startVehicle(world, ship, Direction.NORTH);
       expect(stepVehicle(world, ship)).toEqual({ kind: 'stopped' });
       expect(world.getLocation(ship.id)).toBe(a.id);
@@ -198,7 +198,7 @@ describe('the vehicle machine (ADR-366 D5e)', () => {
     it('stops at a blocked exit and at a hidden one, reading traversal like every mover (ADR-378 D0)', () => {
       const ship = vehicle('ship', new VehicleTrait({ model: { kind: 'compass', drive: 'control', pace: 1 } }), a);
       connect(a, b);
-      b.get(RoomTrait)!.admits = [ship.id];
+      b.get(RoomTrait)!.admits.vehicles = [ship.id];
 
       // Blocked by a live evaluator (Chord `north is blocked while …`): before
       // ADR-378 the machine drove through it.
@@ -229,7 +229,7 @@ describe('the vehicle machine (ADR-366 D5e)', () => {
       gate.add(new OpenableTrait({ isOpen: true }));
       gate.add(new LockableTrait({ isLocked: true }));
       connect(a, b, gate.id);
-      b.get(RoomTrait)!.admits = [ship.id];
+      b.get(RoomTrait)!.admits.vehicles = [ship.id];
 
       startVehicle(world, ship, Direction.NORTH);
       expect(stepVehicle(world, ship)).toEqual({ kind: 'stopped' });

@@ -105,7 +105,8 @@ function vehicleEvent(type: string, messageId: string, vehicle: IFEntity, params
  *
  * @param world - The live world
  * @param playerId - The player, whose place decides what is reported
- * @param random - The session's random service, for drift (ADR-293)
+ * @param random - The session's random service, for drift (ADR-293) and
+ *   for a computed way a compass vehicle's heading meets (ADR-295 D4)
  * @param options - The host's `position` block reader and edge-phrase text,
  *   each absent when the host lowers nothing that needs it
  * @returns the turn's `vehicle_arrived`, `vehicle_stopped`, `vehicle_alongside` and `expanse_edge` events
@@ -113,7 +114,7 @@ function vehicleEvent(type: string, messageId: string, vehicle: IFEntity, params
 export function tickVehicles(world: WorldModel, playerId: string, random: RandomService, options: VehicleTickOptions = {}): ISemanticEvent[] {
   const events: ISemanticEvent[] = [];
   for (const vehicle of world.findByTrait(TraitType.VEHICLE)) {
-    const step = stepVehicle(world, vehicle, options.positionOf?.(vehicle, world));
+    const step = stepVehicle(world, vehicle, options.positionOf?.(vehicle, world), random);
     if (!step) continue;
     const aboard = isAboardVehicle(world, playerId, vehicle.id);
     switch (step.kind) {

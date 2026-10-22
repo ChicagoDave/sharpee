@@ -22,6 +22,7 @@
  *   platform reads it today (dual-mode, ADR-107).
  */
 import {
+  ADMITS_PUSHING,
   IR_FORMAT,
   type IRChannelReturn,
   type IRComposition,
@@ -147,7 +148,7 @@ import {
   type TemperamentDef,
   TraitType,
   TraversalBehavior,
-  PUSHING,
+  type Admittance,
   isPassageKey,
   type ExitKey,
   WeaponTrait,
@@ -437,24 +438,40 @@ export class ChordStory implements Story {
         const entity = world.getEntity(this.requireWorldId(irEntity.id, irEntity));
         if (!entity) continue;
         const direction = toDirection(exit.direction, irEntity);
-        const admits = exit.admits.map((id) => (id === PUSHING ? PUSHING : this.requireWorldId(id, irEntity)));
+        // The line decides both fields for this way: its vehicles, and
+        // every pushable when it names `pushing`, else none.
+        const admits = this.admittanceOf(exit.admits, irEntity);
         const forward = RoomBehavior.getExit(entity, direction);
-        if (forward) forward.admits = [...admits];
+        if (forward) forward.admits = copyAdmittance(admits);
         if (exit.oneWay || isPassageKey(direction)) continue;
         const reverseDirection = getOppositeDirection(direction as DirectionType);
         const far = this.ir.entities.find((e) => e.id === exit.to);
         if (far?.exits.some((e) => toDirection(e.direction, far) === reverseDirection)) continue;
         const reverse = RoomBehavior.getExit(world.getEntity(this.requireWorldId(exit.to, irEntity))!, reverseDirection);
-        if (reverse && reverse.destination === entity.id) reverse.admits = [...admits];
+        if (reverse && reverse.destination === entity.id) reverse.admits = copyAdmittance(admits);
       }
     }
   }
 
   /**
-   * ADR-378 D6b: a thing's `pushing` block stamps the thing's id onto each
-   * named way's `admitsPushed` — the compass exit from the first room to the
-   * second, which the compiler has checked exists. Runs after every exit is
-   * wired, as the exit-line stamp does.
+   * An IR `admits` list as an admittance (ADR-378 D6): entity ids are the
+   * steered vehicles, and the class word `pushing` admits every pushable.
+   */
+  private admittanceOf(list: readonly string[], irEntity: IREntity): Admittance {
+    return {
+      vehicles: list.filter((id) => id !== ADMITS_PUSHING).map((id) => this.requireWorldId(id, irEntity)),
+      pushed: list.includes(ADMITS_PUSHING) ? 'any' : [],
+    };
+  }
+
+  /**
+   * ADR-378 D6b: a thing's `pushing` block adds the thing's id to each named
+   * way's admitted pushed things — the compass exit from the first room to
+   * the second, which the compiler has checked exists. Runs after every exit
+   * is wired and every exit line stamped. A way that already admits every
+   * pushable, by its own line or by its room's `admits pushing` (static: a
+   * story never changes it), needs no grant, and writing one would narrow
+   * the way to this thing alone.
    */
   private stampPushingWays(world: WorldModel): void {
     for (const irEntity of this.ir.entities) {
@@ -466,8 +483,14 @@ export class ChordStory implements Story {
         if (!from) continue;
         for (const [key, exit] of RoomBehavior.getAllExits(from)) {
           if (isPassageKey(key) || exit.destination !== toId) continue;
-          if (!exit.admitsPushed) exit.admitsPushed = [];
-          if (!exit.admitsPushed.includes(thingId)) exit.admitsPushed.push(thingId);
+          const pushed = exit.admits?.pushed ?? world.getEntity(toId)?.get(RoomTrait)?.admits.pushed ?? [];
+          if (pushed === 'any') continue;
+          const own = exit.admits?.pushed;
+          if (Array.isArray(own)) {
+            if (!own.includes(thingId)) own.push(thingId);
+          } else {
+            exit.admits = { ...exit.admits, pushed: [thingId] };
+          }
         }
       }
     }
@@ -479,17 +502,18 @@ export class ChordStory implements Story {
    * unless it names it, so the list only ever grows.
    */
   private wireAdmits(world: WorldModel, irEntity: IREntity, entity: IFEntity): void {
-    // ADR-378 D6: the class word `pushing` passes through as itself.
-    const vehicleIds = (irEntity.admits ?? []).map((id) => (id === PUSHING ? PUSHING : this.requireWorldId(id, irEntity)));
+    // ADR-378 D6: the class word `pushing` admits every pushable.
+    const admits = this.admittanceOf(irEntity.admits ?? [], irEntity);
     const rooms = entity.has(TraitType.ROOM)
       ? [entity]
       : (irEntity.containing ?? []).map((member) => world.getEntity(this.requireWorldId(member.id, irEntity))!);
     for (const room of rooms) {
       const trait = room.get(RoomTrait);
       if (!trait) continue;
-      for (const id of vehicleIds) {
-        if (!trait.admits.includes(id)) trait.admits.push(id);
+      for (const id of admits.vehicles) {
+        if (!trait.admits.vehicles.includes(id)) trait.admits.vehicles.push(id);
       }
+      if (admits.pushed === 'any') trait.admits.pushed = 'any';
     }
   }
 
@@ -3051,6 +3075,11 @@ function toDirection(word: string, at?: IREntity): ExitKey {
   // direction-conformance test).
   if (!dir) throw new LoadError(`Unknown direction \`${word}\`.`, at?.span);
   return dir;
+}
+
+/** A copy of an admittance, so each way's lists are its own to grow. */
+function copyAdmittance(admits: Admittance): Admittance {
+  return { vehicles: [...admits.vehicles], pushed: admits.pushed === 'any' ? 'any' : [...admits.pushed] };
 }
 
 function configValue(comp: IRComposition, key: string): string | undefined {

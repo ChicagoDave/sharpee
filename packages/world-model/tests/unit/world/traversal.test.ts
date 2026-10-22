@@ -23,7 +23,6 @@ import {
   exitBlockedKey,
   exitHiddenKey,
   exitMessageKey,
-  PUSHING,
   type TraversalMover
 } from '../../../src/world/TraversalBehavior';
 
@@ -58,7 +57,7 @@ describe('TraversalBehavior', () => {
     world.moveEntity(ship.id, a.id);
     walker = { kind: 'walker', entity: player };
     steered = { kind: 'steered', vehicle: ship };
-    pushed = { kind: 'pushed', thing: cart };
+    pushed = { kind: 'walker', entity: player, pushing: cart };
   });
 
   describe('the way for a walker', () => {
@@ -160,25 +159,41 @@ describe('TraversalBehavior', () => {
 
     it('a steered vehicle is refused not_admitted unless the destination room lists it', () => {
       expect(TraversalBehavior.wayFor(world, a, Direction.NORTH, steered)).toMatchObject({ kind: 'refused', reason: 'not_admitted' });
-      b.get(RoomTrait)!.admits = [ship.id];
+      b.get(RoomTrait)!.admits = { vehicles: [ship.id], pushed: [] };
       expect(TraversalBehavior.wayFor(world, a, Direction.NORTH, steered).kind).toBe('exit');
     });
 
-    it('a pushed thing is refused pushing_not_admitted unless the room lists `pushing`', () => {
+    it('a pushed thing is refused pushing_not_admitted unless the room admits every pushable', () => {
       expect(TraversalBehavior.wayFor(world, a, Direction.NORTH, pushed)).toMatchObject({ kind: 'refused', reason: 'pushing_not_admitted' });
-      b.get(RoomTrait)!.admits = [PUSHING];
+      b.get(RoomTrait)!.admits = { vehicles: [], pushed: 'any' };
       expect(TraversalBehavior.wayFor(world, a, Direction.NORTH, pushed).kind).toBe('exit');
     });
 
-    it('the exit\'s own admits list decides over the room\'s when it has one', () => {
-      b.get(RoomTrait)!.admits = [PUSHING, ship.id];
-      a.get(RoomTrait)!.exits[Direction.NORTH]!.admits = [ship.id];
+    it('the exit\'s own admits decides over the room\'s when it has one', () => {
+      b.get(RoomTrait)!.admits = { vehicles: [ship.id], pushed: 'any' };
+      a.get(RoomTrait)!.exits[Direction.NORTH]!.admits = { vehicles: [ship.id], pushed: [] };
       expect(TraversalBehavior.wayFor(world, a, Direction.NORTH, pushed)).toMatchObject({ reason: 'pushing_not_admitted' });
       expect(TraversalBehavior.wayFor(world, a, Direction.NORTH, steered).kind).toBe('exit');
 
-      a.get(RoomTrait)!.exits[Direction.NORTH]!.admits = [PUSHING];
+      a.get(RoomTrait)!.exits[Direction.NORTH]!.admits = { vehicles: [], pushed: 'any' };
       expect(TraversalBehavior.wayFor(world, a, Direction.NORTH, pushed).kind).toBe('exit');
       expect(TraversalBehavior.wayFor(world, a, Direction.NORTH, steered)).toMatchObject({ reason: 'not_admitted' });
+    });
+
+    it('decides field by field: an exit that names only pushed things leaves the vehicles to the room', () => {
+      b.get(RoomTrait)!.admits = { vehicles: [ship.id], pushed: [] };
+      a.get(RoomTrait)!.exits[Direction.NORTH]!.admits = { pushed: [cart.id] };
+      expect(TraversalBehavior.wayFor(world, a, Direction.NORTH, steered).kind).toBe('exit');
+      expect(TraversalBehavior.wayFor(world, a, Direction.NORTH, pushed).kind).toBe('exit');
+      b.get(RoomTrait)!.admits.vehicles = [];
+      expect(TraversalBehavior.wayFor(world, a, Direction.NORTH, steered)).toMatchObject({ reason: 'not_admitted' });
+    });
+
+    it('a vehicle whose id were `pushing` is a vehicle, never the class of pushed things', () => {
+      const odd = world.createEntity('pushing', EntityType.ITEM);
+      b.get(RoomTrait)!.admits = { vehicles: [odd.id], pushed: [] };
+      expect(TraversalBehavior.wayFor(world, a, Direction.NORTH, pushed)).toMatchObject({ reason: 'pushing_not_admitted' });
+      expect(TraversalBehavior.wayFor(world, a, Direction.NORTH, { kind: 'steered', vehicle: odd }).kind).toBe('exit');
     });
   });
 
@@ -219,7 +234,7 @@ describe('TraversalBehavior', () => {
 });
 
 describe("the thing's own way (ADR-378 D6b)", () => {
-  it('a pushed thing is admitted by its id on the exit when the way carries no class word', () => {
+  it('a pushed thing is admitted by its id on the exit when the way does not admit every pushable', () => {
     const world = new WorldModel();
     const a = world.createEntity('A', EntityType.ROOM);
     a.add(new RoomTrait());
@@ -228,12 +243,32 @@ describe("the thing's own way (ADR-378 D6b)", () => {
     world.connectRooms(a.id, b.id, Direction.NORTH);
     const cart = world.createEntity('cart', EntityType.OBJECT);
     const crate = world.createEntity('crate', EntityType.OBJECT);
+    const pusher = world.createEntity('pusher', EntityType.ACTOR);
     const exit = RoomBehavior.getExit(a, Direction.NORTH)!;
-    exit.admitsPushed = [cart.id];
+    exit.admits = { pushed: [cart.id] };
 
-    expect(TraversalBehavior.wayFor(world, a, Direction.NORTH, { kind: 'pushed', thing: cart })).toMatchObject({ kind: 'exit' });
-    expect(TraversalBehavior.wayFor(world, a, Direction.NORTH, { kind: 'pushed', thing: crate })).toMatchObject({ kind: 'refused', reason: 'pushing_not_admitted' });
+    expect(TraversalBehavior.wayFor(world, a, Direction.NORTH, { kind: 'walker', entity: pusher, pushing: cart })).toMatchObject({ kind: 'exit' });
+    expect(TraversalBehavior.wayFor(world, a, Direction.NORTH, { kind: 'walker', entity: pusher, pushing: crate })).toMatchObject({ kind: 'refused', reason: 'pushing_not_admitted' });
     // The reverse carries no stamp of its own.
-    expect(TraversalBehavior.wayFor(world, b, Direction.SOUTH, { kind: 'pushed', thing: cart })).toMatchObject({ reason: 'pushing_not_admitted' });
+    expect(TraversalBehavior.wayFor(world, b, Direction.SOUTH, { kind: 'walker', entity: pusher, pushing: cart })).toMatchObject({ reason: 'pushing_not_admitted' });
+  });
+
+  it('a steered vehicle pushing a thing is one party: the way must admit both', () => {
+    const world = new WorldModel();
+    const a = world.createEntity('A', EntityType.ROOM);
+    a.add(new RoomTrait());
+    const b = world.createEntity('B', EntityType.ROOM);
+    b.add(new RoomTrait());
+    world.connectRooms(a.id, b.id, Direction.NORTH);
+    const car = world.createEntity('car', EntityType.ITEM);
+    const cart = world.createEntity('cart', EntityType.OBJECT);
+    const party = { kind: 'steered', vehicle: car, pushing: cart } as const;
+
+    b.get(RoomTrait)!.admits = { vehicles: [], pushed: 'any' };
+    expect(TraversalBehavior.wayFor(world, a, Direction.NORTH, party)).toMatchObject({ kind: 'refused', reason: 'not_admitted' });
+    b.get(RoomTrait)!.admits = { vehicles: [car.id], pushed: [] };
+    expect(TraversalBehavior.wayFor(world, a, Direction.NORTH, party)).toMatchObject({ kind: 'refused', reason: 'pushing_not_admitted' });
+    b.get(RoomTrait)!.admits = { vehicles: [car.id], pushed: 'any' };
+    expect(TraversalBehavior.wayFor(world, a, Direction.NORTH, party).kind).toBe('exit');
   });
 });

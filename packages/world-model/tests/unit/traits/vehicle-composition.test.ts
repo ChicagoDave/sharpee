@@ -21,8 +21,8 @@ import { VehicleTrait } from '../../../src/traits/vehicle/vehicleTrait';
 import { VisibilityBehavior } from '../../../src/world/VisibilityBehavior';
 import { AboardTrait } from '../../../src/traits/vehicle/aboardTrait';
 import { RoomBehavior } from '../../../src/traits/room/roomBehavior';
+import { TraversalBehavior } from '../../../src/world/TraversalBehavior';
 import {
-  admitsVehicle,
   currentStop,
   goingFromVehicle,
   isStop,
@@ -162,12 +162,13 @@ describe('Vehicle model', () => {
   });
 
   describe('admits (D6)', () => {
-    it('a room admits no vehicle until it names it', () => {
+    it('a room admits no vehicle until it names it, as traversal reads it', () => {
       const car = vehicle('car', new VehicleTrait({ model: { kind: 'streets' } }));
-      expect(admitsVehicle(bottom, car)).toBe(false);
-      bottom.get(RoomTrait)!.admits.push(car.id);
-      expect(admitsVehicle(bottom, car)).toBe(true);
-      expect(admitsVehicle(elsewhere, car)).toBe(false);
+      const steered = { kind: 'steered', vehicle: car } as const;
+      expect(TraversalBehavior.admitsMover(null, bottom, steered)).toBe(false);
+      bottom.get(RoomTrait)!.admits.vehicles.push(car.id);
+      expect(TraversalBehavior.admitsMover(null, bottom, steered)).toBe(true);
+      expect(TraversalBehavior.admitsMover(null, elsewhere, steered)).toBe(false);
     });
   });
 

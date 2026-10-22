@@ -9,8 +9,9 @@
  * direction the actor's own traversal is `going`'s, delegated (ADR-228
  * D6-B): every refusal going knows — no exit, a hidden way, the blocked
  * phrase, a closed or locked door, a vehicle the actor rides — is the push's
- * refusal in going's words (ADR-378 D7), and both ids' hooks fire. A way
- * that exists but does not admit pushing refuses `cannot_push_that_way`.
+ * refusal in going's words (ADR-378 D7), and both ids' hooks fire. The
+ * pushed thing is going's mover, so a way that exists but does not admit it
+ * — a computed way's drawn room included — refuses `cannot_push_that_way`.
  *
  * Uses four-phase pattern:
  * 1. validate: target, reach, the marker; with a direction, the way and
@@ -30,9 +31,9 @@ import {
   TraitType,
   SwitchableTrait,
   SwitchableBehavior,
-  TraversalBehavior,
   isDirection,
-  type DirectionType
+  type DirectionType,
+  type IFEntity
 } from '@sharpee/world-model';
 import { IFActions } from '../../constants.js';
 import { ScopeLevel } from '../../../scope/types.js';
@@ -40,7 +41,7 @@ import { ValidatedCommand } from '../../../validation/types.js';
 import { PushedEventData } from './pushing-events.js';
 import { getPushingSharedData } from './pushing-types.js';
 import { nounPhraseFor } from '../../../utils/index.js';
-import { goingAction, goingLifecycle, getGoingSharedData } from '../going/going.js';
+import { goingAction, goingLifecycle, getGoingSharedData, PUSHED_THING_EXTRA } from '../going/going.js';
 import { delegateValidate, delegateExecute, delegateReport, inDelegateWords } from '../delegation-shared.js';
 import {
   ActionLifecycleDescriptor,
@@ -72,8 +73,11 @@ export const pushingLifecycle: ActionLifecycleDescriptor = {
   ]
 };
 
-/** The command the delegated going sees: the direction, and no object. */
-function goingCommand(context: ActionContext, direction: DirectionType): ValidatedCommand {
+/**
+ * The command the delegated going sees: the direction, no object, and the
+ * pushed thing named as the way's mover.
+ */
+function goingCommand(context: ActionContext, direction: DirectionType, pushed: IFEntity): ValidatedCommand {
   return {
     ...context.command,
     actionId: IFActions.GOING,
@@ -81,7 +85,7 @@ function goingCommand(context: ActionContext, direction: DirectionType): Validat
     indirectObject: undefined,
     parsed: {
       ...context.command.parsed,
-      extras: { ...context.command.parsed.extras, direction }
+      extras: { ...context.command.parsed.extras, direction, [PUSHED_THING_EXTRA]: pushed.id }
     }
   };
 }
@@ -175,14 +179,12 @@ export const pushingAction: Action & { metadata: ActionMetadata } = {
     if (!isDirection(direction) || context.world.getLocation(target.id) !== room.id) {
       return { valid: false, error: 'cannot_push_that_way', params: refusal };
     }
-    const way = TraversalBehavior.wayFor(context.world, room, direction, { kind: 'pushed', thing: target });
-    if (way.kind === 'refused' && way.reason === 'pushing_not_admitted') {
-      return { valid: false, error: 'cannot_push_that_way', params: refusal };
-    }
 
-    // The actor's traversal is going's (ADR-378 D7): every other refusal the
-    // home gave is going's to word, and going's hooks fire on its context.
-    const { delegation, result } = delegateValidate(context, goingAction, goingLifecycle, goingCommand(context, direction));
+    // The traversal is going's (ADR-378 D7), with the pushed thing as the
+    // mover: traversal admits the way for it (a way that does not refuses
+    // in this action's words), every other refusal is going's to word, and
+    // going's hooks fire on its context.
+    const { delegation, result } = delegateValidate(context, goingAction, goingLifecycle, goingCommand(context, direction, target));
     sharedData.delegation = delegation;
     return inDelegateWords(result, delegation);
   },

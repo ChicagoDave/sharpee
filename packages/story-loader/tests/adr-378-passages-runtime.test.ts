@@ -190,13 +190,13 @@ describe('a passage is wired under its key, one-way, with no reverse (ADR-378 D1
     const dock = b.world.getEntity(b.id('loading-dock'))!;
     // The Loading Dock writes `west to the Sorting Room` itself (the UPPS
     // shape): that later wiring rewrote both entries, and the stamp held.
-    expect(RoomBehavior.getExit(sorting, Direction.EAST)?.admits).toEqual(['pushing']);
+    expect(RoomBehavior.getExit(sorting, Direction.EAST)?.admits).toEqual({ vehicles: [], pushed: 'any' });
     // The far room's own line carries no admits, so its exit has none.
     expect(RoomBehavior.getExit(dock, Direction.WEST)?.admits).toBeUndefined();
     // An inferred reverse carries the stamp: the Yard's south, from the Dock's north line.
     expect(RoomBehavior.getExit(dock, Direction.NORTH)).toBeDefined();
     expect(RoomBehavior.getExit(dock, Direction.NORTH)?.admits).toBeUndefined();
-    expect(b.world.getEntity(b.id('yard'))!.get(RoomTrait)!.admits).toEqual(['pushing']);
+    expect(b.world.getEntity(b.id('yard'))!.get(RoomTrait)!.admits).toEqual({ vehicles: [], pushed: 'any' });
   });
 });
 
@@ -329,9 +329,10 @@ describe("the thing's own way: the `pushing` block (ADR-378 D6b)", () => {
     const b = await bootTurns(SOURCE);
     const yard = b.world.getEntity(b.id('yard'))!;
     const annex = b.world.getEntity(b.id('annex'))!;
-    expect(RoomBehavior.getExit(yard, Direction.NORTH)?.admitsPushed).toEqual([b.id('crate')]);
+    // The grant decides the pushed things alone; the vehicles stay the room's.
+    expect(RoomBehavior.getExit(yard, Direction.NORTH)?.admits).toEqual({ pushed: [b.id('crate')] });
     // `from … to` is one way: the Annex's own line back carries no stamp.
-    expect(RoomBehavior.getExit(annex, Direction.SOUTH)?.admitsPushed).toBeUndefined();
+    expect(RoomBehavior.getExit(annex, Direction.SOUTH)?.admits).toBeUndefined();
 
     await b.turn('up');
     await b.turn('push crank');

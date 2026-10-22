@@ -214,13 +214,12 @@ describe('climbingAction (Golden Pattern)', () => {
         destinationId: attic.id
       });
 
-      // Should emit movement event
-      expectEvent(events, 'if.event.moved', {
-        direction: 'up',
+      // The move is going's (ADR-378 D7): the climber's actor_moved, from going
+      expectEvent(events, 'if.event.actor_moved', {
         fromRoom: groundFloor.id,
-        toRoom: attic.id,
-        method: 'climbing'
+        toRoom: attic.id
       });
+      expect(world.getLocation(player.id)).toBe(attic.id);
     });
 
     test('should climb down when exit exists', () => {

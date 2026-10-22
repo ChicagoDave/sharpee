@@ -118,6 +118,25 @@ describe('traversal has one home (ADR-379 D2, AC-4)', () => {
     }
   });
 
+  test('admittance has one reader: no source outside the enumerated files touches a room\'s or an exit\'s `admits` (F1, D17)', () => {
+    // The home reads it; the trait declares it; the loader writes it from
+    // the IR (and reads the IR's own `admits` lists to do so). No mover or
+    // action keeps a copy of who a way admits.
+    const ADMITTANCE: Record<string, string> = {
+      [HOME]: 'home — admitsMover, the only reader',
+      'world-model/src/traits/room/roomTrait.ts': 'data — declares Admittance',
+      'story-loader/src/loader.ts': 'writer — lowers the IR admits lists and pushing blocks',
+    };
+    const offenders: string[] = [];
+    for (const file of files) {
+      const relative = path.relative(PACKAGES, file);
+      if (relative in ADMITTANCE) continue;
+      const code = stripComments(fs.readFileSync(file, 'utf8'));
+      if (/\.admits\b|\badmitsPushed\b/.test(code)) offenders.push(relative);
+    }
+    expect(offenders, `admittance is the traversal system's to read:\n  ${offenders.join('\n  ')}`).toEqual([]);
+  });
+
   test('the copies are the two GH #601 names and no more', () => {
     const copies = Object.entries(ALLOWED_READERS).filter(([, v]) => v.role === 'copy').map(([k]) => k).sort();
     expect(copies).toEqual([

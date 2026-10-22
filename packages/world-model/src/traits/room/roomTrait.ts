@@ -19,6 +19,18 @@ export interface IExitMapHint {
   dz?: number;
 }
 
+/**
+ * Who may take a way beyond a walker (ADR-366 D6, ADR-378 D6): the steered
+ * vehicles by id, and the pushed things — every pushable (`'any'`) or these
+ * by id. Read only by the traversal system (`TraversalBehavior.admitsMover`).
+ */
+export interface Admittance {
+  /** The steered vehicles admitted, by entity id. */
+  vehicles: string[];
+  /** The pushed things admitted: every pushable, or these entity ids. */
+  pushed: 'any' | string[];
+}
+
 export interface IExitInfo {
   /** The destination room ID (must be an entity ID, not a name) */
   destination: string;
@@ -27,17 +39,12 @@ export interface IExitInfo {
   /** Optional map positioning hint (ADR-113) */
   mapHint?: IExitMapHint;
   /**
-   * Who may pass this way beyond a walker (ADR-378 D6): steered vehicle ids
-   * and the class word `pushing`. Read by the traversal query before the
-   * room's own `admits` list; absent means the room's list decides.
+   * This way's own admittance (ADR-378 D6), read field by field before the
+   * destination room's: an exit line's `admits` writes both fields; a
+   * thing's `pushing` block (D6b) adds its id to `pushed` alone. A field
+   * absent here is the room's to decide.
    */
-  admits?: string[];
-  /**
-   * The pushable things that may be pushed this way by their own word
-   * (ADR-378 D6b, the thing's `pushing` block): entity ids. Read beside the
-   * class word `pushing` in `admits`; either admits the push.
-   */
-  admitsPushed?: string[];
+  admits?: Partial<Admittance>;
 }
 
 export interface IRoomData {
@@ -106,13 +113,11 @@ export interface IRoomData {
   tags?: string[];
 
   /**
-   * Who may arrive here beyond a walker (ADR-366 D6, ADR-378 D6): the ids
-   * of the steered vehicles this room admits, and the class word `pushing`
-   * when a pushed thing may be brought in. Read by the traversal query for
-   * every way into this room that carries no `admits` of its own; a room
-   * admits nothing by default.
+   * Who may arrive here beyond a walker (ADR-366 D6, ADR-378 D6). Read by
+   * the traversal system for every way into this room whose exit does not
+   * decide the field itself; a room admits nothing by default.
    */
-  admits?: string[];
+  admits?: Admittance;
 
   /**
    * A landmark room's outlook over its expanse (ADR-376 D6), in expanse
@@ -168,7 +173,7 @@ export class RoomTrait implements ITrait, IRoomData {
   regionId?: string;
   walls: string[];
   tags: string[];
-  admits: string[];
+  admits: Admittance;
   sight?: number;
   
   // Container functionality
@@ -201,7 +206,7 @@ export class RoomTrait implements ITrait, IRoomData {
     this.regionId = data.regionId;
     this.walls = data.walls ?? [];
     this.tags = data.tags ?? [];
-    this.admits = data.admits ?? [];
+    this.admits = data.admits ?? { vehicles: [], pushed: [] };
     this.sight = data.sight;
     
     // Container properties

@@ -4,7 +4,7 @@
  * Public interface: `isVehicle`, `isActorInVehicle`, `getActorVehicle`,
  * `getVehicleOccupants`, `isAboardVehicle`, `getVehicleAboard`,
  * `takesCommandSet` (where an actor rides and what they may say there),
- * `goingFromVehicle` (what GO means from inside), `admitsVehicle`,
+ * `goingFromVehicle` (what GO means from inside),
  * `isUnderWay`, the driving statements `startVehicle`, `stopVehicle` and
  * `sendVehicle`, the machine's per-turn step `stepVehicle` with its result
  * `VehicleStep`, the line model's `isStop`, `currentStop` and
@@ -38,12 +38,12 @@
  *   wind, irons, coming about, the sails.
  */
 
+import type { RandomService } from '@sharpee/core';
 import type { ExitResolver } from '../../capabilities/exit-resolver-binding.js';
 import type { WorldModel } from '../../world/WorldModel.js';
 import type { IFEntity } from '../../entities/if-entity.js';
 import { isDirection, type DirectionType } from '../../constants/directions.js';
 import { TraitType } from '../trait-types.js';
-import { RoomTrait } from '../room/roomTrait.js';
 import { RoomBehavior } from '../room/roomBehavior.js';
 import { OpenableBehavior } from '../openable/openableBehavior.js';
 import { TraversalBehavior } from '../../world/TraversalBehavior.js';
@@ -100,7 +100,8 @@ export function getVehicleOccupants(world: WorldModel, vehicleId: string): IFEnt
 /**
  * What GO means for an actor, decided by the vehicle they are in (D5).
  * `on-foot`: not in a vehicle, GO is walking. `steers`: GO moves the
- * vehicle (the destination still has to admit it, `admitsVehicle`).
+ * vehicle (the destination still has to admit it, which the traversal
+ * system answers).
  * `rides`: a line vehicle; the player rides and the story drives.
  * `stays`: a vehicle with no movement model does not move under GO.
  */
@@ -500,17 +501,6 @@ export function registerVehicleExitResolver(world: WorldModel): void {
   world.registerExitResolver(AboardTrait.type, vehicleOutsideExitResolver);
 }
 
-/**
- * Whether a room admits a vehicle (D6). A room admits no vehicle unless it
- * names it.
- *
- * @param room - The room the vehicle would land in
- * @param vehicle - The vehicle
- */
-export function admitsVehicle(room: IFEntity, vehicle: IFEntity): boolean {
-  return room.get(RoomTrait)?.admits.includes(vehicle.id) ?? false;
-}
-
 function lineOf(vehicle: IFEntity): VehicleLineModel | undefined {
   const model = vehicle.get(VehicleTrait)?.model;
   return model?.kind === 'line' ? model : undefined;
@@ -611,15 +601,20 @@ export type VehicleStep =
  *   `position` block names this turn; the caller evaluates the block,
  *   since its guards are code the trait cannot hold. Ignored by every
  *   other model.
+ * @param random - The session's random service, which a computed way's
+ *   resolver may draw on (ADR-295 D4); world-model never makes one. Needed
+ *   only when a compass vehicle's heading meets a computed way.
  * @returns what the step did, or undefined when the vehicle stayed put
+ * @throws Error when a compass vehicle meets a computed way and no random
+ *   service was passed (a host wiring defect, never a silent stop)
  */
-export function stepVehicle(world: WorldModel, vehicle: IFEntity, positionAnswer?: string): VehicleStep | undefined {
+export function stepVehicle(world: WorldModel, vehicle: IFEntity, positionAnswer?: string, random?: RandomService): VehicleStep | undefined {
   const model = vehicle.get(VehicleTrait)?.model;
   switch (model?.kind) {
     case 'line':
       return model.drive === 'state' ? stepStateLine(world, vehicle, model, positionAnswer) : stepControlLine(world, vehicle, model);
     case 'compass':
-      return stepCompass(world, vehicle, model);
+      return stepCompass(world, vehicle, model, random);
     case 'flight':
       return stepFlight(world, vehicle, model);
     case 'open':
@@ -674,26 +669,42 @@ function stepControlLine(world: WorldModel, vehicle: IFEntity, model: VehicleLin
  * while traversal grants it to a steered vehicle (ADR-378 D0: the way
  * exists and is not hidden or blocked, no closed or locked door bars it, and
  * the destination admits the vehicle, D6); when it cannot, the heading
- * clears and the vehicle is stopped, once.
+ * clears and the vehicle is stopped, once. A computed way is taken as every
+ * mover takes one: drawn once, and admitted by the room it reaches.
  */
-function stepCompass(world: WorldModel, vehicle: IFEntity, model: Extract<NonNullable<VehicleTrait['model']>, { kind: 'compass' }>): VehicleStep | undefined {
+function stepCompass(
+  world: WorldModel,
+  vehicle: IFEntity,
+  model: Extract<NonNullable<VehicleTrait['model']>, { kind: 'compass' }>,
+  random: RandomService | undefined
+): VehicleStep | undefined {
   if (model.heading === null) return undefined;
   model.turnsToStep -= 1;
   if (model.turnsToStep > 0) return undefined;
 
   const location = world.getLocation(vehicle.id);
   const room = location !== undefined ? world.getEntity(location) : undefined;
-  const way = room !== undefined
-    ? TraversalBehavior.wayFor(world, room, model.heading as DirectionType, { kind: 'steered', vehicle })
-    : undefined;
-  if (way?.kind !== 'exit') {
+  const key = model.heading as DirectionType;
+  const mover = { kind: 'steered', vehicle } as const;
+  const way = room !== undefined ? TraversalBehavior.wayFor(world, room, key, mover) : undefined;
+  let destinationId: string | undefined;
+  if (way?.kind === 'exit') {
+    destinationId = way.destination.id;
+  } else if (way?.kind === 'computed') {
+    if (!random) {
+      throw new Error(`stepVehicle: ${vehicle.id}'s heading meets a computed way out of ${room!.id} and no random service was passed.`);
+    }
+    const taken = TraversalBehavior.resolveComputed(world, room!, key, mover, { world, actorId: vehicle.id, random });
+    if (taken?.kind === 'exit') destinationId = taken.destination;
+  }
+  if (destinationId === undefined) {
     model.heading = null;
     model.turnsToStep = 0;
     return { kind: 'stopped' };
   }
-  world.moveEntity(vehicle.id, way.destination.id);
+  world.moveEntity(vehicle.id, destinationId);
   model.turnsToStep = model.pace;
-  return { kind: 'arrived', roomId: way.destination.id };
+  return { kind: 'arrived', roomId: destinationId };
 }
 
 /**

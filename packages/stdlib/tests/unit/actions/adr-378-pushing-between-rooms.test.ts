@@ -20,6 +20,7 @@ import {
   WorldModel,
   IFEntity,
   exitHiddenKey,
+  type Admittance,
 } from '@sharpee/world-model';
 import { pushingAction } from '../../../src/actions/standard/pushing';
 import { goingAction } from '../../../src/actions/standard/going';
@@ -40,11 +41,16 @@ interface Fixture {
   cart: IFEntity;
 }
 
+/** An `admits` list as Chord writes it (`pushing` admits every pushable) as the admittance the loader lowers it to. */
+function admittance(words: string[]): Admittance {
+  return { vehicles: words.filter((w) => w !== 'pushing'), pushed: words.includes('pushing') ? 'any' : [] };
+}
+
 /** room --north--> dock, a pushable cart in room; the dock admits nothing unless told. */
 function setup(options: { admits?: string[]; exitAdmits?: string[]; closedDoor?: boolean; oneWay?: boolean } = {}): Fixture {
   const { world, player, room } = setupBasicWorld();
   const dock = world.createEntity('Loading Dock', 'room');
-  dock.add(new RoomTrait({ admits: options.admits }));
+  dock.add(new RoomTrait({ admits: options.admits ? admittance(options.admits) : undefined }));
   let door: IFEntity | undefined;
   if (options.closedDoor) {
     door = world.createEntity('dock door', 'door');
@@ -52,7 +58,7 @@ function setup(options: { admits?: string[]; exitAdmits?: string[]; closedDoor?:
     door.add({ type: TraitType.OPENABLE, isOpen: false } as any);
   }
   world.connectRooms(room.id, dock.id, Direction.NORTH, door?.id, { oneWay: options.oneWay });
-  if (options.exitAdmits) room.getTrait(RoomTrait)!.exits[Direction.NORTH]!.admits = options.exitAdmits;
+  if (options.exitAdmits) room.getTrait(RoomTrait)!.exits[Direction.NORTH]!.admits = admittance(options.exitAdmits);
   const cart = world.createEntity('mail cart', 'object');
   cart.add(new PushableTrait());
   world.moveEntity(cart.id, room.id);
@@ -274,7 +280,7 @@ describe('the push follows wherever going took the actor (ADR-378 D6; mutation g
     car.add({ type: TraitType.CONTAINER, enterable: true } as any);
     world.moveEntity(car.id, room.id);
     world.moveEntity(player.id, car.id);
-    dock.getTrait(RoomTrait)!.admits = [car.id, 'pushing'];
+    dock.getTrait(RoomTrait)!.admits = admittance([car.id, 'pushing']);
 
     push(world, cart, Direction.NORTH);
 
@@ -283,10 +289,30 @@ describe('the push follows wherever going took the actor (ADR-378 D6; mutation g
     expect(world.getLocation(cart.id)).toBe(dock.id);
   });
 
+  test('aboard a steered vehicle the way must admit both: the car without the cart, or the cart without the car, refuses and nothing moves', () => {
+    const { world, player, room, dock, cart } = setup();
+    const car = world.createEntity('car', 'object');
+    car.add(new VehicleTrait({ model: { kind: 'streets' } }));
+    car.add({ type: TraitType.CONTAINER, enterable: true } as any);
+    world.moveEntity(car.id, room.id);
+    world.moveEntity(player.id, car.id);
+
+    dock.getTrait(RoomTrait)!.admits = admittance([car.id]);
+    expect(messageIds(push(world, cart, Direction.NORTH))).toContain('if.action.pushing.cannot_push_that_way');
+    expect(world.getLocation(car.id)).toBe(room.id);
+    expect(world.getLocation(cart.id)).toBe(room.id);
+
+    dock.getTrait(RoomTrait)!.admits = admittance(['pushing']);
+    expect(messageIds(push(world, cart, Direction.NORTH))).toContain('if.action.going.vehicle_cannot_go');
+    expect(world.getLocation(car.id)).toBe(room.id);
+    expect(world.getLocation(cart.id)).toBe(room.id);
+    expect(world.getLocation(player.id)).toBe(car.id);
+  });
+
   test('a computed way whose resolution comes back blocked leaves the cart and the actor in place', () => {
-    const { world, player, room, cart } = setup({ admits: ['pushing'] });
+    const { world, player, room, dock, cart } = setup({ admits: ['pushing'] });
     const CARRIER = 'test.trait.carrier';
-    room.add({ type: CARRIER, computedExitsAll: { candidates: [room.id] } } as any);
+    room.add({ type: CARRIER, computedExitsAll: { candidates: [dock.id] } } as any);
     world.registerExitResolver(CARRIER, () => ({ kind: 'blocked', messageId: 'test.exit_blocked' }));
 
     const events = push(world, cart, Direction.NORTH);
@@ -299,12 +325,12 @@ describe('the push follows wherever going took the actor (ADR-378 D6; mutation g
 });
 
 describe("the thing's own way (ADR-378 D6b)", () => {
-  test('a cart named on the exit\'s admitsPushed is pushed through; another pushable on the same way is refused', () => {
+  test('a cart named in the exit\'s admitted pushed things is pushed through; another pushable on the same way is refused', () => {
     const { world, player, room, dock, cart } = setup();
     const crate = world.createEntity('crate', 'object');
     crate.add(new PushableTrait());
     world.moveEntity(crate.id, room.id);
-    room.getTrait(RoomTrait)!.exits[Direction.NORTH]!.admitsPushed = [cart.id];
+    room.getTrait(RoomTrait)!.exits[Direction.NORTH]!.admits = { pushed: [cart.id] };
 
     const refused = push(world, crate, Direction.NORTH);
     expect(messageIds(refused)).toContain('if.action.pushing.cannot_push_that_way');
@@ -313,5 +339,54 @@ describe("the thing's own way (ADR-378 D6b)", () => {
     push(world, cart, Direction.NORTH);
     expect(world.getLocation(cart.id)).toBe(dock.id);
     expect(world.getLocation(player.id)).toBe(dock.id);
+  });
+});
+
+describe('a push through a computed way (F1)', () => {
+  /** The north way from room is computed: the dock or the yard, the resolver drawing `to`. */
+  function computedNorth(to: 'dock' | 'yard', options: { dockPushing: boolean; yardPushing: boolean }) {
+    const fixture = setup({ admits: options.dockPushing ? ['pushing'] : [] });
+    const { world, room, dock } = fixture;
+    const yard = world.createEntity('Yard', 'room');
+    yard.add(new RoomTrait({ admits: options.yardPushing ? admittance(['pushing']) : undefined }));
+    room.add({ type: 'test.trait.turntable', computedExits: { [Direction.NORTH]: { candidates: [dock.id, yard.id] } } } as never);
+    let draws = 0;
+    world.registerExitResolver('test.trait.turntable', () => {
+      draws += 1;
+      return { kind: 'exit', destination: to === 'dock' ? dock.id : yard.id };
+    });
+    return { ...fixture, yard, draws: () => draws };
+  }
+
+  test('a drawn room that admits pushing takes the cart and the actor', () => {
+    const { world, player, yard, cart, draws } = computedNorth('yard', { dockPushing: false, yardPushing: true });
+
+    push(world, cart, Direction.NORTH);
+
+    expect(world.getLocation(cart.id)).toBe(yard.id);
+    expect(world.getLocation(player.id)).toBe(yard.id);
+    expect(draws()).toBe(1);
+  });
+
+  test('a drawn room that does not admit pushing refuses cannot_push_that_way, and neither moves', () => {
+    const { world, player, room, cart, draws } = computedNorth('dock', { dockPushing: false, yardPushing: true });
+
+    const events = push(world, cart, Direction.NORTH);
+
+    expect(messageIds(events)).toContain('if.action.pushing.cannot_push_that_way');
+    expect(world.getLocation(cart.id)).toBe(room.id);
+    expect(world.getLocation(player.id)).toBe(room.id);
+    expect(draws()).toBe(1);
+  });
+
+  test('no candidate admits pushing: refused before the draw, and neither moves', () => {
+    const { world, player, room, cart, draws } = computedNorth('yard', { dockPushing: false, yardPushing: false });
+
+    const events = push(world, cart, Direction.NORTH);
+
+    expect(messageIds(events)).toContain('if.action.pushing.cannot_push_that_way');
+    expect(world.getLocation(cart.id)).toBe(room.id);
+    expect(world.getLocation(player.id)).toBe(room.id);
+    expect(draws()).toBe(0);
   });
 });

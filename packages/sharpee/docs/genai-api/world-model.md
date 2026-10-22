@@ -2779,6 +2779,17 @@ export interface IExitMapHint {
     /** Grid offset Z (-1 = down, +1 = up) */
     dz?: number;
 }
+/**
+ * Who may take a way beyond a walker (ADR-366 D6, ADR-378 D6): the steered
+ * vehicles by id, and the pushed things — every pushable (`'any'`) or these
+ * by id. Read only by the traversal system (`TraversalBehavior.admitsMover`).
+ */
+export interface Admittance {
+    /** The steered vehicles admitted, by entity id. */
+    vehicles: string[];
+    /** The pushed things admitted: every pushable, or these entity ids. */
+    pushed: 'any' | string[];
+}
 export interface IExitInfo {
     /** The destination room ID (must be an entity ID, not a name) */
     destination: string;
@@ -2787,17 +2798,12 @@ export interface IExitInfo {
     /** Optional map positioning hint (ADR-113) */
     mapHint?: IExitMapHint;
     /**
-     * Who may pass this way beyond a walker (ADR-378 D6): steered vehicle ids
-     * and the class word `pushing`. Read by the traversal query before the
-     * room's own `admits` list; absent means the room's list decides.
+     * This way's own admittance (ADR-378 D6), read field by field before the
+     * destination room's: an exit line's `admits` writes both fields; a
+     * thing's `pushing` block (D6b) adds its id to `pushed` alone. A field
+     * absent here is the room's to decide.
      */
-    admits?: string[];
-    /**
-     * The pushable things that may be pushed this way by their own word
-     * (ADR-378 D6b, the thing's `pushing` block): entity ids. Read beside the
-     * class word `pushing` in `admits`; either admits the push.
-     */
-    admitsPushed?: string[];
+    admits?: Partial<Admittance>;
 }
 export interface IRoomData {
     /** Whether this room has been visited by the player */
@@ -2850,13 +2856,11 @@ export interface IRoomData {
     /** Tags for categorizing rooms */
     tags?: string[];
     /**
-     * Who may arrive here beyond a walker (ADR-366 D6, ADR-378 D6): the ids
-     * of the steered vehicles this room admits, and the class word `pushing`
-     * when a pushed thing may be brought in. Read by the traversal query for
-     * every way into this room that carries no `admits` of its own; a room
-     * admits nothing by default.
+     * Who may arrive here beyond a walker (ADR-366 D6, ADR-378 D6). Read by
+     * the traversal system for every way into this room whose exit does not
+     * decide the field itself; a room admits nothing by default.
      */
-    admits?: string[];
+    admits?: Admittance;
     /**
      * A landmark room's outlook over its expanse (ADR-376 D6), in expanse
      * units: from here the player sees what lies within this distance of the
@@ -2902,7 +2906,7 @@ export declare class RoomTrait implements ITrait, IRoomData {
     regionId?: string;
     walls: string[];
     tags: string[];
-    admits: string[];
+    admits: Admittance;
     sight?: number;
     capacity?: {
         maxWeight?: number;
@@ -5382,7 +5386,7 @@ export declare function isAboardTrait(trait: ITrait): trait is AboardTrait;
  * Public interface: `isVehicle`, `isActorInVehicle`, `getActorVehicle`,
  * `getVehicleOccupants`, `isAboardVehicle`, `getVehicleAboard`,
  * `takesCommandSet` (where an actor rides and what they may say there),
- * `goingFromVehicle` (what GO means from inside), `admitsVehicle`,
+ * `goingFromVehicle` (what GO means from inside),
  * `isUnderWay`, the driving statements `startVehicle`, `stopVehicle` and
  * `sendVehicle`, the machine's per-turn step `stepVehicle` with its result
  * `VehicleStep`, the line model's `isStop`, `currentStop` and
@@ -5415,6 +5419,7 @@ export declare function isAboardTrait(trait: ITrait): trait is AboardTrait;
  * - ADR-375 D2, D3, D5, D7 — a bearing's step, the pace by the angle off the
  *   wind, irons, coming about, the sails.
  */
+import type { RandomService } from '@sharpee/core';
 import type { ExitResolver } from '../../capabilities/exit-resolver-binding.js';
 import type { WorldModel } from '../../world/WorldModel.js';
 import type { IFEntity } from '../../entities/if-entity.js';
@@ -5439,7 +5444,8 @@ export declare function getVehicleOccupants(world: WorldModel, vehicleId: string
 /**
  * What GO means for an actor, decided by the vehicle they are in (D5).
  * `on-foot`: not in a vehicle, GO is walking. `steers`: GO moves the
- * vehicle (the destination still has to admit it, `admitsVehicle`).
+ * vehicle (the destination still has to admit it, which the traversal
+ * system answers).
  * `rides`: a line vehicle; the player rides and the story drives.
  * `stays`: a vehicle with no movement model does not move under GO.
  */
@@ -5591,14 +5597,6 @@ export declare const vehicleOutsideExitResolver: ExitResolver;
  */
 export declare function registerVehicleExitResolver(world: WorldModel): void;
 /**
- * Whether a room admits a vehicle (D6). A room admits no vehicle unless it
- * names it.
- *
- * @param room - The room the vehicle would land in
- * @param vehicle - The vehicle
- */
-export declare function admitsVehicle(room: IFEntity, vehicle: IFEntity): boolean;
-/**
  * Whether a room is one of a line vehicle's stops.
  *
  * @param vehicle - A vehicle; false when it has no line model
@@ -5675,9 +5673,14 @@ export type VehicleStep = {
  *   `position` block names this turn; the caller evaluates the block,
  *   since its guards are code the trait cannot hold. Ignored by every
  *   other model.
+ * @param random - The session's random service, which a computed way's
+ *   resolver may draw on (ADR-295 D4); world-model never makes one. Needed
+ *   only when a compass vehicle's heading meets a computed way.
  * @returns what the step did, or undefined when the vehicle stayed put
+ * @throws Error when a compass vehicle meets a computed way and no random
+ *   service was passed (a host wiring defect, never a silent stop)
  */
-export declare function stepVehicle(world: WorldModel, vehicle: IFEntity, positionAnswer?: string): VehicleStep | undefined;
+export declare function stepVehicle(world: WorldModel, vehicle: IFEntity, positionAnswer?: string, random?: RandomService): VehicleStep | undefined;
 /**
  * ADR-376 D9: an actor leaves an open vehicle that is positioned in its
  * expanse. They are put in the expanse room holding the vehicle's cell on
@@ -9597,31 +9600,41 @@ export declare class PresenceBehavior {
  * else the stamped map); any door on the way is open and unlocked; the
  * destination exists; the way admits the mover (ADR-366 D6 for a steered
  * vehicle, ADR-378 D6 for a pushed thing), read from the exit's own `admits`
- * when it has one, else the destination room's.
+ * field by field, else the destination room's.
  *
- * Public interface: TraversalBehavior.wayFor, exitOf, isExitHidden,
- *   isExitBlocked, blockedMessage, admitsMover; the key builders
- *   exitHiddenKey, exitBlockedKey, exitMessageKey; the types TraversalMover,
- *   Way, WayRefusal, PUSHING.
+ * A computed way (ADR-295) has two halves and both live here. At validate
+ * time `wayFor` refuses it when no candidate destination admits the mover;
+ * at traversal time `resolveComputed` draws the destination once and
+ * refuses it when the destination reached does not admit the mover. Every
+ * mover takes a computed way through `resolveComputed`, so none re-checks
+ * admittance against the candidates.
+ *
+ * Public interface: TraversalBehavior.wayFor, resolveComputed, exitOf,
+ *   isExitHidden, isExitBlocked, blockedMessage, admitsMover; the key
+ *   builders exitHiddenKey, exitBlockedKey, exitMessageKey; the types
+ *   TraversalMover, Way, WayRefusal, ResolvedWay.
  * Owner context: world-model — traversal (the system's home).
  */
 import { IFEntity } from '../entities/if-entity.js';
 import { IExitInfo } from '../traits/room/roomTrait.js';
 import { IComputedExitDeclaration } from '../traits/room/computedExitContract.js';
+import type { ExitResolution, ExitResolverContext } from '../capabilities/exit-resolver-binding.js';
 import type { ExitKey } from '../constants/directions.js';
 import type { WorldModel } from './WorldModel.js';
-/** The class word an `admits` list carries for a pushed thing (ADR-378 D6). */
-export declare const PUSHING = "pushing";
-/** Who is trying to take the way. */
+/**
+ * Who is trying to take the way: an actor on foot, a vehicle the actor
+ * steers, or an NPC. A walker or a steered vehicle may push a thing along
+ * the way with it (ADR-378 D6, D7); the way must admit both, so they are one
+ * party asking once, and a computed way is drawn once for the two.
+ */
 export type TraversalMover = {
     kind: 'walker';
     entity: IFEntity;
+    pushing?: IFEntity;
 } | {
     kind: 'steered';
     vehicle: IFEntity;
-} | {
-    kind: 'pushed';
-    thing: IFEntity;
+    pushing?: IFEntity;
 } | {
     kind: 'npc';
     entity: IFEntity;
@@ -9647,6 +9660,14 @@ export type Way = {
     reason: WayRefusal;
     message?: string;
     door?: IFEntity;
+};
+/**
+ * A computed way taken (ADR-295 D5): the resolver's exit or block, passed
+ * through, or traversal's own refusal of the destination it reached.
+ */
+export type ResolvedWay = NonNullable<ExitResolution> | {
+    kind: 'refused';
+    reason: WayRefusal;
 };
 /** Derived key: is this way hidden now? (ADR-378 D3; registered by the story's `while` on the exit line) */
 export declare function exitHiddenKey(roomId: string, key: ExitKey): string;
@@ -9690,15 +9711,37 @@ export declare class TraversalBehavior {
      */
     static blockedMessage(world: WorldModel, room: IFEntity, key: ExitKey): string | undefined;
     /**
-     * Whether a way admits a mover that needs admitting: the exit's own
-     * `admits` list when it has one, else the destination room's (ADR-366 D6,
-     * ADR-378 D6). A walker and an NPC need no admitting.
+     * Whether a way admits a mover: each field of the exit's own `admits`
+     * when it has it, else the destination room's (ADR-366 D6, ADR-378 D6).
+     * A walker and an NPC need no admitting; a steered vehicle does, and so
+     * does a thing pushed along with either.
      *
-     * @param exit - The exit being taken
+     * @param exit - The exit being taken; null for a computed way with no static exit
      * @param destination - The room it leads to
      * @param mover - Who is taking it
      */
-    static admitsMover(exit: IExitInfo, destination: IFEntity, mover: TraversalMover): boolean;
+    static admitsMover(exit: IExitInfo | null, destination: IFEntity, mover: TraversalMover): boolean;
+    /**
+     * Why a way does not admit a mover, or null when it does: `not_admitted`
+     * for a steered vehicle it does not name, `pushing_not_admitted` for a
+     * pushed thing it does not admit. The vehicle is asked first.
+     */
+    private static admittanceRefusal;
+    /**
+     * Take a computed way (ADR-295 D5): draw its destination once and refuse
+     * it when that destination does not admit the mover (ADR-366 D6). A
+     * resolver that defers hands the way to its static exit, admitted the
+     * same way. Calls the resolver, which may draw, so a caller calls this
+     * exactly once per traversal.
+     *
+     * @param world - The live world
+     * @param room - The room the way leaves
+     * @param key - The way
+     * @param mover - Who is taking it
+     * @param ctx - The resolver's context (world, actor, random service)
+     * @returns The resolved way, or undefined when the way is not computed
+     */
+    static resolveComputed(world: WorldModel, room: IFEntity, key: ExitKey, mover: TraversalMover, ctx: ExitResolverContext): ResolvedWay | undefined;
     /**
      * The way for a mover out of a room by a key, or the refusal (ADR-378 D0).
      *

@@ -466,7 +466,7 @@ function createDamBaseObjects(world: WorldModel, roomId: string): void {
   for (const room of world.getAllEntities()) {
     const navigation = room.get(RiverNavigationTrait);
     if (navigation?.isWaterRoom || navigation?.canLaunchBoat) {
-      room.get(RoomTrait)?.admits.push(boat.id);
+      room.get(RoomTrait)?.admits.vehicles.push(boat.id);
     }
   }
 

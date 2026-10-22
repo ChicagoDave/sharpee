@@ -75,7 +75,7 @@ function addCarrier(
 
 /** Let a fixture room admit a vehicle (ADR-366 D6). */
 function admit(room: IFEntity, vehicle: IFEntity): void {
-  room.get(RoomTrait)!.admits = [vehicle.id];
+  room.get(RoomTrait)!.admits.vehicles.push(vehicle.id);
 }
 
 function goNorth(world: WorldModel) {
@@ -319,23 +319,51 @@ describe('goingAction × computed exits (ADR-295)', () => {
     expect(world.getLocation(player.id)).toBe(boat.id);
   });
 
-  test('vehicle traversal: a computed exit with a candidate that does not admit the vehicle is refused', () => {
-    const { world, player, room, staticDestination, redirectDestination } = setupComputedExitWorld();
+  /** A steered boat in the fixture room with the player aboard, the resolver drawing `to`. */
+  function boatAtComputedWay(to: 'static' | 'redirect') {
+    const fixture = setupComputedExitWorld();
+    const { world, player, room, staticDestination, redirectDestination } = fixture;
     addCarrier(room, {
       computedExitsAll: { candidates: [staticDestination.id, redirectDestination.id] }
     });
     const resolver = vi.fn<ExitResolver>(() => ({
       kind: 'exit',
-      destination: redirectDestination.id
+      destination: to === 'static' ? staticDestination.id : redirectDestination.id
     }));
     world.registerExitResolver(CARRIER_TYPE, resolver);
-
     const boat = world.createEntity('magic boat', 'object');
     boat.add(new VehicleTrait({ model: { kind: 'streets' } }));
     boat.add({ type: TraitType.CONTAINER, enterable: true } as any);
     world.moveEntity(boat.id, room.id);
     world.moveEntity(player.id, boat.id);
+    return { ...fixture, boat, resolver };
+  }
+
+  test('vehicle traversal: the drawn room decides — admitted there, the boat goes though another candidate refuses it (Q1 A)', () => {
+    const { world, player, redirectDestination, boat, resolver } = boatAtComputedWay('redirect');
     admit(redirectDestination, boat);
+
+    executeWithValidation(goingAction, goNorth(world));
+
+    expect(world.getLocation(boat.id)).toBe(redirectDestination.id);
+    expect(world.getLocation(player.id)).toBe(boat.id);
+    expect(resolver).toHaveBeenCalledTimes(1);
+  });
+
+  test('vehicle traversal: a drawn room that does not admit the boat refuses vehicle_cannot_go and nothing moves', () => {
+    const { world, player, room, redirectDestination, boat, resolver } = boatAtComputedWay('static');
+    admit(redirectDestination, boat);
+
+    const events = executeWithValidation(goingAction, goNorth(world));
+
+    expect(events.some(e => e.data?.messageId === 'if.action.going.vehicle_cannot_go')).toBe(true);
+    expect(world.getLocation(boat.id)).toBe(room.id);
+    expect(world.getLocation(player.id)).toBe(boat.id);
+    expect(resolver).toHaveBeenCalledTimes(1);
+  });
+
+  test('vehicle traversal: no candidate admits the boat — refused at validate, and nothing is drawn', () => {
+    const { world, player, room, boat, resolver } = boatAtComputedWay('redirect');
 
     const events = executeWithValidation(goingAction, goNorth(world));
 

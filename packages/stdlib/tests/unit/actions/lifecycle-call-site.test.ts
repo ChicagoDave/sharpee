@@ -39,7 +39,7 @@ const DECLARED_HOOK_CALLERS: Record<string, 'runsOwnHooks' | 'handlesMultiObject
  * module outside the executor that may, and these actions call its three
  * phases. A new delegating action is listed here and nowhere else.
  */
-const DELEGATING_ACTIONS = ['inserting', 'lighting', 'extinguishing', 'pushing'];
+const DELEGATING_ACTIONS = ['inserting', 'lighting', 'extinguishing', 'pushing', 'climbing'];
 const DELEGATION_PHASES = ['delegateValidate', 'delegateExecute', 'delegateReport'];
 
 function actionSources(): Map<string, string> {

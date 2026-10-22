@@ -1091,7 +1091,8 @@ export interface VehicleTickOptions {
  *
  * @param world - The live world
  * @param playerId - The player, whose place decides what is reported
- * @param random - The session's random service, for drift (ADR-293)
+ * @param random - The session's random service, for drift (ADR-293) and
+ *   for a computed way a compass vehicle's heading meets (ADR-295 D4)
  * @param options - The host's `position` block reader and edge-phrase text,
  *   each absent when the host lowers nothing that needs it
  * @returns the turn's `vehicle_arrived`, `vehicle_stopped`, `vehicle_alongside` and `expanse_edge` events

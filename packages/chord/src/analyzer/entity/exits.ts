@@ -33,18 +33,10 @@
 import type { ConditionNode, ExitDecl, NameRef } from '../../ast.js';
 import type { IRCondition, IRExit } from '../../ir.js';
 import type { EntityLineBuilder } from './context.js';
+import { PASSAGE_KEY_PREFIX, passageKeyOfForm } from '../../ir.js';
 import { resolveAdmitsWord } from './vehicle.js';
 
-/** The key prefix a passage exit carries (ADR-378 D1): `passage:<first form, hyphenated>`. */
-export const PASSAGE_KEY_PREFIX = 'passage:';
-
-/**
- * The passage key one written form would name: lowercased, words hyphenated.
- * @param form the words as written
- */
-export function passageKeyOfForm(form: string): string {
-  return `${PASSAGE_KEY_PREFIX}${form.toLowerCase().split(' ').join('-')}`;
-}
+export { passageKeyOfForm };
 
 /** The resolvers an exit line's tails need; absent on a table row, which carries none. */
 export interface ExitTailResolvers {

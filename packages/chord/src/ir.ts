@@ -8,7 +8,9 @@
  * four-phase partition (§5.4) at bind time. Nodes carry source spans for
  * error reporting and IDE tooling.
  *
- * Public interface: StoryIR and every IR* type; IR_FORMAT.
+ * Public interface: StoryIR and every IR* type; IR_FORMAT; the wire's two
+ * reserved spellings, PASSAGE_KEY_PREFIX (with passageKeyOfForm) and
+ * ADMITS_PUSHING.
  * Owner context: @sharpee/chord owns this schema (ADR-210 Interface
  * Contract 1, owner-confirmed 2026-07-10); @sharpee/ide-protocol re-exports
  * it. Invariant: pure data — JSON.parse(JSON.stringify(ir)) is identity.
@@ -25,6 +27,26 @@ import type { Span } from './span.js';
  * instead of failing inside its kind switch.
  */
 export const IR_FORMAT = 'story language 5';
+
+/**
+ * The key prefix a passage exit carries in `IRExit.direction` (ADR-378 D1):
+ * `passage:<first form, hyphenated>`. World-model reads the same key with its
+ * own `PASSAGE_KEY_PREFIX`; Chord depends on no platform package, so a
+ * story-loader test pins the two equal.
+ */
+export const PASSAGE_KEY_PREFIX = 'passage:';
+
+/**
+ * The passage key one written form names: lowercased, words hyphenated.
+ * @param form the words as written
+ * @returns the key, `passage:<words-hyphenated>`
+ */
+export function passageKeyOfForm(form: string): string {
+  return `${PASSAGE_KEY_PREFIX}${form.toLowerCase().split(' ').join('-')}`;
+}
+
+/** The class word an IR `admits` list carries beside entity ids for a pushed thing (ADR-378 D6). */
+export const ADMITS_PUSHING = 'pushing';
 
 /** Root of a compiled story. */
 export interface StoryIR {

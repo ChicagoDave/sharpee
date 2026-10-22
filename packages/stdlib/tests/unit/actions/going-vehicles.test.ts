@@ -97,7 +97,7 @@ describe('goingAction from inside a vehicle (ADR-366)', () => {
 
   test('a streets vehicle steered into an admitting room carries the player there', () => {
     const { world, player, north, vehicle } = setupVehicleWorld({ kind: 'streets' });
-    north.getTrait(RoomTrait)!.admits.push(vehicle.id);
+    north.getTrait(RoomTrait)!.admits.vehicles.push(vehicle.id);
 
     const events = executeWithValidation(goingAction, goNorth(world));
 

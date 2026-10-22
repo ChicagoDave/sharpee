@@ -243,15 +243,15 @@ describe('the vehicle kind lowers onto the trait (ADR-366 D1, D2, D5)', () => {
 describe('`admits:` lands on the rooms (ADR-366 D6)', () => {
   it('a room admits the vehicles it names and no other', () => {
     const { byName } = boot();
-    expect(byName('Harbour').get(RoomTrait)?.admits).toEqual([byName('Marigold').id]);
-    expect(byName('Reef').get(RoomTrait)?.admits).toEqual([]);
+    expect(byName('Harbour').get(RoomTrait)?.admits).toEqual({ vehicles: [byName('Marigold').id], pushed: [] });
+    expect(byName('Reef').get(RoomTrait)?.admits).toEqual({ vehicles: [], pushed: [] });
   });
 
   it('a region\'s line reaches every member room', () => {
     const { byName } = boot();
     const marigold = byName('Marigold').id;
-    expect(byName('Open Water 1').get(RoomTrait)?.admits).toEqual([marigold]);
-    expect(byName('Open Water 2').get(RoomTrait)?.admits).toEqual([marigold]);
+    expect(byName('Open Water 1').get(RoomTrait)?.admits).toEqual({ vehicles: [marigold], pushed: [] });
+    expect(byName('Open Water 2').get(RoomTrait)?.admits).toEqual({ vehicles: [marigold], pushed: [] });
   });
 });
 

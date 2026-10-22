@@ -3,6 +3,9 @@
  *
  * This action handles climbing objects (trees, ladders, etc.) or climbing
  * in directions (up, down). It can result in movement or just changing position.
+ * A climb up or down is going that way, delegated (ADR-378 D7, as pushing):
+ * traversal decides whether the way may be taken, going moves the climber
+ * and narrates the arrival, and both ids' hooks fire.
  *
  * Uses four-phase pattern:
  * 1. validate: Check if climbing is possible (valid direction/climbable object)
@@ -18,10 +21,14 @@ import { Action, ActionContext, ValidationResult } from '../../enhanced-types.js
 import { ActionMetadata } from '../../../validation/index.js';
 import { ScopeLevel } from '../../../scope/types.js';
 import { type ISemanticEvent } from '@sharpee/core';
-import { TraitType, ClimbableBehavior, TraversalBehavior, Direction } from '@sharpee/world-model';
+import { TraitType, ClimbableBehavior, Direction, type DirectionType } from '@sharpee/world-model';
 import { IFActions } from '../../constants.js';
 import { ClimbedEventData } from './climbing-events.js';
 import { nounPhraseFor } from '../../../utils/index.js';
+import { ValidatedCommand } from '../../../validation/types.js';
+import { goingAction, goingLifecycle, getGoingSharedData } from '../going/going.js';
+import { GoingMessages } from '../going/going-messages.js';
+import { Delegation, delegateValidate, delegateExecute, delegateReport, inDelegateWords } from '../delegation-shared.js';
 import {
   ActionLifecycleDescriptor,
   blockedMessageId
@@ -55,6 +62,24 @@ interface ClimbingSharedData {
   targetName?: string;        // target name for messages
   destinationId?: string;     // destination room ID for directional climbing
   fromLocationId?: string;    // current location before climbing
+  /** A directional climb is going up or down, delegated (ADR-378 D7, as pushing). */
+  delegation?: Delegation;
+  /** Whether the delegated going moved the climber (a resolve-time block leaves them put). */
+  moved?: boolean;
+}
+
+/** The command the delegated going sees: the way up or down, and no object. */
+function goingCommand(context: ActionContext, direction: DirectionType): ValidatedCommand {
+  return {
+    ...context.command,
+    actionId: IFActions.GOING,
+    directObject: undefined,
+    indirectObject: undefined,
+    parsed: {
+      ...context.command.parsed,
+      extras: { ...context.command.parsed.extras, direction }
+    }
+  };
 }
 
 function getClimbingSharedData(context: ActionContext): ClimbingSharedData {
@@ -98,6 +123,21 @@ export const climbingAction: Action & { metadata: ActionMetadata } = {
       : validateObjectClimbing(target, context);
     if (!result.valid) return result;
 
+    // A climb up or down is the walker's traversal, and that is going's
+    // (ADR-378 D7, ADR-379): the way's hiding, blocking, door, computed
+    // destination and admittance are traversal's answer, refused in going's
+    // words, and going's hooks fire on its context.
+    if (direction && !target) {
+      const key = direction.toLowerCase() === 'up' ? Direction.UP : Direction.DOWN;
+      const { delegation, result: delegated } = delegateValidate(context, goingAction, goingLifecycle, goingCommand(context, key));
+      getClimbingSharedData(context).delegation = delegation;
+      // No way up or down at all is this action's line, not going's.
+      if (!delegated.valid && !delegated.errorQualified && (delegated.error === GoingMessages.NO_EXIT_THAT_WAY || delegated.error === GoingMessages.NO_EXITS)) {
+        return { valid: false, error: 'cant_go_that_way', params: { direction: direction.toLowerCase() } };
+      }
+      return inDelegateWords(delegated, delegation);
+    }
+
     return result;
   },
 
@@ -119,17 +159,13 @@ export const climbingAction: Action & { metadata: ActionMetadata } = {
       sharedData.mode = 'directional';
       sharedData.direction = normalizedDirection;
 
-      // The destination is the way's, read from traversal's home (ADR-378
-      // D0): a hidden way is absent here as everywhere.
-      if (normalizedDirection === 'up' || normalizedDirection === 'down') {
-        const key = normalizedDirection === 'up' ? Direction.UP : Direction.DOWN;
-        sharedData.destinationId = TraversalBehavior.exitOf(context.world, context.currentLocation, key)?.destination;
-      }
-
-      // Perform the move if there's a destination
-      if (sharedData.destinationId) {
-        context.world.moveEntity(context.actor.id, sharedData.destinationId);
-      }
+      // Going moves the climber (ADR-378 D7); a resolve-time block leaves
+      // them where they were.
+      const delegation = sharedData.delegation!;
+      delegateExecute(delegation);
+      const going = getGoingSharedData(delegation.context);
+      sharedData.moved = going.currentLocation !== undefined && going.currentLocation !== going.previousLocation;
+      if (sharedData.moved) sharedData.destinationId = going.currentLocation;
     } else if (target) {
       // Object climbing
       sharedData.mode = 'object';
@@ -188,6 +224,10 @@ export const climbingAction: Action & { metadata: ActionMetadata } = {
     const sharedData = getClimbingSharedData(context);
 
     if (sharedData.mode === 'directional') {
+      // A climb going stopped at resolve time has no climbed line: going's
+      // own blocked event says why nothing moved.
+      if (!sharedData.moved) return delegateReport(sharedData.delegation!);
+
       // Directional climbing - determine message
       const messageId = sharedData.direction === 'up' ? 'climbed_up' : 'climbed_down';
 
@@ -200,15 +240,8 @@ export const climbingAction: Action & { metadata: ActionMetadata } = {
         destinationId: sharedData.destinationId
       } as ClimbedEventData & { messageId: string; params: Record<string, any> }));
 
-      // Movement event if there's a destination
-      if (sharedData.destinationId) {
-        events.push(context.event('if.event.moved', {
-          direction: sharedData.direction,
-          fromRoom: sharedData.fromLocationId,
-          toRoom: sharedData.destinationId,
-          method: 'climbing'
-        }));
-      }
+      // Then the move and the arrival as going records and narrates them.
+      events.push(...delegateReport(sharedData.delegation!));
     } else {
       // Object climbing - emit climbed event with messageId for text rendering
       // params carry EntityInfo for the formatter chain (ADR-158)
@@ -264,12 +297,7 @@ function validateDirectionalClimbing(
     return { valid: false, error: 'cant_go_that_way', params: { direction: normalizedDirection } };
   }
 
-  // Existence is the home's answer (ADR-378 D0): a hidden way is absent.
-  const key = normalizedDirection === 'up' ? Direction.UP : Direction.DOWN;
-  if (!TraversalBehavior.exitOf(context.world, currentLocation, key)) {
-    return { valid: false, error: 'cant_go_that_way', params: { direction: normalizedDirection } };
-  }
-
+  // Whether the way exists is traversal's, asked through going (validate).
   return { valid: true };
 }
 

@@ -5,7 +5,7 @@
  * Rooms are special entities that represent locations in the game world.
  */
 
-export { RoomTrait, IExitInfo } from './roomTrait.js';
+export { RoomTrait, IExitInfo, Admittance } from './roomTrait.js';
 export { RoomBehavior } from './roomBehavior.js';
 
 // ADR-295: computed-exit declaration contract (existence + candidates as

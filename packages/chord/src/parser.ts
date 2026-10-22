@@ -20,6 +20,7 @@
  * - Every AST node carries a Span.
  */
 import { SCOPE_REQUIREMENT_PREDICATES } from './catalog.js';
+import { passageKeyOfForm } from './ir.js';
 import { CHARACTER_MANIFEST } from './character-manifest.js';
 import { STDLIB_MANIFEST } from './stdlib-manifest.js';
 import {
@@ -2960,7 +2961,7 @@ class Parser {
       bad('A passage line names where it leads: `passage <words> to <room>`, or `passage <words> is blocked: <phrase>`.');
       return;
     }
-    const key = `passage:${forms[0].toLowerCase().split(' ').join('-')}`;
+    const key = passageKeyOfForm(forms[0]);
     if (stop === 'is') {
       if (c.isWord('blocked', 1)) {
         const blocked = this.parseBlockedExit(key, line, c);

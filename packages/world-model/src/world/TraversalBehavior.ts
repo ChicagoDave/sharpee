@@ -12,12 +12,19 @@
  * else the stamped map); any door on the way is open and unlocked; the
  * destination exists; the way admits the mover (ADR-366 D6 for a steered
  * vehicle, ADR-378 D6 for a pushed thing), read from the exit's own `admits`
- * when it has one, else the destination room's.
+ * field by field, else the destination room's.
  *
- * Public interface: TraversalBehavior.wayFor, exitOf, isExitHidden,
- *   isExitBlocked, blockedMessage, admitsMover; the key builders
- *   exitHiddenKey, exitBlockedKey, exitMessageKey; the types TraversalMover,
- *   Way, WayRefusal, PUSHING.
+ * A computed way (ADR-295) has two halves and both live here. At validate
+ * time `wayFor` refuses it when no candidate destination admits the mover;
+ * at traversal time `resolveComputed` draws the destination once and
+ * refuses it when the destination reached does not admit the mover. Every
+ * mover takes a computed way through `resolveComputed`, so none re-checks
+ * admittance against the candidates.
+ *
+ * Public interface: TraversalBehavior.wayFor, resolveComputed, exitOf,
+ *   isExitHidden, isExitBlocked, blockedMessage, admitsMover; the key
+ *   builders exitHiddenKey, exitBlockedKey, exitMessageKey; the types
+ *   TraversalMover, Way, WayRefusal, ResolvedWay.
  * Owner context: world-model — traversal (the system's home).
  */
 
@@ -28,17 +35,19 @@ import { RoomBehavior } from '../traits/room/roomBehavior.js';
 import { IComputedExitDeclaration } from '../traits/room/computedExitContract.js';
 import { OpenableBehavior } from '../traits/openable/openableBehavior.js';
 import { LockableBehavior } from '../traits/lockable/lockableBehavior.js';
+import type { ExitResolution, ExitResolverContext } from '../capabilities/exit-resolver-binding.js';
 import type { ExitKey } from '../constants/directions.js';
 import type { WorldModel } from './WorldModel.js';
 
-/** The class word an `admits` list carries for a pushed thing (ADR-378 D6). */
-export const PUSHING = 'pushing';
-
-/** Who is trying to take the way. */
+/**
+ * Who is trying to take the way: an actor on foot, a vehicle the actor
+ * steers, or an NPC. A walker or a steered vehicle may push a thing along
+ * the way with it (ADR-378 D6, D7); the way must admit both, so they are one
+ * party asking once, and a computed way is drawn once for the two.
+ */
 export type TraversalMover =
-  | { kind: 'walker'; entity: IFEntity }
-  | { kind: 'steered'; vehicle: IFEntity }
-  | { kind: 'pushed'; thing: IFEntity }
+  | { kind: 'walker'; entity: IFEntity; pushing?: IFEntity }
+  | { kind: 'steered'; vehicle: IFEntity; pushing?: IFEntity }
   | { kind: 'npc'; entity: IFEntity };
 
 /** Why a way refused. */
@@ -63,6 +72,19 @@ export type Way =
       exit: IExitInfo | null;
     }
   | { kind: 'refused'; key: ExitKey; reason: WayRefusal; message?: string; door?: IFEntity };
+
+/**
+ * A computed way taken (ADR-295 D5): the resolver's exit or block, passed
+ * through, or traversal's own refusal of the destination it reached.
+ */
+export type ResolvedWay =
+  | NonNullable<ExitResolution>
+  | { kind: 'refused'; reason: WayRefusal };
+
+/** The pushed things an admittance field admits: every pushable, or these. */
+function admitsPushed(pushed: 'any' | string[], thing: IFEntity): boolean {
+  return pushed === 'any' || pushed.includes(thing.id);
+}
 
 /** Derived key: is this way hidden now? (ADR-378 D3; registered by the story's `while` on the exit line) */
 export function exitHiddenKey(roomId: string, key: ExitKey): string {
@@ -133,21 +155,69 @@ export class TraversalBehavior {
   }
 
   /**
-   * Whether a way admits a mover that needs admitting: the exit's own
-   * `admits` list when it has one, else the destination room's (ADR-366 D6,
-   * ADR-378 D6). A walker and an NPC need no admitting.
+   * Whether a way admits a mover: each field of the exit's own `admits`
+   * when it has it, else the destination room's (ADR-366 D6, ADR-378 D6).
+   * A walker and an NPC need no admitting; a steered vehicle does, and so
+   * does a thing pushed along with either.
    *
-   * @param exit - The exit being taken
+   * @param exit - The exit being taken; null for a computed way with no static exit
    * @param destination - The room it leads to
    * @param mover - Who is taking it
    */
-  static admitsMover(exit: IExitInfo, destination: IFEntity, mover: TraversalMover): boolean {
-    if (mover.kind === 'walker' || mover.kind === 'npc') return true;
-    const list = exit.admits ?? destination.get(RoomTrait)?.admits ?? [];
-    if (mover.kind === 'steered') return list.includes(mover.vehicle.id);
-    // ADR-378 D6b: the way admits every pushable by the class word, or this
-    // one thing by its own `pushing` block.
-    return list.includes(PUSHING) || (exit.admitsPushed ?? []).includes(mover.thing.id);
+  static admitsMover(exit: IExitInfo | null, destination: IFEntity, mover: TraversalMover): boolean {
+    return this.admittanceRefusal(exit, destination, mover) === null;
+  }
+
+  /**
+   * Why a way does not admit a mover, or null when it does: `not_admitted`
+   * for a steered vehicle it does not name, `pushing_not_admitted` for a
+   * pushed thing it does not admit. The vehicle is asked first.
+   */
+  private static admittanceRefusal(exit: IExitInfo | null, destination: IFEntity, mover: TraversalMover): WayRefusal | null {
+    if (mover.kind === 'npc') return null;
+    const room = destination.get(RoomTrait)?.admits;
+    if (mover.kind === 'steered' && !(exit?.admits?.vehicles ?? room?.vehicles ?? []).includes(mover.vehicle.id)) {
+      return 'not_admitted';
+    }
+    if (mover.pushing && !admitsPushed(exit?.admits?.pushed ?? room?.pushed ?? [], mover.pushing)) {
+      return 'pushing_not_admitted';
+    }
+    return null;
+  }
+
+  /**
+   * Take a computed way (ADR-295 D5): draw its destination once and refuse
+   * it when that destination does not admit the mover (ADR-366 D6). A
+   * resolver that defers hands the way to its static exit, admitted the
+   * same way. Calls the resolver, which may draw, so a caller calls this
+   * exactly once per traversal.
+   *
+   * @param world - The live world
+   * @param room - The room the way leaves
+   * @param key - The way
+   * @param mover - Who is taking it
+   * @param ctx - The resolver's context (world, actor, random service)
+   * @returns The resolved way, or undefined when the way is not computed
+   */
+  static resolveComputed(
+    world: WorldModel,
+    room: IFEntity,
+    key: ExitKey,
+    mover: TraversalMover,
+    ctx: ExitResolverContext
+  ): ResolvedWay | undefined {
+    if (!RoomBehavior.getComputedExitDeclaration(room, key)) return undefined;
+    const exit = this.exitOf(world, room, key);
+    const resolution = RoomBehavior.resolveExit(room, key, ctx);
+    if (resolution?.kind === 'blocked') return resolution;
+    const reached: NonNullable<ExitResolution> | undefined = resolution
+      ?? (exit ? { kind: 'exit', destination: exit.destination, ...(exit.via !== undefined ? { via: exit.via } : {}) } : undefined);
+    if (!reached) return { kind: 'refused', reason: 'no_exit' };
+    const destination = world.getEntity(reached.destination);
+    if (!destination) return { kind: 'refused', reason: 'destination_missing' };
+    const refusal = this.admittanceRefusal(exit, destination, mover);
+    if (refusal) return { kind: 'refused', reason: refusal };
+    return reached;
   }
 
   /**
@@ -187,19 +257,26 @@ export class TraversalBehavior {
       }
     }
 
-    if (computed) return { kind: 'computed', key, declaration: computed.declaration, exit };
+    if (computed) {
+      // The destination is drawn at traversal (resolveComputed), so here
+      // the way is refused only when no candidate could admit the mover —
+      // for the pushed thing's sake when some candidate takes the vehicle.
+      const refusals = computed.declaration.candidates.map((id) => {
+        const candidate = world.getEntity(id);
+        return candidate !== undefined ? this.admittanceRefusal(exit, candidate, mover) : 'destination_missing';
+      });
+      if (!refusals.includes(null)) {
+        const reason: WayRefusal = refusals.includes('pushing_not_admitted') ? 'pushing_not_admitted' : 'not_admitted';
+        return { kind: 'refused', key, reason, door };
+      }
+      return { kind: 'computed', key, declaration: computed.declaration, exit };
+    }
 
     const destination = world.getEntity(exit!.destination);
     if (!destination) return { kind: 'refused', key, reason: 'destination_missing', door };
 
-    if (!this.admitsMover(exit!, destination, mover)) {
-      return {
-        kind: 'refused',
-        key,
-        reason: mover.kind === 'pushed' ? 'pushing_not_admitted' : 'not_admitted',
-        door
-      };
-    }
+    const refusal = this.admittanceRefusal(exit!, destination, mover);
+    if (refusal) return { kind: 'refused', key, reason: refusal, door };
 
     return { kind: 'exit', key, exit: exit!, destination, door };
   }

@@ -31,13 +31,13 @@ import {
   type TraversalMover,
   type DirectionType,
   goingFromVehicle,
-  admitsVehicle,
+  isPassageKey,
   type RegionCrossings,
   getOppositeDirection,
   NpcTrait,
   FloatingTrait,
 } from '@sharpee/world-model';
-import type { ExitResolution } from '@sharpee/world-model';
+import type { ExitResolution, WayRefusal } from '@sharpee/world-model';
 import { IFActions } from '../../constants.js';
 import { ActionMetadata } from '../../../validation/index.js';
 import { ScopeLevel } from '../../../scope/types.js';
@@ -110,12 +110,77 @@ function resolveWay(context: ActionContext): ExitKey | undefined {
   return direction || undefined;
 }
 
-/** Who is taking the way: the actor on foot, or the vehicle they steer (ADR-366 D5). */
+/**
+ * The command extra naming a thing the actor pushes along the way (ADR-378
+ * D6, D7): pushing delegates its traversal here and sets it, so traversal
+ * admits the pushed thing with its pusher, at validate and at resolution.
+ */
+export const PUSHED_THING_EXTRA = 'pushedThingId';
+
+/**
+ * Who is taking the way: the vehicle the actor steers (ADR-366 D5), or the
+ * actor on foot — with the thing they push along it, when a push delegated
+ * here, so traversal admits the two as one party.
+ */
 function resolveMover(context: ActionContext): TraversalMover {
+  const pushedId = context.command.parsed.extras?.[PUSHED_THING_EXTRA] as string | undefined;
+  const pushed = pushedId !== undefined ? context.world.getEntity(pushedId) : undefined;
+  const pushing = pushed ? { pushing: pushed } : {};
   const vehicleGoing = goingFromVehicle(context.world, context.actor.id);
   return vehicleGoing.kind === 'steers'
-    ? { kind: 'steered', vehicle: vehicleGoing.vehicle }
-    : { kind: 'walker', entity: context.actor };
+    ? { kind: 'steered', vehicle: vehicleGoing.vehicle, ...pushing }
+    : { kind: 'walker', entity: context.actor, ...pushing };
+}
+
+/**
+ * Traversal's admittance refusal in going's words — or, for the thing
+ * pushed along, pushing's own line, which going speaks on the push's behalf.
+ *
+ * @param reason - `not_admitted` (the steered vehicle) or `pushing_not_admitted` (the pushed thing)
+ * @param mover - The party refused
+ * @param direction - The way
+ * @returns The message id, whether it is already qualified, and its params
+ */
+function notAdmittedRefusal(
+  reason: 'not_admitted' | 'pushing_not_admitted',
+  mover: TraversalMover,
+  direction: ExitKey
+): { messageId: string; qualified: boolean; params: Record<string, unknown> } {
+  if (reason === 'pushing_not_admitted' && mover.kind !== 'npc' && mover.pushing) {
+    return {
+      messageId: `${IFActions.PUSHING}.cannot_push_that_way`,
+      qualified: true,
+      params: { target: nounPhraseFor(mover.pushing), direction: direction.toLowerCase() }
+    };
+  }
+  const vehicle = mover.kind === 'steered' ? mover.vehicle : undefined;
+  return {
+    messageId: GoingMessages.VEHICLE_CANNOT_GO,
+    qualified: false,
+    params: { vehicle: vehicle ? nounPhraseFor(vehicle) : undefined, direction }
+  };
+}
+
+/**
+ * A computed way refused at resolution (ADR-295 D5) as a blocked resolution,
+ * so report's one blocked path words it and nothing moves.
+ *
+ * @param context - Going's context
+ * @param reason - Traversal's refusal of the destination reached
+ * @param mover - Who was refused
+ * @param direction - The way
+ */
+function refusedAtResolution(context: ActionContext, reason: WayRefusal, mover: TraversalMover, direction: ExitKey): ExitResolution {
+  if (reason === 'not_admitted' || reason === 'pushing_not_admitted') {
+    const refusal = notAdmittedRefusal(reason, mover, direction);
+    return {
+      kind: 'blocked',
+      messageId: refusal.qualified ? refusal.messageId : `${context.action.id}.${refusal.messageId}`,
+      params: refusal.params
+    };
+  }
+  const messageId = reason === 'destination_missing' ? GoingMessages.DESTINATION_NOT_FOUND : GoingMessages.NO_EXIT_THAT_WAY;
+  return { kind: 'blocked', messageId: `${context.action.id}.${messageId}`, params: { direction } };
 }
 
 /** The room movement starts from (the containing room when steering a vehicle). */
@@ -338,31 +403,20 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
         case 'destination_missing':
           return { valid: false, error: GoingMessages.DESTINATION_NOT_FOUND, params: { direction } };
         case 'not_admitted':
-        case 'pushing_not_admitted':
+        case 'pushing_not_admitted': {
+          const refusal = notAdmittedRefusal(way.reason, resolveMover(context), direction);
           return {
             valid: false,
-            error: GoingMessages.VEHICLE_CANNOT_GO,
-            params: { vehicle: nounPhraseFor((resolveMover(context) as { vehicle: IFEntity }).vehicle), direction }
+            error: refusal.messageId,
+            ...(refusal.qualified ? { errorQualified: true } : {}),
+            params: refusal.params
           };
+        }
       }
     }
 
-    // A computed way (ADR-295 D5) draws its destination in execute, so a
-    // steered vehicle must be admitted by every declared candidate (ADR-366
-    // D6); the home answers admittance only for a destination it knows.
-    if (way.kind === 'computed' && vehicleGoing.kind === 'steers') {
-      const admitted = way.declaration.candidates.every(id => {
-        const room = context.world.getEntity(id);
-        return room !== undefined && admitsVehicle(room, vehicleGoing.vehicle);
-      });
-      if (!admitted) {
-        return {
-          valid: false,
-          error: GoingMessages.VEHICLE_CANNOT_GO,
-          params: { vehicle: nounPhraseFor(vehicleGoing.vehicle), direction }
-        };
-      }
-    }
+    // A computed way (ADR-295 D5) draws its destination in execute; whether
+    // the room it reaches admits the mover is traversal's answer there.
 
     // Note: We allow entry to dark rooms - you just can't see.
     // Darkness affects visibility (looking), not movement.
@@ -394,12 +448,19 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
     // Resolve the traversal EXACTLY ONCE (ADR-295 D5). The resolver may draw
     // on the session random service, so this call must not repeat; every
     // later consumer (report, data builders) reads sharedData instead.
+    // Traversal takes the computed way and refuses a destination that does
+    // not admit the mover; a computed way whose resolver defers with no
+    // static exit is refused there too (ADR-295 Acceptance 7, never a crash).
     const exitConfig = TraversalBehavior.exitOf(context.world, sourceRoom, direction);
-    const resolution = RoomBehavior.resolveExit(sourceRoom, direction, {
+    const mover = resolveMover(context);
+    const taken = TraversalBehavior.resolveComputed(context.world, sourceRoom, direction, mover, {
       world: context.world,
       actorId: actor.id,
       random: context.random
     });
+    const resolution: ExitResolution = taken?.kind === 'refused'
+      ? refusedAtResolution(context, taken.reason, mover, direction)
+      : taken;
     sharedData.exitResolution = resolution;
     sharedData.previousLocation = sourceRoom.id;
     sharedData.direction = direction;
@@ -407,20 +468,6 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
     if (resolution?.kind === 'blocked') {
       // The traversal does not happen: the actor stays put (ADR-295 D5;
       // Acceptance 5 asserts on the unchanged location).
-      sharedData.currentLocation = sourceRoom.id;
-      return;
-    }
-
-    if (!resolution && !exitConfig) {
-      // A computed-only direction whose resolver deferred or is unregistered
-      // (already warned by resolveExit), with no static exit to fall back to:
-      // standard can't-go refusal through the blocked-resolution report path
-      // (ADR-295 Acceptance 7 — never a crash).
-      sharedData.exitResolution = {
-        kind: 'blocked',
-        messageId: `${context.action.id}.no_exit_that_way`,
-        params: { direction }
-      };
       sharedData.currentLocation = sourceRoom.id;
       return;
     }
@@ -504,7 +551,7 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
     const announces = !isProtagonist && (context.actor.get(NpcTrait)?.announcesMovement ?? false);
     // A passage has no bearing to narrate: a witnessed mover by a passage
     // departs and arrives with no direction word (ADR-378 D1).
-    const direction = sharedData.direction && !sharedData.direction.startsWith('passage:')
+    const direction = sharedData.direction && !isPassageKey(sharedData.direction)
       ? sharedData.direction as DirectionType
       : undefined;
     const witnessed = (messageId: string, dir: DirectionType | undefined) => announces

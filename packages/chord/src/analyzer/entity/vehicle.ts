@@ -23,7 +23,7 @@
  * - ADR-378 D6 — `pushing` in an `admits` list; the same list on an exit line.
  */
 import type { CreateDecl, NameRef, VehicleLine } from '../../ast.js';
-import type { IRPositionRow, IRVehicle } from '../../ir.js';
+import { ADMITS_PUSHING, type IRPositionRow, type IRVehicle } from '../../ir.js';
 import type { Scope } from '../../analyzer.js';
 import { MOVEMENT_TABLE, placeIdsOf, vehicleLineOf, type VehicleDecl, type VehicleLineOf } from '../vehicles.js';
 import { manifestForMovementType } from '../../manifests/index.js';
@@ -40,8 +40,6 @@ const PLACE_LINE_KEYS: ReadonlySet<VehicleLine['key']> = new Set(['admits', 'siz
 /** The movement types whose vehicles a room's `admits:` line may name (D6). */
 const STEERED: ReadonlySet<string> = new Set(['streets', 'compass']);
 
-/** The class word an `admits` list takes beside vehicle names (ADR-378 D6): a pushed thing. */
-export const ADMITS_PUSHING = 'pushing';
 
 /**
  * One word of an `admits` list — a room's `admits:` line (ADR-366 D6) or an
