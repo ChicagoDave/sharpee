@@ -126,7 +126,7 @@
 - **Exit state**: a rename of the id rule changes one function; adding a movement type changes one table; every diagnostic names its fault.
 - **Demonstration**: chord suite one run green with new tests per diagnostic code and for the movement table; story-loader and branch-tester suites one run each (they compile Chord fixtures); the Chord corpus (`./repokit` corpus check) compiling clean; no Dungeo chain (no stdlib or world-model change) unless Q4 touches the IR the loader reads, then one run.
 - **Demonstrated**: 
-- **Status**: PENDING
+- **Status**: CURRENT (since 2026-10-22)
 
 ### Phase 8: Claims report and Testing tab (F14, F15, F16, F23, D4)
 - **Tier**: Medium
