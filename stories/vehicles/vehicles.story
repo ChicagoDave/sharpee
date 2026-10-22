@@ -279,7 +279,7 @@ create the Sparrow
   drive: player
   commands: destinations
   destinations: the Pad, the Orbit Station
-  passage: 2 turns
+  pace: 2 turns
   aboard: the Airlock, the Cabin
   boarded through: the Airlock
 

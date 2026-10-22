@@ -219,7 +219,7 @@ create the Hunter
 define action shooting
   grammar
     shoot the target
-    shoot the arrow at the target
+    shoot [the] arrow at the target
     fire at the target
   the target must be visible
   refuse without target: shoot-what

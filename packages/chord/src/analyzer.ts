@@ -108,6 +108,7 @@ import { buildSingleValuedAxes, provablyDisjoint, type SingleValuedAxes } from '
 import type { ScopeRequirementWord } from './catalog.js';
 import { EXTENSION_MANIFESTS, manifestForAdjective, manifestForKindNoun } from './manifests/index.js';
 import { collectExpanses, type ExpanseDecl } from './analyzer/expanses.js';
+import { entityIdOf, factIdOf, hasAdjectiveDecl, isKindDecl } from './analyzer/declared.js';
 import { PHRASEBOOK_REGISTRY } from './phrasebooks.js';
 import { DiagnosticBag } from './diagnostics.js';
 import { CHORD_LANGUAGE_VERSION } from './version.js';
@@ -180,6 +181,7 @@ import {
   IRStoryFields,
   StoryIR,
 } from './ir.js';
+import { MOVEMENT_TYPES, primarySlotOf } from './ir.js';
 import { mergeSpans, Span, spanOf } from './span.js';
 
 /**
@@ -2083,7 +2085,7 @@ export class Analyzer {
     const byId = new Map(entities.map((e) => [e.id, e]));
     for (const decl of this.ast.declarations) {
       if (decl.kind !== 'create' || decl.exitTables.length === 0) continue;
-      const owner = byId.get(this.byId.get(decl.name.words.join('-').toLowerCase())?.id ?? '');
+      const owner = byId.get(entityIdOf(decl.name.words));
       if (!owner) continue; // collection rejected the block — already reported
       if (!owner.kinds.some((k) => k.name === 'region')) {
         for (const table of decl.exitTables) {
@@ -3729,6 +3731,9 @@ export class Analyzer {
     // there is the ordinary unknown reference.
     const headScope: Scope = { owner: null, fields: null, slots: new Set(), ownStates: null, scoreOwner: `action.${decl.name}`, inEach: false, semanticValues: new Map() };
 
+    const body = decl.body.map((s, i) => this.resolveStatement(s, scope, `action.${decl.name}.body.${i}`));
+    this.checkSlotsUsed(decl, entitySlots, [musts, refusals, body]);
+
     return {
       name: decl.name,
       ...(decl.condition ? { condition: this.resolveCondition(decl.condition, headScope) } : {}),
@@ -3751,9 +3756,60 @@ export class Analyzer {
       refusals,
       otherwise: decl.otherwise?.phraseKey ?? null,
       scores: decl.scores.map((s) => ({ name: `action.${decl.name}.${s.name}`, worth: s.worth, span: s.span })),
-      body: decl.body.map((s, i) => this.resolveStatement(s, scope, `action.${decl.name}.body.${i}`)),
+      body,
       span: decl.span,
     };
+  }
+
+  /**
+   * ADR-380 D2a: a `define action` slot no line uses is a warning naming
+   * it, because `the <word>` written for a fixed noun silently becomes a
+   * slot that binds anything. A slot is used when a line of its block
+   * constrains it (a scope constraint), refuses without it, types it
+   * (`is an instrument`, `takes the rest of the line`), when it is the
+   * action's primary slot (its entity's clauses are what the action
+   * consults, `primarySlotOf`), or when a `must`, a refusal's condition or
+   * the body reads it — read from the resolved IR, where every slot read is
+   * a `slot` value.
+   * @param decl the action
+   * @param slots its entity slots (a directions block's `direction` excluded)
+   * @param resolved the resolved musts, refusals and body
+   */
+  private checkSlotsUsed(decl: DefineAction, slots: ReadonlySet<string>, resolved: readonly unknown[]): void {
+    const used = new Set<string>([
+      ...decl.constraints.map((c) => c.slot),
+      ...decl.refusals.flatMap((r) => (r.kind === 'without' && r.slot ? [r.slot] : [])),
+      ...decl.slotTypes.map((t) => t.slot),
+      ...decl.greedy.map((g) => g.slot),
+    ]);
+    const primary = primarySlotOf({
+      patterns: decl.patterns.map((p) => ({ parts: p.parts.map(lowerPatternPart), cardinality: null })),
+      directions: decl.directions,
+      slotTypes: decl.slotTypes.map((st) => ({ slot: st.slot, type: st.type as 'instrument' | 'topic' })),
+    });
+    if (primary !== undefined) used.add(primary);
+    const visit = (node: unknown): void => {
+      if (Array.isArray(node)) {
+        for (const item of node) visit(item);
+      } else if (node !== null && typeof node === 'object') {
+        const record = node as Record<string, unknown>;
+        if (record.kind === 'slot' && typeof record.name === 'string') used.add(record.name);
+        for (const value of Object.values(record)) visit(value);
+      }
+    };
+    visit(resolved);
+    const reported = new Set<string>();
+    for (const pattern of decl.patterns) {
+      for (const part of pattern.parts) {
+        if (part.kind !== 'slot' || !slots.has(part.word) || used.has(part.word) || reported.has(part.word)) continue;
+        reported.add(part.word);
+        this.diagnostics.warning(
+          'analysis.slot-unused',
+          `\`the ${part.word}\` is a slot of \`${decl.name}\` that nothing uses, so it accepts any noun the player types. For the word itself, write \`[the] ${part.word}\`.`,
+          part.span,
+        );
+      }
+    }
   }
 
   // -------------------------------------------------------------- pass 1
@@ -3872,7 +3928,7 @@ export class Analyzer {
       else if (decl.kind === 'define-fact') {
         // ADR-310 D14: fact names are unique; the value sets build after
         // symbol collection (values may name entities).
-        this.registerUnique('fact', decl.name.words.join('-').toLowerCase(), decl.span, 'analysis.duplicate-fact');
+        this.registerUnique('fact', factIdOf(decl.name.words), decl.span, 'analysis.duplicate-fact');
         this.factDecls.push(decl);
       }
       else if (decl.kind === 'define-temperament') {
@@ -4131,11 +4187,7 @@ export class Analyzer {
       let roomNameIndex = 0;
       let unconditionalRoomName = false;
       let roomNameOwnerReported = false;
-      const composedAs = (name: string, asKind: boolean): boolean =>
-        e.decl.compositions.some(
-          (c) => Boolean(c.article) === asKind && c.words.join(' ').toLowerCase() === name,
-        );
-      const canCarryRoomName = composedAs('room', true) || composedAs('enterable', false);
+      const canCarryRoomName = isKindDecl(e.decl, 'room') || hasAdjectiveDecl(e.decl, 'enterable');
       for (const override of e.decl.phraseOverrides) {
         const isDetail = override.key === 'detail';
         const isRoomName = override.key === 'room-name';
@@ -4459,7 +4511,7 @@ export class Analyzer {
 
   private collectEntity(decl: CreateDecl): void {
     const nameWords = decl.name.words;
-    const id = nameWords.join('-').toLowerCase();
+    const id = entityIdOf(nameWords);
     // `match` is a reserved value-position name (David, 2026-07-12 —
     // each package P3): it is the `each`-block binder (`the match`, E3),
     // resolved before entity lookup exactly as `it` is. Multi-word names
@@ -4483,7 +4535,7 @@ export class Analyzer {
     this.checkStateSet(decl.states, nameWords.join(' ').toLowerCase());
     // ADR-374 D8 (GH #537): `<thing> is dark` reads room darkness, so a
     // declared state named `dark` off a room could never be read.
-    const isRoomDecl = decl.compositions.some((c) => c.article !== null && c.words.join(' ') === 'room');
+    const isRoomDecl = isKindDecl(decl, 'room');
     const darkState = isRoomDecl ? undefined : decl.states.find((st) => st.name === 'dark');
     if (darkState) {
       this.diagnostics.error(
@@ -5365,7 +5417,7 @@ export class Analyzer {
    */
   private resolveClaims(): void {
     for (const { claims, phrase } of this.pendingClaims) {
-      const factId = claims.fact.words.join('-').toLowerCase();
+      const factId = factIdOf(claims.fact.words);
       const fact = this.factById.get(factId);
       if (!fact) {
         this.diagnostics.error(
@@ -5397,7 +5449,7 @@ export class Analyzer {
    */
   private buildFacts(): void {
     for (const decl of this.factDecls) {
-      const id = decl.name.words.join('-').toLowerCase();
+      const id = factIdOf(decl.name.words);
       const values: string[] = [];
       for (const v of decl.values) {
         const canonical = this.canonicalFactValue(v);
@@ -5660,7 +5712,7 @@ export class Analyzer {
    * @returns the IR entity, `topics` left empty for `applyTopics`
    */
   private buildEntity(decl: CreateDecl): IREntity {
-    const sym = this.byId.get(decl.name.words.join('-').toLowerCase());
+    const sym = this.byId.get(entityIdOf(decl.name.words));
     const draft = newEntityDraft(decl, sym ?? null, entityScope(sym ?? null));
     for (const builder of ENTITY_LINE_BUILDERS) builder.build(decl, draft, this.entityContext());
     return assembleEntity(draft);
@@ -6251,7 +6303,7 @@ export class Analyzer {
       return dead;
     }
     const itemSym = this.byId.get(item.id);
-    const wearable = itemSym?.decl.compositions.some((c) => !c.article && c.words.join(' ').toLowerCase() === 'wearable') ?? false;
+    const wearable = itemSym ? hasAdjectiveDecl(itemSym.decl, 'wearable') : false;
     if (!wearable) {
       this.diagnostics.error(
         'analysis.wear-not-wearable',
@@ -6341,7 +6393,7 @@ export class Analyzer {
           const expanseId = this.findEntitySilent(stmt.target.base.ref)?.id ?? null;
           this.requireSailing('`set … wind`', stmt.span, null);
           if (expanseId === null || !this.expanses.has(expanseId)) {
-            this.diagnostics.error('analysis.sailing-not-open', `\`set … wind\` names an expanse — \`${stmt.target.base.ref.words.join(' ')}\` is not one.`, stmt.span);
+            this.diagnostics.error('analysis.wind-set-target', `\`set … wind\` names an expanse — \`${stmt.target.base.ref.words.join(' ')}\` is not one.`, stmt.span);
           }
           return { kind: 'expanse-wind', expanse: { kind: 'entity', id: expanseId ?? '' }, wind: windToIR(stmt.wind), stmtWhen: this.resolveStmtWhen(stmt.stmtWhen, scope), span: stmt.span };
         }
@@ -6354,7 +6406,7 @@ export class Analyzer {
             const v = stmt.value;
             const setting = v.kind === 'bare' && v.words.length === 1 ? v.words[0] : v.kind === 'ref' && v.ref.words.length === 1 ? v.ref.words[0] : null;
             if (setting === null) {
-              this.diagnostics.error('analysis.sails-unknown-setting', '`set … sails to` takes one setting word.', stmt.span);
+              this.diagnostics.error('analysis.sails-setting-word', '`set … sails to` takes one setting word.', stmt.span);
             } else {
               this.checkSailSetting(vehicle, setting, stmt.span);
             }
@@ -6382,7 +6434,7 @@ export class Analyzer {
         // a region that declared a landing (a `set` replaces, never creates).
         if (target.kind === 'field' && target.field === 'landing' && target.base.kind === 'entity') {
           const sym = this.byId.get(target.base.id);
-          const isRegion = sym?.decl.compositions.some((c) => c.article && c.words.join(' ').toLowerCase() === 'region') ?? false;
+          const isRegion = sym ? isKindDecl(sym.decl, 'region') : false;
           if (sym && (!isRegion || !sym.decl.landing)) {
             this.diagnostics.error(
               'analysis.landing-set-target',
@@ -6872,19 +6924,20 @@ export class Analyzer {
       this.reportVehicleStatement(stmt.verb, vehicle, stmt.span);
     }
     if (stmt.verb === 'stop') return { kind: 'vehicle-stop', vehicle: value, stmtWhen, span: stmt.span };
-    // ADR-366 D5c and ADR-376 D3: a compass or an open vehicle under
-    // `drive: control` is started `heading <direction>`; no other type takes a heading.
-    const steersByHeading = vehicle.movement === 'compass' || vehicle.movement === 'open';
+    // ADR-366 D5c and ADR-376 D3: a type the table marks `heading` is
+    // started `heading <direction>` under `drive: control`; no other type takes one.
+    const steersByHeading = vehicle.movement !== null && MOVEMENT_TABLE[vehicle.movement].heading;
     if (stmt.heading && (!steersByHeading || vehicle.drive !== 'control')) {
+      const headed = MOVEMENT_TYPES.filter((m) => MOVEMENT_TABLE[m].heading).map((m) => `\`movement: ${m}\``).join(' or ');
       this.diagnostics.error(
         'analysis.vehicle-statement-not-for-movement',
-        `\`heading <direction>\` sets the heading of a \`movement: compass\` or \`movement: open\` vehicle under \`drive: control\` — \`${vehicle.name}\` is ${vehicle.movement ? `\`movement: ${vehicle.movement}\`` : 'not one'}${vehicle.drive ? ` under \`drive: ${vehicle.drive}\`` : ''}.`,
+        `\`heading <direction>\` sets the heading of a ${headed} vehicle under \`drive: control\` — \`${vehicle.name}\` is ${vehicle.movement ? `\`movement: ${vehicle.movement}\`` : 'not one'}${vehicle.drive ? ` under \`drive: ${vehicle.drive}\`` : ''}.`,
         stmt.heading.span,
       );
     } else if (!stmt.heading && steersByHeading) {
       this.diagnostics.error(
         'analysis.vehicle-statement-not-for-movement',
-        `\`start ${vehicle.name}\` needs a heading — a ${vehicle.movement === 'open' ? 'open' : 'compass'} vehicle is started \`heading <direction>\`.`,
+        `\`start ${vehicle.name}\` needs a heading — a \`movement: ${vehicle.movement}\` vehicle is started \`heading <direction>\`.`,
         stmt.span,
       );
     }
@@ -7880,7 +7933,7 @@ export class Analyzer {
         const id = this.resolveEntityId(t.room);
         if (id === null) return null; // already reported
         const sym = this.byId.get(id);
-        if (!sym || !sym.decl.compositions.some((k) => k.article !== null && k.words[0]?.toLowerCase() === 'room')) {
+        if (!sym || !isKindDecl(sym.decl, 'room')) {
           this.diagnostics.error('analysis.chapter-visit-not-room', `\`${t.room.words.join(' ')}\` is not a room — a chapter begins on the first visit to a ROOM.`, t.room.span);
           return null;
         }
@@ -8108,7 +8161,7 @@ export class Analyzer {
     if (value.kind !== 'entity') return;
     const sym = this.byId.get(value.id);
     if (!sym) return;
-    const isRegion = sym.decl.compositions.some((c) => c.article && c.words.join(' ').toLowerCase() === 'region');
+    const isRegion = isKindDecl(sym.decl, 'region');
     if (isRegion && !sym.decl.landing) {
       this.diagnostics.error(
         'analysis.region-not-a-place',
@@ -8530,7 +8583,7 @@ export class Analyzer {
   private checkSailSetting(vehicle: VehicleDecl, setting: string, span: Span): void {
     const sails = vehicleLineOf(vehicle.decl, 'sails');
     if (!sails) {
-      this.diagnostics.error('analysis.sails-without-sailing', `\`${vehicle.name}\` declares no \`sails:\` — nothing to set or read.`, span);
+      this.diagnostics.error('analysis.sails-undeclared', `\`${vehicle.name}\` declares no \`sails:\` — nothing to set or read.`, span);
     } else if (!sails.settings.some((s) => s.word === setting)) {
       this.diagnostics.error('analysis.sails-unknown-setting', `\`${setting}\` is not a setting of \`${vehicle.name}\` — one of ${sails.settings.map((s) => `\`${s.word}\``).join(', ')}.`, span);
     }
@@ -8927,10 +8980,7 @@ export class Analyzer {
     if (!table) return;
     const reportedBare = new Set<string>();
     for (const e of this.entities) {
-      const isRoom = e.decl.compositions.some(
-        (c) => c.article && c.words.join(' ').toLowerCase() === 'room',
-      );
-      if (!isRoom) continue;
+      if (!isKindDecl(e.decl, 'room')) continue;
       // A group's shared keys are checked once, by its first room.
       if ((this.groupOrigins.get(e.decl)?.index ?? 0) > 0) continue;
       const keys = this.descriptionKeysOf(e);

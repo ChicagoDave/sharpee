@@ -75,7 +75,7 @@ export const hostGatesBuilder: EntityLineBuilder = {
       }
       // ADR-376 D8: an expanse's blocked-exit lines are its edges, read by
       // the expanse builder (which refuses every other exit form on it).
-      const isExpanse = decl.compositions.some((c) => c.article !== null && c.words.join(' ').toLowerCase() === 'expanse');
+      const isExpanse = kinds.some((k) => k.name === 'expanse');
       const strayExit = decl.exits.find((e) => !e.exitsLine) ?? (isExpanse ? undefined : decl.blockedExits[0]) ?? decl.deadlyExits[0];
       if (strayExit) {
         context.diagnostics.error(

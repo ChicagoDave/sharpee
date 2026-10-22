@@ -251,7 +251,7 @@ describe('the vehicle machine (ADR-366 D5e)', () => {
 
   describe('a flight vehicle (D5d)', () => {
     it('leaves its room on the first turn, is nowhere for the passage, then arrives and is no longer under way', () => {
-      const sparrow = vehicle('Sparrow', new VehicleTrait({ movement: { kind: 'flight', drive: 'control', destinations: [a.id, c.id], passage: 2 } }), a);
+      const sparrow = vehicle('Sparrow', new VehicleTrait({ movement: { kind: 'flight', drive: 'control', destinations: [a.id, c.id], pace: 2 } }), a);
       const hold = room('Hold');
       hold.add(new AboardTrait({ vehicleId: sparrow.id }));
       world.moveEntity(hold.id, sparrow.id);
@@ -280,7 +280,7 @@ describe('the vehicle machine (ADR-366 D5e)', () => {
 
   describe('who is aboard (D7)', () => {
     it('inside the vehicle at any depth, or in a room aboard it', () => {
-      const sparrow = vehicle('Sparrow', new VehicleTrait({ movement: { kind: 'flight', drive: 'control', destinations: [a.id, c.id], passage: 1 } }), a);
+      const sparrow = vehicle('Sparrow', new VehicleTrait({ movement: { kind: 'flight', drive: 'control', destinations: [a.id, c.id], pace: 1 } }), a);
       const hold = room('Hold');
       hold.add(new AboardTrait({ vehicleId: sparrow.id }));
       const crate = world.createEntity('crate', EntityType.ITEM);
@@ -298,7 +298,7 @@ describe('the vehicle machine (ADR-366 D5e)', () => {
 
   describe('the machine state survives a save (D5g)', () => {
     it('a voyage restored mid-passage still arrives on schedule', () => {
-      const sparrow = vehicle('Sparrow', new VehicleTrait({ movement: { kind: 'flight', drive: 'control', destinations: [a.id, c.id], passage: 3 } }), a);
+      const sparrow = vehicle('Sparrow', new VehicleTrait({ movement: { kind: 'flight', drive: 'control', destinations: [a.id, c.id], pace: 3 } }), a);
       sendVehicle(world, sparrow, c.id);
       stepVehicle(world, sparrow);
       stepVehicle(world, sparrow);

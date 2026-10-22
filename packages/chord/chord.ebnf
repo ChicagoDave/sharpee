@@ -441,22 +441,28 @@ vehicle-line = "movement" ":" ( "none" | "line" | "streets"
                                                               D3's, on an open vehicle
                                                               under `use sailing`
                                                               (analysis.sailing-needs-
-                                                              use, sailing-not-open).
+                                                              use; on another type
+                                                              analysis.commands-not-
+                                                              for-movement).
                                                               D5i: the player's command
                                                               sets (`compass`,
                                                               `destinations`); `drive:
                                                               player` only *)
              | "stops" ":" name { "," name } NL            (* D5a: a line's stops in
                                                               order, two or more, none
-                                                              repeated *)
+                                                              repeated (analysis.
+                                                              vehicle-place-repeated, as
+                                                              in `destinations:` and
+                                                              `aboard:`) *)
              | "direction" ":" ( "both" | "one-way" ) NL  (* D5a *)
              | "pace" ":" NUMBER ( "turn" | "turns" ) NL  (* D5a, D5c: turns per step,
-                                                              one or more *)
+                                                              one or more; a flight's
+                                                              step is its trip (ADR-380
+                                                              D3). The retired
+                                                              `passage:` is parse.
+                                                              passage-is-pace *)
              | "destinations" ":" name { "," name } NL    (* D5d: any to any, two or
-                                                              more *)
-             | "passage" ":" NUMBER ( "turn" | "turns" ) NL
-                                                           (* D5d: the fold, one or
-                                                              more turns *)
+                                                              more, none repeated *)
              | "aboard" ":" name { "," name } NL           (* D7: the rooms inside *)
              | "boarded" "through" ":" name NL            (* D7: one of them, where
                                                               `to outside` lands *)
@@ -508,7 +514,14 @@ sailing-cells = sailing-pace                               (* without `sails:` *
                                                            (* with `sails:`, every
                                                               setting once (analysis.
                                                               sailing-row-missing-
-                                                              setting) *)
+                                                              setting; a setting `sails:`
+                                                              lacks analysis.sails-
+                                                              unknown-setting; a cell
+                                                              with none analysis.
+                                                              sailing-cell-no-setting).
+                                                              Settings without `sails:`
+                                                              are analysis.sailing-row-
+                                                              without-sails *)
 sailing-pace = NUMBER ( "turn" | "turns" ) | "stopped" ;
 sight-line   = "sight" ":" NUMBER NL ;                     (* ADR-376 D6: expanse units.
                                                               On an open vehicle, how far
@@ -540,7 +553,7 @@ expanse-line = "size" ":" NUMBER "by" NUMBER NL            (* ADR-376 D2: the tw
                                                               compass direction or a
                                                               bearing 0..359; on anything
                                                               but an expanse analysis.
-                                                              sailing-not-open *)
+                                                              expanse-line-owner *)
              | "drift" ":" "1" "unit" "every" NUMBER ( "turn" | "turns" ) NL ;
                                                            (* ADR-376 D10: floating things
                                                               move one unit per interval;
@@ -892,11 +905,12 @@ create-line  = "aka" alias { "," alias } NL
                                                               BOTH rooms, ADR-238) *)
              | exits-line                                  (* ADR-362 D2: the room's
                                                               exits on one line *)
-             | passage-line                                (* ADR-378 D1: an exit named
-                                                              by its command *)
-             | exit-key "is" "blocked" [ "while" condition ] ":" phrase-key NL
-                                                           (* blocked exit *)
-             | exit-key "is" "deadly" ":" phrase-key NL    (* deadly exit (ADR-227); the
+             | passage-block                               (* ADR-380 D1: an exit named
+                                                              by its commands *)
+             | DIRECTION "is" "blocked" [ "while" condition ] ":" phrase-key NL
+                                                           (* blocked exit; a passage's
+                                                              is a line of its block *)
+             | DIRECTION "is" "deadly" ":" phrase-key NL   (* deadly exit (ADR-227); the
                                                               `while` form is parsed and
                                                               refused (analysis.deadly-
                                                               while-unsupported) *)
@@ -1372,28 +1386,40 @@ exits-line   = "exits" [ "," "one-way" ] ":" exit { "," exit } NL ;
                      (analysis.exit-line-owner); in a `rooms` group body it is
                      analysis.room-group-line. The colon tells it from ADR-360's table. A
                      blocked line beside it guards that exit as it would a single line. *)
-passage-line = "passage" passage-words { "or" passage-words }
-               "to" name [ "through" name ] [ "while" condition ] NL ;
-                  (* ADR-378 D1–D3: an exit the player takes by typing its words
-                     (`passage climb the rope or climb up to the Loft`), one line
-                     per way, the first form its name and the key
-                     `passage:<first form, hyphenated>`. One-way by construction:
-                     `, one-way` is analysis.passage-one-way. The words are grammar
-                     only where the passage is and while it exists (D2, D3). Not a
-                     direction, so it takes no `admits` (parse.exit-trailing). Two
-                     passages on one room sharing a form are analysis.duplicate-
-                     exit. Rooms only (analysis.exit-non-room). *)
-passage-words = WORD { WORD } ;                            (* the words the player types;
-                                                              none `to` or `or`, which
-                                                              separate; an empty or non-
-                                                              word form is parse.passage-
-                                                              words *)
-exit-key     = DIRECTION | "passage" passage-words ;       (* what a blocked or deadly
-                                                              line names: a compass
-                                                              direction, or a passage the
-                                                              room declares by any of its
-                                                              forms (analysis.passage-
-                                                              unknown) *)
+passage-block = "passage" "to" ( name | "outside" ) [ "through" name ] NL
+              >>> "grammar" NL
+                  >>> passage-pattern NL { passage-pattern NL }
+                  { passage-line }
+                "end" "passage" NL ;
+                  (* ADR-380 D1: an exit the player takes by typing one of its
+                     commands, one block per way. `grammar` comes first, its
+                     patterns indented under it (none is parse.passage-line); after
+                     it, in any order, at most one of each passage-line (a second is
+                     parse.passage-line-duplicate; any other line, or one before
+                     `grammar`, is parse.passage-line). Each pattern expands to the
+                     commands it admits (`or` and `[ ]` as in an action's grammar);
+                     the first command of the first pattern, as written, names the
+                     passage and makes its key `passage:<command, hyphenated>`.
+                     One-way by construction: `, one-way` on the head is
+                     analysis.passage-one-way, and it takes no `admits` (parse.exit-
+                     trailing). The commands are grammar only where the passage is
+                     and while it exists (ADR-378 D2, D3); for the player every
+                     article in them is optional (ADR-380 D2). Two passages on one
+                     room sharing a command are analysis.duplicate-exit. Rooms only
+                     (analysis.exit-non-room). The retired one-line forms
+                     `passage <words> to …`, `passage <words> is blocked: …` and
+                     `… is deadly: …` are parse.passage-line-form, its fix-it the
+                     block (ADR-380 D4). *)
+passage-pattern = passage-elem { passage-elem } ;          (* ADR-380 D2: `the` is a word
+                                                              here, never a slot; at least
+                                                              one element not optional *)
+passage-elem = WORD { "or" WORD } | "[" WORD { "or" WORD } "]" ;
+passage-line = "while" condition NL                        (* the passage exists only
+                                                              while it holds (ADR-378 D3) *)
+             | "blocked" [ "while" condition ] ":" phrase-key NL
+                                                           (* it exists and refuses with
+                                                              the phrase; hidden wins *)
+             | "deadly" ":" phrase-key NL ;                (* ADR-227 *)
 exit         = DIRECTION "to" ( name | "outside" )
                [ "through" name ] ;                        (* the one exit production: a
                                                               room's exit line, a table
@@ -1556,7 +1582,14 @@ phrase-entry     = phrase-key ":" NL prose-paragraph ;     (* prose block only *
    subsumes it — the parser emits parse.removed-define-verb with a fix-it. *)
 pattern          = pattern-elem { pattern-elem } ;         (* ADR-267 D1: shared with pattern-line
                                                               and the ADR-270 alteration blocks *)
-pattern-elem     = plain-elem | "[" plain-elem "]" ;       (* [x] = optional (D9) *)
+pattern-elem     = plain-elem | "[" plain-elem "]"        (* [x] = optional (D9) *)
+                 | "[" "the" "]" ;                         (* ADR-380 D2a: the optional
+                                                              article beside a fixed noun,
+                                                              `shoot [the] arrow at the
+                                                              target`; `[the target]` stays
+                                                              an optional slot. A define-
+                                                              action slot nothing uses is
+                                                              analysis.slot-unused *)
 plain-elem       = WORD { "or" WORD } | "the" WORD ;       (* or = alternation, ONE rule (D8);
                                                               "the" WORD = slot (D15) *)
 STRATEGY        = "randomly" | "cycling" | "stopping" | "sticky" | "first-time" ;

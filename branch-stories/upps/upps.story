@@ -267,7 +267,7 @@ create the courier ship
   movement: flight
   drive: control
   destinations: the Loading Dock, the Landing Pad, the Collar Vestibule
-  passage: 5 turns
+  pace: 5 turns
   aboard: the Hold, the Cockpit, the Airlock
   boarded through: the Hold
   states: buttoned, boarding
@@ -341,7 +341,13 @@ create the floor grating
 create the Cable Trench
   a room, dark
   up to the Loading Dock
-  passage follow the cables or crawl along the cables to the Sorting Room while the Cable Trench is not dark
+
+  passage to the Sorting Room
+    grammar
+      follow the cables
+      crawl along the cables
+    while the Cable Trench is not dark
+  end passage
 
   A trench under the dock floor, just deep enough to stand in, where
   power cables run in bundles along both walls. The grating is

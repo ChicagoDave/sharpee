@@ -106,18 +106,19 @@ export interface VehicleCompassMovement {
 
 /**
  * Free flight (ADR-366 D5d): any destination to any other, nowhere for the
- * passage, then arrival.
+ * trip, then arrival. A flight's step is the whole trip, so its pace is the
+ * trip's length (ADR-380 D3).
  */
 export interface VehicleFlightMovement {
   kind: 'flight';
   drive: 'player' | 'control';
-  /** Room ids the vehicle may fly between. At least two. */
+  /** Room ids the vehicle may fly between. At least two, each once. */
   destinations: string[];
-  /** Turns the passage takes, one or more. */
-  passage: number;
+  /** Turns the trip takes, one or more. */
+  pace: number;
   /** Machine state: where it is bound, or null when not under way. */
   destination: string | null;
-  /** Machine state: turns left in the passage. */
+  /** Machine state: turns left in the trip. */
   turnsRemaining: number;
 }
 
@@ -231,7 +232,7 @@ export class VehicleTrait implements ITrait {
 
   /**
    * Build a movement model from its declaration, holding the invariants the analyzer
-   * reports first: two stops, none repeated; two destinations; a pace, a
+   * reports first: two stops, none repeated; two destinations, none repeated; a pace, a
    * stride of at least one; an open vehicle on at most one of heading and
    * course. The machine's state starts at rest unless the declaration
    * carries it.
@@ -277,17 +278,21 @@ export class VehicleTrait implements ITrait {
         };
       }
       case 'flight': {
-        if (new Set(config.destinations).size < 2) {
+        const { destinations } = config;
+        if (destinations.length < 2) {
           throw new Error('VehicleTrait: a flight needs at least two destinations');
         }
-        if (!Number.isInteger(config.passage) || config.passage < 1) {
-          throw new Error('VehicleTrait: a passage is a whole number of turns, one or more');
+        if (new Set(destinations).size !== destinations.length) {
+          throw new Error('VehicleTrait: a flight names each destination once');
+        }
+        if (!Number.isInteger(config.pace) || config.pace < 1) {
+          throw new Error('VehicleTrait: a pace is a whole number of turns, one or more');
         }
         return {
           kind: 'flight',
           drive: config.drive,
-          destinations: [...new Set(config.destinations)],
-          passage: config.passage,
+          destinations: [...destinations],
+          pace: config.pace,
           destination: config.destination ?? null,
           turnsRemaining: config.turnsRemaining ?? 0,
         };

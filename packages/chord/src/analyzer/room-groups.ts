@@ -26,6 +26,7 @@
 import type { CompositionItem, CreateDecl, Declaration, NameRef, RoomGroupDecl, StoryFile } from '../ast.js';
 import type { DiagnosticBag } from '../diagnostics.js';
 import type { Span } from '../span.js';
+import { entityIdOf, isKindDecl } from './declared.js';
 
 /**
  * The most rooms one group may create. A guard against a typo (`1 to 10000`
@@ -58,14 +59,6 @@ export interface RoomGroupExpansion {
 }
 
 /**
- * The entity id a create block's name derives — the derivation the
- * analyzer's collection pass uses.
- */
-function entityIdOf(words: readonly string[]): string {
-  return words.join('-').toLowerCase();
-}
-
-/**
  * The prefix of a group's shared phrase keys: `<base>.description` and
  * `<base>.initial-description`.
  * @param regionId the region's entity id
@@ -76,7 +69,7 @@ export function groupKeyBase(regionId: string, group: RoomGroupDecl): string {
 }
 
 function isRegionDecl(decl: CreateDecl): boolean {
-  return decl.compositions.some((c) => c.article && c.words.join(' ').toLowerCase() === 'region');
+  return isKindDecl(decl, 'region');
 }
 
 /**

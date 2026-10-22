@@ -34,7 +34,7 @@
 import type { ConditionNode, ExitDecl, NameRef } from '../../ast.js';
 import type { IRCondition, IRExit, IRExitDestination } from '../../ir.js';
 import type { EntityLineBuilder } from './context.js';
-import { PASSAGE_KEY_PREFIX, passageKeyOfForm } from '../../ir.js';
+import { passageKeyOfForm } from '../../ir.js';
 import { resolveAdmitsWord } from './vehicle.js';
 
 export { passageKeyOfForm };
@@ -99,23 +99,6 @@ export const exitsBuilder: EntityLineBuilder = {
         );
       }
     }
-    // ADR-378 D1: a blocked or deadly line names a passage by any of its
-    // forms and lowers under the passage's canonical key.
-    const passages = decl.exits.filter((e) => e.passage);
-    const passageKeyOf = (written: string, span: typeof decl.span): string => {
-      if (!written.startsWith(PASSAGE_KEY_PREFIX)) return written;
-      const declared = passages.find((p) => p.passage!.some((form) => passageKeyOfForm(form) === written));
-      if (declared) return declared.direction;
-      const form = written.slice(PASSAGE_KEY_PREFIX.length).split('-').join(' ');
-      context.diagnostics.error(
-        'analysis.passage-unknown',
-        `\`${entity.name}\` declares no passage \`${form}\`${
-          passages.length > 0 ? ` — its passages are ${passages.map((p) => `\`${p.passage![0]}\``).join(', ')}` : ''
-        }. A blocked or deadly passage line names a passage the room declares, by any of its forms.`,
-        span,
-      );
-      return written;
-    };
     entity.blockedExits = decl.blockedExits.map((b, i) => {
       context.requirePhrase(b.phraseKey, b.span);
       // The first line whose condition holds supplies the refusal, and a
@@ -132,7 +115,7 @@ export const exitsBuilder: EntityLineBuilder = {
         );
       }
       return {
-        direction: passageKeyOf(b.direction, b.span),
+        direction: b.direction,
         phraseKey: b.phraseKey,
         condition: b.condition ? context.resolveCondition(b.condition, scope) : null,
         span: b.span,
@@ -150,7 +133,7 @@ export const exitsBuilder: EntityLineBuilder = {
         );
       }
       return {
-        direction: passageKeyOf(d.direction, d.span),
+        direction: d.direction,
         phraseKey: d.phraseKey,
         condition: d.condition ? context.resolveCondition(d.condition, scope) : null,
         span: d.span,

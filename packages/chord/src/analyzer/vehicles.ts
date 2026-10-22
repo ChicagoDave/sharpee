@@ -5,8 +5,10 @@
  *
  * The registry reads the parsed lines only; names stay unresolved here and
  * are resolved by whoever asks, with the resolver they already hold. The
- * movement table is ADR-366 D5's table, written down once: which drives,
- * command sets, statements and conditions each type takes.
+ * movement table is ADR-366 D5's table, written down once: the lines each
+ * type takes and requires, whether it is steered and started on a heading,
+ * and which drives, command sets, statements and conditions it takes. Its
+ * keys are the IR's `MOVEMENT_TYPES`, so a new type is one row here.
  *
  * Public interface: VehicleDecl, VehicleMovement, VehicleDrive,
  * collectVehicles(), isVehicleDecl(), vehicleLineOf(), MOVEMENT_TABLE,
@@ -18,9 +20,11 @@
  * - ADR-366 D7 — rooms aboard, the `outside` exit.
  */
 import type { CreateDecl, NameRef, VehicleLine } from '../ast.js';
+import type { IRVehicleMovement } from '../ir.js';
+import { entityIdOf, isKindDecl } from './declared.js';
 
 /** The base types (ADR-366 D5) and `open`, contributed by `use expanses` (ADR-376 D3). */
-export type VehicleMovement = 'none' | 'line' | 'streets' | 'compass' | 'flight' | 'open';
+export type VehicleMovement = IRVehicleMovement;
 export type VehicleDrive = 'state' | 'control' | 'player';
 
 /** One vehicle block's declared lines, by key, names unresolved. */
@@ -36,10 +40,22 @@ export interface VehicleDecl {
   readonly aboard: NameRef[];
 }
 
+/** A line the type cannot do without, required under every drive or only the listed ones. */
+export interface RequiredLine {
+  line: 'pace' | 'direction' | 'stride' | 'sight' | 'seen-from-afar';
+  drives?: ReadonlySet<VehicleDrive>;
+}
+
 /** What each movement type takes (ADR-366 D5's table). */
 export interface MovementRow {
   /** The colon lines the type admits, beyond `movement:` and `carries:`. */
   lines: ReadonlySet<VehicleLine['key']>;
+  /** The lines whose absence is a fault; a list's count (`stops:`, `destinations:`) is its own check. */
+  required: readonly RequiredLine[];
+  /** True when the vehicle chooses where it goes, so a room's `admits:` may name it (D6). */
+  steered: boolean;
+  /** True when `start` under `drive: control` takes `heading <direction>`, and requires it (D5c; ADR-376 D3). */
+  heading: boolean;
   /** Whether the type takes a `position` block (`drive: state` only). */
   position: boolean;
   drives: ReadonlySet<VehicleDrive>;
@@ -59,6 +75,9 @@ const stmts = (entries: Array<['start' | 'stop' | 'send', VehicleDrive[]]>): Mov
 export const MOVEMENT_TABLE: Readonly<Record<VehicleMovement, MovementRow>> = {
   none: {
     lines: set<VehicleLine['key']>(),
+    required: [],
+    steered: false,
+    heading: false,
     position: false,
     drives: set<VehicleDrive>(),
     sets: set<string>(),
@@ -67,6 +86,10 @@ export const MOVEMENT_TABLE: Readonly<Record<VehicleMovement, MovementRow>> = {
   },
   line: {
     lines: set<VehicleLine['key']>('drive', 'stops', 'direction', 'pace', ...aboardLines),
+    // D5a: under `drive: state` the `position` block says where it is, and `pace:` is refused.
+    required: [{ line: 'direction' }, { line: 'pace', drives: set<VehicleDrive>('control') }],
+    steered: false,
+    heading: false,
     position: true,
     drives: set<VehicleDrive>('state', 'control'),
     sets: set<string>(),
@@ -75,6 +98,9 @@ export const MOVEMENT_TABLE: Readonly<Record<VehicleMovement, MovementRow>> = {
   },
   streets: {
     lines: set<VehicleLine['key']>('drive', 'commands', ...aboardLines),
+    required: [],
+    steered: true,
+    heading: false,
     position: false,
     drives: set<VehicleDrive>('player'),
     sets: set('compass'),
@@ -83,6 +109,9 @@ export const MOVEMENT_TABLE: Readonly<Record<VehicleMovement, MovementRow>> = {
   },
   compass: {
     lines: set<VehicleLine['key']>('drive', 'commands', 'pace', ...aboardLines),
+    required: [{ line: 'pace' }],
+    steered: true,
+    heading: true,
     position: false,
     drives: set<VehicleDrive>('player', 'control'),
     sets: set('compass'),
@@ -90,7 +119,11 @@ export const MOVEMENT_TABLE: Readonly<Record<VehicleMovement, MovementRow>> = {
     conditions: set<'under-way' | 'at' | 'heading'>('under-way', 'at', 'heading'),
   },
   flight: {
-    lines: set<VehicleLine['key']>('drive', 'commands', 'destinations', 'passage', ...aboardLines),
+    // ADR-380 D3: a flight's step is the trip, so its trip time is `pace:`.
+    lines: set<VehicleLine['key']>('drive', 'commands', 'destinations', 'pace', ...aboardLines),
+    required: [{ line: 'pace' }],
+    steered: false,
+    heading: false,
     position: false,
     drives: set<VehicleDrive>('player', 'control'),
     sets: set('destinations'),
@@ -103,6 +136,10 @@ export const MOVEMENT_TABLE: Readonly<Record<VehicleMovement, MovementRow>> = {
   // set and `is in irons` — each gated on the use line by the sailing builder.
   open: {
     lines: set<VehicleLine['key']>('drive', 'commands', 'pace', 'stride', 'sight', 'seen-from-afar', 'sails', 'sails-start', ...aboardLines),
+    // ADR-375 D4: a `sailing` block stands in for `pace:`.
+    required: [{ line: 'pace' }, { line: 'stride' }, { line: 'sight' }, { line: 'seen-from-afar' }],
+    steered: false,
+    heading: true,
     position: false,
     drives: set<VehicleDrive>('player', 'control'),
     sets: set('compass', 'coordinates', 'naval'),
@@ -113,7 +150,7 @@ export const MOVEMENT_TABLE: Readonly<Record<VehicleMovement, MovementRow>> = {
 
 /** `a vehicle` composed on a create block. */
 export function isVehicleDecl(decl: CreateDecl): boolean {
-  return decl.compositions.some((c) => c.article !== null && c.words.join(' ').toLowerCase() === 'vehicle');
+  return isKindDecl(decl, 'vehicle');
 }
 
 type LineWithKey<L, K> = L extends { key: infer KK } ? (K extends KK ? L : never) : never;
@@ -136,7 +173,7 @@ export function collectVehicles(decls: readonly { kind: string }[]): Map<string,
     if (decl.kind !== 'create') continue;
     const create = decl as CreateDecl;
     if (!isVehicleDecl(create)) continue;
-    const id = create.name.words.join('-').toLowerCase();
+    const id = entityIdOf(create.name.words);
     out.set(id, {
       id,
       name: create.name.words.join(' '),

@@ -194,11 +194,31 @@ describe('sails (D7)', () => {
     expect(errorCodes(story(SEA, noBlock))).toContain('analysis.sails-without-sailing');
   });
 
-  it('a band that misses a setting, names an unknown one, or writes one pace with sails declared is analysis.sailing-row-missing-setting', () => {
+  it('a band that misses a setting is analysis.sailing-row-missing-setting', () => {
     expect(errorCodes(story(SEA, SHIP_WITH_SAILS.replace('furled stopped, reefed 6 turns, full 4 turns', 'furled stopped, full 4 turns')))).toContain('analysis.sailing-row-missing-setting');
-    expect(errorCodes(story(SEA, SHIP_WITH_SAILS.replace('furled stopped, reefed 6 turns, full 4 turns', 'furled stopped, reefed 6 turns, full 4 turns, bare 1 turn')))).toContain('analysis.sailing-row-missing-setting');
-    expect(errorCodes(story(SEA, SHIP_WITH_SAILS.replace('furled stopped, reefed 6 turns, full 4 turns', '4 turns')))).toContain('analysis.sailing-row-missing-setting');
-    expect(errorCodes(story(SEA, SHIP.replace('45 to 74 degrees: 4 turns', '45 to 74 degrees: full 4 turns')))).toContain('analysis.sailing-row-missing-setting');
+  });
+
+  it('a band naming a setting `sails:` does not is analysis.sails-unknown-setting', () => {
+    const codes = errorCodes(story(SEA, SHIP_WITH_SAILS.replace('furled stopped, reefed 6 turns, full 4 turns', 'furled stopped, reefed 6 turns, full 4 turns, bare 1 turn')));
+    expect(codes).toContain('analysis.sails-unknown-setting');
+    expect(codes).not.toContain('analysis.sailing-row-missing-setting');
+  });
+
+  it('a pace with no setting, with sails declared, is analysis.sailing-cell-no-setting', () => {
+    const codes = errorCodes(story(SEA, SHIP_WITH_SAILS.replace('furled stopped, reefed 6 turns, full 4 turns', '4 turns')));
+    expect(codes).toContain('analysis.sailing-cell-no-setting');
+  });
+
+  it('a band naming settings with no `sails:` is analysis.sailing-row-without-sails', () => {
+    const codes = errorCodes(story(SEA, SHIP.replace('45 to 74 degrees: 4 turns', '45 to 74 degrees: full 4 turns')));
+    expect(codes).toContain('analysis.sailing-row-without-sails');
+    expect(codes).not.toContain('analysis.sailing-row-missing-setting');
+  });
+
+  it('a setting named twice in `sails:` is analysis.sails-duplicate-setting', () => {
+    const codes = errorCodes(story(SEA, SHIP_WITH_SAILS.replace('sails: furled, reefed, full', 'sails: furled, reefed, full, reefed')));
+    expect(codes).toContain('analysis.sails-duplicate-setting');
+    expect(codes).not.toContain('analysis.sails-unknown-setting');
   });
 
   it('`set the <vehicle>\'s sails to <setting>` and `<vehicle>\'s sails are <setting>` lower; an unknown setting is refused', () => {
@@ -207,7 +227,12 @@ describe('sails (D7)', () => {
     const nots = findNodes(ir, 'not');
     expect(nots.some((n) => (n['operand'] as { kind: string; setting?: string }).kind === 'vehicle-sails' && (n['operand'] as { setting?: string }).setting === 'reefed')).toBe(true);
     expect(errorCodes(story(SEA, SHIP_WITH_SAILS, glass("    set the Marigold's sails to bare")))).toContain('analysis.sails-unknown-setting');
-    expect(errorCodes(story(SEA, SHIP, glass("    set the Marigold's sails to full")))).toContain('analysis.sails-without-sailing');
+    expect(errorCodes(story(SEA, SHIP, glass("    set the Marigold's sails to full")))).toContain('analysis.sails-undeclared');
+    expect(errorCodes(story(SEA, SHIP_WITH_SAILS, glass("    set the Marigold's sails to very full")))).toContain('analysis.sails-setting-word');
+  });
+
+  it('`sails start:` with no `sails:` is analysis.sails-undeclared', () => {
+    expect(errorCodes(story(SEA, SHIP.replace('  movement: open\n', '  movement: open\n  sails start: furled\n')))).toContain('analysis.sails-undeclared');
   });
 });
 
@@ -239,7 +264,7 @@ describe('the block\'s shape (D4, D5)', () => {
     const ir = compiled(story(SEA, SHIP, glass("    set the Sargasso's wind to southwest\n    set the Sargasso's wind to 10 degrees\n    set the Sargasso's wind to calm")));
     expect(findNodes(ir, 'expanse-wind').map((n) => n['wind'])).toEqual([{ bearing: 225 }, { bearing: 10 }, 'calm']);
     expect(errorCodes(story(SEA, SHIP, glass("    set the Sargasso's wind to gusty")))).toContain('parse.set-wind');
-    expect(errorCodes(story(SEA, SHIP, glass("    set the Reef's wind to calm")))).toContain('analysis.sailing-not-open');
+    expect(errorCodes(story(SEA, SHIP, glass("    set the Reef's wind to calm")))).toContain('analysis.wind-set-target');
   });
 });
 
@@ -273,7 +298,7 @@ describe('the gates (D1)', () => {
     expect(without(SEA.replace('  wind: from northeast\n', ''), CONTROLLED_SHIP.replace(/  sailing\n[\s\S]*?  end sailing\n/, '  pace: 1 turn\n'), glass('    start the Marigold heading 90 degrees'))).toContain('analysis.sailing-needs-use');
   });
 
-  it('`commands: naval` on a compass vehicle, `wind:` on a room, and a sailing block on a flight vehicle are analysis.sailing-not-open', () => {
+  it('`commands: naval` on a compass vehicle is analysis.commands-not-for-movement; `wind:` on a room is analysis.expanse-line-owner; a sailing block on a flight vehicle is analysis.sailing-not-open', () => {
     const compassShip = `
 create the dinghy
   a vehicle
@@ -286,8 +311,9 @@ create the dinghy
 
   A dinghy.
 `;
-    expect(errorCodes(story(SEA, SHIP, compassShip))).toContain('analysis.sailing-not-open');
-    expect(errorCodes(story(SEA.replace('  The port.\n', '  wind: from north\n\n  The port.\n'), SHIP))).toContain('analysis.sailing-not-open');
+    expect(errorCodes(story(SEA, SHIP, compassShip))).toContain('analysis.commands-not-for-movement');
+    expect(errorCodes(story(SEA, SHIP, compassShip))).not.toContain('analysis.sailing-not-open');
+    expect(errorCodes(story(SEA.replace('  The port.\n', '  wind: from north\n\n  The port.\n'), SHIP))).toContain('analysis.expanse-line-owner');
     const flier = `
 create the Sparrow
   a vehicle
@@ -296,7 +322,7 @@ create the Sparrow
   carries: in
   drive: control
   destinations: Port Royal, the Reef
-  passage: 2 turns
+  pace: 2 turns
 
   A flier.
 

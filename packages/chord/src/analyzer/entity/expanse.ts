@@ -25,6 +25,7 @@
 import type { CreateDecl, VehicleLine } from '../../ast.js';
 import type { IRExpanse, IRLandmark } from '../../ir.js';
 import type { ExpanseDecl } from '../expanses.js';
+import { isKindDecl } from '../declared.js';
 import { vehicleLineOf } from '../vehicles.js';
 import type { EntityBuildContext, EntityDraft, EntityLineBuilder } from './context.js';
 
@@ -34,14 +35,9 @@ const EXPANSE_LINE_KEYS: ReadonlySet<VehicleLine['key']> = new Set(['size', 'vis
 /** The sides an expanse's edge line may name (D8). */
 const SIDES: ReadonlySet<string> = new Set(['north', 'south', 'east', 'west']);
 
-/** The kind noun a block composes with an article, or null. */
-function kindOf(decl: CreateDecl): string | null {
-  return decl.compositions.find((c) => c.article !== null)?.words.join(' ').toLowerCase() ?? null;
-}
-
-/** True when the block composes the bare adjective. */
-function hasAdjective(decl: CreateDecl, word: string): boolean {
-  return decl.compositions.some((c) => c.article === null && c.words.join(' ').toLowerCase() === word);
+/** True when the compositions pass resolved `kind` on this entity. */
+function hasKind(entity: EntityDraft, kind: string): boolean {
+  return entity.kinds.some((k) => k.name === kind);
 }
 
 export const expanseBuilder: EntityLineBuilder = {
@@ -49,11 +45,10 @@ export const expanseBuilder: EntityLineBuilder = {
   requires: ['compositions', 'placement', 'exits', 'vehicle'],
   build(decl, entity, context) {
     const name = decl.name.words.join(' ');
-    const kind = kindOf(decl);
-    const isExpanse = kind === 'expanse';
-    const isRoom = kind === 'room';
-    const isThing = kind === 'thing';
-    const isVehicle = kind === 'vehicle';
+    const isExpanse = hasKind(entity, 'expanse');
+    const isRoom = hasKind(entity, 'room');
+    const isThing = hasKind(entity, 'thing');
+    const isVehicle = hasKind(entity, 'vehicle');
     const expanseLines = decl.vehicleLines.filter((l) => EXPANSE_LINE_KEYS.has(l.key));
     const sightLine = vehicleLineOf(decl, 'sight');
     const afarLine = vehicleLineOf(decl, 'seen-from-afar');
@@ -152,7 +147,8 @@ function buildExpanse(decl: CreateDecl, entity: EntityDraft, context: EntityBuil
     const id = context.resolveEntityId(row.room);
     if (id === null) continue;
     const roomName = row.room.words.join(' ');
-    if (kindOf(context.byId.get(id)?.decl ?? decl) !== 'room' || id === entity.id) {
+    const landmark = context.byId.get(id)?.decl;
+    if (!landmark || !isKindDecl(landmark, 'room') || id === entity.id) {
       context.diagnostics.error(
         'analysis.landmark-not-room',
         `\`${roomName}\` is not a room — a landmark is a room the expanse holds at its coordinates.`,
@@ -225,7 +221,7 @@ function checkPlacement(decl: CreateDecl, entity: EntityDraft, context: EntityBu
   if (!placement) return;
   const placeId = context.resolveEntityIdSilent(placement.place);
   const expanse: ExpanseDecl | undefined = placeId !== null ? context.expanses.get(placeId) : undefined;
-  const floats = hasAdjective(decl, 'floats');
+  const floats = entity.traits.some((t) => t.name === 'floats');
   const open = context.vehicles.get(entity.id)?.movement === 'open';
   const placeName = placement.place.words.join(' ');
   if (placement.at) {

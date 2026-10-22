@@ -136,8 +136,8 @@ export function goingFromVehicle(world: WorldModel, actorId: string): VehicleGoi
 
 /**
  * Whether a vehicle's machine is moving it (ADR-366 D5e): a line stepping
- * along its stops, a compass vehicle on a heading, a flight vehicle in its
- * passage, an open vehicle on a heading or a course. A `none` or streets
+ * along its stops, a compass vehicle on a heading, a flight vehicle on its
+ * trip, an open vehicle on a heading or a course. A `none` or streets
  * vehicle is never under way.
  *
  * @param vehicle - A vehicle; false when it has no model
@@ -495,7 +495,7 @@ export function stopVehicle(vehicle: IFEntity): boolean {
 
 /**
  * `send <vehicle> to <destination>` (ADR-366 D5d; ADR-376 D3): a flight
- * vehicle leaves its room and is nowhere for the passage, then arrives; an
+ * vehicle leaves its room and is nowhere for the trip, then arrives; an
  * open vehicle takes a course for a landmark's cell or a cell of its
  * expanse, dropping any heading, and leaves its landmark for the expanse
  * (D5). The departure and the arrival are the machine's per-turn work; this
@@ -515,7 +515,7 @@ export function sendVehicle(world: WorldModel, vehicle: IFEntity, destination: s
   if (model?.kind === 'flight') {
     if (typeof destination !== 'string' || !model.destinations.includes(destination)) return false;
     model.destination = destination;
-    model.turnsRemaining = model.passage;
+    model.turnsRemaining = model.pace;
     return true;
   }
   if (model?.kind !== 'open') return false;
@@ -681,7 +681,7 @@ export function isAboardVehicle(world: WorldModel, entityId: string, vehicleId: 
  * (`vehicle-arrived`, a stop, the room in its heading, its destination, or
  * a landmark), it ran out of way or reached its course and took itself out
  * of the way (`vehicle-stopped`, reported once), it left its room for the
- * passage (`departed`, which no stock line reports: the fold is the
+ * trip (`departed`, which no stock line reports: the fold is the
  * author's sequence on `becomes under way`), it came alongside a floating
  * thing and stopped (`vehicle-alongside`, ADR-376 D10), or it reached an
  * edge of its expanse and stopped (`expanse-edge` or the edge's own phrase,
@@ -701,7 +701,7 @@ export type VehicleStep =
  * one machine and differ only in what a step is (D5f): a line steps to the
  * next stop or to where its `position` block says, a compass vehicle steps
  * along the exit in its heading, a flight vehicle leaves, is nowhere for
- * the passage, and arrives. Every move is `WorldModel.moveEntity`, so what
+ * the trip, and arrives. Every move is `WorldModel.moveEntity`, so what
  * the vehicle holds comes along (D4), and every piece of machine state
  * written here is a trait field (D5g).
  *
@@ -819,7 +819,7 @@ function stepCompass(
 
 /**
  * D5d: bound for a destination, the vehicle leaves its room on the first
- * turn and is nowhere; the passage counts down a turn at a time; at zero
+ * turn and is nowhere; the trip counts down a turn at a time; at zero
  * it arrives and is no longer under way.
  */
 function stepFlight(world: WorldModel, vehicle: IFEntity, model: VehicleFlightMovement): VehicleStep | undefined {

@@ -12,6 +12,7 @@
  * - ADR-376 D10 — `drift:`, read by a floating thing's placement check.
  */
 import type { CreateDecl, LandmarkRowDecl } from '../ast.js';
+import { entityIdOf, isKindDecl } from './declared.js';
 import { vehicleLineOf } from './vehicles.js';
 
 export interface ExpanseDecl {
@@ -30,7 +31,7 @@ export interface ExpanseDecl {
 
 /** True for a block composed `an expanse`. */
 export function isExpanseDecl(decl: CreateDecl): boolean {
-  return decl.compositions.some((c) => c.article !== null && c.words.join(' ').toLowerCase() === 'expanse');
+  return isKindDecl(decl, 'expanse');
 }
 
 /**
@@ -44,7 +45,7 @@ export function collectExpanses(decls: readonly { kind: string }[]): Map<string,
     if (decl.kind !== 'create') continue;
     const create = decl as CreateDecl;
     if (!isExpanseDecl(create)) continue;
-    const id = create.name.words.join('-').toLowerCase();
+    const id = entityIdOf(create.name.words);
     const sizeLine = vehicleLineOf(create, 'size');
     out.set(id, {
       id,

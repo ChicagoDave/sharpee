@@ -207,7 +207,14 @@ const PINNED = {
   // to 4.0.0 (ADR-359 and ADR-361 make it a MAJOR), set `languageVersion`
   // below to match, and leave this hash as it stands unless the grammar
   // moved in between.
-  ebnfSha256: 'f12d98529ddbf622f843d53cae723eee73dd0367824354f480d951fe37ae410e',
+  // Re-pinned 2026-10-22 (session 51f88b, alignment-fixes Phase 7, ADR-380):
+  // the grammar moved. `passage-line` becomes `passage-block` (`passage to
+  // <room> … end passage` with a slot-free `grammar`, and `while`, `blocked`,
+  // `deadly` lines inside it); the blocked and deadly lines take `DIRECTION`
+  // again (`exit-key` removed); a vehicle's `passage:` line is retired for
+  // `pace:`; `pattern-elem` gains `[the]`. BREAKING, on the same unpublished
+  // 4.0.0 surface — no bump; the number moves at publish.
+  ebnfSha256: 'e0a7e7c4e2a5d9f9bc72081f1b1da9d13c3dea165ee6a21569c31e36cc17a2a4',
 };
 
 // Colocated with the version pin it gates (2026-08-14). It previously lived at

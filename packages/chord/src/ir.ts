@@ -263,6 +263,15 @@ export interface IRMeta {
 // entities
 // --------------------------------------------------------------------------
 
+/**
+ * The movement types a vehicle names, in the order the language lists them:
+ * the base types (ADR-366 D5) and `open` under `use expanses` (ADR-376 D3).
+ * The parser's closed word list, the AST and IR types and the analyzer's
+ * movement table all read this one list.
+ */
+export const MOVEMENT_TYPES = ['none', 'line', 'streets', 'compass', 'flight', 'open'] as const;
+export type IRVehicleMovement = (typeof MOVEMENT_TYPES)[number];
+
 /** One `when <condition>: <stop>` row of a `position` block (ADR-366 D5a), resolved. */
 export interface IRPositionRow {
   condition: IRCondition;
@@ -277,8 +286,7 @@ export interface IRPositionRow {
  * loader reads this as true.
  */
 export interface IRVehicle {
-  /** The base types (ADR-366 D5), and `open` under `use expanses` (ADR-376 D3). */
-  movement: 'none' | 'line' | 'streets' | 'compass' | 'flight' | 'open';
+  movement: IRVehicleMovement;
   /** `carries: in | on` — the player's preposition (`EnterableTrait.preposition`). Absent with rooms aboard. */
   carries?: 'in' | 'on';
   /** `drive:` — absent on `none`. */
@@ -288,12 +296,10 @@ export interface IRVehicle {
   /** A line's stops, in order (entity ids). */
   stops?: string[];
   direction?: 'both' | 'one-way';
-  /** Turns per step (`line` under `control`, `compass`). */
+  /** Turns per step (`line` under `control`, `compass`, `open`); a flight's step is the whole trip (ADR-380 D3). */
   pace?: number;
   /** A flight vehicle's destinations (entity ids). */
   destinations?: string[];
-  /** A flight vehicle's passage, in turns. */
-  passage?: number;
   /** The rooms inside the vehicle (entity ids), D7. */
   aboard?: string[];
   /** The boarding room (entity id), D7. */
@@ -1429,6 +1435,25 @@ export interface IRMust {
   condition: IRCondition;
   phraseKey: string;
   span: Span;
+}
+
+/**
+ * A Chord action's primary slot: the first entity slot in pattern order,
+ * whose entity's `on <actor> <action>` clauses the action consults and
+ * whose `otherwise refuse` fires when that entity answers none. A
+ * directions block's `direction` is a semantic key, not an entity slot
+ * (ADR-275), and an instrument-typed slot sits in the command's instrument
+ * seat (GH #333), so neither is ever primary.
+ * @param def the action's patterns, directions and slot types
+ * @returns the slot's word, or undefined when no pattern carries an entity slot
+ */
+export function primarySlotOf(def: Pick<IRActionDef, 'patterns' | 'directions' | 'slotTypes'>): string | undefined {
+  const hasDirections = (def.directions ?? []).length > 0;
+  const instruments = new Set((def.slotTypes ?? []).filter((t) => t.type === 'instrument').map((t) => t.slot));
+  return def.patterns
+    .flatMap((p) => p.parts)
+    .filter((part): part is Extract<IRPatternPart, { kind: 'slot' }> => part.kind === 'slot')
+    .find((part) => !(hasDirections && part.word === 'direction') && !instruments.has(part.word))?.word;
 }
 
 export interface IRActionPattern {

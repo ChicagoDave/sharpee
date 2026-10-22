@@ -20,9 +20,7 @@ export const playableBuilder: EntityLineBuilder = {
   build(decl, entity, context) {
     const { isPerson, isPlayable } = entity;
     if (isPlayable && !isPerson) {
-      const comp = decl.compositions.find(
-        (c) => !c.article && c.words.length === 1 && c.words[0].toLowerCase() === 'playable',
-      )!;
+      const comp = decl.compositions.find((c) => !c.article && c.words.join(' ').toLowerCase() === 'playable')!;
       context.diagnostics.error(
         'analysis.playable-non-person',
         `\`playable\` marks a character who can hold the player role — \`${decl.name.words.join(' ')}\` is not \`a person\`.`,

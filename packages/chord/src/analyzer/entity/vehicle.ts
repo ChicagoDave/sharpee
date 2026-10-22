@@ -1,6 +1,6 @@
 /**
  * vehicle.ts — the block's vehicle lines: `movement:`, `carries:`, `drive:`,
- * `commands:`, `stops:`, `direction:`, `pace:`, `destinations:`, `passage:`,
+ * `commands:`, `stops:`, `direction:`, `pace:`, `destinations:`,
  * `aboard:`, `boarded through:`, the `position` block, and a room's
  * `admits:` line; also the `to outside` exit's host gate.
  *
@@ -23,9 +23,9 @@
  * - ADR-378 D6 — `pushing` in an `admits` list; the same list on an exit line.
  */
 import type { CreateDecl, NameRef, VehicleLine } from '../../ast.js';
-import { ADMITS_PUSHING, type IRPositionRow, type IRVehicle } from '../../ir.js';
+import { ADMITS_PUSHING, type IRPositionRow, type IRVehicle, MOVEMENT_TYPES } from '../../ir.js';
 import type { Scope } from '../../analyzer.js';
-import { MOVEMENT_TABLE, placeIdsOf, vehicleLineOf, type VehicleDecl, type VehicleLineOf } from '../vehicles.js';
+import { MOVEMENT_TABLE, placeIdsOf, type RequiredLine, vehicleLineOf, type VehicleDecl, type VehicleLineOf } from '../vehicles.js';
 import { manifestForMovementType } from '../../manifests/index.js';
 import type { EntityBuildContext, EntityDraft, EntityLineBuilder } from './context.js';
 
@@ -37,8 +37,18 @@ import type { EntityBuildContext, EntityDraft, EntityLineBuilder } from './conte
  */
 const PLACE_LINE_KEYS: ReadonlySet<VehicleLine['key']> = new Set(['admits', 'size', 'visibility', 'drift', 'sight', 'seen-from-afar', 'wind']);
 
-/** The movement types whose vehicles a room's `admits:` line may name (D6). */
-const STEERED: ReadonlySet<string> = new Set(['streets', 'compass']);
+/** What a missing required line is, and what to write (the table's `required`). */
+const MISSING_LINE: Record<RequiredLine['line'], { code: string; says: string; write: string }> = {
+  pace: { code: 'analysis.vehicle-missing-pace', says: 'says nothing about how many turns a step takes', write: 'pace: <n> turns' },
+  direction: { code: 'analysis.line-missing-direction', says: 'says nothing about which ways its line runs', write: 'direction: both | one-way' },
+  stride: { code: 'analysis.open-missing-stride', says: 'says nothing about how far a step goes', write: 'stride: <n> units' },
+  sight: { code: 'analysis.open-missing-sight', says: 'says nothing about how far one sees from it', write: 'sight: <n>' },
+  'seen-from-afar': {
+    code: 'analysis.missing-seen-from-afar',
+    says: 'can be seen across an expanse and says nothing of how it looks from there',
+    write: 'seen from afar: <text>',
+  },
+};
 
 
 /**
@@ -56,7 +66,7 @@ export function resolveAdmitsWord(ref: NameRef, context: EntityBuildContext): st
   const id = context.resolveEntityId(ref);
   if (id === null) return null;
   const vehicle = context.vehicles.get(id);
-  if (!vehicle || !vehicle.movement || !STEERED.has(vehicle.movement)) {
+  if (!vehicle || !vehicle.movement || !MOVEMENT_TABLE[vehicle.movement].steered) {
     context.diagnostics.error(
       'analysis.admits-not-steered-vehicle',
       `\`${ref.words.join(' ')}\` is not a steered vehicle or \`pushing\` — \`admits\` lists \`movement: streets\` and \`movement: compass\` vehicles, the ones that choose where to go, and the word \`pushing\` for a thing pushed along the way. A line's stops and a flight's destinations admit it by being named.`,
@@ -106,7 +116,7 @@ export const vehicleBuilder: EntityLineBuilder = {
       return;
     }
 
-    const enterable = decl.compositions.find((c) => c.article === null && c.words.join(' ') === 'enterable');
+    const enterable = entity.traits.find((t) => t.name === 'enterable');
     if (enterable) {
       context.diagnostics.error(
         'analysis.vehicle-already-enterable',
@@ -129,7 +139,7 @@ export const vehicleBuilder: EntityLineBuilder = {
     if (!movementLine) {
       context.diagnostics.error(
         'analysis.vehicle-missing-movement',
-        `\`${name}\` is a vehicle and names no movement type — add \`movement: none | line | streets | compass | flight\`.`,
+        `\`${name}\` is a vehicle and names no movement type — add \`movement: ${MOVEMENT_TYPES.join(' | ')}\`.`,
         decl.span,
       );
       return;
@@ -176,7 +186,7 @@ export const vehicleBuilder: EntityLineBuilder = {
     const boardedLine = row.lines.has('boarded-through') ? vehicleLineOf(decl, 'boarded-through') : undefined;
     const carriesLine = vehicleLineOf(decl, 'carries');
     if (aboardLine) {
-      const aboard = placeIdsOf(aboardLine.names, (ref) => context.resolveEntityId(ref));
+      const aboard = distinctPlaces(aboardLine.names, 'aboard', name, context);
       vehicle.aboard = aboard;
       if (carriesLine) {
         context.diagnostics.error(
@@ -185,7 +195,7 @@ export const vehicleBuilder: EntityLineBuilder = {
           carriesLine.span,
         );
       }
-      const openable = decl.compositions.find((c) => c.article === null && c.words.join(' ') === 'openable');
+      const openable = entity.traits.find((t) => t.name === 'openable');
       if (openable) {
         context.diagnostics.error(
           'analysis.vehicle-aboard-openable',
@@ -276,7 +286,7 @@ export const vehicleBuilder: EntityLineBuilder = {
           if (set.word === 'naval' && movement !== 'open') {
             // ADR-375 D1: the naval set is a sailing vehicle's, and sailing is `movement: open`.
             context.diagnostics.error(
-              'analysis.sailing-not-open',
+              'analysis.commands-not-for-movement',
               `\`commands: naval\` is a sailing vehicle's set, and sailing is \`movement: open\` — \`${name}\` is \`movement: ${movement}\`.`,
               set.span,
             );
@@ -300,30 +310,31 @@ export const vehicleBuilder: EntityLineBuilder = {
       );
     }
 
-    // The type's own lines.
+    // The lines the type requires (the table's `required`), then its own lines.
+    for (const { line, drives } of row.required) {
+      if (drives && (drive === null || !drives.has(drive))) continue;
+      // ADR-375 D4: a `sailing` block stands in for `pace:`; both is the sailing builder's.
+      if (line === 'pace' && decl.sailingBlock) continue;
+      if (!vehicleLineOf(decl, line)) {
+        const missing = MISSING_LINE[line];
+        context.diagnostics.error(missing.code, `\`${name}\` is a \`movement: ${movement}\` vehicle and ${missing.says} — add \`${missing.write}\`.`, decl.span);
+      }
+    }
     const paceLine = row.lines.has('pace') ? vehicleLineOf(decl, 'pace') : undefined;
     if (paceLine) vehicle.pace = paceLine.turns;
     switch (movement) {
       case 'line':
         buildLine(decl, context, name, vehicle, drive, paceLine, entity.scope);
         break;
-      case 'compass':
-        if (!paceLine) {
-          context.diagnostics.error(
-            'analysis.vehicle-missing-pace',
-            `\`${name}\` moves on its heading and says nothing about how fast — add \`pace: <n> turns\`.`,
-            decl.span,
-          );
-        }
-        break;
       case 'flight':
         buildFlight(decl, context, name, vehicle);
         break;
       case 'open':
-        buildOpen(decl, context, name, vehicle, paceLine);
+        buildOpen(decl, context, name, vehicle);
         break;
       case 'none':
       case 'streets':
+      case 'compass':
         break;
     }
 
@@ -332,56 +343,18 @@ export const vehicleBuilder: EntityLineBuilder = {
 };
 
 /**
- * The open vehicle's own lines (ADR-376 D3, D6): `pace:`, `stride:`,
- * `sight:` and `seen from afar:`, each required, and a placement `in
+ * The open vehicle's own lines (ADR-376 D3, D6): `stride:`, `sight:` and
+ * `seen from afar:` lowered (the table requires them), and a placement `in
  * <expanse> at <x>, <y>` (the coordinates themselves are the expanse
  * builder's check, shared with floating things).
  */
-function buildOpen(
-  decl: CreateDecl,
-  context: EntityBuildContext,
-  name: string,
-  vehicle: IRVehicle,
-  paceLine: VehicleLineOf<'pace'> | undefined,
-): void {
-  // ADR-375 D4, D5: a `sailing` block stands in for `pace:`; both, or neither, is the sailing builder's.
-  if (!paceLine && !decl.sailingBlock) {
-    context.diagnostics.error(
-      'analysis.vehicle-missing-pace',
-      `\`${name}\` moves across an expanse and says nothing about how often — add \`pace: <n> turns\` or a \`sailing\` block.`,
-      decl.span,
-    );
-  }
+function buildOpen(decl: CreateDecl, context: EntityBuildContext, name: string, vehicle: IRVehicle): void {
   const strideLine = vehicleLineOf(decl, 'stride');
-  if (!strideLine) {
-    context.diagnostics.error(
-      'analysis.open-missing-stride',
-      `\`${name}\` says nothing about how far a step goes — add \`stride: <n> units\`.`,
-      decl.span,
-    );
-  } else {
-    vehicle.stride = strideLine.units;
-  }
+  if (strideLine) vehicle.stride = strideLine.units;
   const sightLine = vehicleLineOf(decl, 'sight');
-  if (!sightLine) {
-    context.diagnostics.error(
-      'analysis.open-missing-sight',
-      `\`${name}\` says nothing about how far one sees from it — add \`sight: <n>\`.`,
-      decl.span,
-    );
-  } else {
-    vehicle.sight = sightLine.value;
-  }
+  if (sightLine) vehicle.sight = sightLine.value;
   const afarLine = vehicleLineOf(decl, 'seen-from-afar');
-  if (!afarLine) {
-    context.diagnostics.error(
-      'analysis.missing-seen-from-afar',
-      `\`${name}\` can be seen across an expanse and says nothing of how it looks from there — add \`seen from afar: <text>\`.`,
-      decl.span,
-    );
-  } else {
-    vehicle.seenFromAfar = afarLine.text;
-  }
+  if (afarLine) vehicle.seenFromAfar = afarLine.text;
   const placed = decl.placement ? context.resolveEntityIdSilent(decl.placement.place) : null;
   if (placed === null || !context.expanses.has(placed)) {
     context.diagnostics.error(
@@ -445,22 +418,7 @@ function buildLine(
   scope: Scope,
 ): void {
   const stopsLine = vehicleLineOf(decl, 'stops');
-  const stops: string[] = [];
-  if (stopsLine) {
-    for (const ref of stopsLine.names) {
-      const id = context.resolveEntityId(ref);
-      if (id === null) continue;
-      if (stops.includes(id)) {
-        context.diagnostics.error(
-          'analysis.line-repeated-stop',
-          `\`${ref.words.join(' ')}\` is already a stop of \`${name}\` — a line names each stop once.`,
-          ref.span,
-        );
-        continue;
-      }
-      stops.push(id);
-    }
-  }
+  const stops = stopsLine ? distinctPlaces(stopsLine.names, 'stops', name, context) : [];
   if (stops.length < 2) {
     context.diagnostics.error(
       'analysis.line-too-few-stops',
@@ -471,15 +429,7 @@ function buildLine(
   vehicle.stops = stops;
 
   const directionLine = vehicleLineOf(decl, 'direction');
-  if (!directionLine) {
-    context.diagnostics.error(
-      'analysis.line-missing-direction',
-      `\`${name}\` says nothing about which ways its line runs — add \`direction: both\` or \`direction: one-way\`.`,
-      decl.span,
-    );
-  } else {
-    vehicle.direction = directionLine.value;
-  }
+  if (directionLine) vehicle.direction = directionLine.value;
 
   // D5: a line vehicle starts at one of its stops.
   const placed = decl.placement ? context.resolveEntityIdSilent(decl.placement.place) : null;
@@ -515,13 +465,6 @@ function buildLine(
         'analysis.position-without-state',
         `A \`position\` block says where a \`drive: state\` line is — \`${name}\` is \`drive: control\`, moved by \`start\` and \`stop\`. Remove the block, or write \`drive: state\`.`,
         decl.positionBlock.span,
-      );
-    }
-    if (!paceLine) {
-      context.diagnostics.error(
-        'analysis.vehicle-missing-pace',
-        `\`${name}\` steps along its line and says nothing about how fast — add \`pace: <n> turns\`.`,
-        decl.span,
       );
     }
   }
@@ -578,11 +521,38 @@ function buildPosition(
   return { rows, otherwise };
 }
 
-/** The flight's own lines (D5d): destinations and the passage. */
+/**
+ * The places a vehicle's list names (`stops:`, `destinations:`, `aboard:`),
+ * resolved, each once. A place named again is `analysis.vehicle-place-repeated`
+ * and dropped; an unresolved name is already reported.
+ * @param names the list's names, in order
+ * @param list the line's word, for the message
+ * @param name the vehicle's name, for the message
+ * @param context the build context
+ * @returns the resolved ids, in order, without repeats
+ */
+function distinctPlaces(names: readonly NameRef[], list: string, name: string, context: EntityBuildContext): string[] {
+  const out: string[] = [];
+  for (const ref of names) {
+    const id = context.resolveEntityId(ref);
+    if (id === null) continue;
+    if (out.includes(id)) {
+      context.diagnostics.error(
+        'analysis.vehicle-place-repeated',
+        `\`${ref.words.join(' ')}\` is already in \`${list}:\` of \`${name}\` — the list names each place once.`,
+        ref.span,
+      );
+      continue;
+    }
+    out.push(id);
+  }
+  return out;
+}
+
+/** The flight's own lines (D5d): its destinations, and where it starts. */
 function buildFlight(decl: CreateDecl, context: EntityBuildContext, name: string, vehicle: IRVehicle): void {
   const destinationsLine = vehicleLineOf(decl, 'destinations');
-  const destinations = destinationsLine ? placeIdsOf(destinationsLine.names, (ref) => context.resolveEntityId(ref)) : [];
-  const unique = [...new Set(destinations)];
+  const unique = destinationsLine ? distinctPlaces(destinationsLine.names, 'destinations', name, context) : [];
   if (unique.length < 2) {
     context.diagnostics.error(
       'analysis.flight-too-few-destinations',
@@ -591,16 +561,6 @@ function buildFlight(decl: CreateDecl, context: EntityBuildContext, name: string
     );
   }
   vehicle.destinations = unique;
-  const passageLine = vehicleLineOf(decl, 'passage');
-  if (!passageLine) {
-    context.diagnostics.error(
-      'analysis.flight-no-passage',
-      `\`${name}\` says nothing about how long its passage takes — add \`passage: <n> turns\`.`,
-      decl.span,
-    );
-  } else {
-    vehicle.passage = passageLine.turns;
-  }
   const placed = decl.placement ? context.resolveEntityIdSilent(decl.placement.place) : null;
   if (unique.length >= 2 && (placed === null || !unique.includes(placed))) {
     context.diagnostics.error(

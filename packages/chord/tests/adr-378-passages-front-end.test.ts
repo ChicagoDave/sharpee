@@ -1,6 +1,8 @@
 /**
  * adr-378-passages-front-end.test.ts — ADR-378's declaration surface on the
- * chord side (Chord 4.0 Phase 14, Slice 3): the `passage` room line (D1),
+ * chord side (Chord 4.0 Phase 14, Slice 3): the passage (D1, written as
+ * ADR-380 D1's `passage to <room> … end passage` block, its retired line
+ * forms refused per ADR-380 D4),
  * `while` on an exit line (D3), `admits` on an exit line and `pushing` in a
  * room's `admits:` (D6), and `define action … while` (D5) — parsed, analyzed
  * and lowered to IR. Every case asserts an IR field or a specific diagnostic
@@ -100,73 +102,113 @@ const errorCodes = (source: string) =>
 
 const exitsOf = (ir: StoryIR, id: string): IRExit[] => ir.entities.find((e) => e.id === id)!.exits;
 
-describe('the passage line (ADR-378 D1)', () => {
-  it('lowers to an exit keyed by its first form, carrying every form, with no reverse flag', () => {
-    const ir = compiled(trench('passage follow the cables or crawl along the cables to the Sorting Room'));
-    const [, passage] = exitsOf(ir, 'cable-trench');
-    expect(passage.direction).toBe('passage:follow-the-cables');
-    expect(passage.passage).toEqual(['follow the cables', 'crawl along the cables']);
-    expect(passage.to).toEqual({ kind: 'room', id: 'sorting-room' });
-    expect(passage.via).toBeNull();
-    expect(passage.oneWay).toBeUndefined();
-    expect(passage.condition).toBeUndefined();
-    expect(passage.admits).toBeUndefined();
+/** A passage block's lines for `trench()`: the head, `grammar`, its commands, any inner lines, `end passage`. */
+const passage = (head: string, commands: string[], ...inner: string[]) => [
+  `passage to ${head}`,
+  '  grammar',
+  ...commands.map((c) => `    ${c}`),
+  ...inner.map((l) => `  ${l}`),
+  'end passage',
+];
+
+describe('the passage block (ADR-380 D1)', () => {
+  it('lowers to an exit keyed by its first command, carrying every command, with no reverse flag', () => {
+    const ir = compiled(trench(...passage('the Sorting Room', ['follow the cables', 'crawl along the cables'])));
+    const [, way] = exitsOf(ir, 'cable-trench');
+    expect(way.direction).toBe('passage:follow-the-cables');
+    expect(way.passage).toEqual(['follow the cables', 'crawl along the cables']);
+    expect(way.to).toEqual({ kind: 'room', id: 'sorting-room' });
+    expect(way.via).toBeNull();
+    expect(way.oneWay).toBeUndefined();
+    expect(way.condition).toBeUndefined();
+    expect(way.admits).toBeUndefined();
   });
 
-  it('takes `through <door>` as any exit does', () => {
-    const ir = compiled(trench('passage follow the cables to the Sorting Room through the grating') + GRATING);
+  it('`or` and `[…]` expand to the commands they admit, the line as written first', () => {
+    const ir = compiled(trench(...passage('the Sorting Room', ['crawl or creep along [the] cables'])));
+    const [, way] = exitsOf(ir, 'cable-trench');
+    expect(way.direction).toBe('passage:crawl-along-the-cables');
+    expect(way.passage).toEqual(['crawl along the cables', 'crawl along cables', 'creep along the cables', 'creep along cables']);
+  });
+
+  it('`the` in a passage is a word, never a slot', () => {
+    const ir = compiled(trench(...passage('the Sorting Room', ['follow the cables'])));
+    expect(exitsOf(ir, 'cable-trench')[1].passage).toEqual(['follow the cables']);
+  });
+
+  it('takes `through <door>` on its head as any exit does', () => {
+    const ir = compiled(trench(...passage('the Sorting Room through the grating', ['follow the cables'])) + GRATING);
     expect(exitsOf(ir, 'cable-trench')[1].via).toBe('grating');
   });
 
-  it('a single form is one word or many', () => {
-    const ir = compiled(trench('passage xyzzy to the Sorting Room'));
+  it('a single command is one word or many', () => {
+    const ir = compiled(trench(...passage('the Sorting Room', ['xyzzy'])));
     expect(exitsOf(ir, 'cable-trench')[1].direction).toBe('passage:xyzzy');
     expect(exitsOf(ir, 'cable-trench')[1].passage).toEqual(['xyzzy']);
   });
 
-  it('`, one-way` is analysis.passage-one-way — a passage is one-way by construction', () => {
-    const codes = errorCodes(trench('passage xyzzy to the Sorting Room, one-way'));
-    expect(codes).toEqual(['analysis.passage-one-way']);
+  it('`, one-way` on the head is analysis.passage-one-way — a passage is one-way by construction', () => {
+    expect(errorCodes(trench(...passage('the Sorting Room, one-way', ['xyzzy'])))).toEqual(['analysis.passage-one-way']);
   });
 
-  it.each([
-    ['no words before `to`', 'passage to the Sorting Room'],
-    ['an empty form between the `or`s', 'passage xyzzy or or plugh to the Sorting Room'],
-    ['an empty form before `or`', 'passage or plugh to the Sorting Room'],
-    ['a comma inside a form', 'passage climb, rope to the Sorting Room'],
-    ['no destination at all', 'passage xyzzy'],
-  ])('%s is parse.passage-words', (_what, line) => {
-    expect(errorCodes(trench(line))).toContain('parse.passage-words');
+  it('`admits` on the head is parse.exit-trailing — nothing is pushed through a passage', () => {
+    expect(errorCodes(trench(...passage('the Sorting Room admits pushing', ['xyzzy'])))).toEqual(['parse.exit-trailing']);
   });
 
-  it('on a thing it is analysis.exit-non-room, as any exit line is', () => {
-    const codes = errorCodes(story().replace('  states: cold, warm\n', '  states: cold, warm\n  passage xyzzy to the Sorting Room\n'));
+  it('a block with no `grammar` line is parse.passage-line', () => {
+    expect(errorCodes(trench('passage to the Sorting Room', '  while the lantern is warm', 'end passage'))).toContain('parse.passage-line');
+  });
+
+  it('`grammar` with no commands under it is parse.passage-line', () => {
+    expect(errorCodes(trench('passage to the Sorting Room', '  grammar', 'end passage'))).toContain('parse.passage-line');
+  });
+
+  it('a line before `grammar`, or one the block does not take, is parse.passage-line', () => {
+    expect(errorCodes(trench('passage to the Sorting Room', '  while the lantern is warm', '  grammar', '    xyzzy', 'end passage'))).toContain('parse.passage-line');
+    expect(errorCodes(trench(...passage('the Sorting Room', ['xyzzy'], 'north to the Loading Dock')))).toEqual(['parse.passage-line']);
+  });
+
+  it('a second `while`, `blocked` or `deadly` line is parse.passage-line-duplicate', () => {
+    expect(errorCodes(trench(...passage('the Sorting Room', ['xyzzy'], 'while the lantern is warm', 'while the lantern is cold')))).toEqual(['parse.passage-line-duplicate']);
+    expect(errorCodes(trench(...passage('the Sorting Room', ['xyzzy'], 'blocked: dock-sealed', 'blocked: dock-sealed')))).toEqual(['parse.passage-line-duplicate']);
+    expect(errorCodes(trench(...passage('the Sorting Room', ['xyzzy'], 'deadly: dock-sealed', 'deadly: dock-sealed')))).toEqual(['parse.passage-line-duplicate']);
+  });
+
+  it('a missing `end passage` is parse.unterminated-block', () => {
+    expect(errorCodes(trench('passage to the Sorting Room', '  grammar', '    xyzzy'))).toContain('parse.unterminated-block');
+  });
+
+  it('on a thing it is analysis.exit-non-room, as any exit is', () => {
+    const block = '  passage to the Sorting Room\n    grammar\n      xyzzy\n  end passage\n';
+    const codes = errorCodes(story().replace('  states: cold, warm\n', `  states: cold, warm\n${block}`));
     expect(codes).toContain('analysis.exit-non-room');
   });
 
-  it('two passages on one room sharing a form are analysis.duplicate-exit; distinct forms are not', () => {
+  it('two passages on one room sharing a command are analysis.duplicate-exit; distinct commands are not', () => {
     expect(errorCodes(trench(
-      'passage follow the cables to the Sorting Room',
-      'passage crawl or follow the cables to the Loading Dock',
+      ...passage('the Sorting Room', ['follow the cables']),
+      ...passage('the Loading Dock', ['crawl or follow the cables']),
     ))).toEqual(['analysis.duplicate-exit']);
     expect(errorCodes(trench(
-      'passage follow the cables to the Sorting Room',
-      'passage xyzzy to the Loading Dock',
+      ...passage('the Sorting Room', ['follow the cables']),
+      ...passage('the Loading Dock', ['xyzzy']),
     ))).toEqual([]);
   });
 
   it('a passage and a compass exit on one room do not collide', () => {
-    const ir = compiled(trench('passage up the ladder to the Sorting Room'));
+    const ir = compiled(trench(...passage('the Sorting Room', ['up the ladder'])));
     expect(exitsOf(ir, 'cable-trench').map((e) => e.direction)).toEqual(['up', 'passage:up-the-ladder']);
   });
 });
 
-describe('blocked and deadly passage lines (ADR-378 D1)', () => {
-  it('`passage <words> is blocked` names the passage by any form and lowers under its canonical key', () => {
-    const ir = compiled(trench(
-      'passage follow the cables or crawl along the cables to the Sorting Room',
-      'passage crawl along the cables is blocked: dock-sealed',
-    ));
+describe('a passage block\'s `while`, `blocked` and `deadly` lines (ADR-380 D1)', () => {
+  it('`while` lowers onto the passage', () => {
+    const ir = compiled(trench(...passage('the Sorting Room', ['follow the cables'], 'while the lantern is warm')));
+    expect(exitsOf(ir, 'cable-trench')[1].condition).toBeDefined();
+  });
+
+  it('`blocked:` lowers under the passage\'s key', () => {
+    const ir = compiled(trench(...passage('the Sorting Room', ['follow the cables', 'crawl along the cables'], 'blocked: dock-sealed')));
     const room = ir.entities.find((e) => e.id === 'cable-trench')!;
     expect(room.blockedExits).toHaveLength(1);
     expect(room.blockedExits[0].direction).toBe('passage:follow-the-cables');
@@ -174,28 +216,34 @@ describe('blocked and deadly passage lines (ADR-378 D1)', () => {
     expect(room.blockedExits[0].condition).toBeNull();
   });
 
-  it('`passage <words> is blocked while <condition>` carries the condition', () => {
-    const ir = compiled(trench(
-      'passage follow the cables to the Sorting Room',
-      'passage follow the cables is blocked while the lantern is cold: dock-sealed',
-    ));
+  it('`blocked while <condition>:` carries the condition', () => {
+    const ir = compiled(trench(...passage('the Sorting Room', ['follow the cables'], 'blocked while the lantern is cold: dock-sealed')));
     expect(ir.entities.find((e) => e.id === 'cable-trench')!.blockedExits[0].condition).not.toBeNull();
   });
 
-  it('`passage <words> is deadly` lowers under the passage key', () => {
-    const ir = compiled(trench(
-      'passage follow the cables to the Sorting Room',
-      'passage follow the cables is deadly: dock-sealed',
-    ));
+  it('`deadly:` lowers under the passage\'s key', () => {
+    const ir = compiled(trench(...passage('the Sorting Room', ['follow the cables'], 'deadly: dock-sealed')));
     expect(ir.entities.find((e) => e.id === 'cable-trench')!.deadlyExits[0].direction).toBe('passage:follow-the-cables');
   });
 
-  it('naming a passage the room does not declare is analysis.passage-unknown', () => {
-    expect(errorCodes(trench(
-      'passage follow the cables to the Sorting Room',
-      'passage xyzzy is blocked: dock-sealed',
-    ))).toEqual(['analysis.passage-unknown']);
-    expect(errorCodes(trench('passage xyzzy is deadly: dock-sealed'))).toEqual(['analysis.passage-unknown']);
+  it('the inner lines may come in any order after `grammar`', () => {
+    const ir = compiled(trench(...passage('the Sorting Room', ['follow the cables'], 'blocked: dock-sealed', 'while the lantern is warm')));
+    const room = ir.entities.find((e) => e.id === 'cable-trench')!;
+    expect(room.exits[1].condition).toBeDefined();
+    expect(room.blockedExits[0].direction).toBe('passage:follow-the-cables');
+  });
+});
+
+describe('the retired passage lines (ADR-380 D4)', () => {
+  it.each([
+    ['the one-line passage', 'passage follow the cables or crawl along the cables to the Sorting Room'],
+    ['the blocked passage line', 'passage follow the cables is blocked: dock-sealed'],
+    ['the deadly passage line', 'passage follow the cables is deadly: dock-sealed'],
+  ])('%s is parse.passage-line-form, with the block as its fix-it', (_what, line) => {
+    const diag = compile(trench(line)).diagnostics.find((d) => d.code === 'parse.passage-line-form');
+    expect(diag).toBeDefined();
+    expect(diag!.message).toContain('passage to');
+    expect(diag!.message).toContain('end passage');
   });
 });
 
@@ -206,11 +254,6 @@ describe('`while` on an exit line (ADR-378 D3)', () => {
     expect(north.condition).toBeDefined();
     expect(north.condition!.kind).toBeTruthy();
     expect(north.to).toEqual({ kind: 'room', id: 'sorting-room' });
-  });
-
-  it('a passage lowers its condition', () => {
-    const ir = compiled(trench('passage follow the cables to the Sorting Room while the lantern is warm'));
-    expect(exitsOf(ir, 'cable-trench')[1].condition).toBeDefined();
   });
 
   it('a condition-less exit carries no condition field', () => {
@@ -273,7 +316,7 @@ describe('`admits` on an exit line and `pushing` in `admits:` (ADR-378 D6)', () 
   });
 
   it('on a passage it is parse.exit-trailing — a passage is not a direction', () => {
-    expect(errorCodes(trench('passage xyzzy to the Sorting Room admits pushing'))).toContain('parse.exit-trailing');
+    expect(errorCodes(trench(...passage('the Sorting Room admits pushing', ['xyzzy'])))).toContain('parse.exit-trailing');
   });
 
   it('on an `exits:` line it is parse.exits-line-admits; in a table row parse.exit-row-admits', () => {
@@ -384,7 +427,7 @@ ${rows}
     // The Sorting Room has no exit to the Yard-less Cable Trench in the base fixture.
     expect(errorCodes(story(TROLLEY('    from the Sorting Room to the Cable Trench')))).toEqual(['analysis.pushing-no-exit']);
     // A passage is not a direction, so it does not count.
-    expect(errorCodes(trench('passage xyzzy to the Sorting Room') + TROLLEY('    from the Cable Trench to the Sorting Room'))).toEqual(['analysis.pushing-no-exit']);
+    expect(errorCodes(trench(...passage('the Sorting Room', ['xyzzy'])) + TROLLEY('    from the Cable Trench to the Sorting Room'))).toEqual(['analysis.pushing-no-exit']);
     // The inferred reverse of a two-way line the far room wrote does count.
     expect(errorCodes(trench('east to the Sorting Room') + TROLLEY('    from the Sorting Room to the Cable Trench'))).toEqual([]);
   });

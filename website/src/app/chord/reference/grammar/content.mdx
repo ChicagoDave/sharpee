@@ -52,7 +52,8 @@ is declarations: `create` blocks and `define` forms.
 | Declared states | `states: guarded, softened` (`states, reversible:` allows going back) |
 | Pronouns (people) | `pronouns she` |
 | Exits (rooms) | `north to the Hall through the oak door` · `west to outside` (a room aboard a vehicle; lands where the vehicle is) |
-| Vehicle lines (vehicles) | `movement: line` · `carries: in` · `drive: control` · `stops: the Platform, the Terminus` · `direction: both` · `pace: 2 turns` · `commands: compass` · `destinations: …` · `passage: 5 turns` · `aboard: the Hold, the Airlock` · `boarded through: the Airlock` · `position … end position` (where a `drive: state` line is) |
+| Passages (rooms) | `passage to the Loft` · `grammar` + one command per line · `while …` · `blocked: …` · `deadly: …` · `end passage` — an exit the player takes by typing its command |
+| Vehicle lines (vehicles) | `movement: line` · `carries: in` · `drive: control` · `stops: the Platform, the Terminus` · `direction: both` · `pace: 2 turns` · `commands: compass` · `destinations: …` · `pace: 5 turns` (a flight's trip) · `aboard: the Hold, the Airlock` · `boarded through: the Airlock` · `position … end position` (where a `drive: state` line is) |
 | Admitted vehicles (rooms, groups, regions) | `admits: the bicycle, the Marigold` — the steered vehicles that may enter |
 | Blocked exits (rooms) | `west is blocked while the boiler is off: frost-sealed` |
 | Region membership (regions) | `containing the Drive, the Hall` |
@@ -93,7 +94,7 @@ The working vocabulary inside clause and action bodies:
 | `refuse <key>` | block the action with a reason (in `on` clauses) |
 | `change <name> to <state>` | move an entity (or `the story`) to a declared state |
 | `move <name> to <name>` | relocate an entity — *move puts*; a vehicle carries what it holds, and a `drive: control` line is moved only to one of its stops |
-| `start <vehicle> [heading <direction>]` / `stop <vehicle>` / `send <vehicle> to <destination>` | drive a vehicle's own machine: a `drive: control` line or compass vehicle under way or halted, a `drive: control` flight vehicle on its passage |
+| `start <vehicle> [heading <direction>]` / `stop <vehicle>` / `send <vehicle> to <destination>` | drive a vehicle's own machine: a `drive: control` line or compass vehicle under way or halted, a `drive: control` flight vehicle on its trip |
 | `<character> <verb> [<object>] [<preposition> <object>]` | that character performs the action now, through the same pipeline as a typed command — *acting does*: it can be refused, witnessed, and reacted to (never `the player`; not in `on` intercepts) |
 | `remove <name>` | take an entity out of play, permanently |
 | `award <words>` | score |

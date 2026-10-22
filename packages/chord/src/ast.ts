@@ -10,6 +10,7 @@
  * Public interface: every exported node type; StoryFile is the root.
  * Owner context: @sharpee/chord (language frontend; browser-safe).
  */
+import type { IRVehicleMovement } from './ir.js';
 import type { Span } from './span.js';
 
 /** Root of a parsed `.story` file. */
@@ -262,7 +263,7 @@ export interface CounterDecl {
  */
 export type VehicleLine =
   /** The base types, and `open` under `use expanses` (ADR-376 D3). */
-  | { key: 'movement'; value: 'none' | 'line' | 'streets' | 'compass' | 'flight' | 'open'; span: Span }
+  | { key: 'movement'; value: IRVehicleMovement; span: Span }
   /** `carries: in` / `carries: on` — the colon tells it from `carries <name>`. */
   | { key: 'carries'; value: 'in' | 'on'; span: Span }
   | { key: 'drive'; value: 'state' | 'control' | 'player'; span: Span }
@@ -272,7 +273,7 @@ export type VehicleLine =
   | { key: 'stops' | 'destinations' | 'aboard' | 'admits'; names: NameRef[]; span: Span }
   | { key: 'direction'; value: 'both' | 'one-way'; span: Span }
   /** `pace: <n> turn[s]` / `passage: <n> turn[s]` — a whole number of one or more. */
-  | { key: 'pace' | 'passage'; turns: number; span: Span }
+  | { key: 'pace'; turns: number; span: Span }
   | { key: 'boarded-through'; name: NameRef; span: Span }
   /** `stride: <n> unit[s]` (ADR-376 D3) — an open vehicle's units per step, one or more. */
   | { key: 'stride'; units: number; span: Span }

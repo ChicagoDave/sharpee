@@ -15,9 +15,18 @@ import {
 } from '@sharpee/if-domain';
 import { type Token } from '@sharpee/if-domain';
 import { EnglishPatternCompiler } from './english-pattern-compiler.js';
-import { cardinalNumbers, ordinalNumbers, directionMap } from '@sharpee/lang-en-us';
+import { cardinalNumbers, ordinalNumbers, directionMap, englishWords } from '@sharpee/lang-en-us';
 import { SlotConsumerRegistry, SlotConsumerContext, createDefaultRegistry } from './slot-consumers/index.js';
 import type { PartialMatchFailure, SlotFailure } from './parse-failure.js';
+
+/**
+ * English articles. A pattern's literal article after its verb is optional
+ * for the player and its absence costs nothing: `follow cables` matches
+ * `follow the cables` exactly as well as the full form does (ADR-380 D2).
+ * Articles are the English parser's to know; no language-neutral layer
+ * lists them.
+ */
+const ARTICLE_WORDS: ReadonlySet<string> = new Set(englishWords.articles.map((a) => a.toLowerCase()));
 
 /**
  * Result of attempting to match a rule - either success or failure with info
@@ -168,9 +177,14 @@ export class EnglishGrammarEngine extends GrammarEngine {
     for (const patternToken of pattern.tokens) {
       patternIndex++;
 
+      // An article stands before a noun, never as a command's verb: a
+      // pattern's first word is its verb, even spelled `an` (Dungeo's GDT
+      // code `an :arg...`), so only a later article is optional.
+      const isArticle = patternIndex > 1 && patternToken.type === 'literal' && ARTICLE_WORDS.has(patternToken.value);
+
       // Check if we have a token to match
       if (tokenIndex >= tokens.length) {
-        if (patternToken.optional) {
+        if (patternToken.optional || isArticle) {
           continue;
         }
         // Not enough tokens for required pattern element
@@ -199,6 +213,9 @@ export class EnglishGrammarEngine extends GrammarEngine {
             }
             tokenIndex++;
             literalSpecificity++;
+          } else if (isArticle) {
+            // An article the player left out, written or bracketed: free.
+            continue;
           } else if (patternToken.optional) {
             skippedOptionals++;
             continue;

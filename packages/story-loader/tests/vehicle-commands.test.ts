@@ -101,7 +101,7 @@ create the Sparrow
   drive: player
   commands: destinations
   destinations: the Harbour, the Reef
-  passage: 2 turns
+  pace: 2 turns
   aboard: the Airlock, the Hold
   boarded through: the Airlock
 

@@ -13,7 +13,7 @@
  * References:
  * - ADR-335 D1 — one module per runtime section over a shared core.
  */
-import type { IRActionDef, IROnClause, IRTraitDef, Span } from '@sharpee/chord';
+import { type IRActionDef, type IROnClause, type IRTraitDef, primarySlotOf, type Span } from '@sharpee/chord';
 import type { ISemanticEvent } from '@sharpee/core';
 import type { Choice } from '@sharpee/if-domain';
 import { type ActionInterceptor, type CapabilityBehavior, type CapabilityEffect, type CapabilitySharedData, type CapabilityValidationResult, Direction, IFEntity, type InterceptorReportResult, type InterceptorResult, type InterceptorSharedData, WorldModel } from '@sharpee/world-model';
@@ -311,10 +311,7 @@ export class DispatchVerbsSection {
     // `target` as its primary slot wherever the instrument sits.
     const instrumentSlotNames = new Set((def.slotTypes ?? []).filter((t) => t.type === 'instrument').map((t) => t.slot));
     const isEntitySlot = (word: string) => !(hasDirections && word === 'direction') && !instrumentSlotNames.has(word);
-    const primarySlot = def.patterns
-      .flatMap((p) => p.parts)
-      .filter((part): part is { kind: 'slot'; word: string } => part.kind === 'slot')
-      .find((part) => isEntitySlot(part.word))?.word;
+    const primarySlot = primarySlotOf(def);
     const hasEntityLessPattern = def.patterns.some(
       (p) => !p.parts.some((part) => part.kind === 'slot' && isEntitySlot((part as { word: string }).word)),
     );

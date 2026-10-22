@@ -423,7 +423,7 @@ create the Sparrow
   movement: flight
   drive: control
   destinations: the Mining Platform, the Derelict
-  passage: 2 turns
+  pace: 2 turns
   aboard: the Airlock
   boarded through: the Airlock
 

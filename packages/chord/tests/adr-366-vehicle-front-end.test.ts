@@ -122,7 +122,7 @@ create the Sparrow
   movement: flight
   drive: control
   destinations: the Well Bottom, the Top of the Well
-  passage: 5 turns
+  pace: 5 turns
   aboard: the Airlock, the Hold
   boarded through: the Airlock
 
@@ -277,8 +277,9 @@ describe('the command sets (ADR-366 D5i)', () => {
 
   it('a set the type does not take is analysis.commands-not-for-movement', () => {
     expect(errorCodes(story(BICYCLE.replace('commands: compass', 'commands: destinations')))).toContain('analysis.commands-not-for-movement');
-    // `naval` is a sailing vehicle's set (ADR-375 D1): off an open vehicle it is named as sailing's, not as an unknown set.
-    expect(errorCodes(story(BICYCLE.replace('commands: compass', 'commands: naval')))).toContain('analysis.sailing-not-open');
+    // `naval` is a sailing vehicle's set (ADR-375 D1): the same fault, with a message naming sailing.
+    expect(errorCodes(story(BICYCLE.replace('commands: compass', 'commands: naval')))).toContain('analysis.commands-not-for-movement');
+    expect(errorCodes(story(BICYCLE.replace('commands: compass', 'commands: naval')))).not.toContain('analysis.sailing-not-open');
   });
 
   it('the sets lower in order, once each', () => {
@@ -293,8 +294,8 @@ describe('the line (ADR-366 D5a)', () => {
     expect(errorCodes(story(TRAM.replace('  stops: the Well Bottom, the Top of the Well\n', '')))).toContain('analysis.line-too-few-stops');
   });
 
-  it('a repeated stop is analysis.line-repeated-stop', () => {
-    expect(errorCodes(story(TRAM.replace('stops: the Well Bottom, the Top of the Well', 'stops: the Well Bottom, the Top of the Well, the Well Bottom')))).toContain('analysis.line-repeated-stop');
+  it('a repeated stop is analysis.vehicle-place-repeated', () => {
+    expect(errorCodes(story(TRAM.replace('stops: the Well Bottom, the Top of the Well', 'stops: the Well Bottom, the Top of the Well, the Well Bottom')))).toContain('analysis.vehicle-place-repeated');
   });
 
   it('no `direction:` is analysis.line-missing-direction', () => {
@@ -354,8 +355,12 @@ describe('the compass and free flight (ADR-366 D5c, D5d)', () => {
     expect(errorCodes(story(SPARROW.replace('destinations: the Well Bottom, the Top of the Well', 'destinations: the Well Bottom')))).toContain('analysis.flight-too-few-destinations');
   });
 
-  it('no `passage:` is analysis.flight-no-passage', () => {
-    expect(errorCodes(story(SPARROW.replace('  passage: 5 turns\n', '')))).toContain('analysis.flight-no-passage');
+  it('no `pace:` is analysis.vehicle-missing-pace (ADR-380 D3)', () => {
+    expect(errorCodes(story(SPARROW.replace('  pace: 5 turns\n', '')))).toContain('analysis.vehicle-missing-pace');
+  });
+
+  it('`passage:` on a vehicle is parse.passage-is-pace (ADR-380 D3)', () => {
+    expect(errorCodes(story(SPARROW.replace('  pace: 5 turns\n', '  passage: 5 turns\n')))).toContain('parse.passage-is-pace');
   });
 
   it('a flight vehicle not starting at a destination is analysis.vehicle-not-at-stop', () => {
@@ -370,8 +375,9 @@ describe('the compass and free flight (ADR-366 D5c, D5d)', () => {
       boardedThrough: 'airlock',
       drive: 'control',
       destinations: ['well-bottom', 'top-of-the-well'],
-      passage: 5,
+      pace: 5,
     });
+    expect(vehicleOf(ir, 'sparrow')).not.toHaveProperty('passage');
   });
 });
 

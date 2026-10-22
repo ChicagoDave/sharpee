@@ -143,7 +143,7 @@ describe('steering (ADR-366 D5c, D5i)', () => {
 
 describe('setting course (ADR-366 D5d, D5i)', () => {
   function sparrow(world: WorldModel, at: IFEntity, reef: IFEntity, commands: string[] = ['destinations']): IFEntity {
-    const movement: VehicleMovementConfig = { kind: 'flight', drive: 'player', destinations: [at.id, reef.id], passage: 2 };
+    const movement: VehicleMovementConfig = { kind: 'flight', drive: 'player', destinations: [at.id, reef.id], pace: 2 };
     const ship = vehicle(world, 'Sparrow', new VehicleTrait({ movement, commands }), at, false);
     const airlock = world.createEntity('Airlock', 'object');
     airlock.add(new RoomTrait());
@@ -204,7 +204,7 @@ describe('setting course (ADR-366 D5d, D5i)', () => {
 
     setCourse(world, 'Reef');
     expect(messageIds(setCourse(world, 'Reef'))).toContain('if.action.setting_course.vehicle_under_way');
-    // The refusal leaves the voyage as set: still bound for the Reef, the passage untouched.
+    // The refusal leaves the voyage as set: still bound for the Reef, the trip untouched.
     expect(ship.get(VehicleTrait)!.movement).toMatchObject({ kind: 'flight', destination: reef.id, turnsRemaining: 2 });
   });
 
@@ -220,7 +220,7 @@ describe('setting course (ADR-366 D5d, D5i)', () => {
 
 describe('boarding and the hatch (ADR-366 D7, D7a)', () => {
   function shipWithRooms(world: WorldModel, at: IFEntity, hatchOpen: boolean | undefined): { ship: IFEntity; airlock: IFEntity; hold: IFEntity; hatch?: IFEntity } {
-    const ship = vehicle(world, 'Sparrow', new VehicleTrait({ movement: { kind: 'flight', drive: 'control', destinations: [at.id, 'elsewhere'], passage: 1 } }), at, false);
+    const ship = vehicle(world, 'Sparrow', new VehicleTrait({ movement: { kind: 'flight', drive: 'control', destinations: [at.id, 'elsewhere'], pace: 1 } }), at, false);
     const airlock = world.createEntity('Airlock', 'object');
     airlock.add(new RoomTrait());
     airlock.add(new IdentityTrait({ name: 'Airlock', description: 'A closet.' }));
@@ -424,7 +424,7 @@ describe('the vehicle command transformer (ADR-366 D5b, D5c, D7)', () => {
 
   test('exit in a boarding room with a `to outside` exit becomes going that way, with the noun dropped; elsewhere aboard it stays exiting', () => {
     const { world, player, room } = harbour();
-    const ship = vehicle(world, 'Sparrow', new VehicleTrait({ movement: { kind: 'flight', drive: 'control', destinations: [room.id, 'x'], passage: 1 } }), room, false);
+    const ship = vehicle(world, 'Sparrow', new VehicleTrait({ movement: { kind: 'flight', drive: 'control', destinations: [room.id, 'x'], pace: 1 } }), room, false);
     const airlock = world.createEntity('Airlock', 'object');
     airlock.add(new RoomTrait());
     airlock.add(new AboardTrait({ vehicleId: ship.id, outside: { [Direction.WEST]: { candidates: [room.id] } } }));

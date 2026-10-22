@@ -15,11 +15,11 @@ const HOLDING_KINDS: ReadonlySet<string> = new Set(['container', 'supporter', 'v
 
 export const holdsBuilder: EntityLineBuilder = {
   name: 'holds',
-  requires: [],
+  requires: ['compositions'],
   build(decl, entity, context) {
     const lines = decl.holds;
     if (lines.length === 0) return;
-    const kind = decl.compositions.find((c) => c.article !== null)?.words.join(' ') ?? '';
+    const kind = entity.kinds[0]?.name ?? '';
     if (!HOLDING_KINDS.has(kind)) {
       context.diagnostics.error(
         'analysis.holds-owner',

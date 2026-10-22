@@ -58,7 +58,7 @@ export const sailingBuilder: EntityLineBuilder = {
         entity.expanse.wind = windToIR(windLine.wind);
       } else {
         context.diagnostics.error(
-          'analysis.sailing-not-open',
+          'analysis.expanse-line-owner',
           `\`wind:\` is an expanse's line — \`${name}\` is not \`an expanse\`. A sea where the wind matters is an expanse (ADR-375 D1).`,
           windLine.span,
         );
@@ -105,7 +105,7 @@ function buildSailing(decl: CreateDecl, entity: EntityDraft, context: EntityBuil
     settings = [];
     for (const s of sailsLine.settings) {
       if (settings.includes(s.word)) {
-        context.diagnostics.error('analysis.sails-unknown-setting', `\`${s.word}\` is named twice in \`sails:\` — each setting once, least to most canvas.`, s.span);
+        context.diagnostics.error('analysis.sails-duplicate-setting', `\`${s.word}\` is named twice in \`sails:\` — each setting once, least to most canvas.`, s.span);
         continue;
       }
       settings.push(s.word);
@@ -128,7 +128,7 @@ function buildSailing(decl: CreateDecl, entity: EntityDraft, context: EntityBuil
     }
   } else if (startLine) {
     context.diagnostics.error(
-      'analysis.sails-without-sailing',
+      'analysis.sails-undeclared',
       `\`sails start:\` names a setting of \`sails:\` — \`${name}\` declares none.`,
       startLine.span,
     );
@@ -181,12 +181,16 @@ function buildSailing(decl: CreateDecl, entity: EntityDraft, context: EntityBuil
         paces.push({ setting, pace: cell.pace });
       }
       for (const cell of row.paces) {
-        if (cell.setting === null || !settings.includes(cell.setting)) {
+        if (cell.setting === null) {
           context.diagnostics.error(
-            'analysis.sailing-row-missing-setting',
-            cell.setting === null
-              ? `The band \`${row.from} to ${row.to} degrees\` of \`${name}\` has a pace with no setting — with sails, every cell names its setting.`
-              : `\`${cell.setting}\` is not a setting of \`${name}\` — one of ${settings.map((s) => `\`${s}\``).join(', ')}.`,
+            'analysis.sailing-cell-no-setting',
+            `The band \`${row.from} to ${row.to} degrees\` of \`${name}\` has a pace with no setting — with sails, every cell names its setting.`,
+            cell.span,
+          );
+        } else if (!settings.includes(cell.setting)) {
+          context.diagnostics.error(
+            'analysis.sails-unknown-setting',
+            `\`${cell.setting}\` is not a setting of \`${name}\` — one of ${settings.map((s) => `\`${s}\``).join(', ')}.`,
             cell.span,
           );
         }
@@ -194,7 +198,7 @@ function buildSailing(decl: CreateDecl, entity: EntityDraft, context: EntityBuil
     } else {
       if (row.paces.length !== 1 || row.paces[0]!.setting !== null) {
         context.diagnostics.error(
-          'analysis.sailing-row-missing-setting',
+          'analysis.sailing-row-without-sails',
           `The band \`${row.from} to ${row.to} degrees\` of \`${name}\` names settings, but \`${name}\` declares no \`sails:\` — one pace per row, or add \`sails:\`.`,
           row.span,
         );

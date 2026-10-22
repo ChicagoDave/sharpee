@@ -40,7 +40,7 @@ create the Sparrow
   movement: flight
   drive: control
   destinations: the Well Bottom, the Top of the Well
-  passage: 5 turns
+  pace: 5 turns
   aboard: the Airlock, the Hold
   boarded through: the Airlock
 

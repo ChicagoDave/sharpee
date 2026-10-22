@@ -236,14 +236,15 @@ describe('Vehicle model', () => {
       const ship = new VehicleTrait({ movement: { kind: 'compass', drive: 'player', pace: 2 }, commands: ['compass'] });
       expect(ship.movement).toEqual({ kind: 'compass', drive: 'player', pace: 2, heading: null, turnsToStep: 0 });
       expect(ship.commands).toEqual(['compass']);
-      const courier = new VehicleTrait({ movement: { kind: 'flight', drive: 'control', destinations: [top.id, bottom.id], passage: 5 } });
-      expect(courier.movement).toEqual({ kind: 'flight', drive: 'control', destinations: [top.id, bottom.id], passage: 5, destination: null, turnsRemaining: 0 });
+      const courier = new VehicleTrait({ movement: { kind: 'flight', drive: 'control', destinations: [top.id, bottom.id], pace: 5 } });
+      expect(courier.movement).toEqual({ kind: 'flight', drive: 'control', destinations: [top.id, bottom.id], pace: 5, destination: null, turnsRemaining: 0 });
     });
 
-    it('refuses a pace under one turn, a passage under one turn, and a flight with one destination', () => {
+    it('refuses a pace under one turn, a flight with one destination, and a flight naming a destination twice', () => {
       expect(() => new VehicleTrait({ movement: { kind: 'compass', drive: 'player', pace: 0 } })).toThrow('pace');
-      expect(() => new VehicleTrait({ movement: { kind: 'flight', drive: 'control', destinations: [top.id, bottom.id], passage: 0 } })).toThrow('passage');
-      expect(() => new VehicleTrait({ movement: { kind: 'flight', drive: 'control', destinations: [top.id, top.id], passage: 1 } })).toThrow('two destinations');
+      expect(() => new VehicleTrait({ movement: { kind: 'flight', drive: 'control', destinations: [top.id, bottom.id], pace: 0 } })).toThrow('pace');
+      expect(() => new VehicleTrait({ movement: { kind: 'flight', drive: 'control', destinations: [top.id], pace: 1 } })).toThrow('two destinations');
+      expect(() => new VehicleTrait({ movement: { kind: 'flight', drive: 'control', destinations: [top.id, bottom.id, top.id], pace: 1 } })).toThrow('each destination once');
     });
 
     it('GO from inside a compass or flight vehicle rides; from a `none` vehicle it stays', () => {
@@ -288,8 +289,13 @@ describe('Vehicle model', () => {
     });
 
     it('send binds a flight vehicle to one of its destinations and nothing else', () => {
-      const courier = vehicle('courier', new VehicleTrait({ movement: { kind: 'flight', drive: 'control', destinations: [top.id, bottom.id], passage: 4 } }));
+      const courier = vehicle('courier', new VehicleTrait({ movement: { kind: 'flight', drive: 'control', destinations: [top.id, bottom.id], pace: 4 } }));
       expect(sendVehicle(world, courier, elsewhere.id)).toBe(false);
+      // A refused send leaves the voyage unset, and a cell is no flight destination.
+      expect(courier.get(VehicleTrait)!.movement).toMatchObject({ destination: null, turnsRemaining: 0 });
+      expect(sendVehicle(world, courier, { x: 1, y: 1 })).toBe(false);
+      expect(courier.get(VehicleTrait)!.movement).toMatchObject({ destination: null, turnsRemaining: 0 });
+      expect(isUnderWay(courier)).toBe(false);
       expect(sendVehicle(world, courier, bottom.id)).toBe(true);
       expect(courier.get(VehicleTrait)!.movement).toMatchObject({ destination: bottom.id, turnsRemaining: 4 });
       expect(isUnderWay(courier)).toBe(true);
@@ -298,7 +304,7 @@ describe('Vehicle model', () => {
 
   describe('rooms aboard and the outside exit (D7)', () => {
     it('resolves to the vehicle\'s room on each use, through the door, and is blocked under way', () => {
-      const courier = vehicle('courier', new VehicleTrait({ movement: { kind: 'flight', drive: 'control', destinations: [top.id, bottom.id], passage: 4 } }));
+      const courier = vehicle('courier', new VehicleTrait({ movement: { kind: 'flight', drive: 'control', destinations: [top.id, bottom.id], pace: 4 } }));
       world.moveEntity(courier.id, top.id);
       const airlock = room('Airlock');
       airlock.add(new AboardTrait({ vehicleId: courier.id, outside: { WEST: { candidates: [top.id, bottom.id], via: 'd-hatch' } } }));

@@ -341,7 +341,7 @@ export class ChordStory implements Story {
           kind: 'flight',
           drive: v.drive === 'control' ? 'control' : 'player',
           destinations: ids(v.destinations),
-          passage: v.passage ?? 1,
+          pace: v.pace ?? 1,
         };
         break;
       case 'open':
@@ -1757,10 +1757,11 @@ export class ChordStory implements Story {
 
   /**
    * ADR-378 D2: a passage's words are grammar only where the passage is.
-   * Each form a room's passage line wrote registers as a story-tier rule
-   * for `if.action.going` with the passage key as its direction — as
-   * written, and with its articles removed, so `climb rope` reaches `climb
-   * the rope` — gated on the actor's room having that way live: hidden
+   * Each command a room's passage block admits registers as a story-tier
+   * rule for `if.action.going` with the passage key as its direction, as
+   * written; that `climb rope` reaches `climb the rope` is the parser's
+   * work, which treats every article as optional (ADR-380 D2). The rule is
+   * gated on the actor's room having that way live: hidden
    * (D3) or absent, the words are not a rule and the input falls through
    * to the standard grammar or the parser's own not-understood. Two rooms
    * writing the same first form share the key and the rule.
@@ -1771,11 +1772,7 @@ export class ChordStory implements Story {
       for (const exit of irEntity.exits) {
         if (!exit.passage) continue;
         const forms = formsByKey.get(exit.direction) ?? new Set<string>();
-        for (const form of exit.passage) {
-          forms.add(form.toLowerCase());
-          const bare = form.toLowerCase().split(' ').filter((w) => !ARTICLES.has(w)).join(' ');
-          if (bare) forms.add(bare);
-        }
+        for (const form of exit.passage) forms.add(form.toLowerCase());
         formsByKey.set(exit.direction, forms);
       }
     }
@@ -3046,9 +3043,6 @@ const STARTS_STATE_TRAIT_FIELDS: ReadonlyMap<
   ['lit', { traitType: TraitType.LIGHT_SOURCE, traitName: 'light-source', field: 'isLit', value: true }], // ADR-374 D9
   ['unlit', { traitType: TraitType.LIGHT_SOURCE, traitName: 'light-source', field: 'isLit', value: false }],
 ]);
-
-/** The articles a passage form is registered without, beside the form as written (ADR-378 D2). */
-const ARTICLES: ReadonlySet<string> = new Set(['a', 'an', 'the']);
 
 /** Chord exit word → world-model exit key, or a load error for a word that names none. */
 function toDirection(word: string, at?: IREntity): ExitKey {

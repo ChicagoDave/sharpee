@@ -5199,18 +5199,19 @@ export interface VehicleCompassMovement {
 }
 /**
  * Free flight (ADR-366 D5d): any destination to any other, nowhere for the
- * passage, then arrival.
+ * trip, then arrival. A flight's step is the whole trip, so its pace is the
+ * trip's length (ADR-380 D3).
  */
 export interface VehicleFlightMovement {
     kind: 'flight';
     drive: 'player' | 'control';
-    /** Room ids the vehicle may fly between. At least two. */
+    /** Room ids the vehicle may fly between. At least two, each once. */
     destinations: string[];
-    /** Turns the passage takes, one or more. */
-    passage: number;
+    /** Turns the trip takes, one or more. */
+    pace: number;
     /** Machine state: where it is bound, or null when not under way. */
     destination: string | null;
-    /** Machine state: turns left in the passage. */
+    /** Machine state: turns left in the trip. */
     turnsRemaining: number;
 }
 /**
@@ -5302,7 +5303,7 @@ export declare class VehicleTrait implements ITrait {
     constructor(config?: VehicleTraitConfig);
     /**
      * Build a movement model from its declaration, holding the invariants the analyzer
-     * reports first: two stops, none repeated; two destinations; a pace, a
+     * reports first: two stops, none repeated; two destinations, none repeated; a pace, a
      * stride of at least one; an open vehicle on at most one of heading and
      * course. The machine's state starts at rest unless the declaration
      * carries it.
@@ -5477,8 +5478,8 @@ export type VehicleGoing = {
 export declare function goingFromVehicle(world: WorldModel, actorId: string): VehicleGoing;
 /**
  * Whether a vehicle's machine is moving it (ADR-366 D5e): a line stepping
- * along its stops, a compass vehicle on a heading, a flight vehicle in its
- * passage, an open vehicle on a heading or a course. A `none` or streets
+ * along its stops, a compass vehicle on a heading, a flight vehicle on its
+ * trip, an open vehicle on a heading or a course. A `none` or streets
  * vehicle is never under way.
  *
  * @param vehicle - A vehicle; false when it has no model
@@ -5624,7 +5625,7 @@ export declare function edgePhraseOf(world: WorldModel, expanse: IFEntity, side:
 export declare function stopVehicle(vehicle: IFEntity): boolean;
 /**
  * `send <vehicle> to <destination>` (ADR-366 D5d; ADR-376 D3): a flight
- * vehicle leaves its room and is nowhere for the passage, then arrives; an
+ * vehicle leaves its room and is nowhere for the trip, then arrives; an
  * open vehicle takes a course for a landmark's cell or a cell of its
  * expanse, dropping any heading, and leaves its landmark for the expanse
  * (D5). The departure and the arrival are the machine's per-turn work; this
@@ -5729,7 +5730,7 @@ export declare function isAboardVehicle(world: WorldModel, entityId: string, veh
  * (`vehicle-arrived`, a stop, the room in its heading, its destination, or
  * a landmark), it ran out of way or reached its course and took itself out
  * of the way (`vehicle-stopped`, reported once), it left its room for the
- * passage (`departed`, which no stock line reports: the fold is the
+ * trip (`departed`, which no stock line reports: the fold is the
  * author's sequence on `becomes under way`), it came alongside a floating
  * thing and stopped (`vehicle-alongside`, ADR-376 D10), or it reached an
  * edge of its expanse and stopped (`expanse-edge` or the edge's own phrase,
@@ -5759,7 +5760,7 @@ export type VehicleStep = {
  * one machine and differ only in what a step is (D5f): a line steps to the
  * next stop or to where its `position` block says, a compass vehicle steps
  * along the exit in its heading, a flight vehicle leaves, is nowhere for
- * the passage, and arrives. Every move is `WorldModel.moveEntity`, so what
+ * the trip, and arrives. Every move is `WorldModel.moveEntity`, so what
  * the vehicle holds comes along (D4), and every piece of machine state
  * written here is a trait field (D5g).
  *

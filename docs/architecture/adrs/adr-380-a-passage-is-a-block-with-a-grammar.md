@@ -96,6 +96,16 @@ create the Cable Trench
 - **AC-4 (REAL-PATH, demonstration)**: `./sharpee test branch-stories/upps/upps.story` passes with the trench written as a block, the passage working by each command with and without articles and not understood in the dark; `stories/vehicles` passes with the Sparrow on `pace:`; the `adr-378-passages-runtime` suite passes against the block form.
 - **AC-5**: `./repokit build dungeo` clean; Dungeo chain one run (Dungeo declares no passage and builds no flight vehicle, grep of `stories/dungeo/src` 2026-10-21, so its text cannot move).
 
+## Amendment (2026-10-22, session 51f88b, at implementation)
+
+Implementation settled five points the record left open or worded otherwise; the decisions above stand.
+
+- **A passage's patterns expand to their commands.** Each grammar line's `or` and `[ ]` are expanded by the parser into the plain commands they admit, the line as written first, so `IRExit.passage` keeps its `string[]` shape as Consequences says, now holding every command, and carries no parser-pattern syntax into the IR. The block lowers at parse time to the exit, blocked-exit and deadly-exit declarations a room's other exits use, which is how AC-1's "same `IRExit`" holds by construction.
+- **The block's duplicate-line code is `parse.passage-line-duplicate`**, not `analysis.`, matching `parse.position-duplicate`, `parse.pushing-duplicate` and `parse.landmarks-duplicate`: the parser sees the second line. A retired one-line form is `parse.passage-line-form`; `analysis.passage-unknown` is removed, since nothing outside a block names a passage.
+- **D2a's bracket rule, exactly:** `[the]` (the bracket closing right after `the`) is the optional article; `[the target]` is still ADR-267 D9's optional slot. A bracket holds one element, so the two never overlap.
+- **D2a's "used" includes the primary slot.** An action's first entity slot (`primarySlotOf`, chord `ir.ts`, the rule the loader's dispatch already applied) binds the noun whose `on <actor> <action>` clauses the action consults and whose `otherwise refuse` fires, so it is used by construction; `buy the target` with no body is not a warning. This is what made the 2026-10-21 measurement (only `wumpus.story:222`) come out true.
+- **D2's article is optional after a pattern's verb, not as its verb.** The parser skips a literal article the player left out, at no confidence cost, everywhere but a pattern's first word: Dungeo's GDT code `an :arg...` is a verb spelled like an article. Any other skipped optional word still costs the match 0.9 (ADR-268 D2's confidence-first order), which is a separate question.
+
 ## Supersession notes
 
 The session that marks this record ACCEPTED adds, in the same commit, a one-line note naming ADR-380 to each record it changes: ADR-378 D1 (the line form and the `passage <words> is blocked:`/`is deadly:` lines, replaced by D1 here) and D2 (the loader's article stripping, replaced by D2 here; the gate stands); ADR-366 D5d and its movement table row (`passage:` on a flight, replaced by D3's `pace:`); ADR-267 D15 (an article inside `[…]` is a literal, D2a). No Status line on those records changes; each stays ACCEPTED with the note.

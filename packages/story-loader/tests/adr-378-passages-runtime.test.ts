@@ -22,7 +22,13 @@ const SOURCE = `story
 create the Cable Trench
   a room
   up to the Loading Dock
-  passage follow the cables or crawl along the cables to the Sorting Room while the lantern is warm
+
+  passage to the Sorting Room
+    grammar
+      follow the cables
+      crawl along the cables
+    while the lantern is warm
+  end passage
 
   A trench under the dock floor.
 
@@ -30,7 +36,11 @@ create the Loading Dock
   a room
   west to the Sorting Room
   north to the Yard while the gate is raised
-  passage climb the rope to the Yard
+
+  passage to the Yard
+    grammar
+      climb the rope
+  end passage
 
   The dock.
 

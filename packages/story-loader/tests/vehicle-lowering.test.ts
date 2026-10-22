@@ -137,7 +137,7 @@ create the Sparrow
   movement: flight
   drive: control
   destinations: the Harbour, the Reef
-  passage: 5 turns
+  pace: 5 turns
   aboard: the Airlock, the Hold
   boarded through: the Airlock
 
@@ -222,14 +222,14 @@ describe('the vehicle kind lowers onto the trait (ADR-366 D1, D2, D5)', () => {
     expect(byName('Marigold').get(VehicleTrait)?.movement).toEqual({ kind: 'compass', drive: 'player', pace: 2, heading: null, turnsToStep: 0 });
   });
 
-  it('a flight vehicle lowers its destinations and passage, at rest, and composes no enclosure', () => {
+  it('a flight vehicle lowers its destinations and pace, at rest, and composes no enclosure', () => {
     const { byName } = boot();
     const sparrow = byName('Sparrow');
     expect(sparrow.get(VehicleTrait)?.movement).toEqual({
       kind: 'flight',
       drive: 'control',
       destinations: [byName('Harbour').id, byName('Reef').id],
-      passage: 5,
+      pace: 5,
       destination: null,
       turnsRemaining: 0,
     });
@@ -365,7 +365,7 @@ create the Sparrow
   carries: in
   drive: control
   destinations: the Harbour, the Reef
-  passage: 5 turns
+  pace: 5 turns
 
   A courier.
 

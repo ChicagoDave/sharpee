@@ -20,7 +20,7 @@
  * - Every AST node carries a Span.
  */
 import { SCOPE_REQUIREMENT_PREDICATES } from './catalog.js';
-import { passageKeyOfForm } from './ir.js';
+import { MOVEMENT_TYPES, passageKeyOfForm } from './ir.js';
 import { CHARACTER_MANIFEST } from './character-manifest.js';
 import { STDLIB_MANIFEST } from './stdlib-manifest.js';
 import {
@@ -337,6 +337,24 @@ class Cursor {
     if (t) return mergeSpans(t.span, this.tokens[this.tokens.length - 1].span);
     return lineSpan(this.line);
   }
+}
+
+/**
+ * The commands a slot-free pattern admits, every alternation and optional
+ * element expanded (ADR-380 D1). An optional element is taken first with
+ * the element and then without it, and an alternation in its written order,
+ * so the first command is the pattern as written.
+ * @param parts the pattern's elements; none is a slot
+ * @returns the commands, lowercased words joined by spaces, in order
+ */
+function expandPattern(parts: readonly PatternPart[]): string[] {
+  let out: string[][] = [[]];
+  for (const part of parts) {
+    const choices: string[][] = (part.kind === 'alt' ? part.words : [part.word]).map((w) => [w.toLowerCase()]);
+    if (part.optional) choices.push([]);
+    out = out.flatMap((prefix) => choices.map((choice) => [...prefix, ...choice]));
+  }
+  return out.filter((words) => words.length > 0).map((words) => words.join(' '));
 }
 
 /**
@@ -1877,7 +1895,7 @@ class Parser {
     switch (key) {
       case 'movement': {
         // `open` is `use expanses`' type (ADR-376 D3); the analyzer gates the use line.
-        const value = closedWord(['none', 'line', 'streets', 'compass', 'flight', 'open'] as const, 'movement: none | line | streets | compass | flight | open');
+        const value = closedWord(MOVEMENT_TYPES, `movement: ${MOVEMENT_TYPES.join(' | ')}`);
         return value === null ? null : { key: 'movement', value, span };
       }
       case 'stride': {
@@ -1958,11 +1976,18 @@ class Parser {
         const value = closedWord(['both', 'one-way'] as const, 'direction: both | one-way');
         return value === null ? null : { key: 'direction', value, span };
       }
-      case 'pace':
-      case 'passage': {
-        const turns = turnCount(`${key}: <n> turn | turns`);
-        return turns === null ? null : { key, turns, span };
+      case 'pace': {
+        const turns = turnCount('pace: <n> turn | turns');
+        return turns === null ? null : { key: 'pace', turns, span };
       }
+      case 'passage':
+        // ADR-380 D3: a flight's trip time is its pace; `passage` names only the passage block.
+        this.diagnostics.error(
+          'parse.passage-is-pace',
+          '`passage:` is retired — a flight vehicle\'s trip time is `pace: <n> turns`, the line every moving vehicle uses.',
+          span,
+        );
+        return null;
       case 'commands': {
         const sets: Array<{ word: string; span: Span }> = [];
         for (;;) {
@@ -2734,10 +2759,10 @@ class Parser {
           span: lineSpan(line),
         } as ExitDecl);
       } else if (word === 'passage' && line.tokens[1]?.kind !== 'colon') {
-        // ADR-378 D1: a passage line; the colon tells it from a flight
-        // vehicle's `passage: <n> turns`.
+        // ADR-380 D1: the `passage to <room> … end passage` block; the
+        // colon tells it from the retired vehicle line `passage:`.
         this.pos++;
-        this.parsePassageLine(line, decl);
+        this.parsePassageBlock(line, decl);
       } else if (word === 'exits' && isExitsLineHead(line)) {
         // ADR-362 D2: a room's exits on one line; room-only is the analyzer's gate.
         this.pos++;
@@ -2912,75 +2937,117 @@ class Parser {
   }
 
   /**
-   * A passage line (ADR-378 D1): `passage <words> { or <words> } to <room>
-   * [ through <door> ] [ while <condition> ]`, or `passage <words> is
-   * blocked …` / `is deadly …` naming a passage the room declares. Each
-   * form is one or more words the player types; `to` and `or` are the
-   * separators, so a form holding neither — and holding only words — is
-   * `parse.passage-words`. The key is `passage:<first form, hyphenated>`;
-   * a `, one-way` is carried for the analyzer to refuse (a passage is
-   * one-way by construction).
-   * @param line the `passage` line, already consumed
-   * @param decl the room block the line belongs to
+   * The `passage to <room> … end passage` block (ADR-380 D1), lowered here
+   * to the exit, blocked-exit and deadly-exit declarations a room's other
+   * exits use, so every reader downstream sees one shape. The head names
+   * where it leads (`through <door>` as on any exit; a `, one-way` is
+   * carried for the analyzer to refuse, and anything else on the head is
+   * `parse.exit-trailing`). `grammar` is the first inner line, its patterns
+   * indented under it and written in the `define action` pattern language,
+   * except that `the` is a word here, not a slot (D2); each pattern expands
+   * to the commands it admits. After it, in any order, at most one `while
+   * <condition>`, one `blocked [while <condition>]: <phrase>` and one
+   * `deadly: <phrase>`; a second of any is `parse.passage-line-duplicate`,
+   * anything else is `parse.passage-line`. The exit key is
+   * `passage:<first command, hyphenated>`. The retired one-line form
+   * `passage <words> to …` is `parse.passage-line-form`, with the block as
+   * its fix-it (D4).
+   * @param head the `passage` line, already consumed
+   * @param decl the room block the passage belongs to
    */
-  private parsePassageLine(line: Line, decl: CreateDecl): void {
-    const c = new Cursor(line.tokens, line);
+  private parsePassageBlock(head: Line, decl: CreateDecl): void {
+    const c = new Cursor(head.tokens, head);
     const headTok = c.next()!; // passage
-    const forms: string[] = [];
-    let current: string[] = [];
-    const bad = (message: string, span?: Span): void => {
-      this.diagnostics.error('parse.passage-words', message, span ?? lineSpan(line));
-    };
-    const closeForm = (): boolean => {
-      if (current.length === 0) {
-        bad('A passage\'s words are what the player types — one or more words before `to`, and between the `or`s: `passage climb the rope or climb up to the Loft`.');
-        return false;
-      }
-      forms.push(current.join(' '));
-      current = [];
-      return true;
-    };
-    let stop: 'to' | 'is' | null = null;
-    while (!c.atEnd()) {
-      const t = c.peek()!;
-      if (t.kind !== 'word') {
-        bad(`A passage's words are plain words — \`${t.text}\` cannot be part of one.`, t.span);
-        return;
-      }
-      if (t.text === 'to') { stop = 'to'; break; }
-      if (t.text === 'is' && (c.isWord('blocked', 1) || c.isWord('deadly', 1))) { stop = 'is'; break; }
-      if (t.text === 'or') {
-        c.next();
-        if (!closeForm()) return;
-        continue;
-      }
-      current.push(c.next()!.text);
-    }
-    if (!closeForm()) return;
-    if (stop === null) {
-      bad('A passage line names where it leads: `passage <words> to <room>`, or `passage <words> is blocked: <phrase>`.');
-      return;
-    }
-    const key = passageKeyOfForm(forms[0]);
-    if (stop === 'is') {
-      if (c.isWord('blocked', 1)) {
-        const blocked = this.parseBlockedExit(key, line, c);
-        if (blocked) decl.blockedExits.push(blocked);
-      } else {
-        const deadly = this.parseDeadlyExit(key, line, c);
-        if (deadly) decl.deadlyExits.push(deadly);
-      }
+    if (!c.isWord('to')) {
+      this.diagnostics.error(
+        'parse.passage-line-form',
+        'A passage is a block: `passage to <room>`, then `grammar` with one command per line under it, and `end passage`. ' +
+          'For example:\n  passage to the Loft\n    grammar\n      climb the rope\n  end passage',
+        lineSpan(head),
+      );
       return;
     }
     const toTok = c.next()!; // to
-    const { to, via, toOutside, span } = this.parseExitDestination(c, line, mergeSpans(headTok.span, toTok.span));
+    const { to, via, toOutside, span } = this.parseExitDestination(c, head, mergeSpans(headTok.span, toTok.span));
     let oneWay = false;
     if (c.peek()?.kind === 'comma' && c.isWord('one-way', 1)) {
       c.next();
       c.next();
       oneWay = true;
     }
-    const tails = this.parseExitLineTails(c, line, false, 'A passage line is `passage <words> to <room>`, optionally followed by `through <door>` and `while <condition>`.');
+    if (!c.atEnd()) {
+      const hint = c.isWord('admits')
+        ? ' A passage is not a direction, so nothing is pushed through it and it takes no `admits`.'
+        : c.isWord('while') || c.isWord('during')
+          ? ' A passage\'s `while` is a line inside the block.'
+          : ' The head is `passage to <room>`, optionally followed by `through <door>`.';
+      this.diagnostics.error('parse.exit-trailing', `Unexpected words at the end of this passage's head: \`${restText(c)}\`.${hint}`, c.restSpan());
+    }
+
+    let forms: string[] | null = null;
+    let condition: ConditionNode | undefined;
+    let blocked: BlockedExitDecl | null = null;
+    let deadly: DeadlyExitDecl | null = null;
+    const seen = new Map<string, Span>();
+    const duplicate = (what: string, at: Span): boolean => {
+      const first = seen.get(what);
+      if (first) {
+        this.diagnostics.error('parse.passage-line-duplicate', `This passage already has a \`${what}\` line (line ${first.line}) — one of each.`, at);
+        return true;
+      }
+      seen.set(what, at);
+      return false;
+    };
+    let first = true;
+    while (this.pos < this.lines.length) {
+      const line = this.lines[this.pos];
+      if (line.indent <= head.indent) break;
+      if (looksLikeComment(line)) {
+        this.skipCommentInsideBlock(line);
+        continue;
+      }
+      this.pos++;
+      const lc = new Cursor(line.tokens, line);
+      const word = line.tokens[0]?.kind === 'word' ? line.tokens[0].text : '';
+      if (word === 'grammar' && line.tokens.length === 1) {
+        if (!first) {
+          this.diagnostics.error('parse.passage-line', '`grammar` is the first line of a passage block.', lineSpan(line));
+        }
+        if (!duplicate('grammar', lineSpan(line))) forms = this.parsePassagePatterns(line);
+        else this.parsePassagePatterns(line);
+      } else if (first) {
+        this.diagnostics.error('parse.passage-line', 'A passage block begins with `grammar`, the commands the player types, one per line under it.', lineSpan(line));
+      } else if (word === 'while' || word === 'during') {
+        const at = lineSpan(line);
+        if (word === 'while') lc.next();
+        const cond = this.parseCondition(lc, line);
+        if (!duplicate('while', at)) condition = cond;
+      } else if (word === 'blocked' || word === 'deadly') {
+        // `blocked [while <condition>]: <phrase>` / `deadly: <phrase>` read as
+        // the exit lines they lower to, with the passage's key as their way.
+        const parsed = word === 'blocked' ? this.parseBlockedExit('', line, true) : this.parseDeadlyExit('', line, true);
+        if (!duplicate(word, lineSpan(line)) && parsed) {
+          if (parsed.kind === 'blocked-exit') blocked = parsed;
+          else deadly = parsed;
+        }
+      } else {
+        this.diagnostics.error(
+          'parse.passage-line',
+          'A passage block holds `grammar` and its commands, then at most one each of `while <condition>`, `blocked: <phrase>` and `deadly: <phrase>`.',
+          lineSpan(line),
+        );
+      }
+      first = false;
+    }
+    const endSpan = this.consumeEnd('passage', head);
+    if (forms === null) {
+      if (!seen.has('grammar')) {
+        this.diagnostics.error('parse.passage-line', 'A passage names the commands that take it — add `grammar` with one command per line under it.', lineSpan(head));
+      }
+      return;
+    }
+    if (forms.length === 0) return; // each empty pattern is already reported
+    const key = passageKeyOfForm(forms[0]);
     decl.exits.push({
       kind: 'exit',
       direction: key,
@@ -2989,9 +3056,53 @@ class Parser {
       via,
       ...(oneWay ? { oneWay: true as const } : {}),
       ...(toOutside ? { toOutside: true as const } : {}),
-      ...(tails.condition ? { condition: tails.condition } : {}),
-      span: mergeSpans(span, lineSpan(line)),
+      ...(condition ? { condition } : {}),
+      span: mergeSpans(span, endSpan),
     } as ExitDecl);
+    if (blocked) decl.blockedExits.push({ ...blocked, direction: key });
+    if (deadly) decl.deadlyExits.push({ ...deadly, direction: key });
+  }
+
+  /**
+   * The pattern lines under a passage's `grammar` line, each expanded to
+   * the commands it admits (ADR-380 D1, D2): `or` joins words into one
+   * alternation, `[…]` marks an optional element, and `the` is a word, so
+   * no pattern holds a slot. An optional element yields the command with it
+   * first, so the first expansion of the first line is the line as written,
+   * the canonical command. A line holding a `→` cardinality or a `means`
+   * default is an action's, and is `parse.passage-line`.
+   * @param grammarLine the `grammar` line
+   * @returns the commands, in order, each once
+   */
+  private parsePassagePatterns(grammarLine: Line): string[] {
+    const commands: string[] = [];
+    let any = false;
+    while (this.pos < this.lines.length && this.lines[this.pos].indent > grammarLine.indent) {
+      const line = this.lines[this.pos++];
+      any = true;
+      const c = new Cursor(line.tokens, line);
+      if (c.isWord('means') || line.tokens.some((t) => t.kind === 'punct' && t.text === '→')) {
+        this.diagnostics.error('parse.passage-line', 'A passage\'s commands take no `means` line and no `→` — those belong to an action\'s grammar.', lineSpan(line));
+        continue;
+      }
+      const parts: PatternPart[] = [];
+      let ok = true;
+      while (!c.atEnd()) {
+        const part = this.parsePatternElem(c, true);
+        if (part) parts.push(part);
+        else ok = false;
+      }
+      if (!ok) continue;
+      if (parts.length === 0 || parts.every((p) => p.optional)) {
+        this.diagnostics.error('parse.action-pattern', 'A passage\'s command needs at least one word the player must type.', lineSpan(line));
+        continue;
+      }
+      for (const command of expandPattern(parts)) if (!commands.includes(command)) commands.push(command);
+    }
+    if (!any) {
+      this.diagnostics.error('parse.passage-line', 'A `grammar` line holds the passage\'s commands, one per line, indented under it.', lineSpan(grammarLine));
+    }
+    return commands;
   }
 
   /**
@@ -4011,16 +4122,18 @@ class Parser {
 
   /**
    * `<direction> is blocked [while <condition>]: <phrase-key>` (conditional
-   * form: grammar log 2026-07-10, Phase B). A passage line (ADR-378 D1)
-   * hands in its key and a cursor already at `is`.
+   * form: grammar log 2026-07-10, Phase B). A passage block's `blocked
+   * [while <condition>]: <phrase>` line (ADR-380 D1) reads the same tail.
    * @param direction the compass word, or a passage key
    * @param line the line
-   * @param at a cursor positioned at `is`; omitted, the line's first token is the direction
+   * @param inPassage true for a passage block's line, which begins at `blocked`
    */
-  private parseBlockedExit(direction: string, line: Line, at?: Cursor): BlockedExitDecl | null {
-    const c = at ?? new Cursor(line.tokens, line);
-    if (!at) c.next(); // direction
-    c.next(); // is
+  private parseBlockedExit(direction: string, line: Line, inPassage = false): BlockedExitDecl | null {
+    const c = new Cursor(line.tokens, line);
+    if (!inPassage) {
+      c.next(); // direction
+      c.next(); // is
+    }
     c.next(); // blocked
     let condition: ConditionNode | null = null;
     if (c.matchWord('while') || c.isWord('during')) {
@@ -4043,15 +4156,18 @@ class Parser {
 
   /**
    * `<direction> is deadly [while <condition>]: <phrase-key>` (ADR-227) —
-   * mirrors the blocked-exit grammar exactly, passage keys included.
+   * mirrors the blocked-exit grammar exactly; a passage block's `deadly:
+   * <phrase>` line (ADR-380 D1) reads the same tail.
    * @param direction the compass word, or a passage key
    * @param line the line
-   * @param at a cursor positioned at `is`; omitted, the line's first token is the direction
+   * @param inPassage true for a passage block's line, which begins at `deadly`
    */
-  private parseDeadlyExit(direction: string, line: Line, at?: Cursor): DeadlyExitDecl | null {
-    const c = at ?? new Cursor(line.tokens, line);
-    if (!at) c.next(); // direction
-    c.next(); // is
+  private parseDeadlyExit(direction: string, line: Line, inPassage = false): DeadlyExitDecl | null {
+    const c = new Cursor(line.tokens, line);
+    if (!inPassage) {
+      c.next(); // direction
+      c.next(); // is
+    }
     c.next(); // deadly
     let condition: ConditionNode | null = null;
     if (c.matchWord('while') || c.isWord('during')) {
@@ -5895,8 +6011,15 @@ class Parser {
    * Removed slot spellings (`(word)`, `:word`) and stray `or`/brackets are
    * named parse errors. Returns null after reporting — always having
    * consumed at least one token, so callers cannot loop in place.
+   *
+   * `the` is a word, not a slot, as the whole of a bracket (ADR-380 D2a:
+   * `[the] arrow` is an optional article and the word `arrow`; `[the
+   * target]` stays an optional slot) and everywhere in a passage's
+   * patterns, which take no nouns (D2).
+   * @param c the cursor, at the element
+   * @param theIsWord true where `the` is a word rather than a slot's head
    */
-  private parsePatternElem(c: Cursor): PatternPart | null {
+  private parsePatternElem(c: Cursor, theIsWord = false): PatternPart | null {
     const t = c.next()!;
     if (t.kind === 'lbracket') {
       if (c.atEnd() || c.peek()!.kind === 'rbracket') {
@@ -5908,7 +6031,11 @@ class Parser {
         this.diagnostics.error('parse.pattern-bracket', 'Brackets do not nest in a pattern — one `[ ]` per optional element.', c.peek()!.span);
         return null;
       }
-      const inner = this.parsePatternElem(c);
+      // `[the]` is the optional article (ADR-380 D2a); `[the target]` is an
+      // optional slot (ADR-267 D9). A bracket holds one element, so `the`
+      // with the bracket closing right after it can only be the word.
+      const articleOnly = c.isWord('the') && c.peek(1)?.kind === 'rbracket';
+      const inner = this.parsePatternElem(c, theIsWord || articleOnly);
       if (!inner) return null;
       const close = c.next();
       if (!close || close.kind !== 'rbracket') {
@@ -5917,7 +6044,7 @@ class Parser {
       }
       return { ...inner, optional: true, span: mergeSpans(t.span, close.span) };
     }
-    if (t.kind === 'word' && t.text === 'the') {
+    if (t.kind === 'word' && t.text === 'the' && !theIsWord) {
       const slot = c.next();
       if (!slot || slot.kind !== 'word') {
         this.diagnostics.error('parse.action-slot', 'Expected a slot name after `the` in the grammar pattern.', t.span);

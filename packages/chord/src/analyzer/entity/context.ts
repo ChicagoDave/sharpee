@@ -38,6 +38,7 @@ import type {
   TimerClause,
 } from '../../ast.js';
 import type { DiagnosticBag } from '../../diagnostics.js';
+import { entityIdOf, hasAdjectiveDecl, isKindDecl } from '../declared.js';
 import type { VehicleDecl } from '../vehicles.js';
 import type { ExpanseDecl } from '../expanses.js';
 import type {
@@ -227,7 +228,7 @@ export interface EntityLineBuilder {
 
 /** `a person` composed on a create block — the eligibility floor for the player role. */
 export function isPersonDecl(decl: CreateDecl): boolean {
-  return decl.compositions.some((c) => c.article && c.words.join(' ').toLowerCase() === 'person');
+  return isKindDecl(decl, 'person');
 }
 
 /**
@@ -236,9 +237,7 @@ export function isPersonDecl(decl: CreateDecl): boolean {
  * reaches parser vocabulary or the unknown-trait census gate.
  */
 export function isPlayableDecl(decl: CreateDecl): boolean {
-  return decl.compositions.some(
-    (c) => !c.article && c.words.length === 1 && c.words[0].toLowerCase() === 'playable',
-  );
+  return hasAdjectiveDecl(decl, 'playable');
 }
 
 /**
@@ -250,7 +249,7 @@ export function isPlayableDecl(decl: CreateDecl): boolean {
  */
 export function newEntityDraft(decl: CreateDecl, sym: EntitySymbol | null, scope: Scope): EntityDraft {
   return {
-    id: sym?.id ?? decl.name.words.join('-').toLowerCase(),
+    id: sym?.id ?? entityIdOf(decl.name.words),
     sym,
     isPerson: isPersonDecl(decl),
     scope,
