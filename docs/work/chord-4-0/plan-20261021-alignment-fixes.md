@@ -102,7 +102,7 @@
 - **Exit state**: no stdlib or loader code reads typed English; one conversion for a direction word; a room's alias matches as a course destination.
 - **Demonstration**: parser-en-us, stdlib, story-loader, lang-en-us, world-model suites one run each, green, including a test of setting a course to a room by its alias and of each steering gesture reaching the action as data; Dungeo chain one run.
 - **Demonstrated**: 
-- **Status**: PENDING
+- **Status**: CURRENT (since 2026-10-21)
 
 ### Phase 6: Loader and IR seams (F12, D9, D18, F13, D2, D3, D19)
 - **Tier**: Large
