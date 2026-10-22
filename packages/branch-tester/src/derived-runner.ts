@@ -82,6 +82,7 @@ import { collectClauseBranches, type BranchClause, type BranchPrecondition, type
 import { arrange, CHORD_GONE_PREFIX, CHORD_IR_ID_ATTRIBUTE, CHORD_STATE_PREFIX, counterKey, parsePin } from '@sharpee/story-loader';
 import { evaluateStateExpression, runCommand, type AssertionResult, type TestEventInfo, type TranscriptCommand } from '@sharpee/transcript-tester';
 import { lifecycleDescriptorFor, SOUND_EVENT_TYPES } from '@sharpee/stdlib';
+import type { ToolRequirement } from '@sharpee/world-model';
 import { CHORD_STORY_STATE_KEYS } from './runner.js';
 
 // ---------------------------------------------------------------------------
@@ -233,7 +234,7 @@ interface TraitFlags {
   isOpen?: boolean;
   isLocked?: boolean;
   isOn?: boolean;
-  toolId?: string;
+  toolRequirement?: ToolRequirement;
   keyId?: string;
   /** The identity trait's parser-facing words. */
   name?: string;
@@ -1777,9 +1778,11 @@ function standardPreconditions(action: string, entity: DerivedEntity, keep: stri
     case 'cutting':
     case 'digging':
     case 'burning': {
-      // ADR-371 D2: burning is cutting's shape — the declared tool in hand.
+      // ADR-371 D2: burning is cutting's shape — a declared tool in hand
+      // (any one the requirement accepts; the first is arranged).
       const gated = entity.get(action === 'cutting' ? 'cuttable' : action === 'digging' ? 'diggable' : 'flammable');
-      if (gated?.toolId) expressions.push(`player.inventory contains ${gated.toolId}`);
+      const tool = gated?.toolRequirement?.tools[0];
+      if (tool) expressions.push(`player.inventory contains ${tool}`);
       break;
     }
   }

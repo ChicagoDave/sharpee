@@ -76,6 +76,7 @@ export * from './traits/concealment/index.js';
 export * from './traits/acoustic/index.js';
 export * from './traits/listener/index.js';
 export * from './traits/obstructor-protocol.js';
+export * from './traits/tool-requirement.js';
 
 // Root-barrel hygiene fix (2026-07-14): these trait subdirs shipped with leaf
 // barrels and a mid-level traits/index.ts export but were never enumerated in

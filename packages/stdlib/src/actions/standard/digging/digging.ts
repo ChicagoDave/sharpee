@@ -24,7 +24,7 @@ import { Action, ActionContext, ValidationResult } from '../../enhanced-types.js
 import { type ISemanticEvent } from '@sharpee/core';
 import {
   TraitType,
-  DiggableBehavior,
+  DiggableTrait,
   findTraitWithCapability,
   type CapabilityEffect,
   type CapabilitySharedData,
@@ -156,9 +156,7 @@ export const diggingAction: Action & { metadata: ActionMetadata } = {
       context,
       noun,
       explicitTool,
-      DiggableBehavior.requiresTool(noun),
-      (toolId) => DiggableBehavior.canDigWith(noun, toolId),
-      DiggableBehavior.requiredTools(noun)
+      noun.get(DiggableTrait)?.toolRequirement
     );
     if (toolResolution.failure) {
       return toolResolution.failure;

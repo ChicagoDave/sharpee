@@ -72,6 +72,9 @@ export * from './story-info/index.js';
 // Wall obstructor protocol (ADR-173 Phase 5)
 export * from './obstructor-protocol.js';
 
+// The one tool-requirement shape (Older-1)
+export * from './tool-requirement.js';
+
 // Spatial sound traits (ADR-172 Phase 2)
 export * from './acoustic/index.js';
 export * from './listener/index.js';

@@ -1,6 +1,5 @@
 // packages/world-model/src/traits/openable/openableBehavior.ts
 
-import { type EntityId } from '@sharpee/core';
 import { Behavior } from '../../behaviors/behavior.js';
 import { IFEntity } from '../../entities/if-entity.js';
 import { TraitType } from '../trait-types.js';
@@ -54,42 +53,6 @@ export class OpenableBehavior extends Behavior {
     return openable.isOpen && openable.canClose;
   }
 
-  /**
-   * Check if this entity requires a tool to open (ADR-230 D3b;
-   * mirrors LockableBehavior.requiresKey)
-   */
-  static requiresTool(entity: IFEntity): boolean {
-    const openable = OpenableBehavior.require<OpenableTrait>(entity, TraitType.OPENABLE);
-    return !!(openable.toolId || openable.toolIds?.length);
-  }
-
-  /**
-   * The declared tools that open this entity, in declaration order —
-   * empty when it needs none. The implicit-instrument resolution (GH
-   * #241) reads this to find a held tool the player did not name.
-   */
-  static requiredTools(entity: IFEntity): EntityId[] {
-    const openable = OpenableBehavior.require<OpenableTrait>(entity, TraitType.OPENABLE);
-    return [...(openable.toolId ? [openable.toolId] : []), ...(openable.toolIds ?? [])];
-  }
-
-  /**
-   * Check if a tool can open this entity (mirrors LockableBehavior.canUnlockWith)
-   */
-  static canOpenWith(entity: IFEntity, toolId: EntityId): boolean {
-    const openable = OpenableBehavior.require<OpenableTrait>(entity, TraitType.OPENABLE);
-
-    if (openable.toolId === toolId) {
-      return true;
-    }
-
-    if (openable.toolIds && openable.toolIds.includes(toolId)) {
-      return true;
-    }
-
-    return false;
-  }
-  
   /**
    * Open the entity
    * @returns Result describing what happened

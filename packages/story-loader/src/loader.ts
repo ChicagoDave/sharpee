@@ -159,6 +159,8 @@ import {
   registerLocationName,
   clearLocationNames,
   type LocationNameArm,
+  type IToolGated,
+  toolRequirement,
 } from '@sharpee/world-model';
 import { LoadError } from './errors.js';
 import { exitKeyOfWord } from './direction-words.js';
@@ -281,6 +283,19 @@ export class ChordStory implements Story {
       throw new LoadError(`\`${name}\` (config \`${configKey}\`) names no entity.`, span as never);
     }
     return { irRefId: target.id, ownerName: owner.name, span, apply };
+  }
+
+  /** Queue a tool-gated trait's requirement (`cuttable with the knife`): the
+   *  named tool becomes its `toolRequirement` once every entity exists. No
+   *  tool named, no requirement. */
+  private queueToolRequirement(gated: IToolGated, trait: IRComposition, owner: IREntity): void {
+    const toolName = entityConfigValue(trait);
+    if (toolName === undefined) return;
+    this.pendingEntityRefs.push(
+      this.entityRefFor(toolName, 'tool', owner, trait.span, (worldId) => {
+        gated.toolRequirement = toolRequirement(worldId);
+      }),
+    );
   }
 
   /**
@@ -2183,19 +2198,12 @@ export class ChordStory implements Story {
         case 'openable': {
           // Defect D3 fix (2026-07-17, ratchet G4): `openable with the
           // crowbar` (keyless per R3) gates opening on holding the tool
-          // (OpenableTrait.toolId, ADR-230 D3b). Name → world id via the
-          // shared pending mechanism — never the raw display-name string
-          // (the lockable-bug class).
+          // (ADR-230 D3b). Name → world id via the shared pending
+          // mechanism — never the raw display-name string (the
+          // lockable-bug class).
           if (entity.has(TraitType.OPENABLE)) break;
           const openable = new OpenableTrait();
-          const openToolName = entityConfigValue(trait);
-          if (openToolName !== undefined) {
-            this.pendingEntityRefs.push(
-              this.entityRefFor(openToolName, 'tool', irEntity, trait.span, (worldId) => {
-                openable.toolId = worldId;
-              }),
-            );
-          }
+          this.queueToolRequirement(openable, trait, irEntity);
           entity.add(openable);
           break;
         }
@@ -2231,14 +2239,7 @@ export class ChordStory implements Story {
           const traitType = trait.name === 'cuttable' ? TraitType.CUTTABLE : trait.name === 'diggable' ? TraitType.DIGGABLE : TraitType.FLAMMABLE;
           if (entity.has(traitType)) break;
           const toolGated = trait.name === 'cuttable' ? new CuttableTrait() : trait.name === 'diggable' ? new DiggableTrait() : new FlammableTrait();
-          const toolName = entityConfigValue(trait);
-          if (toolName !== undefined) {
-            this.pendingEntityRefs.push(
-              this.entityRefFor(toolName, 'tool', irEntity, trait.span, (worldId) => {
-                toolGated.toolId = worldId;
-              }),
-            );
-          }
+          this.queueToolRequirement(toolGated, trait, irEntity);
           entity.add(toolGated);
           break;
         }
@@ -2392,14 +2393,7 @@ export class ChordStory implements Story {
           // tool held; resolved after every entity is built.
           if (entity.has(TraitType.LIGHT_SOURCE)) break;
           const lightSource = new LightSourceTrait();
-          const toolName = entityConfigValue(trait);
-          if (toolName !== undefined) {
-            this.pendingEntityRefs.push(
-              this.entityRefFor(toolName, 'tool', irEntity, trait.span, (worldId) => {
-                lightSource.toolId = worldId;
-              }),
-            );
-          }
+          this.queueToolRequirement(lightSource, trait, irEntity);
           entity.add(lightSource);
           break;
         }

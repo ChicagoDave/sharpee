@@ -80,38 +80,6 @@ export class LightSourceBehavior extends Behavior {
   }
   
   /**
-   * Whether lighting this needs a tool (ADR-374 D9; FlammableBehavior's shape).
-   * @param source the light source
-   * @returns true when a tool is declared
-   */
-  static requiresTool(source: IFEntity): boolean {
-    const trait = LightSourceBehavior.require<LightSourceTrait>(source, TraitType.LIGHT_SOURCE);
-    return !!(trait.toolId || trait.toolIds?.length);
-  }
-
-  /**
-   * The declared tools that light this, in declaration order — empty when it
-   * needs none. The implicit-instrument resolution (GH #241) reads it.
-   * @param source the light source
-   * @returns the tool ids
-   */
-  static requiredTools(source: IFEntity): string[] {
-    const trait = LightSourceBehavior.require<LightSourceTrait>(source, TraitType.LIGHT_SOURCE);
-    return [...(trait.toolId ? [trait.toolId] : []), ...(trait.toolIds ?? [])];
-  }
-
-  /**
-   * Whether a tool lights this.
-   * @param source the light source
-   * @param toolId the offered tool
-   * @returns true when the tool is declared for it
-   */
-  static canLightWith(source: IFEntity, toolId: string): boolean {
-    const trait = LightSourceBehavior.require<LightSourceTrait>(source, TraitType.LIGHT_SOURCE);
-    return trait.toolId === toolId || !!trait.toolIds?.includes(toolId);
-  }
-
-  /**
    * Whether the light is giving light now — the one reading of it (ADR-374
    * D10), for the room's light check and for seeing a lit lamp in the dark.
    * A switchable light that needs power and has none gives no light, whatever

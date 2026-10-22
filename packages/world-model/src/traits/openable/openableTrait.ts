@@ -1,10 +1,10 @@
 // packages/world-model/src/traits/openable/openableTrait.ts
 
-import { type EntityId } from '@sharpee/core';
 import { ITrait } from '../trait.js';
 import { TraitType } from '../trait-types.js';
+import { IToolGated, ToolRequirement } from '../tool-requirement.js';
 
-export interface IOpenableData {
+export interface IOpenableData extends IToolGated {
   /** Whether the entity is currently open */
   isOpen?: boolean;
   
@@ -41,11 +41,8 @@ export interface IOpenableData {
   /** Description when closed (used by computed description getter on IFEntity) */
   closedDescription?: string;
 
-  /** Single tool entity required to open this (ADR-230 D3b; mirrors ILockableData.keyId) */
-  toolId?: EntityId;
-
-  /** Multiple tool entities that can open this (mirrors ILockableData.keyIds) */
-  toolIds?: EntityId[];
+  /** The tool opening needs (ADR-230 D3b); absent, opening needs none */
+  toolRequirement?: ToolRequirement;
 }
 
 /**
@@ -72,8 +69,7 @@ export class OpenableTrait implements ITrait, IOpenableData {
   closeSound?: string;
   openDescription?: string;
   closedDescription?: string;
-  toolId?: EntityId;
-  toolIds?: EntityId[];
+  toolRequirement?: ToolRequirement;
 
   constructor(data: IOpenableData = {}) {
     // Set defaults and merge with provided data
@@ -89,7 +85,6 @@ export class OpenableTrait implements ITrait, IOpenableData {
     this.closeSound = data.closeSound;
     this.openDescription = data.openDescription;
     this.closedDescription = data.closedDescription;
-    this.toolId = data.toolId;
-    this.toolIds = data.toolIds;
+    this.toolRequirement = data.toolRequirement;
   }
 }

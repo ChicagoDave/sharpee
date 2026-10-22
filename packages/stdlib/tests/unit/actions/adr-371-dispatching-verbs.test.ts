@@ -18,7 +18,7 @@
  */
 
 import { describe, test, expect } from 'vitest';
-import { WorldModel, FlammableTrait, TraitType } from '@sharpee/world-model';
+import { WorldModel, FlammableTrait, TraitType, toolRequirement } from '@sharpee/world-model';
 import { loweringAction, loweringLifecycle } from '../../../src/actions/standard/lowering';
 import { raisingAction, raisingLifecycle } from '../../../src/actions/standard/raising';
 import { settingAction, settingLifecycle } from '../../../src/actions/standard/setting';
@@ -217,7 +217,7 @@ describe('settingAction (ADR-371 D3)', () => {
 describe('burningAction (ADR-371 D2, cutting\'s shape)', () => {
   function flammableLetter(world: WorldModel, roomId: string, toolId?: string) {
     const letter = world.createEntity('dead letter', 'object');
-    letter.add(new FlammableTrait(toolId ? { toolId } : {}));
+    letter.add(new FlammableTrait(toolId ? { toolRequirement: toolRequirement(toolId) } : {}));
     letter.add({ type: TEST_MARKER_TRAIT } as any);
     world.moveEntity(letter.id, roomId);
     return letter;

@@ -6,22 +6,16 @@
  * Owner context: @sharpee/world-model / traits
  */
 
-import { type EntityId } from '@sharpee/core';
 import { ITrait } from '../trait.js';
 import { TraitType } from '../trait-types.js';
+import { IToolGated, ToolRequirement } from '../tool-requirement.js';
 
 /**
- * Data for the flammable trait. A declared requirement makes the burning
- * action refuse wrong or missing tools; no requirement means any explicit
- * tool (or none) passes validation.
+ * Data for the flammable trait. A declared tool requirement makes the
+ * burning action refuse wrong or missing tools; no requirement means any
+ * explicit tool (or none) passes validation.
  */
-export interface IFlammableData {
-  /** Single tool entity required to burn this (mirrors ICuttableData.toolId) */
-  toolId?: EntityId;
-
-  /** Multiple tool entities that can burn this (mirrors ICuttableData.toolIds) */
-  toolIds?: EntityId[];
-}
+export type IFlammableData = IToolGated;
 
 /**
  * Flammable trait — eligibility and tool data only. The burn OUTCOME is the
@@ -34,11 +28,9 @@ export class FlammableTrait implements ITrait, IFlammableData {
   static readonly type = TraitType.FLAMMABLE;
   readonly type = TraitType.FLAMMABLE;
 
-  toolId?: EntityId;
-  toolIds?: EntityId[];
+  toolRequirement?: ToolRequirement;
 
   constructor(data: IFlammableData = {}) {
-    this.toolId = data.toolId;
-    this.toolIds = data.toolIds;
+    this.toolRequirement = data.toolRequirement;
   }
 }

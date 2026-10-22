@@ -20,7 +20,7 @@
  */
 
 import { type ISemanticEvent } from '@sharpee/core';
-import { TraitType, LightSourceBehavior } from '@sharpee/world-model';
+import { TraitType, LightSourceBehavior, LightSourceTrait } from '@sharpee/world-model';
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types.js';
 import { IFActions } from '../../constants.js';
 import { ActionMetadata } from '../../../validation/index.js';
@@ -137,9 +137,7 @@ export const lightingAction: Action & { metadata: ActionMetadata } = {
       context,
       target,
       context.command.instrument?.entity ?? context.command.indirectObject?.entity,
-      LightSourceBehavior.requiresTool(target),
-      (toolId) => LightSourceBehavior.canLightWith(target, toolId),
-      LightSourceBehavior.requiredTools(target)
+      target.get(LightSourceTrait)?.toolRequirement
     );
     if (tool.failure) return tool.failure;
     shared(context).toolId = tool.tool?.id;

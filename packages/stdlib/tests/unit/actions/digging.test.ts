@@ -15,7 +15,7 @@
 import { describe, test, expect } from 'vitest';
 import { diggingAction } from '../../../src/actions/standard/digging';
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType, WorldModel } from '@sharpee/world-model';
+import { TraitType, WorldModel, toolRequirement } from '@sharpee/world-model';
 import {
   createRealTestContext,
   createCommand,
@@ -41,7 +41,7 @@ const setup = (opts: { toolRequired?: boolean } = {}) => {
   const rope = world.createEntity('loose earth', 'object');
   rope.add({
     type: TraitType.DIGGABLE,
-    ...(opts.toolRequired ? { toolId: knife.id } : {})
+    ...(opts.toolRequired ? { toolRequirement: toolRequirement(knife.id) } : {})
   } as any);
   // Inert marker trait — the target-side registration key.
   rope.add({ type: TEST_MARKER_TRAIT } as any);

@@ -14,7 +14,7 @@
 import { describe, test, expect } from 'vitest';
 import { openingAction } from '../../../src/actions/standard/opening';
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType, WorldModel, OpenableTrait } from '@sharpee/world-model';
+import { TraitType, WorldModel, OpenableTrait, toolRequirement } from '@sharpee/world-model';
 import {
   createRealTestContext,
   createCommand,
@@ -31,7 +31,7 @@ const setup = (toolRequired: boolean) => {
   crate.add({
     type: TraitType.OPENABLE,
     isOpen: false,
-    ...(toolRequired ? { toolId: crowbar.id } : {})
+    ...(toolRequired ? { toolRequirement: toolRequirement(crowbar.id) } : {})
   });
   // Inert marker trait — the target-side interceptor registration key.
   crate.add({ type: TEST_MARKER_TRAIT } as any);
@@ -78,7 +78,7 @@ describe('Opening tool requirement (ADR-230 D3b)', () => {
     expect(validation.valid).toBe(true);
     expect(isOpen(crate)).toBe(true);
     expect((context.sharedData.resolvedTool as { id: string } | undefined)?.id).toBe(world.getEntity(
-      (crate.get(TraitType.OPENABLE) as OpenableTrait).toolId!
+      (crate.get(TraitType.OPENABLE) as OpenableTrait).toolRequirement!.tools[0]
     )!.id);
   });
 
@@ -99,8 +99,7 @@ describe('Opening tool requirement (ADR-230 D3b)', () => {
     const jemmy = world.createEntity('iron jemmy', 'object');
     world.moveEntity(jemmy.id, player.id);
     const openable = crate.get(TraitType.OPENABLE) as OpenableTrait;
-    openable.toolId = undefined;
-    openable.toolIds = [crowbar.id, jemmy.id];
+    openable.toolRequirement = toolRequirement(crowbar.id, jemmy.id);
 
     const { validation } = drive(world, crate);
 

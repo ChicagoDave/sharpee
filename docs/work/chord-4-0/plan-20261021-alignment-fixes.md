@@ -159,8 +159,8 @@
 - **Deliverable**: one `ToolRequirement` shape the five traits hold, read by `tool-shared.ts`; loader and Chord bindings follow; the five trait-level `requiresTool`/`canXWith` families removed. Root barrel rule for any new trait file.
 - **Exit state**: one tool-requirement shape; a sixth tool-needing verb adds no new fields.
 - **Demonstration**: world-model, stdlib, story-loader, chord suites one run each, green; Dungeo chain one run baseline-identical (the lamp and tool actions are in the corpus).
-- **Demonstrated**: 
-- **Status**: CURRENT (since 2026-10-22)
+- **Demonstrated**: 2026-10-22, session 36d713, one run each (`pnpm --filter '@sharpee/<pkg>' test`), 0 failures: world-model 1663; stdlib 1884; story-loader 1369 passing + 1 skipped; chord 1646; branch-tester 381; root `tsc --noEmit` clean. `./repokit build dungeo` exit 0; `node dist/cli/sharpee.js --test --chain stories/dungeo/walkthroughs/wt-*.transcript`: 952 passed in 17 transcripts, golden recordings matched (the chain was run a second time only to grep the recording lines). After mutation-verification, two cutting cases (a requirement of two tools accepts the second when named; refuses a third with `wrong_tool`) and the Diggable/Flammable absence checks were added and run once: stdlib `cutting` 14, world-model `tool-requirement` 6. Not covered by its own test: a ghost tool name on the four adjectives other than openable, and no-tool absence at load time for openable/cuttable/diggable/flammable — all five go through the one `queueToolRequirement`, whose rejection and absence are each tested once. David confirmed deleting `CuttableBehavior`, `DiggableBehavior` and `FlammableBehavior`. [reported by session, unverified]
+- **Status**: DONE
 
 ### Phase 11: Close the ledger and the sweep (merge-gate re-read)
 - **Tier**: Small

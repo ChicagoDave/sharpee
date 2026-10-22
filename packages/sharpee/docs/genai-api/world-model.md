@@ -923,26 +923,6 @@ export declare class LightSourceBehavior extends Behavior {
      */
     static isLit(source: IFEntity): boolean;
     /**
-     * Whether lighting this needs a tool (ADR-374 D9; FlammableBehavior's shape).
-     * @param source the light source
-     * @returns true when a tool is declared
-     */
-    static requiresTool(source: IFEntity): boolean;
-    /**
-     * The declared tools that light this, in declaration order — empty when it
-     * needs none. The implicit-instrument resolution (GH #241) reads it.
-     * @param source the light source
-     * @returns the tool ids
-     */
-    static requiredTools(source: IFEntity): string[];
-    /**
-     * Whether a tool lights this.
-     * @param source the light source
-     * @param toolId the offered tool
-     * @returns true when the tool is declared for it
-     */
-    static canLightWith(source: IFEntity, toolId: string): boolean;
-    /**
      * Whether the light is giving light now — the one reading of it (ADR-374
      * D10), for the room's light check and for seeing a lit lamp in the dark.
      * A switchable light that needs power and has none gives no light, whatever
@@ -1028,7 +1008,6 @@ export declare class ClimbableBehavior {
 ### traits/openable/openableBehavior
 
 ```typescript
-import { type EntityId } from '@sharpee/core';
 import { Behavior } from '../../behaviors/behavior.js';
 import { IFEntity } from '../../entities/if-entity.js';
 /**
@@ -1068,21 +1047,6 @@ export declare class OpenableBehavior extends Behavior {
      * Check if an entity can be closed
      */
     static canClose(entity: IFEntity): boolean;
-    /**
-     * Check if this entity requires a tool to open (ADR-230 D3b;
-     * mirrors LockableBehavior.requiresKey)
-     */
-    static requiresTool(entity: IFEntity): boolean;
-    /**
-     * The declared tools that open this entity, in declaration order —
-     * empty when it needs none. The implicit-instrument resolution (GH
-     * #241) reads this to find a held tool the player did not name.
-     */
-    static requiredTools(entity: IFEntity): EntityId[];
-    /**
-     * Check if a tool can open this entity (mirrors LockableBehavior.canUnlockWith)
-     */
-    static canOpenWith(entity: IFEntity, toolId: EntityId): boolean;
     /**
      * Open the entity
      * @returns Result describing what happened
@@ -3121,9 +3085,9 @@ export declare function isComputedExitCarrier(trait: ITrait): trait is ITrait & 
 ### traits/openable/openableTrait
 
 ```typescript
-import { type EntityId } from '@sharpee/core';
 import { ITrait } from '../trait.js';
-export interface IOpenableData {
+import { IToolGated, ToolRequirement } from '../tool-requirement.js';
+export interface IOpenableData extends IToolGated {
     /** Whether the entity is currently open */
     isOpen?: boolean;
     /** Whether the entity starts open */
@@ -3148,10 +3112,8 @@ export interface IOpenableData {
     openDescription?: string;
     /** Description when closed (used by computed description getter on IFEntity) */
     closedDescription?: string;
-    /** Single tool entity required to open this (ADR-230 D3b; mirrors ILockableData.keyId) */
-    toolId?: EntityId;
-    /** Multiple tool entities that can open this (mirrors ILockableData.keyIds) */
-    toolIds?: EntityId[];
+    /** The tool opening needs (ADR-230 D3b); absent, opening needs none */
+    toolRequirement?: ToolRequirement;
 }
 /**
  * Openable trait for entities that can be opened and closed.
@@ -3175,8 +3137,7 @@ export declare class OpenableTrait implements ITrait, IOpenableData {
     closeSound?: string;
     openDescription?: string;
     closedDescription?: string;
-    toolId?: EntityId;
-    toolIds?: EntityId[];
+    toolRequirement?: ToolRequirement;
     constructor(data?: IOpenableData);
 }
 ```
@@ -3247,22 +3208,16 @@ export declare class LockableTrait implements ITrait, ILockableData {
 ### traits/cuttable/cuttableTrait
 
 ```typescript
-import { type EntityId } from '@sharpee/core';
 import { ITrait } from '../trait.js';
+import { IToolGated, ToolRequirement } from '../tool-requirement.js';
 /**
  * Data for the cuttable trait (ADR-230 D3c).
  *
- * Tool fields mirror ILockableData's key config (PIN 2 shared shape with
- * OpenableTrait's tool fields): a declared requirement makes the cutting
- * action refuse wrong/missing tools; no requirement means any explicit
- * tool (or none) passes validation.
+ * A declared tool requirement makes the cutting action refuse wrong or
+ * missing tools; no requirement means any explicit tool (or none) passes
+ * validation.
  */
-export interface ICuttableData {
-    /** Single tool entity required to cut this (mirrors ILockableData.keyId) */
-    toolId?: EntityId;
-    /** Multiple tool entities that can cut this (mirrors ILockableData.keyIds) */
-    toolIds?: EntityId[];
-}
+export type ICuttableData = IToolGated;
 /**
  * Cuttable trait — marks an entity the cutting action may target.
  *
@@ -3273,48 +3228,14 @@ export interface ICuttableData {
  * implementation is an authoring error (load-time in Chord; runtime
  * safety-net refusal otherwise).
  *
- * This trait contains only data - eligibility/tool logic is in
- * CuttableBehavior.
+ * This trait contains only data; the tool check is the shared
+ * tool-requirement resolver's.
  */
 export declare class CuttableTrait implements ITrait, ICuttableData {
     static readonly type: "cuttable";
     readonly type: "cuttable";
-    toolId?: EntityId;
-    toolIds?: EntityId[];
+    toolRequirement?: ToolRequirement;
     constructor(data?: ICuttableData);
-}
-```
-
-### traits/cuttable/cuttableBehavior
-
-```typescript
-import { type EntityId } from '@sharpee/core';
-import { Behavior } from '../../behaviors/behavior.js';
-import { IFEntity } from '../../entities/if-entity.js';
-/**
- * Behavior for cuttable entities (ADR-230 D3c).
- *
- * Pure predicates only — the cutting action's validate() consults these;
- * the cut mutation itself belongs to the entity's registered
- * implementation, never here.
- */
-export declare class CuttableBehavior extends Behavior {
-    static requiredTraits: "cuttable"[];
-    /**
-     * Check if this entity requires a tool to cut (mirrors
-     * LockableBehavior.requiresKey / OpenableBehavior.requiresTool)
-     */
-    static requiresTool(entity: IFEntity): boolean;
-    /**
-     * The declared tools that cut this entity, in declaration order —
-     * empty when it needs none. The implicit-instrument resolution (GH
-     * #241) reads this to find a held tool the player did not name.
-     */
-    static requiredTools(entity: IFEntity): EntityId[];
-    /**
-     * Check if a tool can cut this entity (mirrors LockableBehavior.canUnlockWith)
-     */
-    static canCutWith(entity: IFEntity, toolId: EntityId): boolean;
 }
 ```
 
@@ -3328,19 +3249,14 @@ export declare class CuttableBehavior extends Behavior {
  * Public interface: FlammableTrait, IFlammableData.
  * Owner context: @sharpee/world-model / traits
  */
-import { type EntityId } from '@sharpee/core';
 import { ITrait } from '../trait.js';
+import { IToolGated, ToolRequirement } from '../tool-requirement.js';
 /**
- * Data for the flammable trait. A declared requirement makes the burning
- * action refuse wrong or missing tools; no requirement means any explicit
- * tool (or none) passes validation.
+ * Data for the flammable trait. A declared tool requirement makes the
+ * burning action refuse wrong or missing tools; no requirement means any
+ * explicit tool (or none) passes validation.
  */
-export interface IFlammableData {
-    /** Single tool entity required to burn this (mirrors ICuttableData.toolId) */
-    toolId?: EntityId;
-    /** Multiple tool entities that can burn this (mirrors ICuttableData.toolIds) */
-    toolIds?: EntityId[];
-}
+export type IFlammableData = IToolGated;
 /**
  * Flammable trait — eligibility and tool data only. The burn OUTCOME is the
  * entity's own registered implementation (an ADR-090 capability behavior, or
@@ -3351,51 +3267,8 @@ export interface IFlammableData {
 export declare class FlammableTrait implements ITrait, IFlammableData {
     static readonly type: "flammable";
     readonly type: "flammable";
-    toolId?: EntityId;
-    toolIds?: EntityId[];
+    toolRequirement?: ToolRequirement;
     constructor(data?: IFlammableData);
-}
-```
-
-### traits/flammable/flammableBehavior
-
-```typescript
-/**
- * Behavior for flammable entities (ADR-371 D2).
- *
- * Pure predicates only — the burning action's validate() consults these;
- * the burn mutation itself belongs to the entity's registered
- * implementation, never here. Mirrors CuttableBehavior.
- *
- * Public interface: FlammableBehavior.
- * Owner context: @sharpee/world-model / traits
- */
-import { type EntityId } from '@sharpee/core';
-import { Behavior } from '../../behaviors/behavior.js';
-import { IFEntity } from '../../entities/if-entity.js';
-export declare class FlammableBehavior extends Behavior {
-    static requiredTraits: "flammable"[];
-    /**
-     * Whether this entity requires a tool to burn.
-     * @param entity the flammable entity
-     * @returns true when a tool is declared
-     */
-    static requiresTool(entity: IFEntity): boolean;
-    /**
-     * The declared tools that burn this entity, in declaration order — empty
-     * when it needs none. The implicit-instrument resolution (GH #241) reads
-     * this to find a held tool the player did not name.
-     * @param entity the flammable entity
-     * @returns the tool ids
-     */
-    static requiredTools(entity: IFEntity): EntityId[];
-    /**
-     * Whether a tool can burn this entity.
-     * @param entity the flammable entity
-     * @param toolId the offered tool
-     * @returns true when the tool is declared for it
-     */
-    static canBurnWith(entity: IFEntity, toolId: EntityId): boolean;
 }
 ```
 
@@ -3438,22 +3311,16 @@ export declare class PurchasableTrait implements ITrait, IPurchasableData {
 ### traits/diggable/diggableTrait
 
 ```typescript
-import { type EntityId } from '@sharpee/core';
 import { ITrait } from '../trait.js';
+import { IToolGated, ToolRequirement } from '../tool-requirement.js';
 /**
  * Data for the diggable trait (ADR-230 Phase 6 (sketch ruling 6)).
  *
- * Tool fields mirror ILockableData's key config (PIN 2 shared shape with
- * OpenableTrait's tool fields): a declared requirement makes the digging
- * action refuse wrong/missing tools; no requirement means any explicit
- * tool (or none) passes validation.
+ * A declared tool requirement makes the digging action refuse wrong or
+ * missing tools; no requirement means any explicit tool (or none) passes
+ * validation.
  */
-export interface IDiggableData {
-    /** Single tool entity required to dig this (mirrors ILockableData.keyId) */
-    toolId?: EntityId;
-    /** Multiple tool entities that can dig this (mirrors ILockableData.keyIds) */
-    toolIds?: EntityId[];
-}
+export type IDiggableData = IToolGated;
 /**
  * Diggable trait — marks an entity the digging action may target.
  *
@@ -3464,48 +3331,14 @@ export interface IDiggableData {
  * implementation is an authoring error (load-time in Chord; runtime
  * safety-net refusal otherwise).
  *
- * This trait contains only data - eligibility/tool logic is in
- * DiggableBehavior.
+ * This trait contains only data; the tool check is the shared
+ * tool-requirement resolver's.
  */
 export declare class DiggableTrait implements ITrait, IDiggableData {
     static readonly type: "diggable";
     readonly type: "diggable";
-    toolId?: EntityId;
-    toolIds?: EntityId[];
+    toolRequirement?: ToolRequirement;
     constructor(data?: IDiggableData);
-}
-```
-
-### traits/diggable/diggableBehavior
-
-```typescript
-import { type EntityId } from '@sharpee/core';
-import { Behavior } from '../../behaviors/behavior.js';
-import { IFEntity } from '../../entities/if-entity.js';
-/**
- * Behavior for diggable entities (ADR-230 Phase 6 (sketch ruling 6)).
- *
- * Pure predicates only — the digging action's validate() consults these;
- * the cut mutation itself belongs to the entity's registered
- * implementation, never here.
- */
-export declare class DiggableBehavior extends Behavior {
-    static requiredTraits: "diggable"[];
-    /**
-     * Check if this entity requires a tool to cut (mirrors
-     * LockableBehavior.requiresKey / OpenableBehavior.requiresTool)
-     */
-    static requiresTool(entity: IFEntity): boolean;
-    /**
-     * The declared tools that dig this entity, in declaration order —
-     * empty when it needs none. The implicit-instrument resolution (GH
-     * #241) reads this to find a held tool the player did not name.
-     */
-    static requiredTools(entity: IFEntity): EntityId[];
-    /**
-     * Check if a tool can cut this entity (mirrors LockableBehavior.canUnlockWith)
-     */
-    static canDigWith(entity: IFEntity, toolId: EntityId): boolean;
 }
 ```
 
@@ -3554,13 +3387,14 @@ export declare class ReadableTrait implements ITrait {
 
 ```typescript
 import { ITrait } from '../trait.js';
+import { IToolGated, ToolRequirement } from '../tool-requirement.js';
 /**
  * LightSource trait allows entities to provide illumination.
  *
  * This is a pure data structure - all validation and logic
  * should be handled by LightSourceBehavior.
  */
-export declare class LightSourceTrait implements ITrait {
+export declare class LightSourceTrait implements ITrait, IToolGated {
     static readonly type: "lightSource";
     readonly type: "lightSource";
     /** Light output level (1-10) */
@@ -3573,12 +3407,10 @@ export declare class LightSourceTrait implements ITrait {
      */
     isLit?: boolean;
     /**
-     * Single tool that lights it — a match for a lantern (ADR-374 D9; the
-     * shape of FlammableTrait.toolId). Absent: lighting needs no tool.
+     * The tool that lights it — a match for a lantern (ADR-374 D9). Absent:
+     * lighting needs no tool.
      */
-    toolId?: string;
-    /** Several tools that light it (mirrors FlammableTrait.toolIds). */
-    toolIds?: string[];
+    toolRequirement?: ToolRequirement;
     /** Optional fuel/battery remaining (undefined = infinite) */
     fuelRemaining?: number;
     /** Maximum fuel capacity (for refillable lights) */
@@ -7910,6 +7742,52 @@ export interface IObstructorTraitMatch<T extends ITrait> {
  * the way that capability cares about.
  */
 export declare function findTraitsOnObstructors<T extends ITrait>(wall: WallEntity, traitType: string, world: IObstructorQueryWorld): IObstructorTraitMatch<T>[];
+```
+
+### traits/tool-requirement
+
+```typescript
+/**
+ * The one tool-requirement shape every tool-gated trait holds.
+ *
+ * A trait that needs a tool — Cuttable, Diggable, Flammable, Openable,
+ * LightSource — carries an optional `toolRequirement`: absent means no tool
+ * is needed, present means one of its `tools` must be used. The standard
+ * actions read it through one resolver, so a new tool-gated verb adds no
+ * fields of its own. The value is plain data, so it saves and restores with
+ * the trait.
+ *
+ * Public interface: `ToolRequirement`, `IToolGated`, `toolRequirement()`,
+ * `accepts()`.
+ *
+ * Owner context: `@sharpee/world-model` — traits.
+ *
+ * References: alignment-fixes Q12 (Older-1). `LockableTrait`'s key is not a
+ * tool requirement: a key is the lock's own concept.
+ */
+import { type EntityId } from '@sharpee/core';
+/** The tools that satisfy a requirement, in declaration order. Never empty. */
+export interface ToolRequirement {
+    readonly tools: readonly EntityId[];
+}
+/** A trait whose action needs a tool. Absent `toolRequirement`: no tool needed. */
+export interface IToolGated {
+    toolRequirement?: ToolRequirement;
+}
+/**
+ * Builds a tool requirement.
+ * @param tools the accepted tool ids, in declaration order
+ * @returns the requirement
+ * @throws when no tool is given — an empty requirement could never be met
+ */
+export declare function toolRequirement(...tools: EntityId[]): ToolRequirement;
+/**
+ * Whether a tool satisfies a requirement.
+ * @param requirement the requirement
+ * @param toolId the offered tool
+ * @returns true when the tool is one the requirement accepts
+ */
+export declare function accepts(requirement: ToolRequirement, toolId: EntityId): boolean;
 ```
 
 ### traits/enterable/enterableTrait

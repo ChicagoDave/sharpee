@@ -24,7 +24,7 @@ import { Action, ActionContext, ValidationResult } from '../../enhanced-types.js
 import { type ISemanticEvent } from '@sharpee/core';
 import {
   TraitType,
-  CuttableBehavior,
+  CuttableTrait,
   findTraitWithCapability,
   type CapabilityEffect,
   type CapabilitySharedData,
@@ -156,9 +156,7 @@ export const cuttingAction: Action & { metadata: ActionMetadata } = {
       context,
       noun,
       explicitTool,
-      CuttableBehavior.requiresTool(noun),
-      (toolId) => CuttableBehavior.canCutWith(noun, toolId),
-      CuttableBehavior.requiredTools(noun)
+      noun.get(CuttableTrait)?.toolRequirement
     );
     if (toolResolution.failure) {
       return toolResolution.failure;

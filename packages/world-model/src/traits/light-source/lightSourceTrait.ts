@@ -2,6 +2,7 @@
 
 import { ITrait } from '../trait.js';
 import { TraitType } from '../trait-types.js';
+import { IToolGated, ToolRequirement } from '../tool-requirement.js';
 
 /**
  * LightSource trait allows entities to provide illumination.
@@ -9,7 +10,7 @@ import { TraitType } from '../trait-types.js';
  * This is a pure data structure - all validation and logic
  * should be handled by LightSourceBehavior.
  */
-export class LightSourceTrait implements ITrait {
+export class LightSourceTrait implements ITrait, IToolGated {
   static readonly type = TraitType.LIGHT_SOURCE;
   readonly type = TraitType.LIGHT_SOURCE;
   
@@ -25,13 +26,10 @@ export class LightSourceTrait implements ITrait {
   isLit?: boolean;
   
   /**
-   * Single tool that lights it — a match for a lantern (ADR-374 D9; the
-   * shape of FlammableTrait.toolId). Absent: lighting needs no tool.
+   * The tool that lights it — a match for a lantern (ADR-374 D9). Absent:
+   * lighting needs no tool.
    */
-  toolId?: string;
-
-  /** Several tools that light it (mirrors FlammableTrait.toolIds). */
-  toolIds?: string[];
+  toolRequirement?: ToolRequirement;
 
   /** Optional fuel/battery remaining (undefined = infinite) */
   fuelRemaining?: number;

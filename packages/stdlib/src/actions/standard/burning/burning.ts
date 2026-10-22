@@ -24,7 +24,7 @@ import { Action, ActionContext, ValidationResult } from '../../enhanced-types.js
 import { type ISemanticEvent } from '@sharpee/core';
 import {
   TraitType,
-  FlammableBehavior,
+  FlammableTrait,
   findTraitWithCapability,
   type CapabilityEffect,
   type CapabilitySharedData,
@@ -156,9 +156,7 @@ export const burningAction: Action & { metadata: ActionMetadata } = {
       context,
       noun,
       explicitTool,
-      FlammableBehavior.requiresTool(noun),
-      (toolId) => FlammableBehavior.canBurnWith(noun, toolId),
-      FlammableBehavior.requiredTools(noun)
+      noun.get(FlammableTrait)?.toolRequirement
     );
     if (toolResolution.failure) {
       return toolResolution.failure;

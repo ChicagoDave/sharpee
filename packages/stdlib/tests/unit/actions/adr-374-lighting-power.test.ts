@@ -27,6 +27,7 @@ import {
   WorldModel,
   ContainerTrait,
   LightSourceTrait,
+  toolRequirement,
   LightSourceBehavior,
   RoomTrait,
   SwitchableTrait,
@@ -69,7 +70,7 @@ function cellar() {
   const lantern = world.createEntity('lantern', 'object');
   const battery = world.createEntity('battery', 'object');
   const torch = world.createEntity('torch', 'object');
-  lantern.add(new LightSourceTrait({ isLit: false, toolId: match.id }));
+  lantern.add(new LightSourceTrait({ isLit: false, toolRequirement: toolRequirement(match.id) }));
   torch.add(new LightSourceTrait());
   torch.add(new ContainerTrait());
   torch.add(new SwitchableTrait({ powerSourceIds: [battery.id] }));
