@@ -48,29 +48,45 @@ define phrases en-US
     The corridor below is too dark to try.</code></pre>
 <p>A per-exit <code>, one-way</code> is not allowed inside an <code>exits:</code> line, because a comma there already separates exits. A room that mixes the two writes an <code>exits:</code> line and an <code>exits, one-way:</code> line, or single lines. An <code>exits:</code> line belongs in a room block; a region lists its rooms' exits in an <code>exits</code> table instead.</p>
 <h2 id="passages-an-exit-named-by-its-command">Passages: an exit named by its command</h2>
-<p>Some ways out of a room have no compass word. The player types <code>xyzzy</code>, or <code>climb the rope</code>, or <code>follow the cables</code>. A <code>passage</code> line names such an exit by the words the player types, with <code>or</code> between alternative forms, and leads somewhere exactly as a compass exit does:</p>
+<p>Some ways out of a room have no compass word. The player types <code>xyzzy</code>, or <code>climb the rope</code>, or <code>follow the cables</code>. A <code>passage</code> block names such an exit by the commands the player types, and leads somewhere exactly as a compass exit does:</p>
 <pre><code class="language-chord">create the Cable Trench
   a room, dark
   up to the Loading Dock
-  passage follow the cables or crawl along the cables to the Sorting Room
+
+  passage to the Sorting Room
+    grammar
+      follow the cables
+      crawl along the cables
+  end passage
 
   A trench under the dock floor. Lit, the cables can be seen running
   off toward the sorting machine.</code></pre>
-<p>The words are plain words, one or more, with <code>to</code> and <code>or</code> as the separators. Articles are optional for the player: <code>follow cables</code> reaches <code>follow the cables</code>. A passage is one-way by construction, since there is no opposite of <code>xyzzy</code>: no return exit is inferred, and <code>, one-way</code> on the line is an error. <code>through &lt;door&gt;</code> works as on any exit. A passage is an exit, so it appears on the map, <code>on the player going</code> fires for it, a door on the way is consulted, and the destination's <code>after the player entering</code> runs. Its words are grammar only in the room that declares it: elsewhere <code>climb the rope</code> is the standard climbing action, and <code>xyzzy</code> is not understood, exactly as if the passage had not been written.</p>
-<p>A blocked or deadly line names a passage by any of its forms:</p>
+<p>The head says where the passage leads, with <code>through &lt;door&gt;</code> as on any exit. <code>grammar</code> comes first, with one command per line under it, written as an action's grammar is: <code>or</code> joins two words (<code>crawl or creep along the cables</code>) and <code>[…]</code> marks a word the player may leave out. A passage takes no nouns, so <code>the</code> is a word here, never a slot. Articles are optional for the player: <code>follow cables</code> reaches <code>follow the cables</code>. The first command names the passage on the map.</p>
+<p>A passage is one-way by construction, since there is no opposite of <code>xyzzy</code>: no return exit is inferred, and <code>, one-way</code> on the head is an error. A passage is an exit, so it appears on the map, <code>on the player going</code> fires for it, a door on the way is consulted, and the destination's <code>after the player entering</code> runs. Its commands are grammar only in the room that declares it: elsewhere <code>climb the rope</code> is the standard climbing action, and <code>xyzzy</code> is not understood, exactly as if the passage had not been written.</p>
+<p>A passage's blocked and deadly lines live inside its block, after <code>grammar</code>, at most one of each:</p>
 <pre><code class="language-chord">create the Cable Trench
   a room, dark
-  passage follow the cables or crawl along the cables to the Sorting Room
-  passage crawl along the cables is blocked while the grating is shut: grating-shut</code></pre>
+
+  passage to the Sorting Room
+    grammar
+      follow the cables
+      crawl along the cables
+    blocked while the grating is shut: grating-shut
+  end passage</code></pre>
 <h2 id="exits-that-exist-while-a-condition-holds">Exits that exist while a condition holds</h2>
-<p>A single exit line, compass or passage, takes a <code>while &lt;condition&gt;</code> tail. While the condition is false the exit is not there: going refuses as with no exit written, a passage's words are not grammar, and the map draws it as a conditional exit. This is a <em>hidden</em> exit, and it is not the same as a blocked one: a blocked exit exists and refuses with your phrase; a hidden exit does not exist and refuses with the platform's &quot;You can't go that way.&quot; An exit that is both hidden and blocked is hidden.</p>
+<p>A single compass exit line takes a <code>while &lt;condition&gt;</code> tail, and a passage takes a <code>while &lt;condition&gt;</code> line inside its block. While the condition is false the exit is not there: going refuses as with no exit written, a passage's commands are not grammar, and the map draws it as a conditional exit. This is a <em>hidden</em> exit, and it is not the same as a blocked one: a blocked exit exists and refuses with your phrase; a hidden exit does not exist and refuses with the platform's &quot;You can't go that way.&quot; An exit that is both hidden and blocked is hidden.</p>
 <pre><code class="language-chord">create the Crawl
   a room
   north to the Passage while the boulder is rolled aside
 
 create the Cable Trench
   a room, dark
-  passage follow the cables to the Sorting Room while the Cable Trench is not dark</code></pre>
+
+  passage to the Sorting Room
+    grammar
+      follow the cables
+    while the Cable Trench is not dark
+  end passage</code></pre>
 <p>The inferred reverse of a two-way exit carries the same condition: a way is there or not from both ends. For a one-sided reveal, write <code>, one-way</code> on each side. <code>while</code> is not allowed on an <code>exits:</code> line or in a region's exit table, where the condition would run into the next exit; give the exit a line of its own.</p>
 <h2 id="who-may-take-an-exit">Who may take an exit</h2>
 <p>A room's <code>admits:</code> line names the steered vehicles that may enter it (see <a href="/chord/guide/world/kinds-traits-and-settings">vehicles</a>). The same list takes the word <code>pushing</code> for a thing pushed along the way, and a single exit line takes its own <code>admits</code> list for that one way:</p>

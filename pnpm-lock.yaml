@@ -111,6 +111,9 @@ importers:
       '@sharpee/engine':
         specifier: workspace:*
         version: link:../engine
+      '@sharpee/ide-protocol':
+        specifier: workspace:*
+        version: link:../ide-protocol
       '@sharpee/lang-en-us':
         specifier: workspace:*
         version: link:../lang-en-us
@@ -139,9 +142,6 @@ importers:
         specifier: ^10.3.10
         version: 10.5.0
     devDependencies:
-      '@sharpee/ide-protocol':
-        specifier: workspace:*
-        version: link:../ide-protocol
       '@types/node':
         specifier: ^20.11.19
         version: 20.19.27

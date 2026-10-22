@@ -1082,9 +1082,9 @@ export function turnOfCard(document: TreeDocument, cardId: string): number | und
 }
 
 /**
- * Pin a claim's name on a card (ADR-367 D5): the card gains `locks` or the
+ * Lock a claim's name on a card (ADR-367 D5): the card gains `locks` or the
  * name is appended once. Mutates the document the caller then writes
- * through `segmentTree`. The CLI and the Testing tab both pin through this
+ * through `segmentTree`. The CLI and the Testing tab both lock through this
  * one function (D7: two surfaces, one path).
  *
  * @param document the tree
@@ -1093,13 +1093,13 @@ export function turnOfCard(document: TreeDocument, cardId: string): number | und
  * @returns true when the document changed
  * @throws when no card in the tree carries the id
  */
-export function pinLockOnCard(document: TreeDocument, cardId: string, name: string): boolean {
-  const visit = (cards: TreeCard[]): 'pinned' | 'already' | undefined => {
+export function lockOnCard(document: TreeDocument, cardId: string, name: string): boolean {
+  const visit = (cards: TreeCard[]): 'locked' | 'already' | undefined => {
     for (const card of cards) {
       if (card.id === cardId) {
         if (card.locks?.includes(name)) return 'already';
         card.locks = [...(card.locks ?? []), name];
-        return 'pinned';
+        return 'locked';
       }
       for (const branch of card.branches ?? []) {
         const found = visit(branch.cards);
@@ -1110,5 +1110,5 @@ export function pinLockOnCard(document: TreeDocument, cardId: string, name: stri
   };
   const found = visit(document.cards);
   if (found === undefined) throw new Error(`no card ${cardId} in the tree`);
-  return found === 'pinned';
+  return found === 'locked';
 }

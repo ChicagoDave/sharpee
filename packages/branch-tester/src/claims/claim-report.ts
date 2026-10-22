@@ -4,18 +4,23 @@
  *
  * Purpose: `sharpee test` prints each claim's verdict with the line that
  * reached it, the walk that found it, or the budget that left it open; the
- * Testing tab shows the same verdict in its claims section. Both read the
- * sentence from here, off the `claim-result` payload, so the two surfaces
- * cannot drift (the derived tier's discipline). Browser-safe: types and
- * strings only.
+ * Testing tab shows the same verdict in its claims section. Both read every
+ * claims word from here — the sentence off the `claim-result` payload, the
+ * ratio and the verdict counts off the `claims-summary` payload — so the two
+ * surfaces cannot drift (the derived tier's discipline). Browser-safe: it
+ * reads the run's shapes from `claim-results`, which holds types only, and
+ * never pulls the runner and its engine seams into a browser program.
  *
- * Public interface: `ClaimResultRow`, `ClaimsSummaryRow`, `ClaimVerdictLike`,
- *   `ClaimPinLike`, `ClaimsRunLike`, `claimResultRowOf`, `claimsSummaryRowOf`,
- *   `claimHeadline`, `claimSentence`, `claimLockLine`, `claimsRatioLine`.
+ * Public interface: `ClaimResultRow`, `ClaimsSummaryRow`, `ClaimCount`,
+ *   `claimResultRowOf`, `claimsSummaryRowOf`, `lockRowOf`, `claimTitle`,
+ *   `claimVerdictWord`, `claimHeadline`, `claimSentence`, `claimLockLine`,
+ *   `claimsRatioLine`,
+ *   `claimsPendingLine`, `claimCounts`.
  * Owner context: @sharpee/branch-tester — the claims runner (ADR-365 D10).
  */
 
-import type { ClaimLockPin, ClaimResultEvent, ClaimsSummaryEvent, RunEventEnvelope } from '@sharpee/ide-protocol';
+import type { ClaimLock, ClaimResultEvent, ClaimVerdictStatus, ClaimsSummaryEvent, RunEventEnvelope } from '@sharpee/ide-protocol';
+import type { ClaimLockResult, ClaimVerdict, ClaimsRunResult } from './claim-results.js';
 
 /** One claim's verdict as the wire carries it: the `claim-result` payload minus its envelope. */
 export type ClaimResultRow = Omit<ClaimResultEvent, keyof RunEventEnvelope | 'type'>;
@@ -23,51 +28,11 @@ export type ClaimResultRow = Omit<ClaimResultEvent, keyof RunEventEnvelope | 'ty
 /** The claims tier's ratio as the wire carries it: the `claims-summary` payload minus its envelope. */
 export type ClaimsSummaryRow = Omit<ClaimsSummaryEvent, keyof RunEventEnvelope | 'type'>;
 
-/*
- * The runner's shapes, taken structurally (the fields read, no more): this
- * module is bundled into the Testing tab, so it must not pull the runner
- * and its engine seams into a browser program.
- */
-
-/** The fields of a `ClaimVerdict` this module reads. */
-export interface ClaimVerdictLike {
-  readonly set: string;
-  readonly name: string;
-  readonly never: boolean;
-  readonly kind: string;
-  readonly verdict: ClaimResultRow['verdict'];
-  readonly settledBy: ClaimResultRow['settledBy'];
-  readonly witness?: readonly string[];
-  readonly depth?: number;
-  readonly line?: { readonly id: string; readonly label: string; readonly turn: number };
-  readonly thingsInSet: number;
-  readonly inertInSet: number;
-}
-
-/** The fields of a `ClaimPinResult` this module reads. */
-export interface ClaimPinLike {
-  readonly claim: string;
-  readonly lineId: string;
-  readonly label: string;
-  readonly turn: number;
-  readonly cardId?: string;
-  readonly outcome: ClaimLockPin['outcome'];
-  readonly message?: string;
-}
-
-/** The fields of a `ClaimsRunResult` this module reads. */
-export interface ClaimsRunLike {
-  readonly source: string;
-  readonly seed?: number;
-  readonly walks: ReadonlyArray<{ readonly set: string; readonly stopReason: string; readonly statesDiscovered: number; readonly walkMs: number }>;
-  readonly claims: readonly ClaimVerdictLike[];
-  readonly declared: number;
-  readonly held: number;
-  readonly violated: number;
-  readonly unproven: number;
-  readonly totalWalkMs: number;
-  readonly floored: boolean;
-  readonly pins: readonly ClaimPinLike[];
+/** How many claims reached one verdict, with the words a count of them is shown in. */
+export interface ClaimCount {
+  readonly verdict: ClaimVerdictStatus;
+  readonly count: number;
+  readonly text: string;
 }
 
 /**
@@ -75,11 +40,11 @@ export interface ClaimsRunLike {
  * on the claim and, for a budget stop, the walk that stopped.
  *
  * @param claim the verdict
- * @param result the run it belongs to (its pins, walks and floor)
+ * @param result the run it belongs to (its locks, walks and floor)
  * @returns the row
  */
-export function claimResultRowOf(claim: ClaimVerdictLike, result: Pick<ClaimsRunLike, 'pins' | 'walks' | 'floored'>): ClaimResultRow {
-  const locks = result.pins.filter((pin) => pin.claim === claim.name).map(lockPinOf);
+export function claimResultRowOf(claim: ClaimVerdict, result: Pick<ClaimsRunResult, 'locks' | 'walks' | 'floored'>): ClaimResultRow {
+  const locks = result.locks.filter((lock) => lock.claim === claim.name).map(lockRowOf);
   const walk = result.walks.find((candidate) => candidate.set === claim.set);
   return {
     name: claim.name,
@@ -105,7 +70,7 @@ export function claimResultRowOf(claim: ClaimVerdictLike, result: Pick<ClaimsRun
  * @param result the run
  * @returns the row
  */
-export function claimsSummaryRowOf(result: ClaimsRunLike): ClaimsSummaryRow {
+export function claimsSummaryRowOf(result: ClaimsRunResult): ClaimsSummaryRow {
   return {
     source: result.source,
     declared: result.declared,
@@ -119,15 +84,42 @@ export function claimsSummaryRowOf(result: ClaimsRunLike): ClaimsSummaryRow {
   };
 }
 
-function lockPinOf(pin: ClaimPinLike): ClaimLockPin {
+/**
+ * Map one lock's check onto the wire's lock: the check minus the claim it
+ * is on, which the row carrying it already names.
+ *
+ * @param lock the check
+ * @returns the wire's lock
+ */
+export function lockRowOf(lock: ClaimLockResult): ClaimLock {
   return {
-    lineId: pin.lineId,
-    label: pin.label,
-    turn: pin.turn,
-    ...(pin.cardId !== undefined ? { cardId: pin.cardId } : {}),
-    outcome: pin.outcome,
-    ...(pin.message !== undefined ? { message: pin.message } : {}),
+    lineId: lock.lineId,
+    label: lock.label,
+    turn: lock.turn,
+    ...(lock.cardId !== undefined ? { cardId: lock.cardId } : {}),
+    outcome: lock.outcome,
+    ...(lock.message !== undefined ? { message: lock.message } : {}),
   };
+}
+
+/**
+ * The claim as the report names it: `the deed box leaves the Folly (never)`.
+ *
+ * @param row the claim
+ * @returns the name, marked when the claim is negative
+ */
+export function claimTitle(row: Pick<ClaimResultRow, 'name' | 'never'>): string {
+  return `${row.name}${row.never ? ' (never)' : ''}`;
+}
+
+/**
+ * The verdict as the report shows it: `HELD`, `VIOLATED`, `UNPROVEN`.
+ *
+ * @param row the claim
+ * @returns the word
+ */
+export function claimVerdictWord(row: Pick<ClaimResultRow, 'verdict'>): string {
+  return row.verdict.toUpperCase();
 }
 
 /**
@@ -137,7 +129,7 @@ function lockPinOf(pin: ClaimPinLike): ClaimLockPin {
  * @returns the head
  */
 export function claimHeadline(row: Pick<ClaimResultRow, 'verdict' | 'name' | 'never'>): string {
-  return `${row.verdict.toUpperCase()}  ${row.name}${row.never ? ' (never)' : ''}`;
+  return `${claimVerdictWord(row)}  ${claimTitle(row)}`;
 }
 
 /**
@@ -155,8 +147,8 @@ export function claimSentence(row: ClaimResultRow): string {
   switch (row.settledBy) {
     case 'line': {
       const broken = (row.locks ?? [])
-        .filter((pin) => pin.outcome !== 'held')
-        .map((pin) => `; its lock at line ${pin.lineId} "${pin.label}" turn ${pin.turn} is NOT held there`)
+        .filter((lock) => lock.outcome !== 'held')
+        .map((lock) => `; its lock at line ${lock.lineId} "${lock.label}" turn ${lock.turn} is NOT held there`)
         .join('');
       return `by line ${row.line?.id} "${row.line?.label}" at turn ${row.line?.turn}${broken}`;
     }
@@ -180,13 +172,13 @@ export function claimSentence(row: ClaimResultRow): string {
  * there, with the miss in the claim's words when it did not.
  *
  * @param name the claim's name
- * @param pin the lock
+ * @param lock the lock
  * @returns the line, indented as the report prints it
  */
-export function claimLockLine(name: string, pin: ClaimLockPin): string {
-  const where = `line ${pin.lineId} "${pin.label}" at turn ${pin.turn}`;
-  if (pin.outcome === 'held') return `  lock "${name}" at ${where} — held there`;
-  if (pin.outcome === 'not-held') return `  lock "${name}" at ${where} — NOT held there: ${pin.message}`;
+export function claimLockLine(name: string, lock: ClaimLock): string {
+  const where = `line ${lock.lineId} "${lock.label}" at turn ${lock.turn}`;
+  if (lock.outcome === 'held') return `  lock "${name}" at ${where} — held there`;
+  if (lock.outcome === 'not-held') return `  lock "${name}" at ${where} — NOT held there: ${lock.message}`;
   return `  lock "${name}" at ${where} — lock-unknown-claim: the fragment declares no claim of that name`;
 }
 
@@ -198,4 +190,31 @@ export function claimLockLine(name: string, pin: ClaimLockPin): string {
  */
 export function claimsRatioLine(summary: ClaimsSummaryRow): string {
   return `claims: ${summary.held} of ${summary.declared} held${summary.violated ? `, ${summary.violated} violated` : ''}${summary.unproven ? `, ${summary.unproven} unproven` : ''}${summary.seed !== undefined ? ` (seed ${summary.seed})` : ''}`;
+}
+
+/**
+ * The line shown while verdicts arrive and the summary has not: `claims: 3 so far`.
+ *
+ * @param arrived how many verdicts have arrived
+ * @returns the line
+ */
+export function claimsPendingLine(arrived: number): string {
+  return `claims: ${arrived} so far`;
+}
+
+/**
+ * The count of each verdict reached, in the order held, violated, unproven,
+ * omitting a verdict no claim reached. The run's summary is the count once it
+ * has arrived; before it, the verdicts that have arrived are counted.
+ *
+ * @param summary the run's summary, or undefined before it arrives
+ * @param rows the verdicts so far
+ * @returns one count per verdict reached
+ */
+export function claimCounts(summary: ClaimsSummaryRow | undefined, rows: ReadonlyArray<Pick<ClaimResultRow, 'verdict'>>): ClaimCount[] {
+  const countOf = (verdict: ClaimVerdictStatus): number =>
+    summary !== undefined ? summary[verdict] : rows.filter((row) => row.verdict === verdict).length;
+  return (['held', 'violated', 'unproven'] as const)
+    .map((verdict) => ({ verdict, count: countOf(verdict), text: `${countOf(verdict)} ${verdict}` }))
+    .filter((entry) => entry.count > 0);
 }

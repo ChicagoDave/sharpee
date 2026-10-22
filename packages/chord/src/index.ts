@@ -115,8 +115,8 @@ function rejectClaims(ast: StoryFile, bag: DiagnosticBag): void {
   ast.declarations = ast.declarations.filter((d) => d.kind !== 'claims');
 }
 
-export { compileClaims } from './claims.js';
-export type { ClaimsCompileResult, CompileClaimsOptions, IRClaim, IRClaimNeeds, IRClaimSet } from './claims.js';
+export { compileClaims, renderClaimBlock, spliceClaimIntoFragment, claimsFragmentWith } from './claims.js';
+export type { ClaimBlockSource, ClaimsCompileResult, CompileClaimsOptions, IRClaim, IRClaimNeeds, IRClaimSet } from './claims.js';
 export { claimCone } from './claims-cone.js';
 export type { ClaimConeKept, ClaimConeResult, ClaimConeSet } from './claims-cone.js';
 

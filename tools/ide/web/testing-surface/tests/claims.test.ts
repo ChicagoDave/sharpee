@@ -11,8 +11,8 @@
  * Owner context: tools/ide — the testing play surface's web bundle.
  */
 import { describe, expect, it } from 'vitest';
-import { claimHeadline, claimLockLine, claimSentence, type ClaimResultRow } from '@sharpee/branch-tester/claim-report';
-import { claimLockText, claimLockVisit, claimRowOf, claimWhyText, claimsHeaderText, claimsSummaryOf } from '../src/claims';
+import { claimHeadline, claimLockLine, claimSentence, claimsRatioLine, type ClaimResultRow } from '@sharpee/branch-tester/claim-report';
+import { claimLockText, claimLockVisit, claimRowOf, claimWhyText, claimsCountsOf, claimsHeaderText, claimsSummaryOf } from '../src/claims';
 
 const envelope = { schemaVersion: 2 as const, seq: 3, elapsedMs: 40 };
 const row: ClaimResultRow = {
@@ -58,9 +58,17 @@ describe('the words are the report\'s', () => {
     expect(claimHeadline(never)).toBe('HELD  the note leaves the Hall (never)');
   });
 
-  it('the header is the ratio once the summary has arrived, else the count so far', () => {
-    expect(claimsHeaderText({ source: 'x', declared: 10, held: 9, violated: 1, unproven: 0, walks: 4, totalWalkMs: 1, floored: true }, [row])).toBe('claims · 9 of 10 held');
-    expect(claimsHeaderText(undefined, [row, row])).toBe('claims · 2');
+  it('the header is the report\'s ratio line once the summary has arrived, else the count so far', () => {
+    const summary = { source: 'x', declared: 10, held: 9, violated: 1, unproven: 0, walks: 4, totalWalkMs: 1, floored: true };
+    expect(claimsHeaderText(summary, [row])).toBe(claimsRatioLine(summary));
+    expect(claimsHeaderText(summary, [row])).toBe('claims: 9 of 10 held, 1 violated');
+    expect(claimsHeaderText(undefined, [row, row])).toBe('claims: 2 so far');
+  });
+
+  it('the counts are the summary\'s once it has arrived, the rows\' before it', () => {
+    const summary = { source: 'x', declared: 10, held: 9, violated: 1, unproven: 0, walks: 4, totalWalkMs: 1, floored: true };
+    expect(claimsCountsOf(summary, [row]).map((count) => count.text)).toEqual(['9 held', '1 violated']);
+    expect(claimsCountsOf(undefined, [row, row]).map((count) => count.text)).toEqual([`2 ${row.verdict}`]);
   });
 
   it('a lock visits its line and its card when the wire named one', () => {

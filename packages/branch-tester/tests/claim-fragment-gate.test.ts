@@ -10,7 +10,7 @@ import { readFileSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { checkCanonicalFragment } from '../src/claims/claim-fragment-gate.js';
-import { freshFragmentWith, spliceLockIntoFragment } from '../src/claims/claim-lock.js';
+import { claimsFragmentWith, spliceClaimIntoFragment } from '@sharpee/chord';
 
 const BLOCK = '  claim the deed box is open\n    the deed box is open\n    needs rooms: the Folly\n    needs things: the deed box\n    needs verbs: open\n';
 const SECOND = '  never the deed box leaves the Folly\n    the deed box is not in the Folly\n    needs rooms: the Folly\n';
@@ -22,9 +22,9 @@ const problemsOf = (text: string) => {
 
 describe('the lock\'s own output is canonical', () => {
   it('a fresh fragment, a spliced second lock, a shared set, and comments between blocks', () => {
-    const fresh = freshFragmentWith('Fernhill', BLOCK);
+    const fresh = claimsFragmentWith('Fernhill', BLOCK);
     expect(checkCanonicalFragment(fresh)).toEqual({ status: 'canonical' });
-    const spliced = spliceLockIntoFragment(fresh, SECOND);
+    const spliced = spliceClaimIntoFragment(fresh, SECOND);
     expect(checkCanonicalFragment(spliced)).toEqual({ status: 'canonical' });
     const shared = `claims\n  needs rooms: the Folly\n  needs verbs: open\n\n${BLOCK}\n## a note between blocks\n\n${SECOND}end claims\n`;
     expect(checkCanonicalFragment(shared)).toEqual({ status: 'canonical' });

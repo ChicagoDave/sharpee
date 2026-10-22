@@ -66,7 +66,7 @@ export type {
   DerivedRunSummaryEvent,
   ClaimVerdictStatus,
   ClaimSettledBy,
-  ClaimLockPin,
+  ClaimLock,
   ClaimResultEvent,
   ClaimsSummaryEvent,
   RunEndEvent,

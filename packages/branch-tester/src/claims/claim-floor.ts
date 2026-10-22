@@ -19,12 +19,14 @@
  * is loud; the claims tier's verdicts still never gate (ADR-365 D9).
  *
  * Public interface: `createClaimFloor`, `ClaimFloor`, `ClaimFloorReading`,
- *   `ClaimFloorReach`, `ClaimPinResult`.
+ *   `ClaimFloorReach`. Each lock's check is a `ClaimLockResult`
+ *   (`claim-results`).
  * Owner context: @sharpee/branch-tester — the claims runner (ADR-365 D10).
  */
 
 import type { StoryIR } from '@sharpee/chord';
 import type { Claim, ClaimSet } from './claim-set.js';
+import type { ClaimLockResult } from './claim-results.js';
 import { claimHolds, claimNamesOf, clauseKeysByFiredOf, describeClaimMiss, entityIdByIrOf, type ClaimContext } from './claim-predicates.js';
 import type { ClaimsTurnEvent, ClaimsWorld } from './claims-game.js';
 import { readWorldSnapshot } from './claims-game.js';
@@ -39,25 +41,12 @@ export interface ClaimFloorReach {
   readonly cardId?: string;
 }
 
-/** One lock's check at its card. */
-export interface ClaimPinResult {
-  readonly claim: string;
-  readonly lineId: string;
-  readonly label: string;
-  readonly turn: number;
-  readonly cardId?: string;
-  /** `held`, `not-held`, or `unknown-claim` when the fragment no longer declares the name. */
-  readonly outcome: 'held' | 'not-held' | 'unknown-claim';
-  /** What was so instead, in the claim's words, when not held (ADR-367 D6); absent when held. */
-  readonly message?: string;
-}
-
 /** What the floor saw over one tree run. */
 export interface ClaimFloorReading {
   /** Claim index to the first line and turn that reached it. */
   readonly reached: ReadonlyMap<number, ClaimFloorReach>;
   /** Every lock the run met, in run order. */
-  readonly pins: readonly ClaimPinResult[];
+  readonly locks: readonly ClaimLockResult[];
 }
 
 /** The floor: hand `onCard` to the walker, read the result after the run. */
@@ -85,7 +74,7 @@ export function createClaimFloor(ir: StoryIR, claimSet: ClaimSet): ClaimFloor {
   const byName = new Map(claimSet.claims.map((claim) => [claim.name, claim]));
   const positive = claimSet.claims.filter((claim) => !claim.never);
   const reached = new Map<number, ClaimFloorReach>();
-  const pins: ClaimPinResult[] = [];
+  const lockResults: ClaimLockResult[] = [];
   // The boot-time id map, per booted game: a line boots fresh, and ids are
   // the loader's per boot.
   const idMaps = new WeakMap<object, Map<string, string>>();
@@ -112,27 +101,27 @@ export function createClaimFloor(ir: StoryIR, claimSet: ClaimSet): ClaimFloor {
     for (const claim of pending) {
       if (claimHolds(claim, ctx)) reached.set(claim.index, where);
     }
-    // The lock's own proof (D5), and the card's verdict (D6): a pin that
+    // The lock's own proof (D5), and the card's verdict (D6): a lock that
     // does not hold fails the card it is on, in the claim's own words; a
-    // pin to a name the fragment no longer declares is a broken lock too.
+    // lock on a name the fragment no longer declares is a broken lock too.
     const verdicts: CardLockVerdict[] = [];
     for (const name of locks) {
       const claim: Claim | undefined = byName.get(name);
       if (claim === undefined) {
         const message = 'the fragment declares no claim of that name';
-        pins.push({ claim: name, ...where, outcome: 'unknown-claim', message });
+        lockResults.push({ claim: name, ...where, outcome: 'unknown-claim', message });
         verdicts.push({ name, held: false, message });
       } else if (claimHolds(claim, ctx)) {
-        pins.push({ claim: name, ...where, outcome: 'held' });
+        lockResults.push({ claim: name, ...where, outcome: 'held' });
         verdicts.push({ name, held: true });
       } else {
         const message = describeClaimMiss(claim, ctx, names);
-        pins.push({ claim: name, ...where, outcome: 'not-held', message });
+        lockResults.push({ claim: name, ...where, outcome: 'not-held', message });
         verdicts.push({ name, held: false, message });
       }
     }
     return verdicts;
   };
 
-  return { onCard, reading: () => ({ reached, pins }) };
+  return { onCard, reading: () => ({ reached, locks: lockResults }) };
 }

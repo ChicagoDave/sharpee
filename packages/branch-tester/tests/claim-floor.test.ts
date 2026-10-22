@@ -80,7 +80,7 @@ describe('the floor over a real tree run (D5)', () => {
       ['the Landing is reached', 'mainline', 1, 'card0002'],
       ['the note has been read', 'branch01', 3, 'card0011'],
     ]);
-    expect(reading.pins).toEqual([]);
+    expect(reading.locks).toEqual([]);
   }, 60_000);
 
   it('checks a lock at its card: held, not held, and a name the fragment lacks', async () => {
@@ -88,7 +88,7 @@ describe('the floor over a real tree run (D5)', () => {
     await runTreeDocument(tree({ mainNorth: ['the Landing is reached', 'the note has been read', 'no such claim'], branchRead: ['the note has been read'] }), loadGame, {
       lineObserver: { onCard: floor.onCard },
     });
-    expect(floor.reading().pins.map((pin) => [pin.claim, pin.lineId, pin.turn, pin.outcome])).toEqual([
+    expect(floor.reading().locks.map((lock) => [lock.claim, lock.lineId, lock.turn, lock.outcome])).toEqual([
       ['the Landing is reached', 'mainline', 1, 'held'],
       ['the note has been read', 'mainline', 1, 'not-held'],
       ['no such claim', 'mainline', 1, 'unknown-claim'],
@@ -139,7 +139,7 @@ describe('the runner under a floor', () => {
   it('without a floor nothing changes: every claim is walked and the report keeps its old words', async () => {
     const result = await runClaims(IR, CLAIMS, loadGame, { seed: SEED, maxStates: 500, maxSeconds: 30, maxDepth: 20 });
     expect(result.floored).toBe(false);
-    expect(result.pins).toEqual([]);
+    expect(result.locks).toEqual([]);
     expect(result.claims.map((claim) => claim.settledBy)).toEqual(['witness', 'witness', 'exhaustion', 'exhaustion']);
     expect(formatClaimsRun(result)).not.toContain('not reached by any line');
   }, 60_000);

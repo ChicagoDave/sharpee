@@ -135,7 +135,7 @@ describe('a broken lock is a failed card (D6)', () => {
     expect(northAgain.assertionResults.map((entry) => [entry.assertion.type, entry.passed])).toEqual([['ok-contains', false], ['lock-assert', false]]);
 
     // The floor's own record carries the same sentences for the claims report.
-    expect(floor.reading().pins.map((pin) => [pin.claim, pin.lineId, pin.turn, pin.outcome, pin.message])).toEqual([
+    expect(floor.reading().locks.map((lock) => [lock.claim, lock.lineId, lock.turn, lock.outcome, lock.message])).toEqual([
       ['the note has been read', 'mainline', 1, 'held', undefined],
       ['the Landing is reached', 'mainline', 2, 'held', undefined],
       ['the note is in the Landing', 'branch01', 2, 'not-held', 'the note is in the Hall'],

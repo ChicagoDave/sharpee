@@ -5,20 +5,34 @@
  * Purpose: shape the `claim-result` and `claims-summary` events the run
  *   column folds into what the column shows — one row per declared claim in
  *   arrival order, each with its verdict, the sentence `sharpee test` prints
- *   for it, and the locks the tree run checked on it, plus the ratio header.
- *   The sentence and the header come from `@sharpee/branch-tester`'s
- *   `claim-report`, the same functions the CLI report calls, so the tab and
- *   the report read as one vocabulary and cannot drift (the derived tier's
- *   discipline). A lock that did not hold is already a failed card in the
- *   tree section; here it is the way to that card.
+ *   for it, and the locks the tree run checked on it, plus the ratio header
+ *   and the verdict counts. Every one of those words comes from
+ *   `@sharpee/branch-tester`'s `claim-report`, the same functions the CLI
+ *   report calls, so the tab and the report read as one vocabulary and
+ *   cannot drift (the derived tier's discipline); the header and the counts
+ *   are the run's summary once it arrives. A lock that did not hold is
+ *   already a failed card in the tree section; here it is the way to that
+ *   card.
  *
  * Public interface: ClaimRow, ClaimsSummary, claimRowOf, claimsSummaryOf,
- *   claimsHeaderText, claimWhyText, claimLockText, claimLockVisit.
+ *   claimsHeaderText, claimsCountsOf, claimNameText, claimBadgeText,
+ *   claimWhyText, claimLockText, claimLockVisit.
  * Owner context: tools/ide — the testing play surface's web bundle.
  */
 
-import type { ClaimResultEvent, ClaimsSummaryEvent, ClaimLockPin, RunEventEnvelope } from '@sharpee/ide-protocol/run-events';
-import { claimLockLine, claimSentence, type ClaimResultRow, type ClaimsSummaryRow } from '@sharpee/branch-tester/claim-report';
+import type { ClaimResultEvent, ClaimsSummaryEvent, ClaimLock, RunEventEnvelope } from '@sharpee/ide-protocol/run-events';
+import {
+  claimCounts,
+  claimLockLine,
+  claimSentence,
+  claimsPendingLine,
+  claimsRatioLine,
+  claimTitle,
+  claimVerdictWord,
+  type ClaimCount,
+  type ClaimResultRow,
+  type ClaimsSummaryRow,
+} from '@sharpee/branch-tester/claim-report';
 
 /** One claim's verdict as the column keeps it: the event minus its envelope. */
 export type ClaimRow = ClaimResultRow;
@@ -49,15 +63,48 @@ export function claimsSummaryOf(event: ClaimsSummaryEvent): ClaimsSummary {
 }
 
 /**
- * The section's title: `claims · 9 of 10 held`.
+ * The section's title: the CLI report's ratio line once the summary has
+ * arrived (`claims: 9 of 10 held, 1 violated (seed 42)`), and the pending
+ * line before it.
  *
  * @param summary the ratio, or undefined before it arrives
  * @param rows the rows so far, for a count while the summary is pending
  * @returns the title
  */
 export function claimsHeaderText(summary: ClaimsSummary | undefined, rows: readonly ClaimRow[]): string {
-  if (summary) return `claims · ${summary.held} of ${summary.declared} held`;
-  return `claims · ${rows.length}`;
+  return summary ? claimsRatioLine(summary) : claimsPendingLine(rows.length);
+}
+
+/**
+ * The verdict counts beside the title: the summary's once it has arrived,
+ * the arrived rows' before it.
+ *
+ * @param summary the ratio, or undefined before it arrives
+ * @param rows the rows so far
+ * @returns one count per verdict reached, in report order
+ */
+export function claimsCountsOf(summary: ClaimsSummary | undefined, rows: readonly ClaimRow[]): ClaimCount[] {
+  return claimCounts(summary, rows);
+}
+
+/**
+ * A claim's name as the row shows it — the CLI report's own words.
+ *
+ * @param row the claim
+ * @returns the name, marked when the claim is negative
+ */
+export function claimNameText(row: ClaimRow): string {
+  return claimTitle(row);
+}
+
+/**
+ * A claim's verdict badge — the CLI report's own word.
+ *
+ * @param row the claim
+ * @returns the word
+ */
+export function claimBadgeText(row: ClaimRow): string {
+  return claimVerdictWord(row);
 }
 
 /**
@@ -75,19 +122,19 @@ export function claimWhyText(row: ClaimRow): string {
  * One lock's line, as the CLI report prints it, without its indent.
  *
  * @param row the claim the lock is on
- * @param pin the lock
+ * @param lock the lock
  * @returns the text
  */
-export function claimLockText(row: ClaimRow, pin: ClaimLockPin): string {
-  return claimLockLine(row.name, pin).trimStart();
+export function claimLockText(row: ClaimRow, lock: ClaimLock): string {
+  return claimLockLine(row.name, lock).trimStart();
 }
 
 /**
  * Where a lock's row visits: its line, and its card when the wire named one.
  *
- * @param pin the lock
+ * @param lock the lock
  * @returns the visit target
  */
-export function claimLockVisit(pin: ClaimLockPin): { lineId: string; cardId?: string } {
-  return { lineId: pin.lineId, ...(pin.cardId !== undefined ? { cardId: pin.cardId } : {}) };
+export function claimLockVisit(lock: ClaimLock): { lineId: string; cardId?: string } {
+  return { lineId: lock.lineId, ...(lock.cardId !== undefined ? { cardId: lock.cardId } : {}) };
 }

@@ -14,18 +14,16 @@
  * the way; the walk reports under that claim and never beyond it.
  *
  * Public interface: `deriveCommandVocabulary`, `candidateCommands`,
- *   `CommandVocabulary`, `CandidateBreadth`.
+ *   `CommandVocabulary`.
  * Owner context: @sharpee/branch-tester — the claims runner (ADR-365 D10).
  */
 
 import type { IRPatternPart, StoryIR } from '@sharpee/chord';
 import { TraitType } from '@sharpee/world-model';
 import type { NecessarySet } from './claim-set.js';
+import type { CandidateBreadth } from './claim-results.js';
 import type { ClaimsEngine, ClaimsEntity, ClaimsWorld } from './claims-game.js';
 import { irIdOf } from './claims-game.js';
-
-/** `basic` — one verb per affordance; `full` — adds put-in / put-on over the carried set. */
-export type CandidateBreadth = 'basic' | 'full';
 
 /** What the story itself declares a player can say, read off its IR and its language. */
 export interface CommandVocabulary {

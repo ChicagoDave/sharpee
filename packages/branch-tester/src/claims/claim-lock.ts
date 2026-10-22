@@ -13,16 +13,17 @@
  * (ADR-365 D12). Verbs are not trimmed (D8). The fact itself is validated
  * by compiling a candidate block through `compileClaims`, which is the one
  * place a sentence becomes a predicate, and then checked to hold at the
- * card. Nothing is written here: the result carries the rendered Chord
- * block and the spliced fragment text, and the caller writes files.
+ * card. Nothing is written here: the result carries the Chord block, which
+ * Chord's own `renderClaimBlock` writes, and the caller splices it into the
+ * fragment through Chord (`spliceClaimIntoFragment`, `claimsFragmentWith`)
+ * and writes files.
  *
- * Public interface: `proposeLock`, `spliceLockIntoFragment`,
- *   `freshFragmentWith`, `LockRequest`, `LockProposal`, `LockGame`,
- *   `LockOffer`.
+ * Public interface: `proposeLock`, `lockOnCard`, `LockRequest`,
+ *   `LockProposal`, `LockGame`, `LockOffer`.
  * Owner context: @sharpee/branch-tester — the claims runner (ADR-365 D10).
  */
 
-import { claimCone, type ClaimsCompileResult, type IREntity, type StoryIR } from '@sharpee/chord';
+import { claimCone, renderClaimBlock, type ClaimsCompileResult, type IREntity, type StoryIR } from '@sharpee/chord';
 import { CHORD_STATE_PREFIX, CHORD_STORY_STATE_KEY } from '@sharpee/story-loader';
 import { normalizeClaimSet, type Claim } from './claim-set.js';
 import { claimHolds, clauseKeysByFiredOf, entityIdByIrOf } from './claim-predicates.js';
@@ -39,9 +40,10 @@ export interface LockGame {
   lastTurnResult?: {
     validatedCommand?: {
       actionId: string;
-      directObject?: { entity: { id: string }; parsed: { text: string } };
-      indirectObject?: { entity: { id: string }; parsed: { text: string } };
-      instrument?: { entity: { id: string }; parsed: { text: string } };
+      parsed: { structure: { verb?: { text: string } } };
+      directObject?: { entity: { id: string } };
+      indirectObject?: { entity: { id: string } };
+      instrument?: { entity: { id: string } };
     };
   } | null;
 }
@@ -169,21 +171,12 @@ function changedBetween(before: SnapshotFacts, after: SnapshotFacts, irById: Rea
   return [...out];
 }
 
-/** The typed words before the first resolved noun — the verb as the candidate filter reads it. */
-function verbOf(input: string, validated: NonNullable<LockGame['lastTurnResult']>['validatedCommand']): string | undefined {
+/** The verb the parser read in the command — the word the candidate filter matches a command's start against. */
+function verbOf(validated: NonNullable<LockGame['lastTurnResult']>['validatedCommand']): string | undefined {
   if (!validated) return undefined;
   if (validated.actionId === GOING_ACTION) return undefined;
-  const lower = input.trim().toLowerCase();
-  const nouns = [validated.directObject, validated.indirectObject, validated.instrument]
-    .map((ref) => ref?.parsed.text.toLowerCase())
-    .filter((text): text is string => text !== undefined && text.length > 0);
-  let cut = lower.length;
-  for (const noun of nouns) {
-    const at = lower.indexOf(` ${noun}`);
-    if (at !== -1 && at < cut) cut = at;
-  }
-  const head = lower.slice(0, cut).trim();
-  return head.length > 0 ? head : undefined;
+  const verb = validated.parsed.structure.verb?.text.trim().toLowerCase();
+  return verb ? verb : undefined;
 }
 
 /**
@@ -246,7 +239,7 @@ export async function proposeLock(request: LockRequest): Promise<LockProposal> {
       room: roomOf(),
       actionId: validated?.actionId,
       resolved,
-      verb: verbOf(input, validated),
+      verb: verbOf(validated),
       changed: changedBetween(before, after, irById),
       snapshot,
       events: game.lastEvents ?? [],
@@ -315,19 +308,11 @@ export async function proposeLock(request: LockRequest): Promise<LockProposal> {
   // written as given, in the fragment's own spelling.
   const roomNames = request.needs?.rooms ?? rooms.map(nameOf);
   const verbNames = request.needs?.verbs ?? verbs;
-  // No provenance comment: Chord admits `##` only at the top level, outside
-  // every block (ADR-249), so ADR-367 D4's comment line cannot be written
-  // inside the block. The card's `locks` pin is the lock's record.
-  const render = (thingNames: readonly string[]): string => {
-    const lines = [
-      `  claim ${name}`,
-      `    ${request.fact}`,
-    ];
-    if (roomNames.length) lines.push(`    needs rooms: ${roomNames.join(', ')}`);
-    if (thingNames.length) lines.push(`    needs things: ${thingNames.join(', ')}`);
-    if (verbNames.length) lines.push(`    needs verbs: ${verbNames.join(', ')}`);
-    return `${lines.join('\n')}\n`;
-  };
+  // Chord writes the block (no provenance comment: `##` is top-level only,
+  // ADR-249, so the card's `locks` entry is the lock's record).
+  const fact = request.fact;
+  const render = (thingNames: readonly string[]): string =>
+    renderClaimBlock({ name, predicate: fact, needs: { rooms: roomNames, things: thingNames, verbs: verbNames } });
 
   // Lower the fact through the compiler: the candidate block is the written
   // block with the untrimmed set, so every name in it is checked too.
@@ -459,49 +444,6 @@ function resolveLine(lines: readonly TreeLine[], key: string): TreeLine {
   throw new Error(`no line "${key}" — the tree's lines, by segment id and first command:\n${listing}`);
 }
 
-/**
- * Splice a rendered block into a claims fragment before its `end claims`
- * line, preceded by one blank line. Every other byte stays where it was.
- *
- * @param fragment the fragment's text
- * @param block the rendered block (`proposeLock().block`)
- * @returns the new text
- * @throws when the fragment has no `end claims` line
- */
-export function spliceLockIntoFragment(fragment: string, block: string): string {
-  const lines = fragment.split('\n');
-  let at = -1;
-  for (let i = lines.length - 1; i >= 0; i--) {
-    if (lines[i].trim() === 'end claims') { at = i; break; }
-  }
-  if (at === -1) throw new Error('the claims fragment has no `end claims` line to write before');
-  const blockLines = block.replace(/\n$/, '').split('\n');
-  const head = lines.slice(0, at);
-  while (head.length > 0 && head[head.length - 1].trim() === '') head.pop();
-  return [...head, '', ...blockLines, ...lines.slice(at)].join('\n');
-}
-
-/**
- * A fresh fragment holding one locked claim (ADR-367 D4): the header the
- * story's author reads, an empty shared set, and the block.
- *
- * @param storyTitle the story's title, for the header
- * @param block the rendered block
- * @returns the fragment's text
- */
-export function freshFragmentWith(storyTitle: string, block: string): string {
-  return [
-    `## ${storyTitle}'s claims: what the finished story can reach, each under the`,
-    '## rooms, things and verbs that are load-bearing on the way. The test tree\'s',
-    '## manifest names this file; the story never imports it.',
-    '',
-    'claims',
-    block.replace(/\n$/, ''),
-    'end claims',
-    '',
-  ].join('\n');
-}
-
-// The pin lives with the document it mutates (browser-safe, so the Testing
-// tab pins through the same function the CLI does — ADR-367 D7).
-export { pinLockOnCard } from '../tree-document.js';
+// The lock's card entry lives with the document it mutates (browser-safe, so
+// the Testing tab locks through the same function the CLI does — ADR-367 D7).
+export { lockOnCard } from '../tree-document.js';

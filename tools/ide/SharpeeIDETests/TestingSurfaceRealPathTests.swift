@@ -1260,6 +1260,120 @@ final class TestingSurfaceRealPathTests: XCTestCase {
         XCTAssertGreaterThan(opened.first?.1 ?? 0, 0)
     }
 
+    /// The claims section's words are the CLI report's (ADR-365 D6, ADR-367
+    /// D6), on the REAL process: the Run button spawns the real devkit CLI on a
+    /// scratch copy of devkit's claims-tier fixture whose fragment declares a
+    /// claim a line reaches, a claim nothing can reach, and a claim the walk
+    /// reaches whose lock does not hold at its card. The header is the
+    /// report's ratio line (`claimsRatioLine`), the counts are the summary's,
+    /// and each row carries the report's verdict word — the tab writes none of
+    /// these itself. The expected strings are the ones the CLI printed on
+    /// stderr for this same project (measured 2026-10-22).
+    func testClaimsSectionShowsTheReportsRatioForHeldBrokenAndUnprovenClaims() async throws {
+        try XCTSkipUnless(FileManager.default.fileExists(atPath: TestToolchain.devkitCLI.path),
+                          "devkit CLI not built — run `./repokit build`")
+        let source = TestToolchain.repoRoot.appendingPathComponent("packages/devkit/tests/fixtures/claims-tier", isDirectory: true)
+        let project = tmp.appendingPathComponent("claims-tier", isDirectory: true)
+        try FileManager.default.copyItem(at: source, to: project)
+        try """
+        claims
+          needs rooms: the Hall, the Landing
+          needs things: the note
+          needs verbs: read
+
+          claim the note has been read
+            the note is read
+
+          claim the note reaches the Landing
+            the note is in the Landing
+
+          claim the player is in the Landing
+            the player is in the Landing
+        end claims
+
+        """.write(to: project.appendingPathComponent("claims-tier.claims.chord"), atomically: true, encoding: .utf8)
+        // One typed card: `read note` reaches the first claim, and the third
+        // claim is locked there while the player is still in the Hall.
+        try """
+        {
+          "cards": [
+            {
+              "assertions": {},
+              "id": "r7t3p9ax",
+              "type": "opening"
+            },
+            {
+              "assertions": {
+                "states": [
+                  "the note is pinned"
+                ]
+              },
+              "id": "d4n6v2qe",
+              "type": "boot"
+            },
+            {
+              "assertions": {
+                "states": [
+                  "the note is pinned"
+                ]
+              },
+              "command": "read note",
+              "id": "q5w8e2rt",
+              "locks": [
+                "the player is in the Landing"
+              ],
+              "type": "turn"
+            }
+          ],
+          "id": "k2m8w1cl"
+        }
+
+        """.write(to: project.appendingPathComponent("claims-tier.tests/k2m8w1cl.json"), atomically: true, encoding: .utf8)
+
+        try await boot()
+        surface.storyFile = project.appendingPathComponent("claims-tier.story")
+        surface.sharpeeExecutableOverride = TestToolchain.devkitCLI
+
+        _ = try await surface.evaluateInSurface(
+            "document.getElementById('ts-run-btn').click();")
+        for _ in 0..<1800 {
+            if let done = try? await surface.evaluateInSurface(
+                "!!document.querySelector('.ts-run-tally')"), done as? Bool == true { break }
+            try await Task.sleep(nanoseconds: 100_000_000)
+        }
+
+        let header = try await surface.evaluateInSurface("""
+        (function () {
+          var heads = Array.from(document.querySelectorAll('.ts-run-section')).map(function (e) { return e.firstChild.textContent; });
+          return heads.find(function (h) { return h.indexOf('claims') === 0; }) || null;
+        })()
+        """) as? String
+        XCTAssertEqual(header, "claims: 2 of 3 held, 1 unproven (seed 7)", "the header is the report's ratio line")
+
+        let counts = try await surface.evaluateInSurface("""
+        (function () {
+          var section = Array.from(document.querySelectorAll('.ts-run-section')).find(function (e) { return e.firstChild.textContent.indexOf('claims') === 0; });
+          if (!section) return null;
+          return Array.from(section.querySelectorAll('[class*="ts-count-"]')).map(function (e) { return e.textContent; }).join('|');
+        })()
+        """) as? String
+        XCTAssertEqual(counts, "2 held|1 unproven", "the counts are the summary's")
+
+        let rows = try await surface.evaluateInSurface("""
+        Array.from(document.querySelectorAll('.ts-claim-row')).map(function (row) {
+          return row.querySelector('.ts-name').textContent + '=' + row.querySelector('.ts-badge').textContent;
+        }).join('|')
+        """) as? String
+        XCTAssertEqual(rows, "the note has been read=HELD|the note reaches the Landing=UNPROVEN|the player is in the Landing=HELD")
+
+        let broken = try await surface.evaluateInSurface("""
+        Array.from(document.querySelectorAll('.ts-claim-lock.ts-broken')).map(function (e) { return e.textContent; }).join('|')
+        """) as? String
+        XCTAssertEqual(broken,
+                       "lock \"the player is in the Landing\" at line k2m8w1cl \"opening-hall\" at turn 1 — NOT held there: the player is in the Hall",
+                       "the broken lock's line is the report's, and it is the only broken one")
+    }
+
     /// The lock gesture's host seam (ADR-367 D7, AC-6), on the REAL process:
     /// the page posts `{lock:{args}}` with the `sharpee claim` arguments it
     /// wrote, the Swift host spawns the real devkit CLI on a scratch copy of

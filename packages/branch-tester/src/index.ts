@@ -143,26 +143,34 @@ export {
 } from './claims/claim-set.js';
 export { claimHolds, claimNamesOf, describeClaimMiss, type ClaimContext, type ClaimNames } from './claims/claim-predicates.js';
 export { writtenName, participleOf, FLAG_SENTENCES, type FlagSentence } from './claims/claim-vocabulary.js';
-export { candidateCommands, deriveCommandVocabulary, type CandidateBreadth, type CommandVocabulary } from './claims/claim-candidates.js';
-export {
-  walkClaims,
-  necessaryIdentity,
-  type ClaimOutcome,
-  type ClaimVerdict,
-  type ClaimsWalkOptions,
-  type ClaimsWalkReport,
-  type WalkStopReason,
-} from './claims/claims-walk.js';
-export { runClaims, formatClaimsRun, type ClaimsRunOptions, type ClaimsRunResult } from './claims/claims-runner.js';
+export { candidateCommands, deriveCommandVocabulary, type CommandVocabulary } from './claims/claim-candidates.js';
+export { walkClaims, necessaryIdentity, type ClaimsWalkOptions } from './claims/claims-walk.js';
+export { runClaims, formatClaimsRun, type ClaimsRunOptions } from './claims/claims-runner.js';
+// The claims tier's result data, declared once and browser-safe: the walk,
+// the floor and the runner build it, the report reads it.
+export type {
+  CandidateBreadth,
+  ClaimLockResult,
+  ClaimVerdict,
+  ClaimsRunResult,
+  ClaimsWalkReport,
+  WalkStopReason,
+} from './claims/claim-results.js';
 // The claims tier's wire rows and the one vocabulary the CLI report and the
 // Testing tab read them in (ADR-367 D6).
 export {
   claimResultRowOf,
   claimsSummaryRowOf,
+  lockRowOf,
+  claimTitle,
+  claimVerdictWord,
   claimHeadline,
   claimSentence,
   claimLockLine,
   claimsRatioLine,
+  claimsPendingLine,
+  claimCounts,
+  type ClaimCount,
   type ClaimResultRow,
   type ClaimsSummaryRow,
 } from './claims/claim-report.js';
@@ -171,9 +179,7 @@ export {
 // at its card. Both filesystem-free; devkit and the tab's sidecar write.
 export {
   proposeLock,
-  spliceLockIntoFragment,
-  freshFragmentWith,
-  pinLockOnCard,
+  lockOnCard,
   type LockGame,
   type LockOffer,
   type LockProposal,
@@ -185,6 +191,5 @@ export {
   type ClaimFloor,
   type ClaimFloorReach,
   type ClaimFloorReading,
-  type ClaimPinResult,
 } from './claims/claim-floor.js';
 export type { ClaimsEngine, ClaimsEntity, ClaimsGame, ClaimsGameLoader, ClaimsTurnEvent, ClaimsWorld, WorldSnapshot } from './claims/claims-game.js';

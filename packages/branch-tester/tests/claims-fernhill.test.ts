@@ -28,7 +28,8 @@ import { claimCone, compile, type StoryIR } from '@sharpee/chord';
 import { createStory } from '@sharpee/story-loader';
 import { assembleGame } from '@sharpee/bootstrap';
 import { normalizeClaimSet } from '../src/claims/claim-set.js';
-import { runClaims, type ClaimsRunResult } from '../src/claims/claims-runner.js';
+import { runClaims } from '../src/claims/claims-runner.js';
+import type { ClaimsRunResult } from '../src/claims/claim-results.js';
 import type { ClaimsGame } from '../src/claims/claims-game.js';
 
 const SEED = 1209;

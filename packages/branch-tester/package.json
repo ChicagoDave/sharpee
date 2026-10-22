@@ -28,10 +28,10 @@
     "chalk": "^4.1.2",
     "glob": "^10.3.10",
     "@sharpee/chord": "workspace:*",
-    "@sharpee/world-index": "workspace:*"
+    "@sharpee/world-index": "workspace:*",
+    "@sharpee/ide-protocol": "workspace:*"
   },
   "devDependencies": {
-    "@sharpee/ide-protocol": "workspace:*",
     "@types/node": "^20.11.19",
     "rimraf": "^5.0.5",
     "typescript": "^5.3.3",

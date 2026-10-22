@@ -19,6 +19,7 @@
 - **Exit state includes the ledger**: each finding fixed moves to the ledger's Fixed section (or the sweep file) with the new file:line, and the Open entry is struck. Fixes follow the finding's stated home; no shortcut is traded for another.
 - Behavior Statements (rule 12) and tests from them accompany every behavior that changes; mutation-verification runs per rule 15.
 - Findings numbered here are the inventory's ids.
+- **The parser review's fixes wait for this plan** (David, 2026-10-22, session 51832e): step 1 of `parser-review` (the small ship-breaking fixes) and everything after it start only once every phase here is DONE. A code organization review follows the parser fixes (David, same day), so the order is: this plan, then the parser fixes, then the organization review.
 
 ## Phases
 
@@ -136,8 +137,8 @@
 - **Deliverable**: F14 — the claim result data types move to a browser-safe types file both the runtime modules and `claim-report.ts` import (DEVARCH 8b); the "Like" mirrors go. F15 — `verbOf` reads `validated.parsed.structure.verb`. F16 — the renderer and splice at `end claims` live in `chord/src/claims.ts` beside the parser; `claim-lock.ts` calls them. F23 — the Testing tab's header and counts come from the summary row through `claim-report` (`claimsRatioLine`). D4 — one word across branch-tester, ide-protocol and the tab (Q11).
 - **Exit state**: one declaration of each claim type; claim syntax written only by Chord; the tab composes no claims text of its own.
 - **Demonstration**: branch-tester, chord and devkit suites one run each, green; the Testing tab's `TestingSurfaceRealPathTests` (drives the real page) one run showing the ratio line equal to `claimsRatioLine` for a held, a broken and an unproven claim; `lock-gesture-real-path.test.ts` still byte-identical to the CLI's lock.
-- **Demonstrated**: 
-- **Status**: CURRENT (since 2026-10-22)
+- **Demonstrated**: 2026-10-22, session 51832e, one run each, 0 failures: branch-tester 381 passing (`pnpm --filter '@sharpee/branch-tester' test`, incl. the real-engine Fernhill claims run and the new `claim-report.test.ts` and F15 case); chord `claims.test.ts` 26 passing (incl. the four "writing a claim" cases); devkit 204 passing + 1 skipped; the tab's web suite 247 passing (`node_modules/.bin/vitest run --root tools/ide/web/testing-surface`), `lock-gesture-real-path.test.ts` among them, byte-identical to the CLI's lock. `xcodebuild test -only-testing:SharpeeIDETests/TestingSurfaceRealPathTests`: 27 tests, 0 failures; the new `testClaimsSectionShowsTheReportsRatioForHeldBrokenAndUnprovenClaims` drives the real page and real devkit CLI on a scratch claims-tier copy and reads header `claims: 2 of 3 held, 1 unproven (seed 7)` — the line the CLI printed on stderr via `claimsRatioLine` for the same project — with HELD (by line), UNPROVEN, and HELD with its lock NOT held. The first tab-suite run failed 1 (`tests/claims.test.ts:62`, the tab's old `claims · 9 of 10 held` header); David approved updating it to the report's words. `./repokit protocol` regenerated with no diff; `surface.js` rebuilt. chord whole suite 1644 passing (`pnpm --filter '@sharpee/chord' test`). [reported by session, unverified]
+- **Status**: DONE
 
 ### Phase 9: Small fixes (D5, D6, D7, D10, D20, D22, F17, Older-2, Older-3)
 - **Tier**: Medium

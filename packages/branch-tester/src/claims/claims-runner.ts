@@ -16,17 +16,18 @@
  * the claim can never depend on (D12, the compiler's cone of influence),
  * and the budget that stopped the walk, which is what the author tightens.
  *
- * Public interface: `runClaims`, `formatClaimsRun`, `ClaimsRunOptions`,
- *   `ClaimsRunResult`.
+ * Public interface: `runClaims`, `formatClaimsRun`, `ClaimsRunOptions`. A
+ *   run is a `ClaimsRunResult` (`claim-results`).
  * Owner context: @sharpee/branch-tester — the claims runner (ADR-365 D10).
  */
 
 import type { StoryIR } from '@sharpee/chord';
 import { groupClaimsBySet, type ClaimSet } from './claim-set.js';
 import type { ClaimsGameLoader } from './claims-game.js';
-import type { ClaimFloorReading, ClaimPinResult } from './claim-floor.js';
-import { claimHeadline, claimLockLine, claimResultRowOf, claimSentence, claimsRatioLine, claimsSummaryRowOf } from './claim-report.js';
-import { walkClaims, type ClaimVerdict, type ClaimsWalkOptions, type ClaimsWalkReport } from './claims-walk.js';
+import type { ClaimFloorReading } from './claim-floor.js';
+import type { ClaimVerdict, ClaimsRunResult, ClaimsWalkReport } from './claim-results.js';
+import { claimHeadline, claimLockLine, claimResultRowOf, claimSentence, claimsRatioLine, claimsSummaryRowOf, lockRowOf } from './claim-report.js';
+import { walkClaims, type ClaimsWalkOptions } from './claims-walk.js';
 
 /** The run's budgets (per walk) and the seed the report names. */
 export interface ClaimsRunOptions extends ClaimsWalkOptions {
@@ -40,22 +41,6 @@ export interface ClaimsRunOptions extends ClaimsWalkOptions {
   readonly floor?: ClaimFloorReading;
 }
 
-/** A whole run: every walk, every verdict, and the held-over-declared ratio (D6). */
-export interface ClaimsRunResult {
-  readonly source: string;
-  readonly seed?: number;
-  readonly walks: readonly ClaimsWalkReport[];
-  readonly claims: readonly ClaimVerdict[];
-  readonly declared: number;
-  readonly held: number;
-  readonly violated: number;
-  readonly unproven: number;
-  readonly totalWalkMs: number;
-  /** Whether a tree run's floor stood under this run — the report's vocabulary depends on it. */
-  readonly floored: boolean;
-  /** Every lock the tree run checked at its card (ADR-367 D5). */
-  readonly pins: readonly ClaimPinResult[];
-}
 
 /**
  * Run every claim in the set, one walk per distinct necessary set.
@@ -108,7 +93,7 @@ export async function runClaims(ir: StoryIR, claimSet: ClaimSet, loadGame: Claim
     unproven: count('unproven'),
     totalWalkMs: walks.reduce((total, walk) => total + walk.walkMs, 0),
     floored: floor !== undefined,
-    pins: floor?.pins ?? [],
+    locks: floor?.locks ?? [],
   };
 }
 
@@ -136,8 +121,6 @@ export function formatClaimsRun(result: ClaimsRunResult): string {
     const row = claimResultRowOf(claim, result);
     lines.push(`${claimHeadline(row)} — ${claimSentence(row)}`);
   }
-  for (const pin of result.pins) {
-    lines.push(claimLockLine(pin.claim, { lineId: pin.lineId, label: pin.label, turn: pin.turn, outcome: pin.outcome, ...(pin.message !== undefined ? { message: pin.message } : {}) }));
-  }
+  for (const lock of result.locks) lines.push(claimLockLine(lock.claim, lockRowOf(lock)));
   return lines.join('\n');
 }

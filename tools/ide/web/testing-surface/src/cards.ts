@@ -30,7 +30,7 @@ import {
   type DerivedSummary,
   type SourceSpan,
 } from './derived';
-import { claimLockText, claimLockVisit, claimWhyText, claimsHeaderText, type ClaimRow, type ClaimsSummary } from './claims';
+import { claimBadgeText, claimLockText, claimLockVisit, claimNameText, claimWhyText, claimsCountsOf, claimsHeaderText, type ClaimRow, type ClaimsSummary } from './claims';
 import type { BranchPoint, TreeSessionModel } from './model';
 import {
   bootLookIndex, commandRowText, firstFailureText, restatesTextClaim, runRowVisitTarget, runRowsOf, type RunVisitTarget,
@@ -1396,13 +1396,8 @@ export class CardsView {
    * (D9), so nothing here touches the tally.
    */
   private renderClaimsRows(results: HTMLElement, rows: ClaimRow[], summary: ClaimsSummary | undefined): void {
-    const counts: Array<[string, string]> = [];
-    const held = rows.filter((row) => row.verdict === 'held').length;
-    const violated = rows.filter((row) => row.verdict === 'violated').length;
-    const unproven = rows.filter((row) => row.verdict === 'unproven').length;
-    if (held > 0) counts.push([`${held} held`, 'ts-count-pass']);
-    if (violated > 0) counts.push([`${violated} violated`, 'ts-count-fail']);
-    if (unproven > 0) counts.push([`${unproven} unproven`, 'ts-count-skip']);
+    const countClass = { held: 'ts-count-pass', violated: 'ts-count-fail', unproven: 'ts-count-skip' } as const;
+    const counts = claimsCountsOf(summary, rows).map((entry): [string, string] => [entry.text, countClass[entry.verdict]]);
     results.appendChild(this.sectionHeader(claimsHeaderText(summary, rows), counts));
 
     for (const [index, claim] of rows.entries()) {
@@ -1414,29 +1409,29 @@ export class CardsView {
       head.className = 'ts-head';
       const name = document.createElement('span');
       name.className = 'ts-name';
-      name.textContent = `${claim.name}${claim.never ? ' (never)' : ''}`;
+      name.textContent = claimNameText(claim);
       const badge = document.createElement('span');
       badge.className = `ts-badge ${claim.verdict === 'held' ? 'ts-pass' : claim.verdict === 'violated' ? 'ts-fail' : 'ts-open'}`;
-      badge.textContent = claim.verdict.toUpperCase();
+      badge.textContent = claimBadgeText(claim);
       head.append(name, badge);
       rowEl.appendChild(head);
       const why = document.createElement('div');
       why.className = 'ts-why';
       why.textContent = claimWhyText(claim);
       rowEl.appendChild(why);
-      for (const pin of claim.locks ?? []) {
-        const lock = document.createElement('div');
-        lock.className = `ts-claim-lock ts-run-row-visit${pin.outcome === 'held' ? '' : ' ts-broken'}`;
-        lock.setAttribute('role', 'button');
-        lock.tabIndex = 0;
-        lock.title = 'Visit the locked card';
-        lock.textContent = claimLockText(claim, pin);
-        const go = (): void => this.delegate.onVisitFailure(claimLockVisit(pin));
-        lock.addEventListener('click', go);
-        lock.addEventListener('keydown', (event) => {
+      for (const lock of claim.locks ?? []) {
+        const lockEl = document.createElement('div');
+        lockEl.className = `ts-claim-lock ts-run-row-visit${lock.outcome === 'held' ? '' : ' ts-broken'}`;
+        lockEl.setAttribute('role', 'button');
+        lockEl.tabIndex = 0;
+        lockEl.title = 'Visit the locked card';
+        lockEl.textContent = claimLockText(claim, lock);
+        const go = (): void => this.delegate.onVisitFailure(claimLockVisit(lock));
+        lockEl.addEventListener('click', go);
+        lockEl.addEventListener('keydown', (event) => {
           if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); go(); }
         });
-        rowEl.appendChild(lock);
+        rowEl.appendChild(lockEl);
       }
       results.appendChild(rowEl);
     }

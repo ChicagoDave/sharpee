@@ -22,7 +22,7 @@
  * prints one JSON object on stdout — `offer`, `proposal`, `written`, or
  * `error` — with the exit codes unchanged. `--fragment-only` writes the
  * fragment and touches no tree file: the page is the tree's writer while it
- * is open, so it pins the card itself through the same `pinLockOnCard` and
+ * is open, so it locks the card itself through the same `lockOnCard` and
  * posts the files it changed; the object names the manifest key the tree
  * then needs.
  *
@@ -140,9 +140,9 @@ export async function runClaimCommand(rest: string[]): Promise<number> {
   }
 
   // Lazy require (the test.ts pattern): the harness loads only when needed.
-  const { assembleTree, checkCanonicalTree, diffTreeFiles, freshFragmentWith, pinLockOnCard, proposeLock, segmentTree, spliceLockIntoFragment } =
+  const { assembleTree, checkCanonicalTree, diffTreeFiles, lockOnCard, proposeLock, segmentTree } =
     require('@sharpee/branch-tester') as typeof import('@sharpee/branch-tester');
-  const { compileClaims } = require('@sharpee/chord') as typeof import('@sharpee/chord');
+  const { claimsFragmentWith, compileClaims, spliceClaimIntoFragment } = require('@sharpee/chord') as typeof import('@sharpee/chord');
 
   const dir = path.resolve(projectDir ?? process.cwd());
   let storyFile: string | null;
@@ -246,25 +246,25 @@ export async function runClaimCommand(rest: string[]): Promise<number> {
   // Everything that can refuse does so before the first write, so a lock is
   // never half on disk: the card must carry an id, and the fragment must not
   // already declare the name (a duplicate would be two claims with one name).
-  if (proposal.cardId === undefined) return refuse('the card carries no id, so the lock cannot be pinned (re-save the tree from the Testing tab)', 2);
+  if (proposal.cardId === undefined) return refuse('the card carries no id, so the lock cannot be recorded on it (re-save the tree from the Testing tab)', 2);
   const declared = existing === undefined ? undefined : existing.split('\n').map((l) => l.trim()).find((l) => l === `claim ${proposal.name}` || l === `never ${proposal.name}`);
   if (declared !== undefined) {
     return refuse(`${claimsFile} already declares \`${declared}\` — give this lock another name with --name, or lock a different fact; nothing written`, 2);
   }
 
   // The fragment: spliced, or created with the manifest key (ADR-367 D4).
-  const fragmentText = existing !== undefined ? spliceLockIntoFragment(existing, proposal.block!) : freshFragmentWith(ir.meta.title, proposal.block!);
+  const fragmentText = existing !== undefined ? spliceClaimIntoFragment(existing, proposal.block!) : claimsFragmentWith(ir.meta.title, proposal.block!);
   const written: string[] = [];
   writeFileSync(fragmentPath, fragmentText);
   written.push(path.relative(dir, fragmentPath));
   const narrated = [`${existing !== undefined ? 'appended to' : 'created'} ${path.relative(process.cwd(), fragmentPath)}`];
 
-  // The pin (D5), and the manifest key when the fragment is new, through the
-  // tree's one writer — unless the page is the tree's writer (`--fragment-only`).
+  // The card's lock (D5), and the manifest key when the fragment is new, through
+  // the tree's one writer — unless the page is the tree's writer (`--fragment-only`).
   const manifestKey = document.claims === undefined ? claimsFile : undefined;
   if (!fragmentOnly) {
     if (document.claims === undefined) document.claims = claimsFile;
-    pinLockOnCard(document, proposal.cardId, proposal.name!);
+    lockOnCard(document, proposal.cardId, proposal.name!);
     const changed = diffTreeFiles(files, segmentTree(document));
     for (const [fileName, content] of Object.entries(changed.written)) {
       writeFileSync(path.join(treePath, fileName), content);

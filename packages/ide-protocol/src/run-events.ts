@@ -511,7 +511,7 @@ export type ClaimVerdictStatus = 'held' | 'violated' | 'unproven';
 export type ClaimSettledBy = 'line' | 'witness' | 'exhaustion' | 'budget';
 
 /** One lock's check at the card it was taken on (ADR-367 D5, D6). */
-export interface ClaimLockPin {
+export interface ClaimLock {
   lineId: string;
   /** The line's derived label, display only. */
   label: string;
@@ -552,7 +552,7 @@ export interface ClaimResultEvent extends RunEventEnvelope {
   /** A tree run's floor stood under the claims (ADR-367 D5) — the sentence's vocabulary depends on it. */
   floored: boolean;
   /** Every lock on this claim the tree run checked, in run order. */
-  locks?: ClaimLockPin[];
+  locks?: ClaimLock[];
 }
 
 /** The claims tier's ratio (ADR-365 D6), once per run, after every `claim-result` and before `run-end`. */
@@ -892,8 +892,8 @@ export function isDerivedRunSummaryEvent(value: unknown): value is DerivedRunSum
   );
 }
 
-/** Narrow a value to a valid {@link ClaimLockPin}. */
-function isClaimLockPin(value: unknown): value is ClaimLockPin {
+/** Narrow a value to a valid {@link ClaimLock}. */
+function isClaimLock(value: unknown): value is ClaimLock {
   if (!isObject(value)) return false;
   return (
     typeof value.lineId === 'string' &&
@@ -925,7 +925,7 @@ export function isClaimResultEvent(value: unknown): value is ClaimResultEvent {
     (value.depth === undefined || typeof value.depth === 'number') &&
     (stopped === undefined || (isObject(stopped) && typeof stopped.reason === 'string' && typeof stopped.states === 'number')) &&
     typeof value.floored === 'boolean' &&
-    (value.locks === undefined || (Array.isArray(value.locks) && value.locks.every(isClaimLockPin)))
+    (value.locks === undefined || (Array.isArray(value.locks) && value.locks.every(isClaimLock)))
   );
 }
 

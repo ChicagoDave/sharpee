@@ -2,7 +2,7 @@
  * claim-lock.test.ts — the lock on the claim-bits fixture against a REAL
  * game (ADR-367 D1, D2, D4, D5; AC-1, AC-2): the offer at a card, the set
  * proposed from the line and trimmed by the cone, the rendered block, the
- * fragment splice, the fresh fragment, and the pin. The story is compiled
+ * fragment splice, the fresh fragment, and the card's lock. The story is compiled
  * by `@sharpee/chord`, loaded by `@sharpee/story-loader`, assembled by
  * `@sharpee/bootstrap`; every replayed command runs through the real
  * parser and engine. No stub of any owned dependency.
@@ -12,10 +12,10 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { compile, compileClaims, type StoryIR } from '@sharpee/chord';
+import { claimsFragmentWith, compile, compileClaims, spliceClaimIntoFragment, type StoryIR } from '@sharpee/chord';
 import { createStory } from '@sharpee/story-loader';
 import { assembleGame } from '@sharpee/bootstrap';
-import { freshFragmentWith, pinLockOnCard, proposeLock, spliceLockIntoFragment, type LockGame } from '../src/claims/claim-lock.js';
+import { lockOnCard, proposeLock, type LockGame } from '../src/claims/claim-lock.js';
 import { emptyTreeDocument, segmentTree, assembleTree, turnOfCard, type TreeDocument } from '../src/tree-document.js';
 import { flattenTreeLines } from '../src/tree-walker.js';
 
@@ -118,6 +118,14 @@ describe('the set from the line (D2, D8) and the block (D4)', () => {
     expect(proposal.verbs).toEqual(['read']);
   });
 
+  it('the verb is the one the parser read, whatever words the noun was typed with', async () => {
+    const document = tree();
+    document.cards[2] = { ...document.cards[2], command: 'read the note' };
+    const proposal = await proposeLock({ ir: IR, document, line: 'mainline', loadGame, compileCandidate, date: '2026-10-22', fact: 'the note is read', turn: 1 });
+    expect(proposal.verbs).toEqual(['read']);
+    expect(proposal.block).toContain('    needs verbs: read\n');
+  });
+
   it('a line is also found by its first typed command when that names one line', async () => {
     const proposal = await request('north', { turn: 2 });
     expect(proposal.line.id).toBe('branch01');
@@ -143,12 +151,12 @@ describe('what the lock refuses, by name', () => {
   });
 });
 
-describe('the writer (D4) and the pin (D5)', () => {
+describe('the writer (D4) and the card\'s lock (D5)', () => {
   const BLOCK = '  claim the player is in the Landing\n    the player is in the Landing\n    needs rooms: the Hall, the Landing\n    needs verbs: read\n';
 
   it('splices before `end claims` after one blank line, and moves no other byte', () => {
     const fragment = '## header\n\nclaims\n  needs rooms: the Hall\n\n  claim a\n    the note is read\nend claims\n';
-    const spliced = spliceLockIntoFragment(fragment, BLOCK);
+    const spliced = spliceClaimIntoFragment(fragment, BLOCK);
     expect(spliced).toBe('## header\n\nclaims\n  needs rooms: the Hall\n\n  claim a\n    the note is read\n\n' + BLOCK + 'end claims\n');
     expect(spliced.startsWith(fragment.slice(0, fragment.indexOf('end claims')))).toBe(true);
     const compiled = compileCandidate(spliced);
@@ -157,11 +165,11 @@ describe('the writer (D4) and the pin (D5)', () => {
   });
 
   it('refuses a fragment with no `end claims`', () => {
-    expect(() => spliceLockIntoFragment('claims\n', BLOCK)).toThrow(/no `end claims` line/);
+    expect(() => spliceClaimIntoFragment('claims\n', BLOCK)).toThrow(/no `end claims` line/);
   });
 
   it('a fresh fragment compiles with its one claim and an empty shared set', () => {
-    const fragment = freshFragmentWith('Claim Bits Fixture', BLOCK);
+    const fragment = claimsFragmentWith('Claim Bits Fixture', BLOCK);
     const compiled = compileCandidate(fragment);
     expect(compiled.diagnostics.filter((d) => d.severity === 'error')).toEqual([]);
     expect(compiled.claims?.rooms).toEqual([]);
@@ -169,17 +177,17 @@ describe('the writer (D4) and the pin (D5)', () => {
     expect(fragment.startsWith("## Claim Bits Fixture's claims")).toBe(true);
   });
 
-  it('pins the name on the card once, and the tree writes and reads it back', () => {
+  it('locks the name on the card once, and the tree writes and reads it back', () => {
     const document = tree();
-    expect(pinLockOnCard(document, 'card0003', 'the player is in the Landing')).toBe(true);
-    expect(pinLockOnCard(document, 'card0003', 'the player is in the Landing')).toBe(false);
+    expect(lockOnCard(document, 'card0003', 'the player is in the Landing')).toBe(true);
+    expect(lockOnCard(document, 'card0003', 'the player is in the Landing')).toBe(false);
     expect(document.cards[3].locks).toEqual(['the player is in the Landing']);
     const files = segmentTree(document);
     expect(files['contin00.json']).toContain('"locks": [\n        "the player is in the Landing"\n      ]');
     const read = assembleTree(files);
     expect(read.status).toBe('ok');
     if (read.status === 'ok') expect(read.document.cards[3].locks).toEqual(['the player is in the Landing']);
-    expect(() => pinLockOnCard(document, 'nocard00', 'x')).toThrow(/no card nocard00/);
+    expect(() => lockOnCard(document, 'nocard00', 'x')).toThrow(/no card nocard00/);
   });
 });
 

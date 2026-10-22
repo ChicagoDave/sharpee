@@ -50,7 +50,7 @@ import {
   emptyTreeDocument,
   ensureSegmentIds,
   mainLineLabelOf,
-  pinLockOnCard,
+  lockOnCard,
   roomSlugOf,
   segmentTree,
   type TreeAssertions,
@@ -347,12 +347,12 @@ export class TreeSessionModel {
   }
 
   /**
-   * Pin a locked claim's name on a card (ADR-367 D5), through the same
-   * function `sharpee claim` pins with (D7). Returns true when the document
+   * Lock a claim's name on a card (ADR-367 D5), through the same function
+   * `sharpee claim` locks with (D7). Returns true when the document
    * changed; false when the card already carried the name.
    */
-  pinLock(cardId: string, name: string): boolean {
-    return pinLockOnCard(this.doc, cardId, name);
+  lockOnCard(cardId: string, name: string): boolean {
+    return lockOnCard(this.doc, cardId, name);
   }
 
   /** Name the claims fragment in the manifest (ADR-365 D7's field), when a lock created it. */

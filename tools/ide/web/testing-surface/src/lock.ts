@@ -8,11 +8,11 @@
  *   through the wire's own guard. Three steps: the offer at a card (no fact),
  *   the proposal for a picked fact (`--propose`), and the write of the
  *   author's edited lists (`--fragment-only`, because the page owns the tree
- *   while it is open and pins the card itself). The argument list is built
- *   here and nowhere else, so neither host carries a second spelling of the
- *   CLI's flags.
+ *   while it is open and records the lock on the card itself). The argument
+ *   list is built here and nowhere else, so neither host carries a second
+ *   spelling of the CLI's flags.
  *
- * Public interface: LockStep, LockNeeds, LockPinTarget, lockArgumentsOf,
+ * Public interface: LockStep, LockNeeds, LockTarget, lockArgumentsOf,
  *   decodeLockResult, applyLockWritten.
  * Owner context: tools/ide — the testing play surface's web bundle.
  */
@@ -20,26 +20,26 @@
 import { isClaimJsonOutput, type ClaimJsonOutput, type ClaimWrittenOutput } from '@sharpee/ide-protocol/claim-output';
 
 /** The slice of the tree-session model a written lock touches. */
-export interface LockPinTarget {
+export interface LockTarget {
   setClaimsFile(file: string): void;
-  pinLock(cardId: string, name: string): boolean;
+  lockOnCard(cardId: string, name: string): boolean;
 }
 
 /**
  * Apply a `written` answer to the page's model: the manifest key when the
- * CLI named one (a fresh fragment), and the claim's name pinned on the card
- * through the same function the CLI pins with (ADR-367 D5, D7). The caller
+ * CLI named one (a fresh fragment), and the claim's name locked on the card
+ * through the same function the CLI locks with (ADR-367 D5, D7). The caller
  * then posts the files that changed. Pure of the DOM, so the real-path test
  * drives exactly what the page drives.
  *
  * @param model the tree-session model
  * @param cardId the card the lock was taken at
  * @param written the CLI's answer
- * @returns true when the pin changed the document
+ * @returns true when the lock changed the document
  */
-export function applyLockWritten(model: LockPinTarget, cardId: string, written: ClaimWrittenOutput): boolean {
+export function applyLockWritten(model: LockTarget, cardId: string, written: ClaimWrittenOutput): boolean {
   if (written.manifestKey !== undefined) model.setClaimsFile(written.manifestKey);
-  return model.pinLock(cardId, written.name);
+  return model.lockOnCard(cardId, written.name);
 }
 
 /** The author's lists as the sheet leaves them (D7's chips). */

@@ -958,13 +958,13 @@
     };
     return visit(document2.cards, 0);
   }
-  function pinLockOnCard(document2, cardId, name) {
+  function lockOnCard(document2, cardId, name) {
     const visit = (cards2) => {
       for (const card of cards2) {
         if (card.id === cardId) {
           if (card.locks?.includes(name)) return "already";
           card.locks = [...card.locks ?? [], name];
-          return "pinned";
+          return "locked";
         }
         for (const branch of card.branches ?? []) {
           const found2 = visit(branch.cards);
@@ -975,7 +975,7 @@
     };
     const found = visit(document2.cards);
     if (found === void 0) throw new Error(`no card ${cardId} in the tree`);
-    return found === "pinned";
+    return found === "locked";
   }
 
   // tools/ide/web/testing-surface/src/boot-document.ts
@@ -1074,11 +1074,17 @@
   }
 
   // packages/branch-tester/src/claims/claim-report.ts
+  function claimTitle(row) {
+    return `${row.name}${row.never ? " (never)" : ""}`;
+  }
+  function claimVerdictWord(row) {
+    return row.verdict.toUpperCase();
+  }
   function claimSentence(row) {
     const unreached = row.floored && !row.never ? "not reached by any line; " : "";
     switch (row.settledBy) {
       case "line": {
-        const broken = (row.locks ?? []).filter((pin) => pin.outcome !== "held").map((pin) => `; its lock at line ${pin.lineId} "${pin.label}" turn ${pin.turn} is NOT held there`).join("");
+        const broken = (row.locks ?? []).filter((lock) => lock.outcome !== "held").map((lock) => `; its lock at line ${lock.lineId} "${lock.label}" turn ${lock.turn} is NOT held there`).join("");
         return `by line ${row.line?.id} "${row.line?.label}" at turn ${row.line?.turn}${broken}`;
       }
       case "witness":
@@ -1092,11 +1098,21 @@
       }
     }
   }
-  function claimLockLine(name, pin) {
-    const where = `line ${pin.lineId} "${pin.label}" at turn ${pin.turn}`;
-    if (pin.outcome === "held") return `  lock "${name}" at ${where} \u2014 held there`;
-    if (pin.outcome === "not-held") return `  lock "${name}" at ${where} \u2014 NOT held there: ${pin.message}`;
+  function claimLockLine(name, lock) {
+    const where = `line ${lock.lineId} "${lock.label}" at turn ${lock.turn}`;
+    if (lock.outcome === "held") return `  lock "${name}" at ${where} \u2014 held there`;
+    if (lock.outcome === "not-held") return `  lock "${name}" at ${where} \u2014 NOT held there: ${lock.message}`;
     return `  lock "${name}" at ${where} \u2014 lock-unknown-claim: the fragment declares no claim of that name`;
+  }
+  function claimsRatioLine(summary) {
+    return `claims: ${summary.held} of ${summary.declared} held${summary.violated ? `, ${summary.violated} violated` : ""}${summary.unproven ? `, ${summary.unproven} unproven` : ""}${summary.seed !== void 0 ? ` (seed ${summary.seed})` : ""}`;
+  }
+  function claimsPendingLine(arrived) {
+    return `claims: ${arrived} so far`;
+  }
+  function claimCounts(summary, rows) {
+    const countOf = (verdict) => summary !== void 0 ? summary[verdict] : rows.filter((row) => row.verdict === verdict).length;
+    return ["held", "violated", "unproven"].map((verdict) => ({ verdict, count: countOf(verdict), text: `${countOf(verdict)} ${verdict}` })).filter((entry) => entry.count > 0);
   }
 
   // tools/ide/web/testing-surface/src/claims.ts
@@ -1109,17 +1125,25 @@
     return summary;
   }
   function claimsHeaderText(summary, rows) {
-    if (summary) return `claims \xB7 ${summary.held} of ${summary.declared} held`;
-    return `claims \xB7 ${rows.length}`;
+    return summary ? claimsRatioLine(summary) : claimsPendingLine(rows.length);
+  }
+  function claimsCountsOf(summary, rows) {
+    return claimCounts(summary, rows);
+  }
+  function claimNameText(row) {
+    return claimTitle(row);
+  }
+  function claimBadgeText(row) {
+    return claimVerdictWord(row);
   }
   function claimWhyText(row) {
     return claimSentence(row);
   }
-  function claimLockText(row, pin) {
-    return claimLockLine(row.name, pin).trimStart();
+  function claimLockText(row, lock) {
+    return claimLockLine(row.name, lock).trimStart();
   }
-  function claimLockVisit(pin) {
-    return { lineId: pin.lineId, ...pin.cardId !== void 0 ? { cardId: pin.cardId } : {} };
+  function claimLockVisit(lock) {
+    return { lineId: lock.lineId, ...lock.cardId !== void 0 ? { cardId: lock.cardId } : {} };
   }
 
   // packages/ide-protocol/src/run-events.ts
@@ -1215,7 +1239,7 @@
     if (!isObject(branches) || !isObject(endings) || !isObject(rooms)) return false;
     return typeof branches.declared === "number" && typeof branches.exercised === "number" && typeof branches.passed === "number" && typeof branches.failed === "number" && Array.isArray(branches.gaps) && branches.gaps.every(isDerivedBranchGap) && typeof endings.declared === "number" && typeof endings.reached === "number" && Array.isArray(endings.unreached) && endings.unreached.every(isDerivedEndingGap) && Array.isArray(endings.unnamed) && endings.unnamed.every(isDerivedEndingGap) && typeof rooms.declared === "number" && typeof rooms.entered === "number" && isStringArray(rooms.unentered);
   }
-  function isClaimLockPin(value) {
+  function isClaimLock(value) {
     if (!isObject(value)) return false;
     return typeof value.lineId === "string" && typeof value.label === "string" && typeof value.turn === "number" && (value.cardId === void 0 || typeof value.cardId === "string") && (value.outcome === "held" || value.outcome === "not-held" || value.outcome === "unknown-claim") && (value.message === void 0 || typeof value.message === "string");
   }
@@ -1223,7 +1247,7 @@
     if (!isObject(value)) return false;
     const line = value.line;
     const stopped = value.stopped;
-    return hasEnvelopeAndType(value, "claim-result") && typeof value.name === "string" && typeof value.never === "boolean" && typeof value.kind === "string" && (value.verdict === "held" || value.verdict === "violated" || value.verdict === "unproven") && (value.settledBy === "line" || value.settledBy === "witness" || value.settledBy === "exhaustion" || value.settledBy === "budget") && typeof value.set === "string" && typeof value.thingsInSet === "number" && typeof value.inertInSet === "number" && (line === void 0 || isObject(line) && typeof line.id === "string" && typeof line.label === "string" && typeof line.turn === "number") && (value.witness === void 0 || isStringArray(value.witness)) && (value.depth === void 0 || typeof value.depth === "number") && (stopped === void 0 || isObject(stopped) && typeof stopped.reason === "string" && typeof stopped.states === "number") && typeof value.floored === "boolean" && (value.locks === void 0 || Array.isArray(value.locks) && value.locks.every(isClaimLockPin));
+    return hasEnvelopeAndType(value, "claim-result") && typeof value.name === "string" && typeof value.never === "boolean" && typeof value.kind === "string" && (value.verdict === "held" || value.verdict === "violated" || value.verdict === "unproven") && (value.settledBy === "line" || value.settledBy === "witness" || value.settledBy === "exhaustion" || value.settledBy === "budget") && typeof value.set === "string" && typeof value.thingsInSet === "number" && typeof value.inertInSet === "number" && (line === void 0 || isObject(line) && typeof line.id === "string" && typeof line.label === "string" && typeof line.turn === "number") && (value.witness === void 0 || isStringArray(value.witness)) && (value.depth === void 0 || typeof value.depth === "number") && (stopped === void 0 || isObject(stopped) && typeof stopped.reason === "string" && typeof stopped.states === "number") && typeof value.floored === "boolean" && (value.locks === void 0 || Array.isArray(value.locks) && value.locks.every(isClaimLock));
   }
   function isClaimsSummaryEvent(value) {
     if (!isObject(value)) return false;
@@ -2504,13 +2528,8 @@
      * (D9), so nothing here touches the tally.
      */
     renderClaimsRows(results, rows, summary) {
-      const counts = [];
-      const held = rows.filter((row) => row.verdict === "held").length;
-      const violated = rows.filter((row) => row.verdict === "violated").length;
-      const unproven = rows.filter((row) => row.verdict === "unproven").length;
-      if (held > 0) counts.push([`${held} held`, "ts-count-pass"]);
-      if (violated > 0) counts.push([`${violated} violated`, "ts-count-fail"]);
-      if (unproven > 0) counts.push([`${unproven} unproven`, "ts-count-skip"]);
+      const countClass = { held: "ts-count-pass", violated: "ts-count-fail", unproven: "ts-count-skip" };
+      const counts = claimsCountsOf(summary, rows).map((entry) => [entry.text, countClass[entry.verdict]]);
       results.appendChild(this.sectionHeader(claimsHeaderText(summary, rows), counts));
       for (const [index, claim] of rows.entries()) {
         const rowEl = document.createElement("div");
@@ -2521,32 +2540,32 @@
         head.className = "ts-head";
         const name = document.createElement("span");
         name.className = "ts-name";
-        name.textContent = `${claim.name}${claim.never ? " (never)" : ""}`;
+        name.textContent = claimNameText(claim);
         const badge = document.createElement("span");
         badge.className = `ts-badge ${claim.verdict === "held" ? "ts-pass" : claim.verdict === "violated" ? "ts-fail" : "ts-open"}`;
-        badge.textContent = claim.verdict.toUpperCase();
+        badge.textContent = claimBadgeText(claim);
         head.append(name, badge);
         rowEl.appendChild(head);
         const why = document.createElement("div");
         why.className = "ts-why";
         why.textContent = claimWhyText(claim);
         rowEl.appendChild(why);
-        for (const pin of claim.locks ?? []) {
-          const lock = document.createElement("div");
-          lock.className = `ts-claim-lock ts-run-row-visit${pin.outcome === "held" ? "" : " ts-broken"}`;
-          lock.setAttribute("role", "button");
-          lock.tabIndex = 0;
-          lock.title = "Visit the locked card";
-          lock.textContent = claimLockText(claim, pin);
-          const go = () => this.delegate.onVisitFailure(claimLockVisit(pin));
-          lock.addEventListener("click", go);
-          lock.addEventListener("keydown", (event) => {
+        for (const lock of claim.locks ?? []) {
+          const lockEl = document.createElement("div");
+          lockEl.className = `ts-claim-lock ts-run-row-visit${lock.outcome === "held" ? "" : " ts-broken"}`;
+          lockEl.setAttribute("role", "button");
+          lockEl.tabIndex = 0;
+          lockEl.title = "Visit the locked card";
+          lockEl.textContent = claimLockText(claim, lock);
+          const go = () => this.delegate.onVisitFailure(claimLockVisit(lock));
+          lockEl.addEventListener("click", go);
+          lockEl.addEventListener("keydown", (event) => {
             if (event.key === "Enter" || event.key === " ") {
               event.preventDefault();
               go();
             }
           });
-          rowEl.appendChild(lock);
+          rowEl.appendChild(lockEl);
         }
         results.appendChild(rowEl);
       }
@@ -3322,12 +3341,12 @@
       return void 0;
     }
     /**
-     * Pin a locked claim's name on a card (ADR-367 D5), through the same
-     * function `sharpee claim` pins with (D7). Returns true when the document
+     * Lock a claim's name on a card (ADR-367 D5), through the same function
+     * `sharpee claim` locks with (D7). Returns true when the document
      * changed; false when the card already carried the name.
      */
-    pinLock(cardId, name) {
-      return pinLockOnCard(this.doc, cardId, name);
+    lockOnCard(cardId, name) {
+      return lockOnCard(this.doc, cardId, name);
     }
     /** Name the claims fragment in the manifest (ADR-365 D7's field), when a lock created it. */
     setClaimsFile(file) {
@@ -4016,7 +4035,7 @@
   // tools/ide/web/testing-surface/src/lock.ts
   function applyLockWritten(model2, cardId, written) {
     if (written.manifestKey !== void 0) model2.setClaimsFile(written.manifestKey);
-    return model2.pinLock(cardId, written.name);
+    return model2.lockOnCard(cardId, written.name);
   }
   function lockArgumentsOf(step) {
     const args = ["claim", step.line, "--at", String(step.turn), "--json"];
