@@ -58,7 +58,7 @@
 - **Exit state**: no second reader of `admits` outside the traversal system; climbing cannot pass a blocked way; one test pins the two passage-key prefixes; F1, D17, D21, D16 are in the ledger's Fixed section.
 - **Demonstration**: world-model, stdlib, chord and story-loader suites each one run, green, including new tests for a computed way refused for an unadmitted pushed thing, an unadmitted steered vehicle, a blocked climb, and the prefix pin; Dungeo chain one run, byte-identical results to the baseline.
 - **Demonstrated**: 
-- **Status**: PENDING
+- **Status**: CURRENT (since 2026-10-21)
 
 ### Phase 2: Sight and visibility as one system (F2, F3, D14, F8)
 - **Tier**: Large
