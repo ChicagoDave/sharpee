@@ -38,6 +38,8 @@ export const goingLanguage = {
     // reaches a room; a vehicle with no way on halts, once.
     'vehicle_arrived': "{capitalize the vehicle} arrives at {the stop}.",
     'vehicle_stopped': "{capitalize the vehicle} comes to a stop.",
+    // A watcher in the room a vehicle leaves sees it go.
+    'vehicle_departed': "{capitalize the vehicle} pulls away.",
     // ADR-366 D7a: `start` on a one-way line at its end (GH #600).
     'vehicle_at_end': "{capitalize the vehicle} is at the end of its line.",
     // ADR-376 D8, D10: the open model's reports — an unwritten edge, plain
@@ -45,6 +47,9 @@ export const goingLanguage = {
     // floating thing.
     'expanse_edge': "{You} can go no farther that way.",
     'vehicle_alongside': "{capitalize the vehicle} comes alongside {the thing}.",
+    // ADR-376 D10: a floating thing seen drifting, and seen washing up in a landmark's room.
+    'thing_drifted': "{capitalize the thing} drifts.",
+    'thing_washed_up': "{capitalize the thing} washes up here.",
     // ADR-375 D5, D6: a sailing vehicle lies in irons; an unwritten edge of a sea under sail.
     'vehicle_in_irons': "{capitalize the vehicle} {verb:is vehicle} in irons.",
     'sailing_edge': "Wind and sea drive {you} back.",

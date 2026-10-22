@@ -19,7 +19,7 @@ import type { IRCondition, IRStatement, IRValue, Span } from '@sharpee/chord';
 import type { ISemanticEvent } from '@sharpee/core';
 import { SOUND_EVENT_TYPES, type Choice, type ISound } from '@sharpee/if-domain';
 import { killPlayer } from '@sharpee/stdlib';
-import { ExpanseTrait, type IFEntity, isAboardVehicle, sendVehicle, setSails, startVehicle, stopVehicle, TraitType, VehicleTrait, WearableBehavior, type WearableTrait, WorldModel } from '@sharpee/world-model';
+import { ExpanseTrait, type IFEntity, isAboardVehicle, sendVehicle, setSails, startVehicle, stopVehicle, TraitType, VEHICLE_EVENT_TYPES, VEHICLE_REPORT_MESSAGES, VehicleTrait, WearableBehavior, type WearableTrait, WorldModel } from '@sharpee/world-model';
 import { DecisionLedger } from '../decisions.js';
 import { LoadError } from '../errors.js';
 import { EVENT_TRIGGERS } from '../event-contract.js';
@@ -675,10 +675,10 @@ export class StatementsSection {
     if (!isAboardVehicle(world, player.id, vehicle.id) && world.getContainingRoom(player.id)?.id !== location) return;
     this.core.phrases.enqueueChannelEvent({
       id: `vehicle-at-end-${vehicle.id}-${Date.now()}`,
-      type: 'if.event.vehicle_at_end',
+      type: VEHICLE_EVENT_TYPES.REACHED_END,
       timestamp: Date.now(),
       entities: { target: vehicle.id, location },
-      data: { messageId: 'if.action.going.vehicle_at_end', params: { vehicle: vehicle.name }, vehicleId: vehicle.id },
+      data: { messageId: VEHICLE_REPORT_MESSAGES.AT_END, params: { vehicle: vehicle.name }, vehicleId: vehicle.id },
       tags: ['vehicle'],
     });
   }

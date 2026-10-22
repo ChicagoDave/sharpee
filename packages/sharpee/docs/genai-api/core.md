@@ -681,6 +681,16 @@ export interface ISemanticEvent {
      */
     presence?: Presence;
     /**
+     * Whether the world has reacted to this event: stamped by the engine's
+     * one door for applying events (`withWorldReactions`) on each event it
+     * applies and each reaction it produces. A later stage that delivers the
+     * event again (an NPC's act inside the actor phase's batch, a Chord
+     * acting statement's drained events) leaves it alone, and a stage that
+     * finds it unstamped applies it, so every fact is applied exactly once.
+     * A copy (`{ ...event }`) keeps the stamp. Absent means not yet applied.
+     */
+    applied?: true;
+    /**
      * Additional metadata for event processing
      */
     metadata?: Record<string, unknown>;

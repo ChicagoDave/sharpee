@@ -5392,7 +5392,7 @@ export declare function isAboardTrait(trait: ITrait): trait is AboardTrait;
  * `to outside` lands where the vehicle is) and `outsideWayOf` with its
  * result `OutsideWay` (which way out traversal grants), the expanse half of
  * exiting and entering: `leaveVehicleIntoExpanse` and `boardFromExpanse`
- * (ADR-376 D9), `edgeAhead` and `edgeRefusalOf` (D8), and the sailing half
+ * (ADR-376 D9), `edgeAhead`, `edgeRefusalOf` and `edgePhraseOf` (D8), and the sailing half
  * (ADR-375): `turnHeading`, `comeAbout`, `setSails`, `makeSail`,
  * `shortenSail`, `furlSails`, `paceUnderSail`, `windOf`. Each mutation an
  * action may be refused names its refusal as a check that mutates nothing —
@@ -5600,6 +5600,18 @@ export declare function edgeRefusalOf(world: WorldModel, vehicle: IFEntity, vect
     message?: string;
 } | undefined;
 /**
+ * The phrase the story wrote for one edge of an expanse (ADR-376 D8), or
+ * undefined for an unwritten side, which reads the stock line. The expanse
+ * borrows the exit message key for its side, so the phrase is resolved
+ * where every blocked way's is, each time it is asked: a varied phrase
+ * varies. The one lookup steering, setting a course and the machine share.
+ *
+ * @param world - The world model
+ * @param expanse - The expanse entity
+ * @param side - The edge
+ */
+export declare function edgePhraseOf(world: WorldModel, expanse: IFEntity, side: ExpanseSide): string | undefined;
+/**
  * `stop <vehicle>` (ADR-366 D5f; ADR-376 D3): take the vehicle's machine
  * out of the way where it is — a line halts at its stop, a compass vehicle
  * loses its heading, an open vehicle loses heading and course and keeps
@@ -5719,7 +5731,7 @@ export declare function isAboardVehicle(world: WorldModel, entityId: string, veh
  * author's sequence on `becomes under way`), it came alongside a floating
  * thing and stopped (`vehicle-alongside`, ADR-376 D10), or it reached an
  * edge of its expanse and stopped (`expanse-edge` or the edge's own phrase,
- * ADR-376 D8).
+ * which `edgePhraseOf` answers at report time, ADR-376 D8).
  */
 export type VehicleStep = {
     kind: 'arrived';
@@ -5734,7 +5746,6 @@ export type VehicleStep = {
 } | {
     kind: 'edge';
     side: ExpanseSide;
-    messageKey?: string;
     sailing?: boolean;
 }
 /** ADR-375 D5: a sailing vehicle lies in irons, reported once. */
@@ -5805,6 +5816,70 @@ export declare function getVehicleAboard(world: WorldModel, actorId: string): IF
 export declare function takesCommandSet(vehicle: IFEntity, set: string): boolean;
 ```
 
+### traits/vehicle/vehicleEvents
+
+```typescript
+/**
+ * Vehicle events — the facts a vehicle's machine, an expanse's drift and
+ * the driving statements record, and the stock lines they render through.
+ *
+ * One home below every emitter and reader: the vehicle machine (plugin-
+ * state-machine), going and the vehicle actions (stdlib), the story
+ * loader's driving statements and its `when <thing> moves` clauses. None of
+ * those may depend on another, and all depend on world-model, which owns
+ * the vehicle domain. Every type is a past-tense fact (alignment findings
+ * F4, D13; David's Q11 d answer).
+ *
+ * Public interface: `VEHICLE_EVENT_TYPES`, `VehicleEventType`,
+ * `VEHICLE_REPORT_MESSAGES`.
+ * Owner context: world-model — vehicles (ADR-366, ADR-375, ADR-376).
+ */
+/** The semantic-event types of the vehicle domain. */
+export declare const VEHICLE_EVENT_TYPES: {
+    /** A vehicle reached a room (ADR-366 D5e). */
+    readonly ARRIVED: "if.event.vehicle_arrived";
+    /** A vehicle left the room it was in (Q5). */
+    readonly DEPARTED: "if.event.vehicle_departed";
+    /** A vehicle ran out of way and halted. */
+    readonly STOPPED: "if.event.vehicle_stopped";
+    /** An open vehicle stopped alongside a floating thing (ADR-376 D10). */
+    readonly ALONGSIDE: "if.event.vehicle_alongside";
+    /** An open vehicle reached an edge of its expanse (ADR-376 D8). */
+    readonly EDGE_REACHED: "if.event.expanse_edge_reached";
+    /** A sailing vehicle was caught in irons (ADR-375 D5), once. */
+    readonly CAUGHT_IN_IRONS: "if.event.vehicle_caught_in_irons";
+    /** A line vehicle reached the end of its line on `send` (ADR-366 D5f). */
+    readonly REACHED_END: "if.event.vehicle_reached_end";
+    /** A floating thing drifted one cell (ADR-376 D10; D11, David's answer a). */
+    readonly DRIFTED: "if.event.drifted";
+    /** A floating thing drifted into a landmark and washed up in its room (ADR-376 D10). */
+    readonly WASHED_UP: "if.event.washed_up";
+};
+export type VehicleEventType = typeof VEHICLE_EVENT_TYPES[keyof typeof VEHICLE_EVENT_TYPES];
+/**
+ * The stock lines vehicle reports render through (ADR-366 D7a, ADR-375,
+ * ADR-376 D8, D10). They live in going's message set; every emitter and
+ * every action that words the same fact reads them here, so none spells a
+ * literal and lang holds each line once.
+ */
+export declare const VEHICLE_REPORT_MESSAGES: {
+    readonly ARRIVED: "if.action.going.vehicle_arrived";
+    readonly DEPARTED: "if.action.going.vehicle_departed";
+    readonly STOPPED: "if.action.going.vehicle_stopped";
+    readonly ALONGSIDE: "if.action.going.vehicle_alongside";
+    /** The stock line for an edge with no phrase: steering, setting a course and the machine alike. */
+    readonly EXPANSE_EDGE: "if.action.going.expanse_edge";
+    /** ADR-375 D6: the unwritten edge of a sea under sail is weather. */
+    readonly SAILING_EDGE: "if.action.going.sailing_edge";
+    readonly IN_IRONS: "if.action.going.vehicle_in_irons";
+    readonly AT_END: "if.action.going.vehicle_at_end";
+    /** Going's line for an authored refusal, rendering the phrase verbatim (an edge's phrase). */
+    readonly MOVEMENT_BLOCKED: "if.action.going.movement_blocked";
+    readonly DRIFTED: "if.action.going.thing_drifted";
+    readonly WASHED_UP: "if.action.going.thing_washed_up";
+};
+```
+
 ### traits/expanse/expanseTrait
 
 ```typescript
@@ -5812,8 +5887,8 @@ export declare function takesCommandSet(vehicle: IFEntity, set: string): boolean
  * Expanse Trait - a bounded space with coordinates, held by the room an expanse lowers to
  *
  * Public interface: `ExpanseTrait` (data: the size, the landmark rooms and
- * their cells, the optional sight cap and drift interval, the edge phrases,
- * and the drift machine's state), `IExpanseCell`, `ExpanseSide`,
+ * their cells, the optional sight cap and drift interval, and the drift
+ * machine's state), `IExpanseCell`, `ExpanseSide`,
  * `IExpanseData`, `isExpanseTrait`, `isInsideExpanse`, `sameCell`.
  *
  * Owner context: world-model traits. An expanse is a room (its heading,
@@ -5827,7 +5902,8 @@ export declare function takesCommandSet(vehicle: IFEntity, set: string): boolean
  * References:
  * - ADR-376 D2 — the expanse kind, its size and landmarks; it lowers to a room.
  * - ADR-376 D6 — `visibility:` caps every looker's sight in it.
- * - ADR-376 D8 — edges, one phrase per side, never crossed.
+ * - ADR-376 D8 — edges are never crossed; a side's phrase is its blocked-exit
+ *   line, read through the exit message key (`edgePhraseOf`), not held here.
  * - ADR-376 D10 — `drift:`, the interval floating things move on.
  * - ADR-375 D4 — `wind:`, the bearing the wind comes from, or a calm.
  * - ADR-375 D2 — a sailing vehicle's coordinates are fractional; a cell is a rounded coordinate.
@@ -5854,8 +5930,6 @@ export interface IExpanseData {
     visibility?: number;
     /** `drift: 1 unit every <n> turns` — turns between drift steps; absent means floating things hold still. */
     drift?: number;
-    /** The phrase key of each written edge line, by side; an unwritten side uses the stock line. */
-    edges?: Partial<Record<ExpanseSide, string>>;
     /** Machine state: turns left before the next drift step. */
     turnsToDrift?: number;
     /** `wind: from <bearing>` / `wind: calm` (ADR-375 D4); absent means the expanse carries no wind. */
@@ -5874,7 +5948,6 @@ export declare class ExpanseTrait implements ITrait, IExpanseData {
     landmarks: Record<string, IExpanseCell>;
     visibility?: number;
     drift?: number;
-    edges: Partial<Record<ExpanseSide, string>>;
     turnsToDrift: number;
     wind?: ExpanseWind;
     /**

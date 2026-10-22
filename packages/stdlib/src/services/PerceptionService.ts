@@ -72,13 +72,16 @@ export class PerceptionService implements IPerceptionService {
       // for the perceiver's highest-precedence available sense. This is generic —
       // it keys off the presence of `renderings`, not off NPC/movement specifics —
       // so future witnessable facts (combat, object sounds, smells) reuse it.
-      const renderings = (event.data as { renderings?: PerSenseRenderings } | undefined)
-        ?.renderings;
+      // The fact stays the fact: its type and domain data are kept, and only
+      // the line it renders through becomes the chosen sense's.
+      const data = event.data as ({ renderings?: PerSenseRenderings } & Record<string, unknown>) | undefined;
+      const renderings = data?.renderings;
       if (renderings !== undefined) {
         for (const sense of SENSE_PRECEDENCE) {
           const r = renderings[sense];
           if (r && this.canPerceive(actor, location, world, sense)) {
-            return { ...event, type: r.messageId, data: r.params };
+            const { renderings: _chosen, ...facts } = data!;
+            return { ...event, data: { ...facts, messageId: r.messageId, params: r.params } };
           }
         }
         // Present but nothing perceivable (incl. empty `{}`) ⇒ imperceptible.

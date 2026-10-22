@@ -876,7 +876,7 @@ export interface EvaluationContext {
 import { type ISemanticEvent } from '@sharpee/core';
 import { type TurnPlugin, type TurnPluginContext } from '@sharpee/plugins';
 import { StateMachineRegistry } from './state-machine-runtime.js';
-import { type ExpanseEdgeTextResolver, type VehiclePositionResolver } from './vehicle-machine.js';
+import { type VehiclePositionResolver } from './vehicle-machine.js';
 /** What the host lends the plugin's vehicle phase. */
 export interface StateMachinePluginOptions {
     /**
@@ -885,12 +885,6 @@ export interface StateMachinePluginOptions {
      * model steps without it.
      */
     vehiclePosition?: VehiclePositionResolver;
-    /**
-     * The host's text for an expanse edge the author wrote a phrase for
-     * (ADR-376 D8). Omit when the host lowers no expanses; an edge with no
-     * phrase, or no resolver, reports the stock `expanse-edge` line.
-     */
-    expanseEdgeText?: ExpanseEdgeTextResolver;
 }
 /**
  * The {@link TurnPlugin} that drives declarative state machines (ADR-119).
@@ -910,7 +904,6 @@ export declare class StateMachinePlugin implements TurnPlugin {
     priority: number;
     private registry;
     private readonly vehiclePosition?;
-    private readonly expanseEdgeText?;
     constructor(options?: StateMachinePluginOptions);
     /**
      * Evaluate all registered machines for this turn, then step every
@@ -1026,25 +1019,39 @@ export declare function executeEffects(effects: Effect[], world: WorldModel, bin
  * Vehicle Machine - the per-turn phase that steps every vehicle's built-in machine and drifts every expanse
  *
  * Public interface: `VehiclePositionResolver` (the host's answer for a
- * `drive: state` line's `position` block), `ExpanseEdgeTextResolver` (the
- * host's text for an authored edge phrase), `VehicleTickOptions`,
+ * `drive: state` line's `position` block), `VehicleTickOptions`, and
  * `tickVehicles` (one turn over every vehicle and every expanse in the
- * world, returning the events the steps earned), and the event types
- * `VEHICLE_ARRIVED_EVENT`, `VEHICLE_STOPPED_EVENT`, `VEHICLE_ALONGSIDE_EVENT`
- * and `EXPANSE_EDGE_EVENT`.
+ * world, returning the facts the steps recorded). The event types and the
+ * stock lines are world-model's `VEHICLE_EVENT_TYPES` and
+ * `VEHICLE_REPORT_MESSAGES`; none is spelled here.
  *
  * Owner context: plugin-state-machine. The vehicle's machine is a phase of
  * the state-machine plugin, run after the story's own machines each turn
  * (ADR-377 D3). The stepping itself is world-model's `stepVehicle` and the
  * drift world-model's `driftExpanse`; this module only decides which
  * vehicles to step, hands a state-driven line the stop its `position` block
- * names, draws drift from the session's random service, and turns each step
- * into the event the player can read: `vehicle-arrived` when they are aboard
- * or in the room the vehicle reached, `vehicle-stopped` and
- * `vehicle-alongside` when they are aboard, an edge once when they are
- * aboard — the author's phrase through going's blocked-movement line, else
- * the stock `expanse-edge`. Drift and wash-up are silent: the author's
- * `when <thing> moves` clause is the hook.
+ * names, draws drift from the session's random service, and records each
+ * step as a past-tense fact. The engine applies every fact a plugin records
+ * to the world, so a story's handlers and `when <thing> moves` clauses
+ * hear them; who reads what is decided here in two voices:
+ *
+ * - A rider (the player aboard) is told of every move by containment, lit
+ *   or dark: arrived, stopped, alongside, an edge (the author's phrase,
+ *   `edgePhraseOf`, through going's blocked-movement line, else the stock
+ *   line), caught in irons. A departure is not told to a rider.
+ * - A watcher (anyone not aboard) sees a move where it happened, as any
+ *   seen thing: the fact carries its place and a sight rendering, so
+ *   perception shows it in a lit room, hides it in a dark one, and the
+ *   client hides it from a player elsewhere. A watcher sees a vehicle
+ *   depart, arrive, stop, come alongside and lie in irons, and sees a
+ *   floating thing drift and wash up. An edge is a rider's experience and
+ *   is recorded silently for a watcher.
+ *
+ * A passenger of a vehicle with no rooms aboard is carried into the room it
+ * reaches, so each one arrives (`if.event.actor_moved`) as a walker does
+ * and the story's `after … entering` clauses fire. A vehicle with rooms
+ * aboard is unchanged: its passengers are in a room aboard and arrive by
+ * walking out.
  *
  * References:
  * - ADR-366 D5e — the machine is ticked by the engine's turn cycle here.
@@ -1052,19 +1059,12 @@ export declare function executeEffects(effects: Effect[], world: WorldModel, bin
  * - ADR-366 D7a — `vehicle-arrived` and `vehicle-stopped` are stock lines.
  * - ADR-376 D8, D10 — the edge and alongside reports; drift from the seeded service.
  * - ADR-377 D3 — no second turn host; the vehicle phase runs in this plugin.
+ * - Alignment fixes Phase 4 — F4, D13 (one declaration, past-tense facts),
+ *   D11 (drift becomes events), Q5 C (riders and watchers), Q6 A
+ *   (passengers arrive).
  */
 import { type ISemanticEvent, type RandomService } from '@sharpee/core';
-import { type ExpanseSide, type IFEntity, WorldModel } from '@sharpee/world-model';
-/** The event a vehicle's machine records when it reaches a room. */
-export declare const VEHICLE_ARRIVED_EVENT = "if.event.vehicle_arrived";
-/** The event a vehicle's machine records when it runs out of way and halts. */
-export declare const VEHICLE_STOPPED_EVENT = "if.event.vehicle_stopped";
-/** The event an open vehicle's machine records when it stops alongside a floating thing (ADR-376 D10). */
-export declare const VEHICLE_ALONGSIDE_EVENT = "if.event.vehicle_alongside";
-/** The event an open vehicle's machine records when it stops at an edge of its expanse (ADR-376 D8). */
-export declare const EXPANSE_EDGE_EVENT = "if.event.expanse_edge";
-/** The event a sailing vehicle's machine records when it lies in irons (ADR-375 D5), once. */
-export declare const VEHICLE_IN_IRONS_EVENT = "if.event.vehicle_in_irons";
+import { type IFEntity, WorldModel } from '@sharpee/world-model';
 /**
  * The host's reading of a `drive: state` line's `position` block (ADR-366
  * D5a): the stop the block names this turn, or undefined when the vehicle
@@ -1072,30 +1072,24 @@ export declare const VEHICLE_IN_IRONS_EVENT = "if.event.vehicle_in_irons";
  * the host that lowered them answers; the trait carries only data (D5g).
  */
 export type VehiclePositionResolver = (vehicle: IFEntity, world: WorldModel) => string | undefined;
-/**
- * The host's text for an expanse edge the author wrote a phrase for (ADR-376
- * D8): the phrase key is trait data, its text is the host's phrasebook. The
- * host resolves it at report time so a varied phrase varies.
- */
-export type ExpanseEdgeTextResolver = (expanse: IFEntity, side: ExpanseSide, messageKey: string, world: WorldModel) => string | undefined;
 /** What the host lends the tick. */
 export interface VehicleTickOptions {
     positionOf?: VehiclePositionResolver;
-    edgeText?: ExpanseEdgeTextResolver;
 }
 /**
  * Step every vehicle's machine once (ADR-366 D5e), drift every expanse
- * (ADR-376 D10), and return the reports the player can read. A vehicle at
- * rest earns nothing; a world with no vehicles and no expanses costs two
- * trait lookups.
+ * (ADR-376 D10), and return the facts both recorded, each in the voice its
+ * reader is owed. A vehicle at rest and a thing held still record nothing;
+ * a world with no vehicles and no expanses costs two trait lookups.
  *
  * @param world - The live world
- * @param playerId - The player, whose place decides what is reported
+ * @param playerId - The player: aboard, they are told; elsewhere, they watch
  * @param random - The session's random service, for drift (ADR-293) and
  *   for a computed way a compass vehicle's heading meets (ADR-295 D4)
- * @param options - The host's `position` block reader and edge-phrase text,
- *   each absent when the host lowers nothing that needs it
- * @returns the turn's `vehicle_arrived`, `vehicle_stopped`, `vehicle_alongside` and `expanse_edge` events
+ * @param options - The host's `position` block reader, absent when the host
+ *   lowers no `drive: state` line
+ * @returns the turn's departed, arrived, stopped, alongside, edge-reached,
+ *   caught-in-irons, passenger-arrival, drifted and washed-up facts
  */
 export declare function tickVehicles(world: WorldModel, playerId: string, random: RandomService, options?: VehicleTickOptions): ISemanticEvent[];
 ```

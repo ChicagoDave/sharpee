@@ -7,9 +7,6 @@ export const SteeringMessages = {
   VEHICLE_NO_SUCH_COMMAND: 'vehicle_no_such_command',
   CANNOT_STEER: 'cannot_steer',
   NOT_UNDER_WAY: 'not_under_way',
-  /** ADR-376 D8: a heading toward the edge the vehicle is at — the stock line, or the author's edge phrase. */
-  EXPANSE_EDGE: 'expanse_edge',
-  EDGE_BLOCKED: 'edge_blocked',
   /** ADR-375 D3, D7: the naval set's refusals. */
   NAVAL_HOW_FAR: 'naval_how_far',
   NAVAL_NO_WIND: 'naval_no_wind',

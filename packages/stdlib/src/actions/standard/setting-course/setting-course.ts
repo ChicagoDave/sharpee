@@ -36,6 +36,7 @@ import {
   landmarkCellOf,
   placeOf,
   type IExpanseCell,
+  VEHICLE_REPORT_MESSAGES,
 } from '@sharpee/world-model';
 import { IFActions } from '../../constants.js';
 import { ActionMetadata } from '../../../validation/index.js';
@@ -121,8 +122,6 @@ export const settingCourseAction: Action & { metadata: ActionMetadata } = {
     SettingCourseMessages.ALREADY_THERE,
     SettingCourseMessages.VEHICLE_UNDER_WAY,
     SettingCourseMessages.COORDINATES_OUTSIDE_EXPANSE,
-    SettingCourseMessages.EXPANSE_EDGE,
-    SettingCourseMessages.EDGE_BLOCKED,
     SettingCourseMessages.COURSE_SET,
     SettingCourseMessages.COURSE_SET_CELL
   ],
@@ -163,9 +162,10 @@ export const settingCourseAction: Action & { metadata: ActionMetadata } = {
       const from = place.cell;
       const edge = edgeRefusalOf(context.world, vehicle, { x: Math.sign(course.cell.x - from.x), y: Math.sign(course.cell.y - from.y) });
       if (edge) {
+        // ADR-376 D8: an edge reads the same whoever meets it — going's line.
         return edge.message !== undefined
-          ? { valid: false, error: SettingCourseMessages.EDGE_BLOCKED, params: { ...params, message: edge.message } }
-          : { valid: false, error: SettingCourseMessages.EXPANSE_EDGE, params };
+          ? { valid: false, error: VEHICLE_REPORT_MESSAGES.MOVEMENT_BLOCKED, errorQualified: true, params: { ...params, message: edge.message } }
+          : { valid: false, error: VEHICLE_REPORT_MESSAGES.EXPANSE_EDGE, errorQualified: true, params };
       }
       return { valid: true };
     }

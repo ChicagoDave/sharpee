@@ -8,13 +8,14 @@
  * (`toRoom` on actor-moved). Renaming the event TYPE string is caught by
  * tests/event-selector.test.ts and the golden transcript gates.
  *
- * Public interface: EVENT_TRIGGERS, EVENT_PAYLOAD_FIELDS,
+ * Public interface: EVENT_TRIGGERS, MOVE_TRIGGERS, EVENT_PAYLOAD_FIELDS,
  * enteringDestination, movedActorId, LISTENER_EVENT_TRIGGERS, heardSound.
  * Owner context: @sharpee/story-loader (type-only stdlib dep; erased at emit).
  */
 import type { ActorMovedEventData } from '@sharpee/stdlib';
 import type { ISemanticEvent } from '@sharpee/core';
 import { SOUND_EVENT_TYPES, type IAudibilityEvent } from '@sharpee/if-domain';
+import { VEHICLE_EVENT_TYPES } from '@sharpee/world-model';
 
 /**
  * Chord event verb → stdlib event type it binds to. Gerund register since
@@ -24,6 +25,18 @@ import { SOUND_EVENT_TYPES, type IAudibilityEvent } from '@sharpee/if-domain';
 export const EVENT_TRIGGERS: Record<string, string> = {
   entering: 'if.event.actor_moved',
 };
+
+/**
+ * The facts a `when <thing> moves` clause hears (ADR-325 D3h): an arrival,
+ * walked or carried, and a floating thing's drift and wash-up, which the
+ * vehicle machine records (alignment D11, David's answer a). Each names
+ * its mover as `movedActorId` reads it.
+ */
+export const MOVE_TRIGGERS: readonly string[] = [
+  EVENT_TRIGGERS.entering,
+  VEHICLE_EVENT_TYPES.DRIFTED,
+  VEHICLE_EVENT_TYPES.WASHED_UP,
+];
 
 /**
  * Payload fields each trigger's filter reads. The mapped types are
@@ -79,8 +92,9 @@ export function crossingRegionId(data: unknown): string | undefined {
  * moves`; ADR-327 D1 `after <actor> entering`): the envelope's
  * `entities.actor` (stamped on every action event — the player, or the NPC
  * the plugin minted the event for), else the payload's `actorId` (the
- * region crossing events and the loader's own D5 move-arrival stamp it
- * there), else the payload's actor snapshot id.
+ * region crossing events, the loader's own D5 move-arrival, and the
+ * vehicle machine's drift and wash-up stamp it there), else the payload's
+ * actor snapshot id.
  * @param event the actor-moved / region-crossing event
  * @returns the mover's world entity id, or undefined
  */

@@ -61,7 +61,7 @@ function belt(): Belt {
   const expanse = world.createEntity('Belt', 'room');
   expanse.add(new RoomTrait());
   expanse.add(new IdentityTrait({ name: 'Belt' }));
-  expanse.add(new ExpanseTrait({ width: 20, height: 8, landmarks: { [platform.id]: { x: 3, y: 3 }, [derelict.id]: { x: 14, y: 6 } }, drift: 4, edges: { NORTH: 'ice-fields' } }));
+  expanse.add(new ExpanseTrait({ width: 20, height: 8, landmarks: { [platform.id]: { x: 3, y: 3 }, [derelict.id]: { x: 14, y: 6 } }, drift: 4 }));
   const skiff = world.createEntity('skiff', 'object');
   skiff.add(new IdentityTrait({ name: 'skiff' }));
   skiff.add(new ContainerTrait());
@@ -118,10 +118,11 @@ describe('steering an open vehicle (D3, D8)', () => {
     const { world, skiff, belt: expanse } = belt();
     model(skiff).position = { x: 4, y: 7 };
     model(skiff).atEdge = 'NORTH';
-    expect(messageIds(steer(world, 'north'))).toContain('if.action.steering.expanse_edge');
+    // An edge reads the same whoever meets it: going's lines, the ones the machine reports.
+    expect(messageIds(steer(world, 'north'))).toContain('if.action.going.expanse_edge');
     world.registerEvaluator(`exit.message.${expanse.id}.NORTH`, () => 'Ice closes the way north.');
     const refused = steer(world, 'northeast');
-    expect(messageIds(refused)).toContain('if.action.steering.edge_blocked');
+    expect(messageIds(refused)).toContain('if.action.going.movement_blocked');
     expect(refused[0].data.params.message).toBe('Ice closes the way north.');
     expect(model(skiff).heading).toBeNull();
     expect(messageIds(steer(world, 'south'))).toContain('if.action.steering.steered');
@@ -156,7 +157,7 @@ describe('a course by coordinates or landmark (D4, D8)', () => {
     expect(messageIds(setCourse(world, '10, 7'))).toContain('if.action.setting_course.course_set_cell');
     steer(world);
     model(skiff).atEdge = 'EAST';
-    expect(messageIds(setCourse(world, '10, 7'))).toContain('if.action.setting_course.expanse_edge');
+    expect(messageIds(setCourse(world, '10, 7'))).toContain('if.action.going.expanse_edge');
     expect(model(skiff)).toMatchObject({ course: null, heading: null });
   });
 

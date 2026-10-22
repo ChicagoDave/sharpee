@@ -42,6 +42,7 @@ import {
   shortenSail,
   turnHeading,
   type IFEntity,
+  VEHICLE_REPORT_MESSAGES,
 } from '@sharpee/world-model';
 import { IFActions } from '../../constants.js';
 import { ActionMetadata } from '../../../validation/index.js';
@@ -116,13 +117,17 @@ export const steeringLifecycle: ActionLifecycleDescriptor = {
   ]
 };
 
-/** ADR-376 D8: the vehicle behavior's edge refusal in steering's words, or undefined. */
+/**
+ * ADR-376 D8: the vehicle behavior's edge refusal, or undefined. An edge
+ * reads the same whoever meets it, so the refusal is going's line, the one
+ * the machine reports: the edge's phrase verbatim, else the stock line.
+ */
 function edgeRefusal(context: ActionContext, vehicle: IFEntity, vector: { x: number; y: number }, params: Record<string, unknown>): ValidationResult | undefined {
   const edge = edgeRefusalOf(context.world, vehicle, vector);
   if (!edge) return undefined;
   return edge.message !== undefined
-    ? { valid: false, error: SteeringMessages.EDGE_BLOCKED, params: { ...params, message: edge.message } }
-    : { valid: false, error: SteeringMessages.EXPANSE_EDGE, params };
+    ? { valid: false, error: VEHICLE_REPORT_MESSAGES.MOVEMENT_BLOCKED, errorQualified: true, params: { ...params, message: edge.message } }
+    : { valid: false, error: VEHICLE_REPORT_MESSAGES.EXPANSE_EDGE, errorQualified: true, params };
 }
 
 export const steeringAction: Action & { metadata: ActionMetadata } = {
@@ -132,8 +137,6 @@ export const steeringAction: Action & { metadata: ActionMetadata } = {
     SteeringMessages.VEHICLE_NO_SUCH_COMMAND,
     SteeringMessages.CANNOT_STEER,
     SteeringMessages.NOT_UNDER_WAY,
-    SteeringMessages.EXPANSE_EDGE,
-    SteeringMessages.EDGE_BLOCKED,
     SteeringMessages.NAVAL_HOW_FAR,
     SteeringMessages.NAVAL_NO_WIND,
     SteeringMessages.NAVAL_CANNOT_COME_ABOUT,

@@ -403,20 +403,15 @@ export class ChordStory implements Story {
   }
 
   /**
-   * ADR-376 D2, D6, D8, D10: the expanse's size, each landmark row resolved
-   * to its room's world id, the sight cap, the drift interval, and the edges
-   * — the four sides' unconditional blocked-exit lines, by their phrase
-   * key. The analyzer has refused every other exit and every `while`.
+   * ADR-376 D2, D6, D10: the expanse's size, each landmark row resolved
+   * to its room's world id, the sight cap and the drift interval. Its edges
+   * (D8) are its blocked-exit lines, registered as every room's are, and
+   * read through the exit message key.
    */
   private wireExpanse(irEntity: IREntity, entity: IFEntity): void {
     const x = irEntity.expanse!;
     const landmarks: Record<string, { x: number; y: number }> = {};
     for (const row of x.landmarks) landmarks[this.requireWorldId(row.room, irEntity)] = { x: row.x, y: row.y };
-    const edges: Partial<Record<'NORTH' | 'SOUTH' | 'EAST' | 'WEST', string>> = {};
-    for (const blocked of irEntity.blockedExits) {
-      const side = blocked.direction.toUpperCase();
-      if (blocked.condition === null && (side === 'NORTH' || side === 'SOUTH' || side === 'EAST' || side === 'WEST')) edges[side] = blocked.phraseKey;
-    }
     entity.add(new ExpanseTrait({
       width: x.width,
       height: x.height,
@@ -425,7 +420,6 @@ export class ChordStory implements Story {
       ...(x.drift !== undefined ? { drift: x.drift } : {}),
       // ADR-375 D4: the wind, a bearing it comes from or a calm.
       ...(x.wind !== undefined ? { wind: x.wind === 'calm' ? 'calm' : x.wind.bearing } : {}),
-      edges,
     }));
   }
 
@@ -1368,9 +1362,6 @@ export class ChordStory implements Story {
       engine,
       installContext,
       (vehicleWorldId, world) => this.vehiclePositionAnswer(vehicleWorldId, world),
-      // ADR-376 D8: an edge's authored phrase, resolved at report time as a
-      // blocked exit's is, so a varied phrase varies.
-      (messageKey, world) => this.runtime.derived.blockedPhraseText(messageKey, world),
     );
 
     for (const [name, registration] of EXTENSION_REGISTRY) {

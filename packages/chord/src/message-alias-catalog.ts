@@ -15,7 +15,7 @@
  * Public interface: MESSAGE_OVERRIDE_ALIASES.
  * Owner context: @sharpee/chord (language frontend; browser-safe; generated artifact).
  *
- * 879 aliases across 78 actions.
+ * 878 aliases across 78 actions.
  *
  * References:
  * - ADR-255 D2 — one hand-maintained table; Interface Contract 3 — names
@@ -385,7 +385,10 @@ export const MESSAGE_OVERRIDE_ALIASES: ReadonlySet<string> = new Set([
   'going-vehicle-alongside',
   'going-vehicle-arrived',
   'going-vehicle-at-end',
+  'going-vehicle-departed',
   'going-vehicle-in-irons',
+  'going-thing-drifted',
+  'going-thing-washed-up',
   'going-sailing-edge',
   'going-vehicle-cannot-go',
   'going-vehicle-cannot-walk',
@@ -699,8 +702,6 @@ export const MESSAGE_OVERRIDE_ALIASES: ReadonlySet<string> = new Set([
   'setting-course-vehicle-no-such-command',
   'setting-course-coordinates-outside-expanse',
   'setting-course-course-set-cell',
-  'setting-course-edge-blocked',
-  'setting-course-expanse-edge',
   'setting-course-vehicle-under-way',
   // if.action.showing
   'showing-no-item',
@@ -764,8 +765,6 @@ export const MESSAGE_OVERRIDE_ALIASES: ReadonlySet<string> = new Set([
   'steering-hove-to',
   'steering-not-in-vehicle',
   'steering-not-under-way',
-  'steering-edge-blocked',
-  'steering-expanse-edge',
   'steering-steered',
   'steering-vehicle-no-such-command',
   // if.action.switching_off

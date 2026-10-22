@@ -11,9 +11,6 @@ export const SettingCourseMessages = {
   VEHICLE_UNDER_WAY: 'vehicle_under_way',
   /** ADR-376 D8: typed coordinates outside the expanse. */
   COORDINATES_OUTSIDE_EXPANSE: 'coordinates_outside_expanse',
-  /** ADR-376 D8: a course whose first leg heads into the edge the vehicle is at. */
-  EXPANSE_EDGE: 'expanse_edge',
-  EDGE_BLOCKED: 'edge_blocked',
   // Success
   COURSE_SET: 'course_set',
   /** ADR-376 D4: a course for a cell. */

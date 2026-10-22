@@ -13,7 +13,7 @@
  * `to outside` lands where the vehicle is) and `outsideWayOf` with its
  * result `OutsideWay` (which way out traversal grants), the expanse half of
  * exiting and entering: `leaveVehicleIntoExpanse` and `boardFromExpanse`
- * (ADR-376 D9), `edgeAhead` and `edgeRefusalOf` (D8), and the sailing half
+ * (ADR-376 D9), `edgeAhead`, `edgeRefusalOf` and `edgePhraseOf` (D8), and the sailing half
  * (ADR-375): `turnHeading`, `comeAbout`, `setSails`, `makeSail`,
  * `shortenSail`, `furlSails`, `paceUnderSail`, `windOf`. Each mutation an
  * action may be refused names its refusal as a check that mutates nothing —
@@ -415,8 +415,24 @@ export function edgeRefusalOf(world: WorldModel, vehicle: IFEntity, vector: IExp
   const side = edgeAhead(vehicle, vector);
   if (!side) return undefined;
   const expanse = placeOf(world, vehicle)?.expanse;
-  const message = expanse ? world.evaluate(exitMessageKey(expanse.id, side)) : undefined;
-  return typeof message === 'string' && message.length > 0 ? { side, message } : { side };
+  const message = expanse ? edgePhraseOf(world, expanse, side) : undefined;
+  return message !== undefined ? { side, message } : { side };
+}
+
+/**
+ * The phrase the story wrote for one edge of an expanse (ADR-376 D8), or
+ * undefined for an unwritten side, which reads the stock line. The expanse
+ * borrows the exit message key for its side, so the phrase is resolved
+ * where every blocked way's is, each time it is asked: a varied phrase
+ * varies. The one lookup steering, setting a course and the machine share.
+ *
+ * @param world - The world model
+ * @param expanse - The expanse entity
+ * @param side - The edge
+ */
+export function edgePhraseOf(world: WorldModel, expanse: IFEntity, side: ExpanseSide): string | undefined {
+  const message = world.evaluate(exitMessageKey(expanse.id, side));
+  return typeof message === 'string' && message.length > 0 ? message : undefined;
 }
 
 /** Whether a direction has a component toward the edge the vehicle is at (D8). */
@@ -669,14 +685,14 @@ export function isAboardVehicle(world: WorldModel, entityId: string, vehicleId: 
  * author's sequence on `becomes under way`), it came alongside a floating
  * thing and stopped (`vehicle-alongside`, ADR-376 D10), or it reached an
  * edge of its expanse and stopped (`expanse-edge` or the edge's own phrase,
- * ADR-376 D8).
+ * which `edgePhraseOf` answers at report time, ADR-376 D8).
  */
 export type VehicleStep =
   | { kind: 'arrived'; roomId: string }
   | { kind: 'stopped' }
   | { kind: 'departed' }
   | { kind: 'alongside'; thingId: string }
-  | { kind: 'edge'; side: ExpanseSide; messageKey?: string; sailing?: boolean }
+  | { kind: 'edge'; side: ExpanseSide; sailing?: boolean }
   /** ADR-375 D5: a sailing vehicle lies in irons, reported once. */
   | { kind: 'in-irons' };
 
@@ -877,8 +893,7 @@ function stepOpen(world: WorldModel, vehicle: IFEntity, model: VehicleOpenModel)
       model.position = cellOf(last);
       model.atEdge = side;
       halt(model);
-      const messageKey = found.trait.edges[side];
-      return { kind: 'edge', side, ...(messageKey !== undefined ? { messageKey } : {}), ...(model.sailing ? { sailing: true } : {}) };
+      return { kind: 'edge', side, ...(model.sailing ? { sailing: true } : {}) };
     }
     const landmark = landmarkAt(found.trait, cell);
     if (landmark !== undefined) {

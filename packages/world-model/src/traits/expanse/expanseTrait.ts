@@ -2,8 +2,8 @@
  * Expanse Trait - a bounded space with coordinates, held by the room an expanse lowers to
  *
  * Public interface: `ExpanseTrait` (data: the size, the landmark rooms and
- * their cells, the optional sight cap and drift interval, the edge phrases,
- * and the drift machine's state), `IExpanseCell`, `ExpanseSide`,
+ * their cells, the optional sight cap and drift interval, and the drift
+ * machine's state), `IExpanseCell`, `ExpanseSide`,
  * `IExpanseData`, `isExpanseTrait`, `isInsideExpanse`, `sameCell`.
  *
  * Owner context: world-model traits. An expanse is a room (its heading,
@@ -17,7 +17,8 @@
  * References:
  * - ADR-376 D2 — the expanse kind, its size and landmarks; it lowers to a room.
  * - ADR-376 D6 — `visibility:` caps every looker's sight in it.
- * - ADR-376 D8 — edges, one phrase per side, never crossed.
+ * - ADR-376 D8 — edges are never crossed; a side's phrase is its blocked-exit
+ *   line, read through the exit message key (`edgePhraseOf`), not held here.
  * - ADR-376 D10 — `drift:`, the interval floating things move on.
  * - ADR-375 D4 — `wind:`, the bearing the wind comes from, or a calm.
  * - ADR-375 D2 — a sailing vehicle's coordinates are fractional; a cell is a rounded coordinate.
@@ -50,8 +51,6 @@ export interface IExpanseData {
   visibility?: number;
   /** `drift: 1 unit every <n> turns` — turns between drift steps; absent means floating things hold still. */
   drift?: number;
-  /** The phrase key of each written edge line, by side; an unwritten side uses the stock line. */
-  edges?: Partial<Record<ExpanseSide, string>>;
   /** Machine state: turns left before the next drift step. */
   turnsToDrift?: number;
   /** `wind: from <bearing>` / `wind: calm` (ADR-375 D4); absent means the expanse carries no wind. */
@@ -72,7 +71,6 @@ export class ExpanseTrait implements ITrait, IExpanseData {
   landmarks: Record<string, IExpanseCell>;
   visibility?: number;
   drift?: number;
-  edges: Partial<Record<ExpanseSide, string>>;
   turnsToDrift: number;
   wind?: ExpanseWind;
 
@@ -107,7 +105,6 @@ export class ExpanseTrait implements ITrait, IExpanseData {
       }
       this.drift = data.drift;
     }
-    this.edges = { ...(data.edges ?? {}) };
     this.turnsToDrift = data.turnsToDrift ?? data.drift ?? 0;
     if (data.wind !== undefined) {
       if (data.wind !== 'calm' && (!Number.isInteger(data.wind) || data.wind < 0 || data.wind > 359)) {

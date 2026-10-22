@@ -18,6 +18,7 @@ import { VehicleTrait, type VehicleOpenModel } from '../../../src/traits/vehicle
 import { ExpanseTrait } from '../../../src/traits/expanse/expanseTrait';
 import { FloatingTrait } from '../../../src/traits/expanse/floatingTrait';
 import {
+  edgePhraseOf,
   isUnderWay,
   sendVehicle,
   startVehicle,
@@ -72,7 +73,6 @@ describe('the open model (ADR-376)', () => {
       width: 20,
       height: 20,
       landmarks: { [platform.id]: { x: 3, y: 3 }, [derelict.id]: { x: 14, y: 9 } },
-      edges: { NORTH: 'ice-fields' },
     }));
     skiff = openVehicle('the skiff', belt);
     player = world.createEntity('player', EntityType.ACTOR);
@@ -282,11 +282,11 @@ describe('the open model (ADR-376)', () => {
   });
 
   describe('edges (D8)', () => {
-    it('a step past a written edge stops at the last cell inside with the edge phrase, once', () => {
+    it('a step past an edge stops at the last cell inside, once', () => {
       model(skiff).position = { x: 10, y: 18 };
       model(skiff).stride = 5;
       startVehicle(world, skiff, 'NORTH');
-      expect(stepVehicle(world, skiff)).toEqual({ kind: 'edge', side: 'NORTH', messageKey: 'ice-fields' });
+      expect(stepVehicle(world, skiff)).toEqual({ kind: 'edge', side: 'NORTH' });
       expect(model(skiff).position).toEqual({ x: 10, y: 19 });
       expect(model(skiff).atEdge).toBe('NORTH');
       expect(model(skiff).heading).toBeNull();
@@ -296,6 +296,17 @@ describe('the open model (ADR-376)', () => {
       expect(stepVehicle(world, skiff)).toBeUndefined();
       expect(model(skiff).position).toEqual({ x: 10, y: 19 });
       expect(model(skiff).atEdge).toBe('NORTH');
+    });
+
+    it('an edge\'s phrase is the blocked-exit line for its side, asked each time; an unwritten or empty one is none', () => {
+      expect(edgePhraseOf(world, belt, 'NORTH')).toBeUndefined();
+      let asked = 0;
+      world.registerEvaluator(`exit.message.${belt.id}.NORTH`, () => (++asked % 2 ? 'Ice closes the way north.' : 'The ice groans.'));
+      world.registerEvaluator(`exit.message.${belt.id}.SOUTH`, () => '');
+      expect(edgePhraseOf(world, belt, 'NORTH')).toBe('Ice closes the way north.');
+      expect(edgePhraseOf(world, belt, 'NORTH')).toBe('The ice groans.');
+      expect(edgePhraseOf(world, belt, 'SOUTH')).toBeUndefined();
+      expect(edgePhraseOf(world, belt, 'EAST')).toBeUndefined();
     });
 
     it('the south and west edges stop a course the same way, including a diagonal crossing mid-path', () => {

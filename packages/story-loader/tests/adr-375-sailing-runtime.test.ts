@@ -305,3 +305,34 @@ describe('the unwritten edge under sail (D6) and the set refused (AC-2)', () => 
     expect((await b.turnText('steer east')).text).toContain('You steer the dinghy east.');
   });
 });
+
+describe('caught in irons is a fact in two voices (alignment fixes Phase 4, Q5 C)', () => {
+  /** The Marigold under full sail, headed 15 degrees off a northeasterly: in irons on the next tick. */
+  function headIntoTheWind(b: BootedTurns): void {
+    Object.assign(ship(b), { heading: 30, underWay: true, course: null, inIrons: false, turnsToStep: 0 });
+    ship(b).sails!.current = 'full';
+  }
+
+  it('the rider is told, wherever they are aboard: the stock line, no place', async () => {
+    const b = await bootTurns(SOURCE);
+    headIntoTheWind(b);
+    const { events, text } = await b.turnText('wait');
+
+    const irons = events.find((e) => e.type === 'if.event.vehicle_caught_in_irons')!;
+    expect(irons.data).toMatchObject({ messageId: 'if.action.going.vehicle_in_irons', aboard: true, vehicleId: named(b, 'Marigold').id });
+    expect(irons.presence).toBeUndefined();
+    expect(text).toContain('The Marigold is in irons.');
+    expect(ship(b).inIrons).toBe(true);
+  });
+
+  it('a player ashore is absent from it: recorded out on the Sargasso, as a watcher would see it', async () => {
+    const b = await bootTurns(SOURCE);
+    b.world.moveEntity(b.player.id, named(b, 'Port Royal').id);
+    headIntoTheWind(b);
+    const { events } = await b.turnText('wait');
+
+    const irons = events.find((e) => e.type === 'if.event.vehicle_caught_in_irons')!;
+    expect(irons).toMatchObject({ presence: 'absent', entities: { location: named(b, 'Sargasso').id }, data: { aboard: false } });
+    expect(ship(b).inIrons).toBe(true);
+  });
+});

@@ -377,7 +377,10 @@ export const MESSAGE_ALIAS_TO_ACTION_ID: Readonly<Record<string, string>> = {
   'going-vehicle-alongside': 'if.action.going.vehicle_alongside',
   'going-vehicle-arrived': 'if.action.going.vehicle_arrived',
   'going-vehicle-at-end': 'if.action.going.vehicle_at_end',
+  'going-vehicle-departed': 'if.action.going.vehicle_departed',
   'going-vehicle-in-irons': 'if.action.going.vehicle_in_irons',
+  'going-thing-drifted': 'if.action.going.thing_drifted',
+  'going-thing-washed-up': 'if.action.going.thing_washed_up',
   'going-sailing-edge': 'if.action.going.sailing_edge',
   'going-vehicle-cannot-go': 'if.action.going.vehicle_cannot_go',
   'going-vehicle-cannot-walk': 'if.action.going.vehicle_cannot_walk',
@@ -692,8 +695,6 @@ export const MESSAGE_ALIAS_TO_ACTION_ID: Readonly<Record<string, string>> = {
   'setting-course-vehicle-no-such-command': 'if.action.setting_course.vehicle_no_such_command',
   'setting-course-coordinates-outside-expanse': 'if.action.setting_course.coordinates_outside_expanse',
   'setting-course-course-set-cell': 'if.action.setting_course.course_set_cell',
-  'setting-course-edge-blocked': 'if.action.setting_course.edge_blocked',
-  'setting-course-expanse-edge': 'if.action.setting_course.expanse_edge',
   'setting-course-vehicle-under-way': 'if.action.setting_course.vehicle_under_way',
   // if.action.showing
   'showing-no-item': 'if.action.showing.no_item',
@@ -757,8 +758,6 @@ export const MESSAGE_ALIAS_TO_ACTION_ID: Readonly<Record<string, string>> = {
   'steering-hove-to': 'if.action.steering.hove_to',
   'steering-not-in-vehicle': 'if.action.steering.not_in_vehicle',
   'steering-not-under-way': 'if.action.steering.not_under_way',
-  'steering-edge-blocked': 'if.action.steering.edge_blocked',
-  'steering-expanse-edge': 'if.action.steering.expanse_edge',
   'steering-steered': 'if.action.steering.steered',
   'steering-vehicle-no-such-command': 'if.action.steering.vehicle_no_such_command',
   // if.action.switching_off

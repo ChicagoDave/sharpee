@@ -18,10 +18,6 @@ export const steeringLanguage = {
     'vehicle_no_such_command': "{You} {can't} steer {the vehicle}.",
     'cannot_steer': "{You} {can't} steer {the vehicle} that way.",
     'not_under_way': "{capitalize the vehicle} {verb:is vehicle} not under way.",
-    // ADR-376 D8: a heading toward the edge the vehicle is at — plain, for
-    // space as well as water; the author's edge phrase when written.
-    'expanse_edge': "{You} can go no farther that way.",
-    'edge_blocked': "{verbatim:message}",
     // ADR-375 D3, D7: the naval set's refusals — none names a setting, since
     // the settings are the author's.
     'naval_how_far': "How many degrees?",

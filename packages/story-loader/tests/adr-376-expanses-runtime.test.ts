@@ -10,7 +10,7 @@
  * anchor; the Dungeo chain is the gate for everything else).
  */
 import { describe, expect, it } from 'vitest';
-import { ExpanseTrait, FloatingTrait, IdentityTrait, LandmarkTrait, RoomTrait, SightTrait, VehicleTrait, WorldModel, type IFEntity, type VehicleOpenModel } from '@sharpee/world-model';
+import { edgePhraseOf, ExpanseTrait, FloatingTrait, IdentityTrait, LandmarkTrait, RoomTrait, SightTrait, VehicleTrait, WorldModel, type IFEntity, type VehicleOpenModel } from '@sharpee/world-model';
 import { bootTurns, type BootedTurns } from './helpers/boot-turns';
 
 const SOURCE = `story
@@ -386,7 +386,9 @@ describe('lowering (D2, D3, D5, D6, D8, D10)', () => {
     const expanse = belt.get(ExpanseTrait)!;
     expect(expanse).toMatchObject({ width: 20, height: 8, visibility: 10, drift: 4, turnsToDrift: 4 });
     expect(expanse.landmarks).toEqual({ [named(b, 'Mining Platform').id]: { x: 3, y: 3 }, [named(b, 'Derelict').id]: { x: 14, y: 6 } });
-    expect(expanse.edges).toEqual({ NORTH: 'ice-fields' });
+    // The edge's phrase is its blocked-exit line, read where every blocked way's is.
+    expect(edgePhraseOf(b.world, belt, 'NORTH')).toBe('Ice closes the way north.');
+    expect(edgePhraseOf(b.world, belt, 'WEST')).toBeUndefined();
 
     expect(skiff(b)).toMatchObject({ kind: 'open', drive: 'control', pace: 1, stride: 1, sight: 6, heading: null, course: null, position: null, atEdge: null });
     // On a landmark's cell the vehicle is in the landmark's room; on an open cell it is in the expanse at that cell.
@@ -455,7 +457,6 @@ describe('heading, course, arrival and stop (D3, D5)', () => {
     const again = restored.getEntity(named(b, 'skiff').id)!.get(VehicleTrait)!.model as VehicleOpenModel;
     expect(again).toMatchObject({ kind: 'open', course: { x: 14, y: 6 }, position: { x: 5, y: 5 }, turnsToStep: 1 });
     expect(restored.getEntity(named(b, 'cask').id)!.get(FloatingTrait)!.position).toEqual(named(b, 'cask').get(FloatingTrait)!.position);
-    expect(restored.getEntity(named(b, 'Belt').id)!.get(ExpanseTrait)!.edges).toEqual({ NORTH: 'ice-fields' });
   });
 });
 
@@ -733,15 +734,16 @@ describe('wash-up and the silence of an empty vehicle (D10, ADR-366 D7a)', () =>
     expect(b.world.getEntity(shore)!.name).toBe(twin.world.getEntity(where(twin, 'bottle')!)!.name);
   });
 
-  it('a vehicle nobody rides reports nothing: alongside and arrival go unread by a player ashore', async () => {
+  it('a vehicle nobody rides is not told to a player ashore: its coming alongside is recorded out on the pool, and they are absent from it', async () => {
     const b = await bootTurns(SHORE);
     await b.turn('wait');
     const bottle = named(b, 'bottle');
     bottle.get(FloatingTrait)!.position = { x: 1, y: 1 };
     b.world.moveEntity(bottle.id, named(b, 'Pool').id);
     named(b, 'Pool').get(ExpanseTrait)!.drift = undefined;
-    const text = (await b.turnText('push lever')).text;
-    expect(text).not.toContain('alongside');
+    const { events } = await b.turnText('push lever');
+    const alongside = events.find((e) => e.type === 'if.event.vehicle_alongside')!;
+    expect(alongside).toMatchObject({ presence: 'absent', entities: { location: named(b, 'Pool').id }, data: { aboard: false, thingId: bottle.id } });
     const raft = named(b, 'raft').get(VehicleTrait)!.model as VehicleOpenModel;
     expect(raft).toMatchObject({ position: { x: 1, y: 1 }, heading: null });
   });

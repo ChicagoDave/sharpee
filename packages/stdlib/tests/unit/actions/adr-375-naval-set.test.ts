@@ -112,7 +112,7 @@ describe('turns (D3)', () => {
     const { world, ship } = sea();
     model(ship).position = { x: 20, y: 39 };
     model(ship).atEdge = 'NORTH';
-    expect(messageIds(say(world, 'ahead'))).toContain('if.action.steering.expanse_edge');
+    expect(messageIds(say(world, 'ahead'))).toContain('if.action.going.expanse_edge');
     expect(model(ship)).toMatchObject({ heading: null, underWay: false });
     say(world, 'starboard', '90');
     expect(messageIds(say(world, 'ahead'))).toContain('if.action.steering.ahead');

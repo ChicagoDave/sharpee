@@ -287,8 +287,9 @@ describe('PerceptionService', () => {
       const filtered = service.filterEvents([departureFact()], player, world);
 
       expect(filtered).toHaveLength(1);
-      expect(filtered[0].type).toBe('npc.leaves');
-      expect(filtered[0].data).toEqual({ npcName: 'Sam', direction: 'EAST' });
+      // The fact stays the fact; only the line it renders through is chosen.
+      expect(filtered[0].type).toBe('npc.moved.witnessed');
+      expect(filtered[0].data).toEqual({ npc: 'sam', messageId: 'npc.leaves', params: { npcName: 'Sam', direction: 'EAST' } });
     });
 
     // Test 7 — dark departure selects hearing (anonymized, no params).
@@ -298,8 +299,8 @@ describe('PerceptionService', () => {
       const filtered = service.filterEvents([departureFact()], player, world);
 
       expect(filtered).toHaveLength(1);
-      expect(filtered[0].type).toBe('npc.heard_departs');
-      expect(filtered[0].data).toEqual({});
+      expect(filtered[0].type).toBe('npc.moved.witnessed');
+      expect(filtered[0].data).toEqual({ npc: 'sam', messageId: 'npc.heard_departs', params: {} });
     });
 
     // Test 8 — dark arrival selects hearing.
@@ -308,8 +309,8 @@ describe('PerceptionService', () => {
 
       const filtered = service.filterEvents([arrivalFact()], player, world);
 
-      expect(filtered[0].type).toBe('npc.heard_arrives');
-      expect(filtered[0].data).toEqual({});
+      expect(filtered[0].type).toBe('npc.moved.witnessed');
+      expect(filtered[0].data).toEqual({ npc: 'sam', messageId: 'npc.heard_arrives', params: {} });
     });
 
     // Test 10 — override is irrelevant in the dark; selection is per-sense.
@@ -318,7 +319,7 @@ describe('PerceptionService', () => {
 
       const filtered = service.filterEvents([departureFact('zoo.sam.leaves')], player, world);
 
-      expect(filtered[0].type).toBe('npc.heard_departs');
+      expect((filtered[0].data as { messageId: string }).messageId).toBe('npc.heard_departs');
     });
 
     // An empty renderings map ⇒ perceptible by nothing ⇒ blocked (distinct from absent).

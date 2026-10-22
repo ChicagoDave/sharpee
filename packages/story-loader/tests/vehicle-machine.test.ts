@@ -262,17 +262,20 @@ describe('a controlled line steps every pace turns and halts at its end (D5a, D5
 });
 
 describe('a compass vehicle steps along its heading while the way admits it (D5c, D6)', () => {
-  it('moves north to the Reef, then stops where no exit continues; nothing is reported to a player elsewhere', async () => {
+  it('moves north to the Reef, then stops where no exit continues; a player elsewhere is absent from each fact', async () => {
     const b = await bootTurns(SOURCE);
     const started = await b.turnText('pull tiller');
     expect(where(b, 'Marigold')).toBe(named(b, 'Reef').id);
     expect(model(b, 'Marigold')).toMatchObject({ kind: 'compass', heading: 'NORTH', turnsToStep: 1 });
-    expect(started.events.some((e) => e.type === 'if.event.vehicle_arrived')).toBe(false);
+    // Recorded where they happened; the client hides what the player was absent from.
+    const arrival = started.events.find((e) => e.type === 'if.event.vehicle_arrived')!;
+    expect(arrival).toMatchObject({ presence: 'absent', entities: { location: named(b, 'Reef').id } });
+    expect(started.events.find((e) => e.type === 'if.event.vehicle_departed')?.presence).toBe('absent');
 
     const halted = await b.turnText('wait');
     expect(where(b, 'Marigold')).toBe(named(b, 'Reef').id);
     expect(model(b, 'Marigold')).toMatchObject({ kind: 'compass', heading: null, turnsToStep: 0 });
-    expect(halted.events.some((e) => e.type === 'if.event.vehicle_stopped')).toBe(false);
+    expect(halted.events.find((e) => e.type === 'if.event.vehicle_stopped')).toMatchObject({ presence: 'absent', entities: { location: named(b, 'Reef').id } });
   });
 
   it('a rider aboard reads the arrival and, when the way runs out, the stop', async () => {
@@ -305,7 +308,11 @@ describe('a compass vehicle steps along its heading while the way admits it (D5c
 
     const arrived = await b.turnText('wait');
     expect(where(b, 'Marigold')).toBe(named(b, 'Reef').id);
-    expect(arrived.events.find((e) => e.type === 'if.event.vehicle_arrived')?.data).toMatchObject({ aboard: false, stopId: named(b, 'Reef').id });
+    const arrival = arrived.events.find((e) => e.type === 'if.event.vehicle_arrived')!;
+    expect(arrival.presence).toBe('present');
+    // Seen, the fact keeps its type and domain data; only the line is perception's choice.
+    expect(arrival.data).toMatchObject({ aboard: false, stopId: named(b, 'Reef').id, messageId: 'if.action.going.vehicle_arrived' });
+    expect(arrival.data).not.toHaveProperty('renderings');
     expect(arrived.text).toContain('The Marigold arrives at the Reef.');
   });
 });
