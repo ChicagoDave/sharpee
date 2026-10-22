@@ -171,7 +171,7 @@
 - **Exit state**: no finding is left OPEN without David's explicit call; the gate can be shown closed from the ledger plus the diff.
 - **Demonstration**: a grep of the ledger's Open section returns nothing (or only David-carried items), and every row of the inventory is marked closed; full suites of the touched packages and the Dungeo chain one run each, green at the branch head.
 - **Demonstrated**: 
-- **Status**: PENDING
+- **Status**: CURRENT (since 2026-10-22)
 
 ## Answers
 (Filled in during Phase 0. Q1–Q13, each with David's choice and date.)
