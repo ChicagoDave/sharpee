@@ -304,7 +304,9 @@ describe('Vehicle model', () => {
       airlock.add(new AboardTrait({ vehicleId: courier.id, outside: { WEST: { candidates: [top.id, bottom.id], via: 'd-hatch' } } }));
       registerVehicleExitResolver(world);
       const ctx = { world, actorId: player.id, random: { draw: () => 0 } as never };
-      expect(airlock.get(AboardTrait)!.computedExits.WEST).toEqual({ candidates: [top.id, bottom.id] });
+      // One record per outside exit (F11): the declaration and its door together.
+      expect(airlock.get(AboardTrait)!.computedExits.WEST).toEqual({ candidates: [top.id, bottom.id], via: 'd-hatch' });
+      expect('outside' in airlock.get(AboardTrait)!).toBe(false);
       expect(RoomBehavior.resolveExit(airlock, 'WEST', ctx)).toEqual({ kind: 'exit', destination: top.id, via: 'd-hatch' });
       world.moveEntity(courier.id, bottom.id);
       expect(RoomBehavior.resolveExit(airlock, 'WEST', ctx)).toEqual({ kind: 'exit', destination: bottom.id, via: 'd-hatch' });

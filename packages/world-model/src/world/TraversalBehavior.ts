@@ -22,7 +22,8 @@
  * admittance against the candidates.
  *
  * Public interface: TraversalBehavior.wayFor, resolveComputed, exitOf,
- *   isExitHidden, isExitBlocked, blockedMessage, admitsMover; the key
+ *   isExitHidden, isExitBlocked, blockedMessage, doorOf, doorRefusal,
+ *   admitsMover; the key
  *   builders exitHiddenKey, exitBlockedKey, exitMessageKey; the types
  *   TraversalMover, Way, WayRefusal, ResolvedWay.
  * Owner context: world-model — traversal (the system's home).
@@ -155,6 +156,32 @@ export class TraversalBehavior {
   }
 
   /**
+   * The door on a way: the static exit's, else the computed way's own (a
+   * vehicle's hatch, ADR-366 D7). Undefined when the way has none.
+   *
+   * @param world - The live world
+   * @param room - The room the way leaves
+   * @param key - The way
+   */
+  static doorOf(world: WorldModel, room: IFEntity, key: ExitKey): IFEntity | undefined {
+    const via = RoomBehavior.getExit(room, key)?.via ?? RoomBehavior.getComputedExitDeclaration(room, key)?.declaration.via;
+    return via !== undefined ? world.getEntity(via) : undefined;
+  }
+
+  /**
+   * Whether a door bars a way, and how: locked before closed. The door gate
+   * every traversal reads, in either direction through the door.
+   *
+   * @param door - The door on the way
+   * @returns `door_locked`, `door_closed`, or undefined when it lets one through
+   */
+  static doorRefusal(door: IFEntity): 'door_locked' | 'door_closed' | undefined {
+    if (door.has(TraitType.LOCKABLE) && LockableBehavior.isLocked(door)) return 'door_locked';
+    if (door.has(TraitType.OPENABLE) && !OpenableBehavior.isOpen(door)) return 'door_closed';
+    return undefined;
+  }
+
+  /**
    * Whether a way admits a mover: each field of the exit's own `admits`
    * when it has it, else the destination room's (ADR-366 D6, ADR-378 D6).
    * A walker and an NPC need no admitting; a steered vehicle does, and so
@@ -247,15 +274,9 @@ export class TraversalBehavior {
     const computed = RoomBehavior.getComputedExitDeclaration(room, key);
     if (!exit && !computed) return { kind: 'refused', key, reason: 'no_exit' };
 
-    const door = exit?.via !== undefined ? world.getEntity(exit.via) : undefined;
-    if (door) {
-      if (door.has(TraitType.LOCKABLE) && LockableBehavior.isLocked(door)) {
-        return { kind: 'refused', key, reason: 'door_locked', door };
-      }
-      if (door.has(TraitType.OPENABLE) && !OpenableBehavior.isOpen(door)) {
-        return { kind: 'refused', key, reason: 'door_closed', door };
-      }
-    }
+    const door = this.doorOf(world, room, key);
+    const barred = door ? this.doorRefusal(door) : undefined;
+    if (barred) return { kind: 'refused', key, reason: barred, door };
 
     if (computed) {
       // The destination is drawn at traversal (resolveComputed), so here

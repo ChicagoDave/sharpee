@@ -31,15 +31,16 @@ import {
   stopVehicle,
   takesCommandSet,
   VehicleTrait,
-  edgeAhead,
+  edgeRefusalOf,
   headingVector,
-  bearingOf,
+  currentBearing,
   comeAbout,
+  comeAboutRefusal,
+  sailChangeRefusal,
   furlSails,
   makeSail,
   shortenSail,
   turnHeading,
-  windOf,
   type IFEntity,
 } from '@sharpee/world-model';
 import { IFActions } from '../../constants.js';
@@ -48,7 +49,6 @@ import { ScopeLevel } from '../../../scope/types.js';
 import { nounPhraseFor } from '../../../utils/index.js';
 import { ActionLifecycleDescriptor, blockedMessageId } from '../../lifecycle/index.js';
 import { SteeringMessages } from './steering-messages.js';
-import { exitMessageKey } from '@sharpee/world-model';
 
 /** The command set this action speaks for (ADR-366 D5i). */
 export const COMPASS_COMMAND_SET = 'compass';
@@ -116,14 +116,12 @@ export const steeringLifecycle: ActionLifecycleDescriptor = {
   ]
 };
 
-/** ADR-376 D8: the refusal for a way with a component toward the edge the vehicle is at, or undefined. */
+/** ADR-376 D8: the vehicle behavior's edge refusal in steering's words, or undefined. */
 function edgeRefusal(context: ActionContext, vehicle: IFEntity, vector: { x: number; y: number }, params: Record<string, unknown>): ValidationResult | undefined {
-  const side = edgeAhead(vehicle, vector);
-  if (!side) return undefined;
-  const expanseId = context.world.getLocation(vehicle.id);
-  const message = expanseId !== undefined ? context.world.evaluate(exitMessageKey(expanseId, side)) : undefined;
-  return typeof message === 'string' && message.length > 0
-    ? { valid: false, error: SteeringMessages.EDGE_BLOCKED, params: { ...params, message } }
+  const edge = edgeRefusalOf(context.world, vehicle, vector);
+  if (!edge) return undefined;
+  return edge.message !== undefined
+    ? { valid: false, error: SteeringMessages.EDGE_BLOCKED, params: { ...params, message: edge.message } }
     : { valid: false, error: SteeringMessages.EXPANSE_EDGE, params };
 }
 
@@ -170,25 +168,24 @@ export const steeringAction: Action & { metadata: ActionMetadata } = {
           if (naval.degrees === undefined) return { valid: false, error: SteeringMessages.NAVAL_HOW_FAR, params };
           return { valid: true };
         case 'ahead': {
-          const bearing = model.heading === null ? 0 : bearingOf(model.heading) ?? 0;
-          return edgeRefusal(context, vehicle, headingVector(bearing)!, params) ?? { valid: true };
+          return edgeRefusal(context, vehicle, headingVector(currentBearing(vehicle)!)!, params) ?? { valid: true };
         }
         case 'come-about': {
-          const wind = windOf(context.world, vehicle);
-          if (!model.sailing || wind === undefined || wind === 'calm') return { valid: false, error: SteeringMessages.NAVAL_NO_WIND, params };
-          const from = model.heading === null ? 0 : bearingOf(model.heading) ?? 0;
-          const off = ((((from - wind) % 360) + 540) % 360) - 180;
-          if (off === 0 || off === 180 || off === -180) return { valid: false, error: SteeringMessages.NAVAL_CANNOT_COME_ABOUT, params };
+          const refusal = comeAboutRefusal(context.world, vehicle);
+          if (refusal === 'no-wind') return { valid: false, error: SteeringMessages.NAVAL_NO_WIND, params };
+          if (refusal === 'cannot') return { valid: false, error: SteeringMessages.NAVAL_CANNOT_COME_ABOUT, params };
           return { valid: true };
         }
         case 'make-sail':
         case 'shorten-sail':
         case 'furl-sails': {
-          if (!model.sails) return { valid: false, error: SteeringMessages.VEHICLE_NO_SUCH_COMMAND, params };
-          const index = model.sails.settings.indexOf(model.sails.current);
-          if (naval.kind === 'make-sail' && index >= model.sails.settings.length - 1) return { valid: false, error: SteeringMessages.SAILS_AT_FULL, params };
-          if (naval.kind !== 'make-sail' && index <= 0) return { valid: false, error: SteeringMessages.SAILS_ALREADY_FURLED, params };
-          return { valid: true };
+          const change = naval.kind === 'make-sail' ? 'make' : naval.kind === 'shorten-sail' ? 'shorten' : 'furl';
+          switch (sailChangeRefusal(vehicle, change)) {
+            case 'no-sails': return { valid: false, error: SteeringMessages.VEHICLE_NO_SUCH_COMMAND, params };
+            case 'at-full': return { valid: false, error: SteeringMessages.SAILS_AT_FULL, params };
+            case 'already-furled': return { valid: false, error: SteeringMessages.SAILS_ALREADY_FURLED, params };
+            default: return { valid: true };
+          }
         }
       }
     }
@@ -229,8 +226,8 @@ export const steeringAction: Action & { metadata: ActionMetadata } = {
           sharedData.bearing = turnHeading(vehicle, naval.side === 'port' ? -naval.degrees! : naval.degrees!);
           break;
         case 'ahead':
-          startVehicle(context.world, vehicle, model.heading === null ? 0 : bearingOf(model.heading) ?? 0);
-          sharedData.bearing = bearingOf(model.heading ?? 0);
+          startVehicle(context.world, vehicle, currentBearing(vehicle)!);
+          sharedData.bearing = currentBearing(vehicle);
           break;
         case 'come-about':
           sharedData.bearing = comeAbout(context.world, vehicle) as number;

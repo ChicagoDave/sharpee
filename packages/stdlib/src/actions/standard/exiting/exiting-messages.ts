@@ -12,6 +12,8 @@ export const ExitingMessages = {
   NOT_ON_THAT: 'not_on_that',
   // ADR-366 D7, D7a: aboard a vehicle, only the boarding room's hatch leads out
   VEHICLE_NOT_AT_HATCH: 'vehicle_not_at_hatch',
+  // Q2 (David, 2026-10-21): more than one way off is open — the platform does not choose
+  OUTSIDE_AMBIGUOUS: 'outside_ambiguous',
   // Success messages
   EXITED: 'exited',
   EXITED_FROM: 'exited_from',

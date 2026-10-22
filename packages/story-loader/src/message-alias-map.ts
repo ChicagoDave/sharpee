@@ -328,6 +328,7 @@ export const MESSAGE_ALIAS_TO_ACTION_ID: Readonly<Record<string, string>> = {
   'exiting-not-in-that': 'if.action.exiting.not_in_that',
   'exiting-not-on-that': 'if.action.exiting.not_on_that',
   'exiting-nowhere-to-go': 'if.action.exiting.nowhere_to_go',
+  'exiting-outside-ambiguous': 'if.action.exiting.outside_ambiguous',
   'exiting-vehicle-not-at-hatch': 'if.action.exiting.vehicle_not_at_hatch',
   // if.action.giving
   'extinguishing-extinguished': 'if.action.extinguishing.extinguished',

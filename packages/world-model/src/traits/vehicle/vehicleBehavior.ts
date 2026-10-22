@@ -10,10 +10,15 @@
  * `VehicleStep`, the line model's `isStop`, `currentStop` and
  * `moveVehicleToStop`, and the rooms-aboard half:
  * `vehicleOutsideExitResolver` and `registerVehicleExitResolver` (an exit
- * `to outside` lands where the vehicle is), the expanse half of exiting
- * and entering: `leaveVehicleIntoExpanse` and `boardFromExpanse` (ADR-376 D9),
- * and the sailing half (ADR-375): `turnHeading`, `comeAbout`, `setSails`,
- * `makeSail`, `shortenSail`, `furlSails`, `paceUnderSail`, `windOf`.
+ * `to outside` lands where the vehicle is) and `outsideWayOf` with its
+ * result `OutsideWay` (which way out traversal grants), the expanse half of
+ * exiting and entering: `leaveVehicleIntoExpanse` and `boardFromExpanse`
+ * (ADR-376 D9), `edgeAhead` and `edgeRefusalOf` (D8), and the sailing half
+ * (ADR-375): `turnHeading`, `comeAbout`, `setSails`, `makeSail`,
+ * `shortenSail`, `furlSails`, `paceUnderSail`, `windOf`. Each mutation an
+ * action may be refused names its refusal as a check that mutates nothing —
+ * `comeAboutRefusal`, `sailChangeRefusal`, `edgeRefusalOf` — so actions ask
+ * it rather than copy it.
  *
  * Owner context: world-model vehicle behavior. Every answer is read from
  * the world and the trait's model; nothing here keeps a position of its own.
@@ -46,13 +51,14 @@ import { isDirection, type DirectionType } from '../../constants/directions.js';
 import { TraitType } from '../trait-types.js';
 import { RoomBehavior } from '../room/roomBehavior.js';
 import { OpenableBehavior } from '../openable/openableBehavior.js';
-import { TraversalBehavior } from '../../world/TraversalBehavior.js';
+import { TraversalBehavior, exitMessageKey, type TraversalMover, type WayRefusal } from '../../world/TraversalBehavior.js';
 import { AboardTrait } from './aboardTrait.js';
 import { VehicleTrait, VehicleLineModel, VehicleOpenModel } from './vehicleTrait.js';
 import { cellOf, ExpanseTrait, isInsideExpanse, sameCell, type ExpanseSide, type ExpanseWind, type IExpanseCell } from '../expanse/expanseTrait.js';
 import { FloatingTrait } from '../expanse/floatingTrait.js';
 import {
   angleOffWind,
+  signedAngleOffWind,
   bearingOf,
   floatingThingsAt,
   headingVector,
@@ -264,8 +270,7 @@ export function paceUnderSail(world: WorldModel, vehicle: IFEntity, setting?: st
 export function turnHeading(vehicle: IFEntity, degrees: number): number | undefined {
   const model = vehicle.get(VehicleTrait)?.model;
   if (model?.kind !== 'open') return undefined;
-  const from = model.heading === null ? 0 : bearingOf(model.heading) ?? 0;
-  const next = (((from + degrees) % 360) + 360) % 360;
+  const next = (((bearingAboard(model) + degrees) % 360) + 360) % 360;
   model.heading = next;
   model.course = null;
   return next;
@@ -284,17 +289,44 @@ export type ComeAboutRefusal = 'no-wind' | 'cannot';
  * @returns the new bearing, or the refusal
  */
 export function comeAbout(world: WorldModel, vehicle: IFEntity): number | ComeAboutRefusal {
+  const refusal = comeAboutRefusal(world, vehicle);
+  if (refusal) return refusal;
+  const model = vehicle.get(VehicleTrait)!.model as VehicleOpenModel;
+  const wind = windOf(world, vehicle) as number;
+  const next = (((wind - signedAngleOffWind(bearingAboard(model), wind)) % 360) + 360) % 360;
+  model.heading = next;
+  model.course = null;
+  return next;
+}
+
+/**
+ * Why `come about` would be refused now (ADR-375 D3), or undefined when it
+ * would tack: `no-wind` aboard a vehicle that does not sail or in a calm,
+ * `cannot` dead into or dead before the wind. Mutates nothing — the check an
+ * action asks before `comeAbout`.
+ */
+export function comeAboutRefusal(world: WorldModel, vehicle: IFEntity): ComeAboutRefusal | undefined {
   const model = vehicle.get(VehicleTrait)?.model;
   if (model?.kind !== 'open' || !model.sailing) return 'no-wind';
   const wind = windOf(world, vehicle);
   if (wind === undefined || wind === 'calm') return 'no-wind';
-  const from = model.heading === null ? 0 : bearingOf(model.heading) ?? 0;
-  const off = ((((from - wind) % 360) + 540) % 360) - 180; // signed, -180 < off <= 180
-  if (off === 0 || off === 180 || off === -180) return 'cannot';
-  const next = (((wind - off) % 360) + 360) % 360;
-  model.heading = next;
-  model.course = null;
-  return next;
+  const off = signedAngleOffWind(bearingAboard(model), wind);
+  return off === 0 || off === 180 ? 'cannot' : undefined;
+}
+
+/** The bearing an open vehicle holds: its heading's, or north with none. */
+function bearingAboard(model: VehicleOpenModel): number {
+  return model.heading === null ? 0 : bearingOf(model.heading) ?? 0;
+}
+
+/**
+ * The bearing a vehicle holds (ADR-375 D2, D3): an open vehicle's heading
+ * as degrees, north when it has none; undefined for any other vehicle.
+ * Steering `ahead` starts on it; port, starboard and coming about turn from it.
+ */
+export function currentBearing(vehicle: IFEntity): number | undefined {
+  const model = vehicle.get(VehicleTrait)?.model;
+  return model?.kind === 'open' ? bearingAboard(model) : undefined;
 }
 
 /**
@@ -309,32 +341,47 @@ export function setSails(vehicle: IFEntity, setting: string): boolean {
   return true;
 }
 
-/** `make sail` (ADR-375 D7): one setting up. False at the fullest (`sails-at-full`) or without sails. */
+/** A change to an open vehicle's sails (ADR-375 D7). */
+export type SailChange = 'make' | 'shorten' | 'furl';
+
+/** Why a sail change would be refused (ADR-375 D7). */
+export type SailChangeRefusal = 'no-sails' | 'at-full' | 'already-furled';
+
+/**
+ * Why a sail change would be refused now, or undefined when it would take:
+ * `no-sails` on a vehicle without them, `at-full` making sail at the fullest
+ * setting, `already-furled` shortening or furling at the first. Mutates
+ * nothing — the check an action asks before the change.
+ */
+export function sailChangeRefusal(vehicle: IFEntity, change: SailChange): SailChangeRefusal | undefined {
+  const model = vehicle.get(VehicleTrait)?.model;
+  if (model?.kind !== 'open' || !model.sails) return 'no-sails';
+  const index = model.sails.settings.indexOf(model.sails.current);
+  if (change === 'make') return index >= model.sails.settings.length - 1 ? 'at-full' : undefined;
+  return index <= 0 ? 'already-furled' : undefined;
+}
+
+/** `make sail` (ADR-375 D7): one setting up. False when `sailChangeRefusal` refuses it. */
 export function makeSail(vehicle: IFEntity): boolean {
-  const model = vehicle.get(VehicleTrait)?.model;
-  if (model?.kind !== 'open' || !model.sails) return false;
-  const index = model.sails.settings.indexOf(model.sails.current);
-  if (index >= model.sails.settings.length - 1) return false;
-  model.sails.current = model.sails.settings[index + 1];
+  if (sailChangeRefusal(vehicle, 'make')) return false;
+  const sails = (vehicle.get(VehicleTrait)!.model as VehicleOpenModel).sails!;
+  sails.current = sails.settings[sails.settings.indexOf(sails.current) + 1];
   return true;
 }
 
-/** `shorten sail` (ADR-375 D7): one setting down. False at the first (`sails-already-furled`) or without sails. */
+/** `shorten sail` (ADR-375 D7): one setting down. False when `sailChangeRefusal` refuses it. */
 export function shortenSail(vehicle: IFEntity): boolean {
-  const model = vehicle.get(VehicleTrait)?.model;
-  if (model?.kind !== 'open' || !model.sails) return false;
-  const index = model.sails.settings.indexOf(model.sails.current);
-  if (index <= 0) return false;
-  model.sails.current = model.sails.settings[index - 1];
+  if (sailChangeRefusal(vehicle, 'shorten')) return false;
+  const sails = (vehicle.get(VehicleTrait)!.model as VehicleOpenModel).sails!;
+  sails.current = sails.settings[sails.settings.indexOf(sails.current) - 1];
   return true;
 }
 
-/** `furl sails` (ADR-375 D7): to the first setting. False when already there or without sails. */
+/** `furl sails` (ADR-375 D7): to the first setting. False when `sailChangeRefusal` refuses it. */
 export function furlSails(vehicle: IFEntity): boolean {
-  const model = vehicle.get(VehicleTrait)?.model;
-  if (model?.kind !== 'open' || !model.sails) return false;
-  if (model.sails.current === model.sails.settings[0]) return false;
-  model.sails.current = model.sails.settings[0];
+  if (sailChangeRefusal(vehicle, 'furl')) return false;
+  const sails = (vehicle.get(VehicleTrait)!.model as VehicleOpenModel).sails!;
+  sails.current = sails.settings[0];
   return true;
 }
 
@@ -352,6 +399,24 @@ export function edgeAhead(vehicle: IFEntity, vector: IExpanseCell): ExpanseSide 
   const model = vehicle.get(VehicleTrait)?.model;
   if (model?.kind !== 'open' || model.atEdge === null) return undefined;
   return headsIntoEdge(model.atEdge, vector) ? model.atEdge : undefined;
+}
+
+/**
+ * The refusal of a way toward the edge an open vehicle is at (ADR-376 D8),
+ * or undefined when the way is open: the side, and the edge's phrase when
+ * the story gave one (the expanse borrows the exit message key for its side).
+ * Steering and setting a course both refuse on it, each in its own words.
+ *
+ * @param world - The world model
+ * @param vehicle - An open vehicle
+ * @param vector - The way asked for, as a direction vector
+ */
+export function edgeRefusalOf(world: WorldModel, vehicle: IFEntity, vector: IExpanseCell): { side: ExpanseSide; message?: string } | undefined {
+  const side = edgeAhead(vehicle, vector);
+  if (!side) return undefined;
+  const expanse = placeOf(world, vehicle)?.expanse;
+  const message = expanse ? world.evaluate(exitMessageKey(expanse.id, side)) : undefined;
+  return typeof message === 'string' && message.length > 0 ? { side, message } : { side };
 }
 
 /** Whether a direction has a component toward the edge the vehicle is at (D8). */
@@ -463,7 +528,7 @@ export function sendVehicle(world: WorldModel, vehicle: IFEntity, destination: s
 export const vehicleOutsideExitResolver: ExitResolver = (_room, trait, direction, _staticExit, ctx) => {
   const aboard = trait as AboardTrait;
   // A `to outside` exit is written with a compass word; a passage key names none.
-  const outside = isDirection(direction) ? aboard.outside[direction] : undefined;
+  const outside = isDirection(direction) ? aboard.computedExits[direction] : undefined;
   if (!outside) return undefined;
   const vehicle = ctx.world.getEntity(aboard.vehicleId);
   const location = ctx.world.getLocation(aboard.vehicleId);
@@ -479,6 +544,55 @@ export const vehicleOutsideExitResolver: ExitResolver = (_room, trait, direction
  */
 export function registerVehicleExitResolver(world: WorldModel): void {
   world.registerExitResolver(AboardTrait.type, vehicleOutsideExitResolver);
+}
+
+/** The way between a room aboard and outside, as traversal answers it. */
+export type OutsideWay =
+  /** The room has no `to outside` exit. */
+  | { kind: 'none' }
+  /** Traversal grants exactly this one. */
+  | { kind: 'way'; key: DirectionType }
+  /** Traversal grants none: the first way's refusal. */
+  | { kind: 'refused'; key: DirectionType; reason: WayRefusal; message?: string; door?: IFEntity }
+  /** Traversal grants more than one: the platform does not choose. */
+  | { kind: 'ambiguous'; keys: DirectionType[] };
+
+/**
+ * The way between a room aboard a vehicle and outside (ADR-366 D7;
+ * alignment findings F9, F10, David's Q2 answer). Leaving (`'out'`),
+ * traversal is asked of each `to outside` exit and the one it grants is the
+ * way. Boarding (`'in'`) takes the same ways in reverse, so it reads the
+ * gates that hold in both directions — the way exists (its `while`) and its
+ * hatch is neither closed nor locked — but not a blocked line, which is
+ * written for one side and, as ADR-378 has it, never carried to the other.
+ * With none granted, the first way's refusal is the answer; with more than
+ * one, the way is ambiguous — no declaration order decides.
+ *
+ * @param world - The world model
+ * @param room - A room aboard a vehicle (anything else has no outside way)
+ * @param mover - Who is taking it: the walker leaving, or the one boarding
+ * @param side - `'out'` leaving the vehicle, `'in'` boarding it
+ */
+export function outsideWayOf(world: WorldModel, room: IFEntity, mover: TraversalMover, side: 'out' | 'in' = 'out'): OutsideWay {
+  const keys = Object.keys(room.get(AboardTrait)?.computedExits ?? {}) as DirectionType[];
+  if (keys.length === 0) return { kind: 'none' };
+  const granted: DirectionType[] = [];
+  let first: Extract<OutsideWay, { kind: 'refused' }> | undefined;
+  for (const key of keys) {
+    if (side === 'in') {
+      const door = TraversalBehavior.doorOf(world, room, key);
+      const reason: WayRefusal | undefined = TraversalBehavior.isExitHidden(world, room, key) ? 'hidden' : door ? TraversalBehavior.doorRefusal(door) : undefined;
+      if (!reason) granted.push(key);
+      else first ??= { kind: 'refused', key, reason, ...(door ? { door } : {}) };
+      continue;
+    }
+    const way = TraversalBehavior.wayFor(world, room, key, mover);
+    if (way.kind !== 'refused') granted.push(key);
+    else first ??= { kind: 'refused', key, reason: way.reason, ...(way.message !== undefined ? { message: way.message } : {}), ...(way.door ? { door: way.door } : {}) };
+  }
+  if (granted.length === 1) return { kind: 'way', key: granted[0] };
+  if (granted.length > 1) return { kind: 'ambiguous', keys: granted };
+  return first!;
 }
 
 function lineOf(vehicle: IFEntity): VehicleLineModel | undefined {

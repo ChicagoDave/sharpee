@@ -3069,6 +3069,13 @@ import type { ITrait } from '../trait.js';
 export interface IComputedExitDeclaration {
     /** Room entity ids the resolver may return for this direction. */
     candidates: string[];
+    /**
+     * The door every traversal of this way passes, whatever the destination
+     * drawn (a vehicle's hatch, ADR-366 D7) — pure data, so the traversal
+     * system's door gate reads it at validate time as it reads a static
+     * exit's. Absent when the way has no door of its own.
+     */
+    via?: string;
 }
 /**
  * The data shape a computed-exit-declaring trait carries (ADR-295 D3).
@@ -5336,11 +5343,11 @@ export {};
 import type { DirectionType } from '../../constants/directions.js';
 import type { IComputedExitCarrier, IComputedExitDeclaration } from '../room/computedExitContract.js';
 import { ITrait } from '../trait.js';
-/** One `to outside` exit of a room aboard a vehicle. */
-export interface IOutsideExit extends IComputedExitDeclaration {
-    /** The door the exit passes through, if the line named one. */
-    via?: string;
-}
+/**
+ * One `to outside` exit of a room aboard a vehicle: a computed-exit
+ * declaration, whose `via` is the hatch the line named, if any.
+ */
+export type IOutsideExit = IComputedExitDeclaration;
 export interface IAboardData {
     /** The vehicle this room is inside. */
     vehicleId: string;
@@ -5349,16 +5356,16 @@ export interface IAboardData {
 }
 /**
  * Trait for a room aboard a vehicle. Its `computedExits` are the room's
- * `to outside` exits, so the room behavior's computed-exit lookup finds them
- * without knowing vehicles exist.
+ * `to outside` exits — one record each, the candidates and the door — so the
+ * room behavior's computed-exit lookup finds them without knowing vehicles
+ * exist, and the outside-exit resolver reads the door from the same record.
  */
-export declare class AboardTrait implements ITrait, IAboardData, IComputedExitCarrier {
+export declare class AboardTrait implements ITrait, IComputedExitCarrier {
     static readonly type: "aboard";
     readonly type: "aboard";
     vehicleId: string;
-    outside: Partial<Record<DirectionType, IOutsideExit>>;
-    /** The computed-exit declarations (ADR-295 D3): one per `to outside` direction. */
-    computedExits: Partial<Record<DirectionType, IComputedExitDeclaration>>;
+    /** The `to outside` exits (ADR-366 D7), each a computed-exit declaration (ADR-295 D3) with its door. */
+    computedExits: Partial<Record<DirectionType, IOutsideExit>>;
     constructor(data: IAboardData);
 }
 /**
@@ -5382,10 +5389,15 @@ export declare function isAboardTrait(trait: ITrait): trait is AboardTrait;
  * `VehicleStep`, the line model's `isStop`, `currentStop` and
  * `moveVehicleToStop`, and the rooms-aboard half:
  * `vehicleOutsideExitResolver` and `registerVehicleExitResolver` (an exit
- * `to outside` lands where the vehicle is), the expanse half of exiting
- * and entering: `leaveVehicleIntoExpanse` and `boardFromExpanse` (ADR-376 D9),
- * and the sailing half (ADR-375): `turnHeading`, `comeAbout`, `setSails`,
- * `makeSail`, `shortenSail`, `furlSails`, `paceUnderSail`, `windOf`.
+ * `to outside` lands where the vehicle is) and `outsideWayOf` with its
+ * result `OutsideWay` (which way out traversal grants), the expanse half of
+ * exiting and entering: `leaveVehicleIntoExpanse` and `boardFromExpanse`
+ * (ADR-376 D9), `edgeAhead` and `edgeRefusalOf` (D8), and the sailing half
+ * (ADR-375): `turnHeading`, `comeAbout`, `setSails`, `makeSail`,
+ * `shortenSail`, `furlSails`, `paceUnderSail`, `windOf`. Each mutation an
+ * action may be refused names its refusal as a check that mutates nothing —
+ * `comeAboutRefusal`, `sailChangeRefusal`, `edgeRefusalOf` — so actions ask
+ * it rather than copy it.
  *
  * Owner context: world-model vehicle behavior. Every answer is read from
  * the world and the trait's model; nothing here keeps a position of its own.
@@ -5413,6 +5425,8 @@ import type { RandomService } from '@sharpee/core';
 import type { ExitResolver } from '../../capabilities/exit-resolver-binding.js';
 import type { WorldModel } from '../../world/WorldModel.js';
 import type { IFEntity } from '../../entities/if-entity.js';
+import { type DirectionType } from '../../constants/directions.js';
+import { type TraversalMover, type WayRefusal } from '../../world/TraversalBehavior.js';
 import { type ExpanseSide, type ExpanseWind, type IExpanseCell } from '../expanse/expanseTrait.js';
 import type { SailingPace } from './vehicleTrait.js';
 /**
@@ -5525,16 +5539,40 @@ export type ComeAboutRefusal = 'no-wind' | 'cannot';
  */
 export declare function comeAbout(world: WorldModel, vehicle: IFEntity): number | ComeAboutRefusal;
 /**
+ * Why `come about` would be refused now (ADR-375 D3), or undefined when it
+ * would tack: `no-wind` aboard a vehicle that does not sail or in a calm,
+ * `cannot` dead into or dead before the wind. Mutates nothing — the check an
+ * action asks before `comeAbout`.
+ */
+export declare function comeAboutRefusal(world: WorldModel, vehicle: IFEntity): ComeAboutRefusal | undefined;
+/**
+ * The bearing a vehicle holds (ADR-375 D2, D3): an open vehicle's heading
+ * as degrees, north when it has none; undefined for any other vehicle.
+ * Steering `ahead` starts on it; port, starboard and coming about turn from it.
+ */
+export declare function currentBearing(vehicle: IFEntity): number | undefined;
+/**
  * `set the <vehicle>'s sails to <setting>` (ADR-375 D7): the current
  * setting, from the next step. False when the vehicle has no sails or the
  * setting is not one of its own.
  */
 export declare function setSails(vehicle: IFEntity, setting: string): boolean;
-/** `make sail` (ADR-375 D7): one setting up. False at the fullest (`sails-at-full`) or without sails. */
+/** A change to an open vehicle's sails (ADR-375 D7). */
+export type SailChange = 'make' | 'shorten' | 'furl';
+/** Why a sail change would be refused (ADR-375 D7). */
+export type SailChangeRefusal = 'no-sails' | 'at-full' | 'already-furled';
+/**
+ * Why a sail change would be refused now, or undefined when it would take:
+ * `no-sails` on a vehicle without them, `at-full` making sail at the fullest
+ * setting, `already-furled` shortening or furling at the first. Mutates
+ * nothing — the check an action asks before the change.
+ */
+export declare function sailChangeRefusal(vehicle: IFEntity, change: SailChange): SailChangeRefusal | undefined;
+/** `make sail` (ADR-375 D7): one setting up. False when `sailChangeRefusal` refuses it. */
 export declare function makeSail(vehicle: IFEntity): boolean;
-/** `shorten sail` (ADR-375 D7): one setting down. False at the first (`sails-already-furled`) or without sails. */
+/** `shorten sail` (ADR-375 D7): one setting down. False when `sailChangeRefusal` refuses it. */
 export declare function shortenSail(vehicle: IFEntity): boolean;
-/** `furl sails` (ADR-375 D7): to the first setting. False when already there or without sails. */
+/** `furl sails` (ADR-375 D7): to the first setting. False when `sailChangeRefusal` refuses it. */
 export declare function furlSails(vehicle: IFEntity): boolean;
 /**
  * The edge an open vehicle is at when a way with any component toward it is
@@ -5547,6 +5585,20 @@ export declare function furlSails(vehicle: IFEntity): boolean;
  *   heading's unit vector, or the signs of a course's first leg)
  */
 export declare function edgeAhead(vehicle: IFEntity, vector: IExpanseCell): ExpanseSide | undefined;
+/**
+ * The refusal of a way toward the edge an open vehicle is at (ADR-376 D8),
+ * or undefined when the way is open: the side, and the edge's phrase when
+ * the story gave one (the expanse borrows the exit message key for its side).
+ * Steering and setting a course both refuse on it, each in its own words.
+ *
+ * @param world - The world model
+ * @param vehicle - An open vehicle
+ * @param vector - The way asked for, as a direction vector
+ */
+export declare function edgeRefusalOf(world: WorldModel, vehicle: IFEntity, vector: IExpanseCell): {
+    side: ExpanseSide;
+    message?: string;
+} | undefined;
 /**
  * `stop <vehicle>` (ADR-366 D5f; ADR-376 D3): take the vehicle's machine
  * out of the way where it is — a line halts at its stop, a compass vehicle
@@ -5586,6 +5638,47 @@ export declare const vehicleOutsideExitResolver: ExitResolver;
  * has rooms aboard a vehicle registers it at load.
  */
 export declare function registerVehicleExitResolver(world: WorldModel): void;
+/** The way between a room aboard and outside, as traversal answers it. */
+export type OutsideWay = 
+/** The room has no `to outside` exit. */
+{
+    kind: 'none';
+}
+/** Traversal grants exactly this one. */
+ | {
+    kind: 'way';
+    key: DirectionType;
+}
+/** Traversal grants none: the first way's refusal. */
+ | {
+    kind: 'refused';
+    key: DirectionType;
+    reason: WayRefusal;
+    message?: string;
+    door?: IFEntity;
+}
+/** Traversal grants more than one: the platform does not choose. */
+ | {
+    kind: 'ambiguous';
+    keys: DirectionType[];
+};
+/**
+ * The way between a room aboard a vehicle and outside (ADR-366 D7;
+ * alignment findings F9, F10, David's Q2 answer). Leaving (`'out'`),
+ * traversal is asked of each `to outside` exit and the one it grants is the
+ * way. Boarding (`'in'`) takes the same ways in reverse, so it reads the
+ * gates that hold in both directions — the way exists (its `while`) and its
+ * hatch is neither closed nor locked — but not a blocked line, which is
+ * written for one side and, as ADR-378 has it, never carried to the other.
+ * With none granted, the first way's refusal is the answer; with more than
+ * one, the way is ambiguous — no declaration order decides.
+ *
+ * @param world - The world model
+ * @param room - A room aboard a vehicle (anything else has no outside way)
+ * @param mover - Who is taking it: the walker leaving, or the one boarding
+ * @param side - `'out'` leaving the vehicle, `'in'` boarding it
+ */
+export declare function outsideWayOf(world: WorldModel, room: IFEntity, mover: TraversalMover, side?: 'out' | 'in'): OutsideWay;
 /**
  * Whether a room is one of a line vehicle's stops.
  *
@@ -5945,7 +6038,8 @@ export declare function isLandmarkTrait(trait: ITrait): trait is LandmarkTrait;
  * Expanse Behavior - the geometry of an expanse, where things in it are, and the drift of what floats
  *
  * Public interface: the compass over cells (`COMPASS_HEADINGS`,
- * `headingVector`, `directionOf`), `distance`, the distance bands
+ * `headingVector`, `directionOf`), the wind angles (`signedAngleOffWind`,
+ * `angleOffWind`), `distance`, the distance bands
  * (`SightBand`, `sightBandOf`), `landmarkAt`, `landmarkCellOf`, `expanseOfLandmark`,
  * `floatingThingsAt`, `receiveInExpanse` (what becomes of a thing that
  * lands in an expanse), `clearFloatingPosition`, and the drift step
@@ -5983,6 +6077,12 @@ export type CompassHeading = typeof COMPASS_HEADINGS[number];
 export declare function headingVector(heading: string | number): IExpanseCell | undefined;
 /** A compass word's bearing (ADR-375 D2), or undefined for any other word. */
 export declare function bearingOf(heading: string | number): number | undefined;
+/**
+ * The signed angle from the bearing a wind comes from to a heading (ADR-375
+ * D3, D5): 0 dead into the wind, positive clockwise of it, in -180 < a <= 180
+ * — 180 is dead before it. Coming about mirrors it; the pace reads its size.
+ */
+export declare function signedAngleOffWind(heading: number, wind: number): number;
 /**
  * The angle between a bearing and the bearing a wind comes from (ADR-375
  * D5): 0 dead into the wind, 180 dead before it.
@@ -9702,7 +9802,8 @@ export declare class PresenceBehavior {
  * admittance against the candidates.
  *
  * Public interface: TraversalBehavior.wayFor, resolveComputed, exitOf,
- *   isExitHidden, isExitBlocked, blockedMessage, admitsMover; the key
+ *   isExitHidden, isExitBlocked, blockedMessage, doorOf, doorRefusal,
+ *   admitsMover; the key
  *   builders exitHiddenKey, exitBlockedKey, exitMessageKey; the types
  *   TraversalMover, Way, WayRefusal, ResolvedWay.
  * Owner context: world-model — traversal (the system's home).
@@ -9802,6 +9903,23 @@ export declare class TraversalBehavior {
      * @param key - The way
      */
     static blockedMessage(world: WorldModel, room: IFEntity, key: ExitKey): string | undefined;
+    /**
+     * The door on a way: the static exit's, else the computed way's own (a
+     * vehicle's hatch, ADR-366 D7). Undefined when the way has none.
+     *
+     * @param world - The live world
+     * @param room - The room the way leaves
+     * @param key - The way
+     */
+    static doorOf(world: WorldModel, room: IFEntity, key: ExitKey): IFEntity | undefined;
+    /**
+     * Whether a door bars a way, and how: locked before closed. The door gate
+     * every traversal reads, in either direction through the door.
+     *
+     * @param door - The door on the way
+     * @returns `door_locked`, `door_closed`, or undefined when it lets one through
+     */
+    static doorRefusal(door: IFEntity): 'door_locked' | 'door_closed' | undefined;
     /**
      * Whether a way admits a mover: each field of the exit's own `admits`
      * when it has it, else the destination room's (ADR-366 D6, ADR-378 D6).

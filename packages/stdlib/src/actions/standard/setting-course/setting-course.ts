@@ -30,7 +30,7 @@ import {
   takesCommandSet,
   VehicleTrait,
   type WorldModel,
-  edgeAhead,
+  edgeRefusalOf,
   ExpanseTrait,
   isInsideExpanse,
   landmarkCellOf,
@@ -43,7 +43,6 @@ import { ScopeLevel } from '../../../scope/types.js';
 import { nounPhraseFor } from '../../../utils/index.js';
 import { ActionLifecycleDescriptor, blockedMessageId } from '../../lifecycle/index.js';
 import { SettingCourseMessages } from './setting-course-messages.js';
-import { exitMessageKey } from '@sharpee/world-model';
 
 /** The command set this action speaks for (ADR-366 D5i). */
 export const DESTINATIONS_COMMAND_SET = 'destinations';
@@ -162,11 +161,10 @@ export const settingCourseAction: Action & { metadata: ActionMetadata } = {
         return { valid: false, error: SettingCourseMessages.ALREADY_THERE, params: { ...params, destination: nounPhraseFor(course.room) } };
       }
       const from = place.cell;
-      const side = edgeAhead(vehicle, { x: Math.sign(course.cell.x - from.x), y: Math.sign(course.cell.y - from.y) });
-      if (side) {
-        const message = context.world.evaluate(exitMessageKey(expanse.id, side));
-        return typeof message === 'string' && message.length > 0
-          ? { valid: false, error: SettingCourseMessages.EDGE_BLOCKED, params: { ...params, message } }
+      const edge = edgeRefusalOf(context.world, vehicle, { x: Math.sign(course.cell.x - from.x), y: Math.sign(course.cell.y - from.y) });
+      if (edge) {
+        return edge.message !== undefined
+          ? { valid: false, error: SettingCourseMessages.EDGE_BLOCKED, params: { ...params, message: edge.message } }
           : { valid: false, error: SettingCourseMessages.EXPANSE_EDGE, params };
       }
       return { valid: true };

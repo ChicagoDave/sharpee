@@ -22,11 +22,11 @@ import type { IComputedExitCarrier, IComputedExitDeclaration } from '../room/com
 import { TraitType } from '../trait-types.js';
 import { ITrait } from '../trait.js';
 
-/** One `to outside` exit of a room aboard a vehicle. */
-export interface IOutsideExit extends IComputedExitDeclaration {
-  /** The door the exit passes through, if the line named one. */
-  via?: string;
-}
+/**
+ * One `to outside` exit of a room aboard a vehicle: a computed-exit
+ * declaration, whose `via` is the hatch the line named, if any.
+ */
+export type IOutsideExit = IComputedExitDeclaration;
 
 export interface IAboardData {
   /** The vehicle this room is inside. */
@@ -37,25 +37,23 @@ export interface IAboardData {
 
 /**
  * Trait for a room aboard a vehicle. Its `computedExits` are the room's
- * `to outside` exits, so the room behavior's computed-exit lookup finds them
- * without knowing vehicles exist.
+ * `to outside` exits — one record each, the candidates and the door — so the
+ * room behavior's computed-exit lookup finds them without knowing vehicles
+ * exist, and the outside-exit resolver reads the door from the same record.
  */
-export class AboardTrait implements ITrait, IAboardData, IComputedExitCarrier {
+export class AboardTrait implements ITrait, IComputedExitCarrier {
   static readonly type = TraitType.ABOARD;
   readonly type = TraitType.ABOARD;
 
   vehicleId: string;
-  outside: Partial<Record<DirectionType, IOutsideExit>>;
-  /** The computed-exit declarations (ADR-295 D3): one per `to outside` direction. */
-  computedExits: Partial<Record<DirectionType, IComputedExitDeclaration>>;
+  /** The `to outside` exits (ADR-366 D7), each a computed-exit declaration (ADR-295 D3) with its door. */
+  computedExits: Partial<Record<DirectionType, IOutsideExit>>;
 
   constructor(data: IAboardData) {
     this.vehicleId = data.vehicleId;
-    this.outside = {};
     this.computedExits = {};
     for (const [direction, exit] of Object.entries(data.outside ?? {}) as Array<[DirectionType, IOutsideExit]>) {
-      this.outside[direction] = { candidates: [...exit.candidates], ...(exit.via !== undefined ? { via: exit.via } : {}) };
-      this.computedExits[direction] = { candidates: [...exit.candidates] };
+      this.computedExits[direction] = { candidates: [...exit.candidates], ...(exit.via !== undefined ? { via: exit.via } : {}) };
     }
   }
 }

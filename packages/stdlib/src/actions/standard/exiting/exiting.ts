@@ -11,6 +11,7 @@ import {
   OpenableBehavior,
   IFEntity,
   leaveVehicleIntoExpanse,
+  outsideWayOf,
 } from '@sharpee/world-model';
 import { IFActions } from '../../constants.js';
 import { ExitedEventData } from './exiting-events.js';
@@ -84,7 +85,8 @@ export const exitingAction: Action & { metadata: ActionMetadata } = {
     'nowhere_to_go',
     'not_in_that',
     'not_on_that',
-    'vehicle_not_at_hatch'
+    'vehicle_not_at_hatch',
+    'outside_ambiguous'
   ],
   group: 'movement',
   
@@ -130,11 +132,13 @@ export const exitingAction: Action & { metadata: ActionMetadata } = {
     const isRoom = currentContainer.has(TraitType.ROOM);
 
     if (isRoom) {
-      // Aboard a vehicle (ADR-366 D7): the boarding room's `to outside` exit
-      // is the way off, and the vehicle command transformer sends `exit`
-      // there as going. Any other room aboard has no hatch.
+      // Aboard a vehicle (ADR-366 D7): the vehicle command transformer sends
+      // `exit` along the one way out traversal grants, as going. Reaching
+      // here, the room has no way out, or more than one is granted and the
+      // platform does not choose between them (Q2).
       if (currentContainer.has(TraitType.ABOARD)) {
-        return { valid: false, error: ExitingMessages.VEHICLE_NOT_AT_HATCH };
+        const way = outsideWayOf(context.world, currentContainer, { kind: 'walker', entity: actor });
+        return { valid: false, error: way.kind === 'ambiguous' ? ExitingMessages.OUTSIDE_AMBIGUOUS : ExitingMessages.VEHICLE_NOT_AT_HATCH };
       }
       return {
         valid: false,

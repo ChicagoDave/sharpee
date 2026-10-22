@@ -2,7 +2,8 @@
  * Expanse Behavior - the geometry of an expanse, where things in it are, and the drift of what floats
  *
  * Public interface: the compass over cells (`COMPASS_HEADINGS`,
- * `headingVector`, `directionOf`), `distance`, the distance bands
+ * `headingVector`, `directionOf`), the wind angles (`signedAngleOffWind`,
+ * `angleOffWind`), `distance`, the distance bands
  * (`SightBand`, `sightBandOf`), `landmarkAt`, `landmarkCellOf`, `expanseOfLandmark`,
  * `floatingThingsAt`, `receiveInExpanse` (what becomes of a thing that
  * lands in an expanse), `clearFloatingPosition`, and the drift step
@@ -73,12 +74,21 @@ export function bearingOf(heading: string | number): number | undefined {
 }
 
 /**
+ * The signed angle from the bearing a wind comes from to a heading (ADR-375
+ * D3, D5): 0 dead into the wind, positive clockwise of it, in -180 < a <= 180
+ * — 180 is dead before it. Coming about mirrors it; the pace reads its size.
+ */
+export function signedAngleOffWind(heading: number, wind: number): number {
+  const signed = ((((heading - wind) % 360) + 540) % 360) - 180;
+  return signed === -180 ? 180 : signed;
+}
+
+/**
  * The angle between a bearing and the bearing a wind comes from (ADR-375
  * D5): 0 dead into the wind, 180 dead before it.
  */
 export function angleOffWind(heading: number, wind: number): number {
-  const signed = ((((heading - wind + 180) % 360) + 360) % 360) - 180;
-  return Math.abs(signed);
+  return Math.abs(signedAngleOffWind(heading, wind));
 }
 
 /**

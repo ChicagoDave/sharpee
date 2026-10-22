@@ -26,6 +26,13 @@ import type { ITrait } from '../trait.js';
 export interface IComputedExitDeclaration {
   /** Room entity ids the resolver may return for this direction. */
   candidates: string[];
+  /**
+   * The door every traversal of this way passes, whatever the destination
+   * drawn (a vehicle's hatch, ADR-366 D7) — pure data, so the traversal
+   * system's door gate reads it at validate time as it reads a static
+   * exit's. Absent when the way has no door of its own.
+   */
+  via?: string;
 }
 
 /**

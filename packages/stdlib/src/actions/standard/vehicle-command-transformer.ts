@@ -9,9 +9,12 @@
  * - `steer <direction>` aboard a streets vehicle is going: GO drives a
  *   streets vehicle one exit, with the room description that follows (D5b).
  * - `exit` / `disembark` / `out` in a room aboard a vehicle that has a `to
- *   outside` exit is going that way, so the hatch door and the under-way
- *   refusal apply as on any exit (D7); a room aboard with no such exit is
- *   left to exiting, which refuses `vehicle-not-at-hatch`.
+ *   outside` exit is going by the way traversal grants (`outsideWayOf`), so
+ *   the hatch door and the under-way refusal apply as on any exit (D7); with
+ *   none granted it is going by the first way, which words the refusal. A
+ *   room aboard with no such exit, or with more than one way granted, is
+ *   left to exiting, which refuses `vehicle-not-at-hatch` or
+ *   `outside-ambiguous` (David's Q2 answer: the platform does not choose).
  *
  * The engine auto-registers this transformer beside the deadly-room one. It
  * is a plain `(parsed, world) => parsed` function so stdlib need not import
@@ -22,8 +25,8 @@
  */
 
 import {
-  AboardTrait,
   getVehicleAboard,
+  outsideWayOf,
   type IParsedCommand,
   takesCommandSet,
   VehicleTrait,
@@ -63,12 +66,15 @@ export function createVehicleCommandTransformer(): (parsed: IParsedCommand, worl
     }
 
     if (parsed.action === IFActions.EXITING) {
+      // The way off is traversal's answer (Q2): the one way it grants, or —
+      // with none granted — the first way, so going words its refusal. With
+      // more than one granted, exiting refuses the ambiguity itself.
       const location = world.getLocation(player.id);
       const room = location !== undefined ? world.getEntity(location) : undefined;
-      const aboard = room?.get(AboardTrait);
-      const direction = aboard ? Object.keys(aboard.outside)[0] : undefined;
-      if (!direction) return parsed;
-      return retarget(parsed, IFActions.GOING, { direction }, true);
+      if (!room) return parsed;
+      const way = outsideWayOf(world, room, { kind: 'walker', entity: player });
+      if (way.kind !== 'way' && way.kind !== 'refused') return parsed;
+      return retarget(parsed, IFActions.GOING, { direction: way.key }, true);
     }
 
     return parsed;

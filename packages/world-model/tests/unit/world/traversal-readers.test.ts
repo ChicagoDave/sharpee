@@ -41,8 +41,9 @@ const ALLOWED_READERS: Record<string, { role: Role; reads: string; why: string }
   // no raw read remains in them, so they are not listed.
   'stdlib/src/actions/base/snapshot-utils.ts': { role: 'lister', reads: 'exits by direction into a room snapshot for event data', why: 'event payload, decides no traversal' },
   'stdlib/src/actions/helpers/exit-legality.ts': { role: 'copy', reads: 'hasTraversableExit: blocked key, getExit, the door lock', why: 'COPY of the rule (its header says so); GH #601 — onto wayFor' },
-  'stdlib/src/actions/standard/steering/steering.ts': { role: 'key-reader', reads: 'exitMessageKey(expanse, side) for an expanse edge\'s phrase', why: 'ADR-376 D8: the edge borrows the message key for its text' },
-  'stdlib/src/actions/standard/setting-course/setting-course.ts': { role: 'key-reader', reads: 'exitMessageKey(expanse, side) for an expanse edge\'s phrase', why: 'ADR-376 D8: the edge borrows the message key for its text' },
+  // Steering and setting a course ask the vehicle behavior's edgeRefusalOf
+  // (alignment finding F6), so neither reads the key any more.
+  'world-model/src/traits/vehicle/vehicleBehavior.ts': { role: 'key-reader', reads: 'exitMessageKey(expanse, side) for an expanse edge\'s phrase (edgeRefusalOf)', why: 'ADR-376 D8: the edge borrows the message key for its text' },
   'stdlib/src/npc/npc-service.ts': { role: 'copy', reads: 'getExitsFromRoom: RoomTrait.exits plus allowed/forbidden rooms', why: 'COPY — walks through closed doors and blocked exits; GH #601 — onto wayFor' },
   'story-loader/src/runtime/derived.ts': { role: 'writer', reads: 'registers the exit.blocked.* and exit.message.* evaluators the home reads', why: 'ADR-240 D2: the registrar' },
   'story-loader/src/loader.ts': { role: 'writer', reads: 'wires IR exits through connectRooms; reads RoomTrait.exits only to find a door\'s reverse while wiring', why: 'construction' },

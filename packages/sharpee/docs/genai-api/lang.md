@@ -605,6 +605,28 @@ export declare const standardActionLanguage: ({
     actionId: string;
     patterns: string[];
     messages: {
+        already_outside: string;
+        container_closed: string;
+        cant_exit: string;
+        exited: string;
+        exited_from: string;
+        nowhere_to_go: string;
+        not_in_that: string;
+        not_on_that: string;
+        exit_blocked: string;
+        must_stand_first: string;
+        vehicle_not_at_hatch: string;
+        outside_ambiguous: string;
+    };
+    help: {
+        description: string;
+        examples: string;
+        summary: string;
+    };
+} | {
+    actionId: string;
+    patterns: string[];
+    messages: {
         no_target: string;
         cant_take_self: string;
         already_have: string;
@@ -1004,27 +1026,6 @@ export declare const standardActionLanguage: ({
         occupied: string;
         boarded: string;
         vehicle_not_boardable: string;
-    };
-    help: {
-        description: string;
-        examples: string;
-        summary: string;
-    };
-} | {
-    actionId: string;
-    patterns: string[];
-    messages: {
-        already_outside: string;
-        container_closed: string;
-        cant_exit: string;
-        exited: string;
-        exited_from: string;
-        nowhere_to_go: string;
-        not_in_that: string;
-        not_on_that: string;
-        exit_blocked: string;
-        must_stand_first: string;
-        vehicle_not_at_hatch: string;
     };
     help: {
         description: string;

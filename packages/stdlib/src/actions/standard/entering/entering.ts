@@ -17,12 +17,12 @@
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types.js';
 import { type ISemanticEvent } from '@sharpee/core';
 import {
-  AboardTrait,
   type IFEntity,
   TraitType,
   OpenableBehavior,
   EnterableTrait,
   getVehicleAboard,
+  outsideWayOf,
   VehicleTrait,
   type WorldModel,
   boardFromExpanse,
@@ -73,15 +73,20 @@ function boardingRoomOf(world: WorldModel, target: IFEntity): IFEntity | undefin
 }
 
 /**
- * The hatch a boarding room's `to outside` exits pass through, when one is
- * declared and closed (D7: the hatch is a door with its own `openable`).
+ * Why boarding is refused, or undefined when the boarder may come aboard
+ * (D7; alignment finding F10): boarding takes the boarding room's outside
+ * ways in reverse, so traversal answers for the gates that hold both ways —
+ * a closed or locked hatch, a way hidden by its `while`. A block on the way
+ * out is that side's line and does not keep anyone off. A boarding room
+ * with no outside exit is boarded as ever.
  */
-function closedHatchOf(world: WorldModel, boardingRoom: IFEntity): IFEntity | undefined {
-  for (const exit of Object.values(boardingRoom.get(AboardTrait)?.outside ?? {})) {
-    const door = exit.via !== undefined ? world.getEntity(exit.via) : undefined;
-    if (door?.has(TraitType.OPENABLE) && !OpenableBehavior.isOpen(door)) return door;
+function boardingRefusal(context: ActionContext, target: IFEntity, boardingRoom: IFEntity): ValidationResult | undefined {
+  const way = outsideWayOf(context.world, boardingRoom, { kind: 'walker', entity: context.actor }, 'in');
+  if (way.kind !== 'refused') return undefined;
+  if (way.reason === 'door_closed' || way.reason === 'door_locked') {
+    return { valid: false, error: EnteringMessages.CONTAINER_CLOSED, params: { container: nounPhraseFor(way.door!) } };
   }
-  return undefined;
+  return { valid: false, error: EnteringMessages.VEHICLE_NOT_BOARDABLE, params: { vehicle: nounPhraseFor(target) } };
 }
 
 /** Whether the player's word was `board` (D7: for a vehicle with rooms aboard only). */
@@ -161,11 +166,7 @@ export const enteringAction: Action & { metadata: ActionMetadata } = {
       if (getVehicleAboard(context.world, actor.id)?.id === target.id) {
         return { valid: false, error: EnteringMessages.ALREADY_INSIDE, params: { place: nounPhraseFor(target) } };
       }
-      const hatch = closedHatchOf(context.world, boardingRoom);
-      if (hatch) {
-        return { valid: false, error: EnteringMessages.CONTAINER_CLOSED, params: { container: nounPhraseFor(hatch) } };
-      }
-      return { valid: true };
+      return boardingRefusal(context, target, boardingRoom) ?? { valid: true };
     }
     if (saidBoard(context)) {
       // `board` is for ships (D7): anything without rooms aboard refuses,

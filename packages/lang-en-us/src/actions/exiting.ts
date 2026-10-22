@@ -33,7 +33,9 @@ export const exitingLanguage = {
     'exit_blocked': "The way out is blocked.",
     'must_stand_first': "{You}'ll need to stand up first.",
     // Aboard a vehicle (ADR-366 D7, D7a): only the boarding room has a way off.
-    'vehicle_not_at_hatch': "There's no way off from here."
+    'vehicle_not_at_hatch': "There's no way off from here.",
+    // More than one way off is open, and nothing says which (David's ruling, 2026-10-21).
+    'outside_ambiguous': "{You} ponder the reality of being outside..."
   },
   
   help: {

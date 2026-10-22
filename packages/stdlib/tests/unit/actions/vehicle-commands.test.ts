@@ -23,6 +23,9 @@ import {
   type IParsedCommand,
   type VehicleModelConfig,
   WorldModel,
+  exitBlockedKey,
+  exitHiddenKey,
+  exitMessageKey,
 } from '@sharpee/world-model';
 import { steeringAction } from '../../../src/actions/standard/steering';
 import { settingCourseAction } from '../../../src/actions/standard/setting-course';
@@ -257,6 +260,63 @@ describe('boarding and the hatch (ADR-366 D7, D7a)', () => {
 
     enter(world, bucket);
     expect(world.getLocation(player.id)).toBe(bucket.id);
+  });
+
+  test('boarding asks traversal: a `while` hiding the outside way refuses until it holds; a block on the way out keeps no one off (F10)', () => {
+    const { world, player, room } = harbour();
+    const { ship, airlock } = shipWithRooms(world, room, undefined);
+    let hidden = true;
+    world.registerEvaluator(exitHiddenKey(airlock.id, Direction.WEST), () => hidden);
+
+    expect(messageIds(enter(world, ship, 'board'))).toContain('if.action.entering.vehicle_not_boardable');
+    expect(world.getLocation(player.id)).toBe(room.id);
+
+    // The block is the way out's own line (UPPS: `down is blocked while the
+    // courier ship is not at the Loading Dock`); boarding is the way in.
+    hidden = false;
+    world.registerEvaluator(exitBlockedKey(airlock.id, Direction.WEST), () => true);
+    world.registerEvaluator(exitMessageKey(airlock.id, Direction.WEST), () => 'The gangway is raised.');
+    enter(world, ship, 'board');
+    expect(world.getLocation(player.id)).toBe(airlock.id);
+  });
+
+  test('exit in a room aboard with two ways off open refuses as ambiguous and nothing moves (Q2)', () => {
+    const { world, player, room } = harbour();
+    const { ship, airlock } = shipWithRooms(world, room, undefined);
+    airlock.get(AboardTrait)!.computedExits[Direction.EAST] = { candidates: [room.id] };
+    world.moveEntity(player.id, airlock.id);
+    const transform = createVehicleCommandTransformer();
+
+    const exitCommand = createCommand(IFActions.EXITING, { verb: 'exit' });
+    expect(transform(exitCommand.parsed, world).action).toBe(IFActions.EXITING);
+    const events = executeWithValidation(exitingAction, createRealTestContext(exitingAction, world, exitCommand));
+
+    expect(messageIds(events)).toContain('if.action.exiting.outside_ambiguous');
+    expect(world.getLocation(player.id)).toBe(airlock.id);
+    expect(world.getLocation(ship.id)).toBe(room.id);
+  });
+
+  test('exit aboard takes the one way traversal grants, and with none granted goes by the first so going refuses it (Q2)', () => {
+    const { world, player, room } = harbour();
+    const { airlock } = shipWithRooms(world, room, undefined);
+    airlock.get(AboardTrait)!.computedExits[Direction.EAST] = { candidates: [room.id] };
+    world.moveEntity(player.id, airlock.id);
+    const transform = createVehicleCommandTransformer();
+    let westHidden = true;
+    let eastHidden = false;
+    world.registerEvaluator(exitHiddenKey(airlock.id, Direction.WEST), () => westHidden);
+    world.registerEvaluator(exitHiddenKey(airlock.id, Direction.EAST), () => eastHidden);
+
+    const out = transform(createCommand(IFActions.EXITING, { verb: 'exit' }).parsed, world);
+    expect(out.action).toBe(IFActions.GOING);
+    expect(out.extras).toEqual({ direction: Direction.EAST });
+
+    eastHidden = true;
+    const none = transform(createCommand(IFActions.EXITING, { verb: 'exit' }).parsed, world);
+    expect(none.action).toBe(IFActions.GOING);
+    expect(none.extras).toEqual({ direction: Direction.WEST });
+    westHidden = false;
+    expect(transform(createCommand(IFActions.EXITING, { verb: 'exit' }).parsed, world).extras).toEqual({ direction: Direction.WEST });
   });
 
   test('exit in a room aboard with no outside exit refuses as not at the hatch', () => {
