@@ -67,8 +67,8 @@ interface EnteringExecutionState {
  * The room `boarded through:` names on a vehicle with rooms aboard (ADR-366
  * D7), or undefined for anything else — which is entered as itself.
  */
-function boardingRoomOf(world: WorldModel, target: IFEntity): IFEntity | undefined {
-  const id = target.get(VehicleTrait)?.boardingRoom;
+function boardedThroughOf(world: WorldModel, target: IFEntity): IFEntity | undefined {
+  const id = target.get(VehicleTrait)?.boardedThrough;
   return id !== undefined ? world.getEntity(id) : undefined;
 }
 
@@ -80,8 +80,8 @@ function boardingRoomOf(world: WorldModel, target: IFEntity): IFEntity | undefin
  * out is that side's line and does not keep anyone off. A boarding room
  * with no outside exit is boarded as ever.
  */
-function boardingRefusal(context: ActionContext, target: IFEntity, boardingRoom: IFEntity): ValidationResult | undefined {
-  const way = outsideWayOf(context.world, boardingRoom, { kind: 'walker', entity: context.actor }, 'in');
+function boardingRefusal(context: ActionContext, target: IFEntity, boardedThrough: IFEntity): ValidationResult | undefined {
+  const way = outsideWayOf(context.world, boardedThrough, { kind: 'walker', entity: context.actor }, 'in');
   if (way.kind !== 'refused') return undefined;
   if (way.reason === 'door_closed' || way.reason === 'door_locked') {
     return { valid: false, error: EnteringMessages.CONTAINER_CLOSED, params: { container: nounPhraseFor(way.door!) } };
@@ -164,12 +164,12 @@ export const enteringAction: Action & { metadata: ActionMetadata } = {
 
     // A vehicle with rooms aboard is boarded, not entered (ADR-366 D7): the
     // player goes to its boarding room, through the hatch if it has one.
-    const boardingRoom = boardingRoomOf(context.world, target);
-    if (boardingRoom) {
+    const boardedThrough = boardedThroughOf(context.world, target);
+    if (boardedThrough) {
       if (getVehicleAboard(context.world, actor.id)?.id === target.id) {
         return { valid: false, error: EnteringMessages.ALREADY_INSIDE, params: { place: nounPhraseFor(target) } };
       }
-      return boardingRefusal(context, target, boardingRoom) ?? { valid: true };
+      return boardingRefusal(context, target, boardedThrough) ?? { valid: true };
     }
     if (saidBoard(context)) {
       // `board` is for ships (D7): anything without rooms aboard refuses,
@@ -210,9 +210,9 @@ export const enteringAction: Action & { metadata: ActionMetadata } = {
 
     // Boarding (ADR-366 D7): the player goes to the boarding room, and sees
     // it as if they had looked.
-    const boardingRoom = boardingRoomOf(context.world, target);
-    if (boardingRoom) {
-      context.world.moveEntity(actor.id, boardingRoom.id);
+    const boardedThrough = boardedThroughOf(context.world, target);
+    if (boardedThrough) {
+      context.world.moveEntity(actor.id, boardedThrough.id);
       sharedData.enteringState = {
         targetId: target.id,
         targetName: target.name,

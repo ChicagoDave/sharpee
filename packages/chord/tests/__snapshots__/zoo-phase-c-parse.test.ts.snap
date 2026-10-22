@@ -258,7 +258,10 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
             "endLine": 14,
             "line": 14,
           },
-          "to": "main-path",
+          "to": {
+            "id": "main-path",
+            "kind": "room",
+          },
           "via": null,
         },
       ],
@@ -346,7 +349,10 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
             "endLine": 24,
             "line": 24,
           },
-          "to": "petting-zoo",
+          "to": {
+            "id": "petting-zoo",
+            "kind": "room",
+          },
           "via": null,
         },
         {
@@ -357,7 +363,10 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
             "endLine": 25,
             "line": 25,
           },
-          "to": "aviary",
+          "to": {
+            "id": "aviary",
+            "kind": "room",
+          },
           "via": null,
         },
         {
@@ -368,7 +377,10 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
             "endLine": 26,
             "line": 26,
           },
-          "to": "supply-room",
+          "to": {
+            "id": "supply-room",
+            "kind": "room",
+          },
           "via": null,
         },
       ],
@@ -527,7 +539,10 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
             "endLine": 50,
             "line": 50,
           },
-          "to": "gift-shop",
+          "to": {
+            "id": "gift-shop",
+            "kind": "room",
+          },
           "via": null,
         },
       ],
@@ -747,7 +762,10 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
             "endLine": 77,
             "line": 77,
           },
-          "to": "nocturnal-animals-exhibit",
+          "to": {
+            "id": "nocturnal-animals-exhibit",
+            "kind": "room",
+          },
           "via": null,
         },
       ],

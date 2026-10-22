@@ -4,7 +4,8 @@
  * Public interface: `ExpanseTrait` (data: the size, the landmark rooms and
  * their cells, the optional sight cap and drift interval, and the drift
  * machine's state), `IExpanseCell`, `ExpanseSide`,
- * `IExpanseData`, `isExpanseTrait`, `isInsideExpanse`, `sameCell`.
+ * `IExpanseData`, `isExpanseTrait`, `isInsideExpanse`, `sameCell`, and the
+ * value checks `isExpanseVisibility`, `isExpanseWind`.
  *
  * Owner context: world-model traits. An expanse is a room (its heading,
  * looking and scope read it as one) carrying this trait, so an open vehicle
@@ -95,7 +96,7 @@ export class ExpanseTrait implements ITrait, IExpanseData {
       this.landmarks[roomId] = { x: cell.x, y: cell.y };
     }
     if (data.visibility !== undefined) {
-      if (typeof data.visibility !== 'number' || data.visibility < 0) {
+      if (!isExpanseVisibility(data.visibility)) {
         throw new Error('ExpanseTrait: visibility is zero or more');
       }
       this.visibility = data.visibility;
@@ -108,12 +109,22 @@ export class ExpanseTrait implements ITrait, IExpanseData {
     }
     this.turnsToDrift = data.turnsToDrift ?? data.drift ?? 0;
     if (data.wind !== undefined) {
-      if (data.wind !== 'calm' && (!Number.isInteger(data.wind) || data.wind < 0 || data.wind > 359)) {
+      if (!isExpanseWind(data.wind)) {
         throw new Error('ExpanseTrait: a wind is a bearing of 0 to 359, or calm');
       }
       this.wind = data.wind;
     }
   }
+}
+
+/** Whether a value is a visibility an expanse can hold: a number, zero or more. */
+export function isExpanseVisibility(value: unknown): value is number {
+  return typeof value === 'number' && value >= 0;
+}
+
+/** Whether a value is a wind an expanse can hold: a whole bearing 0 to 359, or `calm`. */
+export function isExpanseWind(value: unknown): value is ExpanseWind {
+  return value === 'calm' || (Number.isInteger(value) && (value as number) >= 0 && (value as number) <= 359);
 }
 
 function isWholeAtLeast(value: unknown, floor: number): value is number {

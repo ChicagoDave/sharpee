@@ -73,7 +73,10 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
             "endLine": 14,
             "line": 14,
           },
-          "to": "cloakroom",
+          "to": {
+            "id": "cloakroom",
+            "kind": "room",
+          },
           "via": null,
         },
         {
@@ -84,7 +87,10 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
             "endLine": 15,
             "line": 15,
           },
-          "to": "foyer-bar",
+          "to": {
+            "id": "foyer-bar",
+            "kind": "room",
+          },
           "via": null,
         },
       ],

@@ -21,6 +21,7 @@ export {
   isInitialState,
   undirectedExits,
   wiredEdges,
+  outsideRoomsOf,
   oppositeDirection,
   doorStartsLocked,
   isPortableByDefault,

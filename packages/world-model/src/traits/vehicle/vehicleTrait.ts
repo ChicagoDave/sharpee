@@ -1,11 +1,12 @@
 /**
  * Vehicle Trait - an enterable thing that carries what it holds when it moves
  *
- * Public interface: `VehicleTrait` (data: the movement model, the player's
- * command sets and the boarding room), the model types `VehicleModel`, `VehicleNoneModel`,
- * `VehicleLineModel`, `VehicleStreetsModel`, `VehicleCompassModel`,
- * `VehicleFlightModel`, `VehicleOpenModel`, their declaration shapes
- * `VehicleModelConfig`, the type guard `isVehicleTrait`, and the factory
+ * Public interface: `VehicleTrait` (data: the movement model `movement`, the
+ * player's command sets and the room it is `boardedThrough`), the movement
+ * types `VehicleMovement`, `VehicleNoneMovement`,
+ * `VehicleLineMovement`, `VehicleStreetsMovement`, `VehicleCompassMovement`,
+ * `VehicleFlightMovement`, `VehicleOpenMovement`, their declaration shapes
+ * `VehicleMovementConfig`, the type guard `isVehicleTrait`, and the factory
  * `createVehicleTrait`.
  *
  * Owner context: world-model traits. The trait carries exactly what the
@@ -54,7 +55,7 @@ export interface SailingTable {
 }
 
 /** A vehicle that does not move (ADR-366 D5): a bathtub, a crate the player sits in. */
-export interface VehicleNoneModel {
+export interface VehicleNoneMovement {
   kind: 'none';
 }
 
@@ -62,7 +63,7 @@ export interface VehicleNoneModel {
  * The line (ADR-366 D5a): ordered stops the vehicle runs between. GO from
  * inside is refused; the player rides, the world's state or the story drives.
  */
-export interface VehicleLineModel {
+export interface VehicleLineMovement {
   kind: 'line';
   /** Room ids of the stops, in line order. At least two, no repeats. */
   stops: string[];
@@ -84,7 +85,7 @@ export interface VehicleLineModel {
  * The streets (ADR-366 D5b): GO from inside moves the vehicle along the
  * current room's exit when the destination room admits it.
  */
-export interface VehicleStreetsModel {
+export interface VehicleStreetsMovement {
   kind: 'streets';
 }
 
@@ -92,7 +93,7 @@ export interface VehicleStreetsModel {
  * The compass (ADR-366 D5c): the vehicle keeps a heading and moves one room
  * that way every `pace` turns while the way is admitted.
  */
-export interface VehicleCompassModel {
+export interface VehicleCompassMovement {
   kind: 'compass';
   drive: 'player' | 'control';
   /** Turns per step, one or more. */
@@ -107,7 +108,7 @@ export interface VehicleCompassModel {
  * Free flight (ADR-366 D5d): any destination to any other, nowhere for the
  * passage, then arrival.
  */
-export interface VehicleFlightModel {
+export interface VehicleFlightMovement {
   kind: 'flight';
   drive: 'player' | 'control';
   /** Room ids the vehicle may fly between. At least two. */
@@ -128,7 +129,7 @@ export interface VehicleFlightModel {
  * vehicle is in the expanse room (D5): at a landmark it is null and the
  * vehicle's location is the one record.
  */
-export interface VehicleOpenModel {
+export interface VehicleOpenMovement {
   kind: 'open';
   drive: 'player' | 'control';
   /** Turns per step, one or more. Under sail (`sailing` present) the table sets the pace and this is unread. */
@@ -167,13 +168,13 @@ export interface VehicleOpenModel {
 }
 
 /** How a vehicle moves — the declaration of its built-in machine, with the machine's state beside it. */
-export type VehicleModel =
-  | VehicleNoneModel
-  | VehicleLineModel
-  | VehicleStreetsModel
-  | VehicleCompassModel
-  | VehicleFlightModel
-  | VehicleOpenModel;
+export type VehicleMovement =
+  | VehicleNoneMovement
+  | VehicleLineMovement
+  | VehicleStreetsMovement
+  | VehicleCompassMovement
+  | VehicleFlightMovement
+  | VehicleOpenMovement;
 
 type LineState = 'underWay' | 'travelDirection' | 'turnsToStep';
 type CompassState = 'heading' | 'turnsToStep';
@@ -184,23 +185,24 @@ type OpenState = 'heading' | 'course' | 'position' | 'underWay' | 'turnsToStep' 
  * A model as declared: the machine's state fields are optional and start at
  * rest (not under way, onward, no heading, no destination).
  */
-export type VehicleModelConfig =
-  | VehicleNoneModel
-  | VehicleStreetsModel
-  | (Omit<VehicleLineModel, LineState> & Partial<Pick<VehicleLineModel, LineState>>)
-  | (Omit<VehicleCompassModel, CompassState> & Partial<Pick<VehicleCompassModel, CompassState>>)
-  | (Omit<VehicleFlightModel, FlightState> & Partial<Pick<VehicleFlightModel, FlightState>>)
-  | (Omit<VehicleOpenModel, OpenState> & Partial<Pick<VehicleOpenModel, OpenState>>);
+export type VehicleMovementConfig =
+  | VehicleNoneMovement
+  | VehicleStreetsMovement
+  | (Omit<VehicleLineMovement, LineState> & Partial<Pick<VehicleLineMovement, LineState>>)
+  | (Omit<VehicleCompassMovement, CompassState> & Partial<Pick<VehicleCompassMovement, CompassState>>)
+  | (Omit<VehicleFlightMovement, FlightState> & Partial<Pick<VehicleFlightMovement, FlightState>>)
+  | (Omit<VehicleOpenMovement, OpenState> & Partial<Pick<VehicleOpenMovement, OpenState>>);
 
 /**
  * Configuration options for VehicleTrait
  */
 export interface VehicleTraitConfig {
-  model?: VehicleModelConfig;
+  /** `movement:` and the lines its type takes (ADR-366 D5). */
+  movement?: VehicleMovementConfig;
   /** The player's command sets (`commands:`), present on a player-driven vehicle. */
   commands?: string[];
   /** The room `boarded through:` names (ADR-366 D7), present on a vehicle with rooms aboard. */
-  boardingRoom?: string;
+  boardedThrough?: string;
 }
 
 /**
@@ -210,8 +212,8 @@ export class VehicleTrait implements ITrait {
   static readonly type = TraitType.VEHICLE;
   readonly type = TraitType.VEHICLE;
 
-  /** The movement model; undefined means the vehicle does not move under GO. */
-  model?: VehicleModel;
+  /** The movement model (`movement:`); undefined means the vehicle does not move under GO. */
+  movement?: VehicleMovement;
   /** The player's command sets (ADR-366 D5i); absent when the player drives nothing. */
   commands?: string[];
   /**
@@ -219,24 +221,23 @@ export class VehicleTrait implements ITrait {
    * put the player there. Absent on a vehicle with no rooms aboard, which
    * is entered as any enterable thing is.
    */
-  boardingRoom?: string;
+  boardedThrough?: string;
 
   constructor(config: VehicleTraitConfig = {}) {
-    const model = config.model;
-    if (model) this.model = VehicleTrait.buildModel(model);
+    if (config.movement) this.movement = VehicleTrait.buildMovement(config.movement);
     if (config.commands) this.commands = [...config.commands];
-    if (config.boardingRoom !== undefined) this.boardingRoom = config.boardingRoom;
+    if (config.boardedThrough !== undefined) this.boardedThrough = config.boardedThrough;
   }
 
   /**
-   * Build a model from its declaration, holding the invariants the analyzer
+   * Build a movement model from its declaration, holding the invariants the analyzer
    * reports first: two stops, none repeated; two destinations; a pace, a
    * stride of at least one; an open vehicle on at most one of heading and
    * course. The machine's state starts at rest unless the declaration
    * carries it.
    * @throws when an invariant is broken
    */
-  private static buildModel(config: VehicleModelConfig): VehicleModel {
+  private static buildMovement(config: VehicleMovementConfig): VehicleMovement {
     switch (config.kind) {
       case 'none':
       case 'streets':

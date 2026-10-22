@@ -137,7 +137,7 @@ function placeOf(world: WorldModel, entityId: string): string | undefined {
  * story's arrival clauses read it.
  */
 function passengerArrivals(world: WorldModel, vehicle: IFEntity, fromRoom: string | undefined, toRoom: string): ISemanticEvent[] {
-  if (vehicle.get(VehicleTrait)?.boardingRoom !== undefined) return [];
+  if (vehicle.get(VehicleTrait)?.boardedThrough !== undefined) return [];
   return getVehicleOccupants(world, vehicle.id).map((passenger) => ({
     id: `vehicle-${++eventCounter}`,
     type: ACTOR_MOVED,

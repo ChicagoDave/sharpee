@@ -119,8 +119,8 @@ function named(b: BootedTurns, name: string): IFEntity {
   return found!;
 }
 
-function model(b: BootedTurns, name: string): NonNullable<VehicleTrait['model']> {
-  return named(b, name).get(VehicleTrait)!.model!;
+function model(b: BootedTurns, name: string): NonNullable<VehicleTrait['movement']> {
+  return named(b, name).get(VehicleTrait)!.movement!;
 }
 
 function where(b: BootedTurns, name: string): string | undefined {

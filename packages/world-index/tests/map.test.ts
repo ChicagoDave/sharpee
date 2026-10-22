@@ -12,7 +12,7 @@
  */
 
 import { beforeAll, describe, expect, it } from 'vitest';
-import type { StoryIR } from '@sharpee/chord';
+import { exitRoomId, type StoryIR } from '@sharpee/chord';
 import { layoutMap, type Cell } from '../src/map.js';
 import { CORPUS, compileStory, entity, faultable } from './corpus.js';
 
@@ -62,7 +62,7 @@ describe('the corpus lays out on a grid', () => {
   it('walks the mirror of an authored exit, not only the authored row', () => {
     const faulted = faultable(alderman);
     const foyer = entity(faulted, 'foyer');
-    foyer.exits = foyer.exits.filter((exit) => exit.to !== 'bar');
+    foyer.exits = foyer.exits.filter((exit) => exitRoomId(exit) !=='bar');
     const map = layoutMap(faulted);
 
     expect(map.unplaced).toEqual([]);
@@ -129,7 +129,7 @@ describe('a room the walk cannot reach', () => {
   it('is reported unplaced rather than given an arbitrary cell', () => {
     const faulted = faultable(fernhill);
     const kitchen = entity(faulted, 'kitchen');
-    kitchen.exits = kitchen.exits.filter((exit) => exit.to !== 'pantry');
+    kitchen.exits = kitchen.exits.filter((exit) => exitRoomId(exit) !=='pantry');
     const map = layoutMap(faulted);
 
     expect(map.unplaced).toEqual(['pantry']);
@@ -142,8 +142,8 @@ describe('`in` and `out` exits (ADR-369 D3b)', () => {
     const faulted = faultable(alderman);
     const foyer = entity(faulted, 'foyer');
     const bar = entity(faulted, 'bar');
-    for (const exit of foyer.exits) if (exit.to === 'bar') exit.direction = 'in';
-    for (const exit of bar.exits) if (exit.to === 'foyer') exit.direction = 'out';
+    for (const exit of foyer.exits) if (exitRoomId(exit) ==='bar') exit.direction = 'in';
+    for (const exit of bar.exits) if (exitRoomId(exit) ==='foyer') exit.direction = 'out';
     const map = layoutMap(faulted);
 
     expect(map.unplaced).toEqual([]);
@@ -160,12 +160,12 @@ describe('passages and conditional exits (ADR-378 D8)', () => {
     const foyer = entity(faulted, 'foyer');
     const bar = entity(faulted, 'bar');
     for (const exit of foyer.exits) {
-      if (exit.to === 'bar') {
+      if (exitRoomId(exit) ==='bar') {
         exit.direction = 'passage:follow-the-music';
         exit.passage = ['follow the music', 'follow the band'];
       }
     }
-    bar.exits = bar.exits.filter((exit) => exit.to !== 'foyer');
+    bar.exits = bar.exits.filter((exit) => exitRoomId(exit) !=='foyer');
     const map = layoutMap(faulted);
 
     expect(map.unplaced).toEqual([]);
@@ -179,7 +179,7 @@ describe('passages and conditional exits (ADR-378 D8)', () => {
     const faulted = faultable(alderman);
     const foyer = entity(faulted, 'foyer');
     const condition = { kind: 'predicate', pred: 'is', negated: false, subject: { kind: 'entity', id: 'bar' }, object: { kind: 'symbol', name: 'open' } } as never;
-    for (const exit of foyer.exits) if (exit.to === 'bar') exit.condition = condition;
+    for (const exit of foyer.exits) if (exitRoomId(exit) ==='bar') exit.condition = condition;
     const map = layoutMap(faulted);
 
     const connection = map.connections.find((c) => c.rooms.includes('bar') && c.rooms.includes('foyer'));

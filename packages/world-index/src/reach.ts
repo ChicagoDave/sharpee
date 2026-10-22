@@ -211,7 +211,7 @@ export function deriveReach(ir: StoryIR): ReachResult {
   const containment = holderIndex(ir);
   const isKnownRoom = (id: string): boolean => roomIds.has(id);
 
-  const edges = wiredEdges(rooms, isKnownRoom);
+  const edges = wiredEdges(rooms, isKnownRoom, ir.entities);
   const gates = gateIndex(ir);
   const byName = nameIndex(ir);
   const writers = collectStateWriters(ir);
@@ -596,8 +596,9 @@ function brokenExitsOf(rooms: readonly IREntity[], isKnownRoom: (id: string) => 
   const broken: BrokenExit[] = [];
   for (const room of rooms) {
     for (const exit of room.exits ?? []) {
-      if (isKnownRoom(exit.to)) continue;
-      broken.push({ from: room.id, direction: exit.direction, to: exit.to, line: exit.span?.line ?? null });
+      // An outside way names no room by design; an unresolved name is the compiler's own error.
+      if (exit.to.kind !== 'room' || isKnownRoom(exit.to.id)) continue;
+      broken.push({ from: room.id, direction: exit.direction, to: exit.to.id, line: exit.span?.line ?? null });
     }
   }
   return broken;

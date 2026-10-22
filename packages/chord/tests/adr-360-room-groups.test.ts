@@ -97,7 +97,7 @@ describe('a group creates its rooms (D1, AC-1 compile half)', () => {
   });
 
   it('lets an ordinary exit name a created room', () => {
-    expect(byId('sphere-room-34')!.exits.find((e) => e.direction === 'north')).toMatchObject({ to: 'maze-61', oneWay: true });
+    expect(byId('sphere-room-34')!.exits.find((e) => e.direction === 'north')).toMatchObject({ to: { kind: 'room', id: 'maze-61' }, oneWay: true });
   });
 
   it('takes `to` inside a stem: `rooms Road to Ruin 1 to 3` (AC-11)', () => {

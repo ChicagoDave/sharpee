@@ -5101,11 +5101,12 @@ export declare class NpcTrait implements ITrait, INpcData {
 /**
  * Vehicle Trait - an enterable thing that carries what it holds when it moves
  *
- * Public interface: `VehicleTrait` (data: the movement model, the player's
- * command sets and the boarding room), the model types `VehicleModel`, `VehicleNoneModel`,
- * `VehicleLineModel`, `VehicleStreetsModel`, `VehicleCompassModel`,
- * `VehicleFlightModel`, `VehicleOpenModel`, their declaration shapes
- * `VehicleModelConfig`, the type guard `isVehicleTrait`, and the factory
+ * Public interface: `VehicleTrait` (data: the movement model `movement`, the
+ * player's command sets and the room it is `boardedThrough`), the movement
+ * types `VehicleMovement`, `VehicleNoneMovement`,
+ * `VehicleLineMovement`, `VehicleStreetsMovement`, `VehicleCompassMovement`,
+ * `VehicleFlightMovement`, `VehicleOpenMovement`, their declaration shapes
+ * `VehicleMovementConfig`, the type guard `isVehicleTrait`, and the factory
  * `createVehicleTrait`.
  *
  * Owner context: world-model traits. The trait carries exactly what the
@@ -5151,14 +5152,14 @@ export interface SailingTable {
     calm: SailingPace;
 }
 /** A vehicle that does not move (ADR-366 D5): a bathtub, a crate the player sits in. */
-export interface VehicleNoneModel {
+export interface VehicleNoneMovement {
     kind: 'none';
 }
 /**
  * The line (ADR-366 D5a): ordered stops the vehicle runs between. GO from
  * inside is refused; the player rides, the world's state or the story drives.
  */
-export interface VehicleLineModel {
+export interface VehicleLineMovement {
     kind: 'line';
     /** Room ids of the stops, in line order. At least two, no repeats. */
     stops: string[];
@@ -5179,14 +5180,14 @@ export interface VehicleLineModel {
  * The streets (ADR-366 D5b): GO from inside moves the vehicle along the
  * current room's exit when the destination room admits it.
  */
-export interface VehicleStreetsModel {
+export interface VehicleStreetsMovement {
     kind: 'streets';
 }
 /**
  * The compass (ADR-366 D5c): the vehicle keeps a heading and moves one room
  * that way every `pace` turns while the way is admitted.
  */
-export interface VehicleCompassModel {
+export interface VehicleCompassMovement {
     kind: 'compass';
     drive: 'player' | 'control';
     /** Turns per step, one or more. */
@@ -5200,7 +5201,7 @@ export interface VehicleCompassModel {
  * Free flight (ADR-366 D5d): any destination to any other, nowhere for the
  * passage, then arrival.
  */
-export interface VehicleFlightModel {
+export interface VehicleFlightMovement {
     kind: 'flight';
     drive: 'player' | 'control';
     /** Room ids the vehicle may fly between. At least two. */
@@ -5220,7 +5221,7 @@ export interface VehicleFlightModel {
  * vehicle is in the expanse room (D5): at a landmark it is null and the
  * vehicle's location is the one record.
  */
-export interface VehicleOpenModel {
+export interface VehicleOpenMovement {
     kind: 'open';
     drive: 'player' | 'control';
     /** Turns per step, one or more. Under sail (`sailing` present) the table sets the pace and this is unread. */
@@ -5261,7 +5262,7 @@ export interface VehicleOpenModel {
     inIrons: boolean;
 }
 /** How a vehicle moves — the declaration of its built-in machine, with the machine's state beside it. */
-export type VehicleModel = VehicleNoneModel | VehicleLineModel | VehicleStreetsModel | VehicleCompassModel | VehicleFlightModel | VehicleOpenModel;
+export type VehicleMovement = VehicleNoneMovement | VehicleLineMovement | VehicleStreetsMovement | VehicleCompassMovement | VehicleFlightMovement | VehicleOpenMovement;
 type LineState = 'underWay' | 'travelDirection' | 'turnsToStep';
 type CompassState = 'heading' | 'turnsToStep';
 type FlightState = 'destination' | 'turnsRemaining';
@@ -5270,16 +5271,17 @@ type OpenState = 'heading' | 'course' | 'position' | 'underWay' | 'turnsToStep' 
  * A model as declared: the machine's state fields are optional and start at
  * rest (not under way, onward, no heading, no destination).
  */
-export type VehicleModelConfig = VehicleNoneModel | VehicleStreetsModel | (Omit<VehicleLineModel, LineState> & Partial<Pick<VehicleLineModel, LineState>>) | (Omit<VehicleCompassModel, CompassState> & Partial<Pick<VehicleCompassModel, CompassState>>) | (Omit<VehicleFlightModel, FlightState> & Partial<Pick<VehicleFlightModel, FlightState>>) | (Omit<VehicleOpenModel, OpenState> & Partial<Pick<VehicleOpenModel, OpenState>>);
+export type VehicleMovementConfig = VehicleNoneMovement | VehicleStreetsMovement | (Omit<VehicleLineMovement, LineState> & Partial<Pick<VehicleLineMovement, LineState>>) | (Omit<VehicleCompassMovement, CompassState> & Partial<Pick<VehicleCompassMovement, CompassState>>) | (Omit<VehicleFlightMovement, FlightState> & Partial<Pick<VehicleFlightMovement, FlightState>>) | (Omit<VehicleOpenMovement, OpenState> & Partial<Pick<VehicleOpenMovement, OpenState>>);
 /**
  * Configuration options for VehicleTrait
  */
 export interface VehicleTraitConfig {
-    model?: VehicleModelConfig;
+    /** `movement:` and the lines its type takes (ADR-366 D5). */
+    movement?: VehicleMovementConfig;
     /** The player's command sets (`commands:`), present on a player-driven vehicle. */
     commands?: string[];
     /** The room `boarded through:` names (ADR-366 D7), present on a vehicle with rooms aboard. */
-    boardingRoom?: string;
+    boardedThrough?: string;
 }
 /**
  * Trait for vehicles - enterable things that transport what they hold
@@ -5287,8 +5289,8 @@ export interface VehicleTraitConfig {
 export declare class VehicleTrait implements ITrait {
     static readonly type: "vehicle";
     readonly type: "vehicle";
-    /** The movement model; undefined means the vehicle does not move under GO. */
-    model?: VehicleModel;
+    /** The movement model (`movement:`); undefined means the vehicle does not move under GO. */
+    movement?: VehicleMovement;
     /** The player's command sets (ADR-366 D5i); absent when the player drives nothing. */
     commands?: string[];
     /**
@@ -5296,17 +5298,17 @@ export declare class VehicleTrait implements ITrait {
      * put the player there. Absent on a vehicle with no rooms aboard, which
      * is entered as any enterable thing is.
      */
-    boardingRoom?: string;
+    boardedThrough?: string;
     constructor(config?: VehicleTraitConfig);
     /**
-     * Build a model from its declaration, holding the invariants the analyzer
+     * Build a movement model from its declaration, holding the invariants the analyzer
      * reports first: two stops, none repeated; two destinations; a pace, a
      * stride of at least one; an open vehicle on at most one of heading and
      * course. The machine's state starts at rest unless the declaration
      * carries it.
      * @throws when an invariant is broken
      */
-    private static buildModel;
+    private static buildMovement;
 }
 /**
  * Type guard for VehicleTrait
@@ -5889,7 +5891,8 @@ export declare const VEHICLE_REPORT_MESSAGES: {
  * Public interface: `ExpanseTrait` (data: the size, the landmark rooms and
  * their cells, the optional sight cap and drift interval, and the drift
  * machine's state), `IExpanseCell`, `ExpanseSide`,
- * `IExpanseData`, `isExpanseTrait`, `isInsideExpanse`, `sameCell`.
+ * `IExpanseData`, `isExpanseTrait`, `isInsideExpanse`, `sameCell`, and the
+ * value checks `isExpanseVisibility`, `isExpanseWind`.
  *
  * Owner context: world-model traits. An expanse is a room (its heading,
  * looking and scope read it as one) carrying this trait, so an open vehicle
@@ -5959,6 +5962,10 @@ export declare class ExpanseTrait implements ITrait, IExpanseData {
      */
     constructor(data: IExpanseData);
 }
+/** Whether a value is a visibility an expanse can hold: a number, zero or more. */
+export declare function isExpanseVisibility(value: unknown): value is number;
+/** Whether a value is a wind an expanse can hold: a whole bearing 0 to 359, or `calm`. */
+export declare function isExpanseWind(value: unknown): value is ExpanseWind;
 /**
  * Whether a cell lies inside an expanse's size.
  *
@@ -6116,15 +6123,16 @@ export declare function isLandmarkTrait(trait: ITrait): trait is LandmarkTrait;
  * `angleOffWind`), `distance`, the distance bands
  * (`SightBand`, `sightBandOf`), `landmarkAt`, `landmarkCellOf`, `expanseOfLandmark`,
  * `floatingThingsAt`, `receiveInExpanse` (what becomes of a thing that
- * lands in an expanse), `clearFloatingPosition`, and the drift step
+ * lands in an expanse), `clearFloatingPosition`, the weather setters
+ * `setExpanseVisibility` and `setExpanseWind`, and the drift step
  * `driftExpanse` with its result `DriftStep`. Where a thing is in an
  * expanse is a system of its own (`world/ExpansePlaceBehavior.ts`), as is
  * sight across one (`world/SightBehavior.ts`).
  *
  * Owner context: world-model expanse behavior. Every answer is read from the
  * world and the traits; nothing here keeps a position of its own. The
- * mutations are drift (a floating thing's cell, or a wash-up into a
- * landmark's room), a thing received by the expanse (afloat at a cell, or
+ * mutations are the expanse's visibility and wind, drift (a floating thing's
+ * cell, or a wash-up into a landmark's room), a thing received by the expanse (afloat at a cell, or
  * lost offstage, D9/D10), and a floating thing taken out of it. The vehicle's own
  * stepping is `vehicleBehavior.ts`, which reads this module for the
  * landmarks, the floating things and the compass.
@@ -6139,7 +6147,7 @@ export declare function isLandmarkTrait(trait: ITrait): trait is LandmarkTrait;
 import { type RandomService } from '@sharpee/core';
 import type { WorldModel } from '../../world/WorldModel.js';
 import type { IFEntity } from '../../entities/if-entity.js';
-import { ExpanseTrait, type IExpanseCell } from './expanseTrait.js';
+import { ExpanseTrait, type ExpanseWind, type IExpanseCell } from './expanseTrait.js';
 import { type DirectionType } from '../../constants/directions.js';
 /** The eight compass headings a vehicle or a drift may take: a subset of the one `Direction` value (D15). */
 export type CompassHeading = Extract<DirectionType, 'NORTH' | 'NORTHEAST' | 'EAST' | 'SOUTHEAST' | 'SOUTH' | 'SOUTHWEST' | 'WEST' | 'NORTHWEST'>;
@@ -6218,6 +6226,21 @@ export declare function receiveInExpanse(world: WorldModel, thing: IFEntity, exp
  * @returns true when the thing held a position
  */
 export declare function clearFloatingPosition(thing: IFEntity): boolean;
+/**
+ * Set the cap on every looker's sight in an expanse (D6), for fog and night.
+ *
+ * @returns false, changing nothing, when the entity is not an expanse or the
+ *   value is not zero or more
+ */
+export declare function setExpanseVisibility(expanse: IFEntity, visibility: number): boolean;
+/**
+ * Set the wind an expanse carries (ADR-375 D4); the sailing table reads it
+ * on the next step.
+ *
+ * @returns false, changing nothing, when the entity is not an expanse or the
+ *   wind is neither a bearing 0 to 359 nor `calm`
+ */
+export declare function setExpanseWind(expanse: IFEntity, wind: ExpanseWind): boolean;
 /** What one drift step did to one floating thing (D10). */
 export type DriftStep = {
     kind: 'drifted';

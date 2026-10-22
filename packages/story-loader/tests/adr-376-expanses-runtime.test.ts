@@ -10,7 +10,7 @@
  * anchor; the Dungeo chain is the gate for everything else).
  */
 import { describe, expect, it } from 'vitest';
-import { edgePhraseOf, ExpanseTrait, FloatingTrait, IdentityTrait, LandmarkTrait, RoomTrait, SightTrait, VehicleTrait, WorldModel, type IFEntity, type VehicleOpenModel } from '@sharpee/world-model';
+import { edgePhraseOf, ExpanseTrait, FloatingTrait, IdentityTrait, LandmarkTrait, RoomTrait, SightTrait, VehicleTrait, WorldModel, type IFEntity, type VehicleOpenMovement } from '@sharpee/world-model';
 import { bootTurns, type BootedTurns } from './helpers/boot-turns';
 
 const SOURCE = `story
@@ -364,8 +364,8 @@ function named(b: BootedTurns, name: string): IFEntity {
   return found!;
 }
 
-function skiff(b: BootedTurns): VehicleOpenModel {
-  return named(b, 'skiff').get(VehicleTrait)!.model as VehicleOpenModel;
+function skiff(b: BootedTurns): VehicleOpenMovement {
+  return named(b, 'skiff').get(VehicleTrait)!.movement as VehicleOpenMovement;
 }
 
 function where(b: BootedTurns, name: string): string | undefined {
@@ -393,7 +393,7 @@ describe('lowering (D2, D3, D5, D6, D8, D10)', () => {
     expect(skiff(b)).toMatchObject({ kind: 'open', drive: 'control', pace: 1, stride: 1, sight: 6, heading: null, course: null, position: null, atEdge: null });
     // On a landmark's cell the vehicle is in the landmark's room; on an open cell it is in the expanse at that cell.
     expect(where(b, 'skiff')).toBe(named(b, 'Mining Platform').id);
-    expect(named(b, 'barge').get(VehicleTrait)!.model).toMatchObject({ kind: 'open', pace: 2, stride: 2, sight: 3, position: { x: 10, y: 2 } });
+    expect(named(b, 'barge').get(VehicleTrait)!.movement).toMatchObject({ kind: 'open', pace: 2, stride: 2, sight: 3, position: { x: 10, y: 2 } });
     expect(where(b, 'barge')).toBe(belt.id);
     // D19 (Q7 A): the extension's data rides its own trait and the open model, never a core trait.
     expect(skiff(b).seenFromAfar).toBe('a glint of hull against the dark');
@@ -454,7 +454,7 @@ describe('heading, course, arrival and stop (D3, D5)', () => {
     await b.turn('wait');
     const restored = new WorldModel();
     restored.loadJSON(b.world.toJSON());
-    const again = restored.getEntity(named(b, 'skiff').id)!.get(VehicleTrait)!.model as VehicleOpenModel;
+    const again = restored.getEntity(named(b, 'skiff').id)!.get(VehicleTrait)!.movement as VehicleOpenMovement;
     expect(again).toMatchObject({ kind: 'open', course: { x: 14, y: 6 }, position: { x: 5, y: 5 }, turnsToStep: 1 });
     expect(restored.getEntity(named(b, 'cask').id)!.get(FloatingTrait)!.position).toEqual(named(b, 'cask').get(FloatingTrait)!.position);
   });
@@ -744,7 +744,7 @@ describe('wash-up and the silence of an empty vehicle (D10, ADR-366 D7a)', () =>
     const { events } = await b.turnText('push lever');
     const alongside = events.find((e) => e.type === 'if.event.vehicle_alongside')!;
     expect(alongside).toMatchObject({ presence: 'absent', entities: { location: named(b, 'Pool').id }, data: { aboard: false, thingId: bottle.id } });
-    const raft = named(b, 'raft').get(VehicleTrait)!.model as VehicleOpenModel;
+    const raft = named(b, 'raft').get(VehicleTrait)!.movement as VehicleOpenMovement;
     expect(raft).toMatchObject({ position: { x: 1, y: 1 }, heading: null });
   });
 });

@@ -56,7 +56,7 @@ export interface Lookout extends ExpansePlace {
  */
 export function lookoutOf(world: WorldModel, actor: IFEntity): Lookout | undefined {
   const vehicle = getVehicleAboard(world, actor.id);
-  const model = vehicle?.get(VehicleTrait)?.model;
+  const model = vehicle?.get(VehicleTrait)?.movement;
   if (vehicle && model?.kind === 'open') {
     // Under way, the vehicle's cell and sight. Moored at a landmark, the
     // looker is in the landmark room and sees from its row with the room's
@@ -66,7 +66,7 @@ export function lookoutOf(world: WorldModel, actor: IFEntity): Lookout | undefin
   }
   const own = placeOf(world, actor);
   if (own) {
-    const beside = world.getContents(own.expanse.id).map((e) => e.get(VehicleTrait)?.model).filter((m) => m?.kind === 'open' && m.position && sameCell(m.position, own.cell));
+    const beside = world.getContents(own.expanse.id).map((e) => e.get(VehicleTrait)?.movement).filter((m) => m?.kind === 'open' && m.position && sameCell(m.position, own.cell));
     const sight = beside.reduce((best, m) => Math.max(best, m?.kind === 'open' ? m.sight : 0), 0);
     return { ...own, sight };
   }
@@ -183,6 +183,6 @@ export function seenFromAfar(world: WorldModel, actor: IFEntity, thing: IFEntity
 }
 
 function openModelOf(thing: IFEntity) {
-  const model = thing.get(VehicleTrait)?.model;
+  const model = thing.get(VehicleTrait)?.movement;
   return model?.kind === 'open' ? model : undefined;
 }

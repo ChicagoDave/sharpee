@@ -33,6 +33,8 @@ import {
   type IRTraitDef,
   SCOPE_REQUIREMENT_PREDICATES,
   type StoryIR,
+  vehicleAboard,
+  vehicleCandidateRoomIds,
 } from '@sharpee/chord';
 import type { IRActionPattern, IRPatternPart, IRProseValue, ScopeRequirementWord } from '@sharpee/chord';
 import type { IROnClause } from '@sharpee/chord';
@@ -144,7 +146,7 @@ import {
   SwitchableTrait,
   registerVehicleExitResolver,
   VehicleTrait,
-  type VehicleModelConfig,
+  type VehicleMovementConfig,
   type TemperamentDef,
   TraitType,
   TraversalBehavior,
@@ -316,14 +318,14 @@ export class ChordStory implements Story {
   private wireVehicle(world: WorldModel, irEntity: IREntity, entity: IFEntity): void {
     const v = irEntity.vehicle!;
     const ids = (list: string[] | undefined) => (list ?? []).map((id) => this.requireWorldId(id, irEntity));
-    let model: VehicleModelConfig;
+    let movement: VehicleMovementConfig;
     switch (v.movement) {
       case 'none':
       case 'streets':
-        model = { kind: v.movement };
+        movement = { kind: v.movement };
         break;
       case 'line':
-        model = {
+        movement = {
           kind: 'line',
           stops: ids(v.stops),
           oneWay: v.direction === 'one-way',
@@ -332,10 +334,10 @@ export class ChordStory implements Story {
         };
         break;
       case 'compass':
-        model = { kind: 'compass', drive: v.drive === 'control' ? 'control' : 'player', pace: v.pace ?? 1 };
+        movement = { kind: 'compass', drive: v.drive === 'control' ? 'control' : 'player', pace: v.pace ?? 1 };
         break;
       case 'flight':
-        model = {
+        movement = {
           kind: 'flight',
           drive: v.drive === 'control' ? 'control' : 'player',
           destinations: ids(v.destinations),
@@ -348,7 +350,7 @@ export class ChordStory implements Story {
         // its location is the one record. `pace:`, `stride:` and `sight:`
         // are required by the analyzer. ADR-375 D5, D7: the sailing table
         // stands in for `pace:`; the sails start in their declared setting.
-        model = {
+        movement = {
           kind: 'open',
           drive: v.drive === 'control' ? 'control' : 'player',
           pace: v.pace ?? 1,
@@ -362,10 +364,10 @@ export class ChordStory implements Story {
         break;
     }
     entity.add(new VehicleTrait({
-      model,
+      movement,
       ...(v.commands !== undefined ? { commands: v.commands } : {}),
       // D7: `boarded through:` is where `enter` and `board` put the player.
-      ...(v.boardedThrough !== undefined ? { boardingRoom: this.requireWorldId(v.boardedThrough, irEntity) } : {}),
+      ...(v.boardedThrough !== undefined ? { boardedThrough: this.requireWorldId(v.boardedThrough, irEntity) } : {}),
     }));
     if (v.position) {
       this.vehiclePositions.set(entity.id, {
@@ -435,7 +437,8 @@ export class ChordStory implements Story {
   private stampExitAdmits(world: WorldModel): void {
     for (const irEntity of this.ir.entities) {
       for (const exit of irEntity.exits) {
-        if (!exit.admits || exit.toOutside) continue;
+        if (!exit.admits || exit.to.kind !== 'room') continue;
+        const farId = exit.to.id;
         const entity = world.getEntity(this.requireWorldId(irEntity.id, irEntity));
         if (!entity) continue;
         const direction = toDirection(exit.direction, irEntity);
@@ -446,9 +449,9 @@ export class ChordStory implements Story {
         if (forward) forward.admits = copyAdmittance(admits);
         if (exit.oneWay || isPassageKey(direction)) continue;
         const reverseDirection = getOppositeDirection(direction as DirectionType);
-        const far = this.ir.entities.find((e) => e.id === exit.to);
+        const far = this.ir.entities.find((e) => e.id === farId);
         if (far?.exits.some((e) => toDirection(e.direction, far) === reverseDirection)) continue;
-        const reverse = RoomBehavior.getExit(world.getEntity(this.requireWorldId(exit.to, irEntity))!, reverseDirection);
+        const reverse = RoomBehavior.getExit(world.getEntity(this.requireWorldId(farId, irEntity))!, reverseDirection);
         if (reverse && reverse.destination === entity.id) reverse.admits = copyAdmittance(admits);
       }
     }
@@ -529,12 +532,12 @@ export class ChordStory implements Story {
    * with the rooms-aboard phase).
    */
   private wireOutsideExits(world: WorldModel, irEntity: IREntity, entity: IFEntity): void {
-    const host = this.ir.entities.find((e) => e.vehicle?.aboard?.includes(irEntity.id));
+    const host = vehicleAboard(this.ir.entities, irEntity.id);
     if (!host) return;
     const outside: Record<string, { candidates: string[]; via?: string }> = {};
-    const candidates = this.vehicleCandidateRooms(host);
+    const candidates = vehicleCandidateRoomIds(this.ir.entities, host).map((id) => this.requireWorldId(id, host));
     for (const exit of irEntity.exits) {
-      if (!exit.toOutside) continue;
+      if (exit.to.kind !== 'outside') continue;
       const direction = toDirection(exit.direction, irEntity);
       const via = exit.via ? this.requireWorldId(exit.via, irEntity) : undefined;
       if (via !== undefined) new AuthorModel(world.getDataStore(), world).moveEntity(via, entity.id);
@@ -542,20 +545,6 @@ export class ChordStory implements Story {
     }
     entity.add(new AboardTrait({ vehicleId: this.requireWorldId(host.id, irEntity), outside }));
     registerVehicleExitResolver(world);
-  }
-
-  /** The world ids of every room a vehicle can be in (ADR-366 D7's candidate set). */
-  private vehicleCandidateRooms(host: IREntity): string[] {
-    const v = host.vehicle!;
-    if (v.movement === 'line') return (v.stops ?? []).map((id) => this.requireWorldId(id, host));
-    if (v.movement === 'flight') return (v.destinations ?? []).map((id) => this.requireWorldId(id, host));
-    const admitting = new Set<string>();
-    for (const e of this.ir.entities) {
-      if (!e.admits?.includes(host.id)) continue;
-      if (e.kinds.some((k) => k.name === 'room')) admitting.add(this.requireWorldId(e.id, host));
-      for (const member of e.containing ?? []) admitting.add(this.requireWorldId(member.id, host));
-    }
-    return [...admitting];
   }
 
   /**
@@ -617,9 +606,14 @@ export class ChordStory implements Story {
     return this.irIds.get(worldId);
   }
 
-  /** The player's world id, once createPlayer has run. */
+  /**
+   * The player's world id: the role holder once createPlayer has run, and
+   * inside the start block the character it has assigned so far — so a line
+   * after `change the player to Alex` that names the player's own state
+   * (`start the player's bell`) means Alex's.
+   */
   playerWorldId(): string | undefined {
-    return this.playerId;
+    return this.playerId ?? this.runtime.assignedPlayerId;
   }
   private playerId: string | undefined;
 
@@ -737,8 +731,9 @@ export class ChordStory implements Story {
       for (const exit of irEntity.exits) {
         // ADR-366 D7: `to outside` names no room — it is wired as the aboard
         // room's computed exit below, resolved on each use to the vehicle's room.
-        if (exit.toOutside) continue;
-        const toId = this.requireWorldId(exit.to, irEntity);
+        if (exit.to.kind === 'outside') continue;
+        if (exit.to.kind === 'unresolved') throw new LoadError(`\`${irEntity.name}\`: the \`${exit.direction}\` exit names no room.`, exit.span);
+        const toId = this.requireWorldId(exit.to.id, irEntity);
         const direction = toDirection(exit.direction, irEntity);
         // `, one-way` (ADR-234 D4, GH #327): the written direction only —
         // no reverse exit is inferred, so a room reached by an authorial
@@ -756,7 +751,7 @@ export class ChordStory implements Story {
           const reverseExit = oneWay ? undefined : targetRoomTrait?.exits?.[getOppositeDirection(direction as DirectionType)];
           if (!oneWay && reverseExit?.via && reverseExit.destination === entity.id) {
             throw new LoadError(
-              `\`${irEntity.name}\`: plain \`${exit.direction}\` exit mirrors a door-wired exit on \`${exit.to}\` — rogue IR (the compiler's door-plain-mirror gate refuses this).`,
+              `\`${irEntity.name}\`: plain \`${exit.direction}\` exit mirrors a door-wired exit on \`${exit.to.id}\` — rogue IR (the compiler's door-plain-mirror gate refuses this).`,
               exit.span,
             );
           }

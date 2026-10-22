@@ -188,7 +188,7 @@ ${ROOMS}`;
     const r = compileStory(hall('  exits: east to the B through the oak door\n  north to the C\n') +
       'create the oak door\n  a door, openable\n\n  An oak door.\n\n');
     expect(errors(r)).toEqual([]);
-    expect(entity(r, 'hall').exits.map((e) => `${e.direction}>${e.to}:${e.via}`)).toEqual(['east>b:oak-door', 'north>c:null']);
+    expect(entity(r, 'hall').exits.map((e) => `${e.direction}>${e.to.kind === 'room' ? e.to.id : e.to.kind}:${e.via}`)).toEqual(['east>b:oak-door', 'north>c:null']);
   });
 
   it('an unknown room in the middle of the line reports on that exit (AC-5)', () => {

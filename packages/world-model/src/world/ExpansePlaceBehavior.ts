@@ -47,7 +47,7 @@ function positionHeld(entity: IFEntity): IExpanseCell | null | undefined {
   const floating = entity.getTrait(FloatingTrait);
   if (floating) return floating.position;
   const vehicle = entity.getTrait(VehicleTrait);
-  return vehicle?.model?.kind === 'open' ? vehicle.model.position : undefined;
+  return vehicle?.movement?.kind === 'open' ? vehicle.movement.position : undefined;
 }
 
 /** A landmark room's place: its expanse and its row, or undefined when it is no landmark. */
@@ -77,7 +77,7 @@ export function placeOf(world: WorldModel, entity: IFEntity): ExpansePlace | und
   }
   // ADR-376 D5: an open vehicle at a landmark holds no position; it is at
   // the landmark's row.
-  const moored = position === null && entity.getTrait(VehicleTrait)?.model?.kind === 'open' && here?.has(TraitType.ROOM);
+  const moored = position === null && entity.getTrait(VehicleTrait)?.movement?.kind === 'open' && here?.has(TraitType.ROOM);
   return moored ? landmarkPlace(world, here!) : undefined;
 }
 

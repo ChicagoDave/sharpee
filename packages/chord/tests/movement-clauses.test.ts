@@ -67,7 +67,7 @@ describe("the player's own going (D3h)", () => {
       ['after', 'going', 'self', 'interceptor'],
     ]);
     expect(player.onClauses[0].condition).not.toBeNull();
-    expect(player.onClauses[1].body[0]).toMatchObject({ kind: 'timer', verb: 'restart', timer: 'alex.waiting' });
+    expect(player.onClauses[1].body[0]).toMatchObject({ kind: 'timer', verb: 'restart', name: 'waiting', owner: { kind: 'entity', id: 'alex' } });
   });
 
   it('accepts `, once` on the bare form', () => {

@@ -183,7 +183,7 @@ function nearestFreeCell(wanted: Cell, taken: ReadonlyMap<string, string>): Cell
 export function layoutMap(ir: StoryIR, options: LayoutOptions = {}): MapResult {
   const rooms = roomsOf(ir);
   const roomIds = new Set(rooms.map((room) => room.id));
-  const edges = wiredEdges(rooms, (id) => roomIds.has(id));
+  const edges = wiredEdges(rooms, (id) => roomIds.has(id), ir.entities);
 
   const outgoing = new Map<string, typeof edges>();
   for (const edge of edges) {
@@ -221,10 +221,11 @@ export function layoutMap(ir: StoryIR, options: LayoutOptions = {}): MapResult {
       const roomId = queue.shift() as string;
       const here = positions.get(roomId) as Cell;
       for (const edge of outgoing.get(roomId) ?? []) {
-        const step = STEP[edge.direction];
+        const step = edge.outside ? undefined : STEP[edge.direction];
         if (step === undefined) {
           // ADR-369 D3b: `in` and `out` have no bearing, and neither does a
-          // passage (ADR-378 D8). A room reached only that way is placed in
+          // passage (ADR-378 D8) or a way outside a vehicle, whose far room
+          // moves with it (ADR-366 D7). A room reached only that way is placed in
           // the first free cell beside this one rather than left unplaced;
           // the edge is drawn like any other connection, a passage's with
           // its first form as the label.

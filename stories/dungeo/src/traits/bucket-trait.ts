@@ -19,7 +19,7 @@ import { type IFEntity, type ITrait, type ITraitConstructor, VehicleTrait } from
  * @returns the top and bottom room ids, or undefined when the entity has no line
  */
 export function wellStops(bucket: IFEntity): { top: string; bottom: string } | undefined {
-  const model = bucket.get(VehicleTrait)?.model;
+  const model = bucket.get(VehicleTrait)?.movement;
   if (model?.kind !== 'line') return undefined;
   const [top, bottom] = model.stops;
   return { top, bottom };

@@ -53,7 +53,7 @@ import { RoomBehavior } from '../room/roomBehavior.js';
 import { OpenableBehavior } from '../openable/openableBehavior.js';
 import { TraversalBehavior, exitMessageKey, type TraversalMover, type WayRefusal } from '../../world/TraversalBehavior.js';
 import { AboardTrait } from './aboardTrait.js';
-import { VehicleTrait, VehicleLineModel, VehicleOpenModel } from './vehicleTrait.js';
+import { VehicleTrait, VehicleCompassMovement, VehicleFlightMovement, VehicleLineMovement, VehicleOpenMovement } from './vehicleTrait.js';
 import { cellOf, ExpanseTrait, isInsideExpanse, sameCell, type ExpanseSide, type ExpanseWind, type IExpanseCell } from '../expanse/expanseTrait.js';
 import { FloatingTrait } from '../expanse/floatingTrait.js';
 import {
@@ -128,7 +128,7 @@ export function goingFromVehicle(world: WorldModel, actorId: string): VehicleGoi
   const vehicle = getActorVehicle(world, actorId);
   if (!vehicle) return { kind: 'on-foot' };
 
-  const model = vehicle.get(VehicleTrait)?.model;
+  const model = vehicle.get(VehicleTrait)?.movement;
   if (model?.kind === 'streets') return { kind: 'steers', vehicle };
   if (model?.kind === 'line' || model?.kind === 'compass' || model?.kind === 'flight' || model?.kind === 'open') return { kind: 'rides', vehicle };
   return { kind: 'stays', vehicle };
@@ -143,7 +143,7 @@ export function goingFromVehicle(world: WorldModel, actorId: string): VehicleGoi
  * @param vehicle - A vehicle; false when it has no model
  */
 export function isUnderWay(vehicle: IFEntity): boolean {
-  const model = vehicle.get(VehicleTrait)?.model;
+  const model = vehicle.get(VehicleTrait)?.movement;
   switch (model?.kind) {
     case 'line':
       return model.underWay;
@@ -177,7 +177,7 @@ export function isUnderWay(vehicle: IFEntity): boolean {
  *   expanse, or a type with no `start`
  */
 export function startVehicle(world: WorldModel, vehicle: IFEntity, heading?: string | number): boolean {
-  const model = vehicle.get(VehicleTrait)?.model;
+  const model = vehicle.get(VehicleTrait)?.movement;
   if (model?.kind === 'line') {
     const stop = currentStop(world, vehicle);
     const index = stop === undefined ? -1 : model.stops.indexOf(stop);
@@ -229,7 +229,7 @@ export function startVehicle(world: WorldModel, vehicle: IFEntity, heading?: str
  * undefined when the expanse carries none or the vehicle is in no expanse.
  */
 export function windOf(world: WorldModel, vehicle: IFEntity): ExpanseWind | undefined {
-  const model = vehicle.get(VehicleTrait)?.model;
+  const model = vehicle.get(VehicleTrait)?.movement;
   if (model?.kind !== 'open') return undefined;
   return placeOf(world, vehicle)?.trait.wind;
 }
@@ -245,7 +245,7 @@ export function windOf(world: WorldModel, vehicle: IFEntity): ExpanseWind | unde
  *   fullest, for irons)
  */
 export function paceUnderSail(world: WorldModel, vehicle: IFEntity, setting?: string): SailingPace | undefined {
-  const model = vehicle.get(VehicleTrait)?.model;
+  const model = vehicle.get(VehicleTrait)?.movement;
   if (model?.kind !== 'open' || !model.sailing || model.heading === null) return undefined;
   const wind = windOf(world, vehicle);
   if (wind === undefined || wind === 'calm') return model.sailing.calm;
@@ -268,7 +268,7 @@ export function paceUnderSail(world: WorldModel, vehicle: IFEntity, setting?: st
  * @returns the new bearing, or undefined when the vehicle does not sail
  */
 export function turnHeading(vehicle: IFEntity, degrees: number): number | undefined {
-  const model = vehicle.get(VehicleTrait)?.model;
+  const model = vehicle.get(VehicleTrait)?.movement;
   if (model?.kind !== 'open') return undefined;
   const next = (((bearingAboard(model) + degrees) % 360) + 360) % 360;
   model.heading = next;
@@ -291,7 +291,7 @@ export type ComeAboutRefusal = 'no-wind' | 'cannot';
 export function comeAbout(world: WorldModel, vehicle: IFEntity): number | ComeAboutRefusal {
   const refusal = comeAboutRefusal(world, vehicle);
   if (refusal) return refusal;
-  const model = vehicle.get(VehicleTrait)!.model as VehicleOpenModel;
+  const model = vehicle.get(VehicleTrait)!.movement as VehicleOpenMovement;
   const wind = windOf(world, vehicle) as number;
   const next = (((wind - signedAngleOffWind(bearingAboard(model), wind)) % 360) + 360) % 360;
   model.heading = next;
@@ -306,7 +306,7 @@ export function comeAbout(world: WorldModel, vehicle: IFEntity): number | ComeAb
  * action asks before `comeAbout`.
  */
 export function comeAboutRefusal(world: WorldModel, vehicle: IFEntity): ComeAboutRefusal | undefined {
-  const model = vehicle.get(VehicleTrait)?.model;
+  const model = vehicle.get(VehicleTrait)?.movement;
   if (model?.kind !== 'open' || !model.sailing) return 'no-wind';
   const wind = windOf(world, vehicle);
   if (wind === undefined || wind === 'calm') return 'no-wind';
@@ -315,7 +315,7 @@ export function comeAboutRefusal(world: WorldModel, vehicle: IFEntity): ComeAbou
 }
 
 /** The bearing an open vehicle holds: its heading's, or north with none. */
-function bearingAboard(model: VehicleOpenModel): number {
+function bearingAboard(model: VehicleOpenMovement): number {
   return model.heading === null ? 0 : bearingOf(model.heading) ?? 0;
 }
 
@@ -325,7 +325,7 @@ function bearingAboard(model: VehicleOpenModel): number {
  * Steering `ahead` starts on it; port, starboard and coming about turn from it.
  */
 export function currentBearing(vehicle: IFEntity): number | undefined {
-  const model = vehicle.get(VehicleTrait)?.model;
+  const model = vehicle.get(VehicleTrait)?.movement;
   return model?.kind === 'open' ? bearingAboard(model) : undefined;
 }
 
@@ -335,7 +335,7 @@ export function currentBearing(vehicle: IFEntity): number | undefined {
  * setting is not one of its own.
  */
 export function setSails(vehicle: IFEntity, setting: string): boolean {
-  const model = vehicle.get(VehicleTrait)?.model;
+  const model = vehicle.get(VehicleTrait)?.movement;
   if (model?.kind !== 'open' || !model.sails || !model.sails.settings.includes(setting)) return false;
   model.sails.current = setting;
   return true;
@@ -354,7 +354,7 @@ export type SailChangeRefusal = 'no-sails' | 'at-full' | 'already-furled';
  * nothing — the check an action asks before the change.
  */
 export function sailChangeRefusal(vehicle: IFEntity, change: SailChange): SailChangeRefusal | undefined {
-  const model = vehicle.get(VehicleTrait)?.model;
+  const model = vehicle.get(VehicleTrait)?.movement;
   if (model?.kind !== 'open' || !model.sails) return 'no-sails';
   const index = model.sails.settings.indexOf(model.sails.current);
   if (change === 'make') return index >= model.sails.settings.length - 1 ? 'at-full' : undefined;
@@ -364,7 +364,7 @@ export function sailChangeRefusal(vehicle: IFEntity, change: SailChange): SailCh
 /** `make sail` (ADR-375 D7): one setting up. False when `sailChangeRefusal` refuses it. */
 export function makeSail(vehicle: IFEntity): boolean {
   if (sailChangeRefusal(vehicle, 'make')) return false;
-  const sails = (vehicle.get(VehicleTrait)!.model as VehicleOpenModel).sails!;
+  const sails = (vehicle.get(VehicleTrait)!.movement as VehicleOpenMovement).sails!;
   sails.current = sails.settings[sails.settings.indexOf(sails.current) + 1];
   return true;
 }
@@ -372,7 +372,7 @@ export function makeSail(vehicle: IFEntity): boolean {
 /** `shorten sail` (ADR-375 D7): one setting down. False when `sailChangeRefusal` refuses it. */
 export function shortenSail(vehicle: IFEntity): boolean {
   if (sailChangeRefusal(vehicle, 'shorten')) return false;
-  const sails = (vehicle.get(VehicleTrait)!.model as VehicleOpenModel).sails!;
+  const sails = (vehicle.get(VehicleTrait)!.movement as VehicleOpenMovement).sails!;
   sails.current = sails.settings[sails.settings.indexOf(sails.current) - 1];
   return true;
 }
@@ -380,7 +380,7 @@ export function shortenSail(vehicle: IFEntity): boolean {
 /** `furl sails` (ADR-375 D7): to the first setting. False when `sailChangeRefusal` refuses it. */
 export function furlSails(vehicle: IFEntity): boolean {
   if (sailChangeRefusal(vehicle, 'furl')) return false;
-  const sails = (vehicle.get(VehicleTrait)!.model as VehicleOpenModel).sails!;
+  const sails = (vehicle.get(VehicleTrait)!.movement as VehicleOpenMovement).sails!;
   sails.current = sails.settings[0];
   return true;
 }
@@ -396,7 +396,7 @@ export function furlSails(vehicle: IFEntity): boolean {
  *   heading's unit vector, or the signs of a course's first leg)
  */
 export function edgeAhead(vehicle: IFEntity, vector: IExpanseCell): ExpanseSide | undefined {
-  const model = vehicle.get(VehicleTrait)?.model;
+  const model = vehicle.get(VehicleTrait)?.movement;
   if (model?.kind !== 'open' || model.atEdge === null) return undefined;
   return headsIntoEdge(model.atEdge, vector) ? model.atEdge : undefined;
 }
@@ -452,7 +452,7 @@ function headsIntoEdge(atEdge: ExpanseSide | null, vector: IExpanseCell): boolea
  * everything it holds. Nothing to do when already positioned.
  * @returns false when the vehicle is in no expanse
  */
-function departLandmark(world: WorldModel, vehicle: IFEntity, model: VehicleOpenModel): boolean {
+function departLandmark(world: WorldModel, vehicle: IFEntity, model: VehicleOpenMovement): boolean {
   const found = placeOf(world, vehicle);
   if (!found) return false;
   if (model.position) return true;
@@ -470,7 +470,7 @@ function departLandmark(world: WorldModel, vehicle: IFEntity, model: VehicleOpen
  * @returns false when the type has no `stop`
  */
 export function stopVehicle(vehicle: IFEntity): boolean {
-  const model = vehicle.get(VehicleTrait)?.model;
+  const model = vehicle.get(VehicleTrait)?.movement;
   if (model?.kind === 'line') {
     model.underWay = false;
     model.turnsToStep = 0;
@@ -511,7 +511,7 @@ export function stopVehicle(vehicle: IFEntity): boolean {
  *   edge it is at (D8), or the vehicle is in no expanse
  */
 export function sendVehicle(world: WorldModel, vehicle: IFEntity, destination: string | IExpanseCell): boolean {
-  const model = vehicle.get(VehicleTrait)?.model;
+  const model = vehicle.get(VehicleTrait)?.movement;
   if (model?.kind === 'flight') {
     if (typeof destination !== 'string' || !model.destinations.includes(destination)) return false;
     model.destination = destination;
@@ -611,8 +611,8 @@ export function outsideWayOf(world: WorldModel, room: IFEntity, mover: Traversal
   return first!;
 }
 
-function lineOf(vehicle: IFEntity): VehicleLineModel | undefined {
-  const model = vehicle.get(VehicleTrait)?.model;
+function lineOf(vehicle: IFEntity): VehicleLineMovement | undefined {
+  const model = vehicle.get(VehicleTrait)?.movement;
   return model?.kind === 'line' ? model : undefined;
 }
 
@@ -719,7 +719,7 @@ export type VehicleStep =
  *   service was passed (a host wiring defect, never a silent stop)
  */
 export function stepVehicle(world: WorldModel, vehicle: IFEntity, positionAnswer?: string, random?: RandomService): VehicleStep | undefined {
-  const model = vehicle.get(VehicleTrait)?.model;
+  const model = vehicle.get(VehicleTrait)?.movement;
   switch (model?.kind) {
     case 'line':
       return model.drive === 'state' ? stepStateLine(world, vehicle, model, positionAnswer) : stepControlLine(world, vehicle, model);
@@ -735,7 +735,7 @@ export function stepVehicle(world: WorldModel, vehicle: IFEntity, positionAnswer
 }
 
 /** D5a, `drive: state`: the block's answer differs from where the vehicle is, so it moves there. */
-function stepStateLine(world: WorldModel, vehicle: IFEntity, model: VehicleLineModel, positionAnswer: string | undefined): VehicleStep | undefined {
+function stepStateLine(world: WorldModel, vehicle: IFEntity, model: VehicleLineMovement, positionAnswer: string | undefined): VehicleStep | undefined {
   if (positionAnswer === undefined || !model.stops.includes(positionAnswer)) return undefined;
   if (world.getLocation(vehicle.id) === positionAnswer) return undefined;
   world.moveEntity(vehicle.id, positionAnswer);
@@ -747,7 +747,7 @@ function stepStateLine(world: WorldModel, vehicle: IFEntity, model: VehicleLineM
  * travel direction; the machine halts itself at the line's end. A vehicle
  * found off its stops (a `move` the author wrote) halts where it is.
  */
-function stepControlLine(world: WorldModel, vehicle: IFEntity, model: VehicleLineModel): VehicleStep | undefined {
+function stepControlLine(world: WorldModel, vehicle: IFEntity, model: VehicleLineMovement): VehicleStep | undefined {
   if (!model.underWay) return undefined;
   const stop = currentStop(world, vehicle);
   if (stop === undefined) {
@@ -785,7 +785,7 @@ function stepControlLine(world: WorldModel, vehicle: IFEntity, model: VehicleLin
 function stepCompass(
   world: WorldModel,
   vehicle: IFEntity,
-  model: Extract<NonNullable<VehicleTrait['model']>, { kind: 'compass' }>,
+  model: VehicleCompassMovement,
   random: RandomService | undefined
 ): VehicleStep | undefined {
   if (model.heading === null) return undefined;
@@ -822,7 +822,7 @@ function stepCompass(
  * turn and is nowhere; the passage counts down a turn at a time; at zero
  * it arrives and is no longer under way.
  */
-function stepFlight(world: WorldModel, vehicle: IFEntity, model: Extract<NonNullable<VehicleTrait['model']>, { kind: 'flight' }>): VehicleStep | undefined {
+function stepFlight(world: WorldModel, vehicle: IFEntity, model: VehicleFlightMovement): VehicleStep | undefined {
   if (model.destination === null) return undefined;
   if (world.getLocation(vehicle.id) !== undefined) {
     world.moveEntity(vehicle.id, null);
@@ -849,7 +849,7 @@ function stepFlight(world: WorldModel, vehicle: IFEntity, model: Extract<NonNull
  * its cell the machine holds and the turn is not counted (D9). A vehicle
  * found in no expanse stops where it is.
  */
-function stepOpen(world: WorldModel, vehicle: IFEntity, model: VehicleOpenModel): VehicleStep | undefined {
+function stepOpen(world: WorldModel, vehicle: IFEntity, model: VehicleOpenMovement): VehicleStep | undefined {
   if (!model.underWay) return undefined;
   const found = placeOf(world, vehicle);
   if (!found || !model.position) {
@@ -925,7 +925,7 @@ function stepOpen(world: WorldModel, vehicle: IFEntity, model: VehicleOpenModel)
 }
 
 /** Take an open vehicle out of the way where it is; a ship keeps its bearing (ADR-375 D3), a compass word clears. */
-function halt(model: VehicleOpenModel): void {
+function halt(model: VehicleOpenMovement): void {
   if (!model.sailing && typeof model.heading !== 'number') model.heading = null;
   model.course = null;
   model.underWay = false;
@@ -938,7 +938,7 @@ function halt(model: VehicleOpenModel): void {
  * word's unit vector, or a bearing's sine and cosine (ADR-375 D2) — or
  * toward the course without overshooting. A course outranks a heading.
  */
-function stepDelta(model: VehicleOpenModel, from: IExpanseCell): IExpanseCell {
+function stepDelta(model: VehicleOpenMovement, from: IExpanseCell): IExpanseCell {
   if (model.course === null && model.heading !== null) {
     const vector = headingVector(model.heading) ?? { x: 0, y: 0 };
     return { x: vector.x * model.stride, y: vector.y * model.stride };
@@ -979,7 +979,7 @@ function actorOutAt(world: WorldModel, expanseId: string, cell: IExpanseCell): b
  * @returns true when the actor was put out into the expanse
  */
 export function leaveVehicleIntoExpanse(world: WorldModel, actor: IFEntity, vehicle: IFEntity): boolean {
-  const model = vehicle.get(VehicleTrait)?.model;
+  const model = vehicle.get(VehicleTrait)?.movement;
   if (model?.kind !== 'open' || !model.position) return false;
   const location = world.getLocation(vehicle.id);
   if (location === undefined || !world.getEntity(location)?.has(TraitType.EXPANSE)) return false;

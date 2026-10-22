@@ -16,7 +16,7 @@ import {
   RoomTrait,
   VehicleTrait,
   type IFEntity,
-  type VehicleOpenModel,
+  type VehicleOpenMovement,
   WorldModel,
 } from '@sharpee/world-model';
 import { steeringAction } from '../../../src/actions/standard/steering';
@@ -48,7 +48,7 @@ function sea(commands: string[] = ['naval'], withSails = true): Sea {
   ship.add(new ContainerTrait());
   ship.add(new EnterableTrait());
   ship.add(new VehicleTrait({
-    model: { kind: 'open', drive: 'player', pace: 1, stride: 1, sight: 8, sailing: TABLE, position: { x: 20, y: 20 }, ...(withSails ? { sails: { settings: ['furled', 'full'], current: 'furled' } } : {}) },
+    movement: { kind: 'open', drive: 'player', pace: 1, stride: 1, sight: 8, sailing: TABLE, position: { x: 20, y: 20 }, ...(withSails ? { sails: { settings: ['furled', 'full'], current: 'furled' } } : {}) },
     commands,
   }));
   world.moveEntity(ship.id, expanse.id);
@@ -56,8 +56,8 @@ function sea(commands: string[] = ['naval'], withSails = true): Sea {
   return { world, player, sea: expanse, ship };
 }
 
-function model(ship: IFEntity): VehicleOpenModel {
-  return ship.get(VehicleTrait)!.model as VehicleOpenModel;
+function model(ship: IFEntity): VehicleOpenMovement {
+  return ship.get(VehicleTrait)!.movement as VehicleOpenMovement;
 }
 
 function messageIds(events: { data?: any }[]): string[] {

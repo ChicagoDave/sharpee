@@ -33,7 +33,7 @@ export const BALLOON_POSITIONS: readonly BalloonPosition[] = [
 ];
 
 function balloonStops(balloon: IFEntity): string[] | undefined {
-  const model = balloon.get(VehicleTrait)?.model;
+  const model = balloon.get(VehicleTrait)?.movement;
   return model?.kind === 'line' ? model.stops : undefined;
 }
 

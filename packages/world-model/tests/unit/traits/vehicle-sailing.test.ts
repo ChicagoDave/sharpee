@@ -13,7 +13,7 @@ import { IdentityTrait } from '../../../src/traits/identity/identityTrait';
 import { ContainerTrait } from '../../../src/traits/container/containerTrait';
 import { EnterableTrait } from '../../../src/traits/enterable/enterableTrait';
 import { RoomTrait } from '../../../src/traits/room/roomTrait';
-import { VehicleTrait, type VehicleOpenModel } from '../../../src/traits/vehicle/vehicleTrait';
+import { VehicleTrait, type VehicleOpenMovement } from '../../../src/traits/vehicle/vehicleTrait';
 import { ExpanseTrait } from '../../../src/traits/expanse/expanseTrait';
 import { angleOffWind, bearingOf, headingVector } from '../../../src/traits/expanse/expanseBehavior';
 import { Direction } from '../../../src/constants/directions';
@@ -81,8 +81,8 @@ describe('a sailing vehicle (ADR-375 D3, D5, D7)', () => {
     return r;
   }
 
-  function model(): VehicleOpenModel {
-    return ship.get(VehicleTrait)!.model as VehicleOpenModel;
+  function model(): VehicleOpenMovement {
+    return ship.get(VehicleTrait)!.movement as VehicleOpenMovement;
   }
 
   function build(sailing: typeof TABLE | typeof TABLE_WITH_SAILS, sails?: { settings: string[]; current: string }) {
@@ -90,7 +90,7 @@ describe('a sailing vehicle (ADR-375 D3, D5, D7)', () => {
     ship.add(new IdentityTrait({ name: 'the Marigold' }));
     ship.add(new ContainerTrait());
     ship.add(new EnterableTrait());
-    ship.add(new VehicleTrait({ model: { kind: 'open', drive: 'player', pace: 1, stride: 1, sight: 8, sailing, position: { x: 20, y: 20 }, ...(sails ? { sails } : {}) }, commands: ['naval'] }));
+    ship.add(new VehicleTrait({ movement: { kind: 'open', drive: 'player', pace: 1, stride: 1, sight: 8, sailing, position: { x: 20, y: 20 }, ...(sails ? { sails } : {}) }, commands: ['naval'] }));
     world.moveEntity(ship.id, sea.id);
   }
 
@@ -192,7 +192,7 @@ describe('a sailing vehicle (ADR-375 D3, D5, D7)', () => {
     stepVehicle(world, ship);
     const restored = new WorldModel();
     restored.loadJSON(world.toJSON());
-    const again = restored.getEntity(ship.id)!.get(VehicleTrait)!.model as VehicleOpenModel;
+    const again = restored.getEntity(ship.id)!.get(VehicleTrait)!.movement as VehicleOpenMovement;
     expect(again.heading).toBe(225);
     expect(again.underWay).toBe(true);
     expect(again.position!.x).toBeCloseTo(20 - Math.SQRT1_2);

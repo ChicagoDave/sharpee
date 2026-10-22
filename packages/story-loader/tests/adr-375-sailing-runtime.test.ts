@@ -9,7 +9,7 @@
  * the turn's rendered text.
  */
 import { describe, expect, it } from 'vitest';
-import { ExpanseTrait, VehicleTrait, WorldModel, type IFEntity, type VehicleOpenModel } from '@sharpee/world-model';
+import { ExpanseTrait, VehicleTrait, WorldModel, type IFEntity, type VehicleOpenMovement } from '@sharpee/world-model';
 import { bootTurns, type BootedTurns } from './helpers/boot-turns';
 
 const SOURCE = `story
@@ -174,8 +174,8 @@ function named(b: BootedTurns, name: string): IFEntity {
   return found!;
 }
 
-function ship(b: BootedTurns): VehicleOpenModel {
-  return named(b, 'Marigold').get(VehicleTrait)!.model as VehicleOpenModel;
+function ship(b: BootedTurns): VehicleOpenMovement {
+  return named(b, 'Marigold').get(VehicleTrait)!.movement as VehicleOpenMovement;
 }
 
 async function waitTurns(b: BootedTurns, n: number): Promise<string> {
@@ -271,7 +271,7 @@ describe('turning, pace by band, irons (D2, D3, D5)', () => {
     await waitTurns(b, 2);
     const restored = new WorldModel();
     restored.loadJSON(b.world.toJSON());
-    const again = restored.getEntity(named(b, 'Marigold').id)!.get(VehicleTrait)!.model as VehicleOpenModel;
+    const again = restored.getEntity(named(b, 'Marigold').id)!.get(VehicleTrait)!.movement as VehicleOpenMovement;
     expect(again).toMatchObject({ heading: 225, underWay: true, sails: { current: 'full' } });
     expect(again.position!.x).toBeCloseTo(ship(b).position!.x);
     expect(again.position!.x).not.toBe(Math.round(again.position!.x));
@@ -282,7 +282,7 @@ describe('a statement start by bearing (D2)', () => {
   it('`start the tug heading 135 degrees` puts a controlled sailing vehicle under way on that bearing', async () => {
     const b = await bootTurns(SOURCE);
     await b.turn('push whistle');
-    const tug = named(b, 'tug').get(VehicleTrait)!.model as VehicleOpenModel;
+    const tug = named(b, 'tug').get(VehicleTrait)!.movement as VehicleOpenMovement;
     expect(tug).toMatchObject({ heading: 135, underWay: true });
     expect(tug.position!.x).toBeCloseTo(10 + Math.SQRT1_2);
     expect(tug.position!.y).toBeCloseTo(10 - Math.SQRT1_2);

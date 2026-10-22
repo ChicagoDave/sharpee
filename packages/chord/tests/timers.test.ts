@@ -79,7 +79,7 @@ describe('define timer (D3a)', () => {
     const ir = ok(story(TIMERS, '', ''));
     expect(ir.timers.map((t) => [t.qualified, t.owner, t.states, t.interrupted, t.meanwhile?.chance ?? null])).toEqual([
       ['guards.search', 'guards', ['arriving', 'lingering'], 3, 5],
-      ['player.waiting', 'player', ['pausing'], null, null],
+      ['alex.waiting', 'alex', ['pausing'], null, null],
       ['curfew', null, [], null, null],
     ]);
     expect(ir.timers[0].meanwhile?.body).toMatchObject([{ kind: 'phrase', phraseKey: 'idle' }]);
@@ -110,16 +110,16 @@ describe('timer verbs (D3c)', () => {
   };
 
   it('a bare name resolves owner-first', () => {
-    expect(verb(inGuards('start search'))).toMatchObject({ kind: 'timer', verb: 'start', timer: 'guards.search' });
+    expect(verb(inGuards('start search'))).toMatchObject({ kind: 'timer', verb: 'start', name: 'search', owner: { kind: 'entity', id: 'guards' } });
   });
 
   it('a bare name falls back to the story', () => {
-    expect(verb(inGuards('restart curfew'))).toMatchObject({ kind: 'timer', verb: 'restart', timer: 'curfew' });
+    expect(verb(inGuards('restart curfew'))).toMatchObject({ kind: 'timer', verb: 'restart', name: 'curfew', owner: null });
   });
 
   it("a possessive names its owner (`the player's waiting`, `the guards\' search`)", () => {
-    expect(verb(inGuards("reset the player's waiting"))).toMatchObject({ verb: 'reset', timer: 'player.waiting' });
-    expect(verb(inGuards('interrupt the guards\' search'))).toMatchObject({ verb: 'interrupt', timer: 'guards.search' });
+    expect(verb(inGuards("reset the player's waiting"))).toMatchObject({ verb: 'reset', name: 'waiting', owner: { kind: 'player' } });
+    expect(verb(inGuards('interrupt the guards\' search'))).toMatchObject({ verb: 'interrupt', name: 'search', owner: { kind: 'entity', id: 'guards' } });
   });
 
   it('`stop <timer>` is a timer verb; `stop music` stays media', () => {
@@ -129,7 +129,7 @@ describe('timer verbs (D3c)', () => {
 
   it("the plural possessive works from the player's block (GH #305)", () => {
     const ir = ok(story(TIMERS, '', "  on every turn\n    restart the guards\' search\n  end on\n"));
-    expect(ir.entities.find((e) => e.id === 'alex')!.onClauses[0].body[0]).toMatchObject({ verb: 'restart', timer: 'guards.search' });
+    expect(ir.entities.find((e) => e.id === 'alex')!.onClauses[0].body[0]).toMatchObject({ verb: 'restart', name: 'search', owner: { kind: 'entity', id: 'guards' } });
   });
 
   it('rejects an unknown timer, and a tally named where a timer is wanted', () => {
@@ -149,7 +149,7 @@ describe('timer reads (D3d)', () => {
   const condition = (src: string) => ok(src).entities.find((e) => e.id === 'guards')!.onClauses[0].condition;
 
   it('`is <turn>` reads the named turn against the timer\'s own list', () => {
-    expect(condition(cond('search is lingering'))).toMatchObject({ kind: 'predicate', pred: 'is', subject: { kind: 'timer', timer: 'guards.search' }, object: { kind: 'symbol', name: 'lingering' } });
+    expect(condition(cond('search is lingering'))).toMatchObject({ kind: 'predicate', pred: 'is', subject: { kind: 'timer', name: 'search', owner: { kind: 'entity', id: 'guards' } }, object: { kind: 'symbol', name: 'lingering' } });
     expect(errs(cond('search is calm'))).toContain('analysis.unknown-timer-state');
   });
 
@@ -159,8 +159,8 @@ describe('timer reads (D3d)', () => {
   });
 
   it('`has started` / `has not expired` lower to timer-has; `is expired` is rejected', () => {
-    expect(condition(cond('search has started'))).toEqual({ kind: 'timer-has', timer: 'guards.search', what: 'started' });
-    expect(condition(cond("the player's waiting has not expired"))).toEqual({ kind: 'not', operand: { kind: 'timer-has', timer: 'player.waiting', what: 'expired' } });
+    expect(condition(cond('search has started'))).toEqual({ kind: 'timer-has', name: 'search', owner: { kind: 'entity', id: 'guards' }, what: 'started' });
+    expect(condition(cond("the player's waiting has not expired"))).toEqual({ kind: 'not', operand: { kind: 'timer-has', name: 'waiting', owner: { kind: 'player' }, what: 'expired' } });
     expect(errs(cond('search is expired'))).toContain('analysis.timer-is-expired');
   });
 
@@ -180,7 +180,8 @@ describe('when <timer> expires (D3e)', () => {
     const guards = ir.entities.find((e) => e.id === 'guards')!;
     expect(guards.timerClauses).toMatchObject([
       { timer: 'guards.search', condition: null, body: [{ kind: 'change', entity: { kind: 'entity', id: 'guards' }, state: 'alert' }] },
-      { timer: 'player.waiting', condition: { kind: 'predicate' }, body: [{ kind: 'timer', verb: 'start', timer: 'guards.search' }] },
+      // One playable character: `the player's waiting` names Alex's.
+      { timer: 'alex.waiting', condition: { kind: 'predicate' }, body: [{ kind: 'timer', verb: 'start', name: 'search', owner: { kind: 'entity', id: 'guards' } }] },
     ]);
     expect(ir.story.timerClauses).toMatchObject([{ timer: 'curfew', body: [{ kind: 'phrase', phraseKey: 'idle' }] }]);
   });

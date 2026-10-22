@@ -393,12 +393,12 @@ describe('rooms aboard and the outside exit (ADR-366 D7)', () => {
     expect(errorCodes(story(SPARROW.replace('create the Sparrow\n  a vehicle', 'create the Sparrow\n  a vehicle, openable')))).toContain('analysis.vehicle-aboard-openable');
   });
 
-  it('`to outside` lowers with no destination and the flag', () => {
+  it('`to outside` lowers to the outside destination', () => {
     const ir = compiled(story(SPARROW));
     const airlock = ir.entities.find((e) => e.id === 'airlock')!;
     expect(airlock.exits).toEqual([
-      expect.objectContaining({ direction: 'east', to: 'hold', via: null }),
-      expect.objectContaining({ direction: 'west', to: '', via: null, toOutside: true }),
+      expect.objectContaining({ direction: 'east', to: { kind: 'room', id: 'hold' }, via: null }),
+      expect.objectContaining({ direction: 'west', to: { kind: 'outside' }, via: null }),
     ]);
   });
 
@@ -414,7 +414,7 @@ create the outer hatch
   A hatch.
 `));
     const airlock = ir.entities.find((e) => e.id === 'airlock')!;
-    expect(airlock.exits.find((e) => e.direction === 'west')).toMatchObject({ to: '', via: 'outer-hatch', toOutside: true });
+    expect(airlock.exits.find((e) => e.direction === 'west')).toMatchObject({ to: { kind: 'outside' }, via: 'outer-hatch' });
   });
 });
 
@@ -492,7 +492,7 @@ define timer tram
 end timer
 `, clause('    start the tram')));
     const body = ir.entities.find((e) => e.id === 'lever')!.onClauses[0].body;
-    expect(body[0]).toMatchObject({ kind: 'timer', verb: 'start', timer: 'tram' });
+    expect(body[0]).toMatchObject({ kind: 'timer', verb: 'start', name: 'tram', owner: null });
   });
 
   it('`start … heading <direction>` lowers on a controlled compass vehicle and is refused elsewhere', () => {
@@ -520,7 +520,7 @@ end timer
     expect(ir.entities.find((e) => e.id === 'lever')!.onClauses[0].body[0]).toEqual({
       kind: 'vehicle-send',
       vehicle: { kind: 'entity', id: 'sparrow' },
-      destination: { kind: 'entity', id: 'top-of-the-well' },
+      to: { kind: 'room', room: { kind: 'entity', id: 'top-of-the-well' } },
       stmtWhen: null,
       span: expect.anything(),
     });

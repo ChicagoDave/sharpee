@@ -193,7 +193,7 @@ describe('the vehicle kind lowers onto the trait (ADR-366 D1, D2, D5)', () => {
   it('a state-driven line lowers its stops in order, its direction and no pace', () => {
     const { byName } = boot();
     const bucket = byName('bucket');
-    expect(bucket.get(VehicleTrait)?.model).toEqual({
+    expect(bucket.get(VehicleTrait)?.movement).toEqual({
       kind: 'line',
       stops: [byName('Well Bottom').id, byName('Top of the Well').id],
       oneWay: false,
@@ -207,25 +207,25 @@ describe('the vehicle kind lowers onto the trait (ADR-366 D1, D2, D5)', () => {
 
   it('a controlled one-way line lowers its pace', () => {
     const { byName } = boot();
-    expect(byName('tram car').get(VehicleTrait)?.model).toMatchObject({ kind: 'line', oneWay: true, drive: 'control', pace: 3 });
+    expect(byName('tram car').get(VehicleTrait)?.movement).toMatchObject({ kind: 'line', oneWay: true, drive: 'control', pace: 3 });
   });
 
   it('a streets vehicle lowers with the player\'s command sets', () => {
     const { byName } = boot();
     const trait = byName('bicycle').get(VehicleTrait)!;
-    expect(trait.model).toEqual({ kind: 'streets' });
+    expect(trait.movement).toEqual({ kind: 'streets' });
     expect(trait.commands).toEqual(['compass']);
   });
 
   it('a compass vehicle lowers its drive and pace, at rest', () => {
     const { byName } = boot();
-    expect(byName('Marigold').get(VehicleTrait)?.model).toEqual({ kind: 'compass', drive: 'player', pace: 2, heading: null, turnsToStep: 0 });
+    expect(byName('Marigold').get(VehicleTrait)?.movement).toEqual({ kind: 'compass', drive: 'player', pace: 2, heading: null, turnsToStep: 0 });
   });
 
   it('a flight vehicle lowers its destinations and passage, at rest, and composes no enclosure', () => {
     const { byName } = boot();
     const sparrow = byName('Sparrow');
-    expect(sparrow.get(VehicleTrait)?.model).toEqual({
+    expect(sparrow.get(VehicleTrait)?.movement).toEqual({
       kind: 'flight',
       drive: 'control',
       destinations: [byName('Harbour').id, byName('Reef').id],
@@ -236,7 +236,7 @@ describe('the vehicle kind lowers onto the trait (ADR-366 D1, D2, D5)', () => {
     expect(sparrow.has(EnterableTrait.type)).toBe(false);
     expect(sparrow.has(ContainerTrait.type)).toBe(false);
     // `boarded through: the Airlock` (D7) is where `enter` and `board` land.
-    expect(sparrow.get(VehicleTrait)?.boardingRoom).toBe(byName('Airlock').id);
+    expect(sparrow.get(VehicleTrait)?.boardedThrough).toBe(byName('Airlock').id);
   });
 });
 
@@ -295,7 +295,7 @@ describe('rooms aboard and `to outside` (ADR-366 D7)', () => {
     expect(RoomBehavior.resolveExit(airlock, Direction.WEST, ctx)).toEqual({ kind: 'exit', destination: byName('Harbour').id });
     world.moveEntity(sparrow.id, byName('Reef').id);
     expect(RoomBehavior.resolveExit(airlock, Direction.WEST, ctx)).toEqual({ kind: 'exit', destination: byName('Reef').id });
-    const model = sparrow.get(VehicleTrait)!.model;
+    const model = sparrow.get(VehicleTrait)!.movement;
     if (model?.kind === 'flight') model.destination = byName('Harbour').id;
     expect(RoomBehavior.resolveExit(airlock, Direction.WEST, ctx)).toMatchObject({ kind: 'blocked', messageId: 'if.action.going.vehicle_under_way' });
   });
@@ -424,7 +424,7 @@ create the plotter
     const { engine, world } = bootEngine(PLAYED, 3);
     engine.start({ capabilities: { text: true } as never });
     const named = (name: string) => world.getAllEntities().find((e) => e.name === name)!;
-    const model = (name: string) => named(name).get(VehicleTrait)!.model;
+    const model = (name: string) => named(name).get(VehicleTrait)!.movement;
 
     await engine.executeTurn('pull lever');
     // `start` arms the pace (2); the machine's tick on the same turn counts
@@ -452,8 +452,8 @@ create the plotter
     const named = (name: string) => world.getAllEntities().find((e) => e.name === name)!;
     world.moveEntity(named('Sparrow').id, named('Reef').id);
     await engine.executeTurn('push plotter');
-    expect(named('Sparrow').get(VehicleTrait)!.model).toMatchObject({ kind: 'flight', destination: null, turnsRemaining: 0 });
+    expect(named('Sparrow').get(VehicleTrait)!.movement).toMatchObject({ kind: 'flight', destination: null, turnsRemaining: 0 });
     await engine.executeTurn('pull helm');
-    expect(named('Marigold').get(VehicleTrait)!.model).toMatchObject({ kind: 'compass', heading: null });
+    expect(named('Marigold').get(VehicleTrait)!.movement).toMatchObject({ kind: 'compass', heading: null });
   });
 });

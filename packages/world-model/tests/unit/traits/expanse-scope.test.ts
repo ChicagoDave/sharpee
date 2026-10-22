@@ -15,7 +15,7 @@ import { ContainerTrait } from '../../../src/traits/container/containerTrait';
 import { EnterableTrait } from '../../../src/traits/enterable/enterableTrait';
 import { RoomTrait } from '../../../src/traits/room/roomTrait';
 import { ActorTrait } from '../../../src/traits/actor/actorTrait';
-import { VehicleTrait, type VehicleOpenModel } from '../../../src/traits/vehicle/vehicleTrait';
+import { VehicleTrait, type VehicleOpenMovement } from '../../../src/traits/vehicle/vehicleTrait';
 import { ExpanseTrait } from '../../../src/traits/expanse/expanseTrait';
 import { FloatingTrait } from '../../../src/traits/expanse/floatingTrait';
 import { VisibilityBehavior } from '../../../src/world/VisibilityBehavior';
@@ -50,7 +50,7 @@ describe('scope in an expanse (ADR-376 D6, D10)', () => {
     v.add(new IdentityTrait({ name }));
     v.add(new ContainerTrait());
     v.add(new EnterableTrait());
-    v.add(new VehicleTrait({ model: { kind: 'open', drive: 'player', pace: 1, stride: 1, sight, position: { x, y } }, commands: ['compass'] }));
+    v.add(new VehicleTrait({ movement: { kind: 'open', drive: 'player', pace: 1, stride: 1, sight, position: { x, y } }, commands: ['compass'] }));
     world.moveEntity(v.id, ocean.id);
     return v;
   }
@@ -81,12 +81,12 @@ describe('scope in an expanse (ADR-376 D6, D10)', () => {
     expect(VisibilityBehavior.canSee(player, sloop, world)).toBe(true);
     expect(VisibilityBehavior.canSee(player, port, world)).toBe(true);
     expect(VisibilityBehavior.canSee(player, marigold, world)).toBe(true);
-    (sloop.get(VehicleTrait)!.model as VehicleOpenModel).position = { x: 80, y: 50 };
+    (sloop.get(VehicleTrait)!.movement as VehicleOpenMovement).position = { x: 80, y: 50 };
     expect(VisibilityBehavior.canSee(player, sloop, world)).toBe(false);
     expect(VisibilityBehavior.canSee(player, lamp, world)).toBe(false);
     cask.get(FloatingTrait)!.position = { x: 90, y: 90 };
     expect(VisibilityBehavior.canSee(player, cask, world)).toBe(false);
-    (marigold.get(VehicleTrait)!.model as VehicleOpenModel).sight = 5;
+    (marigold.get(VehicleTrait)!.movement as VehicleOpenMovement).sight = 5;
     expect(VisibilityBehavior.canSee(player, azores, world)).toBe(false);
     expect(VisibilityBehavior.canSee(player, port, world)).toBe(false);
   });
@@ -99,7 +99,7 @@ describe('scope in an expanse (ADR-376 D6, D10)', () => {
     expect(fromShip).toContain(sloop.id);
 
     world.moveEntity(player.id, port.id);
-    (marigold.get(VehicleTrait)!.model as VehicleOpenModel).position = { x: 25, y: 50 };
+    (marigold.get(VehicleTrait)!.movement as VehicleOpenMovement).position = { x: 25, y: 50 };
     const fromPort = VisibilityBehavior.getVisible(player, world).map((e) => e.id);
     expect(fromPort).toContain(marigold.id);
     expect(fromPort).not.toContain(sloop.id);
@@ -117,7 +117,7 @@ describe('scope in an expanse (ADR-376 D6, D10)', () => {
     expect(ReachabilityBehavior.canReach(player, cask, world)).toBe(true);
     expect(ReachabilityBehavior.canReach(player, sloop, world)).toBe(false);
     expect(ReachabilityBehavior.canReach(player, lamp, world)).toBe(false);
-    (sloop.get(VehicleTrait)!.model as VehicleOpenModel).position = { x: 40, y: 50 };
+    (sloop.get(VehicleTrait)!.movement as VehicleOpenMovement).position = { x: 40, y: 50 };
     expect(ReachabilityBehavior.canReach(player, sloop, world)).toBe(true);
   });
 
@@ -145,8 +145,8 @@ describe('the player out of the vehicle, and things overboard (ADR-376 D9, D10)'
     return r;
   }
 
-  function model(): VehicleOpenModel {
-    return skiff.get(VehicleTrait)!.model as VehicleOpenModel;
+  function model(): VehicleOpenMovement {
+    return skiff.get(VehicleTrait)!.movement as VehicleOpenMovement;
   }
 
   beforeEach(() => {
@@ -158,7 +158,7 @@ describe('the player out of the vehicle, and things overboard (ADR-376 D9, D10)'
     skiff.add(new IdentityTrait({ name: 'the skiff' }));
     skiff.add(new ContainerTrait());
     skiff.add(new EnterableTrait());
-    skiff.add(new VehicleTrait({ model: { kind: 'open', drive: 'player', pace: 1, stride: 1, sight: 6, position: { x: 5, y: 5 } }, commands: ['compass'] }));
+    skiff.add(new VehicleTrait({ movement: { kind: 'open', drive: 'player', pace: 1, stride: 1, sight: 6, position: { x: 5, y: 5 } }, commands: ['compass'] }));
     world.moveEntity(skiff.id, belt.id);
     player = world.createEntity('player', EntityType.ACTOR);
     player.add(new ActorTrait({ isPlayer: true }));

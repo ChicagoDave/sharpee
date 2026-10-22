@@ -112,6 +112,8 @@ import { PHRASEBOOK_REGISTRY } from './phrasebooks.js';
 import { DiagnosticBag } from './diagnostics.js';
 import { CHORD_LANGUAGE_VERSION } from './version.js';
 import {
+  exitRoomId,
+  qualifiedTimerKey,
   IR_FORMAT,
   IRActionDef,
   IRCondition,
@@ -678,6 +680,20 @@ const ACT_DIRECTION_CANONICAL: Record<string, string> = {
 /** The words of an acting statement or a `perform` step, as the parser carried them. */
 type ActWords = ReadonlyArray<{ text: string; span: Span }>;
 
+/** One declared timer, by owner (ADR-325 D3a); `owner` null is the story's. */
+interface TimerDecl {
+  name: string;
+  owner: string | null;
+  states: string[];
+  decl: DefineTimer;
+}
+
+/** A timer a value names: its name and its owner — an entity, the player role, or null for the story. */
+interface TimerRef {
+  name: string;
+  owner: { kind: 'entity'; id: string } | { kind: 'player' } | null;
+}
+
 /** The span covering `words[from..to)`. */
 function actWordsSpan(words: ActWords, from: number, to: number): Span {
   let sp = words[from].span;
@@ -821,7 +837,7 @@ export class Analyzer {
   /** Story-global counter names (ADR-264) — for `raise`/`lower`/read resolution. */
   private storyCounterNames = new Set<string>();
   /** ADR-325 D3: timers by `qualified` key (`<owner>.<name>` / `<name>`). */
-  private timers = new Map<string, { name: string; owner: string | null; states: string[]; decl: DefineTimer }>();
+  private timers = new Map<string, TimerDecl>();
   /** Lowered timer defs, in declaration order — the IR `timers` list. */
   private timerDefs: IRTimerDef[] = [];
   /** Entity id → its per-entity counter names (ADR-264). */
@@ -2193,18 +2209,23 @@ export class Analyzer {
           firstRef.set(door.id, { owner, exit });
           continue;
         }
-        const samePair = (owner.id === first.owner.id && exit.to === first.exit.to)
-          || (owner.id === first.exit.to && exit.to === first.owner.id);
+        // An outside way's far side is the vehicle's to decide at each use
+        // (ADR-366 D7); two outside lines through one door name the same pair.
+        const to = exitRoomId(exit);
+        const firstTo = exitRoomId(first.exit);
+        const firstToName = firstTo === undefined ? 'outside' : (byId.get(firstTo)?.name ?? firstTo);
+        const samePair = (owner.id === first.owner.id && to === firstTo)
+          || (owner.id === firstTo && to === first.owner.id);
         if (!samePair) {
           this.diagnostics.error(
             'analysis.door-multi-pair',
-            `\`${door.name}\` already connects \`${first.owner.name}\` and \`${byId.get(first.exit.to)?.name ?? first.exit.to}\` (line ${first.exit.span.line}) — a door connects exactly two rooms.`,
+            `\`${door.name}\` already connects \`${first.owner.name}\` and \`${firstToName}\` (line ${first.exit.span.line}) — a door connects exactly two rooms.`,
             exit.span,
           );
           continue;
         }
-        const isMirror = owner.id === first.exit.to
-          && exit.to === first.owner.id
+        const isMirror = owner.id === firstTo
+          && to === first.owner.id
           && exit.direction === OPPOSITE_DIRECTION[first.exit.direction]
           && !mirrored.has(door.id);
         if (isMirror) {
@@ -2212,7 +2233,7 @@ export class Analyzer {
         } else {
           this.diagnostics.error(
             'analysis.door-pair-mismatch',
-            `\`${door.name}\` is already wired by \`${first.owner.name}\`'s \`${first.exit.direction}\` line (line ${first.exit.span.line}) — the only legal second reference is the exact mirror (\`${OPPOSITE_DIRECTION[first.exit.direction] ?? '?'} to the ${first.owner.name} through the ${door.name}\` in \`${byId.get(first.exit.to)?.name ?? first.exit.to}\`), stated at most once.`,
+            `\`${door.name}\` is already wired by \`${first.owner.name}\`'s \`${first.exit.direction}\` line (line ${first.exit.span.line}) — the only legal second reference is the exact mirror (\`${OPPOSITE_DIRECTION[first.exit.direction] ?? '?'} to the ${first.owner.name} through the ${door.name}\` in \`${firstToName}\`), stated at most once.`,
             exit.span,
           );
         }
@@ -2228,10 +2249,11 @@ export class Analyzer {
     for (const owner of entities) {
       for (const exit of owner.exits) {
         if (exit.via !== null) continue;
-        const target = byId.get(exit.to);
+        const toId = exitRoomId(exit);
+        const target = toId === undefined ? undefined : byId.get(toId);
         if (!target) continue;
         const reverse = target.exits.find(
-          (e) => e.via !== null && e.via !== '' && e.to === owner.id
+          (e) => e.via !== null && e.via !== '' && exitRoomId(e) === owner.id
             && e.direction === OPPOSITE_DIRECTION[exit.direction],
         );
         if (reverse) {
@@ -2282,14 +2304,14 @@ export class Analyzer {
   private checkPushingWays(entities: IREntity[]): void {
     const byId = new Map(entities.map((e) => [e.id, e]));
     const compassExit = (from: IREntity, toId: string): boolean =>
-      from.exits.some((e) => e.to === toId && !e.passage && !e.toOutside);
+      from.exits.some((e) => exitRoomId(e) === toId && !e.passage);
     const hasWay = (fromId: string, toId: string): boolean => {
       const from = byId.get(fromId);
       const to = byId.get(toId);
       if (!from || !to) return true; // the unknown entity is already reported
       if (compassExit(from, toId)) return true;
       // The inferred reverse of a two-way line the far room wrote.
-      return to.exits.some((e) => e.to === fromId && !e.passage && !e.toOutside && !e.oneWay && OPPOSITE_DIRECTION[e.direction] !== undefined);
+      return to.exits.some((e) => exitRoomId(e) === fromId && !e.passage && !e.oneWay && OPPOSITE_DIRECTION[e.direction] !== undefined);
     };
     for (const thing of entities) {
       for (const way of thing.pushing ?? []) {
@@ -2337,11 +2359,13 @@ export class Analyzer {
       for (const exit of owner.exits) {
         if (exit.oneWay) continue;
         const reverseDirection = OPPOSITE_DIRECTION[exit.direction];
-        const target = byId.get(exit.to);
+        const toId = exitRoomId(exit);
+        const target = toId === undefined ? undefined : byId.get(toId);
         if (!reverseDirection || !target) continue;
         const explicit = target.exits.find((e) => e.direction === reverseDirection);
-        if (!explicit || explicit.to === owner.id) continue;
-        const elsewhere = byId.get(explicit.to)?.name ?? explicit.to;
+        const explicitTo = explicit ? exitRoomId(explicit) : undefined;
+        if (!explicit || explicitTo === owner.id) continue;
+        const elsewhere = explicitTo === undefined ? 'outside' : (byId.get(explicitTo)?.name ?? explicitTo);
         this.diagnostics.error(
           'analysis.duplicate-exit',
           `\`${target.name}\`'s \`${reverseDirection}\` exit leads to \`${elsewhere}\`, but \`${owner.name}\`'s \`${exit.direction} to the ${target.name}\` (${lineOf(exit)}) also makes \`${reverseDirection}\` from \`${target.name}\` lead back to \`${owner.name}\`. If that line should not lead back, write it \`${exit.direction} to the ${target.name}, one-way\`.`,
@@ -6290,7 +6314,7 @@ export class Analyzer {
       }
       case 'set': {
         // ADR-325 D3: a timer never takes a value.
-        if (this.timerKeyOf(stmt.target, scope) !== null) {
+        if (this.timerRefOf(stmt.target, scope) !== null) {
           this.diagnostics.error(
             'analysis.tally-verb-on-timer',
             '`set` writes a value — a timer has none; it is `start`ed, `stop`ped, `restart`ed, `reset`, or `interrupt`ed.',
@@ -6538,7 +6562,7 @@ export class Analyzer {
           } else {
             this.resolveEntityId(stmt.vehicle);
           }
-          return { kind: 'vehicle-send', vehicle: { kind: 'entity', id: '' }, destination: { kind: 'entity', id: '' }, stmtWhen: this.resolveStmtWhen(stmt.stmtWhen, scope), span: stmt.span };
+          return { kind: 'vehicle-send', vehicle: { kind: 'unresolved' }, to: { kind: 'room', room: { kind: 'unresolved' } }, stmtWhen: this.resolveStmtWhen(stmt.stmtWhen, scope), span: stmt.span };
         }
         const legal = vehicle.movement ? MOVEMENT_TABLE[vehicle.movement].statements.get('send') : undefined;
         if (!legal || !vehicle.drive || !legal.has(vehicle.drive)) {
@@ -6550,8 +6574,7 @@ export class Analyzer {
           return {
             kind: 'vehicle-send',
             vehicle: { kind: 'entity', id: vehicle.id },
-            destination: 'kind' in of ? of : { kind: 'entity', id: '' },
-            ...('kind' in of ? {} : { coordinates: of }),
+            to: 'kind' in of ? { kind: 'room', room: of } : { kind: 'cell', x: of.x, y: of.y },
             stmtWhen: this.resolveStmtWhen(stmt.stmtWhen, scope),
             span: stmt.span,
           };
@@ -6562,7 +6585,7 @@ export class Analyzer {
             `\`send\` to coordinates is for a \`movement: open\` vehicle — \`${vehicle.name}\` is ${vehicle.movement ? `\`movement: ${vehicle.movement}\`` : 'not one'}.`,
             stmt.destination.span,
           );
-          return { kind: 'vehicle-send', vehicle: { kind: 'entity', id: vehicle.id }, destination: { kind: 'entity', id: '' }, stmtWhen: this.resolveStmtWhen(stmt.stmtWhen, scope), span: stmt.span };
+          return { kind: 'vehicle-send', vehicle: { kind: 'entity', id: vehicle.id }, to: { kind: 'room', room: { kind: 'unresolved' } }, stmtWhen: this.resolveStmtWhen(stmt.stmtWhen, scope), span: stmt.span };
         }
         const destinations = placeIdsOf(vehicle.destinations, (ref) => this.findEntitySilent(ref)?.id ?? null);
         const destination = this.resolveEntityId(stmt.destination);
@@ -6576,7 +6599,7 @@ export class Analyzer {
         return {
           kind: 'vehicle-send',
           vehicle: { kind: 'entity', id: vehicle.id },
-          destination: { kind: 'entity', id: destination ?? '' },
+          to: { kind: 'room', room: destination === null ? { kind: 'unresolved' } : { kind: 'entity', id: destination } },
           stmtWhen: this.resolveStmtWhen(stmt.stmtWhen, scope),
           span: stmt.span,
         };
@@ -6613,7 +6636,7 @@ export class Analyzer {
         // ADR-366 D5f: `start` and `stop` naming a vehicle are its driving
         // statements — the name decides, a timer first (ADR-325), then a
         // vehicle, else the timer's own unknown-target error.
-        const vehicle = this.timerKeyOf(stmt.target, scope) === null ? this.vehicleNamed(stmt.target) : null;
+        const vehicle = this.timerRefOf(stmt.target, scope) === null ? this.vehicleNamed(stmt.target) : null;
         if (vehicle) return this.resolveVehicleVerb(stmt, vehicle, scope);
         if (stmt.heading) {
           this.diagnostics.error(
@@ -6624,7 +6647,14 @@ export class Analyzer {
         }
         // ADR-325 D3c: the five timer verbs. A tally is not a timer.
         const timer = this.resolveTimerRef(stmt.target, scope, stmt.span, stmt.verb);
-        return { kind: 'timer', verb: stmt.verb, timer: timer ?? '', stmtWhen: this.resolveStmtWhen(stmt.stmtWhen, scope), span: stmt.span };
+        return {
+          kind: 'timer',
+          verb: stmt.verb,
+          name: timer?.name ?? '',
+          owner: timer ? timer.owner : { kind: 'unresolved' },
+          stmtWhen: this.resolveStmtWhen(stmt.stmtWhen, scope),
+          span: stmt.span,
+        };
       }
       case 'raise':
       case 'lower': {
@@ -6632,7 +6662,7 @@ export class Analyzer {
         // possessive (per-entity), validated against the counter registries.
         const target = stmt.target;
         // ADR-325 D3: a timer never takes a number.
-        if (this.timerKeyOf(target, scope) !== null) {
+        if (this.timerRefOf(target, scope) !== null) {
           this.diagnostics.error(
             'analysis.tally-verb-on-timer',
             `\`${stmt.kind}\` moves a tally, not a timer — a timer is \`start\`ed, \`stop\`ped, \`restart\`ed, \`reset\`, or \`interrupt\`ed, never counted.`,
@@ -7233,16 +7263,12 @@ export class Analyzer {
         // ADR-325 D3d: `<owner>'s <timer>` reads the timer's state word.
         const field = expr.field.join(' ');
         const base = this.possessiveBase(expr, scope);
-        let ownerId: string | null = null;
-        if (base.kind === 'entity') ownerId = base.id;
-        else if (base.kind === 'player') ownerId = 'player'; // the player-owned timer key (ADR-325 D3d)
-        else if (base.kind === 'it') ownerId = scope.owner?.id ?? null;
+        const ownerId = base.kind === 'entity' ? base.id : base.kind === 'it' ? scope.owner?.id ?? null : null;
         if (this.ownsCounter(base, ownerId, field)) {
           return { kind: 'counter', name: field, owner: base };
         }
-        if (ownerId !== null && this.timers.has(`${ownerId}.${field}`)) {
-          return { kind: 'timer', timer: `${ownerId}.${field}` };
-        }
+        const timer = this.timerRefOf(expr, scope);
+        if (timer !== null) return { kind: 'timer', name: timer.name, owner: timer.owner };
         return { kind: 'field', base, field };
       }
       case 'ref': {
@@ -7251,8 +7277,8 @@ export class Analyzer {
           return { kind: 'counter', name: expr.ref.words[0], owner: null };
         }
         // ADR-325 D3d: a bare timer name, owner-first then story.
-        const timer = this.timerKeyOf(expr, scope);
-        if (timer !== null) return { kind: 'timer', timer };
+        const timer = this.timerRefOf(expr, scope);
+        if (timer !== null) return { kind: 'timer', name: timer.name, owner: timer.owner };
         return this.resolveRefValue(expr.ref, scope);
       }
       case 'bare': {
@@ -7745,32 +7771,47 @@ export class Analyzer {
     const decls = this.ast.declarations.filter((d): d is DefineTimer => d.kind === 'define-timer');
     // Register names first so `meanwhile` bodies may name any timer.
     for (const decl of decls) {
-      let owner: string | null = null;
+      // `for the player` is one timer per playable character, keyed on the
+      // character (a role holds no state of its own); with none playable,
+      // the role's key stands in — such a story never loads.
+      let owners: (string | null)[] = [null];
       if (decl.owner) {
         const lower = decl.owner.words.join(' ').toLowerCase();
-        owner = PLAYER_WORDS.has(lower) ? 'player' : this.resolveEntityId(decl.owner);
-        if (owner === null) continue; // unknown owner already reported
-      }
-      const qualified = owner === null ? decl.name : `${owner}.${decl.name}`;
-      if (this.timers.has(qualified)) {
-        this.diagnostics.error('analysis.duplicate-timer', `A timer named \`${decl.name}\` is already declared${owner ? ` for \`${owner}\`` : ''}.`, decl.span);
-        continue;
+        if (PLAYER_WORDS.has(lower)) {
+          const playable = this.playableIds();
+          owners = playable.length > 0 ? playable : ['player'];
+        } else {
+          const owner = this.resolveEntityId(decl.owner);
+          if (owner === null) continue; // unknown owner already reported
+          owners = [owner];
+        }
       }
       const states: string[] = [];
+      const turns: typeof decl.states = [];
       for (const st of decl.states) {
         if (states.includes(st.name)) {
           this.diagnostics.error('analysis.duplicate-timer-state', `The timer \`${decl.name}\` already has a turn named \`${st.name}\`.`, st.span);
           continue;
         }
         states.push(st.name);
-        if (st.text) {
-          this.registerPhrase(DEFAULT_LOCALE, `${qualified}.${st.name}`, { strategy: null, variants: [this.variantOf(st.text)], span: st.span });
-        }
+        turns.push(st);
       }
-      this.timers.set(qualified, { name: decl.name, owner, states, decl });
+      for (const owner of owners) {
+        const qualified = qualifiedTimerKey(decl.name, owner);
+        if (this.timers.has(qualified)) {
+          this.diagnostics.error('analysis.duplicate-timer', `A timer named \`${decl.name}\` is already declared${owner ? ` for \`${owner}\`` : ''}.`, decl.span);
+          continue;
+        }
+        for (const st of turns) {
+          if (st.text) {
+            this.registerPhrase(DEFAULT_LOCALE, `${qualified}.${st.name}`, { strategy: null, variants: [this.variantOf(st.text)], span: st.span });
+          }
+        }
+        this.timers.set(qualified, { name: decl.name, owner, states, decl });
+      }
     }
     for (const [qualified, t] of this.timers) {
-      const scope = t.owner === null ? STORY_SCOPE : t.owner === 'player' ? entityScope(this.byId.get('player') ?? null) : entityScope(this.byId.get(t.owner) ?? null);
+      const scope = t.owner === null ? STORY_SCOPE : entityScope(this.byId.get(t.owner) ?? null);
       const meanwhile = t.decl.meanwhile
         ? { chance: t.decl.meanwhile.chance, body: t.decl.meanwhile.body.map((st, i) => this.resolveStatement(st, scope, `timer.${qualified}.meanwhile.${i}`)) }
         : null;
@@ -7846,14 +7887,15 @@ export class Analyzer {
         return { kind: 'first-visit', room: id };
       }
       case 'timer-expires': {
-        const key = this.timerKeyOf(t.timer, STORY_SCOPE);
-        if (key === null) {
+        const ref = this.timerRefOf(t.timer, STORY_SCOPE);
+        if (ref === null) {
           const candidates = [...this.timers.values()].map((x) => (x.owner === null ? x.name : `the ${x.owner}'s ${x.name}`));
           const written = t.timer.kind === 'ref' ? t.timer.ref.words.join(' ') : t.timer.kind === 'bare' ? t.timer.words.join(' ') : t.timer.kind === 'possessive' ? t.timer.field.join(' ') : '<value>';
           this.diagnostics.error('analysis.unknown-timer', `\`${written}\` is not a declared timer of the story${this.suggestText(written, candidates)} — from the chapter table, name an owner's timer by its possessive.`, t.span);
           return null;
         }
-        return { kind: 'timer-expires', timer: key };
+        const key = this.timerEventKeyOf(ref, t.span, 'begins when … expires');
+        return key === null ? null : { kind: 'timer-expires', timer: key };
       }
       case 'becomes': {
         const anchor = this.resolveStepAnchor({ timing: 'becomes', owner: t.owner, state: t.state, span: t.span });
@@ -7868,34 +7910,54 @@ export class Analyzer {
    * (the scope's owner, the player inside the player's block) then the
    * story's; a possessive names its owner outright (ADR-325 D3c).
    */
-  private timerKeyOf(expr: ValueExpr, scope: Scope): string | null {
+  private timerRefOf(expr: ValueExpr, scope: Scope): TimerRef | null {
     if (expr.kind === 'ref' && expr.ref.words.length === 1) {
       const name = expr.ref.words[0];
       const ownerId = scope.owner?.id ?? null;
-      if (ownerId !== null && this.timers.has(`${ownerId}.${name}`)) return `${ownerId}.${name}`;
-      if (this.timers.has(name)) return name;
+      if (ownerId !== null && this.timers.has(qualifiedTimerKey(name, ownerId))) return { name, owner: { kind: 'entity', id: ownerId } };
+      if (this.timers.has(name)) return { name, owner: null };
       return null;
     }
     if (expr.kind === 'bare' && expr.words.length === 1) {
-      return this.timerKeyOf({ kind: 'ref', ref: { kind: 'name', article: null, words: expr.words, span: expr.span }, span: expr.span }, scope);
+      return this.timerRefOf({ kind: 'ref', ref: { kind: 'name', article: null, words: expr.words, span: expr.span }, span: expr.span }, scope);
     }
     if (expr.kind === 'possessive' && expr.field.length === 1) {
+      const name = expr.field[0];
       const base = this.possessiveBase(expr, scope);
-      let ownerId: string | null = null;
-      if (base.kind === 'entity') ownerId = base.id;
-      else if (base.kind === 'player') ownerId = 'player';
-      else if (base.kind === 'it') ownerId = scope.owner?.id ?? null;
+      if (base.kind === 'player') return this.playerOwnsTimer(name) ? { name, owner: { kind: 'player' } } : null;
+      const ownerId = base.kind === 'entity' ? base.id : base.kind === 'it' ? scope.owner?.id ?? null : null;
       if (ownerId === null) return null;
-      const key = `${ownerId}.${expr.field[0]}`;
-      return this.timers.has(key) ? key : null;
+      return this.timers.has(qualifiedTimerKey(name, ownerId)) ? { name, owner: { kind: 'entity', id: ownerId } } : null;
     }
     return null;
   }
 
+  /**
+   * The fixed key of the timer an event names (`when … expires`, a chapter
+   * trigger). An event is wired at load, so it names one timer: `the
+   * player's` stands for the one playable character, and with two or more
+   * it names nobody in particular and is refused — the author names the person.
+   */
+  private timerEventKeyOf(ref: TimerRef, span: Span, construct: string): string | null {
+    if (ref.owner === null) return qualifiedTimerKey(ref.name, null);
+    if (ref.owner.kind === 'entity') return qualifiedTimerKey(ref.name, ref.owner.id);
+    const playable = this.playableIds();
+    if (playable.length >= 2) {
+      const names = playable.map((id) => this.byId.get(id)?.decl.name.words.join(' ') ?? id);
+      this.diagnostics.error(
+        'analysis.timer-event-names-the-player',
+        `\`${construct}\` on \`the player's ${ref.name}\` cannot say whose — ${names.length} characters are playable (${names.join(', ')}), and each has their own. Name the person: \`when ${names[0]}'s ${ref.name} expires\`.`,
+        span,
+      );
+      return null;
+    }
+    return qualifiedTimerKey(ref.name, playable[0] ?? 'player');
+  }
+
   /** Resolve a timer reference for a verb or clause head; errors name the verb. */
-  private resolveTimerRef(expr: ValueExpr, scope: Scope, span: Span, verb: string): string | null {
-    const key = this.timerKeyOf(expr, scope);
-    if (key !== null) return key;
+  private resolveTimerRef(expr: ValueExpr, scope: Scope, span: Span, verb: string): TimerRef | null {
+    const ref = this.timerRefOf(expr, scope);
+    if (ref !== null) return ref;
     const written =
       expr.kind === 'ref' ? expr.ref.words.join(' ')
       : expr.kind === 'bare' ? expr.words.join(' ')
@@ -7927,7 +7989,8 @@ export class Analyzer {
 
   /** `when <timer> expires [, while <cond>]` (ADR-325 D3e) on an owner. */
   private buildTimerClause(clause: TimerClause, scope: Scope, ownerKey: string, index: number): IRTimerClause {
-    const timer = this.resolveTimerRef(clause.timer, scope, clause.span, 'when … expires') ?? '';
+    const ref = this.resolveTimerRef(clause.timer, scope, clause.span, 'when … expires');
+    const timer = (ref && this.timerEventKeyOf(ref, clause.span, 'when … expires')) ?? '';
     const condition = clause.condition ? this.resolveCondition(clause.condition, scope) : null;
     const body = clause.body.map((st, i) => this.resolveStatement(st, scope, `${ownerKey}.expires-${index}.${i}`));
     this.checkPhaseOrder(clause.body, { ended: null });
@@ -7977,12 +8040,36 @@ export class Analyzer {
    * has no holder, reported as `player`.
    */
   private playableLackingCounter(counter: string): string | null {
-    const playable = [...this.byId.values()].filter((sym) => isPlayableDecl(sym.decl));
+    const playable = this.playableIds();
     if (playable.length === 0) return 'player';
-    for (const sym of playable) {
-      if (!this.entityCounterNames.get(sym.id)?.has(counter)) return sym.id;
+    for (const id of playable) {
+      if (!this.entityCounterNames.get(id)?.has(counter)) return id;
     }
     return null;
+  }
+
+  /** The `playable` characters' ids, in declaration order. */
+  private playableIds(): string[] {
+    return [...this.byId.values()].filter((sym) => isPlayableDecl(sym.decl)).map((sym) => sym.id);
+  }
+
+  /**
+   * The timer defs a reference may name: one for an entity's or the story's,
+   * one per playable character for the player's (the role may move to any of
+   * them), or `player`'s own when nobody is playable.
+   */
+  private timerDefsOf(ref: TimerRef): TimerDecl[] {
+    const owners = ref.owner === null ? [null]
+      : ref.owner.kind === 'entity' ? [ref.owner.id]
+      : this.playableIds().length > 0 ? this.playableIds() : ['player'];
+    return owners.map((owner) => this.timers.get(qualifiedTimerKey(ref.name, owner))).filter((t): t is TimerDecl => t !== undefined);
+  }
+
+  /** Does the player role carry this timer — every playable character holds one by that name? */
+  private playerOwnsTimer(name: string): boolean {
+    const playable = this.playableIds();
+    if (playable.length === 0) return this.timers.has(qualifiedTimerKey(name, 'player'));
+    return playable.every((id) => this.timers.has(qualifiedTimerKey(name, id)));
   }
 
   /**
@@ -8312,7 +8399,7 @@ export class Analyzer {
               this.diagnostics.error('analysis.unknown-timer', `\`has ${cond.predicate.what}\` reads a timer — the subject is not a declared timer.`, cond.predicate.span);
               return { kind: 'condition', name: '' };
             }
-            const node: IRCondition = { kind: 'timer-has', timer: subject.timer, what: cond.predicate.what };
+            const node: IRCondition = { kind: 'timer-has', name: subject.name, owner: subject.owner, what: cond.predicate.what };
             return cond.predicate.negated ? { kind: 'not', operand: node } : node;
           }
           case 'is-here': {
@@ -8576,7 +8663,7 @@ export class Analyzer {
         target.span,
       );
     }
-    return { kind: 'entity', id: id ?? '' };
+    return id === null ? { kind: 'unresolved' } : { kind: 'entity', id };
   }
 
   /**
@@ -8625,15 +8712,17 @@ export class Analyzer {
       // ADR-325 D3d: a timer subject reads its own named turns; `expired`
       // is the lifecycle's word (`has expired`), never `is expired`.
       if (subject.kind === 'timer') {
-        const timer = this.timers.get(subject.timer)!;
         if (word === 'expired') {
           this.diagnostics.error('analysis.timer-is-expired', '`is expired` is not a read — write `has expired` (the lifecycle), or name one of the timer\'s turns.', span);
           return { kind: 'symbol', name: word };
         }
-        if (timer.states.includes(word)) return { kind: 'symbol', name: word };
+        // The player's timer may be any playable character's: the turn must be one of every one's.
+        const defs = subject.owner?.kind === 'unresolved' ? [] : this.timerDefsOf({ name: subject.name, owner: subject.owner as TimerRef['owner'] });
+        const turns = defs.length > 0 ? defs[0].states.filter((s) => defs.every((d) => d.states.includes(s))) : [];
+        if (turns.includes(word)) return { kind: 'symbol', name: word };
         this.diagnostics.error(
           'analysis.unknown-timer-state',
-          `\`${word}\` is not a turn of the timer \`${timer.name}\`${this.suggestText(word, timer.states)}.`,
+          `\`${word}\` is not a turn of the timer \`${subject.name}\`${this.suggestText(word, turns)}.`,
           span,
         );
         return { kind: 'symbol', name: word };

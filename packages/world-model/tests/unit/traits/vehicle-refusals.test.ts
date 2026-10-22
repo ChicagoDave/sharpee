@@ -23,7 +23,7 @@ import { DoorTrait } from '../../../src/traits/door/doorTrait';
 import { OpenableTrait } from '../../../src/traits/openable/openableTrait';
 import { LockableTrait } from '../../../src/traits/lockable/lockableTrait';
 import { AboardTrait } from '../../../src/traits/vehicle/aboardTrait';
-import { VehicleTrait, type VehicleOpenModel } from '../../../src/traits/vehicle/vehicleTrait';
+import { VehicleTrait, type VehicleOpenMovement } from '../../../src/traits/vehicle/vehicleTrait';
 import { ExpanseTrait } from '../../../src/traits/expanse/expanseTrait';
 import { angleOffWind, signedAngleOffWind } from '../../../src/traits/expanse/expanseBehavior';
 import { Direction } from '../../../src/constants/directions';
@@ -53,7 +53,7 @@ describe('the vehicle behaviors\' refusals (F6)', () => {
   let sea: IFEntity;
   let ship: IFEntity;
 
-  const model = () => ship.get(VehicleTrait)!.model as VehicleOpenModel;
+  const model = () => ship.get(VehicleTrait)!.movement as VehicleOpenMovement;
 
   beforeEach(() => {
     world = new WorldModel();
@@ -64,7 +64,7 @@ describe('the vehicle behaviors\' refusals (F6)', () => {
     ship.add(new IdentityTrait({ name: 'ship' }));
     ship.add(new ContainerTrait());
     ship.add(new EnterableTrait());
-    ship.add(new VehicleTrait({ model: { kind: 'open', drive: 'player', pace: 1, stride: 1, sight: 5, sailing: TABLE, sails: { settings: ['furled', 'reefed', 'full'], current: 'reefed' }, heading: 90, position: { x: 10, y: 10 } } }));
+    ship.add(new VehicleTrait({ movement: { kind: 'open', drive: 'player', pace: 1, stride: 1, sight: 5, sailing: TABLE, sails: { settings: ['furled', 'reefed', 'full'], current: 'reefed' }, heading: 90, position: { x: 10, y: 10 } } }));
     world.moveEntity(ship.id, sea.id);
   });
 
@@ -150,7 +150,7 @@ describe('the way out of a room aboard (F9, F10, F11)', () => {
     quay = world.createEntity('Quay', EntityType.ROOM);
     quay.add(new RoomTrait({ exits: {} }));
     const ship = world.createEntity('ship', EntityType.ITEM);
-    ship.add(new VehicleTrait({ model: { kind: 'line', stops: [quay.id, 'elsewhere'], oneWay: false, drive: 'control', pace: 1 } }));
+    ship.add(new VehicleTrait({ movement: { kind: 'line', stops: [quay.id, 'elsewhere'], oneWay: false, drive: 'control', pace: 1 } }));
     world.moveEntity(ship.id, quay.id);
     deck = world.createEntity('Deck', EntityType.ROOM);
     deck.add(new RoomTrait({ exits: {} }));

@@ -72,7 +72,7 @@ describe('D6 backstop — a non-room exit in rogue IR still throws', () => {
 
   it('an exit on a container throws a LoadError naming the entity', () => {
     const rogue = structuredClone(compileClean(BASE));
-    rogue.entities.find((e) => e.id === 'crate')!.exits.push({ direction: 'north', to: 'vault', via: null, span });
+    rogue.entities.find((e) => e.id === 'crate')!.exits.push({ direction: 'north', to: { kind: 'room', id: 'vault' }, via: null, span });
     expect(load(rogue)).toThrowError(LoadError);
     expect(load(rogue)).toThrowError(/crate/);
   });

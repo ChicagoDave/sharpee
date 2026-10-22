@@ -21,7 +21,7 @@ import {
   VehicleTrait,
   type IFEntity,
   type IParsedCommand,
-  type VehicleModelConfig,
+  type VehicleMovementConfig,
   WorldModel,
   exitBlockedKey,
   exitHiddenKey,
@@ -64,7 +64,7 @@ function vehicle(world: WorldModel, name: string, trait: VehicleTrait, at: IFEnt
 }
 
 function compassShip(world: WorldModel, at: IFEntity, commands: string[] = ['compass']): IFEntity {
-  return vehicle(world, 'Marigold', new VehicleTrait({ model: { kind: 'compass', drive: 'player', pace: 1 }, commands }), at);
+  return vehicle(world, 'Marigold', new VehicleTrait({ movement: { kind: 'compass', drive: 'player', pace: 1 }, commands }), at);
 }
 
 function messageIds(events: { data?: any }[]): string[] {
@@ -93,7 +93,7 @@ describe('steering (ADR-366 D5c, D5i)', () => {
 
     const events = steer(world, Direction.NORTH);
 
-    expect(ship.get(VehicleTrait)!.model).toMatchObject({ kind: 'compass', heading: Direction.NORTH, turnsToStep: 1 });
+    expect(ship.get(VehicleTrait)!.movement).toMatchObject({ kind: 'compass', heading: Direction.NORTH, turnsToStep: 1 });
     expect(messageIds(events)).toContain('if.action.steering.steered');
     // The step is the machine's, not the action's: the ship has not moved yet.
     expect(world.getLocation(ship.id)).toBe(room.id);
@@ -106,30 +106,30 @@ describe('steering (ADR-366 D5c, D5i)', () => {
     steer(world, Direction.NORTH);
 
     const hove = steer(world);
-    expect(ship.get(VehicleTrait)!.model).toMatchObject({ kind: 'compass', heading: null, turnsToStep: 0 });
+    expect(ship.get(VehicleTrait)!.movement).toMatchObject({ kind: 'compass', heading: null, turnsToStep: 0 });
     expect(messageIds(hove)).toContain('if.action.steering.hove_to');
 
     const again = steer(world);
     expect(messageIds(again)).toContain('if.action.steering.not_under_way');
-    expect(ship.get(VehicleTrait)!.model).toMatchObject({ kind: 'compass', heading: null, turnsToStep: 0 });
+    expect(ship.get(VehicleTrait)!.movement).toMatchObject({ kind: 'compass', heading: null, turnsToStep: 0 });
   });
 
   test('on foot, and aboard a vehicle without the compass set, the refusal names the case and nothing moves', () => {
     const { world, player, room } = harbour();
     const ship = compassShip(world, room);
     expect(messageIds(steer(world, Direction.NORTH))).toContain('if.action.steering.not_in_vehicle');
-    expect(ship.get(VehicleTrait)!.model).toMatchObject({ kind: 'compass', heading: null });
+    expect(ship.get(VehicleTrait)!.movement).toMatchObject({ kind: 'compass', heading: null });
     expect(world.getLocation(player.id)).toBe(room.id);
 
-    const tram = vehicle(world, 'tram car', new VehicleTrait({ model: { kind: 'line', stops: [room.id, 'x'], oneWay: false, drive: 'control', pace: 1 } }), room);
+    const tram = vehicle(world, 'tram car', new VehicleTrait({ movement: { kind: 'line', stops: [room.id, 'x'], oneWay: false, drive: 'control', pace: 1 } }), room);
     world.moveEntity(player.id, tram.id);
     expect(messageIds(steer(world, Direction.NORTH))).toContain('if.action.steering.vehicle_no_such_command');
-    expect(tram.get(VehicleTrait)!.model).toMatchObject({ kind: 'line', underWay: false });
+    expect(tram.get(VehicleTrait)!.movement).toMatchObject({ kind: 'line', underWay: false });
   });
 
   test('a rider in a room aboard a compass vehicle steers it', () => {
     const { world, player, room } = harbour();
-    const ship = vehicle(world, 'Marigold', new VehicleTrait({ model: { kind: 'compass', drive: 'player', pace: 2 }, commands: ['compass'] }), room, false);
+    const ship = vehicle(world, 'Marigold', new VehicleTrait({ movement: { kind: 'compass', drive: 'player', pace: 2 }, commands: ['compass'] }), room, false);
     const deck = world.createEntity('Deck', 'object');
     deck.add(new RoomTrait());
     deck.add(new AboardTrait({ vehicleId: ship.id }));
@@ -137,14 +137,14 @@ describe('steering (ADR-366 D5c, D5i)', () => {
     world.moveEntity(player.id, deck.id);
 
     steer(world, Direction.EAST);
-    expect(ship.get(VehicleTrait)!.model).toMatchObject({ kind: 'compass', heading: Direction.EAST, turnsToStep: 2 });
+    expect(ship.get(VehicleTrait)!.movement).toMatchObject({ kind: 'compass', heading: Direction.EAST, turnsToStep: 2 });
   });
 });
 
 describe('setting course (ADR-366 D5d, D5i)', () => {
   function sparrow(world: WorldModel, at: IFEntity, reef: IFEntity, commands: string[] = ['destinations']): IFEntity {
-    const model: VehicleModelConfig = { kind: 'flight', drive: 'player', destinations: [at.id, reef.id], passage: 2 };
-    const ship = vehicle(world, 'Sparrow', new VehicleTrait({ model, commands }), at, false);
+    const movement: VehicleMovementConfig = { kind: 'flight', drive: 'player', destinations: [at.id, reef.id], passage: 2 };
+    const ship = vehicle(world, 'Sparrow', new VehicleTrait({ movement, commands }), at, false);
     const airlock = world.createEntity('Airlock', 'object');
     airlock.add(new RoomTrait());
     airlock.add(new AboardTrait({ vehicleId: ship.id, outside: { [Direction.WEST]: { candidates: [at.id, reef.id] } } }));
@@ -158,7 +158,7 @@ describe('setting course (ADR-366 D5d, D5i)', () => {
     world.moveEntity(player.id, world.getContents(ship.id)[0].id);
 
     const events = setCourse(world, 'the Reef');
-    expect(ship.get(VehicleTrait)!.model).toMatchObject({ kind: 'flight', destination: reef.id, turnsRemaining: 2 });
+    expect(ship.get(VehicleTrait)!.movement).toMatchObject({ kind: 'flight', destination: reef.id, turnsRemaining: 2 });
     expect(messageIds(events)).toContain('if.action.setting_course.course_set');
     // Nothing has moved: the departure is the machine's.
     expect(world.getLocation(ship.id)).toBe(room.id);
@@ -174,7 +174,7 @@ describe('setting course (ADR-366 D5d, D5i)', () => {
     expect(command.topic).toMatchObject({ text: 'the coral shelf', entity: reef.id });
     const events = executeWithValidation(settingCourseAction, createRealTestContext(settingCourseAction, world, command));
     expect(messageIds(events)).toContain('if.action.setting_course.course_set');
-    expect(ship.get(VehicleTrait)!.model).toMatchObject({ kind: 'flight', destination: reef.id, turnsRemaining: 2 });
+    expect(ship.get(VehicleTrait)!.movement).toMatchObject({ kind: 'flight', destination: reef.id, turnsRemaining: 2 });
   });
 
   test('a room that is not among the destinations does not resolve, even by its exact name', () => {
@@ -187,7 +187,7 @@ describe('setting course (ADR-366 D5d, D5i)', () => {
 
     expect(validateTyped(settingCourseAction, world, 'set course for Lighthouse').topic!.entity).toBeUndefined();
     expect(messageIds(setCourse(world, 'Lighthouse'))).toContain('if.action.setting_course.not_a_destination');
-    expect(ship.get(VehicleTrait)!.model).toMatchObject({ kind: 'flight', destination: null, turnsRemaining: 0 });
+    expect(ship.get(VehicleTrait)!.movement).toMatchObject({ kind: 'flight', destination: null, turnsRemaining: 0 });
   });
 
   test('a name that is no destination, the room the ship is at, a missing name, and a ship under way each refuse', () => {
@@ -196,16 +196,16 @@ describe('setting course (ADR-366 D5d, D5i)', () => {
     world.moveEntity(player.id, world.getContents(ship.id)[0].id);
 
     expect(messageIds(setCourse(world, 'Atlantis'))).toContain('if.action.setting_course.not_a_destination');
-    expect(ship.get(VehicleTrait)!.model).toMatchObject({ kind: 'flight', destination: null, turnsRemaining: 0 });
+    expect(ship.get(VehicleTrait)!.movement).toMatchObject({ kind: 'flight', destination: null, turnsRemaining: 0 });
     expect(messageIds(setCourse(world, room.name))).toContain('if.action.setting_course.already_there');
-    expect(ship.get(VehicleTrait)!.model).toMatchObject({ kind: 'flight', destination: null, turnsRemaining: 0 });
+    expect(ship.get(VehicleTrait)!.movement).toMatchObject({ kind: 'flight', destination: null, turnsRemaining: 0 });
     expect(messageIds(setCourse(world))).toContain('if.action.setting_course.no_destination');
-    expect(ship.get(VehicleTrait)!.model).toMatchObject({ kind: 'flight', destination: null, turnsRemaining: 0 });
+    expect(ship.get(VehicleTrait)!.movement).toMatchObject({ kind: 'flight', destination: null, turnsRemaining: 0 });
 
     setCourse(world, 'Reef');
     expect(messageIds(setCourse(world, 'Reef'))).toContain('if.action.setting_course.vehicle_under_way');
     // The refusal leaves the voyage as set: still bound for the Reef, the passage untouched.
-    expect(ship.get(VehicleTrait)!.model).toMatchObject({ kind: 'flight', destination: reef.id, turnsRemaining: 2 });
+    expect(ship.get(VehicleTrait)!.movement).toMatchObject({ kind: 'flight', destination: reef.id, turnsRemaining: 2 });
   });
 
   test('on foot, and aboard a vehicle without the destinations set, the refusal names the case', () => {
@@ -220,7 +220,7 @@ describe('setting course (ADR-366 D5d, D5i)', () => {
 
 describe('boarding and the hatch (ADR-366 D7, D7a)', () => {
   function shipWithRooms(world: WorldModel, at: IFEntity, hatchOpen: boolean | undefined): { ship: IFEntity; airlock: IFEntity; hold: IFEntity; hatch?: IFEntity } {
-    const ship = vehicle(world, 'Sparrow', new VehicleTrait({ model: { kind: 'flight', drive: 'control', destinations: [at.id, 'elsewhere'], passage: 1 } }), at, false);
+    const ship = vehicle(world, 'Sparrow', new VehicleTrait({ movement: { kind: 'flight', drive: 'control', destinations: [at.id, 'elsewhere'], passage: 1 } }), at, false);
     const airlock = world.createEntity('Airlock', 'object');
     airlock.add(new RoomTrait());
     airlock.add(new IdentityTrait({ name: 'Airlock', description: 'A closet.' }));
@@ -238,7 +238,7 @@ describe('boarding and the hatch (ADR-366 D7, D7a)', () => {
     airlock.add(new AboardTrait({ vehicleId: ship.id, outside: { [Direction.WEST]: { candidates: [at.id], ...(hatch ? { via: hatch.id } : {}) } } }));
     world.moveEntity(airlock.id, ship.id);
     world.moveEntity(hold.id, ship.id);
-    ship.get(VehicleTrait)!.boardingRoom = airlock.id;
+    ship.get(VehicleTrait)!.boardedThrough = airlock.id;
     return { ship, airlock, hold, hatch };
   }
 
@@ -285,7 +285,7 @@ describe('boarding and the hatch (ADR-366 D7, D7a)', () => {
 
   test('`board` on a vehicle without rooms aboard refuses as not boardable; `enter` still enters it', () => {
     const { world, player, room } = harbour();
-    const bucket = vehicle(world, 'bucket', new VehicleTrait({ model: { kind: 'none' } }), room);
+    const bucket = vehicle(world, 'bucket', new VehicleTrait({ movement: { kind: 'none' } }), room);
 
     expect(messageIds(enter(world, bucket, 'board'))).toContain('if.action.entering.vehicle_not_boardable');
     expect(world.getLocation(player.id)).toBe(room.id);
@@ -296,7 +296,7 @@ describe('boarding and the hatch (ADR-366 D7, D7a)', () => {
 
   test('`get on` carries no boarding gesture, so it enters a vehicle `board` refuses', () => {
     const { world, player, room } = harbour();
-    const bucket = vehicle(world, 'bucket', new VehicleTrait({ model: { kind: 'none' } }), room);
+    const bucket = vehicle(world, 'bucket', new VehicleTrait({ movement: { kind: 'none' } }), room);
 
     const command = validateTyped(enteringAction, world, 'get on bucket');
     expect(command.parsed.extras?.gesture).toBeUndefined();
@@ -404,7 +404,7 @@ describe('the vehicle command transformer (ADR-366 D5b, D5c, D7)', () => {
 
   test('steer <direction> aboard a streets vehicle becomes going', () => {
     const { world, player, room } = harbour();
-    const car = vehicle(world, 'car', new VehicleTrait({ model: { kind: 'streets' }, commands: ['compass'] }), room);
+    const car = vehicle(world, 'car', new VehicleTrait({ movement: { kind: 'streets' }, commands: ['compass'] }), room);
     world.moveEntity(player.id, car.id);
     const out = transform(parsed(IFActions.STEERING, { direction: Direction.NORTH }), world);
     expect(out.action).toBe(IFActions.GOING);
@@ -417,14 +417,14 @@ describe('the vehicle command transformer (ADR-366 D5b, D5c, D7)', () => {
     const ship = compassShip(world, room, []);
     world.moveEntity(player.id, ship.id);
     expect(transform(parsed(IFActions.GOING, { direction: Direction.NORTH }), world).action).toBe(IFActions.GOING);
-    const tram = vehicle(world, 'tram car', new VehicleTrait({ model: { kind: 'line', stops: [room.id, 'x'], oneWay: false, drive: 'control', pace: 1 } }), room);
+    const tram = vehicle(world, 'tram car', new VehicleTrait({ movement: { kind: 'line', stops: [room.id, 'x'], oneWay: false, drive: 'control', pace: 1 } }), room);
     world.moveEntity(player.id, tram.id);
     expect(transform(parsed(IFActions.GOING, { direction: Direction.NORTH }), world).action).toBe(IFActions.GOING);
   });
 
   test('exit in a boarding room with a `to outside` exit becomes going that way, with the noun dropped; elsewhere aboard it stays exiting', () => {
     const { world, player, room } = harbour();
-    const ship = vehicle(world, 'Sparrow', new VehicleTrait({ model: { kind: 'flight', drive: 'control', destinations: [room.id, 'x'], passage: 1 } }), room, false);
+    const ship = vehicle(world, 'Sparrow', new VehicleTrait({ movement: { kind: 'flight', drive: 'control', destinations: [room.id, 'x'], passage: 1 } }), room, false);
     const airlock = world.createEntity('Airlock', 'object');
     airlock.add(new RoomTrait());
     airlock.add(new AboardTrait({ vehicleId: ship.id, outside: { [Direction.WEST]: { candidates: [room.id] } } }));

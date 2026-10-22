@@ -141,7 +141,7 @@ export const inflateAction: Action = {
 
     // The inflated boat is steered by GO into the rooms that admit it
     if (!boat.has(TraitType.VEHICLE)) {
-      boat.add(new VehicleTrait({ model: { kind: 'streets' } }));
+      boat.add(new VehicleTrait({ movement: { kind: 'streets' } }));
     }
   },
 

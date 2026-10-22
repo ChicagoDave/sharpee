@@ -69,20 +69,20 @@ describe('Vehicle model', () => {
 
   describe('the trait (D8)', () => {
     it('refuses a line with fewer than two stops', () => {
-      expect(() => new VehicleTrait({ model: { kind: 'line', stops: [top.id], oneWay: false, drive: 'control' } }))
+      expect(() => new VehicleTrait({ movement: { kind: 'line', stops: [top.id], oneWay: false, drive: 'control' } }))
         .toThrow('at least two stops');
     });
 
     it('refuses a line that names a stop twice', () => {
-      expect(() => new VehicleTrait({ model: { kind: 'line', stops: [top.id, top.id], oneWay: false, drive: 'control' } }))
+      expect(() => new VehicleTrait({ movement: { kind: 'line', stops: [top.id, top.id], oneWay: false, drive: 'control' } }))
         .toThrow('each stop once');
     });
 
     it('owns its stops: changing the array it was built from changes nothing', () => {
       const stops = [top.id, bottom.id];
-      const trait = new VehicleTrait({ model: { kind: 'line', stops, oneWay: false, drive: 'control' } });
+      const trait = new VehicleTrait({ movement: { kind: 'line', stops, oneWay: false, drive: 'control' } });
       stops.push(elsewhere.id);
-      expect(trait.model).toEqual({ kind: 'line', stops: [top.id, bottom.id], oneWay: false, drive: 'control', underWay: false, travelDirection: 'onward', turnsToStep: 0 });
+      expect(trait.movement).toEqual({ kind: 'line', stops: [top.id, bottom.id], oneWay: false, drive: 'control', underWay: false, travelDirection: 'onward', turnsToStep: 0 });
     });
   });
 
@@ -91,7 +91,7 @@ describe('Vehicle model', () => {
 
     beforeEach(() => {
       bucket = vehicle('bucket', new VehicleTrait({
-        model: { kind: 'line', stops: [top.id, bottom.id], oneWay: false, drive: 'control' }
+        movement: { kind: 'line', stops: [top.id, bottom.id], oneWay: false, drive: 'control' }
       }));
       world.moveEntity(bucket.id, top.id);
     });
@@ -154,7 +154,7 @@ describe('Vehicle model', () => {
     });
 
     it('a streets vehicle is steered', () => {
-      const car = vehicle('car', new VehicleTrait({ model: { kind: 'streets' } }));
+      const car = vehicle('car', new VehicleTrait({ movement: { kind: 'streets' } }));
       world.moveEntity(car.id, top.id);
       world.moveEntity(player.id, car.id);
       expect(goingFromVehicle(world, player.id)).toEqual({ kind: 'steers', vehicle: car });
@@ -163,7 +163,7 @@ describe('Vehicle model', () => {
 
   describe('admits (D6)', () => {
     it('a room admits no vehicle until it names it, as traversal reads it', () => {
-      const car = vehicle('car', new VehicleTrait({ model: { kind: 'streets' } }));
+      const car = vehicle('car', new VehicleTrait({ movement: { kind: 'streets' } }));
       const steered = { kind: 'steered', vehicle: car } as const;
       expect(TraversalBehavior.admitsMover(null, bottom, steered)).toBe(false);
       bottom.get(RoomTrait)!.admits.vehicles.push(car.id);
@@ -233,25 +233,25 @@ describe('Vehicle model', () => {
 
   describe('the five models and the machine state they carry (D5, D5g)', () => {
     it('a compass model starts with no heading; a flight model with no destination', () => {
-      const ship = new VehicleTrait({ model: { kind: 'compass', drive: 'player', pace: 2 }, commands: ['compass'] });
-      expect(ship.model).toEqual({ kind: 'compass', drive: 'player', pace: 2, heading: null, turnsToStep: 0 });
+      const ship = new VehicleTrait({ movement: { kind: 'compass', drive: 'player', pace: 2 }, commands: ['compass'] });
+      expect(ship.movement).toEqual({ kind: 'compass', drive: 'player', pace: 2, heading: null, turnsToStep: 0 });
       expect(ship.commands).toEqual(['compass']);
-      const courier = new VehicleTrait({ model: { kind: 'flight', drive: 'control', destinations: [top.id, bottom.id], passage: 5 } });
-      expect(courier.model).toEqual({ kind: 'flight', drive: 'control', destinations: [top.id, bottom.id], passage: 5, destination: null, turnsRemaining: 0 });
+      const courier = new VehicleTrait({ movement: { kind: 'flight', drive: 'control', destinations: [top.id, bottom.id], passage: 5 } });
+      expect(courier.movement).toEqual({ kind: 'flight', drive: 'control', destinations: [top.id, bottom.id], passage: 5, destination: null, turnsRemaining: 0 });
     });
 
     it('refuses a pace under one turn, a passage under one turn, and a flight with one destination', () => {
-      expect(() => new VehicleTrait({ model: { kind: 'compass', drive: 'player', pace: 0 } })).toThrow('pace');
-      expect(() => new VehicleTrait({ model: { kind: 'flight', drive: 'control', destinations: [top.id, bottom.id], passage: 0 } })).toThrow('passage');
-      expect(() => new VehicleTrait({ model: { kind: 'flight', drive: 'control', destinations: [top.id, top.id], passage: 1 } })).toThrow('two destinations');
+      expect(() => new VehicleTrait({ movement: { kind: 'compass', drive: 'player', pace: 0 } })).toThrow('pace');
+      expect(() => new VehicleTrait({ movement: { kind: 'flight', drive: 'control', destinations: [top.id, bottom.id], passage: 0 } })).toThrow('passage');
+      expect(() => new VehicleTrait({ movement: { kind: 'flight', drive: 'control', destinations: [top.id, top.id], passage: 1 } })).toThrow('two destinations');
     });
 
     it('GO from inside a compass or flight vehicle rides; from a `none` vehicle it stays', () => {
-      const ship = vehicle('ship', new VehicleTrait({ model: { kind: 'compass', drive: 'player', pace: 1 } }));
+      const ship = vehicle('ship', new VehicleTrait({ movement: { kind: 'compass', drive: 'player', pace: 1 } }));
       world.moveEntity(ship.id, top.id);
       world.moveEntity(player.id, ship.id);
       expect(goingFromVehicle(world, player.id)).toEqual({ kind: 'rides', vehicle: ship });
-      const tub = vehicle('tub', new VehicleTrait({ model: { kind: 'none' } }));
+      const tub = vehicle('tub', new VehicleTrait({ movement: { kind: 'none' } }));
       world.moveEntity(tub.id, top.id);
       world.moveEntity(player.id, tub.id);
       expect(goingFromVehicle(world, player.id)).toEqual({ kind: 'stays', vehicle: tub });
@@ -260,45 +260,45 @@ describe('Vehicle model', () => {
 
   describe('the driving statements set the machine state (D5f)', () => {
     it('start puts a controlled line under way from its stop, turning back at a both-ways end', () => {
-      const tram = vehicle('tram', new VehicleTrait({ model: { kind: 'line', stops: [top.id, bottom.id], oneWay: false, drive: 'control', pace: 2 } }));
+      const tram = vehicle('tram', new VehicleTrait({ movement: { kind: 'line', stops: [top.id, bottom.id], oneWay: false, drive: 'control', pace: 2 } }));
       world.moveEntity(tram.id, bottom.id);
       expect(isUnderWay(tram)).toBe(false);
       expect(startVehicle(world, tram)).toBe(true);
-      expect(tram.get(VehicleTrait)!.model).toMatchObject({ underWay: true, travelDirection: 'back', turnsToStep: 2 });
+      expect(tram.get(VehicleTrait)!.movement).toMatchObject({ underWay: true, travelDirection: 'back', turnsToStep: 2 });
       expect(isUnderWay(tram)).toBe(true);
       expect(stopVehicle(tram)).toBe(true);
-      expect(tram.get(VehicleTrait)!.model).toMatchObject({ underWay: false, turnsToStep: 0 });
+      expect(tram.get(VehicleTrait)!.movement).toMatchObject({ underWay: false, turnsToStep: 0 });
     });
 
     it('start refuses a one-way line at its end', () => {
-      const funicular = vehicle('funicular', new VehicleTrait({ model: { kind: 'line', stops: [top.id, bottom.id], oneWay: true, drive: 'control', pace: 1 } }));
+      const funicular = vehicle('funicular', new VehicleTrait({ movement: { kind: 'line', stops: [top.id, bottom.id], oneWay: true, drive: 'control', pace: 1 } }));
       world.moveEntity(funicular.id, bottom.id);
       expect(startVehicle(world, funicular)).toBe(false);
       expect(isUnderWay(funicular)).toBe(false);
     });
 
     it('start heading sets a compass vehicle\'s heading; stop clears it', () => {
-      const ship = vehicle('ship', new VehicleTrait({ model: { kind: 'compass', drive: 'control', pace: 3 } }));
+      const ship = vehicle('ship', new VehicleTrait({ movement: { kind: 'compass', drive: 'control', pace: 3 } }));
       expect(startVehicle(world, ship)).toBe(false);
       expect(startVehicle(world, ship, 'NORTH')).toBe(true);
-      expect(ship.get(VehicleTrait)!.model).toMatchObject({ heading: 'NORTH', turnsToStep: 3 });
+      expect(ship.get(VehicleTrait)!.movement).toMatchObject({ heading: 'NORTH', turnsToStep: 3 });
       expect(isUnderWay(ship)).toBe(true);
       stopVehicle(ship);
-      expect(ship.get(VehicleTrait)!.model).toMatchObject({ heading: null });
+      expect(ship.get(VehicleTrait)!.movement).toMatchObject({ heading: null });
     });
 
     it('send binds a flight vehicle to one of its destinations and nothing else', () => {
-      const courier = vehicle('courier', new VehicleTrait({ model: { kind: 'flight', drive: 'control', destinations: [top.id, bottom.id], passage: 4 } }));
+      const courier = vehicle('courier', new VehicleTrait({ movement: { kind: 'flight', drive: 'control', destinations: [top.id, bottom.id], passage: 4 } }));
       expect(sendVehicle(world, courier, elsewhere.id)).toBe(false);
       expect(sendVehicle(world, courier, bottom.id)).toBe(true);
-      expect(courier.get(VehicleTrait)!.model).toMatchObject({ destination: bottom.id, turnsRemaining: 4 });
+      expect(courier.get(VehicleTrait)!.movement).toMatchObject({ destination: bottom.id, turnsRemaining: 4 });
       expect(isUnderWay(courier)).toBe(true);
     });
   });
 
   describe('rooms aboard and the outside exit (D7)', () => {
     it('resolves to the vehicle\'s room on each use, through the door, and is blocked under way', () => {
-      const courier = vehicle('courier', new VehicleTrait({ model: { kind: 'flight', drive: 'control', destinations: [top.id, bottom.id], passage: 4 } }));
+      const courier = vehicle('courier', new VehicleTrait({ movement: { kind: 'flight', drive: 'control', destinations: [top.id, bottom.id], passage: 4 } }));
       world.moveEntity(courier.id, top.id);
       const airlock = room('Airlock');
       airlock.add(new AboardTrait({ vehicleId: courier.id, outside: { WEST: { candidates: [top.id, bottom.id], via: 'd-hatch' } } }));

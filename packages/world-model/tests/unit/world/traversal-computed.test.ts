@@ -65,7 +65,7 @@ describe('a computed way, admitted by traversal (F1)', () => {
   }
 
   function ferryModel(): { underWay: boolean } {
-    return ferry.get(VehicleTrait)!.model as unknown as { underWay: boolean };
+    return ferry.get(VehicleTrait)!.movement as unknown as { underWay: boolean };
   }
 
   const ctx = () => ({ world, actorId: player.id, random: noDraws });
@@ -74,11 +74,11 @@ describe('a computed way, admitted by traversal (F1)', () => {
     world = new WorldModel();
     harbour = room('Harbour');
     quay = room('Quay');
-    ferry = vehicle('ferry', new VehicleTrait({ model: { kind: 'line', stops: [harbour.id, quay.id], oneWay: false, drive: 'control', pace: 1 } }), harbour);
+    ferry = vehicle('ferry', new VehicleTrait({ movement: { kind: 'line', stops: [harbour.id, quay.id], oneWay: false, drive: 'control', pace: 1 } }), harbour);
     wellDeck = room('Well Deck');
     wellDeck.add(new AboardTrait({ vehicleId: ferry.id, outside: { [Direction.WEST]: { candidates: [harbour.id, quay.id] } } }));
     registerVehicleExitResolver(world);
-    boat = vehicle('jolly boat', new VehicleTrait({ model: { kind: 'compass', drive: 'control', pace: 1 } }), wellDeck);
+    boat = vehicle('jolly boat', new VehicleTrait({ movement: { kind: 'compass', drive: 'control', pace: 1 } }), wellDeck);
     harbour.get(RoomTrait)!.admits.vehicles.push(boat.id);
     player = world.createEntity('player', EntityType.ACTOR);
     player.add(new ActorTrait());

@@ -6,15 +6,16 @@
  * `angleOffWind`), `distance`, the distance bands
  * (`SightBand`, `sightBandOf`), `landmarkAt`, `landmarkCellOf`, `expanseOfLandmark`,
  * `floatingThingsAt`, `receiveInExpanse` (what becomes of a thing that
- * lands in an expanse), `clearFloatingPosition`, and the drift step
+ * lands in an expanse), `clearFloatingPosition`, the weather setters
+ * `setExpanseVisibility` and `setExpanseWind`, and the drift step
  * `driftExpanse` with its result `DriftStep`. Where a thing is in an
  * expanse is a system of its own (`world/ExpansePlaceBehavior.ts`), as is
  * sight across one (`world/SightBehavior.ts`).
  *
  * Owner context: world-model expanse behavior. Every answer is read from the
  * world and the traits; nothing here keeps a position of its own. The
- * mutations are drift (a floating thing's cell, or a wash-up into a
- * landmark's room), a thing received by the expanse (afloat at a cell, or
+ * mutations are the expanse's visibility and wind, drift (a floating thing's
+ * cell, or a wash-up into a landmark's room), a thing received by the expanse (afloat at a cell, or
  * lost offstage, D9/D10), and a floating thing taken out of it. The vehicle's own
  * stepping is `vehicleBehavior.ts`, which reads this module for the
  * landmarks, the floating things and the compass.
@@ -31,7 +32,7 @@ import { definePoint, type ChoicePoint, type RandomService } from '@sharpee/core
 import type { WorldModel } from '../../world/WorldModel.js';
 import type { IFEntity } from '../../entities/if-entity.js';
 import { TraitType } from '../trait-types.js';
-import { ExpanseTrait, isInsideExpanse, sameCell, type IExpanseCell } from './expanseTrait.js';
+import { ExpanseTrait, isExpanseVisibility, isExpanseWind, isInsideExpanse, sameCell, type ExpanseWind, type IExpanseCell } from './expanseTrait.js';
 import { FloatingTrait } from './floatingTrait.js';
 import { Direction, type DirectionType } from '../../constants/directions.js';
 
@@ -210,6 +211,33 @@ export function clearFloatingPosition(thing: IFEntity): boolean {
   const floating = thing.get(FloatingTrait);
   if (!floating?.position) return false;
   floating.position = null;
+  return true;
+}
+
+/**
+ * Set the cap on every looker's sight in an expanse (D6), for fog and night.
+ *
+ * @returns false, changing nothing, when the entity is not an expanse or the
+ *   value is not zero or more
+ */
+export function setExpanseVisibility(expanse: IFEntity, visibility: number): boolean {
+  const trait = expanse.get(ExpanseTrait);
+  if (!trait || !isExpanseVisibility(visibility)) return false;
+  trait.visibility = visibility;
+  return true;
+}
+
+/**
+ * Set the wind an expanse carries (ADR-375 D4); the sailing table reads it
+ * on the next step.
+ *
+ * @returns false, changing nothing, when the entity is not an expanse or the
+ *   wind is neither a bearing 0 to 359 nor `calm`
+ */
+export function setExpanseWind(expanse: IFEntity, wind: ExpanseWind): boolean {
+  const trait = expanse.get(ExpanseTrait);
+  if (!trait || !isExpanseWind(wind)) return false;
+  trait.wind = wind;
   return true;
 }
 

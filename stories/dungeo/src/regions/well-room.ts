@@ -288,7 +288,7 @@ function createBucket(
   bucket.add(new OpenableTrait({ isOpen: true }));
   // A line with two stops, written top first; the story drives it by water weight
   bucket.add(new VehicleTrait({
-    model: { kind: 'line', stops: [topOfWellId, wellBottomId], oneWay: false, drive: 'control' }
+    movement: { kind: 'line', stops: [topOfWellId, wellBottomId], oneWay: false, drive: 'control' }
   }));
   bucket.add(new BucketTrait({ hasWater: false }));
   world.moveEntity(bucket.id, startRoomId);

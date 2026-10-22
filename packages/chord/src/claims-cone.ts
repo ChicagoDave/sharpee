@@ -34,6 +34,7 @@ import {
   OFFSTAGE,
   extractRules,
   resolveValue,
+  timerKeysOf,
   valueReads,
   type ConeRule,
   type ConeSet,
@@ -116,7 +117,7 @@ class ConeWorld {
   private readonly placeChanged = new Set<string>();
   private widened = false;
 
-  constructor(private readonly ir: StoryIR, set: ClaimConeSet) {
+  constructor(readonly ir: StoryIR, set: ClaimConeSet) {
     this.setThings = new Set(set.things);
     const traitStates = new Map<string, string[]>((ir.traits ?? []).map((t) => [t.name, t.states ?? []]));
     for (const entity of ir.entities) {
@@ -357,7 +358,7 @@ class ConeWorld {
       case 'story-state':
         return this.mayHaveState('story', condition.state);
       case 'timer-has':
-        return this.startedTimers.has(condition.timer) ? 'maybe' : 'false';
+        return timerKeysOf(this.ir, condition.name, condition.owner, { owner }).some((key) => this.startedTimers.has(key)) ? 'maybe' : 'false';
       case 'condition': {
         const named = this.namedCondition(condition.name);
         if (!named) return 'maybe';
@@ -554,7 +555,7 @@ function conditionReads(condition: IRCondition, owner: string | null, world: Con
     case 'story-state':
       return ['state:story'];
     case 'timer-has':
-      return [`timer:${condition.timer}`];
+      return timerKeysOf(world.ir, condition.name, condition.owner, { owner }).map((key) => `timer:${key}`);
     case 'chapter':
       return world.chapterReads();
     case 'condition': {
@@ -569,7 +570,7 @@ function conditionReads(condition: IRCondition, owner: string | null, world: Con
     case 'satisfies':
       return [...WILDCARD_READS, ...resolveValue(condition.subject, { owner }).flatMap((id) => [`state:${id}`, `place:${id}`, `flag:${id}`])];
     case 'compare':
-      return [...valueReads(condition.left, { owner }), ...valueReads(condition.right, { owner })];
+      return [...valueReads(condition.left, { owner }, world.ir), ...valueReads(condition.right, { owner }, world.ir)];
     case 'feels':
       return [...resolveValue(condition.subject, { owner }), ...resolveValue(condition.target, { owner })].map((id) => `flag:${id}`);
     case 'knows-topic':

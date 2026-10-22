@@ -1,12 +1,11 @@
 /**
  * sailing.ts — the `use sailing` registry entry.
  *
- * One moment today. `gatedConstruct` names a sailing vehicle or a wind
- * written without the `use` line, the backstop every entry carries behind
- * the analyzer's own gate. The runtime parts — bearings, the naval set,
- * wind, the sailing block, sails — are the sailing runtime's (Chord 4.0
- * Phase 13, Slice 6), and until they land the loader refuses each by name
- * rather than playing a ship with no wind.
+ * One moment. `gatedConstruct` names a sailing vehicle or a wind written
+ * without the `use` line, the backstop every entry carries behind the
+ * analyzer's own gate. The runtime parts are not here: the loader lowers a
+ * `sailing` block and `sails:` onto the vehicle's open model and `wind:`
+ * onto the expanse, and the vehicle machine plays them.
  *
  * Public interface: SAILING_EXTENSION.
  * Owner context: @sharpee/story-loader (language-neutral IR consumer).

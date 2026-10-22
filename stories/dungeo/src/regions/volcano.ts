@@ -463,7 +463,7 @@ function createBalloonObjects(world: WorldModel, roomIds: VolcanoRoomIds): Volca
     'ledg4': roomIds.wideLedge,
   };
   balloon.add(new VehicleTrait({
-    model: {
+    movement: {
       kind: 'line',
       stops: BALLOON_POSITIONS.map(position => positionRooms[position]),
       oneWay: false,

@@ -406,9 +406,8 @@ describe('`send` to coordinates or a landmark (D3)', () => {
   it('`send <vehicle> to <x>, <y>` lowers to a course; `to <landmark>` to the room', () => {
     const ir = compiled(story(BELT, CONTROLLED_SKIFF, LANDMARKS, console('    send the skiff to 14, 9\n    send the skiff to the Derelict')));
     const sends = findNodes(ir, 'vehicle-send');
-    expect(sends[0]).toMatchObject({ vehicle: { kind: 'entity', id: 'skiff' }, destination: { kind: 'entity', id: '' }, coordinates: { x: 14, y: 9 } });
-    expect(sends[1]).toMatchObject({ vehicle: { kind: 'entity', id: 'skiff' }, destination: { kind: 'entity', id: 'derelict' } });
-    expect(sends[1]).not.toHaveProperty('coordinates');
+    expect(sends[0]).toMatchObject({ vehicle: { kind: 'entity', id: 'skiff' }, to: { kind: 'cell', x: 14, y: 9 } });
+    expect(sends[1]).toMatchObject({ vehicle: { kind: 'entity', id: 'skiff' }, to: { kind: 'room', room: { kind: 'entity', id: 'derelict' } } });
   });
 
   it('a room that is not a landmark is analysis.not-a-destination; coordinates outside the size are refused', () => {

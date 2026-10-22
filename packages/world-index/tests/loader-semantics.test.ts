@@ -111,7 +111,7 @@ describe('D3 row 2 — every exit is mirrored, so adjacency is undirected', () =
     expect(hall?.exits?.map((x) => x.direction)).toEqual(['north']);
     expect(rooms.find((r) => r.id === 'study')?.exits ?? []).toHaveLength(0);
 
-    const adjacency = undirectedExits(rooms, (id) => ids.has(id));
+    const adjacency = undirectedExits(rooms, (id) => ids.has(id), ir.entities);
     expect([...(adjacency.get('hall') ?? [])]).toEqual(['study']);
     expect([...(adjacency.get('study') ?? [])]).toEqual(['hall']);
   });
@@ -119,7 +119,7 @@ describe('D3 row 2 — every exit is mirrored, so adjacency is undirected', () =
   it('drops an exit whose destination is not a room, rather than inventing adjacency', () => {
     const ir = irOf(TWO_ROOMS);
     const rooms = roomsOf(ir);
-    const adjacency = undirectedExits(rooms, (id) => id === 'study');
+    const adjacency = undirectedExits(rooms, (id) => id === 'study', ir.entities);
     expect(adjacency.get('hall')?.has('study')).toBe(true);
     expect(adjacency.size).toBe(rooms.filter(isRoom).length);
   });
@@ -292,7 +292,7 @@ create the oak door
 `);
     const rooms = roomsOf(ir);
     const known = new Set(rooms.map((room) => room.id));
-    const edges = wiredEdges(rooms, (id) => known.has(id));
+    const edges = wiredEdges(rooms, (id) => known.has(id), ir.entities);
 
     expect(edges).toContainEqual({
       from: 'hall', to: 'study', direction: 'north', via: 'oak-door', authored: true,
@@ -305,7 +305,7 @@ create the oak door
   it('yields no edge in either direction for an exit to nowhere', () => {
     const ir = irOf(TWO_ROOMS);
     const rooms = roomsOf(ir);
-    const edges = wiredEdges(rooms, (id) => id === 'hall');
+    const edges = wiredEdges(rooms, (id) => id === 'hall', ir.entities);
 
     expect(edges).toEqual([]);
   });

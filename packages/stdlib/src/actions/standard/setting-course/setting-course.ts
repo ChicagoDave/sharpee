@@ -67,7 +67,7 @@ function typedCell(typed: string): IExpanseCell | undefined {
  */
 function courseCandidates(world: WorldModel, actorId: string): readonly string[] {
   const vehicle = getVehicleAboard(world, actorId);
-  const model = vehicle?.get(VehicleTrait)?.model;
+  const model = vehicle?.get(VehicleTrait)?.movement;
   if (model?.kind === 'flight') return model.destinations;
   if (model?.kind === 'open') {
     const expanse = placeOf(world, vehicle!)?.expanse;
@@ -101,7 +101,7 @@ function namedDestination(context: ActionContext): IFEntity | undefined {
 
 /** The destination room the player named, among the vehicle's destinations. */
 function matchDestination(vehicle: IFEntity, named: IFEntity | undefined): IFEntity | undefined {
-  const model = vehicle.get(VehicleTrait)?.model;
+  const model = vehicle.get(VehicleTrait)?.movement;
   if (model?.kind !== 'flight' || !named) return undefined;
   return model.destinations.includes(named.id) ? named : undefined;
 }
@@ -152,7 +152,7 @@ export const settingCourseAction: Action & { metadata: ActionMetadata } = {
       return { valid: false, error: SettingCourseMessages.NOT_IN_VEHICLE };
     }
     const params = { vehicle: nounPhraseFor(vehicle) };
-    const model = vehicle.get(VehicleTrait)?.model;
+    const model = vehicle.get(VehicleTrait)?.movement;
     const open = model?.kind === 'open' && takesCommandSet(vehicle, COORDINATES_COMMAND_SET);
     if (!open && (!takesCommandSet(vehicle, DESTINATIONS_COMMAND_SET) || model?.kind !== 'flight')) {
       return { valid: false, error: SettingCourseMessages.VEHICLE_NO_SUCH_COMMAND, params };
@@ -203,7 +203,7 @@ export const settingCourseAction: Action & { metadata: ActionMetadata } = {
     const sharedData = context.sharedData as SettingCourseSharedData;
     sharedData.vehicleId = vehicle.id;
     const typed = typedDestination(context)!;
-    if (vehicle.get(VehicleTrait)?.model?.kind === 'open') {
+    if (vehicle.get(VehicleTrait)?.movement?.kind === 'open') {
       const expanse = placeOf(context.world, vehicle)!.expanse;
       const course = matchOpenCourse(expanse, typed, namedDestination(context)) as OpenCourse;
       if (course.room) {

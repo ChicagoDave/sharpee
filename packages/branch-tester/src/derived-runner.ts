@@ -77,7 +77,7 @@
  * not re-walk the IR); ADR-293 D12 (real path only).
  */
 
-import type { IRCondition, IRStatement, IRValue, Span, StoryIR } from '@sharpee/chord';
+import { timerKeysFor, type IRCondition, type IRStatement, type IRValue, type Span, type StoryIR } from '@sharpee/chord';
 import { collectClauseBranches, type BranchClause, type BranchPrecondition, type ClauseBranch } from '@sharpee/world-index';
 import { arrange, CHORD_GONE_PREFIX, CHORD_IR_ID_ATTRIBUTE, CHORD_STATE_PREFIX, counterKey, parsePin } from '@sharpee/story-loader';
 import { evaluateStateExpression, runCommand, type AssertionResult, type TestEventInfo, type TranscriptCommand } from '@sharpee/transcript-tester';
@@ -686,8 +686,18 @@ function conditionTerms(
           return { shape: `predicate-${condition.pred}`, detail: `\`${condition.pred}\` is not a floor form` };
       }
     }
-    case 'timer-has':
-      return { terms: [{ kind: 'pin', expression: `${condition.timer} has ${condition.what}`, mustHold: holds }] };
+    case 'timer-has': {
+      // A pin names one timer by its key; `the player's` names one only when one character is playable.
+      const owner = condition.owner;
+      const keys = owner === null ? timerKeysFor(scope.ir, condition.name, null)
+        : owner.kind === 'entity' ? timerKeysFor(scope.ir, condition.name, owner.id)
+        : owner.kind === 'player' ? timerKeysFor(scope.ir, condition.name, 'player')
+        : [];
+      if (keys.length !== 1) {
+        return { shape: 'condition-timer-has', detail: `\`${condition.name}\` names ${keys.length} timers (the player's, one per playable character) — a pin names one` };
+      }
+      return { terms: [{ kind: 'pin', expression: `${keys[0]} has ${condition.what}`, mustHold: holds }] };
+    }
     case 'asked':
       return { terms: [{ kind: 'pin', expression: `it asked ${condition.word.replace('-', ' ')}`, mustHold: holds }] };
     case 'discussed':

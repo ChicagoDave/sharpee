@@ -20,7 +20,7 @@ import type { ISemanticEvent } from '@sharpee/core';
 import { SOUND_EVENT_TYPES, type Choice, type ISound } from '@sharpee/if-domain';
 import { killPlayer } from '@sharpee/stdlib';
 import { directionOfWord } from '../direction-words.js';
-import { ExpanseTrait, type IFEntity, isAboardVehicle, sendVehicle, setSails, startVehicle, stopVehicle, TraitType, VEHICLE_EVENT_TYPES, VEHICLE_REPORT_MESSAGES, VehicleTrait, WearableBehavior, type WearableTrait, WorldModel } from '@sharpee/world-model';
+import { type IFEntity, isAboardVehicle, sendVehicle, setExpanseVisibility, setExpanseWind, setSails, startVehicle, stopVehicle, TraitType, VEHICLE_EVENT_TYPES, VEHICLE_REPORT_MESSAGES, VehicleTrait, WearableBehavior, type WearableTrait, WorldModel } from '@sharpee/world-model';
 import { DecisionLedger } from '../decisions.js';
 import { LoadError } from '../errors.js';
 import { EVENT_TRIGGERS } from '../event-contract.js';
@@ -172,7 +172,7 @@ export class StatementsSection {
               );
               ctx.world.setStateValue(CHORD_STORY_STATE_KEY, stmt.state);
             } else {
-              const irId = this.irIdOfValue(stmt.entity, ctx);
+              const irId = this.core.evaluator.ownerIrId(stmt.entity, ctx);
               const set = this.stateSetOf(irId, stmt.state);
               if (set) {
                 this.checkForwardMarch(
@@ -317,7 +317,8 @@ export class StatementsSection {
           // and fires its expiry clauses in place — decided once in the
           // mutations pass, their narration replayed to the reports pass.
           if (!holds) break;
-          const fired = ledger.resolve(stmt, 'expiry', () => this.core.timers.runTimerVerb(stmt.verb, stmt.timer, ctx));
+          const fired = ledger.resolve(stmt, 'expiry', () =>
+            this.core.timers.runTimerVerb(stmt.verb, this.core.evaluator.timerKeyOf(stmt.name, stmt.owner, ctx), ctx));
           if (phase !== 'mutations') events.push(...fired);
           break;
         }
@@ -336,14 +337,14 @@ export class StatementsSection {
             if (stmt.kind === 'vehicle-start') {
               // ADR-375 D2: a bearing in degrees, or a compass word as the platform's constant (D15).
               const started = startVehicle(ctx.world, vehicle, stmt.bearing ?? (stmt.heading === undefined ? undefined : directionOfWord(stmt.heading)));
-              if (!started && vehicle.get(VehicleTrait)?.model?.kind === 'line') this.reportVehicleAtEnd(vehicle, ctx.world);
+              if (!started && vehicle.get(VehicleTrait)?.movement?.kind === 'line') this.reportVehicleAtEnd(vehicle, ctx.world);
             } else if (stmt.kind === 'vehicle-stop') {
               stopVehicle(vehicle);
-            } else if (stmt.coordinates) {
+            } else if (stmt.to.kind === 'cell') {
               // ADR-376 D3: a course for a cell of the vehicle's expanse.
-              sendVehicle(ctx.world, vehicle, { x: stmt.coordinates.x, y: stmt.coordinates.y });
+              sendVehicle(ctx.world, vehicle, { x: stmt.to.x, y: stmt.to.y });
             } else {
-              sendVehicle(ctx.world, vehicle, this.core.evaluator.entityValue(stmt.destination, ctx));
+              sendVehicle(ctx.world, vehicle, this.core.evaluator.entityValue(stmt.to.room, ctx));
             }
           }
           break;
@@ -352,7 +353,7 @@ export class StatementsSection {
         case 'lower': {
           // ADR-264 D2: additive counter mutation with silent two-sided clamp.
           if (phase !== 'reports' && holds) {
-            const ownerIrId = stmt.owner === null ? null : this.irIdOfValue(stmt.owner, ctx);
+            const ownerIrId = stmt.owner === null ? null : this.core.evaluator.ownerIrId(stmt.owner, ctx);
             const key = counterKey(stmt.counter, ownerIrId ?? undefined);
             const bounds = this.core.phrases.counterBounds(stmt.counter, ownerIrId);
             const current = Number(ctx.world.getStateValue(key) ?? 0);
@@ -368,7 +369,7 @@ export class StatementsSection {
         case 'set-counter': {
           // ADR-325 D4: absolute tally assignment, clamped like raise/lower.
           if (phase !== 'reports' && holds) {
-            const ownerIrId = stmt.owner === null ? null : this.irIdOfValue(stmt.owner, ctx);
+            const ownerIrId = stmt.owner === null ? null : this.core.evaluator.ownerIrId(stmt.owner, ctx);
             const key = counterKey(stmt.counter, ownerIrId ?? undefined);
             const bounds = this.core.phrases.counterBounds(stmt.counter, ownerIrId);
             let next = stmt.value;
@@ -451,18 +452,20 @@ export class StatementsSection {
           // ADR-376 D6: the cap on every looker's sight in the expanse, for
           // fog and night; trait data, so it rides a save.
           if (phase !== 'reports' && holds) {
-            const expanse = ctx.world.getEntity(this.core.evaluator.entityValue(stmt.expanse, ctx))?.get(ExpanseTrait);
-            if (!expanse) throw new LoadError('`set … visibility` names an entity that is not an expanse.', stmt.span);
-            expanse.visibility = stmt.value;
+            const expanse = ctx.world.getEntity(this.core.evaluator.entityValue(stmt.expanse, ctx));
+            if (!expanse || !setExpanseVisibility(expanse, stmt.value)) {
+              throw new LoadError('`set … visibility` names an entity that is not an expanse, or a visibility below zero.', stmt.span);
+            }
           }
           break;
         }
         case 'expanse-wind': {
           // ADR-375 D4: the wind an expanse carries — the sailing table reads it live.
           if (phase !== 'reports' && holds) {
-            const expanse = ctx.world.getEntity(this.core.evaluator.entityValue(stmt.expanse, ctx))?.get(ExpanseTrait);
-            if (!expanse) throw new LoadError('`set … wind` names an entity that is not an expanse.', stmt.span);
-            expanse.wind = stmt.wind === 'calm' ? 'calm' : stmt.wind.bearing;
+            const expanse = ctx.world.getEntity(this.core.evaluator.entityValue(stmt.expanse, ctx));
+            if (!expanse || !setExpanseWind(expanse, stmt.wind === 'calm' ? 'calm' : stmt.wind.bearing)) {
+              throw new LoadError('`set … wind` names an entity that is not an expanse, or a bearing outside 0 to 359.', stmt.span);
+            }
           }
           break;
         }
@@ -637,7 +640,7 @@ export class StatementsSection {
     if (!place?.has(TraitType.EXPANSE)) return false;
     const thing = world.getEntity(thingWorldId);
     if (!thing || thing.has(TraitType.FLOATING) || thing.has(TraitType.ACTOR)) return false;
-    return thing.get(VehicleTrait)?.model?.kind !== 'open';
+    return thing.get(VehicleTrait)?.movement?.kind !== 'open';
   }
 
   /**
@@ -970,17 +973,5 @@ export class StatementsSection {
       if (this.core.evaluator.evalCondition({ kind: 'chance', n: count - i }, ctx)) return i;
     }
     return count - 1;
-  }
-
-  private irIdOfValue(value: IRValue, ctx: ExecContext): string {
-    if (value.kind === 'entity') return value.id;
-    if (value.kind === 'it') {
-      if (!ctx.it) throw new LoadError('`it` used outside an entity-scoped clause.');
-      return ctx.it;
-    }
-    const worldId = this.core.evaluator.entityValue(value, ctx);
-    const irId = this.core.host.irIdOf(worldId);
-    if (!irId) throw new LoadError('Cannot change the state of a non-story entity.');
-    return irId;
   }
 }

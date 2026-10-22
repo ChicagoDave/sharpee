@@ -21,7 +21,7 @@ import {
   SightTrait,
   VehicleTrait,
   type IFEntity,
-  type VehicleOpenModel,
+  type VehicleOpenMovement,
   WorldModel,
 } from '@sharpee/world-model';
 import { steeringAction } from '../../../src/actions/standard/steering';
@@ -67,7 +67,7 @@ function belt(): Belt {
   skiff.add(new IdentityTrait({ name: 'skiff' }));
   skiff.add(new ContainerTrait());
   skiff.add(new EnterableTrait());
-  skiff.add(new VehicleTrait({ model: { kind: 'open', drive: 'player', pace: 1, stride: 1, sight: 6, seenFromAfar: 'a glint of hull', position: { x: 4, y: 3 } }, commands: ['compass', 'coordinates'] }));
+  skiff.add(new VehicleTrait({ movement: { kind: 'open', drive: 'player', pace: 1, stride: 1, sight: 6, seenFromAfar: 'a glint of hull', position: { x: 4, y: 3 } }, commands: ['compass', 'coordinates'] }));
   world.moveEntity(skiff.id, expanse.id);
   const cask = world.createEntity('cask', 'object');
   cask.add(new IdentityTrait({ name: 'cask' }));
@@ -77,8 +77,8 @@ function belt(): Belt {
   return { world, player, belt: expanse, platform, derelict, skiff, cask };
 }
 
-function model(skiff: IFEntity): VehicleOpenModel {
-  return skiff.get(VehicleTrait)!.model as VehicleOpenModel;
+function model(skiff: IFEntity): VehicleOpenMovement {
+  return skiff.get(VehicleTrait)!.movement as VehicleOpenMovement;
 }
 
 function messageIds(events: { data?: any }[]): string[] {

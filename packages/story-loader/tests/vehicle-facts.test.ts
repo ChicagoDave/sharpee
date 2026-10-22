@@ -11,7 +11,7 @@
  * reads the world, the turn's events, or the turn's rendered text.
  */
 import { describe, expect, it } from 'vitest';
-import { FloatingTrait, startVehicle, VehicleTrait, type IFEntity, type VehicleOpenModel } from '@sharpee/world-model';
+import { FloatingTrait, startVehicle, VehicleTrait, type IFEntity, type VehicleOpenMovement } from '@sharpee/world-model';
 import { bootTurns, type BootedTurns } from './helpers/boot-turns';
 
 const FUNICULAR = (upper: string) => `story
@@ -287,6 +287,6 @@ describe('an edge is a rider\'s experience (Q5 C)', () => {
 
     expect(edge).toMatchObject({ presence: 'absent', entities: { location: named(b, 'Pool').id }, data: { side: 'NORTH', aboard: false } });
     expect(edge!.data).not.toHaveProperty('messageId');
-    expect((raft.get(VehicleTrait)!.model as VehicleOpenModel)).toMatchObject({ atEdge: 'NORTH', position: { x: 2, y: 4 } });
+    expect((raft.get(VehicleTrait)!.movement as VehicleOpenMovement)).toMatchObject({ atEdge: 'NORTH', position: { x: 2, y: 4 } });
   });
 });

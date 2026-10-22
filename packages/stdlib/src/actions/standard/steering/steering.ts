@@ -43,6 +43,7 @@ import {
   shortenSail,
   turnHeading,
   type IFEntity,
+  type VehicleOpenMovement,
   VEHICLE_REPORT_MESSAGES,
 } from '@sharpee/world-model';
 import { IFActions } from '../../constants.js';
@@ -175,7 +176,7 @@ export const steeringAction: Action & { metadata: ActionMetadata } = {
       return { valid: false, error: SteeringMessages.NOT_IN_VEHICLE };
     }
     const params = { vehicle: nounPhraseFor(vehicle) };
-    const model = vehicle.get(VehicleTrait)?.model;
+    const model = vehicle.get(VehicleTrait)?.movement;
     const naval = navalCommand(context);
     if (naval) {
       // ADR-375 D3, D7: the naval set, on an open vehicle that lists it.
@@ -239,7 +240,7 @@ export const steeringAction: Action & { metadata: ActionMetadata } = {
     const naval = navalCommand(context);
     if (naval) {
       sharedData.naval = naval;
-      const model = vehicle.get(VehicleTrait)!.model as Extract<NonNullable<VehicleTrait['model']>, { kind: 'open' }>;
+      const model = vehicle.get(VehicleTrait)!.movement as VehicleOpenMovement;
       switch (naval.kind) {
         case 'turn':
           sharedData.bearing = turnHeading(vehicle, naval.side === 'port' ? -naval.degrees! : naval.degrees!);
@@ -285,7 +286,7 @@ export const steeringAction: Action & { metadata: ActionMetadata } = {
         : naval.kind === 'make-sail' ? SteeringMessages.SAIL_MADE
         : naval.kind === 'shorten-sail' ? SteeringMessages.SAIL_SHORTENED
         : SteeringMessages.SAILS_FURLED;
-      const model = vehicle.get(VehicleTrait)?.model;
+      const model = vehicle.get(VehicleTrait)?.movement;
       return [
         context.event('if.event.steered', {
           messageId: `${context.action.id}.${key}`,

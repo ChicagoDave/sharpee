@@ -17,7 +17,7 @@
  * - Unknown constructs throw LoadError: the compiler gates should make
  *   these unreachable; reaching one is a loader bug, not author error.
  */
-import type { IRCondition, IREntity, IRTimerDef, IRValue, StoryIR } from '@sharpee/chord';
+import { qualifiedTimerKey, type IRCondition, type IREntity, type IRTimerDef, type IRValue, type StoryIR } from '@sharpee/chord';
 import { createSeededRandom, type RandomService, type SeededRandom } from '@sharpee/core';
 import { exitBlockedKey } from '@sharpee/stdlib';
 import { classifiesAs } from './kind-classification.js';
@@ -208,7 +208,7 @@ export class Evaluator {
       case 'timer-has': {
         // ADR-325 D3d: `has started` = running, stopped, or expired; `has
         // expired` = over. Idle (never started, or reset) answers no to both.
-        const record = this.timerRecord(cond.timer, ctx);
+        const record = this.timerRecord(this.timerKeyOf(cond.name, cond.owner, ctx), ctx);
         return cond.what === 'started' ? record.phase !== 'idle' : record.phase === 'expired';
       }
       case 'client-has': {
@@ -233,7 +233,7 @@ export class Evaluator {
         // when it has none. ADR-375 D2: a bearing compares as a number, and a
         // compass word names its bearing, so `is heading east` holds a ship
         // on 90 degrees too.
-        const model = ctx.world.getEntity(this.entityValue(cond.vehicle, ctx))?.get(VehicleTrait)?.model;
+        const model = ctx.world.getEntity(this.entityValue(cond.vehicle, ctx))?.get(VehicleTrait)?.movement;
         if (model?.kind !== 'compass' && model?.kind !== 'open') return false;
         if (model.heading === null) return false;
         const named = cond.direction === undefined ? undefined : directionOfWord(cond.direction);
@@ -244,12 +244,12 @@ export class Evaluator {
       }
       case 'in-irons': {
         // ADR-375 D5: lying still in a `stopped` band under the fullest setting.
-        const model = ctx.world.getEntity(this.entityValue(cond.vehicle, ctx))?.get(VehicleTrait)?.model;
+        const model = ctx.world.getEntity(this.entityValue(cond.vehicle, ctx))?.get(VehicleTrait)?.movement;
         return model?.kind === 'open' && model.inIrons;
       }
       case 'vehicle-sails': {
         // ADR-375 D7: the current setting.
-        const model = ctx.world.getEntity(this.entityValue(cond.vehicle, ctx))?.get(VehicleTrait)?.model;
+        const model = ctx.world.getEntity(this.entityValue(cond.vehicle, ctx))?.get(VehicleTrait)?.movement;
         return model?.kind === 'open' && model.sails?.current === cond.setting;
       }
       case 'in-sight': {
@@ -651,25 +651,18 @@ export class Evaluator {
       case 'timer': {
         // ADR-325 D3d: the timer's current named turn, `expired` once over,
         // and no value (null) before it starts or after a reset.
-        const record = this.timerRecord(value.timer, ctx);
+        const qualified = this.timerKeyOf(value.name, value.owner, ctx);
+        const record = this.timerRecord(qualified, ctx);
         if (record.phase === 'idle') return null;
         if (record.phase === 'expired') return 'expired';
-        const def = this.timerDefs.get(value.timer);
+        const def = this.timerDefs.get(qualified);
         return record.index >= 1 && def ? def.states[record.index - 1] ?? null : null;
       }
       case 'counter': {
         // ADR-264 D3: read a counter's current value from world state. The
-        // owner (per-entity) resolves to an IR entity id, matching how the
-        // loader seeds and the runtime mutates the counter.
-        let ownerId: string | null = null;
-        if (value.owner) {
-          if (value.owner.kind === 'entity') ownerId = value.owner.id;
-          else if (value.owner.kind === 'it') ownerId = ctx.it ?? null;
-          // GH #613: the role reads the current player character's counter.
-          else if (value.owner.kind === 'player') ownerId = this.ids.irIdOf(this.playerId(ctx.world)) ?? null;
-        }
-        const key = counterKey(value.name, ownerId ?? undefined);
-        return Number(ctx.world.getStateValue(key) ?? 0);
+        // owner resolves through the one resolution the writes use.
+        const ownerId = value.owner ? this.ownerIrId(value.owner, ctx) : undefined;
+        return Number(ctx.world.getStateValue(counterKey(value.name, ownerId)) ?? 0);
       }
       case 'slot': {
         const bound = ctx.slots?.[value.name];
@@ -684,6 +677,9 @@ export class Evaluator {
         if (!ctx.match) throw new LoadError('`the match` used outside an `each` block.');
         return this.requireWorldId(ctx.match);
       }
+      case 'unresolved':
+        // The analyzer's error result: a story that compiled with errors never loads.
+        throw new LoadError('A name in this story did not resolve — compile it and fix the reported errors.');
     }
   }
 
@@ -859,10 +855,39 @@ export class Evaluator {
       .map((e) => e.id);
   }
 
+  /**
+   * The key of the timer a read, condition or verb names: its owner resolved
+   * now, through the one owner resolution counters use — so `the player's
+   * wound` is the wound of the character holding the role this turn.
+   *
+   * @throws LoadError when the owner does not resolve to a story entity
+   */
+  timerKeyOf(name: string, owner: IRValue | null, ctx: EvalContext): string {
+    return qualifiedTimerKey(name, owner === null ? null : this.ownerIrId(owner, ctx));
+  }
+
   /** A timer's persisted record (ADR-325 D3g); idle when never written. */
   timerRecord(qualified: string, ctx: EvalContext): TimerRecord {
     const stored = ctx.world.getStateValue(timerKey(qualified)) as TimerRecord | undefined;
     return stored ?? { ...IDLE_TIMER_RECORD };
+  }
+
+  /**
+   * The IR id of the entity a value names, for keying owned state (a
+   * counter, a timer). The one owner resolution: reads and writes both call
+   * it, so `the player's` names the character holding the role now.
+   *
+   * @throws LoadError when `it` is unbound or the value is not a story entity
+   */
+  ownerIrId(value: IRValue, ctx: EvalContext): string {
+    if (value.kind === 'entity') return value.id;
+    if (value.kind === 'it') {
+      if (!ctx.it) throw new LoadError('`it` used outside an entity-scoped clause.');
+      return ctx.it;
+    }
+    const irId = this.ids.irIdOf(this.entityValue(value, ctx));
+    if (!irId) throw new LoadError('Only a story entity owns state.');
+    return irId;
   }
 
   /** Evaluate a value that must be an entity (world id). */

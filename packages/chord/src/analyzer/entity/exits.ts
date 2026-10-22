@@ -3,8 +3,9 @@
  * line, `is blocked`, `is deadly`, and the room-wide `deadly:` marker.
  *
  * Exit targets and `through` doors resolve like any entity reference; an
- * unresolved one is the standard unknown-entity error and leaves '' so the
- * door graph check skips what is already reported. A passage is one-way by
+ * unresolved one is the standard unknown-entity error. Its destination
+ * lowers to `unresolved` and its door to '', so the door graph check skips
+ * what is already reported. A passage is one-way by
  * construction, so a `, one-way` on its line is refused with the fix-it to
  * remove it; a blocked or deadly line naming a passage must name one the
  * room declares, by any of its forms, and lowers under the passage's
@@ -31,7 +32,7 @@
  * - Platform-issue-sweep Phase 8 #15d — `is deadly while` fails at compile.
  */
 import type { ConditionNode, ExitDecl, NameRef } from '../../ast.js';
-import type { IRCondition, IRExit } from '../../ir.js';
+import type { IRCondition, IRExit, IRExitDestination } from '../../ir.js';
 import type { EntityLineBuilder } from './context.js';
 import { PASSAGE_KEY_PREFIX, passageKeyOfForm } from '../../ir.js';
 import { resolveAdmitsWord } from './vehicle.js';
@@ -51,7 +52,7 @@ export interface ExitTailResolvers {
  * @param e the parsed exit
  * @param resolve entity-name resolution (reports an unresolved name)
  * @param tails the `while` and `admits` resolvers (ADR-378); omitted on a table row
- * @returns the IR exit; '' marks an unresolved destination or door
+ * @returns the IR exit; an unresolved destination is `unresolved`, an unresolved door ''
  */
 export function lowerExit(e: ExitDecl, resolve: (ref: NameRef) => string | null, tails?: ExitTailResolvers): IRExit {
   const admits = tails && e.admits
@@ -63,16 +64,20 @@ export function lowerExit(e: ExitDecl, resolve: (ref: NameRef) => string | null,
     // ADR-366 D7: `to outside` names no entity — the loader resolves it to
     // the containing vehicle's room on each use. Whether the room is aboard
     // a vehicle at all is the vehicle builder's gate.
-    to: e.toOutside ? '' : (resolve(e.to) ?? ''),
+    to: e.toOutside ? { kind: 'outside' } : destinationOf(resolve(e.to)),
     via: e.via ? (resolve(e.via) ?? '') : null,
     // A passage is one-way by construction (ADR-378 D1): the loader infers
     // no reverse from its key, so the flag is never written for it.
     ...(e.oneWay && !e.passage ? { oneWay: true as const } : {}),
-    ...(e.toOutside ? { toOutside: true as const } : {}),
     ...(tails && e.condition ? { condition: tails.resolveCondition(e.condition) } : {}),
     ...(admits ? { admits } : {}),
     span: e.span,
   };
+}
+
+/** A resolved room id as a destination; an unresolved name (already reported) as `unresolved`. */
+function destinationOf(id: string | null): IRExitDestination {
+  return id === null ? { kind: 'unresolved' } : { kind: 'room', id };
 }
 
 export const exitsBuilder: EntityLineBuilder = {

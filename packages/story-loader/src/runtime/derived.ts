@@ -15,7 +15,7 @@
  * - ADR-335 D1 — one module per runtime section over a shared core.
  * - ADR-378 D3 — `exit.hidden.<room>.<key>`, read before blocking by the home.
  */
-import type { IREntity } from '@sharpee/chord';
+import { exitRoomId, type IREntity } from '@sharpee/chord';
 import { exitBlockedKey, exitHiddenKey, exitMessageKey } from '@sharpee/stdlib';
 import { darkKey, type ExitKey, getOppositeDirection, isPassageKey, WorldModel } from '@sharpee/world-model';
 import { exitKeyOfWord as exitKeyOf } from '../direction-words.js';
@@ -61,9 +61,11 @@ export class DerivedSection {
         // writes its own line back registers that line's own condition (or
         // none), and this one must not overwrite it.
         const reverse = getOppositeDirection(key);
-        const far = this.core.ir.entities.find((e) => e.id === exit.to);
+        const farId = exitRoomId(exit);
+        if (farId === undefined) continue;
+        const far = this.core.ir.entities.find((e) => e.id === farId);
         if (far?.exits.some((e) => exitKeyOf(e.direction) === reverse)) continue;
-        const toId = this.core.host.entityId(exit.to);
+        const toId = this.core.host.entityId(farId);
         if (!toId) continue;
         world.registerEvaluator(exitHiddenKey(toId, reverse), (w) => hidden(w as WorldModel));
       }

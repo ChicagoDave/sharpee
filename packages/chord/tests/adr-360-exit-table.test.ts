@@ -8,7 +8,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { compile } from '../src';
+import { compile, exitRoomId } from '../src';
 
 const MAZE = readFileSync(join(__dirname, 'fixtures', 'maze-sixteen.story'), 'utf8');
 
@@ -54,7 +54,7 @@ ${extraRooms}`);
 describe('the table lowers onto its rooms (D3, AC-1 sixteen rows)', () => {
   const result = compile(MAZE);
   const exitsOf = (id: string) =>
-    result.ir.entities.find((e) => e.id === id)!.exits.map((x) => `${x.direction}>${x.to}`);
+    result.ir.entities.find((e) => e.id === id)!.exits.map((x) => `${x.direction}>${exitRoomId(x)}`);
 
   it('compiles the sixteen-row maze with no diagnostic', () => {
     expect(result.diagnostics).toEqual([]);
@@ -85,7 +85,7 @@ describe('the table lowers onto its rooms (D3, AC-1 sixteen rows)', () => {
     the Room 1: east to the Room 2
 `));
     expect(r.diagnostics).toEqual([]);
-    expect(r.ir.entities.find((e) => e.id === 'room-1')!.exits).toMatchObject([{ direction: 'east', to: 'room-2' }]);
+    expect(r.ir.entities.find((e) => e.id === 'room-1')!.exits).toMatchObject([{ direction: 'east', to: { kind: 'room', id: 'room-2' } }]);
     expect(r.ir.entities.find((e) => e.id === 'room-1')!.exits[0].oneWay).toBeUndefined();
   });
 
@@ -100,7 +100,7 @@ create the gate
   A gate.
 `));
     expect(r.diagnostics.filter((d) => d.severity === 'error')).toEqual([]);
-    expect(r.ir.entities.find((e) => e.id === 'room-1')!.exits).toMatchObject([{ direction: 'east', to: 'garden', via: 'gate' }]);
+    expect(r.ir.entities.find((e) => e.id === 'room-1')!.exits).toMatchObject([{ direction: 'east', to: { kind: 'room', id: 'garden' }, via: 'gate' }]);
   });
 
   it('a one-off member may use the table, and its own lines come first', () => {
@@ -136,7 +136,7 @@ create the Attic
     the Room 3: west to the Room 2
 `));
     expect(r.diagnostics).toEqual([]);
-    expect(r.ir.entities.find((e) => e.id === 'room-3')!.exits).toMatchObject([{ direction: 'west', to: 'room-2', oneWay: true }]);
+    expect(r.ir.entities.find((e) => e.id === 'room-3')!.exits).toMatchObject([{ direction: 'west', to: { kind: 'room', id: 'room-2' }, oneWay: true }]);
   });
 });
 
@@ -160,7 +160,7 @@ describe('table refusals (D3, AC-2, AC-3)', () => {
 `));
     expect(result.diagnostics.filter((d) => d.severity === 'error').map((d) => d.code)).toEqual(['parse.exit-row-blocked']);
     const exitsOf = (id: string) => result.ir.entities.find((e) => e.id === id)!.exits;
-    expect(exitsOf('room-1')).toMatchObject([{ direction: 'east', to: 'room-2' }]);
+    expect(exitsOf('room-1')).toMatchObject([{ direction: 'east', to: { kind: 'room', id: 'room-2' } }]);
     expect(exitsOf('room-3')).toEqual([]);
   });
 

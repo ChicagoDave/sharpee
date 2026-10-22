@@ -10,7 +10,7 @@
  * turn's rendered text.
  */
 import { describe, expect, it } from 'vitest';
-import { FloatingTrait, VehicleTrait, type IFEntity, type VehicleOpenModel } from '@sharpee/world-model';
+import { FloatingTrait, VehicleTrait, type IFEntity, type VehicleOpenMovement } from '@sharpee/world-model';
 import { bootTurns, type BootedTurns } from './helpers/boot-turns';
 
 const SOURCE = `story
@@ -134,8 +134,8 @@ function named(b: BootedTurns, name: string): IFEntity {
   return found!;
 }
 
-function skiff(b: BootedTurns): VehicleOpenModel {
-  return named(b, 'skiff').get(VehicleTrait)!.model as VehicleOpenModel;
+function skiff(b: BootedTurns): VehicleOpenMovement {
+  return named(b, 'skiff').get(VehicleTrait)!.movement as VehicleOpenMovement;
 }
 
 function where(b: BootedTurns, name: string): string | undefined {

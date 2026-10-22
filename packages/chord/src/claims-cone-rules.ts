@@ -22,16 +22,18 @@
  * Owner context: Chord language frontend. Browser-safe, filesystem-free.
  */
 
-import type {
-  IRActionDef,
-  IRCondition,
-  IREntity,
-  IRGoalStep,
-  IROnClause,
-  IRPatternPart,
-  IRStatement,
-  IRValue,
-  StoryIR,
+import {
+  exitRoomId,
+  timerKeysFor,
+  type IRActionDef,
+  type IRCondition,
+  type IREntity,
+  type IRGoalStep,
+  type IROnClause,
+  type IRPatternPart,
+  type IRStatement,
+  type IRValue,
+  type StoryIR,
 } from './ir.js';
 import type { Span } from './span.js';
 import { STDLIB_MANIFEST } from './stdlib-manifest.js';
@@ -233,6 +235,7 @@ export function resolveValue(value: IRValue, binding: ValueBinding): string[] {
     case 'literal':
     case 'symbol':
     case 'timer':
+    case 'unresolved':
       return [];
   }
 }
@@ -492,14 +495,15 @@ class RuleExtractor {
       const room = this.entityById.get(roomId);
       if (!room) continue;
       for (const exit of room.exits ?? []) {
-        if (!this.setRooms.has(exit.to)) continue;
+        const to = exitRoomId(exit);
+        if (to === undefined || !this.setRooms.has(to)) continue;
         const blocks = (room.blockedExits ?? []).filter((b) => b.direction === exit.direction);
         if (blocks.some((b) => b.condition === null)) continue;
         const guards: ConeGuard[] = blocks.map((b) => ({ condition: b.condition as IRCondition, span: b.span }));
         const reads: Fact[] = ['place:player'];
         if (exit.via) reads.push(`flag:${exit.via}`, `place:${exit.via}`);
         const label = blocks.length ? `the guard on ${room.name}'s ${exit.direction} exit` : `${room.name}'s ${exit.direction} exit`;
-        this.pushLeaf({ kind: 'always' }, roomId, guards, reads, [{ fact: 'place:player', value: exit.to }], exit.span, label);
+        this.pushLeaf({ kind: 'always' }, roomId, guards, reads, [{ fact: 'place:player', value: to }], exit.span, label);
       }
       for (const deadly of room.deadlyExits ?? []) {
         this.pushLeaf({ kind: 'always' }, roomId, guardsOf(deadly.condition, deadly.span), ['place:player'], [{ fact: 'ending', value: null }], deadly.span, `the deadly ${deadly.direction} exit of ${room.name}`);
@@ -663,10 +667,10 @@ class RuleExtractor {
         const target = stmt.target;
         if (target.kind === 'counter') {
           const owners = target.owner ? resolveValue(target.owner, binding) : ['story'];
-          return { writes: owners.map((id) => ({ fact: `counter:${id}.${target.name}`, value: null })), reads: valueReads(stmt.value, binding) };
+          return { writes: owners.map((id) => ({ fact: `counter:${id}.${target.name}`, value: null })), reads: valueReads(stmt.value, binding, this.ir) };
         }
         const bases = resolveValue(target, binding);
-        return { writes: (bases.length ? bases : [ANY]).map((id) => ({ fact: `flag:${id}`, value: null })), reads: valueReads(stmt.value, binding) };
+        return { writes: (bases.length ? bases : [ANY]).map((id) => ({ fact: `flag:${id}`, value: null })), reads: valueReads(stmt.value, binding, this.ir) };
       }
       case 'move': {
         const place = placeOf(stmt.place, binding, this.roomIds);
@@ -690,8 +694,10 @@ class RuleExtractor {
         const owners = stmt.owner ? resolveValue(stmt.owner, binding) : ['story'];
         return { writes: owners.map((id) => ({ fact: `counter:${id}.${stmt.counter}`, value: null })), reads: [] };
       }
-      case 'timer':
-        return { writes: [{ fact: `timer:${stmt.timer}`, value: stmt.verb === 'start' || stmt.verb === 'restart' ? 'started' : 'stopped' }], reads: [] };
+      case 'timer': {
+        const value = stmt.verb === 'start' || stmt.verb === 'restart' ? 'started' : 'stopped';
+        return { writes: timerKeysOf(this.ir, stmt.name, stmt.owner, binding).map((key) => ({ fact: `timer:${key}`, value })), reads: [] };
+      }
       case 'win':
       case 'lose':
       case 'kill':
@@ -808,9 +814,10 @@ function roleTarget(target: string, slots: ReadonlyMap<string, readonly string[]
  *
  * @param value the IR value
  * @param binding what `it` and the slots mean here
+ * @param ir the compiled story, for the timers a player's timer may be
  * @returns the facts, empty for literals, symbols, and bare entity references
  */
-export function valueReads(value: IRValue, binding: ValueBinding): Fact[] {
+export function valueReads(value: IRValue, binding: ValueBinding, ir: StoryIR): Fact[] {
   switch (value.kind) {
     case 'field':
       return resolveValue(value.base, binding).map((id) => `flag:${id}`);
@@ -819,10 +826,29 @@ export function valueReads(value: IRValue, binding: ValueBinding): Fact[] {
       return owners.map((id) => `counter:${id}.${value.name}`);
     }
     case 'timer':
-      return [`timer:${value.timer}`];
+      return timerKeysOf(ir, value.name, value.owner, binding).map((key) => `timer:${key}`);
     default:
       return [];
   }
+}
+
+/**
+ * The timer keys a reference may name: the story's, an entity's, or — for
+ * `the player's` — each playable character's, since the role may move to any
+ * of them. Writes and reads both expand through it, so a `start the player's
+ * wound` and a `when Alex's wound expires` meet on Alex's key.
+ *
+ * @param ir the compiled story (its timers and which characters are playable)
+ * @param name the timer's name
+ * @param owner the owner value, or null for the story's
+ * @param binding what `it` and the slots mean here
+ * @returns the qualified keys, each a declared timer's
+ */
+export function timerKeysOf(ir: StoryIR, name: string, owner: IRValue | null, binding: ValueBinding): string[] {
+  if (owner === null) return timerKeysFor(ir, name, null);
+  return resolveValue(owner, binding).flatMap((id) =>
+    id === ANY ? (ir.timers ?? []).filter((t) => t.name === name).map((t) => t.qualified) : timerKeysFor(ir, name, id),
+  );
 }
 
 /**

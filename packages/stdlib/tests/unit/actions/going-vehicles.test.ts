@@ -14,7 +14,7 @@ import {
   Direction,
   RoomTrait,
   VehicleTrait,
-  type VehicleModel,
+  type VehicleMovement,
   IFEntity,
   WorldModel
 } from '@sharpee/world-model';
@@ -34,7 +34,7 @@ interface VehicleFixture {
 }
 
 /** room --north--> north, with the player in a vehicle standing in room. */
-function setupVehicleWorld(model: VehicleModel | undefined): VehicleFixture {
+function setupVehicleWorld(movement: VehicleMovement | undefined): VehicleFixture {
   const { world, player, room } = setupBasicWorld();
 
   const north = world.createEntity('North Room', 'object');
@@ -42,7 +42,7 @@ function setupVehicleWorld(model: VehicleModel | undefined): VehicleFixture {
   room.getTrait(RoomTrait)!.exits = { [Direction.NORTH]: { destination: north.id } };
 
   const vehicle = world.createEntity('cart', 'object');
-  vehicle.add(new VehicleTrait({ model }));
+  vehicle.add(new VehicleTrait({ movement }));
   vehicle.add({ type: TraitType.CONTAINER, enterable: true } as any);
   world.moveEntity(vehicle.id, room.id);
   world.moveEntity(player.id, vehicle.id);

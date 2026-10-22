@@ -173,25 +173,25 @@ describe('AC-5 (D2a) — kind nouns take no `with` settings', () => {
 describe('AC-6 (D3) — `in` and `out` are exit directions', () => {
   it('`in to <room>` and `out to <room>` are exits; `in the <room>` is placement', () => {
     const ir = ok({ hall: '  in to the Closet\n' });
-    expect(entity(ir, 'hall').exits).toEqual([expect.objectContaining({ direction: 'in', to: 'closet', via: null })]);
+    expect(entity(ir, 'hall').exits).toEqual([expect.objectContaining({ direction: 'in', to: { kind: 'room', id: 'closet' }, via: null })]);
     const out = ok({ closet: '  out to the Hall\n' });
-    expect(entity(out, 'closet').exits).toEqual([expect.objectContaining({ direction: 'out', to: 'hall' })]);
+    expect(entity(out, 'closet').exits).toEqual([expect.objectContaining({ direction: 'out', to: { kind: 'room', id: 'hall' } })]);
     expect(entity(ok({}), 'jar').placement).toMatchObject({ place: 'hall' });
   });
 
   it('takes `, one-way` and `through <door>`', () => {
     const top = 'create the hatch\n  a door\n\n  A hatch.\n';
     const ir = ok({ top, hall: '  in to the Closet through the hatch\n', closet: '  out to the Hall, one-way\n' });
-    expect(entity(ir, 'hall').exits[0]).toMatchObject({ direction: 'in', to: 'closet', via: 'hatch' });
-    expect(entity(ir, 'closet').exits[0]).toMatchObject({ direction: 'out', to: 'hall', oneWay: true });
+    expect(entity(ir, 'hall').exits[0]).toMatchObject({ direction: 'in', to: { kind: 'room', id: 'closet' }, via: 'hatch' });
+    expect(entity(ir, 'closet').exits[0]).toMatchObject({ direction: 'out', to: { kind: 'room', id: 'hall' }, oneWay: true });
   });
 
   it('rides an `exits:` line and a region exit table', () => {
     const line = ok({ hall: '  exits: in to the Closet\n' });
-    expect(entity(line, 'hall').exits[0]).toMatchObject({ direction: 'in', to: 'closet' });
+    expect(entity(line, 'hall').exits[0]).toMatchObject({ direction: 'in', to: { kind: 'room', id: 'closet' } });
     const top = 'create the Wing\n  a region\n  exits\n    the Hall: out to the Closet\n';
     const table = ok({ top, hall: '  in the Wing\n' });
-    expect(entity(table, 'hall').exits.some((e) => e.direction === 'out' && e.to === 'closet')).toBe(true);
+    expect(entity(table, 'hall').exits.some((e) => e.direction === 'out' && e.to.kind === 'room' && e.to.id === 'closet')).toBe(true);
   });
 
   it('`in is blocked: …` is a blocked exit', () => {

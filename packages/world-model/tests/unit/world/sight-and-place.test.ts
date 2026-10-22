@@ -25,7 +25,7 @@ import { OpenableTrait } from '../../../src/traits/openable/openableTrait';
 import { RoomTrait } from '../../../src/traits/room/roomTrait';
 import { ActorTrait } from '../../../src/traits/actor/actorTrait';
 import { NightVisionTrait } from '../../../src/traits/night-vision/nightVisionTrait';
-import { VehicleTrait, type VehicleOpenModel } from '../../../src/traits/vehicle/vehicleTrait';
+import { VehicleTrait, type VehicleOpenMovement } from '../../../src/traits/vehicle/vehicleTrait';
 import { ExpanseTrait } from '../../../src/traits/expanse/expanseTrait';
 import { FloatingTrait } from '../../../src/traits/expanse/floatingTrait';
 import { LandmarkTrait } from '../../../src/traits/expanse/landmarkTrait';
@@ -56,12 +56,12 @@ describe('an expanse with a moored vehicle', () => {
     v.add(new IdentityTrait({ name }));
     v.add(new ContainerTrait());
     v.add(new EnterableTrait());
-    v.add(new VehicleTrait({ model: { kind: 'open', drive: 'player', pace: 1, stride: 1, sight: 10, position, ...(seenFromAfar ? { seenFromAfar } : {}) } }));
+    v.add(new VehicleTrait({ movement: { kind: 'open', drive: 'player', pace: 1, stride: 1, sight: 10, position, ...(seenFromAfar ? { seenFromAfar } : {}) } }));
     world.moveEntity(v.id, at.id);
     return v;
   }
 
-  const model = (v: IFEntity) => v.get(VehicleTrait)!.model as VehicleOpenModel;
+  const model = (v: IFEntity) => v.get(VehicleTrait)!.movement as VehicleOpenMovement;
 
   beforeEach(() => {
     world = new WorldModel();

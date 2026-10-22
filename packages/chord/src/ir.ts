@@ -1075,8 +1075,8 @@ export interface IRExit {
    * own `admits:` list is `IREntity.admits`. Present only when written.
    */
   admits?: string[];
-  /** Entity ID of the destination room. */
-  to: string;
+  /** Where the exit leads: a room, or outside the vehicle the room is aboard. */
+  to: IRExitDestination;
   /**
    * Entity ID of the door this exit passes through (`through the <door>`,
    * ADR-234 D1) — null on plain exits. The loader stamps it as `via` on
@@ -1090,13 +1090,53 @@ export interface IRExit {
    * byte-identical).
    */
   oneWay?: true;
-  /**
-   * `<direction> to outside` (ADR-366 D7): `to` is '' and the destination is
-   * the containing vehicle's current room, resolved by the loader on each
-   * use. Present only when written.
-   */
-  toOutside?: true;
   span: Span;
+}
+
+/**
+ * An exit's destination. `room` names it by entity id. `outside`
+ * (`<direction> to outside`, ADR-366 D7) is the room the containing vehicle
+ * is in, resolved by the loader on each use — one of the vehicle's
+ * candidate rooms (`vehicleCandidateRoomIds`). `unresolved` is the
+ * analyzer's error result: the name was reported and the IR never loads.
+ */
+export type IRExitDestination =
+  | { kind: 'room'; id: string }
+  | { kind: 'outside' }
+  | { kind: 'unresolved' };
+
+/** The room id an exit leads to, or undefined for an outside or unresolved exit. */
+export function exitRoomId(exit: IRExit): string | undefined {
+  return exit.to.kind === 'room' ? exit.to.id : undefined;
+}
+
+/**
+ * Every room a vehicle can be in (ADR-366 D7's candidate set), by IR id: a
+ * line's stops, a flight's destinations, otherwise each room that admits the
+ * vehicle and each member of a region that does. The one rule for where an
+ * `outside` exit can lead — the loader and world-index both read it.
+ *
+ * @param entities the story's entities
+ * @param host the vehicle entity
+ * @returns the candidate room ids, each once, in declaration order
+ */
+export function vehicleCandidateRoomIds(entities: readonly IREntity[], host: IREntity): string[] {
+  const v = host.vehicle;
+  if (!v) return [];
+  if (v.movement === 'line') return [...(v.stops ?? [])];
+  if (v.movement === 'flight') return [...(v.destinations ?? [])];
+  const admitting = new Set<string>();
+  for (const e of entities) {
+    if (!e.admits?.includes(host.id)) continue;
+    if (e.kinds.some((k) => k.name === 'room')) admitting.add(e.id);
+    for (const member of e.containing ?? []) admitting.add(member.id);
+  }
+  return [...admitting];
+}
+
+/** The vehicle a room is aboard, or undefined when the room is aboard none. */
+export function vehicleAboard(entities: readonly IREntity[], roomId: string): IREntity | undefined {
+  return entities.find((e) => e.vehicle?.aboard?.includes(roomId));
 }
 
 export interface IRBlockedExit {
@@ -1504,12 +1544,6 @@ export interface IRCounterDef {
   span: Span;
 }
 
-/**
- * A named-turn timer (ADR-325 D3a). `qualified` is the runtime key:
- * `<owner-ir-id>.<name>` for an entity's or the player's (`player.<name>`),
- * bare `<name>` for the story's. A state's prose, when authored, lives in
- * the phrase table under `<qualified>.<state>`.
- */
 /** The moment a chapter begins (ADR-330 D2), resolved: ids are IR entity ids, timers their `qualified` key. */
 export type IRChapterTrigger =
   | { kind: 'game-starts' }
@@ -1532,10 +1566,18 @@ export interface IRChapterDef {
   span: Span;
 }
 
+/**
+ * A named-turn timer (ADR-325 D3a). `qualified` is the runtime key,
+ * `qualifiedTimerKey(name, owner)`. A state's prose, when authored, lives in the
+ * phrase table under `<qualified>.<state>`. `define timer … for the player`
+ * lowers to one def per playable character, each owned by that character;
+ * with no playable character it is owned by `player`, a story that never
+ * loads (the role has no holder).
+ */
 export interface IRTimerDef {
   name: string;
   qualified: string;
-  /** The owning entity's IR id (`player` for the player), or null for the story. */
+  /** The owning entity's IR id, or null for the story. */
   owner: string | null;
   /** Named turns in order; `expired` follows the last and is never listed. */
   states: string[];
@@ -1544,6 +1586,35 @@ export interface IRTimerDef {
   /** `interrupted one chance in n` — per-turn chance of expiring early. */
   interrupted: number | null;
   span: Span;
+}
+
+/**
+ * The runtime key of a timer: `<owner-ir-id>.<name>` for an entity's,
+ * bare `<name>` for the story's. The one spelling — the analyzer mints
+ * `IRTimerDef.qualified` with it and the loader keys a timer read, condition
+ * or verb by it once the owner is resolved.
+ */
+export function qualifiedTimerKey(name: string, ownerIrId: string | null): string {
+  return ownerIrId === null ? name : `${ownerIrId}.${name}`;
+}
+
+/**
+ * The declared timers an owner's named timer may be: the story's or an
+ * entity's own, or — for the player role (`player`) — each playable
+ * character's, since the role may move to any of them.
+ *
+ * @param ir the compiled story
+ * @param name the timer's name
+ * @param ownerIrId an entity id, `player` for the role, or null for the story
+ * @returns the qualified keys of the declared timers it may be
+ */
+export function timerKeysFor(ir: Pick<StoryIR, 'entities' | 'timers'>, name: string, ownerIrId: string | null): string[] {
+  if (ownerIrId !== 'player') {
+    const key = qualifiedTimerKey(name, ownerIrId);
+    return (ir.timers ?? []).some((t) => t.qualified === key) ? [key] : [];
+  }
+  const playable = new Set(ir.entities.filter((e) => e.isPlayable).map((e) => e.id));
+  return (ir.timers ?? []).filter((t) => t.name === name && t.owner !== null && (playable.has(t.owner) || t.owner === 'player')).map((t) => t.qualified);
 }
 
 /** `when <timer> expires [, while <cond>]` (ADR-325 D3e) — on the clause owner. */
@@ -1778,8 +1849,8 @@ export type IRStatement =
   | { kind: 'raise' | 'lower'; counter: string; owner: IRValue | null; amount: number; stmtWhen?: IRCondition | null; span: Span }
   /** `set <tally> to <n>` (ADR-325 D4) — absolute assignment, clamped to the counter's bounds. */
   | { kind: 'set-counter'; counter: string; owner: IRValue | null; value: number; stmtWhen?: IRCondition | null; span: Span }
-  /** ADR-325 D3c: a timer verb. `timer` is the timer's `qualified` key. */
-  | { kind: 'timer'; verb: 'start' | 'stop' | 'restart' | 'reset' | 'interrupt'; timer: string; stmtWhen?: IRCondition | null; span: Span }
+  /** ADR-325 D3c: a timer verb on the named timer of `owner` (null: the story's), keyed `qualifiedTimerKey(name, owner)` at run time. */
+  | { kind: 'timer'; verb: 'start' | 'stop' | 'restart' | 'reset' | 'interrupt'; name: string; owner: IRValue | null; stmtWhen?: IRCondition | null; span: Span }
   /**
    * `start <vehicle> [heading <direction>]` (ADR-366 D5a, D5c, D5f): put the
    * vehicle's machine under way; `heading` is present only on a compass
@@ -1800,10 +1871,11 @@ export type IRStatement =
   | {
       kind: 'vehicle-send';
       vehicle: IRValue;
-      /** The destination room; `{ kind: 'entity', id: '' }` when `coordinates` carries the target (ADR-376 D3). */
-      destination: IRValue;
-      /** `send <vehicle> to <x>, <y>` (ADR-376 D3): a course to a cell of the vehicle's expanse. */
-      coordinates?: IRCoordinates;
+      /**
+       * Where it goes: a room (`send … to <room>`), or a cell of an open
+       * vehicle's expanse (`send … to <x>, <y>`, ADR-376 D3).
+       */
+      to: { kind: 'room'; room: IRValue } | ({ kind: 'cell' } & IRCoordinates);
       stmtWhen?: IRCondition | null;
       span: Span;
     }
@@ -1913,14 +1985,17 @@ export type IRValue =
   /** A numeric counter read (ADR-264 D3) — `owner` is the entity IRValue for a
    *  per-entity counter, or null for a story-global one. */
   | { kind: 'counter'; name: string; owner: IRValue | null }
-  /** A timer's current named state (ADR-325 D3d) — `timer` is the `qualified` key. Reads
+  /** A timer's current named state (ADR-325 D3d), of `owner` (null: the story's), as a
+   *  counter names its owner: `the player's` is the role's holder at run time. Reads
    *  as the state word while running/stopped, `expired` after, nothing before start. */
-  | { kind: 'timer'; timer: string }
+  | { kind: 'timer'; name: string; owner: IRValue | null }
   /** A grammar-slot / role context value inside an action or role clause (`the animal`, `the taker`). */
   | { kind: 'slot'; name: string }
   /** The `each`-block binder `the match` (ratchet E3) — parallel to `it`. */
   | { kind: 'match' }
-  | { kind: 'symbol'; name: string };
+  | { kind: 'symbol'; name: string }
+  /** The analyzer's error result: a name that did not resolve, already reported. An IR carrying it never loads. */
+  | { kind: 'unresolved' };
 
 export type IRCondition =
   | { kind: 'and'; operands: IRCondition[] }
@@ -1930,7 +2005,7 @@ export type IRCondition =
   | { kind: 'not'; operand: IRCondition }
   | { kind: 'chance'; n: number }
   /** `<timer> has started` / `has expired` (ADR-325 D3d). */
-  | { kind: 'timer-has'; timer: string; what: 'started' | 'expired' }
+  | { kind: 'timer-has'; name: string; owner: IRValue | null; what: 'started' | 'expired' }
   | { kind: 'condition'; name: string }
   /** The story is in the named phase (`while after-hours`, ratchet D2). */
   | { kind: 'story-state'; state: string }

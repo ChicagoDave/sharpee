@@ -14,7 +14,7 @@ import { ContainerTrait } from '../../../src/traits/container/containerTrait';
 import { EnterableTrait } from '../../../src/traits/enterable/enterableTrait';
 import { RoomTrait } from '../../../src/traits/room/roomTrait';
 import { ActorTrait } from '../../../src/traits/actor/actorTrait';
-import { VehicleTrait, type VehicleOpenModel } from '../../../src/traits/vehicle/vehicleTrait';
+import { VehicleTrait, type VehicleOpenMovement } from '../../../src/traits/vehicle/vehicleTrait';
 import { ExpanseTrait } from '../../../src/traits/expanse/expanseTrait';
 import { FloatingTrait } from '../../../src/traits/expanse/floatingTrait';
 import { SightTrait } from '../../../src/traits/expanse/sightTrait';
@@ -44,7 +44,7 @@ describe('sight in an expanse (ADR-376 D6)', () => {
     v.add(new IdentityTrait({ name }));
     v.add(new ContainerTrait());
     v.add(new EnterableTrait());
-    v.add(new VehicleTrait({ model: { kind: 'open', drive: 'player', pace: 1, stride: 10, sight, position: { x, y } } }));
+    v.add(new VehicleTrait({ movement: { kind: 'open', drive: 'player', pace: 1, stride: 10, sight, position: { x, y } } }));
     world.moveEntity(v.id, ocean.id);
     return v;
   }
@@ -77,7 +77,7 @@ describe('sight in an expanse (ADR-376 D6)', () => {
   });
 
   it('bands follow the sight in use: the same landmark closer is in the distance, then close by', () => {
-    const model = marigold.get(VehicleTrait)!.model as VehicleOpenModel;
+    const model = marigold.get(VehicleTrait)!.movement as VehicleOpenMovement;
     model.position = { x: 590, y: 300 };
     expect(sightingOf(world, lookoutOf(world, player)!, azores)).toMatchObject({ distance: 20, band: 'in-the-distance' });
     model.position = { x: 605, y: 300 };
@@ -119,14 +119,14 @@ describe('sight in an expanse (ADR-376 D6)', () => {
     world.moveEntity(player.id, ocean.id);
     player.add(new FloatingTrait({ position: { x: 560, y: 300 } }));
     expect(lookoutOf(world, player)).toMatchObject({ cell: { x: 560, y: 300 }, sight: 30 });
-    (marigold.get(VehicleTrait)!.model as VehicleOpenModel).position = { x: 570, y: 300 };
+    (marigold.get(VehicleTrait)!.movement as VehicleOpenMovement).position = { x: 570, y: 300 };
     expect(lookoutOf(world, player)).toMatchObject({ cell: { x: 560, y: 300 }, sight: 0 });
     expect(sightingOf(world, lookoutOf(world, player)!, marigold)).toBeUndefined();
   });
 
   it('a landmark room with sight looks out over the expanse; one without sees nothing of it', () => {
     world.moveEntity(player.id, portRoyal.id);
-    (marigold.get(VehicleTrait)!.model as VehicleOpenModel).position = { x: 55, y: 250 };
+    (marigold.get(VehicleTrait)!.movement as VehicleOpenMovement).position = { x: 55, y: 250 };
     const harbour = lookoutOf(world, player)!;
     expect(harbour).toMatchObject({ cell: { x: 40, y: 250 }, sight: 20 });
     expect(sightingOf(world, harbour, marigold)).toMatchObject({ distance: 15, band: 'on-the-horizon', direction: 'EAST' });
@@ -141,7 +141,7 @@ describe('sight in an expanse (ADR-376 D6)', () => {
   it('aboard an open vehicle at a landmark, the looker has the landmark room\'s outlook (GH #612)', () => {
     // At a landmark the vehicle holds no position (D5): the Marigold lies
     // in Port Royal, the player still aboard her.
-    (marigold.get(VehicleTrait)!.model as VehicleOpenModel).position = null;
+    (marigold.get(VehicleTrait)!.movement as VehicleOpenMovement).position = null;
     world.moveEntity(marigold.id, portRoyal.id);
     const skiff = ship('the skiff', 55, 250, 5);
     expect(lookoutOf(world, player)).toMatchObject({ cell: { x: 40, y: 250 }, sight: 20 });

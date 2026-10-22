@@ -151,7 +151,7 @@ describe('push <thing> <direction> (ADR-378 D6, D7)', () => {
   test('aboard a line vehicle, refuses vehicle_ride in going\'s words', () => {
     const { world, player, room, cart } = setup({ admits: ['pushing'] });
     const tram = world.createEntity('tram', 'object');
-    tram.add(new VehicleTrait({ model: { kind: 'line', stops: ['a', 'b'], oneWay: false, drive: 'control' } }));
+    tram.add(new VehicleTrait({ movement: { kind: 'line', stops: ['a', 'b'], oneWay: false, drive: 'control' } }));
     tram.add({ type: TraitType.CONTAINER, enterable: true } as any);
     world.moveEntity(tram.id, room.id);
     world.moveEntity(player.id, tram.id);
@@ -276,7 +276,7 @@ describe('the push follows wherever going took the actor (ADR-378 D6; mutation g
   test('aboard a steered vehicle the cart arrives beside the vehicle, and the actor stays inside it', () => {
     const { world, player, room, dock, cart } = setup();
     const car = world.createEntity('car', 'object');
-    car.add(new VehicleTrait({ model: { kind: 'streets' } }));
+    car.add(new VehicleTrait({ movement: { kind: 'streets' } }));
     car.add({ type: TraitType.CONTAINER, enterable: true } as any);
     world.moveEntity(car.id, room.id);
     world.moveEntity(player.id, car.id);
@@ -292,7 +292,7 @@ describe('the push follows wherever going took the actor (ADR-378 D6; mutation g
   test('aboard a steered vehicle the way must admit both: the car without the cart, or the cart without the car, refuses and nothing moves', () => {
     const { world, player, room, dock, cart } = setup();
     const car = world.createEntity('car', 'object');
-    car.add(new VehicleTrait({ model: { kind: 'streets' } }));
+    car.add(new VehicleTrait({ movement: { kind: 'streets' } }));
     car.add({ type: TraitType.CONTAINER, enterable: true } as any);
     world.moveEntity(car.id, room.id);
     world.moveEntity(player.id, car.id);

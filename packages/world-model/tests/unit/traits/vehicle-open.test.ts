@@ -14,7 +14,7 @@ import { ContainerTrait } from '../../../src/traits/container/containerTrait';
 import { EnterableTrait } from '../../../src/traits/enterable/enterableTrait';
 import { RoomTrait } from '../../../src/traits/room/roomTrait';
 import { ActorTrait } from '../../../src/traits/actor/actorTrait';
-import { VehicleTrait, type VehicleOpenModel } from '../../../src/traits/vehicle/vehicleTrait';
+import { VehicleTrait, type VehicleOpenMovement } from '../../../src/traits/vehicle/vehicleTrait';
 import { ExpanseTrait } from '../../../src/traits/expanse/expanseTrait';
 import { FloatingTrait } from '../../../src/traits/expanse/floatingTrait';
 import {
@@ -41,21 +41,21 @@ describe('the open model (ADR-376)', () => {
     return r;
   }
 
-  function openVehicle(name: string, at: IFEntity, overrides: Partial<VehicleOpenModel> = {}): IFEntity {
+  function openVehicle(name: string, at: IFEntity, overrides: Partial<VehicleOpenMovement> = {}): IFEntity {
     const v = world.createEntity(name, EntityType.ITEM);
     v.add(new IdentityTrait({ name }));
     v.add(new ContainerTrait());
     v.add(new EnterableTrait());
     v.add(new VehicleTrait({
-      model: { kind: 'open', drive: 'player', pace: 1, stride: 1, sight: 6, position: { x: 3, y: 4 }, ...overrides },
+      movement: { kind: 'open', drive: 'player', pace: 1, stride: 1, sight: 6, position: { x: 3, y: 4 }, ...overrides },
       commands: ['compass', 'coordinates'],
     }));
     world.moveEntity(v.id, at.id);
     return v;
   }
 
-  function model(v: IFEntity): VehicleOpenModel {
-    return v.get(VehicleTrait)!.model as VehicleOpenModel;
+  function model(v: IFEntity): VehicleOpenMovement {
+    return v.get(VehicleTrait)!.movement as VehicleOpenMovement;
   }
 
   function tick(v: IFEntity, turns: number) {
@@ -82,8 +82,8 @@ describe('the open model (ADR-376)', () => {
 
   describe('the trait', () => {
     it('refuses a heading and a course together, and a stride under one', () => {
-      expect(() => new VehicleTrait({ model: { kind: 'open', drive: 'player', pace: 1, stride: 0, sight: 1 } })).toThrow(/stride/);
-      expect(() => new VehicleTrait({ model: { kind: 'open', drive: 'player', pace: 1, stride: 1, sight: 1, heading: 'EAST', course: { x: 1, y: 1 } } })).toThrow(/heading or a course/);
+      expect(() => new VehicleTrait({ movement: { kind: 'open', drive: 'player', pace: 1, stride: 0, sight: 1 } })).toThrow(/stride/);
+      expect(() => new VehicleTrait({ movement: { kind: 'open', drive: 'player', pace: 1, stride: 1, sight: 1, heading: 'EAST', course: { x: 1, y: 1 } } })).toThrow(/heading or a course/);
     });
 
     it('starts at rest with its position and no edge', () => {
@@ -423,7 +423,7 @@ describe('the open model (ADR-376)', () => {
       const restored = new WorldModel();
       restored.loadJSON(world.toJSON());
       const again = restored.getEntity(skiff.id)!;
-      const m = again.get(VehicleTrait)!.model as VehicleOpenModel;
+      const m = again.get(VehicleTrait)!.movement as VehicleOpenMovement;
       expect(m.kind).toBe('open');
       expect(m.position).toEqual({ x: 5, y: 6 });
       expect(m.course).toEqual({ x: 14, y: 9 });
@@ -444,7 +444,7 @@ describe('the open model (ADR-376)', () => {
       const restored = new WorldModel();
       restored.loadJSON(world.toJSON());
       const again = restored.getEntity(skiff.id)!;
-      expect((again.get(VehicleTrait)!.model as VehicleOpenModel).atEdge).toBe('NORTH');
+      expect((again.get(VehicleTrait)!.movement as VehicleOpenMovement).atEdge).toBe('NORTH');
       expect(startVehicle(restored, again, 'NORTHWEST')).toBe(false);
     });
   });

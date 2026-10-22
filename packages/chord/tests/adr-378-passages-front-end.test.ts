@@ -106,7 +106,7 @@ describe('the passage line (ADR-378 D1)', () => {
     const [, passage] = exitsOf(ir, 'cable-trench');
     expect(passage.direction).toBe('passage:follow-the-cables');
     expect(passage.passage).toEqual(['follow the cables', 'crawl along the cables']);
-    expect(passage.to).toBe('sorting-room');
+    expect(passage.to).toEqual({ kind: 'room', id: 'sorting-room' });
     expect(passage.via).toBeNull();
     expect(passage.oneWay).toBeUndefined();
     expect(passage.condition).toBeUndefined();
@@ -205,7 +205,7 @@ describe('`while` on an exit line (ADR-378 D3)', () => {
     const north = exitsOf(ir, 'cable-trench').find((e) => e.direction === 'north')!;
     expect(north.condition).toBeDefined();
     expect(north.condition!.kind).toBeTruthy();
-    expect(north.to).toBe('sorting-room');
+    expect(north.to).toEqual({ kind: 'room', id: 'sorting-room' });
   });
 
   it('a passage lowers its condition', () => {

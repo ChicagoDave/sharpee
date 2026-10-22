@@ -55,8 +55,8 @@ describe('the vehicle machine (ADR-366 D5e)', () => {
     return v;
   }
 
-  function model<T extends VehicleTrait['model']>(v: IFEntity): NonNullable<T> {
-    return v.get(VehicleTrait)!.model as NonNullable<T>;
+  function model<T extends VehicleTrait['movement']>(v: IFEntity): NonNullable<T> {
+    return v.get(VehicleTrait)!.movement as NonNullable<T>;
   }
 
   beforeEach(() => {
@@ -72,8 +72,8 @@ describe('the vehicle machine (ADR-366 D5e)', () => {
   describe('a vehicle at rest', () => {
     it('no model, a streets model, or a line not under way: nothing moves and nothing is reported', () => {
       const tub = vehicle('tub', new VehicleTrait(), a);
-      const car = vehicle('car', new VehicleTrait({ model: { kind: 'streets' } }), a);
-      const tram = vehicle('tram', new VehicleTrait({ model: { kind: 'line', stops: [a.id, b.id], oneWay: false, drive: 'control', pace: 1 } }), a);
+      const car = vehicle('car', new VehicleTrait({ movement: { kind: 'streets' } }), a);
+      const tram = vehicle('tram', new VehicleTrait({ movement: { kind: 'line', stops: [a.id, b.id], oneWay: false, drive: 'control', pace: 1 } }), a);
       expect(stepVehicle(world, tub)).toBeUndefined();
       expect(stepVehicle(world, car)).toBeUndefined();
       expect(stepVehicle(world, tram)).toBeUndefined();
@@ -83,7 +83,7 @@ describe('the vehicle machine (ADR-366 D5e)', () => {
 
   describe('a control line (D5a)', () => {
     it('steps one stop every `pace` turns, carrying its rider, and halts itself at the end', () => {
-      const tram = vehicle('tram', new VehicleTrait({ model: { kind: 'line', stops: [a.id, b.id, c.id], oneWay: false, drive: 'control', pace: 2 } }), a);
+      const tram = vehicle('tram', new VehicleTrait({ movement: { kind: 'line', stops: [a.id, b.id, c.id], oneWay: false, drive: 'control', pace: 2 } }), a);
       world.moveEntity(player.id, tram.id);
       expect(startVehicle(world, tram)).toBe(true);
 
@@ -105,19 +105,19 @@ describe('the vehicle machine (ADR-366 D5e)', () => {
     });
 
     it('a `both` line started at its end runs back; a one-way line at its end refuses to start', () => {
-      const both = vehicle('lift', new VehicleTrait({ model: { kind: 'line', stops: [a.id, b.id], oneWay: false, drive: 'control', pace: 1 } }), b);
+      const both = vehicle('lift', new VehicleTrait({ movement: { kind: 'line', stops: [a.id, b.id], oneWay: false, drive: 'control', pace: 1 } }), b);
       expect(startVehicle(world, both)).toBe(true);
       expect(stepVehicle(world, both)).toEqual({ kind: 'arrived', roomId: a.id });
       expect(world.getLocation(both.id)).toBe(a.id);
       expect(isUnderWay(both)).toBe(false);
 
-      const oneWay = vehicle('chute', new VehicleTrait({ model: { kind: 'line', stops: [a.id, b.id], oneWay: true, drive: 'control', pace: 1 } }), b);
+      const oneWay = vehicle('chute', new VehicleTrait({ movement: { kind: 'line', stops: [a.id, b.id], oneWay: true, drive: 'control', pace: 1 } }), b);
       expect(startVehicle(world, oneWay)).toBe(false);
       expect(isUnderWay(oneWay)).toBe(false);
     });
 
     it('a line found off its stops halts where it is and reports stopped once', () => {
-      const tram = vehicle('tram', new VehicleTrait({ model: { kind: 'line', stops: [a.id, b.id], oneWay: false, drive: 'control', pace: 1 } }), a);
+      const tram = vehicle('tram', new VehicleTrait({ movement: { kind: 'line', stops: [a.id, b.id], oneWay: false, drive: 'control', pace: 1 } }), a);
       startVehicle(world, tram);
       world.moveEntity(tram.id, c.id);
       expect(stepVehicle(world, tram)).toEqual({ kind: 'stopped' });
@@ -129,7 +129,7 @@ describe('the vehicle machine (ADR-366 D5e)', () => {
 
   describe('a state line (D5a)', () => {
     it('moves to the block\'s answer when it differs from where it is, and stays when it does not', () => {
-      const bucket = vehicle('bucket', new VehicleTrait({ model: { kind: 'line', stops: [a.id, b.id], oneWay: false, drive: 'state' } }), a);
+      const bucket = vehicle('bucket', new VehicleTrait({ movement: { kind: 'line', stops: [a.id, b.id], oneWay: false, drive: 'state' } }), a);
       world.moveEntity(player.id, bucket.id);
       expect(stepVehicle(world, bucket, a.id)).toBeUndefined();
       expect(stepVehicle(world, bucket, b.id)).toEqual({ kind: 'arrived', roomId: b.id });
@@ -139,7 +139,7 @@ describe('the vehicle machine (ADR-366 D5e)', () => {
     });
 
     it('ignores an answer that is not a stop, and an absent answer', () => {
-      const bucket = vehicle('bucket', new VehicleTrait({ model: { kind: 'line', stops: [a.id, b.id], oneWay: false, drive: 'state' } }), a);
+      const bucket = vehicle('bucket', new VehicleTrait({ movement: { kind: 'line', stops: [a.id, b.id], oneWay: false, drive: 'state' } }), a);
       expect(stepVehicle(world, bucket, c.id)).toBeUndefined();
       expect(stepVehicle(world, bucket)).toBeUndefined();
       expect(world.getLocation(bucket.id)).toBe(a.id);
@@ -152,7 +152,7 @@ describe('the vehicle machine (ADR-366 D5e)', () => {
     }
 
     it('moves one room along its heading every `pace` turns while the room admits it, then stops once', () => {
-      const ship = vehicle('ship', new VehicleTrait({ model: { kind: 'compass', drive: 'control', pace: 2 } }), a);
+      const ship = vehicle('ship', new VehicleTrait({ movement: { kind: 'compass', drive: 'control', pace: 2 } }), a);
       connect(a, b);
       connect(b, c);
       b.get(RoomTrait)!.admits.vehicles = [ship.id];
@@ -174,7 +174,7 @@ describe('the vehicle machine (ADR-366 D5e)', () => {
     });
 
     it('stops at a missing exit and at a closed door; an open door lets it through', () => {
-      const ship = vehicle('ship', new VehicleTrait({ model: { kind: 'compass', drive: 'control', pace: 1 } }), a);
+      const ship = vehicle('ship', new VehicleTrait({ movement: { kind: 'compass', drive: 'control', pace: 1 } }), a);
       startVehicle(world, ship, Direction.NORTH);
       expect(stepVehicle(world, ship)).toEqual({ kind: 'stopped' });
       expect(model<{ kind: 'compass'; heading: string | null; turnsToStep: number }>(ship)).toMatchObject({ heading: null, turnsToStep: 0 });
@@ -196,7 +196,7 @@ describe('the vehicle machine (ADR-366 D5e)', () => {
     });
 
     it('stops at a blocked exit and at a hidden one, reading traversal like every mover (ADR-378 D0)', () => {
-      const ship = vehicle('ship', new VehicleTrait({ model: { kind: 'compass', drive: 'control', pace: 1 } }), a);
+      const ship = vehicle('ship', new VehicleTrait({ movement: { kind: 'compass', drive: 'control', pace: 1 } }), a);
       connect(a, b);
       b.get(RoomTrait)!.admits.vehicles = [ship.id];
 
@@ -223,7 +223,7 @@ describe('the vehicle machine (ADR-366 D5e)', () => {
     });
 
     it('stops at a locked door (new with the shared query) and at an exit blocked by the stamped map', () => {
-      const ship = vehicle('ship', new VehicleTrait({ model: { kind: 'compass', drive: 'control', pace: 1 } }), a);
+      const ship = vehicle('ship', new VehicleTrait({ movement: { kind: 'compass', drive: 'control', pace: 1 } }), a);
       const gate = world.createEntity('gate', EntityType.DOOR);
       gate.add(new DoorTrait({ room1: a.id, room2: b.id }));
       gate.add(new OpenableTrait({ isOpen: true }));
@@ -251,7 +251,7 @@ describe('the vehicle machine (ADR-366 D5e)', () => {
 
   describe('a flight vehicle (D5d)', () => {
     it('leaves its room on the first turn, is nowhere for the passage, then arrives and is no longer under way', () => {
-      const sparrow = vehicle('Sparrow', new VehicleTrait({ model: { kind: 'flight', drive: 'control', destinations: [a.id, c.id], passage: 2 } }), a);
+      const sparrow = vehicle('Sparrow', new VehicleTrait({ movement: { kind: 'flight', drive: 'control', destinations: [a.id, c.id], passage: 2 } }), a);
       const hold = room('Hold');
       hold.add(new AboardTrait({ vehicleId: sparrow.id }));
       world.moveEntity(hold.id, sparrow.id);
@@ -280,7 +280,7 @@ describe('the vehicle machine (ADR-366 D5e)', () => {
 
   describe('who is aboard (D7)', () => {
     it('inside the vehicle at any depth, or in a room aboard it', () => {
-      const sparrow = vehicle('Sparrow', new VehicleTrait({ model: { kind: 'flight', drive: 'control', destinations: [a.id, c.id], passage: 1 } }), a);
+      const sparrow = vehicle('Sparrow', new VehicleTrait({ movement: { kind: 'flight', drive: 'control', destinations: [a.id, c.id], passage: 1 } }), a);
       const hold = room('Hold');
       hold.add(new AboardTrait({ vehicleId: sparrow.id }));
       const crate = world.createEntity('crate', EntityType.ITEM);
@@ -298,7 +298,7 @@ describe('the vehicle machine (ADR-366 D5e)', () => {
 
   describe('the machine state survives a save (D5g)', () => {
     it('a voyage restored mid-passage still arrives on schedule', () => {
-      const sparrow = vehicle('Sparrow', new VehicleTrait({ model: { kind: 'flight', drive: 'control', destinations: [a.id, c.id], passage: 3 } }), a);
+      const sparrow = vehicle('Sparrow', new VehicleTrait({ movement: { kind: 'flight', drive: 'control', destinations: [a.id, c.id], passage: 3 } }), a);
       sendVehicle(world, sparrow, c.id);
       stepVehicle(world, sparrow);
       stepVehicle(world, sparrow);
@@ -306,7 +306,7 @@ describe('the vehicle machine (ADR-366 D5e)', () => {
       const restored = new WorldModel();
       restored.loadJSON(world.toJSON());
       const back = restored.getEntity(sparrow.id)!;
-      expect(back.get(VehicleTrait)!.model).toMatchObject({ kind: 'flight', destination: c.id, turnsRemaining: 2 });
+      expect(back.get(VehicleTrait)!.movement).toMatchObject({ kind: 'flight', destination: c.id, turnsRemaining: 2 });
       expect(restored.getLocation(back.id)).toBeUndefined();
 
       expect(stepVehicle(restored, back)).toBeUndefined();
@@ -315,12 +315,12 @@ describe('the vehicle machine (ADR-366 D5e)', () => {
     });
 
     it('a compass heading and step count come back as written', () => {
-      const ship = vehicle('ship', new VehicleTrait({ model: { kind: 'compass', drive: 'player', pace: 3 } }), a);
+      const ship = vehicle('ship', new VehicleTrait({ movement: { kind: 'compass', drive: 'player', pace: 3 } }), a);
       startVehicle(world, ship, Direction.NORTH);
       stepVehicle(world, ship);
       const restored = new WorldModel();
       restored.loadJSON(world.toJSON());
-      expect(restored.getEntity(ship.id)!.get(VehicleTrait)!.model).toMatchObject({ kind: 'compass', heading: Direction.NORTH, turnsToStep: 2 });
+      expect(restored.getEntity(ship.id)!.get(VehicleTrait)!.movement).toMatchObject({ kind: 'compass', heading: Direction.NORTH, turnsToStep: 2 });
     });
   });
 });
