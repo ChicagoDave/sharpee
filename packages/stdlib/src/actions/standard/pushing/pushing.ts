@@ -175,7 +175,7 @@ export const pushingAction: Action & { metadata: ActionMetadata } = {
       return { valid: false, error: 'carrying_it', params: { target: nounPhraseFor(target) } };
     }
     const room = context.world.getContainingRoom(actor.id) ?? context.currentLocation;
-    const refusal = { target: nounPhraseFor(target), direction: direction.toLowerCase() };
+    const refusal = { target: nounPhraseFor(target), direction };
     if (!isDirection(direction) || context.world.getLocation(target.id) !== room.id) {
       return { valid: false, error: 'cannot_push_that_way', params: refusal };
     }
@@ -216,7 +216,7 @@ export const pushingAction: Action & { metadata: ActionMetadata } = {
         sharedData.moved = true;
         sharedData.destinationId = going.currentLocation;
         sharedData.messageId = 'pushed_direction';
-        sharedData.messageParams.direction = direction.toLowerCase();
+        sharedData.messageParams.direction = direction;
       } else {
         sharedData.moved = false;
       }

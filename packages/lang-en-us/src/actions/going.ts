@@ -22,7 +22,7 @@ export const goingLanguage = {
     'door_closed': "{capitalize the door} {verb:is door} closed.",
     'door_locked': "{capitalize the door} {verb:is door} locked.",
     'too_dark': "It is pitch dark. {You} {be} likely to be eaten by a grue.",
-    'moved': "{You} {go} {verbatim:direction}.",
+    'moved': "{You} {go} {direction:direction}.",
     'cant_go_through': "{You} {can't} go through {obstacle}.",
     'already_there': "{You're} already there.",
     'nowhere_to_go': "{You}'ll have to say which compass direction to go in.",
@@ -57,12 +57,12 @@ export const goingLanguage = {
     'movement_blocked': "{verbatim:message}",
     'destination_not_found': "{You} {can't} go that way.",
     'need_light': "It's too dark to go that way safely.",
-    'went': "{You} {go} {verbatim:direction}.",
+    'went': "{You} {go} {direction:direction}.",
     'arrived': "{You} {arrive}.",
     // A witnessed mover (ADR-328 D3/D4): emitted only for a non-player
     // actor, so `{You}` always renders as the mover's name.
-    'departs': "{You} {leave} to the {verbatim:direction}.",
-    'arrives': "{You} {enter} from the {verbatim:direction}.",
+    'departs': "{You} {leave} to the {direction:direction}.",
+    'arrives': "{You} {enter} from the {direction:direction}.",
     'cant_go': "{You} {can't} go that way.",
     // ADR-376 D9: out of the vehicle in an expanse, the player stays by it.
     'stays_by_vehicle': "{You} {stay} where {you} {are}, by the vehicle."

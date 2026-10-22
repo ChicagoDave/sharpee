@@ -2361,6 +2361,13 @@ export interface ActionMetadata {
      * carried black book and a guidebook on the floor means the carried one).
      */
     preferredScope?: ScopeLevel;
+    /**
+     * The entities this action's topic may name beyond what the actor sees
+     * (alignment finding F5): setting-course's destinations and landmarks,
+     * which are never in scope. The validator resolves the topic among them
+     * by name and alias, rooms included; a miss leaves the topic as text.
+     */
+    topicCandidates?: (world: WorldModel, actorId: string) => readonly string[];
 }
 /**
  * Slot types that can have entity selections
@@ -2407,7 +2414,12 @@ export declare class CommandValidator implements CommandValidator {
      * match carries its EntityId (interceptors and future conversation
      * systems key on it); a miss or a tie falls back to the verbatim text.
      *
+     * An action that names its own `topicCandidates` resolves among those
+     * instead, rooms included and with no scope filter: the places a command
+     * names that are never in sight (alignment finding F5).
+     *
      * @param text Verbatim topic text as typed (articles preserved)
+     * @param metadata The action's metadata, for its `topicCandidates`
      * @returns The validated topic — `entity` set only on a unique match
      */
     private resolveTopic;

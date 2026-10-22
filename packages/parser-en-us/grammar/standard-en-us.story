@@ -509,6 +509,7 @@ define action entering
     go in the portal
     go into the portal
     board the vehicle
+      means gesture board
     get on the vehicle
 
 define action climbing
@@ -638,18 +639,31 @@ define action steering
   grammar
     steer the direction
     heave to
+      means gesture heave-to
     port the turn
+      means gesture port
     starboard the turn
+      means gesture starboard
     port
+      means gesture port
     starboard
+      means gesture starboard
     hard to port
+      means gesture hard-port
     hard to starboard
+      means gesture hard-starboard
     ahead
+      means gesture ahead
     come about
+      means gesture come-about
     make sail
+      means gesture make-sail
     shorten sail
+      means gesture shorten-sail
     furl sails
+      means gesture furl-sails
     furl the sails
+      means gesture furl-sails
   the turn is a topic
   directions
     north or n

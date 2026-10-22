@@ -150,7 +150,7 @@ function notAdmittedRefusal(
     return {
       messageId: `${IFActions.PUSHING}.cannot_push_that_way`,
       qualified: true,
-      params: { target: nounPhraseFor(mover.pushing), direction: direction.toLowerCase() }
+      params: { target: nounPhraseFor(mover.pushing), direction }
     };
   }
   const vehicle = mover.kind === 'steered' ? mover.vehicle : undefined;
@@ -555,7 +555,7 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
       ? sharedData.direction as DirectionType
       : undefined;
     const witnessed = (messageId: string, dir: DirectionType | undefined) => announces
-      ? { messageId, params: { ...(dir ? { direction: dir.toLowerCase() } : {}) } }
+      ? { messageId, params: { ...(dir ? { direction: dir } : {}) } }
       : {};
 
     // Return movement events first. actor_moved carries no messageId — it is

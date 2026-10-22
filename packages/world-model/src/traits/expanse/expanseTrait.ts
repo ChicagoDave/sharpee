@@ -27,6 +27,7 @@
 
 import { TraitType } from '../trait-types.js';
 import { ITrait } from '../trait.js';
+import type { DirectionType } from '../../constants/directions.js';
 
 /** A cell of an expanse: whole-unit coordinates, x east, y north. */
 export interface IExpanseCell {
@@ -34,8 +35,8 @@ export interface IExpanseCell {
   y: number;
 }
 
-/** The four sides an expanse's edge lines may name (ADR-376 D8). */
-export type ExpanseSide = 'NORTH' | 'SOUTH' | 'EAST' | 'WEST';
+/** The four sides an expanse's edge lines may name (ADR-376 D8): a subset of the one `Direction` value (D15). */
+export type ExpanseSide = Extract<DirectionType, 'NORTH' | 'SOUTH' | 'EAST' | 'WEST'>;
 
 /** A wind (ADR-375 D4): the bearing it comes from, 0 north clockwise, or a calm. */
 export type ExpanseWind = number | 'calm';

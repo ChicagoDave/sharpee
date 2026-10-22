@@ -27,7 +27,7 @@ export const steeringLanguage = {
     'sails_already_furled': "The sails are already furled.",
 
     // Success
-    'steered': "{You} {steer} {the vehicle} {verbatim:direction}.",
+    'steered': "{You} {steer} {the vehicle} {direction:direction}.",
     'hove_to': "{You} {heave} to, and {the vehicle} loses way.",
     // ADR-375 D3, D7: the naval set's reports.
     'turned': "{You} {bring} {the vehicle} to {verbatim:side}, to {verbatim:bearing} degrees.",

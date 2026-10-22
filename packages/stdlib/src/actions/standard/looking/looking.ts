@@ -105,7 +105,8 @@ export function sightingEvents(context: ActionContext, actionId: string, instrum
   return sightings(context.world, lookout, instrument, own).map((sighting) =>
     context.event('if.event.sighted', {
       messageId: `${actionId}.${sighting.direction ? SIGHTING_MESSAGE_BY_BAND[sighting.band] : LookingMessages.SIGHTING_HERE}`,
-      params: { thing: nounPhraseFor(sighting.thing), direction: (sighting.direction ?? 'here').toLowerCase() },
+      // The direction goes to lang as the constant; lang renders the word (D15).
+      params: { thing: nounPhraseFor(sighting.thing), ...(sighting.direction ? { direction: sighting.direction } : {}) },
       thingId: sighting.thing.id,
       band: sighting.band,
       direction: sighting.direction ?? null,

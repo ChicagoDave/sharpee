@@ -2693,6 +2693,10 @@ export declare function realizeLocationHeading(parts: ReadonlyArray<Pick<Heading
  *    subject param to agree with. The subject must be a bound param.
  *  - `{verbatim:name}` → a `Verbatim` atom (ADR-200): the param's value rendered
  *    as opaque, whitespace-exempt text. The param must be bound.
+ *  - `{direction:name}` → the English word for a bound `Direction` constant
+ *    (`NORTH` → "north"), as a `Verbatim` atom: actions pass the constant and
+ *    the word is this package's (alignment finding D15). An unknown value
+ *    raises `PhraseParseError`.
  *  - `{number:coins}` / `{number:coins words}` / `{number:floor ordinal}` → a
  *    `Numeral` atom (ADR-198): the numeric param, optional format. Must be bound.
  *  - `{pronoun:subject}` / `{pronoun:object}` / `{pronoun:possessive}` → a `Pronoun`

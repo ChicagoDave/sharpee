@@ -21,6 +21,10 @@
  *    subject param to agree with. The subject must be a bound param.
  *  - `{verbatim:name}` → a `Verbatim` atom (ADR-200): the param's value rendered
  *    as opaque, whitespace-exempt text. The param must be bound.
+ *  - `{direction:name}` → the English word for a bound `Direction` constant
+ *    (`NORTH` → "north"), as a `Verbatim` atom: actions pass the constant and
+ *    the word is this package's (alignment finding D15). An unknown value
+ *    raises `PhraseParseError`.
  *  - `{number:coins}` / `{number:coins words}` / `{number:floor ordinal}` → a
  *    `Numeral` atom (ADR-198): the numeric param, optional format. Must be bound.
  *  - `{pronoun:subject}` / `{pronoun:object}` / `{pronoun:possessive}` → a `Pronoun`
@@ -170,6 +174,34 @@ function parseVerbatim(inner: string, template: string, params: Record<string, u
   const value = params[name];
   if (isPhraseValue(value)) return value;
   return { kind: 'verbatim', text: String(value) };
+}
+
+/** The English word for each `Direction` constant (world-model's spelling). */
+const DIRECTION_WORDS: Readonly<Record<string, string>> = {
+  NORTH: 'north', SOUTH: 'south', EAST: 'east', WEST: 'west',
+  NORTHEAST: 'northeast', NORTHWEST: 'northwest', SOUTHEAST: 'southeast', SOUTHWEST: 'southwest',
+  UP: 'up', DOWN: 'down', IN: 'in', OUT: 'out',
+};
+
+/**
+ * Parse a `{direction:param}` head: the bound param is a `Direction`
+ * constant, rendered as its English word in a `Verbatim` atom (D15).
+ */
+function parseDirectionWord(inner: string, template: string, params: Record<string, unknown>): Phrase {
+  const rest = inner.slice(inner.indexOf(':') + 1).trim();
+  const tokens = rest.split(/\s+/).filter((t) => t.length > 0);
+  if (tokens.length !== 1) {
+    throw new PhraseParseError(inner, template, 'direction takes a single param, e.g. {direction:direction}');
+  }
+  const name = tokens[0];
+  if (!(name in params)) {
+    throw new PhraseParseError(name, template, `direction param '${name}' is not bound`);
+  }
+  const word = DIRECTION_WORDS[String(params[name])];
+  if (word === undefined) {
+    throw new PhraseParseError(name, template, `direction param '${name}' is '${String(params[name])}', not a direction`);
+  }
+  return { kind: 'verbatim', text: word };
 }
 
 /**
@@ -328,6 +360,10 @@ function parsePlaceholder(inner: string, template: string, params: Record<string
     // Verbatim atom (ADR-200): binds a single param, rendered as opaque text.
     if (prefix === 'verbatim') {
       return parseVerbatim(body, template, params);
+    }
+    // Direction word (D15): binds a Direction constant, rendered in English.
+    if (prefix === 'direction') {
+      return parseDirectionWord(body, template, params);
     }
     // Numeral atom (ADR-198): binds a numeric param + optional format.
     if (prefix === 'number') {

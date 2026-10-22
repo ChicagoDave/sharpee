@@ -33,7 +33,7 @@ import { enteringAction } from '../../../src/actions/standard/entering';
 import { exitingAction } from '../../../src/actions/standard/exiting';
 import { createVehicleCommandTransformer } from '../../../src/actions/standard/vehicle-command-transformer';
 import { IFActions } from '../../../src/actions/constants';
-import { createCommand, createRealTestContext, executeWithValidation, setupBasicWorld } from '../../test-utils';
+import { createCommand, createRealTestContext, executeWithValidation, setupBasicWorld, validateTyped } from '../../test-utils';
 
 interface Harbour {
   world: WorldModel;
@@ -77,9 +77,11 @@ function steer(world: WorldModel, direction?: string) {
   return executeWithValidation(steeringAction, createRealTestContext(steeringAction, world, command));
 }
 
+/** `set course for <destination>` typed, through the real parser and validator (F5); bare, built by hand. */
 function setCourse(world: WorldModel, destination?: string) {
-  const command = createCommand(IFActions.SETTING_COURSE, { verb: 'set course for' });
-  if (destination !== undefined) command.topic = { text: destination };
+  const command = destination === undefined
+    ? createCommand(IFActions.SETTING_COURSE, { verb: 'set course for' })
+    : validateTyped(settingCourseAction, world, `set course for ${destination}`);
   return executeWithValidation(settingCourseAction, createRealTestContext(settingCourseAction, world, command));
 }
 
@@ -162,6 +164,32 @@ describe('setting course (ADR-366 D5d, D5i)', () => {
     expect(world.getLocation(ship.id)).toBe(room.id);
   });
 
+  test('a destination room answers to its alias, resolved by the validator, not read by the action (F5)', () => {
+    const { world, player, room, reef } = harbour();
+    reef.get(IdentityTrait)!.aliases = ['coral shelf'];
+    const ship = sparrow(world, room, reef);
+    world.moveEntity(player.id, world.getContents(ship.id)[0].id);
+
+    const command = validateTyped(settingCourseAction, world, 'set course for the coral shelf');
+    expect(command.topic).toMatchObject({ text: 'the coral shelf', entity: reef.id });
+    const events = executeWithValidation(settingCourseAction, createRealTestContext(settingCourseAction, world, command));
+    expect(messageIds(events)).toContain('if.action.setting_course.course_set');
+    expect(ship.get(VehicleTrait)!.model).toMatchObject({ kind: 'flight', destination: reef.id, turnsRemaining: 2 });
+  });
+
+  test('a room that is not among the destinations does not resolve, even by its exact name', () => {
+    const { world, player, room, reef } = harbour();
+    const ship = sparrow(world, room, reef);
+    const elsewhere = world.createEntity('Lighthouse', 'object');
+    elsewhere.add(new RoomTrait());
+    elsewhere.add(new IdentityTrait({ name: 'Lighthouse' }));
+    world.moveEntity(player.id, world.getContents(ship.id)[0].id);
+
+    expect(validateTyped(settingCourseAction, world, 'set course for Lighthouse').topic!.entity).toBeUndefined();
+    expect(messageIds(setCourse(world, 'Lighthouse'))).toContain('if.action.setting_course.not_a_destination');
+    expect(ship.get(VehicleTrait)!.model).toMatchObject({ kind: 'flight', destination: null, turnsRemaining: 0 });
+  });
+
   test('a name that is no destination, the room the ship is at, a missing name, and a ship under way each refuse', () => {
     const { world, player, room, reef } = harbour();
     const ship = sparrow(world, room, reef);
@@ -215,7 +243,11 @@ describe('boarding and the hatch (ADR-366 D7, D7a)', () => {
   }
 
   function enter(world: WorldModel, target: IFEntity, verb = 'enter') {
-    const command = createCommand(IFActions.ENTERING, { entity: target, verb });
+    // `board` is typed through the real parser, so the boarding gesture is
+    // the one `board the vehicle`'s `means gesture` line hands entering (F5).
+    const command = verb === 'board'
+      ? validateTyped(enteringAction, world, `board ${target.name}`)
+      : createCommand(IFActions.ENTERING, { entity: target, verb });
     return executeWithValidation(enteringAction, createRealTestContext(enteringAction, world, command));
   }
 
@@ -259,6 +291,17 @@ describe('boarding and the hatch (ADR-366 D7, D7a)', () => {
     expect(world.getLocation(player.id)).toBe(room.id);
 
     enter(world, bucket);
+    expect(world.getLocation(player.id)).toBe(bucket.id);
+  });
+
+  test('`get on` carries no boarding gesture, so it enters a vehicle `board` refuses', () => {
+    const { world, player, room } = harbour();
+    const bucket = vehicle(world, 'bucket', new VehicleTrait({ model: { kind: 'none' } }), room);
+
+    const command = validateTyped(enteringAction, world, 'get on bucket');
+    expect(command.parsed.extras?.gesture).toBeUndefined();
+    const events = executeWithValidation(enteringAction, createRealTestContext(enteringAction, world, command));
+    expect(messageIds(events)).not.toContain('if.action.entering.vehicle_not_boardable');
     expect(world.getLocation(player.id)).toBe(bucket.id);
   });
 

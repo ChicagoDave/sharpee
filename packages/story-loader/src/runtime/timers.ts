@@ -16,7 +16,8 @@
 import type { IRStatement } from '@sharpee/chord';
 import type { ISemanticEvent } from '@sharpee/core';
 import type { ActResult, ActSlots } from '@sharpee/stdlib';
-import { Direction, type DirectionType, IFEntity, WorldModel } from '@sharpee/world-model';
+import { IFEntity, WorldModel } from '@sharpee/world-model';
+import { directionOfWord } from '../direction-words.js';
 import { LoadError } from '../errors.js';
 import { clauseOccurrenceKey, timerKey, type TimerRecord } from '../state-keys.js';
 import { ExecContext, SchedulerTick, ACT_DEPTH_CAP, type RuntimeCore } from './core.js';
@@ -108,7 +109,7 @@ export class TimersSection {
     for (const bound of stmt.slots) {
       if (bound.slot === 'direction') {
         const word = bound.value.kind === 'literal' ? bound.value.value : this.core.evaluator.entityValue(bound.value, ctx);
-        const direction = (Direction as Record<string, DirectionType>)[word.toUpperCase()];
+        const direction = directionOfWord(word);
         if (!direction) throw new LoadError(`Unknown direction \`${word}\`.`, stmt.span);
         slots.direction = direction;
         continue;

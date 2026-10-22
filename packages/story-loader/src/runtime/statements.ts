@@ -19,6 +19,7 @@ import type { IRCondition, IRStatement, IRValue, Span } from '@sharpee/chord';
 import type { ISemanticEvent } from '@sharpee/core';
 import { SOUND_EVENT_TYPES, type Choice, type ISound } from '@sharpee/if-domain';
 import { killPlayer } from '@sharpee/stdlib';
+import { directionOfWord } from '../direction-words.js';
 import { ExpanseTrait, type IFEntity, isAboardVehicle, sendVehicle, setSails, startVehicle, stopVehicle, TraitType, VEHICLE_EVENT_TYPES, VEHICLE_REPORT_MESSAGES, VehicleTrait, WearableBehavior, type WearableTrait, WorldModel } from '@sharpee/world-model';
 import { DecisionLedger } from '../decisions.js';
 import { LoadError } from '../errors.js';
@@ -332,10 +333,9 @@ export class StatementsSection {
           if (phase !== 'reports' && holds) {
             const vehicle = ctx.world.getEntity(this.core.evaluator.entityValue(stmt.vehicle, ctx));
             if (!vehicle) throw new LoadError('A vehicle statement names an entity that was never built.', stmt.span);
-            // A heading is the platform's direction word (`NORTH`), as going reads it.
             if (stmt.kind === 'vehicle-start') {
-              // ADR-375 D2: a bearing in degrees, or the platform's direction word (`NORTH`).
-              const started = startVehicle(ctx.world, vehicle, stmt.bearing ?? stmt.heading?.toUpperCase());
+              // ADR-375 D2: a bearing in degrees, or a compass word as the platform's constant (D15).
+              const started = startVehicle(ctx.world, vehicle, stmt.bearing ?? (stmt.heading === undefined ? undefined : directionOfWord(stmt.heading)));
               if (!started && vehicle.get(VehicleTrait)?.model?.kind === 'line') this.reportVehicleAtEnd(vehicle, ctx.world);
             } else if (stmt.kind === 'vehicle-stop') {
               stopVehicle(vehicle);

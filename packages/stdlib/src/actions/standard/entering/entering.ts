@@ -89,10 +89,13 @@ function boardingRefusal(context: ActionContext, target: IFEntity, boardingRoom:
   return { valid: false, error: EnteringMessages.VEHICLE_NOT_BOARDABLE, params: { vehicle: nounPhraseFor(target) } };
 }
 
-/** Whether the player's word was `board` (D7: for a vehicle with rooms aboard only). */
+/**
+ * Whether the command was the boarding gesture (D7: for a vehicle with rooms
+ * aboard only): the grammar line's `means gesture board`, data from the
+ * parser, never the typed verb (alignment finding F5).
+ */
 function saidBoard(context: ActionContext): boolean {
-  const verb = context.command.parsed.structure.verb?.text || context.command.parsed.rawInput || '';
-  return verb.trim().toLowerCase().startsWith('board');
+  return context.command.parsed.extras?.gesture === 'board';
 }
 
 /**

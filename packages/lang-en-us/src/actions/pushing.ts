@@ -34,7 +34,7 @@ export const pushingLanguage = {
 
     // Success messages - a push between rooms (ADR-378 D6); going's
     // arrival narration follows this line.
-    'pushed_direction': "{You} {push} {the target} {verbatim:direction}.",
+    'pushed_direction': "{You} {push} {the target} {direction:direction}.",
     'pushed_nudged': "{You} {give} {the target} a push, but it doesn't move far.",
 
     // Success messages - fixed objects

@@ -177,6 +177,30 @@ describe('parsePhraseTemplate — Numeral atom (ADR-198)', () => {
   });
 });
 
+// --- Direction word (alignment finding D15) -----------------------------------
+
+describe('parsePhraseTemplate — {direction:param} (D15)', () => {
+  it('renders each Direction constant as its English word', () => {
+    const words: Record<string, string> = {
+      NORTH: 'north', SOUTH: 'south', EAST: 'east', WEST: 'west',
+      NORTHEAST: 'northeast', NORTHWEST: 'northwest', SOUTHEAST: 'southeast', SOUTHWEST: 'southwest',
+      UP: 'up', DOWN: 'down', IN: 'in', OUT: 'out',
+    };
+    for (const [constant, word] of Object.entries(words)) {
+      expect(parsePhraseTemplate('{direction:direction}', { direction: constant })).toEqual({ kind: 'verbatim', text: word });
+    }
+  });
+
+  it('refuses an English word or any other value: the action passes the constant, lang owns the word', () => {
+    expect(() => parsePhraseTemplate('{direction:direction}', { direction: 'north' })).toThrow(PhraseParseError);
+    expect(() => parsePhraseTemplate('{direction:direction}', { direction: 'passage:climb-rope' })).toThrow(PhraseParseError);
+  });
+
+  it('throws PhraseParseError for an unbound direction param', () => {
+    expect(() => parsePhraseTemplate('{direction:direction}', {})).toThrow(PhraseParseError);
+  });
+});
+
 // --- Verbatim atom (ADR-200) -----------------------------------------------
 
 describe('parsePhraseTemplate — Verbatim atom (ADR-200)', () => {

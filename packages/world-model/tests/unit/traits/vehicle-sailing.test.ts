@@ -16,6 +16,7 @@ import { RoomTrait } from '../../../src/traits/room/roomTrait';
 import { VehicleTrait, type VehicleOpenModel } from '../../../src/traits/vehicle/vehicleTrait';
 import { ExpanseTrait } from '../../../src/traits/expanse/expanseTrait';
 import { angleOffWind, bearingOf, headingVector } from '../../../src/traits/expanse/expanseBehavior';
+import { Direction } from '../../../src/constants/directions';
 import {
   comeAbout,
   furlSails,
@@ -53,9 +54,9 @@ const TABLE_WITH_SAILS = {
 
 describe('bearings (ADR-375 D2)', () => {
   it('a compass word names its bearing; a bearing has a sine and cosine vector; the angle off the wind runs 0 to 180', () => {
-    expect(bearingOf('northeast')).toBe(45);
+    expect(bearingOf(Direction.NORTHEAST)).toBe(45);
     expect(bearingOf(405)).toBe(45);
-    expect(bearingOf('up')).toBeUndefined();
+    expect(bearingOf(Direction.UP)).toBeUndefined();
     const east = headingVector(90)!;
     expect(east.x).toBeCloseTo(1);
     expect(east.y).toBeCloseTo(0);
@@ -110,7 +111,7 @@ describe('a sailing vehicle (ADR-375 D3, D5, D7)', () => {
     expect(turnHeading(ship, 90)).toBe(75);
     expect(stopVehicle(ship)).toBe(true);
     expect(model()).toMatchObject({ heading: 75, underWay: false });
-    expect(startVehicle(world, ship, 'south')).toBe(true);
+    expect(startVehicle(world, ship, Direction.SOUTH)).toBe(true);
     expect(model().heading).toBe(180);
   });
 

@@ -59,7 +59,7 @@ export const lookThroughBehavior: CapabilityBehavior = {
     for (const sighting of seen) {
       effects.push(createEffect('if.event.sighted', {
         messageId: `${IFActions.LOOKING}.${sighting.direction ? SIGHTING_MESSAGE_BY_BAND[sighting.band] : LookingMessages.SIGHTING_HERE}`,
-        params: { thing: nounPhraseFor(sighting.thing), direction: (sighting.direction ?? 'here').toLowerCase() },
+        params: { thing: nounPhraseFor(sighting.thing), ...(sighting.direction ? { direction: sighting.direction } : {}) },
         thingId: sighting.thing.id,
         band: sighting.band,
         direction: sighting.direction ?? null,

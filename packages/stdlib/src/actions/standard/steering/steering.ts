@@ -25,6 +25,7 @@ import { Action, ActionContext, ValidationResult } from '../../enhanced-types.js
 import { type ISemanticEvent } from '@sharpee/core';
 import {
   type DirectionType,
+  isDirection,
   getVehicleAboard,
   isUnderWay,
   startVehicle,
@@ -56,7 +57,7 @@ export const COMPASS_COMMAND_SET = 'compass';
 /** The sailing set (ADR-375 D3): turns by degrees, `ahead`, `come about`, and the sail words. */
 export const NAVAL_COMMAND_SET = 'naval';
 
-/** A naval gesture as the player typed it (ADR-375 D3, D7). */
+/** A naval gesture as the grammar matched it (ADR-375 D3, D7). */
 type NavalCommand =
   | { kind: 'turn'; side: 'port' | 'starboard'; degrees: number | undefined }
   | { kind: 'ahead' }
@@ -65,30 +66,45 @@ type NavalCommand =
   | { kind: 'shorten-sail' }
   | { kind: 'furl-sails' };
 
-/** The naval gesture the command's verb names, or undefined for `steer` and `heave to`. */
-function navalCommand(context: ActionContext): NavalCommand | undefined {
-  const verb = (context.command.parsed.structure.verb?.text || context.command.parsed.rawInput || '').trim().toLowerCase();
-  const topic = context.command.topic?.text?.trim().toLowerCase() ?? '';
-  const degreesOf = (text: string): number | undefined => {
-    const m = /^(\d+)(?:\s*degrees?)?$/.exec(text.trim());
-    return m ? Number(m[1]) : undefined;
-  };
-  if (verb.startsWith('hard to port')) return { kind: 'turn', side: 'port', degrees: 90 };
-  if (verb.startsWith('hard to starboard')) return { kind: 'turn', side: 'starboard', degrees: 90 };
-  if (verb === 'port' || verb.startsWith('port ')) return { kind: 'turn', side: 'port', degrees: degreesOf(topic || verb.slice(5)) };
-  if (verb === 'starboard' || verb.startsWith('starboard ')) return { kind: 'turn', side: 'starboard', degrees: degreesOf(topic || verb.slice(10)) };
-  if (verb.startsWith('ahead')) return { kind: 'ahead' };
-  if (verb.startsWith('come about')) return { kind: 'come-about' };
-  if (verb.startsWith('make sail')) return { kind: 'make-sail' };
-  if (verb.startsWith('shorten sail')) return { kind: 'shorten-sail' };
-  if (verb.startsWith('furl')) return { kind: 'furl-sails' };
-  return undefined;
+/**
+ * The gesture the matched grammar line names (its `means gesture <value>`
+ * line, alignment finding F5): data from the parser, never the typed verb.
+ */
+function gestureOf(context: ActionContext): string | undefined {
+  const gesture = context.command.parsed.extras?.gesture;
+  return typeof gesture === 'string' ? gesture : undefined;
 }
 
-/** The heading the command names, as the platform's direction constant; undefined for `heave to`. */
+/** The degrees of a turn, from the `the turn` topic (`port 20`, `starboard 45 degrees`). */
+function turnDegrees(context: ActionContext): number | undefined {
+  const m = /^(\d+)(?:\s*degrees?)?$/.exec(context.command.topic?.text?.trim() ?? '');
+  return m ? Number(m[1]) : undefined;
+}
+
+/** The naval gesture the command names, or undefined for `steer` and `heave to`. */
+function navalCommand(context: ActionContext): NavalCommand | undefined {
+  switch (gestureOf(context)) {
+    case 'hard-port': return { kind: 'turn', side: 'port', degrees: 90 };
+    case 'hard-starboard': return { kind: 'turn', side: 'starboard', degrees: 90 };
+    case 'port': return { kind: 'turn', side: 'port', degrees: turnDegrees(context) };
+    case 'starboard': return { kind: 'turn', side: 'starboard', degrees: turnDegrees(context) };
+    case 'ahead': return { kind: 'ahead' };
+    case 'come-about': return { kind: 'come-about' };
+    case 'make-sail': return { kind: 'make-sail' };
+    case 'shorten-sail': return { kind: 'shorten-sail' };
+    case 'furl-sails': return { kind: 'furl-sails' };
+    default: return undefined;
+  }
+}
+
+/**
+ * The heading the command names, undefined for `heave to`. The parser
+ * hands a direction over as the platform's constant (D15), so it is read,
+ * never re-spelled.
+ */
 function resolveHeading(context: ActionContext): DirectionType | undefined {
   const direction = context.command.parsed.extras?.direction;
-  return typeof direction === 'string' && direction.length > 0 ? (direction.toUpperCase() as DirectionType) : undefined;
+  return isDirection(direction) ? direction : undefined;
 }
 
 interface SteeringSharedData {
@@ -289,7 +305,7 @@ export const steeringAction: Action & { metadata: ActionMetadata } = {
     return [
       context.event('if.event.steered', {
         messageId: `${context.action.id}.${heading ? SteeringMessages.STEERED : SteeringMessages.HOVE_TO}`,
-        params: { vehicle: nounPhraseFor(vehicle), ...(heading ? { direction: heading.toLowerCase() } : {}) },
+        params: { vehicle: nounPhraseFor(vehicle), ...(heading ? { direction: heading } : {}) },
         vehicleId: vehicle.id,
         heading: heading ?? null,
         actorId: context.actor.id

@@ -17,13 +17,9 @@
  */
 import type { IREntity } from '@sharpee/chord';
 import { exitBlockedKey, exitHiddenKey, exitMessageKey } from '@sharpee/stdlib';
-import { darkKey, Direction, type DirectionType, type ExitKey, getOppositeDirection, isPassageKey, WorldModel } from '@sharpee/world-model';
+import { darkKey, type ExitKey, getOppositeDirection, isPassageKey, WorldModel } from '@sharpee/world-model';
+import { exitKeyOfWord as exitKeyOf } from '../direction-words.js';
 
-/** An IR exit word as the world keys it: a passage key as written, a compass word as its constant. */
-function exitKeyOf(word: string): ExitKey | undefined {
-  if (isPassageKey(word)) return word;
-  return (Direction as Record<string, DirectionType>)[word.toUpperCase()];
-}
 import { CHORD_OCCURRENCE_PREFIX } from '../state-keys.js';
 import type { RuntimeCore } from './core.js';
 

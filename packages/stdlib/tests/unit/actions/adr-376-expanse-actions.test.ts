@@ -11,6 +11,7 @@
 import { describe, test, expect } from 'vitest';
 import {
   ContainerTrait,
+  Direction,
   EnterableTrait,
   ExpanseTrait,
   FloatingTrait,
@@ -36,7 +37,7 @@ import { examiningAction } from '../../../src/actions/standard/examining';
 import { lookThroughBehavior } from '../../../src/actions/standard/searching';
 import { createVehicleCommandTransformer } from '../../../src/actions/standard/vehicle-command-transformer';
 import { IFActions } from '../../../src/actions/constants';
-import { createCommand, createRealTestContext, executeWithValidation, setupBasicWorld } from '../../test-utils';
+import { createCommand, createRealTestContext, executeWithValidation, setupBasicWorld, validateTyped } from '../../test-utils';
 
 interface Belt {
   world: WorldModel;
@@ -90,9 +91,11 @@ function steer(world: WorldModel, direction?: string) {
   return executeWithValidation(steeringAction, createRealTestContext(steeringAction, world, command));
 }
 
+/** `set course for <destination>` typed, through the real parser and validator (F5); bare, built by hand. */
 function setCourse(world: WorldModel, destination?: string) {
-  const command = createCommand(IFActions.SETTING_COURSE, { verb: 'set course for' });
-  if (destination !== undefined) command.topic = { text: destination };
+  const command = destination === undefined
+    ? createCommand(IFActions.SETTING_COURSE, { verb: 'set course for' })
+    : validateTyped(settingCourseAction, world, `set course for ${destination}`);
   return executeWithValidation(settingCourseAction, createRealTestContext(settingCourseAction, world, command));
 }
 
@@ -105,7 +108,7 @@ function run(action: typeof goingAction, world: WorldModel, entity?: IFEntity, e
 describe('steering an open vehicle (D3, D8)', () => {
   test('a heading puts the skiff under way; heave to clears it; go <direction> aboard becomes steering', () => {
     const { world, skiff } = belt();
-    expect(messageIds(steer(world, 'east'))).toContain('if.action.steering.steered');
+    expect(messageIds(steer(world, Direction.EAST))).toContain('if.action.steering.steered');
     expect(model(skiff)).toMatchObject({ heading: 'EAST', course: null, turnsToStep: 1 });
     expect(messageIds(steer(world))).toContain('if.action.steering.hove_to');
     expect(model(skiff).heading).toBeNull();
@@ -119,13 +122,13 @@ describe('steering an open vehicle (D3, D8)', () => {
     model(skiff).position = { x: 4, y: 7 };
     model(skiff).atEdge = 'NORTH';
     // An edge reads the same whoever meets it: going's lines, the ones the machine reports.
-    expect(messageIds(steer(world, 'north'))).toContain('if.action.going.expanse_edge');
+    expect(messageIds(steer(world, Direction.NORTH))).toContain('if.action.going.expanse_edge');
     world.registerEvaluator(`exit.message.${expanse.id}.NORTH`, () => 'Ice closes the way north.');
-    const refused = steer(world, 'northeast');
+    const refused = steer(world, Direction.NORTHEAST);
     expect(messageIds(refused)).toContain('if.action.going.movement_blocked');
     expect(refused[0].data.params.message).toBe('Ice closes the way north.');
     expect(model(skiff).heading).toBeNull();
-    expect(messageIds(steer(world, 'south'))).toContain('if.action.steering.steered');
+    expect(messageIds(steer(world, Direction.SOUTH))).toContain('if.action.steering.steered');
   });
 });
 

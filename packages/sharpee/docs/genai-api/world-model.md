@@ -5910,13 +5910,14 @@ export declare const VEHICLE_REPORT_MESSAGES: {
  * - ADR-366 D5g — machine state is trait data, so `turnsToDrift` rides a save.
  */
 import { ITrait } from '../trait.js';
+import type { DirectionType } from '../../constants/directions.js';
 /** A cell of an expanse: whole-unit coordinates, x east, y north. */
 export interface IExpanseCell {
     x: number;
     y: number;
 }
-/** The four sides an expanse's edge lines may name (ADR-376 D8). */
-export type ExpanseSide = 'NORTH' | 'SOUTH' | 'EAST' | 'WEST';
+/** The four sides an expanse's edge lines may name (ADR-376 D8): a subset of the one `Direction` value (D15). */
+export type ExpanseSide = Extract<DirectionType, 'NORTH' | 'SOUTH' | 'EAST' | 'WEST'>;
 /** A wind (ADR-375 D4): the bearing it comes from, 0 north clockwise, or a calm. */
 export type ExpanseWind = number | 'calm';
 export interface IExpanseData {
@@ -6139,9 +6140,11 @@ import { type RandomService } from '@sharpee/core';
 import type { WorldModel } from '../../world/WorldModel.js';
 import type { IFEntity } from '../../entities/if-entity.js';
 import { ExpanseTrait, type IExpanseCell } from './expanseTrait.js';
-/** The eight compass headings a vehicle or a drift may take, in the world's direction spelling. */
-export declare const COMPASS_HEADINGS: readonly ["NORTH", "NORTHEAST", "EAST", "SOUTHEAST", "SOUTH", "SOUTHWEST", "WEST", "NORTHWEST"];
-export type CompassHeading = typeof COMPASS_HEADINGS[number];
+import { type DirectionType } from '../../constants/directions.js';
+/** The eight compass headings a vehicle or a drift may take: a subset of the one `Direction` value (D15). */
+export type CompassHeading = Extract<DirectionType, 'NORTH' | 'NORTHEAST' | 'EAST' | 'SOUTHEAST' | 'SOUTH' | 'SOUTHWEST' | 'WEST' | 'NORTHWEST'>;
+/** The eight headings clockwise from north, so a heading's index times 45 is its bearing. */
+export declare const COMPASS_HEADINGS: readonly CompassHeading[];
 /**
  * The unit vector of a heading (D3: x east, y north) — one of the eight
  * words, or a bearing in degrees (ADR-375 D2, 0 north, clockwise) — or

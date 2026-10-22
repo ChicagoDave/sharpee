@@ -20,8 +20,7 @@ import {
   WorldModel,
 } from '@sharpee/world-model';
 import { steeringAction } from '../../../src/actions/standard/steering';
-import { IFActions } from '../../../src/actions/constants';
-import { createCommand, createRealTestContext, executeWithValidation, setupBasicWorld } from '../../test-utils';
+import { createRealTestContext, executeWithValidation, setupBasicWorld, validateTyped } from '../../test-utils';
 
 const TABLE = {
   bands: [
@@ -65,9 +64,13 @@ function messageIds(events: { data?: any }[]): string[] {
   return events.map((e) => e.data?.messageId).filter((id): id is string => typeof id === 'string');
 }
 
+/**
+ * The command as the player types it, through the real parser and
+ * validator, so the gesture the action switches on is the one the
+ * grammar's `means gesture` line hands it (F5).
+ */
 function say(world: WorldModel, verb: string, topic?: string) {
-  const command = createCommand(IFActions.STEERING, { verb });
-  if (topic !== undefined) command.topic = { text: topic };
+  const command = validateTyped(steeringAction, world, topic === undefined ? verb : `${verb} ${topic}`);
   return executeWithValidation(steeringAction, createRealTestContext(steeringAction, world, command));
 }
 

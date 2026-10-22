@@ -10,6 +10,10 @@ import { WorldModel } from '@sharpee/world-model';
 import { type LanguageProvider } from '@sharpee/if-domain';
 import EnglishLanguageProvider from '@sharpee/lang-en-us';
 import type { ParsedCommand } from '@sharpee/world-model';
+import { CommandValidator } from '../../src/validation/command-validator';
+import { StandardActionRegistry } from '../../src/actions/registry';
+import type { Action } from '../../src/actions/enhanced-types';
+import type { ValidatedCommand } from '../../src/validation/types';
 
 /**
  * Creates a parser with the specified language provider
@@ -61,6 +65,29 @@ export function parseCommandWithLanguage(
  */
 export function parseCommand(input: string, world: WorldModel): ParsedCommand | null {
   return parseCommandWithLanguage(input, world, EnglishLanguageProvider);
+}
+
+/**
+ * Typed input through the real path an action receives it by: the English
+ * parser with the standard grammar, then the real CommandValidator with
+ * `action` registered — so what reaches the action is what the parser and
+ * the validator resolved, never a hand-built command.
+ *
+ * @param action The action the input is expected to reach
+ * @param world The world the validator resolves against (its player is the actor)
+ * @param input The command as a player types it
+ * @returns The validated command
+ * @throws When the input does not parse or does not validate
+ */
+export function validateTyped(action: Action, world: WorldModel, input: string): ValidatedCommand {
+  const parsed = parseCommand(input, world);
+  if (!parsed) throw new Error(`\`${input}\` did not parse`);
+  const registry = new StandardActionRegistry();
+  registry.setLanguageProvider(EnglishLanguageProvider as unknown as LanguageProvider);
+  registry.register(action);
+  const result = new CommandValidator(world, registry).validate(parsed);
+  if (!result.success) throw new Error(`\`${input}\` did not validate: ${result.error.code}`);
+  return result.value;
 }
 
 /**

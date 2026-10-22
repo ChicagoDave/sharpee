@@ -48,6 +48,13 @@ export interface ActionMetadata {
    * carried black book and a guidebook on the floor means the carried one).
    */
   preferredScope?: ScopeLevel;
+  /**
+   * The entities this action's topic may name beyond what the actor sees
+   * (alignment finding F5): setting-course's destinations and landmarks,
+   * which are never in scope. The validator resolves the topic among them
+   * by name and alias, rooms included; a miss leaves the topic as text.
+   */
+  topicCandidates?: (world: WorldModel, actorId: string) => readonly string[];
 }
 
 /**
@@ -222,7 +229,7 @@ export class CommandValidator implements CommandValidator {
     // fallback. Quiet resolution only — a topic NEVER produces
     // ENTITY_NOT_FOUND or a disambiguation prompt; on miss or tie the
     // verbatim text flows through with entity undefined.
-    const topic = command.topic ? this.resolveTopic(command.topic.text) : undefined;
+    const topic = command.topic ? this.resolveTopic(command.topic.text, this.getActionMetadata(actionHandler)) : undefined;
 
     // 4. Check scope constraints based on action metadata
     const metadata = this.getActionMetadata(actionHandler);
@@ -648,10 +655,15 @@ export class CommandValidator implements CommandValidator {
    * match carries its EntityId (interceptors and future conversation
    * systems key on it); a miss or a tie falls back to the verbatim text.
    *
+   * An action that names its own `topicCandidates` resolves among those
+   * instead, rooms included and with no scope filter: the places a command
+   * names that are never in sight (alignment finding F5).
+   *
    * @param text Verbatim topic text as typed (articles preserved)
+   * @param metadata The action's metadata, for its `topicCandidates`
    * @returns The validated topic — `entity` set only on a unique match
    */
-  private resolveTopic(text: string): { text: string; entity?: EntityId } {
+  private resolveTopic(text: string, metadata: ActionMetadata): { text: string; entity?: EntityId } {
     const words = this.stripLeadingArticles(text.toLowerCase().trim()).split(/\s+/);
     const ref: INounPhrase = {
       tokens: [],
@@ -663,8 +675,12 @@ export class CommandValidator implements CommandValidator {
       candidates: [text]
     };
 
-    const candidates = this.findCandidates(ref);
-    const inScope = this.filterByScope(candidates, ScopeLevel.VISIBLE);
+    const named = metadata.topicCandidates;
+    const inScope = named
+      ? named(this.world, this.world.getPlayer()?.id ?? '')
+          .map((id) => this.world.getEntity(id))
+          .filter((entity): entity is IFEntity => entity !== undefined && this.matchEntityName(entity, ref) !== null)
+      : this.filterByScope(this.findCandidates(ref), ScopeLevel.VISIBLE);
     const viable = this.dominantMatches(this.scoreEntities(inScope, ref));
 
     if (viable.length === 1) {

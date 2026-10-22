@@ -110,7 +110,7 @@ describe('push <thing> <direction> (ADR-378 D6, D7)', () => {
     const pushed = events.find((e) => e.type === 'if.event.pushed')!;
     expect(pushed.data).toMatchObject({
       messageId: 'if.action.pushing.pushed_direction',
-      params: { direction: 'north' },
+      params: { direction: Direction.NORTH },
       moved: true,
       destinationId: dock.id,
     });

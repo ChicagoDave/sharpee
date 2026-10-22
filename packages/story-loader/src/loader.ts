@@ -115,7 +115,6 @@ import {
   DiggableTrait,
   FlammableTrait,
   DeadlyRoomTrait,
-  Direction,
   DoorTrait,
   type DirectionType,
   getOppositeDirection,
@@ -160,6 +159,7 @@ import {
   type LocationNameArm,
 } from '@sharpee/world-model';
 import { LoadError } from './errors.js';
+import { exitKeyOfWord } from './direction-words.js';
 import { assertSelectIds, sweepRetiredSelectKeys } from './select-ids.js';
 import { translateEventId } from './event-id-map.js';
 import { COMBAT_FIELD_ROUTES, EXTENSION_REGISTRY, NPC_BEHAVIOR_ADJECTIVES, NPC_FIELD_ROUTES, type ExtensionInstallContext } from './extension-registry.js';
@@ -820,7 +820,7 @@ export class ChordStory implements Story {
         }
         const direction = toDirection(deadly.direction, irEntity);
         const byRoom = this.deadlyExits.get(entity.id) ?? new Map<string, { cause: string; messageId: string }>();
-        byRoom.set(String(direction).toUpperCase(), { cause: deadly.phraseKey, messageId: deadly.phraseKey });
+        byRoom.set(direction, { cause: deadly.phraseKey, messageId: deadly.phraseKey });
         this.deadlyExits.set(entity.id, byRoom);
       }
       if (irEntity.states.length > 0) {
@@ -1454,12 +1454,6 @@ export class ChordStory implements Story {
    */
   private buildDeadlyExitTransformer(): (parsed: IParsedCommand, world: WorldModel) => IParsedCommand {
     const deadlyExits = this.deadlyExits;
-    // Single-letter direction abbreviations some parsers surface in extras.
-    const ABBREV: Record<string, string> = {
-      N: 'NORTH', S: 'SOUTH', E: 'EAST', W: 'WEST',
-      NE: 'NORTHEAST', NW: 'NORTHWEST', SE: 'SOUTHEAST', SW: 'SOUTHWEST',
-      U: 'UP', D: 'DOWN',
-    };
     return (parsed: IParsedCommand, world: WorldModel): IParsedCommand => {
       const actionId = parsed.action?.toLowerCase() ?? '';
       if (actionId !== 'if.action.going' && actionId !== 'going') return parsed;
@@ -1471,9 +1465,9 @@ export class ChordStory implements Story {
       const byRoom = deadlyExits.get(roomId);
       if (!byRoom) return parsed;
 
-      const raw = String(parsed.extras?.direction ?? '').toUpperCase();
-      const direction = ABBREV[raw] ?? raw;
-      const hit = byRoom.get(direction);
+      // The parser hands the way over as the platform's exit key (a
+      // Direction constant or a passage key), the value it is stored by.
+      const hit = byRoom.get(String(parsed.extras?.direction ?? ''));
       if (!hit) return parsed;
 
       return {
@@ -3058,15 +3052,12 @@ const STARTS_STATE_TRAIT_FIELDS: ReadonlyMap<
   ['unlit', { traitType: TraitType.LIGHT_SOURCE, traitName: 'light-source', field: 'isLit', value: false }],
 ]);
 
-/** Chord direction word → world-model DirectionType. */
 /** The articles a passage form is registered without, beside the form as written (ADR-378 D2). */
 const ARTICLES: ReadonlySet<string> = new Set(['a', 'an', 'the']);
 
+/** Chord exit word → world-model exit key, or a load error for a word that names none. */
 function toDirection(word: string, at?: IREntity): ExitKey {
-  // ADR-378 D1a: a passage key is an exit key as written; only a compass
-  // word is mapped onto the Direction constant.
-  if (isPassageKey(word)) return word;
-  const dir = (Direction as Record<string, DirectionType>)[word.toUpperCase()];
+  const dir = exitKeyOfWord(word);
   // ADR-276 census 16: pre-gated by the PARSER — chord's closed exit
   // DIRECTIONS set (parser.ts) is a strict subset of the Direction enum, so
   // gate-clean IR cannot carry an unknown word here. Defensive backstop

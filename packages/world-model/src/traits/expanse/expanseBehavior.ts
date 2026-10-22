@@ -33,10 +33,24 @@ import type { IFEntity } from '../../entities/if-entity.js';
 import { TraitType } from '../trait-types.js';
 import { ExpanseTrait, isInsideExpanse, sameCell, type IExpanseCell } from './expanseTrait.js';
 import { FloatingTrait } from './floatingTrait.js';
+import { Direction, type DirectionType } from '../../constants/directions.js';
 
-/** The eight compass headings a vehicle or a drift may take, in the world's direction spelling. */
-export const COMPASS_HEADINGS = ['NORTH', 'NORTHEAST', 'EAST', 'SOUTHEAST', 'SOUTH', 'SOUTHWEST', 'WEST', 'NORTHWEST'] as const;
-export type CompassHeading = typeof COMPASS_HEADINGS[number];
+/** The eight compass headings a vehicle or a drift may take: a subset of the one `Direction` value (D15). */
+export type CompassHeading = Extract<
+  DirectionType,
+  'NORTH' | 'NORTHEAST' | 'EAST' | 'SOUTHEAST' | 'SOUTH' | 'SOUTHWEST' | 'WEST' | 'NORTHWEST'
+>;
+
+/** The eight headings clockwise from north, so a heading's index times 45 is its bearing. */
+export const COMPASS_HEADINGS: readonly CompassHeading[] = [
+  Direction.NORTH, Direction.NORTHEAST, Direction.EAST, Direction.SOUTHEAST,
+  Direction.SOUTH, Direction.SOUTHWEST, Direction.WEST, Direction.NORTHWEST,
+];
+
+/** Whether a value is one of the eight compass headings. */
+function isCompassHeading(value: unknown): value is CompassHeading {
+  return (COMPASS_HEADINGS as readonly unknown[]).includes(value);
+}
 
 const VECTORS: Record<CompassHeading, IExpanseCell> = {
   NORTH: { x: 0, y: 1 },
@@ -62,15 +76,13 @@ export function headingVector(heading: string | number): IExpanseCell | undefine
     const tidy = (n: number) => Math.round(n * 1e12) / 1e12;
     return { x: tidy(Math.sin(radians)), y: tidy(Math.cos(radians)) };
   }
-  const word = heading.toUpperCase();
-  return (COMPASS_HEADINGS as readonly string[]).includes(word) ? VECTORS[word as CompassHeading] : undefined;
+  return isCompassHeading(heading) ? VECTORS[heading] : undefined;
 }
 
 /** A compass word's bearing (ADR-375 D2), or undefined for any other word. */
 export function bearingOf(heading: string | number): number | undefined {
   if (typeof heading === 'number') return ((heading % 360) + 360) % 360;
-  const index = (COMPASS_HEADINGS as readonly string[]).indexOf(heading.toUpperCase());
-  return index < 0 ? undefined : index * 45;
+  return isCompassHeading(heading) ? COMPASS_HEADINGS.indexOf(heading) * 45 : undefined;
 }
 
 /**

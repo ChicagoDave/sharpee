@@ -75,9 +75,9 @@ describe('a witnessed mover (ADR-328 D3/D5)', () => {
     const exited = events.find(e => e.type === 'if.event.actor_exited')!;
     const entered = events.find(e => e.type === 'if.event.actor_entered')!;
     expect(exited.entities).toMatchObject({ actor: npc.id, location: hall.id });
-    expect(exited.data).toMatchObject({ messageId: 'if.action.going.departs', params: { direction: 'north' } });
+    expect(exited.data).toMatchObject({ messageId: 'if.action.going.departs', params: { direction: Direction.NORTH } });
     expect(entered.entities).toMatchObject({ actor: npc.id, location: cellar.id });
-    expect(entered.data).toMatchObject({ messageId: 'if.action.going.arrives', params: { direction: 'south' } });
+    expect(entered.data).toMatchObject({ messageId: 'if.action.going.arrives', params: { direction: Direction.SOUTH } });
   });
 
   it('a mover that does not announce its movement moves unremarked — the events carry no messages', () => {

@@ -46,6 +46,7 @@ import {
 } from '@sharpee/world-model';
 import { sceneWith } from '@sharpee/world-model';
 import { bearingOf, distance, type IFEntity, inSight, isUnderWay, landmarkCellOf, lookoutOf, placeOf, sightingOf, VehicleTrait } from '@sharpee/world-model';
+import { directionOfWord } from './direction-words.js';
 import { askedWordFor, dialogueTurn, recencyWordFor } from '@sharpee/character';
 import { CHAPTER_CURRENT_KEY } from '@sharpee/ext-chapters';
 import { LoadError } from './errors.js';
@@ -235,8 +236,9 @@ export class Evaluator {
         const model = ctx.world.getEntity(this.entityValue(cond.vehicle, ctx))?.get(VehicleTrait)?.model;
         if (model?.kind !== 'compass' && model?.kind !== 'open') return false;
         if (model.heading === null) return false;
-        if (cond.bearing === undefined && typeof model.heading === 'string') return model.heading === (cond.direction ?? '').toUpperCase();
-        const want = cond.bearing ?? bearingOf((cond.direction ?? '').toUpperCase());
+        const named = cond.direction === undefined ? undefined : directionOfWord(cond.direction);
+        if (cond.bearing === undefined && typeof model.heading === 'string') return model.heading === named;
+        const want = cond.bearing ?? (named === undefined ? undefined : bearingOf(named));
         const have = bearingOf(model.heading);
         return want !== undefined && have !== undefined && want === have;
       }

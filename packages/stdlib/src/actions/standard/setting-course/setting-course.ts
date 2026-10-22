@@ -2,9 +2,11 @@
  * Setting-course action — the `destinations` command set aboard a flight
  * vehicle (ADR-366 D5d, D5i): `set course for <destination>` names one of
  * the vehicle's `destinations:` and puts it under way. The destination is
- * typed as free text (a topic slot, as `setting`'s value is), because the
- * rooms a ship flies to are never in the player's scope; it is matched
- * against the destination rooms' names here. The departure, the passage
+ * a topic slot, because the rooms a ship flies to are never in the
+ * player's scope; the action names them (`topicCandidates`) and the
+ * validator resolves the typed words among them by name and alias, so
+ * this action reads a room, never English (alignment finding F5). Only a
+ * cell, `<x>, <y>`, is read from the text. The departure, the passage
  * and the arrival are the vehicle's machine (D5e); this action records
  * where it is bound and nothing else.
  *
@@ -56,35 +58,52 @@ function typedCell(typed: string): IExpanseCell | undefined {
   return m ? { x: Number(m[1]), y: Number(m[2]) } : undefined;
 }
 
+/**
+ * The rooms a course may name from aboard the actor's vehicle: a flight
+ * vehicle's `destinations:`, or the landmarks of the expanse an open
+ * vehicle is in. The validator resolves the typed destination among them
+ * by name and alias (alignment finding F5), so this action never reads
+ * the typed words for a place.
+ */
+function courseCandidates(world: WorldModel, actorId: string): readonly string[] {
+  const vehicle = getVehicleAboard(world, actorId);
+  const model = vehicle?.get(VehicleTrait)?.model;
+  if (model?.kind === 'flight') return model.destinations;
+  if (model?.kind === 'open') {
+    const expanse = placeOf(world, vehicle!)?.expanse;
+    return expanse ? Object.keys(expanse.get(ExpanseTrait)!.landmarks) : [];
+  }
+  return [];
+}
+
 /** The course an open vehicle is asked for: a cell, or a landmark room with its cell. */
 type OpenCourse = { cell: IExpanseCell; room?: IFEntity };
 
-function matchOpenCourse(world: WorldModel, expanse: IFEntity, typed: string): OpenCourse | { error: string } | undefined {
+function matchOpenCourse(expanse: IFEntity, typed: string, named: IFEntity | undefined): OpenCourse | { error: string } | undefined {
   const trait = expanse.get(ExpanseTrait)!;
   const cell = typedCell(typed);
   if (cell) return isInsideExpanse(trait, cell) ? { cell } : { error: SettingCourseMessages.COORDINATES_OUTSIDE_EXPANSE };
-  for (const roomId of Object.keys(trait.landmarks)) {
-    const room = world.getEntity(roomId);
-    if (room && room.name.trim().toLowerCase() === typed) return { cell: landmarkCellOf(trait, roomId)!, room };
-  }
-  return undefined;
+  const landmark = named ? landmarkCellOf(trait, named.id) : undefined;
+  return landmark ? { cell: landmark, room: named } : undefined;
 }
 
-/** The typed destination, trimmed and lowercased with a leading article dropped; undefined when none was typed. */
+/** The destination as typed, trimmed; undefined when none was typed. */
 function typedDestination(context: ActionContext): string | undefined {
-  const text = context.command.topic?.text?.trim().toLowerCase().replace(/^(the|a|an)\s+/, '');
+  const text = context.command.topic?.text?.trim();
   return text ? text : undefined;
 }
 
-/** The destination room whose name the player typed, among the vehicle's destinations. */
-function matchDestination(world: WorldModel, vehicle: IFEntity, typed: string): IFEntity | undefined {
+/** The room the validator resolved the destination to, among `courseCandidates`; undefined on a miss. */
+function namedDestination(context: ActionContext): IFEntity | undefined {
+  const id = context.command.topic?.entity;
+  return id ? context.world.getEntity(id) : undefined;
+}
+
+/** The destination room the player named, among the vehicle's destinations. */
+function matchDestination(vehicle: IFEntity, named: IFEntity | undefined): IFEntity | undefined {
   const model = vehicle.get(VehicleTrait)?.model;
-  if (model?.kind !== 'flight') return undefined;
-  for (const id of model.destinations) {
-    const room = world.getEntity(id);
-    if (room && room.name.trim().toLowerCase() === typed) return room;
-  }
-  return undefined;
+  if (model?.kind !== 'flight' || !named) return undefined;
+  return model.destinations.includes(named.id) ? named : undefined;
 }
 
 interface SettingCourseSharedData {
@@ -153,7 +172,7 @@ export const settingCourseAction: Action & { metadata: ActionMetadata } = {
       const place = placeOf(context.world, vehicle);
       if (!place) return { valid: false, error: SettingCourseMessages.NOT_A_DESTINATION, params: { ...params, destination: typed } };
       const expanse = place.expanse;
-      const course = matchOpenCourse(context.world, expanse, typed);
+      const course = matchOpenCourse(expanse, typed, namedDestination(context));
       if (!course) return { valid: false, error: SettingCourseMessages.NOT_A_DESTINATION, params: { ...params, destination: typed } };
       if ('error' in course) return { valid: false, error: course.error, params: { ...params, destination: typed } };
       if (course.room && context.world.getLocation(vehicle.id) === course.room.id) {
@@ -169,7 +188,7 @@ export const settingCourseAction: Action & { metadata: ActionMetadata } = {
       }
       return { valid: true };
     }
-    const destination = matchDestination(context.world, vehicle, typed);
+    const destination = matchDestination(vehicle, namedDestination(context));
     if (!destination) {
       return { valid: false, error: SettingCourseMessages.NOT_A_DESTINATION, params: { ...params, destination: typed } };
     }
@@ -186,7 +205,7 @@ export const settingCourseAction: Action & { metadata: ActionMetadata } = {
     const typed = typedDestination(context)!;
     if (vehicle.get(VehicleTrait)?.model?.kind === 'open') {
       const expanse = placeOf(context.world, vehicle)!.expanse;
-      const course = matchOpenCourse(context.world, expanse, typed) as OpenCourse;
+      const course = matchOpenCourse(expanse, typed, namedDestination(context)) as OpenCourse;
       if (course.room) {
         sendVehicle(context.world, vehicle, course.room.id);
         sharedData.destinationId = course.room.id;
@@ -196,7 +215,7 @@ export const settingCourseAction: Action & { metadata: ActionMetadata } = {
       }
       return;
     }
-    const destination = matchDestination(context.world, vehicle, typed)!;
+    const destination = matchDestination(vehicle, namedDestination(context))!;
     sendVehicle(context.world, vehicle, destination.id);
     sharedData.destinationId = destination.id;
   },
@@ -242,7 +261,8 @@ export const settingCourseAction: Action & { metadata: ActionMetadata } = {
   metadata: {
     requiresDirectObject: false,
     requiresIndirectObject: false,
-    directObjectScope: ScopeLevel.VISIBLE
+    directObjectScope: ScopeLevel.VISIBLE,
+    topicCandidates: courseCandidates
   }
 };
 

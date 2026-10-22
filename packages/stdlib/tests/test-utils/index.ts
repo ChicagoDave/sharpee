@@ -460,7 +460,7 @@ export function updateCapability(world: WorldModel, capabilityName: string, data
 // import { createParserWithLanguage } from './parser-helpers';
 
 // Re-export parser helpers for tests that need them
-export { parseCommand, createParserWithWorld } from './parser-helpers';
+export { parseCommand, createParserWithWorld, validateTyped } from './parser-helpers';
 
 // ============================================================================
 // World State Verification Helpers
