@@ -160,7 +160,7 @@
 - **Exit state**: one tool-requirement shape; a sixth tool-needing verb adds no new fields.
 - **Demonstration**: world-model, stdlib, story-loader, chord suites one run each, green; Dungeo chain one run baseline-identical (the lamp and tool actions are in the corpus).
 - **Demonstrated**: 
-- **Status**: PENDING
+- **Status**: CURRENT (since 2026-10-22)
 
 ### Phase 11: Close the ledger and the sweep (merge-gate re-read)
 - **Tier**: Small
