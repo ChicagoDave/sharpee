@@ -114,7 +114,7 @@
 - **Exit state**: one resolution for a counter owner; no trait field written from the loader's runtime; the World tab's map shows rooms aboard connected.
 - **Demonstration**: chord, story-loader, world-index, world-model, plugin suites one run each, green; new tests for a counter owned by the player (the GH #613 case) read and written through one path and a `to outside` exit appearing in the world-index mirror; IDE protocol regeneration (`./repokit protocol`) clean.
 - **Demonstrated**: 
-- **Status**: PENDING
+- **Status**: CURRENT (since 2026-10-22)
 
 ### Phase 7: Chord analyzer — one rule, one code (F18, F19, F20, F21, F22, D1)
 - **Tier**: Large
