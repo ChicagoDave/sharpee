@@ -81,6 +81,15 @@ define action presenting
     presented:
       You give {the gift} to {the friend}.
 
+define action zapping
+  grammar
+    Zap the target
+  phrase zapped
+
+  phrases en-US
+    zapped:
+      You zap {the target}.
+
 define action waving
   grammar
     wave
@@ -114,6 +123,12 @@ describe('every entity slot binds by its name at dispatch', () => {
       expect(turn.text).toContain('You give the coin to Bob.');
     },
   );
+
+  it('a pattern written `Zap the target` matches typed `zap coat` (parser review B3)', async () => {
+    const b = await bootTurns(STORY);
+    const turn = await b.turnText('zap coat');
+    expect(turn.text).toContain('You zap the coat.');
+  });
 
   it('a `with` binding of a proper-named entity renders with no article', async () => {
     const b = await bootTurns(STORY);

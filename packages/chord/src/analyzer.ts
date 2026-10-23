@@ -3484,13 +3484,27 @@ export class Analyzer {
    * The grammar-surface line checks shared by `define action` and
    * `extend action` (ADR-270 D2): greedy lines (ADR-267 D10), the
    * `directions` block (D12), typed slots (D11), and scope constraints
-   * (ADR-271 D1) — each validated against the block's own pattern slots.
+   * (ADR-271 D1) — each validated against the block's own pattern slots —
+   * and the `→` cardinality refusal.
    */
   private checkGrammarSurfaceLines(
     name: string,
-    decl: Pick<DefineAction, 'constraints' | 'greedy' | 'slotTypes' | 'directions'>,
+    decl: Pick<DefineAction, 'patterns' | 'constraints' | 'greedy' | 'slotTypes' | 'directions'>,
     slots: Set<string>,
   ): void {
+    // ADR-267 D3: a construct lands whole or not at all. `→` parses, but
+    // its expansion is engine-owned and was never built, so the loader
+    // drops the pattern and the line can never match (parser review B2).
+    // Refused here until the expansion exists.
+    for (const p of decl.patterns) {
+      if (p.cardinality) {
+        this.diagnostics.error(
+          'analysis.cardinality-unsupported',
+          `\`→ ${p.cardinality.join(' ')}\` is not supported yet — the pattern would never match. Write the line without \`→ …\`.`,
+          p.span,
+        );
+      }
+    }
     // ADR-267 D10: a greedy line names a slot that must exist in at least
     // one of the block's patterns — the constraint-line treatment.
     for (const g of decl.greedy) {
@@ -3756,7 +3770,10 @@ export class Analyzer {
     const headScope: Scope = { owner: null, fields: null, slots: new Set(), ownStates: null, scoreOwner: `action.${decl.name}`, inEach: false, semanticValues: new Map() };
 
     const body = decl.body.map((s, i) => this.resolveStatement(s, scope, `action.${decl.name}.body.${i}`));
-    this.checkSlotsUsed(decl, entitySlots, [musts, refusals, body]);
+    // A grammar file (ADR-269) is grammar surfaces for stdlib actions whose
+    // TypeScript reads the seats, so nothing here can show a slot used:
+    // the check would only report false warnings (parser review G2).
+    if (!this.ast.grammarHeader) this.checkSlotsUsed(decl, entitySlots, [musts, refusals, body]);
 
     return {
       name: decl.name,
@@ -3812,16 +3829,31 @@ export class Analyzer {
       slotTypes: decl.slotTypes.map((st) => ({ slot: st.slot, type: st.type as 'instrument' | 'topic' })),
     });
     if (primary !== undefined) used.add(primary);
+    const spokenKeys = new Set<string>();
     const visit = (node: unknown): void => {
       if (Array.isArray(node)) {
         for (const item of node) visit(item);
       } else if (node !== null && typeof node === 'object') {
         const record = node as Record<string, unknown>;
         if (record.kind === 'slot' && typeof record.name === 'string') used.add(record.name);
+        if (typeof record.phraseKey === 'string') spokenKeys.add(record.phraseKey);
         for (const value of Object.values(record)) visit(value);
       }
     };
     visit(resolved);
+    // ADR-380 D2a (amended 2026-10-22): a phrase the action speaks that reads
+    // a slot (`{the hook}`, `{capitalize the hook}`, `{verb:is hook}`) uses
+    // it. A marker names its param in its last token.
+    const markParams = (markers: readonly string[]): void => {
+      for (const marker of markers) {
+        const last = marker.trim().split(/\s+/).pop() ?? '';
+        used.add(last.slice(last.lastIndexOf(':') + 1));
+      }
+    };
+    for (const entry of decl.phrases?.entries ?? []) markParams(entry.value.markers.map((m) => m.content));
+    for (const key of spokenKeys) {
+      for (const variant of this.phrases.get(DEFAULT_LOCALE)?.get(key)?.variants ?? []) markParams(variant.markers);
+    }
     const reported = new Set<string>();
     for (const pattern of decl.patterns) {
       for (const part of pattern.parts) {

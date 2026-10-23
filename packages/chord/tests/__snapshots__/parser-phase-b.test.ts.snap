@@ -918,11 +918,7 @@ exports[`traits-basic.story (design.md §2.2/§3.2 + ownership package) > matche
           },
         },
         {
-          "cardinality": [
-            "each",
-            "quiet",
-            "corner",
-          ],
+          "cardinality": null,
           "means": [],
           "parts": [
             {
@@ -938,7 +934,7 @@ exports[`traits-basic.story (design.md §2.2/§3.2 + ownership package) > matche
           ],
           "span": {
             "column": 5,
-            "endColumn": 28,
+            "endColumn": 8,
             "endLine": 60,
             "line": 60,
           },

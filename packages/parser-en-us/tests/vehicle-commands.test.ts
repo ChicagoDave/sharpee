@@ -92,6 +92,7 @@ describe('the gesture reaches the action as data (F5)', () => {
     ['make sail', 'make-sail'],
     ['shorten sail', 'shorten-sail'],
     ['furl sails', 'furl-sails'],
+    ['furl the sails', 'furl-sails'],
   ];
 
   for (const [input, gesture] of GESTURES) {
@@ -104,6 +105,11 @@ describe('the gesture reaches the action as data (F5)', () => {
       }
     });
   }
+
+  it('`furl the cat` is not steering: `sails` is a word, not a slot (parser review G3)', () => {
+    const result = parser.parse('furl the cat');
+    expect(result.success && result.value.action === 'if.action.steering').toBe(false);
+  });
 
   it('a turn keeps its degrees on the turn topic', () => {
     const result = parser.parse('port 20');

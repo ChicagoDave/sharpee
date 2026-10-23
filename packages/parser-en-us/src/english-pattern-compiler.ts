@@ -80,8 +80,8 @@ export class EnglishPatternCompiler implements PatternCompiler {
             slotType: isGreedy ? SlotType.TEXT_GREEDY : undefined
           });
         } else if (optionalWord.includes('|')) {
-          // Optional alternates
-          const alternates = optionalWord.split('|');
+          // Optional alternates (lowercased: input is matched normalized)
+          const alternates = optionalWord.toLowerCase().split('|');
           tokens.push({
             type: 'alternates',
             value: alternates[0],
@@ -92,7 +92,7 @@ export class EnglishPatternCompiler implements PatternCompiler {
           // Optional literal
           tokens.push({
             type: 'literal',
-            value: optionalWord,
+            value: optionalWord.toLowerCase(),
             optional: true
           });
         }
@@ -129,18 +129,21 @@ export class EnglishPatternCompiler implements PatternCompiler {
           slotType: isGreedy ? SlotType.TEXT_GREEDY : undefined
         });
       } else if (word.includes('|')) {
-        // Alternates token
-        const alternates = word.split('|');
+        // Alternates token (lowercased: input is matched normalized)
+        const alternates = word.toLowerCase().split('|');
         tokens.push({
           type: 'alternates',
           value: alternates[0], // First as primary
           alternates
         });
       } else {
-        // Literal token
+        // Literal token. The engine matches it against the lowercased input
+        // (`token.normalized`), so an author's `Zap` or `XYZZY` is lowercased
+        // here, the one place every literal passes, Chord's and a TS story's
+        // alike (parser review B3).
         tokens.push({
           type: 'literal',
-          value: word
+          value: word.toLowerCase()
         });
       }
     }

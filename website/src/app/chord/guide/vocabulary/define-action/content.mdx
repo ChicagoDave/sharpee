@@ -7,7 +7,7 @@ define action petting
   grammar
     pet the animal
     pat the animal
-    stroke the animal → each nearby creature
+    stroke the animal
   the animal must be reachable
   score gentle-hands worth 5
   refuse without animal: pet-what
@@ -32,9 +32,8 @@ Reading it line by line:
 - **`grammar`** lists the surface patterns. `the <word>` marks a slot,
   and the slot name *is* the value name used everywhere else in the
   action. Because the pattern says `the animal`, the requirements and
-  phrases all refer to `the animal`. The `→` gives a pattern's
-  cardinality: `stroke the animal → each nearby creature` marks that
-  form as applying to each match rather than a single object.
+  phrases all refer to `the animal`. `→` cardinality on a pattern is
+  reserved: it is refused at compile time until it is implemented.
 - **`the animal must be reachable`** is a scope constraint (no colon):
   a precondition on a slot the parser enforces during resolution.
   Reachable means what it does in play: the animal is in the same place

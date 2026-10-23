@@ -566,8 +566,7 @@ export function defineGrammar(grammar: GrammarBuilder): void {
   grammar.define("come about").mapsTo("if.action.steering").withDefaultSemantics({"gesture":"come-about"}).build();
   grammar.define("make sail").mapsTo("if.action.steering").withDefaultSemantics({"gesture":"make-sail"}).build();
   grammar.define("shorten sail").mapsTo("if.action.steering").withDefaultSemantics({"gesture":"shorten-sail"}).build();
-  grammar.define("furl sails").mapsTo("if.action.steering").withDefaultSemantics({"gesture":"furl-sails"}).build();
-  grammar.define("furl :sails").mapsTo("if.action.steering").withDefaultSemantics({"gesture":"furl-sails"}).build();
+  grammar.define("furl [the] sails").mapsTo("if.action.steering").withDefaultSemantics({"gesture":"furl-sails"}).build();
   grammar.define("set course for :destination").mapsTo("if.action.setting_course").topic("destination").build();
   grammar.define("set a course for :destination").mapsTo("if.action.setting_course").topic("destination").build();
   grammar.define("set :target to :value").mapsTo("if.action.setting").topic("value").build();

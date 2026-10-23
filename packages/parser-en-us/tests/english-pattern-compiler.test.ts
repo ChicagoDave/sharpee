@@ -150,12 +150,13 @@ describe('EnglishPatternCompiler', () => {
       expect(pattern.slots.get('target_entity')).toBe(3);
     });
     
-    it('should preserve case in literals but not slots', () => {
-      const pattern = compiler.compile('SHOUT :message AT :person');
-      
-      expect(pattern.tokens[0].value).toBe('SHOUT');
-      expect(pattern.tokens[2].value).toBe('AT');
-      expect(pattern.slots.get('message')).toBe(1);
+    it('should lowercase literals, which match the lowercased input, and keep slot names as written', () => {
+      const pattern = compiler.compile('SHOUT :Message AT :person');
+
+      expect(pattern.tokens[0].value).toBe('shout');
+      expect(pattern.tokens[2].value).toBe('at');
+      expect(pattern.tokens[1].value).toBe('Message');
+      expect(pattern.slots.get('Message')).toBe(1);
       expect(pattern.slots.get('person')).toBe(3);
     });
   });

@@ -660,9 +660,7 @@ define action steering
       means gesture make-sail
     shorten sail
       means gesture shorten-sail
-    furl sails
-      means gesture furl-sails
-    furl the sails
+    furl [the] sails
       means gesture furl-sails
   the turn is a topic
   directions

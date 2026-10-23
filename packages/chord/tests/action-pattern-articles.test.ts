@@ -80,6 +80,40 @@ describe('analysis.slot-unused', () => {
     expect(unused(source)).toEqual([]);
   });
 
+  it('does not fire on a slot only a phrase in the action\'s own block reads (ADR-380 D2a amendment)', () => {
+    const source =
+      `${HEADER}define action hanging\n  grammar\n    hang the item on the hook\n  phrase hung\n\n` +
+      `  phrases en-US\n    hung:\n      You hang {the item} on {the hook}.\n\n${WORLD}`;
+    expect(unused(source)).toEqual([]);
+  });
+
+  it('does not fire on a slot only a story phrase the action speaks reads', () => {
+    const source =
+      `${HEADER}define action hanging\n  grammar\n    hang the item on the hook\n  phrase hung\n\n` +
+      `define phrase hung\n  {capitalize the item} {verb:hangs item} from {the hook}.\nend phrase\n\n${WORLD}`;
+    expect(unused(source)).toEqual([]);
+  });
+
+  it('does not fire on a slot only a colon-qualified marker reads (`{verb:is hook}`)', () => {
+    const source =
+      `${HEADER}define action hanging\n  grammar\n    hang the item on the hook\n  phrase hung\n\n` +
+      `  phrases en-US\n    hung:\n      You hang {the item} up; {the hook} {verb:is hook} sturdy.\n\n${WORLD}`;
+    expect(unused(source)).toEqual([]);
+    const onlyColon =
+      `${HEADER}define action hanging\n  grammar\n    hang the item on the hook\n  phrase hung\n\n` +
+      `  phrases en-US\n    hung:\n      You hang {the item} up and it {verb:holds hook}.\n\n${WORLD}`;
+    expect(unused(onlyColon)).toEqual([]);
+  });
+
+  it('still fires on a slot no phrase reads, beside one a phrase does', () => {
+    const source =
+      `${HEADER}define action hanging\n  grammar\n    hang the item on the hook\n  phrase hung\n\n` +
+      `  phrases en-US\n    hung:\n      You hang {the item} up.\n\n${WORLD}`;
+    const messages = unused(source);
+    expect(messages).toHaveLength(1);
+    expect(messages[0]).toContain('`the hook`');
+  });
+
   it('does not fire on a slot typed as an instrument', () => {
     const source = action('  grammar\n    shoot the target with the arrow\n  the arrow is an instrument\n');
     expect(unused(source)).toEqual([]);

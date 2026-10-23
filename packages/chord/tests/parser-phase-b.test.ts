@@ -192,10 +192,16 @@ describe('traits-basic.story (design.md §2.2/§3.2 + ownership package)', () =>
     expect((body[3] as PhraseStmt).stmtWhen).toMatchObject({ kind: 'and' });
   });
 
-  it('parses cardinality arrows and the action-owned score line', () => {
+  it('parses the action-owned score line', () => {
     const snoozing = decls.find((d): d is DefineAction => d.kind === 'define-action' && d.name === 'snoozing')!;
-    expect(snoozing.patterns[1].cardinality).toEqual(['each', 'quiet', 'corner']);
+    expect(snoozing.patterns[1].cardinality).toBeNull();
     expect(snoozing.scores).toMatchObject([{ name: 'napped', worth: 1 }]);
+  });
+
+  it('parses a cardinality arrow (the analyzer refuses it until the expansion exists)', () => {
+    const result = parse('define action snoozing\n  grammar\n    nap → each quiet corner\n');
+    const snoozing = result.ast.declarations.find((d): d is DefineAction => d.kind === 'define-action' && d.name === 'snoozing')!;
+    expect(snoozing.patterns[0].cardinality).toEqual(['each', 'quiet', 'corner']);
   });
 
   it('parses conditional blocked exits', () => {
