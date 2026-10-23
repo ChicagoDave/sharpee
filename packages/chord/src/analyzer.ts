@@ -94,6 +94,8 @@ import {
 } from './ast.js';
 import { capabilityKeyOf, CLIENT_CAPABILITY_FLAGS, EVENT_VERBS, TAILED_EVENT_VERBS, KIND_NOUNS, MESSAGE_OVERRIDE_ALIASES, PLATFORM_STATE_PAIRS, PRONOUN_CASES, PRONOUN_WORDS, SCOPE_REQUIREMENT_PREDICATES, STARTS_STATE_PAIRINGS, STATE_ADJECTIVES, TRAIT_ADJECTIVES } from './catalog.js';
 import { STDLIB_MANIFEST } from './stdlib-manifest.js';
+import { expandReadings, lowerParts, renderPattern, samePatternShape } from './patterns.js';
+import type { PatternElement } from '@sharpee/if-domain';
 import { CHARACTER_MANIFEST } from './character-manifest.js';
 import { levenshtein } from './edit-distance.js';
 import { normalizeTopic } from './analyzer/topic.js';
@@ -748,57 +750,63 @@ function verbLemmas(word: string): Set<string> {
   return out;
 }
 
-/**
- * Render a story action pattern as manifest-style shapes (`kick :target`),
- * expanding optional parts to both readings and `a|b` alternatives to each.
- */
-function expandPatternShapes(pattern: ActionPattern): string[] {
-  let shapes: string[][] = [[]];
-  for (const part of pattern.parts) {
-    const options: string[][] = part.kind === 'alt' ? part.words.map((w) => [w]) : part.kind === 'slot' ? [[`:${part.word}`]] : [[part.word]];
-    if (part.optional) options.push([]);
-    const next: string[][] = [];
-    for (const prefix of shapes) for (const opt of options) next.push([...prefix, ...opt]);
-    shapes = next;
+/** A shape an acting statement may match: as written, for diagnostics, and its readings (ADR-382 D5). */
+interface ActShape {
+  display: string;
+  readings: PatternElement[][];
+}
+
+/** A pattern's acting-statement shape: its display text and every reading. */
+function actShapeOf(parts: PatternElement[]): ActShape {
+  return { display: renderPattern(parts), readings: expandReadings(parts) };
+}
+
+/** The manifest's standard shapes by bare action name, expanded once. */
+let manifestShapeCache: Map<string, ActShape[]> | null = null;
+function manifestActShapes(): Map<string, ActShape[]> {
+  if (manifestShapeCache) return manifestShapeCache;
+  const out = new Map<string, ActShape[]>();
+  for (const [id, shapes] of Object.entries(STDLIB_MANIFEST.locales['en-US'].grammarShapes)) {
+    out.set(id.slice('if.action.'.length), shapes.map((shape) => actShapeOf([...shape])));
   }
-  return shapes.filter((sh) => sh.length > 0).map((sh) => sh.join(' '));
+  manifestShapeCache = out;
+  return out;
 }
 
 /**
- * Match lowercased words against a shape's parts. The first literal matches
- * by lemma, later literals exactly; a slot consumes at least one word, up to
- * the next literal (or the end). Returns the slot bindings as word ranges, or
- * null when the words do not fit the shape.
+ * Match lowercased words against one reading of a shape (words and slots
+ * only). The first word matches by lemma, later words exactly; a slot
+ * consumes at least one word, up to the next word (or the end). Returns the
+ * slot bindings as word ranges, or null when the words do not fit.
  */
-function matchShapeWords(words: string[], parts: string[]): Array<{ slot: string; from: number; to: number }> | null {
+function matchShapeWords(words: string[], parts: readonly PatternElement[]): Array<{ slot: string; from: number; to: number }> | null {
   const slots: Array<{ slot: string; from: number; to: number }> = [];
-  // GH #351: a literal part may be an alternation (`to|with`) — any of its
-  // spellings matches, as the grammar engine reads it.
-  const spellingsOf = (part: string): string[] => part.split('|');
   let i = 0;
   for (let j = 0; j < parts.length; j++) {
     const part = parts[j];
-    if (part.startsWith(':')) {
+    if (part.kind === 'slot') {
       const next = parts[j + 1];
       let end: number;
       if (next === undefined) {
         end = words.length;
-      } else if (next.startsWith(':')) {
+      } else if (next.kind !== 'word') {
         return null; // two adjacent slots cannot be split without a parser — no standard shape has them
       } else {
-        const alts = spellingsOf(next);
-        end = words.findIndex((w, k) => k > i && alts.includes(w));
+        const word = next.word.toLowerCase();
+        end = words.findIndex((w, k) => k > i && w === word);
         if (end === -1) return null;
       }
       if (end <= i) return null;
-      slots.push({ slot: part.slice(1), from: i, to: end });
+      slots.push({ slot: part.name, from: i, to: end });
       i = end;
-    } else {
+    } else if (part.kind === 'word') {
       if (i >= words.length) return null;
-      const alts = spellingsOf(part);
-      const ok = j === 0 ? alts.some((a) => verbLemmas(words[i]).has(a)) : alts.includes(words[i]);
+      const word = part.word.toLowerCase();
+      const ok = j === 0 ? verbLemmas(words[i]).has(word) : words[i] === word;
       if (!ok) return null;
       i++;
+    } else {
+      return null; // a reading carries no alternation
     }
   }
   return i === words.length ? slots : null;
@@ -849,7 +857,7 @@ export class Analyzer {
    * like the manifest's (`kick :target`). Built on first use from the AST,
    * so a clause body that precedes its action's declaration still matches.
    */
-  private actShapes: Map<string, string[]> | null = null;
+  private actShapes: Map<string, ActShape[]> | null = null;
   /**
    * emit event id (dotless) → the top-level payload field names it carries
    * (ADR-253 D1). Collected across every `emit` during resolution so
@@ -1958,22 +1966,18 @@ export class Analyzer {
         );
         continue;
       }
-      // Census 3: each removal pattern must match a standard-grammar shape —
-      // rendered exactly as the loader renders it (renderPatternPart with no
-      // greedy suffix) and compared by the same string equality removeRules
-      // uses. The manifest's shapes derive from the same expansion that
-      // emits the registered rules, so agreement is structural.
+      // Census 3: each removal pattern must match a standard-grammar shape,
+      // by shape (ADR-382 D6): slot names ignored, words lowercased,
+      // alternations as sets — the same samePatternShape the loader removes
+      // by. The manifest's shapes are lowered by the same module that
+      // lowers the registered rules, so agreement is structural.
       const shapes = STDLIB_MANIFEST.locales['en-US'].grammarShapes[`if.action.${removal.action}`] ?? [];
-      const renderPart = (p: IRPatternPart): string => {
-        const core = p.kind === 'alt' ? p.words.join('|') : p.kind === 'slot' ? `:${p.word}` : p.word;
-        return p.optional ? `[${core}]` : core;
-      };
       for (const pattern of removal.patterns) {
-        const text = pattern.parts.map(renderPart).join(' ');
-        if (!shapes.includes(text)) {
+        const parts = lowerParts(pattern.parts);
+        if (!shapes.some((shape) => samePatternShape(shape, parts))) {
           this.diagnostics.error(
             'analysis.unmatched-removal-pattern',
-            `\`remove from action ${removal.action}\` — no standard rule matches \`${text}\`. The action's standard patterns are: ${shapes.map((s) => `\`${s}\``).join(', ') || '(none)'}.`,
+            `\`remove from action ${removal.action}\` — no standard rule matches \`${renderPattern(parts)}\`. The action's standard patterns are: ${shapes.map((s) => `\`${renderPattern(s)}\``).join(', ') || '(none)'}.`,
             removal.span,
           );
         }
@@ -7096,7 +7100,7 @@ export class Analyzer {
       const verb = lowerOf(rest[0]);
       const shapesOfVerb = this.shapesOpenedBy(verb);
       if (shapesOfVerb.length === 0) {
-        const verbs = [...new Set([...this.allActShapes().values()].flat().map((sh) => sh.split(' ')[0]).filter((v) => !v.startsWith(':')))];
+        const verbs = [...new Set([...this.allActShapes().values()].flat().flatMap((sh) => sh.readings.flatMap((reading) => (reading[0].kind === 'word' ? [reading[0].word] : []))))];
         this.diagnostics.error(
           'analysis.act-unknown-verb',
           `\`${line}\` — \`${rest[0].text}\` is not an action's word; an acting statement uses an action's own grammar (\`take the sword\`, \`give the necklace to the player\`)${this.suggestText(verb, verbs)}.`,
@@ -7214,15 +7218,14 @@ export class Analyzer {
 
   /**
    * The story's own shapes (`define action` patterns, `extend action`
-   * additions) by action name, rendered like the manifest's. Optional parts
-   * expand to both readings; `a|b` alternatives to each.
+   * additions) by action name, each with its readings (ADR-382 D5).
    */
-  private storyActShapes(): Map<string, string[]> {
+  private storyActShapes(): Map<string, ActShape[]> {
     if (this.actShapes) return this.actShapes;
-    const out = new Map<string, string[]>();
+    const out = new Map<string, ActShape[]>();
     const add = (name: string, patterns: ActionPattern[]) => {
       const list = out.get(name) ?? [];
-      for (const pattern of patterns) list.push(...expandPatternShapes(pattern));
+      for (const pattern of patterns) list.push(actShapeOf(lowerParts(pattern.parts)));
       out.set(name, list);
     };
     for (const decl of this.ast.declarations) {
@@ -7234,23 +7237,22 @@ export class Analyzer {
   }
 
   /** Story shapes first (a story action of a standard name shadows it), then the manifest's. */
-  private allActShapes(): Map<string, string[]> {
-    const out = new Map<string, string[]>(this.storyActShapes());
-    const manifest = STDLIB_MANIFEST.locales['en-US'].grammarShapes;
-    for (const [id, shapes] of Object.entries(manifest)) {
-      const name = id.slice('if.action.'.length);
+  private allActShapes(): Map<string, ActShape[]> {
+    const out = new Map<string, ActShape[]>(this.storyActShapes());
+    for (const [name, shapes] of manifestActShapes()) {
       out.set(name, [...(out.get(name) ?? []), ...shapes]);
     }
     return out;
   }
 
+  /** The shapes, as written, any of whose readings opens with a lemma of `verb`. */
   private shapesOpenedBy(verb: string): string[] {
     const lemmas = verbLemmas(verb);
     const out: string[] = [];
     for (const shapes of this.allActShapes().values()) {
       for (const sh of shapes) {
-        const first = sh.split(' ')[0];
-        if (!first.startsWith(':') && lemmas.has(first)) out.push(sh);
+        const opens = sh.readings.some((reading) => reading[0].kind === 'word' && lemmas.has(reading[0].word.toLowerCase()));
+        if (opens && !out.includes(sh.display)) out.push(sh.display);
       }
     }
     return out;
@@ -7268,23 +7270,25 @@ export class Analyzer {
     if (rest.length === 0) return null;
     const lower = rest.map((w) => w.toLowerCase());
     const story = this.storyActShapes();
-    let best: { action: string; shape: string; slots: Array<{ slot: string; from: number; to: number }>; literals: number; isStory: boolean } | null = null;
+    let best: { action: string; reading: PatternElement[]; slots: Array<{ slot: string; from: number; to: number }>; literals: number; isStory: boolean } | null = null;
     for (const [action, shapes] of this.allActShapes()) {
       const isStory = story.has(action);
       for (const shape of shapes) {
-        const slots = matchShapeWords(lower, shape.split(' '));
-        if (!slots) continue;
-        const literals = shape.split(' ').filter((pt) => !pt.startsWith(':')).length;
-        if (!best || (isStory && !best.isStory) || (isStory === best.isStory && literals > best.literals)) {
-          best = { action, shape, slots, literals, isStory };
+        for (const reading of shape.readings) {
+          const slots = matchShapeWords(lower, reading);
+          if (!slots) continue;
+          const literals = reading.filter((part) => part.kind !== 'slot').length;
+          if (!best || (isStory && !best.isStory) || (isStory === best.isStory && literals > best.literals)) {
+            best = { action, reading, slots, literals, isStory };
+          }
         }
       }
     }
     if (!best) return null;
-    const parts = best.shape.split(' ');
-    const written = best.action === 'going' && best.slots.length === 0 && parts.length >= 1 ? parts[parts.length - 1] : null;
+    const last = best.reading[best.reading.length - 1];
+    const written = best.action === 'going' && best.slots.length === 0 && last?.kind === 'word' ? last.word : null;
     const direction = written === null ? null : (ACT_DIRECTION_CANONICAL[written] ?? written);
-    return { action: best.action, shape: best.shape, slots: best.slots, direction };
+    return { action: best.action, shape: renderPattern(best.reading), slots: best.slots, direction };
   }
 
   /**

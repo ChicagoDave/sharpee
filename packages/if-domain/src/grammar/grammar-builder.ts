@@ -339,13 +339,14 @@ export interface GrammarBuilder {
   clear(): void;
 
   /**
-   * ADR-270 D3: remove registered rules by shape — (action id, pattern
-   * string, tier). Diagnostic-free: returns the count removed (0 = no rule
-   * matched); the caller owns any miss diagnostic. `tier` defaults to
-   * 'standard' — the alteration model removes platform rules, never story
-   * rules, unless explicitly asked.
+   * ADR-270 D3: remove registered rules by shape — (action id, shape,
+   * tier), the shape test supplied by the caller over each rule (ADR-382 D6;
+   * Chord's is `samePatternShape` on `rule.parts`). Diagnostic-free:
+   * returns the count removed (0 = no rule matched); the caller owns any
+   * miss diagnostic. `tier` defaults to 'standard' — the alteration model
+   * removes platform rules, never story rules, unless explicitly asked.
    */
-  removeRules(action: string, pattern: string, tier?: GrammarTier): number;
+  removeRules(action: string, shapeMatches: (rule: GrammarRule) => boolean, tier?: GrammarTier): number;
 }
 
 /**

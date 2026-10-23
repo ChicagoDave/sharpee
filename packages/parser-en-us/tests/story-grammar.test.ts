@@ -219,7 +219,7 @@ describe('Story Grammar API', () => {
       expect(before.success).toBe(true);
       if (before.success) expect(before.value.action).toBe('if.action.taking');
 
-      expect(grammar.removeRules('if.action.taking', 'get :item')).toBe(1);
+      expect(grammar.removeRules('if.action.taking', (rule) => rule.pattern === 'get :item')).toBe(1);
 
       const after = parser.parse('get crystal');
       expect(after.success ? after.value.action : null).not.toBe('if.action.taking');
@@ -230,7 +230,7 @@ describe('Story Grammar API', () => {
     });
 
     it('returns 0 on a shape the standard grammar does not carry', () => {
-      expect(grammar.removeRules('if.action.taking', 'yoink :item')).toBe(0);
+      expect(grammar.removeRules('if.action.taking', (rule) => rule.pattern === 'yoink :item')).toBe(0);
     });
   });
 });

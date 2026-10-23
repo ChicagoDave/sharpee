@@ -31,6 +31,9 @@ import {
   type IREntity,
   type IRPhrase,
   type IRTraitDef,
+  lowerParts,
+  renderPattern,
+  samePatternShape,
   SCOPE_REQUIREMENT_PREDICATES,
   type StoryIR,
   vehicleAboard,
@@ -1623,8 +1626,10 @@ export class ChordStory implements Story {
         );
       }
       for (const pattern of removal.patterns) {
-        const text = pattern.parts.map((part) => renderPatternPart(part, [])).join(' ');
-        const removed = grammar.removeRules(derived, text);
+        // ADR-382 D6: removal by shape — slot names ignored, words
+        // lowercased, alternations as sets — the analyzer's census-3 test.
+        const parts = lowerParts(pattern.parts);
+        const removed = grammar.removeRules(derived, (rule) => samePatternShape(rule.parts, parts));
         if (removed === 0) {
           // ADR-276 census 3: the compiler's gate refuses this
           // (analysis.unmatched-removal-pattern, from the manifest's
@@ -1634,7 +1639,7 @@ export class ChordStory implements Story {
             .filter((rule) => rule.action === derived && rule.tier === 'standard')
             .map((rule) => `\`${rule.pattern}\``);
           throw new LoadError(
-            `\`remove from action ${removal.action}\` — no standard rule matches \`${text}\`. The action's standard patterns are: ${actual.join(', ') || '(none)'}.`,
+            `\`remove from action ${removal.action}\` — no standard rule matches \`${renderPattern(parts)}\`. The action's standard patterns are: ${actual.join(', ') || '(none)'}.`,
           );
         }
       }

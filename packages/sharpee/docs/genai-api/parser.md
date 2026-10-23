@@ -223,6 +223,58 @@ export declare class EnglishParser implements Parser {
 export {};
 ```
 
+### english-pattern-compiler
+
+```typescript
+/**
+ * @file English Pattern Compiler
+ * @description English-specific implementation of pattern compilation.
+ *
+ * Public interface: EnglishPatternCompiler (parse, compile).
+ * Owner context: parser-en-us. `parse` is the `define(text)` front end, the
+ * one place pattern text is read (ADR-382 D3); `compile` turns structured
+ * parts into the matcher's tokens and one record per slot (D4).
+ */
+import { type PatternCompiler, type CompiledPattern, type PatternElement } from '@sharpee/if-domain';
+/**
+ * English-specific pattern compiler
+ * Handles patterns like: "put :item in|into :container"
+ */
+export declare class EnglishPatternCompiler implements PatternCompiler {
+    /**
+     * Parse pattern text into parts. Elements are whitespace-separated: a
+     * word, an alternation `a|b`, or a slot `:name` (greedy `:name...`); any
+     * one element may be bracketed `[…]` to make it optional. A bracket that
+     * does not wrap exactly one element is refused (ADR-382 D3, Q-5).
+     * @param pattern The pattern text
+     * @returns The pattern's elements, in order
+     * @throws PatternSyntaxError, with the offending offset, on an empty
+     *   pattern, an unclosed `[`, a stray `]`, a nested or empty bracket, a
+     *   multi-word optional, an invalid slot name or an empty alternation
+     */
+    parse(pattern: string): PatternElement[];
+    /**
+     * Compile parts into tokens and slot records. Words and alternates are
+     * lowercased here, the one place every literal passes, Chord's and a TS
+     * story's alike (parser review B3).
+     * @param parts The pattern's elements
+     * @param source The rule's display text, quoted in error messages only
+     * @returns The compiled pattern
+     * @throws PatternSyntaxError on an empty pattern, an invalid or duplicate
+     *   slot name, or an empty alternation
+     */
+    compile(parts: readonly PatternElement[], source?: string): CompiledPattern;
+    /**
+     * One unbracketed element's text → its part.
+     * @param body The element's text, brackets removed
+     * @param optional Whether it was bracketed
+     * @param pattern The whole pattern, for error messages
+     * @param at The element's offset in the pattern
+     */
+    private parseElement;
+}
+```
+
 ### parse-failure
 
 ```typescript
@@ -422,6 +474,7 @@ export declare class PronounContextManager {
  */
 export { EnglishParser } from './english-parser.js';
 export { EnglishParser as Parser } from './english-parser.js';
+export { EnglishPatternCompiler } from './english-pattern-compiler.js';
 export type { Parser as ParserInterface } from '@sharpee/if-domain';
 export type { PartialMatchFailure, SlotFailure, MatchFailureReason } from './parse-failure.js';
 export { analyzeBestFailure } from './parse-failure.js';

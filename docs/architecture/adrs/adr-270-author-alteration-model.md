@@ -166,6 +166,8 @@ default. Contract:
 This is a platform change (if-domain + parser-en-us match path untouched; the mutation surface
 grows by one operation) and is recorded here per the platform-change policy.
 
+> **Amended by ADR-382 D6 (2026-10-23):** identity is structural, not pattern-string equality — slot names are ignored, words compare lowercased and alternations as sets; the primitive takes the shape test as a predicate (`removeRules(action, rule => …, tier)`), and Chord passes `samePatternShape` over the rule's parts.
+
 ### D4 — Reorder is compositional; no ordering syntax is added
 
 ADR-268's model stands whole: no numeric priority, no ordering annotations, no relational

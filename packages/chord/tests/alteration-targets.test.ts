@@ -10,6 +10,7 @@
 import { describe, expect, it } from 'vitest';
 import { compile } from '../src';
 import { STDLIB_MANIFEST } from '../src/stdlib-manifest';
+import { renderPattern } from '../src/patterns';
 
 const STORY =
   'story\n  title: T\n  authors:\n    N\n\ncreate the Barn\n  a room\n\n  A barn.\n\ncreate Alex\n  a person\n  playable\n  starts in the Barn\n\n  You.\n\nbefore the game starts\n  change the player to Alex\nend before\n\n';
@@ -60,10 +61,10 @@ describe('alteration targets (ADR-276 census 1–2)', () => {
     expect(errors(`${STORY}remove from action taking\n  get the item\n  take up the item\n`)).toEqual([]);
   });
 
-  it('census 3: the manifest shape strings are the registered rule patterns verbatim', () => {
+  it('census 3: the manifest shapes are parts, rendering as the registered rule patterns (ADR-382 D6)', () => {
     const shapes = STDLIB_MANIFEST.locales['en-US'].grammarShapes['if.action.taking'];
-    expect(shapes).toContain('take :item');
-    expect(shapes).toContain('get :item');
+    expect(shapes).toContainEqual([{ kind: 'word', word: 'take' }, { kind: 'slot', name: 'item' }]);
+    expect(shapes.map((shape) => renderPattern(shape))).toContain('get :item');
     expect(Object.keys(STDLIB_MANIFEST.locales['en-US'].grammarShapes).length).toBeGreaterThanOrEqual(50);
   });
 

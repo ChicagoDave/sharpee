@@ -12,6 +12,7 @@ import { findRepoRoot } from '../repo';
 import {
   checkDocsBlocksModule,
   checkGrammarModule,
+  compileStandardGrammarRules,
   expandGrammarIr,
   extractGrammarBlocks,
   readReferenceEntryIds,
@@ -205,5 +206,18 @@ describe('docs blocks derivation (ADR-272 D4/D5)', () => {
 
   it('the committed docs data module matches the Chord source', () => {
     expect(checkDocsBlocksModule(findRepoRoot())).toBe(true);
+  });
+});
+
+describe("chord's pattern module lowers the standard grammar as the generator emits it (ADR-382 D5)", () => {
+  it('every action yields the same rendered patterns, defaults and slot types, differing at most in order', () => {
+    const { rules, lowered } = compileStandardGrammarRules(findRepoRoot());
+    const key = (r: { pattern: string; defaults: Record<string, string> | null; slotTypes: Record<string, string> }) =>
+      JSON.stringify([r.pattern, r.defaults, r.slotTypes]);
+    for (const { action, rules: fromModule } of lowered) {
+      const fromGenerator = rules.filter((r) => r.action === action).map(key).sort();
+      expect(fromModule.map(key).sort(), action).toEqual(fromGenerator);
+    }
+    expect(lowered.reduce((n, a) => n + a.rules.length, 0)).toBe(rules.length);
   });
 });

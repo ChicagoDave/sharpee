@@ -30,6 +30,8 @@ export type { ScopeRequirementWord } from './catalog.js';
 export { STDLIB_MANIFEST } from './stdlib-manifest.js';
 export type { StdlibManifest, StdlibLocaleFacts } from './stdlib-manifest.js';
 export { conditionRequiresSelfBreaking } from './condition-discharge.js';
+export { lowerParts, lowerActionRules, renderPattern, expandReadings, expandCommands, samePatternShape } from './patterns.js';
+export type { LoweredRule, LowerableAction } from './patterns.js';
 export { CHARACTER_MANIFEST } from './character-manifest.js';
 export type { CharacterManifest } from './character-manifest.js';
 export { EXTENSION_MANIFESTS, CHAPTERS_MANIFEST, COMBAT_MANIFEST, EXPANSES_MANIFEST, NPC_MANIFEST, manifestForAdjective, manifestForKindNoun, manifestForMovementType } from './manifests/index.js';

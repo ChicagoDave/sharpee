@@ -69,20 +69,24 @@ const DIMENSION_FIELDS: ReadonlyArray<[string, string]> = [
 export function generateManifestModule(root: string): { source: string; actionIds: number; shapedActions: number } {
   const actionIds = [...readStdlibActionIds(root)].sort();
 
-  // Grammar-shape slice (ADR-276 Phase 4, census 3): the per-action pattern
-  // shapes the loader's removeRules compares by EXACT string equality —
-  // derived from the same compileStandardGrammarRules expansion that emits
+  // Grammar-shape slice (ADR-276 Phase 4, census 3; ADR-382 D6, Q-3): the
+  // per-action pattern shapes as parts, which the analyzer compares to a
+  // removal with chord's samePatternShape and renders only for display —
+  // lowered by chord's lowerActionRules from the same compile that emits
   // parser-en-us/src/grammar.ts, so the manifest and the registered rules
   // cannot drift. The platform-side exception rules (platform-grammar.ts:
   // `?`, `trace …`) are deliberately absent: `?` is unlexable in Chord and
   // `trace` derives no stdlib id, so neither is expressible as a removal —
   // the Chord grammar source IS the removable surface.
-  const { rules } = compileStandardGrammarRules(root);
+  const { lowered } = compileStandardGrammarRules(root);
   const grammarShapes = new Map<string, string[]>();
-  for (const rule of rules) {
-    const list = grammarShapes.get(rule.action) ?? [];
-    if (!list.includes(rule.pattern)) list.push(rule.pattern);
-    grammarShapes.set(rule.action, list);
+  for (const { action, rules } of lowered) {
+    const list = grammarShapes.get(action) ?? [];
+    for (const rule of rules) {
+      const shape = JSON.stringify(rule.parts);
+      if (!list.includes(shape)) list.push(shape);
+    }
+    grammarShapes.set(action, list);
   }
 
   // Setting-schema slice (ADR-276 Phase 5, census 4–6): the Q-3 declarative
@@ -117,8 +121,8 @@ export function generateManifestModule(root: string): { source: string; actionId
   lines.push(' * build) fails the build on drift.');
   lines.push(' *');
   lines.push(' * The stdlib facts the analyzer gates against at compile time. Data only —');
-  lines.push(' * chord stays platform-FREE (imports nothing) while no longer being');
-  lines.push(' * stdlib-IGNORANT (ADR-276 D1). Locale-neutral facts sit at top level;');
+  lines.push(' * chord stays platform-FREE (if-domain types only, ADR-210) while no longer');
+  lines.push(' * being stdlib-IGNORANT (ADR-276 D1). Locale-neutral facts sit at top level;');
   lines.push(' * locale-owned facts (grammar shapes, direction words) go under `locales`,');
   lines.push(' * keyed from day one (Q-2), `en-US` the sole entry.');
   lines.push(' *');
@@ -126,14 +130,16 @@ export function generateManifestModule(root: string): { source: string; actionId
   lines.push(' * Owner context: @sharpee/chord (generated artifact; browser-safe).');
   lines.push(' */');
   lines.push('');
+  lines.push("import type { PatternElement } from '@sharpee/if-domain';");
+  lines.push('');
   lines.push('/** Locale-owned stdlib facts (direction words join in a later ADR-276 phase). */');
   lines.push('export interface StdlibLocaleFacts {');
   lines.push('  /**');
-  lines.push("   * Standard grammar pattern shapes per action id — the loader's removable");
-  lines.push('   * surface (ADR-270 D3), rendered exactly as the registered rule patterns');
-  lines.push('   * (`take :item`); removal matching is string equality on these.');
+  lines.push("   * Standard grammar pattern shapes per action id, as parts — the loader's");
+  lines.push('   * removable surface (ADR-270 D3), compared to a removal by shape and');
+  lines.push('   * rendered only for display (ADR-382 D6).');
   lines.push('   */');
-  lines.push('  grammarShapes: Readonly<Record<string, readonly string[]>>;');
+  lines.push('  grammarShapes: Readonly<Record<string, readonly (readonly PatternElement[])[]>>;');
   lines.push('}');
   lines.push('');
   lines.push('export interface StdlibManifest {');
@@ -176,7 +182,9 @@ export function generateManifestModule(root: string): { source: string; actionId
   lines.push("    'en-US': {");
   lines.push('      grammarShapes: {');
   for (const [action, shapes] of [...grammarShapes.entries()].sort(([a], [b]) => a.localeCompare(b))) {
-    lines.push(`        ${JSON.stringify(action)}: [${shapes.map((s) => JSON.stringify(s)).join(', ')}],`);
+    lines.push(`        ${JSON.stringify(action)}: [`);
+    for (const shape of shapes) lines.push(`          ${shape},`);
+    lines.push('        ],');
   }
   lines.push('      },');
   lines.push('    },');

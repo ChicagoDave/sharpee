@@ -1757,13 +1757,14 @@ export interface GrammarBuilder {
      */
     clear(): void;
     /**
-     * ADR-270 D3: remove registered rules by shape — (action id, pattern
-     * string, tier). Diagnostic-free: returns the count removed (0 = no rule
-     * matched); the caller owns any miss diagnostic. `tier` defaults to
-     * 'standard' — the alteration model removes platform rules, never story
-     * rules, unless explicitly asked.
+     * ADR-270 D3: remove registered rules by shape — (action id, shape,
+     * tier), the shape test supplied by the caller over each rule (ADR-382 D6;
+     * Chord's is `samePatternShape` on `rule.parts`). Diagnostic-free:
+     * returns the count removed (0 = no rule matched); the caller owns any
+     * miss diagnostic. `tier` defaults to 'standard' — the alteration model
+     * removes platform rules, never story rules, unless explicitly asked.
      */
-    removeRules(action: string, pattern: string, tier?: GrammarTier): number;
+    removeRules(action: string, shapeMatches: (rule: GrammarRule) => boolean, tier?: GrammarTier): number;
 }
 /**
  * ADR-087: Action-centric grammar builder
@@ -2171,20 +2172,21 @@ export declare abstract class GrammarEngine {
     clear(): void;
     /**
      * ADR-270 D3: remove registered rules by shape — the alteration model's
-     * removal primitive. Identity is (action id, pattern string, tier); rule
-     * ids are nondeterministic and never part of identity.
+     * removal primitive. Identity is (action id, shape, tier); the shape test
+     * is the caller's (ADR-382 D6: Chord passes `samePatternShape` over the
+     * rule's parts). Rule ids are nondeterministic and never part of identity.
      *
      * Diagnostic-free by contract: returns the number of rules removed and
      * never throws — the CALLER owns the miss diagnostic (the Chord loader
      * raises its LoadError on 0; a TS story checks the return itself).
      *
      * @param action The action id whose rule is removed (e.g. 'if.action.taking').
-     * @param pattern The exact registered pattern string (e.g. 'get :item').
+     * @param shapeMatches Whether a rule of that action and tier has the shape to remove.
      * @param tier The tier to remove from — 'standard' (default) targets the
      *   platform grammar; story-tier rules are never touched unless asked.
      * @returns The number of rules removed (0 = no rule matched the shape).
      */
-    removeRules(action: string, pattern: string, tier?: GrammarTier): number;
+    removeRules(action: string, shapeMatches: (rule: GrammarRule) => boolean, tier?: GrammarTier): number;
     /**
      * Get all rules
      */

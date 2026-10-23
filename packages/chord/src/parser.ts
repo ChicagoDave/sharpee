@@ -23,6 +23,7 @@ import { SCOPE_REQUIREMENT_PREDICATES } from './catalog.js';
 import { MOVEMENT_TYPES, passageKeyOfForm } from './ir.js';
 import { CHARACTER_MANIFEST } from './character-manifest.js';
 import { STDLIB_MANIFEST } from './stdlib-manifest.js';
+import { expandCommands, lowerParts } from './patterns.js';
 import {
   ActStmt,
   ActionPattern,
@@ -231,9 +232,10 @@ function stdlibActVerbs(): Set<string> {
   const out = new Set<string>();
   for (const shapes of Object.values(STDLIB_MANIFEST.locales['en-US'].grammarShapes)) {
     for (const shape of shapes) {
-      const parts = shape.split(' ');
-      if (parts.length < 2 || parts[0].startsWith(':')) continue;
-      out.add(parts[0]);
+      const first = shape[0];
+      if (shape.length < 2 || !first || first.kind === 'slot') continue;
+      if (first.kind === 'word') out.add(first.word);
+      else for (const word of first.words) out.add(word);
     }
   }
   actVerbLexicon = out;
@@ -337,24 +339,6 @@ class Cursor {
     if (t) return mergeSpans(t.span, this.tokens[this.tokens.length - 1].span);
     return lineSpan(this.line);
   }
-}
-
-/**
- * The commands a slot-free pattern admits, every alternation and optional
- * element expanded (ADR-380 D1). An optional element is taken first with
- * the element and then without it, and an alternation in its written order,
- * so the first command is the pattern as written.
- * @param parts the pattern's elements; none is a slot
- * @returns the commands, lowercased words joined by spaces, in order
- */
-function expandPattern(parts: readonly PatternPart[]): string[] {
-  let out: string[][] = [[]];
-  for (const part of parts) {
-    const choices: string[][] = (part.kind === 'alt' ? part.words : [part.word]).map((w) => [w.toLowerCase()]);
-    if (part.optional) choices.push([]);
-    out = out.flatMap((prefix) => choices.map((choice) => [...prefix, ...choice]));
-  }
-  return out.filter((words) => words.length > 0).map((words) => words.join(' '));
 }
 
 /**
@@ -3097,7 +3081,7 @@ class Parser {
         this.diagnostics.error('parse.action-pattern', 'A passage\'s command needs at least one word the player must type.', lineSpan(line));
         continue;
       }
-      for (const command of expandPattern(parts)) if (!commands.includes(command)) commands.push(command);
+      for (const command of expandCommands(lowerParts(parts))) if (!commands.includes(command)) commands.push(command);
     }
     if (!any) {
       this.diagnostics.error('parse.passage-line', 'A `grammar` line holds the passage\'s commands, one per line, indented under it.', lineSpan(grammarLine));

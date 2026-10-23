@@ -37,6 +37,7 @@ import {
 } from './ir.js';
 import type { Span } from './span.js';
 import { STDLIB_MANIFEST } from './stdlib-manifest.js';
+import type { PatternElement } from '@sharpee/if-domain';
 
 /** A tracked fact about the world; see the module header for the forms. */
 export type Fact = string;
@@ -557,7 +558,7 @@ class RuleExtractor {
     for (const verb of this.set.verbs) {
       let matched = false;
       for (const [actionId, patterns] of Object.entries(shapes)) {
-        if (patterns.some((pattern) => verbMatches(verb, leadingWords(pattern)))) {
+        if (patterns.some((pattern) => verbMatches(verb, patternLeadingWords(pattern)))) {
           reached.add(actionId.replace(/^if\.action\./, ''));
           matched = true;
         }
@@ -585,7 +586,7 @@ class RuleExtractor {
     if (story) return this.set.verbs.some((verb) => story.patterns.some((pattern) => verbMatches(verb, patternLeadingWords(pattern.parts))));
     const shapes = STDLIB_MANIFEST.locales['en-US']?.grammarShapes?.[`if.action.${action}`];
     if (!shapes) return true;
-    return this.set.verbs.some((verb) => shapes.some((pattern) => verbMatches(verb, leadingWords(pattern))));
+    return this.set.verbs.some((verb) => shapes.some((pattern) => verbMatches(verb, patternLeadingWords(pattern))));
   }
 
   // ---- building rules -----------------------------------------------------
@@ -908,21 +909,16 @@ function standardWrites(action: string, objects: readonly string[], actor: strin
   return writes;
 }
 
-/** The literal words a grammar shape opens with, before its first slot (`take :item` → `take`). */
-function leadingWords(pattern: string): string {
-  const words: string[] = [];
-  for (const word of pattern.trim().split(/\s+/)) {
-    if (word.startsWith(':') || word.startsWith('[')) break;
-    words.push(word.toLowerCase());
-  }
-  return words.join(' ');
-}
-
-/** The same, off an IR action pattern's parts; an alternation stops the prefix, since any of its words may open it. */
-function patternLeadingWords(parts: readonly IRPatternPart[]): string {
+/**
+ * The literal words a pattern opens with, before its first slot, optional
+ * element or alternation (`take :item` → `take`) — off an IR action
+ * pattern's parts or a manifest shape's (ADR-382 D6). An alternation stops
+ * the prefix, since any of its words may open it.
+ */
+function patternLeadingWords(parts: readonly (IRPatternPart | PatternElement)[]): string {
   const words: string[] = [];
   for (const part of parts) {
-    if (part.kind !== 'word') break;
+    if (part.kind !== 'word' || part.optional) break;
     words.push(part.word.toLowerCase());
   }
   return words.join(' ');

@@ -24,6 +24,7 @@
  */
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
+import type { LowerableAction, LoweredRule } from '@sharpee/chord';
 import { findRepoRoot } from '../repo';
 import { Command } from './command';
 
@@ -178,7 +179,12 @@ export function validateActionNames(names: string[], validIds: Set<string>): str
  * and the ADR-276 manifest step (grammar-shape slice), so both artifacts
  * derive from ONE compile + ONE expansion and cannot drift from each other.
  */
-export function compileStandardGrammarRules(root: string): { rules: EmittedRule[]; actions: number } {
+export function compileStandardGrammarRules(root: string): {
+  rules: EmittedRule[];
+  actions: number;
+  /** Each action's rules as chord's pattern module lowers them (ADR-382 D5), in definition order. */
+  lowered: Array<{ action: string; rules: LoweredRule[] }>;
+} {
   const storyPath = join(root, 'packages/parser-en-us/grammar/standard-en-us.story');
   const chordDist = join(root, 'packages/chord/dist/index.js');
   if (!existsSync(chordDist)) {
@@ -187,12 +193,13 @@ export function compileStandardGrammarRules(root: string): { rules: EmittedRule[
   // Runtime require of the built compiler — outside the package graph, the
   // bundle-entry.js precedent (ADR-210 direction rule stands).
   // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const { compile } = require(chordDist) as {
+  const { compile, lowerActionRules } = require(chordDist) as {
     compile: (src: string, opts?: object) => {
       ok: boolean;
       ir: { grammarFile?: { name: string }; actions: Parameters<typeof expandGrammarIr>[0]['actions'] } | null;
       diagnostics: Array<{ severity: string; code: string; message: string; span?: { line: number } }>;
     };
+    lowerActionRules: (action: LowerableAction, options: { bareVerbForms: boolean }) => LoweredRule[];
   };
   const storySrc = readFileSync(storyPath, 'utf8');
   const grammarDir = dirname(storyPath);
@@ -216,7 +223,11 @@ export function compileStandardGrammarRules(root: string): { rules: EmittedRule[
   const errors2 = validateActionNames(result.ir.actions.map((a) => a.name), readStdlibActionIds(root));
   if (errors2.length > 0) throw new Error(errors2.join('\n'));
 
-  return { rules: expandGrammarIr(result.ir), actions: result.ir.actions.length };
+  const lowered = result.ir.actions.map((action) => ({
+    action: `if.action.${action.name}`,
+    rules: lowerActionRules(action as LowerableAction, { bareVerbForms: false }),
+  }));
+  return { rules: expandGrammarIr(result.ir), actions: result.ir.actions.length, lowered };
 }
 
 /** Compile the Chord source and produce the generated module's TS text. */

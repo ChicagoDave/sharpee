@@ -109,22 +109,23 @@ export abstract class GrammarEngine {
 
   /**
    * ADR-270 D3: remove registered rules by shape — the alteration model's
-   * removal primitive. Identity is (action id, pattern string, tier); rule
-   * ids are nondeterministic and never part of identity.
+   * removal primitive. Identity is (action id, shape, tier); the shape test
+   * is the caller's (ADR-382 D6: Chord passes `samePatternShape` over the
+   * rule's parts). Rule ids are nondeterministic and never part of identity.
    *
    * Diagnostic-free by contract: returns the number of rules removed and
    * never throws — the CALLER owns the miss diagnostic (the Chord loader
    * raises its LoadError on 0; a TS story checks the return itself).
    *
    * @param action The action id whose rule is removed (e.g. 'if.action.taking').
-   * @param pattern The exact registered pattern string (e.g. 'get :item').
+   * @param shapeMatches Whether a rule of that action and tier has the shape to remove.
    * @param tier The tier to remove from — 'standard' (default) targets the
    *   platform grammar; story-tier rules are never touched unless asked.
    * @returns The number of rules removed (0 = no rule matched the shape).
    */
-  removeRules(action: string, pattern: string, tier: GrammarTier = 'standard'): number {
+  removeRules(action: string, shapeMatches: (rule: GrammarRule) => boolean, tier: GrammarTier = 'standard'): number {
     const matches = (rule: GrammarRule) =>
-      rule.action === action && rule.pattern === pattern && rule.tier === tier;
+      rule.action === action && rule.tier === tier && shapeMatches(rule);
     const removed = this.rules.filter(matches).length;
     if (removed === 0) return 0;
     // Definition order of the survivors is untouched — filter preserves it.
@@ -559,8 +560,8 @@ export abstract class GrammarEngine {
         engine.clear();
       },
 
-      removeRules(action: string, pattern: string, tier: GrammarTier = 'standard') {
-        return engine.removeRules(action, pattern, tier);
+      removeRules(action: string, shapeMatches: (rule: GrammarRule) => boolean, tier: GrammarTier = 'standard') {
+        return engine.removeRules(action, shapeMatches, tier);
       }
     };
   }

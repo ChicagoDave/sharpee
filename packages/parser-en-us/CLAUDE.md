@@ -104,7 +104,9 @@ extendParser(parser: Parser): void {
 - Definition order is semantic: when two story patterns tie on specificity,
   the one defined earlier wins. Don't reorder grammar lines casually.
 - Stdlib grammar uses `.forAction()` — stories usually don't need this.
-- **Removing standard rules (ADR-270)**: `grammar.removeRules(actionId, pattern)`
-  removes a standard-tier rule by shape and returns the count (0 = no match —
-  check it; the call never throws). Chord stories spell the same thing as
+- **Removing standard rules (ADR-270, ADR-382 D6)**:
+  `grammar.removeRules(actionId, rule => …)` removes the standard-tier rules of
+  that action the test accepts and returns the count (0 = no match — check it;
+  the call never throws). Chord's loader passes `samePatternShape(rule.parts, …)`
+  from `@sharpee/chord`. Chord stories spell the same thing as
   `remove from action <name>` / `extend action <name>` blocks.

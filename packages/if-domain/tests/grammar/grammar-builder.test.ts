@@ -311,7 +311,7 @@ describe('removeRules (ADR-270 D3)', () => {
   });
 
   it('removes the matching standard-tier rule from getRules and the action index, returning 1', () => {
-    const removed = engine.removeRules('if.action.taking', 'get :item');
+    const removed = engine.removeRules('if.action.taking', (rule) => rule.pattern === 'get :item');
 
     expect(removed).toBe(1);
     expect(engine.getRules().map((r) => r.pattern)).toEqual(['take :item', 'drop :item']);
@@ -320,14 +320,22 @@ describe('removeRules (ADR-270 D3)', () => {
 
   it('preserves the definition order of survivors (ADR-268: order is semantic)', () => {
     builder.define('snag :item').mapsTo('if.action.taking').build();
-    engine.removeRules('if.action.taking', 'get :item');
+    engine.removeRules('if.action.taking', (rule) => rule.pattern === 'get :item');
 
     expect(engine.getRules().map((r) => r.pattern)).toEqual(['take :item', 'drop :item', 'snag :item']);
   });
 
+  it('removes every rule the shape test accepts in one call, returning the count; an unknown action removes nothing and does not throw', () => {
+    expect(engine.removeRules('if.action.taking', (rule) => rule.parts[1]?.kind === 'slot')).toBe(2);
+    expect(engine.getRules().map((r) => r.pattern)).toEqual(['drop :item']);
+    expect(engine.getRulesForAction('if.action.taking')).toEqual([]);
+    expect(engine.removeRules('if.action.nonesuch', () => true)).toBe(0);
+    expect(engine.getRules()).toHaveLength(1);
+  });
+
   it('returns 0 on a shape no rule carries, leaving every rule in place', () => {
-    expect(engine.removeRules('if.action.taking', 'grab :item')).toBe(0);
-    expect(engine.removeRules('if.action.eating', 'take :item')).toBe(0);
+    expect(engine.removeRules('if.action.taking', (rule) => rule.pattern === 'grab :item')).toBe(0);
+    expect(engine.removeRules('if.action.eating', (rule) => rule.pattern === 'take :item')).toBe(0);
     expect(engine.getRules()).toHaveLength(3);
   });
 
@@ -335,7 +343,7 @@ describe('removeRules (ADR-270 D3)', () => {
     const storyBuilder = engine.createBuilder('story');
     storyBuilder.define('get :item').mapsTo('if.action.taking').build();
 
-    expect(engine.removeRules('if.action.taking', 'get :item')).toBe(1);
+    expect(engine.removeRules('if.action.taking', (rule) => rule.pattern === 'get :item')).toBe(1);
     const remaining = engine.getRules().filter((r) => r.pattern === 'get :item');
     expect(remaining).toHaveLength(1);
     expect(remaining[0].tier).toBe('story');
@@ -345,17 +353,17 @@ describe('removeRules (ADR-270 D3)', () => {
     const storyBuilder = engine.createBuilder('story');
     storyBuilder.define('yoink :item').mapsTo('if.action.taking').build();
 
-    expect(engine.removeRules('if.action.taking', 'yoink :item', 'story')).toBe(1);
+    expect(engine.removeRules('if.action.taking', (rule) => rule.pattern === 'yoink :item', 'story')).toBe(1);
     expect(engine.getRules().some((r) => r.pattern === 'yoink :item')).toBe(false);
   });
 
   it('empties the action index when the last rule of an action is removed', () => {
-    engine.removeRules('if.action.dropping', 'drop :item');
+    engine.removeRules('if.action.dropping', (rule) => rule.pattern === 'drop :item');
     expect(engine.getRulesForAction('if.action.dropping')).toEqual([]);
   });
 
   it('is reachable through the builder surface (dual-surface, umbrella D8)', () => {
-    expect(builder.removeRules('if.action.taking', 'get :item')).toBe(1);
+    expect(builder.removeRules('if.action.taking', (rule) => rule.pattern === 'get :item')).toBe(1);
     expect(builder.getRules().map((r: any) => r.pattern)).toEqual(['take :item', 'drop :item']);
   });
 });
