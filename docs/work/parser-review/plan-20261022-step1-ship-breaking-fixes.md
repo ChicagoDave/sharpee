@@ -78,4 +78,4 @@
 - **Exit state**: Chord, story-loader, parser-en-us and repokit suites green (one run each); `./repokit grammar --check` passes; Dungeo chain and golden recordings green; no stale `slot-unused` noise on the standard grammar.
 - **Demonstration**: compile of a probe story shows the `→` error and no `slot-unused` on a `{the anchor}`-only slot; `zap book` with `Zap the target` parses; `furl sails` and `furl the sails` run; `./repokit grammar --check` exit 0; per-package suite and Dungeo chain results recorded.
 - **Demonstrated**: 
-- **Status**: PENDING
+- **Status**: CURRENT (since 2026-10-23)
