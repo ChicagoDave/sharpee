@@ -1,7 +1,8 @@
 # Session Plan: Chord 4.0 alignment fixes — close every open finding for the merge gate
 
 **Created**: 2026-10-21
-**Plan Status**: ACTIVE — written by session 1588df; pointed at 2026-10-21 after David disposed of `plan-20261013-chord-4-0.md` as done (rule 18b, option 1).
+**Plan Status**: DONE
+**Archive**: not until `chord-4-0` merges (David, 2026-10-22, session 289aa0). `docs/work/chord-4-0/` holds the ledger, sweep and inventory the merge gate is shown from, and ADR-380 and ADR-381 cite them by path.
 **Overall scope**: Fix or decide every open finding on `chord-4-0` so the merge gate (David 2026-10-15: every change shown elegant and aligned for Sharpee and Chord; shortcuts fixed, not listed) can close. 48 findings: 3 older ledger items, F1–F23, D1–D22.
 **Bounded contexts touched**: world-model (traversal, visibility and sight systems, vehicle/expanse/room traits), stdlib (going, pushing, climbing, steering, setting-course, entering, examining, searching, dropping, lighting, emptying, validator), plugin-state-machine (vehicle machine), story-loader and its IR seam, Chord (parser, analyzer, IR), parser-en-us, lang-en-us, engine, event-processor, world-index, branch-tester, ide-protocol, Testing tab.
 **Key domain language**: way (traversal), mover, admittance, landmark / outlook (sight), expanse, vehicle machine, passage, claim lock.

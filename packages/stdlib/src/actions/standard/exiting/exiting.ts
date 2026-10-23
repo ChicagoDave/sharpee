@@ -1,7 +1,11 @@
 /**
  * Exiting action - exit from containers, supporters, or other enterable objects
- * 
+ *
  * This action handles exiting objects that the actor is currently inside/on.
+ * In a room the actor is inside nothing, so `go out`, `exit` and `leave` are
+ * going out, delegated (ADR-228 D6-B, as climbing and pushing): the room's
+ * `out` way and every traversal gate on it are going's, and a room with no
+ * way out keeps exiting's own line.
  */
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types.js';
@@ -10,10 +14,15 @@ import {
   TraitType,
   OpenableBehavior,
   IFEntity,
+  Direction,
   leaveVehicleIntoExpanse,
   outsideWayOf,
 } from '@sharpee/world-model';
 import { IFActions } from '../../constants.js';
+import { ValidatedCommand } from '../../../validation/types.js';
+import { goingAction, goingLifecycle } from '../going/going.js';
+import { GoingMessages } from '../going/going-messages.js';
+import { Delegation, delegateValidate, delegateExecute, delegateReport, inDelegateWords } from '../delegation-shared.js';
 import { ExitedEventData } from './exiting-events.js';
 import { ExitingMessages } from './exiting-messages.js';
 import { nounPhraseFor } from '../../../utils/index.js';
@@ -65,10 +74,26 @@ interface ExitingExecutionState {
  */
 interface ExitingSharedData {
   exitingState?: ExitingExecutionState;
+  /** In a room, exiting is going out, delegated. */
+  delegation?: Delegation;
 }
 
 function getExitingSharedData(context: ActionContext): ExitingSharedData {
   return context.sharedData as ExitingSharedData;
+}
+
+/** The command the delegated going sees: the way out, and no object. */
+function goingOutCommand(context: ActionContext): ValidatedCommand {
+  return {
+    ...context.command,
+    actionId: IFActions.GOING,
+    directObject: undefined,
+    indirectObject: undefined,
+    parsed: {
+      ...context.command.parsed,
+      extras: { ...context.command.parsed.extras, direction: Direction.OUT }
+    }
+  };
 }
 
 import { ActionMetadata } from '../../../validation/index.js';
@@ -140,10 +165,15 @@ export const exitingAction: Action & { metadata: ActionMetadata } = {
         const way = outsideWayOf(context.world, currentContainer, { kind: 'walker', entity: actor });
         return { valid: false, error: way.kind === 'ambiguous' ? ExitingMessages.OUTSIDE_AMBIGUOUS : ExitingMessages.VEHICLE_NOT_AT_HATCH };
       }
-      return {
-        valid: false,
-        error: ExitingMessages.ALREADY_OUTSIDE
-      };
+      // In a room, exiting is going out: the author's `out` way and its
+      // gates are traversal's, refused in going's words.
+      const { delegation, result: delegated } = delegateValidate(context, goingAction, goingLifecycle, goingOutCommand(context));
+      getExitingSharedData(context).delegation = delegation;
+      // No way out at all is this action's line, not going's.
+      if (!delegated.valid && !delegated.errorQualified && (delegated.error === GoingMessages.NO_EXIT_THAT_WAY || delegated.error === GoingMessages.NO_EXITS)) {
+        return { valid: false, error: ExitingMessages.ALREADY_OUTSIDE };
+      }
+      return inDelegateWords(delegated, delegation);
     }
 
     // Find the parent location (where we'll exit to)
@@ -174,6 +204,13 @@ export const exitingAction: Action & { metadata: ActionMetadata } = {
    * Assumes validation has already passed
    */
   execute(context: ActionContext): void {
+    // Going out of a room: going moves the actor (validate delegated it).
+    const delegation = getExitingSharedData(context).delegation;
+    if (delegation) {
+      delegateExecute(delegation);
+      return;
+    }
+
     const actor = context.actor;
     const currentLocation = context.world.getLocation(actor.id)!; // Safe because validate ensures it exists
     const currentContainer = context.world.getEntity(currentLocation)!; // Safe because validate ensures it exists
@@ -213,6 +250,8 @@ export const exitingAction: Action & { metadata: ActionMetadata } = {
   report(context: ActionContext): ISemanticEvent[] {
     // Get stored state from execute phase
     const sharedData = getExitingSharedData(context);
+    // Going out of a room: the move and arrival are going's to record.
+    if (sharedData.delegation) return delegateReport(sharedData.delegation);
     const state = sharedData.exitingState as ExitingExecutionState | undefined;
     if (!state) {
       // This shouldn't happen, but handle gracefully

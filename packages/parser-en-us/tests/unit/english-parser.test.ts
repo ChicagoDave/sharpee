@@ -257,7 +257,6 @@ describe('EnglishParser', () => {
       expect(result.success).toBe(true);
       if (result.success) {
         expect(result.value.action).toBe('if.action.going');
-        expect(result.value.pattern).toBe('DIRECTION_ONLY');
         expect(result.value.extras?.direction).toBe(Direction.NORTH);
       }
     });

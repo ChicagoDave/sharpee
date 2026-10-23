@@ -154,3 +154,138 @@ describe('a fixed noun written `[the] arrow` is a word, not a slot', () => {
     expect(turn.text).not.toContain('You loose an arrow.');
   });
 });
+
+const WELL = `${HEADER}
+create the Shaft
+  a room
+
+  passage to the Cellar
+    grammar
+      climb down the ladder
+  end passage
+
+  passage to the Loft
+    grammar
+      climb up the rope
+  end passage
+
+  A shaft with a ladder and a rope.
+
+create the Cellar
+  a room
+
+  The cellar.
+
+create the Loft
+  a room
+
+  The loft.
+${PLAYER}`;
+
+describe('a passage command holding a compass word reaches its passage (parser review C3)', () => {
+  it('`climb down the ladder` takes the player to the Cellar, though the Shaft has no way down', async () => {
+    const b = await bootTurns(WELL);
+    await b.turn('climb down the ladder');
+    expect(b.world.getLocation(b.player.id)).toBe(b.id('cellar'));
+  });
+
+  it('`climb up the rope` takes the player to the Loft, not "You can\'t go that way."', async () => {
+    const b = await bootTurns(WELL);
+    const turn = await b.turnText('climb up the rope');
+    expect(turn.text).not.toContain("can't go that way");
+    expect(b.world.getLocation(b.player.id)).toBe(b.id('loft'));
+  });
+});
+
+const HALL = `${HEADER}
+create the Hall
+  a room
+
+  A hall.
+
+  out to the Yard
+  out is blocked while the bolt is shot: bolted
+
+create the Yard
+  a room
+
+  A yard.
+
+create the Den
+  a room
+
+  A den with no way out.
+
+create the Porch
+  a room
+
+  A porch with a way north and none out.
+
+  north to the Yard
+
+create the bolt
+  a thing, pushable
+  in the Hall
+  states: drawn, shot
+
+  A bolt.
+
+  on the player pushing
+    change the bolt to shot
+  end on
+
+create Alex
+  a person
+  playable
+  starts in the Hall
+
+  You.
+
+before the game starts
+  change the player to Alex
+end before
+
+define phrase bolted
+  The door is bolted.
+end phrase
+`;
+
+describe('every word for leaving takes the author\'s `out` exit (parser review step 1)', () => {
+  it.each(['out', 'go out', 'exit', 'leave'])('`%s` takes the player from the Hall to the Yard', async (command) => {
+    const b = await bootTurns(HALL);
+    await b.turn(command);
+    expect(b.world.getLocation(b.player.id)).toBe(b.id('yard'));
+  });
+
+  it('`go out` through a blocked way speaks the way\'s phrase and stays', async () => {
+    const b = await bootTurns(HALL);
+    await b.turn('push bolt');
+    const turn = await b.turnText('go out');
+    expect(turn.text).toContain('The door is bolted.');
+    expect(b.world.getLocation(b.player.id)).toBe(b.id('hall'));
+  });
+
+  it('going out of a room records going\'s move, not an exit from a container', async () => {
+    const b = await bootTurns(HALL);
+    const events = await b.turn('exit');
+    expect(events.some((e) => e.type === 'if.event.actor_moved')).toBe(true);
+    expect(events.some((e) => e.type === 'if.event.exited')).toBe(false);
+  });
+
+  it('`exit` in a room with other ways but none out keeps "You\'re not inside anything." and stays', async () => {
+    const b = await bootTurns(HALL);
+    b.world.moveEntity(b.player.id, b.id('porch'));
+    const turn = await b.turnText('exit');
+    expect(turn.text).toContain("You're not inside anything.");
+    expect(turn.text).not.toContain("can't go that way");
+    expect(b.world.getLocation(b.player.id)).toBe(b.id('porch'));
+  });
+
+  it('`exit` in a room with no way out keeps "You\'re not inside anything." and stays', async () => {
+    const b = await bootTurns(HALL);
+    b.world.moveEntity(b.player.id, b.id('den'));
+    const turn = await b.turnText('exit');
+    expect(turn.text).toContain("You're not inside anything.");
+    expect(b.world.getLocation(b.player.id)).toBe(b.id('den'));
+  });
+});

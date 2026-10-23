@@ -114,8 +114,8 @@ interface RichCandidate {
   // ADR-082 additions
   vocabularySlots?: Map<string, { word: string; category: string }>;
   manner?: string;
-  // Direction and extras for grammar matches
-  direction?: string;
+  // Extras for grammar matches; a direction arrives here, from the matched
+  // rule's semantics or its direction slot
   extras?: Record<string, unknown>;
 }
 
@@ -461,13 +461,7 @@ export class EnglishParser implements Parser {
     };
 
     // Add extras if present
-    if (best.direction) {
-      // Convert direction string to Direction constant
-      const directionConstant = parseDirection(best.direction);
-      parsed.extras = {
-        direction: directionConstant || best.direction
-      };
-    } else if (best.extras) {
+    if (best.extras) {
       // Check if extras contains a direction and convert it
       const extras = { ...best.extras };
       if (extras.direction && typeof extras.direction === 'string') {
@@ -765,8 +759,6 @@ export class EnglishParser implements Parser {
       const candidate = this.convertGrammarMatch(match, tokens);
       if (candidate) {
         candidates.push(candidate);
-      } else if (input.includes('throw')) {
-        console.log('Failed to convert match:', match.rule.pattern);
       }
     }
     
@@ -1031,28 +1023,6 @@ export class EnglishParser implements Parser {
           };
           break;
         }
-      }
-    }
-    
-    // For direction commands, handle specially
-    if (rule.action === 'if.action.going' && !directObject) {
-      // Extract direction from pattern — check vocabulary registry tags
-      // (no hardcoded word list; the registry is updated when vocabulary changes)
-      const directionToken = tokens.find(t =>
-        t.candidates.some((c: any) => c.type === VocabPartOfSpeech.DIRECTION)
-      );
-      
-      if (directionToken) {
-        return {
-          tokens,
-          verb: verbPhrase,
-          pattern: 'DIRECTION_ONLY',
-          confidence: match.confidence,
-          tier: rule.tier,
-          literalSpecificity: match.literalSpecificity ?? 0,
-          action: rule.action,
-          direction: directionToken.normalized
-        };
       }
     }
     

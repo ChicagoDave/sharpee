@@ -40,8 +40,7 @@ export const metadata = {
     'VERB_ONLY',
     'VERB_NOUN',
     'VERB_PREP_NOUN',
-    'VERB_NOUN_PREP_NOUN',
-    'DIRECTION_ONLY'
+    'VERB_NOUN_PREP_NOUN'
   ],
   features: [
     'compound-verbs',
