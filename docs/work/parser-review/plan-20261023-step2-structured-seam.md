@@ -107,7 +107,7 @@ Step 3 adds `seat` (direct, indirect, instrument, topic, text) to a rule's slots
 - **Exit state**: no pattern-text renderer or directions expander outside chord's one module (grep, enforced by a test); `fullPattern(string)` and the `forAction` family gone from `if-domain`; loader, repokit and the generated `grammar.ts` on the rule-spec entry, `platform-grammar.ts` and TS stories on `define`; Dungeo chain at 952 passed and 17 of 17 golden recordings with **no transcript edits** unless a classified order difference changes a pinned recording, in which case the change stops here and David rules it (Dungeo is a floor, but a platform default that changes rendered text is its own decision); every tree identical to baseline; `./repokit grammar --check`, `manifest --check`, `aliases --check` fresh.
 - **Demonstration**: the classified snapshot diff; the `poke [the target]` story run on the bundle and through `./sharpee test`; grep results for the renderer and `fullPattern`; chain, tree and per-package suite counts.
 - **Demonstrated**: 
-- **Status**: PENDING
+- **Status**: CURRENT (since 2026-10-23)
 
 ### Phase 5: Guard, documentation and step 3 hand-off
 - **Tier**: Small
