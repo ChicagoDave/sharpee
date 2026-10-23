@@ -321,6 +321,14 @@ export class DispatchVerbsSection {
     const semanticKeys = new Set<string>();
     if (hasDirections) semanticKeys.add('direction');
     for (const p of def.patterns) for (const m of p.means ?? []) semanticKeys.add(m.key);
+    // The entity slots this action's patterns declare: a parsed object binds
+    // under its slot name only when the name is one of these.
+    const entitySlotNames = new Set<string>();
+    for (const p of def.patterns) {
+      for (const part of p.parts) {
+        if (part.kind === 'slot' && isEntitySlot((part as { word: string }).word)) entitySlotNames.add((part as { word: string }).word);
+      }
+    }
 
     interface DispatchContext {
       world: WorldModel;
@@ -330,7 +338,17 @@ export class DispatchVerbsSection {
       // ADR-275 D2 (review fix): `parsed.extras` carries the matched rule's
       // defaultSemantics (merged parser-side, ADR-148) — the access seam
       // for semantic word bindings.
-      command: { directObject?: { entity?: IFEntity }; instrument?: { entity?: IFEntity }; parsed?: { extras?: Record<string, unknown> } };
+      // The parsed structure names the slot each object filled
+      // (`INounPhrase.slot`), so both objects bind by name.
+      command: {
+        directObject?: { entity?: IFEntity };
+        indirectObject?: { entity?: IFEntity };
+        instrument?: { entity?: IFEntity };
+        parsed?: {
+          extras?: Record<string, unknown>;
+          structure?: { directObject?: { slot?: string }; indirectObject?: { slot?: string } };
+        };
+      };
       sharedData: Record<string, unknown>;
       event(type: string, data: Record<string, unknown>): ISemanticEvent;
     }
@@ -340,7 +358,17 @@ export class DispatchVerbsSection {
       // `the actor` is whoever performs the action — a character acting
       // through the execution entry (ADR-329 D1/D10) as much as the player.
       const slots: Record<string, string> = { actor: (context.actor ?? context.player).id };
-      if (entity && primarySlot) slots[primarySlot] = entity.id;
+      // Each parsed object binds under the slot it filled in the matched
+      // rule, so a two-noun pattern's second noun reads by name. A command
+      // with no slot names (an act through the execution entry) binds its
+      // direct object to the primary slot, as before.
+      const structure = context.command.parsed?.structure;
+      const bindNamed = (name: string | undefined, seated: IFEntity | undefined) => {
+        if (seated && name && entitySlotNames.has(name) && slots[name] === undefined) slots[name] = seated.id;
+      };
+      bindNamed(structure?.directObject?.slot, entity);
+      bindNamed(structure?.indirectObject?.slot, context.command.indirectObject?.entity);
+      if (entity && primarySlot && slots[primarySlot] === undefined) slots[primarySlot] = entity.id;
       // GH #333: an instrument-typed slot (`the item is an instrument`) is
       // parsed into the command's instrument seat, never the direct object —
       // bind it under its own slot name so `{the item}` in a clause body
@@ -376,9 +404,11 @@ export class DispatchVerbsSection {
         for (const refusal of def.refusals) {
           if (refusal.kind === 'without') {
             // ADR-275 D1: the arm fires when the named binding is absent on
-            // THIS command — an entity slot needs the entity, a semantic
-            // key needs its word.
-            const bound = semanticKeys.has(refusal.slot ?? '') ? slots[refusal.slot!] !== undefined : !!entity;
+            // THIS command — an entity slot needs its entity, read by name
+            // so a second noun's absence is seen, and a semantic key needs
+            // its word.
+            const named = refusal.slot !== undefined && (semanticKeys.has(refusal.slot) || entitySlotNames.has(refusal.slot));
+            const bound = named ? slots[refusal.slot!] !== undefined : !!entity;
             if (!bound) return { valid: false, error: refusal.phraseKey };
           }
           if (refusal.kind === 'when') {

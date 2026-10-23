@@ -176,13 +176,13 @@ describe('action bodies execute through the §5.4 phases (behavior host optional
     const photo = first.events.find(
       (e) => e.type === 'chord.phrase' && (e.data as { messageId?: string }).messageId === 'took-photo',
     )!;
-    expect(((photo.data as { params?: Record<string, unknown> }).params ?? {}).target).toBe('gnome');
+    expect(((photo.data as { params?: Record<string, unknown> }).params ?? {}).target).toEqual(expect.objectContaining({ kind: 'noun', name: 'gnome' }));
     // Authored `with subject = the gnome` params flow too (entity values
     // pass as display names).
     const framed = first.events.find(
       (e) => e.type === 'chord.phrase' && (e.data as { messageId?: string }).messageId === 'framed',
     )!;
-    expect(((framed.data as { params?: Record<string, unknown> }).params ?? {}).subject).toBe('gnome');
+    expect(((framed.data as { params?: Record<string, unknown> }).params ?? {}).subject).toEqual(expect.objectContaining({ kind: 'noun', name: 'gnome' }));
 
     const second = run(l, 'chord.action.photographing', 'gnome');
     expect(second.validation.valid).toBe(true);

@@ -1794,6 +1794,12 @@ export interface INounPhrase {
     entityId?: string;
     /** True if this noun phrase was a pronoun (e.g., "it", "them") */
     wasPronoun?: boolean;
+    /**
+     * The matched rule's slot this phrase filled (`item`, `peg`), so a reader
+     * can bind it by name whichever seat it sits in. Absent when the phrase
+     * came from no named slot.
+     */
+    slot?: string;
 }
 /**
  * Preposition phrase structure

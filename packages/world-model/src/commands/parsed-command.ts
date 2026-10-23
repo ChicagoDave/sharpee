@@ -131,6 +131,13 @@ export interface INounPhrase {
   // ADR-104 implicit inference
   /** True if this noun phrase was a pronoun (e.g., "it", "them") */
   wasPronoun?: boolean;
+
+  /**
+   * The matched rule's slot this phrase filled (`item`, `peg`), so a reader
+   * can bind it by name whichever seat it sits in. Absent when the phrase
+   * came from no named slot.
+   */
+  slot?: string;
 }
 
 /**

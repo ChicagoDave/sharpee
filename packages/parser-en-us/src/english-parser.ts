@@ -898,7 +898,9 @@ export class EnglishParser implements Parser {
         modifiers: [],
         articles: np.articles,
         determiners: [],
-        candidates: [np.text]
+        candidates: [np.text],
+        // The seat is chosen below; the slot it came from travels with it
+        slot: slotName
       };
 
       // ADR-080 Phase 2: Add multi-object support
