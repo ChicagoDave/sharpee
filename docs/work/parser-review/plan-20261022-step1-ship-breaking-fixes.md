@@ -1,7 +1,7 @@
 # Session Plan: Parser review step 1 — the small ship-breaking fixes
 
 **Created**: 2026-10-22
-**Plan Status**: ACTIVE
+**Plan Status**: DONE
 **Overall scope**: Step 1 of `docs/work/parser-review/review-20261022.md` Recommendation only: delete the going direction scan (C3), bind every entity slot at dispatch by the matched rule's slot names (C1), make `→` a compile error (B2), lowercase pattern words at lowering (B3), fix `slot-unused` and the standard grammar's `furl` (G1-G3), remove the `throw` log. Steps 2-7 (structured seam, declared roles, ranking, noun matcher, search, language/state) and the code organization review are NOT in this plan.
 **Bounded contexts touched**: English parser (`packages/parser-en-us`); Chord language and analyzer (`packages/chord`); story-loader dispatch and lowering (`packages/story-loader`); repokit grammar generation (`tools/repokit`)
 **Key domain language**: matched rule, slot, direct/indirect object seat, passage, phrase placeholder, grammar-file mode
