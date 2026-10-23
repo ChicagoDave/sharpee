@@ -9,6 +9,7 @@ import {
   type PatternMatch,
   type GrammarMatchOptions,
   type PatternToken,
+  type PatternElement,
   type CompiledPattern,
   SlotType,
   type SlotMatch
@@ -27,6 +28,28 @@ import type { PartialMatchFailure, SlotFailure } from './parse-failure.js';
  * lists them.
  */
 const ARTICLE_WORDS: ReadonlySet<string> = new Set(englishWords.articles.map((a) => a.toLowerCase()));
+
+/**
+ * What a failure stopped short of, read from the compiled pattern
+ * (ADR-382 D4): the element at `index`, and the first slot after it — the
+ * slot a missing preposition would have introduced.
+ * @param pattern The rule's compiled pattern
+ * @param index The token index the match failed at
+ * @returns The expected element and following slot, each absent when there is none
+ */
+function expectationAt(pattern: CompiledPattern, index: number): { expected?: PatternElement; followingSlot?: string } {
+  const token = pattern.tokens[index];
+  if (!token) return {};
+  const optional = token.optional ? { optional: true } : {};
+  const expected: PatternElement =
+    token.type === 'slot'
+      ? { kind: 'slot', name: token.value, ...optional }
+      : token.type === 'alternates'
+        ? { kind: 'alt', words: token.alternates ?? [token.value], ...optional }
+        : { kind: 'word', word: token.value, ...optional };
+  const followingSlot = pattern.slots.find((slot) => slot.tokenIndex > index)?.name;
+  return { expected, ...(followingSlot !== undefined ? { followingSlot } : {}) };
+}
 
 /**
  * Result of attempting to match a rule - either success or failure with info
@@ -157,7 +180,7 @@ export class EnglishGrammarEngine extends GrammarEngine {
             progress: 0,
             tokensConsumed: 0,
             reason: 'NOT_ENOUGH_TOKENS',
-            expected: first?.value
+            ...expectationAt(pattern, 0)
           }
         };
       }
@@ -197,7 +220,7 @@ export class EnglishGrammarEngine extends GrammarEngine {
             tokensConsumed: tokenIndex,
             reason: 'NOT_ENOUGH_TOKENS',
             matchedVerb,
-            expected: patternToken.type === 'slot' ? `:${patternToken.value}` : patternToken.value
+            ...expectationAt(pattern, patternIndex - 1)
           }
         };
       }
@@ -232,7 +255,7 @@ export class EnglishGrammarEngine extends GrammarEngine {
                 reason,
                 matchedVerb,
                 failedAtToken: token.normalized,
-                expected: patternToken.value
+                ...expectationAt(pattern, patternIndex - 1)
               }
             };
           }
@@ -261,7 +284,7 @@ export class EnglishGrammarEngine extends GrammarEngine {
                 reason,
                 matchedVerb,
                 failedAtToken: token.normalized,
-                expected: patternToken.alternates!.join('/')
+                ...expectationAt(pattern, patternIndex - 1)
               }
             };
           }
@@ -448,9 +471,9 @@ export class EnglishGrammarEngine extends GrammarEngine {
       return null;
     }
 
-    // Determine slot type from slot constraints or pattern token
+    // The slot's type is settled on its compiled record (ADR-382 D4)
     const slotConstraints = rule.slots.get(slotName);
-    const slotType = slotConstraints?.slotType || patternSlotToken?.slotType || SlotType.ENTITY;
+    const slotType = pattern.slotsByName.get(slotName)?.slotType ?? SlotType.ENTITY;
 
     if (DEBUG) {
       console.log(`Slot '${slotName}' has type: ${slotType}`);

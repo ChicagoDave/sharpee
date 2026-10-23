@@ -5,46 +5,37 @@
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import { GrammarEngine } from '../../src/grammar/grammar-engine';
-import { PatternCompiler, CompiledPattern } from '../../src/grammar/pattern-compiler';
+import { PatternCompiler } from '../../src/grammar/pattern-compiler';
+import { CompiledPattern, CompiledSlot, PatternElement, PatternToken, SlotType } from '../../src/grammar/grammar-builder';
 import { scope } from '../../src/grammar/scope-builder';
 import { Token } from '../../src/parser-contracts/parser-types';
 
-// Mock pattern compiler for testing
+// Mock pattern compiler for testing: plain words, `a|b` alternates, `:slot`
 class MockPatternCompiler implements PatternCompiler {
-  compile(pattern: string): CompiledPattern {
-    const tokens = pattern.split(' ').map((word, index) => {
-      if (word.startsWith(':')) {
-        return { type: 'slot' as const, value: word.substring(1) };
-      } else if (word.includes('|')) {
-        return { type: 'alternates' as const, value: word.split('|')[0], alternates: word.split('|') };
-      } else {
-        return { type: 'literal' as const, value: word };
-      }
+  parse(pattern: string): PatternElement[] {
+    return pattern.split(' ').map((word): PatternElement => {
+      if (word.startsWith(':')) return { kind: 'slot', name: word.substring(1) };
+      if (word.includes('|')) return { kind: 'alt', words: word.split('|') };
+      return { kind: 'word', word };
     });
-    
-    const slots = new Map<string, number>();
-    tokens.forEach((token, index) => {
-      if (token.type === 'slot') {
-        slots.set(token.value, index);
+  }
+
+  compile(parts: readonly PatternElement[]): CompiledPattern {
+    const slots: CompiledSlot[] = [];
+    const tokens = parts.map((part, index): PatternToken => {
+      if (part.kind === 'slot') {
+        slots.push({ name: part.name, tokenIndex: index, optional: false, greedy: false, slotType: SlotType.ENTITY });
+        return { type: 'slot', value: part.name };
       }
+      if (part.kind === 'alt') return { type: 'alternates', value: part.words[0], alternates: [...part.words] };
+      return { type: 'literal', value: part.word };
     });
-    
     return {
       tokens,
       slots,
-      minTokens: tokens.length,
-      maxTokens: tokens.length
+      slotsByName: new Map(slots.map((slot) => [slot.name, slot])),
+      minTokens: tokens.length
     };
-  }
-  
-  validate(pattern: string): boolean {
-    return pattern.length > 0 && !pattern.includes('||');
-  }
-  
-  extractSlots(pattern: string): string[] {
-    return pattern.split(' ')
-      .filter(word => word.startsWith(':'))
-      .map(word => word.substring(1));
   }
 }
 
@@ -91,7 +82,8 @@ describe('GrammarBuilder', () => {
       expect(rule.pattern).toBe('take :item');
       expect(rule.action).toBe('if.action.taking');
       expect(rule.compiledPattern).toBeDefined();
-      expect(rule.compiledPattern.slots.has('item')).toBe(true);
+      expect(rule.compiledPattern.slotsByName.has('item')).toBe(true);
+      expect(rule.parts).toEqual([{ kind: 'word', word: 'take' }, { kind: 'slot', name: 'item' }]);
     });
     
     it('should handle alternates in patterns', () => {

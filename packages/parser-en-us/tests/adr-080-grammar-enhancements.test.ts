@@ -21,7 +21,7 @@ describe('ADR-080: Grammar Enhancements', () => {
 
   describe('Pattern Compiler - Greedy Slots (:slot...)', () => {
     it('should compile pattern with greedy slot syntax', () => {
-      const pattern = compiler.compile('say :message...');
+      const pattern = compiler.compile(compiler.parse('say :message...'));
 
       expect(pattern.tokens).toHaveLength(2);
       expect(pattern.tokens[0]).toEqual({
@@ -36,20 +36,20 @@ describe('ADR-080: Grammar Enhancements', () => {
       });
     });
 
-    it('should extract slot name correctly from greedy pattern', () => {
-      const slots = compiler.extractSlots('say :message...');
+    it('should record the greedy slot by its clean name', () => {
+      const pattern = compiler.compile(compiler.parse('say :message...'));
 
-      expect(slots).toHaveLength(1);
-      expect(slots).toContain('message');
+      expect(pattern.slots.map((slot) => slot.name)).toEqual(['message']);
+      expect(pattern.slotsByName.get('message')?.greedy).toBe(true);
     });
 
     it('should validate greedy slot patterns', () => {
-      expect(compiler.validate('say :message...')).toBe(true);
-      expect(compiler.validate('write :content... on :surface')).toBe(true);
+      expect(compiler.parse('say :message...')[1]).toEqual({ kind: 'slot', name: 'message', greedy: true });
+      expect(compiler.parse('write :content... on :surface')[1]).toEqual({ kind: 'slot', name: 'content', greedy: true });
     });
 
     it('should compile bounded greedy pattern', () => {
-      const pattern = compiler.compile('write :content... on :surface');
+      const pattern = compiler.compile(compiler.parse('write :content... on :surface'));
 
       expect(pattern.tokens).toHaveLength(4);
       expect(pattern.tokens[1]).toEqual({
@@ -65,7 +65,7 @@ describe('ADR-080: Grammar Enhancements', () => {
     });
 
     it('should handle optional greedy slots', () => {
-      const pattern = compiler.compile('speak [:message...]');
+      const pattern = compiler.compile(compiler.parse('speak [:message...]'));
 
       // Should have marker for optional and the slot
       const slotToken = pattern.tokens.find(t => t.type === 'slot' && t.value === 'message');

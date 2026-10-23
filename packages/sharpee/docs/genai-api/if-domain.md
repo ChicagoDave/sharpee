@@ -1723,6 +1723,16 @@ export interface GrammarBuilder {
      */
     define(pattern: string): PatternBuilder;
     /**
+     * Register one rule from structured parts (ADR-382 D2), at this
+     * builder's tier. The Chord loader's and the generated standard
+     * grammar's entry: no text is parsed.
+     * @param spec The rule's action, parts, display text and per-slot configuration
+     * @throws PatternSyntaxError when the parts are malformed; Error when a
+     *   slot configuration names a slot the parts lack, or types a greedy slot
+     *   as anything but TEXT_GREEDY
+     */
+    rule(spec: GrammarRuleSpec): void;
+    /**
      * ADR-087: Define grammar patterns for an action with verb aliases
      * @param actionId The action identifier to map patterns to
      * @returns An ActionGrammarBuilder for fluent configuration
@@ -1871,7 +1881,10 @@ export type GrammarTier = 'standard' | 'story';
 export type GrammarGate = (context: GrammarContext) => boolean;
 export interface GrammarRule {
     id: string;
+    /** Display text for diagnostics and failure messages; nothing parses it (ADR-382 D2). */
     pattern: string;
+    /** The rule's structure — the only source of its words and slots. */
+    parts: readonly PatternElement[];
     compiledPattern?: CompiledPattern;
     slots: Map<string, SlotConstraint>;
     action: string;
@@ -1945,13 +1958,71 @@ export interface PatternToken {
     vocabularyCategory?: string;
 }
 /**
+ * One element of a grammar pattern, as a rule is registered (ADR-382 D1).
+ * A rule crosses into the engine as these parts, never as text to re-split:
+ * a word, an alternation of words, or a named slot, each optionally
+ * optional. A greedy slot takes the rest of the input up to the next
+ * element.
+ */
+export type PatternElement = {
+    kind: 'word';
+    word: string;
+    optional?: boolean;
+} | {
+    kind: 'alt';
+    words: readonly string[];
+    optional?: boolean;
+} | {
+    kind: 'slot';
+    name: string;
+    optional?: boolean;
+    greedy?: boolean;
+};
+/**
+ * Per-slot configuration on a rule spec: the slot's type and its scope
+ * constraints. Keyed by slot name; a name no part carries is a build error.
+ */
+export interface GrammarRuleSlotSpec {
+    type?: SlotType;
+    constraints?: readonly ScopeConstraintBuilder[];
+    /** For VOCABULARY slots: the category name to match against */
+    vocabularyCategory?: string;
+}
+/**
+ * A grammar rule, as data (ADR-382 D2) — what `GrammarBuilder.rule()` takes.
+ */
+export interface GrammarRuleSpec {
+    action: string;
+    parts: readonly PatternElement[];
+    /** How the rule displays in diagnostics and failure messages; never parsed. */
+    pattern: string;
+    defaults?: Partial<SemanticProperties>;
+    slots?: Readonly<Record<string, GrammarRuleSlotSpec>>;
+    when?: GrammarGate;
+}
+/**
+ * One slot of a compiled pattern (ADR-382 D4): the single source of a
+ * slot's name, position, optionality, greediness and resolved type.
+ */
+export interface CompiledSlot {
+    name: string;
+    /** Index of the slot's token in `CompiledPattern.tokens`. */
+    tokenIndex: number;
+    optional: boolean;
+    greedy: boolean;
+    /** The configured type, `TEXT_GREEDY` for a greedy slot, else `ENTITY`. */
+    slotType: SlotType;
+}
+/**
  * Compiled pattern for efficient matching
  */
 export interface CompiledPattern {
     tokens: PatternToken[];
-    slots: Map<string, number>;
+    /** Every slot, in pattern order. */
+    slots: CompiledSlot[];
+    /** The same slot records, by name. */
+    slotsByName: ReadonlyMap<string, CompiledSlot>;
     minTokens: number;
-    maxTokens: number;
 }
 /**
  * Slot match data with multi-object support
@@ -2002,32 +2073,36 @@ export interface PatternMatch {
 ```typescript
 /**
  * @file Pattern Compiler Interface
- * @description Language-agnostic interface for compiling grammar patterns
+ * @description Language-agnostic interface for compiling grammar patterns.
+ *
+ * Public interface: PatternCompiler (parse, compile), PatternSyntaxError.
+ * Owner context: if-domain grammar contract. A rule's structure crosses as
+ * PatternElement parts (ADR-382 D1); text is parsed once, at the boundary,
+ * by `parse`, and nothing downstream reads pattern text again.
  */
-import { CompiledPattern } from './grammar-builder.js';
+import { CompiledPattern, PatternElement } from './grammar-builder.js';
 /**
  * Pattern compiler interface
  * Language-specific implementations handle their own syntax
  */
 export interface PatternCompiler {
     /**
-     * Compile a pattern string into tokens
-     * @param pattern The pattern string (e.g., "put :item in|into :container")
-     * @returns Compiled pattern with tokens and metadata
+     * Parse pattern text into structured parts — the `define(text)` front end
+     * (ADR-382 D3). The only place pattern text is read.
+     * @param pattern The pattern text (e.g., "put :item in|into :container")
+     * @returns The pattern's elements, in order
+     * @throws PatternSyntaxError, with the offending offset, on malformed text
      */
-    compile(pattern: string): CompiledPattern;
+    parse(pattern: string): PatternElement[];
     /**
-     * Validate a pattern string
-     * @param pattern The pattern to validate
-     * @returns True if valid, false otherwise
+     * Compile structured parts into the matcher's tokens and slot records.
+     * @param parts The pattern's elements
+     * @param source The rule's display text, quoted in error messages only
+     * @returns Compiled pattern with tokens and one record per slot
+     * @throws PatternSyntaxError on an empty pattern, an invalid or duplicate
+     *   slot name, or an empty alternation
      */
-    validate(pattern: string): boolean;
-    /**
-     * Extract slot names from a pattern
-     * @param pattern The pattern string
-     * @returns Array of slot names
-     */
-    extractSlots(pattern: string): string[];
+    compile(parts: readonly PatternElement[], source?: string): CompiledPattern;
 }
 /**
  * Pattern syntax error

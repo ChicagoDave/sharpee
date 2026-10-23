@@ -8,6 +8,10 @@
 export { EnglishParser } from './english-parser.js';
 export { EnglishParser as Parser } from './english-parser.js'; // For convenience
 
+// The English implementation of if-domain's PatternCompiler (ADR-382 D3):
+// `parse` is the define(text) front end, `compile` turns parts into tokens.
+export { EnglishPatternCompiler } from './english-pattern-compiler.js';
+
 // Re-export the parser interface for type checking
 export type { Parser as ParserInterface } from '@sharpee/if-domain';
 

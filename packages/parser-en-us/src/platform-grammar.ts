@@ -48,8 +48,8 @@ export function definePlatformGrammar(grammar: GrammarBuilder): void {
   // would additionally send `parser`/`all` through entity scope resolution, which has
   // nothing to resolve them to.
   //
-  // Two patterns, not one: `[…]` marks exactly the next word optional
-  // (EnglishPatternCompiler.expandOptionalElements), so `trace [category] [state]` cannot
+  // Two patterns, not one: `[…]` makes exactly one element optional
+  // (EnglishPatternCompiler.parse), so `trace [category] [state]` cannot
   // express "a category only ever comes with a state". Written as one pattern it would
   // also accept `trace parser`, widening the language; these two accept exactly what the
   // eleven literals did.

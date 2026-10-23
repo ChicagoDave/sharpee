@@ -12,9 +12,11 @@ import {
   GrammarContext,
   CompiledPattern,
   GrammarBuilder,
+  GrammarRuleSpec,
   PatternBuilder,
   ActionGrammarBuilder,
   SemanticProperties,
+  SlotConstraint,
   SlotType,
   ScopeConstraintBuilder
 } from './grammar-builder.js';
@@ -54,10 +56,12 @@ export abstract class GrammarEngine {
    * reintroduce a sort here; it would erase the semantics of file order.
    */
   addRule(rule: GrammarRule): void {
-    // Compile the pattern if not already compiled
+    // ADR-382 D4: compile from the rule's parts, never its display text,
+    // then settle each slot's type on the compiled record.
     if (!rule.compiledPattern) {
-      rule.compiledPattern = this.compiler.compile(rule.pattern);
+      rule.compiledPattern = this.compiler.compile(rule.parts, rule.pattern);
     }
+    resolveSlotTypes(rule, rule.compiledPattern);
 
     this.rules.push(rule);
 
@@ -161,9 +165,12 @@ export abstract class GrammarEngine {
 
     return {
       define(pattern: string) {
+        // ADR-382 D3: the text is parsed once, here; a malformed pattern
+        // throws at the definition that wrote it.
         const rule: Partial<GrammarRule> = {
           id: `rule_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
           pattern,
+          parts: engine.compiler.parse(pattern),
           slots: new Map(),
           tier
         };
@@ -315,7 +322,32 @@ export abstract class GrammarEngine {
         
         return builder;
       },
-      
+
+      rule(spec: GrammarRuleSpec): void {
+        if (!spec.action) {
+          throw new Error(`Grammar rule "${spec.pattern}" must have an action`);
+        }
+        const slots = new Map<string, SlotConstraint>();
+        for (const [name, config] of Object.entries(spec.slots ?? {})) {
+          slots.set(name, {
+            name,
+            constraints: [...(config.constraints ?? [])],
+            slotType: config.type,
+            vocabularyCategory: config.vocabularyCategory,
+          });
+        }
+        engine.addRule({
+          id: `rule_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          pattern: spec.pattern,
+          parts: spec.parts,
+          slots,
+          action: spec.action,
+          tier,
+          ...(spec.defaults ? { defaultSemantics: spec.defaults } : {}),
+          ...(spec.when ? { when: spec.when } : {}),
+        });
+      },
+
       forAction(actionId: string): ActionGrammarBuilder {
         // Accumulated configuration
         const verbList: string[] = [];
@@ -422,8 +454,18 @@ export abstract class GrammarEngine {
                     builder = builder.withDefaultSemantics(defaultSemantics);
                   }
 
+                  // Slot configuration attaches only where the template
+                  // carries the slot: a slot a rule lacks is a build error
+                  // (ADR-382 D4).
+                  const templateSlots = new Set(
+                    engine.compiler
+                      .parse(fullPattern)
+                      .flatMap((part) => (part.kind === 'slot' ? [part.name] : [])),
+                  );
+
                   // Apply slot constraints
                   for (const [slot, constraints] of slotConstraints) {
+                    if (!templateSlots.has(slot)) continue;
                     for (const { constraint } of constraints) {
                       builder = builder.where(slot, constraint);
                     }
@@ -431,6 +473,7 @@ export abstract class GrammarEngine {
 
                   // Apply slot types
                   for (const [slot, type] of slotTypes) {
+                    if (!templateSlots.has(slot)) continue;
                     builder = applySlotType(builder, slot, type);
                   }
 
@@ -446,11 +489,12 @@ export abstract class GrammarEngine {
             // slot (D2: a constraint gates the rules that have the slot,
             // never an unrelated line of the same action).
             for (const fullPattern of fullPatternList) {
+              // ADR-382 D4: the line's slots come from its parsed parts, so
+              // an optional slot (`[:target]`) carries its configuration too.
               const lineSlots = new Set(
-                fullPattern
-                  .split(/\s+/)
-                  .filter((w) => w.startsWith(':'))
-                  .map((w) => w.slice(1).replace(/\.\.\.$/, '')),
+                engine.compiler
+                  .parse(fullPattern)
+                  .flatMap((part) => (part.kind === 'slot' ? [part.name] : [])),
               );
 
               let builder = engine.createBuilder(tier).define(fullPattern);
@@ -519,5 +563,30 @@ export abstract class GrammarEngine {
         return engine.removeRules(action, pattern, tier);
       }
     };
+  }
+}
+
+/**
+ * Settle each configured slot's type on the rule's compiled slot records
+ * (ADR-382 D4). A greedy slot is TEXT_GREEDY; a non-greedy slot takes the
+ * configured type, keeping the compiler's ENTITY when none is configured.
+ * @param rule The rule whose per-slot configuration is applied
+ * @param compiled The rule's compiled pattern; its slot records are updated
+ * @throws Error when configuration names a slot the pattern lacks, or types
+ *   a greedy slot as anything but TEXT_GREEDY
+ */
+function resolveSlotTypes(rule: GrammarRule, compiled: CompiledPattern): void {
+  for (const [name, config] of rule.slots) {
+    const slot = compiled.slotsByName.get(name);
+    if (!slot) {
+      throw new Error(`Grammar rule "${rule.pattern}" configures slot '${name}', which its pattern does not have`);
+    }
+    if (config.slotType === undefined) continue;
+    if (slot.greedy && config.slotType !== SlotType.TEXT_GREEDY) {
+      throw new Error(
+        `Grammar rule "${rule.pattern}" types greedy slot '${name}' as ${config.slotType}; a greedy slot is always ${SlotType.TEXT_GREEDY}`,
+      );
+    }
+    slot.slotType = config.slotType;
   }
 }

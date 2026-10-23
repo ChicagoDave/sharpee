@@ -301,6 +301,17 @@ export interface GrammarBuilder {
   define(pattern: string): PatternBuilder;
 
   /**
+   * Register one rule from structured parts (ADR-382 D2), at this
+   * builder's tier. The Chord loader's and the generated standard
+   * grammar's entry: no text is parsed.
+   * @param spec The rule's action, parts, display text and per-slot configuration
+   * @throws PatternSyntaxError when the parts are malformed; Error when a
+   *   slot configuration names a slot the parts lack, or types a greedy slot
+   *   as anything but TEXT_GREEDY
+   */
+  rule(spec: GrammarRuleSpec): void;
+
+  /**
    * ADR-087: Define grammar patterns for an action with verb aliases
    * @param actionId The action identifier to map patterns to
    * @returns An ActionGrammarBuilder for fluent configuration
@@ -465,7 +476,10 @@ export type GrammarGate = (context: GrammarContext) => boolean;
 
 export interface GrammarRule {
   id: string;
+  /** Display text for diagnostics and failure messages; nothing parses it (ADR-382 D2). */
   pattern: string;
+  /** The rule's structure — the only source of its words and slots. */
+  parts: readonly PatternElement[];
   compiledPattern?: CompiledPattern; // Set during compilation
   slots: Map<string, SlotConstraint>;
   action: string;
@@ -552,13 +566,65 @@ export interface PatternToken {
 }
 
 /**
+ * One element of a grammar pattern, as a rule is registered (ADR-382 D1).
+ * A rule crosses into the engine as these parts, never as text to re-split:
+ * a word, an alternation of words, or a named slot, each optionally
+ * optional. A greedy slot takes the rest of the input up to the next
+ * element.
+ */
+export type PatternElement =
+  | { kind: 'word'; word: string; optional?: boolean }
+  | { kind: 'alt'; words: readonly string[]; optional?: boolean }
+  | { kind: 'slot'; name: string; optional?: boolean; greedy?: boolean };
+
+/**
+ * Per-slot configuration on a rule spec: the slot's type and its scope
+ * constraints. Keyed by slot name; a name no part carries is a build error.
+ */
+export interface GrammarRuleSlotSpec {
+  type?: SlotType;
+  constraints?: readonly ScopeConstraintBuilder[];
+  /** For VOCABULARY slots: the category name to match against */
+  vocabularyCategory?: string;
+}
+
+/**
+ * A grammar rule, as data (ADR-382 D2) — what `GrammarBuilder.rule()` takes.
+ */
+export interface GrammarRuleSpec {
+  action: string;
+  parts: readonly PatternElement[];
+  /** How the rule displays in diagnostics and failure messages; never parsed. */
+  pattern: string;
+  defaults?: Partial<SemanticProperties>;
+  slots?: Readonly<Record<string, GrammarRuleSlotSpec>>;
+  when?: GrammarGate;
+}
+
+/**
+ * One slot of a compiled pattern (ADR-382 D4): the single source of a
+ * slot's name, position, optionality, greediness and resolved type.
+ */
+export interface CompiledSlot {
+  name: string;
+  /** Index of the slot's token in `CompiledPattern.tokens`. */
+  tokenIndex: number;
+  optional: boolean;
+  greedy: boolean;
+  /** The configured type, `TEXT_GREEDY` for a greedy slot, else `ENTITY`. */
+  slotType: SlotType;
+}
+
+/**
  * Compiled pattern for efficient matching
  */
 export interface CompiledPattern {
   tokens: PatternToken[];
-  slots: Map<string, number>; // slot name -> token index
+  /** Every slot, in pattern order. */
+  slots: CompiledSlot[];
+  /** The same slot records, by name. */
+  slotsByName: ReadonlyMap<string, CompiledSlot>;
   minTokens: number;
-  maxTokens: number;
 }
 
 /**

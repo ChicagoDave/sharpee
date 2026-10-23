@@ -805,22 +805,19 @@ export class EnglishParser implements Parser {
     let indirectObject: INounPhrase | undefined;
     let extras: any = {};
     
-    // Analyze the pattern to understand the expected structure
-    const patternParts = rule.pattern.split(/\s+/);
     const slotPositions: { [slotName: string]: number } = {};
     let positionCounter = 0;
-    
-    // Map slot names to their positions in the pattern. An INSTRUMENT slot
-    // (ADR-080 `.instrument()`) takes no positional seat: it is set aside
-    // below, so the first NON-instrument slot is the direct object wherever
-    // the instrument sits in the pattern — `hang :item on :target` with
-    // `:item` the instrument seats the target as the direct object (GH #333).
-    for (const part of patternParts) {
-      if (part.startsWith(':')) {
-        const slotName = part.substring(1);
-        if (match.slots.get(slotName)?.slotType === SlotType.INSTRUMENT) continue;
-        slotPositions[slotName] = positionCounter++;
-      }
+
+    // Map slot names to their positions, read from the compiled pattern's
+    // slot records (ADR-382 D4) — an optional slot counts like a required
+    // one. An INSTRUMENT slot (ADR-080 `.instrument()`) takes no positional
+    // seat: it is set aside below, so the first NON-instrument slot is the
+    // direct object wherever the instrument sits in the pattern —
+    // `hang :item on :target` with `:item` the instrument seats the target
+    // as the direct object (GH #333).
+    for (const slot of rule.compiledPattern!.slots) {
+      if (slot.slotType === SlotType.INSTRUMENT) continue;
+      slotPositions[slot.name] = positionCounter++;
     }
     
     // ADR-080: Track text slots, instruments, and excluded items

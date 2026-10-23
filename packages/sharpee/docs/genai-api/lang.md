@@ -605,42 +605,6 @@ export declare const standardActionLanguage: ({
     actionId: string;
     patterns: string[];
     messages: {
-        no_item: string;
-        not_holding: string;
-        target_not_visible: string;
-        target_not_here: string;
-        no_exit: string;
-        cant_throw_that_way: string;
-        too_heavy: string;
-        self: string;
-        thrown: string;
-        thrown_down: string;
-        thrown_at: string;
-        hits_target: string;
-        misses_target: string;
-        bounces_off: string;
-        lands_on: string;
-        lands_in: string;
-        thrown_direction: string;
-        sails_through: string;
-        breaks_on_impact: string;
-        breaks_against: string;
-        fragile_breaks: string;
-        target_ducks: string;
-        target_catches: string;
-        target_angry: string;
-        thrown_afloat: string;
-        lost_overboard: string;
-    };
-    help: {
-        description: string;
-        examples: string;
-        summary: string;
-    };
-} | {
-    actionId: string;
-    patterns: string[];
-    messages: {
         no_target: string;
         cant_take_self: string;
         already_have: string;
@@ -984,42 +948,6 @@ export declare const standardActionLanguage: ({
         cant_reach: string;
         key_not_held: string;
         still_locked: string;
-    };
-    help: {
-        description: string;
-        examples: string;
-        summary: string;
-    };
-} | {
-    actionId: string;
-    patterns: string[];
-    messages: {
-        no_target: string;
-        not_cuttable: string;
-        cant_cut: string;
-        no_tool: string;
-        needs_tool: string;
-        tool_not_held: string;
-        wrong_tool: string;
-        cut: string;
-    };
-    help: {
-        description: string;
-        examples: string;
-        summary: string;
-    };
-} | {
-    actionId: string;
-    patterns: string[];
-    messages: {
-        no_target: string;
-        not_diggable: string;
-        cant_dig: string;
-        no_tool: string;
-        needs_tool: string;
-        tool_not_held: string;
-        wrong_tool: string;
-        dug: string;
     };
     help: {
         description: string;
@@ -1526,6 +1454,42 @@ export declare const standardActionLanguage: ({
     patterns: string[];
     messages: {
         no_item: string;
+        not_holding: string;
+        target_not_visible: string;
+        target_not_here: string;
+        no_exit: string;
+        cant_throw_that_way: string;
+        too_heavy: string;
+        self: string;
+        thrown: string;
+        thrown_down: string;
+        thrown_at: string;
+        hits_target: string;
+        misses_target: string;
+        bounces_off: string;
+        lands_on: string;
+        lands_in: string;
+        thrown_direction: string;
+        sails_through: string;
+        breaks_on_impact: string;
+        breaks_against: string;
+        fragile_breaks: string;
+        target_ducks: string;
+        target_catches: string;
+        target_angry: string;
+        thrown_afloat: string;
+        lost_overboard: string;
+    };
+    help: {
+        description: string;
+        examples: string;
+        summary: string;
+    };
+} | {
+    actionId: string;
+    patterns: string[];
+    messages: {
+        no_item: string;
         not_visible: string;
         not_reachable: string;
         not_edible: string;
@@ -1664,6 +1628,38 @@ export declare const standardActionLanguage: ({
         peaceful_solution: string;
         no_fighting: string;
         unnecessary_violence: string;
+    };
+    help: {
+        description: string;
+        examples: string;
+        summary: string;
+    };
+} | {
+    actionId: string;
+    patterns: string[];
+    messages: {
+        behind: string;
+        under: string;
+        on: string;
+        inside: string;
+        nothing_to_hide: string;
+        cant_hide_there_behind: string;
+        cant_hide_there_under: string;
+        cant_hide_there_on: string;
+        cant_hide_there_inside: string;
+        already_hidden: string;
+    };
+    help: {
+        description: string;
+        examples: string;
+        summary: string;
+    };
+} | {
+    actionId: string;
+    patterns: string[];
+    messages: {
+        revealed: string;
+        not_hidden: string;
     };
     help: {
         description: string;
@@ -1946,16 +1942,14 @@ export declare const standardActionLanguage: ({
     actionId: string;
     patterns: string[];
     messages: {
-        behind: string;
-        under: string;
-        on: string;
-        inside: string;
-        nothing_to_hide: string;
-        cant_hide_there_behind: string;
-        cant_hide_there_under: string;
-        cant_hide_there_on: string;
-        cant_hide_there_inside: string;
-        already_hidden: string;
+        no_target: string;
+        not_cuttable: string;
+        cant_cut: string;
+        no_tool: string;
+        needs_tool: string;
+        tool_not_held: string;
+        wrong_tool: string;
+        cut: string;
     };
     help: {
         description: string;
@@ -1966,8 +1960,14 @@ export declare const standardActionLanguage: ({
     actionId: string;
     patterns: string[];
     messages: {
-        revealed: string;
-        not_hidden: string;
+        no_target: string;
+        not_diggable: string;
+        cant_dig: string;
+        no_tool: string;
+        needs_tool: string;
+        tool_not_held: string;
+        wrong_tool: string;
+        dug: string;
     };
     help: {
         description: string;

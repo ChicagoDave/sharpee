@@ -5,6 +5,7 @@
  */
 
 import type { ParseErrorCode } from '@sharpee/world-model';
+import type { PatternElement } from '@sharpee/if-domain';
 
 /**
  * Reason why a pattern match failed
@@ -68,8 +69,11 @@ export interface PartialMatchFailure {
   /** The token that caused the mismatch (if applicable) */
   failedAtToken?: string;
 
-  /** What was expected at the failure point */
-  expected?: string;
+  /** The pattern element expected at the failure point (ADR-382 D4) */
+  expected?: PatternElement;
+
+  /** The first slot after the expected element, read from the compiled pattern */
+  followingSlot?: string;
 }
 
 /**
@@ -150,8 +154,8 @@ export function analyzeBestFailure(
   // If verb matched but we ran out of tokens (missing object)
   if (best.matchedVerb && best.reason === 'NOT_ENOUGH_TOKENS') {
     // Check if it was looking for a slot
-    if (best.expected?.startsWith(':')) {
-      const slotName = best.expected.slice(1);
+    if (best.expected?.kind === 'slot') {
+      const slotName = best.expected.name;
       // Determine if it's direct or indirect object
       if (slotName === 'target' || slotName === 'item' || slotName === 'object') {
         return {
@@ -173,17 +177,14 @@ export function analyzeBestFailure(
     // Ran out at a literal (a preposition) after the verb and an object —
     // `put pear` against `put :item in :container`: the indirect object is
     // what is missing (GH #318). The slot it introduces names the question.
-    if (best.expected && !best.expected.startsWith(':') && best.tokensConsumed >= 2) {
-      const parts = best.pattern.split(' ');
-      const at = parts.indexOf(best.expected);
-      const following = at >= 0 ? parts.slice(at + 1).find((part) => part.startsWith(':')) : undefined;
+    if (best.expected && best.tokensConsumed >= 2) {
       return {
         code: 'MISSING_INDIRECT',
         messageId: 'parser.error.missingIndirect',
         context: {
           verb: best.matchedVerb,
-          slot: following ? following.slice(1) : undefined,
-          preposition: best.expected
+          slot: best.followingSlot,
+          preposition: best.expected.kind === 'word' ? best.expected.word : best.expected.words.join('/')
         }
       };
     }

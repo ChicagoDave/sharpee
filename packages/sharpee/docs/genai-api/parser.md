@@ -232,6 +232,7 @@ export {};
  *              to provide better error messages (Phase 1.2 of parser recommendations)
  */
 import type { ParseErrorCode } from '@sharpee/world-model';
+import type { PatternElement } from '@sharpee/if-domain';
 /**
  * Reason why a pattern match failed
  */
@@ -273,8 +274,10 @@ export interface PartialMatchFailure {
     slotFailure?: SlotFailure;
     /** The token that caused the mismatch (if applicable) */
     failedAtToken?: string;
-    /** What was expected at the failure point */
-    expected?: string;
+    /** The pattern element expected at the failure point (ADR-382 D4) */
+    expected?: PatternElement;
+    /** The first slot after the expected element, read from the compiled pattern */
+    followingSlot?: string;
 }
 /**
  * Analyze partial match failures to determine the best error to report
