@@ -170,8 +170,17 @@
 - **Deliverable**: `alignment-ledger.md` re-read in full: its Open section is empty or lists only findings David chose to carry, each with his call and date; every FIXED entry names its new file:line, and each cited line is checked to hold; `ddd-sweep-20261021.md` gets a closing section mapping D1–D22 to their fixes or to David's recorded decisions; `alignment-findings-inventory.md` marks each row closed. The outgoing plan (`plan-20261013-chord-4-0.md`) Phase 19 is updated by its owner per David's disposition.
 - **Exit state**: no finding is left OPEN without David's explicit call; the gate can be shown closed from the ledger plus the diff.
 - **Demonstration**: a grep of the ledger's Open section returns nothing (or only David-carried items), and every row of the inventory is marked closed; full suites of the touched packages and the Dungeo chain one run each, green at the branch head.
-- **Demonstrated**: 
-- **Status**: CURRENT (since 2026-10-22)
+- **Demonstrated**: 2026-10-22, session 289aa0. [reported by session, unverified: the event log holds one test row, 613 passing at 22:37Z before any edit; no fresh row for the suites, the build or the chain]
+  - **Re-read and cites:** `alignment-ledger.md` and `ddd-sweep-20261021.md` were re-read at 8128c8821. Every file:line cited in a FIXED entry was checked with a script that prints each cited source line, and the hand check found every symbol present. About 45 line numbers that later phases had moved were corrected, along with two stale names (stdlib's `setting_course/`, `VehicleOpenMovement`).
+  - **Closing records:** the sweep gained a Closing table mapping D1–D23 to their phases and decisions, and the inventory gained a Closed cell per row.
+  - **Ledger Open section:** a grep of it returns no unstruck entry.
+  - **Found in passing:** F24 and F25 were found open without a decision and fixed with David's go. Stdlib reads the parser's `Direction` constant (climbing, throwing, the dead `determineGoingMessage` removed). Throwing refuses a non-constant with `cant_throw_that_way`. Going's phrase-less block speaks lang's `cant_go`.
+  - **Phase 8 re-read:** the Aligned entry "to be re-read in full at the audit" was done (45 files of 84a4ed218 and 775452c0d). It found P8-1 to P8-4. P8-1 to P8-3 are fixed: the loader attaches through `AttachedBehavior.attach`, the evaluator's `broken` asks `isBroken`, and `AttachedTrait`'s header names its owner. P8-4 became ADR-381, ACCEPTED after `adr-review` 21/21. Under it attachment goes: fixed is scenery, hanging is on a supporter, and joining is the `use connections` connector, modeled on Entropy's safety cable. ADR-373 D1 and D6 carry supersession notes. ADR-381's implementation is a plan of its own. A `tied to` form was built for P8-4 and reverted uncommitted once the noun-first reading replaced it.
+  - **Suites,** one run each after the last change to each package: stdlib 1889, lang-en-us 469, chord 1646, story-loader 1369 passing and 1 skipped, world-model 1663, 0 failures. `./repokit manifest --check` and `aliases --check` fresh.
+  - **Dungeo:** `./repokit build dungeo` exit 0, then `node dist/cli/sharpee.js --test --chain stories/dungeo/walkthroughs/wt-*.transcript` 952 passed, 17 of 17 golden recordings matched.
+  - **Mutation verification:** run twice; the F24 gaps were closed with three assertions, and it was clean after.
+  - `[reported by session; suite counts read from the run output in this session]`
+- **Status**: DONE
 
 ## Answers
 (Filled in during Phase 0. Q1–Q13, each with David's choice and date.)

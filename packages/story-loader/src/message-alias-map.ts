@@ -847,6 +847,7 @@ export const MESSAGE_ALIAS_TO_ACTION_ID: Readonly<Record<string, string>> = {
   // if.action.throwing
   'throwing-bounces-off': 'if.action.throwing.bounces_off',
   'throwing-breaks-against': 'if.action.throwing.breaks_against',
+  'throwing-cant-throw-that-way': 'if.action.throwing.cant_throw_that_way',
   'throwing-breaks-on-impact': 'if.action.throwing.breaks_on_impact',
   'throwing-fragile-breaks': 'if.action.throwing.fragile_breaks',
   'throwing-hits-target': 'if.action.throwing.hits_target',

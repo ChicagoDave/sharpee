@@ -32,8 +32,8 @@ import {
   ActorBehavior,
   RoomBehavior,
   OpenableBehavior,
-  Direction,
   type DirectionType,
+  isDirection,
   findTraitWithCapability,
   type CapabilityBehavior,
   type CapabilityEffect,
@@ -94,37 +94,11 @@ export const throwingLifecycle: ActionLifecycleDescriptor = {
 };
 
 /**
- * Helper to convert a string direction to Direction constant
+ * The direction the command names: the parser hands over the `Direction`
+ * constant, so anything else names none.
  */
-function parseDirectionString(dir: string | undefined): DirectionType | null {
-  if (!dir) return null;
-
-  const directionMap: Record<string, DirectionType> = {
-    'north': Direction.NORTH,
-    'south': Direction.SOUTH,
-    'east': Direction.EAST,
-    'west': Direction.WEST,
-    'northeast': Direction.NORTHEAST,
-    'northwest': Direction.NORTHWEST,
-    'southeast': Direction.SOUTHEAST,
-    'southwest': Direction.SOUTHWEST,
-    'up': Direction.UP,
-    'down': Direction.DOWN,
-    'in': Direction.IN,
-    'out': Direction.OUT,
-    'n': Direction.NORTH,
-    's': Direction.SOUTH,
-    'e': Direction.EAST,
-    'w': Direction.WEST,
-    'ne': Direction.NORTHEAST,
-    'nw': Direction.NORTHWEST,
-    'se': Direction.SOUTHEAST,
-    'sw': Direction.SOUTHWEST,
-    'u': Direction.UP,
-    'd': Direction.DOWN
-  };
-
-  return directionMap[dir.toLowerCase()] || null;
+function parseDirectionString(dir: unknown): DirectionType | null {
+  return isDirection(dir) ? dir : null;
 }
 
 /**
@@ -180,6 +154,7 @@ export const throwingAction: Action & { metadata: ActionMetadata } = {
     'target_not_visible',
     'target_not_here',
     'no_exit',
+    'cant_throw_that_way',
     'too_heavy',
     'self',
     'thrown',
@@ -213,10 +188,17 @@ export const throwingAction: Action & { metadata: ActionMetadata } = {
     const actor = context.actor;
     const item = context.command.directObject?.entity;
     const target = context.command.indirectObject?.entity;
-    const direction = context.command.parsed.extras?.direction as string;
+    const named = context.command.parsed.extras?.direction;
+    const direction = parseDirectionString(named);
 
     if (!item) {
       return { valid: false, error: 'no_item' };
+    }
+
+    // Only the parser's Direction constant names a direction; any other
+    // value is a way this action cannot read, refused in its own words
+    if (named !== undefined && !direction) {
+      return { valid: false, error: 'cant_throw_that_way', params: { item: nounPhraseFor(item) } };
     }
 
     // Item must be carried (or implicitly takeable)
@@ -243,20 +225,14 @@ export const throwingAction: Action & { metadata: ActionMetadata } = {
         return { valid: false, error: 'self' };
       }
     } else if (direction) {
-      const throwDirection = parseDirectionString(direction);
-
-      if (!throwDirection) {
-        return { valid: false, error: 'no_exit' };
-      }
-
       const currentRoom = context.currentLocation;
       if (currentRoom.has(TraitType.ROOM)) {
-        const exit = RoomBehavior.getExit(currentRoom, throwDirection);
+        const exit = RoomBehavior.getExit(currentRoom, direction);
         if (!exit) {
           return {
             valid: false,
             error: 'no_exit',
-            params: { direction: throwDirection }
+            params: { direction }
           };
         }
       }

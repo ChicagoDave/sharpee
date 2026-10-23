@@ -25,7 +25,8 @@ export const throwingLanguage = {
     'not_holding': "{You} aren't holding {the item}.",
     'target_not_visible': "{You} {can't} see {the target}.",
     'target_not_here': "{capitalize the target} isn't here.",
-    'no_exit': "There's no exit {verbatim:direction}.",
+    'no_exit': "There's no exit {direction:direction}.",
+    'cant_throw_that_way': "{You} {can't} throw {the item} that way.",
     'too_heavy': "{capitalize the item} {verb:is item} too heavy to throw far (weighs {weight}kg).",
     'self': "{You} {can't} throw things at {yourself}.",
 
@@ -42,8 +43,8 @@ export const throwingLanguage = {
     'lands_in': "{capitalize the item} lands in {the target}.",
 
     // Success messages - directional
-    'thrown_direction': "{You} {throw} {the item} {verbatim:direction}.",
-    'sails_through': "{capitalize the item} sails through the exit to the {verbatim:direction}.",
+    'thrown_direction': "{You} {throw} {the item} {direction:direction}.",
+    'sails_through': "{capitalize the item} sails through the exit to the {direction:direction}.",
 
     // Breaking messages
     'breaks_on_impact': "{capitalize the item} shatters on impact!",

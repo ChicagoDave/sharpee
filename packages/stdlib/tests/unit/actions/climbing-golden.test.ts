@@ -102,9 +102,9 @@ describe('climbingAction (Golden Pattern)', () => {
     });
 
     test('should fail for invalid directions', () => {
-      const { world, player } = setupBasicWorld();
+      const { world, player, room } = setupBasicWorld();
       const command = createCommand(IFActions.CLIMBING);
-      command.parsed.extras = { direction: 'north' }; // Invalid for climbing
+      command.parsed.extras = { direction: Direction.NORTH }; // Invalid for climbing
 
       const context = createRealTestContext(climbingAction, world, command);
 
@@ -114,6 +114,7 @@ describe('climbingAction (Golden Pattern)', () => {
         messageId: 'if.action.climbing.cant_go_that_way',
         reason: 'cant_go_that_way'
       });
+      expect(world.getLocation(player.id)).toBe(room.id);
     });
 
     test('should fail when no exit in climb direction', () => {
@@ -133,7 +134,7 @@ describe('climbingAction (Golden Pattern)', () => {
       world.moveEntity(player.id, room.id);
 
       const command = createCommand(IFActions.CLIMBING);
-      command.parsed.extras = { direction: 'up' };
+      command.parsed.extras = { direction: Direction.UP };
 
       const context = createRealTestContext(climbingAction, world, command);
 
@@ -157,7 +158,7 @@ describe('climbingAction (Golden Pattern)', () => {
       world.moveEntity(player.id, container.id);
 
       const command = createCommand(IFActions.CLIMBING);
-      command.parsed.extras = { direction: 'up' };
+      command.parsed.extras = { direction: Direction.UP };
 
       const context = createRealTestContext(climbingAction, world, command);
 
@@ -200,7 +201,7 @@ describe('climbingAction (Golden Pattern)', () => {
       world.moveEntity(player.id, groundFloor.id);
       
       const command = createCommand(IFActions.CLIMBING);
-      command.parsed.extras = { direction: 'up' };
+      command.parsed.extras = { direction: Direction.UP };
       
       const context = createRealTestContext(climbingAction, world, command);
       
@@ -209,7 +210,7 @@ describe('climbingAction (Golden Pattern)', () => {
       // Should emit CLIMBED event with messageId for text rendering
       expectEvent(events, 'if.event.climbed', {
         messageId: 'if.action.climbing.climbed_up',
-        direction: 'up',
+        direction: Direction.UP,
         method: 'directional',
         destinationId: attic.id
       });
@@ -242,7 +243,7 @@ describe('climbingAction (Golden Pattern)', () => {
       world.moveEntity(player.id, attic.id);
 
       const command = createCommand(IFActions.CLIMBING);
-      command.parsed.extras = { direction: 'down' };
+      command.parsed.extras = { direction: Direction.DOWN };
 
       const context = createRealTestContext(climbingAction, world, command);
 
@@ -250,10 +251,11 @@ describe('climbingAction (Golden Pattern)', () => {
 
       expectEvent(events, 'if.event.climbed', {
         messageId: 'if.action.climbing.climbed_down',
-        direction: 'down',
+        direction: Direction.DOWN,
         method: 'directional',
         destinationId: groundFloor.id
       });
+      expect(world.getLocation(player.id)).toBe(groundFloor.id);
     });
 
     test('should climb onto enterable supporter', () => {
@@ -403,14 +405,15 @@ describe('climbingAction (Golden Pattern)', () => {
       world.moveEntity(player.id, room1.id);
       
       const command = createCommand(IFActions.CLIMBING);
-      command.parsed.extras = { direction: 'UP' }; // Uppercase
-      
+      command.parsed.extras = { direction: Direction.UP }; // The parser's constant
+
       const context = createRealTestContext(climbingAction, world, command);
-      
+
       const events = executeWithValidation(climbingAction, context);
-      
+
+      // Carried as the constant, never re-spelled as a word
       expectEvent(events, 'if.event.climbed', {
-        direction: 'up' // Normalized to lowercase
+        direction: Direction.UP
       });
     });
   });
@@ -471,7 +474,7 @@ describe('climbingAction (Golden Pattern)', () => {
       expectLocation(world, player.id, groundFloor.id);
 
       const command = createCommand(IFActions.CLIMBING);
-      command.parsed.extras = { direction: 'up' };
+      command.parsed.extras = { direction: Direction.UP };
       const context = createRealTestContext(climbingAction, world, command);
 
       const validation = climbingAction.validate(context);
@@ -503,7 +506,7 @@ describe('climbingAction (Golden Pattern)', () => {
       expectLocation(world, player.id, attic.id);
 
       const command = createCommand(IFActions.CLIMBING);
-      command.parsed.extras = { direction: 'down' };
+      command.parsed.extras = { direction: Direction.DOWN };
       const context = createRealTestContext(climbingAction, world, command);
 
       const validation = climbingAction.validate(context);

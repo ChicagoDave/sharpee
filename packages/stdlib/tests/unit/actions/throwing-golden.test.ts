@@ -14,7 +14,7 @@
 import { describe, test, expect, beforeEach, vi } from 'vitest';
 import { throwingAction } from '../../../src/actions/standard/throwing';
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType, WorldModel, Direction, ITrait, IdentityTrait, BreakableTrait } from '@sharpee/world-model';
+import { TraitType, WorldModel, Direction, ITrait, IdentityTrait, BreakableTrait, RoomTrait } from '@sharpee/world-model';
 import {
   createRealTestContext,
   expectEvent,
@@ -124,6 +124,46 @@ describe('throwingAction (Golden Pattern)', () => {
       expectEvent(events, 'if.event.throw_blocked', {
         messageId: expect.stringContaining('no_exit')
       });
+      // The refusal carries the parser's constant for lang to render
+      const blocked = events.find((e) => e.type === 'if.event.throw_blocked')!;
+      expect((blocked.data as any).params.direction).toBe(Direction.NORTH);
+    });
+
+    test('a throw by the parser\'s Direction constant sails the item through the exit', () => {
+      const { world, room, item: coin } = TestData.withInventoryItem('gold coin');
+      const field = world.createEntity('North Field', 'object');
+      field.add({ type: TraitType.ROOM });
+      room.getTrait(RoomTrait)!.exits = { [Direction.NORTH]: { destination: field.id } };
+
+      const command = createCommand(IFActions.THROWING, {
+        entity: coin
+      });
+      command.parsed.extras = { direction: Direction.NORTH };
+
+      const context = createRealTestContext(throwingAction, world, command);
+      const events = executeWithValidation(throwingAction, context);
+
+      const sailed = events.find((e) => (e.data as any)?.messageId?.includes('sails_through'));
+      expect((sailed!.data as any).params.direction).toBe(Direction.NORTH);
+      expect(world.getLocation(coin.id)).toBe(field.id);
+    });
+
+    test('a direction that is not a Direction constant is refused in throwing\'s own words', () => {
+      const { world, player, item: coin } = TestData.withInventoryItem('gold coin');
+
+      // Only the parser turns words into directions; a raw word is not one
+      const command = createCommand(IFActions.THROWING, {
+        entity: coin
+      });
+      command.parsed.extras = { direction: 'north' };
+
+      const context = createRealTestContext(throwingAction, world, command);
+      const events = executeWithValidation(throwingAction, context);
+
+      expectEvent(events, 'if.event.throw_blocked', {
+        messageId: expect.stringContaining('cant_throw_that_way')
+      });
+      expect(world.getLocation(coin.id)).toBe(player.id);
     });
 
     test('should fail when item is too heavy for distance throw', () => {

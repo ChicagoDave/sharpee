@@ -49,8 +49,8 @@ export interface IAttachedData {
 /**
  * Attached trait for objects that are attached, fastened, or connected to something
  * 
- * This trait contains only data - all logic for detachment
- * is handled by the pulling action.
+ * This trait contains only data - attaching and detaching are AttachedBehavior's
+ * (ADR-373 D1, D6), which tying, untying, pulling and the story loader call.
  */
 export class AttachedTrait implements ITrait, IAttachedData {
   static readonly type = TraitType.ATTACHED;

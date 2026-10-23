@@ -3,13 +3,14 @@
  */
 
 import { type EntityId } from '@sharpee/core';
+import { type DirectionType } from '@sharpee/world-model';
 
 /**
  * Event data for when an actor climbs
  */
 export interface ClimbedEventData {
-  /** Direction of climbing (up/down) if directional */
-  direction?: string;
+  /** Direction of climbing (UP or DOWN) if directional */
+  direction?: DirectionType;
   
   /** Target object being climbed if object climbing */
   targetId?: EntityId;

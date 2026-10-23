@@ -12,6 +12,7 @@
 import { describe, test, expect } from 'vitest';
 import {
   Direction,
+  type DirectionType,
   RoomTrait,
   DoorTrait,
   OpenableTrait,
@@ -47,7 +48,7 @@ function setup(options: { hatch?: 'closed' | 'locked' } = {}): { world: WorldMod
   return { world, player, room, loft };
 }
 
-function climb(world: WorldModel, direction: string) {
+function climb(world: WorldModel, direction: DirectionType) {
   const command = createCommand(IFActions.CLIMBING);
   command.parsed.extras = { direction };
   return executeWithValidation(climbingAction, createRealTestContext(climbingAction, world, command));
@@ -59,13 +60,13 @@ describe('climb up / climb down ask traversal (D21)', () => {
   test('an open way: the climber is in the loft, with the climbed line and going\'s arrival', () => {
     const { world, player, room, loft } = setup();
 
-    const events = climb(world, 'up');
+    const events = climb(world, Direction.UP);
 
     expect(world.getLocation(player.id)).toBe(loft.id);
     expect(messageIds(events)).toContain('if.action.climbing.climbed_up');
     expect(events.find((e) => e.type === 'if.event.actor_moved')?.data).toMatchObject({ fromRoom: room.id, toRoom: loft.id });
 
-    climb(world, 'down');
+    climb(world, Direction.DOWN);
     expect(world.getLocation(player.id)).toBe(room.id);
   });
 
@@ -74,7 +75,7 @@ describe('climb up / climb down ask traversal (D21)', () => {
     world.registerEvaluator(exitBlockedKey(room.id, Direction.UP), () => true);
     world.registerEvaluator(exitMessageKey(room.id, Direction.UP), () => 'The ladder is roped off.');
 
-    const events = climb(world, 'up');
+    const events = climb(world, Direction.UP);
 
     expect(world.getLocation(player.id)).toBe(room.id);
     expect(events.find((e) => e.data?.params?.message === 'The ladder is roped off.')).toBeDefined();
@@ -83,7 +84,7 @@ describe('climb up / climb down ask traversal (D21)', () => {
   test('a closed hatch overhead stops the climber in going\'s words', () => {
     const { world, player, room } = setup({ hatch: 'closed' });
 
-    const events = climb(world, 'up');
+    const events = climb(world, Direction.UP);
 
     expect(world.getLocation(player.id)).toBe(room.id);
     expect(messageIds(events)).toContain('if.action.going.door_closed');
@@ -93,7 +94,7 @@ describe('climb up / climb down ask traversal (D21)', () => {
   test('a locked hatch overhead stops the climber in going\'s words', () => {
     const { world, player, room } = setup({ hatch: 'locked' });
 
-    const events = climb(world, 'up');
+    const events = climb(world, Direction.UP);
 
     expect(world.getLocation(player.id)).toBe(room.id);
     expect(messageIds(events)).toContain('if.action.going.door_locked');
@@ -103,9 +104,9 @@ describe('climb up / climb down ask traversal (D21)', () => {
     const { world, player, room } = setup();
     world.registerEvaluator(exitHiddenKey(room.id, Direction.UP), () => true);
 
-    expect(messageIds(climb(world, 'up'))).toContain('if.action.climbing.cant_go_that_way');
+    expect(messageIds(climb(world, Direction.UP))).toContain('if.action.climbing.cant_go_that_way');
     expect(world.getLocation(player.id)).toBe(room.id);
-    expect(messageIds(climb(world, 'down'))).toContain('if.action.climbing.cant_go_that_way');
+    expect(messageIds(climb(world, Direction.DOWN))).toContain('if.action.climbing.cant_go_that_way');
     expect(world.getLocation(player.id)).toBe(room.id);
   });
 
@@ -120,7 +121,7 @@ describe('climb up / climb down ask traversal (D21)', () => {
       return { kind: 'exit', destination: roof.id };
     });
 
-    climb(world, 'up');
+    climb(world, Direction.UP);
 
     expect(world.getLocation(player.id)).toBe(roof.id);
     expect(draws).toBe(1);

@@ -371,11 +371,10 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
             : { valid: false, error: GoingMessages.NO_EXITS };
         }
         case 'blocked':
-          return {
-            valid: false,
-            error: GoingMessages.MOVEMENT_BLOCKED,
-            params: { direction, message: way.message || "You can't go that way." }
-          };
+          // A block with no phrase of its own speaks lang's stock line.
+          return way.message
+            ? { valid: false, error: GoingMessages.MOVEMENT_BLOCKED, params: { direction, message: way.message } }
+            : { valid: false, error: GoingMessages.CANT_GO, params: { direction } };
         case 'door_locked':
           return {
             valid: false,

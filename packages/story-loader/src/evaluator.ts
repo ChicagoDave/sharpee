@@ -23,7 +23,7 @@ import { exitBlockedKey } from '@sharpee/stdlib';
 import { classifiesAs } from './kind-classification.js';
 import {
   AttachedBehavior,
-  BreakableTrait,
+  BreakableBehavior,
   CharacterModelTrait,
   LightSourceBehavior,
   LockableBehavior,
@@ -608,10 +608,10 @@ export class Evaluator {
         if (!entity.has(TraitType.LIGHT_SOURCE)) return null;
         return LightSourceBehavior.givesLight(entity, world);
       case 'broken': {
-        // ADR-373 D2: the trait attacking, dropping and throwing write.
-        const breakable = entity.get(TraitType.BREAKABLE) as BreakableTrait | undefined;
-        if (!breakable) return null;
-        return breakable.broken === true;
+        // ADR-373 D2: the behavior's reading of what attacking, dropping and
+        // throwing write.
+        if (!entity.has(TraitType.BREAKABLE)) return null;
+        return BreakableBehavior.isBroken(entity);
       }
       case 'attached':
         // ADR-373 D1: one reading of "attached", shared with taking and pulling.

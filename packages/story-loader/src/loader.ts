@@ -101,7 +101,7 @@ import {
   AboardTrait,
   ActorTrait,
   addPlayerRoleVocabulary,
-  AttachedTrait,
+  AttachedBehavior,
   BackdropTrait,
   BreakableTrait,
   NightVisionTrait,
@@ -2320,22 +2320,18 @@ export class ChordStory implements Story {
         }
         case 'attached': {
           // ADR-373 D1: the anchor resolves name → world id after every
-          // entity is built (forward refs legal). `detachable` is read from
-          // the sibling word here, so the two compose in either order.
-          if (entity.has(TraitType.ATTACHED)) break;
-          const attached = new AttachedTrait({
-            attachmentType: 'stuck',
-            detachable: irEntity.traits.some((t) => t.name === 'detachable'),
-          });
+          // entity is built (forward refs legal), and the behavior that owns
+          // an attachment makes it. `detachable` is read from the sibling
+          // word here, so the two compose in either order.
+          const detachable = irEntity.traits.some((t) => t.name === 'detachable');
           const anchorName = entityConfigValue(trait);
           if (anchorName !== undefined) {
             this.pendingEntityRefs.push(
               this.entityRefFor(anchorName, 'anchor', irEntity, trait.span, (worldId) => {
-                attached.attachedTo = worldId;
+                AttachedBehavior.attach(entity, worldId, 'stuck', detachable);
               }),
             );
           }
-          entity.add(attached);
           break;
         }
         case 'breakable':

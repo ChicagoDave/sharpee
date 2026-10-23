@@ -32,7 +32,7 @@ Generated for Sharpee 5.4.1
 | [engine.md](engine.md) | @sharpee/engine | GameEngine, Story interface, turn cycle, command executor, save/restore, vocabulary. (14 files, ~2542 lines) |
 | [stdlib.md](stdlib.md) | @sharpee/stdlib | All 43 standard actions, validation, scope builders, NPC support, combat, action chains. (50 files, ~5000 lines) |
 | [parser.md](parser.md) | @sharpee/parser-en-us | English parser, grammar patterns, story grammar extension API. (4 files, ~438 lines) |
-| [lang.md](lang.md) | @sharpee/lang-en-us | English language provider, message resolution, formatters. (18 files, ~2970 lines) |
+| [lang.md](lang.md) | @sharpee/lang-en-us | English language provider, message resolution, formatters. (18 files, ~2971 lines) |
 | [plugins.md](plugins.md) | Plugins | Plugin system, scheduler (daemons/fuses), state machine. (14 files, ~1096 lines) |
 | [text.md](text.md) | Text System | Text blocks, decorations, rendering. (3 files, ~360 lines) |
 | [if-services.md](if-services.md) | @sharpee/if-services | Runtime service interfaces (perception). (1 files, ~116 lines) |
