@@ -1640,6 +1640,19 @@ action-line    = "grammar" NL >>> { pattern-line }
                | "refuse" "without" WORD ":" phrase-key NL
                | "refuse" "when" condition ":" phrase-key NL
                | "otherwise" "refuse" phrase-key NL        (* dispatch miss *)
+               | topic-row                                 (* ADR-383 D9: answers the
+                                                              action's topic slot, matched
+                                                              as a topic table's rows are;
+                                                              the body runs, then the
+                                                              matched row; no row matching
+                                                              is the otherwise miss. No
+                                                              topic slot is analysis.about-
+                                                              without-topic; the topic
+                                                              table's duplicate and
+                                                              collision checks apply; the
+                                                              row body is an action body,
+                                                              so conversation statements
+                                                              are refused *)
                | "phrases" LOCALE NL >>> { phrase-entry }
                | statement ;
 pattern-line   = pattern [ "→" token { token } ] NL
@@ -1653,7 +1666,8 @@ pattern-line   = pattern [ "→" token { token } ] NL
 extend-action  = "extend" "action" WORD NL action-line* ;  (* dedent-terminated. Grammar
                                                               surfaces only: behavior lines
                                                               (must-line, score-line, refuse,
-                                                              otherwise, phrases, statements)
+                                                              otherwise, topic-row, phrases,
+                                                              statements)
                                                               parse but are analyzer errors
                                                               (analysis.alteration-behavior).
                                                               The target action resolves

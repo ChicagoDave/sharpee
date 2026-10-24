@@ -214,7 +214,11 @@ const PINNED = {
   // again (`exit-key` removed); a vehicle's `passage:` line is retired for
   // `pace:`; `pattern-elem` gains `[the]`. BREAKING, on the same unpublished
   // 4.0.0 surface — no bump; the number moves at publish.
-  ebnfSha256: 'e0a7e7c4e2a5d9f9bc72081f1b1da9d13c3dea165ee6a21569c31e36cc17a2a4',
+  // Re-pinned 2026-10-24 (session b0a093, parser review step 3 Phase 7,
+  // ADR-383 D9): `action-line` gains `topic-row` — `about …:` rows answering
+  // a `define action`'s topic slot — and `extend-action`'s behavior-line list
+  // names it. Additive, on the same unpublished 4.0.0 surface — no bump.
+  ebnfSha256: '873a6cd24576d9abf5981c44b352e26bd7ea93fc4a86746c8305d1020ae688b8',
 };
 
 // Colocated with the version pin it gates (2026-08-14). It previously lived at

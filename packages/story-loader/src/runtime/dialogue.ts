@@ -60,13 +60,14 @@ export class DialogueSection {
    * Match an intent against row filters — entity tier first (quiet
    * `topicEntityId` resolution), then normalized free-text tier: the
    * topic arm's rule, shared by exchange answer rows. Null slots (act and
-   * silence rows) never match typed input.
+   * silence rows) never match typed input. A `define action`'s `about`
+   * rows match through here too (ADR-383 D9), so only the topic is read.
    *
    * @returns The matched index, or -1
    */
   matchTopicFilters(
     filters: Array<{ kind: 'entity'; id: string } | { kind: 'text'; primary: string; aliases: string[] } | null>,
-    intent: ConversationIntent,
+    intent: Pick<ConversationIntent, 'text' | 'topicEntityId'>,
   ): number {
     const askedEntity = intent.topicEntityId ?? null;
     const askedText = intent.text !== undefined ? normalizeTopic(intent.text) : null;

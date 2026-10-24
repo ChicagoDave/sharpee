@@ -994,6 +994,7 @@ exports[`traits-basic.story (design.md §2.2/§3.2 + ownership package) > matche
         "endLine": 64,
         "line": 57,
       },
+      "topics": [],
     },
     {
       "aka": [],
@@ -1944,6 +1945,7 @@ exports[`zoo-actions.story (design.md §3.4 + ownership package) > matches the g
         "endLine": 30,
         "line": 22,
       },
+      "topics": [],
     },
     {
       "body": [],
@@ -2102,6 +2104,7 @@ exports[`zoo-actions.story (design.md §3.4 + ownership package) > matches the g
         "endLine": 43,
         "line": 36,
       },
+      "topics": [],
     },
     {
       "data": [

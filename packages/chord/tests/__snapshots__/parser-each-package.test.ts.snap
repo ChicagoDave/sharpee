@@ -735,6 +735,7 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
         "endLine": 45,
         "line": 31,
       },
+      "topics": [],
     },
     {
       "aka": [],

@@ -175,6 +175,8 @@ unknown type word is a named analyzer error listing the supported ones (the ADR-
 closed sets). Loader emission: `.slotType(slot, INSTRUMENT | TOPIC)` on the emitted rule. Rejected:
 inline `as instrument` in the pattern (mixes slot metadata into the command shape).
 
+> **Amended by ADR-383 D9 (2026-10-24):** a topic slot now reaches the action. The action binds the words the player typed under the slot's name, and it may answer them with `about …:` rows, the topic table's row form, matched by the topic table's matcher. A `takes the rest of the line` slot (D10) binds its words the same way. A topic slot with no rows stays legal: it accepts any words.
+
 ### D12 — Semantic defaults: per-pattern `means` line; direction map: a `directions` block bound to the `direction` slot (Q-6 resolved 2026-07-25)
 
 ```chord

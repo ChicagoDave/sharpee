@@ -91,6 +91,7 @@ import {
   Predicate,
   TimerVerbStmt,
   CoordinatesExpr,
+  TopicRow,
 } from './ast.js';
 import { capabilityKeyOf, CLIENT_CAPABILITY_FLAGS, EVENT_VERBS, TAILED_EVENT_VERBS, KIND_NOUNS, MESSAGE_OVERRIDE_ALIASES, PLATFORM_STATE_PAIRS, PRONOUN_CASES, PRONOUN_WORDS, SCOPE_REQUIREMENT_PREDICATES, STARTS_STATE_PAIRINGS, STATE_ADJECTIVES, TRAIT_ADJECTIVES } from './catalog.js';
 import { STDLIB_MANIFEST } from './stdlib-manifest.js';
@@ -2544,94 +2545,112 @@ export class Analyzer {
         }
       }
 
-      // Entity-tier refs resolve once, up front: the cross-tier collision
-      // gate must see every entity-tier row's names, even those declared
-      // AFTER a colliding quoted row.
-      const resolvedRefs = decl.rows.map((row) =>
-        row.filter.kind === 'entity' ? this.resolveEntityId(row.filter.ref) : null,
-      );
-      /** normalized name/aka of entity-tier row entities → display name. */
-      const entityTierNames = new Map<string, string>();
-      for (const id of resolvedRefs) {
-        if (!id) continue;
-        const rowSym = this.byId.get(id);
-        if (!rowSym) continue;
-        entityTierNames.set(normalizeTopic(rowSym.nameLower), rowSym.nameLower);
-        for (const alias of rowSym.aka) entityTierNames.set(normalizeTopic(alias), rowSym.nameLower);
-      }
-
       const scope: Scope = { ...entityScope(sym), dialogue: true };
-      const rows: IRTopicRow[] = [];
-      const seenEntities = new Map<string, Span>();
-      const seenTexts = new Map<string, Span>();
-
-      for (let i = 0; i < decl.rows.length; i++) {
-        const row = decl.rows[i];
-        if (row.filter.kind === 'entity') {
-          const id = resolvedRefs[i];
-          if (!id) continue; // unresolved — already reported
-          const dup = seenEntities.get(id);
-          if (dup) {
-            this.diagnostics.error(
-              'analysis.duplicate-topic',
-              `\`${this.byId.get(id)?.nameLower ?? id}\` is already a topic of this table (line ${dup.line}) — a topic answers in one place; merge the rows.`,
-              row.span,
-            );
-            continue;
-          }
-          seenEntities.set(id, row.span);
-          rows.push({
-            filter: { kind: 'entity', id },
-            // Keyed on the IR row index — the same index the runtime's topic
-            // occurrence key uses, so the two cannot drift.
-            body: row.body.map((s, i) =>
-              this.resolveStatement(s, scope, `topic.${ownerId}.row-${rows.length}.${i}`),
-            ),
-            span: row.span,
-          });
-        } else {
-          const texts = [row.filter.primary, ...row.filter.aliases];
-          let rejected = false;
-          for (const text of texts) {
-            const norm = normalizeTopic(text);
-            const dup = seenTexts.get(norm);
-            if (dup) {
-              this.diagnostics.error(
-                'analysis.duplicate-topic',
-                `"${text}" is already declared in this table (line ${dup.line}) — aliases included, a topic answers in one place.`,
-                row.filter.span,
-              );
-              rejected = true;
-              continue;
-            }
-            seenTexts.set(norm, row.span);
-            const collidesWith = entityTierNames.get(norm);
-            if (collidesWith) {
-              this.diagnostics.error(
-                'analysis.topic-entity-collision',
-                `"${text}" collides with \`${collidesWith}\` — that entity is already an entity-tier row of this table, and the quoted spelling would shadow its quiet entity resolution. Remove one.`,
-                row.filter.span,
-              );
-              rejected = true;
-            }
-          }
-          if (rejected) continue;
-          rows.push({
-            filter: { kind: 'text', primary: row.filter.primary, aliases: row.filter.aliases },
-            body: row.body.map((s, i) =>
-              this.resolveStatement(s, scope, `topic.${ownerId}.row-${rows.length}.${i}`),
-            ),
-            span: row.span,
-          });
-        }
-        this.checkPhaseOrder(row.body, { ended: null });
-      }
+      const rows = this.resolveTopicRows(decl.rows, scope, `topic.${ownerId}`);
 
       const axes = this.phraseAxesFor(owner);
       for (const row of rows) this.checkPhraseExclusivity(row, axes);
 
       owner.topics = rows;
     }
+  }
+
+  /**
+   * Resolve one set of `about` rows — a topic table's, or a `define action`'s
+   * (ADR-383 D9) — with the topic table's checks: a duplicate row
+   * (`analysis.duplicate-topic`, aliases included) and a quoted row
+   * colliding with an entity-tier row's name (`analysis.topic-entity-collision`).
+   * A rejected or unresolved row is dropped, its error reported.
+   *
+   * @param source the parsed rows, in written order
+   * @param scope the scope every row body resolves in
+   * @param keyPrefix the occurrence-key prefix; each statement keys as
+   *   `<prefix>.row-<IR row index>.<statement index>`
+   * @returns the resolved rows, in written order
+   */
+  private resolveTopicRows(source: readonly TopicRow[], scope: Scope, keyPrefix: string): IRTopicRow[] {
+    // Entity-tier refs resolve once, up front: the cross-tier collision
+    // gate must see every entity-tier row's names, even those declared
+    // AFTER a colliding quoted row.
+    const resolvedRefs = source.map((row) =>
+      row.filter.kind === 'entity' ? this.resolveEntityId(row.filter.ref) : null,
+    );
+    /** normalized name/aka of entity-tier row entities → display name. */
+    const entityTierNames = new Map<string, string>();
+    for (const id of resolvedRefs) {
+      if (!id) continue;
+      const rowSym = this.byId.get(id);
+      if (!rowSym) continue;
+      entityTierNames.set(normalizeTopic(rowSym.nameLower), rowSym.nameLower);
+      for (const alias of rowSym.aka) entityTierNames.set(normalizeTopic(alias), rowSym.nameLower);
+    }
+
+    const rows: IRTopicRow[] = [];
+    const seenEntities = new Map<string, Span>();
+    const seenTexts = new Map<string, Span>();
+
+    for (let i = 0; i < source.length; i++) {
+      const row = source[i];
+      if (row.filter.kind === 'entity') {
+        const id = resolvedRefs[i];
+        if (!id) continue; // unresolved — already reported
+        const dup = seenEntities.get(id);
+        if (dup) {
+          this.diagnostics.error(
+            'analysis.duplicate-topic',
+            `\`${this.byId.get(id)?.nameLower ?? id}\` is already a topic of this table (line ${dup.line}) — a topic answers in one place; merge the rows.`,
+            row.span,
+          );
+          continue;
+        }
+        seenEntities.set(id, row.span);
+        rows.push({
+          filter: { kind: 'entity', id },
+          // Keyed on the IR row index — the same index the runtime's topic
+          // occurrence key uses, so the two cannot drift.
+          body: row.body.map((s, i) =>
+            this.resolveStatement(s, scope, `${keyPrefix}.row-${rows.length}.${i}`),
+          ),
+          span: row.span,
+        });
+      } else {
+        const texts = [row.filter.primary, ...row.filter.aliases];
+        let rejected = false;
+        for (const text of texts) {
+          const norm = normalizeTopic(text);
+          const dup = seenTexts.get(norm);
+          if (dup) {
+            this.diagnostics.error(
+              'analysis.duplicate-topic',
+              `"${text}" is already declared in this table (line ${dup.line}) — aliases included, a topic answers in one place.`,
+              row.filter.span,
+            );
+            rejected = true;
+            continue;
+          }
+          seenTexts.set(norm, row.span);
+          const collidesWith = entityTierNames.get(norm);
+          if (collidesWith) {
+            this.diagnostics.error(
+              'analysis.topic-entity-collision',
+              `"${text}" collides with \`${collidesWith}\` — that entity is already an entity-tier row of this table, and the quoted spelling would shadow its quiet entity resolution. Remove one.`,
+              row.filter.span,
+            );
+            rejected = true;
+          }
+        }
+        if (rejected) continue;
+        rows.push({
+          filter: { kind: 'text', primary: row.filter.primary, aliases: row.filter.aliases },
+          body: row.body.map((s, i) =>
+            this.resolveStatement(s, scope, `${keyPrefix}.row-${rows.length}.${i}`),
+          ),
+          span: row.span,
+        });
+      }
+      this.checkPhaseOrder(row.body, { ended: null });
+    }
+    return rows;
   }
 
   /**
@@ -3701,6 +3720,7 @@ export class Analyzer {
     if (decl.musts.length > 0) offend('a `must` requirement', decl.musts[0].span);
     if (decl.refusals.length > 0) offend('a refusal line', decl.refusals[0].span);
     if (decl.otherwise) offend('`otherwise refuse`', decl.otherwise.span);
+    if (decl.topics.length > 0) offend('an `about` row', decl.topics[0].span);
     if (decl.scores.length > 0) offend('a `score` line', decl.scores[0].span);
     if (decl.phrases) offend('a `phrases` block', decl.phrases.span);
     if (decl.body.length > 0) offend('a body statement', decl.body[0].span);
@@ -3850,10 +3870,22 @@ export class Analyzer {
     const headScope: Scope = { owner: null, fields: null, slots: new Set(), ownStates: null, scoreOwner: `action.${decl.name}`, inEach: false, semanticValues: new Map() };
 
     const body = decl.body.map((s, i) => this.resolveStatement(s, scope, `action.${decl.name}.body.${i}`));
+    // ADR-383 D9: `about` rows answer the action's topic slot, resolved and
+    // checked as a topic table's rows are.
+    const topics = this.resolveTopicRows(decl.topics, scope, `action.${decl.name}.topic`);
+    // A topic slot with no rows is legal: it accepts any words, and an
+    // action may ignore them (Secret Letter's `following`, `dancing`).
+    if (decl.topics.length > 0 && !decl.slotTypes.some((t) => t.type === 'topic')) {
+      this.diagnostics.error(
+        'analysis.about-without-topic',
+        `\`${decl.name}\` has \`about\` rows but no topic slot for them to answer — declare one with \`the <slot> is a topic\`, or remove the rows.`,
+        decl.topics[0].span,
+      );
+    }
     // A grammar file (ADR-269) is grammar surfaces for stdlib actions whose
     // TypeScript reads the seats, so nothing here can show a slot used:
     // the check would only report false warnings (parser review G2).
-    if (!this.ast.grammarHeader) this.checkSlotsUsed(decl, entitySlots, [musts, refusals, body]);
+    if (!this.ast.grammarHeader) this.checkSlotsUsed(decl, entitySlots, [musts, refusals, body, topics]);
 
     return {
       name: decl.name,
@@ -3876,6 +3908,7 @@ export class Analyzer {
       musts,
       refusals,
       otherwise: decl.otherwise?.phraseKey ?? null,
+      ...(topics.length > 0 ? { topics } : {}),
       scores: decl.scores.map((s) => ({ name: `action.${decl.name}.${s.name}`, worth: s.worth, span: s.span })),
       body,
       span: decl.span,
@@ -3972,6 +4005,7 @@ export class Analyzer {
         if (decl.musts.length > 0) offend('a `must` requirement', decl.musts[0].span);
         if (decl.refusals.length > 0) offend('a refusal line', decl.refusals[0].span);
         if (decl.otherwise) offend('`otherwise refuse`', decl.otherwise.span);
+        if (decl.topics.length > 0) offend('an `about` row', decl.topics[0].span);
         if (decl.scores.length > 0) offend('a `score` line', decl.scores[0].span);
         if (decl.phrases) offend('a `phrases` block', decl.phrases.span);
         if (decl.body.length > 0) offend('a body statement', decl.body[0].span);

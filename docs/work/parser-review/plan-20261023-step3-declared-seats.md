@@ -110,8 +110,52 @@
 - **Deliverable**: Implements ADR-383 D9 and AC10. `define action` gains `about` rows (`chord.ebnf`, mirrored to the website copy, `parser.ts`, `ast.ts`); `IRActionDef.topics?: IRTopicRow[]`; the analyzer applies `analysis.duplicate-topic` and `analysis.topic-entity-collision` and refuses `about` rows on an action with no topic slot or a topic slot with no answer; dispatch reads `context.command.topic.entity` and the typed text and calls `matchTopicFilters` (no second matcher); no row matching falls to `otherwise refuse`; `{the subject}` renders the typed words with the article adding nothing; a `takes the rest of the line` slot binds its words under its name. `./repokit protocol` regenerates Swift and C# types; IDE consumers checked. ADR-267 D11 gets its one-line amendment note pointing to ADR-383 (the about rows ship here). Before building the `{the subject}` rendering, its article-suppression path is checked against GH #562 (phrase param resolution). Tests (bundle and `./sharpee test` on a new Chord probe story with the `praying` action): `pray for rain`, `pray about the altar` (altar in scope), `pray about the altar` from another room (out of scope; record what it does, since GH #242 is the same gate in topic tables), `pray about taxes` refusing `unheard` with "taxes"; the failing compiles; duplicate alias; the rest-of-line slot rendering.
 - **Exit state**: chord, story-loader, repokit, devkit and IDE protocol checks green; EBNF mirrored; `repokit protocol --check` fresh; chain and trees identical to baseline.
 - **Demonstration**: the `praying` story run on the bundle and through `./sharpee test` with its three transcripts; the analyzer diagnostics quoted; the regenerated protocol diff.
-- **Demonstrated**: 
-- **Status**: PENDING
+- **Demonstrated**: 2026-10-24, session b0a093, on 0adae65d4 plus this phase's uncommitted changes. **Ruled mid-phase (David, "agreed"):** D9's "a topic slot with no rows and no body that reads it is a compile error" was implemented, then removed. It refused Secret Letter at load, because four actions use an unread topic slot on purpose as a wildcard, so "follow bobby" reaches the action out of sight (`night-journey.chord:186`, `:1549`, `ball.chord:382`, `jail.chord:425`; ADR-383's corpus grep had missed the imported `.chord` files). ADR-383 D9 is amended in place. **Calls made under David's go:** the action body runs first, then the matched row, in each phase; a row's statements key as `action.<name>.topic.row-<IR index>.<i>`. **GH #562 checked first:** it concerns `Verb`/`Contents` nodes resolving param names against the host message; a topic or text binding is a string, rendered by `phrases.ts:128-133` as a `Literal`, never a phrase tree, so it cannot reach that path.
+
+Code:
+- chord `ast.ts`: `DefineAction.topics`/`ExtendAction.topics: TopicRow[]`.
+- `parser.ts`: `parseActionBlockParts` takes `about` lines through `parseTopicRow(line, 'action')`, which now takes the row body's statement context, so `then asks`/`deflect to` stay refused in an action.
+- `ir.ts`: `IRActionDef.topics?: IRTopicRow[]`, present only when written.
+- `analyzer.ts`: the topic table's row loop is lifted into `resolveTopicRows(rows, scope, keyPrefix)`, which both `define topics` (prefix `topic.<owner>`, keys unchanged) and `buildAction` (prefix `action.<name>.topic`) call, so `analysis.duplicate-topic` and `analysis.topic-entity-collision` are one implementation. New `analysis.about-without-topic`. `about` rows are refused under `extend action` (`analysis.alteration-behavior`) and in a grammar file (`analysis.grammar-file-behavior`).
+- story-loader `dispatch-verbs.ts`:
+  - Topic and rest-of-line slots are no longer entity slots; their typed words bind under their names in the slot map.
+  - Rows match through `core.dialogue.matchTopicFilters` (no second matcher); its intent parameter is narrowed to `Pick<ConversationIntent, 'text' | 'topicEntityId'>`.
+  - A miss refuses with `otherwise`. An action with rows and no body dispatches without an entity or a behavior host.
+  - The slot map is written at validate entry, so `blocked()` renders a refusal's `{the subject}`; before this, any slot in a refusal phrase rendered blank.
+- `chord.ebnf`: `action-line` gains `topic-row`, and `extend-action` lists it. The language-version pin is re-recorded, no bump (unpublished 4.0 surface). The file is mirrored to `website/public/chord.ebnf` byte-identical; the mirror also carries `8c3be564b`'s unmirrored changes.
+- ADR-267 D11 carries its amendment note.
+- IDE: the projection decodes only `name` and `span` of an action and no topic rows anywhere (`protocol-projection.ts:126`), so `protocol --check` is fresh with no regeneration and nothing to align.
+
+Tests:
+- `chord/tests/action-about-rows.test.ts` (9):
+  - lowering: entity and aliased text rows in order; a `select` in row 1 keyed `action.praying.topic.row-1.0`;
+  - an unanswered topic slot compiles with no `topics` field;
+  - each rejection: `about-without-topic`, a duplicate spelling via alias, a duplicate entity, `topic-entity-collision`, `deflect to` refused, `extend action` refused.
+- `story-loader/tests/action-about-rows.test.ts` (11, real compiler, loader and engine; assertions on score and rendered text):
+  - matching and rendering: the primary and aliases with `once` holding at 5; "rain" / "the rain" article-free; the entity row in scope; out of scope `otherwise` names "the altar";
+  - refusals: a miss refuses with "taxes", score 0; a row's own refusal, score 0; the action's refusal line renders the topic before the row runs, score 0; no `otherwise` gives the platform refusal with the body not run;
+  - order: body then row both award (score 5, text in order);
+  - an unanswered topic slot accepts any words; the rest-of-line words render.
+- Against the committed `dispatch-verbs.ts`, 9 of the first 10 fail. Mutation verification found the mutations real and no RED or YELLOW tests; its three gaps (row-refusal state, body and row mutations together, a non-`otherwise` refusal rendering the subject) are closed by the last three edits.
+- Fixtures: four chord golden AST snapshots gain `topics: []`, and nothing else moved.
+
+Bundle probes (`scratchpad/praying/praying.story`, one fresh game each):
+- `pray for rain` → "You pray for rain, and the wind turns."; `pray for the rain` → "…the rain…"; `pray about the crops` → "…the crops…";
+- `pray about the altar` → "You kneel before the altar."; from the Yard → "Nothing answers a prayer about the altar." (the GH #242 gate: out of scope the topic stays text);
+- `pray about taxes` → "Nothing answers a prayer about taxes."; `pray for rain` twice then `score` → 5 points;
+- `scribble hello there world` → `You scribble "hello there world" in the dust.`
+
+**Not done as written:** the praying story through `./sharpee test` with three transcripts. A tree is recorded in the IDE's Testing tab, so the same cases run instead as the real-engine loader suite above.
+
+Floor after the last source edit:
+- `./repokit build dungeo` exit 0; chain 952 passed.
+- Trees identical to baseline: expanses 19/23, sailing 21/22, vehicles 19/21, thealderman 3/8 + 1 failing, fernhill 86/107, ides-of-march 39/51, secret-letter 1459/2640 + 10 failing, upps 244/368, wumpus 35/68 + 1 failing.
+- Suites: if-domain 101, parser-en-us 447, chord 1720 (1711 + 9), story-loader 1415 + 1 skipped (1404 + 11), devkit 204 + 1 skipped, repokit 139 + 1 skipped.
+- `pnpm exec turbo run test:ci` 75 of 75.
+- `./repokit grammar --check`, `manifest --check`, `aliases --check`, `protocol --check` fresh.
+- The `chord-grammar-changes.md` row for D9 stays with Phase 8, as planned.
+- [verified: suites passed 2026-10-24T09:10:14Z (if-domain 101, parser-en-us 447, chord 1720, story-loader 1415, devkit 204, repokit 139, chain 952), after the last source edit 09:07:20Z; build, trees, turbo and bundle probes have no hook rows, reported by session]
+- **Status**: DONE
 
 ### Phase 8: Close-out — documentation, amendment notes, step 4 hand-off
 - **Tier**: Small

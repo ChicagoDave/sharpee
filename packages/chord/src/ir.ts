@@ -1424,6 +1424,12 @@ export interface IRActionDef {
   refusals: IRActionRefusal[];
   /** Dispatch-miss phrase key (`otherwise refuse …`), or null. */
   otherwise: string | null;
+  /**
+   * `about …:` rows answering the action's topic slot (ADR-383 D9), matched
+   * as a topic table's rows are; a command whose topic no row matches
+   * refuses with `otherwise`. Present only when written.
+   */
+  topics?: IRTopicRow[];
   /** Action-owned scores (D12); names owner-qualified (`action.<name>.<score>`). */
   scores: IRScoreDef[];
   body: IRStatement[];

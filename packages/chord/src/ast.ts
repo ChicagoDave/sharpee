@@ -1866,6 +1866,11 @@ export interface DefineAction {
   refusals: ActionRefusal[];
   /** `otherwise refuse <key>` — the dispatch-miss phrase. */
   otherwise: { phraseKey: string; span: Span } | null;
+  /**
+   * `about …:` rows answering the action's topic slot (ADR-383 D9) — the
+   * row form `define topics` uses; empty when none are written.
+   */
+  topics: TopicRow[];
   /** `score <name> worth N` lines — action-owned scores (D12). */
   scores: ScoreDecl[];
   /** Embedded `phrases <locale>` block, if any. */
@@ -1959,6 +1964,7 @@ export interface ExtendAction {
   musts: MustRequirement[];
   refusals: ActionRefusal[];
   otherwise: { phraseKey: string; span: Span } | null;
+  topics: TopicRow[];
   scores: ScoreDecl[];
   phrases: DefinePhrases | null;
   body: Statement[];

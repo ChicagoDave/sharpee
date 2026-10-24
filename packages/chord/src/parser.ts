@@ -5741,6 +5741,7 @@ class Parser {
     const musts: MustRequirement[] = [];
     const refusals: ActionRefusal[] = [];
     let otherwise: DefineAction['otherwise'] = null;
+    const topics: TopicRow[] = [];
     const scores: ScoreDecl[] = [];
     let phrases: DefinePhrases | null = null;
     const body: Statement[] = [];
@@ -5813,6 +5814,15 @@ class Parser {
       } else if (word === 'phrases') {
         this.pos++;
         phrases = this.parsePhrasesBlock(line, 1);
+      } else if (word === 'about') {
+        // `about …:` rows answer the action's topic slot (ADR-383 D9) — the
+        // topic table's row form; parseTopicRow consumes the row's lines.
+        const row = this.parseTopicRow(line, 'action');
+        if (row) {
+          topics.push(row);
+          span = mergeSpans(span, row.span);
+        }
+        continue;
       } else {
         const stmt = this.parseStatement(line, 'action');
         if (stmt) body.push(stmt);
@@ -5820,7 +5830,7 @@ class Parser {
       span = mergeSpans(span, lineSpan(line));
     }
 
-    return { patterns, constraints, greedy, slotTypes, directions, musts, refusals, otherwise, scores, phrases, body, span };
+    return { patterns, constraints, greedy, slotTypes, directions, musts, refusals, otherwise, topics, scores, phrases, body, span };
   }
 
   /**
@@ -6420,8 +6430,13 @@ class Parser {
    * Free-text tier: `about "<text>"[, "<text>" …]:` — comma-separated
    * quoted aliases (spelling ruled 2026-07-18). The response is either the
    * rest of the line (one statement) or an indented statement body.
+   *
+   * @param headLine the `about …:` line
+   * @param blockKeyword the statement context of the row body — `topics`
+   *   for a topic table; `action` for a `define action`'s rows (ADR-383 D9),
+   *   where the conversation-only statements stay refused
    */
-  private parseTopicRow(headLine: Line): TopicRow | null {
+  private parseTopicRow(headLine: Line, blockKeyword: 'topics' | 'action' = 'topics'): TopicRow | null {
     const c = new Cursor(headLine.tokens, headLine);
     c.next(); // about
     let filter: TopicRow['filter'];
@@ -6474,13 +6489,13 @@ class Parser {
       // One-line response: the rest of the line is a single statement.
       // parseStatement consumes this.lines[this.pos] (the row line itself).
       const rest: Line = { ...headLine, tokens: headLine.tokens.slice(c.i) };
-      const stmt = this.parseStatement(rest, 'topics');
+      const stmt = this.parseStatement(rest, blockKeyword);
       if (!stmt) return null; // the statement error is already reported
       body = [stmt];
     } else {
       // Indented statement body on the following lines.
       this.pos++;
-      body = this.parseStatements(headLine.indent, 'topics');
+      body = this.parseStatements(headLine.indent, blockKeyword);
       if (body.length > 0) span = mergeSpans(span, body[body.length - 1].span);
     }
     if (body.length === 0) {
