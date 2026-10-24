@@ -213,71 +213,38 @@ describe('GrammarBuilder', () => {
     });
   });
   
-  describe('forAction fullPattern emission (ADR-271 D3)', () => {
-    it('registers one rule per full-pattern line, sharing the action id and tier', () => {
-      engine.createBuilder('story')
-        .forAction('chord.action.petting')
-        .fullPattern('pet :animal')
-        .fullPattern('pat :animal')
-        .build();
+  describe('rule(spec) registration (ADR-382 D2, D7)', () => {
+    const words = (text: string): PatternElement[] => new MockPatternCompiler().parse(text);
+
+    it('registers each spec as one rule at the builder tier, in the order given', () => {
+      const story = engine.createBuilder('story');
+      for (const text of ['pet :animal', 'hide under :thing', 'pat :animal', 'hide behind :thing']) {
+        story.rule({ action: 'chord.action.petting', parts: words(text), pattern: text });
+      }
 
       const rules = engine.getRulesForAction('chord.action.petting');
-      expect(rules).toHaveLength(2);
-      expect(rules.map(r => r.pattern).sort()).toEqual(['pat :animal', 'pet :animal']);
-      for (const rule of rules) {
-        expect(rule.action).toBe('chord.action.petting');
-        expect(rule.tier).toBe('story');
-      }
+      expect(rules.map(r => r.pattern)).toEqual(['pet :animal', 'hide under :thing', 'pat :animal', 'hide behind :thing']);
+      for (const rule of rules) expect(rule.tier).toBe('story');
     });
 
-    it('does not cross full-pattern lines with verbs()', () => {
-      engine.createBuilder()
-        .forAction('chord.action.lowering')
-        .verbs(['lower'])
-        .pattern(':target')
-        .fullPattern('winch :target down')
-        .build();
+    it('carries per-rule defaults and per-slot constraints on the registered rule', () => {
+      engine.createBuilder().rule({
+        action: 'chord.action.hiding',
+        parts: words('hide under :thing'),
+        pattern: 'hide under :thing',
+        defaults: { spatialRelation: 'under' },
+        slots: { thing: { constraints: [s => s.touchable()] } },
+      });
 
-      const rules = engine.getRulesForAction('chord.action.lowering');
-      expect(rules.map(r => r.pattern).sort()).toEqual(['lower :target', 'winch :target down']);
+      const [rule] = engine.getRulesForAction('chord.action.hiding');
+      expect(rule.defaultSemantics).toEqual({ spatialRelation: 'under' });
+      expect(rule.slots.get('thing')!.constraints).toHaveLength(1);
+      expect(rule.parts).toEqual(words('hide under :thing'));
     });
 
-    it('attaches .where() constraints to every line carrying the slot', () => {
-      engine.createBuilder()
-        .forAction('chord.action.petting')
-        .fullPattern('pet :animal')
-        .fullPattern('stroke :animal')
-        .where('animal', scope => scope.touchable())
-        .build();
-
-      const rules = engine.getRulesForAction('chord.action.petting');
-      expect(rules).toHaveLength(2);
-      for (const rule of rules) {
-        const constraint = rule.slots.get('animal');
-        expect(constraint, rule.pattern).toBeDefined();
-        expect(constraint!.constraints).toHaveLength(1);
-      }
-    });
-
-    it('skips slot-scoped config on lines that do not carry the slot', () => {
-      engine.createBuilder()
-        .forAction('chord.action.waving')
-        .fullPattern('wave :thing')
-        .fullPattern('wave hands')
-        .where('thing', scope => scope.visible())
-        .build();
-
-      const rules = engine.getRulesForAction('chord.action.waving');
-      const slotted = rules.find(r => r.pattern === 'wave :thing')!;
-      const bare = rules.find(r => r.pattern === 'wave hands')!;
-      expect(slotted.slots.get('thing')?.constraints).toHaveLength(1);
-      expect(bare.slots.has('thing')).toBe(false);
-    });
-
-    it('rejects an empty pattern line', () => {
-      expect(() => {
-        engine.createBuilder().forAction('chord.action.x').fullPattern('  ');
-      }).toThrow('fullPattern() requires a non-empty pattern line');
+    it('refuses a spec with no action and registers nothing', () => {
+      expect(() => engine.createBuilder().rule({ action: '', parts: words('wave'), pattern: 'wave' })).toThrow('must have an action');
+      expect(engine.getRules()).toHaveLength(0);
     });
   });
 

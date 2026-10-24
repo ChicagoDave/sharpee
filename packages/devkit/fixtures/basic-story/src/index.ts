@@ -178,9 +178,13 @@ class RegressionStory implements Story {
 
     // WEAR :thing — wearing grammar not in stdlib parser yet
     grammar
-      .forAction('if.action.wearing')
-      .verbs(['wear', 'don'])
-      .pattern(':target')
+      .define('wear :target')
+      .mapsTo('if.action.wearing')
+      .build();
+
+    grammar
+      .define('don :target')
+      .mapsTo('if.action.wearing')
       .build();
 
     grammar
@@ -201,9 +205,13 @@ class RegressionStory implements Story {
 
     // CLIMB :thing — climbing grammar not in stdlib parser yet
     grammar
-      .forAction('if.action.climbing')
-      .verbs(['climb', 'scale'])
-      .pattern(':target')
+      .define('climb :target')
+      .mapsTo('if.action.climbing')
+      .build();
+
+    grammar
+      .define('scale :target')
+      .mapsTo('if.action.climbing')
       .build();
 
     grammar
@@ -224,9 +232,13 @@ class RegressionStory implements Story {
 
     // SMELL :thing — smelling grammar not in stdlib parser
     grammar
-      .forAction('if.action.smelling')
-      .verbs(['smell', 'sniff'])
-      .pattern(':target')
+      .define('smell :target')
+      .mapsTo('if.action.smelling')
+      .build();
+
+    grammar
+      .define('sniff :target')
+      .mapsTo('if.action.smelling')
       .build();
 
     // LISTEN TO :thing — listening grammar not in stdlib parser

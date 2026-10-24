@@ -19,7 +19,8 @@
  * directions against the reference page's entry headings; `--check` covers it.
  *
  * Public interface: GrammarCommand, runGrammarStep, checkGrammarModule,
- * checkDocsBlocksModule.
+ * checkDocsBlocksModule, compileStandardGrammarRules, refuseNonStandardConstructs,
+ * renderRuleCall.
  * Owner context: tools/repokit — the in-repo platform build tool (unpublished).
  */
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
@@ -27,13 +28,6 @@ import { join, dirname } from 'node:path';
 import type { LowerableAction, LoweredRule } from '@sharpee/chord';
 import { findRepoRoot } from '../repo';
 import { Command } from './command';
-
-export interface EmittedRule {
-  pattern: string;
-  action: string;
-  defaults: Record<string, string> | null;
-  slotTypes: Record<string, 'instrument' | 'topic'>;
-}
 
 /** Read the stdlib action-id set from the constants SOURCE (see header). */
 export function readStdlibActionIds(root: string): Set<string> {
@@ -64,93 +58,55 @@ function editDistance(a: string, b: string): number {
   return dp[a.length][b.length];
 }
 
-/**
- * Expand a compiled grammar-file IR to the rule list the loader's emission
- * semantics produce — standard-flavored (ADR-269 D3): `if.action.*` ids, no
- * bare-verb prefix rules, no dispatch registration. Mirrors
- * story-loader/src/loader.ts extendParser (ADR-267 D12 grouping included, so
- * registration order matches the story-side precedent exactly).
- */
-export function expandGrammarIr(ir: {
-  actions: Array<{
-    name: string;
-    patterns: Array<{
-      parts: Array<{ kind: string; word?: string; words?: string[]; optional?: boolean }>;
-      cardinality: string[] | null;
-      means?: Array<{ key: string; value: string }>;
-    }>;
-    constraints: Array<{ slot: string; requirement: string }>;
-    greedy?: string[];
-    slotTypes?: Array<{ slot: string; type: 'instrument' | 'topic' }>;
-    directions?: Array<{ canonical: string; aliases: string[] }>;
-  }>;
-}): EmittedRule[] {
-  const renderPart = (part: { kind: string; word?: string; words?: string[]; optional?: boolean }): string => {
-    const core =
-      part.kind === 'alt' ? (part.words ?? []).join('|')
-      : part.kind === 'slot' ? `:${part.word}`
-      : String(part.word);
-    return part.optional ? `[${core}]` : core;
-  };
+/** The grammar-file action fields the standard-grammar refusals read. */
+export interface StandardGrammarAction {
+  name: string;
+  patterns: ReadonlyArray<{ cardinality?: readonly string[] | null }>;
+  constraints?: ReadonlyArray<unknown>;
+  greedy?: readonly string[];
+}
 
-  const emitted: EmittedRule[] = [];
-  for (const action of ir.actions) {
+/**
+ * Refuse the constructs the standard grammar does not use (ADR-269 D2, D3):
+ * a scope constraint, a greedy slot, `→` cardinality. Each is a divergence
+ * to rule before it ships, never a silent emission.
+ * @param actions The grammar file's actions
+ * @throws Error naming the first action that uses one
+ */
+export function refuseNonStandardConstructs(actions: readonly StandardGrammarAction[]): void {
+  for (const action of actions) {
     const actionId = `if.action.${action.name}`;
-    const directions = action.directions ?? [];
     if ((action.constraints ?? []).length > 0) {
       throw new Error(`grammar: ${actionId} carries a scope constraint — the standard grammar defines none (ADR-269 D2); rule the divergence before adding one`);
     }
     if ((action.greedy ?? []).length > 0) {
       throw new Error(`grammar: ${actionId} declares a greedy slot — none exist in the standard grammar baseline; rule the divergence first`);
     }
-    const slotTypes = Object.fromEntries((action.slotTypes ?? []).map((st) => [st.slot, st.type]));
-
-    const emissions: Array<{ text: string; defaults: Record<string, string> | null }> = [];
-    for (const pattern of action.patterns) {
-      if (pattern.cardinality) {
-        throw new Error(`grammar: ${actionId} uses → cardinality — not a standard-grammar construct`);
-      }
-      const means = pattern.means?.length
-        ? Object.fromEntries(pattern.means.map((m) => [m.key, m.value]))
-        : null;
-      const usesDirection =
-        directions.length > 0 && pattern.parts.some((p) => p.kind === 'slot' && p.word === 'direction');
-      if (usesDirection) {
-        const isBare = pattern.parts.length === 1;
-        for (const entry of directions) {
-          for (const alias of [entry.canonical, ...entry.aliases]) {
-            const text = isBare
-              ? alias
-              : pattern.parts
-                  .map((p) => (p.kind === 'slot' && p.word === 'direction' ? alias : renderPart(p)))
-                  .join(' ');
-            emissions.push({ text, defaults: { ...(means ?? {}), direction: entry.canonical } });
-          }
-        }
-      } else {
-        emissions.push({ text: pattern.parts.map(renderPart).join(' '), defaults: means });
-      }
-    }
-    // Group-major registration order (loader.ts:1171-1198) — one group per
-    // distinct defaults object, insertion-ordered.
-    const groups = new Map<string, { defaults: Record<string, string> | null; texts: string[] }>();
-    for (const e of emissions) {
-      const key = JSON.stringify(e.defaults);
-      const group = groups.get(key) ?? { defaults: e.defaults, texts: [] };
-      group.texts.push(e.text);
-      groups.set(key, group);
-    }
-    for (const group of groups.values()) {
-      for (const text of group.texts) {
-        const ruleSlotTypes: EmittedRule['slotTypes'] = {};
-        for (const [slot, type] of Object.entries(slotTypes)) {
-          if (text.includes(`:${slot}`)) ruleSlotTypes[slot] = type as 'instrument' | 'topic';
-        }
-        emitted.push({ pattern: text, action: actionId, defaults: group.defaults, slotTypes: ruleSlotTypes });
-      }
+    if (action.patterns.some((pattern) => pattern.cardinality)) {
+      throw new Error(`grammar: ${actionId} uses → cardinality — not a standard-grammar construct`);
     }
   }
-  return emitted;
+}
+
+/**
+ * One generated registration line: the lowered rule as a `grammar.rule()`
+ * literal (ADR-382 Q-2), slot types as `SlotType` members.
+ * @param action The rule's action id
+ * @param rule The rule as chord's `lowerActionRules` lowered it
+ * @returns The line, indented for the module body
+ */
+export function renderRuleCall(action: string, rule: LoweredRule): string {
+  const fields = [
+    `action: ${JSON.stringify(action)}`,
+    `pattern: ${JSON.stringify(rule.pattern)}`,
+    `parts: ${JSON.stringify(rule.parts)}`,
+  ];
+  if (rule.defaults) fields.push(`defaults: ${JSON.stringify(rule.defaults)}`);
+  const slots = Object.entries(rule.slotTypes).map(
+    ([slot, type]) => `${JSON.stringify(slot)}: { type: SlotType.${type === 'instrument' ? 'INSTRUMENT' : 'TOPIC'} }`,
+  );
+  if (slots.length > 0) fields.push(`slots: { ${slots.join(', ')} }`);
+  return `  grammar.rule({ ${fields.join(', ')} });`;
 }
 
 /**
@@ -175,12 +131,13 @@ export function validateActionNames(names: string[], validIds: Set<string>): str
 
 /**
  * Compile the standard-grammar Chord source with the built chord dist and
- * expand its emitted rule list — shared by the grammar step (module emission)
- * and the ADR-276 manifest step (grammar-shape slice), so both artifacts
- * derive from ONE compile + ONE expansion and cannot drift from each other.
+ * lower each action with chord's `lowerActionRules` (ADR-382 D5) —
+ * standard-flavored (ADR-269 D3): `if.action.*` ids, no bare-verb prefix
+ * rules. Shared by the grammar step (module emission) and the ADR-276
+ * manifest step (grammar-shape slice), so both artifacts derive from ONE
+ * compile and ONE lowering and cannot drift from each other.
  */
 export function compileStandardGrammarRules(root: string): {
-  rules: EmittedRule[];
   actions: number;
   /** Each action's rules as chord's pattern module lowers them (ADR-382 D5), in definition order. */
   lowered: Array<{ action: string; rules: LoweredRule[] }>;
@@ -196,7 +153,7 @@ export function compileStandardGrammarRules(root: string): {
   const { compile, lowerActionRules } = require(chordDist) as {
     compile: (src: string, opts?: object) => {
       ok: boolean;
-      ir: { grammarFile?: { name: string }; actions: Parameters<typeof expandGrammarIr>[0]['actions'] } | null;
+      ir: { grammarFile?: { name: string }; actions: Array<StandardGrammarAction & LowerableAction> } | null;
       diagnostics: Array<{ severity: string; code: string; message: string; span?: { line: number } }>;
     };
     lowerActionRules: (action: LowerableAction, options: { bareVerbForms: boolean }) => LoweredRule[];
@@ -223,16 +180,20 @@ export function compileStandardGrammarRules(root: string): {
   const errors2 = validateActionNames(result.ir.actions.map((a) => a.name), readStdlibActionIds(root));
   if (errors2.length > 0) throw new Error(errors2.join('\n'));
 
+  refuseNonStandardConstructs(result.ir.actions);
+
   const lowered = result.ir.actions.map((action) => ({
     action: `if.action.${action.name}`,
-    rules: lowerActionRules(action as LowerableAction, { bareVerbForms: false }),
+    rules: lowerActionRules(action, { bareVerbForms: false }),
   }));
-  return { rules: expandGrammarIr(result.ir), actions: result.ir.actions.length, lowered };
+  return { actions: result.ir.actions.length, lowered };
 }
 
 /** Compile the Chord source and produce the generated module's TS text. */
 export function generateGrammarModule(root: string): { source: string; rules: number; actions: number } {
-  const { rules, actions } = compileStandardGrammarRules(root);
+  const { lowered, actions } = compileStandardGrammarRules(root);
+  const calls = lowered.flatMap(({ action, rules }) => rules.map((rule) => renderRuleCall(action, rule)));
+  const usesSlotType = calls.some((call) => call.includes('SlotType.'));
   const lines: string[] = [];
   lines.push('/**');
   lines.push(' * grammar.ts — GENERATED by `repokit grammar` from grammar/standard-en-us.story');
@@ -240,34 +201,30 @@ export function generateGrammarModule(root: string): { source: string; rules: nu
   lines.push(' * freshness gate (`repokit grammar --check`) fails the build on drift.');
   lines.push(' *');
   lines.push(' * The Chord file is the standard grammar\'s editable source (ADR-266 (iv));');
-  lines.push(' * this module is its build-time registration form — one `.define()` per');
-  lines.push(' * registered rule, in emission order (definition order is semantic,');
-  lines.push(' * ADR-268). Platform-side exception rules (`?`, `trace …`) live in');
+  lines.push(' * this module is its build-time registration form — one `grammar.rule()` per');
+  lines.push(' * registered rule, as parts (ADR-382 Q-2), in definition order (definition');
+  lines.push(' * order is semantic, ADR-268). Platform-side exception rules (`?`, `trace …`) live in');
   lines.push(' * platform-grammar.ts, not here.');
   lines.push(' *');
   lines.push(' * Public interface: defineGrammar(grammar).');
   lines.push(' * Owner context: parser-en-us (generated artifact).');
   lines.push(' */');
   lines.push('');
-  lines.push("import { type GrammarBuilder } from '@sharpee/if-domain';");
+  lines.push(
+    usesSlotType
+      ? "import { type GrammarBuilder, SlotType } from '@sharpee/if-domain';"
+      : "import { type GrammarBuilder } from '@sharpee/if-domain';",
+  );
   lines.push('');
   lines.push('/**');
   lines.push(' * Register the standard English grammar (generated).');
   lines.push(' * @param grammar The grammar builder to use');
   lines.push(' */');
   lines.push('export function defineGrammar(grammar: GrammarBuilder): void {');
-  for (const r of rules) {
-    let chain = `  grammar.define(${JSON.stringify(r.pattern)}).mapsTo(${JSON.stringify(r.action)})`;
-    if (r.defaults) chain += `.withDefaultSemantics(${JSON.stringify(r.defaults)})`;
-    for (const [slot, type] of Object.entries(r.slotTypes)) {
-      chain += type === 'instrument' ? `.instrument(${JSON.stringify(slot)})` : `.topic(${JSON.stringify(slot)})`;
-    }
-    chain += '.build();';
-    lines.push(chain);
-  }
+  lines.push(...calls);
   lines.push('}');
   lines.push('');
-  return { source: lines.join('\n'), rules: rules.length, actions };
+  return { source: lines.join('\n'), rules: calls.length, actions };
 }
 
 const MODULE_PATH = 'packages/parser-en-us/src/grammar.ts';

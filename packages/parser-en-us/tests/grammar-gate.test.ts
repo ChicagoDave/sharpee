@@ -2,11 +2,12 @@
  * The rule gate (ADR-378 D5, GH #317): a grammar rule with a `when`
  * predicate is skipped while the predicate answers false against the live
  * world — neither a match nor a failure — so the input falls through to the
- * rules that remain. `forAction().when()` gates every rule of the block.
+ * rules that remain. `rule(spec)` carries the gate on each rule it registers.
  * Each test asserts on what the engine matched and on the failure list.
  */
 import { describe, it, expect, beforeEach } from 'vitest';
 import { EnglishGrammarEngine } from '../src/english-grammar-engine';
+import { EnglishPatternCompiler } from '../src/english-pattern-compiler';
 import { Token, GrammarContext } from '@sharpee/if-domain';
 
 function tokens(words: string[]): Token[] {
@@ -62,20 +63,16 @@ describe('the grammar rule gate (ADR-378 D5)', () => {
     expect(elsewhere?.rule.action).toBe('if.action.dropping');
   });
 
-  it('forAction().when() gates every rule the block registers, slotted and bare alike', () => {
-    engine
-      .createBuilder('story')
-      .forAction('story.releasing')
-      .when((ctx) => ctx.currentLocation === 'r_wire')
-      .fullPattern('let go')
-      .fullPattern('release :thing')
-      .verbs(['let'])
-      .pattern('go of :thing')
-      .build();
+  it('rule(spec) carries its gate, on slotted and bare rules alike', () => {
+    const story = engine.createBuilder('story');
+    const onTheWire = (ctx: GrammarContext) => ctx.currentLocation === 'r_wire';
+    for (const pattern of ['let go', 'release :thing', 'let go of :thing']) {
+      story.rule({ action: 'story.releasing', parts: new EnglishPatternCompiler().parse(pattern), pattern, when: onTheWire });
+    }
 
     const rules = engine.getRules().filter((r) => r.action === 'story.releasing');
-    expect(rules.length).toBeGreaterThanOrEqual(3);
-    for (const rule of rules) expect(rule.when).toBeDefined();
+    expect(rules).toHaveLength(3);
+    for (const rule of rules) expect(rule.when).toBe(onTheWire);
 
     expect(engine.findMatches(tokens(['let', 'go']), contextIn('r_wire'))).toHaveLength(1);
     expect(engine.findMatches(tokens(['let', 'go']), contextIn('r_hall'))).toHaveLength(0);

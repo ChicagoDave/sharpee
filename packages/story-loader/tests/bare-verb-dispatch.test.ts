@@ -34,7 +34,7 @@ function compileFixture(name: string): StoryIR {
 
 /**
  * Captures grammar registrations against a real if-domain GrammarEngine
- * (ADR-271 D3 — the loader now emits action-centrically via forAction()).
+ * (the loader registers each lowered rule through rule(spec), ADR-382 D2).
  */
 function captureGrammar(story: ChordStory): Array<{ pattern: string; action: string; tier: string }> {
   return captureGrammarRules(story).map((r) => ({ pattern: r.pattern, action: r.action, tier: r.tier }));

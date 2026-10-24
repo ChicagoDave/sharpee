@@ -33,45 +33,38 @@ editable source is `grammar/standard-en-us.story` (a Chord *grammar file*:
 - Patterns in `lang-en-us` action files are for documentation/help, not parsing.
 - Stories can extend grammar for story-specific commands via `extendParser()`.
 
-## Grammar Patterns (ADR-087)
+## Grammar Patterns (ADR-382)
 
-Use the **action-centric** `.forAction()` API for standard verb patterns:
+A grammar rule reaches the engine as **structured parts** (`PatternElement[]`
+from `@sharpee/if-domain`). There are two entries, and both end in the same
+compiled pattern:
+
+- **`grammar.rule(spec)`** takes the parts directly — action, parts, display
+  text, per-rule defaults, per-slot types and constraints, and an optional
+  gate. The Chord loader and the generated `src/grammar.ts` register through
+  it, and no text is parsed.
+- **`grammar.define(text)`** is the text front end for TypeScript stories.
+  `EnglishPatternCompiler.parse` turns the text into parts once, at the
+  definition, and refuses malformed brackets and multi-word optionals
+  (`[look at]`) with `PatternSyntaxError`.
 
 ```typescript
-// Preferred: action-centric with verb aliases
+// One rule per line; verb aliases are separate rules
 grammar
-  .forAction('if.action.pushing')
-  .verbs(['push', 'press', 'shove', 'move'])
-  .pattern(':target')
+  .define('push :target')
   .where('target', (scope) => scope.touchable())
+  .mapsTo('if.action.pushing')
   .build();
-// Generates: push :target, press :target, shove :target, move :target
 
-// Direction commands with aliases
-grammar
-  .forAction('if.action.going')
-  .directions({
-    north: ['north', 'n'],
-    south: ['south', 's'],
-    // ...
-  })
-  .build();
-```
-
-Use `.define()` only for:
-
-- **Phrasal verbs**: `pick up :item`, `put down :item`
-- **Complex patterns**: `unlock :door with :key`
-- **Story-specific commands**: `incant :word`
-
-```typescript
-// Phrasal verb — can't use forAction because verb has space
 grammar
   .define('pick up :item')
-  .where('item', (scope) => scope.visible().matching({ portable: true }))
   .mapsTo('if.action.taking')
   .build();
 ```
+
+A slot's configuration (`.where()`, `.instrument()`, …) has to name a slot the
+pattern carries. A name the pattern lacks throws at build. Nothing reads
+`rule.pattern` back as a pattern: it is display text only.
 
 ## Story Grammar Extension
 
@@ -103,7 +96,7 @@ extendParser(parser: Parser): void {
   resolution is confidence → tier → literal specificity → definition order).
 - Definition order is semantic: when two story patterns tie on specificity,
   the one defined earlier wins. Don't reorder grammar lines casually.
-- Stdlib grammar uses `.forAction()` — stories usually don't need this.
+- The standard grammar registers through `rule(spec)` (generated); TS stories use `.define()`.
 - **Removing standard rules (ADR-270, ADR-382 D6)**:
   `grammar.removeRules(actionId, rule => …)` removes the standard-tier rules of
   that action the test accepts and returns the count (0 = no match — check it;

@@ -9,7 +9,7 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { compile } from '../src';
-import { expandCommands, expandReadings, lowerActionRules, lowerParts, renderPattern, samePatternShape } from '../src/patterns';
+import { commandParts, expandCommands, expandReadings, lowerActionRules, lowerParts, renderPattern, samePatternShape } from '../src/patterns';
 import type { PatternElement } from '@sharpee/if-domain';
 
 const word = (w: string, optional?: boolean): PatternElement => ({ kind: 'word', word: w, ...(optional ? { optional } : {}) });
@@ -56,6 +56,17 @@ describe('expandReadings and expandCommands share one walk', () => {
       'climb rope',
       'climb ladder',
     ]);
+  });
+
+  it('commandParts turns each command back into its word elements, the inverse of the join', () => {
+    const commands = expandCommands([word('Climb'), word('up', true), alt(['rope', 'Ladder'])]);
+    expect(commands.map(commandParts)).toEqual([
+      [word('climb'), word('up'), word('rope')],
+      [word('climb'), word('up'), word('ladder')],
+      [word('climb'), word('rope')],
+      [word('climb'), word('ladder')],
+    ]);
+    expect(commands.map((command) => renderPattern(commandParts(command)))).toEqual(commands);
   });
 
   it('an all-optional pattern yields no empty reading', () => {

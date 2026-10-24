@@ -5,7 +5,7 @@
  * their readings and a passage's commands, and comparing two patterns by
  * shape.
  *
- * Public interface: lowerParts, lowerActionRules, LoweredRule,
+ * Public interface: lowerParts, lowerActionRules, LoweredRule, commandParts,
  * renderPattern, expandReadings, expandCommands, samePatternShape.
  * Owner context: @sharpee/chord. The element type is if-domain's
  * PatternElement (ADR-382 D1), imported as a type only, so chord stays free
@@ -115,6 +115,17 @@ export function expandCommands(parts: readonly PatternElement[]): string[] {
   return expandReadings(parts).map((reading) =>
     reading.map((part) => (part.kind === 'word' ? part.word.toLowerCase() : '')).join(' '),
   );
+}
+
+/**
+ * A command from `expandCommands` → its word elements, the inverse of that
+ * function's join: a command is words joined by single spaces (ADR-382 D8,
+ * a passage's command registered through `rule(spec)`).
+ * @param command One command `expandCommands` returned
+ * @returns One word element per word, in order
+ */
+export function commandParts(command: string): PatternElement[] {
+  return command.split(' ').map((word): PatternElement => ({ kind: 'word', word }));
 }
 
 /**

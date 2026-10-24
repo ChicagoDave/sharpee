@@ -3,7 +3,7 @@
  * grammar, so loader-emission tests assert on the registered GrammarRule
  * shape (ADR-271 acceptance 3) rather than on a mocked builder chain. The
  * pattern compiler is the real English one (ADR-382 D3), and the
- * registration path — forAction/fullPattern/where/build → addRule — is the
+ * registration path — rule(spec) → addRule (ADR-382 D2) — is the
  * engine's own. Only matching is left out; the full production path
  * (EnglishGrammarEngine + parse) is exercised by the transcript suites.
  */

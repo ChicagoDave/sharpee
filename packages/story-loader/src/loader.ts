@@ -31,6 +31,9 @@ import {
   type IREntity,
   type IRPhrase,
   type IRTraitDef,
+  commandParts,
+  lowerActionRules,
+  type LowerableAction,
   lowerParts,
   renderPattern,
   samePatternShape,
@@ -39,7 +42,7 @@ import {
   vehicleAboard,
   vehicleCandidateRoomIds,
 } from '@sharpee/chord';
-import type { IRActionPattern, IRPatternPart, IRProseValue, ScopeRequirementWord } from '@sharpee/chord';
+import type { IRProseValue, ScopeRequirementWord } from '@sharpee/chord';
 import type { IROnClause } from '@sharpee/chord';
 
 /**
@@ -64,7 +67,7 @@ function arrivalNarratedTopicsOf(onClauses: readonly IROnClause[]): ReadonlySet<
   }
   return topics;
 }
-import type { Choice, GrammarBuilder, IChannelRegistry, IOChannel, Literal, Phrase, ScopeBuilder, SemanticProperties, SnippetEntry, SnippetMap } from '@sharpee/if-domain';
+import type { Choice, GrammarBuilder, GrammarRuleSlotSpec, ScopeConstraintBuilder, IChannelRegistry, IOChannel, Literal, Phrase, ScopeBuilder, SemanticProperties, SnippetEntry, SnippetMap } from '@sharpee/if-domain';
 import {
   registerSnippetGate,
   IFActions,
@@ -1567,10 +1570,10 @@ export class ChordStory implements Story {
   }
 
   /**
-   * Register `define action` grammar patterns as story grammar (ADR-087),
-   * action-centrically (ADR-271 D3): one `forAction()` block per action,
-   * grammar lines as complete `fullPattern()` calls, and the action's
-   * scope constraints attached as `.where()` slot gates (D2). The param is
+   * Register `define action` grammar patterns as story grammar: one
+   * `rule(spec)` per lowered rule, in definition order (ADR-382 D2, D7),
+   * with the action's scope constraints as slot constraints (ADR-271 D2)
+   * on the rules that carry the slot. The param is
    * the Story contract's stdlib Parser; `getStoryGrammar` is accessed
    * structurally (the Parser contract doesn't declare it) but returns the
    * real if-domain GrammarBuilder — the ADR-266-era three-method cast is
@@ -1647,131 +1650,49 @@ export class ChordStory implements Story {
   }
 
   /**
-   * Register one action's grammar surfaces (ADR-271 D3 emission, shared by
-   * `define action` and ADR-270 `extend action`): pattern strings with
-   * per-pattern semantic defaults, `.where()` scope gates, `.slotType()`
-   * lines, and the `directions` cross-product — at story tier, grouped by
-   * identical defaults. `bareVerbForms` adds each pattern's literal verb
-   * prefix as its own rule (dispatch actions only).
+   * Register one action's grammar surfaces (shared by `define action` and
+   * ADR-270 `extend action`) at story tier: the rules chord's
+   * `lowerActionRules` lowers the action to, each through `rule(spec)` in
+   * definition order with its own `means` defaults (ADR-382 D7). The
+   * loader's one piece of grammar work is mapping each scope requirement
+   * word to its predicate. `bareVerbForms` adds each pattern's literal verb
+   * prefix as its own rule, after the written patterns (dispatch actions only).
    */
   private registerActionGrammar(
     grammar: GrammarBuilder,
     actionId: string,
-    def: {
-      patterns: IRActionPattern[];
-      constraints: Array<{ slot: string; requirement: ScopeRequirementWord }>;
-      greedy?: string[];
-      slotTypes?: Array<{ slot: string; type: 'instrument' | 'topic' }>;
-      directions?: Array<{ canonical: string; aliases: string[] }>;
-      condition?: IRCondition;
-    },
+    def: LowerableAction & { constraints: Array<{ slot: string; requirement: ScopeRequirementWord }>; condition?: IRCondition },
     opts: { bareVerbForms: boolean },
   ): void {
-    {
-      const action = def;
-      const greedy = action.greedy ?? [];
-      const directions = action.directions ?? [];
-      // ADR-378 D5 (ADR-370 D7, GH #317): `define action … while` gates
-      // every rule the action registers, bare-verb prefixes included — where
-      // the condition is false the input parses as though the action did
-      // not exist. Read against the live world at match time.
-      const condition = action.condition;
-      const gate = condition
-        ? (ctx: { world: unknown }) => this.evaluator.evalCondition(condition, { world: ctx.world as WorldModel })
-        : undefined;
+    // ADR-378 D5 (ADR-370 D7, GH #317): `define action … while` gates every
+    // rule the action registers, bare-verb prefixes included — where the
+    // condition is false the input parses as though the action did not
+    // exist. Read against the live world at match time.
+    const condition = def.condition;
+    const gate = condition
+      ? (ctx: { world: unknown }) => this.evaluator.evalCondition(condition, { world: ctx.world as WorldModel })
+      : undefined;
 
-      // ADR-267 D12: collect the emitted pattern strings first, each with
-      // its per-pattern semantic defaults (`means` lines; the `directions`
-      // cross-product adds `direction: <canonical>`). Rules then register
-      // grouped by identical defaults — one forAction block per group, so
-      // defaults stay PER-PATTERN (never leak action-wide) while the
-      // pre-267 no-defaults path emits exactly as before.
-      const emissions: Array<{ text: string; defaults: Record<string, string> | null }> = [];
-      const bareForms = new Set<string>();
-      for (const pattern of action.patterns) {
-        if (pattern.cardinality) continue; // `→ each …` expansion is engine-owned (Phase C)
-        const means = pattern.means?.length
-          ? Object.fromEntries(pattern.means.map((m) => [m.key, m.value]))
-          : null;
-        const usesDirection =
-          directions.length > 0 && pattern.parts.some((p) => p.kind === 'slot' && p.word === 'direction');
-
-        if (usesDirection) {
-          // Expansion: one rule per alias × pattern, `direction: <canonical>`
-          // as that rule's default. A bare `the direction` pattern registers
-          // the standalone forms (`port`, `p`, …).
-          const isBare = pattern.parts.length === 1;
-          for (const entry of directions) {
-            for (const alias of [entry.canonical, ...entry.aliases]) {
-              const text = isBare
-                ? alias
-                : pattern.parts
-                    .map((part) =>
-                      part.kind === 'slot' && part.word === 'direction' ? alias : renderPatternPart(part, greedy),
-                    )
-                    .join(' ');
-              emissions.push({ text, defaults: { ...(means ?? {}), direction: entry.canonical } });
-            }
-          }
-        } else {
-          const text = pattern.parts.map((part) => renderPatternPart(part, greedy)).join(' ');
-          emissions.push({ text, defaults: means });
-        }
-
-        // Bare-verb forms (platform-issue-sweep Phase 8 #13, David's ruling:
-        // ALL dispatch actions): each pattern's literal prefix registers as
-        // its own rule below the slotted forms — computed from the original
-        // parts, direction expansion included (the prefix is the verb).
-        const slotIndex = pattern.parts.findIndex((part) => part.kind === 'slot');
-        if (opts.bareVerbForms && slotIndex > 0) {
-          const bare = pattern.parts
-            .slice(0, slotIndex)
-            .map((part) => renderPatternPart(part, greedy))
-            .join(' ');
-          if (bare) bareForms.add(bare);
-        }
+    for (const lowered of lowerActionRules(def, opts)) {
+      const slots: Record<string, GrammarRuleSlotSpec> = {};
+      for (const { slot, requirement } of lowered.requirements) {
+        const predicate = SCOPE_REQUIREMENT_PREDICATES[requirement as ScopeRequirementWord];
+        const constraint: ScopeConstraintBuilder = (scope) => applyScopePredicate(scope, predicate);
+        slots[slot] = { ...slots[slot], constraints: [...(slots[slot]?.constraints ?? []), constraint] };
       }
-
-      // One builder per distinct defaults object; shared slot configuration
-      // (.where() gates, ADR-271 D2; .slotType(), ADR-267 D11) is applied to
-      // every group — it attaches only to rules that carry the slot.
-      const groups = new Map<string, { defaults: Record<string, string> | null; texts: string[] }>();
-      for (const e of emissions) {
-        const key = JSON.stringify(e.defaults);
-        const group = groups.get(key) ?? { defaults: e.defaults, texts: [] };
-        group.texts.push(e.text);
-        groups.set(key, group);
+      for (const [slot, type] of Object.entries(lowered.slotTypes)) {
+        slots[slot] = { ...slots[slot], type: type === 'instrument' ? SlotType.INSTRUMENT : SlotType.TOPIC };
       }
-      for (const group of groups.values()) {
-        // Story tier (ADR-268 D2): the builder from getStoryGrammar()
-        // registers 'story', which outranks the standard grammar outright —
-        // the old 150/140 priorities collapsed into that single tier.
-        const slotted = grammar.forAction(actionId);
-        if (gate) slotted.when(gate);
-        if (group.defaults) slotted.withDefaultSemantics(group.defaults);
-        for (const text of group.texts) slotted.fullPattern(text);
-        for (const constraint of action.constraints) {
-          const predicate = SCOPE_REQUIREMENT_PREDICATES[constraint.requirement];
-          // No `: ScopeBuilder` annotation needed — `.where()` narrowed to a
-          // single callback type, so `scope` is contextually typed
-          // (ADR-231 D2a Amendment 1).
-          slotted.where(constraint.slot, (scope) => applyScopePredicate(scope, predicate));
-        }
-        for (const st of action.slotTypes ?? []) {
-          slotted.slotType(st.slot, st.type === 'instrument' ? SlotType.INSTRUMENT : SlotType.TOPIC);
-        }
-        slotted.build();
-      }
-
-      // Bare-verb prefixes carry no `.where()` gate — the `refuse without`
-      // arm owns the no-target case (D2). They register after the slotted
-      // forms; specificity orders them below the slotted forms anyway.
-      if (bareForms.size > 0) {
-        const bare = grammar.forAction(actionId);
-        if (gate) bare.when(gate);
-        for (const form of bareForms) bare.fullPattern(form);
-        bare.build();
-      }
+      // Story tier (ADR-268 D2): the builder from getStoryGrammar()
+      // registers 'story', which outranks the standard grammar outright.
+      grammar.rule({
+        action: actionId,
+        parts: lowered.parts,
+        pattern: lowered.pattern,
+        ...(lowered.defaults ? { defaults: lowered.defaults } : {}),
+        slots,
+        ...(gate ? { when: gate } : {}),
+      });
     }
   }
 
@@ -1805,11 +1726,11 @@ export class ChordStory implements Story {
         const way = TraversalBehavior.wayFor(world, room, key as ExitKey, { kind: 'walker', entity: actor });
         return !(way.kind === 'refused' && (way.reason === 'hidden' || way.reason === 'no_exit'));
       };
-      const rule = grammar.forAction('if.action.going');
-      rule.withDefaultSemantics({ direction: key });
-      rule.when(gate);
-      for (const form of forms) rule.fullPattern(form);
-      rule.build();
+      // ADR-382 D8: each command as word parts, through the same entry.
+      for (const form of forms) {
+        const parts = commandParts(form);
+        grammar.rule({ action: 'if.action.going', parts, pattern: renderPattern(parts), defaults: { direction: key }, when: gate });
+      }
     }
   }
 
@@ -3184,19 +3105,4 @@ function editDistance(a: string, b: string, max: number): number {
   return prev[b.length];
 }
 
-/**
- * One IR pattern element → its Sharpee pattern-string token (ADR-267):
- * alternation → `a|b` (D8, one rule), optional → `[…]` (D9), a slot named
- * by a greedy line → `:slot...` (D10, TEXT_GREEDY). Plain words and slots
- * pass through as before — pre-267 patterns emit byte-identical strings.
- */
-function renderPatternPart(part: IRPatternPart, greedy: readonly string[]): string {
-  const core =
-    part.kind === 'alt'
-      ? part.words.join('|')
-      : part.kind === 'slot'
-        ? `:${part.word}${greedy.includes(part.word) ? '...' : ''}`
-        : part.word;
-  return part.optional ? `[${core}]` : core;
-}
 

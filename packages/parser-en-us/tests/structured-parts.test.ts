@@ -161,19 +161,6 @@ describe('slot configuration attaches by compiled slot (ADR-382 D4)', () => {
     expect(engine.getRules()).toHaveLength(0);
   });
 
-  it('forAction configures a slot only on the generated rules that carry it', () => {
-    engine
-      .createBuilder('story')
-      .forAction('story.wave')
-      .verbs(['wave', 'flap'])
-      .patterns([':thing', ''])
-      .where('thing', (s) => s.carried())
-      .build();
-    const rules = engine.getRules();
-    expect(rules.map((r) => r.pattern)).toEqual(['wave :thing', 'wave', 'flap :thing', 'flap']);
-    expect(rules.map((r) => r.slots.get('thing')?.constraints.length ?? 0)).toEqual([1, 0, 1, 0]);
-  });
-
   it('a greedy slot typed as anything but TEXT_GREEDY throws', () => {
     expect(() => engine.createBuilder().define('say :message...').text('message').mapsTo('story.say').build()).toThrow(
       /greedy slot 'message'/,
@@ -258,12 +245,15 @@ describe('an optional slot is seated and constrained (B1)', () => {
     vocabularyRegistry.clear();
     parser = new EnglishParser(new EnglishLanguageProvider());
     parser.setWorldContext(new Room(), 'player', 'room');
-    parser
-      .getStoryGrammar()
-      .forAction('story.poke')
-      .fullPattern('poke [:target]')
-      .where('target', (scope) => scope.carried())
-      .build();
+    parser.getStoryGrammar().rule({
+      action: 'story.poke',
+      pattern: 'poke [:target]',
+      parts: [
+        { kind: 'word', word: 'poke' },
+        { kind: 'slot', name: 'target', optional: true },
+      ],
+      slots: { target: { constraints: [(scope) => scope.carried()] } },
+    });
   });
 
   it('`poke coin` (carried) seats the coin as the direct object of the story rule', () => {

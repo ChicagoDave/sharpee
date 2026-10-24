@@ -11,6 +11,7 @@
 
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { EnglishParser } from '../src/english-parser';
+import { EnglishPatternCompiler } from '../src/english-pattern-compiler';
 import { EnglishLanguageProvider } from '@sharpee/lang-en-us';
 import { vocabularyRegistry } from '@sharpee/if-domain';
 import { Direction } from '@sharpee/world-model';
@@ -45,10 +46,10 @@ class EmptyWorld {
 
 /** Register a passage's commands the way the story loader does. */
 function passage(parser: EnglishParser, key: string, forms: string[]): void {
-  const rule = parser.getStoryGrammar().forAction('if.action.going');
-  rule.withDefaultSemantics({ direction: key });
-  for (const form of forms) rule.fullPattern(form);
-  rule.build();
+  for (const form of forms) {
+    const parts = new EnglishPatternCompiler().parse(form);
+    parser.getStoryGrammar().rule({ action: 'if.action.going', parts, pattern: form, defaults: { direction: key } });
+  }
 }
 
 describe('a going command carries the matched rule\'s direction', () => {
