@@ -770,21 +770,16 @@ export class EnglishParser implements Parser {
    */
   private convertGrammarMatch(match: PatternMatch, tokens: IToken[]): RichCandidate | null {
     const rule = match.rule;
-    
-    // Extract verb tokens from the beginning of the match
-    const verbTokenIndices: number[] = [];
-    let verbEndIndex = 0;
-    
-    // Find verb tokens at the start
-    for (let i = 0; i < tokens.length; i++) {
-      if (tokens[i].partOfSpeech.includes(PartOfSpeech.VERB)) {
-        verbTokenIndices.push(i);
-        verbEndIndex = i + 1;
-      } else {
-        break;
-      }
-    }
-    
+    const compiled = rule.compiledPattern!;
+
+    // ADR-383 D7: the verb phrase is the input the rule's literals before
+    // its first slot consumed — never the words a vocabulary tags as verbs,
+    // so `examine light` has the verb `examine` and a story verb its own word.
+    const firstSlotIndex = compiled.slots.length > 0 ? Math.min(...compiled.slots.map((s) => s.tokenIndex)) : Infinity;
+    const literalTokensWhere = (inRange: (tokenIndex: number) => boolean): number[] =>
+      match.literals.filter((element) => inRange(element.tokenIndex)).flatMap((element) => [...element.inputTokens]);
+    const verbTokenIndices = literalTokensWhere((index) => index < firstSlotIndex);
+
     // Build verb phrase
     const verbPhrase: IVerbPhrase = {
       tokens: verbTokenIndices,
@@ -955,19 +950,18 @@ export class EnglishParser implements Parser {
       }
     }
     
-    // Find prepositions between direct and indirect objects
+    // ADR-383 D7: the preposition is the input the literals between the
+    // direct and the indirect slot consumed, in pattern order; absent when
+    // they consumed none.
     if (directObject && indirectObject) {
-      const directObjLastToken = directObject.tokens[directObject.tokens.length - 1];
-      const indirectObjFirstToken = indirectObject.tokens[0];
-      
-      for (let i = directObjLastToken + 1; i < indirectObjFirstToken; i++) {
-        if (tokens[i].partOfSpeech.includes(PartOfSpeech.PREPOSITION)) {
-          preposition = {
-            tokens: [i],
-            text: tokens[i].word
-          };
-          break;
-        }
+      const seatIndex = (phrase: INounPhrase) => compiled.slotsByName.get(phrase.slot!)!.tokenIndex;
+      const [from, to] = [seatIndex(directObject), seatIndex(indirectObject)].sort((a, b) => a - b);
+      const prepositionTokens = literalTokensWhere((index) => index > from && index < to);
+      if (prepositionTokens.length > 0) {
+        preposition = {
+          tokens: prepositionTokens,
+          text: prepositionTokens.map((i) => tokens[i].word).join(' ')
+        };
       }
     }
     

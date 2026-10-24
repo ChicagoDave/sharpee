@@ -100,7 +100,7 @@
 - **Exit state**: no tag-derived verb or preposition and no slot-name guess in the parser (grep); suites green; chain and trees identical to baseline or classified.
 - **Demonstration**: bundle probes for `examine light`, `pick up`, `give`, and a story verb; the greps; counts.
 - **Demonstrated**: 
-- **Status**: PENDING
+- **Status**: CURRENT (since 2026-10-23)
 
 ### Phase 7: Topic and text slots reach the action (`about` rows) and the language record
 - **Tier**: Large

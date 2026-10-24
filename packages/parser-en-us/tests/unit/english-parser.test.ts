@@ -463,8 +463,9 @@ describe('EnglishParser', () => {
       expect(result.success).toBe(true);
       if (result.success) {
         expect(result.value.action).toBe('if.action.examining');
-        // 'look at' is parsed as a single verb pattern, not compound
-        expect(result.value.structure.verb.text).toBe('look');
+        // The verb phrase is the rule's literals before its first slot
+        // (ADR-383 D7), so `look at :target` has the verb `look at`
+        expect(result.value.structure.verb.text).toBe('look at');
         // ADR-231 D3: the leading article is split off the noun phrase
         expect(result.value.structure.directObject?.text).toBe('mirror');
         expect(result.value.structure.directObject?.articles).toEqual(['the']);

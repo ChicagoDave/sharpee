@@ -32,7 +32,8 @@ describe('Improved Error Messages', () => {
         tokensConsumed: 1,
         reason: 'NOT_ENOUGH_TOKENS',
         matchedVerb: 'take',
-        expected: { kind: 'slot', name: 'target' }
+        expected: { kind: 'slot', name: 'target' },
+        missingSeats: ['direct']
       }];
 
       const result = analyzeBestFailure(failures, 'take', true);
@@ -190,7 +191,7 @@ describe('Improved Error Messages', () => {
     it('GH #318: a verb-matched failure outranks a higher-progress failure that matched nothing', () => {
       const failures: PartialMatchFailure[] = [
         { pattern: '[look]', action: 'if.action.looking', progress: 0.9, tokensConsumed: 0, reason: 'LEFTOVER_TOKENS', failedAtToken: 'drop' },
-        { pattern: 'drop :item', action: 'if.action.dropping', progress: 0.5, tokensConsumed: 1, reason: 'NOT_ENOUGH_TOKENS', matchedVerb: 'drop', expected: { kind: 'slot', name: 'item' } },
+        { pattern: 'drop :item', action: 'if.action.dropping', progress: 0.5, tokensConsumed: 1, reason: 'NOT_ENOUGH_TOKENS', matchedVerb: 'drop', expected: { kind: 'slot', name: 'item' }, missingSeats: ['direct'] },
       ];
 
       const result = analyzeBestFailure(failures, 'drop', true);

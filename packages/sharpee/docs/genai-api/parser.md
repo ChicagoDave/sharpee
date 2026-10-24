@@ -284,7 +284,7 @@ export declare class EnglishPatternCompiler implements PatternCompiler {
  *              to provide better error messages (Phase 1.2 of parser recommendations)
  */
 import type { ParseErrorCode } from '@sharpee/world-model';
-import type { PatternElement } from '@sharpee/if-domain';
+import type { PatternElement, Seat } from '@sharpee/if-domain';
 /**
  * Reason why a pattern match failed
  */
@@ -320,7 +320,11 @@ export interface PartialMatchFailure {
     tokensConsumed: number;
     /** Why the match failed */
     reason: MatchFailureReason;
-    /** If verb was recognized, what was it */
+    /**
+     * The verb phrase so far, when the rule's first literal matched: the
+     * words its literals before the first slot consumed (ADR-383 D7) —
+     * `pick up` for `pick up :item`, never only the first word.
+     */
     matchedVerb?: string;
     /** If a slot failed, details about that failure */
     slotFailure?: SlotFailure;
@@ -328,6 +332,11 @@ export interface PartialMatchFailure {
     failedAtToken?: string;
     /** The pattern element expected at the failure point (ADR-382 D4) */
     expected?: PatternElement;
+    /**
+     * The seats of the required entity slots at and after the failure point:
+     * the objects the input left out when it ran out there (ADR-383 D8)
+     */
+    missingSeats?: Seat[];
     /** The first slot after the expected element, read from the compiled pattern */
     followingSlot?: string;
 }

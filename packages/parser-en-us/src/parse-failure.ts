@@ -5,7 +5,7 @@
  */
 
 import type { ParseErrorCode } from '@sharpee/world-model';
-import type { PatternElement } from '@sharpee/if-domain';
+import type { PatternElement, Seat } from '@sharpee/if-domain';
 
 /**
  * Reason why a pattern match failed
@@ -60,7 +60,11 @@ export interface PartialMatchFailure {
   /** Why the match failed */
   reason: MatchFailureReason;
 
-  /** If verb was recognized, what was it */
+  /**
+   * The verb phrase so far, when the rule's first literal matched: the
+   * words its literals before the first slot consumed (ADR-383 D7) —
+   * `pick up` for `pick up :item`, never only the first word.
+   */
   matchedVerb?: string;
 
   /** If a slot failed, details about that failure */
@@ -71,6 +75,12 @@ export interface PartialMatchFailure {
 
   /** The pattern element expected at the failure point (ADR-382 D4) */
   expected?: PatternElement;
+
+  /**
+   * The seats of the required entity slots at and after the failure point:
+   * the objects the input left out when it ran out there (ADR-383 D8)
+   */
+  missingSeats?: Seat[];
 
   /** The first slot after the expected element, read from the compiled pattern */
   followingSlot?: string;
@@ -153,26 +163,27 @@ export function analyzeBestFailure(
 
   // If verb matched but we ran out of tokens (missing object)
   if (best.matchedVerb && best.reason === 'NOT_ENOUGH_TOKENS') {
-    // Check if it was looking for a slot
+    // The seats of the slots the input left out say which object is missing
+    // (ADR-383 D8): the direct object whenever its slot is among them, so
+    // `give` alone asks what to give against `give :recipient :item` too.
+    if (best.missingSeats?.includes('direct')) {
+      return {
+        code: 'MISSING_OBJECT',
+        messageId: 'parser.error.missingObject',
+        context: { verb: best.matchedVerb }
+      };
+    }
+    // Ran out at an indirect slot, or at a typed slot (instrument, topic,
+    // text), which has no seat and is asked about by name.
     if (best.expected?.kind === 'slot') {
-      const slotName = best.expected.name;
-      // Determine if it's direct or indirect object
-      if (slotName === 'target' || slotName === 'item' || slotName === 'object') {
-        return {
-          code: 'MISSING_OBJECT',
-          messageId: 'parser.error.missingObject',
-          context: { verb: best.matchedVerb }
-        };
-      } else {
-        return {
-          code: 'MISSING_INDIRECT',
-          messageId: 'parser.error.missingIndirect',
-          context: {
-            verb: best.matchedVerb,
-            slot: slotName
-          }
-        };
-      }
+      return {
+        code: 'MISSING_INDIRECT',
+        messageId: 'parser.error.missingIndirect',
+        context: {
+          verb: best.matchedVerb,
+          slot: best.expected.name
+        }
+      };
     }
     // Ran out at a literal (a preposition) after the verb and an object —
     // `put pear` against `put :item in :container`: the indirect object is

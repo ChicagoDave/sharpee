@@ -1614,21 +1614,6 @@ export interface PatternBuilder {
      */
     mapsTo(action: string): PatternBuilder;
     /**
-     * Add semantic mappings for verbs
-     * @param verbs Map of verb text to semantic properties
-     */
-    withSemanticVerbs(verbs: Record<string, Partial<SemanticProperties>>): PatternBuilder;
-    /**
-     * Add semantic mappings for prepositions
-     * @param prepositions Map of preposition text to spatial relations
-     */
-    withSemanticPrepositions(prepositions: Record<string, string>): PatternBuilder;
-    /**
-     * Add semantic mappings for directions
-     * @param directions Map of direction text to normalized directions
-     */
-    withSemanticDirections(directions: Record<string, string>): PatternBuilder;
-    /**
      * Set default semantic properties
      * @param defaults Default semantic properties
      */
@@ -1791,7 +1776,6 @@ export interface GrammarRule {
     tier: GrammarTier;
     /** ADR-378 D5: skip the rule while this answers false (absent = always on) */
     when?: GrammarGate;
-    semantics?: SemanticMapping;
     defaultSemantics?: Partial<SemanticProperties>;
     experimentalConfidence?: number;
 }
@@ -1819,19 +1803,6 @@ export interface SemanticProperties {
     implicitDirection?: boolean;
     /** Custom properties for specific actions */
     [key: string]: any;
-}
-/**
- * Mapping from text variations to semantic properties
- */
-export interface SemanticMapping {
-    /** Map verb variations to properties */
-    verbs?: Record<string, Partial<SemanticProperties>>;
-    /** Map preposition variations to spatial relations */
-    prepositions?: Record<string, string>;
-    /** Map direction variations to normalized directions */
-    directions?: Record<string, string>;
-    /** Function to compute dynamic semantics based on match */
-    compute?: (match: any) => Partial<SemanticProperties>;
 }
 /**
  * Slot constraint definition
@@ -1972,11 +1943,19 @@ export interface PatternMatch {
      */
     literalSpecificity?: number;
     semantics?: SemanticProperties;
-    matchedTokens?: {
-        verb?: string;
-        preposition?: string;
-        direction?: string;
-    };
+    /**
+     * Every literal (word or alternation) element, in pattern order, with the
+     * input tokens it consumed (ADR-383 D7) — where the verb phrase and the
+     * preposition are read from.
+     */
+    literals: readonly MatchedElement[];
+}
+/** One pattern element as it matched the input (ADR-383 D7). */
+export interface MatchedElement {
+    /** Index of the element in `rule.compiledPattern.tokens`. */
+    tokenIndex: number;
+    /** Input token indices it consumed; empty for a skipped optional or article. */
+    inputTokens: readonly number[];
 }
 ```
 

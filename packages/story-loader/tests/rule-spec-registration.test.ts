@@ -83,10 +83,12 @@ describe('an optional slot is constrained and seated (B1)', () => {
     expect(held.text).toContain('You poke the coin.');
 
     // The story rule's `must be held` refuses the unheld lamp, so the input
-    // falls to the standard `poke` (touching).
+    // falls to the standard `poke` (touching), which speaks its own poke line
+    // now that the verb phrase is the rule's literal (ADR-383 D7).
     const unheld = await b.turnText('poke lamp');
-    expect(unheld.text).toContain('You touch the lamp.');
-    expect(unheld.text).not.toContain('You poke');
+    expect(unheld.events.map((e) => e.type)).toContain('if.event.touched');
+    expect(unheld.events.find((e) => e.type === 'if.event.touched')?.data).toMatchObject({ messageId: 'if.action.touching.poked' });
+    expect(unheld.text).toContain('You poke the lamp.');
     expect(b.world.getLocation(b.id('lamp'))).not.toBe(b.player.id);
   });
 });

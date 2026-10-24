@@ -7,12 +7,14 @@ import {
   GrammarEngine,
   type GrammarContext,
   type PatternMatch,
+  type MatchedElement,
   type GrammarMatchOptions,
   type PatternToken,
   type PatternElement,
   type CompiledPattern,
   SlotType,
-  type SlotMatch
+  type SlotMatch,
+  type Seat
 } from '@sharpee/if-domain';
 import { type Token } from '@sharpee/if-domain';
 import { EnglishPatternCompiler } from './english-pattern-compiler.js';
@@ -31,13 +33,15 @@ const ARTICLE_WORDS: ReadonlySet<string> = new Set(englishWords.articles.map((a)
 
 /**
  * What a failure stopped short of, read from the compiled pattern
- * (ADR-382 D4): the element at `index`, and the first slot after it — the
- * slot a missing preposition would have introduced.
+ * (ADR-382 D4): the element at `index`, the seats of the required entity
+ * slots from it on — the objects input that ran out there is missing
+ * (ADR-383 D8) — and the first slot after it, the slot a missing
+ * preposition would have introduced.
  * @param pattern The rule's compiled pattern
  * @param index The token index the match failed at
- * @returns The expected element and following slot, each absent when there is none
+ * @returns The expected element, the missing seats and the following slot, each absent when there is none
  */
-function expectationAt(pattern: CompiledPattern, index: number): { expected?: PatternElement; followingSlot?: string } {
+function expectationAt(pattern: CompiledPattern, index: number): { expected?: PatternElement; missingSeats?: Seat[]; followingSlot?: string } {
   const token = pattern.tokens[index];
   if (!token) return {};
   const optional = token.optional ? { optional: true } : {};
@@ -47,8 +51,13 @@ function expectationAt(pattern: CompiledPattern, index: number): { expected?: Pa
       : token.type === 'alternates'
         ? { kind: 'alt', words: token.alternates ?? [token.value], ...optional }
         : { kind: 'word', word: token.value, ...optional };
+  const missingSeats = pattern.slots.flatMap((slot) => (slot.tokenIndex >= index && !slot.optional && slot.seat ? [slot.seat] : []));
   const followingSlot = pattern.slots.find((slot) => slot.tokenIndex > index)?.name;
-  return { expected, ...(followingSlot !== undefined ? { followingSlot } : {}) };
+  return {
+    expected,
+    ...(missingSeats.length > 0 ? { missingSeats } : {}),
+    ...(followingSlot !== undefined ? { followingSlot } : {}),
+  };
 }
 
 /**
@@ -193,12 +202,28 @@ export class EnglishGrammarEngine extends GrammarEngine {
     let skippedOptionals = 0;
     // ADR-231 D2b: words consumed by literal/alternate pattern tokens
     let literalSpecificity = 0;
-    const matchedTokens: any = {};
+    // ADR-383 D7: each literal element and the input tokens it consumed.
+    const literals: MatchedElement[] = [];
+    // The verb phrase so far: the words the literals before the first slot
+    // consumed. It names the verb in a failure's message.
+    const verbWords: string[] = [];
+    let reachedSlot = false;
     let matchedVerb: string | undefined;
+    const literalMatched = (index: number, normalized: string) => {
+      literals.push({ tokenIndex: index, inputTokens: [tokenIndex] });
+      if (!reachedSlot) {
+        verbWords.push(normalized);
+        matchedVerb = verbWords.join(' ');
+      }
+    };
 
     // Try to match each pattern token
     for (const patternToken of pattern.tokens) {
       patternIndex++;
+      if (patternToken.type === 'slot') reachedSlot = true;
+      const skippedLiteral = () => {
+        if (patternToken.type !== 'slot') literals.push({ tokenIndex: patternIndex - 1, inputTokens: [] });
+      };
 
       // An article stands before a noun, never as a command's verb: a
       // pattern's first word is its verb, even spelled `an` (Dungeo's GDT
@@ -208,6 +233,7 @@ export class EnglishGrammarEngine extends GrammarEngine {
       // Check if we have a token to match
       if (tokenIndex >= tokens.length) {
         if (patternToken.optional || isArticle) {
+          skippedLiteral();
           continue;
         }
         // Not enough tokens for required pattern element
@@ -230,17 +256,16 @@ export class EnglishGrammarEngine extends GrammarEngine {
       switch (patternToken.type) {
         case 'literal':
           if (token.normalized === patternToken.value) {
-            if (tokenIndex === 0) {
-              matchedTokens.verb = token.normalized;
-              matchedVerb = token.normalized;
-            }
+            literalMatched(patternIndex - 1, token.normalized);
             tokenIndex++;
             literalSpecificity++;
           } else if (isArticle) {
             // An article the player left out, written or bracketed: free.
+            skippedLiteral();
             continue;
           } else if (patternToken.optional) {
             skippedOptionals++;
+            skippedLiteral();
             continue;
           } else {
             // Check if this is verb position for better error
@@ -263,14 +288,12 @@ export class EnglishGrammarEngine extends GrammarEngine {
 
         case 'alternates':
           if (patternToken.alternates!.includes(token.normalized)) {
-            if (tokenIndex === 0) {
-              matchedTokens.verb = token.normalized;
-              matchedVerb = token.normalized;
-            }
+            literalMatched(patternIndex - 1, token.normalized);
             tokenIndex++;
             literalSpecificity++;
           } else if (patternToken.optional) {
             skippedOptionals++;
+            skippedLiteral();
             continue;
           } else {
             const reason = tokenIndex === 0 ? 'VERB_MISMATCH' : 'LITERAL_MISMATCH';
@@ -330,12 +353,6 @@ export class EnglishGrammarEngine extends GrammarEngine {
 
           slots.set(patternToken.value, slotResult);
 
-          if (patternToken.value === 'direction') {
-            matchedTokens.direction = slotResult.text;
-          } else if (patternToken.value === 'preposition') {
-            matchedTokens.preposition = slotResult.text;
-          }
-
           tokenIndex = slotResult.tokens[slotResult.tokens.length - 1] + 1;
           confidence *= slotResult.confidence || 0.9;
           break;
@@ -366,8 +383,9 @@ export class EnglishGrammarEngine extends GrammarEngine {
       confidence *= rule.experimentalConfidence;
     }
 
-    // Build semantics from the rule and matched tokens
-    const semantics = this.buildSemantics(rule, matchedTokens);
+    // A rule's semantics are its per-rule defaults (ADR-148); nothing is
+    // derived from the matched words.
+    const semantics = rule.defaultSemantics && Object.keys(rule.defaultSemantics).length > 0 ? { ...rule.defaultSemantics } : undefined;
 
     return {
       success: true,
@@ -378,68 +396,9 @@ export class EnglishGrammarEngine extends GrammarEngine {
         consumed: tokenIndex,
         literalSpecificity,
         semantics,
-        matchedTokens
+        literals
       }
     };
-  }
-
-  /**
-   * Build semantic properties from rule and matched tokens
-   */
-  private buildSemantics(
-    rule: any, // GrammarRule
-    matchedTokens: any
-  ): any { // SemanticProperties | undefined
-    const DEBUG = process.env.PARSER_DEBUG === 'true';
-    let semantics: any = {};
-    
-    if (DEBUG) {
-      console.log(`Building semantics for rule: ${rule.pattern}`);
-      console.log(`Matched tokens:`, matchedTokens);
-      console.log(`Rule semantics:`, rule.semantics);
-      console.log(`Rule default semantics:`, rule.defaultSemantics);
-    }
-    
-    // Start with default semantics if available
-    if (rule.defaultSemantics) {
-      semantics = { ...rule.defaultSemantics };
-    }
-    
-    // Apply semantic mappings if available
-    if (rule.semantics) {
-      // Apply verb semantics
-      if (rule.semantics.verbs && matchedTokens.verb) {
-        const verbSemantics = rule.semantics.verbs[matchedTokens.verb];
-        if (verbSemantics) {
-          semantics = { ...semantics, ...verbSemantics };
-          if (DEBUG) {
-            console.log(`Applied verb semantics for '${matchedTokens.verb}':`, verbSemantics);
-          }
-        }
-      }
-      
-      // Apply direction semantics
-      if (rule.semantics.directions && matchedTokens.direction) {
-        const normalizedDirection = rule.semantics.directions[matchedTokens.direction];
-        if (normalizedDirection) {
-          semantics.direction = normalizedDirection;
-        }
-      }
-      
-      // Apply preposition semantics
-      if (rule.semantics.prepositions && matchedTokens.preposition) {
-        const spatialRelation = rule.semantics.prepositions[matchedTokens.preposition];
-        if (spatialRelation) {
-          semantics.spatialRelation = spatialRelation;
-        }
-      }
-    }
-    
-    if (DEBUG) {
-      console.log(`Final semantics:`, semantics);
-    }
-    
-    return Object.keys(semantics).length > 0 ? semantics : undefined;
   }
   
   /**
