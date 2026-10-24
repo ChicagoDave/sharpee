@@ -66,6 +66,39 @@ A slot's configuration (`.where()`, `.instrument()`, …) has to name a slot the
 pattern carries. A name the pattern lacks throws at build. Nothing reads
 `rule.pattern` back as a pattern: it is display text only.
 
+### Seats (ADR-383)
+
+Every entity slot carries a **seat**, `direct` or `indirect`, set on its
+compiled slot at build. The parser puts each noun in the command by its seat,
+and failure messages ask by it ("What do you want to give?" is the missing
+`direct` seat). Nothing guesses a seat from a slot's name or its position in
+the parser.
+
+- **The default is positional, and lives in if-domain.** With nothing
+  declared, the first entity slot is `direct` and the second `indirect`;
+  optional slots count. Instrument, topic, text and other typed slots take no
+  seat.
+- **Declare a seat for an indirect-first line**: `.seat(name, seat)` beside
+  `.instrument(name)`, or `slots[name].seat` in a `rule(spec)`.
+
+  ```typescript
+  grammar
+    .define('hand :recipient :item')
+    .seat('item', 'direct')
+    .mapsTo('if.action.giving')
+    .build();
+  ```
+
+  A seat on a non-entity slot, two slots in one seat, or a third entity slot
+  throws at build and registers nothing.
+- **Chord seats by name.** An action's slot name keeps one seat across all
+  its lines (`hand the recipient the item` seats like `give the item to the
+  recipient`), and the generated `src/grammar.ts` writes every seat out.
+- **The verb and preposition are the literals the rule matched**, not
+  vocabulary tags: the verb phrase is the input those literals consumed
+  before the first slot (`examine light` has the verb `examine`), and the
+  preposition is the input between the two seats.
+
 ## Story Grammar Extension
 
 Stories extend grammar in `extendParser()`:
