@@ -434,15 +434,6 @@ describe('EnglishParser', () => {
       expect(result.errors.length).toBeGreaterThan(0);
       expect(result.errors[0].type).toBe('UNKNOWN_WORD');
     });
-
-    test('should filter by confidence', () => {
-      const result = parser.parseWithErrors('take ball', { minConfidence: 0.9 });
-
-      const lowConfidenceCandidates = result.candidates.filter(
-        c => (c.confidence || 0) < 0.9
-      );
-      expect(lowConfidenceCandidates).toHaveLength(0);
-    });
   });
 
   describe('complex scenarios', () => {

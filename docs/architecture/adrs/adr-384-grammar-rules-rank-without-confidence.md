@@ -6,7 +6,7 @@
 
 **Kind**: technical
 
-**Scope**: `packages/parser-en-us` (`src/english-grammar-engine.ts`, `english-parser.ts`, `parse-failure.ts`, `src/slot-consumers/*`, `parser-types.ts`), `packages/if-domain` (`src/grammar/grammar-builder.ts`, `grammar-engine.ts`, `src/parser-contracts/parser-internals.ts`), `packages/chord` (`src/patterns.ts`), `packages/story-loader` (`src/loader.ts`), `packages/engine` and `packages/stdlib` (the `confidence: 1.0` writers), `packages/parser-en-us/CLAUDE.md`, `docs/architecture/adrs/adr-268-chord-grammar-rule-ordering.md` (amendment note), `packages/sharpee/docs/genai-api` (regenerated).
+**Scope**: `packages/parser-en-us` (`src/english-grammar-engine.ts`, `english-parser.ts`, `parse-failure.ts`, `src/slot-consumers/*`, `parser-types.ts` deleted), `packages/world-model` (`src/commands/parsed-command.ts`), `packages/if-domain` (`src/grammar/grammar-builder.ts`, `grammar-engine.ts`, `src/parser-contracts/parser-internals.ts`), `packages/chord` (`src/patterns.ts`), `packages/story-loader` (`src/loader.ts`), `packages/engine` and `packages/stdlib` (the `confidence: 1.0` writers), `packages/parser-en-us/CLAUDE.md`, `docs/architecture/adrs/adr-268-chord-grammar-rule-ordering.md` (amendment note), `packages/sharpee/docs/genai-api` (regenerated).
 
 ## Parent
 
@@ -58,7 +58,9 @@ Bare `take` fully matches the story's `take` prefix rule and runs `dismantling` 
 
 ### D1 — Confidence is removed
 
-A grammar match has no confidence. The skipped-optional penalty, `experimentalConfidence`, `minConfidence`, the slot consumers' confidence return and its `|| 0.9` are deleted. So are `confidence` on `PatternMatch` and on the parser's `RichCandidate`, and the optional `confidence` on the parsed command contract (`parser-internals.ts:67`), together with its constant writers in engine and stdlib. Nothing is accepted and ignored: a TypeScript story or fixture that sets one of these fields fails to compile.
+A grammar match has no confidence. The skipped-optional penalty, `experimentalConfidence`, `minConfidence`, the slot consumers' confidence return and its `|| 0.9` are deleted. So are `confidence` on `PatternMatch` and on the parser's `RichCandidate`, and the parsed command's `confidence`, together with its constant writers in engine and stdlib. The live contract is world-model's `IParsedCommand.confidence: number`, which is required (`world-model/src/commands/parsed-command.ts:179`); if-domain's optional copy (`parser-internals.ts:67`) goes with it. *(Citation corrected 2026-10-24, session b09060, at Phase 2 entry: the draft named only the if-domain copy. David widened Phase 2 to world-model the same day, "a".)* The parser-en-us file `src/parser-types.ts`, imported by nothing and carrying its own `confidence` and `minConfidence`, is deleted (David, 2026-10-24). Nothing is accepted and ignored: a TypeScript story or fixture that sets one of these fields fails to compile.
+
+World-model's `ITokenCandidate.confidence` (`parsed-command.ts:65`) is not match confidence. It is the vocabulary entry's priority under another name (filled from `vc.priority` at `english-parser.ts:700` and turned back into `priority` at `:748`), and matching never reads it. It is out of scope here; renaming it `priority` belongs to step 7 (language and state).
 
 A rule that used its optional already outranks one that skipped it, through `literalSpecificity` (`push hard button` consumes two literal words, `push button` one). The penalty did nothing else, except make a rule's rank depend on where in the input its optional fell.
 

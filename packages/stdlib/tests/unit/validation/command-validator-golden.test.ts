@@ -122,9 +122,7 @@ describe('CommandValidator (Golden Pattern)', () => {
               candidates: ['ball']
             }
           },
-          pattern: 'VERB_NOUN',
-          confidence: 1.0
-        };
+          pattern: 'VERB_NOUN'        };
         const result = validator.validate(manualParsed as unknown as IParsedCommand);
         expect(result.success).toBe(false);
         if (!result.success) {

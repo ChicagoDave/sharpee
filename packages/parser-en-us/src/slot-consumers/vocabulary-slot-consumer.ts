@@ -67,7 +67,6 @@ export class VocabularySlotConsumer implements SlotConsumer {
       return {
         tokens: [startIndex],
         text: token.word,
-        confidence: 1.0,
         slotType: SlotType.ADJECTIVE
       };
     }
@@ -96,7 +95,6 @@ export class VocabularySlotConsumer implements SlotConsumer {
       return {
         tokens: [startIndex],
         text: token.word,
-        confidence: 1.0,
         slotType: SlotType.NOUN
       };
     }
@@ -133,7 +131,6 @@ export class VocabularySlotConsumer implements SlotConsumer {
       return {
         tokens: [startIndex],
         text: token.word,
-        confidence: 1.0,
         slotType: SlotType.VOCABULARY,
         // Store category and matched word for action access
         category,
@@ -164,7 +161,6 @@ export class VocabularySlotConsumer implements SlotConsumer {
       return {
         tokens: [startIndex],
         text: token.word,
-        confidence: 1.0,
         slotType: SlotType.MANNER,
         manner: word
       };
@@ -178,7 +174,6 @@ export class VocabularySlotConsumer implements SlotConsumer {
         return {
           tokens: [startIndex],
           text: token.word,
-          confidence: 1.0,
           slotType: SlotType.MANNER,
           manner: word
         };

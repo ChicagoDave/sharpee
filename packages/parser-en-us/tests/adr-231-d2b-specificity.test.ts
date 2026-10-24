@@ -1,8 +1,8 @@
 /**
  * @file ADR-231 D2b — Literal-before-slot specificity tests
  * @description Pins the general match-ordering contract (ADR-268 D2):
- * confidence desc → tier (story over standard) → literal specificity desc →
- * definition order. A rule whose literal tokens consume words outranks a
+ * tier (story over standard) → literal specificity desc → definition order
+ * (ADR-268 D2 without its confidence term, ADR-384 D1). A rule whose literal tokens consume words outranks a
  * rule whose unconstrained slot swallows the same words (`get in :portal`
  * beats `get :item` for "get in basket"); the story tier is the override
  * layered on top of specificity.

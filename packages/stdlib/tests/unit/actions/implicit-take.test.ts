@@ -32,9 +32,7 @@ describe('Implicit Takes (requireCarriedOrImplicitTake)', () => {
         action: testAction.id,
         tokens: [],
         structure: { verb: { tokens: [0], text: 'test', head: 'test' } },
-        pattern: 'VERB_NOUN',
-        confidence: 1.0
-      },
+        pattern: 'VERB_NOUN'      },
       actionId: testAction.id,
       directObject: entity ? {
         entity,

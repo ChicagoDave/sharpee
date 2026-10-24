@@ -250,7 +250,6 @@ describe('ParsedCommand types', () => {
           }
         },
         pattern: 'VERB_ONLY',
-        confidence: 1.0,
         action: 'if.action.looking'
       };
 
@@ -259,7 +258,6 @@ describe('ParsedCommand types', () => {
       expect(command.structure.verb).toBeDefined();
       expect(command.structure.directObject).toBeUndefined();
       expect(command.pattern).toBe('VERB_ONLY');
-      expect(command.confidence).toBe(1.0);
       expect(command.action).toBe('if.action.looking');
     });
 
@@ -303,7 +301,6 @@ describe('ParsedCommand types', () => {
           }
         },
         pattern: 'VERB_NOUN',
-        confidence: 0.9,
         action: 'if.action.taking'
       };
 
@@ -346,7 +343,6 @@ describe('ParsedCommand types', () => {
           }
         },
         pattern: 'VERB_NOUN_PREP_NOUN',
-        confidence: 0.85,
         action: 'if.action.putting'
       };
 
@@ -369,7 +365,6 @@ describe('ParsedCommand types', () => {
           }
         },
         pattern: 'VERB_ONLY',
-        confidence: 1.0,
         action: 'if.action.looking',
         extras: {
           isAbbreviated: false,
@@ -496,7 +491,6 @@ describe('Language-agnostic design', () => {
         verb: { tokens: [0], text: 'test', head: 'test' }
       },
       pattern: 'TEST_PATTERN',
-      confidence: 1.0,
       action: 'test.action'
     };
 
@@ -505,7 +499,6 @@ describe('Language-agnostic design', () => {
     expect(command).toHaveProperty('tokens');
     expect(command).toHaveProperty('structure');
     expect(command).toHaveProperty('pattern');
-    expect(command).toHaveProperty('confidence');
 
     // No English-specific fields
     expect(command).not.toHaveProperty('englishGrammar');
@@ -559,7 +552,6 @@ describe('Language-agnostic design', () => {
       tokens: [],
       structure: { verb: { tokens: [0], text: 'test', head: 'test' } },
       pattern: 'ENGLISH_SPECIFIC_PATTERN_NAME',
-      confidence: 1.0,
       action: 'test.action'
     };
 
@@ -572,7 +564,6 @@ describe('Language-agnostic design', () => {
       tokens: [],
       structure: { verb: { tokens: [0], text: 'test', head: 'test' } },
       pattern: 'JAPANESE_SPECIFIC_PATTERN_NAME',
-      confidence: 1.0,
       action: 'test.action'
     };
 

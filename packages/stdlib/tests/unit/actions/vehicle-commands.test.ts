@@ -387,7 +387,6 @@ describe('the vehicle command transformer (ADR-366 D5b, D5c, D7)', () => {
         ...(noun ? { directObject: { tokens: [1], text: noun, head: noun, modifiers: [], articles: [], determiners: [], candidates: [noun] } } : {}),
       },
       pattern: 'TEST',
-      confidence: 1,
       action,
       ...(extras ? { extras } : {}),
     } as IParsedCommand;

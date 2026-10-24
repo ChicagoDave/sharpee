@@ -43,7 +43,6 @@ function commandFor(rawText: string): IParsedCommand {
       },
     },
     pattern: 'VERB_NOUN',
-    confidence: 1.0,
     action: 'if.action.examining',
   } as IParsedCommand;
 }

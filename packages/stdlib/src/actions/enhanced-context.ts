@@ -190,8 +190,7 @@ class InternalActionContext implements ActionContext {
         action: takingAction.id,
         tokens: [],
         structure: { verb: { tokens: [0], text: 'take', head: 'take' } },
-        pattern: 'VERB_NOUN',
-        confidence: 1.0
+        pattern: 'VERB_NOUN'
       },
       actionId: takingAction.id,
       directObject: {
@@ -488,8 +487,7 @@ export function createMockActionContext(
       action: action.id,
       tokens: [],
       structure: { verb: { tokens: [0], text: 'test', head: 'test' } },
-      pattern: 'VERB_ONLY',
-      confidence: 1.0
+      pattern: 'VERB_ONLY'
     },
     actionId: action.id,
     ...command

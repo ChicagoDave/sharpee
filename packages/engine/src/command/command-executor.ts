@@ -132,7 +132,6 @@ function syntheticParsed(request: ActorCommand): IParsedCommand {
     tokens: [],
     structure: { verb: { tokens: [0], text: request.actionId, head: request.actionId } },
     pattern: 'PROGRAMMATIC',
-    confidence: 1.0,
     ...(request.direction ? { extras: { direction: request.direction } } : {})
   };
 }

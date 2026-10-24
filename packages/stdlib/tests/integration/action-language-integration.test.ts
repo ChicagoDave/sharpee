@@ -74,8 +74,7 @@ class MockLanguageProvider implements Partial<LanguageProvider> {
       structure: {
         verb: { tokens: [0], text: verb, head: verb }
       },
-      pattern: 'VERB_ONLY',
-      confidence: actionId ? 1.0 : 0.5
+      pattern: 'VERB_ONLY'
     } as unknown as ParsedCommand;
   }
 }

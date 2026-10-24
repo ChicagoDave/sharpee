@@ -359,7 +359,6 @@ export interface GrammarRule {
   /** ADR-378 D5: skip the rule while this answers false (absent = always on) */
   when?: GrammarGate;
   defaultSemantics?: Partial<SemanticProperties>; // Default semantics
-  experimentalConfidence?: number; // Multiplier applied to match confidence
 }
 
 /**
@@ -501,7 +500,6 @@ export interface SlotMatch {
   tokens: number[];       // Token indices
   text: string;           // Combined text
   slotType?: SlotType;    // How the slot was matched
-  confidence?: number;    // Match confidence (0-1)
   // Multi-object support (ADR-080 Phase 2)
   isAll?: boolean;        // True if "all" keyword
   isList?: boolean;       // True if "X and Y" list
@@ -523,15 +521,15 @@ export interface SlotMatch {
  */
 export interface PatternMatch {
   rule: GrammarRule;
-  confidence: number;
   slots: Map<string, SlotMatch>;
   consumed: number; // Number of tokens consumed
   /**
    * Literal specificity (ADR-231 D2b): count of input words consumed by the
    * pattern's literal/alternate tokens (as opposed to slots). A rule whose
    * literals consume words outranks a rule whose unconstrained slot swallows
-   * the same words. Resolution order (ADR-268 D2): confidence desc → tier
-   * (story over standard) → literalSpecificity desc → definition order.
+   * the same words. Resolution order (ADR-268 D2 without its confidence
+   * term, ADR-384 D1): tier (story over standard) → literalSpecificity desc
+   * → definition order.
    */
   literalSpecificity?: number;
   semantics?: SemanticProperties; // Derived semantic properties

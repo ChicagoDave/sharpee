@@ -18,7 +18,6 @@ class MockParser implements Parser {
           verb: { tokens: [], text: 'mock', head: 'mock' }
         },
         pattern: 'MOCK',
-        confidence: 1.0,
         action: 'mock.action'
       }
     };

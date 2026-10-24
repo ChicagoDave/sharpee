@@ -71,7 +71,6 @@ function goNorth(world: WorldModel, player: IFEntity, actor: IFEntity, random: E
       tokens: [],
       structure: { verb: { tokens: [0], text: 'north', head: 'north' } },
       pattern: 'PROGRAMMATIC',
-      confidence: 1.0,
       extras: { direction: Direction.NORTH },
     },
     actionId: IFActions.GOING,

@@ -59,8 +59,7 @@ type CommandResult<T, E> = Result<T, E>;
 const DEFAULT_OPTIONS: ParserOptions = {
   allowPartial: true,
   expandAbbreviations: true,
-  ignoreArticles: false, // We preserve everything in the English parser
-  minConfidence: 0.1
+  ignoreArticles: false // We preserve everything in the English parser
 };
 
 /**
@@ -99,7 +98,6 @@ interface RichCandidate {
   preposition?: IPrepPhrase;
   indirectObject?: INounPhrase;
   pattern: string;
-  confidence: number;
   /** Grammar rule tier (ADR-268 D2: story outranks standard) */
   tier: 'standard' | 'story';
   /** Words consumed by literal pattern tokens (ADR-231 D2b literal-before-slot tiebreak) */
@@ -330,8 +328,7 @@ export class EnglishParser implements Parser {
       candidateCount: candidates.length,
       patterns: candidates.map(c => ({
         pattern: c.pattern,
-        action: c.action,
-        confidence: c.confidence
+        action: c.action
       }))
     });
     
@@ -346,8 +343,7 @@ export class EnglishParser implements Parser {
           input,
           patternsAttempted: candidates.map(c => ({
             name: c.pattern,
-            matched: true,
-            confidence: c.confidence
+            matched: true
           })),
           totalCandidates: candidates.length
         }
@@ -400,15 +396,12 @@ export class EnglishParser implements Parser {
       };
     }
     
-    // Full candidate ordering (ADR-268 D2): confidence desc → tier (story
-    // over standard) → literal specificity desc → definition order
-    // (candidates arrive in engine order; Array.prototype.sort is stable).
-    // This mirrors EnglishGrammarEngine.findMatches — a confidence-only
-    // re-sort here would silently drop the tier and specificity tiebreaks.
+    // Full candidate ordering (ADR-268 D2 without its confidence term,
+    // ADR-384 D1): tier (story over standard) → literal specificity desc →
+    // definition order (candidates arrive in engine order;
+    // Array.prototype.sort is stable). This mirrors
+    // EnglishGrammarEngine.findMatches.
     candidates.sort((a, b) => {
-      if (b.confidence !== a.confidence) {
-        return b.confidence - a.confidence;
-      }
       if (a.tier !== b.tier) {
         return a.tier === 'story' ? -1 : 1;
       }
@@ -428,10 +421,9 @@ export class EnglishParser implements Parser {
           candidates: candidates.map((c, i) => ({
             action: c.action,
             pattern: c.pattern,
-            confidence: c.confidence,
             selected: i === 0
           })),
-          selectionReason: candidates.length === 1 ? 'only_candidate' : 'highest_confidence'
+          selectionReason: candidates.length === 1 ? 'only_candidate' : 'highest_ranked'
         }
       });
     }
@@ -447,7 +439,6 @@ export class EnglishParser implements Parser {
         indirectObject: best.indirectObject
       },
       pattern: best.pattern,
-      confidence: best.confidence,
       action: best.action,
       // ADR-080 additions
       textSlots: best.textSlots,
@@ -478,7 +469,6 @@ export class EnglishParser implements Parser {
       input,
       action: parsed.action,
       pattern: parsed.pattern,
-      confidence: parsed.confidence,
       structure: {
         verb: parsed.structure.verb?.text,
         directObject: parsed.structure.directObject?.text,
@@ -984,7 +974,6 @@ export class EnglishParser implements Parser {
       preposition,
       indirectObject,
       pattern,
-      confidence: match.confidence,
       tier: rule.tier,
       literalSpecificity: match.literalSpecificity ?? 0,
       action: rule.action,
@@ -1186,8 +1175,7 @@ export class EnglishParser implements Parser {
         action: result.value.action,
         originalInput: input,
         tokens: this.tokenize(input),
-        pattern: result.value.pattern,
-        confidence: result.value.confidence
+        pattern: result.value.pattern
       };
       
       // Add noun information
@@ -1207,15 +1195,8 @@ export class EnglishParser implements Parser {
         candidate.secondNounCandidates = result.value.structure.indirectObject.candidates;
       }
       
-      // Filter by confidence if specified
-      const candidateConfidence = candidate.confidence || 0;
-      const candidates = mergedOptions.minConfidence !== undefined && 
-                       candidateConfidence < mergedOptions.minConfidence 
-                       ? [] 
-                       : [candidate];
-      
       return {
-        candidates,
+        candidates: [candidate],
         errors,
         partial: hasUnknownWords && (mergedOptions.allowPartial === true)
       };

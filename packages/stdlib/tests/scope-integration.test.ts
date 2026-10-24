@@ -74,9 +74,7 @@ describe('Scope Integration Tests', () => {
             modifiers: []
           }
         },
-        pattern: 'VERB_OBJECT',
-        confidence: 1.0
-      };
+        pattern: 'VERB_OBJECT'      };
       
       
       const result = validator.validate(command);
@@ -109,9 +107,7 @@ describe('Scope Integration Tests', () => {
             modifiers: []
           }
         },
-        pattern: 'VERB_OBJECT',
-        confidence: 1.0
-      };
+        pattern: 'VERB_OBJECT'      };
       
       const result = validator.validate(command);
       expect(result.success).toBe(true);
@@ -149,9 +145,7 @@ describe('Scope Integration Tests', () => {
             modifiers: []
           }
         },
-        pattern: 'VERB_OBJECT_PREP_OBJECT',
-        confidence: 1.0
-      };
+        pattern: 'VERB_OBJECT_PREP_OBJECT'      };
 
       const result = validator.validate(command);
       // Rock is REACHABLE (in the room), and throwing requires REACHABLE scope
@@ -185,9 +179,7 @@ describe('Scope Integration Tests', () => {
             modifiers: []
           }
         },
-        pattern: 'VERB_OBJECT_PREP_OBJECT',
-        confidence: 1.0
-      };
+        pattern: 'VERB_OBJECT_PREP_OBJECT'      };
       
       const result = validator.validate(command);
       expect(result.success).toBe(true);
@@ -229,9 +221,7 @@ describe('Scope Integration Tests', () => {
             modifiers: []
           }
         },
-        pattern: 'VERB_PREP_OBJECT',
-        confidence: 1.0
-      };
+        pattern: 'VERB_PREP_OBJECT'      };
       
       const result = validator.validate(command);
       
@@ -269,9 +259,7 @@ describe('Scope Integration Tests', () => {
             modifiers: []
           }
         },
-        pattern: 'VERB_OBJECT',
-        confidence: 1.0
-      };
+        pattern: 'VERB_OBJECT'      };
       
       const result = validator.validate(command);
       expect(result.success).toBe(true);
@@ -310,9 +298,7 @@ describe('Scope Integration Tests', () => {
             modifiers: []
           }
         },
-        pattern: 'VERB_OBJECT',
-        confidence: 1.0
-      };
+        pattern: 'VERB_OBJECT'      };
 
       const result = validator.validate(command);
 
@@ -339,9 +325,7 @@ describe('Scope Integration Tests', () => {
             modifiers: []
           }
         },
-        pattern: 'VERB_OBJECT',
-        confidence: 1.0
-      };
+        pattern: 'VERB_OBJECT'      };
       
       const result = validator.validate(command);
       expect(result.success).toBe(true);

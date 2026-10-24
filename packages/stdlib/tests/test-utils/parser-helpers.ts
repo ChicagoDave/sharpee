@@ -158,7 +158,6 @@ export function createParsedCommand(
     tokens: [],
     structure,
     pattern,
-    confidence: 1.0,
     action
   };
 }

@@ -80,7 +80,6 @@ function trollSwings(world: WorldModel, player: ReturnType<typeof buildArena>['p
       tokens: [],
       structure: { verb: { tokens: [0], text: 'attack', head: 'attack' } },
       pattern: 'PROGRAMMATIC',
-      confidence: 1.0,
     },
     actionId: IFActions.ATTACKING,
     directObject: { entity: player, parsed: { text: 'yourself', candidates: ['yourself'] } },

@@ -60,12 +60,7 @@ export interface CandidateCommand {
    * Grammar pattern that was matched
    */
   pattern?: string;
-  
-  /**
-   * Parser confidence (0-1)
-   */
-  confidence?: number;
-  
+
   /**
    * Any special flags (ALL, EXCEPT, etc.)
    */

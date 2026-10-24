@@ -175,9 +175,6 @@ export interface IParsedCommand {
   /** Which grammar pattern matched (e.g., "VERB_NOUN_PREP_NOUN") */
   pattern: string;
 
-  /** Parser confidence in this interpretation */
-  confidence: number;
-
   /** Identified action (for compatibility) */
   action: string;
 

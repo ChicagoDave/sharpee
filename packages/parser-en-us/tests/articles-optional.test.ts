@@ -4,9 +4,9 @@
  * cables`) or bracketed (`climb [the] rope`), matches input that leaves it
  * out, at no cost to the match: an article left out is not a weaker match,
  * so a story rule written with one still outranks a standard rule on the
- * same words. Any other optional word skipped keeps costing the match, as
- * before. The engine cases assert confidence and the winning rule; the
- * parser case asserts the action the full English grammar chooses.
+ * same words. Since ADR-384 D1 no skipped optional word costs a match
+ * anything. The engine cases assert the winning rule; the parser case
+ * asserts the action the full English grammar chooses.
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
@@ -30,24 +30,21 @@ describe('a literal article in a pattern (engine)', () => {
     grammar = engine.createBuilder();
   });
 
-  it('matches input with the article and without it, at the same confidence', () => {
+  it('matches input with the article and without it', () => {
     grammar.define('follow the cables').mapsTo('test.action.follow').build();
     const full = engine.findMatches(tokens(['follow', 'the', 'cables']), context as any);
     const bare = engine.findMatches(tokens(['follow', 'cables']), context as any);
     expect(full.map((m) => m.rule.action)).toEqual(['test.action.follow']);
     expect(bare.map((m) => m.rule.action)).toEqual(['test.action.follow']);
-    expect(bare[0].confidence).toBe(full[0].confidence);
   });
 
-  it('a bracketed `[the]` left out costs nothing, while another optional word left out still does', () => {
+  it('a bracketed `[the]` or another optional word left out still matches', () => {
     grammar.define('climb [the] rope').mapsTo('test.action.article').build();
     grammar.define('climb [up] ladder').mapsTo('test.action.word').build();
     const article = engine.findMatches(tokens(['climb', 'rope']), context as any);
     const word = engine.findMatches(tokens(['climb', 'ladder']), context as any);
     expect(article[0].rule.action).toBe('test.action.article');
-    expect(article[0].confidence).toBe(1);
     expect(word[0].rule.action).toBe('test.action.word');
-    expect(word[0].confidence).toBeCloseTo(0.9);
   });
 
   it('a pattern\'s first word is its verb, never an optional article, even when spelled like one', () => {

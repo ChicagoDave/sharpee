@@ -54,9 +54,7 @@ function fakeCommand(actionId: string): ValidatedCommand {
       action: actionId,
       tokens: [],
       structure: { verb: { tokens: [0], text: 'fake', head: 'fake' } },
-      pattern: 'VERB_ONLY',
-      confidence: 1.0
-    },
+      pattern: 'VERB_ONLY'    },
     actionId
   };
 }

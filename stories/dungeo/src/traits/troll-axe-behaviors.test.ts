@@ -63,7 +63,6 @@ function takeAxe(world: WorldModel, player: IFEntity, axe: IFEntity, actor: IFEn
       tokens: [],
       structure: { verb: { tokens: [0], text: 'take', head: 'take' } },
       pattern: 'PROGRAMMATIC',
-      confidence: 1.0,
     },
     actionId: IFActions.TAKING,
     directObject: { entity: axe, parsed: { text: 'axe', candidates: ['axe'] } },

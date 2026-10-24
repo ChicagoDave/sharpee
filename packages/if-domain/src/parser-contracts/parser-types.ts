@@ -93,11 +93,6 @@ export interface ParserOptions {
    * Whether to ignore articles
    */
   ignoreArticles?: boolean;
-
-  /**
-   * Minimum confidence threshold
-   */
-  minConfidence?: number;
 }
 
 /**

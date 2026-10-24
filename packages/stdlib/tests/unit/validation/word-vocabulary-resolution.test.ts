@@ -96,7 +96,6 @@ function commandFor(
       }
     },
     pattern: 'VERB_NOUN',
-    confidence: 1.0,
     action
   } as IParsedCommand;
 }

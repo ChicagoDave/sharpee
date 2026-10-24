@@ -99,7 +99,6 @@ export class EntitySlotConsumer implements SlotConsumer {
       const result: SlotMatch = {
         tokens: [startIndex],
         text: ref.text, // Use resolved entity text for entity resolution
-        confidence: 1.0,
         slotType,
         entityId: ref.entityId,
         resolvedText: ref.text,
@@ -113,7 +112,6 @@ export class EntitySlotConsumer implements SlotConsumer {
     const result: SlotMatch = {
       tokens: [startIndex],
       text: pronoun,
-      confidence: 1.0,
       slotType,
       isList: true,
       isPronoun: true,
@@ -165,7 +163,6 @@ export class EntitySlotConsumer implements SlotConsumer {
     return {
       tokens: consumedIndices,
       text: 'all',
-      confidence: 1.0,
       slotType,
       isAll: true,
       excluded: excluded.length > 0 ? excluded : undefined
@@ -280,7 +277,7 @@ export class EntitySlotConsumer implements SlotConsumer {
       if (nextIsSlot && items.length === 0) {
         // Try to find the shortest match that satisfies constraints
         const slotConstraints = rule.slots.get(slotName);
-        let bestMatch: { tokens: number[]; words: string[]; confidence: number } | null = null;
+        let bestMatch: { tokens: number[]; words: string[] } | null = null;
 
         // Try progressively longer phrases until we find a match or run out
         for (let tryLength = 1; tryLength <= tokens.length - currentIndex; tryLength++) {
@@ -301,15 +298,14 @@ export class EntitySlotConsumer implements SlotConsumer {
 
           // Check if this matches constraints
           if (slotConstraints && slotConstraints.constraints.length > 0 && context.world) {
-            const confidence = this.evaluateSlotConstraints(tryText, slotConstraints, context);
-            if (confidence > 0) {
-              bestMatch = { tokens: tryTokens, words: tryWords, confidence };
+            if (this.satisfiesSlotConstraints(tryText, slotConstraints, context)) {
+              bestMatch = { tokens: tryTokens, words: tryWords };
               // Found a match - use it (greedy: first match wins)
               break;
             }
           } else {
             // No constraints - take first word only for consecutive slots
-            bestMatch = { tokens: tryTokens, words: tryWords, confidence: 1.0 };
+            bestMatch = { tokens: tryTokens, words: tryWords };
             break;
           }
         }
@@ -366,7 +362,6 @@ export class EntitySlotConsumer implements SlotConsumer {
 
     // Check constraints on each item
     const slotConstraints = rule.slots.get(slotName);
-    let confidence = 1.0;
 
     if (DEBUG) {
       console.log(`Checking constraints for slot '${slotName}':`);
@@ -376,17 +371,10 @@ export class EntitySlotConsumer implements SlotConsumer {
     }
 
     if (slotConstraints && slotConstraints.constraints.length > 0 && context.world) {
-      // For lists, check constraints on each item
-      for (const item of items) {
-        const itemConfidence = this.evaluateSlotConstraints(
-          item.text,
-          slotConstraints,
-          context
-        );
-        confidence = Math.min(confidence, itemConfidence);
-      }
+      // For lists, every item must satisfy the constraints
+      const satisfied = items.every((item) => this.satisfiesSlotConstraints(item.text, slotConstraints, context));
 
-      if (confidence === 0) {
+      if (!satisfied) {
         if (DEBUG) {
           console.log(`Failed to consume slot '${slotName}'`);
         }
@@ -397,7 +385,6 @@ export class EntitySlotConsumer implements SlotConsumer {
     const result: SlotMatch = {
       tokens: allTokens,
       text: allWords.join(' '),
-      confidence,
       slotType
     };
 
@@ -414,13 +401,17 @@ export class EntitySlotConsumer implements SlotConsumer {
   }
 
   /**
-   * Evaluate slot constraints and return confidence
+   * Whether any entity in the slot's scope matches the text
+   * @param slotText The words the slot would take
+   * @param slotConstraints The slot's scope constraints
+   * @param context The grammar context (world, actor, location)
+   * @returns True when at least one constraint yields an entity matching the text
    */
-  private evaluateSlotConstraints(
+  private satisfiesSlotConstraints(
     slotText: string,
     slotConstraints: SlotConstraint,
     context: any // GrammarContext
-  ): number {
+  ): boolean {
     // For each constraint, check if any entities match
     let hasMatchingEntity = false;
 
@@ -477,7 +468,6 @@ export class EntitySlotConsumer implements SlotConsumer {
       }
     }
 
-    // Return confidence based on whether we found matching entities
-    return hasMatchingEntity ? 1.0 : 0.0;
+    return hasMatchingEntity;
   }
 }

@@ -26,8 +26,6 @@ import { PatternCompiler } from './pattern-compiler.js';
  * Grammar matching options
  */
 export interface GrammarMatchOptions {
-  /** Minimum confidence threshold */
-  minConfidence?: number;
   /** Maximum number of matches to return */
   maxMatches?: number;
   /** Whether to allow partial matches */
@@ -52,7 +50,7 @@ export abstract class GrammarEngine {
    *
    * ADR-268: insertion is deliberately unsorted — registration order IS
    * definition order, the final tiebreak of the resolution order
-   * (confidence → tier → literal specificity → definition order). Do not
+   * (tier → literal specificity → definition order). Do not
    * reintroduce a sort here; it would erase the semantics of file order.
    */
   addRule(rule: GrammarRule): void {

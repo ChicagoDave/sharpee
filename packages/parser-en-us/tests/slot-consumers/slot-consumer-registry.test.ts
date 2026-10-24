@@ -54,7 +54,6 @@ describe('SlotConsumerRegistry', () => {
       const expectedResult: SlotMatch = {
         tokens: [0],
         text: 'test',
-        confidence: 1.0,
         slotType: SlotType.TEXT
       };
 

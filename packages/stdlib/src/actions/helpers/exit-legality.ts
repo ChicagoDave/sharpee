@@ -78,7 +78,6 @@ export function canActorLeave(
         tokens: [],
         structure: { verb: { tokens: [0], text: 'go', head: 'go' } },
         pattern: 'PROGRAMMATIC',
-        confidence: 1.0,
         extras: { direction },
       },
       actionId: IFActions.GOING,

@@ -99,7 +99,7 @@ export class EnglishGrammarEngine extends GrammarEngine {
   ): PatternMatch[] {
     const matches: PatternMatch[] = [];
     const failures: PartialMatchFailure[] = [];
-    const { minConfidence = 0.1, maxMatches = 10 } = options;
+    const { maxMatches = 10 } = options;
 
     // ADR-268 D5: iterate story-tier rules first so the maxMatches
     // early-stop cannot exhaust its budget on standard rules and miss a
@@ -120,13 +120,11 @@ export class EnglishGrammarEngine extends GrammarEngine {
       const result = this.tryMatchRuleWithFailure(rule, tokens, context);
 
       if (result.success) {
-        if (result.match.confidence >= minConfidence) {
-          matches.push(result.match);
+        matches.push(result.match);
 
-          // Stop if we have enough matches
-          if (matches.length >= maxMatches) {
-            break;
-          }
+        // Stop if we have enough matches
+        if (matches.length >= maxMatches) {
+          break;
         }
       } else {
         // Collect failures for error reporting
@@ -137,15 +135,12 @@ export class EnglishGrammarEngine extends GrammarEngine {
     // Store failures for later retrieval
     this.lastFailures = failures;
 
-    // Full match ordering (ADR-268 D2):
-    // confidence desc → tier (story over standard) → literal specificity
-    // desc → definition order (rules are iterated tier-first in stable
+    // Full match ordering (ADR-268 D2 without its confidence term, ADR-384
+    // D1): tier (story over standard) → literal specificity desc →
+    // definition order (rules are iterated tier-first in stable
     // registration order, and Array.prototype.sort is stable, so equal keys
     // fall through to definition order).
     matches.sort((a, b) => {
-      if (b.confidence !== a.confidence) {
-        return b.confidence - a.confidence;
-      }
       if (a.rule.tier !== b.rule.tier) {
         return a.rule.tier === 'story' ? -1 : 1;
       }
@@ -198,8 +193,6 @@ export class EnglishGrammarEngine extends GrammarEngine {
     const slots = new Map<string, SlotMatch>();
     let tokenIndex = 0;
     let patternIndex = 0;
-    let confidence = 1.0;
-    let skippedOptionals = 0;
     // ADR-231 D2b: words consumed by literal/alternate pattern tokens
     let literalSpecificity = 0;
     // ADR-383 D7: each literal element and the input tokens it consumed.
@@ -264,11 +257,10 @@ export class EnglishGrammarEngine extends GrammarEngine {
             skippedLiteral();
             continue;
           } else if (patternToken.optional) {
-            skippedOptionals++;
             skippedLiteral();
             continue;
           } else {
-            // Check if this is verb position for better error
+            //Check if this is verb position for better error
             const reason = tokenIndex === 0 ? 'VERB_MISMATCH' : 'LITERAL_MISMATCH';
             return {
               success: false,
@@ -292,7 +284,6 @@ export class EnglishGrammarEngine extends GrammarEngine {
             tokenIndex++;
             literalSpecificity++;
           } else if (patternToken.optional) {
-            skippedOptionals++;
             skippedLiteral();
             continue;
           } else {
@@ -325,7 +316,6 @@ export class EnglishGrammarEngine extends GrammarEngine {
 
           if (!slotResult) {
             if (patternToken.optional) {
-              skippedOptionals++;
               continue;
             }
             // Required slot couldn't be filled - collect the attempted text
@@ -354,7 +344,6 @@ export class EnglishGrammarEngine extends GrammarEngine {
           slots.set(patternToken.value, slotResult);
 
           tokenIndex = slotResult.tokens[slotResult.tokens.length - 1] + 1;
-          confidence *= slotResult.confidence || 0.9;
           break;
       }
     }
@@ -375,14 +364,6 @@ export class EnglishGrammarEngine extends GrammarEngine {
       };
     }
 
-    // Reduce confidence for each skipped optional element
-    confidence *= Math.pow(0.9, skippedOptionals);
-
-    // Apply experimental confidence if set
-    if (rule.experimentalConfidence) {
-      confidence *= rule.experimentalConfidence;
-    }
-
     // A rule's semantics are its per-rule defaults (ADR-148); nothing is
     // derived from the matched words.
     const semantics = rule.defaultSemantics && Object.keys(rule.defaultSemantics).length > 0 ? { ...rule.defaultSemantics } : undefined;
@@ -391,7 +372,6 @@ export class EnglishGrammarEngine extends GrammarEngine {
       success: true,
       match: {
         rule,
-        confidence,
         slots,
         consumed: tokenIndex,
         literalSpecificity,

@@ -49,7 +49,6 @@ export class TextSlotConsumer implements SlotConsumer {
     return {
       tokens: [startIndex],
       text: token.word,
-      confidence: 1.0,
       slotType
     };
   }
@@ -82,7 +81,6 @@ export class TextSlotConsumer implements SlotConsumer {
     return {
       tokens: consumedIndices,
       text: consumedWords.join(' '),
-      confidence: 1.0,
       slotType
     };
   }
@@ -111,7 +109,6 @@ export class TextSlotConsumer implements SlotConsumer {
       return {
         tokens: [startIndex],
         text: word.slice(1, -1), // Remove quotes
-        confidence: 1.0,
         slotType: SlotType.QUOTED_TEXT
       };
     }
@@ -130,7 +127,6 @@ export class TextSlotConsumer implements SlotConsumer {
         return {
           tokens: consumedIndices,
           text: consumedWords.join(' '),
-          confidence: 1.0,
           slotType: SlotType.QUOTED_TEXT
         };
       }
@@ -176,7 +172,6 @@ export class TextSlotConsumer implements SlotConsumer {
     return {
       tokens: consumedIndices,
       text: consumedWords.join(' '),
-      confidence: 1.0,
       slotType: SlotType.TOPIC
     };
   }

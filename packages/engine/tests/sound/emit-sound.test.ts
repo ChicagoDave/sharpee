@@ -74,7 +74,6 @@ function buildFixture() {
       tokens: [],
       structure: { verb: { tokens: [0], text: 'fake', head: 'fake' } },
       pattern: 'VERB_ONLY',
-      confidence: 1.0,
     },
     actionId: fakeAction.id,
   };

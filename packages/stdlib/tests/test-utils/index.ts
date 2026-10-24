@@ -233,7 +233,6 @@ export function createCommand(
       tokens: [],
       structure,
       pattern,
-      confidence: 1.0,
       extras: options.extras || {}
     },
     actionId: actionId,

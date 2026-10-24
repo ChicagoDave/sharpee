@@ -53,7 +53,6 @@ describe('EnglishGrammarEngine', () => {
       
       expect(matches).toHaveLength(1);
       expect(matches[0].rule.action).toBe('if.action.looking');
-      expect(matches[0].confidence).toBeGreaterThan(0);
     });
     
     it('should match verb-noun patterns', () => {
@@ -175,7 +174,7 @@ describe('EnglishGrammarEngine', () => {
       expect(matches[0].rule.action).toBe('if.action.hanging');
     });
     
-    it('should calculate confidence based on alternate matches', () => {
+    it('counts each literal word a form consumes toward its specificity', () => {
       grammar
         .define('look at :target')
         .mapsTo('if.action.examining')
@@ -196,8 +195,8 @@ describe('EnglishGrammarEngine', () => {
       expect(matches1).toHaveLength(1);
       expect(matches2).toHaveLength(1);
       
-      // Full-literal match confidence is comparable across both forms
-      expect(matches1[0].confidence).toBeGreaterThanOrEqual(matches2[0].confidence);
+      expect(matches1[0].literalSpecificity).toBe(2); // "look" + "at"
+      expect(matches2[0].literalSpecificity).toBe(1); // "examine"
     });
   });
   

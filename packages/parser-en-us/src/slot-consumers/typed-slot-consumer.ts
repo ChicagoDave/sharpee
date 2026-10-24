@@ -55,7 +55,6 @@ export class TypedSlotConsumer implements SlotConsumer {
       return {
         tokens: [startIndex],
         text: token.word,
-        confidence: 1.0,
         slotType: SlotType.NUMBER
       };
     }
@@ -65,7 +64,6 @@ export class TypedSlotConsumer implements SlotConsumer {
       return {
         tokens: [startIndex],
         text: token.word,
-        confidence: 1.0,
         slotType: SlotType.NUMBER
       };
     }
@@ -92,7 +90,6 @@ export class TypedSlotConsumer implements SlotConsumer {
       return {
         tokens: [startIndex],
         text: token.word,
-        confidence: 1.0,
         slotType: SlotType.ORDINAL
       };
     }
@@ -103,7 +100,6 @@ export class TypedSlotConsumer implements SlotConsumer {
       return {
         tokens: [startIndex],
         text: token.word,
-        confidence: 1.0,
         slotType: SlotType.ORDINAL
       };
     }
@@ -136,7 +132,6 @@ export class TypedSlotConsumer implements SlotConsumer {
         return {
           tokens: [startIndex],
           text: word,
-          confidence: 1.0,
           slotType: SlotType.TIME
         };
       }
@@ -164,7 +159,6 @@ export class TypedSlotConsumer implements SlotConsumer {
       return {
         tokens: [startIndex],
         text: token.word,
-        confidence: 1.0,
         slotType: SlotType.DIRECTION
       };
     }
