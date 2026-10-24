@@ -89,7 +89,7 @@
 - **Exit state**: no `primarySlotOf` in the tree (grep); chord, story-loader suites green; chain and trees identical to baseline or classified.
 - **Demonstration**: the updated test run; a `./sharpee test` or bundle run of the two-line `offer`/`present` action; the grep; counts.
 - **Demonstrated**: 
-- **Status**: PENDING
+- **Status**: CURRENT (since 2026-10-23)
 
 ### Phase 6: Verb and preposition from matched literals; failure messages read the seat
 - **Tier**: Medium
