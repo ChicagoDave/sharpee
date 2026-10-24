@@ -67,7 +67,7 @@
 - **Exit state**: chord, repokit, story-loader, parser-en-us suites green; `manifest --check` and `grammar --check` fresh; chain and trees identical to baseline (the parser still seats by position, so rule texts and seats agree except recipient-first giving/showing lines, whose differences are classified against Phase 1's snapshot); the guard still passes with its five allowances.
 - **Demonstration**: the tests; the regenerated manifest's `grammarSeats` for giving and showing; a bundle probe of the `extend action` cases through the real loader; the classified snapshot diff.
 - **Demonstrated**: 
-- **Status**: PENDING
+- **Status**: CURRENT (since 2026-10-23)
 
 ### Phase 4: The parser seats by the record; the five tests and the guard allowances go
 - **Tier**: Medium
