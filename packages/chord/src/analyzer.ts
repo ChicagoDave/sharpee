@@ -94,7 +94,7 @@ import {
 } from './ast.js';
 import { capabilityKeyOf, CLIENT_CAPABILITY_FLAGS, EVENT_VERBS, TAILED_EVENT_VERBS, KIND_NOUNS, MESSAGE_OVERRIDE_ALIASES, PLATFORM_STATE_PAIRS, PRONOUN_CASES, PRONOUN_WORDS, SCOPE_REQUIREMENT_PREDICATES, STARTS_STATE_PAIRINGS, STATE_ADJECTIVES, TRAIT_ADJECTIVES } from './catalog.js';
 import { STDLIB_MANIFEST } from './stdlib-manifest.js';
-import { expandReadings, lowerParts, renderPattern, samePatternShape } from './patterns.js';
+import { expandReadings, lowerParts, renderPattern, samePatternShape, seatTable, type SeatProblem, type SeatTable } from './patterns.js';
 import type { PatternElement } from '@sharpee/if-domain';
 import { CHARACTER_MANIFEST } from './character-manifest.js';
 import { levenshtein } from './edit-distance.js';
@@ -851,6 +851,8 @@ export class Analyzer {
   private traitNames = new Set<string>();
   /** action name → declared grammar-slot names. */
   private actionSlots = new Map<string, Set<string>>();
+  /** Each built action's and extension's pattern spans, in pattern order, for the seat check. */
+  private patternSpans = new Map<IRActionDef | IRGrammarExtension, Span[]>();
   /**
    * ADR-329 D2: the story's own grammar shapes by action name — every
    * `define action` pattern and every `extend action` addition, rendered
@@ -1126,6 +1128,8 @@ export class Analyzer {
     // Inline and override bindings synthesize temperament defs during entity build.
     { name: 'emitTemperaments', requires: ['buildDeclarations'], run: (a) => a.emitTemperaments() },
     { name: 'checkAlterationTargets', requires: ['buildDeclarations'], run: (a) => a.checkAlterationTargets(a.builtIR()) },
+    // An extension seats from its target's table, and a story action may be declared after its extension.
+    { name: 'checkSeats', requires: ['buildDeclarations'], run: (a) => a.checkSeats(a.builtIR()) },
     // Bare `{…}` markers must name a declared phrase key.
     { name: 'checkMarkers', requires: ['collect', 'buildDeclarations'], run: (a) => a.checkMarkers() },
     { name: 'checkDescriptionMarkers', requires: ['collect'], run: (a) => a.checkDescriptionMarkers() },
@@ -1335,13 +1339,19 @@ export class Analyzer {
         case 'define-trait':
           ir.traits.push(this.buildTrait(decl));
           break;
-        case 'define-action':
-          ir.actions.push(this.buildAction(decl));
+        case 'define-action': {
+          const action = this.buildAction(decl);
+          this.patternSpans.set(action, decl.patterns.map((p) => p.span));
+          ir.actions.push(action);
           break;
-        case 'extend-action':
+        }
+        case 'extend-action': {
           // ADR-270 D2: story-scoped grammar addition to an existing action.
-          (ir.grammarExtensions ??= []).push(this.buildExtension(decl));
+          const extension = this.buildExtension(decl);
+          this.patternSpans.set(extension, decl.patterns.map((p) => p.span));
+          (ir.grammarExtensions ??= []).push(extension);
           break;
+        }
         case 'remove-from-action':
           // ADR-270 D3: standard-grammar shapes removed at load.
           (ir.grammarRemovals ??= []).push(this.buildRemoval(decl));
@@ -1939,6 +1949,60 @@ export class Analyzer {
    * manifest, mirroring the loader's story-first order (ADR-270 D2) exactly.
    * The loader keeps the same checks as first-throw backstops for rogue IR.
    */
+  /**
+   * ADR-383 D3, D4: every action's seat table seats each of its lines, and
+   * every extension seats from its target's table — the story action's own,
+   * else the standard action's from the manifest. Each line the table cannot
+   * seat is a compile error, so the loader's lowering never guesses.
+   */
+  private checkSeats(ir: StoryIR): void {
+    const storyTables = new Map<string, SeatTable>();
+    for (const action of ir.actions) {
+      const { table, problems } = seatTable(action);
+      storyTables.set(action.name, table);
+      for (const problem of problems) this.reportSeatProblem(action.name, action, problem);
+    }
+    const standardSeats = STDLIB_MANIFEST.locales['en-US'].grammarSeats;
+    for (const ext of ir.grammarExtensions ?? []) {
+      // Story-first, as the target resolves (checkAlterationTargets): a
+      // story action's own table, else the standard action's. An unknown
+      // target is that pass's error, not a seat problem.
+      const inherited =
+        storyTables.get(ext.action) ??
+        (STDLIB_MANIFEST.actionIds.has(`if.action.${ext.action}`) ? (standardSeats[`if.action.${ext.action}`] ?? {}) : undefined);
+      if (inherited === undefined) continue;
+      for (const problem of seatTable(ext, inherited).problems) this.reportSeatProblem(ext.action, ext, problem, inherited);
+    }
+  }
+
+  /**
+   * One seat-table problem as its diagnostic, at the offending pattern line:
+   * `analysis.seat-conflict` naming both slots and the lines that seated
+   * them, or `analysis.unknown-slot` listing the names an extension line may
+   * seat from.
+   */
+  private reportSeatProblem(name: string, owner: IRActionDef | IRGrammarExtension, problem: SeatProblem, inherited?: SeatTable): void {
+    const line = (index: number) => `\`${renderPattern(lowerParts(owner.patterns[index].parts, owner.greedy ?? []))}\``;
+    const span = this.patternSpans.get(owner)?.[problem.pattern] ?? owner.span;
+    const [first, second] = problem.slots;
+    if (problem.kind === 'unknown') {
+      const names = Object.keys(inherited ?? {}).sort();
+      this.diagnostics.error(
+        'analysis.unknown-slot',
+        `${line(problem.pattern)} names neither of its slots from \`${name}\`, so which one is the thing acted on would be a guess. Name at least one of: ${names.join(', ') || '(none)'}.`,
+        span,
+      );
+      return;
+    }
+    const by = (index: number | 'inherited' | null) =>
+      index === 'inherited' ? `the action \`${name}\` extends` : index === null ? 'this line' : line(index);
+    const message =
+      problem.seat === undefined
+        ? `${line(problem.pattern)} has no seat left for \`${second}\` — direct and indirect are both taken on this line (\`${first}\` holds indirect). A line seats at most two nouns.`
+        : `${line(problem.pattern)} puts \`${first}\` and \`${second}\` in one seat (${problem.seat}): \`${first}\` was seated ${problem.seat} by ${by(problem.seatedBy[0])}, \`${second}\` by ${by(problem.seatedBy[1])}. Within one action a slot name keeps one seat; rename one of them.`;
+    this.diagnostics.error('analysis.seat-conflict', message, span);
+  }
+
   private checkAlterationTargets(ir: StoryIR): void {
     const storyActionNames = new Set(ir.actions.map((a) => a.name));
     const stdlibBareNames = [...STDLIB_MANIFEST.actionIds].map((id) => id.slice('if.action.'.length));

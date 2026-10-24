@@ -4,10 +4,11 @@
  * first, then each undeclared entity slot takes the first free of direct and
  * indirect, in pattern order, optional slots counted. Every other slot type
  * carries no seat. A seat on a non-entity slot, two slots in one seat, and a
- * third entity slot are build errors that register nothing. The parser does
- * not read the seat yet (Phase 4), so these tests assert on the records the
- * real engine builds, and on the whole standard grammar through the real
- * parser.
+ * third entity slot are build errors that register nothing. The generated
+ * standard grammar declares every entity slot's seat from Chord's per-action
+ * seat table (ADR-383 D3). The parser does not read the seat yet (Phase 4),
+ * so these tests assert on the records the real engine builds, and on the
+ * whole standard grammar through the real parser.
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
@@ -251,23 +252,31 @@ describe('the standard grammar, seated through the real parser', () => {
     rules = parser.getStoryGrammar().getRules();
   });
 
-  it('seats every entity slot of every rule by position, and nothing else', () => {
+  it('seats every entity slot, each slot name keeping one seat across its action`s rules, and nothing else', () => {
     expect(rules.length).toBeGreaterThan(500);
+    const tables = new Map<string, Map<string, string>>();
     for (const rule of rules) {
       const entity = rule.compiledPattern!.slots.filter((slot) => slot.slotType === SlotType.ENTITY);
       expect(entity.length, rule.pattern).toBeLessThanOrEqual(2);
-      expect(
-        entity.map((slot) => slot.seat),
-        rule.pattern,
-      ).toEqual(['direct', 'indirect'].slice(0, entity.length));
+      expect(new Set(entity.map((slot) => slot.seat)).size, rule.pattern).toBe(entity.length);
+      const table = tables.get(rule.action) ?? new Map<string, string>();
+      for (const slot of entity) {
+        expect(slot.seat, `${rule.pattern} :${slot.name}`).toBeDefined();
+        expect(table.get(slot.name) ?? slot.seat, `${rule.action} :${slot.name} on ${rule.pattern}`).toBe(slot.seat);
+        table.set(slot.name, slot.seat!);
+      }
+      tables.set(rule.action, table);
       for (const slot of rule.compiledPattern!.slots) {
         if (slot.slotType !== SlotType.ENTITY) expect(slot.seat, `${rule.pattern} :${slot.name}`).toBeUndefined();
       }
     }
   });
 
-  it('`hand :recipient :item` still seats the recipient direct: the table that fixes it is Phase 3`s', () => {
-    const hand = rules.find((rule) => rule.pattern === 'hand :recipient :item')!;
-    expect(seats(hand)).toEqual({ recipient: 'direct', item: 'indirect' });
+  it('the recipient-first lines of giving and showing seat the item direct, as their to-lines do (ADR-383 D3)', () => {
+    for (const pattern of ['give :recipient :item', 'hand :recipient :item', 'show :recipient :item']) {
+      const rule = rules.find((r) => r.pattern === pattern)!;
+      expect(seats(rule), pattern).toEqual({ recipient: 'indirect', item: 'direct' });
+    }
+    expect(seats(rules.find((r) => r.pattern === 'give :item to :recipient')!)).toEqual({ item: 'direct', recipient: 'indirect' });
   });
 });

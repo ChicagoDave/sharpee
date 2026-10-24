@@ -14,7 +14,7 @@
  * Owner context: @sharpee/chord (generated artifact; browser-safe).
  */
 
-import type { PatternElement } from '@sharpee/if-domain';
+import type { PatternElement, Seat } from '@sharpee/if-domain';
 
 /** Locale-owned stdlib facts (direction words join in a later ADR-276 phase). */
 export interface StdlibLocaleFacts {
@@ -24,6 +24,12 @@ export interface StdlibLocaleFacts {
    * rendered only for display (ADR-382 D6).
    */
   grammarShapes: Readonly<Record<string, readonly (readonly PatternElement[])[]>>;
+  /**
+   * Each standard action's seat table, entity slot name → seat, as the
+   * standard rules registered it — the table `extend action` starts from
+   * (ADR-383 D4). An action with no entity slot has no entry.
+   */
+  grammarSeats: Readonly<Record<string, Readonly<Record<string, Seat>>>>;
 }
 
 export interface StdlibManifest {
@@ -876,6 +882,61 @@ export const STDLIB_MANIFEST: StdlibManifest = {
           [{"kind":"word","word":"equip"},{"kind":"slot","name":"item"}],
           [{"kind":"word","word":"put"},{"kind":"word","word":"on"},{"kind":"slot","name":"item"}],
         ],
+      },
+      grammarSeats: {
+        "if.action.asking": { "recipient": "direct" },
+        "if.action.asking_for": { "item": "indirect", "recipient": "direct" },
+        "if.action.attacking": { "target": "direct" },
+        "if.action.burning": { "target": "direct" },
+        "if.action.buying": { "item": "direct" },
+        "if.action.climbing": { "target": "direct" },
+        "if.action.closing": { "door": "direct" },
+        "if.action.consulting": { "source": "direct" },
+        "if.action.cutting": { "object": "direct", "target": "direct" },
+        "if.action.digging": { "location": "direct", "target": "direct" },
+        "if.action.drinking": { "item": "direct", "target": "direct" },
+        "if.action.dropping": { "item": "direct" },
+        "if.action.eating": { "item": "direct" },
+        "if.action.emptying": { "destination": "indirect", "target": "direct" },
+        "if.action.entering": { "portal": "direct", "vehicle": "direct" },
+        "if.action.examining": { "target": "direct" },
+        "if.action.exiting": { "container": "direct", "vehicle": "direct" },
+        "if.action.extinguishing": { "target": "direct" },
+        "if.action.giving": { "item": "direct", "recipient": "indirect" },
+        "if.action.hiding": { "target": "direct" },
+        "if.action.inserting": { "container": "indirect", "item": "direct" },
+        "if.action.kissing": { "target": "direct" },
+        "if.action.lighting": { "target": "direct" },
+        "if.action.listening": { "target": "direct" },
+        "if.action.locking": { "target": "direct" },
+        "if.action.looking_under": { "target": "direct" },
+        "if.action.lowering": { "target": "direct" },
+        "if.action.opening": { "container": "direct", "door": "direct" },
+        "if.action.pulling": { "target": "direct" },
+        "if.action.pushing": { "target": "direct" },
+        "if.action.putting": { "container": "indirect", "destination": "indirect", "hook": "indirect", "item": "direct", "supporter": "indirect" },
+        "if.action.raising": { "target": "direct" },
+        "if.action.reading": { "target": "direct" },
+        "if.action.removing": { "container": "indirect", "item": "direct" },
+        "if.action.saying_goodbye": { "person": "direct" },
+        "if.action.searching": { "target": "direct" },
+        "if.action.setting": { "target": "direct" },
+        "if.action.showing": { "item": "direct", "recipient": "indirect" },
+        "if.action.smelling": { "target": "direct" },
+        "if.action.switching_off": { "device": "direct" },
+        "if.action.switching_on": { "device": "direct" },
+        "if.action.taking": { "item": "direct" },
+        "if.action.taking_off": { "item": "direct" },
+        "if.action.talking": { "target": "direct" },
+        "if.action.telling": { "recipient": "direct" },
+        "if.action.throwing": { "item": "direct", "recipient": "indirect", "target": "indirect" },
+        "if.action.touching": { "target": "direct" },
+        "if.action.turning": { "target": "direct" },
+        "if.action.tying": { "anchor": "indirect", "item": "direct" },
+        "if.action.unlocking": { "door": "direct", "target": "direct" },
+        "if.action.untying": { "anchor": "indirect", "item": "direct" },
+        "if.action.waving": { "target": "direct" },
+        "if.action.wearing": { "item": "direct" },
       },
     },
   },

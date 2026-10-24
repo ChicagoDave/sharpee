@@ -80,13 +80,18 @@ export function generateManifestModule(root: string): { source: string; actionId
   // the Chord grammar source IS the removable surface.
   const { lowered } = compileStandardGrammarRules(root);
   const grammarShapes = new Map<string, string[]>();
-  for (const { action, rules } of lowered) {
+  // Seat slice (ADR-383 D4): each standard action's seat table, from the
+  // same lowering, so `extend action` starts from the seats the standard
+  // rules registered with.
+  const grammarSeats = new Map<string, Record<string, string>>();
+  for (const { action, rules, seats } of lowered) {
     const list = grammarShapes.get(action) ?? [];
     for (const rule of rules) {
       const shape = JSON.stringify(rule.parts);
       if (!list.includes(shape)) list.push(shape);
     }
     grammarShapes.set(action, list);
+    if (Object.keys(seats).length > 0) grammarSeats.set(action, { ...grammarSeats.get(action), ...seats });
   }
 
   // Setting-schema slice (ADR-276 Phase 5, census 4–6): the Q-3 declarative
@@ -130,7 +135,7 @@ export function generateManifestModule(root: string): { source: string; actionId
   lines.push(' * Owner context: @sharpee/chord (generated artifact; browser-safe).');
   lines.push(' */');
   lines.push('');
-  lines.push("import type { PatternElement } from '@sharpee/if-domain';");
+  lines.push("import type { PatternElement, Seat } from '@sharpee/if-domain';");
   lines.push('');
   lines.push('/** Locale-owned stdlib facts (direction words join in a later ADR-276 phase). */');
   lines.push('export interface StdlibLocaleFacts {');
@@ -140,6 +145,12 @@ export function generateManifestModule(root: string): { source: string; actionId
   lines.push('   * rendered only for display (ADR-382 D6).');
   lines.push('   */');
   lines.push('  grammarShapes: Readonly<Record<string, readonly (readonly PatternElement[])[]>>;');
+  lines.push('  /**');
+  lines.push("   * Each standard action's seat table, entity slot name → seat, as the");
+  lines.push('   * standard rules registered it — the table `extend action` starts from');
+  lines.push('   * (ADR-383 D4). An action with no entity slot has no entry.');
+  lines.push('   */');
+  lines.push('  grammarSeats: Readonly<Record<string, Readonly<Record<string, Seat>>>>;');
   lines.push('}');
   lines.push('');
   lines.push('export interface StdlibManifest {');
@@ -185,6 +196,14 @@ export function generateManifestModule(root: string): { source: string; actionId
     lines.push(`        ${JSON.stringify(action)}: [`);
     for (const shape of shapes) lines.push(`          ${shape},`);
     lines.push('        ],');
+  }
+  lines.push('      },');
+  lines.push('      grammarSeats: {');
+  for (const [action, seats] of [...grammarSeats.entries()].sort(([a], [b]) => a.localeCompare(b))) {
+    const entries = Object.keys(seats)
+      .sort()
+      .map((slot) => `${JSON.stringify(slot)}: ${JSON.stringify(seats[slot])}`);
+    lines.push(`        ${JSON.stringify(action)}: { ${entries.join(', ')} },`);
   }
   lines.push('      },');
   lines.push('    },');

@@ -25,7 +25,7 @@
  */
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
-import type { LowerableAction, LoweredRule } from '@sharpee/chord';
+import type { LowerableAction, LoweredRule, SeatTable } from '@sharpee/chord';
 import { findRepoRoot } from '../repo';
 import { Command } from './command';
 
@@ -90,7 +90,9 @@ export function refuseNonStandardConstructs(actions: readonly StandardGrammarAct
 
 /**
  * One generated registration line: the lowered rule as a `grammar.rule()`
- * literal (ADR-382 Q-2), slot types as `SlotType` members.
+ * literal (ADR-382 Q-2), slot types as `SlotType` members, every entity
+ * slot's seat from the action's seat table (ADR-383 D3), slots in pattern
+ * order.
  * @param action The rule's action id
  * @param rule The rule as chord's `lowerActionRules` lowered it
  * @returns The line, indented for the module body
@@ -102,9 +104,13 @@ export function renderRuleCall(action: string, rule: LoweredRule): string {
     `parts: ${JSON.stringify(rule.parts)}`,
   ];
   if (rule.defaults) fields.push(`defaults: ${JSON.stringify(rule.defaults)}`);
-  const slots = Object.entries(rule.slotTypes).map(
-    ([slot, type]) => `${JSON.stringify(slot)}: { type: SlotType.${type === 'instrument' ? 'INSTRUMENT' : 'TOPIC'} }`,
-  );
+  const slots = rule.parts.flatMap((part) => {
+    if (part.kind !== 'slot') return [];
+    const type = rule.slotTypes[part.name];
+    if (type) return [`${JSON.stringify(part.name)}: { type: SlotType.${type === 'instrument' ? 'INSTRUMENT' : 'TOPIC'} }`];
+    const seat = rule.seats[part.name];
+    return seat ? [`${JSON.stringify(part.name)}: { seat: ${JSON.stringify(seat)} }`] : [];
+  });
   if (slots.length > 0) fields.push(`slots: { ${slots.join(', ')} }`);
   return `  grammar.rule({ ${fields.join(', ')} });`;
 }
@@ -139,8 +145,11 @@ export function validateActionNames(names: string[], validIds: Set<string>): str
  */
 export function compileStandardGrammarRules(root: string): {
   actions: number;
-  /** Each action's rules as chord's pattern module lowers them (ADR-382 D5), in definition order. */
-  lowered: Array<{ action: string; rules: LoweredRule[] }>;
+  /**
+   * Each action's rules as chord's pattern module lowers them (ADR-382 D5),
+   * in definition order, with the action's seat table (ADR-383 D3).
+   */
+  lowered: Array<{ action: string; rules: LoweredRule[]; seats: SeatTable }>;
 } {
   const storyPath = join(root, 'packages/parser-en-us/grammar/standard-en-us.story');
   const chordDist = join(root, 'packages/chord/dist/index.js');
@@ -150,13 +159,14 @@ export function compileStandardGrammarRules(root: string): {
   // Runtime require of the built compiler — outside the package graph, the
   // bundle-entry.js precedent (ADR-210 direction rule stands).
   // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const { compile, lowerActionRules } = require(chordDist) as {
+  const { compile, lowerActionRules, seatTable } = require(chordDist) as {
     compile: (src: string, opts?: object) => {
       ok: boolean;
       ir: { grammarFile?: { name: string }; actions: Array<StandardGrammarAction & LowerableAction> } | null;
       diagnostics: Array<{ severity: string; code: string; message: string; span?: { line: number } }>;
     };
     lowerActionRules: (action: LowerableAction, options: { bareVerbForms: boolean }) => LoweredRule[];
+    seatTable: (action: LowerableAction) => { table: SeatTable };
   };
   const storySrc = readFileSync(storyPath, 'utf8');
   const grammarDir = dirname(storyPath);
@@ -185,6 +195,7 @@ export function compileStandardGrammarRules(root: string): {
   const lowered = result.ir.actions.map((action) => ({
     action: `if.action.${action.name}`,
     rules: lowerActionRules(action, { bareVerbForms: false }),
+    seats: seatTable(action).table,
   }));
   return { actions: result.ir.actions.length, lowered };
 }

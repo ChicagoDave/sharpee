@@ -77,13 +77,14 @@ describe('generated registration line (ADR-382 Q-2)', () => {
       pattern: 'open :container with|using :tool',
       defaults: { manner: 'careful' },
       slotTypes: { tool: 'instrument' },
+      seats: { container: 'direct' },
       requirements: [],
       bare: false,
     });
     expect(line).toBe(
       '  grammar.rule({ action: "if.action.opening", pattern: "open :container with|using :tool", ' +
         'parts: [{"kind":"word","word":"open"},{"kind":"slot","name":"container"},{"kind":"alt","words":["with","using"]},{"kind":"slot","name":"tool"}], ' +
-        'defaults: {"manner":"careful"}, slots: { "tool": { type: SlotType.INSTRUMENT } } });',
+        'defaults: {"manner":"careful"}, slots: { "container": { seat: "direct" }, "tool": { type: SlotType.INSTRUMENT } } });',
     );
   });
 
@@ -93,6 +94,7 @@ describe('generated registration line (ADR-382 Q-2)', () => {
       pattern: 'look',
       defaults: null,
       slotTypes: {},
+      seats: {},
       requirements: [],
       bare: false,
     });

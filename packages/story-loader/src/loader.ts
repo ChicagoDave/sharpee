@@ -38,6 +38,9 @@ import {
   renderPattern,
   samePatternShape,
   SCOPE_REQUIREMENT_PREDICATES,
+  type SeatTable,
+  seatTable,
+  STDLIB_MANIFEST,
   type StoryIR,
   vehicleAboard,
   vehicleCandidateRoomIds,
@@ -1597,8 +1600,12 @@ export class ChordStory implements Story {
     const storyActionNames = new Set(this.ir.actions.map((a) => a.name));
     for (const ext of this.ir.grammarExtensions ?? []) {
       let actionId: string;
+      // ADR-383 D4: an extension seats from its target's table — the story
+      // action's own, else the standard action's from the manifest.
+      let inheritedSeats: SeatTable;
       if (storyActionNames.has(ext.action)) {
         actionId = `chord.action.${ext.action}`;
+        inheritedSeats = seatTable(this.ir.actions.find((a) => a.name === ext.action)!).table;
       } else {
         const derived = `if.action.${ext.action}`;
         if (!STDLIB_ACTION_IDS.has(derived)) {
@@ -1609,10 +1616,11 @@ export class ChordStory implements Story {
           );
         }
         actionId = derived;
+        inheritedSeats = STDLIB_MANIFEST.locales['en-US'].grammarSeats[derived] ?? {};
       }
       // No dispatch conveniences (ADR-270 D2, mirroring ADR-269 D3): the
       // extension registers exactly the stated lines at story tier.
-      this.registerActionGrammar(grammar, actionId, ext, { bareVerbForms: false });
+      this.registerActionGrammar(grammar, actionId, ext, { bareVerbForms: false, inheritedSeats });
     }
 
     // ADR-270 D3: `remove from action` — standard-tier rules removed by
@@ -1657,12 +1665,14 @@ export class ChordStory implements Story {
    * loader's one piece of grammar work is mapping each scope requirement
    * word to its predicate. `bareVerbForms` adds each pattern's literal verb
    * prefix as its own rule, after the written patterns (dispatch actions only).
+   * Every entity slot is registered with its seat from the action's seat
+   * table, started from `inheritedSeats` for an extension (ADR-383 D3, D4).
    */
   private registerActionGrammar(
     grammar: GrammarBuilder,
     actionId: string,
     def: LowerableAction & { constraints: Array<{ slot: string; requirement: ScopeRequirementWord }>; condition?: IRCondition },
-    opts: { bareVerbForms: boolean },
+    opts: { bareVerbForms: boolean; inheritedSeats?: SeatTable },
   ): void {
     // ADR-378 D5 (ADR-370 D7, GH #317): `define action … while` gates every
     // rule the action registers, bare-verb prefixes included — where the
@@ -1682,6 +1692,9 @@ export class ChordStory implements Story {
       }
       for (const [slot, type] of Object.entries(lowered.slotTypes)) {
         slots[slot] = { ...slots[slot], type: type === 'instrument' ? SlotType.INSTRUMENT : SlotType.TOPIC };
+      }
+      for (const [slot, seat] of Object.entries(lowered.seats)) {
+        slots[slot] = { ...slots[slot], seat };
       }
       // Story tier (ADR-268 D2): the builder from getStoryGrammar()
       // registers 'story', which outranks the standard grammar outright.

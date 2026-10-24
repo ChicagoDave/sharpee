@@ -2,18 +2,20 @@
  * patterns.ts — every walk over a Chord grammar pattern's parts, in one home
  * (ADR-382 D5): lowering an action's patterns to the rules it registers,
  * rendering parts as display text, expanding optionals and alternations to
- * their readings and a passage's commands, and comparing two patterns by
- * shape.
+ * their readings and a passage's commands, comparing two patterns by
+
+ * shape, and seating each entity slot by the action's seat table.
  *
- * Public interface: lowerParts, lowerActionRules, LoweredRule, commandParts,
- * renderPattern, expandReadings, expandCommands, samePatternShape.
- * Owner context: @sharpee/chord. The element type is if-domain's
- * PatternElement (ADR-382 D1), imported as a type only, so chord stays free
- * of platform runtime (ADR-210). The loader, the analyzer and repokit call
- * these; none keeps a walker of its own.
+ * Public interface: lowerParts, lowerActionRules, LoweredRule, seatTable,
+ * SeatTable, SeatProblem, commandParts, renderPattern, expandReadings,
+ * expandCommands, samePatternShape.
+ * Owner context: @sharpee/chord. The element types are if-domain's
+ * PatternElement (ADR-382 D1) and Seat (ADR-383 D1), imported as types only,
+ * so chord stays free of platform runtime (ADR-210). The loader, the
+ * analyzer and repokit call these; none keeps a walker of its own.
  */
 
-import type { PatternElement } from '@sharpee/if-domain';
+import type { PatternElement, Seat } from '@sharpee/if-domain';
 
 /** A Chord pattern element as the AST and IR spell it: a slot names itself in `word`. */
 type ChordPart =
@@ -43,6 +45,8 @@ export interface LoweredRule {
   defaults: Record<string, string> | null;
   /** The typed slots this rule carries. */
   slotTypes: Record<string, 'instrument' | 'topic'>;
+  /** The seat of every entity slot this rule carries, from the action's seat table. */
+  seats: Record<string, Seat>;
   /** The scope requirements on slots this rule carries, as written words. */
   requirements: Array<{ slot: string; requirement: string }>;
   /** True for a bare-verb form (the literal prefix of a slotted pattern). */
@@ -153,6 +157,109 @@ export function samePatternShape(a: readonly PatternElement[], b: readonly Patte
   });
 }
 
+/** An action's seat table (ADR-383 D3): each entity slot name's one seat. */
+export type SeatTable = Readonly<Record<string, Seat>>;
+
+/**
+ * A pattern line the seat table cannot seat. `conflict`: two of the line's
+ * names hold one seat (`slots` both, `seat` theirs), or a name finds no seat
+ * left (`slots` the line's seated name and the unseated one). `unknown`: a
+ * line of an extension whose two entity slots are both names the table
+ * lacks, so its seats would be a guess (ADR-383 D4).
+ */
+export interface SeatProblem {
+  kind: 'conflict' | 'unknown';
+  /** Index of the offending pattern in the action's `patterns`. */
+  pattern: number;
+  /** The two slot names involved, in pattern order. */
+  slots: [string, string];
+  /** For a conflict, the seat both would hold. */
+  seat?: Seat;
+  /**
+   * Where each of `slots` was seated: a pattern index, or `inherited` for a
+   * name the starting table already held, or null for a name the line
+   * itself seats.
+   */
+  seatedBy: [number | 'inherited' | null, number | 'inherited' | null];
+}
+
+/** The seats an entity slot can take, in the order a line's open seats fill. */
+const SEATS: readonly Seat[] = ['direct', 'indirect'];
+
+/**
+ * The entity slot names of one written pattern, in pattern order: every
+ * slot that is not greedy, typed (instrument, topic) or the `directions`
+ * block's `direction` (lowered to words). Optional slots count (ADR-383 D2).
+ */
+function entitySlotNames(action: LowerableAction, parts: readonly ChordPart[]): string[] {
+  const greedy = action.greedy ?? [];
+  const typed = new Set((action.slotTypes ?? []).map((t) => t.slot));
+  const directions = (action.directions ?? []).length > 0;
+  const names: string[] = [];
+  for (const part of parts) {
+    if (part.kind !== 'slot') continue;
+    const name = part.word;
+    if (greedy.includes(name) || typed.has(name) || (directions && name === 'direction')) continue;
+    if (!names.includes(name)) names.push(name);
+  }
+  return names;
+}
+
+/**
+ * The action's seat table (ADR-383 D3, D4). Lines are read in definition
+ * order. A name already in the table keeps its seat; each new name, in
+ * pattern order, takes the first seat its line leaves open — on the first
+ * line that is the positional default, the first entity slot direct and
+ * the second indirect. Starting from `inherited` (an `extend action`'s
+ * target table), a line whose two entity slots are both new names is an
+ * `unknown` problem and seats nothing. Cardinality patterns register
+ * nothing and are skipped.
+ * @param action The action's patterns and the slot lines that type them
+ * @param inherited The table an extension starts from; absent for an action's own lines
+ * @returns The table, including the inherited names, and every problem found
+ */
+export function seatTable(action: LowerableAction, inherited?: SeatTable): { table: Record<string, Seat>; problems: SeatProblem[] } {
+  const table: Record<string, Seat> = { ...(inherited ?? {}) };
+  const origin = new Map<string, number | 'inherited'>(Object.keys(table).map((name) => [name, 'inherited' as const]));
+  const problems: SeatProblem[] = [];
+
+  action.patterns.forEach((pattern, index) => {
+    if (pattern.cardinality) return;
+    const names = entitySlotNames(action, pattern.parts);
+    const known = names.filter((name) => name in table);
+    if (inherited && names.length >= 2 && known.length === 0) {
+      problems.push({ kind: 'unknown', pattern: index, slots: [names[0], names[1]], seatedBy: [null, null] });
+      return;
+    }
+    const holder = new Map<Seat, string>();
+    for (const name of known) {
+      const other = holder.get(table[name]);
+      if (other !== undefined) {
+        problems.push({ kind: 'conflict', pattern: index, slots: [other, name], seat: table[name], seatedBy: [origin.get(other)!, origin.get(name)!] });
+        return;
+      }
+      holder.set(table[name], name);
+    }
+    const seated: Array<[string, Seat]> = [];
+    for (const name of names) {
+      if (name in table) continue;
+      const free = SEATS.find((seat) => !holder.has(seat));
+      if (free === undefined) {
+        const other = holder.get('indirect')!;
+        problems.push({ kind: 'conflict', pattern: index, slots: [other, name], seatedBy: [origin.get(other) ?? null, null] });
+        return;
+      }
+      holder.set(free, name);
+      seated.push([name, free]);
+    }
+    for (const [name, seat] of seated) {
+      table[name] = seat;
+      origin.set(name, index);
+    }
+  });
+  return { table, problems };
+}
+
 /**
  * The rules one `define action` or `extend action` registers, in definition
  * order (ADR-382 D7): one per written pattern, or per alias × pattern where
@@ -160,27 +267,52 @@ export function samePatternShape(a: readonly PatternElement[], b: readonly Patte
  * `the direction` line registering the standalone aliases), each with its
  * own `means` defaults (ADR-267 D12). With `bareVerbForms`, each slotted
  * pattern's literal prefix follows as its own rule, once per distinct
- * prefix, after every written pattern.
+ * prefix, after every written pattern. Every entity slot carries its seat
+ * from the action's seat table (ADR-383 D3), started from
+ * `inheritedSeats` for an extension (D4).
  * @param action The action's patterns, constraints, greedy and typed slots and directions
- * @param options `bareVerbForms` adds the bare-verb prefixes (dispatch actions)
+ * @param options `bareVerbForms` adds the bare-verb prefixes (dispatch
+ *   actions); `inheritedSeats` is the extended action's table
  * @returns The rules, in registration order
+ * @throws Error when the seat table has a problem — the analyzer refuses
+ *   such a line (`analysis.seat-conflict`, `analysis.unknown-slot`), so only
+ *   IR that bypassed it reaches this
  */
-export function lowerActionRules(action: LowerableAction, options: { bareVerbForms: boolean }): LoweredRule[] {
+export function lowerActionRules(
+  action: LowerableAction,
+  options: { bareVerbForms: boolean; inheritedSeats?: SeatTable },
+): LoweredRule[] {
   const greedy = action.greedy ?? [];
   const directions = action.directions ?? [];
   const rules: LoweredRule[] = [];
   const bareTexts = new Set<string>();
   const bare: LoweredRule[] = [];
 
+  const { table, problems } = seatTable(action, options.inheritedSeats);
+  if (problems.length > 0) {
+    const problem = problems[0];
+    const line = renderPattern(lowerParts(action.patterns[problem.pattern].parts, greedy));
+    throw new Error(
+      problem.kind === 'unknown'
+        ? `Pattern \`${line}\` seats neither \`${problem.slots[0]}\` nor \`${problem.slots[1]}\` from the action's seat table`
+        : `Pattern \`${line}\` puts \`${problem.slots[0]}\` and \`${problem.slots[1]}\` in one seat`,
+    );
+  }
+
   const ruleOf = (parts: PatternElement[], defaults: Record<string, string> | null): LoweredRule => {
     const slots = new Set(parts.flatMap((part) => (part.kind === 'slot' ? [part.name] : [])));
     const slotTypes: Record<string, 'instrument' | 'topic'> = {};
     for (const typed of action.slotTypes ?? []) if (slots.has(typed.slot)) slotTypes[typed.slot] = typed.type;
+    const seats: Record<string, Seat> = {};
+    for (const part of parts) {
+      if (part.kind === 'slot' && !part.greedy && !(part.name in slotTypes)) seats[part.name] = table[part.name];
+    }
     return {
       parts,
       pattern: renderPattern(parts),
       defaults,
       slotTypes,
+      seats,
       requirements: action.constraints.filter((c) => slots.has(c.slot)).map((c) => ({ slot: c.slot, requirement: c.requirement })),
       bare: false,
     };
