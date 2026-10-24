@@ -1,0 +1,128 @@
+# Session Plan: Parser review step 3 — roles declared, not guessed
+
+**Created**: 2026-10-23
+**Plan Status**: ACTIVE
+**Overall scope**: Step 3 of `docs/work/parser-review/review-20261022.md`, root cause 3, implementing ADR-383. Each entity slot of a grammar rule carries a declared seat (direct or indirect), assigned at build in if-domain and per action in Chord; the parser, dispatch, the acting statement and failure messages read it; the verb and preposition come from the rule's matched literals; a story action's topic and text slots reach the action. Fixes C2, C4, C5, C6, C7. Steps 4-7 (ranking, search, one noun matcher, language and state) are NOT in this plan.
+**Bounded contexts touched**: grammar contract (`packages/if-domain/src/grammar`); English parser (`packages/parser-en-us`); Chord compiler, analyzer and language (`packages/chord`, `chord.ebnf`); story-loader dispatch, acting statement and topic matching (`packages/story-loader`); repokit grammar and manifest generation (`tools/repokit`); IDE protocol types (generated)
+**Key domain language**: seat (direct, indirect), seat table, compiled slot record, positional default, matched literal, verb phrase, preposition, `about` row, topic slot, text slot, `analysis.seat-conflict`
+
+## References consulted
+- `docs/architecture/adrs/adr-383-a-rule-declares-each-slots-seat.md` — the decision this plan implements: D1-D9, acceptance criteria 1-11, no implementation authorized until David says go on a phase.
+- `docs/architecture/adrs/adr-382-grammar-rules-cross-as-structured-parts.md` — the seam this stands on (`CompiledSlot`, `GrammarRuleSpec.slots`, `lowerActionRules`, rule-spec entry); D9 is the question ADR-383 D2 answers and gets an amendment note.
+- `docs/architecture/adrs/adr-267-chord-grammar-pattern-constructs.md` — D10 greedy and D11 typed slots; D11 gets an amendment note when `about` rows ship.
+- `docs/architecture/adrs/adr-268-chord-grammar-rule-ordering.md` — definition order is the tiebreak; seat tables use definition order for "first line where a name appears". The ranking itself is step 4, untouched.
+- `docs/architecture/adrs/adr-080-raw-text-grammar-slots.md` — instrument, text, greedy-text slots keep their type-given seats.
+- `docs/architecture/adrs/adr-231-player-surface-contract-rulings.md` — D4 topic slot; validator resolves topic quietly (`command-validator.ts:228-232`).
+- `docs/architecture/adrs/adr-329-chord-acting-statement.md` — the acting-statement matcher whose slot names must always come from a matched shape (D6 pre-check).
+- `docs/context/project-profile.md` — stack and conventions.
+- `docs/work/parser-review/review-20261022.md` — findings C2, C4-C7 and step order.
+- `docs/work/parser-review/plan-20261023-step2-structured-seam.md` — DONE; its Close-out records this plan's entry state (compiled slot record, `GrammarRuleSpec.slots`, positional default at `english-parser.ts` ~808, five seat tests, guard allowances).
+- `packages/parser-en-us/CLAUDE.md`, `packages/stdlib/CLAUDE.md`, `docs/core-concepts/README.md` — platform conventions for the touched layers.
+- Product ADRs not consulted (no Scope intersection): none classified as product.
+
+## Out of scope
+- Step 4 ranking and the bare-verb prefix tier (C8); steps 5-7.
+- Stdlib actions and descriptors (they keep reading `directObject`/`indirectObject`).
+- F5 slot types Chord cannot express; GH #621; versions (`CHORD_LANGUAGE_VERSION` follows the versions-at-publish ruling).
+- The step 1 and step 2 plans and the review are not archived.
+
+## Standing constraints (every phase)
+- Platform change, ADR-accepted. Every phase touching `packages/` or `tools/` needs David's explicit go before editing; stop and ask at phase entry.
+- A failed build or test is reported, never auto-retried.
+- No backward compatibility, one-shot cutover. Behavior Statements first; real-path tests (real parser, engine, loader, CLI bundle; `./sharpee test` where a Chord tree applies); mutation verification at each phase end.
+- Regression floor each phase end, one run each (deterministic at the pinned seed, never re-run for flakiness): `./repokit build dungeo`, then `node dist/cli/sharpee.js --test --chain stories/dungeo/walkthroughs/wt-*.transcript` (952 passed, 17 of 17 goldens at step 2's close); every Chord tree via `./sharpee test` (baseline counts in step 2's Phase 2 Baseline line: expanses 19/23, sailing 21/22, vehicles 19/21, fernhill 86/107, ides-of-march 39/51, upps 244/368, thealderman 3/8 + 1 failing, wumpus 35/68 + 1 failing, secret-letter 1459/2640 + 10 failing); package suites for touched packages; `pnpm exec turbo run test:ci`; `./repokit grammar --check`, `manifest --check`, `aliases --check`. Build story-loader before `./repokit manifest` (open item 624).
+- A recording or tree result that moves is a classified difference and **stops for David's ruling**; the transcript is never edited to match. Dungeo is a regression floor, not a design input.
+- Chord and IDE alignment is two-sided: IR, EBNF and protocol changes are checked against the IDE consumers.
+
+## Phases
+
+### Phase 1: Pre-checks and baseline — what the ADR assumes, measured
+- **Tier**: Small
+- **Budget**: ~100 tool calls
+- **Domain focus**: grammar seam (no code changes)
+- **Entry state**: ADR-383 ACCEPTED; branch `chord-4-0`; step 2 DONE. David's go to run probes and build (no source edits).
+- **Deliverable**: Four recorded measurements, each written into this phase's Demonstrated line with its command and result. (1) D7: count of rules in the standard grammar, generated `grammar.ts`, `platform-grammar.ts`, Dungeo and `packages/character` that still carry `semantics` verbs/prepositions/directions maps, and any reader of `buildSemantics` output; decides port vs delete. (2) D6: grep of the ADR-329 matcher's binding step (`analyzer.ts` ~755, 7237-7284; `timers.ts:117-121`) confirming acting-statement slot names always come from a matched shape. (3) D3: a scratchpad script lowering every Chord story's actions with the proposed seat-table rule, counting lines that hit `analysis.seat-conflict` or `analysis.unknown-slot` (D4 extension rule) over the standard grammar, all trees and Dungeo `define` lines. (4) AC11's premise: the baseline: Dungeo chain, every tree's counts, package suite counts, and a registration/seat snapshot script (extending step 2's `rules-snapshot.cjs` in the scratchpad to also dump each rule's positional seats), byte-identical on a second run. Reproduce the `hand bob the coin` and `pick up` probes on the bundle. Any pre-check that contradicts the ADR stops here for David's ruling and the plan's later phases are revised.
+- **Exit state**: Baseline recorded; the four measurements either confirm the ADR's premises or are brought to David; no source, test or generated file changed.
+- **Demonstration**: the commands and outputs for each measurement, quoted; the snapshot file path and its two-run equality.
+- **Demonstrated**: 2026-10-23, session 84f183, at 5f08c0930, no source edited (`git status`: only docs and the build-stamped `stories/dungeo/src/version.ts`). Scratchpad = `/private/tmp/claude-501/-Users-david-repos-sharpee/149bc5e4-cb0c-42d2-8161-3a34d7634d26/scratchpad/`. **(1) D7:** `grep -rn -E "withSemanticVerbs|withSemanticPrepositions|withSemanticDirections|semantics\.compute" packages stories tools` (dist and .d.ts excluded) → only the declarations (`if-domain/src/grammar/grammar-builder.ts:163-175`, `grammar-engine.ts:205-221`) and the generated API reference; no caller in source or tests. `rule.semantics` is therefore never set and `SemanticMapping.compute` has no setter or reader. Ruling under ADR-383 D7: the three builders, `SemanticMapping` and `buildSemantics`' map branches (`english-grammar-engine.ts:409-440`) are **deleted, not ported**, in Phase 6; the `defaultSemantics` merge (`english-parser.ts:1064`) stays. **(2) D6:** acting-statement slot names are the matched shape's part names: `matchActShape` pushes `part.name` (`chord/src/analyzer.ts:800`), the acting statement copies them into the IR (`:7098`, `:7120-7123`), and the goal-step path takes the same matcher (`:7156`); the shapes are the story's and the manifest's only. Premise holds. Note for Phase 5: a story that extends a standard action matches its extension shapes too, so that action's table at load is the manifest's table plus the extension's names (D4). **(3) D3/D4:** `node seat-census.cjs` (compiles the standard grammar and every `.story` under `stories/` and `branch-stories/`, applies the D2/D3/D4 rule) → `stories compiled: 23 of 23`, `seat conflicts: 0`, `extension lines with two new names: 0`, `rules whose table seat differs from position: 3` — standard giving `give :recipient :item` and `hand :recipient :item`, standard showing `show :recipient :item`, each `recipient:indirect item:direct`. No TS `define` is indirect-first (grep at ADR time). **(4) Baseline (AC11's premise):** `./repokit build dungeo` exit 0; `node dist/cli/sharpee.js --test --chain stories/dungeo/walkthroughs/wt-*.transcript` → 952 passed, 17 transcripts. Trees (`./sharpee test <dir>`): expanses 19 cards / 23 assertions passing; sailing 21/22; vehicles 19/21; thealderman 3/8, 1 card failing; fernhill 86/107; ides-of-march 39/51; secret-letter 1459/2640, 10 cards / 12 assertions failing; upps 244/368; wumpus 35/68, 1 card failing — identical to step 2's baseline. Suites (`vitest run`): if-domain 101 passed (6 files); parser-en-us 406 (32); chord 1673 (105); story-loader 1391 + 1 skipped (166); repokit 139 + 1 skipped (14). Snapshot: `snapshot/rules-snapshot.cjs` (step 2's script plus `pos=`, `today=` and `seat=` columns) → `snapshot/baseline.txt`, 6212 lines, Dungeo 800 rules, expanses/sailing/vehicles/ides-of-march 574, thealderman and upps 576, fernhill 584, secret-letter 781, wumpus 580; second run `baseline-2.txt` byte-identical (`cmp`). `today` differs from `pos` only on `give :recipient :item` and `show :recipient :item` (10 stories each); `hand :recipient :item` seats the recipient direct today. No rule has a third entity slot. **Probes** (`probe/roles.story`, a coin and Bob): `hand bob the coin` → blank refusal, `if.action.giving.cannot_take` (Bob seated as the item); `give bob the coin` → "You give the coin to the Bob."; `pick up` → "What do you want to pick?"; `give` → "You can't see any such thing." (the review recorded "Give it where?"; today's text is a different failure, so Phase 6's AC7 case for bare `give` is re-derived from this output, not the review's); `examine` → "What do you want to examine?". Seen in passing, not step 3's: "to the Bob" puts an article on a proper name in giving's success message. All premises hold; later phases stand as written. [reported by session, unverified: the event log's only test row, 2026-10-24T01:23:49Z UTC, is "Tests ran (status unverified)"; no pass status recorded]
+- **Status**: DONE
+
+### Phase 2: The seat on the compiled slot, assigned at build (if-domain)
+- **Tier**: Medium
+- **Budget**: ~250 tool calls
+- **Domain focus**: if-domain `CompiledSlot`, `GrammarRuleSpec.slots`, the compile step, `define(text)` with `.seat(name, seat)`
+- **Entry state**: Phase 1 DONE; David's go on `packages/if-domain` (and parser-en-us only where a type it imports changes shape).
+- **Deliverable**: Implements ADR-383 D1 and D2. `Seat` type; `CompiledSlot.seat?` set on every entity slot at build (declared seats first, then first free of `direct`/`indirect` in pattern order; optional slots count); `GrammarRuleSpec.slots[name].seat`; `.seat(name, seat)` beside `.instrument(name)` on the text front end; build errors for a seat on a non-entity slot, two slots in one seat, and a third entity slot. ADR-382 D9 gets its one-line amendment note (answered yes by D2). Tests (real engine): default seats equal today's positional result for every rule in the registration snapshot (diff empty); an indirect-first rule declared by `.seat` seats correctly; each build error throws and registers nothing.
+- **Exit state**: if-domain and dependents green; chain, trees and snapshot identical to baseline (the parser still seats positionally until Phase 4, so no behavior has moved); the seat field exists and equals the old positional map on every registered rule.
+- **Demonstration**: the new tests; the snapshot's seat column equal to the old positional map for every rule of Dungeo and each Chord story; counts against baseline.
+- **Demonstrated**: 
+- **Status**: PENDING
+
+### Phase 3: Chord seat tables, `grammarSeats` in the manifest, the extension rule
+- **Tier**: Medium
+- **Budget**: ~250 tool calls
+- **Domain focus**: Chord pattern module (`chord/src/patterns.ts`), analyzer diagnostics, stdlib manifest (`grammarSeats`), `extend action`
+- **Entry state**: Phase 2 DONE; David's go on `packages/chord`, `tools/repokit` (manifest, grammar generation) and `packages/parser-en-us/src/grammar.ts` (regenerated).
+- **Deliverable**: Implements ADR-383 D3 and D4 and AC3, AC4 (Chord half), AC9. `lowerActionRules` computes one seat table per action (first line in definition order fixes a name's seat; later lines inherit, new names take the open seat) and emits `seat` on every entity slot; `analysis.seat-conflict` naming the two slots and the lines; `StdlibLocaleFacts.grammarSeats` written by `./repokit manifest`; `extend action <standard>` starts from the manifest table; a two-entity-slot extension line with no inherited name is `analysis.unknown-slot` listing the action's names; repokit's `renderRuleCall` emits seats and `grammar.ts` is regenerated. IR unchanged. Tests: giving's table is `item: direct, recipient: indirect`; `hand the recipient the item` under `extend action giving` seats as the standard line; `hang the item on the peg` under putting seats the peg indirect; `hand the friend the gift` fails with `analysis.unknown-slot`; two names in one seat fails with `analysis.seat-conflict`; one-noun extension lines stay legal. Any corpus line Phase 1 found conflicting is handled as David ruled.
+- **Exit state**: chord, repokit, story-loader, parser-en-us suites green; `manifest --check` and `grammar --check` fresh; chain and trees identical to baseline (the parser still seats by position, so rule texts and seats agree except recipient-first giving/showing lines, whose differences are classified against Phase 1's snapshot); the guard still passes with its five allowances.
+- **Demonstration**: the tests; the regenerated manifest's `grammarSeats` for giving and showing; a bundle probe of the `extend action` cases through the real loader; the classified snapshot diff.
+- **Demonstrated**: 
+- **Status**: PENDING
+
+### Phase 4: The parser seats by the record; the five tests and the guard allowances go
+- **Tier**: Medium
+- **Budget**: ~250 tool calls
+- **Domain focus**: English parser `convertGrammarMatch`, `english-parser.ts` seat map, `scripts/__tests__/grammar-seam-guard.test.ts`
+- **Entry state**: Phase 3 DONE; David's go on `packages/parser-en-us`. This is the first behavior-bearing phase (`hand bob the coin` changes).
+- **Deliverable**: Implements ADR-383 D5 and AC1, AC5 (parser half). `convertGrammarMatch` seats each entity phrase by `slot.seat`; the positional map (`~809-821`) and the five `rule.pattern.includes(...)` tests (`~961-995`) deleted; no fallback branch. The guard's five allowances cleared and its allowance list empty and asserted empty. Tests (real parser and engine): `hand bob the coin`, `give bob the coin`, `give coin to bob`, `show bob the coin`, `show coin to bob`, `take coin from box` seat correctly; recipient-first lines of a Chord `extend action giving` seat by the table. Dungeo chain, trees and snapshot diff are classified: the expected differences are only synonym or extension lines written indirect-first; any moved recording stops here for David's ruling.
+- **Exit state**: no seat test on a rule's pattern text in `parser-en-us/src` (grep); guard green with an empty allowance list; chain and trees identical to baseline or each difference classified and ruled.
+- **Demonstration**: bundle run of the five phrases above (before: `hand bob the coin` blocked with `cannot_take`; after: gives the coin); the grep; guard output; counts against baseline.
+- **Demonstrated**: 
+- **Status**: PENDING
+
+### Phase 5: Dispatch and the acting statement read the seat table; `primarySlotOf` deleted
+- **Tier**: Medium
+- **Budget**: ~250 tool calls
+- **Domain focus**: story-loader dispatch (`dispatch-verbs.ts`), acting statement (`timers.ts`), Chord analyzer unused-slot warning, `primarySlotOf`
+- **Entry state**: Phase 4 DONE; David's go on `packages/story-loader` and `packages/chord`.
+- **Deliverable**: Implements ADR-383 D6 and AC2, AC8. `primarySlotOf` deleted; "consulted slot" and the acting statement's direct binding come from the table (every name seated `direct`); `timers.ts:117-121` seats each named binding by the table, so a statement naming the recipient first builds the same command; a slot name absent from the table is a load error naming the slot, never a positional fallback (premise checked in Phase 1). The pinned test in `dispatch-slot-names.test.ts` is updated to assert the gift is consulted on both `offer coin to Bob` and `present Bob with coin`. Tests: that case through the real loader and engine; `make Bob give the coin to Alice` and the recipient-first statement build the same command; the unused-slot warning reads the table.
+- **Exit state**: no `primarySlotOf` in the tree (grep); chord, story-loader suites green; chain and trees identical to baseline or classified.
+- **Demonstration**: the updated test run; a `./sharpee test` or bundle run of the two-line `offer`/`present` action; the grep; counts.
+- **Demonstrated**: 
+- **Status**: PENDING
+
+### Phase 6: Verb and preposition from matched literals; failure messages read the seat
+- **Tier**: Medium
+- **Budget**: ~250 tool calls
+- **Domain focus**: grammar engine `PatternMatch.literals`, `buildSemantics`, verb phrase and preposition in the parser, `parse-failure.ts`
+- **Entry state**: Phase 5 DONE; David's go on `packages/if-domain` and `packages/parser-en-us`. Phase 1's `semantics` count decides whether `buildSemantics` is ported or deleted.
+- **Deliverable**: Implements ADR-383 D7, D8 and AC6, AC7, AC5's remainder. `MatchedElement` and `PatternMatch.literals`; `matchedTokens` deleted; the verb phrase is the input tokens of literals before the first slot, the preposition those between the direct and indirect slot; vocabulary-tag reading at `english-parser.ts:778-794` and `1012-1025` removed; `buildSemantics` ported to `literals` or deleted with unused maps; failure classifier reports MISSING_OBJECT for a `direct` seat and MISSING_INDIRECT for `indirect`, naming D7's verb phrase; the `target`/`item`/`object` test at `parse-failure.ts:156-160` deleted. Tests (real parser): `examine light` with `light` also a verb has verb `examine`; a story verb absent from the vocabulary keeps its own word; `pick up` alone asks what to pick up; a first slot named `door` reports a missing direct object; `give` alone asks the direct question.
+- **Exit state**: no tag-derived verb or preposition and no slot-name guess in the parser (grep); suites green; chain and trees identical to baseline or classified.
+- **Demonstration**: bundle probes for `examine light`, `pick up`, `give`, and a story verb; the greps; counts.
+- **Demonstrated**: 
+- **Status**: PENDING
+
+### Phase 7: Topic and text slots reach the action (`about` rows) and the language record
+- **Tier**: Large
+- **Budget**: ~400 tool calls
+- **Domain focus**: Chord language (`about` rows on `define action`, topic slot binding, text slot binding), IR (`IRActionDef.topics`), story-loader dispatch, `{the subject}` rendering, IDE protocol
+- **Entry state**: Phase 6 DONE; David's go on `packages/chord` (grammar, AST, analyzer, EBNF), `website/public/chord.ebnf`, `packages/story-loader`, `tools/ide` protocol types (regenerated). This is a language change and the IDE alignment is checked in this phase.
+- **Deliverable**: Implements ADR-383 D9 and AC10. `define action` gains `about` rows (`chord.ebnf`, mirrored to the website copy, `parser.ts`, `ast.ts`); `IRActionDef.topics?: IRTopicRow[]`; the analyzer applies `analysis.duplicate-topic` and `analysis.topic-entity-collision` and refuses `about` rows on an action with no topic slot or a topic slot with no answer; dispatch reads `context.command.topic.entity` and the typed text and calls `matchTopicFilters` (no second matcher); no row matching falls to `otherwise refuse`; `{the subject}` renders the typed words with the article adding nothing; a `takes the rest of the line` slot binds its words under its name. `./repokit protocol` regenerates Swift and C# types; IDE consumers checked. ADR-267 D11 gets its one-line amendment note pointing to ADR-383 (the about rows ship here). Before building the `{the subject}` rendering, its article-suppression path is checked against GH #562 (phrase param resolution). Tests (bundle and `./sharpee test` on a new Chord probe story with the `praying` action): `pray for rain`, `pray about the altar` (altar in scope), `pray about the altar` from another room (out of scope; record what it does, since GH #242 is the same gate in topic tables), `pray about taxes` refusing `unheard` with "taxes"; the failing compiles; duplicate alias; the rest-of-line slot rendering.
+- **Exit state**: chord, story-loader, repokit, devkit and IDE protocol checks green; EBNF mirrored; `repokit protocol --check` fresh; chain and trees identical to baseline.
+- **Demonstration**: the `praying` story run on the bundle and through `./sharpee test` with its three transcripts; the analyzer diagnostics quoted; the regenerated protocol diff.
+- **Demonstrated**: 
+- **Status**: PENDING
+
+### Phase 8: Close-out — documentation, amendment notes, step 4 hand-off
+- **Tier**: Small
+- **Budget**: ~100 tool calls
+- **Domain focus**: closing the step: published references and the step 4 entry note
+- **Entry state**: Phase 7 DONE.
+- **Deliverable**: `chord-grammar-changes.md` rows for `analysis.seat-conflict`, D4's extension rule and D9's `about` rows; genai API reference regenerated; ADR-382 D9 and ADR-267 D11 each carry the one-line amendment note pointing to ADR-383 (checked by grep); `parser-en-us/CLAUDE.md` and `packages/stdlib/CLAUDE.md` updated where they teach seating or `forAction`-era text; the guard's allowance list empty and passing; findings C2, C4, C5, C6, C7 marked fixed in this plan's close-out; the close-out records step 4's entry state (where the seat lives, what remains in the parser, what step 4's ranking inherits).
+- **Exit state**: all earlier phases DONE; plan status DONE; close-out present. The plan is not archived (the review serves steps 4-7).
+- **Demonstration**: greps for the amendment notes and for `primarySlotOf`, `matchedTokens`, `rule.pattern.includes`; guard test green; final chain, tree, suite and `test:ci` counts.
+- **Demonstrated**: 
+- **Status**: PENDING
+
+## Sequencing note
+Phases 2-6 are sequential by real dependency: the seat on the record (2) is what the Chord tables (3) emit and the parser (4) reads; dispatch (5) needs the parser seating consistently; Phase 6 (literals, failure messages) reads the seat but is otherwise independent of 5 and could swap with it. Phase 7 depends on no seat work and could run after Phase 2 if David wants the language change earlier; it is placed late because it is the only phase that changes the IR and EBNF. Phase 4 isolates the one behavior-bearing seating change so a regression is attributable to it alone.
