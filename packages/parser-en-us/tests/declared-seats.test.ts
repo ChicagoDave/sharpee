@@ -280,3 +280,54 @@ describe('the standard grammar, seated through the real parser', () => {
     expect(seats(rules.find((r) => r.pattern === 'give :item to :recipient')!)).toEqual({ item: 'direct', recipient: 'indirect' });
   });
 });
+
+describe('the parser seats each noun by its slot`s seat (ADR-383 D5)', () => {
+  let parser: EnglishParser;
+
+  beforeEach(() => {
+    vocabularyRegistry.clear();
+    parser = new EnglishParser(new EnglishLanguageProvider());
+  });
+
+  /** The parsed command's action and its two noun phrases' texts. */
+  function seated(input: string) {
+    const result = parser.parse(input);
+    if (!result.success) throw new Error(`${input}: did not parse`);
+    const { structure, action } = result.value;
+    return { action, direct: structure.directObject?.text, indirect: structure.indirectObject?.text };
+  }
+
+  it.each([
+    ['hand bob the coin', 'if.action.giving', 'coin', 'bob'],
+    ['give bob the coin', 'if.action.giving', 'coin', 'bob'],
+    ['give coin to bob', 'if.action.giving', 'coin', 'bob'],
+    ['show bob the coin', 'if.action.showing', 'coin', 'bob'],
+    ['show coin to bob', 'if.action.showing', 'coin', 'bob'],
+    ['take coin from box', 'if.action.removing', 'coin', 'box'],
+  ])('`%s` seats the thing acted on direct', (input, action, direct, indirect) => {
+    expect(seated(input)).toEqual({ action, direct, indirect });
+  });
+
+  it('a story rule declaring an indirect-first line seats by its declaration', () => {
+    parser.getStoryGrammar().define('pass :recipient :item').seat('item', 'direct').mapsTo('if.action.giving').build();
+    expect(seated('pass bob the coin')).toEqual({ action: 'if.action.giving', direct: 'coin', indirect: 'bob' });
+  });
+
+  it('an undeclared story rule seats its first entity slot direct, an instrument before it skipped', () => {
+    parser.getStoryGrammar().define('prod :tool at :target').instrument('tool').mapsTo('if.action.pushing').build();
+    const result = parser.parse('prod stick at bell');
+    if (!result.success) throw new Error('did not parse');
+    expect(result.value.structure.directObject?.text).toBe('bell');
+    expect(result.value.structure.indirectObject).toBeUndefined();
+    expect(result.value.instrument?.text).toBe('stick');
+  });
+
+  it('a typed value slot takes no seat and travels in extras under its name', () => {
+    parser.getStoryGrammar().define('dial :n on :device').number('n').mapsTo('chord.action.dialing').build();
+    const result = parser.parse('dial 29 on radio');
+    if (!result.success) throw new Error('did not parse');
+    expect(result.value.structure.directObject?.text).toBe('radio');
+    expect(result.value.structure.indirectObject).toBeUndefined();
+    expect((result.value.extras?.n as { text: string } | undefined)?.text).toBe('29');
+  });
+});

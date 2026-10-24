@@ -3,13 +3,15 @@
  * entity slots with the action's seat table (ADR-383 D3, D4; parser review
  * step 3, Phase 3): a story action's indirect-first line seats by name, and
  * `extend action` seats from the standard action's table in the manifest.
- * Seats are read from the compiled slot records of a real if-domain engine.
+ * Seats are read from the compiled slot records of a real if-domain engine,
+ * and the parser's reading of them (Phase 4, D5) is shown on a booted engine
+ * by where the coin ends up.
  */
 import { describe, expect, it } from 'vitest';
 import type { GrammarRule } from '@sharpee/if-domain';
 import { createStory } from '../src';
 import { captureGrammarEngine } from './helpers/grammar-harness';
-import { compileSource } from './helpers/boot-turns';
+import { bootTurns, compileSource } from './helpers/boot-turns';
 
 const HEAD = `story
   title: Seats
@@ -98,5 +100,36 @@ extend action offering
     const extension = rules.find((r) => r.pattern === 'present :friend with :gift')!;
     expect(extension.action).toBe('chord.action.offering');
     expect(seats(extension)).toEqual({ friend: 'indirect', gift: 'direct' });
+  });
+});
+
+describe('the parser reads the seats the loader registered (ADR-383 D5)', () => {
+  const PEOPLE = `create the coin
+  a thing
+  in the Study
+
+  A coin.
+
+create Bob
+  a person
+  in the Study
+
+  Bob.
+
+`;
+
+  it('`pass bob the coin` under `extend action giving` gives the coin to Bob', async () => {
+    const b = await bootTurns(HEAD + PEOPLE + 'extend action giving\n  grammar\n    pass the recipient the item\n');
+    await b.turn('take coin');
+    expect(b.world.getLocation(b.id('coin'))).toBe(b.player.id);
+    await b.turn('pass bob the coin');
+    expect(b.world.getLocation(b.id('coin'))).toBe(b.id('bob'));
+  });
+
+  it('the standard `hand bob the coin` gives the coin to Bob', async () => {
+    const b = await bootTurns(HEAD + PEOPLE);
+    await b.turn('take coin');
+    await b.turn('hand bob the coin');
+    expect(b.world.getLocation(b.id('coin'))).toBe(b.id('bob'));
   });
 });

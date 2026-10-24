@@ -804,22 +804,12 @@ export class EnglishParser implements Parser {
     let preposition: IPrepPhrase | undefined;
     let indirectObject: INounPhrase | undefined;
     let extras: any = {};
-    
-    const slotPositions: { [slotName: string]: number } = {};
-    let positionCounter = 0;
 
-    // Map slot names to their positions, read from the compiled pattern's
-    // slot records (ADR-382 D4) — an optional slot counts like a required
-    // one. An INSTRUMENT slot (ADR-080 `.instrument()`) takes no positional
-    // seat: it is set aside below, so the first NON-instrument slot is the
-    // direct object wherever the instrument sits in the pattern —
-    // `hang :item on :target` with `:item` the instrument seats the target
-    // as the direct object (GH #333).
-    for (const slot of rule.compiledPattern!.slots) {
-      if (slot.slotType === SlotType.INSTRUMENT) continue;
-      slotPositions[slot.name] = positionCounter++;
-    }
-    
+    // Each entity slot's seat was settled when the rule was built (ADR-383
+    // D1, D2): declared, else the first free of direct and indirect in
+    // pattern order, instrument and other typed slots never seated.
+    const compiledSlots = rule.compiledPattern!.slotsByName;
+
     // ADR-080: Track text slots, instruments, and excluded items
     let textSlots: Map<string, string> | undefined;
     let instrument: INounPhrase | undefined;
@@ -952,60 +942,16 @@ export class EnglishParser implements Parser {
         continue; // Don't also add to direct/indirect objects
       }
 
-      // Determine where this slot should go based on the pattern.
-      // (Deleted 2026-07-16, David's ruling during ADR-229 R3: the legacy
-      // "slot after literal 'with' → extras" shunt is superseded by
-      // ADR-080's `.instrument()` slot typing — handled above — and had no
-      // remaining consumer. With-slots now follow positional assignment
-      // like any other slot.)
-      if (rule.pattern.includes('give :recipient :item')) {
-        // Special case for give patterns
-        if (slotName === 'item') {
-          directObject = phrase;
-        } else if (slotName === 'recipient') {
-          indirectObject = phrase;
-        }
-      } else if (rule.pattern.includes('give :item to :recipient')) {
-        // Give with 'to' pattern
-        if (slotName === 'item') {
-          directObject = phrase;
-        } else if (slotName === 'recipient') {
-          indirectObject = phrase;
-        }
-      } else if (rule.pattern.includes('show :recipient :item')) {
-        // Special case for show recipient item
-        if (slotName === 'item') {
-          directObject = phrase;
-        } else if (slotName === 'recipient') {
-          indirectObject = phrase;
-        }
-      } else if (rule.pattern.includes('show :item to :recipient')) {
-        // Show with 'to' pattern
-        if (slotName === 'item') {
-          directObject = phrase;
-        } else if (slotName === 'recipient') {
-          indirectObject = phrase;
-        }
-      } else if (rule.pattern.includes(':item from :container')) {
-        // Take from pattern
-        if (slotName === 'item') {
-          directObject = phrase;
-        } else if (slotName === 'container') {
-          indirectObject = phrase;
-        }
-      } else {
-        // General case: first slot is direct object, second is indirect object
-        const slotPosition = slotPositions[slotName];
-        if (slotPosition === 0 && !directObject) {
-          directObject = phrase;
-        } else if (slotPosition === 1 && !indirectObject) {
-          indirectObject = phrase;
-        } else {
-          // Additional slots or already assigned slots go to extras
-          if (!extras[slotName]) {
-            extras[slotName] = phrase;
-          }
-        }
+      // The entity phrase takes its slot's seat (ADR-383 D5). A typed value
+      // slot with no handler above (number, ordinal, time, quoted text)
+      // carries no seat and travels in extras under its own name.
+      const seat = compiledSlots.get(slotName)?.seat;
+      if (seat === 'direct') {
+        directObject = phrase;
+      } else if (seat === 'indirect') {
+        indirectObject = phrase;
+      } else if (!extras[slotName]) {
+        extras[slotName] = phrase;
       }
     }
     

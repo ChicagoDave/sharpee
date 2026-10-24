@@ -5,13 +5,11 @@
  * the four packages on the seam for the scans that used to re-split it, so
  * the seam cannot silently reopen.
  *
- * Two places are allowed, each named here rather than by a pattern:
- * - `parser-en-us/src/english-pattern-compiler.ts` is the one text front end
- *   (`define(text)` → parts, ADR-382 D3). Parsing pattern text is its job.
- * - The five seat special cases in `english-parser.ts` that test
- *   `rule.pattern.includes(…)` are step 3's to remove (declared roles). They
- *   are pinned by exact line, so step 3 removing them makes this list stale,
- *   and a stale entry fails too.
+ * One place is allowed: `parser-en-us/src/english-pattern-compiler.ts` is the
+ * one text front end (`define(text)` → parts, ADR-382 D3). Parsing pattern
+ * text is its job. No other line is allowed: the parser seats a noun by its
+ * compiled slot's seat (ADR-383 D5), so the five `rule.pattern.includes(…)`
+ * seat tests are gone and the allowance list is asserted empty.
  *
  * Public interface: none (a vitest suite under `pnpm test:scripts`).
  * Owner context: repo tooling, guarding the grammar seam across if-domain,
@@ -43,14 +41,8 @@ const FORBIDDEN: ReadonlyArray<{ name: string; test: RegExp }> = [
 /** The one file whose job is parsing pattern text (ADR-382 D3). */
 const TEXT_FRONT_END = 'packages/parser-en-us/src/english-pattern-compiler.ts';
 
-/** Step 3's seat special cases, pinned by file and exact trimmed line. */
-const STEP_3_SEAT_TESTS: ReadonlyArray<{ file: string; line: string }> = [
-  { file: 'packages/parser-en-us/src/english-parser.ts', line: "if (rule.pattern.includes('give :recipient :item')) {" },
-  { file: 'packages/parser-en-us/src/english-parser.ts', line: "} else if (rule.pattern.includes('give :item to :recipient')) {" },
-  { file: 'packages/parser-en-us/src/english-parser.ts', line: "} else if (rule.pattern.includes('show :recipient :item')) {" },
-  { file: 'packages/parser-en-us/src/english-parser.ts', line: "} else if (rule.pattern.includes('show :item to :recipient')) {" },
-  { file: 'packages/parser-en-us/src/english-parser.ts', line: "} else if (rule.pattern.includes(':item from :container')) {" },
-];
+/** Lines allowed to scan pattern text, by file and exact trimmed line; empty, and asserted so. */
+const ALLOWED_LINES: ReadonlyArray<{ file: string; line: string }> = [];
 
 /** Every .ts source file under a directory. */
 function sourceFiles(dir: string): string[] {
@@ -73,7 +65,7 @@ export function findSeamScans(file: string, text: string): Array<{ file: string;
   text.split('\n').forEach((raw, index) => {
     const line = raw.trim();
     if (line.startsWith('//') || line.startsWith('*') || line.startsWith('/*')) return;
-    if (STEP_3_SEAT_TESTS.some((allowed) => allowed.file === file && allowed.line === line)) return;
+    if (ALLOWED_LINES.some((allowed) => allowed.file === file && allowed.line === line)) return;
     for (const scan of FORBIDDEN) {
       if (scan.test.test(raw)) found.push({ file, line: index + 1, text: line, scan: scan.name });
     }
@@ -95,12 +87,13 @@ describe('the grammar seam carries parts, not text (ADR-382 AC7)', () => {
     expect(files.flatMap((f) => findSeamScans(f.file, f.text))).toEqual([]);
   });
 
-  it('each step-3 allowance still names a line that exists', () => {
-    for (const allowed of STEP_3_SEAT_TESTS) {
-      const text = files.find((f) => f.file === allowed.file)?.text ?? '';
-      const lines = text.split('\n').map((l) => l.trim());
-      expect(lines, `stale allowance: ${allowed.line}`).toContain(allowed.line);
-    }
+  it('allows no line outside the text front end', () => {
+    expect(ALLOWED_LINES).toEqual([]);
+  });
+
+  it('flags a seat test on a rule`s pattern text, the kind the parser used to carry', () => {
+    const seatTest = "} else if (rule.pattern.includes(':item from :container')) {";
+    expect(findSeamScans('packages/parser-en-us/src/english-parser.ts', seatTest)).toHaveLength(1);
   });
 
   it('flags each scan the seam used to carry', () => {
