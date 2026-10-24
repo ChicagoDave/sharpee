@@ -5,9 +5,10 @@
  * the compiled IR, the story host, the evaluator, the engine's turn and
  * execution entries once wired, and the runtime's own mutable state — the
  * re-entrancy guards and per-turn buffers the sections set and release, and
- * the two cross-turn counters a restore resets. The five helpers every
+ * the two cross-turn counters a restore resets. The six helpers every
  * section reaches for (an NPC's dialogue turn, a raw runtime event, an
- * entity's place, narration and sourcing of scheduler events) live here
+ * entity's place, narration and sourcing of scheduler events, an action's
+ * seat roles) live here
  * beside the state. Each section is a field on the core, assigned by the
  * facade that constructs them, so a section reaches another through
  * `core.<section>` and never imports it.
@@ -33,7 +34,7 @@
  * - ADR-207/208 — per-world, keyed registration.
  */
 import { dialogueTurn, type KindMembership } from '@sharpee/character';
-import type { IRCondition, IREntity, IRTimerClause, IRTimerDef, StoryIR } from '@sharpee/chord';
+import { actionRoles, type ActionRoles, type IRCondition, type IREntity, type IRTimerClause, type IRTimerDef, type StoryIR } from '@sharpee/chord';
 import type { ISemanticEvent } from '@sharpee/core';
 import type { Choice, StoryEndingKind } from '@sharpee/if-domain';
 import type { ActResult, ActSlots } from '@sharpee/stdlib';
@@ -301,6 +302,26 @@ export class RuntimeCore {
       list.push({ clause, it: null });
       this.timerClauses.set(clause.timer, list);
     }
+  }
+
+  /** Each action's roles, computed once per action name. */
+  private readonly rolesByAction = new Map<string, ActionRoles>();
+
+  /**
+   * An action's seat table and typed slots as the story loads them — its
+   * own, else the standard action's, extended by every `extend action`
+   * aimed at it (ADR-383 D6). Dispatch and the acting statement both read
+   * this one answer.
+   *
+   * @param name the action's bare name (`giving`, `presenting`)
+   */
+  actionRoles(name: string): ActionRoles {
+    let roles = this.rolesByAction.get(name);
+    if (!roles) {
+      roles = actionRoles(name, { actions: this.ir.actions, extensions: this.ir.grammarExtensions ?? [] });
+      this.rolesByAction.set(name, roles);
+    }
+    return roles;
   }
 
   /**

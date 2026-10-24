@@ -13,7 +13,7 @@
  * References:
  * - ADR-335 D1 — one module per runtime section over a shared core.
  */
-import type { IRStatement, IRTimerDef } from '@sharpee/chord';
+import { seatActBindings, type IRStatement, type IRTimerDef } from '@sharpee/chord';
 import type { ISemanticEvent } from '@sharpee/core';
 import type { ActResult, ActSlots } from '@sharpee/stdlib';
 import { IFEntity, WorldModel } from '@sharpee/world-model';
@@ -102,24 +102,29 @@ export class TimersSection {
     }
     const storyDef = this.core.ir.actions.find((a) => a.name === stmt.action);
     const actionId = storyDef ? `chord.action.${stmt.action}` : `if.action.${stmt.action}`;
-    const instrumentSlots = new Set((storyDef?.slotTypes ?? []).filter((t) => t.type === 'instrument').map((t) => t.slot));
 
     const slots: ActSlots = {};
-    let entitySlots = 0;
-    for (const bound of stmt.slots) {
-      if (bound.slot === 'direction') {
-        const word = bound.value.kind === 'literal' ? bound.value.value : this.core.evaluator.entityValue(bound.value, ctx);
+    const bound: Array<{ slot: string; value: IFEntity }> = [];
+    for (const binding of stmt.slots) {
+      if (binding.slot === 'direction') {
+        const word = binding.value.kind === 'literal' ? binding.value.value : this.core.evaluator.entityValue(binding.value, ctx);
         const direction = directionOfWord(word);
         if (!direction) throw new LoadError(`Unknown direction \`${word}\`.`, stmt.span);
         slots.direction = direction;
         continue;
       }
-      const entity = world.getEntity(this.core.evaluator.entityValue(bound.value, ctx));
-      if (!entity) throw new LoadError(`\`${bound.slot}\` names nothing in the world.`, stmt.span);
-      if (instrumentSlots.has(bound.slot)) slots.instrument = entity;
-      else if (entitySlots++ === 0) slots.directObject = entity;
-      else slots.indirectObject = entity;
+      const entity = world.getEntity(this.core.evaluator.entityValue(binding.value, ctx));
+      if (!entity) throw new LoadError(`\`${binding.slot}\` names nothing in the world.`, stmt.span);
+      bound.push({ slot: binding.slot, value: entity });
     }
+    // ADR-383 D6: each slot takes the seat the action's table gives its
+    // name, so the order the statement names them in never moves a noun.
+    // The compiler refuses a slot with no seat; this is the backstop.
+    const seated = seatActBindings(bound, this.core.actionRoles(stmt.action));
+    if (!seated.ok) {
+      throw new LoadError(`runtime.act-unseated-slot: \`${seated.slot}\` has no seat in \`${stmt.action}\`.`, stmt.span);
+    }
+    Object.assign(slots, seated.seating);
 
     const link = `${actorName} ${stmt.action}`;
     if (this.core.actDepth >= ACT_DEPTH_CAP) {

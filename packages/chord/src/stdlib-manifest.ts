@@ -10,11 +10,14 @@
  * locale-owned facts (grammar shapes, direction words) go under `locales`,
  * keyed from day one (Q-2), `en-US` the sole entry.
  *
- * Public interface: STDLIB_MANIFEST, StdlibManifest, StdlibLocaleFacts.
+ * Public interface: STDLIB_MANIFEST, StdlibManifest, StdlibLocaleFacts, ActSlotType.
  * Owner context: @sharpee/chord (generated artifact; browser-safe).
  */
 
 import type { PatternElement, Seat } from '@sharpee/if-domain';
+
+/** The type a typed grammar slot carries: a seat table leaves these slots out. */
+export type ActSlotType = 'instrument' | 'topic' | 'text';
 
 /** Locale-owned stdlib facts (direction words join in a later ADR-276 phase). */
 export interface StdlibLocaleFacts {
@@ -30,6 +33,12 @@ export interface StdlibLocaleFacts {
    * (ADR-383 D4). An action with no entity slot has no entry.
    */
   grammarSeats: Readonly<Record<string, Readonly<Record<string, Seat>>>>;
+  /**
+   * Each standard action's typed slots, slot name → type (`text` for a
+   * greedy slot) — the slots its seat table leaves out, which an acting
+   * statement seats by type (ADR-383 D6). An action with none has no entry.
+   */
+  grammarSlotTypes: Readonly<Record<string, Readonly<Record<string, ActSlotType>>>>;
 }
 
 export interface StdlibManifest {
@@ -937,6 +946,24 @@ export const STDLIB_MANIFEST: StdlibManifest = {
         "if.action.untying": { "anchor": "indirect", "item": "direct" },
         "if.action.waving": { "target": "direct" },
         "if.action.wearing": { "item": "direct" },
+      },
+      grammarSlotTypes: {
+        "if.action.answering": { "response": "topic" },
+        "if.action.asking": { "topic": "topic" },
+        "if.action.attacking": { "weapon": "instrument" },
+        "if.action.burning": { "tool": "instrument" },
+        "if.action.consulting": { "topic": "topic" },
+        "if.action.cutting": { "tool": "instrument" },
+        "if.action.digging": { "tool": "instrument" },
+        "if.action.lighting": { "tool": "instrument" },
+        "if.action.locking": { "key": "instrument" },
+        "if.action.opening": { "tool": "instrument" },
+        "if.action.removing": { "tool": "instrument" },
+        "if.action.setting": { "value": "topic" },
+        "if.action.setting_course": { "destination": "topic" },
+        "if.action.steering": { "turn": "topic" },
+        "if.action.telling": { "topic": "topic" },
+        "if.action.unlocking": { "key": "instrument" },
       },
     },
   },

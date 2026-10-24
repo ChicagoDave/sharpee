@@ -84,14 +84,21 @@ export function generateManifestModule(root: string): { source: string; actionId
   // same lowering, so `extend action` starts from the seats the standard
   // rules registered with.
   const grammarSeats = new Map<string, Record<string, string>>();
+  // Typed-slot slice (ADR-383 D6): the slots a seat table leaves out, by the
+  // type that seats them, so an acting statement naming one seats it by type.
+  const grammarSlotTypes = new Map<string, Record<string, string>>();
   for (const { action, rules, seats } of lowered) {
     const list = grammarShapes.get(action) ?? [];
+    const typed: Record<string, string> = { ...grammarSlotTypes.get(action) };
     for (const rule of rules) {
       const shape = JSON.stringify(rule.parts);
       if (!list.includes(shape)) list.push(shape);
+      Object.assign(typed, rule.slotTypes);
+      for (const part of rule.parts) if (part.kind === 'slot' && part.greedy) typed[part.name] = 'text';
     }
     grammarShapes.set(action, list);
     if (Object.keys(seats).length > 0) grammarSeats.set(action, { ...grammarSeats.get(action), ...seats });
+    if (Object.keys(typed).length > 0) grammarSlotTypes.set(action, typed);
   }
 
   // Setting-schema slice (ADR-276 Phase 5, census 4–6): the Q-3 declarative
@@ -131,11 +138,14 @@ export function generateManifestModule(root: string): { source: string; actionId
   lines.push(' * locale-owned facts (grammar shapes, direction words) go under `locales`,');
   lines.push(' * keyed from day one (Q-2), `en-US` the sole entry.');
   lines.push(' *');
-  lines.push(' * Public interface: STDLIB_MANIFEST, StdlibManifest, StdlibLocaleFacts.');
+  lines.push(' * Public interface: STDLIB_MANIFEST, StdlibManifest, StdlibLocaleFacts, ActSlotType.');
   lines.push(' * Owner context: @sharpee/chord (generated artifact; browser-safe).');
   lines.push(' */');
   lines.push('');
   lines.push("import type { PatternElement, Seat } from '@sharpee/if-domain';");
+  lines.push('');
+  lines.push('/** The type a typed grammar slot carries: a seat table leaves these slots out. */');
+  lines.push("export type ActSlotType = 'instrument' | 'topic' | 'text';");
   lines.push('');
   lines.push('/** Locale-owned stdlib facts (direction words join in a later ADR-276 phase). */');
   lines.push('export interface StdlibLocaleFacts {');
@@ -151,6 +161,12 @@ export function generateManifestModule(root: string): { source: string; actionId
   lines.push('   * (ADR-383 D4). An action with no entity slot has no entry.');
   lines.push('   */');
   lines.push('  grammarSeats: Readonly<Record<string, Readonly<Record<string, Seat>>>>;');
+  lines.push('  /**');
+  lines.push("   * Each standard action's typed slots, slot name → type (`text` for a");
+  lines.push('   * greedy slot) — the slots its seat table leaves out, which an acting');
+  lines.push('   * statement seats by type (ADR-383 D6). An action with none has no entry.');
+  lines.push('   */');
+  lines.push("  grammarSlotTypes: Readonly<Record<string, Readonly<Record<string, ActSlotType>>>>;");
   lines.push('}');
   lines.push('');
   lines.push('export interface StdlibManifest {');
@@ -203,6 +219,14 @@ export function generateManifestModule(root: string): { source: string; actionId
     const entries = Object.keys(seats)
       .sort()
       .map((slot) => `${JSON.stringify(slot)}: ${JSON.stringify(seats[slot])}`);
+    lines.push(`        ${JSON.stringify(action)}: { ${entries.join(', ')} },`);
+  }
+  lines.push('      },');
+  lines.push('      grammarSlotTypes: {');
+  for (const [action, typed] of [...grammarSlotTypes.entries()].sort(([a], [b]) => a.localeCompare(b))) {
+    const entries = Object.keys(typed)
+      .sort()
+      .map((slot) => `${JSON.stringify(slot)}: ${JSON.stringify(typed[slot])}`);
     lines.push(`        ${JSON.stringify(action)}: { ${entries.join(', ')} },`);
   }
   lines.push('      },');

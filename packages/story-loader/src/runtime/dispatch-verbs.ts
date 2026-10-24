@@ -13,7 +13,7 @@
  * References:
  * - ADR-335 D1 — one module per runtime section over a shared core.
  */
-import { type IRActionDef, type IROnClause, type IRTraitDef, primarySlotOf, type Span } from '@sharpee/chord';
+import { type IRActionDef, type IROnClause, type IRTraitDef, type Span } from '@sharpee/chord';
 import type { ISemanticEvent } from '@sharpee/core';
 import type { Choice } from '@sharpee/if-domain';
 import { type ActionInterceptor, type CapabilityBehavior, type CapabilityEffect, type CapabilitySharedData, type CapabilityValidationResult, Direction, IFEntity, type InterceptorReportResult, type InterceptorResult, type InterceptorSharedData, WorldModel } from '@sharpee/world-model';
@@ -311,7 +311,10 @@ export class DispatchVerbsSection {
     // `target` as its primary slot wherever the instrument sits.
     const instrumentSlotNames = new Set((def.slotTypes ?? []).filter((t) => t.type === 'instrument').map((t) => t.slot));
     const isEntitySlot = (word: string) => !(hasDirections && word === 'direction') && !instrumentSlotNames.has(word);
-    const primarySlot = primarySlotOf(def);
+    // ADR-383 D6: a command with no slot names (an act through the execution
+    // entry) binds each object to every name the action's table seats there.
+    const seatedNames = { direct: [] as string[], indirect: [] as string[] };
+    for (const [name, seat] of Object.entries(runtime.core.actionRoles(def.name).seats)) seatedNames[seat].push(name);
     const hasEntityLessPattern = def.patterns.some(
       (p) => !p.parts.some((part) => part.kind === 'slot' && isEntitySlot((part as { word: string }).word)),
     );
@@ -359,16 +362,19 @@ export class DispatchVerbsSection {
       // through the execution entry (ADR-329 D1/D10) as much as the player.
       const slots: Record<string, string> = { actor: (context.actor ?? context.player).id };
       // Each parsed object binds under the slot it filled in the matched
-      // rule, so a two-noun pattern's second noun reads by name. A command
-      // with no slot names (an act through the execution entry) binds its
-      // direct object to the primary slot, as before.
+      // rule, so a two-noun pattern's second noun reads by name. An object
+      // whose slot is not one of the action's own names — a command with no
+      // slot names (an act through the execution entry), or an `extend
+      // action` line's new name — binds under every name the action's seat
+      // table gives its seat.
       const structure = context.command.parsed?.structure;
-      const bindNamed = (name: string | undefined, seated: IFEntity | undefined) => {
-        if (seated && name && entitySlotNames.has(name) && slots[name] === undefined) slots[name] = seated.id;
+      const bindSeat = (slotName: string | undefined, seated: IFEntity | undefined, names: readonly string[]) => {
+        if (!seated) return;
+        const named = slotName !== undefined && entitySlotNames.has(slotName) ? [slotName] : names;
+        for (const name of named) if (slots[name] === undefined) slots[name] = seated.id;
       };
-      bindNamed(structure?.directObject?.slot, entity);
-      bindNamed(structure?.indirectObject?.slot, context.command.indirectObject?.entity);
-      if (entity && primarySlot && slots[primarySlot] === undefined) slots[primarySlot] = entity.id;
+      bindSeat(structure?.directObject?.slot, entity, seatedNames.direct);
+      bindSeat(structure?.indirectObject?.slot, context.command.indirectObject?.entity, seatedNames.indirect);
       // GH #333: an instrument-typed slot (`the item is an instrument`) is
       // parsed into the command's instrument seat, never the direct object —
       // bind it under its own slot name so `{the item}` in a clause body
@@ -543,12 +549,6 @@ export class DispatchVerbsSection {
         return [context.event(event.type, (event.data ?? {}) as Record<string, unknown>)];
       },
     };
-  }
-
-  private slotBindings(primarySlot: string | undefined, entity: IFEntity, player: IFEntity): Record<string, string> {
-    const slots: Record<string, string> = { actor: player.id };
-    if (primarySlot) slots[primarySlot] = entity.id;
-    return slots;
   }
 
   /**

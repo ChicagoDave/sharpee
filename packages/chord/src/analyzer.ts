@@ -94,7 +94,7 @@ import {
 } from './ast.js';
 import { capabilityKeyOf, CLIENT_CAPABILITY_FLAGS, EVENT_VERBS, TAILED_EVENT_VERBS, KIND_NOUNS, MESSAGE_OVERRIDE_ALIASES, PLATFORM_STATE_PAIRS, PRONOUN_CASES, PRONOUN_WORDS, SCOPE_REQUIREMENT_PREDICATES, STARTS_STATE_PAIRINGS, STATE_ADJECTIVES, TRAIT_ADJECTIVES } from './catalog.js';
 import { STDLIB_MANIFEST } from './stdlib-manifest.js';
-import { expandReadings, lowerParts, renderPattern, samePatternShape, seatTable, type SeatProblem, type SeatTable } from './patterns.js';
+import { expandReadings, lowerParts, renderPattern, samePatternShape, seatTable, type LowerableAction, type SeatProblem, type SeatTable } from './patterns.js';
 import type { PatternElement } from '@sharpee/if-domain';
 import { CHARACTER_MANIFEST } from './character-manifest.js';
 import { levenshtein } from './edit-distance.js';
@@ -184,7 +184,8 @@ import {
   IRStoryFields,
   StoryIR,
 } from './ir.js';
-import { MOVEMENT_TYPES, primarySlotOf } from './ir.js';
+import { MOVEMENT_TYPES } from './ir.js';
+import { actionRoles, seatActBindings, type ActionRoles, type RoleSource } from './act-seats.js';
 import { mergeSpans, Span, spanOf } from './span.js';
 
 /**
@@ -199,6 +200,17 @@ function lowerPatternPart(part: PatternPart): IRPatternPart {
   const base: IRPatternPart =
     part.kind === 'alt' ? { kind: 'alt', words: part.words } : { kind: part.kind, word: part.word };
   return part.optional ? { ...base, optional: true } : base;
+}
+
+/** A `define action` or `extend action` declaration as the pattern module reads it. */
+function lowerableOf(decl: DefineAction | ExtendAction): LowerableAction {
+  return {
+    patterns: decl.patterns.map((p) => ({ parts: p.parts.map(lowerPatternPart), cardinality: p.cardinality })),
+    constraints: [],
+    greedy: decl.greedy.map((g) => g.slot),
+    slotTypes: decl.slotTypes.map((st) => ({ slot: st.slot, type: st.type as 'instrument' | 'topic' })),
+    directions: decl.directions,
+  };
 }
 
 /** Phase A stories register text in this locale (design.md §2.6). */
@@ -3875,9 +3887,9 @@ export class Analyzer {
    * it, because `the <word>` written for a fixed noun silently becomes a
    * slot that binds anything. A slot is used when a line of its block
    * constrains it (a scope constraint), refuses without it, types it
-   * (`is an instrument`, `takes the rest of the line`), when it is the
-   * action's primary slot (its entity's clauses are what the action
-   * consults, `primarySlotOf`), or when a `must`, a refusal's condition or
+   * (`is an instrument`, `takes the rest of the line`), when the action's
+   * seat table seats it direct (its entity's clauses are what the action
+   * consults, ADR-383 D6), or when a `must`, a refusal's condition or
    * the body reads it — read from the resolved IR, where every slot read is
    * a `slot` value.
    * @param decl the action
@@ -3891,12 +3903,9 @@ export class Analyzer {
       ...decl.slotTypes.map((t) => t.slot),
       ...decl.greedy.map((g) => g.slot),
     ]);
-    const primary = primarySlotOf({
-      patterns: decl.patterns.map((p) => ({ parts: p.parts.map(lowerPatternPart), cardinality: null })),
-      directions: decl.directions,
-      slotTypes: decl.slotTypes.map((st) => ({ slot: st.slot, type: st.type as 'instrument' | 'topic' })),
-    });
-    if (primary !== undefined) used.add(primary);
+    for (const [name, seat] of Object.entries(seatTable(lowerableOf(decl)).table)) {
+      if (seat === 'direct') used.add(name);
+    }
     const spokenKeys = new Set<string>();
     const visit = (node: unknown): void => {
       if (Array.isArray(node)) {
@@ -7185,6 +7194,17 @@ export class Analyzer {
       const ref = nameRefOf(actorEnd + bound.from, actorEnd + bound.to);
       slots.push({ slot: bound.slot, value: this.resolveEntityValue(ref, scope) });
     }
+    // ADR-383 D6: the loader seats each slot by the action's table; one it
+    // cannot seat is refused here, where the author can see it.
+    const seated = seatActBindings(slots, this.actRoles(match.action));
+    if (!seated.ok) {
+      this.diagnostics.error(
+        'analysis.act-unseated-slot',
+        `\`${line}\` — \`${seated.slot}\` ${seated.type ? `is a ${seated.type} slot of \`${match.action}\`, which an acting statement cannot carry` : `has no seat in \`${match.action}\``}.`,
+        spanOfRange(actorEnd, words.length),
+      );
+      return dead;
+    }
     if (match.direction) {
       slots.push({ slot: 'direction', value: { kind: 'literal', value: match.direction, valueType: 'string' } });
     }
@@ -7264,20 +7284,36 @@ export class Analyzer {
       }
     }
 
-    const instrumentSlots = new Set<string>();
-    for (const decl of this.ast.declarations) {
-      if ((decl.kind === 'define-action' || decl.kind === 'extend-action') && decl.name === match.action) {
-        for (const st of decl.slotTypes) if (st.type === 'instrument') instrumentSlots.add(st.slot);
-      }
+    // ADR-383 D6: each slot takes the seat the action's table gives its
+    // name, whatever order the step names them in.
+    const seated = seatActBindings(bound.map((b) => ({ slot: b.slot, value: b.id })), this.actRoles(match.action));
+    if (!seated.ok) {
+      this.diagnostics.error(
+        'analysis.act-unseated-slot',
+        `\`${line}\` — \`${seated.slot}\` ${seated.type ? `is a ${seated.type} slot of \`${match.action}\`, which a goal step cannot carry` : `has no seat in \`${match.action}\``}.`,
+        step.span,
+      );
+      return null;
     }
-    const slots: IRPerformSlots = {};
-    for (const b of bound) {
-      if (instrumentSlots.has(b.slot)) slots.instrument = b.id;
-      else if (slots.directObject === undefined) slots.directObject = b.id;
-      else slots.indirectObject = b.id;
-    }
+    const slots: IRPerformSlots = { ...seated.seating };
     if (match.direction !== null) slots.direction = match.direction;
     return { kind: 'perform', action: match.action, shape: match.shape, slots, span: step.span };
+  }
+
+  /**
+   * The roles of the action an acting statement or goal step names: its
+   * seat table and typed slots, from the story's own declarations, story-first
+   * (ADR-383 D6).
+   * @param name the action's bare name
+   */
+  private actRoles(name: string): ActionRoles {
+    const actions: RoleSource['actions'][number][] = [];
+    const extensions: RoleSource['extensions'][number][] = [];
+    for (const decl of this.ast.declarations) {
+      if (decl.kind === 'define-action') actions.push({ ...lowerableOf(decl), name: decl.name });
+      else if (decl.kind === 'extend-action') extensions.push({ ...lowerableOf(decl), action: decl.name });
+    }
+    return actionRoles(name, { actions, extensions });
   }
 
   /**

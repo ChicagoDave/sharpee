@@ -1437,25 +1437,6 @@ export interface IRMust {
   span: Span;
 }
 
-/**
- * A Chord action's primary slot: the first entity slot in pattern order,
- * whose entity's `on <actor> <action>` clauses the action consults and
- * whose `otherwise refuse` fires when that entity answers none. A
- * directions block's `direction` is a semantic key, not an entity slot
- * (ADR-275), and an instrument-typed slot sits in the command's instrument
- * seat (GH #333), so neither is ever primary.
- * @param def the action's patterns, directions and slot types
- * @returns the slot's word, or undefined when no pattern carries an entity slot
- */
-export function primarySlotOf(def: Pick<IRActionDef, 'patterns' | 'directions' | 'slotTypes'>): string | undefined {
-  const hasDirections = (def.directions ?? []).length > 0;
-  const instruments = new Set((def.slotTypes ?? []).filter((t) => t.type === 'instrument').map((t) => t.slot));
-  return def.patterns
-    .flatMap((p) => p.parts)
-    .filter((part): part is Extract<IRPatternPart, { kind: 'slot' }> => part.kind === 'slot')
-    .find((part) => !(hasDirections && part.word === 'direction') && !instruments.has(part.word))?.word;
-}
-
 export interface IRActionPattern {
   parts: IRPatternPart[];
   /** `→ each …` cardinality words, or null. */

@@ -4,9 +4,10 @@
  * REAL engine. The parser names each noun phrase's slot (`INounPhrase.slot`)
  * and dispatch binds the direct and the indirect object by it, so a phrase
  * reading both nouns renders both, and `refuse without <slot>` sees a second
- * noun missing. Which noun the action consults is still the per-action
- * primary seat (C2, step 3); the two-pattern case pins today's rendering by
- * name. Assertions read the turn's rendered text.
+ * noun missing. The noun the action consults is the one its seat table
+ * seats direct (ADR-383 D6), so a two-pattern action naming its nouns in
+ * opposite orders consults the same one on both lines (parser review C2).
+ * Assertions read the turn's rendered text.
  */
 import { describe, expect, it } from 'vitest';
 import { bootTurns } from './helpers/boot-turns';
@@ -36,13 +37,13 @@ create the peg
   A peg.
 
 create Bob
-  a person, proper
+  a person, proper, bob-like
   in the Hall
 
   Bob.
 
 create the coin
-  a thing
+  a thing, coin-like
   in the Hall
 
   A coin.
@@ -53,6 +54,26 @@ create Alex
   starts in the Hall
 
   You.
+
+define trait coin-like
+  on the player presenting
+    phrase coin-consulted
+  end on
+end trait
+
+define trait bob-like
+  on the player presenting
+    phrase bob-consulted
+  end on
+end trait
+
+define phrase coin-consulted
+  The coin is consulted.
+end phrase
+
+define phrase bob-consulted
+  Bob is consulted.
+end phrase
 
 before the game starts
   change the player to Alex
@@ -80,6 +101,10 @@ define action presenting
   phrases en-US
     presented:
       You give {the gift} to {the friend}.
+
+extend action presenting
+  grammar
+    hand the friend the thing
 
 define action zapping
   grammar
@@ -116,13 +141,29 @@ describe('every entity slot binds by its name at dispatch', () => {
   });
 
   it.each(['offer coin to Bob', 'present Bob with coin'])(
-    '`%s` names each noun by its slot, whichever seat it filled',
+    '`%s` consults the gift, whichever line named it first',
     async (command) => {
       const b = await bootTurns(STORY);
+      const turn = await b.turnText(command);
+      expect(turn.text).toContain('The coin is consulted.');
+      expect(turn.text).not.toContain('Bob is consulted.');
+    },
+  );
+
+  it.each(['offer coin to Bob', 'present Bob with coin'])(
+    '`%s` names each noun by its slot, whichever seat it filled',
+    async (command) => {
+      const b = await bootTurns(STORY.replace('a thing, coin-like', 'a thing').replace('a person, proper, bob-like', 'a person, proper'));
       const turn = await b.turnText(command);
       expect(turn.text).toContain('You give the coin to Bob.');
     },
   );
+
+  it('an extension line`s new name binds under the names its seat holds: `hand Bob coin`', async () => {
+    const b = await bootTurns(STORY.replace('a thing, coin-like', 'a thing').replace('a person, proper, bob-like', 'a person, proper'));
+    const turn = await b.turnText('hand Bob coin');
+    expect(turn.text).toContain('You give the coin to Bob.');
+  });
 
   it('a pattern written `Zap the target` matches typed `zap coat` (parser review B3)', async () => {
     const b = await bootTurns(STORY);
