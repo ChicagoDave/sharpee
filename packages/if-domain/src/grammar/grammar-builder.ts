@@ -151,6 +151,15 @@ export interface PatternBuilder {
   instrument(slot: string): PatternBuilder;
 
   /**
+   * Declare an entity slot's seat (ADR-383 D2), for a line written
+   * indirect-first: `define('hand :recipient :item').seat('item', 'direct')`.
+   * Undeclared entity slots take the seats left free, in pattern order.
+   * @param slot The slot name from the pattern
+   * @param seat Where the slot's noun goes in the parsed command
+   */
+  seat(slot: string, seat: Seat): PatternBuilder;
+
+  /**
    * Map this pattern to an action
    * @param action The action identifier
    */
@@ -430,6 +439,8 @@ export interface SlotConstraint {
   slotType?: SlotType;
   /** For VOCABULARY slots: the category name to match against */
   vocabularyCategory?: string;
+  /** Declared seat of an entity slot (ADR-383 D1) */
+  seat?: Seat;
 }
 
 /**
@@ -458,14 +469,24 @@ export type PatternElement =
   | { kind: 'slot'; name: string; optional?: boolean; greedy?: boolean };
 
 /**
- * Per-slot configuration on a rule spec: the slot's type and its scope
- * constraints. Keyed by slot name; a name no part carries is a build error.
+ * Where an entity slot's noun goes in the parsed command (ADR-383 D1).
+ * Every other slot type is seated by its type (instrument, topic, text,
+ * vocabulary, manner, direction).
+ */
+export type Seat = 'direct' | 'indirect';
+
+/**
+ * Per-slot configuration on a rule spec: the slot's type, its scope
+ * constraints and, for an entity slot, its declared seat. Keyed by slot
+ * name; a name no part carries is a build error.
  */
 export interface GrammarRuleSlotSpec {
   type?: SlotType;
   constraints?: readonly ScopeConstraintBuilder[];
   /** For VOCABULARY slots: the category name to match against */
   vocabularyCategory?: string;
+  /** The entity slot's seat; undeclared seats take the positional default (ADR-383 D2). */
+  seat?: Seat;
 }
 
 /**
@@ -493,6 +514,8 @@ export interface CompiledSlot {
   greedy: boolean;
   /** The configured type, `TEXT_GREEDY` for a greedy slot, else `ENTITY`. */
   slotType: SlotType;
+  /** Set on every ENTITY slot at build (ADR-383 D1, D2); absent on every other slot type. */
+  seat?: Seat;
 }
 
 /**

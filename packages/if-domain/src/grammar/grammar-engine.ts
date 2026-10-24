@@ -15,6 +15,7 @@ import {
   GrammarRuleSpec,
   PatternBuilder,
   SemanticProperties,
+  Seat,
   SlotConstraint,
   SlotType,
   ScopeConstraintBuilder
@@ -61,6 +62,7 @@ export abstract class GrammarEngine {
       rule.compiledPattern = this.compiler.compile(rule.parts, rule.pattern);
     }
     resolveSlotTypes(rule, rule.compiledPattern);
+    assignSeats(rule, rule.compiledPattern);
 
     this.rules.push(rule);
 
@@ -193,6 +195,13 @@ export abstract class GrammarEngine {
           instrument(slot: string) {
             const slotConstraint = rule.slots!.get(slot) || { name: slot, constraints: [] };
             slotConstraint.slotType = SlotType.INSTRUMENT;
+            rule.slots!.set(slot, slotConstraint);
+            return builder;
+          },
+
+          seat(slot: string, seat: Seat) {
+            const slotConstraint = rule.slots!.get(slot) || { name: slot, constraints: [] };
+            slotConstraint.seat = seat;
             rule.slots!.set(slot, slotConstraint);
             return builder;
           },
@@ -334,6 +343,7 @@ export abstract class GrammarEngine {
             constraints: [...(config.constraints ?? [])],
             slotType: config.type,
             vocabularyCategory: config.vocabularyCategory,
+            ...(config.seat ? { seat: config.seat } : {}),
           });
         }
         engine.addRule({
@@ -385,5 +395,63 @@ function resolveSlotTypes(rule: GrammarRule, compiled: CompiledPattern): void {
       );
     }
     slot.slotType = config.slotType;
+  }
+}
+
+/** The seats an entity slot can take, in the order the positional default fills them. */
+const SEATS: readonly Seat[] = ['direct', 'indirect'];
+
+/**
+ * Seat every ENTITY slot on the rule's compiled slot records (ADR-383 D1,
+ * D2), once types are settled. Declared seats are taken first; then each
+ * undeclared entity slot, in pattern order, takes the first seat still
+ * free. With nothing declared that is the positional rule: the first entity
+ * slot direct, the second indirect, optional slots counted. Every other
+ * slot type is seated by its type and carries no seat. Recomputed from
+ * scratch on each build, so a pre-compiled pattern added twice is seated
+ * the same way; the records are written only once every seat is settled,
+ * so a refused rule leaves its pattern's seats as they were.
+ * @param rule The rule whose per-slot seat declarations are applied
+ * @param compiled The rule's compiled pattern; its slot records are updated
+ * @throws Error when a seat is declared on a slot that is not an entity
+ *   slot, when two entity slots hold one seat, or when an entity slot is
+ *   left with no free seat (a third entity slot)
+ */
+function assignSeats(rule: GrammarRule, compiled: CompiledPattern): void {
+  const seatOf = new Map<string, Seat>();
+  const holder = new Map<Seat, string>();
+
+  for (const [name, config] of rule.slots) {
+    if (config.seat === undefined) continue;
+    const slot = compiled.slotsByName.get(name)!;
+    if (slot.slotType !== SlotType.ENTITY) {
+      throw new Error(
+        `Grammar rule "${rule.pattern}" seats slot '${name}' as ${config.seat}, but its type is ${slot.slotType}; only an entity slot takes a seat`,
+      );
+    }
+    const other = holder.get(config.seat);
+    if (other !== undefined) {
+      throw new Error(`Grammar rule "${rule.pattern}" seats both '${other}' and '${name}' as ${config.seat}`);
+    }
+    holder.set(config.seat, name);
+    seatOf.set(name, config.seat);
+  }
+
+  for (const slot of compiled.slots) {
+    if (slot.slotType !== SlotType.ENTITY || seatOf.has(slot.name)) continue;
+    const free = SEATS.find((seat) => !holder.has(seat));
+    if (free === undefined) {
+      throw new Error(
+        `Grammar rule "${rule.pattern}" has more entity slots than seats: '${slot.name}' has none left (direct and indirect are taken)`,
+      );
+    }
+    holder.set(free, slot.name);
+    seatOf.set(slot.name, free);
+  }
+
+  for (const slot of compiled.slots) {
+    const seat = seatOf.get(slot.name);
+    if (seat === undefined) delete slot.seat;
+    else slot.seat = seat;
   }
 }

@@ -170,6 +170,8 @@ Step 3 declares roles: which slot is the direct object, the indirect object, the
 
 The positional default stays exactly as today. Step 3's ADR inherits the question of whether an optional slot takes a positional seat.
 
+> **Amended by ADR-383 D2 (2026-10-23):** answered yes. Every entity slot's seat is set on `CompiledSlot.seat` at build, an optional slot counted like a required one; declared seats (`GrammarRuleSpec.slots[name].seat`, `.seat(name, seat)`) are taken first and undeclared entity slots fill the seats left free in pattern order.
+
 ## Consequences
 
 **Gained.** One home for every structural pattern fact: if-domain for the type, chord for every walk over Chord's parts, the compiled pattern for every slot fact at match time. `[the target]` works as ADR-267 D9 promised. Malformed patterns are refused where they are written. A removal names a rule by its shape, as an author reads it. Registration order is the order the author wrote, as ADR-268 promised. Text survives only as a label, and a guard test keeps it that way.
