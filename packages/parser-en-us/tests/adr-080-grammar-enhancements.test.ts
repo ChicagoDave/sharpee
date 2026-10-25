@@ -9,6 +9,7 @@ import { EnglishGrammarEngine } from '../src/english-grammar-engine';
 import { EnglishParser } from '../src/english-parser';
 import { EnglishLanguageProvider } from '@sharpee/lang-en-us';
 import { SlotType, GrammarContext, vocabularyRegistry } from '@sharpee/if-domain';
+import { PartOfSpeech } from '@sharpee/if-domain';
 
 describe('ADR-080: Grammar Enhancements', () => {
   let compiler: EnglishPatternCompiler;
@@ -276,7 +277,7 @@ describe('ADR-080: Grammar Enhancements', () => {
 
       const tokens = [
         { word: 'take', normalized: 'take', position: 0, candidates: [] },
-        { word: 'all', normalized: 'all', position: 5, candidates: [] }
+        { word: 'all', normalized: 'all', position: 5, candidates: [{ partOfSpeech: PartOfSpeech.SPECIAL, mapsTo: 'ALL', priority: 100 }] }
       ];
 
       const context: GrammarContext = {
@@ -302,8 +303,8 @@ describe('ADR-080: Grammar Enhancements', () => {
 
       const tokens = [
         { word: 'take', normalized: 'take', position: 0, candidates: [] },
-        { word: 'all', normalized: 'all', position: 5, candidates: [] },
-        { word: 'but', normalized: 'but', position: 9, candidates: [] },
+        { word: 'all', normalized: 'all', position: 5, candidates: [{ partOfSpeech: PartOfSpeech.SPECIAL, mapsTo: 'ALL', priority: 100 }] },
+        { word: 'but', normalized: 'but', position: 9, candidates: [{ partOfSpeech: PartOfSpeech.SPECIAL, mapsTo: 'EXCEPT', priority: 100 }] },
         { word: 'sword', normalized: 'sword', position: 13, candidates: [] }
       ];
 
@@ -334,8 +335,8 @@ describe('ADR-080: Grammar Enhancements', () => {
 
       const tokens = [
         { word: 'drop', normalized: 'drop', position: 0, candidates: [] },
-        { word: 'all', normalized: 'all', position: 5, candidates: [] },
-        { word: 'except', normalized: 'except', position: 9, candidates: [] },
+        { word: 'all', normalized: 'all', position: 5, candidates: [{ partOfSpeech: PartOfSpeech.SPECIAL, mapsTo: 'ALL', priority: 100 }] },
+        { word: 'except', normalized: 'except', position: 9, candidates: [{ partOfSpeech: PartOfSpeech.SPECIAL, mapsTo: 'EXCEPT', priority: 100 }] },
         { word: 'sword', normalized: 'sword', position: 16, candidates: [] },
         { word: 'and', normalized: 'and', position: 22, candidates: [] },
         { word: 'shield', normalized: 'shield', position: 26, candidates: [] }

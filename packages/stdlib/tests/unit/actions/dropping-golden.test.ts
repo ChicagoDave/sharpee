@@ -670,8 +670,7 @@ describe('Multi-object dropping drives per-item interceptor hooks (ADR-228 D4)',
       },
     });
 
-    const command = createCommand(IFActions.DROPPING, { entity: coin, text: 'all' });
-    (command.parsed.structure.directObject as any).isAll = true;
+    const command = createCommand(IFActions.DROPPING, { entity: coin, all: true });
     const context = createRealTestContext(droppingAction, world, command);
 
     const validation = runValidatePhase(droppingAction, context);

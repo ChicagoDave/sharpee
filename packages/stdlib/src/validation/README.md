@@ -81,7 +81,6 @@ const parsed: ParsedCommand = {
   action: 'TAKE',
   directObject: {
     text: 'red ball',
-    candidates: ['red', 'ball'],
     modifiers: ['red']
   }
 };
@@ -145,12 +144,10 @@ interface ParsedCommand {
   action: string;
   directObject?: {
     text: string;
-    candidates: string[];
     modifiers?: string[];
   };
   indirectObject?: {
     text: string;
-    candidates: string[];
     modifiers?: string[];
   };
   preposition?: string;

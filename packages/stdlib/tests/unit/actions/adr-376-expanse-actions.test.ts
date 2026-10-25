@@ -232,8 +232,7 @@ describe('out of the vehicle (D9)', () => {
     world.moveEntity(anchor.id, player.id);
     run(exitingAction, world);
 
-    const command = createCommand(IFActions.DROPPING, { entity: buoy, text: 'all' });
-    (command.parsed.structure.directObject as any).isAll = true;
+    const command = createCommand(IFActions.DROPPING, { entity: buoy, all: true });
     const events = executeWithValidation(droppingAction, createRealTestContext(droppingAction, world, command));
 
     expect(world.getLocation(buoy.id)).toBe(expanse.id);
@@ -245,8 +244,7 @@ describe('out of the vehicle (D9)', () => {
   test('`take all` alongside hauls the floating thing in with the multi-object line, and its cell is cleared', () => {
     const { world, player, skiff, cask } = belt();
     model(skiff).position = { x: 6, y: 3 };
-    const command = createCommand(IFActions.TAKING, { verb: 'take', nounPhrase: 'all' });
-    command.parsed.structure.directObject = { ...(command.parsed.structure.directObject as any), text: 'all', head: 'all' } as any;
+    const command = createCommand(IFActions.TAKING, { verb: 'take', all: true });
     const events = executeWithValidation(takingAction, createRealTestContext(takingAction, world, command));
     if (world.getLocation(cask.id) === player.id) {
       expect(cask.get(FloatingTrait)!.position).toBeNull();

@@ -195,10 +195,7 @@ class InternalActionContext implements ActionContext {
       actionId: takingAction.id,
       directObject: {
         entity,
-        parsed: {
-          text: entity.name,
-          candidates: [entity.name]
-        }
+        parsed: { text: entity.name }
       }
     };
 

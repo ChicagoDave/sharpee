@@ -44,7 +44,7 @@ describe('the vehicle command sets (ADR-366 D5i)', () => {
       expect(result.success, input).toBe(true);
       if (result.success) {
         expect(result.value.action).toBe('if.action.setting_course');
-        expect(result.value.topic).toEqual({ text: 'the reef' });
+        expect(result.value.topic).toMatchObject({ text: 'the reef' });
       }
     }
   });

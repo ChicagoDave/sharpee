@@ -119,14 +119,15 @@ describe('GrammarScopeResolver scope bases against a real WorldModel (ADR-273)',
     expect(GrammarScopeResolver.findEntitiesByName('firefly', constraint('touchable'), context)).toHaveLength(0);
   });
 
-  it('leading articles are stripped when the original text matches nothing', () => {
-    expect(GrammarScopeResolver.findEntitiesByName('the rock', constraint('touchable'), context).map((e) => e.id)).toEqual([rock.id]);
-    expect(GrammarScopeResolver.findEntitiesByName('a rock', constraint('touchable'), context).map((e) => e.id)).toEqual([rock.id]);
-    // Stripping does not weaken the gate: the articled firefly still fails touchable
-    expect(GrammarScopeResolver.findEntitiesByName('the firefly', constraint('touchable'), context)).toHaveLength(0);
+  it('strips nothing itself: the slot consumer split the articles off before asking (ADR-385 D2)', () => {
+    expect(GrammarScopeResolver.findEntitiesByName('rock', constraint('touchable'), context).map((e) => e.id)).toEqual([rock.id]);
+    // An article reaching the gate is a content word, and names nothing
+    expect(GrammarScopeResolver.findEntitiesByName('the rock', constraint('touchable'), context)).toHaveLength(0);
+    // The gate is not weakened: the firefly still fails touchable
+    expect(GrammarScopeResolver.findEntitiesByName('firefly', constraint('touchable'), context)).toHaveLength(0);
   });
 
-  it('an entity genuinely named with a leading article wins before stripping', () => {
+  it('an entity genuinely named with a leading article matches its whole name', () => {
     const grail = world.createEntity('The Grail', 'item');
     world.moveEntity(grail.id, room.id);
 

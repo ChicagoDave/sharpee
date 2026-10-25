@@ -81,7 +81,7 @@ function makeCommand(actionId: string, entity: IFEntity, topicText?: string): Va
         verb: { tokens: [0], text: verb, head: verb },
         directObject: {
           tokens: [1], text: entity.name, head: entity.name,
-          modifiers: [], articles: [], determiners: [], candidates: [entity.name],
+          modifiers: [], articles: [], determiners: [],
         },
       },
       pattern: 'VERB_NOUN',

@@ -148,6 +148,7 @@ export function createRealTestContext(
  * @param options.preposition The preposition in the command
  * @param options.extras Extra command data
  * @param options.nounPhrase Text that parser found but validator couldn't resolve
+ * @param options.all The direct object is a bare all-phrase ("take all"), as the parser builds it (ADR-385 D2)
  * @param options.rawInput The raw input string (defaults to verb)
  */
 export function createCommand(
@@ -159,6 +160,7 @@ export function createCommand(
     preposition?: string;
     extras?: Record<string, any>;
     nounPhrase?: string; // For simulating unresolved entities
+    all?: boolean;
     rawInput?: string;
   } = {}
 ): ValidatedCommand {
@@ -174,16 +176,27 @@ export function createCommand(
     }
   };
   
+  // A bare all-phrase: no content words, the all word as its determiner
+  if (options.all) {
+    structure.directObject = {
+      tokens: [1],
+      text: '',
+      head: '',
+      modifiers: [],
+      articles: [],
+      determiners: ['all'],
+      isAll: true
+    };
+  }
   // If we have an entity, add direct object structure
-  if (options.entity) {
+  else if (options.entity) {
     structure.directObject = {
       tokens: [1],
       text: options.entity.name,
       head: options.entity.name,
       modifiers: [],
       articles: [],
-      determiners: [],
-      candidates: [options.entity.name]
+      determiners: []
     };
   }
   // If we have a noun phrase but no entity, create a proper directObject structure
@@ -195,8 +208,7 @@ export function createCommand(
       head: options.nounPhrase,
       modifiers: [],
       articles: [],
-      determiners: [],
-      candidates: [options.nounPhrase]
+      determiners: []
     };
   }
   
@@ -216,13 +228,12 @@ export function createCommand(
       head: options.secondEntity.name,
       modifiers: [],
       articles: [],
-      determiners: [],
-      candidates: [options.secondEntity.name]
+      determiners: []
     };
   }
   
   let pattern = 'VERB_ONLY';
-  if (options.entity || options.nounPhrase) {
+  if (options.entity || options.nounPhrase || options.all) {
     pattern = options.secondEntity ? 'VERB_NOUN_PREP_NOUN' : 'VERB_NOUN';
   }
   

@@ -24,6 +24,7 @@ import {
   type VerbVocabulary,
   type VocabularyEntry,
   type PatternMatch,
+  type SlotMatch,
   SlotType
 } from '@sharpee/if-domain';
 
@@ -79,9 +80,10 @@ function mapPartOfSpeech(vocabPos: VocabPartOfSpeech): PartOfSpeech {
       return PartOfSpeech.PREPOSITION;
     case VocabPartOfSpeech.PRONOUN:
       return PartOfSpeech.PRONOUN;
-    // Note: stdlib doesn't have DETERMINER, but we map special words to DETERMINER
+    case VocabPartOfSpeech.DETERMINER:
+      return PartOfSpeech.DETERMINER;
+    // The all and except words are registered as SPECIAL; they read as determiners
     case VocabPartOfSpeech.SPECIAL:
-      // Special words could be determiners
       return PartOfSpeech.DETERMINER;
     default:
       return PartOfSpeech.UNKNOWN;
@@ -103,8 +105,9 @@ interface RichCandidate {
   textSlots?: Map<string, string>;
   instrument?: INounPhrase;
   excluded?: INounPhrase[]; // For "all but X" patterns
-  // ADR-231 D4: first-class conversation topic (verbatim free text)
-  topic?: { text: string };
+  // ADR-231 D4: first-class conversation topic (verbatim free text), with
+  // its articles and determiners split once as `phrase` (ADR-385 D2)
+  topic?: { text: string; phrase: INounPhrase };
   // ADR-082 additions
   vocabularySlots?: Map<string, { word: string; category: string }>;
   manner?: string;
@@ -788,7 +791,7 @@ export class EnglishParser implements Parser {
     let excluded: INounPhrase[] | undefined;
 
     // ADR-231 D4: Track the conversation topic
-    let topic: { text: string } | undefined;
+    let topic: { text: string; phrase: INounPhrase } | undefined;
 
     // ADR-082: Track vocabulary slots and manner
     let vocabularySlots: Map<string, { word: string; category: string }> | undefined;
@@ -813,7 +816,7 @@ export class EnglishParser implements Parser {
       // NOT a positional noun phrase, so it never becomes indirectObject
       // and never enters entity resolution as a scope-rejectable slot.
       if (slotType === SlotType.TOPIC) {
-        topic = { text: slotData.text };
+        topic = { text: slotData.text, phrase: this.nounPhraseFrom(slotData) };
         continue; // Don't also add to direct/indirect objects
       }
 
@@ -843,64 +846,22 @@ export class EnglishParser implements Parser {
         continue; // Don't also add to direct/indirect objects
       }
 
-      // Build base noun phrase.
-      // ADR-231 D3: leading ARTICLE-tagged tokens are split into the
-      // `articles` field and stripped from text/head/candidates. The
-      // validator restores the full text (articles + text) first when
-      // matching, so proper names beginning with an article-like word
-      // survive.
-      const np = this.splitLeadingArticles(slotData.tokens, tokens, slotData.text);
-      const phrase: INounPhrase = {
-        tokens: slotData.tokens,
-        text: np.text,
-        head: np.head,
-        modifiers: [],
-        articles: np.articles,
-        determiners: [],
-        candidates: [np.text],
-        // The seat is chosen below; the slot it came from travels with it
-        slot: slotName
-      };
+      // Build the noun phrase from the slot consumer's one split of its
+      // leading articles and determiners (ADR-385 D2). The seat is chosen
+      // below; the slot it came from travels with it.
+      const phrase: INounPhrase = { ...this.nounPhraseFrom(slotData), slot: slotName };
 
       // ADR-080 Phase 2: Add multi-object support
       if (slotData.isAll) {
         phrase.isAll = true;
         // Extract excluded items for "all but X" patterns
         if (slotData.excluded && slotData.excluded.length > 0) {
-          excluded = slotData.excluded.map((item) => {
-            const itemNp = this.splitLeadingArticles(item.tokens, tokens, item.text);
-            return {
-              tokens: item.tokens,
-              text: itemNp.text,
-              head: itemNp.head,
-              modifiers: [],
-              articles: itemNp.articles,
-              determiners: [],
-              candidates: [itemNp.text]
-            };
-          });
+          excluded = slotData.excluded.map((item) => this.nounPhraseFrom(item));
         }
       }
       if (slotData.isList && slotData.items) {
         phrase.isList = true;
-        phrase.items = slotData.items.map((item) => {
-          const itemNp = this.splitLeadingArticles(item.tokens, tokens, item.text);
-          return {
-            tokens: item.tokens,
-            text: itemNp.text,
-            head: itemNp.head,
-            modifiers: [],
-            articles: itemNp.articles,
-            determiners: [],
-            candidates: [itemNp.text],
-            entityId: item.entityId // ADR-089: preserve pre-resolved entity ID
-          };
-        });
-      }
-
-      // ADR-089: Copy pre-resolved entity ID from pronoun resolution
-      if (slotData.entityId) {
-        phrase.entityId = slotData.entityId;
+        phrase.items = slotData.items.map((item) => this.nounPhraseFrom(item));
       }
 
       // ADR-104: Mark if this was a pronoun (for implicit inference)
@@ -992,57 +953,33 @@ export class EnglishParser implements Parser {
   }
 
   /**
-   * Split leading ARTICLE-tagged tokens off a consumed noun-phrase span
-   * (ADR-231 D3 defect fix — `INounPhrase.articles` was hardcoded `[]`).
+   * A noun phrase from a slot match (ADR-385 D2).
    *
-   * @param tokenIndices Indices of the consumed span into `tokens`.
-   * @param tokens The full rich-token array for the input.
-   * @param originalText The slot's consumed text (used verbatim when the
-   *   span does not textually reconstruct it, e.g. pronoun-resolved text).
-   * @returns The leading articles, the article-stripped text, and the head
-   *   (last word of the stripped text, normalized). When every token is an
-   *   article, nothing is stripped (the phrase keeps at least one word).
+   * The slot consumer split the leading articles and determiners once; the
+   * words of `text` after that split are the phrase's content: `text`, the
+   * `head` (its last word) and the `modifiers` (the words before the head).
+   * A pronoun-resolved match carries the referent's name as its text with
+   * no split, so the whole of it is content. A bare all-phrase has no
+   * content words.
+   *
+   * @param slot The slot match, its items or exclusions
+   * @returns The noun phrase, with any pre-resolved entity id (ADR-089)
    */
-  private splitLeadingArticles(
-    tokenIndices: number[],
-    tokens: IToken[],
-    originalText: string
-  ): { articles: string[]; text: string; head: string } {
-    const spanTokens = tokenIndices.map(i => tokens[i]);
-    const fallback = {
-      articles: [] as string[],
-      text: originalText,
-      head: originalText.split(' ').pop() || originalText
-    };
-
-    // Only strip when the span textually reconstructs the slot text —
-    // pronoun-resolved slots carry substituted text ("them" → "brass
-    // lantern") whose tokens don't correspond word-for-word.
-    if (spanTokens.some(t => !t) ||
-        spanTokens.map(t => t.word).join(' ') !== originalText) {
-      return fallback;
-    }
-
-    let start = 0;
-    while (
-      start < spanTokens.length - 1 &&
-      spanTokens[start].partOfSpeech.includes(PartOfSpeech.ARTICLE)
-    ) {
-      start++;
-    }
-    if (start === 0) {
-      return {
-        articles: [],
-        text: originalText,
-        head: spanTokens[spanTokens.length - 1].normalized
-      };
-    }
-
-    const rest = spanTokens.slice(start);
+  private nounPhraseFrom(slot: SlotMatch): INounPhrase {
+    const articles = slot.articles ?? [];
+    const determiners = slot.determiners ?? [];
+    const words = slot.text ? slot.text.split(' ') : [];
+    const content = words.slice(articles.length + determiners.length);
+    const normalized = content.map((w) => w.toLowerCase());
     return {
-      articles: spanTokens.slice(0, start).map(t => t.normalized),
-      text: rest.map(t => t.word).join(' '),
-      head: rest[rest.length - 1].normalized
+      tokens: slot.tokens,
+      text: content.join(' '),
+      head: normalized[normalized.length - 1] ?? '',
+      modifiers: normalized.slice(0, -1),
+      articles,
+      determiners,
+      ...(slot.ownedByActor ? { ownedByActor: true } : {}),
+      ...(slot.entityId ? { entityId: slot.entityId } : {})
     };
   }
 
@@ -1166,7 +1103,6 @@ export class EnglishParser implements Parser {
       // Add noun information
       if (result.value.structure.directObject) {
         candidate.nounText = result.value.structure.directObject.text;
-        candidate.nounCandidates = result.value.structure.directObject.candidates;
       }
       
       // Add preposition
@@ -1177,7 +1113,6 @@ export class EnglishParser implements Parser {
       // Add indirect object
       if (result.value.structure.indirectObject) {
         candidate.secondNounText = result.value.structure.indirectObject.text;
-        candidate.secondNounCandidates = result.value.structure.indirectObject.candidates;
       }
       
       return {

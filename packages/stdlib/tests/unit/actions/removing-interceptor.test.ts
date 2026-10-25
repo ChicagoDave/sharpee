@@ -97,9 +97,8 @@ describe('Removing consults taking-id interceptors (ADR-228 D6-B — TrollAxe by
       entity: axe,
       secondEntity: box,
       preposition: 'from',
-      text: 'all'
+      all: true
     });
-    (command.parsed.structure.directObject as any).isAll = true;
     const context = createRealTestContext(removingAction, world, command);
 
     const validation = runValidatePhase(removingAction, context);

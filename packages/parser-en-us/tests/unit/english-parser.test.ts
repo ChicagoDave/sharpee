@@ -247,7 +247,6 @@ describe('EnglishParser', () => {
         expect(result.value.action).toBe('if.action.taking');
         expect(result.value.structure.directObject).toBeDefined();
         expect(result.value.structure.directObject?.text).toBe('ball');
-        expect(result.value.structure.directObject?.candidates).toEqual(['ball']);
       }
     });
 
@@ -286,7 +285,6 @@ describe('EnglishParser', () => {
         expect(result.value.structure.directObject?.articles).toEqual(['the']);
         expect(result.value.structure.directObject?.text).toBe('ball');
         expect(result.value.structure.directObject?.head).toBe('ball');
-        expect(result.value.structure.directObject?.candidates).toContain('ball');
       }
     });
 

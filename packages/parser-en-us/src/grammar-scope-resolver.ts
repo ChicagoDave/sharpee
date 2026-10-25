@@ -285,16 +285,11 @@ export class GrammarScopeResolver {
   /**
    * Find entities by name in a given scope.
    *
-   * Matching is original-text-first: an entity whose name genuinely begins
-   * with an article ("The Grail") wins its exact match before any article
-   * stripping is attempted. Only when the original text matches nothing is
-   * a leading English article (the/a/an) stripped and the search retried —
-   * articles are noise in entity references platform-wide (the
-   * unconstrained resolution path already ignores them), so `wind the
-   * clock` must gate the same as `wind clock`. Non-article determiners
-   * (`my`, `that`, `some`) are NOT handled here — a known limit of the
-   * constrained path; the fuller fix is determiner-tagged token stripping
-   * in the slot consumer.
+   * `name` is the phrase's content words: the slot consumer has already
+   * split its leading articles and determiners off (ADR-385 D2), so `wind
+   * the clock` and `wind my clock` gate as `wind clock`, and nothing is
+   * stripped here. Matching is exact first (name or alias), then substring;
+   * ADR-385 D3 moves it onto the one noun matcher.
    */
   static findEntitiesByName(
     name: string,
@@ -323,17 +318,6 @@ export class GrammarScopeResolver {
       });
     };
 
-    const searchName = name.toLowerCase();
-    const originalMatches = matchesFor(searchName);
-    if (originalMatches.length > 0) {
-      return originalMatches;
-    }
-
-    const stripped = searchName.replace(/^(?:the|a|an)\s+/, '');
-    if (stripped !== searchName && stripped.length > 0) {
-      return matchesFor(stripped);
-    }
-
-    return [];
+    return matchesFor(name.toLowerCase());
   }
 }

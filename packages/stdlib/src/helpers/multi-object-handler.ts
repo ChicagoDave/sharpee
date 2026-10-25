@@ -5,7 +5,7 @@
  * Actions use this helper to expand multi-object commands into entity lists.
  */
 
-import { IFEntity, WorldModel, TraitType, IdentityTrait } from '@sharpee/world-model';
+import { IFEntity, WorldModel, TraitType, IdentityTrait, matchNoun, namingSurfaceOf } from '@sharpee/world-model';
 import { ActionContext } from '../actions/enhanced-types.js';
 import { StandardScopeResolver } from '../scope/scope-resolver.js';
 import { type INounPhrase } from '@sharpee/world-model';
@@ -109,6 +109,7 @@ function expandAll(
 ): MultiObjectItem[] {
   const world = context.world;
   const actor = context.actor;
+  const directObject = context.command.parsed.structure.directObject;
   const scopeResolver = new StandardScopeResolver(world);
 
   // Get entities based on scope
@@ -135,6 +136,21 @@ function expandAll(
 
   // Apply default portable filter (not room, not scenery, not actor)
   candidates = candidates.filter(e => isPortable(e));
+
+  // ADR-385 D2: `all` followed by noun words means every candidate the one
+  // noun matcher names for them (`take all coins`); `my` keeps only what the
+  // actor carries or wears when something there matches (`drop all my coins`)
+  if (directObject && directObject.text) {
+    candidates = candidates.filter(e => matchNoun(namingSurfaceOf(world, e, actor.id), directObject) !== null);
+  }
+  if (directObject?.ownedByActor) {
+    const { carried, worn } = world.getCarriedAndWorn(actor.id);
+    const ownedIds = new Set([...carried, ...worn].map(e => e.id));
+    const owned = candidates.filter(e => ownedIds.has(e.id));
+    if (owned.length > 0) {
+      candidates = owned;
+    }
+  }
 
   // Apply exclusions from "all but X"
   const excludedNames = getExcludedNames(context);

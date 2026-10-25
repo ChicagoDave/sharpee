@@ -731,8 +731,7 @@ describe('Multi-object taking drives per-item interceptor hooks (ADR-118)', () =
       },
     });
 
-    const command = createCommand(IFActions.TAKING, { entity: coin, text: 'all' });
-    (command.parsed.structure.directObject as any).isAll = true;
+    const command = createCommand(IFActions.TAKING, { entity: coin, all: true });
     const context = createRealTestContext(takingAction, world, command);
 
     const validation = runValidatePhase(takingAction, context);

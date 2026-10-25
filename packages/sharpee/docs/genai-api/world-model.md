@@ -1692,8 +1692,6 @@ export declare function passageKey(words: readonly string[]): PassageKey;
 export interface IParsedObjectReference {
     /** Original text from input */
     text: string;
-    /** Possible vocabulary matches */
-    candidates: string[];
     /** Optional modifiers (adjectives, etc.) */
     modifiers?: string[];
 }
@@ -1772,18 +1770,29 @@ export interface IVerbPhrase {
 export interface INounPhrase {
     /** Indices into token array */
     tokens: number[];
-    /** Original complete text (e.g., "the small red ball") */
+    /**
+     * The content words, without the leading articles and determiners the
+     * parser split off ("small red ball" for "the small red ball"; ADR-385 D2).
+     * Empty for a bare all-phrase ("take all").
+     */
     text: string;
-    /** Head noun ("ball") */
+    /** Head noun: the last content word ("ball") */
     head: string;
-    /** Modifiers/adjectives ("small", "red") */
+    /** The content words before the head ("small", "red") */
     modifiers: string[];
-    /** Articles ("the", "a", "an") */
+    /** The leading articles the parser split off ("the", "a", "an"), normalized */
     articles: string[];
-    /** Determiners ("all", "every", "some") */
+    /**
+     * The leading determiners the parser split off ("my", "some", "all"),
+     * normalized; for an all-phrase the all word comes first ("everything").
+     */
     determiners: string[];
-    /** Vocabulary candidates for the head noun */
-    candidates: string[];
+    /**
+     * A determiner marked the phrase as the actor's own ("my"): resolution
+     * prefers what the actor carries or wears when something there matches
+     * (ADR-385 D2).
+     */
+    ownedByActor?: boolean;
     /** True if this represents "all" (e.g., "take all") */
     isAll?: boolean;
     /** True if this is a list of objects (e.g., "take knife and lamp") */
@@ -1843,14 +1852,18 @@ export interface IParsedCommand {
     instrument?: INounPhrase;
     /**
      * Conversation topic for ".topic()" slots (ADR-231 D4)
-     * The parser fills `text` only (verbatim, articles preserved) — it never
-     * resolves entities. `entity` exists for shape parity with
-     * IValidatedCommand.topic and is populated by the validator's
-     * entity-first attempt, never here.
+     * The parser fills `text` (verbatim, articles preserved, for rendering and
+     * quoted-row matching) and `phrase` (the same words with their leading
+     * articles and determiners split off, ADR-385 D2, for the validator's
+     * entity-first attempt) — it never resolves entities. `entity` exists for
+     * shape parity with IValidatedCommand.topic and is populated by the
+     * validator, never here.
      */
     topic?: {
         /** Verbatim topic text as typed */
         text: string;
+        /** The topic as a noun phrase: content words, articles and determiners split once */
+        phrase: INounPhrase;
         /** Never set by the parser; see IValidatedCommand.topic */
         entity?: import('@sharpee/core').EntityId;
     };
@@ -2675,7 +2688,7 @@ export declare function deriveNameVocabulary(name: string): string[];
  * - the self words name the observer, at the exact tier;
  * - exact: the whole phrase equals the name, an alias or the type, tried
  *   first with the leading articles restored (so "The Grail" survives),
- *   then as given, then article-stripped;
+ *   then as given;
  * - words: every content word of the phrase is in the vocabulary (name
  *   words, alias words, adjectives);
  * - any content word found nowhere matches nothing.
@@ -2708,9 +2721,13 @@ export interface NamingSurface {
     /** True when the self words ("me", "myself") name this entity. */
     readonly isObserver: boolean;
 }
-/** A noun phrase as the matcher reads it. An `INounPhrase` is one. */
+/**
+ * A noun phrase as the matcher reads it. An `INounPhrase` is one. The
+ * English parser has already split the leading articles and determiners off
+ * `text` (ADR-385 D2); the matcher strips nothing itself.
+ */
 export interface NounQuery {
-    /** The phrase as parsed (leading articles split off). */
+    /** The phrase's content words (leading articles and determiners split off). */
     readonly text: string;
     /** The leading articles the parser split off, for the article-first exact try. */
     readonly articles?: readonly string[];

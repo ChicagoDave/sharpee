@@ -76,9 +76,6 @@ const MATCH_TIER_WORDS = 2;
 /** The matcher's tiers as the validator ranks them (higher wins). */
 const TIER_RANK: Record<NounMatchTier, number> = { exact: MATCH_TIER_EXACT, words: MATCH_TIER_WORDS };
 
-/** Leading articles stripped from query text before matching (D3 defect fix). */
-const QUERY_ARTICLES: ReadonlySet<string> = new Set(['the', 'a', 'an']);
-
 /**
  * Result of matching a noun phrase against one entity's naming surface.
  */
@@ -237,7 +234,7 @@ export class CommandValidator implements CommandValidator {
     // fallback. Quiet resolution only — a topic NEVER produces
     // ENTITY_NOT_FOUND or a disambiguation prompt; on miss or tie the
     // verbatim text flows through with entity undefined.
-    const topic = command.topic ? this.resolveTopic(command.topic.text, this.getActionMetadata(actionHandler)) : undefined;
+    const topic = command.topic ? this.resolveTopic(command.topic, this.getActionMetadata(actionHandler)) : undefined;
 
     // 4. Check scope constraints based on action metadata
     const metadata = this.getActionMetadata(actionHandler);
@@ -429,6 +426,17 @@ export class CommandValidator implements CommandValidator {
       candidates = this.findCandidates(ref);
     }
 
+    // ADR-385 D2: `my` narrows the phrase to what the player carries or
+    // wears when something there matches; otherwise the phrase resolves as
+    // if the determiner were absent (`take my lantern` with the lantern on
+    // the floor takes it).
+    if (ref.ownedByActor) {
+      const owned = candidates.filter((e) => this.isOwnedByPlayer(e));
+      if (owned.length > 0) {
+        candidates = owned;
+      }
+    }
+
     this.emitDebugEvent('entity_search', command, {
       searchTerm: ref.text,
       candidateCount: candidates.length,
@@ -539,7 +547,6 @@ export class CommandValidator implements CommandValidator {
           parsed: command,
           details: {
             searchText: ref.text,
-            candidates: ref.candidates,
             scope: requiredScope
           }
         }
@@ -562,17 +569,9 @@ export class CommandValidator implements CommandValidator {
       // Phase 5: If user specified modifiers (adjectives) but NO candidate matches them,
       // this is ENTITY_NOT_FOUND (the specific entity doesn't exist), not AMBIGUOUS_ENTITY.
       // Example: "green ball" when only red and blue balls exist -> ENTITY_NOT_FOUND
-      //
-      // Note: The parser may not always populate modifiers, so we also extract them
-      // by comparing text to head (e.g., "green ball" vs "ball" -> modifier "green")
-      let modifiers = ref.modifiers || [];
-      if (modifiers.length === 0 && ref.text && ref.head) {
-        const head = ref.head.toLowerCase();
-        const words = ref.text.toLowerCase().split(/\s+/).filter(w => w !== head);
-        // Filter out common articles/determiners that aren't adjectives
-        const nonModifiers = ['the', 'a', 'an', 'all', 'some', 'every', 'any', 'my'];
-        modifiers = words.filter(w => !nonModifiers.includes(w));
-      }
+      // The parser fills `modifiers` with the content words before the head
+      // (ADR-385 D2); nothing is re-derived from the text here.
+      const modifiers = ref.modifiers;
 
       if (modifiers.length > 0) {
         const anyModifierMatch = viableMatches.some(m =>
@@ -669,21 +668,16 @@ export class CommandValidator implements CommandValidator {
    * instead, rooms included and with no scope filter: the places a command
    * names that are never in sight (alignment finding F5).
    *
-   * @param text Verbatim topic text as typed (articles preserved)
+   * @param topic The parsed topic: its verbatim text, and the phrase the
+   *   parser split once (ADR-385 D2), which the matcher reads
    * @param metadata The action's metadata, for its `topicCandidates`
    * @returns The validated topic — `entity` set only on a unique match
    */
-  private resolveTopic(text: string, metadata: ActionMetadata): { text: string; entity?: EntityId } {
-    const words = this.stripLeadingArticles(text.toLowerCase().trim()).split(/\s+/);
-    const ref: INounPhrase = {
-      tokens: [],
-      text,
-      head: words[words.length - 1] || text,
-      modifiers: [],
-      articles: [],
-      determiners: [],
-      candidates: [text]
-    };
+  private resolveTopic(
+    topic: { text: string; phrase: INounPhrase },
+    metadata: ActionMetadata
+  ): { text: string; entity?: EntityId } {
+    const { text, phrase: ref } = topic;
 
     const named = metadata.topicCandidates;
     const inScope = named
@@ -749,17 +743,12 @@ export class CommandValidator implements CommandValidator {
     return namingSurfaceOf(this.world, entity, this.world.getPlayer()?.id ?? '');
   }
 
-  /**
-   * Strip leading articles ("the", "a", "an") from query text, always
-   * keeping at least one word.
-   */
-  private stripLeadingArticles(text: string): string {
-    const words = text.split(/\s+/);
-    let start = 0;
-    while (start < words.length - 1 && QUERY_ARTICLES.has(words[start])) {
-      start++;
-    }
-    return words.slice(start).join(' ');
+  /** Whether the player carries or wears the entity (what `my` narrows to, ADR-385 D2). */
+  private isOwnedByPlayer(entity: IFEntity): boolean {
+    const player = this.world.getPlayer();
+    if (!player) return false;
+    const { carried, worn } = this.world.getCarriedAndWorn(player.id);
+    return carried.some((e) => e.id === entity.id) || worn.some((e) => e.id === entity.id);
   }
 
   /**
@@ -822,15 +811,9 @@ export class CommandValidator implements CommandValidator {
 
     const scored: ScoredEntityMatch[] = [];
 
-    // Extract modifiers from ref, or infer from text vs head if not set
-    // (The parser may not always populate the modifiers field)
-    let modifiers = ref.modifiers || [];
-    if (modifiers.length === 0 && ref.text && ref.head) {
-      const head = ref.head.toLowerCase();
-      const words = ref.text.toLowerCase().split(/\s+/).filter(w => w !== head);
-      const nonModifiers = ['the', 'a', 'an', 'all', 'some', 'every', 'any', 'my'];
-      modifiers = words.filter(w => !nonModifiers.includes(w));
-    }
+    // The parser fills `modifiers` with the content words before the head
+    // (ADR-385 D2)
+    const modifiers = ref.modifiers;
 
     for (const entity of entities) {
       const surface = this.surfaceOf(entity);
@@ -961,15 +944,9 @@ export class CommandValidator implements CommandValidator {
       }
     }
 
-    // If all adjectives match for only one entity, use it
-    // Infer modifiers from text vs head (same logic as scoreEntities)
-    let modifiers = ref?.modifiers || [];
-    if (modifiers.length === 0 && ref?.text && ref?.head) {
-      const head = ref.head.toLowerCase();
-      const words = ref.text.toLowerCase().split(/\s+/).filter(w => w !== head);
-      const nonModifiers = ['the', 'a', 'an', 'all', 'some', 'every', 'any', 'my'];
-      modifiers = words.filter(w => !nonModifiers.includes(w));
-    }
+    // If all adjectives match for only one entity, use it (the parser's
+    // `modifiers`, ADR-385 D2)
+    const modifiers = ref?.modifiers ?? [];
 
     if (modifiers.length > 0) {
       const perfectMatches = matches.filter(m => {

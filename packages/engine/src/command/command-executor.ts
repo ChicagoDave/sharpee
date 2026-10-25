@@ -139,7 +139,7 @@ function syntheticParsed(request: ActorCommand): IParsedCommand {
 /** Wrap an already-resolved entity as a validated slot reference. */
 function slotReference(entity: IFEntity | undefined) {
   return entity
-    ? { entity, parsed: { text: entity.name, candidates: [entity.name] } }
+    ? { entity, parsed: { text: entity.name } }
     : undefined;
 }
 

@@ -499,8 +499,15 @@ export interface CompiledPattern {
  */
 export interface SlotMatch {
   tokens: number[];       // Token indices
-  text: string;           // Combined text
+  text: string;           // Combined text, as typed (its leading articles and determiners included)
   slotType?: SlotType;    // How the slot was matched
+  // The one split of a noun phrase's leading articles and determiners (ADR-385 D2).
+  // The English parser's slot consumers fill these from the tokens' parts of
+  // speech; `articles.length + determiners.length` leading words of `text` are
+  // the split, the rest are the phrase's content words.
+  articles?: string[];     // Leading articles, normalized ("the", "a", "an")
+  determiners?: string[];  // Leading determiners, normalized ("my", "some", "all"); for an all-phrase, the all word first
+  ownedByActor?: boolean;  // A determiner marked the phrase as the actor's own ("my")
   // Multi-object support (ADR-080 Phase 2)
   isAll?: boolean;        // True if "all" keyword
   isList?: boolean;       // True if "X and Y" list

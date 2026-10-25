@@ -138,8 +138,7 @@ describe('ParsedCommand types', () => {
         head: 'ball',
         modifiers: [],
         articles: [],
-        determiners: [],
-        candidates: ['ball']
+        determiners: []
       };
 
       expect(nounPhrase.tokens).toEqual([1]);
@@ -148,7 +147,6 @@ describe('ParsedCommand types', () => {
       expect(nounPhrase.modifiers).toHaveLength(0);
       expect(nounPhrase.articles).toHaveLength(0);
       expect(nounPhrase.determiners).toHaveLength(0);
-      expect(nounPhrase.candidates).toEqual(['ball']);
     });
 
     test('should represent nouns with articles', () => {
@@ -158,8 +156,7 @@ describe('ParsedCommand types', () => {
         head: 'ball',
         modifiers: [],
         articles: ['the'],
-        determiners: [],
-        candidates: ['ball']
+        determiners: []
       };
 
       expect(nounPhrase.tokens).toEqual([1, 2]);
@@ -174,8 +171,7 @@ describe('ParsedCommand types', () => {
         head: 'balls',
         modifiers: ['red'],
         articles: ['the'],
-        determiners: ['all'],
-        candidates: ['ball', 'balls']
+        determiners: ['all']
       };
 
       expect(nounPhrase.tokens).toEqual([1, 2, 3, 4]);
@@ -186,22 +182,6 @@ describe('ParsedCommand types', () => {
       expect(nounPhrase.determiners).toEqual(['all']);
     });
 
-    test('should support multiple candidates', () => {
-      const nounPhrase: NounPhrase = {
-        tokens: [1],
-        text: 'box',
-        head: 'box',
-        modifiers: [],
-        articles: [],
-        determiners: [],
-        candidates: ['small_box', 'large_box', 'wooden_box']
-      };
-
-      expect(nounPhrase.candidates).toHaveLength(3);
-      expect(nounPhrase.candidates).toContain('small_box');
-      expect(nounPhrase.candidates).toContain('large_box');
-      expect(nounPhrase.candidates).toContain('wooden_box');
-    });
   });
 
   describe('PrepPhrase structure', () => {
@@ -296,8 +276,7 @@ describe('ParsedCommand types', () => {
             head: 'ball',
             modifiers: [],
             articles: [],
-            determiners: [],
-            candidates: ['ball']
+            determiners: []
           }
         },
         pattern: 'VERB_NOUN',
@@ -325,8 +304,7 @@ describe('ParsedCommand types', () => {
             head: 'ball',
             modifiers: [],
             articles: [],
-            determiners: [],
-            candidates: ['ball']
+            determiners: []
           },
           preposition: {
             tokens: [2],
@@ -338,8 +316,7 @@ describe('ParsedCommand types', () => {
             head: 'box',
             modifiers: [],
             articles: [],
-            determiners: [],
-            candidates: ['box']
+            determiners: []
           }
         },
         pattern: 'VERB_NOUN_PREP_NOUN',
@@ -428,7 +405,6 @@ describe('ParsedCommand types', () => {
         action: 'if.action.taking',
         directObject: {
           text: 'ball',
-          candidates: ['ball'],
           modifiers: []
         }
       };
@@ -442,12 +418,10 @@ describe('ParsedCommand types', () => {
     test('should support ParsedObjectReference', () => {
       const objRef: ParsedObjectReference = {
         text: 'red ball',
-        candidates: ['ball_1', 'ball_2'],
         modifiers: ['red']
       };
 
       expect(objRef.text).toBe('red ball');
-      expect(objRef.candidates).toHaveLength(2);
       expect(objRef.modifiers).toContain('red');
     });
   });

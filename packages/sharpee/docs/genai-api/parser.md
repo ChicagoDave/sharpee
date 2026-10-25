@@ -107,18 +107,19 @@ export declare class EnglishParser implements Parser {
      */
     private convertGrammarMatch;
     /**
-     * Split leading ARTICLE-tagged tokens off a consumed noun-phrase span
-     * (ADR-231 D3 defect fix — `INounPhrase.articles` was hardcoded `[]`).
+     * A noun phrase from a slot match (ADR-385 D2).
      *
-     * @param tokenIndices Indices of the consumed span into `tokens`.
-     * @param tokens The full rich-token array for the input.
-     * @param originalText The slot's consumed text (used verbatim when the
-     *   span does not textually reconstruct it, e.g. pronoun-resolved text).
-     * @returns The leading articles, the article-stripped text, and the head
-     *   (last word of the stripped text, normalized). When every token is an
-     *   article, nothing is stripped (the phrase keeps at least one word).
+     * The slot consumer split the leading articles and determiners once; the
+     * words of `text` after that split are the phrase's content: `text`, the
+     * `head` (its last word) and the `modifiers` (the words before the head).
+     * A pronoun-resolved match carries the referent's name as its text with
+     * no split, so the whole of it is content. A bare all-phrase has no
+     * content words.
+     *
+     * @param slot The slot match, its items or exclusions
+     * @returns The noun phrase, with any pre-resolved entity id (ADR-089)
      */
-    private splitLeadingArticles;
+    private nounPhraseFrom;
     /**
      * Get the grammar builder for story-specific rules.
      * Stories use this to define custom grammar patterns.

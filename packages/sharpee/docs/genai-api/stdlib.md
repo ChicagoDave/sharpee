@@ -2418,7 +2418,8 @@ export declare class CommandValidator implements CommandValidator {
      * instead, rooms included and with no scope filter: the places a command
      * names that are never in sight (alignment finding F5).
      *
-     * @param text Verbatim topic text as typed (articles preserved)
+     * @param topic The parsed topic: its verbatim text, and the phrase the
+     *   parser split once (ADR-385 D2), which the matcher reads
      * @param metadata The action's metadata, for its `topicCandidates`
      * @returns The validated topic — `entity` set only on a unique match
      */
@@ -2445,11 +2446,8 @@ export declare class CommandValidator implements CommandValidator {
     private nameMatch;
     /** The entity's naming surface as the player sees it (ADR-385 D1). */
     private surfaceOf;
-    /**
-     * Strip leading articles ("the", "a", "an") from query text, always
-     * keeping at least one word.
-     */
-    private stripLeadingArticles;
+    /** Whether the player carries or wears the entity (what `my` narrows to, ADR-385 D2). */
+    private isOwnedByPlayer;
     /**
      * Keep only the dominant (tier, wordsMatched) group of an already-sorted
      * scored list (PIN 2: higher tier wins; within a tier, more matched

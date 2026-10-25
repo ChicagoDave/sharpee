@@ -78,7 +78,7 @@ describe('CommandValidator topic resolution (ADR-231 D4)', () => {
   test('THE rejection test: a free-text topic naming nothing in scope does NOT scope-reject', () => {
     const parsed = parseCommand('ask hermit about the weather', world);
     expect(parsed).not.toBeNull();
-    expect(parsed!.topic).toEqual({ text: 'the weather' });
+    expect(parsed!.topic).toMatchObject({ text: 'the weather' });
 
     const result = validator.validate(parsed!);
 

@@ -82,7 +82,7 @@ function trollSwings(world: WorldModel, player: ReturnType<typeof buildArena>['p
       pattern: 'PROGRAMMATIC',
     },
     actionId: IFActions.ATTACKING,
-    directObject: { entity: player, parsed: { text: 'yourself', candidates: ['yourself'] } },
+    directObject: { entity: player, parsed: { text: 'yourself' } },
   };
   const context = createActionContext(world, player, attackingAction, command, random ?? createFixtureRandomService(seed), undefined, troll);
   // ADR-337 D1: the phase runner resolves the lifecycle, which is what

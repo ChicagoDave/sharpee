@@ -53,8 +53,7 @@ function buildWorld() {
 }
 
 function allCommand(actionId: string, entity: IFEntity) {
-  const command = createCommand(actionId, { entity, rawInput: 'all' });
-  (command.parsed.structure.directObject as { isAll?: boolean }).isAll = true;
+  const command = createCommand(actionId, { entity, rawInput: 'all', all: true });
   return command;
 }
 

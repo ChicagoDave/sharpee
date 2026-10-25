@@ -1,8 +1,9 @@
 /**
  * @file ADR-231 D3 — INounPhrase.articles population
  * @description Leading ARTICLE-tagged tokens are split into the noun
- *   phrase's `articles` field and stripped from `text`/`head`/`candidates`
- *   (previously hardcoded `articles: []` at the three construction sites).
+ *   phrase's `articles` field and stripped from `text`/`head` (previously
+ *   hardcoded `articles: []` at the three construction sites). The split
+ *   now happens once, in the slot consumer (ADR-385 D2).
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
@@ -20,7 +21,7 @@ describe('ADR-231 D3: noun-phrase article population', () => {
     parser = new EnglishParser(language);
   });
 
-  it('splits a leading "the" into articles and strips it from text/head/candidates', () => {
+  it('splits a leading "the" into articles and strips it from text/head', () => {
     const result = parser.parse('take the sword');
 
     expect(result.success).toBe(true);
@@ -29,7 +30,6 @@ describe('ADR-231 D3: noun-phrase article population', () => {
       expect(dobj.articles).toEqual(['the']);
       expect(dobj.text).toBe('sword');
       expect(dobj.head).toBe('sword');
-      expect(dobj.candidates).toEqual(['sword']);
     }
   });
 

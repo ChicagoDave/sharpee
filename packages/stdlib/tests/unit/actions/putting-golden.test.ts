@@ -961,9 +961,8 @@ describe('Multi-object putting drives per-item container hooks (ADR-228 D4 — t
       entity: coin,
       secondEntity: box,
       preposition: 'in',
-      text: 'all'
+      all: true
     });
-    (command.parsed.structure.directObject as any).isAll = true;
     const context = createRealTestContext(puttingAction, world, command);
 
     const validation = puttingAction.validate(context);

@@ -5,6 +5,7 @@
 
 import { SlotType, type SlotMatch } from '@sharpee/if-domain';
 import { SlotConsumer, SlotConsumerContext, getNextPatternToken, isPatternDelimiter } from './slot-consumer.js';
+import { splitLeadingWords } from './noun-phrase-split.js';
 
 /**
  * Consumer for text slots (TEXT, TEXT_GREEDY, QUOTED_TEXT, TOPIC)
@@ -140,7 +141,10 @@ export class TextSlotConsumer implements SlotConsumer {
 
   /**
    * Consume a topic slot
-   * Consumes one or more words until next pattern element
+   * Consumes one or more words until next pattern element. The text stays
+   * verbatim (articles kept, ADR-231 D4); the leading articles and
+   * determiners are also split once (ADR-385 D2) so the validator's
+   * entity-first attempt reads content words.
    */
   private consumeTopic(ctx: SlotConsumerContext): SlotMatch | null {
     const { tokens, startIndex } = ctx;
@@ -169,10 +173,14 @@ export class TextSlotConsumer implements SlotConsumer {
       return null;
     }
 
+    const split = splitLeadingWords(consumedIndices, tokens);
     return {
       tokens: consumedIndices,
       text: consumedWords.join(' '),
-      slotType: SlotType.TOPIC
+      slotType: SlotType.TOPIC,
+      articles: split.articles,
+      determiners: split.determiners,
+      ...(split.ownedByActor ? { ownedByActor: true } : {})
     };
   }
 }

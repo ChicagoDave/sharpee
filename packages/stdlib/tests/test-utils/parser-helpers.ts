@@ -96,9 +96,9 @@ export function validateTyped(action: Action, world: WorldModel, input: string):
  */
 export function createParsedCommand(
   action: string,
-  directObject?: { text: string; modifiers?: string[]; candidates?: string[] },
+  directObject?: { text: string; modifiers?: string[] },
   preposition?: string,
-  indirectObject?: { text: string; modifiers?: string[]; candidates?: string[] }
+  indirectObject?: { text: string; modifiers?: string[] }
 ): ParsedCommand {
   const structure: any = {
     verb: { 
@@ -117,8 +117,7 @@ export function createParsedCommand(
       head: directObject.text.split(' ').pop() || directObject.text,
       modifiers: directObject.modifiers || [],
       articles: [],
-      determiners: [],
-      candidates: directObject.candidates || [directObject.text]
+      determiners: []
     };
     tokenIndex++;
   }
@@ -136,8 +135,7 @@ export function createParsedCommand(
       head: indirectObject.text.split(' ').pop() || indirectObject.text,
       modifiers: indirectObject.modifiers || [],
       articles: [],
-      determiners: [],
-      candidates: indirectObject.candidates || [indirectObject.text]
+      determiners: []
     };
   }
   
