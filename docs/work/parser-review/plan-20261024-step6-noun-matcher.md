@@ -161,7 +161,7 @@
 - **Exit state**: `grep` finds no `orRule`, `includeRules` or `kind(` in if-domain's grammar; world-index green; `protocol --check` fresh (no wire change); chain and trees identical.
 - **Demonstration**: the agreement test; the greps; counts against baseline.
 - **Demonstrated**: 
-- **Status**: PENDING
+- **Status**: CURRENT (since 2026-10-25)
 
 ### Phase 8: A disambiguation prompt is answered (D11)
 - **Tier**: Large
