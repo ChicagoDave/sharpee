@@ -87,7 +87,7 @@
 - **Exit state**: A1, A2, A5, A6 give the ADR's probe answers; `take widget` prints "You can't see any widget here." and `look at sky` the validator's refusal; one comparator in if-domain; `matchNoun` calls per rule measured against Phase 1's estimate; chain and trees identical to baseline, or each moved line listed with old and new text, classified and ruled.
 - **Demonstration**: the new tests shown failing against pre-phase source; probe groups A1, A2, A5, A6 before and after; the floor's counts and chain wall time against Phase 1.
 - **Demonstrated**: 
-- **Status**: PENDING
+- **Status**: CURRENT (since 2026-10-25)
 
 ### Phase 4: `and` and a comma are readings (D6)
 - **Tier**: Medium
