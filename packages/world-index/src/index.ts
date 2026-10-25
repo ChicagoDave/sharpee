@@ -81,6 +81,7 @@ export type {
 export {
   buildVocabularyIndex,
   entityVocabulary,
+  irNamingSurface,
   publishVocabulary,
   resolvePhrase,
 } from './vocabulary.js';

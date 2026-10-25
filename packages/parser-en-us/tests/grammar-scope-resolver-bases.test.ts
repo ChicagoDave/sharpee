@@ -19,7 +19,7 @@ import type { GrammarContext, ScopeConstraint } from '@sharpee/if-domain';
 import { GrammarScopeResolver } from '../src/grammar-scope-resolver';
 
 function constraint(base: ScopeConstraint['base']): ScopeConstraint {
-  return { base, filters: [], traitFilters: [], explicitEntities: [], includeRules: [] };
+  return { base, filters: [], traitFilters: [], explicitEntities: [] };
 }
 
 describe('GrammarScopeResolver scope bases against a real WorldModel (ADR-273)', () => {

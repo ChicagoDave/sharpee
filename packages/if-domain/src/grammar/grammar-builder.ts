@@ -82,9 +82,7 @@ export interface ScopeBuilder {
   carried(): ScopeBuilder;
   nearby(): ScopeBuilder;
   matching(constraint: PropertyConstraint | FunctionConstraint): ScopeBuilder;
-  kind(kind: string): ScopeBuilder;
   orExplicitly(entityIds: string[]): ScopeBuilder;
-  orRule(ruleId: string): ScopeBuilder;
   /**
    * Require the entity to have a specific trait
    * @param traitType The trait type constant (e.g., TraitType.PORTABLE)
@@ -102,7 +100,6 @@ export interface ScopeConstraint {
   /** Required trait types the entity must have */
   traitFilters: string[];
   explicitEntities: string[];
-  includeRules: string[];
 }
 
 /**

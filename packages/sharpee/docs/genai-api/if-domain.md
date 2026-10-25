@@ -1497,9 +1497,7 @@ export interface ScopeBuilder {
     carried(): ScopeBuilder;
     nearby(): ScopeBuilder;
     matching(constraint: PropertyConstraint | FunctionConstraint): ScopeBuilder;
-    kind(kind: string): ScopeBuilder;
     orExplicitly(entityIds: string[]): ScopeBuilder;
-    orRule(ruleId: string): ScopeBuilder;
     /**
      * Require the entity to have a specific trait
      * @param traitType The trait type constant (e.g., TraitType.PORTABLE)
@@ -1516,7 +1514,6 @@ export interface ScopeConstraint {
     /** Required trait types the entity must have */
     traitFilters: string[];
     explicitEntities: string[];
-    includeRules: string[];
 }
 /**
  * ADR-082: Typed slot value for non-entity slots
@@ -2123,7 +2120,16 @@ export declare function compareGrammarRank(a: GrammarRank, b: GrammarRank): numb
 ```typescript
 /**
  * @file Scope Builder Implementation
- * @description Concrete implementation of the scope builder interface
+ * @description Concrete implementation of the scope builder interface. A
+ *   constraint is a base (visible, touchable, carried, nearby, all), property
+ *   or function filters, required traits, and explicit entity ids — exactly
+ *   what the scope resolver reads, and nothing it does not.
+ *
+ * Public interface: `scope()`, `ScopeBuilderImpl`.
+ * Owner context: if-domain grammar contracts.
+ *
+ * References: ADR-385 D9 (the rule-inclusion list nothing read, and the
+ * alias of `matching({ kind })`, are gone).
  */
 import { ScopeBuilder, ScopeConstraint, PropertyConstraint, FunctionConstraint } from './grammar-builder.js';
 /**
@@ -2136,9 +2142,7 @@ export declare class ScopeBuilderImpl implements ScopeBuilder {
     carried(): ScopeBuilder;
     nearby(): ScopeBuilder;
     matching(constraint: PropertyConstraint | FunctionConstraint): ScopeBuilder;
-    kind(kind: string): ScopeBuilder;
     orExplicitly(entityIds: string[]): ScopeBuilder;
-    orRule(ruleId: string): ScopeBuilder;
     hasTrait(traitType: string): ScopeBuilder;
     build(): ScopeConstraint;
 }

@@ -123,7 +123,7 @@ describe('the gate asks the matcher (ADR-385 D3, D4, D6)', () => {
     const grail = thing('The Grail');
     world.moveEntity(grail.id, room.id);
     const context: GrammarContext = { world, actorId: player.id, currentLocation: room.id, slots: new Map() };
-    const constraint = { base: 'visible' as const, filters: [], traitFilters: [], explicitEntities: [], includeRules: [] };
+    const constraint = { base: 'visible' as const, filters: [], traitFilters: [], explicitEntities: [] };
     const found = GrammarScopeResolver.findEntitiesByName({ text: 'grail', articles: ['the'] }, constraint, context);
     expect(found.map((e) => e.id)).toEqual([grail.id]);
   });
