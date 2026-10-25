@@ -194,19 +194,18 @@ export declare class EnglishParser implements Parser {
     private buildParseError;
     /**
      * Update pronoun context after a successful command execution
-     * Called by the engine after command execution succeeds
+     * Called by the engine after command execution succeeds; the referent
+     * follows the command's roles (ADR-385 D7)
      * @param command The validated command with resolved entity IDs
-     * @param turnNumber Current turn number
      */
-    updatePronounContext(command: IValidatedCommand, turnNumber: number): void;
+    updatePronounContext(command: IValidatedCommand): void;
     /**
      * Register an entity that was mentioned in context
      * Used when entities are referenced outside of standard parsing
      * @param entityId The entity's ID
      * @param text How the player referred to it
-     * @param turnNumber Current turn number
      */
-    registerPronounEntity(entityId: string, text: string, turnNumber: number): void;
+    registerPronounEntity(entityId: string, text: string): void;
     /**
      * Reset the pronoun context
      * Called on game restart or when context should be cleared
@@ -368,7 +367,12 @@ export declare function analyzeBestFailure(failures: PartialMatchFailure[], inpu
  * Enables commands like:
  * - "take lamp. light it" → "it" = lamp
  * - "talk to Alice. give her the key" → "her" = Alice
- * - "take all. drop them" → "them" = all items taken
+ * - "take sword and lantern. drop them" → "them" = the list's entities
+ *
+ * The referent follows the command's roles (ADR-385 D7): the direct object,
+ * else the indirect object, else the instrument; a list sets `them` to every
+ * entity it resolved. `take all. drop them` is not supported: `all` expands
+ * inside the action, after validation, where the pronoun context never sees it.
  */
 import type { IParsedCommand, IValidatedCommand, PronounSet } from '@sharpee/world-model';
 /**
@@ -379,8 +383,6 @@ export interface EntityReference {
     entityId: string;
     /** How the player referred to it ("the lamp", "Alice") */
     text: string;
-    /** Turn number when this reference was set */
-    turnNumber: number;
 }
 /**
  * Context for resolving pronouns in commands
@@ -456,13 +458,17 @@ export declare class PronounContextManager {
      */
     resolve(pronoun: string): EntityReference[] | null;
     /**
-     * Update pronoun context after a successful command execution
+     * Update pronoun context after a successful command execution (ADR-385 D7).
+     *
+     * The referent follows the command's roles: a list sets `them` to every
+     * entity in `directObjects`; otherwise the direct object sets the pronoun,
+     * and only when there is none does the indirect object, and then the
+     * instrument. So after `unlock door with key`, `it` is the door.
+     *
      * @param command The validated command with resolved entity IDs
      * @param world The world model (for entity lookup)
-     * @param turnNumber Current turn number
      */
-    updateFromCommand(command: IValidatedCommand, world: any, // WorldModel
-    turnNumber: number): void;
+    updateFromCommand(command: IValidatedCommand, world: any): void;
     /**
      * Process a validated object reference and update context
      * Uses the already-resolved entity ID from validation
@@ -472,7 +478,7 @@ export declare class PronounContextManager {
      * Register an entity that was mentioned (for external use)
      * This allows actions to register entities they interact with
      */
-    registerEntity(entityId: string, text: string, world: any, turnNumber: number): void;
+    registerEntity(entityId: string, text: string, world: any): void;
     /**
      * Get the last successful command (for "again" support)
      */

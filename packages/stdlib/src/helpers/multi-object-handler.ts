@@ -3,9 +3,11 @@
  *
  * Handles "take all", "take all but X", and "take X and Y" patterns.
  * Actions use this helper to expand multi-object commands into entity lists.
+ * A list's entities are the validator's `directObjects` (ADR-385 D5); an
+ * `all but` exclusion removes every candidate the one noun matcher names.
  */
 
-import { IFEntity, WorldModel, TraitType, IdentityTrait, matchNoun, namingSurfaceOf } from '@sharpee/world-model';
+import { IFEntity, WorldModel, TraitType, matchNoun, namingSurfaceOf } from '@sharpee/world-model';
 import { ActionContext } from '../actions/enhanced-types.js';
 import { StandardScopeResolver } from '../scope/scope-resolver.js';
 import { type INounPhrase } from '@sharpee/world-model';
@@ -51,14 +53,25 @@ export function isListCommand(context: ActionContext): boolean {
 }
 
 /**
- * Get excluded entity names from "all but X" pattern
+ * Remove from the candidates every entity an `all but` exclusion names
+ * (ADR-385 D5): the one noun matcher decides, over each entity's naming
+ * surface as the actor sees it. An exclusion that names nothing removes
+ * nothing.
+ *
+ * @param context Action context (the parsed command's `excluded` phrases, the world, the actor)
+ * @param candidates The expansion before exclusions
+ * @returns The candidates no exclusion names
  */
-export function getExcludedNames(context: ActionContext): string[] {
+export function withoutExcluded(context: ActionContext, candidates: IFEntity[]): IFEntity[] {
   const excluded = context.command.parsed.excluded;
   if (!excluded || excluded.length === 0) {
-    return [];
+    return candidates;
   }
-  return excluded.map(np => np.head || np.text).map(s => s.toLowerCase());
+  const { world, actor } = context;
+  return candidates.filter((entity) => {
+    const surface = namingSurfaceOf(world, entity, actor.id);
+    return !excluded.some((phrase) => matchNoun(surface, phrase) !== null);
+  });
 }
 
 /**
@@ -85,9 +98,9 @@ export function expandMultiObject(
     return expandAll(context, options);
   }
 
-  // Handle list "X and Y"
-  if (directObject?.isList && directObject.items) {
-    return expandList(context, directObject.items, options);
+  // Handle list "X and Y": the validator resolved every item (ADR-385 D5)
+  if (directObject?.isList) {
+    return expandList(context);
   }
 
   // Single object - use the already-resolved entity
@@ -153,73 +166,24 @@ function expandAll(
   }
 
   // Apply exclusions from "all but X"
-  const excludedNames = getExcludedNames(context);
-  if (excludedNames.length > 0) {
-    candidates = candidates.filter(e => {
-      const name = e.name.toLowerCase();
-      const aliases = getEntityAliases(e).map(a => a.toLowerCase());
-      // Exclude if name or any alias matches excluded list
-      return !excludedNames.includes(name) &&
-             !aliases.some(a => excludedNames.includes(a));
-    });
-  }
+  candidates = withoutExcluded(context, candidates);
 
   return candidates.map(entity => ({ entity }));
 }
 
 /**
- * Expand list items "X and Y" into entities
+ * The entities of a list "X and Y": the validator's `directObjects`, in the
+ * order typed, each entity once (ADR-385 D5). Nothing is matched by name
+ * here; an item that named nothing or tied already failed validation.
  */
-function expandList(
-  context: ActionContext,
-  items: INounPhrase[],
-  options: MultiObjectOptions
-): MultiObjectItem[] {
-  const world = context.world;
-  const actor = context.actor;
-  const scopeResolver = new StandardScopeResolver(world);
+function expandList(context: ActionContext): MultiObjectItem[] {
   const results: MultiObjectItem[] = [];
-
-  // Get scope candidates
-  let scopeCandidates: IFEntity[];
-  switch (options.scope) {
-    case 'carried':
-      // ADR-247: `carried` scope is held items, not worn (IF `all` convention).
-      scopeCandidates = world.getCarriedAndWorn(actor.id).carried;
-      break;
-    case 'visible':
-      scopeCandidates = scopeResolver.getVisible(actor);
-      break;
-    case 'reachable':
-    default:
-      scopeCandidates = scopeResolver.getReachable(actor);
-      break;
+  const seen = new Set<string>();
+  for (const ref of context.command.directObjects ?? []) {
+    if (seen.has(ref.entity.id)) continue;
+    seen.add(ref.entity.id);
+    results.push({ entity: ref.entity, nounPhrase: ref.parsed as INounPhrase });
   }
-
-  // Resolve each item in the list
-  for (const item of items) {
-    const searchTerm = (item.head || item.text).toLowerCase();
-
-    // A pronoun item carries its entity (ADR-385 D6); a named item matches
-    // by name or alias until D5 moves lists onto the matcher
-    const match = item.entityId
-      ? scopeCandidates.find(e => e.id === item.entityId)
-      : scopeCandidates.find(e => {
-          const name = e.name.toLowerCase();
-          const aliases = getEntityAliases(e).map(a => a.toLowerCase());
-          return name === searchTerm || aliases.includes(searchTerm);
-        });
-
-    if (match) {
-      // Apply filter if provided
-      if (!options.filter || options.filter(match, world)) {
-        results.push({ entity: match, nounPhrase: item });
-      }
-    }
-    // Note: If item doesn't resolve, we skip it (partial success)
-    // The action can check results.length vs items.length to detect this
-  }
-
   return results;
 }
 
@@ -243,15 +207,4 @@ function isPortable(entity: IFEntity): boolean {
   }
 
   return true;
-}
-
-/**
- * Get entity aliases from identity trait
- */
-function getEntityAliases(entity: IFEntity): string[] {
-  const identity = entity.getTrait(IdentityTrait);
-  if (identity && Array.isArray(identity.aliases)) {
-    return identity.aliases.map(String);
-  }
-  return [];
 }

@@ -102,7 +102,7 @@ describe('the gate asks the matcher and its answer travels (ADR-385 D3, D4, D6)'
     const game = await bootTurns(STORY);
     const spool = game.id('spool');
     expect(game.world.getLocation(spool)).toBeUndefined();
-    getPronounContextManager()!.registerEntity(spool, 'spool', game.world, 1);
+    getPronounContextManager()!.registerEntity(spool, 'spool', game.world);
     const { text } = await game.turnText('wind it');
     expect(text).not.toContain('You wind');
   });

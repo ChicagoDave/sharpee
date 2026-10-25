@@ -41,7 +41,7 @@ import { attachedRefusal } from '../attachment-shared.js';
 import { getRemovingSharedData, RemovingItemScratch } from './removing-types.js';
 
 // Import multi-object helpers
-import { isMultiObjectCommand, getExcludedNames } from '../../../helpers/multi-object-handler.js';
+import { isMultiObjectCommand, withoutExcluded } from '../../../helpers/multi-object-handler.js';
 import { nounPhraseFor } from '../../../utils/index.js';
 import {
   ActionLifecycleDescriptor,
@@ -217,41 +217,26 @@ function validateSingleEntity(
 }
 
 /**
- * Expand the multi-object item list for "remove all/X and Y from Z" —
- * removing resolves its items from the SOURCE's contents, not from scope.
+ * Expand the multi-object item list for "remove all/X and Y from Z".
+ * `all` is the SOURCE's contents less what any `all but` exclusion names
+ * (one rule for every action, ADR-385 D5); a list is the validator's
+ * resolved items, each once, and per-item validation refuses one that is
+ * not in the source.
  */
 function expandRemovableItems(context: ActionContext, source: IFEntity): IFEntity[] {
   const directObject = context.command.parsed.structure.directObject;
-  let items: IFEntity[];
 
   if (directObject?.isAll) {
-    // "remove all from X" - get all contents of source
-    items = getSourceContents(context, source);
-
-    // Apply exclusions from "all but X"
-    const excludedNames = getExcludedNames(context);
-    if (excludedNames.length > 0) {
-      items = items.filter(e => {
-        const name = e.name.toLowerCase();
-        return !excludedNames.includes(name);
-      });
-    }
-  } else if (directObject?.isList && directObject.items) {
-    // "remove X and Y from Z" - resolve each item from source contents
-    const sourceContents = getSourceContents(context, source);
-    items = [];
-    for (const np of directObject.items) {
-      const searchTerm = (np.head || np.text).toLowerCase();
-      const match = sourceContents.find(e => e.name.toLowerCase() === searchTerm);
-      if (match) {
-        items.push(match);
-      }
-    }
-  } else {
-    items = [];
+    return withoutExcluded(context, getSourceContents(context, source));
   }
-
-  return items;
+  if (directObject?.isList) {
+    const items: IFEntity[] = [];
+    for (const ref of context.command.directObjects ?? []) {
+      if (!items.some((e) => e.id === ref.entity.id)) items.push(ref.entity);
+    }
+    return items;
+  }
+  return [];
 }
 
 /**

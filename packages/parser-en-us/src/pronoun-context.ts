@@ -5,7 +5,12 @@
  * Enables commands like:
  * - "take lamp. light it" → "it" = lamp
  * - "talk to Alice. give her the key" → "her" = Alice
- * - "take all. drop them" → "them" = all items taken
+ * - "take sword and lantern. drop them" → "them" = the list's entities
+ *
+ * The referent follows the command's roles (ADR-385 D7): the direct object,
+ * else the indirect object, else the instrument; a list sets `them` to every
+ * entity it resolved. `take all. drop them` is not supported: `all` expands
+ * inside the action, after validation, where the pronoun context never sees it.
  */
 
 import type { IParsedCommand, INounPhrase, IValidatedCommand, IValidatedObjectReference, PronounSet } from '@sharpee/world-model';
@@ -20,8 +25,6 @@ export interface EntityReference {
   entityId: string;
   /** How the player referred to it ("the lamp", "Alice") */
   text: string;
-  /** Turn number when this reference was set */
-  turnNumber: number;
 }
 
 /**
@@ -195,37 +198,35 @@ export class PronounContextManager {
   }
 
   /**
-   * Update pronoun context after a successful command execution
+   * Update pronoun context after a successful command execution (ADR-385 D7).
+   *
+   * The referent follows the command's roles: a list sets `them` to every
+   * entity in `directObjects`; otherwise the direct object sets the pronoun,
+   * and only when there is none does the indirect object, and then the
+   * instrument. So after `unlock door with key`, `it` is the door.
+   *
    * @param command The validated command with resolved entity IDs
    * @param world The world model (for entity lookup)
-   * @param turnNumber Current turn number
    */
-  updateFromCommand(
-    command: IValidatedCommand,
-    world: any, // WorldModel
-    turnNumber: number
-  ): void {
+  updateFromCommand(command: IValidatedCommand, world: any /* WorldModel */): void {
     // DEBUG: Verify pronoun context is being updated
     if (process.env.DEBUG_PRONOUNS) {
-      console.log(`[PronounContext] updateFromCommand turn=${turnNumber} directObject=${command.directObject?.entity?.id}`);
+      console.log(`[PronounContext] updateFromCommand directObject=${command.directObject?.entity?.id}`);
     }
 
     // Store last command for "again" support
     this.context.lastCommand = command.parsed;
 
-    // Process direct object - use validated entity directly
-    if (command.directObject) {
-      this.processValidatedReference(command.directObject, world, turnNumber);
+    if (command.directObjects && command.directObjects.length > 0) {
+      this.context.them = command.directObjects
+        .filter((ref) => ref.entity)
+        .map((ref) => ({ entityId: ref.entity.id, text: ref.parsed?.text || ref.entity.id }));
+      return;
     }
 
-    // Process indirect object - use validated entity directly
-    if (command.indirectObject) {
-      this.processValidatedReference(command.indirectObject, world, turnNumber);
-    }
-
-    // Process instrument if present
-    if (command.instrument) {
-      this.processValidatedReference(command.instrument, world, turnNumber);
+    const referent = command.directObject ?? command.indirectObject ?? command.instrument;
+    if (referent) {
+      this.processValidatedReference(referent);
     }
   }
 
@@ -233,11 +234,7 @@ export class PronounContextManager {
    * Process a validated object reference and update context
    * Uses the already-resolved entity ID from validation
    */
-  private processValidatedReference(
-    ref: IValidatedObjectReference,
-    world: any,
-    turnNumber: number
-  ): void {
+  private processValidatedReference(ref: IValidatedObjectReference): void {
     const entity = ref.entity;
     if (!entity) {
       return;
@@ -245,8 +242,7 @@ export class PronounContextManager {
 
     const entityRef: EntityReference = {
       entityId: entity.id,
-      text: ref.parsed?.text || entity.id,
-      turnNumber
+      text: ref.parsed?.text || entity.id
     };
 
     // Check if this is an actor (animate)
@@ -280,22 +276,13 @@ export class PronounContextManager {
    * Register an entity that was mentioned (for external use)
    * This allows actions to register entities they interact with
    */
-  registerEntity(
-    entityId: string,
-    text: string,
-    world: any,
-    turnNumber: number
-  ): void {
+  registerEntity(entityId: string, text: string, world: any): void {
     const entity = world.getEntity(entityId);
     if (!entity) {
       return;
     }
 
-    const ref: EntityReference = {
-      entityId,
-      text,
-      turnNumber
-    };
+    const ref: EntityReference = { entityId, text };
 
     const actorTrait = entity.get('actor');
     if (actorTrait?.pronouns) {

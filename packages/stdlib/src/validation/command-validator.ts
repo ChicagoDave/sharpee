@@ -185,14 +185,30 @@ export class CommandValidator implements CommandValidator {
 
     // 2. Resolve direct object if present in parsed command
     let directObject: IValidatedObjectReference | undefined;
+    let directObjects: IValidatedObjectReference[] | undefined;
     if (command.structure?.directObject) {
-      // ADR-080: Multi-object commands ("get all", "drop all but sword")
-      // Skip single-entity resolution - let the action handle expansion via expandMultiObject()
       const nounPhrase = command.structure.directObject;
-      if (nounPhrase.isAll || nounPhrase.isList) {
-        // Leave directObject undefined - action will use isMultiObjectCommand()
-        // and expandMultiObject() to handle multiple entities
+      if (nounPhrase.isAll) {
+        // `all` is the action's to expand (expandMultiObject); the validator
+        // resolves nothing for it
         directObject = undefined;
+      } else if (nounPhrase.isList && nounPhrase.items) {
+        // ADR-385 D5: each item of a list resolves by the single-noun path,
+        // in order; an item that names nothing or ties fails the command
+        // here, naming that item, so none is dropped silently
+        const metadata = this.getActionMetadata(actionHandler);
+        const scope = metadata.directObjectScope || ScopeLevel.VISIBLE;
+        directObjects = [];
+        for (const item of nounPhrase.items) {
+          const resolved = this.resolveEntity(item, 'direct', scope, command);
+          if (!resolved.success) {
+            if (resolved.error.code === 'ENTITY_NOT_FOUND') {
+              resolved.error.details = { ...resolved.error.details, listItem: true };
+            }
+            return resolved;
+          }
+          directObjects.push(resolved.value);
+        }
       } else {
         // Normal single-entity resolution
         const metadata = this.getActionMetadata(actionHandler);
@@ -351,6 +367,7 @@ export class CommandValidator implements CommandValidator {
       parsed: command,
       actionId: actionHandler.id,
       directObject,
+      ...(directObjects ? { directObjects } : {}),
       indirectObject,
       instrument,
       topic,
@@ -637,6 +654,9 @@ export class CommandValidator implements CommandValidator {
           details: {
             ambiguousEntities: choices,
             searchText: ref.text,
+            // The tied phrase's token span (a list item's own), for the
+            // answer to be spliced into the held command (ADR-385 D11)
+            tokens: ref.tokens,
             matchCount: viableMatches.length,
             objectType  // 'direct', 'indirect', or 'instrument'
           }

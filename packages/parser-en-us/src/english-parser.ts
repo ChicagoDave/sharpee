@@ -1358,13 +1358,13 @@ export class EnglishParser implements Parser {
 
   /**
    * Update pronoun context after a successful command execution
-   * Called by the engine after command execution succeeds
+   * Called by the engine after command execution succeeds; the referent
+   * follows the command's roles (ADR-385 D7)
    * @param command The validated command with resolved entity IDs
-   * @param turnNumber Current turn number
    */
-  updatePronounContext(command: IValidatedCommand, turnNumber: number): void {
+  updatePronounContext(command: IValidatedCommand): void {
     if (this.worldContext?.world) {
-      this.pronounContext.updateFromCommand(command, this.worldContext.world, turnNumber);
+      this.pronounContext.updateFromCommand(command, this.worldContext.world);
     }
   }
 
@@ -1373,11 +1373,10 @@ export class EnglishParser implements Parser {
    * Used when entities are referenced outside of standard parsing
    * @param entityId The entity's ID
    * @param text How the player referred to it
-   * @param turnNumber Current turn number
    */
-  registerPronounEntity(entityId: string, text: string, turnNumber: number): void {
+  registerPronounEntity(entityId: string, text: string): void {
     if (this.worldContext?.world) {
-      this.pronounContext.registerEntity(entityId, text, this.worldContext.world, turnNumber);
+      this.pronounContext.registerEntity(entityId, text, this.worldContext.world);
     }
   }
 

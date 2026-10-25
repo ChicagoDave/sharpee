@@ -359,8 +359,11 @@ export class CommandExecutor {
           };
         }
 
-        // Other validation errors still throw
-        throw new Error(`Validation failed: ${validationResult.error.code}`);
+        // Other validation errors still throw; the error carries the
+        // validator's details so the failure can name what it refused
+        throw Object.assign(new Error(`Validation failed: ${validationResult.error.code}`), {
+          validation: validationResult.error.details
+        });
       }
 
       if (!player) {
@@ -675,6 +678,10 @@ export class CommandExecutor {
     // command parsed, a rule blew up. The flag rides the event so the prose
     // pipeline renders it as such, never as the parser's own refusal.
     const storyRule = (error as { storyRule?: unknown }).storyRule === true;
+    // A list item that named nothing (ADR-385 D5) is named back: the
+    // validator's details carry the item's phrase
+    const validation = (error as { validation?: { listItem?: unknown; searchText?: unknown } }).validation;
+    const phrase = validation?.listItem === true && typeof validation.searchText === 'string' ? validation.searchText : undefined;
     const result: TurnResult = {
       turn,
       input,
@@ -684,7 +691,7 @@ export class CommandExecutor {
         type: 'command.failed',
         timestamp: Date.now(),
         entities: {},
-        data: { reason: error.message, input, ...(storyRule ? { storyRule: true } : {}) }
+        data: { reason: error.message, input, ...(storyRule ? { storyRule: true } : {}), ...(phrase ? { phrase } : {}) }
       }],
       error: error.message
     };

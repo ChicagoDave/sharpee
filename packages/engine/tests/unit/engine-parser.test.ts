@@ -38,8 +38,8 @@ describe('adaptParser (Phase 6)', () => {
     expect(() => {
       adapted.setWorldContext({} as WorldModel, 'a1', 'r1');
       adapted.setPlatformEventEmitter(undefined);
-      adapted.updatePronounContext({} as IValidatedCommand, 3);
-      adapted.registerPronounEntity('i1', 'lamp', 3);
+      adapted.updatePronounContext({} as IValidatedCommand);
+      adapted.registerPronounEntity('i1', 'lamp');
       adapted.resetPronounContext();
     }).not.toThrow();
   });
@@ -51,11 +51,11 @@ describe('adaptParser (Phase 6)', () => {
     const adapted = adaptParser(parser);
     const world = {} as WorldModel;
     adapted.setWorldContext(world, 'a1', 'r1');
-    adapted.registerPronounEntity('i1', 'lamp', 7);
-    adapted.updatePronounContext({} as IValidatedCommand, 7);
+    adapted.registerPronounEntity('i1', 'lamp');
+    adapted.updatePronounContext({} as IValidatedCommand);
     adapted.resetPronounContext();
     expect(setWorldContext).toHaveBeenCalledWith(world, 'a1', 'r1');
-    expect(registerPronounEntity).toHaveBeenCalledWith('i1', 'lamp', 7);
+    expect(registerPronounEntity).toHaveBeenCalledWith('i1', 'lamp');
     expect(adapted).not.toBe(parser);
   });
 

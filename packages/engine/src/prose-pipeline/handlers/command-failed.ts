@@ -8,7 +8,9 @@
  *     `core.story_rule_failed` followed by the reason, never the parser's
  *     refusal: the command parsed; a rule blew up.
  *   - `ENTITY_NOT_FOUND` / `modifiers_not_matched` →
- *     `core.entity_not_found` (default: "I don't see that here.")
+ *     `core.entity_not_found` (default: "I don't see that here."); with a
+ *     `phrase` (a list item that named nothing, ADR-385 D5) →
+ *     `core.entity_not_found_named`, which names it
  *   - `NO_MATCH` / `parse` →
  *     `core.command_not_understood` (default: "I don't understand that.")
  * Anything else → `core.command_failed` (same default).
@@ -33,6 +35,8 @@ interface CommandFailedData {
   input?: string;
   /** The failure is a story rule's diagnostic (GH #345), not a parse failure. */
   storyRule?: boolean;
+  /** The content words of a list item that named nothing (ADR-385 D5). */
+  phrase?: string;
 }
 
 export function handleCommandFailed(
@@ -52,6 +56,12 @@ export function handleCommandFailed(
       data.reason.includes('ENTITY_NOT_FOUND') ||
       data.reason.includes('modifiers_not_matched')
     ) {
+      if (data.phrase) {
+        const named = provider?.getMessage('core.entity_not_found_named', { phrase: data.phrase });
+        if (named && named !== 'core.entity_not_found_named') {
+          return createBlocks(BLOCK_KEYS.ERROR, named);
+        }
+      }
       const message =
         provider?.getMessage('core.entity_not_found') ??
         "I don't see that here.";
