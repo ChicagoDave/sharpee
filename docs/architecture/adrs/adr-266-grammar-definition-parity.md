@@ -76,6 +76,10 @@ patterns.
 for `.where()` (`visible`, `touchable`, `carried`, `nearby`, `matching`, `kind`, `hasTrait`,
 `orExplicitly`, `orRule`):
 
+> **Amendment note (2026-10-25, ADR-385):** `kind` and `orRule` were no-ops and are
+> deleted (ADR-385 D9). A scope constraint is `base`, `filters`, `traitFilters` and
+> `explicitEntities`.
+
 | form | call sites in `grammar.ts` |
 | --- | --- |
 | `.define(…).mapsTo(…)` | 154 |

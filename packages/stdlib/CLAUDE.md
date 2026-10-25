@@ -12,6 +12,19 @@ Actions follow the four-phase pattern (validate/execute/report/blocked) per ADR-
 - Never hardcode English strings in stdlib (or engine, world-model).
 - Pass entity-valued template parameters as `entityInfoFrom(entity)`, not `entity.name` (ADR-158). Bare strings strip the `nounType`/`properName`/`article` metadata the formatter chain needs.
 
+## Entity Resolution (ADR-385)
+
+The validator (`src/validation/command-validator.ts`) does not decide which
+entities a phrase names. It calls world-model's one noun matcher, `matchNoun`,
+over `namingSurfaceOf(world, entity, actorId)`, as the parse-time gate and the
+IDE do, and owns only what happens around the answer: scope, dominance, the
+gate's admitted ids (`INounPhrase.scope`), the soft `my` narrowing, exact
+matches out of scope, the ambiguity tiebreaks and the error it returns. A list
+resolves item by item into `IValidatedCommand.directObjects`; `all` is the
+action's to expand (`helpers/multi-object-handler.ts`), where `all but` removes
+what the matcher names. Never add a second name-matching rule in stdlib: the
+matcher is the one place, and `src/validation/README.md` describes the flow.
+
 ## Capability Dispatch, Actions, and Event Handlers (ADR-090)
 
 **CRITICAL**: Understand when to use each pattern before implementing new puzzles/mechanics.

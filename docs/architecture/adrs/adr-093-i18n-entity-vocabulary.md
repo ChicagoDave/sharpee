@@ -27,6 +27,11 @@
 > **Consequences:** the field stays supported and existing declarations keep working; the
 > Chord language needs no adjective syntax, and `aka` correctly stays what it is —
 > *alternate names, not modifiers*. The i18n concern deferred as Phase 2 is untouched.
+>
+> **Amendment note (2026-10-25, ADR-385):** `CommandValidator.getEntityVocabulary()` is
+> deleted. The vocabulary described above (name words + alias words + authored adjectives)
+> is `vocabularyOf(namingSurfaceOf(world, entity, actorId))` in world-model's one noun
+> matcher (ADR-385 D1), and the validator's modifier check reads it from there.
 
 ## Context
 

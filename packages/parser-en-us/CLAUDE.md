@@ -99,6 +99,29 @@ the parser.
   before the first slot (`examine light` has the verb `examine`), and the
   preposition is the input between the two seats.
 
+### Noun phrases and constrained slots (ADR-385)
+
+- **Articles and determiners are split once**, in the slot consumer
+  (`slot-consumers/noun-phrase-split.ts`), from the tokens' parts of speech the
+  language registered. The noun phrase carries `articles`, `determiners`,
+  `modifiers`, `text` and `head`; nothing downstream strips again. `my` marks
+  the phrase as the actor's own; the all and except words come from the language
+  (`take everything`, `take all coins`, `take all but the lantern`).
+- **A `.where()` constraint asks the one noun matcher.** The gate
+  (`grammar-scope-resolver.ts`) admits the base's entities that world-model's
+  `matchNoun` names, exactly as the validator does, so an adjective admits and a
+  substring never does. The admitted ids travel on the slot match and the noun
+  phrase (`scope`), and the validator resolves only among them.
+- **A pronoun is a whole item** and passes the same gate; it may be a list item
+  (`take it and the box`). Followed by a noun word it is a determiner (`her key`).
+- **A gate failure names the phrase and the reason.** A name found in sight but
+  outside the slot's base is `SCOPE_VIOLATION` with the entity's id and
+  `requiredScope`; nothing found is `NO_MATCH` naming the content words. The
+  language renders "You aren't holding the brass lantern." and the like.
+- **Pronoun context follows the command's roles** (`pronoun-context.ts`): the
+  direct object, else the indirect object, else the instrument; a list sets
+  `them` to every entity it resolved.
+
 ## Story Grammar Extension
 
 Stories extend grammar in `extendParser()`:
