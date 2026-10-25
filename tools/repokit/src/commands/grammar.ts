@@ -165,7 +165,7 @@ export function compileStandardGrammarRules(root: string): {
       ir: { grammarFile?: { name: string }; actions: Array<StandardGrammarAction & LowerableAction> } | null;
       diagnostics: Array<{ severity: string; code: string; message: string; span?: { line: number } }>;
     };
-    lowerActionRules: (action: LowerableAction, options: { bareVerbForms: boolean }) => LoweredRule[];
+    lowerActionRules: (action: LowerableAction, options: { inheritedSeats?: SeatTable }) => LoweredRule[];
     seatTable: (action: LowerableAction) => { table: SeatTable };
   };
   const storySrc = readFileSync(storyPath, 'utf8');
@@ -194,7 +194,9 @@ export function compileStandardGrammarRules(root: string): {
 
   const lowered = result.ir.actions.map((action) => ({
     action: `if.action.${action.name}`,
-    rules: lowerActionRules(action, { bareVerbForms: false }),
+    // Options passed explicitly: repokit runs this before it rebuilds chord,
+    // so it must not rely on a default an older chord dist lacks.
+    rules: lowerActionRules(action, {}),
     seats: seatTable(action).table,
   }));
   return { actions: result.ir.actions.length, lowered };

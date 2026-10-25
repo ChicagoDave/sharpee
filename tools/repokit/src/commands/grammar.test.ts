@@ -79,7 +79,6 @@ describe('generated registration line (ADR-382 Q-2)', () => {
       slotTypes: { tool: 'instrument' },
       seats: { container: 'direct' },
       requirements: [],
-      bare: false,
     });
     expect(line).toBe(
       '  grammar.rule({ action: "if.action.opening", pattern: "open :container with|using :tool", ' +
@@ -96,7 +95,6 @@ describe('generated registration line (ADR-382 Q-2)', () => {
       slotTypes: {},
       seats: {},
       requirements: [],
-      bare: false,
     });
     expect(line).toBe('  grammar.rule({ action: "if.action.looking", pattern: "look", parts: [{"kind":"word","word":"look"}] });');
   });

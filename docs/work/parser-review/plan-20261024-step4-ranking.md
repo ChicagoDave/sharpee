@@ -149,8 +149,29 @@
 - **Files**: `packages/chord/src/patterns.ts`, `packages/story-loader/src/loader.ts`, `packages/chord/tests/patterns.test.ts`, `packages/story-loader/tests/`
 - **Exit state**: no bare-verb form in `packages/chord/src/patterns.ts` or the loader (grep for `bareVerbForms`, LoweredRule.bare); suites green; chain and trees identical to baseline or each moved card listed and ruled; `grammar --check` and `manifest --check` fresh.
 - **Demonstration**: the new tests shown failing against pre-phase source; bundle probes of bare take, take clock apart, bare frob; the greps; counts against baseline.
-- **Demonstrated**: 
-- **Status**: PENDING
+- **Demonstrated**: 2026-10-24, session b09060, on c15883248 plus this phase's working tree. `R` = `/private/tmp/claude-501/-Users-david-repos-sharpee/c5b810e6-de64-402b-8039-33b7da9cc6cd/scratchpad/ranking`. [verified: story-loader suite "1425 passed" 2026-10-25T00:50:17Z, after the last test edit 00:50:04Z; new-suite run "41 passed 4 passed" 00:41:37Z; build, tsc, chord, parser-en-us, if-domain, repokit, stdlib, test:ci, chain, units, trees, probes reported by session, unverified (no event-log rows)]
+  - **Code.**
+    - `chord/src/patterns.ts`: `LoweredRule.bare` and the bare-verb loop are gone. `lowerActionRules(action, options = {})` takes only `inheritedSeats` and returns exactly the written lines.
+    - `story-loader/src/loader.ts`: both `registerActionGrammar` calls and its option type drop `bareVerbForms`; the doc and gate comment are updated.
+    - `tools/repokit/src/commands/grammar.ts`: calls `lowerActionRules(action, {})` with the options explicit. The first build crashed (`Cannot read properties of undefined (reading 'inheritedSeats')`): repokit rebuilds itself and then runs the grammar step against the old chord dist, before chord is rebuilt. Reported and waited; fixed with David's go; rebuilt, exit 0.
+    - Obsolete tests rewritten to the retired feature's absence: chord `patterns.test.ts` and `seat-tables.test.ts`; story-loader `bare-verb-dispatch.test.ts` (header rewritten: ADR-384 D5 supersedes platform-issue-sweep Phase 8 #13), `rule-spec-registration.test.ts` (two cases) and `scope-constraint-emission.test.ts`; repokit `grammar.test.ts` fixtures.
+  - **Greps.** `bareVerbForms` and `bare: true|false` across chord, story-loader and repokit src and tests: none.
+  - **Tests.** New `story-loader/tests/bare-verb-forms-retired.test.ts` (4, real compiler, loader and engine):
+    - bare `take` → "What do you want to take?", though a story line `take the target apart` exists (before: "You can't do that.");
+    - a story-only verb, bare `frob` → "What do you want to frob?" (before: "You can't do that.");
+    - `take clock apart` still → "You take the clock apart.";
+    - an author-written bare line `ring` still answers, score 0 → 1.
+
+    The first two failed against the pre-phase source.
+  - **Floor.**
+    - `./repokit build dungeo`: exit 0 (after the repokit fix). Root `npx tsc --noEmit -p .`: clean.
+    - Suites: chord 1720, story-loader 1425 + 1 skipped, parser-en-us 458, if-domain 107, repokit 139 + 1 skipped, stdlib 1889 via pnpm. `pnpm exec turbo run test:ci`: 75 of 75.
+    - Chain: 952 passed. Trees: all 1940 cards byte-identical to Phase 1's dump.
+    - Dungeo units: 1721 passed, 12 failed. The extra failure is `grue-mechanics.transcript` `> east` (`actor_moved should not exist`). Three solo runs passed. It has no `seed:` header, and Dungeo's TypeScript grammar never goes through `lowerActionRules`. Added to GH #631.
+    - `./repokit grammar --check`, `manifest --check`, `aliases --check` and `protocol --check`: all fresh. No EBNF change.
+  - **Bundle probes.** Probe story: bare `take` → "What do you want to take?" (Phase 1: "You can't do that."); `take clock apart` and `push button` unchanged. Dungeo: bare `take` → "What do you want to take?"; `wave hands` and `give coin` as after Phase 3.
+  - **Other stories' text (reported, per David's standing directive: the floor is Dungeo plus Chord syntax as tested).** A bare verb typed alone now gets the parser's seat question, not the action's authored no-target line. Six authored `refuse without` arms are now unreachable from a bare verb: wumpus `shoot-what` ("Shoot what? The dark does not count."), thealderman `accuse-whom`, friendly-zoo `cant-pet` and `not-an-animal`, secret-letter `peer-where`, nautical `sail-where`. Secret Letter's other bare forms likewise lose their actions' `otherwise` lines for bare input. No tree card or transcript types any of them; a story that wants the action to answer the bare verb writes the bare line.
+- **Status**: DONE
 
 ### Phase 5: Close-out — amendment note, references, step 5 hand-off
 - **Tier**: Small

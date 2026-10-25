@@ -49,13 +49,8 @@ describe('scope-constraint emission (ADR-271 D2)', () => {
     }
   });
 
-  it('emits bare-verb rules with no constraint (refuse-without owns no-target)', () => {
-    const bare = rules.filter((r) => !r.pattern.includes(':'));
-    expect(bare.map((r) => r.pattern).sort()).toEqual(['pat', 'pet']);
-    for (const rule of bare) {
-      expect(rule.action).toBe('chord.action.petting');
-      expect(rule.slots.has('animal')).toBe(false);
-    }
+  it('emits no rule for a line\'s verb alone (ADR-384 D5)', () => {
+    expect(rules.filter((r) => !r.pattern.includes(':')).map((r) => r.pattern)).toEqual([]);
   });
 });
 

@@ -49,8 +49,6 @@ export interface LoweredRule {
   seats: Record<string, Seat>;
   /** The scope requirements on slots this rule carries, as written words. */
   requirements: Array<{ slot: string; requirement: string }>;
-  /** True for a bare-verb form (the literal prefix of a slotted pattern). */
-  bare: boolean;
 }
 
 /**
@@ -265,14 +263,12 @@ export function seatTable(action: LowerableAction, inherited?: SeatTable): { tab
  * order (ADR-382 D7): one per written pattern, or per alias × pattern where
  * a pattern uses the `directions` block's `direction` slot (a bare
  * `the direction` line registering the standalone aliases), each with its
- * own `means` defaults (ADR-267 D12). With `bareVerbForms`, each slotted
- * pattern's literal prefix follows as its own rule, once per distinct
- * prefix, after every written pattern. Every entity slot carries its seat
- * from the action's seat table (ADR-383 D3), started from
+ * own `means` defaults (ADR-267 D12). Exactly the written lines: no rule is
+ * added for a line's verb alone (ADR-384 D5). Every entity slot carries its
+ * seat from the action's seat table (ADR-383 D3), started from
  * `inheritedSeats` for an extension (D4).
  * @param action The action's patterns, constraints, greedy and typed slots and directions
- * @param options `bareVerbForms` adds the bare-verb prefixes (dispatch
- *   actions); `inheritedSeats` is the extended action's table
+ * @param options `inheritedSeats` is the extended action's table
  * @returns The rules, in registration order
  * @throws Error when the seat table has a problem — the analyzer refuses
  *   such a line (`analysis.seat-conflict`, `analysis.unknown-slot`), so only
@@ -280,13 +276,11 @@ export function seatTable(action: LowerableAction, inherited?: SeatTable): { tab
  */
 export function lowerActionRules(
   action: LowerableAction,
-  options: { bareVerbForms: boolean; inheritedSeats?: SeatTable },
+  options: { inheritedSeats?: SeatTable } = {},
 ): LoweredRule[] {
   const greedy = action.greedy ?? [];
   const directions = action.directions ?? [];
   const rules: LoweredRule[] = [];
-  const bareTexts = new Set<string>();
-  const bare: LoweredRule[] = [];
 
   const { table, problems } = seatTable(action, options.inheritedSeats);
   if (problems.length > 0) {
@@ -314,7 +308,6 @@ export function lowerActionRules(
       slotTypes,
       seats,
       requirements: action.constraints.filter((c) => slots.has(c.slot)).map((c) => ({ slot: c.slot, requirement: c.requirement })),
-      bare: false,
     };
   };
 
@@ -339,19 +332,6 @@ export function lowerActionRules(
     } else {
       rules.push(ruleOf(parts, means));
     }
-
-    // The bare-verb form: the literal prefix before the first slot, taken
-    // from the written parts (direction expansion included — the prefix is
-    // the verb).
-    const slotIndex = parts.findIndex((part) => part.kind === 'slot');
-    if (options.bareVerbForms && slotIndex > 0) {
-      const prefix = parts.slice(0, slotIndex);
-      const text = renderPattern(prefix);
-      if (!bareTexts.has(text)) {
-        bareTexts.add(text);
-        bare.push({ ...ruleOf(prefix, null), bare: true });
-      }
-    }
   }
-  return [...rules, ...bare];
+  return rules;
 }

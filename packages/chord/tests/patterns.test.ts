@@ -103,14 +103,13 @@ describe('lowerActionRules (ADR-382 D5, D7)', () => {
         ],
         constraints: [{ slot: 'target', requirement: 'reachable' }],
       },
-      { bareVerbForms: false },
     );
     expect(rules.map((r) => [r.pattern, r.defaults])).toEqual([
       ['hide under :target', { position: 'under' }],
       ['hide behind :target', { position: 'behind' }],
       ['duck under :target', { position: 'under' }],
     ]);
-    expect(rules.every((r) => r.requirements.length === 1 && !r.bare)).toBe(true);
+    expect(rules.every((r) => r.requirements.length === 1)).toBe(true);
   });
 
   it('expands a directions block: alias × pattern with the canonical as default, a bare line as standalone aliases', () => {
@@ -123,7 +122,6 @@ describe('lowerActionRules (ADR-382 D5, D7)', () => {
         constraints: [],
         directions: [{ canonical: 'port', aliases: ['p'] }],
       },
-      { bareVerbForms: false },
     );
     expect(rules.map((r) => [r.pattern, r.defaults])).toEqual([
       ['sail port', { direction: 'port' }],
@@ -145,7 +143,6 @@ describe('lowerActionRules (ADR-382 D5, D7)', () => {
         slotTypes: [{ slot: 'blade', type: 'instrument' }],
         greedy: ['words'],
       },
-      { bareVerbForms: false },
     );
     expect(rules[0].slotTypes).toEqual({ blade: 'instrument' });
     expect(rules[0].requirements).toEqual([{ slot: 'blade', requirement: 'held' }]);
@@ -154,7 +151,7 @@ describe('lowerActionRules (ADR-382 D5, D7)', () => {
     expect(rules[2].pattern).toBe('say :words...');
   });
 
-  it('adds each distinct bare-verb prefix after the written patterns, and skips a cardinality pattern', () => {
+  it('lowers exactly the written lines, adding no rule for a line\'s verb alone (ADR-384 D5)', () => {
     const rules = lowerActionRules(
       {
         patterns: [
@@ -165,16 +162,8 @@ describe('lowerActionRules (ADR-382 D5, D7)', () => {
         ],
         constraints: [{ slot: 'cord', requirement: 'held' }],
       },
-      { bareVerbForms: true },
     );
-    expect(rules.map((r) => [r.pattern, r.bare])).toEqual([
-      ['tie :cord to :post', false],
-      ['tie up :cord', false],
-      ['tie :cord', false],
-      ['tie', true],
-      ['tie up', true],
-    ]);
-    expect(rules[3].requirements).toEqual([]);
+    expect(rules.map((r) => r.pattern)).toEqual(['tie :cord to :post', 'tie up :cord', 'tie :cord']);
   });
 });
 

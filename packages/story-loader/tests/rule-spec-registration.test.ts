@@ -94,7 +94,7 @@ describe('an optional slot is constrained and seated (B1)', () => {
 });
 
 describe('definition order (ADR-382 D7, B7)', () => {
-  it('registers an action`s rules as written, `means` groups interleaved, then the bare-verb prefixes', () => {
+  it('registers an action`s rules as written, `means` groups interleaved, and nothing more (ADR-384 D5)', () => {
     const source = `define action ducking
   grammar
     duck under the target
@@ -115,9 +115,6 @@ describe('definition order (ADR-382 D7, B7)', () => {
       ['duck under :target', { position: 'under' }],
       ['duck behind :target', { position: 'behind' }],
       ['crouch under :target', { position: 'under' }],
-      ['duck under', null],
-      ['duck behind', null],
-      ['crouch under', null],
     ]);
     for (const rule of rules) expect(rule.tier).toBe('story');
   });
@@ -148,10 +145,6 @@ describe('typed slots and directions reach the registered rules', () => {
       ['signal south', { direction: 'south' }],
       ['signal about :news', null],
       ['signal', null],
-      // Bare-verb prefixes dedupe among themselves only, so `signal the
-      // direction`'s prefix repeats the written `signal` line (unchanged).
-      ['signal', null],
-      ['signal about', null],
     ]);
     const typed = rules.find((r) => r.pattern === 'signal about :news')!;
     expect(typed.slots.get('news')?.slotType).toBe(SlotType.TOPIC);

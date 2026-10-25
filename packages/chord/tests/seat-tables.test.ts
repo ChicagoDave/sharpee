@@ -94,38 +94,35 @@ describe('seatTable (ADR-383 D3)', () => {
 
 describe('lowerActionRules carries the seats (ADR-383 D3, D4)', () => {
   it('every rule seats its entity slots by the table, an indirect-first line included', () => {
-    const rules = lowerActionRules(action(['offer :gift to :friend', 'present :friend with :gift', 'wave']), { bareVerbForms: true });
+    const rules = lowerActionRules(action(['offer :gift to :friend', 'present :friend with :gift', 'wave']));
     expect(rules.map((r) => [r.pattern, r.seats])).toEqual([
       ['offer :gift to :friend', { gift: 'direct', friend: 'indirect' }],
       ['present :friend with :gift', { friend: 'indirect', gift: 'direct' }],
       ['wave', {}],
-      ['offer', {}],
-      ['present', {}],
     ]);
   });
 
   it('an extension seats from the inherited table', () => {
     const [rule] = lowerActionRules(action(['hand :recipient :item']), {
-      bareVerbForms: false,
       inheritedSeats: { item: 'direct', recipient: 'indirect' },
     });
     expect(rule.seats).toEqual({ recipient: 'indirect', item: 'direct' });
   });
 
   it('gives no seat to a typed or greedy slot', () => {
-    const [untyped] = lowerActionRules(action(['cut :rope with :blade']), { bareVerbForms: false });
+    const [untyped] = lowerActionRules(action(['cut :rope with :blade']));
     expect(untyped.seats).toEqual({ rope: 'direct', blade: 'indirect' });
-    const [typed] = lowerActionRules(action(['cut :rope with :blade'], { slotTypes: [{ slot: 'blade', type: 'instrument' }] }), { bareVerbForms: false });
+    const [typed] = lowerActionRules(action(['cut :rope with :blade'], { slotTypes: [{ slot: 'blade', type: 'instrument' }] }));
     expect(typed.seats).toEqual({ rope: 'direct' });
-    const [greedy] = lowerActionRules(action(['tell :listener :words'], { greedy: ['words'] }), { bareVerbForms: false });
+    const [greedy] = lowerActionRules(action(['tell :listener :words'], { greedy: ['words'] }));
     expect(greedy.seats).toEqual({ listener: 'direct' });
   });
 
   it('throws on a line the table cannot seat, naming the line', () => {
-    expect(() => lowerActionRules(action(['give :item to :recipient', 'tip :coin to :recipient', 'swap :item :coin']), { bareVerbForms: false })).toThrow(
+    expect(() => lowerActionRules(action(['give :item to :recipient', 'tip :coin to :recipient', 'swap :item :coin']))).toThrow(
       /`swap :item :coin` puts `item` and `coin` in one seat/,
     );
-    expect(() => lowerActionRules(action(['hand :friend :gift']), { bareVerbForms: false, inheritedSeats: { item: 'direct' } })).toThrow(
+    expect(() => lowerActionRules(action(['hand :friend :gift']), { inheritedSeats: { item: 'direct' } })).toThrow(
       /`hand :friend :gift` seats neither `friend` nor `gift`/,
     );
   });

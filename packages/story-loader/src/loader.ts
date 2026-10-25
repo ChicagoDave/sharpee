@@ -1585,9 +1585,7 @@ export class ChordStory implements Story {
   extendParser(parser: Parameters<NonNullable<Story['extendParser']>>[0]): void {
     const grammar = (parser as unknown as { getStoryGrammar(): GrammarBuilder }).getStoryGrammar();
     for (const action of this.ir.actions) {
-      // Bare-verb prefixes ride only full `define action` dispatch actions
-      // (platform-issue-sweep Phase 8 #13) — never alteration blocks.
-      this.registerActionGrammar(grammar, `chord.action.${action.name}`, action, { bareVerbForms: true });
+      this.registerActionGrammar(grammar, `chord.action.${action.name}`, action, {});
     }
 
     this.registerPassageGrammar(grammar);
@@ -1620,7 +1618,7 @@ export class ChordStory implements Story {
       }
       // No dispatch conveniences (ADR-270 D2, mirroring ADR-269 D3): the
       // extension registers exactly the stated lines at story tier.
-      this.registerActionGrammar(grammar, actionId, ext, { bareVerbForms: false, inheritedSeats });
+      this.registerActionGrammar(grammar, actionId, ext, { inheritedSeats });
     }
 
     // ADR-270 D3: `remove from action` — standard-tier rules removed by
@@ -1663,8 +1661,8 @@ export class ChordStory implements Story {
    * `lowerActionRules` lowers the action to, each through `rule(spec)` in
    * definition order with its own `means` defaults (ADR-382 D7). The
    * loader's one piece of grammar work is mapping each scope requirement
-   * word to its predicate. `bareVerbForms` adds each pattern's literal verb
-   * prefix as its own rule, after the written patterns (dispatch actions only).
+   * word to its predicate. Exactly the written lines register: no rule for a
+   * line's verb alone (ADR-384 D5).
    * Every entity slot is registered with its seat from the action's seat
    * table, started from `inheritedSeats` for an extension (ADR-383 D3, D4).
    */
@@ -1672,10 +1670,10 @@ export class ChordStory implements Story {
     grammar: GrammarBuilder,
     actionId: string,
     def: LowerableAction & { constraints: Array<{ slot: string; requirement: ScopeRequirementWord }>; condition?: IRCondition },
-    opts: { bareVerbForms: boolean; inheritedSeats?: SeatTable },
+    opts: { inheritedSeats?: SeatTable },
   ): void {
     // ADR-378 D5 (ADR-370 D7, GH #317): `define action … while` gates every
-    // rule the action registers, bare-verb prefixes included — where the
+    // rule the action registers — where the
     // condition is false the input parses as though the action did not
     // exist. Read against the live world at match time.
     const condition = def.condition;
