@@ -175,6 +175,14 @@ node dist/cli/sharpee.js --test stories/dungeo/tests/transcripts/rug-trapdoor.tr
 node dist/cli/sharpee.js --test stories/dungeo/tests/transcripts/*.transcript
 ```
 
+**Dungeo is a regression floor only up to its own requirements** (David, 2026-10-25).
+Where a decision takes the platform past what Dungeo ever required of it (the parser
+review's search, ADR-386, is the first), Dungeo's lines follow the platform: a line the
+decision moves is re-recorded after the phase's census is reviewed, not taken to David
+one at a time. A move that looks like a defect, and any move on an input the decision
+does not touch, is still a regression and still stops for a ruling. The dividing line is
+step 6 of the parser review (ADR-385): records before it keep their per-line clauses.
+
 **IMPORTANT — Don't modify working transcripts:**
 - If a transcript was passing before, don't change its commands. Control-flow directives (`[WHILE:]`, `[RETRY:]`, `[DO]`/`[UNTIL]`, `[IF:]`, `[ENSURES:]`, `[REQUIRES:]`, `[NAVIGATE TO:]`) are removed grammar (ADR-294 D4) — the parser rejects each by name; never add them.
 - Combat sequences are exact pinned-seed counts, not padding. Runs are deterministic at the pinned seed: derive the required command list by probing with `--exec`, or pin a specific outcome with the `forces:`/`point-seed:` header fields (ADR-293 Phase C). Never add surplus attack commands "for safety."
