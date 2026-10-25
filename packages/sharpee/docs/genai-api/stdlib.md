@@ -2435,32 +2435,16 @@ export declare class CommandValidator implements CommandValidator {
     /** A landmark room of an expanse the player is positioned in, seen from outside it (ADR-376 D6). */
     private isLandmarkInSight;
     /**
-     * Match a noun phrase against one entity's naming surface (ADR-231 D3,
-     * PIN 2's tiered model).
+     * Match a noun phrase against one entity through the one noun matcher
+     * (ADR-385 D1; the tiers are ADR-231 D3's). The self words name whoever
+     * holds the player role (ADR-327), so the player is the observer.
      *
-     * Tier EXACT: the query text — tried with its leading articles restored
-     * first (so proper names beginning with an article-like word survive),
-     * then as parsed, then article-stripped — equals the full name, a full
-     * alias, or the entity type, case-insensitively.
-     *
-     * Tier WORDS: EVERY query content word (stopwords dropped by
-     * `deriveNameVocabulary`) matches a word of the entity's vocabulary
-     * (name content words + alias content words + authored adjectives).
-     * Any query word matching nothing DISQUALIFIES the candidate:
-     * "x brass sword" never resolves to the brass key.
-     *
-     * @returns The tier and matched-word count, or null when neither
-     *   tier matches.
+     * @returns The tier as the validator ranks it and the matched-word count,
+     *   or null when the phrase does not name the entity.
      */
-    private matchEntityName;
-    /**
-     * The entity's word-level matching vocabulary (PIN 2): name content
-     * words + alias content words + authored adjectives (per-side for walls
-     * via getEntityAdjectives). Always derived on demand from the CURRENT
-     * name — never stored — so renames can't leave stale vocabulary and
-     * Chord-loaded and TS-authored entities are uniform by construction.
-     */
-    private getEntityVocabulary;
+    private nameMatch;
+    /** The entity's naming surface as the player sees it (ADR-385 D1). */
+    private surfaceOf;
     /**
      * Strip leading articles ("the", "a", "an") from query text, always
      * keeping at least one word.
@@ -2479,7 +2463,7 @@ export declare class CommandValidator implements CommandValidator {
     /**
      * Score entities against a reference (ADR-231 D3 tiered model).
      *
-     * The tier and matched-word count come from `matchEntityName` and carry
+     * The tier and matched-word count come from `nameMatch` and carry
      * PIN 2's ranking; the numeric `score` is the within-tie heuristic
      * (modifier/visibility/inventory/author scope priority bonuses) that the
      * normal disambiguation flow uses to break residual ties.
@@ -2526,24 +2510,6 @@ export declare class CommandValidator implements CommandValidator {
      * Get entity description
      */
     private getEntityDescription;
-    /**
-     * Get entity adjectives.
-     *
-     * For walls (ADR-173), adjectives are per-side: the wall entity carries
-     * an adjective for each of its two connecting rooms, and the parser
-     * resolves against the side facing the player's current room. The same
-     * wall entity therefore matches different adjectives from each side
-     * (e.g. 'oak' from the parlor, 'brick' from the library). When the
-     * player is not in either connecting room, the wall contributes no
-     * adjectives.
-     *
-     * For all other entities, adjectives come from `IdentityTrait.adjectives`.
-     */
-    private getEntityAdjectives;
-    /**
-     * Get entity synonyms
-     */
-    private getEntitySynonyms;
     /**
      * Get action metadata
      */
