@@ -1696,8 +1696,8 @@ export class ChordStory implements Story {
       for (const [slot, seat] of Object.entries(lowered.seats)) {
         slots[slot] = { ...slots[slot], seat };
       }
-      // Story tier (ADR-268 D2): the builder from getStoryGrammar()
-      // registers 'story', which outranks the standard grammar outright.
+      // Story tier: the builder from getStoryGrammar() registers 'story',
+      // which wins ties with the standard grammar (ADR-384 D2).
       grammar.rule({
         action: actionId,
         parts: lowered.parts,

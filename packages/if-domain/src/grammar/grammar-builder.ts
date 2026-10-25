@@ -324,9 +324,10 @@ export interface GrammarBuilder {
 }
 
 /**
- * Grammar tier (ADR-268 D2): which layer defined the rule. Story-tier rules
- * outrank standard-tier rules unconditionally (before specificity is
- * consulted) — "story overrides platform". Set at the registration entry
+ * Grammar tier: which layer defined the rule. At equal literal specificity a
+ * story-tier rule outranks a standard-tier one; a more specific standard rule
+ * still wins, and a story replaces one by removing it (ADR-384 D2,
+ * `compareGrammarRank`). Set at the registration entry
  * point: the standard grammar's builder registers 'standard'; the story
  * grammar surface (getStoryGrammar()) and the Chord loader register 'story'.
  */
@@ -527,9 +528,8 @@ export interface PatternMatch {
    * Literal specificity (ADR-231 D2b): count of input words consumed by the
    * pattern's literal/alternate tokens (as opposed to slots). A rule whose
    * literals consume words outranks a rule whose unconstrained slot swallows
-   * the same words. Resolution order (ADR-268 D2 without its confidence
-   * term, ADR-384 D1): tier (story over standard) → literalSpecificity desc
-   * → definition order.
+   * the same words. Resolution order (ADR-384 D2, `compareGrammarRank`):
+   * literalSpecificity desc → tier (story over standard) → definition order.
    */
   literalSpecificity?: number;
   semantics?: SemanticProperties; // Derived semantic properties

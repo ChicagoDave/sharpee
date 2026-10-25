@@ -108,8 +108,37 @@
 - **Files**: `packages/if-domain/src/grammar/grammar-builder.ts`, `packages/if-domain/src/grammar/grammar-engine.ts`, `packages/if-domain/src/grammar/rule-order.ts` (new), `packages/if-domain/src/grammar/index.ts`, `packages/parser-en-us/src/english-grammar-engine.ts`, `packages/parser-en-us/src/english-parser.ts`, `packages/parser-en-us/src/parse-failure.ts`, `packages/parser-en-us/CLAUDE.md`, `packages/story-loader/src/loader.ts`, `packages/parser-en-us/tests/`, `packages/story-loader/tests/`
 - **Exit state**: exactly one comparator, called from the engine and the parser (grep); no `maxMatches`; suites green; chain and trees identical to baseline or each moved line listed with old and new text and ruled; Dungeo `wave hands` probe taken to David and his ruling applied or recorded.
 - **Demonstration**: the new tests shown failing against pre-phase source; bundle probes of take off hat and take lamp on the probe story and of Dungeo wave hands and wave stick before and after; the give coin before and after; grep for the comparator's call sites; counts against baseline.
-- **Demonstrated**: 
-- **Status**: PENDING
+- **Demonstrated**: 2026-10-24, session b09060, on 0529c2587 plus this phase's working tree. `R` = `/private/tmp/claude-501/-Users-david-repos-sharpee/c5b810e6-de64-402b-8039-33b7da9cc6cd/scratchpad/ranking`. [verified: parser-en-us suite "458 passed" 2026-10-25T00:21:32Z, after the last source/test edit 00:21:20Z; if-domain/new-suite run "6 passed" 2026-10-25T00:23:03Z; build, tsc, chain, units, trees, other suites and bundle probes reported by session, unverified (no event-log rows)]
+  - **Code.**
+    - New `packages/if-domain/src/grammar/rule-order.ts`: `GrammarRank { literalSpecificity, tier, definitionIndex }` and `compareGrammarRank` (specificity desc, story before standard, earlier definition first), exported from the grammar barrel.
+    - `findMatches` tries every rule in registration order (gated-off rules still skipped first). `maxMatches` (from `GrammarMatchOptions` too) and the story-first iteration are gone, and matches are sorted by the comparator using each rule's definition index.
+    - The parser's candidate sort is deleted, along with `RichCandidate.tier` and `literalSpecificity` (no other reader); candidates keep the engine's order.
+    - `PartialMatchFailure` carries `literalSpecificity` (set at each failure site), `tier` and `definitionIndex` (set in `findMatches`). `analyzeBestFailure` sorts by verb matched, then progress, then the comparator.
+    - Ordering comments were rewritten in `grammar-builder.ts` (the `GrammarTier` and `PatternMatch` docs), `grammar-engine.ts` (`addRule`), `english-parser.ts` and `loader.ts`, along with `parser-en-us/CLAUDE.md`'s resolution paragraph. Obsolete tests were rewritten: `adr-231-d2b-specificity` ("literal specificity beats the story tier") and `english-grammar-engine`'s two `maxMatches` tests (now one: all 21 matches returned, the story rule first at equal specificity).
+  - **Greps.** `compareGrammarRank` is called in `english-grammar-engine.ts:128` and `parse-failure.ts:132` and defined at `rule-order.ts:37`; everything else is comments. `maxMatches` across packages' src and tests: none.
+  - **Tests.** All new suites failed against the pre-phase source where they should and now pass:
+    - `if-domain/tests/grammar/rule-order.test.ts` (6): each key, specificity over tier, tier over definition order, zero only for the same rank.
+    - `parser-en-us/tests/ranking-specificity-first.test.ts` (6). Before: "take off hat" ranked grabbing first; the twelve matches came back as 10; the failure tiebreak picked "later". Now: a specific standard rule beats a broad story rule; story wins at equal specificity; the most specific of 12 matches wins though registered last; failures tie to the earlier definition; progress still outranks the tiebreak; `give coin` is `MISSING_OBJECT`, as before.
+    - `story-loader/tests/ranking-specificity-first.test.ts` (3, real compiler, loader and engine; state assertion on `WearableTrait.worn`). Before, the hat stayed worn because the story's `take the thing` took `take off hat`. Now standard taking-off unwears it; `take lamp` still says "You grab at the lamp."; and with `remove from action taking_off` / `take off the item`, `take off hat` leaves the hat worn.
+  - **Floor.**
+    - `./repokit build dungeo`: exit 0. Root `npx tsc --noEmit -p .`: clean.
+    - Suites: if-domain 107, parser-en-us 458, story-loader 1421 + 1 skipped, world-model 1663, engine 858 + 7 skipped, chord 1720, stdlib 1889 via pnpm.
+    - Chain: 952 passed. Dungeo units: 1722 passed, 11 failed, 10 expected, 2 skipped (`brick-explosion` passed this run, GH #631).
+    - Trees: all 1940 cards byte-identical to Phase 1's dump (`diff` empty).
+  - **Bundle probes.**
+    - Hat scratch story (`R/hat/hat.story`) before Phase 3: `take off hat` → "You can't see any such thing." (grabbing took "off hat"); now covered by the real-path suite.
+    - Dungeo at the start, leaflet in hand, after the change:
+      - `wave hands` / `wave hand` → "You wave. Nobody waves back." (Phase 1: "You can't see any such thing." via dungeo.action.wave);
+      - `hit mailbox with leaflet` → "Your attack has no effect on the small mailbox.";
+      - `dig ground with leaflet` → "You can't see any such thing.";
+      - `burn leaflet with leaflet` → "The leaflet isn't something you can burn.";
+      - `say goodbye` / `say farewell` → "You aren't talking to anyone.";
+      - `give coin` → "What do you want to give?" (unchanged).
+
+      For comparison, Dungeo's own actions answer `hit mailbox` "You can't break that.", `dig ground` "You can't see any such thing.", `burn leaflet` "You can't burn that.", `say hello` "You can't see any such thing.".
+    - Secret Letter `pick up` and `jump up`: not probed, because the bundle's `--exec` can't run an imported story (GH #352).
+  - **Rulings.** On GH #629, David ruled "a" (accept the standard reading) for all census moves: items 5 and 6 (`wave hands`/`hand`, Secret Letter `pick up`) on the recommendation he accepted with "proceed", and items 1–4 and 7 with "a for all five". Nothing in `stories/` changes. The moves are recorded in ADR-384's Consequences.
+- **Status**: DONE
 
 ### Phase 4: Bare-verb prefix rules retired (D5)
 - **Tier**: Medium

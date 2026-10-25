@@ -124,10 +124,12 @@ extendParser(parser: Parser): void {
 **Key points**:
 
 - Use `.define()` for literal patterns or phrasal verbs.
-- Story grammar automatically outranks the standard grammar: `getStoryGrammar()`
-  registers rules at the story tier (ADR-268 — there is no numeric priority;
-  resolution is tier → literal specificity → definition order, and a skipped
-  optional word costs a rule nothing, ADR-384 D1).
+- Story grammar wins ties with the standard grammar: `getStoryGrammar()`
+  registers rules at the story tier. There is no numeric priority; resolution
+  is literal specificity → tier → definition order (ADR-384 D2,
+  `compareGrammarRank` in if-domain), and a skipped optional word costs a rule
+  nothing. A more specific standard line beats a broader story line: to take
+  its words, remove it (`removeRules`, or `remove from action` in Chord).
 - Definition order is semantic: when two story patterns tie on specificity,
   the one defined earlier wins. Don't reorder grammar lines casually.
 - The standard grammar registers through `rule(spec)` (generated); TS stories use `.define()`.

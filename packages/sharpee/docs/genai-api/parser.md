@@ -284,7 +284,7 @@ export declare class EnglishPatternCompiler implements PatternCompiler {
  *              to provide better error messages (Phase 1.2 of parser recommendations)
  */
 import type { ParseErrorCode } from '@sharpee/world-model';
-import type { PatternElement, Seat } from '@sharpee/if-domain';
+import { type GrammarTier, type PatternElement, type Seat } from '@sharpee/if-domain';
 /**
  * Reason why a pattern match failed
  */
@@ -318,6 +318,12 @@ export interface PartialMatchFailure {
     progress: number;
     /** Number of tokens consumed before failure */
     tokensConsumed: number;
+    /** Input words the rule's literals consumed before it failed (its rank's specificity) */
+    literalSpecificity: number;
+    /** The rule's tier (its rank's second key) */
+    tier: GrammarTier;
+    /** The rule's position in registration order (its rank's last key) */
+    definitionIndex: number;
     /** Why the match failed */
     reason: MatchFailureReason;
     /**

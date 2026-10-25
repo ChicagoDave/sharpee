@@ -98,10 +98,6 @@ interface RichCandidate {
   preposition?: IPrepPhrase;
   indirectObject?: INounPhrase;
   pattern: string;
-  /** Grammar rule tier (ADR-268 D2: story outranks standard) */
-  tier: 'standard' | 'story';
-  /** Words consumed by literal pattern tokens (ADR-231 D2b literal-before-slot tiebreak) */
-  literalSpecificity: number;
   action: string;
   // ADR-080 additions
   textSlots?: Map<string, string>;
@@ -396,17 +392,8 @@ export class EnglishParser implements Parser {
       };
     }
     
-    // Full candidate ordering (ADR-268 D2 without its confidence term,
-    // ADR-384 D1): tier (story over standard) → literal specificity desc →
-    // definition order (candidates arrive in engine order;
-    // Array.prototype.sort is stable). This mirrors
-    // EnglishGrammarEngine.findMatches.
-    candidates.sort((a, b) => {
-      if (a.tier !== b.tier) {
-        return a.tier === 'story' ? -1 : 1;
-      }
-      return b.literalSpecificity - a.literalSpecificity;
-    });
+    // Candidates arrive ranked by EnglishGrammarEngine.findMatches
+    // (compareGrammarRank); the first is the best.
     const best = candidates[0];
     
     // Emit candidate selection debug event
@@ -974,8 +961,6 @@ export class EnglishParser implements Parser {
       preposition,
       indirectObject,
       pattern,
-      tier: rule.tier,
-      literalSpecificity: match.literalSpecificity ?? 0,
       action: rule.action,
       // ADR-080 additions
       textSlots,

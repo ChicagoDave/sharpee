@@ -14,7 +14,8 @@ import {
   type CompiledPattern,
   SlotType,
   type SlotMatch,
-  type Seat
+  type Seat,
+  compareGrammarRank
 } from '@sharpee/if-domain';
 import { type Token } from '@sharpee/if-domain';
 import { EnglishPatternCompiler } from './english-pattern-compiler.js';
@@ -65,7 +66,7 @@ function expectationAt(pattern: CompiledPattern, index: number): { expected?: Pa
  */
 type MatchAttemptResult =
   | { success: true; match: PatternMatch }
-  | { success: false; failure: PartialMatchFailure };
+  | { success: false; failure: Omit<PartialMatchFailure, 'tier' | 'definitionIndex'> };
 
 /**
  * English-specific grammar matching engine
@@ -97,59 +98,40 @@ export class EnglishGrammarEngine extends GrammarEngine {
     context: GrammarContext,
     options: GrammarMatchOptions = {}
   ): PatternMatch[] {
-    const matches: PatternMatch[] = [];
+    const ranked: Array<{ match: PatternMatch; definitionIndex: number }> = [];
     const failures: PartialMatchFailure[] = [];
-    const { maxMatches = 10 } = options;
 
-    // ADR-268 D5: iterate story-tier rules first so the maxMatches
-    // early-stop cannot exhaust its budget on standard rules and miss a
-    // story rule that would outrank them all. Within each tier, rules stay
-    // in registration (definition) order — the final tiebreak below.
-    const orderedRules = [
-      ...this.rules.filter((r) => r.tier === 'story'),
-      ...this.rules.filter((r) => r.tier !== 'story'),
-    ];
-
-    // Try each rule
-    for (const rule of orderedRules) {
-      if (!rule.compiledPattern) continue;
+    // Every rule is tried, in registration (definition) order, and every
+    // match is ranked: no cap, so the most specific rule is never cut off.
+    this.rules.forEach((rule, definitionIndex) => {
+      if (!rule.compiledPattern) return;
       // ADR-378 D5: a gated-off rule is not there — neither a match nor a
       // failure, so the input falls through to the rules that remain.
-      if (rule.when && !rule.when(context)) continue;
+      if (rule.when && !rule.when(context)) return;
 
       const result = this.tryMatchRuleWithFailure(rule, tokens, context);
 
       if (result.success) {
-        matches.push(result.match);
-
-        // Stop if we have enough matches
-        if (matches.length >= maxMatches) {
-          break;
-        }
+        ranked.push({ match: result.match, definitionIndex });
       } else {
-        // Collect failures for error reporting
-        failures.push(result.failure);
+        // Collect failures for error reporting, ranked like matches
+        failures.push({ ...result.failure, tier: rule.tier, definitionIndex });
       }
-    }
+    });
 
     // Store failures for later retrieval
     this.lastFailures = failures;
 
-    // Full match ordering (ADR-268 D2 without its confidence term, ADR-384
-    // D1): tier (story over standard) → literal specificity desc →
-    // definition order (rules are iterated tier-first in stable
-    // registration order, and Array.prototype.sort is stable, so equal keys
-    // fall through to definition order).
-    matches.sort((a, b) => {
-      if (a.rule.tier !== b.rule.tier) {
-        return a.rule.tier === 'story' ? -1 : 1;
-      }
-      // Literal-before-slot: literal tokens consuming words outrank an
-      // unconstrained slot swallowing the same words.
-      return (b.literalSpecificity ?? 0) - (a.literalSpecificity ?? 0);
-    });
+    // Literal specificity, then tier, then definition order: the one
+    // ordering of grammar rules.
+    ranked.sort((a, b) =>
+      compareGrammarRank(
+        { literalSpecificity: a.match.literalSpecificity ?? 0, tier: a.match.rule.tier, definitionIndex: a.definitionIndex },
+        { literalSpecificity: b.match.literalSpecificity ?? 0, tier: b.match.rule.tier, definitionIndex: b.definitionIndex }
+      )
+    );
 
-    return matches;
+    return ranked.map((entry) => entry.match);
   }
   
   /**
@@ -183,6 +165,7 @@ export class EnglishGrammarEngine extends GrammarEngine {
             action: rule.action,
             progress: 0,
             tokensConsumed: 0,
+            literalSpecificity: 0,
             reason: 'NOT_ENOUGH_TOKENS',
             ...expectationAt(pattern, 0)
           }
@@ -237,6 +220,7 @@ export class EnglishGrammarEngine extends GrammarEngine {
             action: rule.action,
             progress: patternIndex / totalPatternTokens,
             tokensConsumed: tokenIndex,
+            literalSpecificity,
             reason: 'NOT_ENOUGH_TOKENS',
             matchedVerb,
             ...expectationAt(pattern, patternIndex - 1)
@@ -269,6 +253,7 @@ export class EnglishGrammarEngine extends GrammarEngine {
                 action: rule.action,
                 progress: patternIndex / totalPatternTokens,
                 tokensConsumed: tokenIndex,
+                literalSpecificity,
                 reason,
                 matchedVerb,
                 failedAtToken: token.normalized,
@@ -295,6 +280,7 @@ export class EnglishGrammarEngine extends GrammarEngine {
                 action: rule.action,
                 progress: patternIndex / totalPatternTokens,
                 tokensConsumed: tokenIndex,
+                literalSpecificity,
                 reason,
                 matchedVerb,
                 failedAtToken: token.normalized,
@@ -329,6 +315,7 @@ export class EnglishGrammarEngine extends GrammarEngine {
                 action: rule.action,
                 progress: patternIndex / totalPatternTokens,
                 tokensConsumed: tokenIndex,
+                literalSpecificity,
                 reason: 'SLOT_FAILED',
                 matchedVerb,
                 slotFailure: {
@@ -357,6 +344,7 @@ export class EnglishGrammarEngine extends GrammarEngine {
           action: rule.action,
           progress: 0.9, // Almost matched but had extra tokens
           tokensConsumed: tokenIndex,
+          literalSpecificity,
           reason: 'LEFTOVER_TOKENS',
           matchedVerb,
           failedAtToken: tokens[tokenIndex]?.word

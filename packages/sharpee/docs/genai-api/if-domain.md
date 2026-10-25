@@ -1736,9 +1736,10 @@ export interface GrammarBuilder {
     removeRules(action: string, shapeMatches: (rule: GrammarRule) => boolean, tier?: GrammarTier): number;
 }
 /**
- * Grammar tier (ADR-268 D2): which layer defined the rule. Story-tier rules
- * outrank standard-tier rules unconditionally (before specificity is
- * consulted) — "story overrides platform". Set at the registration entry
+ * Grammar tier: which layer defined the rule. At equal literal specificity a
+ * story-tier rule outranks a standard-tier one; a more specific standard rule
+ * still wins, and a story replaces one by removing it (ADR-384 D2,
+ * `compareGrammarRank`). Set at the registration entry
  * point: the standard grammar's builder registers 'standard'; the story
  * grammar surface (getStoryGrammar()) and the Chord loader register 'story'.
  */
@@ -1927,9 +1928,8 @@ export interface PatternMatch {
      * Literal specificity (ADR-231 D2b): count of input words consumed by the
      * pattern's literal/alternate tokens (as opposed to slots). A rule whose
      * literals consume words outranks a rule whose unconstrained slot swallows
-     * the same words. Resolution order (ADR-268 D2 without its confidence
-     * term, ADR-384 D1): tier (story over standard) → literalSpecificity desc
-     * → definition order.
+     * the same words. Resolution order (ADR-384 D2, `compareGrammarRank`):
+     * literalSpecificity desc → tier (story over standard) → definition order.
      */
     literalSpecificity?: number;
     semantics?: SemanticProperties;
@@ -2009,8 +2009,6 @@ import { PatternCompiler } from './pattern-compiler.js';
  * Grammar matching options
  */
 export interface GrammarMatchOptions {
-    /** Maximum number of matches to return */
-    maxMatches?: number;
     /** Whether to allow partial matches */
     allowPartial?: boolean;
 }
@@ -2027,8 +2025,8 @@ export declare abstract class GrammarEngine {
      * Add a grammar rule.
      *
      * ADR-268: insertion is deliberately unsorted — registration order IS
-     * definition order, the final tiebreak of the resolution order
-     * (tier → literal specificity → definition order). Do not
+     * definition order, the final key of the resolution order
+     * (literal specificity → tier → definition order, `compareGrammarRank`). Do not
      * reintroduce a sort here; it would erase the semantics of file order.
      */
     addRule(rule: GrammarRule): void;
@@ -2083,6 +2081,45 @@ export declare abstract class GrammarEngine {
      */
     createBuilder(tier?: GrammarTier): GrammarBuilder;
 }
+```
+
+### grammar/rule-order
+
+```typescript
+/**
+ * @file Grammar rank comparator — the one ordering of grammar matches
+ * @description Orders grammar matches, and the failures the parser classifies,
+ * by literal specificity (more first), then tier (story before standard),
+ * then definition order (earlier first). Every reader that ranks rules calls
+ * this; no other ordering of grammar rules exists.
+ *
+ * Public interface: GrammarRank, compareGrammarRank.
+ * Owner context: if-domain grammar contract (the English grammar engine and
+ * the parser's failure classifier are the callers).
+ *
+ * References: ADR-384 D2 (supersedes ADR-268 D2), ADR-231 D2b (literal
+ * specificity).
+ */
+import type { GrammarTier } from './grammar-builder.js';
+/**
+ * What a rule is ranked by.
+ */
+export interface GrammarRank {
+    /** Input words consumed by the rule's literal and alternate elements */
+    literalSpecificity: number;
+    /** The registration layer: story outranks standard at equal specificity */
+    tier: GrammarTier;
+    /** The rule's position in registration (definition) order */
+    definitionIndex: number;
+}
+/**
+ * Compare two ranks for sorting, best first.
+ * @param a The first rank
+ * @param b The second rank
+ * @returns Negative when `a` ranks first, positive when `b` does, zero only
+ *   for the same specificity, tier and definition index
+ */
+export declare function compareGrammarRank(a: GrammarRank, b: GrammarRank): number;
 ```
 
 ### grammar/scope-builder

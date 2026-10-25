@@ -5,7 +5,7 @@
  */
 
 import type { ParseErrorCode } from '@sharpee/world-model';
-import type { PatternElement, Seat } from '@sharpee/if-domain';
+import { compareGrammarRank, type GrammarTier, type PatternElement, type Seat } from '@sharpee/if-domain';
 
 /**
  * Reason why a pattern match failed
@@ -56,6 +56,15 @@ export interface PartialMatchFailure {
 
   /** Number of tokens consumed before failure */
   tokensConsumed: number;
+
+  /** Input words the rule's literals consumed before it failed (its rank's specificity) */
+  literalSpecificity: number;
+
+  /** The rule's tier (its rank's second key) */
+  tier: GrammarTier;
+
+  /** The rule's position in registration order (its rank's last key) */
+  definitionIndex: number;
 
   /** Why the match failed */
   reason: MatchFailureReason;
@@ -115,8 +124,12 @@ export function analyzeBestFailure(
   // and stopped on "leftover" tokens (progress 0.9 by construction) outranks
   // `drop :item`'s not-enough-tokens (0.5) for a bare `drop`, and the player
   // gets "I don't understand" instead of "What do you want to drop?" (GH #318).
+  // Failures equal on both are ranked as matches are (ADR-384 D4).
   const sorted = [...failures].sort(
-    (a, b) => (Number(Boolean(b.matchedVerb)) - Number(Boolean(a.matchedVerb))) || (b.progress - a.progress),
+    (a, b) =>
+      (Number(Boolean(b.matchedVerb)) - Number(Boolean(a.matchedVerb))) ||
+      (b.progress - a.progress) ||
+      compareGrammarRank(a, b),
   );
   const best = sorted[0];
 

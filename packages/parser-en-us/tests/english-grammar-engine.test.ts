@@ -256,28 +256,8 @@ describe('EnglishGrammarEngine', () => {
       expect(matches[0].rule.action).toBe('if.action.taking');
     });
     
-    it('should limit matches based on maxMatches option', () => {
-      // Add many rules that would match
+    it('returns every matching rule, ranking a story rule defined last first at equal specificity (ADR-384 D2, D3)', () => {
       for (let i = 0; i < 20; i++) {
-        grammar
-          .define('look')
-          .mapsTo(`if.action.looking${i}`)
-          .build();
-      }
-      
-      const tokens = createTokens(['look']);
-      const context = { world: null, actorId: 'player', currentLocation: 'room', slots: new Map() };
-      const matches = engine.findMatches(tokens, context, { maxMatches: 5 });
-
-      expect(matches).toHaveLength(5);
-    });
-
-    it('story rule survives maxMatches even when defined after enough standard rules (ADR-268 D5)', () => {
-      // Fill the maxMatches budget with standard rules that all match, then
-      // register a story rule last. Story-tier-first iteration must surface
-      // it — a plain registration-order scan would exhaust the budget on the
-      // standard rules and drop the rule that outranks them all.
-      for (let i = 0; i < 5; i++) {
         grammar
           .define('look')
           .mapsTo(`if.action.looking${i}`)
@@ -290,11 +270,12 @@ describe('EnglishGrammarEngine', () => {
 
       const tokens = createTokens(['look']);
       const context = { world: null, actorId: 'player', currentLocation: 'room', slots: new Map() };
-      const matches = engine.findMatches(tokens, context, { maxMatches: 5 });
+      const matches = engine.findMatches(tokens, context);
 
-      expect(matches).toHaveLength(5);
+      expect(matches).toHaveLength(21);
       expect(matches[0].rule.action).toBe('story.action.looking');
       expect(matches[0].rule.tier).toBe('story');
+      expect(matches[1].rule.action).toBe('if.action.looking0');
     });
   });
 });
