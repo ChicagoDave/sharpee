@@ -272,8 +272,10 @@ export class GrammarScopeResolver {
     context: GrammarContext
   ): IEntity[] {
     const world = context.world as WorldModel;
+    // The world's scope surfaces hand back its own entities (IFEntity), typed
+    // here as the core IEntity the grammar contracts speak of
     return this.getEntitiesInScope(constraint, context).filter(
-      (e) => !!e && matchNoun(namingSurfaceOf(world, e as unknown as IFEntity, context.actorId), query) !== null
+      (e) => !!e && matchNoun(namingSurfaceOf(world, e as IFEntity, context.actorId), query) !== null
     );
   }
 }

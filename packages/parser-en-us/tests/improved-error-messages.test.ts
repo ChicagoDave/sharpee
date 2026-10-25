@@ -64,7 +64,7 @@ describe('Improved Error Messages', () => {
       expect(result.context.noun).toBe('grue');
     });
 
-    it('should return SCOPE_VIOLATION when entity found but out of scope', () => {
+    it('should return SCOPE_VIOLATION naming the entity found and the base the slot required (ADR-385 D8)', () => {
       const failures: PartialMatchFailure[] = [{
         pattern: 'take :target',
         action: 'if.action.taking',
@@ -76,34 +76,37 @@ describe('Improved Error Messages', () => {
           slotName: 'target',
           attemptedText: 'lamp',
           reason: 'SCOPE_VIOLATION',
-          outOfScopeEntities: ['brass-lamp']
+          entityId: 'brass-lamp',
+          requiredScope: 'carried'
         }
       }];
 
       const result = analyzeBestFailure(failures, 'take lamp', true);
       expect(result.code).toBe('SCOPE_VIOLATION');
-      expect(result.messageId).toBe('parser.error.scopeViolation');
+      expect(result.messageId).toBe('parser.error.scopeViolation.carried');
+      expect(result.context.entityId).toBe('brass-lamp');
+      expect(result.context.requiredScope).toBe('carried');
     });
 
-    it('should return AMBIGUOUS_INPUT when multiple entities match', () => {
+    it('names the phrase\'s content words on NO_MATCH, never its first token (ADR-385 D8)', () => {
       const failures: PartialMatchFailure[] = [{
-        pattern: 'take :target',
-        action: 'if.action.taking',
+        pattern: 'wind :target',
+        action: 'story.winding',
         progress: 0.5,
         tokensConsumed: 1,
         reason: 'SLOT_FAILED',
-        matchedVerb: 'take',
+        matchedVerb: 'wind',
         slotFailure: {
           slotName: 'target',
-          attemptedText: 'book',
-          reason: 'AMBIGUOUS',
-          candidates: ['red book', 'blue book']
+          attemptedText: 'the widget',
+          reason: 'NO_MATCH',
+          unknownWord: 'widget'
         }
       }];
 
-      const result = analyzeBestFailure(failures, 'take book', true);
-      expect(result.code).toBe('AMBIGUOUS_INPUT');
-      expect(result.messageId).toBe('parser.error.ambiguous');
+      const result = analyzeBestFailure(failures, 'wind the widget', true);
+      expect(result.code).toBe('ENTITY_NOT_FOUND');
+      expect(result.context.noun).toBe('widget');
     });
 
     it('should prefer higher progress failures', () => {

@@ -1331,11 +1331,6 @@ export class EnglishParser implements Parser {
           ? `You can't reach the ${context.noun}.`
           : "You can't reach that.";
         break;
-      case 'AMBIGUOUS_INPUT':
-        message = context.noun
-          ? `Which ${context.noun} do you mean?`
-          : "Which do you mean?";
-        break;
       default:
         message = "I don't understand that.";
     }
@@ -1348,7 +1343,10 @@ export class EnglishParser implements Parser {
       input,
       verb: context.verb,
       failedWord: context.noun || context.verb,
-      slot: context.slot
+      slot: context.slot,
+      // ADR-385 D8: what the gate found and the base it required
+      ...(context.entityId ? { entityId: context.entityId } : {}),
+      ...(context.requiredScope ? { requiredScope: context.requiredScope } : {})
     };
   }
 

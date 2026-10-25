@@ -18,9 +18,10 @@ import {
   ScopeBuilderImpl,
   type ScopeConstraintBuilder
 } from '@sharpee/if-domain';
-import { SlotConsumer, SlotConsumerContext, getNextPatternToken, isPatternDelimiter } from './slot-consumer.js';
+import { SlotConsumer, SlotConsumerContext, getNextPatternToken, isPatternDelimiter, isSlotRefusal, type SlotConsumeResult, type SlotRefusal } from './slot-consumer.js';
 import { GrammarScopeResolver } from '../grammar-scope-resolver.js';
 import { isRecognizedPronoun, getPronounContextManager } from '../pronoun-context.js';
+import type { RequiredScope } from '../parse-failure.js';
 import { isAllWord, isExceptWord, splitLeadingWords, startsNounPhrase } from './noun-phrase-split.js';
 
 /** The list conjunction. English, until the language owns its word lists (step 7). */
@@ -39,7 +40,7 @@ interface Gate {
 export class EntitySlotConsumer implements SlotConsumer {
   readonly slotTypes = [SlotType.ENTITY, SlotType.INSTRUMENT];
 
-  consume(ctx: SlotConsumerContext): SlotMatch | null {
+  consume(ctx: SlotConsumerContext): SlotConsumeResult {
     const { tokens, startIndex } = ctx;
     const DEBUG = ctx.DEBUG || false;
     const nextPatternToken = getNextPatternToken(ctx);
@@ -173,7 +174,7 @@ export class EntitySlotConsumer implements SlotConsumer {
   private consumeEntityWithListDetection(
     ctx: SlotConsumerContext,
     DEBUG: boolean
-  ): SlotMatch | null {
+  ): SlotConsumeResult {
     const { slotName, tokens, startIndex, pattern, slotTokenIndex, rule, context, slotType } = ctx;
     const nextPatternToken = pattern.tokens[slotTokenIndex + 1];
     const items: SlotMatch[] = [];
@@ -206,11 +207,11 @@ export class EntitySlotConsumer implements SlotConsumer {
       }
 
       const consumed = this.consumeItem(span, tokens, gate, nextIsSlot && items.length === 0, DEBUG);
-      if (!consumed) {
+      if (isSlotRefusal(consumed)) {
         if (DEBUG) {
-          console.log(`Failed to consume slot '${slotName}' at '${tokens[currentIndex].word}'`);
+          console.log(`Slot '${slotName}' refused at '${tokens[currentIndex].word}': ${consumed.failure.reason}`);
         }
-        return null;
+        return consumed;
       }
       items.push(...consumed.items);
       allTokens.push(...consumed.tokens);
@@ -255,7 +256,8 @@ export class EntitySlotConsumer implements SlotConsumer {
   /**
    * Consume one item from its maximal span: a whole-item pronoun with a
    * referent, else a name. Returns the item matches (a plural pronoun gives
-   * several) and the tokens consumed, or null when the gate refuses.
+   * several) and the tokens consumed, or the gate's refusal with its reason
+   * (ADR-385 D8).
    *
    * @param span The item's maximal token indices
    * @param tokens The input tokens
@@ -269,7 +271,7 @@ export class EntitySlotConsumer implements SlotConsumer {
     gate: Gate | undefined,
     shortest: boolean,
     DEBUG: boolean
-  ): { items: SlotMatch[]; tokens: number[] } | null {
+  ): { items: SlotMatch[]; tokens: number[] } | SlotRefusal {
     const first = tokens[span[0]];
 
     // A recognised pronoun is a pronoun only as the whole item (ADR-385
@@ -283,9 +285,12 @@ export class EntitySlotConsumer implements SlotConsumer {
           console.log(`Pronoun '${first.normalized}' resolved to: ${referents.map(r => r.entityId).join(', ')}`);
         }
         // The pronoun's entity must be one the slot's base admits, or the
-        // slot fails exactly as a name would
-        if (gate && !referents.every((ref) => this.admitsEntity(ref.entityId, gate))) {
-          return null;
+        // slot fails exactly as a name would: a scope violation naming it
+        if (gate) {
+          const outside = referents.find((ref) => !this.admitsEntity(ref.entityId, gate));
+          if (outside) {
+            return this.refuse(gate, outside.entityId);
+          }
         }
         const items: SlotMatch[] = referents.map((ref) => ({
           tokens: [span[0]],
@@ -319,7 +324,7 @@ export class EntitySlotConsumer implements SlotConsumer {
           return { items: [{ ...item, scope: admitted }], tokens: item.tokens };
         }
       }
-      return null;
+      return this.refusalFor(this.itemMatch(span, tokens), gate);
     }
 
     const item = this.itemMatch(span, tokens);
@@ -328,9 +333,35 @@ export class EntitySlotConsumer implements SlotConsumer {
     }
     const admitted = this.admittedFor(item, gate);
     if (admitted.length === 0) {
-      return null;
+      return this.refusalFor(item, gate);
     }
     return { items: [{ ...item, scope: admitted }], tokens: item.tokens };
+  }
+
+  /**
+   * The gate's refusal of a named item (ADR-385 D8): the matcher is asked
+   * once more over everything the actor can see. A name found is a scope
+   * violation naming that entity and the base the slot required; nothing
+   * found is NO_MATCH naming the phrase's content words.
+   */
+  private refusalFor(item: SlotMatch, gate: Gate): SlotRefusal {
+    const query = { text: this.contentTextOf(item), articles: item.articles ?? [] };
+    const inView = GrammarScopeResolver.findEntitiesByName(query, new ScopeBuilderImpl().visible().build(), gate.context);
+    if (inView.length > 0) {
+      return this.refuse(gate, inView[0].id);
+    }
+    return { refused: true, failure: { reason: 'NO_MATCH', unknownWord: query.text } };
+  }
+
+  /** A scope violation: the entity found, and the base the slot's first constraint required. */
+  private refuse(gate: Gate, entityId: string): SlotRefusal {
+    return { refused: true, failure: { reason: 'SCOPE_VIOLATION', entityId, requiredScope: this.requiredScopeOf(gate) } };
+  }
+
+  /** The base the slot required, as the language words it: carried, touchable, or visible for every other base. */
+  private requiredScopeOf(gate: Gate): RequiredScope {
+    const base = this.scopesOf(gate)[0]?.base;
+    return base === 'carried' || base === 'touchable' ? base : 'visible';
   }
 
   /** The token indices of one item from `start`: up to the conjunction or the next pattern element. */

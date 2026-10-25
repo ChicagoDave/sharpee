@@ -52,22 +52,15 @@ export const parserErrors: Record<string, string | ((ctx: Record<string, any>) =
       ? `You can't see any "${ctx.noun}" here.`
       : "You can't see any such thing.",
 
-  // Scope violation
-  'parser.error.scopeViolation': (ctx) =>
-    ctx.noun
-      ? `You can't reach the ${ctx.noun}.`
-      : "You can't reach that.",
-
-  // Ambiguous input
-  'parser.error.ambiguous': (ctx) => {
-    if (ctx.candidates && ctx.candidates.length > 0) {
-      const options = ctx.candidates.join(', ');
-      return `Which do you mean: ${options}?`;
-    }
-    return ctx.noun
-      ? `Which ${ctx.noun} do you mean?`
-      : "Which do you mean?";
-  },
+  // Scope violation (ADR-385 D8), worded by the base the slot required; the
+  // live templates, which name the entity through the formatter chain, are
+  // registered on the language provider
+  'parser.error.scopeViolation.carried': (ctx) =>
+    ctx.noun ? `You aren't holding the ${ctx.noun}.` : "You aren't holding that.",
+  'parser.error.scopeViolation.touchable': (ctx) =>
+    ctx.noun ? `You can't reach the ${ctx.noun}.` : "You can't reach that.",
+  'parser.error.scopeViolation.visible': (ctx) =>
+    ctx.noun ? `You can't see the ${ctx.noun} from here.` : "You can't see that from here.",
 
   // Generic syntax error
   'parser.error.invalidSyntax': (ctx) =>

@@ -20,7 +20,7 @@ import {
 import { type Token } from '@sharpee/if-domain';
 import { EnglishPatternCompiler } from './english-pattern-compiler.js';
 import { cardinalNumbers, ordinalNumbers, directionMap, englishWords } from '@sharpee/lang-en-us';
-import { SlotConsumerRegistry, SlotConsumerContext, createDefaultRegistry } from './slot-consumers/index.js';
+import { SlotConsumerRegistry, SlotConsumerContext, createDefaultRegistry, isSlotRefusal, type SlotConsumeResult } from './slot-consumers/index.js';
 import type { PartialMatchFailure, SlotFailure } from './parse-failure.js';
 
 /**
@@ -300,13 +300,16 @@ export class EnglishGrammarEngine extends GrammarEngine {
             context
           );
 
-          if (!slotResult) {
+          if (!slotResult || isSlotRefusal(slotResult)) {
             if (patternToken.optional) {
               continue;
             }
-            // Required slot couldn't be filled - collect the attempted text
+            // Required slot couldn't be filled - collect the attempted text.
+            // A consumer's refusal says what was found and why (ADR-385 D8);
+            // without one the failure names the attempted text.
             const remainingTokens = tokens.slice(tokenIndex);
             const attemptedText = remainingTokens.map(t => t.word).join(' ');
+            const refusal = slotResult ? slotResult.failure : { reason: 'NO_MATCH' as const, unknownWord: attemptedText || undefined };
 
             return {
               success: false,
@@ -321,8 +324,7 @@ export class EnglishGrammarEngine extends GrammarEngine {
                 slotFailure: {
                   slotName: patternToken.value,
                   attemptedText: attemptedText || '(nothing)',
-                  reason: 'NO_MATCH',
-                  unknownWord: remainingTokens[0]?.word
+                  ...refusal
                 }
               }
             };
@@ -379,7 +381,7 @@ export class EnglishGrammarEngine extends GrammarEngine {
     pattern: CompiledPattern,
     rule: any, // GrammarRule
     context: GrammarContext
-  ): SlotMatch | null {
+  ): SlotConsumeResult {
     const DEBUG = process.env.PARSER_DEBUG === 'true';
 
     // Find the current slot in the pattern tokens

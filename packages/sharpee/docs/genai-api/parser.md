@@ -290,22 +290,28 @@ import { type GrammarTier, type PatternElement, type Seat } from '@sharpee/if-do
  * Reason why a pattern match failed
  */
 export type MatchFailureReason = 'NO_TOKENS' | 'VERB_MISMATCH' | 'LITERAL_MISMATCH' | 'SLOT_FAILED' | 'LEFTOVER_TOKENS' | 'NOT_ENOUGH_TOKENS';
+/** The scope base a constrained slot required, as the language words it (ADR-385 D8). */
+export type RequiredScope = 'carried' | 'touchable' | 'visible';
 /**
- * Detailed slot failure information
+ * Detailed slot failure information (ADR-385 D8): what the slot refused and why.
  */
 export interface SlotFailure {
     /** Slot name (e.g., 'target', 'container') */
     slotName: string;
     /** Tokens that were tried for this slot */
     attemptedText: string;
-    /** Why the slot failed */
-    reason: 'NO_MATCH' | 'SCOPE_VIOLATION' | 'AMBIGUOUS';
-    /** For NO_MATCH: the word(s) that couldn't be resolved */
+    /**
+     * Why the slot failed: NO_MATCH when the phrase names nothing the actor can
+     * see; SCOPE_VIOLATION when it names something in view that the slot's base
+     * does not admit.
+     */
+    reason: 'NO_MATCH' | 'SCOPE_VIOLATION';
+    /** For NO_MATCH: the phrase's content words (its articles and determiners split off), never its first token */
     unknownWord?: string;
-    /** For SCOPE_VIOLATION: entities found but out of scope */
-    outOfScopeEntities?: string[];
-    /** For AMBIGUOUS: multiple matches found */
-    candidates?: string[];
+    /** For SCOPE_VIOLATION: the entity the matcher found in view */
+    entityId?: string;
+    /** For SCOPE_VIOLATION: the base the slot required */
+    requiredScope?: RequiredScope;
 }
 /**
  * Information about a partial pattern match failure

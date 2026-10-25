@@ -1592,6 +1592,16 @@ export declare class CommandExecutor {
     /**
      * Build the failure result both entries return instead of throwing.
      */
+    /**
+     * The turn result for a parse failure at a constrained slot (ADR-385 D8).
+     *
+     * A SCOPE_VIOLATION carries the language's message id for the base the slot
+     * required and the found entity as `params.entity`, a noun phrase the
+     * formatter chain names ("You aren't holding the brass lantern."). An
+     * ENTITY_NOT_FOUND carries the phrase's content words, named back as a
+     * list item's are ("You can't see any widget here.").
+     */
+    private parseRefusalResult;
     private failedResult;
 }
 export declare function createCommandExecutor(world: WorldModel, actionRegistry: ActionRegistry, eventProcessor: EventProcessor, parser: IParser, systemEvents?: IGenericEventSource<ISystemEvent>, randomService?: RandomService): CommandExecutor;

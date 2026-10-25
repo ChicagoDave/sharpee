@@ -82,6 +82,11 @@ export class EnglishLanguageProvider implements ParserLanguageProvider {
       'core.entity_not_found': "You can't see any such thing.",
       // A list item that names nothing is named back (ADR-385 D5)
       'core.entity_not_found_named': "You can't see any {phrase} here.",
+      // A parse-time scope violation (ADR-385 D8): the slot's base refused an
+      // entity the matcher found in view; worded by the base, naming the entity
+      'parser.error.scopeViolation.carried': "{You} aren't holding {the entity}.",
+      'parser.error.scopeViolation.touchable': "{You} {can't} reach {the entity}.",
+      'parser.error.scopeViolation.visible': "{You} {can't} see {the entity} from here.",
       'core.ambiguous_reference': "Which do you mean?",
       'core.disambiguation_prompt': "Which do you mean: {options}?",
       'core.command_not_understood': "I don't understand that command.",

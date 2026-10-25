@@ -14,6 +14,7 @@ import type { HandlerContext } from '../../src/prose-pipeline/handlers/types';
 const MESSAGES: Record<string, string> = {
   'core.entity_not_found': "You can't see any such thing.",
   'core.entity_not_found_named': "You can't see any {phrase} here.",
+  'parser.error.scopeViolation.carried': "You aren't holding {entity}.",
 };
 
 const context = {
@@ -32,6 +33,14 @@ describe('command.failed names a list item that names nothing (ADR-385 D5)', () 
   it('renders the named refusal when the failure carries the item phrase', () => {
     const blocks = handleCommandFailed(failed({ reason: 'Validation failed: ENTITY_NOT_FOUND', phrase: 'widget' }), context);
     expect(textOf(blocks)).toBe("You can't see any widget here.");
+  });
+
+  it('renders a scope violation by its message id and params (ADR-385 D8)', () => {
+    const blocks = handleCommandFailed(
+      failed({ reason: 'Parse failed: SCOPE_VIOLATION', messageId: 'parser.error.scopeViolation.carried', params: { entity: 'the brass lantern' } }),
+      context
+    );
+    expect(textOf(blocks)).toBe("You aren't holding the brass lantern.");
   });
 
   it('keeps the standing refusal when no phrase is carried', () => {

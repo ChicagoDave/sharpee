@@ -292,6 +292,12 @@ export interface IParseError {
   /** Which slot failed (directObject, indirectObject) */
   slot?: string;
 
+  /** For SCOPE_VIOLATION: the entity the matcher found in view but the slot's base did not admit (ADR-385 D8) */
+  entityId?: string;
+
+  /** For SCOPE_VIOLATION: the base the slot required, which words the message */
+  requiredScope?: 'carried' | 'touchable' | 'visible';
+
   /** Suggestion for correction */
   suggestion?: string;
 

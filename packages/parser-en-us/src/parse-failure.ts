@@ -18,8 +18,11 @@ export type MatchFailureReason =
   | 'LEFTOVER_TOKENS'     // Pattern consumed but tokens remain
   | 'NOT_ENOUGH_TOKENS';  // Not enough tokens for pattern
 
+/** The scope base a constrained slot required, as the language words it (ADR-385 D8). */
+export type RequiredScope = 'carried' | 'touchable' | 'visible';
+
 /**
- * Detailed slot failure information
+ * Detailed slot failure information (ADR-385 D8): what the slot refused and why.
  */
 export interface SlotFailure {
   /** Slot name (e.g., 'target', 'container') */
@@ -28,17 +31,21 @@ export interface SlotFailure {
   /** Tokens that were tried for this slot */
   attemptedText: string;
 
-  /** Why the slot failed */
-  reason: 'NO_MATCH' | 'SCOPE_VIOLATION' | 'AMBIGUOUS';
+  /**
+   * Why the slot failed: NO_MATCH when the phrase names nothing the actor can
+   * see; SCOPE_VIOLATION when it names something in view that the slot's base
+   * does not admit.
+   */
+  reason: 'NO_MATCH' | 'SCOPE_VIOLATION';
 
-  /** For NO_MATCH: the word(s) that couldn't be resolved */
+  /** For NO_MATCH: the phrase's content words (its articles and determiners split off), never its first token */
   unknownWord?: string;
 
-  /** For SCOPE_VIOLATION: entities found but out of scope */
-  outOfScopeEntities?: string[];
+  /** For SCOPE_VIOLATION: the entity the matcher found in view */
+  entityId?: string;
 
-  /** For AMBIGUOUS: multiple matches found */
-  candidates?: string[];
+  /** For SCOPE_VIOLATION: the base the slot required */
+  requiredScope?: RequiredScope;
 }
 
 /**
@@ -150,25 +157,17 @@ export function analyzeBestFailure(
     }
 
     if (sf.reason === 'SCOPE_VIOLATION') {
+      // The language words the violation by the base the slot required and
+      // names the entity found (ADR-385 D8); the engine binds the entity
       return {
         code: 'SCOPE_VIOLATION',
-        messageId: 'parser.error.scopeViolation',
+        messageId: `parser.error.scopeViolation.${sf.requiredScope ?? 'visible'}`,
         context: {
           verb: best.matchedVerb,
           noun: sf.attemptedText,
-          slot: sf.slotName
-        }
-      };
-    }
-
-    if (sf.reason === 'AMBIGUOUS') {
-      return {
-        code: 'AMBIGUOUS_INPUT',
-        messageId: 'parser.error.ambiguous',
-        context: {
-          verb: best.matchedVerb,
-          noun: sf.attemptedText,
-          candidates: sf.candidates
+          slot: sf.slotName,
+          entityId: sf.entityId,
+          requiredScope: sf.requiredScope ?? 'visible'
         }
       };
     }

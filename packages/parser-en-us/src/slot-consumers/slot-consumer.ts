@@ -12,6 +12,26 @@ import {
   type PatternToken
 } from '@sharpee/if-domain';
 import { type Token } from '@sharpee/if-domain';
+import type { SlotFailure } from '../parse-failure.js';
+
+/**
+ * A consumer's refusal with its reason (ADR-385 D8): what the slot found and
+ * why it would not take it. The grammar engine records it as the slot's
+ * failure, so the player hears "You aren't holding the brass lantern."
+ * rather than a bare "I don't understand".
+ */
+export interface SlotRefusal {
+  refused: true;
+  failure: Pick<SlotFailure, 'reason' | 'unknownWord' | 'entityId' | 'requiredScope'>;
+}
+
+/** What a consumer returns: a match, a refusal with its reason, or null (nothing to say). */
+export type SlotConsumeResult = SlotMatch | SlotRefusal | null;
+
+/** Whether a result that may be a refusal is one. */
+export function isSlotRefusal<T>(result: T | SlotRefusal): result is SlotRefusal {
+  return typeof result === 'object' && result !== null && 'refused' in result && result.refused === true;
+}
 
 /**
  * Context passed to slot consumers containing all information needed for consumption
@@ -57,9 +77,10 @@ export interface SlotConsumer {
   /**
    * Attempt to consume tokens for this slot
    * @param ctx The consumption context
-   * @returns SlotMatch if successful, null if no match
+   * @returns SlotMatch if successful; a SlotRefusal when the slot refused
+   *   for a reason worth telling the player; null when there is no match
    */
-  consume(ctx: SlotConsumerContext): SlotMatch | null;
+  consume(ctx: SlotConsumerContext): SlotConsumeResult;
 }
 
 /**
