@@ -194,7 +194,7 @@
 - **Exit state**: all earlier phases DONE; plan status DONE; Close-out present. The plan is not archived (steps 5 and 7 use the directory).
 - **Demonstration**: greps for the removed names (matchEntityName, QUERY_ARTICLES, nonModifiers, getExcludedNames, orRule, includeRules, candidates); final chain, tree, suite and turbo counts; the four `--check`s fresh.
 - **Demonstrated**: 
-- **Status**: PENDING
+- **Status**: CURRENT (since 2026-10-25)
 
 ## Sequencing note
 Phases 2 → 3 → 4 → 5 are sequential by real dependency: the matcher must exist before the validator and the gate share it; the parser's single article/determiner split must exist before the gate and validator stop stripping; the gate's scope travel (4) precedes list resolution (5) because each list item's `SlotMatch` carries its own scope; `directObjects` (5) carries the tied item's span that Phase 8 needs. Phase 6 depends on the gate's matcher (4) but not on lists, and could precede Phase 5. Phase 7 is independent of 4-6 in code (the scope builder and world-index touch no shared site once Phase 2 has exported the matcher) and could run any time after Phase 2. Phase 8 needs Phase 5's tied-item prompt. Splitting this way attributes each text move to one decision: Phase 3 (parser split), Phase 4 (gate strictness, D4 narrowing), Phase 5 (lists and pronoun context), Phase 6 (D8 lines), Phase 8 (answered prompts). Phase 1 is first because every Dungeo-affecting prediction in the ADR's Consequences is inferred from code and unprobed, and each ends in a ruling David owns.
