@@ -114,7 +114,8 @@ export declare class EnglishParser implements Parser {
      * `head` (its last word) and the `modifiers` (the words before the head).
      * A pronoun-resolved match carries the referent's name as its text with
      * no split, so the whole of it is content. A bare all-phrase has no
-     * content words.
+     * content words. A constrained slot's admitted ids travel as `scope`
+     * (ADR-385 D4).
      *
      * @param slot The slot match, its items or exclusions
      * @returns The noun phrase, with any pre-resolved entity id (ADR-089)
@@ -495,7 +496,7 @@ export type { Parser as ParserInterface } from '@sharpee/if-domain';
 export type { PartialMatchFailure, SlotFailure, MatchFailureReason } from './parse-failure.js';
 export { analyzeBestFailure } from './parse-failure.js';
 export type { EntityReference, PronounContext, RecognizedPronoun } from './pronoun-context.js';
-export { PronounContextManager, isRecognizedPronoun, RECOGNIZED_PRONOUNS, INANIMATE_IT, INANIMATE_THEM } from './pronoun-context.js';
+export { PronounContextManager, getPronounContextManager, isRecognizedPronoun, RECOGNIZED_PRONOUNS, INANIMATE_IT, INANIMATE_THEM } from './pronoun-context.js';
 /**
  * Package metadata
  */

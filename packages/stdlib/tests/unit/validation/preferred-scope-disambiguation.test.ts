@@ -50,8 +50,7 @@ function dropCommand(rawText: string): IParsedCommand {
         head,
         modifiers: words.slice(0, -1),
         articles: [],
-        determiners: [],
-        candidates: [rawText.toLowerCase()]
+        determiners: []
       }
     },
     pattern: 'VERB_NOUN',

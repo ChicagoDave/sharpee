@@ -15,14 +15,13 @@ import { EnglishGrammarEngine } from '../src/english-grammar-engine';
 import { analyzeBestFailure } from '../src/parse-failure';
 import { EnglishLanguageProvider } from '@sharpee/lang-en-us';
 import { vocabularyRegistry, PatternSyntaxError, SlotType, type Token, type GrammarContext } from '@sharpee/if-domain';
+import { WorldModel } from '@sharpee/world-model';
 
-const things = ['coin', 'lamp', 'pear', 'box'].map((name) => ({
-  id: name,
-  name,
-  attributes: { name },
-  visible: true,
-  portable: true,
-}));
+// Real entities: the gate reads their naming surface through the one noun matcher (ADR-385 D3)
+const scratch = new WorldModel();
+const things = ['coin', 'lamp', 'pear', 'box'].map((name) =>
+  Object.assign(scratch.createEntity(name, 'item'), { visible: true, portable: true }),
+);
 
 /** A room holding every thing; the player carries only the coin. */
 class Room {
@@ -39,7 +38,7 @@ class Room {
     return things;
   }
   getCarriedEntities() {
-    return things.filter((t) => t.id === 'coin');
+    return things.filter((t) => t.name === 'coin');
   }
   getVisible() {
     return things;
@@ -48,7 +47,7 @@ class Room {
     return things;
   }
   getCarriedAndWorn() {
-    return { carried: things.filter((t) => t.id === 'coin'), worn: [] };
+    return { carried: things.filter((t) => t.name === 'coin'), worn: [] };
   }
 }
 

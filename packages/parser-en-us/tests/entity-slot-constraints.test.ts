@@ -9,16 +9,17 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { EnglishParser } from '../src/english-parser';
 import { ParserLanguageProvider, GrammarBuilder, ScopeBuilder } from '@sharpee/if-domain';
+import { WorldModel, type IFEntity } from '@sharpee/world-model';
 
-/** Minimal entity shape the scope resolver reads */
-interface MockEntity {
-  id: string;
-  name: string;
-  attributes: Record<string, unknown>;
-  visible: boolean;
-  magical?: boolean;
-  creature?: boolean;
-}
+/**
+ * A real entity (the gate reads its naming surface through the one noun
+ * matcher, ADR-385 D3) carrying the flags the mock world's property filters
+ * read.
+ */
+type MockEntity = IFEntity & { visible: boolean; magical?: boolean; creature?: boolean };
+const scratch = new WorldModel();
+const thing = (name: string, flags: { visible: boolean; magical?: boolean; creature?: boolean }): MockEntity =>
+  Object.assign(scratch.createEntity(name, 'item'), flags) as MockEntity;
 
 const languageProvider: ParserLanguageProvider = {
   getVerbs: () => [],
@@ -34,12 +35,14 @@ const languageProvider: ParserLanguageProvider = {
 
 /** A crystal and an orb (magical), a sword (not), a dragon (a creature), all visible */
 class MockWorldModel {
-  private entities = new Map<string, MockEntity>([
-    ['crystal', { id: 'crystal', name: 'crystal', attributes: { name: 'crystal' }, visible: true, magical: true }],
-    ['orb', { id: 'orb', name: 'orb', attributes: { name: 'orb' }, visible: true, magical: true }],
-    ['sword', { id: 'sword', name: 'sword', attributes: { name: 'sword' }, visible: true }],
-    ['dragon', { id: 'dragon', name: 'dragon', attributes: { name: 'dragon' }, visible: true, creature: true }]
-  ]);
+  private entities = new Map<string, MockEntity>(
+    [
+      thing('crystal', { visible: true, magical: true }),
+      thing('orb', { visible: true, magical: true }),
+      thing('sword', { visible: true }),
+      thing('dragon', { visible: true, creature: true })
+    ].map((e) => [e.id, e])
+  );
 
   getEntity(id: string): MockEntity | undefined {
     return this.entities.get(id);

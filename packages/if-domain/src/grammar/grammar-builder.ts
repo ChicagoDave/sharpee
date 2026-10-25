@@ -508,6 +508,10 @@ export interface SlotMatch {
   articles?: string[];     // Leading articles, normalized ("the", "a", "an")
   determiners?: string[];  // Leading determiners, normalized ("my", "some", "all"); for an all-phrase, the all word first
   ownedByActor?: boolean;  // A determiner marked the phrase as the actor's own ("my")
+  // The entity ids a constrained slot admitted at parse time (ADR-385 D4), for
+  // the validator to resolve among; absent for an unconstrained slot. A list
+  // item carries its own.
+  scope?: string[];
   // Multi-object support (ADR-080 Phase 2)
   isAll?: boolean;        // True if "all" keyword
   isList?: boolean;       // True if "X and Y" list

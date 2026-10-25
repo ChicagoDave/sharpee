@@ -70,7 +70,6 @@ describe('Scope Integration Tests', () => {
           verb: { tokens: [0], text: 'take', head: 'take' },
           directObject: { 
             text: 'gem',
-            candidates: ['gem'],
             modifiers: []
           }
         },
@@ -103,7 +102,6 @@ describe('Scope Integration Tests', () => {
           verb: { tokens: [0], text: 'take', head: 'take' },
           directObject: { 
             text: 'coin',
-            candidates: ['coin'],
             modifiers: []
           }
         },
@@ -135,13 +133,11 @@ describe('Scope Integration Tests', () => {
           verb: { tokens: [0], text: 'throw', head: 'throw' },
           directObject: {
             text: 'rock',
-            candidates: ['rock'],
             modifiers: []
           },
           preposition: 'at',
           indirectObject: {
             text: 'window',
-            candidates: ['window'],
             modifiers: []
           }
         },
@@ -169,13 +165,11 @@ describe('Scope Integration Tests', () => {
           verb: { tokens: [0], text: 'throw', head: 'throw' },
           directObject: { 
             text: 'rock',
-            candidates: ['rock'],
             modifiers: []
           },
           preposition: 'at',
           indirectObject: {
             text: 'window',
-            candidates: ['window'],
             modifiers: []
           }
         },
@@ -217,7 +211,6 @@ describe('Scope Integration Tests', () => {
           preposition: 'to',
           directObject: { 
             text: 'chime',
-            candidates: ['chime'],
             modifiers: []
           }
         },
@@ -255,7 +248,6 @@ describe('Scope Integration Tests', () => {
           verb: { tokens: [0], text: 'smell', head: 'smell' },
           directObject: { 
             text: 'cheese',
-            candidates: ['cheese'],
             modifiers: []
           }
         },
@@ -294,7 +286,6 @@ describe('Scope Integration Tests', () => {
           verb: { tokens: [0], text: 'smell', head: 'smell' },
           directObject: {
             text: 'cheese',
-            candidates: ['cheese'],
             modifiers: []
           }
         },
@@ -321,7 +312,6 @@ describe('Scope Integration Tests', () => {
           verb: { tokens: [0], text: 'take', head: 'take' },
           directObject: { 
             text: 'coin',
-            candidates: ['coin'],
             modifiers: []
           }
         },

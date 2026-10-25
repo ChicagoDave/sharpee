@@ -200,12 +200,15 @@ function expandList(
   for (const item of items) {
     const searchTerm = (item.head || item.text).toLowerCase();
 
-    // Find matching entity in scope
-    const match = scopeCandidates.find(e => {
-      const name = e.name.toLowerCase();
-      const aliases = getEntityAliases(e).map(a => a.toLowerCase());
-      return name === searchTerm || aliases.includes(searchTerm);
-    });
+    // A pronoun item carries its entity (ADR-385 D6); a named item matches
+    // by name or alias until D5 moves lists onto the matcher
+    const match = item.entityId
+      ? scopeCandidates.find(e => e.id === item.entityId)
+      : scopeCandidates.find(e => {
+          const name = e.name.toLowerCase();
+          const aliases = getEntityAliases(e).map(a => a.toLowerCase());
+          return name === searchTerm || aliases.includes(searchTerm);
+        });
 
     if (match) {
       // Apply filter if provided

@@ -91,8 +91,7 @@ function commandFor(
         head,
         modifiers,
         articles,
-        determiners: [],
-        candidates: [rawText.toLowerCase()]
+        determiners: []
       }
     },
     pattern: 'VERB_NOUN',

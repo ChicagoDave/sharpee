@@ -9,17 +9,16 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { EnglishParser } from '../src/english-parser';
 import { ParserLanguageProvider, GrammarBuilder, ScopeBuilder } from '@sharpee/if-domain';
-/** Minimal entity shape used by mock world model in these tests */
-interface MockEntity {
-  id: string;
-  name: string;
-  attributes: Record<string, unknown>;
-  visible: boolean;
-  magical?: boolean;
-  portable?: boolean;
-  weapon?: boolean;
-  creature?: boolean;
-}
+import { WorldModel, type IFEntity } from '@sharpee/world-model';
+
+/**
+ * A real entity (the gate reads its naming surface through the one noun
+ * matcher, ADR-385 D3) carrying the flags the mock world's property filters read.
+ */
+type Flags = { visible: boolean; magical?: boolean; portable?: boolean; weapon?: boolean; creature?: boolean };
+type MockEntity = IFEntity & Flags;
+const scratch = new WorldModel();
+const thing = (name: string, flags: Flags): MockEntity => Object.assign(scratch.createEntity(name, 'item'), flags) as MockEntity;
 
 // Mock language provider
 const mockLanguageProvider: ParserLanguageProvider = {
@@ -52,30 +51,14 @@ class MockWorldModel {
   private entities: Map<string, MockEntity> = new Map();
 
   constructor() {
-    this.entities.set('crystal', {
-      id: 'crystal',
-      name: 'crystal',
-      attributes: { name: 'crystal' },
-      visible: true,
-      magical: true
-    });
-
-    this.entities.set('sword', {
-      id: 'sword',
-      name: 'sword',
-      attributes: { name: 'sword' },
-      visible: true,
-      portable: true,
-      weapon: true
-    });
-
-    this.entities.set('dragon', {
-      id: 'dragon',
-      name: 'dragon',
-      attributes: { name: 'dragon' },
-      visible: true,
-      creature: true
-    });
+    for (const e of [
+      thing('crystal', { visible: true, magical: true }),
+      thing('sword', { visible: true, portable: true, weapon: true }),
+      thing('dragon', { visible: true, creature: true })
+    ]) {
+      // keyed by name: the tests reach entities as `getEntity('sword')`
+      this.entities.set(e.name, e);
+    }
   }
 
   getEntity(id: string): MockEntity | undefined {
@@ -193,12 +176,11 @@ describe('Story Grammar API', () => {
         .mapsTo('story.action.attacking')
         .build();
 
-      // Move sword to inventory
-      world['entities'].set('sword', {
-        ...world.getEntity('sword')!,
-        visible: false
-      });
-      world['getCarriedEntities'] = () => [world.getEntity('sword')!];
+      // Move sword to inventory (the entity itself: a spread copy would lose
+      // the real entity's methods the gate reads)
+      const sword = world.getEntity('sword')!;
+      sword.visible = false;
+      world['getCarriedEntities'] = () => [sword];
 
       const result = parser.parse('attack dragon with sword');
       expect(result.success).toBe(true);

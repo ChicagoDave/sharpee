@@ -123,6 +123,13 @@ export interface INounPhrase {
    * (ADR-385 D2).
    */
   ownedByActor?: boolean;
+  /**
+   * The entity ids a constrained grammar slot admitted at parse time
+   * (ADR-385 D4). The validator resolves such a phrase only among its own
+   * candidates that are also here; the set narrows and never adds. Absent
+   * for a phrase from an unconstrained slot. A list item carries its own.
+   */
+  scope?: import('@sharpee/core').EntityId[];
 
   // ADR-080 additions for multi-object support
   /** True if this represents "all" (e.g., "take all") */

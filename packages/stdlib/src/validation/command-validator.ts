@@ -426,6 +426,14 @@ export class CommandValidator implements CommandValidator {
       candidates = this.findCandidates(ref);
     }
 
+    // ADR-385 D4: a constrained grammar slot's admitted ids narrow the
+    // candidates and never add to them, so the validator never finds an
+    // entity the gate rejected and never misses one it admitted.
+    if (ref.scope) {
+      const admitted = new Set(ref.scope);
+      candidates = candidates.filter((e) => admitted.has(e.id));
+    }
+
     // ADR-385 D2: `my` narrows the phrase to what the player carries or
     // wears when something there matches; otherwise the phrase resolves as
     // if the determiner were absent (`take my lantern` with the lantern on

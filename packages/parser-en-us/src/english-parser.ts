@@ -960,7 +960,8 @@ export class EnglishParser implements Parser {
    * `head` (its last word) and the `modifiers` (the words before the head).
    * A pronoun-resolved match carries the referent's name as its text with
    * no split, so the whole of it is content. A bare all-phrase has no
-   * content words.
+   * content words. A constrained slot's admitted ids travel as `scope`
+   * (ADR-385 D4).
    *
    * @param slot The slot match, its items or exclusions
    * @returns The noun phrase, with any pre-resolved entity id (ADR-089)
@@ -979,6 +980,7 @@ export class EnglishParser implements Parser {
       articles,
       determiners,
       ...(slot.ownedByActor ? { ownedByActor: true } : {}),
+      ...(slot.scope ? { scope: slot.scope } : {}),
       ...(slot.entityId ? { entityId: slot.entityId } : {})
     };
   }

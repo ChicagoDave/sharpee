@@ -1901,6 +1901,7 @@ export interface SlotMatch {
     articles?: string[];
     determiners?: string[];
     ownedByActor?: boolean;
+    scope?: string[];
     isAll?: boolean;
     isList?: boolean;
     items?: SlotMatch[];

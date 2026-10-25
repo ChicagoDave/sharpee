@@ -118,8 +118,7 @@ describe('CommandValidator (Golden Pattern)', () => {
           head: 'ball',
               modifiers: [],
               articles: [],
-              determiners: [],
-              candidates: ['ball']
+              determiners: []
             }
           },
           pattern: 'VERB_NOUN'        };
@@ -161,8 +160,7 @@ describe('CommandValidator (Golden Pattern)', () => {
           head: 'box',
           modifiers: [],
           articles: [],
-          determiners: [],
-          candidates: ['box']
+          determiners: []
         }
       };
 
@@ -200,8 +198,7 @@ describe('CommandValidator (Golden Pattern)', () => {
             head: noun,
             modifiers: [],
             articles: [],
-            determiners: [],
-            candidates: [noun]
+            determiners: []
           }
         };
 
@@ -248,8 +245,7 @@ describe('CommandValidator (Golden Pattern)', () => {
           head: 'ball',
           modifiers: ['red'],
           articles: [],
-          determiners: [],
-          candidates: ['ball']
+          determiners: []
         }
       };
 
@@ -271,8 +267,7 @@ describe('CommandValidator (Golden Pattern)', () => {
           head: 'ball',
           modifiers: ['blue'],
           articles: [],
-          determiners: [],
-          candidates: ['blue', 'ball']
+          determiners: []
         }
       };
 
@@ -318,8 +313,7 @@ describe('CommandValidator (Golden Pattern)', () => {
           head: 'yellow',  // "yellow" is the head noun itself
           modifiers: [],   // No modifiers - it's a bare adjective
           articles: [],
-          determiners: [],
-          candidates: ['yellow']
+          determiners: []
         }
       };
 
@@ -351,8 +345,7 @@ describe('CommandValidator (Golden Pattern)', () => {
           head: 'ball',
           modifiers: [],
           articles: [],
-          determiners: [],
-          candidates: ['ball']
+          determiners: []
         }
       };
 
@@ -378,8 +371,7 @@ describe('CommandValidator (Golden Pattern)', () => {
           head: 'key',
           modifiers: [],
           articles: [],
-          determiners: [],
-          candidates: ['key']
+          determiners: []
         }
       };
 
@@ -453,8 +445,7 @@ describe('CommandValidator (Golden Pattern)', () => {
           head: 'box',
           modifiers: [],
           articles: [],
-          determiners: [],
-          candidates: ['box']
+          determiners: []
         }
       };
 
@@ -492,8 +483,7 @@ describe('CommandValidator (Golden Pattern)', () => {
           head: 'ball',
           modifiers: [],
           articles: [],
-          determiners: [],
-          candidates: ['ball']
+          determiners: []
         }
       };
 
@@ -534,8 +524,7 @@ describe('CommandValidator (Golden Pattern)', () => {
           head: 'ball',
           modifiers: ['small'],
           articles: [],
-          determiners: [],
-          candidates: ['small', 'ball']
+          determiners: []
         }
       };
 
@@ -567,8 +556,7 @@ describe('CommandValidator (Golden Pattern)', () => {
           head: 'container',
           modifiers: [],
           articles: [],
-          determiners: [],
-          candidates: ['container']
+          determiners: []
         }
       };
 
@@ -598,8 +586,7 @@ describe('CommandValidator (Golden Pattern)', () => {
           head: 'box',
           modifiers: [],
           articles: [],
-          determiners: [],
-          candidates: ['box']
+          determiners: []
         }
       };
 
@@ -641,8 +628,7 @@ describe('CommandValidator (Golden Pattern)', () => {
           head: 'ball',
           modifiers: [],
           articles: [],
-          determiners: [],
-          candidates: ['ball']
+          determiners: []
         },
         preposition: { tokens: [2], text: 'in' },
         indirectObject: {
@@ -651,8 +637,7 @@ describe('CommandValidator (Golden Pattern)', () => {
           head: 'box',
           modifiers: [],
           articles: [],
-          determiners: [],
-          candidates: ['box']
+          determiners: []
         }
       };
 

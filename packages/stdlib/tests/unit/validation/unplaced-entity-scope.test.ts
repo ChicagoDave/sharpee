@@ -41,8 +41,7 @@ function wearCommand(rawText: string): IParsedCommand {
         head: words[words.length - 1],
         modifiers: words.slice(0, -1),
         articles: [],
-        determiners: [],
-        candidates: [rawText.toLowerCase()],
+        determiners: []
       },
     },
     pattern: 'VERB_NOUN',

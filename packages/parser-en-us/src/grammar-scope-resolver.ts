@@ -15,6 +15,10 @@
  * parse-time gate must not guess) and WARNS: silent degradation is the
  * defect class ADR-273 exists to kill.
  *
+ * Which entities a phrase names is the one noun matcher's answer (ADR-385
+ * D3): `findEntitiesByName` asks `matchNoun` over each entity's naming
+ * surface, exactly as the validator does, so the two layers cannot disagree.
+ *
  * NOT the same as the world-model's RuleScopeEvaluator (rule-based pre-parse
  * vocabulary) or the stdlib's StandardScopeResolver (validation-phase entity
  * resolution with disambiguation).
@@ -27,6 +31,7 @@ import {
   type GrammarContext 
 } from '@sharpee/if-domain';
 import { type IEntity } from '@sharpee/core';
+import { matchNoun, namingSurfaceOf, type IFEntity, type NounQuery, type WorldModel } from '@sharpee/world-model';
 
 /**
  * Entity with optional trait methods (duck-typed for IFEntity compatibility).
@@ -248,76 +253,27 @@ export class GrammarScopeResolver {
   }
 
   /**
-   * Get entity names and aliases for matching
-   * Supports both legacy attributes.name and IdentityTrait patterns
-   */
-  private static getEntityNames(entity: IEntity): string[] {
-    const names: string[] = [];
-
-    // Check attributes (legacy pattern)
-    if (entity.attributes) {
-      if (entity.attributes.displayName) {
-        names.push(String(entity.attributes.displayName));
-      }
-      if (entity.attributes.name) {
-        names.push(String(entity.attributes.name));
-      }
-    }
-
-    // Check IdentityTrait (via .get() method)
-    const traitEntity = entity as ITraitAwareEntity;
-    if (typeof traitEntity.get === 'function') {
-      const identity = traitEntity.get('identity');
-      if (identity && typeof identity === 'object') {
-        if (identity.name) {
-          names.push(String(identity.name));
-        }
-        // Also check aliases
-        if (Array.isArray(identity.aliases)) {
-          names.push(...identity.aliases.map(String));
-        }
-      }
-    }
-
-    return names;
-  }
-
-  /**
-   * Find entities by name in a given scope.
+   * The entities in a scope base that a noun phrase names (ADR-385 D3).
    *
-   * `name` is the phrase's content words: the slot consumer has already
-   * split its leading articles and determiners off (ADR-385 D2), so `wind
-   * the clock` and `wind my clock` gate as `wind clock`, and nothing is
-   * stripped here. Matching is exact first (name or alias), then substring;
-   * ADR-385 D3 moves it onto the one noun matcher.
+   * Asks the one noun matcher over each entity's naming surface, so an
+   * adjective admits here as it does in the validator and a substring never
+   * does. The query is the phrase's content words with the articles the slot
+   * consumer split off (ADR-385 D2), so a name beginning with an article
+   * ("The Grail") still matches exactly.
+   *
+   * @param query The phrase: content text and its leading articles
+   * @param constraint The slot's scope constraint (base and filters)
+   * @param context The grammar context (world, actor, location)
+   * @returns The admitted entities, in the base's order
    */
   static findEntitiesByName(
-    name: string,
+    query: NounQuery,
     constraint: ScopeConstraint,
     context: GrammarContext
   ): IEntity[] {
-    const entitiesInScope = this.getEntitiesInScope(constraint, context);
-
-    const matchesFor = (searchName: string): IEntity[] => {
-      // Try exact match first (name or any alias)
-      const exactMatches = entitiesInScope.filter(e => {
-        if (!e) return false;
-        const names = this.getEntityNames(e);
-        return names.some(n => n.toLowerCase() === searchName);
-      });
-
-      if (exactMatches.length > 0) {
-        return exactMatches;
-      }
-
-      // Try partial match
-      return entitiesInScope.filter(e => {
-        if (!e) return false;
-        const names = this.getEntityNames(e);
-        return names.some(n => n.toLowerCase().includes(searchName));
-      });
-    };
-
-    return matchesFor(name.toLowerCase());
+    const world = context.world as WorldModel;
+    return this.getEntitiesInScope(constraint, context).filter(
+      (e) => !!e && matchNoun(namingSurfaceOf(world, e as unknown as IFEntity, context.actorId), query) !== null
+    );
   }
 }

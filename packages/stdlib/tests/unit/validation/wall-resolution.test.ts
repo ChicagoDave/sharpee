@@ -76,8 +76,7 @@ function examineCommand(rawText: string): IParsedCommand {
         head,
         modifiers,
         articles: [],
-        determiners: [],
-        candidates: [head],
+        determiners: []
       },
     },
     pattern: 'VERB_NOUN',
