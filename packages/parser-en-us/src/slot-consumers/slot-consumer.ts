@@ -1,6 +1,15 @@
 /**
  * @file Slot Consumer Interface
- * @description Interface for slot consumption strategies (ADR-088)
+ * @description The contract between the grammar engine and the slot consumers
+ * (ADR-088). A consumer answers one question: from this token, which spans
+ * could this slot take? It returns every extent it admits, longest first, and
+ * the engine's search over the pattern decides which one survives; a consumer
+ * never reads the next pattern element and never chooses between its own
+ * readings (ADR-386 D1, D2).
+ *
+ * Public interface: SlotConsumer, SlotConsumerContext, SlotReadings,
+ * SlotRefusal, SlotConsumeResult, isSlotReadings, isSlotRefusal.
+ * Owner context: parser-en-us grammar matching.
  */
 
 import {
@@ -25,12 +34,27 @@ export interface SlotRefusal {
   failure: Pick<SlotFailure, 'reason' | 'unknownWord' | 'entityId' | 'requiredScope'>;
 }
 
-/** What a consumer returns: a match, a refusal with its reason, or null (nothing to say). */
-export type SlotConsumeResult = SlotMatch | SlotRefusal | null;
+/**
+ * The readings of a slot from its start token: every span the consumer
+ * admits, each a complete slot match, ordered longest extent first. The
+ * engine tries them shorter first when another pattern element follows the
+ * slot and longest first when the slot ends the pattern (ADR-386 D2).
+ */
+export interface SlotReadings {
+  readings: SlotMatch[];
+}
+
+/** What a consumer returns: its readings, a refusal with its reason, or null (nothing to say). */
+export type SlotConsumeResult = SlotReadings | SlotRefusal | null;
 
 /** Whether a result that may be a refusal is one. */
 export function isSlotRefusal<T>(result: T | SlotRefusal): result is SlotRefusal {
   return typeof result === 'object' && result !== null && 'refused' in result && result.refused === true;
+}
+
+/** Whether a result carries readings. */
+export function isSlotReadings(result: SlotConsumeResult): result is SlotReadings {
+  return result !== null && 'readings' in result;
 }
 
 /**
@@ -75,39 +99,10 @@ export interface SlotConsumer {
   readonly slotTypes: SlotType[];
 
   /**
-   * Attempt to consume tokens for this slot
+   * The readings of this slot from the context's start token.
    * @param ctx The consumption context
-   * @returns SlotMatch if successful; a SlotRefusal when the slot refused
-   *   for a reason worth telling the player; null when there is no match
+   * @returns The readings, longest extent first; a SlotRefusal when the slot
+   *   refused for a reason worth telling the player; null when there is nothing to read
    */
   consume(ctx: SlotConsumerContext): SlotConsumeResult;
-}
-
-/**
- * Helper to get the next pattern token after the current slot
- */
-export function getNextPatternToken(ctx: SlotConsumerContext): PatternToken | undefined {
-  return ctx.pattern.tokens[ctx.slotTokenIndex + 1];
-}
-
-/**
- * Helper to check if a token matches a pattern delimiter
- */
-export function isPatternDelimiter(
-  token: Token,
-  nextPatternToken: PatternToken | undefined
-): boolean {
-  if (!nextPatternToken) return false;
-
-  if (nextPatternToken.type === 'literal' &&
-      token.normalized === nextPatternToken.value) {
-    return true;
-  }
-
-  if (nextPatternToken.type === 'alternates' &&
-      nextPatternToken.alternates!.includes(token.normalized)) {
-    return true;
-  }
-
-  return false;
 }

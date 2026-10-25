@@ -1,10 +1,15 @@
 /**
  * @file Text Slot Consumer
- * @description Handles text capture slots (ADR-088)
+ * @description Reads text capture slots (ADR-088): a single word, greedy text,
+ *   quoted text and a topic. A span slot returns every extent to the end of
+ *   the input, longest first (ADR-386 D1); the engine's search chooses.
+ *
+ * Public interface: TextSlotConsumer.
+ * Owner context: parser-en-us slot consumers.
  */
 
-import { SlotType, type SlotMatch } from '@sharpee/if-domain';
-import { SlotConsumer, SlotConsumerContext, getNextPatternToken, isPatternDelimiter } from './slot-consumer.js';
+import { SlotType, type SlotMatch, type Token } from '@sharpee/if-domain';
+import { SlotConsumer, SlotConsumerContext, type SlotConsumeResult } from './slot-consumer.js';
 import { splitLeadingWords } from './noun-phrase-split.js';
 
 /**
@@ -19,21 +24,37 @@ export class TextSlotConsumer implements SlotConsumer {
     SlotType.TOPIC
   ];
 
-  consume(ctx: SlotConsumerContext): SlotMatch | null {
+  consume(ctx: SlotConsumerContext): SlotConsumeResult {
     const { slotType } = ctx;
 
     switch (slotType) {
       case SlotType.TEXT:
-        return this.consumeText(ctx);
+        return this.one(this.consumeText(ctx));
       case SlotType.TEXT_GREEDY:
         return this.consumeGreedyText(ctx);
       case SlotType.QUOTED_TEXT:
-        return this.consumeQuotedText(ctx);
+        return this.one(this.consumeQuotedText(ctx));
       case SlotType.TOPIC:
         return this.consumeTopic(ctx);
       default:
         return null;
     }
+  }
+
+  /** A single match as the slot's one reading. */
+  private one(match: SlotMatch | null): SlotConsumeResult {
+    return match ? { readings: [match] } : null;
+  }
+
+  /** Every span from the start to each later end, longest first. */
+  private spans(tokens: Token[], startIndex: number): number[][] {
+    const out: number[][] = [];
+    for (let end = tokens.length; end > startIndex; end--) {
+      const span: number[] = [];
+      for (let i = startIndex; i < end; i++) span.push(i);
+      out.push(span);
+    }
+    return out;
   }
 
   /**
@@ -55,35 +76,16 @@ export class TextSlotConsumer implements SlotConsumer {
   }
 
   /**
-   * Consume tokens until next pattern element or end (greedy text)
+   * Greedy text: every extent from the start to the end of the input
    */
-  private consumeGreedyText(ctx: SlotConsumerContext): SlotMatch | null {
+  private consumeGreedyText(ctx: SlotConsumerContext): SlotConsumeResult {
     const { tokens, startIndex, slotType } = ctx;
-    const nextPatternToken = getNextPatternToken(ctx);
-    const consumedIndices: number[] = [];
-    const consumedWords: string[] = [];
-
-    for (let i = startIndex; i < tokens.length; i++) {
-      const token = tokens[i];
-
-      // Check if this token matches the next pattern element (delimiter)
-      if (isPatternDelimiter(token, nextPatternToken)) {
-        break; // Stop - this token belongs to next pattern element
-      }
-
-      consumedIndices.push(i);
-      consumedWords.push(token.word);
-    }
-
-    if (consumedIndices.length === 0) {
-      return null;
-    }
-
-    return {
-      tokens: consumedIndices,
-      text: consumedWords.join(' '),
+    const readings = this.spans(tokens, startIndex).map((span) => ({
+      tokens: span,
+      text: span.map((i) => tokens[i].word).join(' '),
       slotType
-    };
+    }));
+    return readings.length > 0 ? { readings } : null;
   }
 
   /**
@@ -140,47 +142,24 @@ export class TextSlotConsumer implements SlotConsumer {
   }
 
   /**
-   * Consume a topic slot
-   * Consumes one or more words until next pattern element. The text stays
+   * A topic slot: every extent from the start, longest first. The text stays
    * verbatim (articles kept, ADR-231 D4); the leading articles and
    * determiners are also split once (ADR-385 D2) so the validator's
    * entity-first attempt reads content words.
    */
-  private consumeTopic(ctx: SlotConsumerContext): SlotMatch | null {
+  private consumeTopic(ctx: SlotConsumerContext): SlotConsumeResult {
     const { tokens, startIndex } = ctx;
-
-    if (startIndex >= tokens.length) {
-      return null;
-    }
-
-    const nextPatternToken = getNextPatternToken(ctx);
-    const consumedIndices: number[] = [];
-    const consumedWords: string[] = [];
-
-    for (let i = startIndex; i < tokens.length; i++) {
-      const token = tokens[i];
-
-      // Check for pattern delimiter
-      if (isPatternDelimiter(token, nextPatternToken)) {
-        break;
-      }
-
-      consumedIndices.push(i);
-      consumedWords.push(token.word);
-    }
-
-    if (consumedIndices.length === 0) {
-      return null;
-    }
-
-    const split = splitLeadingWords(consumedIndices, tokens);
-    return {
-      tokens: consumedIndices,
-      text: consumedWords.join(' '),
-      slotType: SlotType.TOPIC,
-      articles: split.articles,
-      determiners: split.determiners,
-      ...(split.ownedByActor ? { ownedByActor: true } : {})
-    };
+    const readings = this.spans(tokens, startIndex).map((span) => {
+      const split = splitLeadingWords(span, tokens);
+      return {
+        tokens: span,
+        text: span.map((i) => tokens[i].word).join(' '),
+        slotType: SlotType.TOPIC,
+        articles: split.articles,
+        determiners: split.determiners,
+        ...(split.ownedByActor ? { ownedByActor: true } : {})
+      };
+    });
+    return readings.length > 0 ? { readings } : null;
   }
 }

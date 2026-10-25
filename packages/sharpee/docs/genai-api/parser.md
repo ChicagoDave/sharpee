@@ -285,7 +285,7 @@ export declare class EnglishPatternCompiler implements PatternCompiler {
  *              to provide better error messages (Phase 1.2 of parser recommendations)
  */
 import type { ParseErrorCode } from '@sharpee/world-model';
-import { type GrammarTier, type PatternElement, type Seat } from '@sharpee/if-domain';
+import { type GrammarTier, type PatternElement, type Seat, type SlotMatch } from '@sharpee/if-domain';
 /**
  * Reason why a pattern match failed
  */
@@ -341,6 +341,8 @@ export interface PartialMatchFailure {
     matchedVerb?: string;
     /** If a slot failed, details about that failure */
     slotFailure?: SlotFailure;
+    /** The slots the furthest path had filled before it failed (ADR-386 D2), for ranking failures by their nouns (D5) */
+    slots?: Map<string, SlotMatch>;
     /** The token that caused the mismatch (if applicable) */
     failedAtToken?: string;
     /** The pattern element expected at the failure point (ADR-382 D4) */

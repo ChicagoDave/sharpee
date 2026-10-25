@@ -4,7 +4,7 @@
  */
 
 import { SlotType, type SlotMatch, type GrammarContext } from '@sharpee/if-domain';
-import { SlotConsumer, SlotConsumerContext } from './slot-consumer.js';
+import { SlotConsumer, SlotConsumerContext, type SlotConsumeResult } from './slot-consumer.js';
 
 /**
  * Built-in manner adverbs that modify how actions are performed.
@@ -29,7 +29,13 @@ export class VocabularySlotConsumer implements SlotConsumer {
     SlotType.MANNER
   ];
 
-  consume(ctx: SlotConsumerContext): SlotMatch | null {
+  consume(ctx: SlotConsumerContext): SlotConsumeResult {
+    const match = this.matchOne(ctx);
+    return match ? { readings: [match] } : null;
+  }
+
+  /** The one match the category's vocabulary reads at the start token, or null (ADR-386 D1). */
+  private matchOne(ctx: SlotConsumerContext): SlotMatch | null {
     const { slotType } = ctx;
 
     switch (slotType) {

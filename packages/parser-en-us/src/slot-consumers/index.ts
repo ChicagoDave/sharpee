@@ -10,8 +10,8 @@ import { TextSlotConsumer } from './text-slot-consumer.js';
 import { TypedSlotConsumer } from './typed-slot-consumer.js';
 import { VocabularySlotConsumer } from './vocabulary-slot-consumer.js';
 
-export { SlotConsumer, SlotConsumerContext, getNextPatternToken, isPatternDelimiter, isSlotRefusal } from './slot-consumer.js';
-export type { SlotRefusal, SlotConsumeResult } from './slot-consumer.js';
+export { SlotConsumer, SlotConsumerContext, isSlotRefusal, isSlotReadings } from './slot-consumer.js';
+export type { SlotRefusal, SlotReadings, SlotConsumeResult } from './slot-consumer.js';
 export { EntitySlotConsumer } from './entity-slot-consumer.js';
 export { TextSlotConsumer } from './text-slot-consumer.js';
 export { TypedSlotConsumer } from './typed-slot-consumer.js';
@@ -43,7 +43,7 @@ export class SlotConsumerRegistry {
   /**
    * Consume tokens for a slot type
    * @param ctx The consumption context
-   * @returns SlotMatch if successful, a SlotRefusal with its reason, or null if no match
+   * @returns The slot's readings, a SlotRefusal with its reason, or null if no match
    * @throws Error if no consumer registered for the slot type
    */
   consume(ctx: SlotConsumerContext): SlotConsumeResult {

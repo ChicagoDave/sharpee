@@ -5,11 +5,12 @@
 
 import { SlotType, type SlotMatch } from '@sharpee/if-domain';
 import { cardinalNumbers, ordinalNumbers, directionMap } from '@sharpee/lang-en-us';
-import { SlotConsumer, SlotConsumerContext } from './slot-consumer.js';
+import { SlotConsumer, SlotConsumerContext, type SlotConsumeResult } from './slot-consumer.js';
 
 /**
  * Consumer for typed value slots (NUMBER, ORDINAL, TIME, DIRECTION)
- * Validates input matches expected format/vocabulary
+ * Validates input matches expected format/vocabulary. A typed slot has one
+ * reading, the one token its vocabulary reads (ADR-386 D1; D8 widens numbers).
  */
 export class TypedSlotConsumer implements SlotConsumer {
   readonly slotTypes = [
@@ -19,7 +20,13 @@ export class TypedSlotConsumer implements SlotConsumer {
     SlotType.DIRECTION
   ];
 
-  consume(ctx: SlotConsumerContext): SlotMatch | null {
+  consume(ctx: SlotConsumerContext): SlotConsumeResult {
+    const match = this.matchOne(ctx);
+    return match ? { readings: [match] } : null;
+  }
+
+  /** The one match the slot's vocabulary reads at the start token, or null. */
+  private matchOne(ctx: SlotConsumerContext): SlotMatch | null {
     const { slotType } = ctx;
 
     switch (slotType) {

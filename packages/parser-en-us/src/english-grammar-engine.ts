@@ -1,6 +1,15 @@
 /**
  * @file English Grammar Engine
- * @description English-specific implementation of grammar matching
+ * @description English-specific grammar matching. A rule is matched by a
+ * search over its pattern (ADR-386 D2): each optional element and each
+ * pattern article is taken before it is skipped, each slot is tried at every
+ * extent its consumer admits, and every way the pattern consumes the whole
+ * input is a reading. The readings of every rule are ranked by one comparator
+ * and returned together; a rule with no reading records its furthest failure.
+ *
+ * Public interface: EnglishGrammarEngine (findMatches, getLastFailures,
+ * getLastCapped, the typed-slot value extractors), MAX_READINGS_PER_RULE.
+ * Owner context: parser-en-us grammar matching.
  */
 
 import {
@@ -21,16 +30,24 @@ import { type Token } from '@sharpee/if-domain';
 import { EnglishPatternCompiler } from './english-pattern-compiler.js';
 import { cardinalNumbers, ordinalNumbers, directionMap, englishWords } from '@sharpee/lang-en-us';
 import { SlotConsumerRegistry, SlotConsumerContext, createDefaultRegistry, isSlotRefusal, type SlotConsumeResult } from './slot-consumers/index.js';
-import type { PartialMatchFailure, SlotFailure } from './parse-failure.js';
+import type { PartialMatchFailure } from './parse-failure.js';
 
 /**
  * English articles. A pattern's literal article after its verb is optional
  * for the player and its absence costs nothing: `follow cables` matches
- * `follow the cables` exactly as well as the full form does (ADR-380 D2).
- * Articles are the English parser's to know; no language-neutral layer
- * lists them.
+ * `follow the cables` exactly as well as the full form does (ADR-380 D2); and
+ * a typed article before a literal the pattern does not spell is skipped the
+ * same way: `climb the rope` reaches `climb rope` (ADR-386 D3). Articles are
+ * the English parser's to know; no language-neutral layer lists them.
  */
 const ARTICLE_WORDS: ReadonlySet<string> = new Set(englishWords.articles.map((a) => a.toLowerCase()));
+
+/**
+ * The most readings one rule may have of one input. Past it the readings
+ * found so far stand and the rule is recorded for the parser's debug event,
+ * never silently (ADR-386 D2).
+ */
+export const MAX_READINGS_PER_RULE = 256;
 
 /**
  * What a failure stopped short of, read from the compiled pattern
@@ -39,7 +56,7 @@ const ARTICLE_WORDS: ReadonlySet<string> = new Set(englishWords.articles.map((a)
  * (ADR-383 D8) — and the first slot after it, the slot a missing
  * preposition would have introduced.
  * @param pattern The rule's compiled pattern
- * @param index The token index the match failed at
+ * @param index The pattern element index the match failed at
  * @returns The expected element, the missing seats and the following slot, each absent when there is none
  */
 function expectationAt(pattern: CompiledPattern, index: number): { expected?: PatternElement; missingSeats?: Seat[]; followingSlot?: string } {
@@ -61,12 +78,37 @@ function expectationAt(pattern: CompiledPattern, index: number): { expected?: Pa
   };
 }
 
-/**
- * Result of attempting to match a rule - either success or failure with info
- */
-type MatchAttemptResult =
-  | { success: true; match: PatternMatch }
-  | { success: false; failure: Omit<PartialMatchFailure, 'tier' | 'definitionIndex'> };
+/** A failure as the search records it, before the rule's tier and index are added. */
+type RuleFailure = Omit<PartialMatchFailure, 'tier' | 'definitionIndex'>;
+
+/** The readings of one rule, or its furthest failure when it has none. */
+interface RuleReadings {
+  matches: PatternMatch[];
+  failure?: RuleFailure;
+  capped: boolean;
+}
+
+/** One path of the search through a pattern. */
+interface SearchPath {
+  /** The next input token to match */
+  tokenIndex: number;
+  /** The slots filled so far */
+  slots: Map<string, SlotMatch>;
+  /** Each literal element so far and the input it consumed (ADR-383 D7) */
+  literals: MatchedElement[];
+  /** Input words consumed by literal and alternate elements (ADR-231 D2b) */
+  literalSpecificity: number;
+  /** The verb phrase: the words the literals before the first slot consumed */
+  verbWords: string[];
+  /** Whether a slot has been reached, which closes the verb phrase */
+  afterSlot: boolean;
+}
+
+/** Whether a literal or alternates element reads the token. */
+function literalReads(element: PatternToken, token: Token | undefined): boolean {
+  if (!token) return false;
+  return element.type === 'literal' ? token.normalized === element.value : (element.alternates ?? []).includes(token.normalized);
+}
 
 /**
  * English-specific grammar matching engine
@@ -76,6 +118,9 @@ export class EnglishGrammarEngine extends GrammarEngine {
 
   /** Last set of partial match failures (for error reporting) */
   private lastFailures: PartialMatchFailure[] = [];
+
+  /** The patterns whose readings hit MAX_READINGS_PER_RULE in the last match */
+  private lastCapped: string[] = [];
 
   constructor(slotConsumerRegistry?: SlotConsumerRegistry) {
     super(new EnglishPatternCompiler());
@@ -91,60 +136,71 @@ export class EnglishGrammarEngine extends GrammarEngine {
   }
 
   /**
-   * Find matching grammar rules for tokens
+   * The patterns of the rules whose readings were capped in the last match
+   * (ADR-386 D2), for the parser's debug event.
+   */
+  getLastCapped(): string[] {
+    return this.lastCapped;
+  }
+
+  /**
+   * Find every reading of the input: each rule's complete readings, ranked
+   * by `compareGrammarRank` and then by the rule's search order (ADR-386 D2,
+   * ADR-384 D2). Rules a gate closes are skipped (ADR-378 D5).
    */
   findMatches(
     tokens: Token[],
     context: GrammarContext,
     options: GrammarMatchOptions = {}
   ): PatternMatch[] {
-    const ranked: Array<{ match: PatternMatch; definitionIndex: number }> = [];
+    const ranked: Array<{ match: PatternMatch; definitionIndex: number; order: number }> = [];
     const failures: PartialMatchFailure[] = [];
+    const capped: string[] = [];
 
     // Every rule is tried, in registration (definition) order, and every
-    // match is ranked: no cap, so the most specific rule is never cut off.
+    // reading of every rule is ranked: no cap on rules, so the most specific
+    // rule is never cut off.
     this.rules.forEach((rule, definitionIndex) => {
       if (!rule.compiledPattern) return;
       // ADR-378 D5: a gated-off rule is not there — neither a match nor a
       // failure, so the input falls through to the rules that remain.
       if (rule.when && !rule.when(context)) return;
 
-      const result = this.tryMatchRuleWithFailure(rule, tokens, context);
-
-      if (result.success) {
-        ranked.push({ match: result.match, definitionIndex });
-      } else {
-        // Collect failures for error reporting, ranked like matches
+      const result = this.readingsOfRule(rule, tokens, context);
+      result.matches.forEach((match, order) => ranked.push({ match, definitionIndex, order }));
+      if (result.matches.length === 0 && result.failure) {
         failures.push({ ...result.failure, tier: rule.tier, definitionIndex });
       }
+      if (result.capped) capped.push(rule.pattern);
     });
 
-    // Store failures for later retrieval
     this.lastFailures = failures;
+    this.lastCapped = capped;
 
     // Literal specificity, then tier, then definition order: the one
-    // ordering of grammar rules.
+    // ordering of grammar rules; a rule's own readings keep search order.
     ranked.sort((a, b) =>
       compareGrammarRank(
         { literalSpecificity: a.match.literalSpecificity ?? 0, tier: a.match.rule.tier, definitionIndex: a.definitionIndex },
         { literalSpecificity: b.match.literalSpecificity ?? 0, tier: b.match.rule.tier, definitionIndex: b.definitionIndex }
-      )
+      ) || a.order - b.order
     );
 
     return ranked.map((entry) => entry.match);
   }
-  
+
   /**
-   * Try to match a single rule against tokens, returning failure info if no match
+   * Every complete reading of one rule, in search order, or its furthest
+   * failure when it has none (ADR-386 D2).
    */
-  private tryMatchRuleWithFailure(
+  private readingsOfRule(
     rule: any, // GrammarRule
     tokens: Token[],
     context: GrammarContext
-  ): MatchAttemptResult {
-    const pattern = rule.compiledPattern!;
-    const DEBUG = process.env.PARSER_DEBUG === 'true';
-    const totalPatternTokens = pattern.tokens.length;
+  ): RuleReadings {
+    const pattern: CompiledPattern = rule.compiledPattern!;
+    const elements = pattern.tokens;
+    const total = elements.length;
 
     // Quick check: do we have enough tokens? A too-short input still says
     // something when its first word IS the pattern's verb (GH #318: a bare
@@ -152,14 +208,15 @@ export class EnglishGrammarEngine extends GrammarEngine {
     // it stopped short of, so the failure classifier can ask "What do you
     // want to drop?" instead of shrugging.
     if (tokens.length < pattern.minTokens) {
-      const first = pattern.tokens[0];
+      const first = elements[0];
       const verbMatched = first?.type === 'literal' && tokens[0] !== undefined && tokens[0].normalized === first.value;
-      // A verb-led short input runs the full matcher below, which stops on
+      // A verb-led short input runs the full search below, which stops on
       // the exact element the input ran out at (the slot for `drop`, the
       // preposition for `put pear`) and records the verb with it.
       if (!verbMatched) {
         return {
-          success: false,
+          matches: [],
+          capped: false,
           failure: {
             pattern: rule.pattern,
             action: rule.action,
@@ -173,206 +230,170 @@ export class EnglishGrammarEngine extends GrammarEngine {
       }
     }
 
-    const slots = new Map<string, SlotMatch>();
-    let tokenIndex = 0;
-    let patternIndex = 0;
-    // ADR-231 D2b: words consumed by literal/alternate pattern tokens
-    let literalSpecificity = 0;
-    // ADR-383 D7: each literal element and the input tokens it consumed.
-    const literals: MatchedElement[] = [];
-    // The verb phrase so far: the words the literals before the first slot
-    // consumed. It names the verb in a failure's message.
-    const verbWords: string[] = [];
-    let reachedSlot = false;
-    let matchedVerb: string | undefined;
-    const literalMatched = (index: number, normalized: string) => {
-      literals.push({ tokenIndex: index, inputTokens: [tokenIndex] });
-      if (!reachedSlot) {
-        verbWords.push(normalized);
-        matchedVerb = verbWords.join(' ');
-      }
-    };
-
-    // Try to match each pattern token
-    for (const patternToken of pattern.tokens) {
-      patternIndex++;
-      if (patternToken.type === 'slot') reachedSlot = true;
-      const skippedLiteral = () => {
-        if (patternToken.type !== 'slot') literals.push({ tokenIndex: patternIndex - 1, inputTokens: [] });
-      };
-
-      // An article stands before a noun, never as a command's verb: a
-      // pattern's first word is its verb, even spelled `an` (Dungeo's GDT
-      // code `an :arg...`), so only a later article is optional.
-      const isArticle = patternIndex > 1 && patternToken.type === 'literal' && ARTICLE_WORDS.has(patternToken.value);
-
-      // Check if we have a token to match
-      if (tokenIndex >= tokens.length) {
-        if (patternToken.optional || isArticle) {
-          skippedLiteral();
-          continue;
-        }
-        // Not enough tokens for required pattern element
-        return {
-          success: false,
-          failure: {
-            pattern: rule.pattern,
-            action: rule.action,
-            progress: patternIndex / totalPatternTokens,
-            tokensConsumed: tokenIndex,
-            literalSpecificity,
-            reason: 'NOT_ENOUGH_TOKENS',
-            matchedVerb,
-            ...expectationAt(pattern, patternIndex - 1)
-          }
-        };
-      }
-
-      const token = tokens[tokenIndex];
-
-      switch (patternToken.type) {
-        case 'literal':
-          if (token.normalized === patternToken.value) {
-            literalMatched(patternIndex - 1, token.normalized);
-            tokenIndex++;
-            literalSpecificity++;
-          } else if (isArticle) {
-            // An article the player left out, written or bracketed: free.
-            skippedLiteral();
-            continue;
-          } else if (patternToken.optional) {
-            skippedLiteral();
-            continue;
-          } else {
-            //Check if this is verb position for better error
-            const reason = tokenIndex === 0 ? 'VERB_MISMATCH' : 'LITERAL_MISMATCH';
-            return {
-              success: false,
-              failure: {
-                pattern: rule.pattern,
-                action: rule.action,
-                progress: patternIndex / totalPatternTokens,
-                tokensConsumed: tokenIndex,
-                literalSpecificity,
-                reason,
-                matchedVerb,
-                failedAtToken: token.normalized,
-                ...expectationAt(pattern, patternIndex - 1)
-              }
-            };
-          }
-          break;
-
-        case 'alternates':
-          if (patternToken.alternates!.includes(token.normalized)) {
-            literalMatched(patternIndex - 1, token.normalized);
-            tokenIndex++;
-            literalSpecificity++;
-          } else if (patternToken.optional) {
-            skippedLiteral();
-            continue;
-          } else {
-            const reason = tokenIndex === 0 ? 'VERB_MISMATCH' : 'LITERAL_MISMATCH';
-            return {
-              success: false,
-              failure: {
-                pattern: rule.pattern,
-                action: rule.action,
-                progress: patternIndex / totalPatternTokens,
-                tokensConsumed: tokenIndex,
-                literalSpecificity,
-                reason,
-                matchedVerb,
-                failedAtToken: token.normalized,
-                ...expectationAt(pattern, patternIndex - 1)
-              }
-            };
-          }
-          break;
-
-        case 'slot':
-          const slotResult = this.consumeSlot(
-            patternToken.value,
-            tokens,
-            tokenIndex,
-            pattern,
-            rule,
-            context
-          );
-
-          if (!slotResult || isSlotRefusal(slotResult)) {
-            if (patternToken.optional) {
-              continue;
-            }
-            // Required slot couldn't be filled - collect the attempted text.
-            // A consumer's refusal says what was found and why (ADR-385 D8);
-            // without one the failure names the attempted text.
-            const remainingTokens = tokens.slice(tokenIndex);
-            const attemptedText = remainingTokens.map(t => t.word).join(' ');
-            const refusal = slotResult ? slotResult.failure : { reason: 'NO_MATCH' as const, unknownWord: attemptedText || undefined };
-
-            return {
-              success: false,
-              failure: {
-                pattern: rule.pattern,
-                action: rule.action,
-                progress: patternIndex / totalPatternTokens,
-                tokensConsumed: tokenIndex,
-                literalSpecificity,
-                reason: 'SLOT_FAILED',
-                matchedVerb,
-                slotFailure: {
-                  slotName: patternToken.value,
-                  attemptedText: attemptedText || '(nothing)',
-                  ...refusal
-                }
-              }
-            };
-          }
-
-          slots.set(patternToken.value, slotResult);
-
-          tokenIndex = slotResult.tokens[slotResult.tokens.length - 1] + 1;
-          break;
-      }
-    }
-
-    // Check if we consumed all tokens
-    if (tokenIndex !== tokens.length) {
-      return {
-        success: false,
-        failure: {
-          pattern: rule.pattern,
-          action: rule.action,
-          progress: 0.9, // Almost matched but had extra tokens
-          tokensConsumed: tokenIndex,
-          literalSpecificity,
-          reason: 'LEFTOVER_TOKENS',
-          matchedVerb,
-          failedAtToken: tokens[tokenIndex]?.word
-        }
-      };
-    }
-
     // A rule's semantics are its per-rule defaults (ADR-148); nothing is
     // derived from the matched words.
     const semantics = rule.defaultSemantics && Object.keys(rule.defaultSemantics).length > 0 ? { ...rule.defaultSemantics } : undefined;
 
-    return {
-      success: true,
-      match: {
-        rule,
-        slots,
-        consumed: tokenIndex,
-        literalSpecificity,
-        semantics,
-        literals
-      }
+    const matches: PatternMatch[] = [];
+    // Two paths can consume the same spans (a pattern article taken, or
+    // skipped with the typed article skipped before the next word): one
+    // reading, recorded once.
+    const seen = new Set<string>();
+    let capped = false;
+    let furthest: { tokenIndex: number; elementIndex: number; failure: RuleFailure } | undefined;
+
+    // The furthest point any path reached is the failure worth reporting:
+    // most input consumed, then most of the pattern matched.
+    const fail = (path: SearchPath, elementIndex: number, failure: Omit<RuleFailure, 'pattern' | 'action' | 'progress' | 'tokensConsumed' | 'literalSpecificity' | 'matchedVerb' | 'slots'>) => {
+      if (furthest && (path.tokenIndex < furthest.tokenIndex || (path.tokenIndex === furthest.tokenIndex && elementIndex <= furthest.elementIndex))) return;
+      furthest = {
+        tokenIndex: path.tokenIndex,
+        elementIndex,
+        failure: {
+          pattern: rule.pattern,
+          action: rule.action,
+          progress: elementIndex >= total ? 0.9 : (elementIndex + 1) / total,
+          tokensConsumed: path.tokenIndex,
+          literalSpecificity: path.literalSpecificity,
+          matchedVerb: path.verbWords.length > 0 ? path.verbWords.join(' ') : undefined,
+          slots: new Map(path.slots),
+          ...failure
+        }
+      };
     };
+
+    const walk = (elementIndex: number, path: SearchPath): void => {
+      if (matches.length >= MAX_READINGS_PER_RULE) {
+        capped = true;
+        return;
+      }
+
+      if (elementIndex === total) {
+        if (path.tokenIndex === tokens.length) {
+          const key = [...path.slots.entries()].map(([name, slot]) => `${name}:${slot.tokens.join(',')}`).join('|');
+          if (!seen.has(key)) {
+            seen.add(key);
+            matches.push({
+              rule,
+              slots: new Map(path.slots),
+              consumed: path.tokenIndex,
+              literalSpecificity: path.literalSpecificity,
+              semantics,
+              literals: [...path.literals]
+            });
+          }
+        } else {
+          fail(path, elementIndex, { reason: 'LEFTOVER_TOKENS', failedAtToken: tokens[path.tokenIndex]?.word });
+        }
+        return;
+      }
+
+      const element = elements[elementIndex];
+
+      if (element.type === 'literal' || element.type === 'alternates') {
+        // An article stands before a noun, never as a command's verb: a
+        // pattern's first word is its verb, even spelled `an` (Dungeo's GDT
+        // code `an :arg...`), so only a later article is optional.
+        const isArticle = elementIndex > 0 && element.type === 'literal' && ARTICLE_WORDS.has(element.value);
+        const skippable = element.optional === true || isArticle;
+
+        // ADR-386 D3: a typed article the pattern does not spell, standing
+        // before the word the element reads, is skipped and costs nothing.
+        let at = path.tokenIndex;
+        const typedArticle =
+          elementIndex > 0 && !isArticle && at < tokens.length && ARTICLE_WORDS.has(tokens[at].normalized) && literalReads(element, tokens[at + 1]);
+        if (typedArticle) at++;
+
+        if (literalReads(element, tokens[at])) {
+          const inputTokens = typedArticle ? [path.tokenIndex, at] : [at];
+          walk(elementIndex + 1, {
+            tokenIndex: at + 1,
+            slots: path.slots,
+            literals: [...path.literals, { tokenIndex: elementIndex, inputTokens }],
+            literalSpecificity: path.literalSpecificity + 1,
+            verbWords: path.afterSlot ? path.verbWords : [...path.verbWords, tokens[at].normalized],
+            afterSlot: path.afterSlot
+          });
+        } else if (!skippable) {
+          if (path.tokenIndex >= tokens.length) {
+            fail(path, elementIndex, { reason: 'NOT_ENOUGH_TOKENS', ...expectationAt(pattern, elementIndex) });
+          } else {
+            fail(path, elementIndex, {
+              reason: path.tokenIndex === 0 ? 'VERB_MISMATCH' : 'LITERAL_MISMATCH',
+              failedAtToken: tokens[path.tokenIndex].normalized,
+              ...expectationAt(pattern, elementIndex)
+            });
+          }
+        }
+        // An article the player left out, or an optional word, is skipped
+        // after it was tried taken.
+        if (skippable) {
+          walk(elementIndex + 1, { ...path, literals: [...path.literals, { tokenIndex: elementIndex, inputTokens: [] }] });
+        }
+        return;
+      }
+
+      // A slot: every extent its consumer admits, shorter first when another
+      // element follows, longer first when the slot ends the pattern.
+      const slotName = element.value;
+      const skipped = () => walk(elementIndex + 1, { ...path, afterSlot: true });
+
+      if (path.tokenIndex >= tokens.length) {
+        if (element.optional) {
+          skipped();
+        } else {
+          fail(path, elementIndex, { reason: 'NOT_ENOUGH_TOKENS', ...expectationAt(pattern, elementIndex) });
+        }
+        return;
+      }
+
+      const result = this.consumeSlot(slotName, tokens, path.tokenIndex, pattern, rule, context);
+      if (!result || isSlotRefusal(result)) {
+        if (element.optional) {
+          skipped();
+          return;
+        }
+        // Required slot couldn't be filled - collect the attempted text.
+        // A consumer's refusal says what was found and why (ADR-385 D8);
+        // without one the failure names the attempted text.
+        const attemptedText = tokens.slice(path.tokenIndex).map((t) => t.word).join(' ');
+        const refusal = result ? result.failure : { reason: 'NO_MATCH' as const, unknownWord: attemptedText || undefined };
+        fail(path, elementIndex, {
+          reason: 'SLOT_FAILED',
+          slotFailure: { slotName, attemptedText: attemptedText || '(nothing)', ...refusal }
+        });
+        return;
+      }
+
+      const last = elementIndex === total - 1;
+      const readings = last ? result.readings : [...result.readings].reverse();
+      for (const reading of readings) {
+        if (matches.length >= MAX_READINGS_PER_RULE) {
+          capped = true;
+          return;
+        }
+        const slots = new Map(path.slots);
+        slots.set(slotName, reading);
+        walk(elementIndex + 1, {
+          tokenIndex: reading.tokens[reading.tokens.length - 1] + 1,
+          slots,
+          literals: path.literals,
+          literalSpecificity: path.literalSpecificity,
+          verbWords: path.verbWords,
+          afterSlot: true
+        });
+      }
+      if (element.optional) skipped();
+    };
+
+    walk(0, { tokenIndex: 0, slots: new Map(), literals: [], literalSpecificity: 0, verbWords: [], afterSlot: false });
+
+    return { matches, capped, ...(matches.length === 0 && furthest ? { failure: furthest.failure } : {}) };
   }
-  
+
   /**
-   * Consume tokens for a slot
+   * The readings of a slot from a start token, through the consumer
+   * registered for its type.
    */
   private consumeSlot(
     slotName: string,

@@ -43,7 +43,7 @@ import type {
 import { PartOfSpeech } from '@sharpee/world-model';
 
 import type { ISystemEvent, Result } from '@sharpee/core';
-import { EnglishGrammarEngine } from './english-grammar-engine.js';
+import { EnglishGrammarEngine, MAX_READINGS_PER_RULE } from './english-grammar-engine.js';
 import { defineGrammar } from './grammar.js';
 import { definePlatformGrammar } from './platform-grammar.js';
 import { scope, type GrammarBuilder } from '@sharpee/if-domain';
@@ -731,7 +731,19 @@ export class EnglishParser implements Parser {
     
     // Use grammar engine to find matches
     const matches = this.grammarEngine.findMatches(internalTokens, context);
-    
+
+    // ADR-386 D2: a rule whose readings hit the cap is never silent
+    const capped = this.grammarEngine.getLastCapped();
+    if (capped.length > 0 && this.onDebugEvent) {
+      this.onDebugEvent({
+        id: `parser_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        timestamp: Date.now(),
+        subsystem: 'parser',
+        type: 'readings_capped',
+        data: { input, rules: capped, cap: MAX_READINGS_PER_RULE }
+      });
+    }
+
     // Convert grammar matches to RichCandidates
     const candidates: RichCandidate[] = [];
     

@@ -5,7 +5,7 @@
  */
 
 import type { ParseErrorCode } from '@sharpee/world-model';
-import { compareGrammarRank, type GrammarTier, type PatternElement, type Seat } from '@sharpee/if-domain';
+import { compareGrammarRank, type GrammarTier, type PatternElement, type Seat, type SlotMatch } from '@sharpee/if-domain';
 
 /**
  * Reason why a pattern match failed
@@ -85,6 +85,9 @@ export interface PartialMatchFailure {
 
   /** If a slot failed, details about that failure */
   slotFailure?: SlotFailure;
+
+  /** The slots the furthest path had filled before it failed (ADR-386 D2), for ranking failures by their nouns (D5) */
+  slots?: Map<string, SlotMatch>;
 
   /** The token that caused the mismatch (if applicable) */
   failedAtToken?: string;
