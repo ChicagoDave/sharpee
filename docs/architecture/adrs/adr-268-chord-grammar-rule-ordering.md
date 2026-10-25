@@ -67,6 +67,12 @@ order reproduce every observable resolution the numbers produce today.
   tiebreak; it becomes *meaningful* (file order) instead of incidental (priority-sorted
   insertion).
 
+> **Amendment note (2026-10-24, ADR-384):** D2 is superseded. Confidence is removed
+> (ADR-384 D1), and the order is specificity → tier → definition order (ADR-384 D2): a
+> more specific standard rule now beats a broader story rule, and a story replaces a
+> standard line explicitly with `remove from action`. David reversed this record's Q-2
+> (tier-first) in ADR-384's Q-1. D1, D3 and D4 stand.
+
 ### D3 — `go out` is ordered by definition order in the migrated source
 
 The exiting rule precedes the going rule in the migrated standard grammar; a comment marks

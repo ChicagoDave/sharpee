@@ -138,8 +138,7 @@ export function validateActionNames(names: string[], validIds: Set<string>): str
 /**
  * Compile the standard-grammar Chord source with the built chord dist and
  * lower each action with chord's `lowerActionRules` (ADR-382 D5) —
- * standard-flavored (ADR-269 D3): `if.action.*` ids, no bare-verb prefix
- * rules. Shared by the grammar step (module emission) and the ADR-276
+ * standard-flavored (ADR-269 D3): `if.action.*` ids. Shared by the grammar step (module emission) and the ADR-276
  * manifest step (grammar-shape slice), so both artifacts derive from ONE
  * compile and ONE lowering and cannot drift from each other.
  */

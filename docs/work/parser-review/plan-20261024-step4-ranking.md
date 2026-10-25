@@ -1,7 +1,7 @@
 # Session Plan: Parser review step 4 — rules rank without confidence
 
 **Created**: 2026-10-24
-**Plan Status**: ACTIVE
+**Plan Status**: DONE
 **Overall scope**: Step 4 of `docs/work/parser-review/review-20261022.md`, root cause 4, implementing ADR-384. Confidence is removed; one if-domain comparator orders matches by literal specificity, then tier, then definition order; the `maxMatches` early stop and the tier-first iteration are deleted; failures break ties by the same comparator; the bare-verb prefix rules are retired in Chord and the loader. Fixes D1, D2, D3, A8, C8. Steps 5-7 (search, one noun matcher, language and state) are NOT in this plan.
 **Bounded contexts touched**: grammar contract (`packages/if-domain/src/grammar`, `parser-contracts`); English parser (`packages/parser-en-us`); Chord pattern lowering (`packages/chord`); story-loader rule registration (`packages/story-loader`); engine and stdlib (the constant `confidence: 1.0` writers); published references (ADR-268 amendment note, the parser-en-us CLAUDE.md, genai API reference)
 **Key domain language**: confidence, literal specificity, tier (story over standard), definition order, comparator, replacement (`remove from action`), bare-verb prefix rule, failure tiebreak, seat question
@@ -182,8 +182,39 @@
 - **Files**: `docs/architecture/adrs/adr-268-chord-grammar-rule-ordering.md`, `docs/architecture/adrs/adr-231-player-surface-contract-rulings.md`, `packages/parser-en-us/CLAUDE.md`, `docs/work/parser-review/plan-20261024-step4-ranking.md`
 - **Exit state**: all earlier phases DONE; plan status DONE; close-out present. The plan is not archived (the review serves steps 5-7).
 - **Demonstration**: grep for the amendment note and for removed names (maxMatches, experimentalConfidence, minConfidence, bareVerbForms); final chain, tree, suite and turbo test:ci counts; the repokit grammar, manifest, aliases and protocol checks fresh.
-- **Demonstrated**: 
-- **Status**: PENDING
+- **Demonstrated**: 2026-10-24, session b09060, on 75a25c3df plus this phase's working tree: docs and two source comments, no code.
+  - **Amendment notes** (`grep -n "Amendment note (2026-10-24, ADR-384)"`): `adr-268-chord-grammar-rule-ordering.md:70`, under D2 (superseded; Q-2 reversed; D1, D3 and D4 stand; Status line untouched), and `adr-231-player-surface-contract-rulings.md:221`, under D2b (specificity stands; confidence and per-rule priority do not).
+  - **Comment audit.** Two stale comments corrected: `chord/src/ir.ts:1394` ("bare-verb prefixes included") and `tools/repokit/src/commands/grammar.ts:141` ("no bare-verb prefix rules"). Then `grep -rn -i "tier-first|confidence desc|confidence →|bare-verb prefix"` over packages' src, packages' CLAUDE.md and tools' src finds nothing. `parser-en-us/CLAUDE.md`'s resolution paragraph (rewritten in Phase 3) matches `compareGrammarRank`. The dated log row in `chord-grammar-changes.md` (ADR-270, 2026-07-26) and the proposals' mentions are history, left as written. No `chord-grammar-changes.md` row is due: no Chord surface change (ADR-384 D6).
+  - **Removed names.** `grep -rn -w "maxMatches|experimentalConfidence|minConfidence|bareVerbForms|skippedOptionals"` over packages' src and tests and tools' src: 0.
+  - **Build and checks.** `./repokit build dungeo`: exit 0; the genai reference regenerated with no diff (its only `confidence` in world-model is `ITokenCandidate`'s vocabulary priority, out of scope). `grammar --check`, `manifest --check`, `aliases --check` and `protocol --check`: all fresh.
+  - **Final floor.** No code changed after 75a25c3df, so it is carried from Phase 4's Demonstrated line and that commit's gate: chain 952; trees 1940 cards byte-identical to Phase 1's dump; suites chord 1720, story-loader 1425 + 1, parser-en-us 458, if-domain 107, world-model 1663, engine 858 + 7, repokit 139 + 1, stdlib 1889; `test:ci` 75/75 at 75a25c3df. Dungeo units swing 1721–1722 passed with seedless transcripts (GH #631).
+  - **ADR-384 acceptance, against evidence:** see Close-out below.
+- **Status**: DONE
+
+## Close-out
+
+**ADR-384's acceptance criteria, each against the Demonstrated line that holds its evidence:**
+1. **AC1 (D1, real path).** Phase 2: the probe story's `push button` runs `shoving` (`story-loader/tests/ranking-skipped-optional.test.ts`, score 0 → 1, failed pre-change); `parser-en-us/tests/ranking-skipped-optional.test.ts` pins a skipped-optional story rule over a standard rule of equal specificity. Met.
+2. **AC2 (D1).** Phase 2: no grammar-match or parsed-command confidence in parser-en-us src, if-domain grammar or parser-contracts; the engine and stdlib writers are gone; tsc clean. Met. The citation was corrected at Phase 2 entry: the live contract was world-model's `IParsedCommand.confidence`.
+3. **AC3 (D2).** Phase 3: `compareGrammarRank` exported from if-domain; called by the engine (`english-grammar-engine.ts`) and the parser's failure classifier (`parse-failure.ts`); the parser's own candidate sort deleted; `rule-order.test.ts` pins the three keys. Met.
+4. **AC4 (D3).** Phase 3: twelve standard rules, the most specific registered last, all 12 returned and the specific one first (failed pre-change: 10 returned). Met.
+5. **AC5 (D4).** Phase 1 recorded `give coin` at HEAD (MISSING_OBJECT; progress 1 against 0.75, so the tiebreak is never reached). Phase 3 pins it after the change, and pins the failure tiebreak by definition order. Met.
+6. **AC6 (D5, real path).** Phase 4: bare `take` → "What do you want to take?", `take clock apart` still `dismantling`, a story-only verb asks for its seat, an author-written bare line still answers (`bare-verb-forms-retired.test.ts`). The chord test pins exactly the written lines. Met.
+7. **AC7 (D2 replacement, real path).** Phase 3: with a story `take the thing`, `take off hat` unwears the hat (standard taking-off) and `take lamp` reaches the story; with `remove from action taking_off`, `take off hat` reaches the story (`ranking-specificity-first.test.ts`, `WearableTrait.worn`). Met.
+8. **AC8 (floor).** Every phase: build 0, chain 952, trees byte-identical to Phase 1's per-card baseline, `test:ci` 75/75, the `--check`s fresh. Dungeo `wave hands` probed before (Phase 1: dungeo.action.wave, "You can't see any such thing.") and after (Phase 3: "You wave. Nobody waves back."), and ruled by David with every other census move (GH #629, "a"). Met. The unit-transcript swing is seedless variation, GH #631.
+
+**Findings fixed** (`review-20261022.md`, sections D, A and C):
+- **D1** (Phase 2): a story rule with a skipped optional no longer loses to a standard rule. Confidence is removed.
+- **D2** (Phase 2): the vestigial confidence is gone: the penalty, `experimentalConfidence`, `minConfidence`, the slot consumers' constant, and the parsed command's field.
+- **D3** (Phase 3): a broad story line no longer hides a more specific standard phrasing; replacement is explicit with `remove from action`.
+- **A8** (Phase 3): no match cap; every match is ranked.
+- **C8** (Phase 4): bare-verb prefix rules are retired, so a story's slotted line no longer takes over a standard verb typed alone.
+
+**Step 5's entry state** (at the commit closing this plan):
+- **Where ranking lives.** `packages/if-domain/src/grammar/rule-order.ts`: `GrammarRank { literalSpecificity, tier, definitionIndex }` and `compareGrammarRank`. Its callers are `EnglishGrammarEngine.findMatches`, which tries every rule in registration order, skips gated-off rules, and ranks every full match with the rule's definition index, and `analyzeBestFailure`, which ranks by verb matched, then progress, then the comparator (failures carry `literalSpecificity`, `tier` and `definitionIndex`). The parser keeps the engine's order.
+- **What step 5's search inherits.** A complete parse is ranked by specificity, then tier, then definition order, with no confidence to reconcile. If step 5's noun score (from the one matcher of step 6) becomes a ranking key, it has one place to go: `GrammarRank`. That is step 5's ADR to decide. Slot extent is still decided once per slot, from the next pattern token (root cause 1, findings A1–A7, A9–A11): untouched here.
+- **What stays as it was.** `ITokenCandidate.confidence` (world-model) is vocabulary priority under another name, filled from `vc.priority` and turned back into `priority` (`english-parser.ts`). It is unread by matching and belongs to step 7.
+- **Known variation.** Two Dungeo unit transcripts have no `seed:` header and vary run to run (`brick-explosion`, `grue-mechanics`; GH #631), so compare unit totals with that in mind.
 
 ## Sequencing note
 Phases 2 and 3 are sequential by real dependency: the comparator replaces the sort sites that confidence leaves behind, and splitting them attributes the `push button` change to the removed penalty alone and the specificity-before-tier change to the comparator alone. Phase 4 (D5) is independent of 2 and 3 in code, since the loader's registration and Chord's lowering touch no ranking site, but its census-reviewed card moves are easier to attribute after ranking has settled, and bare take answering with the seat question depends on ADR-383's classifier only. It could swap with Phase 3 if David wants C8 closed earlier. Phase 1 is first because the ADR's three predictions (`wave hands`, the winner changes under D2, the bare-verb card moves) are inferred from code and unprobed, and each ends in a ruling David owns.

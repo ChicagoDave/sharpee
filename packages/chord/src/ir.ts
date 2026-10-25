@@ -1390,8 +1390,8 @@ export interface IRActionDef {
   name: string;
   /**
    * `define action <name> while <condition>` (ADR-378 D5): the loader
-   * attaches it as the `.when()` gate on every rule the action registers,
-   * bare-verb prefixes included; where it is false the input parses as
+   * attaches it as the `.when()` gate on every rule the action registers;
+   * where it is false the input parses as
    * though the action did not exist. Present only when written.
    */
   condition?: IRCondition;

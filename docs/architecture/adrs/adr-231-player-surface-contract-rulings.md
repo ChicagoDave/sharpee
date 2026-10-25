@@ -218,6 +218,11 @@ recur. Because it re-scores many parses subtly, delivery requires the
 full dungeo walkthrough chain (one good run = baseline), the unit
 transcripts, and the parser suite before it merges.
 
+> **Amendment note (2026-10-24, ADR-384):** literal specificity stands as
+> the first ranking key; "confidence" and per-rule priority do not. ADR-384
+> D1 removed match confidence, and D2 orders matches by specificity, then
+> tier, then definition order (`compareGrammarRank`).
+
 ### D3: Word-level name vocabulary with scored matching (ruled by David, 2026-07-17)
 
 Ruled against the north star — 100% Sharpee↔Chord alignment and a
