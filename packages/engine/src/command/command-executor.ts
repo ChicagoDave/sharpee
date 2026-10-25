@@ -18,7 +18,7 @@
  */
 
 import { type ISemanticEvent, type ISystemEvent, type IGenericEventSource, QuerySource, QueryType, Result, type RandomService } from '@sharpee/core';
-import { type IParser, type IValidatedCommand, type IParsedCommand, type IValidationError, type IParseError as CoreParseError, type IFEntity, type DirectionType } from '@sharpee/world-model';
+import { type IParser, type IValidatedCommand, type IParsedCommand, type IValidationError, type IParseError as CoreParseError, type IFEntity, type DirectionType, PartOfSpeech } from '@sharpee/world-model';
 import { type ISound, type NounPhrase } from '@sharpee/if-domain';
 import { adaptParser, type EngineParser } from '../ports/parser-interface.js';
 import { SharedDataKeys, EngineSharedData } from './shared-data-keys.js';
@@ -40,7 +40,7 @@ import {
   nounPhraseFor,
 } from '@sharpee/stdlib';
 
-import { GameContext, TurnResult, EngineConfig } from '../types.js';
+import { GameContext, TurnResult, EngineConfig, type HeldCommand } from '../types.js';
 import { createActionContext } from './action-context-factory.js';
 import {
   checkCapabilityDispatch,
@@ -163,6 +163,27 @@ function slotReference(entity: IFEntity | undefined) {
   return entity
     ? { entity, parsed: { text: entity.name } }
     : undefined;
+}
+
+/**
+ * Where an answer to a disambiguation prompt is inserted (ADR-385 D11):
+ * the tied phrase's first content word, after the article and determiner
+ * tokens that lead it (the parser's own split, ADR-385 D2). The last
+ * token of the span is content whatever it is tagged.
+ * @param parsed the parsed command whose tokens the span indexes
+ * @param span the tied phrase's token indices, from the validator
+ * @returns the token index to insert at, or undefined for an empty span
+ */
+function insertionPoint(parsed: IParsedCommand, span: readonly number[]): number | undefined {
+  if (span.length === 0) return undefined;
+  for (let i = 0; i < span.length - 1; i++) {
+    const token = parsed.tokens[span[i]];
+    const leading = token?.partOfSpeech.some(
+      (part) => part === PartOfSpeech.ARTICLE || part === PartOfSpeech.DETERMINER
+    );
+    if (!leading) return span[i];
+  }
+  return span[span.length - 1];
 }
 
 export class CommandExecutor {
@@ -333,7 +354,9 @@ export class CommandExecutor {
             success: false,
             needsInput: true,
             events: [queryEvent],
-            error: 'CLARIFICATION_NEEDED'
+            error: 'CLARIFICATION_NEEDED',
+            // The missing seat is answered at the end: no insertion point
+            hold: { input, tokens: input.trim().split(/\s+/) }
           };
         }
         // ADR-385 D8: a failure at a constrained slot says what was found and
@@ -360,6 +383,14 @@ export class CommandExecutor {
         if (validationResult.error.code === 'AMBIGUOUS_ENTITY') {
           const details = validationResult.error.details || {};
           const candidates = details.ambiguousEntities || [];
+          // ADR-385 D11: hold the command with the tied phrase's span, so
+          // the next input can answer the prompt in place
+          const span: number[] = Array.isArray(details.tokens) ? details.tokens : [];
+          const hold: HeldCommand = {
+            input,
+            tokens: parsedCommand.tokens.map((token) => token.word),
+            insertAt: insertionPoint(parsedCommand, span)
+          };
 
           // Emit client.query event for disambiguation
           const queryEvent: ISemanticEvent = {
@@ -384,7 +415,8 @@ export class CommandExecutor {
             success: false,
             needsInput: true,
             events: [queryEvent],
-            error: 'DISAMBIGUATION_NEEDED'
+            error: 'DISAMBIGUATION_NEEDED',
+            hold
           };
         }
 

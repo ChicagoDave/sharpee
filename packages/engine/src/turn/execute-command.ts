@@ -3,13 +3,14 @@
  * pipeline and take its result as the turn's.
  *
  * The per-turn sound buffer is reset first; sounds the report phase
- * emits live there until the sound stage fans them out. A clarification
- * request holds the command for the next input.
+ * emits live there until the sound stage fans them out. A result that
+ * asked a question carries the command to hold for the next input.
  *
  * Public interface: `executeCommandStage`.
  * Owner context: `@sharpee/engine` — the turn cycle.
  *
- * References: ADR-172 Phase 6 (the sound buffer); GH #318 (the hold).
+ * References: ADR-172 Phase 6 (the sound buffer); GH #318 and ADR-385
+ * D11 (the hold).
  */
 
 import type { TurnStage } from './context.js';
@@ -28,8 +29,8 @@ export const executeCommandStage: TurnStage = {
       engine.config,
       engine.soundBuffer
     );
-    if (result.error === 'CLARIFICATION_NEEDED') {
-      engine.holdCommand(context.input);
+    if (result.hold) {
+      engine.holdCommand(result.hold);
     }
     context.result = result;
     return 'continue';

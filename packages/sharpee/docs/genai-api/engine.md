@@ -828,6 +828,28 @@ export interface TurnResult {
      * a follow-up response before continuing.
      */
     needsInput?: boolean;
+    /**
+     * The command to hold for the next input, when this turn asked a
+     * question — a missing-object clarification (GH #318) or a
+     * disambiguation prompt (ADR-385 D11). The execute stage hands it to
+     * the engine; the held-command stage spends it on the next input.
+     */
+    hold?: HeldCommand;
+}
+/**
+ * A command held for one more input after a question (GH #318, ADR-385
+ * D11). `tokens` are the input's words; `insertAt` is the index where an
+ * answer's words are inserted — the tied phrase's first content word,
+ * after its articles and determiners. Absent, the answer is appended (the
+ * missing-object hold). Turn state: never saved.
+ */
+export interface HeldCommand {
+    /** The input as typed. */
+    input: string;
+    /** The input's token words, in order. */
+    tokens: string[];
+    /** Where an answer's words go; absent means at the end. */
+    insertAt?: number;
 }
 /**
  * Union of all command execution results.
@@ -1734,7 +1756,7 @@ import type { StandardActionRegistry, IPerceptionService } from '@sharpee/stdlib
 import type { ISound } from '@sharpee/if-domain';
 import type { ITextBlock } from '@sharpee/text-blocks';
 import type { PluginRegistry } from '@sharpee/plugins';
-import type { EngineConfig, GameContext, GameEngineEvents, InputModeHandler, TurnResult } from '../types.js';
+import type { EngineConfig, GameContext, GameEngineEvents, HeldCommand, InputModeHandler, TurnResult } from '../types.js';
 import type { CommandExecutor } from '../command/command-executor.js';
 import type { EngineRandomService } from '../session/engine-random-service.js';
 import type { IProsePipeline } from '../prose-pipeline/index.js';
@@ -1847,10 +1869,10 @@ export interface TurnEngine {
     switchPlayer(entityId: string): void;
     /** Run an input as a turn of its own (command chaining, AGAIN). */
     executeTurn(input: string): Promise<TurnResult>;
-    /** Remember a clarification for the next input (GH #318). */
-    holdCommand(input: string): void;
+    /** Remember a question's command for the next input (GH #318, ADR-385 D11); a new hold replaces an open one. */
+    holdCommand(held: HeldCommand): void;
     /** Take the held command, if any, clearing the hold — exactly one input spends it (GH #318). */
-    takeHeldCommand(): string | undefined;
+    takeHeldCommand(): HeldCommand | undefined;
     /** Count a turn (and a move when it succeeded) in the session statistics. */
     countSessionTurn(success: boolean): void;
     /** What a platform operation needs of the engine: the hooks, save data, stop, undo, repeat (ADR-334 D3). */

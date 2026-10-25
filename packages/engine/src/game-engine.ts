@@ -54,7 +54,8 @@ import {
   EngineConfig,
   InputModeHandler,
   INPUT_MODE_STATE_KEY,
-  type GameEngineEvents
+  type GameEngineEvents,
+  type HeldCommand
 } from './types.js';
 import { introspect as introspectEngine, type EngineIntrospection } from './introspection/introspect.js';
 import { Story, type StoryEngine } from './install/story.js';
@@ -351,7 +352,7 @@ export class GameEngine implements StoryEngine {
    * #318, ADR-225 as amended): consumed by the very next input, answer or
    * not. Never serialized — a restore starts with no question pending.
    */
-  private heldCommand?: { input: string };
+  private heldCommand?: HeldCommand;
   private perceptionService?: IPerceptionService;
   private pluginRegistry: PluginRegistry;
   private actorTurnPlugin!: ActorTurnPlugin;
@@ -1044,11 +1045,11 @@ export class GameEngine implements StoryEngine {
       updateScopeVocabulary: () => this.updateScopeVocabulary(),
       switchPlayer: (entityId) => this.switchPlayer(entityId),
       executeTurn: (input) => this.executeTurn(input),
-      holdCommand: (input) => { this.heldCommand = { input }; },
+      holdCommand: (held) => { this.heldCommand = held; },
       takeHeldCommand: () => {
         const held = this.heldCommand;
         this.heldCommand = undefined;
-        return held?.input;
+        return held;
       },
       countSessionTurn: (success) => {
         this.sessionTurns++;

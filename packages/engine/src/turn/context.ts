@@ -33,7 +33,7 @@ import type { Parser, StandardActionRegistry, IPerceptionService } from '@sharpe
 import type { ISound } from '@sharpee/if-domain';
 import type { ITextBlock } from '@sharpee/text-blocks';
 import type { PluginRegistry } from '@sharpee/plugins';
-import type { EngineConfig, GameContext, GameEngineEvents, InputModeHandler, TurnResult } from '../types.js';
+import type { EngineConfig, GameContext, GameEngineEvents, HeldCommand, InputModeHandler, TurnResult } from '../types.js';
 import type { CommandExecutor } from '../command/command-executor.js';
 import type { EngineRandomService } from '../session/engine-random-service.js';
 import type { IProsePipeline } from '../prose-pipeline/index.js';
@@ -152,10 +152,10 @@ export interface TurnEngine {
   switchPlayer(entityId: string): void;
   /** Run an input as a turn of its own (command chaining, AGAIN). */
   executeTurn(input: string): Promise<TurnResult>;
-  /** Remember a clarification for the next input (GH #318). */
-  holdCommand(input: string): void;
+  /** Remember a question's command for the next input (GH #318, ADR-385 D11); a new hold replaces an open one. */
+  holdCommand(held: HeldCommand): void;
   /** Take the held command, if any, clearing the hold — exactly one input spends it (GH #318). */
-  takeHeldCommand(): string | undefined;
+  takeHeldCommand(): HeldCommand | undefined;
   /** Count a turn (and a move when it succeeded) in the session statistics. */
   countSessionTurn(success: boolean): void;
   /** What a platform operation needs of the engine: the hooks, save data, stop, undo, repeat (ADR-334 D3). */
