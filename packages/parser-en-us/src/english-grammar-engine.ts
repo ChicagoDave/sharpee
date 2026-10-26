@@ -107,6 +107,12 @@ interface SearchPath {
   afterSlot: boolean;
 }
 
+/** A slot match's shape as a string: its span, then its list items' and exclusions' spans. */
+function readingKey(slot: SlotMatch): string {
+  const spans = (items: readonly SlotMatch[] | undefined): string => (items ? `[${items.map((item) => item.tokens.join(',')).join('|')}]` : '');
+  return `${slot.tokens.join(',')}${spans(slot.items)}${slot.excluded ? `-${spans(slot.excluded)}` : ''}`;
+}
+
 /** Whether a literal or alternates element reads the token. */
 function literalReads(element: PatternToken, token: Token | undefined): boolean {
   if (!token) return false;
@@ -282,7 +288,9 @@ export class EnglishGrammarEngine extends GrammarEngine {
 
       if (elementIndex === total) {
         if (path.tokenIndex === tokens.length) {
-          const key = [...path.slots.entries()].map(([name, slot]) => `${name}:${slot.tokens.join(',')}`).join('|');
+          // The same spans read as a list and as one item are two readings
+          // (ADR-386 D6), so the key carries each slot's items and exclusions
+          const key = [...path.slots.entries()].map(([name, slot]) => `${name}:${readingKey(slot)}`).join('|');
           if (!seen.has(key)) {
             seen.add(key);
             const slots = new Map(path.slots);
@@ -379,8 +387,12 @@ export class EnglishGrammarEngine extends GrammarEngine {
         return;
       }
 
+      // Readings of one extent keep the consumer's order (the list before the
+      // single item across its separators, ADR-386 D6); the stable sort only
+      // reorders extents.
       const last = elementIndex === total - 1;
-      const readings = last ? result.readings : [...result.readings].reverse();
+      const endOf = (reading: SlotMatch): number => reading.tokens[reading.tokens.length - 1];
+      const readings = last ? result.readings : [...result.readings].sort((a, b) => endOf(a) - endOf(b));
       for (const reading of readings) {
         if (matches.length >= MAX_READINGS_PER_RULE) {
           capped = true;

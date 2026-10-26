@@ -10,7 +10,7 @@
 
 import { SlotType, type SlotMatch, type Token } from '@sharpee/if-domain';
 import { SlotConsumer, SlotConsumerContext, type SlotConsumeResult } from './slot-consumer.js';
-import { splitLeadingWords } from './noun-phrase-split.js';
+import { spanText, splitLeadingWords } from './noun-phrase-split.js';
 
 /**
  * Consumer for text slots (TEXT, TEXT_GREEDY, QUOTED_TEXT, TOPIC)
@@ -82,7 +82,7 @@ export class TextSlotConsumer implements SlotConsumer {
     const { tokens, startIndex, slotType } = ctx;
     const readings = this.spans(tokens, startIndex).map((span) => ({
       tokens: span,
-      text: span.map((i) => tokens[i].word).join(' '),
+      text: spanText(span, tokens),
       slotType
     }));
     return readings.length > 0 ? { readings } : null;
@@ -153,7 +153,7 @@ export class TextSlotConsumer implements SlotConsumer {
       const split = splitLeadingWords(span, tokens);
       return {
         tokens: span,
-        text: span.map((i) => tokens[i].word).join(' '),
+        text: spanText(span, tokens),
         slotType: SlotType.TOPIC,
         articles: split.articles,
         determiners: split.determiners,

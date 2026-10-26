@@ -350,7 +350,8 @@ describe('ADR-080: Grammar Enhancements', () => {
       };
 
       const matches = engine.findMatches(tokens, context);
-      expect(matches).toHaveLength(1);
+      // The exclusions are read as a list and as one item (ADR-386 D6); the list first
+      expect(matches).toHaveLength(2);
 
       const match = matches[0];
       const slot = match.slots.get('item')!;
@@ -383,7 +384,8 @@ describe('ADR-080: Grammar Enhancements', () => {
       };
 
       const matches = engine.findMatches(tokens, context);
-      expect(matches).toHaveLength(1);
+      // The span is read as a list and as one item (ADR-386 D6); the list first
+      expect(matches).toHaveLength(2);
 
       const match = matches[0];
       const slot = match.slots.get('item')!;
@@ -417,7 +419,7 @@ describe('ADR-080: Grammar Enhancements', () => {
       };
 
       const matches = engine.findMatches(tokens, context);
-      expect(matches).toHaveLength(1);
+      expect(matches).toHaveLength(2);
 
       const match = matches[0];
       const slot = match.slots.get('item')!;
@@ -452,7 +454,7 @@ describe('ADR-080: Grammar Enhancements', () => {
       };
 
       const matches = engine.findMatches(tokens, context);
-      expect(matches).toHaveLength(1);
+      expect(matches).toHaveLength(2);
 
       const match = matches[0];
       const slot = match.slots.get('item')!;
@@ -486,7 +488,9 @@ describe('ADR-080: Grammar Enhancements', () => {
       };
 
       const matches = engine.findMatches(tokens, context);
-      expect(matches).toHaveLength(1);
+      // The span is read as the list and as one item (ADR-386 D6); with no
+      // world to rank by, the list comes first in search order
+      expect(matches).toHaveLength(2);
 
       const match = matches[0];
       const itemSlot = match.slots.get('item')!;
@@ -494,6 +498,7 @@ describe('ADR-080: Grammar Enhancements', () => {
       expect(itemSlot.items).toHaveLength(2);
       expect(itemSlot.items[0].text).toBe('knife');
       expect(itemSlot.items[1].text).toBe('lamp');
+      expect(matches[1].slots.get('item')!.text).toBe('knife and lamp');
 
       const containerSlot = match.slots.get('container');
       expect(containerSlot?.text).toBe('bag');

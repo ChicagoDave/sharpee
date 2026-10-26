@@ -650,9 +650,14 @@ export class EnglishParser implements Parser {
       quoteIndex++;
     }
     
-    // Now tokenize the processed input
-    const words = processedInput.trim().split(/(\s+)/); // Keep whitespace for position tracking
-    
+    // Now tokenize the processed input: split on whitespace, keeping it for
+    // position tracking, and give each comma its own token (ADR-386 D6) so a
+    // list separator is never glued to the word before it
+    const words = processedInput
+      .trim()
+      .split(/(\s+)/)
+      .flatMap((segment) => (/^\s+$/.test(segment) ? [segment] : segment.split(/(,)/).filter((piece) => piece.length > 0)));
+
     for (const segment of words) {
       // Skip pure whitespace segments
       if (/^\s+$/.test(segment)) {

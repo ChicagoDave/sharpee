@@ -96,3 +96,59 @@ export function splitLeadingWords(indices: readonly number[], tokens: readonly T
   }
   return { articles, determiners, ownedByActor, content: indices.slice(start) };
 }
+
+/** The list conjunction. English, until the language owns its word lists (step 7). */
+export const LIST_CONJUNCTION = 'and';
+
+/** The comma, a token of its own (ADR-386 D6). */
+export const LIST_COMMA = ',';
+
+/**
+ * Whether the token separates list items: the conjunction or a comma
+ * (ADR-386 D6). `, and` is one separator, which `splitAtSeparators` reads.
+ * @param token The token to test
+ * @returns True for `and` and for a comma
+ */
+export function isListSeparator(token: Token | undefined): boolean {
+  return token !== undefined && (token.normalized === LIST_CONJUNCTION || token.normalized === LIST_COMMA);
+}
+
+/**
+ * Split a span at the list separators into item spans, `, and` counting as
+ * one separator.
+ * @param span The token indices of the span
+ * @param tokens The input tokens
+ * @returns The item spans, or null when a part is empty (a leading, trailing
+ *   or doubled separator), which no extent reads
+ */
+export function splitAtSeparators(span: readonly number[], tokens: readonly Token[]): number[][] | null {
+  const parts: number[][] = [[]];
+  let afterComma = false;
+  for (const i of span) {
+    const token = tokens[i];
+    if (isListSeparator(token)) {
+      if (!(afterComma && token.normalized === LIST_CONJUNCTION)) parts.push([]);
+      afterComma = token.normalized === LIST_COMMA;
+    } else {
+      parts[parts.length - 1].push(i);
+      afterComma = false;
+    }
+  }
+  return parts.some((part) => part.length === 0) ? null : parts;
+}
+
+/**
+ * The typed words of a span, as the player wrote them: a space between
+ * words and none before a comma, so `14, 6` reads back as `14, 6`.
+ * @param indices The token indices of the span, in order
+ * @param tokens The input tokens
+ * @returns The span's text
+ */
+export function spanText(indices: readonly number[], tokens: readonly Token[]): string {
+  let text = '';
+  for (const i of indices) {
+    const word = tokens[i].word;
+    text += text.length === 0 || word === LIST_COMMA ? word : ` ${word}`;
+  }
+  return text;
+}

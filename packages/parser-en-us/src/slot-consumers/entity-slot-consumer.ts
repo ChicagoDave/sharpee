@@ -1,13 +1,16 @@
 /**
  * @file Entity Slot Consumer
  * @description Reads entity and instrument slots: single nouns, lists ("X and
- *   Y", ADR-088), all phrases ("all", "all but X") and pronouns (ADR-089).
- *   It returns every extent the slot could take from its start, longest first
- *   (ADR-386 D1); the engine's search chooses among them. Every item has its
- *   leading articles and determiners split once (ADR-385 D2); a constrained
- *   slot admits an extent only when the gate names something for each of its
- *   items and records the admitted ids on the item (D3, D4); a pronoun is a
- *   whole item, may be a list item, and passes the same gate (D6).
+ *   Y", "X, Y", ADR-088), all phrases ("all", "all but X") and pronouns
+ *   (ADR-089). It returns every extent the slot could take from its start,
+ *   longest first (ADR-386 D1); the engine's search chooses among them. A
+ *   span that holds a list separator is read both ways, as the list split at
+ *   the separators and as one item across them (ADR-386 D6); the noun rank
+ *   decides. Every item has its leading articles and determiners split once
+ *   (ADR-385 D2); a constrained slot admits an extent only when the gate
+ *   names something for each of its items and records the admitted ids on
+ *   the item (D3, D4); a pronoun is a whole item, may be a list item, and
+ *   passes the same gate (D6).
  *
  * Public interface: EntitySlotConsumer.
  * Owner context: parser-en-us slot consumers.
@@ -26,10 +29,7 @@ import { SlotConsumer, SlotConsumerContext, isSlotRefusal, type SlotConsumeResul
 import { GrammarScopeResolver } from '../grammar-scope-resolver.js';
 import { isRecognizedPronoun, getPronounContextManager } from '../pronoun-context.js';
 import type { RequiredScope } from '../parse-failure.js';
-import { isAllWord, isExceptWord, splitLeadingWords, startsNounPhrase } from './noun-phrase-split.js';
-
-/** The list conjunction. English, until the language owns its word lists (step 7). */
-const LIST_CONJUNCTION = 'and';
+import { isAllWord, isExceptWord, isListSeparator, spanText, splitAtSeparators, splitLeadingWords, startsNounPhrase } from './noun-phrase-split.js';
 
 /** A slot's gate: its constraints and the world they are asked against. */
 interface Gate {
@@ -86,37 +86,46 @@ export class EntitySlotConsumer implements SlotConsumer {
       const rest = range(startIndex + 1, end);
       const exceptAt = rest.findIndex((i) => isExceptWord(tokens[i]));
       const nounSpan = exceptAt >= 0 ? rest.slice(0, exceptAt) : rest;
-      if (nounSpan.some((i) => tokens[i].normalized === LIST_CONJUNCTION || isExceptWord(tokens[i]))) continue;
+      if (nounSpan.some((i) => isListSeparator(tokens[i]) || isExceptWord(tokens[i]))) continue;
 
-      let excluded: SlotMatch[] | undefined;
+      // The exclusions are read as a list split at the separators and, when
+      // there is a separator, as one item across them (ADR-386 D6)
+      const exclusionReadings: Array<SlotMatch[] | undefined> = [undefined];
       if (exceptAt >= 0) {
-        const exclusionSpans = this.splitItems(rest.slice(exceptAt + 1), tokens);
+        const exclusionSpan = rest.slice(exceptAt + 1);
+        const exclusionSpans = splitAtSeparators(exclusionSpan, tokens);
         if (!exclusionSpans) continue;
-        excluded = exclusionSpans.map((span) => this.itemMatch(span, tokens));
+        exclusionReadings[0] = exclusionSpans.map((span) => this.itemMatch(span, tokens));
+        if (exclusionSpans.length > 1) exclusionReadings.push([this.itemMatch(exclusionSpan, tokens)]);
       }
 
       const split = nounSpan.length > 0 ? splitLeadingWords(nounSpan, tokens) : undefined;
-      readings.push({
-        tokens: range(startIndex, end),
-        text: [allWord, ...nounSpan.map((i) => tokens[i])].map((t) => t.word).join(' '),
-        slotType,
-        articles: split?.articles ?? [],
-        determiners: [allWord.normalized, ...(split?.determiners ?? [])],
-        ...(split?.ownedByActor ? { ownedByActor: true } : {}),
-        isAll: true,
-        ...(excluded ? { excluded } : {})
-      });
+      for (const excluded of exclusionReadings) {
+        readings.push({
+          tokens: range(startIndex, end),
+          text: spanText([startIndex, ...nounSpan], tokens),
+          slotType,
+          articles: split?.articles ?? [],
+          determiners: [allWord.normalized, ...(split?.determiners ?? [])],
+          ...(split?.ownedByActor ? { ownedByActor: true } : {}),
+          isAll: true,
+          ...(excluded ? { excluded } : {})
+        });
+      }
     }
 
     return readings.length > 0 ? { readings } : null;
   }
 
   /**
-   * The readings of one or more items ("X", "X and Y", "it and the box"):
-   * every span from the start, longest first, each split at the conjunction
-   * into items that are each a name or a whole-item pronoun, gated by the
-   * slot's constraints when it has any. When a gate refuses every extent, the
-   * refusal for the longest span is returned (ADR-385 D8).
+   * The readings of one or more items ("X", "X and Y", "X, Y", "it and the
+   * box"): every span from the start, longest first; a span with a separator
+   * is read as the list split at the separators and as one item across them
+   * (ADR-386 D6), the list first; each item is a name or a whole-item
+   * pronoun, gated by the slot's constraints when it has any. A span with an
+   * empty part (a leading, trailing or doubled separator) is no extent. When
+   * a gate refuses every extent, the refusal for the longest span is returned
+   * (ADR-385 D8).
    */
   private itemReadings(ctx: SlotConsumerContext): SlotConsumeResult {
     const { tokens, startIndex, slotType } = ctx;
@@ -126,34 +135,39 @@ export class EntitySlotConsumer implements SlotConsumer {
 
     for (let end = tokens.length; end > startIndex; end--) {
       const span = range(startIndex, end);
-      const itemSpans = this.splitItems(span, tokens);
+      const itemSpans = splitAtSeparators(span, tokens);
       if (!itemSpans) continue;
 
-      const items: SlotMatch[] = [];
-      let refused: SlotRefusal | undefined;
-      let notAnItem = false;
-      for (const itemSpan of itemSpans) {
-        const consumed = this.consumeItem(itemSpan, tokens, gate);
-        if (consumed === null) {
-          notAnItem = true;
-          break;
+      const ways = itemSpans.length > 1 ? [itemSpans, [span]] : [itemSpans];
+      for (const way of ways) {
+        const read = this.readItems(way, tokens, gate);
+        if (read === null) continue;
+        if (isSlotRefusal(read)) {
+          refusal ??= read;
+          continue;
         }
-        if (isSlotRefusal(consumed)) {
-          refused = consumed;
-          break;
-        }
-        items.push(...consumed);
+        readings.push(this.matchOf(span, read, tokens, slotType));
       }
-      if (notAnItem) continue;
-      if (refused) {
-        refusal ??= refused;
-        continue;
-      }
-      readings.push(this.matchOf(span, items, tokens, slotType));
     }
 
     if (readings.length > 0) return { readings };
     return refusal ?? null;
+  }
+
+  /**
+   * Read each item span of one way of splitting a span.
+   * @returns The items, the first gate refusal met, or null when a span is
+   *   not an item at all
+   */
+  private readItems(itemSpans: readonly number[][], tokens: Token[], gate: Gate | undefined): SlotMatch[] | SlotRefusal | null {
+    const items: SlotMatch[] = [];
+    for (const itemSpan of itemSpans) {
+      const consumed = this.consumeItem(itemSpan, tokens, gate);
+      if (consumed === null) return null;
+      if (isSlotRefusal(consumed)) return consumed;
+      items.push(...consumed);
+    }
+    return items;
   }
 
   /** One item is the slot's own match; several make a list whose items carry their own splits, scopes and entity ids. */
@@ -169,23 +183,6 @@ export class EntitySlotConsumer implements SlotConsumer {
       items,
       ...(items.every((item) => item.isPronoun) ? { isPronoun: true } : {})
     };
-  }
-
-  /**
-   * Split a span at the list conjunction into item spans.
-   * @returns The item spans, or null when a part is empty (a leading,
-   *   trailing or doubled conjunction), which no extent reads
-   */
-  private splitItems(span: number[], tokens: Token[]): number[][] | null {
-    const parts: number[][] = [[]];
-    for (const i of span) {
-      if (tokens[i].normalized === LIST_CONJUNCTION) {
-        parts.push([]);
-      } else {
-        parts[parts.length - 1].push(i);
-      }
-    }
-    return parts.some((part) => part.length === 0) ? null : parts;
   }
 
   /**
@@ -278,9 +275,9 @@ export class EntitySlotConsumer implements SlotConsumer {
     };
   }
 
-  /** The typed words at the indices, space-joined. */
+  /** The typed words at the indices, as the player wrote them. */
   private wordsOf(indices: readonly number[], tokens: Token[]): string {
-    return indices.map((i) => tokens[i].word).join(' ');
+    return spanText(indices, tokens);
   }
 
   /** An item's content words: its text after the split prefix. */
