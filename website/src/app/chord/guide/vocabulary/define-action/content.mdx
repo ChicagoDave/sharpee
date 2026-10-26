@@ -151,13 +151,32 @@ carrying its canonical direction.
 
 ## Which pattern wins
 
-When two patterns could match the same command, the more specific one —
-the one that spells out more of what was typed — wins. Between equally
-specific patterns, the one listed first wins, so the order of grammar
-lines (and of `define action` blocks) is meaningful. A story's grammar
-always outranks the standard library's, which is what makes
-[extend action](/chord/guide/vocabulary/extend-action) and
-[remove from action](/chord/guide/vocabulary/remove-from-action) work.
+When more than one pattern could read a command, one ordering decides, in
+four steps:
+
+1. **The reading whose nouns name things.** Every way a line can read the
+   input is tried, and a reading that fills a slot with words naming
+   nothing in the world loses to one whose words all name something. So
+   `give the old man the sword` reads the old man and the sword, whatever
+   the line order, and `put jack in the box in chest` reads the toy and
+   the chest.
+2. **The more specific line** — the one that spells out more of what was
+   typed — wins whatever its tier. A story's `take the thing` takes
+   `take lamp` and leaves `take off hat` to the standard `taking off`,
+   because that line spells out two words to the story's one.
+3. **At equal specificity, the story's line** beats the standard
+   library's. This is what makes
+   [extend action](/chord/guide/vocabulary/extend-action) settle a
+   contest: restate the standard line under your action and yours wins.
+4. **Between equally specific lines of one tier, the one listed first**,
+   so the order of grammar lines (and of `define action` blocks) is
+   meaningful.
+
+A broad story line does not capture a standard verb's more specific
+phrasings. To take a standard phrasing away from its action, say so with
+[remove from action](/chord/guide/vocabulary/remove-from-action); nothing
+is implied by writing a shorter line. There is no numeric priority and no
+ordering construct.
 
 That ranking holds for the whole game, not just where the action makes
 sense. A story action whose grammar carries `wear dress` takes every
@@ -167,6 +186,52 @@ later can never be worn by that phrase. To react to a standard action on
 one thing, put an `on` clause on the thing (`on the player wearing`)
 and leave the phrase to the standard action; reserve a story action's
 grammar for phrases that are the story's own.
+
+## How a command is read
+
+Every entity slot has a **seat**: it is the command's direct object or its
+indirect object, and the action reads it by seat, never by position. The
+first entity slot in a line is the direct object and the second the
+indirect, unless the action's earlier lines already seated that name: a
+slot name keeps one seat across every line of an action. Giving's first
+line, `give the item to the recipient`, seats the item direct and the
+recipient indirect, so `hand the recipient the item` seats them the same
+way and `give the old man the sword` hands over the sword. `is an
+instrument` and `is a topic` take no seat; they are the command's
+instrument and topic. Two names in one seat is a compile error
+(`analysis.seat-conflict`).
+
+When the player stops short, the question asks by seat and by the verb
+they used:
+
+```transcript
+> give
+What do you want to give?
+
+> unlock door with
+Unlock it where?
+```
+
+A slot's `must be held`, `must be reachable` or `must be visible` is
+checked while the command is read, by the same noun matcher the rest of
+the engine uses to decide which thing a phrase names. When the words name
+something the player can see but the slot's requirement excludes it, the
+refusal names the thing and the reason:
+
+```transcript
+> wind lantern
+You aren't holding the brass lantern.
+
+> wind the widget
+You can't see any widget here.
+```
+
+`and` and a comma are list readings, never hard splits. `take knife and
+lamp` names two things as a list and nothing as one item, so it is a list;
+`take salt and pepper shaker` names one thing as a single item, so it is
+that item, taken once. Articles are optional in both directions: `climb
+rope` matches a line written `climb the rope`, and `take the lamp off`
+matches `take lamp off`.
 
 ## Claiming a verb only where it makes sense
 

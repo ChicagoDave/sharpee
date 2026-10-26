@@ -12,13 +12,18 @@ extend action taking
 `snag the lamp` now works exactly as `take the lamp` does. Slot names
 refer to the slots the action already resolves — `taking` calls its
 object `the item`, so the extension does too (the standard names are
-listed on [define action](/chord/guide/vocabulary/define-action)).
+listed on [define action](/chord/guide/vocabulary/define-action)). An
+extension line inherits the action's seats by those names, so a line with
+two entity slots must carry at least one name the action already has
+(`hang the item on the peg` under `putting` seats the peg as the indirect
+object); two new names at once is `analysis.unknown-slot`, since their
+seats would be a guess.
 
 ## Making a different action win
 
-Extensions also settle contests. A story's grammar always outranks the
-standard library's, so restating a pattern under a different action
-flips which one wins:
+Extensions also settle contests. At equal specificity a story's line
+outranks the standard library's, so restating a pattern word for word
+under a different action flips which one wins:
 
 ```chord
 extend action examining
