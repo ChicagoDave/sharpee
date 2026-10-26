@@ -102,7 +102,7 @@
 - **Exit state**: ADR-387 AC3 and AC6 met; the parser holds no English word or sentence; `parserErrors` gone; Dungeo and tree text unchanged, or each move a defect taken to David.
 - **Demonstration**: the real-path tests green; the greps for the removed names and for English sentences in parser-en-us src; the floor commands quoted.
 - **Demonstrated**: 
-- **Status**: PENDING
+- **Status**: CURRENT (since 2026-10-25)
 
 ### Phase 5: One direction table per language (F3)
 - **Tier**: Medium
