@@ -220,6 +220,8 @@ Nothing on the wire carries an entity id back: the answer is words, resolved by 
 - The engine's held command gains a span. GH #318's missing-object hold is unchanged in behavior, and its tests are the floor for that.
 - The world-model module's English words are an interim home. Step 7 moves them, and nothing else in this record depends on where they live.
 
+> **Amendment note (2026-10-26, ADR-387):** fulfilled, not superseded. The interim home is gone: world-model declares the language-agnostic roles (`LanguageWords { selfWords, nameStopwords }`, if-domain), the English provider fills them from its one word table, and the engine assigns them to the world at install (ADR-387 D2, step 7 Phase 3). `SELF_WORDS`, `NAME_VOCABULARY_STOPWORDS` and `PLAYER_ROLE_ALIASES` no longer exist. This record's Status line is left alone.
+
 ## Acceptance criteria
 
 1. **D1**: `matchNoun` and `namingSurfaceOf` are exported from world-model. A test pins each tier, the dominance of more matched words, disqualification by an unmatched word, the article-first EXACT try, the self words, and wall side adjectives. `grep` finds no `matchEntityName`, `getEntityVocabulary` or `SELF_WORDS` in stdlib.

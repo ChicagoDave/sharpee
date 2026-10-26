@@ -4,12 +4,47 @@
 
 ## Parser vs Language Layer
 
-**Parser owns grammar, language layer owns text.**
+**Parser owns grammar, language layer owns text and words.**
 
 | Package        | Owns                | Examples                                            |
 | -------------- | ------------------- | --------------------------------------------------- |
-| `parser-en-us` | Grammar patterns    | `grammar/standard-en-us.story`: the standard grammar (Chord source) |
-| `lang-en-us`   | Messages, help text | `searching.ts`: error messages, action descriptions |
+| `parser-en-us` | Grammar patterns, the search, the parser's own state | `grammar/standard-en-us.story`: the standard grammar (Chord source); `pronoun-context.ts`: one pronoun context per parser |
+| `lang-en-us`   | Messages, help text, the word table | `searching.ts`: error messages, action descriptions; `data/words.ts`: articles, determiners, directions, list separators; `parser.error.*`: the seat questions |
+
+### Words and state (ADR-387)
+
+- **The parser holds no English word and no sentence a player reads.** Every
+  word list (articles, determiners and whose possessive each is, self words,
+  all and except words, list separators, manner adverbs, name stopwords, the
+  direction table, number words) is declared once in lang-en-us's
+  `data/words.ts` and reaches the parser through the `ParserLanguageProvider`
+  it was constructed with. `slot-consumers/slot-consumer.ts` derives the
+  consumers' `PhraseWords` (list separators, the actor's possessives, manner
+  adverbs, the direction lookup) from the provider once per parse, and the
+  grammar engine hands it to every consumer through `SlotConsumerContext`.
+  `import … from '@sharpee/lang-en-us'` in `src/` is a structural test
+  failure (`lang-en-us/tests/one-home.test.ts`).
+- **A parse failure carries a message id and its bindings**, never a sentence
+  (`parse-failure.ts`, `buildParseError`): `parser.error.missingIndirect` with
+  `{ verb }` is what reaches the engine, and lang-en-us words "Unlock it where?".
+  A quote-delimited sentence in `src/` is a test failure
+  (`tests/adr-387-d3-no-sentences.test.ts`).
+- **The possessive is by person.** `my lantern` and, in the default
+  second-person voice, `your lantern` mark the phrase the actor's own;
+  `her key` narrows nothing. The person comes from the provider's
+  `getNarrativePerson()`, read per parse because the story's voice is set at
+  install.
+- **One direction table.** The tokenizer's DIRECTION tag, the typed DIRECTION
+  slot, going's `extras.direction` and `extractDirectionValue` all read the
+  provider's `getDirections()`, whose ids are world-model's `Direction`
+  constants; a word is a direction everywhere or nowhere. `upward` is in no
+  table. `./repokit grammar --check` holds every `directions` block of the
+  standard grammar to going's.
+- **Parser state is per instance.** `EnglishParser` owns its
+  `VocabularyRegistry` and its `PronounContextManager`; constructing a second
+  parser touches nothing of the first (`tests/adr-387-d4-two-parsers.test.ts`).
+  There is no module-level registry or pronoun manager, and entity names are
+  not vocabulary: the noun matcher resolves them over the world (ADR-385).
 
 ## The Standard Grammar Is Chord (ADR-269)
 
@@ -104,9 +139,10 @@ the parser.
 - **Articles and determiners are split once**, in the slot consumer
   (`slot-consumers/noun-phrase-split.ts`), from the tokens' parts of speech the
   language registered. The noun phrase carries `articles`, `determiners`,
-  `modifiers`, `text` and `head`; nothing downstream strips again. `my` marks
-  the phrase as the actor's own; the all and except words come from the language
-  (`take everything`, `take all coins`, `take all but the lantern`).
+  `modifiers`, `text` and `head`; nothing downstream strips again. A possessive
+  of the actor's person marks the phrase as the actor's own (`my`, and `your`
+  in the second-person voice; ADR-387 D6); the all and except words come from
+  the language (`take everything`, `take all coins`, `take all but the lantern`).
 - **A `.where()` constraint asks the one noun matcher.** The gate
   (`grammar-scope-resolver.ts`) admits the base's entities that world-model's
   `matchNoun` names, exactly as the validator does, so an adjective admits and a
@@ -120,7 +156,8 @@ the parser.
   language renders "You aren't holding the brass lantern." and the like.
 - **Pronoun context follows the command's roles** (`pronoun-context.ts`): the
   direct object, else the indirect object, else the instrument; a list sets
-  `them` to every entity it resolved.
+  `them` to every entity it resolved. The context is the parser's own, handed
+  to the consumers as `SlotConsumerContext.pronouns` (ADR-387 D4).
 
 ### Slot extents and readings (ADR-386)
 
@@ -161,9 +198,10 @@ the parser.
   pattern articles after the first element, and the short-input verb test reads
   an alternation (`push|press :target`) as well as a literal, so bare `press`
   asks what to press.
-- **A number slot reads a compound number**: `parseCardinal` in lang-en-us
-  reads digits, one number word, or a tens-and-units pair (`twenty five`,
-  `twenty-five`); the number consumer admits every span it reads, longest first.
+- **A number slot reads a compound number**: the provider's `parseCardinal`
+  (lang-en-us's, for English) reads digits, one number word, or a tens-and-units
+  pair (`twenty five`, `twenty-five`); the number consumer admits every span it
+  reads, longest first.
 
 ## Story Grammar Extension
 

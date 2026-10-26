@@ -96,3 +96,5 @@ The matcher's tiers, the gate and its refusals, the validator's resolution, the 
 ## Session
 
 Drafted in session 57820e (2026-10-25), `docs/context/session-20261025-1954-chord-4-0.md`, from the step 7 plan's Phase 1 measurement. Scripts and run files: `/private/tmp/claude-501/-Users-david-repos-sharpee/2bd09231-4c2f-4e2e-92ce-fab84f1950b1/scratchpad/language/` (`p1/inventory.md`, `two-parsers.cjs`, `census7.cjs`, `census/`).
+
+**Implemented** (sessions 57820e and 63b2a2, 2026-10-25/26, `docs/context/session-20261025-2320-chord-4-0.md`): D1, D2, D7 in commit a7d0a1dc2 (Phase 3); D3, D6 in e721c88a0 (Phase 4); D5 in 510044415 (Phase 5); D4 in 7cb9896fa (Phase 6); the close-out in the commit that follows. AC1–AC8 are checked against the evidence in the step 7 plan's Close-out. Two interpretations recorded there for David: the actor's possessives are the first person's and the narrative person's (D6), and the grammar check holds every `directions` block to going's lines rather than requiring the three identical, since steering has no `in`/`out` (D5).

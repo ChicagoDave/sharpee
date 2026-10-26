@@ -111,6 +111,8 @@ The language owns how number words compose: `lang-en-us` gains `parseCardinal(wo
 
 The validator's resolution, the gate (ADR-385 D3, D4), its refusals (D8) and `SlotMatch.scope` keep their meaning. ADR-384's keys and their order stand below the noun rank; nothing else in the ordering moves. No Chord construct, diagnostic, EBNF line or `chord-grammar-changes.md` row changes; the IDE and the wire are untouched. The English word lists this record touches (the list conjunction, number words) stay where they are until step 7.
 
+> **Amendment note (2026-10-26, ADR-387):** step 7 landed. The list conjunction and comma left `noun-phrase-split.ts` for the language's `listSeparators`, read through the provider as `PhraseWords` once per parse (ADR-387 D6, step 7 Phase 4); the number words and `parseCardinal` were already the language's and are read through the provider (ADR-387 D1). Nothing else in this record moved; its Status line is left alone.
+
 ## Consequences
 
 - One search decides extents and one comparator decides the parse; no slot ever ends at "the next literal" and no optional is "tried once". A1–A7, A9, A10 and A11 are fixed by construction, and each has a probe line.
