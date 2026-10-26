@@ -1,0 +1,90 @@
+# Session Plan: Bring sharpee.net to Chord 4.0.0 / Sharpee 5.5.0
+
+**Created**: 2026-10-26
+**Plan Status**: ACTIVE
+**Overall scope**: The chord-4-0 branch merged to main today (PR #633, merge 9e70e57e4): 22 ADRs (366-387), 35 new rows in the Chord grammar log, and a reworked English parser (parser review, ADR-382-387). The site still says Sharpee 5.4.1 / Chord 3.6.0. Measure the delta first, then correct the site, then ship a build-clean website. Docs/website work only; no platform change, no npm publish (hand-dispatched GitHub workflow, David's).
+**Bounded contexts touched**: N/A - documentation/website (`website/`, `docs/releases/`)
+**Key domain language**: kind leads every create block (ADR-359); hatches removed (ADR-361); passage block (ADR-380); seat (ADR-383); grammar-blocks (generated)
+
+## References consulted
+- `docs/architecture/chord-grammar-changes.md` - 35 rows since 2026-10-13; each says what changed and whether the website/guide was touched; the census input for Chord constructs.
+- `docs/architecture/adrs/adr-366-a-vehicle-is-a-kind-with-a-movement-model.md` through `docs/architecture/adrs/adr-387-language-tables-and-per-parser-state.md` - 22 ADRs; each is checked in Phase 1 for a website obligation.
+- `docs/releases/release-5.4.1.md` - release-note shape (Status, Published, Chord language, Traces to, What shipped, Details); 5.4.1 was Claude-written technical content.
+- `website/src/lib/versions.json`, `website/src/lib/releases-data.json` - both still 5.4.1 / Chord 3.6.0; written by `website/scripts/sync-versions.mjs` and `sync-releases.mjs` (run by `npm run build`).
+- `CLAUDE.md` / memory - sharpee.net is canon, `docs/reference/` lags; `docs/unofficial/` is never a source; release prose is David's only where he said so (a 5.5.0 note is Claude-written technical); no platform changes without discussion; Chord stays simple (names are syntax).
+- `website/AGENTS.md` - this Next.js has breaking changes; read `website/node_modules/next/dist/docs/` before writing code.
+- Product ADRs not consulted (no Scope intersection): none classified product by Scope; ADR-366..387 read by title only until Phase 1.
+
+## Phases
+
+### Phase 1: Census of the site against main
+- **Tier**: Medium
+- **Budget**: ~250 tool calls
+- **Domain focus**: measured delta, no edits to site content
+- **Entry state**: main at 44e20ddd2 (plus the uncommitted 5.5.0 / 4.0.0 version bump); `docs/architecture/chord-grammar-changes.md` and ADR-366..387 readable
+- **Deliverable**: `docs/work/website-chord-4-0-delta/census.md` (new) holding: (a) every grammar-log row since 2026-10-13 classified present / stale / missing against `website/src/app/chord/guide/`, `website/src/app/chord/reference/grammar/`, `website/src/app/chord/stdlib/`, `website/src/app/chord/cookbook/`, `website/src/app/chord/getting-started/`; (b) ADR-366..387 each with a website obligation or "none"; (c) parser-behaviour pages (`website/src/app/sharpee/platform/`, `website/src/app/sharpee/actions-and-traits/`, the grammar reference) checked against ADR-382..387 (seat questions, list parsing, directions, one word table); (d) a sweep of every Chord code block on the site for pre-4.0 syntax (create blocks not led by kind, hatches, attachment forms replaced by connectors per ADR-381); (e) version/release data state; (f) generated `website/src/app/chord/stdlib/reference/grammar-blocks.ts` and `website/scripts/sync-chord-ebnf.mjs` output freshness vs the repokit grammar and the EBNF pin; (g) broken internal links; (h) counts per category; (i) the phase list below corrected to what the census found
+- **Files**: `docs/work/website-chord-4-0-delta/census.md` (new), `docs/work/website-chord-4-0-delta/plan.md`
+- **Exit state**: census.md records counts (rows: present/stale/missing; ADRs with/without obligation; stale code blocks; broken links), and Phases 3-5 below name the actual pages
+- **Demonstration**: open census.md and confirm the counts sum to 35 grammar rows and 22 ADRs; re-run one grep per category from the census to show the recorded count reproduces
+- **Demonstrated**: 2026-10-26, session 63b2a2 (David: "go"). `docs/work/website-chord-4-0-delta/census.md` written from the scratchpad sweep `census.py` (332 files, 165 routes). Counts: 35 rows → 30 present, 2 stale (the reference header "67 standard actions" vs 77 grammar actions; define-action §Which pattern wins vs ADR-384/386), 3 missing (`dark` reserved, the seat rule, and the vehicle/sailing/expanses guide pages counted under their rows as reference-only); 22 ADRs → 10 with an obligation (366, 374 D8, 375, 376, 377, 383, 384, 385, 386 small; 381 none until implemented), 12 none; 365 create blocks, 0 not kind-led — the first sweep's 91 were the heuristic's error, settled by two compiler probes (`aka` before the kind line, and the inline `create the X, a room` form with `exits:` lines, both compile clean); 0 hatch forms; 0 stale syntax blocks, including the 11 create blocks of learn/fernhill (plan-review's tutorial advisory is moot); 252 internal links, 0 broken; `grammar-blocks.ts` and `public/chord.ebnf` fresh (`./repokit grammar --check`, `diff -q`); `versions.json` 5.4.1/3.6.0 (derived, moves on sync), `releases-data.json` 5.4.1 (correct until publish). **Finding for David:** ADR-381 (connectors replace attachment, ACCEPTED 2026-10-22) is not implemented — `packages/chord/src/catalog.ts:62` still admits `attached to`/`detachable`, stdlib still ships `tying`/`untying`, world-model still has `traits/attached`; the site documents what ships. Phases 3–5 corrected to the census (Phase 3 resized Small; Phase 4 names four guide pages and one sentence; Phase 5 names one section and three ADR points). The two 2026-10-26 probes: `kindprobe/probe.story`, `kindprobe/inline.story` in the scratchpad, `compile().ok === true`, no diagnostics.
+- **Status**: DONE
+
+### Phase 2: Release note and version data for 5.5.0 / Chord 4.0.0
+- **Tier**: Small
+- **Budget**: ~100 tool calls
+- **Domain focus**: release record; Claude-written technical note in the 5.4.1 shape
+- **Entry state**: Phase 1 census done; 5.5.0 / 4.0.0 bump committed on main (`packages/chord/src/version.ts`, `packages/sharpee/package.json`)
+- **Deliverable**: The release note is DRAFTED, not published (plan-review 2026-10-26: `docs/releases/README.md` admits only `**Status**: PUBLISHED` with the registry's publish date, and `sync-releases.mjs` reads "one file per published release"). The draft is `docs/work/website-chord-4-0-delta/release-5.5.0.draft.md` in the 5.4.1 shape (Chord language 4.0.0, Traces to ADR-366..387 and PR #633, What shipped / Details grouped by ADR), with `**Status**` and `**Published**` left as `PENDING PUBLISH`; it moves to `docs/releases/release-5.5.0.md` with the registry date the day David's npm publish of 5.5.0 lands (a one-line step recorded in this plan's Close-out, not a phase). `website/src/lib/versions.json` is regenerated through `website/scripts/sync-versions.mjs`, which reads `packages/sharpee/package.json` and `CHORD_LANGUAGE_VERSION` by the site's own rule, so it reads 5.5.0 / 4.0.0 from the bump; `releases-data.json` is NOT regenerated until the note lands in `docs/releases/`. Chord Writer version left as the repo states it.
+- **Files**: `docs/work/website-chord-4-0-delta/release-5.5.0.draft.md` (new), `website/src/lib/versions.json`
+- **Exit state**: the draft note is complete and reviewed against the ADR range; `versions.json` reads 5.5.0 / Chord 4.0.0; `releases-data.json` unchanged (5.4.1 is the latest published release, which is true)
+- **Demonstration**: `node website/scripts/sync-versions.mjs` completes and "5.5.0" and "4.0.0" grep in `website/src/lib/versions.json`; the draft's "What shipped" names every ADR 366-387 or says why one is omitted
+- **Demonstrated**: 
+- **Status**: PENDING
+
+### Phase 3: Corrected pages for changed Chord syntax
+- **Tier**: Small (resized by the census: the site has no pre-4.0 create block, no hatch form and no stale `use` line; the two compiler probes in census.md settle the forms the sweep flagged)
+- **Budget**: ~100 tool calls
+- **Domain focus**: the two stale statements the census found, and the migration page's list of 4.0 removals
+- **Entry state**: census.md written (Phase 1 DONE)
+- **Deliverable**: `website/src/app/chord/stdlib/reference/content.mdx` header "67 standard actions" corrected to the standard grammar's count (77 `define action` blocks; the page's 78th entry, `deadly_room_death`, is platform-only and says so); `website/src/app/chord/guide/tooling/migrating-from-removed-constructs/` lists the 4.0 removals an author can meet — the three hatch forms (ADR-361: `define text|action|chain … from`, each with the parser's fix-it), `use state-machines` (ADR-377), `with max items`/`with max weight` (ADR-369), a create block without a kind (ADR-359) — each with the diagnostic code it raises; the ranking section is Phase 5's. **Not** the attachment words: ADR-381 is accepted but its cutover has not landed (census row 13), so the site stays with the code until David rules.
+- **Files**: `website/src/app/chord/stdlib/reference/content.mdx`, `website/src/app/chord/guide/tooling/migrating-from-removed-constructs/content.mdx`
+- **Exit state**: the count line matches `grep -c "^define action" packages/parser-en-us/grammar/standard-en-us.story`; every removal the migration page lists is a parse or analysis code that exists in `packages/chord/src`
+- **Demonstration**: the grep count and the page's number agree; each diagnostic code named on the migration page greps in `packages/chord/src`
+- **Demonstrated**: 
+- **Status**: PENDING
+
+### Phase 4: Reference and guide pages for new Chord constructs
+- **Tier**: Large
+- **Budget**: ~400 tool calls
+- **Domain focus**: the pages the census marks missing or reference-only (census.md §(b)): vehicles (ADR-366), sailing (ADR-375), expanses (ADR-376), a `define machine` guide (ADR-377), and the `dark` reserved-name sentence (ADR-374 D8). Every other ADR 366–387 construct is already documented (census §(a): 30 of 35 rows present); the stdlib reference already carries every standard action (77 of 77 grammar actions have an entry)
+- **Entry state**: Phase 3 done so new pages sit beside correct neighbours; `website/src/lib/nav.ts` structure read; `website/node_modules/next/dist/docs/` read for the route-file conventions this Next.js uses (website/AGENTS.md)
+- **Deliverable**: four new guide pages, each an MDX `content.mdx` with its `page.tsx` route in the existing pattern and a `website/src/lib/nav.ts` entry: `website/src/app/chord/guide/world/vehicles/` (the kind, the movement models line/streets/flight/compass/open/none, `admits`, `to outside`, boarding and the driving statements, with the `stories/vehicles` fixture as the worked example), `website/src/app/chord/guide/world/sailing/` (`use sailing`: bearings in degrees, the naval command set, wind and sails, the sailing block; `stories/sailing`), `website/src/app/chord/guide/world/expanses/` (`use expanses`: the expanse kind, open movement on coordinates, landmarks, visibility, drift, edges, `start <vehicle> heading <direction>`; `stories/expanses`, `branch-stories/wumpus`), `website/src/app/chord/guide/flow/state-machines/` (`define machine` as core: states, guards as Chord conditions, effects as Chord bodies, the vehicle machine; today's stdlib/plugins page points to it); one sentence on `website/src/app/chord/guide/world/states/content.mdx` that `dark` is reserved as a state name off rooms (`analysis` code named). Every Chord example compiled with the real compiler before it is written in (the census's probe pattern). `grammar-blocks.ts` is regenerated only if `./repokit grammar --check` says so (it is fresh today).
+- **Files**: `website/src/app/chord/guide/world/vehicles/` (new), `website/src/app/chord/guide/world/sailing/` (new), `website/src/app/chord/guide/world/expanses/` (new), `website/src/app/chord/guide/flow/state-machines/` (new), `website/src/app/chord/guide/world/states/content.mdx`, `website/src/lib/nav.ts`
+- **Exit state**: census §(b) obligations for 366, 375, 376, 377 and 374 D8 met; nav reaches every new page; every code block on the four pages compiles
+- **Demonstration**: the four routes render under `npm --prefix website run dev`; each page's code blocks compiled clean (the probe log quoted); nav.ts diff shows the four entries
+- **Demonstrated**: 
+- **Status**: PENDING
+
+### Phase 5: Parser pages (ADR-382..387)
+- **Tier**: Medium
+- **Budget**: ~250 tool calls
+- **Domain focus**: English parser behaviour as described to authors: structured grammar parts, per-slot seats, ranking without confidence, one noun matcher, slot-extent search, language tables and per-parser state
+- **Entry state**: census.md §(b), §(c): one section is wrong and one rule is absent
+- **Deliverable**: `website/src/app/chord/guide/vocabulary/define-action/content.mdx` §Which pattern wins rewritten to the one ordering of ADR-384 as amended by ADR-386: a reading whose items name fewer nothings wins first; then literal specificity (a more specific standard line beats a broader story line — to take its words, `remove from action`); then tier (story over standard); then definition order; the "a story's grammar always outranks the standard library's" sentence goes. A new §How a command is read on the same page: each entity slot has a seat (ADR-383: the first entity slot is the direct object, the second the indirect; `is an instrument` and `is a topic` take none; a slot name keeps one seat across an action's lines; a missing object is asked for by its seat, "What do you want to give?"); a `must be …` requirement is checked at parse time by the one noun matcher and a name found outside the slot's base is refused by name (ADR-385: "You aren't holding the brass lantern."); `and` and a comma are list readings, never hard splits (ADR-386: `take salt and pepper shaker` is one item when only the shaker is present). `website/src/app/chord/guide/vocabulary/extend-action/content.mdx` gains one sentence: an extension line's slot names must be the action's (ADR-383 D4, `analysis.unknown-slot`). `website/src/app/sharpee/platform/content.mdx`'s parser-en-us row gains the words "one noun matcher, seats, slot-extent search" with a link to the define-action section; no new platform page.
+- **Files**: `website/src/app/chord/guide/vocabulary/define-action/content.mdx`, `website/src/app/chord/guide/vocabulary/extend-action/content.mdx`, `website/src/app/sharpee/platform/content.mdx`
+- **Exit state**: every ranking and seat statement on the three pages matches a decision in ADR-383, 384, 385 or 386, cited in the Demonstrated line
+- **Demonstration**: each sentence of the rewritten section paired with its ADR decision id; the salt-and-pepper-shaker, bare-give and brass-lantern examples run on the real engine (`packages/story-loader/tests/` already pins all three) and the quoted text matches
+- **Demonstrated**: 
+- **Status**: PENDING
+
+### Phase 6: Final build, search index, and link check
+- **Tier**: Small
+- **Budget**: ~100 tool calls
+- **Domain focus**: site integrity
+- **Entry state**: Phases 2-5 done
+- **Deliverable**: `npm --prefix website run build` (runs sync, EBNF sync, search index, `next build`) clean; internal link check across `website/src/app/`; any residual link fixes; the IDE docs-tab bundle input (`tools/ide/web/docs-tab/build.mjs` reads `website/src/app/chord/stdlib/reference/grammar-blocks.ts`) confirmed still building if the regenerated module changed
+- **Files**: `website/src/`, `website/public/`
+- **Exit state**: build exits 0; zero broken internal links; the deploy script untouched and not run (deploy and publish are David's)
+- **Demonstration**: build output ends with the route table and exit 0; link-check count recorded as 0 broken
+- **Demonstrated**: 
+- **Status**: PENDING
