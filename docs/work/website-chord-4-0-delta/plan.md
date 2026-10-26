@@ -38,8 +38,8 @@
 - **Files**: `docs/work/website-chord-4-0-delta/release-5.5.0.draft.md` (new), `website/src/lib/versions.json`
 - **Exit state**: the draft note is complete and reviewed against the ADR range; `versions.json` reads 5.5.0 / Chord 4.0.0; `releases-data.json` unchanged (5.4.1 is the latest published release, which is true)
 - **Demonstration**: `node website/scripts/sync-versions.mjs` completes and "5.5.0" and "4.0.0" grep in `website/src/lib/versions.json`; the draft's "What shipped" names every ADR 366-387 or says why one is omitted
-- **Demonstrated**: 
-- **Status**: PENDING
+- **Demonstrated**: 2026-10-26, session 63b2a2. `docs/work/website-chord-4-0-delta/release-5.5.0.draft.md` (138 lines) in the 5.4.1 shape: header with `**Status**` and `**Published**` as `PENDING PUBLISH`, `**Chord language**: 4.0.0`, Traces to ADR-355…387 (381 named as not in the release), PR #633 and issues #549, #507, #560, #570; a DRAFT note stating the move-at-publish step; "What shipped" (one paragraph: the kind leads, hatches gone, regions, the vehicle and its extensions, passages, senses, physical state, two-noun clauses, stock verbs, state machines core, the lock, the parser review); "Details" (one bullet per ADR group, derived from `git log f6c27d1ba..a9e3c226c` — 170 commits on main and the branch's 130 — plus the smaller main-line fixes #542, #533, #548, #543, ADR-349, ADR-330 D4); "Upgrading" (six story-level breaks with their diagnostics; six platform-type breaks from ADR-382…387). Every ADR 366–387 is named: 21 as shipped, 381 as "not in this release" with the reason (its cutover has not landed; census row 13). `node website/scripts/sync-versions.mjs` → "wrote website/src/lib/versions.json"; the file reads `"sharpee": "5.5.0", "chord": "4.0.0", "chordWriter": "1.4.0"`. `releases-data.json` untouched (5.4.1 is the latest published release). `docs/releases/` untouched.
+- **Status**: DONE
 
 ### Phase 3: Corrected pages for changed Chord syntax
 - **Tier**: Small (resized by the census: the site has no pre-4.0 create block, no hatch form and no stale `use` line; the two compiler probes in census.md settle the forms the sweep flagged)
