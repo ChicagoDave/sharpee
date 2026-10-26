@@ -6,7 +6,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { SlotType, type SlotMatch } from '@sharpee/if-domain';
-import { TypedSlotConsumer, SlotConsumerContext, isSlotReadings } from '../../src/slot-consumers';
+import { TypedSlotConsumer, SlotConsumerContext, isSlotReadings, phraseWordsOf } from '../../src/slot-consumers';
 import { EnglishLanguageProvider } from '@sharpee/lang-en-us';
 
 describe('TypedSlotConsumer', () => {
@@ -22,6 +22,7 @@ describe('TypedSlotConsumer', () => {
       rule: { slots: new Map() },
       context: { world: undefined as unknown },
       language: new EnglishLanguageProvider(),
+      words: phraseWordsOf(new EnglishLanguageProvider()),
       slotType
     } as unknown as SlotConsumerContext;
   }

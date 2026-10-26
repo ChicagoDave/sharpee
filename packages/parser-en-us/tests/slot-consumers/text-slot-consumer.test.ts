@@ -8,7 +8,8 @@
 
 import { describe, it, expect } from 'vitest';
 import { SlotType } from '@sharpee/if-domain';
-import { TextSlotConsumer, SlotConsumerContext, isSlotReadings } from '../../src/slot-consumers';
+import { TextSlotConsumer, SlotConsumerContext, isSlotReadings, phraseWordsOf } from '../../src/slot-consumers';
+import { EnglishLanguageProvider } from '@sharpee/lang-en-us';
 
 describe('TextSlotConsumer', () => {
   const consumer = new TextSlotConsumer();
@@ -28,6 +29,8 @@ describe('TextSlotConsumer', () => {
       slotTokenIndex: 0,
       rule: { slots: new Map() },
       context: { world: undefined as unknown },
+      language: new EnglishLanguageProvider(),
+      words: phraseWordsOf(new EnglishLanguageProvider()),
       slotType
     } as unknown as SlotConsumerContext;
   }

@@ -9,8 +9,12 @@ import {
   SlotConsumerRegistry,
   createDefaultRegistry,
   SlotConsumer,
-  SlotConsumerContext
+  SlotConsumerContext,
+  phraseWordsOf
 } from '../../src/slot-consumers';
+import { EnglishLanguageProvider } from '@sharpee/lang-en-us';
+
+const language = new EnglishLanguageProvider();
 
 describe('SlotConsumerRegistry', () => {
   describe('Basic Registry Operations', () => {
@@ -43,6 +47,8 @@ describe('SlotConsumerRegistry', () => {
         slotTokenIndex: 0,
         rule: { slots: new Map() },
         context: { world: undefined as unknown },
+        language,
+        words: phraseWordsOf(language),
         slotType: SlotType.NUMBER
       };
 
@@ -72,6 +78,8 @@ describe('SlotConsumerRegistry', () => {
         slotTokenIndex: 0,
         rule: { slots: new Map() },
         context: { world: undefined as unknown },
+        language,
+        words: phraseWordsOf(language),
         slotType: SlotType.TEXT
       };
 

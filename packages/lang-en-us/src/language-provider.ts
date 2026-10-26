@@ -87,6 +87,21 @@ export class EnglishLanguageProvider implements ParserLanguageProvider {
       'parser.error.scopeViolation.carried': "{You} aren't holding {the entity}.",
       'parser.error.scopeViolation.touchable': "{You} {can't} reach {the entity}.",
       'parser.error.scopeViolation.visible': "{You} {can't} see {the entity} from here.",
+      // The parser's seat questions and failure sentences (ADR-387 D3): the
+      // parse error carries the id and its params (verb, noun, slot); the
+      // `.noVerb` and `.noNoun` ids are the same failure with nothing to name.
+      // The clarification query renders missingObject and missingIndirect;
+      // the command-failed path renders the rest by its own core ids today.
+      'parser.error.noInput': "I beg your pardon?",
+      'parser.error.unknownVerb': 'I don\'t know the verb "{verb}".',
+      'parser.error.unknownVerb.noVerb': "I don't understand that sentence.",
+      'parser.error.missingObject': "What do you want to {verb}?",
+      'parser.error.missingObject.noVerb': "What do you want to do that to?",
+      'parser.error.missingIndirect': "{Verb} it where?",
+      'parser.error.missingIndirect.noVerb': "Where do you want to do that?",
+      'parser.error.entityNotFound': 'I don\'t see any "{noun}" here.',
+      'parser.error.entityNotFound.noNoun': "I don't see that here.",
+      'parser.error.notUnderstood': "I don't understand that.",
       'core.ambiguous_reference': "Which do you mean?",
       'core.disambiguation_prompt': "Which do you mean: {options}?",
       'core.command_not_understood': "I don't understand that command.",
@@ -236,11 +251,19 @@ export class EnglishLanguageProvider implements ParserLanguageProvider {
     // Step 1: Resolve perspective placeholders (ADR-089) — {You}, {your}, {take}.
     message = resolvePerspectivePlaceholders(message, this.narrativeContext, params);
 
-    // Step 2: Plain `{key}` substitution for any bound params.
+    // Step 2: Plain `{key}` substitution for any bound params. A placeholder
+    // written capitalised (`{Verb}`) takes the param capitalised, as `{You}`
+    // does beside `{you}`: a sentence-initial value is the template's to shape.
     if (params) {
-      message = message.replace(/\{([a-zA-Z_][a-zA-Z0-9_]*)\}/g, (match, key) =>
-        key in params ? String(params[key]) : match,
-      );
+      message = message.replace(/\{([a-zA-Z_][a-zA-Z0-9_]*)\}/g, (match, key: string) => {
+        if (key in params) return String(params[key]);
+        const lower = key.charAt(0).toLowerCase() + key.slice(1);
+        if (lower !== key && lower in params) {
+          const value = String(params[lower]);
+          return value.charAt(0).toUpperCase() + value.slice(1);
+        }
+        return match;
+      });
     }
 
     return message;

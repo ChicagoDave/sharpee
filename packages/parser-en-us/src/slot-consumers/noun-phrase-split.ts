@@ -1,26 +1,29 @@
 /**
  * @file Noun phrase split
  * @description The one place a noun phrase's leading articles and determiners
- *   are split off its content words (ADR-385 D2). Slot consumers call it on
- *   every item they consume; the parser copies the result onto the noun
- *   phrase; nothing downstream strips again.
+ *   are split off its content words, and the one place a span is split at its
+ *   list separators. Slot consumers call it on every item they consume; the
+ *   parser copies the result onto the noun phrase; nothing downstream strips
+ *   again.
  *
- *   The words come from the language: the parser registers the language's
- *   articles, determiners, all words and except words into the vocabulary,
- *   and the tokens carry the resulting parts of speech, which is what this
- *   module reads. The one English fact held here is which determiner marks
- *   the actor's own things (`my`), until the language owns its word lists
- *   (parser review step 7).
+ *   The words come from the language. The tokens carry the parts of speech
+ *   the parser registered from the language's articles, determiners, all
+ *   words and except words, which is what the split reads; the list
+ *   separators and the possessive determiners that mark the actor's own
+ *   things arrive as `PhraseWords`, derived from the provider for the parse.
+ *   This module holds no word of any language.
  *
  * Public interface: `splitLeadingWords`, `isAllWord`, `isExceptWord`,
- * `startsNounPhrase`, `NounPhraseSplit`.
+ * `startsNounPhrase`, `isListSeparator`, `splitAtSeparators`, `spanText`,
+ * `NounPhraseSplit`.
  * Owner context: parser-en-us slot consumers.
+ *
+ * References: ADR-385 D2 (one split), ADR-386 D6 (separators as readings),
+ * ADR-387 D6 (the words come from the table).
  */
 
 import { PartOfSpeech, type Token } from '@sharpee/if-domain';
-
-/** The determiner that marks a phrase as the actor's own. English, until step 7 moves it to the language. */
-const ACTOR_POSSESSIVE = 'my';
+import type { PhraseWords } from './slot-consumer.js';
 
 /** The split of a consumed span: the leading words by kind, and the content that remains. */
 export interface NounPhraseSplit {
@@ -28,7 +31,7 @@ export interface NounPhraseSplit {
   articles: string[];
   /** Leading determiners, normalized, in order. */
   determiners: string[];
-  /** True when a determiner was the actor's possessive. */
+  /** True when a determiner was one of the actor's possessives. */
   ownedByActor: boolean;
   /** Indices (into the token array) of the content words, in order. */
   content: number[];
@@ -39,6 +42,9 @@ const hasPart = (token: Token, part: PartOfSpeech): boolean =>
 
 const mapsToSpecial = (token: Token, id: string): boolean =>
   token.candidates.some((c) => c.partOfSpeech === PartOfSpeech.SPECIAL && c.mapsTo === id);
+
+/** Whether a word is punctuation: no letter or digit in it (a comma, a semicolon). */
+const isPunctuation = (word: string): boolean => !/[\p{L}\p{N}]/u.test(word);
 
 /** Whether the token is one of the language's all words ("all", "everything", "every"). */
 export function isAllWord(token: Token | undefined): boolean {
@@ -70,13 +76,15 @@ export function startsNounPhrase(token: Token | undefined): boolean {
  *
  * Reads left to right while the token is tagged ARTICLE or DETERMINER, in any
  * order, and always leaves at least one content word (a span that is nothing
- * but articles keeps its last word, as a name can be "The").
+ * but articles keeps its last word, as a name can be "The"). A determiner
+ * among the language's actor possessives marks the phrase the actor's own.
  *
  * @param indices The consumed token indices, in input order
  * @param tokens The input tokens
+ * @param words The language's words for this parse
  * @returns The articles, the determiners, the actor's-own flag and the content indices
  */
-export function splitLeadingWords(indices: readonly number[], tokens: readonly Token[]): NounPhraseSplit {
+export function splitLeadingWords(indices: readonly number[], tokens: readonly Token[], words: PhraseWords): NounPhraseSplit {
   const articles: string[] = [];
   const determiners: string[] = [];
   let ownedByActor = false;
@@ -88,7 +96,7 @@ export function splitLeadingWords(indices: readonly number[], tokens: readonly T
       articles.push(token.normalized);
     } else if (hasPart(token, PartOfSpeech.DETERMINER)) {
       determiners.push(token.normalized);
-      if (token.normalized === ACTOR_POSSESSIVE) ownedByActor = true;
+      if (words.actorPossessives.has(token.normalized)) ownedByActor = true;
     } else {
       break;
     }
@@ -97,41 +105,39 @@ export function splitLeadingWords(indices: readonly number[], tokens: readonly T
   return { articles, determiners, ownedByActor, content: indices.slice(start) };
 }
 
-/** The list conjunction. English, until the language owns its word lists (step 7). */
-export const LIST_CONJUNCTION = 'and';
-
-/** The comma, a token of its own (ADR-386 D6). */
-export const LIST_COMMA = ',';
-
 /**
- * Whether the token separates list items: the conjunction or a comma
- * (ADR-386 D6). `, and` is one separator, which `splitAtSeparators` reads.
+ * Whether the token separates list items: one of the language's separators
+ * (ADR-386 D6). A punctuation separator followed by a word separator (`, and`)
+ * is one separator, which `splitAtSeparators` reads.
  * @param token The token to test
- * @returns True for `and` and for a comma
+ * @param words The language's words for this parse
+ * @returns True for a separator
  */
-export function isListSeparator(token: Token | undefined): boolean {
-  return token !== undefined && (token.normalized === LIST_CONJUNCTION || token.normalized === LIST_COMMA);
+export function isListSeparator(token: Token | undefined, words: PhraseWords): boolean {
+  return token !== undefined && words.listSeparators.has(token.normalized);
 }
 
 /**
- * Split a span at the list separators into item spans, `, and` counting as
- * one separator.
+ * Split a span at the list separators into item spans, a punctuation
+ * separator followed by a word separator (`, and`) counting as one.
  * @param span The token indices of the span
  * @param tokens The input tokens
+ * @param words The language's words for this parse
  * @returns The item spans, or null when a part is empty (a leading, trailing
  *   or doubled separator), which no extent reads
  */
-export function splitAtSeparators(span: readonly number[], tokens: readonly Token[]): number[][] | null {
+export function splitAtSeparators(span: readonly number[], tokens: readonly Token[], words: PhraseWords): number[][] | null {
   const parts: number[][] = [[]];
-  let afterComma = false;
+  let afterPunctuation = false;
   for (const i of span) {
     const token = tokens[i];
-    if (isListSeparator(token)) {
-      if (!(afterComma && token.normalized === LIST_CONJUNCTION)) parts.push([]);
-      afterComma = token.normalized === LIST_COMMA;
+    if (isListSeparator(token, words)) {
+      const punctuation = isPunctuation(token.normalized);
+      if (!(afterPunctuation && !punctuation)) parts.push([]);
+      afterPunctuation = punctuation;
     } else {
       parts[parts.length - 1].push(i);
-      afterComma = false;
+      afterPunctuation = false;
     }
   }
   return parts.some((part) => part.length === 0) ? null : parts;
@@ -139,7 +145,7 @@ export function splitAtSeparators(span: readonly number[], tokens: readonly Toke
 
 /**
  * The typed words of a span, as the player wrote them: a space between
- * words and none before a comma, so `14, 6` reads back as `14, 6`.
+ * words and none before punctuation, so `14, 6` reads back as `14, 6`.
  * @param indices The token indices of the span, in order
  * @param tokens The input tokens
  * @returns The span's text
@@ -148,7 +154,7 @@ export function spanText(indices: readonly number[], tokens: readonly Token[]): 
   let text = '';
   for (const i of indices) {
     const word = tokens[i].word;
-    text += text.length === 0 || word === LIST_COMMA ? word : ` ${word}`;
+    text += text.length === 0 || isPunctuation(word) ? word : ` ${word}`;
   }
   return text;
 }

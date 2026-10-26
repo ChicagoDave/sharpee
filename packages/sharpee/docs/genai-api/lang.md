@@ -2914,38 +2914,6 @@ export declare const ordinalNumbers: Record<string, number>;
 export declare const directionMap: Record<string, string>;
 ```
 
-### data/messages
-
-```typescript
-/**
- * English parser error messages: the text the player reads when a command
- * fails to parse, keyed by the parse error's message id.
- *
- * Public interface: `parserErrors` (the template table) and
- * `getParserErrorMessage(messageId, context)` (template resolution).
- *
- * Owner context: `@sharpee/lang-en-us`, the English language layer.
- */
-/**
- * Parser error messages
- * Keys match the messageId from ParseErrorCode analysis
- *
- * Template variables:
- * - {verb} - The recognized verb
- * - {noun} - The word that failed to resolve
- * - {slot} - The slot name (target, container, etc.)
- * - {options} - Comma-separated list of disambiguation options
- */
-export declare const parserErrors: Record<string, string | ((ctx: Record<string, any>) => string)>;
-/**
- * Get a parser error message by ID
- * @param messageId The message ID (e.g., 'parser.error.unknownVerb')
- * @param context Template variables to substitute
- * @returns The formatted error message
- */
-export declare function getParserErrorMessage(messageId: string, context?: Record<string, any>): string;
-```
-
 ### sound-messages
 
 ```typescript

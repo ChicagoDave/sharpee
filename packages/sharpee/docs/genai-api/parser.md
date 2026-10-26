@@ -189,7 +189,8 @@ export declare class EnglishParser implements Parser {
      */
     addPreposition(word: string): void;
     /**
-     * Build a detailed parse error from failure analysis
+     * Build the parse error from the failure analysis: the language's template
+     * id and its bindings, and no sentence (ADR-387 D3).
      */
     private buildParseError;
     /**
@@ -296,6 +297,9 @@ export declare class EnglishPatternCompiler implements PatternCompiler {
  * one ranking of failures (verb matched, progress, then the grammar rank
  * with the consumed items' nouns), the failure-versus-reading rule (ADR-386
  * D5) and the error each kind of failure becomes.
+ *
+ * The analysis names the language template that words each failure (ADR-387
+ * D3): the parser carries the id and its bindings and builds no sentence.
  *
  * Public interface: PartialMatchFailure, SlotFailure, MatchFailureReason,
  * RequiredScope, bestFailure, failureOutranking, analyzeBestFailure.

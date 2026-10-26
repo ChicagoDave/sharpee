@@ -6,6 +6,9 @@
  * with the consumed items' nouns), the failure-versus-reading rule (ADR-386
  * D5) and the error each kind of failure becomes.
  *
+ * The analysis names the language template that words each failure (ADR-387
+ * D3): the parser carries the id and its bindings and builds no sentence.
+ *
  * Public interface: PartialMatchFailure, SlotFailure, MatchFailureReason,
  * RequiredScope, bestFailure, failureOutranking, analyzeBestFailure.
  * Owner context: parser-en-us error reporting (the English parser is the caller).
@@ -175,10 +178,11 @@ export function analyzeBestFailure(
         context: {}
       };
     }
+    const verb = input.trim().split(/\s+/)[0];
     return {
       code: 'UNKNOWN_VERB',
-      messageId: 'parser.error.unknownVerb',
-      context: { verb: input.split(/\s+/)[0] }
+      messageId: withOrWithout('parser.error.unknownVerb', verb, 'noVerb'),
+      context: { verb }
     };
   }
 
@@ -187,12 +191,13 @@ export function analyzeBestFailure(
     const sf = best.slotFailure;
 
     if (sf.reason === 'NO_MATCH') {
+      const noun = sf.unknownWord || sf.attemptedText;
       return {
         code: 'ENTITY_NOT_FOUND',
-        messageId: 'parser.error.entityNotFound',
+        messageId: withOrWithout('parser.error.entityNotFound', noun, 'noNoun'),
         context: {
           verb: best.matchedVerb,
-          noun: sf.unknownWord || sf.attemptedText,
+          noun,
           slot: sf.slotName
         }
       };
@@ -273,7 +278,7 @@ export function analyzeBestFailure(
   if (best.matchedVerb && best.reason === 'LEFTOVER_TOKENS') {
     return {
       code: 'INVALID_SYNTAX',
-      messageId: 'parser.error.invalidSyntax',
+      messageId: 'parser.error.notUnderstood',
       context: {
         verb: best.matchedVerb,
         extraWords: best.failedAtToken
@@ -283,17 +288,31 @@ export function analyzeBestFailure(
 
   // No verb matched at all - unknown verb
   if (!hasVerb) {
+    const verb = input.trim().split(/\s+/)[0];
     return {
       code: 'UNKNOWN_VERB',
-      messageId: 'parser.error.unknownVerb',
-      context: { verb: input.split(/\s+/)[0] }
+      messageId: withOrWithout('parser.error.unknownVerb', verb, 'noVerb'),
+      context: { verb }
     };
   }
 
   // Fallback
   return {
     code: 'INVALID_SYNTAX',
-    messageId: 'parser.error.invalidSyntax',
+    messageId: 'parser.error.notUnderstood',
     context: {}
   };
+}
+
+/**
+ * The template id for a failure that may have nothing to name: the base id
+ * when the binding is present, the `.<suffix>` variant when it is empty
+ * (ADR-387 D3), so the language never renders an empty quotation.
+ * @param base The template id that names the binding
+ * @param binding The verb or noun, possibly empty
+ * @param suffix The variant that names nothing: `noVerb` or `noNoun`
+ * @returns The id the language renders
+ */
+function withOrWithout(base: string, binding: string | undefined, suffix: 'noVerb' | 'noNoun'): string {
+  return binding ? base : `${base}.${suffix}`;
 }

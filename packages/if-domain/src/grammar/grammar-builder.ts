@@ -507,7 +507,7 @@ export interface SlotMatch {
   // the split, the rest are the phrase's content words.
   articles?: string[];     // Leading articles, normalized ("the", "a", "an")
   determiners?: string[];  // Leading determiners, normalized ("my", "some", "all"); for an all-phrase, the all word first
-  ownedByActor?: boolean;  // A determiner marked the phrase as the actor's own ("my")
+  ownedByActor?: boolean;  // A possessive determiner marked the phrase as the actor's own ("my"; "your" in the second-person voice)
   // The entity ids a constrained slot admitted at parse time (ADR-385 D4), for
   // the validator to resolve among; absent for an unconstrained slot. A list
   // item carries its own.

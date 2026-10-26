@@ -51,7 +51,7 @@ describe('ADR-386 D6: list separators', () => {
 
   const direct = (input: string) => {
     const result = parser.parse(input);
-    expect(result.success, `${input}: ${result.success ? '' : result.error.message}`).toBe(true);
+    expect(result.success, `${input}: ${result.success ? '' : result.error.messageId}`).toBe(true);
     return result.success ? result.value.structure.directObject! : undefined!;
   };
 

@@ -325,12 +325,13 @@ export class CommandExecutor {
       }
       
       if (!parseResult.success) {
-        const parseError = parseResult.error as { code?: string; messageId?: string; message?: string; verb?: string; slot?: string };
+        const parseError = parseResult.error as CoreParseError;
         // GH #318 (ADR-225's missing-object orphaning): a command missing its
         // object or indirect object becomes a clarification query — the
-        // parser's question reaches the player, and the engine holds the
-        // input for one more input to complete it. Every other parse
-        // failure keeps the standing path.
+        // language's seat question reaches the player (its id and bindings
+        // ride the query, ADR-387 D3), and the engine holds the input for
+        // one more input to complete it. Every other parse failure keeps the
+        // standing path.
         if (parseError?.code === 'MISSING_OBJECT' || parseError?.code === 'MISSING_INDIRECT') {
           const queryEvent: ISemanticEvent = {
             id: `query_clarify_${turn}_${Date.now()}`,
@@ -341,7 +342,7 @@ export class CommandExecutor {
               source: QuerySource.CLARIFICATION,
               type: QueryType.CLARIFICATION,
               messageId: parseError.messageId,
-              message: parseError.message,
+              params: parseError.params,
               code: parseError.code,
               verb: parseError.verb,
               slot: parseError.slot,
@@ -364,7 +365,7 @@ export class CommandExecutor {
         // the entity by its message id and params; a phrase naming nothing is
         // named back
         if (parseError?.code === 'SCOPE_VIOLATION' || parseError?.code === 'ENTITY_NOT_FOUND') {
-          return this.parseRefusalResult(turn, input, parseError as CoreParseError, world, config, timing);
+          return this.parseRefusalResult(turn, input, parseError, world, config, timing);
         }
         throw new Error(`Parse failed: ${parseError?.code || 'UNKNOWN'}`);
       }

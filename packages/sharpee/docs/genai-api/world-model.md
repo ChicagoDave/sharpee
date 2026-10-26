@@ -1897,15 +1897,26 @@ export interface IParsedCommand {
  */
 export type ParseErrorCode = 'NO_VERB' | 'UNKNOWN_VERB' | 'MISSING_OBJECT' | 'MISSING_INDIRECT' | 'ENTITY_NOT_FOUND' | 'SCOPE_VIOLATION' | 'AMBIGUOUS_INPUT' | 'UNKNOWN_COMMAND' | 'INVALID_SYNTAX';
 /**
- * Errors that can occur during parsing
+ * The bindings a parse error's language template reads: the verb the parser
+ * recognised, the content words of the phrase that named nothing, and the
+ * slot the input stopped short of. Each is present only when the parser has it.
+ */
+export interface ParseErrorParams {
+    verb?: string;
+    noun?: string;
+    slot?: string;
+}
+/**
+ * Errors that can occur during parsing. The error carries no sentence: the
+ * language renders `messageId` with `params` (ADR-387 D3).
  */
 export interface IParseError {
     type: 'PARSE_ERROR';
     code: ParseErrorCode;
-    /** Message ID for lang layer lookup (e.g., 'parser.error.unknownVerb') */
+    /** The language template that words this failure (e.g., 'parser.error.unknownVerb') */
     messageId: string;
-    /** Fallback message if lang layer lookup fails */
-    message: string;
+    /** The template's bindings */
+    params: ParseErrorParams;
     /** Original input */
     input: string;
     /** Character position of error (if applicable) */

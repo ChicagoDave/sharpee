@@ -25,7 +25,7 @@ import {
   ScopeBuilderImpl,
   type ScopeConstraintBuilder
 } from '@sharpee/if-domain';
-import { SlotConsumer, SlotConsumerContext, isSlotRefusal, type SlotConsumeResult, type SlotRefusal } from './slot-consumer.js';
+import { SlotConsumer, SlotConsumerContext, isSlotRefusal, type PhraseWords, type SlotConsumeResult, type SlotRefusal } from './slot-consumer.js';
 import { GrammarScopeResolver } from '../grammar-scope-resolver.js';
 import { isRecognizedPronoun, getPronounContextManager } from '../pronoun-context.js';
 import type { RequiredScope } from '../parse-failure.js';
@@ -78,7 +78,7 @@ export class EntitySlotConsumer implements SlotConsumer {
    * parser's split leaves the noun words as the phrase's content.
    */
   private allReadings(ctx: SlotConsumerContext): SlotConsumeResult {
-    const { tokens, startIndex, slotType } = ctx;
+    const { tokens, startIndex, slotType, words } = ctx;
     const allWord = tokens[startIndex];
     const readings: SlotMatch[] = [];
 
@@ -86,20 +86,20 @@ export class EntitySlotConsumer implements SlotConsumer {
       const rest = range(startIndex + 1, end);
       const exceptAt = rest.findIndex((i) => isExceptWord(tokens[i]));
       const nounSpan = exceptAt >= 0 ? rest.slice(0, exceptAt) : rest;
-      if (nounSpan.some((i) => isListSeparator(tokens[i]) || isExceptWord(tokens[i]))) continue;
+      if (nounSpan.some((i) => isListSeparator(tokens[i], words) || isExceptWord(tokens[i]))) continue;
 
       // The exclusions are read as a list split at the separators and, when
       // there is a separator, as one item across them (ADR-386 D6)
       const exclusionReadings: Array<SlotMatch[] | undefined> = [undefined];
       if (exceptAt >= 0) {
         const exclusionSpan = rest.slice(exceptAt + 1);
-        const exclusionSpans = splitAtSeparators(exclusionSpan, tokens);
+        const exclusionSpans = splitAtSeparators(exclusionSpan, tokens, words);
         if (!exclusionSpans) continue;
-        exclusionReadings[0] = exclusionSpans.map((span) => this.itemMatch(span, tokens));
-        if (exclusionSpans.length > 1) exclusionReadings.push([this.itemMatch(exclusionSpan, tokens)]);
+        exclusionReadings[0] = exclusionSpans.map((span) => this.itemMatch(span, tokens, words));
+        if (exclusionSpans.length > 1) exclusionReadings.push([this.itemMatch(exclusionSpan, tokens, words)]);
       }
 
-      const split = nounSpan.length > 0 ? splitLeadingWords(nounSpan, tokens) : undefined;
+      const split = nounSpan.length > 0 ? splitLeadingWords(nounSpan, tokens, words) : undefined;
       for (const excluded of exclusionReadings) {
         readings.push({
           tokens: range(startIndex, end),
@@ -128,19 +128,19 @@ export class EntitySlotConsumer implements SlotConsumer {
    * (ADR-385 D8).
    */
   private itemReadings(ctx: SlotConsumerContext): SlotConsumeResult {
-    const { tokens, startIndex, slotType } = ctx;
+    const { tokens, startIndex, slotType, words } = ctx;
     const gate = this.gateOf(ctx);
     const readings: SlotMatch[] = [];
     let refusal: SlotRefusal | undefined;
 
     for (let end = tokens.length; end > startIndex; end--) {
       const span = range(startIndex, end);
-      const itemSpans = splitAtSeparators(span, tokens);
+      const itemSpans = splitAtSeparators(span, tokens, words);
       if (!itemSpans) continue;
 
       const ways = itemSpans.length > 1 ? [itemSpans, [span]] : [itemSpans];
       for (const way of ways) {
-        const read = this.readItems(way, tokens, gate);
+        const read = this.readItems(way, tokens, gate, words);
         if (read === null) continue;
         if (isSlotRefusal(read)) {
           refusal ??= read;
@@ -159,10 +159,10 @@ export class EntitySlotConsumer implements SlotConsumer {
    * @returns The items, the first gate refusal met, or null when a span is
    *   not an item at all
    */
-  private readItems(itemSpans: readonly number[][], tokens: Token[], gate: Gate | undefined): SlotMatch[] | SlotRefusal | null {
+  private readItems(itemSpans: readonly number[][], tokens: Token[], gate: Gate | undefined, words: PhraseWords): SlotMatch[] | SlotRefusal | null {
     const items: SlotMatch[] = [];
     for (const itemSpan of itemSpans) {
-      const consumed = this.consumeItem(itemSpan, tokens, gate);
+      const consumed = this.consumeItem(itemSpan, tokens, gate, words);
       if (consumed === null) return null;
       if (isSlotRefusal(consumed)) return consumed;
       items.push(...consumed);
@@ -192,7 +192,7 @@ export class EntitySlotConsumer implements SlotConsumer {
    * an item at all (a pronoun with a referent followed by the words of a new
    * noun phrase, which the one-token span already reads).
    */
-  private consumeItem(span: number[], tokens: Token[], gate: Gate | undefined): SlotMatch[] | SlotRefusal | null {
+  private consumeItem(span: number[], tokens: Token[], gate: Gate | undefined, words: PhraseWords): SlotMatch[] | SlotRefusal | null {
     const first = tokens[span[0]];
 
     // A recognised pronoun is a pronoun only as the whole item (ADR-385
@@ -226,7 +226,7 @@ export class EntitySlotConsumer implements SlotConsumer {
       // is tried as a name
     }
 
-    const item = this.itemMatch(span, tokens);
+    const item = this.itemMatch(span, tokens, words);
     if (!gate) {
       return [item];
     }
@@ -264,8 +264,8 @@ export class EntitySlotConsumer implements SlotConsumer {
   }
 
   /** A slot match for one item span, its leading articles and determiners split off. */
-  private itemMatch(span: number[], tokens: Token[]): SlotMatch {
-    const split = splitLeadingWords(span, tokens);
+  private itemMatch(span: number[], tokens: Token[], words: PhraseWords): SlotMatch {
+    const split = splitLeadingWords(span, tokens, words);
     return {
       tokens: span,
       text: this.wordsOf(span, tokens),

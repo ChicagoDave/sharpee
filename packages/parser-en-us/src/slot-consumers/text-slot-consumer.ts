@@ -148,9 +148,9 @@ export class TextSlotConsumer implements SlotConsumer {
    * entity-first attempt reads content words.
    */
   private consumeTopic(ctx: SlotConsumerContext): SlotConsumeResult {
-    const { tokens, startIndex } = ctx;
+    const { tokens, startIndex, words } = ctx;
     const readings = this.spans(tokens, startIndex).map((span) => {
-      const split = splitLeadingWords(span, tokens);
+      const split = splitLeadingWords(span, tokens, words);
       return {
         tokens: span,
         text: spanText(span, tokens),

@@ -33,6 +33,7 @@ import type {
   IValidatedCommand,
   IParseError as CoreParseError,
   ParseErrorCode,
+  ParseErrorParams,
   IToken,
   ITokenCandidate,
   IVerbPhrase,
@@ -58,9 +59,7 @@ type CommandResult<T, E> = Result<T, E>;
  * Default parser options
  */
 const DEFAULT_OPTIONS: ParserOptions = {
-  allowPartial: true,
-  expandAbbreviations: true,
-  ignoreArticles: false // We preserve everything in the English parser
+  allowPartial: true
 };
 
 /**
@@ -1164,7 +1163,7 @@ export class EnglishParser implements Parser {
       // Other parsing errors
       const error: ParseError = {
         type: ParseErrorType.PATTERN_MISMATCH,
-        message: result.error.message,
+        message: result.error.messageId,
         position: result.error.position
       };
       
@@ -1321,54 +1320,25 @@ export class EnglishParser implements Parser {
   }
 
   /**
-   * Build a detailed parse error from failure analysis
+   * Build the parse error from the failure analysis: the language's template
+   * id and its bindings, and no sentence (ADR-387 D3).
    */
   private buildParseError(
     input: string,
     analysis: { code: ParseErrorCode; messageId: string; context: Record<string, any> }
   ): CoreParseError {
     const { code, messageId, context } = analysis;
-
-    // Generate fallback message based on error code and context
-    let message: string;
-    switch (code) {
-      case 'NO_VERB':
-        message = "I beg your pardon?";
-        break;
-      case 'UNKNOWN_VERB':
-        message = context.verb
-          ? `I don't know the verb "${context.verb}".`
-          : "I don't understand that sentence.";
-        break;
-      case 'MISSING_OBJECT':
-        message = context.verb
-          ? `What do you want to ${context.verb}?`
-          : "What do you want to do that to?";
-        break;
-      case 'MISSING_INDIRECT':
-        message = context.verb
-          ? `${capitalize(context.verb)} it where?`
-          : "Where do you want to do that?";
-        break;
-      case 'ENTITY_NOT_FOUND':
-        message = context.noun
-          ? `I don't see any "${context.noun}" here.`
-          : "I don't see that here.";
-        break;
-      case 'SCOPE_VIOLATION':
-        message = context.noun
-          ? `You can't reach the ${context.noun}.`
-          : "You can't reach that.";
-        break;
-      default:
-        message = "I don't understand that.";
-    }
+    const params: ParseErrorParams = {
+      ...(context.verb ? { verb: context.verb } : {}),
+      ...(context.noun ? { noun: context.noun } : {}),
+      ...(context.slot ? { slot: context.slot } : {})
+    };
 
     return {
       type: 'PARSE_ERROR',
       code,
       messageId,
-      message,
+      params,
       input,
       verb: context.verb,
       failedWord: context.noun || context.verb,
@@ -1429,11 +1399,4 @@ export class EnglishParser implements Parser {
   getPronounContextManager(): PronounContextManager {
     return this.pronounContext;
   }
-}
-
-/**
- * Capitalize the first letter of a string
- */
-function capitalize(s: string): string {
-  return s.charAt(0).toUpperCase() + s.slice(1);
 }

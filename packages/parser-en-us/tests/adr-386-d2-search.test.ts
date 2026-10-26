@@ -10,7 +10,7 @@
 import { describe, expect, it } from 'vitest';
 import { EnglishLanguageProvider } from '@sharpee/lang-en-us';
 import { EnglishGrammarEngine } from '../src/english-grammar-engine';
-import { createDefaultRegistry } from '../src/slot-consumers';
+import { createDefaultRegistry, phraseWordsOf } from '../src/slot-consumers';
 import type { Token } from '@sharpee/if-domain';
 
 const tokens = (text: string): Token[] =>
@@ -118,6 +118,8 @@ describe('ADR-386 D1: the consumer contract', () => {
       slotTokenIndex: 1,
       rule: { slots: new Map() },
       context,
+      language: new EnglishLanguageProvider(),
+      words: phraseWordsOf(new EnglishLanguageProvider()),
       slotType: 'entity' as never,
     });
     expect(result && 'readings' in result ? result.readings.map((r) => r.tokens) : result).toEqual([[1, 2], [1]]);

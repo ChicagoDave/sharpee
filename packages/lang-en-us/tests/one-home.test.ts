@@ -59,10 +59,15 @@ const LISTS: ReadonlyArray<{ name: string; words: readonly string[] }> = [
   { name: 'name stopwords', words: ['the', 'a', 'an', 'of'] },
   { name: 'all words', words: ['all', 'everything', 'every'] },
   { name: 'except words', words: ['except', 'but'] },
+  { name: 'list separators', words: ['and', ','] },
+  { name: 'manner adverbs', words: ['carefully', 'quietly', 'quickly', 'slowly'] },
 ];
 
 /** Symbols that were a second home for a word list; none may exist in any package source. */
-const RETIRED_SYMBOLS = ['SELF_WORDS', 'NAME_VOCABULARY_STOPWORDS', 'PLAYER_ROLE_ALIASES', 'specialVocabulary', 'standardDirections'];
+const RETIRED_SYMBOLS = [
+  'SELF_WORDS', 'NAME_VOCABULARY_STOPWORDS', 'PLAYER_ROLE_ALIASES', 'specialVocabulary', 'standardDirections',
+  'LIST_CONJUNCTION', 'LIST_COMMA', 'ACTOR_POSSESSIVE', 'MANNER_ADVERBS', 'parserErrors', 'getParserErrorMessage',
+];
 
 /** parser-en-us files that may still import lang-en-us, and the one name each may take, until Phase 5. */
 const DIRECTION_TABLE_CARVE_OUT: Readonly<Record<string, string>> = {

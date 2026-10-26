@@ -31,7 +31,7 @@ import {
 import { type Token, type ParserLanguageProvider } from '@sharpee/if-domain';
 import { EnglishPatternCompiler } from './english-pattern-compiler.js';
 import { directionMap } from '@sharpee/lang-en-us';
-import { SlotConsumerRegistry, SlotConsumerContext, createDefaultRegistry, isSlotRefusal, type SlotConsumeResult } from './slot-consumers/index.js';
+import { SlotConsumerRegistry, SlotConsumerContext, createDefaultRegistry, isSlotRefusal, phraseWordsOf, type PhraseWords, type SlotConsumeResult } from './slot-consumers/index.js';
 import type { PartialMatchFailure } from './parse-failure.js';
 import { ReadingNamer } from './reading-names.js';
 
@@ -124,6 +124,9 @@ export class EnglishGrammarEngine extends GrammarEngine {
   /** The language the parser was constructed with: its articles, numbers and ordinals (ADR-387 D1). */
   private readonly language: ParserLanguageProvider;
 
+  /** The language's list separators, actor's possessives and manner adverbs, derived at each `findMatches` (ADR-387 D6). */
+  private words: PhraseWords;
+
   /**
    * The language's articles. A pattern's literal article after its verb is
    * optional for the player and its absence costs nothing: `follow cables`
@@ -141,6 +144,7 @@ export class EnglishGrammarEngine extends GrammarEngine {
   constructor(language: ParserLanguageProvider, slotConsumerRegistry?: SlotConsumerRegistry) {
     super(new EnglishPatternCompiler(language));
     this.language = language;
+    this.words = phraseWordsOf(language);
     this.articles = new Set(language.getSpecialVocabulary().articles.map((a) => a.toLowerCase()));
     // Use provided registry or create default with all consumers
     this.slotConsumerRegistry = slotConsumerRegistry || createDefaultRegistry();
@@ -177,6 +181,9 @@ export class EnglishGrammarEngine extends GrammarEngine {
     const capped: string[] = [];
     // One namer per input: the items the readings share are named once
     const namer = new ReadingNamer(context);
+    // The language's words for this parse (ADR-387 D6): read now, not at
+    // construction, since the story's voice is set at install
+    this.words = phraseWordsOf(this.language);
 
     // Every rule is tried, in registration (definition) order, and every
     // reading of every rule is ranked: no cap on rules, so the most specific
@@ -477,6 +484,7 @@ export class EnglishGrammarEngine extends GrammarEngine {
         rule,
         context,
         language: this.language,
+        words: this.words,
         slotType,
         slotConstraints,
         patternToken: patternSlotToken,

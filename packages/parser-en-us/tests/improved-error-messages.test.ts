@@ -206,5 +206,5 @@ describe('Improved Error Messages', () => {
   });
 });
 
-// Note: getParserErrorMessage tests are in lang-en-us package
+// The templates these ids name are pinned in lang-en-us (parser-error-templates.test.ts, ADR-387 D3)
 // They are omitted here due to slow import times in vitest

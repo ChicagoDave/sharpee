@@ -362,13 +362,14 @@ describe('ParsedCommand types', () => {
       const error: ParseError = {
         type: 'PARSE_ERROR',
         code: 'UNKNOWN_COMMAND',
-        message: 'I don\'t understand that command.',
+        messageId: 'parser.error.notUnderstood',
+        params: {},
         input: 'xyzzy'
       };
 
       expect(error.type).toBe('PARSE_ERROR');
       expect(error.code).toBe('UNKNOWN_COMMAND');
-      expect(error.message).toContain('understand');
+      expect(error.messageId).toBe('parser.error.notUnderstood');
       expect(error.input).toBe('xyzzy');
     });
 
@@ -376,7 +377,8 @@ describe('ParsedCommand types', () => {
       const error: ParseError = {
         type: 'PARSE_ERROR',
         code: 'INVALID_SYNTAX',
-        message: 'Invalid syntax near "in"',
+        messageId: 'parser.error.notUnderstood',
+        params: { verb: 'take' },
         input: 'take in box',
         position: 5
       };
@@ -389,12 +391,13 @@ describe('ParsedCommand types', () => {
       const error: ParseError = {
         type: 'PARSE_ERROR',
         code: 'AMBIGUOUS_INPUT',
-        message: 'Which box do you mean?',
+        messageId: 'core.ambiguous_reference',
+        params: { noun: 'box' },
         input: 'take box'
       };
 
       expect(error.code).toBe('AMBIGUOUS_INPUT');
-      expect(error.message).toContain('Which');
+      expect(error.params.noun).toBe('box');
     });
   });
 

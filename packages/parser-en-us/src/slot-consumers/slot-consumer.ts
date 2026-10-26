@@ -7,8 +7,14 @@
  * never reads the next pattern element and never chooses between its own
  * readings (ADR-386 D1, D2).
  *
- * Public interface: SlotConsumer, SlotConsumerContext, SlotReadings,
- * SlotRefusal, SlotConsumeResult, isSlotReadings, isSlotRefusal.
+ * The consumers read the language's words through the context: the list
+ * separators, the possessive determiners that mark the actor's own things
+ * and the manner adverbs, derived from the provider once per parse by
+ * `phraseWordsOf` (ADR-387 D6). No consumer holds a word of its own.
+ *
+ * Public interface: SlotConsumer, SlotConsumerContext, PhraseWords,
+ * phraseWordsOf, SlotReadings, SlotRefusal, SlotConsumeResult,
+ * isSlotReadings, isSlotRefusal.
  * Owner context: parser-en-us grammar matching.
  */
 
@@ -58,6 +64,44 @@ export function isSlotReadings(result: SlotConsumeResult): result is SlotReading
 }
 
 /**
+ * The language's words the slot consumers read, as sets of normalized words
+ * (ADR-387 D6). Derived from the provider once per parse, so a narrative
+ * voice set after the parser was built is honoured.
+ */
+export interface PhraseWords {
+  /** The words that separate list items: the conjunction and the comma in English. */
+  readonly listSeparators: ReadonlySet<string>;
+  /**
+   * The possessive determiners that mark a phrase as the actor's own: the
+   * first person's (the player speaking of their own things) and those of
+   * the person the story addresses the actor in.
+   */
+  readonly actorPossessives: ReadonlySet<string>;
+  /** The adverbs a MANNER slot accepts. */
+  readonly mannerAdverbs: ReadonlySet<string>;
+}
+
+/**
+ * Derive the consumers' words from the provider.
+ * @param language The provider the parser was constructed with
+ * @returns The list separators, the actor's possessives and the manner adverbs
+ */
+export function phraseWordsOf(language: ParserLanguageProvider): PhraseWords {
+  const actorPerson = language.getNarrativePerson();
+  const lower = (words: readonly string[]) => new Set(words.map((word) => word.toLowerCase()));
+  return {
+    listSeparators: lower(language.getListSeparators()),
+    actorPossessives: lower(
+      language
+        .getDeterminers()
+        .filter((determiner) => determiner.possessive === 'first' || determiner.possessive === actorPerson)
+        .map((determiner) => determiner.word)
+    ),
+    mannerAdverbs: lower(language.getMannerAdverbs())
+  };
+}
+
+/**
  * Context passed to slot consumers containing all information needed for consumption
  */
 export interface SlotConsumerContext {
@@ -80,6 +124,8 @@ export interface SlotConsumerContext {
   context: GrammarContext;
   /** The language the parser was constructed with: its numbers, ordinals and words (ADR-387 D1) */
   language: ParserLanguageProvider;
+  /** The language's list separators, actor's possessives and manner adverbs, derived for this parse (ADR-387 D6) */
+  words: PhraseWords;
   /** The slot type being consumed */
   slotType: SlotType;
   /** Constraints for this slot */

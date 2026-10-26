@@ -1,21 +1,12 @@
 /**
  * @file Vocabulary Slot Consumer
- * @description Handles vocabulary-constrained slots (ADR-088, ADR-082)
+ * @description Handles vocabulary-constrained slots (ADR-088, ADR-082). The
+ *   manner adverbs a MANNER slot accepts are the language's, read from the
+ *   context's words (ADR-387 D6); a story extends them through its vocabulary.
  */
 
 import { SlotType, type SlotMatch, type GrammarContext } from '@sharpee/if-domain';
 import { SlotConsumer, SlotConsumerContext, type SlotConsumeResult } from './slot-consumer.js';
-
-/**
- * Built-in manner adverbs that modify how actions are performed.
- * Stories can extend this via vocab.extend('manner', [...])
- */
-const MANNER_ADVERBS = new Set([
-  'carefully', 'quietly', 'quickly', 'slowly',
-  'forcefully', 'gently', 'loudly', 'softly',
-  'cautiously', 'boldly', 'stealthily', 'silently',
-  'hastily', 'deliberately', 'violently', 'tenderly'
-]);
 
 /**
  * Consumer for vocabulary-constrained slots (ADJECTIVE, NOUN, VOCABULARY, MANNER)
@@ -149,11 +140,11 @@ export class VocabularySlotConsumer implements SlotConsumer {
 
   /**
    * Consume a manner adverb slot.
-   * Matches built-in manner adverbs plus any story-defined extensions.
+   * Matches the language's manner adverbs plus any story-defined extensions.
    * The matched manner is intended to feed into command.intention.manner
    */
   private consumeManner(ctx: SlotConsumerContext): SlotMatch | null {
-    const { tokens, startIndex, context } = ctx;
+    const { tokens, startIndex, context, words } = ctx;
 
     if (startIndex >= tokens.length) {
       return null;
@@ -162,8 +153,8 @@ export class VocabularySlotConsumer implements SlotConsumer {
     const token = tokens[startIndex];
     const word = token.normalized;
 
-    // First check built-in manner adverbs
-    if (MANNER_ADVERBS.has(word)) {
+    // First the language's manner adverbs
+    if (words.mannerAdverbs.has(word)) {
       return {
         tokens: [startIndex],
         text: token.word,
