@@ -1,0 +1,211 @@
+An expanse is a bounded space with coordinates: a sea, an asteroid belt,
+a desert — anywhere a vessel is *between* places rather than in one. It is
+the `use expanses` extension; write the line in the story header, and the
+`expanse` kind, `movement: open` and the `coordinates` command set become
+available. An expanse lowers to a room, so the room heading, `look` and
+scope read it as they read any room, and its own prose describes it.
+
+```chord
+story
+  title: The Belt
+  authors:
+    ref
+  id: belt
+  story-version: 0.0.1
+  use expanses
+```
+
+The expanse writes `size: <w> by <h>` and a `landmarks` block whose rows
+place rooms in it at coordinates. A landmark is an ordinary room; a
+vehicle that reaches its cell arrives in it. `seen from afar:` on a room
+or a vehicle is the line a looker sees when it is in sight but not here.
+
+```chord
+create the Belt
+  an expanse
+  size: 20 by 8
+  drift: 1 unit every 50 turns
+  north is blocked: ice-fields
+  aka belt, void
+
+  Black, and the slow tumble of rock against it.
+
+  landmarks
+    the Mining Platform: 3, 3
+    the Derelict: 14, 6
+  end landmarks
+
+define phrase ice-fields
+  Ice closes the way north; the skiff will not answer that heading.
+end phrase
+
+create the Mining Platform
+  a room
+  seen from afar: a cluster of lights on a lopsided rock
+  sight: 4
+
+  A platform bolted to a rock, its lights the only warm thing for miles.
+
+create the Derelict
+  a room
+  seen from afar: a long dead hull, turning slowly end over end
+
+  The inside of a hull that has not held air in a hundred years.
+```
+
+## An open vehicle
+
+`movement: open` is a [vehicle](/chord/guide/world/vehicles) with a
+position in an expanse rather than a room. It starts `in <expanse> at <x>, <y>`
+or in a landmark, and writes three lines the type needs: `pace:` (turns per
+step), `stride:` (units per step) and `sight:` (how far one sees from it,
+in units). Speed is entirely the author's: a long voyage is long by the
+numbers written here, and no command changes them.
+
+```chord
+create the skiff
+  a vehicle
+  in the Belt at 3, 3
+  movement: open
+  carries: in
+  drive: player
+  commands: compass, coordinates
+  pace: 1 turn
+  stride: 1 unit
+  sight: 6
+  seen from afar: a glint of hull against the dark
+  aka craft
+
+  A skiff: one seat, one console, a hull you can see through.
+
+create the telescope
+  a thing
+  in the skiff
+  sight: 12
+  aka scope
+
+  A brass telescope, older than the skiff.
+```
+
+Two command sets drive it. `compass` is the base set — `steer north`,
+`go north` from inside, `heave to` — and under `use expanses` a heading is
+held across the open until something stops it. `coordinates` adds
+`set course for <x>, <y>` and `set course for <landmark>`. Under
+`drive: control` the story writes `start <vehicle> heading <direction>` or
+`send <vehicle> to <landmark or coordinates>` instead.
+
+```transcript
+> set course for the Derelict
+You set course for the Derelict.
+
+> wait
+Time passes...
+
+> wait
+Time passes...
+
+> wait
+Time passes...
+
+> wait
+Time passes...
+
+> wait
+Time passes...
+
+The lookout cries: the Derelict is in sight.
+```
+
+## Sight
+
+Whoever looks sees in bands, and out of sight is out of scope. From the
+skiff, anything within its `sight:` is reported — *close by*, *in the
+distance*, or *on the horizon*, with its direction — and a thing carrying
+`sight:` of its own is an instrument: `look through the telescope` looks
+once with its reach instead.
+
+```transcript
+> look
+Mining Platform
+A platform bolted to a rock, its lights the only warm thing for miles.
+
+You can see a skiff here.
+
+In the skiff you see a telescope and an Alex.
+
+The cask, in the distance, to the east.
+
+> look through telescope
+You look through the telescope.
+
+The cask, on the horizon, to the west.
+
+The Mining Platform, on the horizon, to the west.
+```
+
+The same bands are conditions — `<thing> is in sight`, `is close by`,
+`is in the distance`, `is on the horizon` — and `when <thing> comes into
+sight` is an anchor a sequence or an `after` clause can wait on, which is
+how the lookout above cries out:
+
+```chord
+define phrase land-ho
+  The lookout cries: the Derelict is in sight.
+end phrase
+
+define sequence landfall
+  when the Derelict comes into sight
+    phrase land-ho
+end sequence
+```
+
+`<vehicle> is within <n> of <landmark>` reads distance; `<vehicle> is in
+<expanse>`, `is at <landmark>`, `is heading <direction>` and `is under way`
+read where it is. An expanse's description varies by position with the
+ordinary per-entity override, `phrase description while <condition>:`,
+gated on any of these. A voyage of a hundred turns is as eventful as the
+author makes it.
+
+## Edges
+
+Each side of an expanse may carry a blocked-exit line, `north is blocked:
+<phrase>`, for `north`, `south`, `east` and `west`. A step that would pass
+an edge ends at it, stops the vehicle, and says the phrase once; a vehicle
+never crosses one. An edge with no line of its own gets the stock line.
+
+```transcript
+> steer north
+You steer the skiff north.
+
+> wait
+Time passes...
+
+Ice closes the way north; the skiff will not answer that heading.
+```
+
+## Floating things
+
+A thing marked `floats` may sit in the expanse with coordinates of its
+own, and drifts: the expanse's `drift: 1 unit every <n> turns` moves every
+floating thing one unit in a random direction, on the story's seed. When
+the vehicle is alongside — in the same cell — `retrieve the cask` brings it
+aboard; a floating thing that drifts into a landmark's cell washes up in
+that room.
+
+```chord
+create the cask
+  a thing, floats
+  in the Belt at 5, 3
+  aka barrel
+
+  A tarred cask, riding low.
+```
+
+Anything else dropped or thrown overboard is lost: it goes offstage and
+the stock line says it drifts away, which a thing's own
+`phrase lost-overboard` can replace. The player may leave the vehicle in
+the open; they stay in its cell, can go nowhere on their own, and
+`enter` or `board` any open vehicle alongside.
+
+Wind, bearings in degrees and sails are a further extension on top of
+this one: [Sailing](/chord/guide/world/sailing).

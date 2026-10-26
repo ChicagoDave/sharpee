@@ -23,3 +23,10 @@ earlier state is a load error (`analysis.irreversible-state`): a marrow
 declared `states: entire, sliced` can never be un-sliced, and the
 compiler holds you to it. Add `, reversible` only when the story really
 does move both ways, as the fountain does.
+
+One name is reserved. `dark` is the platform's word for a room without
+light, so a `states:` line on anything but a room may not declare a state
+called `dark` (`analysis.dark-state-reserved`): `the lantern is dark`
+would read the room's light, never the lantern's state. A thing that
+gives light composes `light-source` (with `switchable` to turn it on and
+off) instead of declaring a dark state.

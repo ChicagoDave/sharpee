@@ -1,0 +1,120 @@
+A `define machine` block is a state machine the story owns: named states,
+transitions fired by an action, an event or a condition, guarded by Chord
+conditions, with Chord bodies run on entering or leaving a state. It is
+core vocabulary — no `use` line, and writing `use state-machines` is a
+compile error that says the vocabulary is core.
+
+[States](/chord/guide/world/states) on an entity are not this. A
+`states:` line is plain world-state with a forward ratchet, moved by
+`change` and read by conditions and `select on`; it gives the *effect* of
+a simple machine with none of the machinery. Reach for a machine when the
+thing you are modelling has enter and exit effects, a terminal state, or a
+transition that waits on an event rather than a clause.
+
+```chord
+define machine ferry
+  role capstan is the capstan
+  starts moored
+
+  state moored
+    when turning the capstan: casting-off
+
+  state casting-off
+    on enter
+      phrase rope-pays-out
+    end on
+    when signaled: underway
+
+  state underway, terminal
+    on enter
+      phrase ferry-underway
+    end on
+end machine
+```
+
+The parts, in the order they are written:
+
+- **`role <name> is <entity>`** binds a name the triggers below can use.
+  The machine is story-owned, so `it` has no antecedent here and is a
+  compile error; name the role.
+- **`starts <state>`** names the first state.
+- **`state <name>`**, with `, terminal` for a state the machine never
+  leaves. Inside it, any number of transitions and effects.
+- **`when <trigger> [while <condition>]: <state>`** is a transition. The
+  trigger is an action on a role or entity (`turning the capstan`), an
+  event (`event bridge-seated`, raised with `emit`), a declared story
+  state or condition by its bare word (`signaled` above is a story state),
+  or any condition. `while` guards it.
+- **`on enter` / `on exit`** blocks hold statements, run when the state is
+  entered or left.
+
+At most one transition per machine fires in a turn. An action trigger
+fires the turn the action succeeds, in the same turn's output as the clause
+that made it succeed; a condition trigger fires the turn the condition
+becomes true.
+
+```chord
+story
+  title: The Ferry
+  authors:
+    ref
+  id: ferry
+  story-version: 0.0.1
+  states: waiting, signaled
+
+create the Slipway
+  a room
+
+  A cobbled slipway running down into grey water.
+
+create the capstan
+  a thing
+  in the Slipway
+
+  A tarred capstan wound with ferry rope.
+
+  on the player turning
+    phrase capstan-turns
+      You lean into the capstan and it comes round, pawls clacking.
+  end on
+
+create the signal cord
+  aka cord
+  a thing, scenery, pullable
+  in the Slipway
+
+  A cord for ringing the bell on the far bank.
+
+  on the player pulling
+    change the story to signaled
+    phrase cord-rings
+      Far across the water, a bell answers the cord.
+  end on
+
+define phrase rope-pays-out
+  The rope pays out and the ferry noses off the far bank.
+end phrase
+
+define phrase ferry-underway
+  The ferry is underway, beating slowly toward you.
+end phrase
+```
+
+```transcript
+> turn the capstan
+You lean into the capstan and it comes round, pawls clacking.
+
+The rope pays out and the ferry noses off the far bank.
+
+> pull the cord
+Far across the water, a bell answers the cord.
+
+The ferry is underway, beating slowly toward you.
+```
+
+A [vehicle](/chord/guide/world/vehicles) that moves over turns carries a
+machine of this shape built in — at a stop, under way, stopped — which the
+author never declares and reads only through `is under way`, `is at` and
+the `becomes under way` anchor. The platform runs it in the same place it
+runs the story's machines, after them, each turn. How that place sits in
+the turn is on [NPC & state machines](/chord/stdlib/plugins/npc-and-state-machine-plugins).

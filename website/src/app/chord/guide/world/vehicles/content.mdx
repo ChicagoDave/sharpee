@@ -1,0 +1,428 @@
+A vehicle is a kind: a thing the player gets into or onto that moves
+them with it. Every vehicle block writes three lines, with no defaults:
+`movement:` names how it moves, `carries: in` or `carries: on` says
+where the player rides, and `drive:` says what moves it. A vehicle the
+player drives also writes `commands:`, naming the command set the player
+steers it with. Nothing about a vehicle is implied by its type.
+
+| `movement:` | What it is | `drive:` | The player's `commands:` |
+|---|---|---|---|
+| `none` | a bathtub, a crate the player sits in; it never moves | (none) | (none) |
+| `line` | stops in order, both ways or one-way: a lift, a tram, a bucket on a rope | `state`, `control` | (none — the player rides) |
+| `streets` | a car on a street map, moving along exits whose rooms admit it | `player` | `compass` |
+| `compass` | a boat with a heading, moving one room every `pace:` turns | `player`, `control` | `compass` |
+| `flight` | a ship that is nowhere for `pace:` turns and then arrives | `player`, `control` | `destinations` |
+| `open` | a vessel on coordinates in an expanse — see [Expanses](/chord/guide/world/expanses) | `player`, `control` | `compass`, `coordinates` |
+
+The three drives: under `drive: state` the vehicle is wherever its
+`position` block says, and no statement moves it; under `drive: control`
+the story moves it with `start`, `stop` and `send`, bound to whatever the
+player operates; under `drive: player` the player's own commands move it,
+and `commands:` says which. A line or a flight starts at one of its stops
+or destinations. Moving a vehicle moves everything it holds.
+
+## A line driven by state
+
+The bucket is wherever the world says it should be. Its `position` block
+is read after every turn, top to bottom, and the vehicle moves when the
+answer changes:
+
+```chord
+create the Well Bottom
+  a room
+  up to the Top of the Well
+
+  The bottom of a dry well. A bucket hangs here on a rope.
+
+create the Top of the Well
+  a room
+
+  The top of the well, open to the sky.
+
+create the water
+  a thing
+  in the Well Bottom
+
+  A pool of clear water.
+
+create the bucket
+  a vehicle
+  in the Well Bottom
+  movement: line
+  carries: in
+  drive: state
+  stops: the Well Bottom, the Top of the Well
+  direction: both
+  holds 3
+
+  A wooden bucket on a rope, big enough to stand in.
+
+  position
+    when the bucket holds the water: the Top of the Well
+    otherwise: the Well Bottom
+  end position
+```
+
+```transcript
+> enter bucket
+You get into the bucket.
+
+> take water
+You take the water from the Well Bottom.
+
+> put water in bucket
+You put the water in the bucket.
+
+The bucket arrives at the Top of the Well.
+```
+
+## A line under control
+
+The tram has a `pace:` and is started by the story. `start <vehicle>` puts
+it under way; it steps one stop every `pace` turns and stops by itself at
+the end of the line, where the next `start` runs it back. `stop <vehicle>`
+halts it where it is, and `move <vehicle> to <stop>` relocates it outright.
+The brake lever is the player's handle on the statement:
+
+```chord
+create the Depot
+  a room
+
+  A tram depot. The rails run north.
+
+create the Midway Halt
+  a room
+
+  A halt halfway along the tram line.
+
+create the Terminus
+  a room
+
+  The end of the tram line.
+
+create the tram car
+  a vehicle
+  in the Depot
+  movement: line
+  carries: in
+  drive: control
+  stops: the Depot, the Midway Halt, the Terminus
+  direction: both
+  pace: 2 turns
+
+  An open tram car with a brake lever.
+
+create the brake
+  a thing, pushable
+  in the tram car
+  aka lever, brake lever
+
+  A brake lever.
+
+  on the player pushing
+    start the tram car when the tram car is not under way
+    phrase brake-off
+  end on
+
+define phrase brake-off
+  The brake comes off.
+end phrase
+
+define phrase tram-lurch
+  The tram car lurches into motion.
+end phrase
+
+define sequence the tram ride
+  when the tram car becomes under way
+    phrase tram-lurch
+end sequence
+```
+
+```transcript
+> push brake
+The brake comes off.
+
+The tram car lurches into motion.
+
+> wait
+Time passes...
+
+The tram car arrives at the Midway Halt.
+
+> wait
+Time passes...
+
+> wait
+Time passes...
+
+The tram car arrives at the Terminus.
+```
+
+`<vehicle> is under way` and `<vehicle> is at <stop>` are the conditions,
+and `when <vehicle> becomes under way` is an anchor a sequence can wait on.
+From inside a line vehicle, `go north` is refused: the player rides, and
+leaves with `out` or `exit`.
+
+## Streets: the player steers by GO
+
+A `streets` vehicle moves along the current room's exit when the room on
+the other side admits it. Rooms, `rooms` groups and regions say which
+vehicles they admit with `admits:`, and it is the only place that says so:
+a room with no `admits:` line admits no vehicle, which is what a street
+map needs. The alley the car can take is the room with the line; the
+footpath is the room without it.
+
+```chord
+create the High Street
+  a region
+  admits: the car
+
+create the Garage
+  a room
+  in the High Street
+  north to the Market
+  east to the Alley
+  west to the Footpath
+
+  A garage opening onto the High Street.
+
+create the Market
+  a room
+  in the High Street
+
+  The market square at the top of the High Street.
+
+create the Alley
+  a room
+  admits: the car
+
+  A narrow alley, just wide enough for a car.
+
+create the Footpath
+  a room
+
+  A footpath between hedges.
+
+create the car
+  a vehicle
+  in the Garage
+  movement: streets
+  carries: in
+  drive: player
+  commands: compass
+
+  A small car.
+```
+
+```transcript
+> enter car
+You get into the car.
+
+> east
+Alley
+A narrow alley, just wide enough for a car.
+
+> west
+Garage
+A garage opening onto the High Street.
+
+> west
+The car can't go that way.
+```
+
+The refusal names nothing: the Footpath's own prose says why a car does
+not fit, not the platform's. Every vehicle refusal ships with a stock
+line, overridable with `override message` like any stdlib message.
+
+## Compass: a heading, held until something stops it
+
+A `compass` vehicle has a heading. Under `drive: player`, `steer north` and
+`go north` from inside are the same command and set it; `heave to` clears
+it. Every `pace` turns the vehicle moves one room in its heading while an
+exit that way exists and admits it; when it cannot, it stops and says so
+once. The story can also halt it with `stop <vehicle>`, which is how the
+anchor works here:
+
+```chord
+create the Open Water
+  a region
+  admits: the Marigold
+
+create the Harbour
+  a room
+  in the Open Water
+  north to the Sound
+
+  A sheltered harbour.
+
+create the Sound
+  a room
+  in the Open Water
+  north to the Strait
+
+  A wide sound.
+
+create the Strait
+  a room
+  in the Open Water
+  north to the Shoal
+
+  A narrow strait.
+
+create the Shoal
+  a room
+
+  A shoal, too shallow for a keel.
+
+create the Marigold
+  a vehicle
+  in the Harbour
+  movement: compass
+  carries: in
+  drive: player
+  commands: compass
+  pace: 2 turns
+
+  A barque with a tiller and an anchor.
+
+create the anchor
+  a thing, pullable
+  in the Marigold
+
+  A heavy anchor on a chain.
+
+  on the player pulling
+    stop the Marigold
+    phrase anchor-dropped
+  end on
+
+define phrase anchor-dropped
+  The anchor goes over the side and the chain runs out.
+end phrase
+```
+
+```transcript
+> steer north
+You steer the Marigold north.
+
+> wait
+Time passes...
+
+The Marigold arrives at the Sound.
+
+> wait
+Time passes...
+
+> wait
+Time passes...
+
+The Marigold arrives at the Strait.
+
+> wait
+Time passes...
+
+> wait
+Time passes...
+
+The Marigold comes to a stop.
+```
+
+The Shoal is not in the Open Water region and has no `admits:` line of its
+own, so the Marigold stops at the Strait. Under `drive: control` the story
+sets the heading instead, with `start <vehicle> heading <direction>`.
+`<vehicle> is heading <direction>` is the condition.
+
+## Flight: rooms aboard, and an exit to outside
+
+A `flight` vehicle has `destinations:`, any to any. `set course for <destination>`
+(the `destinations` command set) puts it under way; it leaves its room,
+is nowhere for `pace` turns, and arrives. A vehicle of any moving type
+may have rooms aboard: `aboard:` lists them and `boarded through:` names
+the one the player enters by. Such a vehicle writes no `carries:` line —
+the player is in a room of the ship, not in the ship — and `board` and
+`disembark` work alongside `enter` and `exit`. Inside, an exit may lead
+`to outside`, and it resolves on every use to wherever the ship is now:
+
+```chord
+create the Pad
+  a room
+
+  A launch pad beside the harbour.
+
+create the Orbit Station
+  a room
+
+  A station in orbit.
+
+create the Sparrow
+  a vehicle
+  in the Pad
+  movement: flight
+  drive: player
+  commands: destinations
+  destinations: the Pad, the Orbit Station
+  pace: 2 turns
+  aboard: the Airlock, the Cabin
+  boarded through: the Airlock
+
+  A courier ship.
+
+create the Airlock
+  a room
+  east to the Cabin
+  west to outside
+
+  The Sparrow's airlock.
+
+create the Cabin
+  a room
+  west to the Airlock
+
+  The Sparrow's cabin.
+```
+
+```transcript
+> board the Sparrow
+You board the Sparrow.
+
+Airlock
+The Sparrow's airlock.
+
+> set course for the Orbit Station
+You set course for the Orbit Station.
+
+> west
+The Sparrow is under way.
+
+> wait
+Time passes...
+
+The Sparrow arrives at the Orbit Station.
+
+> west
+Orbit Station
+A station in orbit.
+```
+
+Under `drive: control` the story sends it: `send <vehicle> to <destination>`.
+`board` is for a vehicle with rooms aboard only; `board the bucket` refuses.
+
+## What the author never writes
+
+A vehicle that moves over turns has a state machine built in — at a
+stop, under way, stopped — and the author never declares it, never names
+its states, and reads it only through `is under way`, `is at`, `is heading`
+and the `becomes under way` anchor. Its heading, destination and turns
+remaining are plain data on the vehicle, so a save taken mid-passage
+restores a ship that arrives on schedule. The author's own command words
+need no new syntax: extra words for a shipped set are an
+[`extend action`](/chord/guide/vocabulary/extend-action) on `steering` or
+`setting-course`; a vocabulary of the author's own is a
+[`define action`](/chord/guide/vocabulary/define-action) with a
+`directions` block whose body drives a `drive: control` vehicle with
+`start <vehicle> heading <direction>`.
+
+Seas and skies without rooms — a vessel on coordinates, bearings in
+degrees, wind and sails — are the `use expanses` and `use sailing`
+extensions: [Expanses](/chord/guide/world/expanses) and
+[Sailing](/chord/guide/world/sailing).

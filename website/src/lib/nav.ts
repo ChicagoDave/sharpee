@@ -93,6 +93,9 @@ export const NAV: NavSection[] = [
           { title: 'Starting state', href: '/chord/guide/world/starting-state' },
           { title: 'Doors', href: '/chord/guide/world/doors' },
           { title: 'Regions', href: '/chord/guide/world/regions' },
+          { title: 'Vehicles', href: '/chord/guide/world/vehicles' },
+          { title: 'Expanses', href: '/chord/guide/world/expanses' },
+          { title: 'Sailing', href: '/chord/guide/world/sailing' },
           { title: 'Sound, music, and images', href: '/chord/guide/world/sound-music-and-images' },
           { title: 'People', href: '/chord/guide/world/people' },
           { title: 'The player role', href: '/chord/guide/world/the-player-role' },
@@ -148,6 +151,7 @@ export const NAV: NavSection[] = [
           { title: 'Sequences', href: '/chord/guide/flow/sequences' },
           { title: 'Timers', href: '/chord/guide/flow/timers' },
           { title: 'Chapters', href: '/chord/guide/flow/chapters' },
+          { title: 'State machines', href: '/chord/guide/flow/state-machines' },
         ],
       },
       {
