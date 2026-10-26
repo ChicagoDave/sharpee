@@ -50,8 +50,8 @@
 - **Files**: `website/src/app/chord/stdlib/reference/content.mdx`, `website/src/app/chord/guide/tooling/migrating-from-removed-constructs/content.mdx`
 - **Exit state**: the count line matches `grep -c "^define action" packages/parser-en-us/grammar/standard-en-us.story`; every removal the migration page lists is a parse or analysis code that exists in `packages/chord/src`
 - **Demonstration**: the grep count and the page's number agree; each diagnostic code named on the migration page greps in `packages/chord/src`
-- **Demonstrated**: 
-- **Status**: PENDING
+- **Demonstrated**: 2026-10-26, session 63b2a2. `grep -c "^define action" packages/parser-en-us/grammar/standard-en-us.story` → 77; the reference header now reads "77 standard actions, plus one system action (`deadly-room-death`) that no player types". The migration page's table gains nine Chord 4.0 rows and a paragraph on why the 4.0 ratchet turned on closed syntax; every code named greps in `packages/chord/src` with its file: `analysis.missing-kind-noun`, `analysis.kind-not-first` (analyzer/entity/compositions.ts), `parse.removed-text-hatch`, `parse.removed-action-hatch`, `parse.removed-chain-hatch`, `parse.removed-containing`, `parse.removed-capacity-setting`, `parse.passage-line-form`, `parse.passage-is-pace` (parser.ts), `analysis.extension-core` (analyzer.ts — the `use state-machines` error per ADR-377 D1). Each has at least one test under `packages/chord/tests`. The attachment words were left as they are (ADR-381 unimplemented).
+- **Status**: DONE
 
 ### Phase 4: Reference and guide pages for new Chord constructs
 - **Tier**: Large

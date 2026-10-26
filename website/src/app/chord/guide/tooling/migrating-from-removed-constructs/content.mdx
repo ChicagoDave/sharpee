@@ -19,6 +19,15 @@ harness, which asserts the exact code still fires.
 | `on <verb> it` / `after <verb> it` clause head | `parse.removed-head-it` | `on <actor> <verb>` — the head names who acts |
 | `it` / `its` in a statement, condition, or possessive | `analysis.it-removed` | the owner's name; still the carrier inside `define trait` |
 | `create the player` | `parse.removed-create-player` | a named character, `playable`, and a `before the game starts` block |
+| a `create` block with no kind, or a trait before the kind (Chord 4.0) | `analysis.missing-kind-noun` / `analysis.kind-not-first` | the kind as the block's first line — `a thing`, `a room`, `a container, openable` |
+| `define text <name> from "<module>"` (Chord 4.0) | `parse.removed-text-hatch` | a `define phrase`, with a strategy (`cycling`, `first-time`, …) if the text varies |
+| `define action <name> from "<module>"` (Chord 4.0) | `parse.removed-action-hatch` | a `define action` block written in Chord |
+| `define chain <name> from "<module>"` (Chord 4.0) | `parse.removed-chain-hatch` | none — the behavior needs support in the language; say so in an issue |
+| a region `containing` rooms, or nested regions (Chord 4.0) | `parse.removed-containing` | the region's `rooms` group; a room's `in <region>` membership |
+| `use state-machines` (Chord 4.0) | `analysis.extension-core` | nothing — `define machine` is core; remove the line |
+| `a container with max items N` / `with max weight N` (Chord 4.0) | `parse.removed-capacity-setting` | the `holds <n>` line |
+| a one-line `passage <words> to <room>` (Chord 4.0) | `parse.passage-line-form` | the `passage to <room> … end passage` block with its `grammar` |
+| `passage:` on a vehicle (Chord 4.0) | `parse.passage-is-pace` | `pace:` — a flight's trip time |
 
 The through-line is *stickiness* (design.md, given 9): every one of these
 removals took a floating, top-level behavior and re-homed it on the thing
@@ -34,6 +43,18 @@ antecedent on the line, so a clause could not be read alone; now the owner is
 written, except inside a `define trait`, where the carrier has no name to
 write. And the player stopped being a block to become a role a named character
 holds — see [The player role](/chord/guide/world/the-player-role).
+
+The Chord 4.0 rows are the first since 3.0.0 to turn the ratchet on the
+language's own closed syntax rather than on a floating construct. A
+`create` block names its kind first because the kind is what the rest of
+the block is read against; the three hatch forms are gone because a story
+that reaches into TypeScript is no longer a Chord story, and what Chord
+cannot say is a language gap to close, not a hole to climb through; a region
+declares its rooms because membership belongs on the region, not in a
+nesting; `use state-machines` and the capacity settings are refused
+because the vocabulary is core and `holds` is the one spelling; and a
+passage is a block with a grammar, so the one-line form and a vehicle's
+`passage:` line both have a named replacement.
 
 The richest case is `if`, because a single removed construct fans out to
 three replacements. This no longer parses:
