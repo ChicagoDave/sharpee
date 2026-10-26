@@ -17,8 +17,12 @@ import {
   PatternSyntaxError,
   SlotType
 } from '@sharpee/if-domain';
+import { englishWords } from '@sharpee/lang-en-us';
 
 const SLOT_NAME = /^[a-zA-Z_]\w*$/;
+
+/** English articles: a pattern's article after its first element is never required of the player (ADR-380 D2). */
+const ARTICLE_WORDS: ReadonlySet<string> = new Set(englishWords.articles.map((a) => a.toLowerCase()));
 
 /**
  * English-specific pattern compiler
@@ -140,7 +144,10 @@ export class EnglishPatternCompiler implements PatternCompiler {
       }
     });
 
-    const minTokens = tokens.filter((t) => !t.optional).length;
+    // What the match requires (ADR-386 D7): every required element less the
+    // articles after the first, which the matcher never demands; a
+    // pattern's first word is its verb, even when spelled like an article.
+    const minTokens = tokens.filter((t, index) => !t.optional && !(index > 0 && t.type === 'literal' && ARTICLE_WORDS.has(t.value))).length;
     return { tokens, slots, slotsByName, minTokens };
   }
 

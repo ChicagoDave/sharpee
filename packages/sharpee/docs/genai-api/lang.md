@@ -2852,6 +2852,15 @@ export declare const abbreviations: Map<string, string>;
  */
 export declare const cardinalNumbers: Record<string, number>;
 /**
+ * Read a cardinal number from typed words (ADR-386 D8): digits, one number
+ * word, or a tens-and-units compound written as two words (`twenty five`) or
+ * hyphenated (`twenty-five`). Nothing else composes: ordinals, times and
+ * larger constructions are not numbers here.
+ * @param words The typed words, in order (case does not matter)
+ * @returns The number, or null when the words are not one number
+ */
+export declare function parseCardinal(words: readonly string[]): number | null;
+/**
  * Ordinal number words mapped to numeric values
  * Used by ORDINAL slot type in grammar patterns
  */

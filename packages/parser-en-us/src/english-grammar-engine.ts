@@ -30,7 +30,7 @@ import {
 } from '@sharpee/if-domain';
 import { type Token } from '@sharpee/if-domain';
 import { EnglishPatternCompiler } from './english-pattern-compiler.js';
-import { cardinalNumbers, ordinalNumbers, directionMap, englishWords } from '@sharpee/lang-en-us';
+import { parseCardinal, ordinalNumbers, directionMap, englishWords } from '@sharpee/lang-en-us';
 import { SlotConsumerRegistry, SlotConsumerContext, createDefaultRegistry, isSlotRefusal, type SlotConsumeResult } from './slot-consumers/index.js';
 import type { PartialMatchFailure } from './parse-failure.js';
 import { ReadingNamer } from './reading-names.js';
@@ -227,7 +227,9 @@ export class EnglishGrammarEngine extends GrammarEngine {
     // want to drop?" instead of shrugging.
     if (tokens.length < pattern.minTokens) {
       const first = elements[0];
-      const verbMatched = first?.type === 'literal' && tokens[0] !== undefined && tokens[0].normalized === first.value;
+      // A literal verb or an alternation holding it (ADR-386 D7): bare
+      // `press` against `push|press :target` asks for its seat too
+      const verbMatched = first !== undefined && (first.type === 'literal' || first.type === 'alternates') && literalReads(first, tokens[0]);
       // A verb-led short input runs the full search below, which stops on
       // the exact element the input ran out at (the slot for `drop`, the
       // preposition for `put pear`) and records the verb with it.
@@ -483,24 +485,12 @@ export class EnglishGrammarEngine extends GrammarEngine {
   // ==========================================================================
 
   /**
-   * Extract typed value from a NUMBER slot match
+   * Extract typed value from a NUMBER slot match: the language reads the
+   * words as one number (ADR-386 D8).
    */
   static extractNumberValue(match: SlotMatch): number | null {
     if (match.slotType !== SlotType.NUMBER) return null;
-
-    const normalized = match.text.toLowerCase();
-
-    // Word form (using imported vocabulary from lang-en-us)
-    if (normalized in cardinalNumbers) {
-      return cardinalNumbers[normalized];
-    }
-
-    // Digit form
-    if (/^\d+$/.test(normalized)) {
-      return parseInt(normalized, 10);
-    }
-
-    return null;
+    return parseCardinal(match.text.split(' '));
   }
 
   /**

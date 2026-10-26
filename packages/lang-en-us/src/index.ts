@@ -45,6 +45,7 @@ export { countWord } from './number-words.js';
 // Export vocabulary data for parser use (ADR-082)
 export {
   cardinalNumbers,
+  parseCardinal,
   ordinalNumbers,
   directionMap,
   englishWords,

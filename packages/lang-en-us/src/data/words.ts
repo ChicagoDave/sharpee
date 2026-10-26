@@ -196,6 +196,31 @@ export const cardinalNumbers: Record<string, number> = {
 };
 
 /**
+ * Read a cardinal number from typed words (ADR-386 D8): digits, one number
+ * word, or a tens-and-units compound written as two words (`twenty five`) or
+ * hyphenated (`twenty-five`). Nothing else composes: ordinals, times and
+ * larger constructions are not numbers here.
+ * @param words The typed words, in order (case does not matter)
+ * @returns The number, or null when the words are not one number
+ */
+export function parseCardinal(words: readonly string[]): number | null {
+  const parts = words.flatMap((word) => word.toLowerCase().split('-')).filter((part) => part.length > 0);
+  if (parts.length === 1) {
+    const [word] = parts;
+    if (/^\d+$/.test(word)) return parseInt(word, 10);
+    return word in cardinalNumbers ? cardinalNumbers[word] : null;
+  }
+  if (parts.length === 2) {
+    const tens = cardinalNumbers[parts[0]];
+    const units = cardinalNumbers[parts[1]];
+    const isTens = tens !== undefined && tens >= 20 && tens <= 90 && tens % 10 === 0;
+    const isUnits = units !== undefined && units >= 1 && units <= 9;
+    return isTens && isUnits ? tens + units : null;
+  }
+  return null;
+}
+
+/**
  * Ordinal number words mapped to numeric values
  * Used by ORDINAL slot type in grammar patterns
  */

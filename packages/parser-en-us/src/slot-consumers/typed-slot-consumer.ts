@@ -1,16 +1,22 @@
 /**
  * @file Typed Slot Consumer
- * @description Handles typed value slots (ADR-088, ADR-082)
+ * @description Reads typed value slots (ADR-088, ADR-082): a number, an
+ *   ordinal, a time and a direction. An ordinal, time or direction slot has
+ *   one reading, the one token its vocabulary reads; a number slot admits
+ *   every span from its start the language reads as one number, longest
+ *   first (ADR-386 D1, D8).
+ *
+ * Public interface: TypedSlotConsumer.
+ * Owner context: parser-en-us slot consumers.
  */
 
 import { SlotType, type SlotMatch } from '@sharpee/if-domain';
-import { cardinalNumbers, ordinalNumbers, directionMap } from '@sharpee/lang-en-us';
+import { parseCardinal, ordinalNumbers, directionMap } from '@sharpee/lang-en-us';
 import { SlotConsumer, SlotConsumerContext, type SlotConsumeResult } from './slot-consumer.js';
+import { spanText } from './noun-phrase-split.js';
 
 /**
  * Consumer for typed value slots (NUMBER, ORDINAL, TIME, DIRECTION)
- * Validates input matches expected format/vocabulary. A typed slot has one
- * reading, the one token its vocabulary reads (ADR-386 D1; D8 widens numbers).
  */
 export class TypedSlotConsumer implements SlotConsumer {
   readonly slotTypes = [
@@ -21,6 +27,9 @@ export class TypedSlotConsumer implements SlotConsumer {
   ];
 
   consume(ctx: SlotConsumerContext): SlotConsumeResult {
+    if (ctx.slotType === SlotType.NUMBER) {
+      return this.consumeNumber(ctx);
+    }
     const match = this.matchOne(ctx);
     return match ? { readings: [match] } : null;
   }
@@ -30,8 +39,6 @@ export class TypedSlotConsumer implements SlotConsumer {
     const { slotType } = ctx;
 
     switch (slotType) {
-      case SlotType.NUMBER:
-        return this.consumeNumber(ctx);
       case SlotType.ORDINAL:
         return this.consumeOrdinal(ctx);
       case SlotType.TIME:
@@ -44,38 +51,20 @@ export class TypedSlotConsumer implements SlotConsumer {
   }
 
   /**
-   * Consume a number slot (integer)
-   * Matches digits (1, 29, 100) or words (one, twenty)
+   * A number slot: every span from the start that the language reads as one
+   * number (`25`, `twenty`, `twenty five`, `twenty-five`), longest first
+   * (ADR-386 D8). A compound is at most two words, so two spans are tried.
    */
-  private consumeNumber(ctx: SlotConsumerContext): SlotMatch | null {
+  private consumeNumber(ctx: SlotConsumerContext): SlotConsumeResult {
     const { tokens, startIndex } = ctx;
-
-    if (startIndex >= tokens.length) {
-      return null;
+    const readings: SlotMatch[] = [];
+    for (let end = Math.min(tokens.length, startIndex + 2); end > startIndex; end--) {
+      const span: number[] = [];
+      for (let i = startIndex; i < end; i++) span.push(i);
+      if (parseCardinal(span.map((i) => tokens[i].normalized)) === null) continue;
+      readings.push({ tokens: span, text: spanText(span, tokens), slotType: SlotType.NUMBER });
     }
-
-    const token = tokens[startIndex];
-    const normalized = token.normalized;
-
-    // Check word form (using imported vocabulary from lang-en-us)
-    if (normalized in cardinalNumbers) {
-      return {
-        tokens: [startIndex],
-        text: token.word,
-        slotType: SlotType.NUMBER
-      };
-    }
-
-    // Check digit form
-    if (/^\d+$/.test(normalized)) {
-      return {
-        tokens: [startIndex],
-        text: token.word,
-        slotType: SlotType.NUMBER
-      };
-    }
-
-    return null;
+    return readings.length > 0 ? { readings } : null;
   }
 
   /**
