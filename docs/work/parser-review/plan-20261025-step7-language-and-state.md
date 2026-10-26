@@ -1,7 +1,7 @@
 # Session Plan: Parser review step 7 — language and state: one table per language, one parser's state per parser
 
 **Created**: 2026-10-25
-**Plan Status**: ACTIVE
+**Plan Status**: DONE
 **Overall scope**: Step 7 of `docs/work/parser-review/review-20261022.md`, root cause 6, the last step of the parser review: "one article, determiner, self-word and direction table per language, owned by the language; the pronoun manager and vocabulary registry per parser instance." Fixes F1, F2, F3 and the language-and-state share of section H; scopes F4 and F5 in or out as ADR-387 decides (David owns the Chord-surface half). The decision record, ADR-387, does not exist yet: Phase 1 measures, Phase 2 drafts, interviews and reviews it, and no implementation phase starts until it is ACCEPTED and David says go.
 **Bounded contexts touched**: language layer (`packages/lang-en-us`, the table's home); grammar and vocabulary contracts (`packages/if-domain`); English parser (`packages/parser-en-us`); the naming matcher's self words and name stopwords (`packages/world-model`); the validator and engine only where they read a table or the registry (`packages/stdlib`, `packages/engine`); published references (package CLAUDE.md files, genai API reference); Dungeo and Chord trees (the regression floor)
 **Key domain language**: language table (the one owned list of articles, determiners, self words, all and except words, list conjunction, directions per language), self word, determiner versus article, direction table, parser instance state (pronoun context, vocabulary registry), seat question, "one home"
