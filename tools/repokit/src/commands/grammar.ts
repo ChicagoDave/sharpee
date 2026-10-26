@@ -20,6 +20,7 @@
  *
  * Public interface: GrammarCommand, runGrammarStep, checkGrammarModule,
  * checkDocsBlocksModule, compileStandardGrammarRules, refuseNonStandardConstructs,
+ * checkDirectionsBlocks,
  * renderRuleCall.
  * Owner context: tools/repokit — the in-repo platform build tool (unpublished).
  */
@@ -64,6 +65,37 @@ export interface StandardGrammarAction {
   patterns: ReadonlyArray<{ cardinality?: readonly string[] | null }>;
   constraints?: ReadonlyArray<unknown>;
   greedy?: readonly string[];
+  /** The action's `directions` block: each line's canonical word and its aliases. */
+  directions?: ReadonlyArray<{ canonical: string; aliases: readonly string[] }>;
+}
+
+/** The action whose `directions` block is the reference the others are held to. */
+const DIRECTIONS_REFERENCE_ACTION = 'going';
+
+/**
+ * Hold every `directions` block in the standard grammar to going's (ADR-387
+ * D5): the compass list is written per action (F5 carried), so each line of
+ * another block must be one of going's lines, canonical and aliases alike. A
+ * block may leave lines out (steering has no `in` or `out`); it may not add a
+ * word or regroup an alias.
+ * @param actions The grammar file's actions
+ * @throws Error naming the first action and line that drift from going's block
+ */
+export function checkDirectionsBlocks(actions: readonly StandardGrammarAction[]): void {
+  const reference = actions.find((action) => action.name === DIRECTIONS_REFERENCE_ACTION)?.directions;
+  if (!reference) {
+    throw new Error(`grammar: if.action.${DIRECTIONS_REFERENCE_ACTION} declares no directions block — it is the reference every other block is held to`);
+  }
+  const lineOf = (entry: { canonical: string; aliases: readonly string[] }) => [entry.canonical, ...entry.aliases].join(' or ');
+  const referenceLines = new Set(reference.map(lineOf));
+  for (const action of actions) {
+    for (const entry of action.directions ?? []) {
+      const line = lineOf(entry);
+      if (!referenceLines.has(line)) {
+        throw new Error(`grammar: if.action.${action.name} directions line \`${line}\` is not one of if.action.${DIRECTIONS_REFERENCE_ACTION}'s — the compass is written once per action and held equal; change going's block first`);
+      }
+    }
+  }
 }
 
 /**
@@ -190,6 +222,7 @@ export function compileStandardGrammarRules(root: string): {
   if (errors2.length > 0) throw new Error(errors2.join('\n'));
 
   refuseNonStandardConstructs(result.ir.actions);
+  checkDirectionsBlocks(result.ir.actions);
 
   const lowered = result.ir.actions.map((action) => ({
     action: `if.action.${action.name}`,

@@ -11,7 +11,6 @@
  */
 
 import { SlotType, type SlotMatch } from '@sharpee/if-domain';
-import { directionMap } from '@sharpee/lang-en-us';
 import { SlotConsumer, SlotConsumerContext, type SlotConsumeResult } from './slot-consumer.js';
 import { spanText } from './noun-phrase-split.js';
 
@@ -137,11 +136,11 @@ export class TypedSlotConsumer implements SlotConsumer {
   }
 
   /**
-   * Consume a direction slot
-   * Matches built-in direction vocabulary (n, north, up, etc.)
+   * Consume a direction slot: one token that is a word or abbreviation of the
+   * language's direction table (ADR-387 D5).
    */
   private consumeDirection(ctx: SlotConsumerContext): SlotMatch | null {
-    const { tokens, startIndex } = ctx;
+    const { tokens, startIndex, words } = ctx;
 
     if (startIndex >= tokens.length) {
       return null;
@@ -150,8 +149,7 @@ export class TypedSlotConsumer implements SlotConsumer {
     const token = tokens[startIndex];
     const normalized = token.normalized;
 
-    // Check direction vocabulary (using imported vocabulary from lang-en-us)
-    if (normalized in directionMap) {
+    if (words.directions.has(normalized)) {
       return {
         tokens: [startIndex],
         text: token.word,

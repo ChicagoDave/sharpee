@@ -552,21 +552,17 @@ export class EnglishLanguageProvider implements ParserLanguageProvider {
     }));
   }
 
+  /**
+   * The one direction table (ADR-387 D5), from the word table: each
+   * direction's canonical id, words and abbreviations.
+   * @returns a fresh copy of the table's entries
+   */
   getDirections(): DirectionVocabulary[] {
-    return [
-      { direction: 'north', words: ['north'], abbreviations: ['n'] },
-      { direction: 'south', words: ['south'], abbreviations: ['s'] },
-      { direction: 'east', words: ['east'], abbreviations: ['e'] },
-      { direction: 'west', words: ['west'], abbreviations: ['w'] },
-      { direction: 'northeast', words: ['northeast'], abbreviations: ['ne'] },
-      { direction: 'northwest', words: ['northwest'], abbreviations: ['nw'] },
-      { direction: 'southeast', words: ['southeast'], abbreviations: ['se'] },
-      { direction: 'southwest', words: ['southwest'], abbreviations: ['sw'] },
-      { direction: 'up', words: ['up', 'upward', 'upwards'], abbreviations: ['u'] },
-      { direction: 'down', words: ['down', 'downward', 'downwards'], abbreviations: ['d'] },
-      { direction: 'in', words: ['in', 'inside'] },
-      { direction: 'out', words: ['out', 'outside'] }
-    ];
+    return englishWords.directions.map((entry) => ({
+      direction: entry.direction,
+      words: [...entry.words],
+      ...(entry.abbreviations ? { abbreviations: [...entry.abbreviations] } : {})
+    }));
   }
 
   getSpecialVocabulary(): SpecialVocabulary {

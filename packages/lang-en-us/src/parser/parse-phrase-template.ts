@@ -42,6 +42,7 @@
  */
 
 import { type Phrase, type NounPhrase, type Slot } from '@sharpee/if-domain';
+import { englishWords } from '../data/words.js';
 
 /**
  * Leading hint → the article it selects on a `NounPhrase`. `bare` (GH #337)
@@ -176,12 +177,10 @@ function parseVerbatim(inner: string, template: string, params: Record<string, u
   return { kind: 'verbatim', text: String(value) };
 }
 
-/** The English word for each `Direction` constant (world-model's spelling). */
-const DIRECTION_WORDS: Readonly<Record<string, string>> = {
-  NORTH: 'north', SOUTH: 'south', EAST: 'east', WEST: 'west',
-  NORTHEAST: 'northeast', NORTHWEST: 'northwest', SOUTHEAST: 'southeast', SOUTHWEST: 'southwest',
-  UP: 'up', DOWN: 'down', IN: 'in', OUT: 'out',
-};
+/** The English word for each `Direction` constant: the direction table's first word (ADR-387 D5). */
+const DIRECTION_WORDS: Readonly<Record<string, string>> = Object.fromEntries(
+  englishWords.directions.map((entry) => [entry.direction, entry.words[0]])
+);
 
 /**
  * Parse a `{direction:param}` head: the bound param is a `Direction`

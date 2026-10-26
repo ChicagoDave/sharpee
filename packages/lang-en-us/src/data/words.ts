@@ -1,7 +1,12 @@
 /**
  * @file English Word Lists
- * @description Common word lists for English parsing
+ * @description The one word table of English (ADR-387 D1): articles,
+ *   determiners, pronouns, self words, all and except words, list separators,
+ *   manner adverbs, name stopwords, the direction table and the number words.
+ *   Every reader asks the language provider, which reads it here.
  */
+
+import type { DirectionVocabulary } from '@sharpee/if-domain';
 
 /**
  * English word lists for parsing
@@ -114,14 +119,27 @@ export const englishWords = {
   ],
   
   /**
-   * Directions
+   * The direction table (ADR-387 D5): each direction's canonical id, which is
+   * world-model's `Direction` constant spelled as if-domain's contract names
+   * it, the English words that mean it, and its abbreviations. It holds
+   * exactly the words the standard grammar's `directions` blocks accept:
+   * `upward` and `downward` are not standard IF direction commands. The
+   * tokenizer's tag, the DIRECTION slot and going's direction all read it.
    */
   directions: [
-    'north', 'south', 'east', 'west',
-    'northeast', 'northwest', 'southeast', 'southwest',
-    'up', 'down', 'in', 'out',
-    'left', 'right', 'forward', 'back', 'backward'
-  ],
+    { direction: 'NORTH', words: ['north'], abbreviations: ['n'] },
+    { direction: 'SOUTH', words: ['south'], abbreviations: ['s'] },
+    { direction: 'EAST', words: ['east'], abbreviations: ['e'] },
+    { direction: 'WEST', words: ['west'], abbreviations: ['w'] },
+    { direction: 'NORTHEAST', words: ['northeast'], abbreviations: ['ne'] },
+    { direction: 'NORTHWEST', words: ['northwest'], abbreviations: ['nw'] },
+    { direction: 'SOUTHEAST', words: ['southeast'], abbreviations: ['se'] },
+    { direction: 'SOUTHWEST', words: ['southwest'], abbreviations: ['sw'] },
+    { direction: 'UP', words: ['up'], abbreviations: ['u'] },
+    { direction: 'DOWN', words: ['down'], abbreviations: ['d'] },
+    { direction: 'IN', words: ['in', 'inside'] },
+    { direction: 'OUT', words: ['out', 'outside'] }
+  ] as ReadonlyArray<DirectionVocabulary>,
   
   /**
    * Common adjectives for parsing
@@ -202,28 +220,6 @@ export const irregularPlurals = new Map<string, string>([
 ]);
 
 /**
- * Common abbreviations
- */
-export const abbreviations = new Map<string, string>([
-  ['n', 'north'],
-  ['s', 'south'],
-  ['e', 'east'],
-  ['w', 'west'],
-  ['ne', 'northeast'],
-  ['nw', 'northwest'],
-  ['se', 'southeast'],
-  ['sw', 'southwest'],
-  ['u', 'up'],
-  ['d', 'down'],
-  ['l', 'look'],
-  ['x', 'examine'],
-  ['i', 'inventory'],
-  ['z', 'wait'],
-  ['g', 'again'],
-  ['q', 'quit']
-]);
-
-/**
  * Cardinal number words mapped to numeric values
  * Used by NUMBER slot type in grammar patterns
  */
@@ -270,27 +266,4 @@ export const ordinalNumbers: Record<string, number> = {
   sixth: 6, seventh: 7, eighth: 8, ninth: 9, tenth: 10,
   eleventh: 11, twelfth: 12, thirteenth: 13, fourteenth: 14, fifteenth: 15,
   sixteenth: 16, seventeenth: 17, eighteenth: 18, nineteenth: 19, twentieth: 20
-};
-
-/**
- * Direction vocabulary with canonical forms
- * Maps all variations (full names and abbreviations) to canonical direction names
- * Used by DIRECTION slot type in grammar patterns
- */
-export const directionMap: Record<string, string> = {
-  // Cardinals - full
-  north: 'north', south: 'south', east: 'east', west: 'west',
-  // Cardinals - abbreviated
-  n: 'north', s: 'south', e: 'east', w: 'west',
-  // Ordinals - full
-  northeast: 'northeast', northwest: 'northwest',
-  southeast: 'southeast', southwest: 'southwest',
-  // Ordinals - abbreviated
-  ne: 'northeast', nw: 'northwest', se: 'southeast', sw: 'southwest',
-  // Verticals - full
-  up: 'up', down: 'down',
-  // Verticals - abbreviated
-  u: 'up', d: 'down',
-  // Special
-  in: 'in', out: 'out'
 };

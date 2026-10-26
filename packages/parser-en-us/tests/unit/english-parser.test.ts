@@ -49,14 +49,15 @@ class MockLanguageProvider implements ParserLanguageProvider {
     ];
   }
 
+  // The canonical id is world-model's Direction constant (ADR-387 D5)
   getDirections() {
     return [
-      { direction: 'north', words: ['north', 'n'] },
-      { direction: 'south', words: ['south', 's'] },
-      { direction: 'east', words: ['east', 'e'] },
-      { direction: 'west', words: ['west', 'w'] },
-      { direction: 'up', words: ['up', 'u'] },
-      { direction: 'down', words: ['down', 'd'] }
+      { direction: 'NORTH', words: ['north'], abbreviations: ['n'] },
+      { direction: 'SOUTH', words: ['south'], abbreviations: ['s'] },
+      { direction: 'EAST', words: ['east'], abbreviations: ['e'] },
+      { direction: 'WEST', words: ['west'], abbreviations: ['w'] },
+      { direction: 'UP', words: ['up'], abbreviations: ['u'] },
+      { direction: 'DOWN', words: ['down'], abbreviations: ['d'] }
     ];
   }
 

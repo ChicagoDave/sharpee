@@ -10,8 +10,8 @@ import { TextSlotConsumer } from './text-slot-consumer.js';
 import { TypedSlotConsumer } from './typed-slot-consumer.js';
 import { VocabularySlotConsumer } from './vocabulary-slot-consumer.js';
 
-export { SlotConsumer, SlotConsumerContext, isSlotRefusal, isSlotReadings, phraseWordsOf } from './slot-consumer.js';
-export type { SlotRefusal, SlotReadings, SlotConsumeResult, PhraseWords } from './slot-consumer.js';
+export { SlotConsumer, SlotConsumerContext, isSlotRefusal, isSlotReadings, phraseWordsOf, directionTableOf } from './slot-consumer.js';
+export type { SlotRefusal, SlotReadings, SlotConsumeResult, PhraseWords, DirectionTable } from './slot-consumer.js';
 export { EntitySlotConsumer } from './entity-slot-consumer.js';
 export { TextSlotConsumer } from './text-slot-consumer.js';
 export { TypedSlotConsumer } from './typed-slot-consumer.js';

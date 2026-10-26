@@ -13,8 +13,8 @@
  * `phraseWordsOf` (ADR-387 D6). No consumer holds a word of its own.
  *
  * Public interface: SlotConsumer, SlotConsumerContext, PhraseWords,
- * phraseWordsOf, SlotReadings, SlotRefusal, SlotConsumeResult,
- * isSlotReadings, isSlotRefusal.
+ * phraseWordsOf, DirectionTable, directionTableOf, SlotReadings, SlotRefusal,
+ * SlotConsumeResult, isSlotReadings, isSlotRefusal.
  * Owner context: parser-en-us grammar matching.
  */
 
@@ -79,12 +79,34 @@ export interface PhraseWords {
   readonly actorPossessives: ReadonlySet<string>;
   /** The adverbs a MANNER slot accepts. */
   readonly mannerAdverbs: ReadonlySet<string>;
+  /** The direction table as a lookup: each word and abbreviation, normalized, to its canonical direction id (ADR-387 D5). */
+  readonly directions: DirectionTable;
+}
+
+/** The one direction table as the parser reads it: word or abbreviation → world-model's `Direction` constant. */
+export type DirectionTable = ReadonlyMap<string, string>;
+
+/**
+ * Derive the direction lookup from the provider's table (ADR-387 D5). The
+ * tokenizer's DIRECTION tag registers the same table, so a word is a
+ * direction everywhere or nowhere.
+ * @param language The provider the parser was constructed with
+ * @returns Each word and abbreviation, lower-cased, to its canonical id
+ */
+export function directionTableOf(language: ParserLanguageProvider): DirectionTable {
+  const table = new Map<string, string>();
+  for (const entry of language.getDirections()) {
+    for (const word of [...entry.words, ...(entry.abbreviations ?? [])]) {
+      table.set(word.toLowerCase(), entry.direction);
+    }
+  }
+  return table;
 }
 
 /**
  * Derive the consumers' words from the provider.
  * @param language The provider the parser was constructed with
- * @returns The list separators, the actor's possessives and the manner adverbs
+ * @returns The list separators, the actor's possessives, the manner adverbs and the direction lookup
  */
 export function phraseWordsOf(language: ParserLanguageProvider): PhraseWords {
   const actorPerson = language.getNarrativePerson();
@@ -97,7 +119,8 @@ export function phraseWordsOf(language: ParserLanguageProvider): PhraseWords {
         .filter((determiner) => determiner.possessive === 'first' || determiner.possessive === actorPerson)
         .map((determiner) => determiner.word)
     ),
-    mannerAdverbs: lower(language.getMannerAdverbs())
+    mannerAdverbs: lower(language.getMannerAdverbs()),
+    directions: directionTableOf(language)
   };
 }
 

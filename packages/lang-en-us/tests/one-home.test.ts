@@ -8,8 +8,8 @@
  * lang-en-us data. A second declaration anywhere, or a new data import in the
  * parser, fails here before it can drift.
  *
- * The one allowed import is the direction table, which Phase 5 of the step 7
- * plan collapses; it is pinned by file so it cannot grow.
+ * The direction table is one of the lists (ADR-387 D5): parser-en-us imports
+ * nothing from lang-en-us.
  */
 import { describe, it, expect } from 'vitest';
 import { readdirSync, readFileSync, statSync } from 'node:fs';
@@ -67,13 +67,8 @@ const LISTS: ReadonlyArray<{ name: string; words: readonly string[] }> = [
 const RETIRED_SYMBOLS = [
   'SELF_WORDS', 'NAME_VOCABULARY_STOPWORDS', 'PLAYER_ROLE_ALIASES', 'specialVocabulary', 'standardDirections',
   'LIST_CONJUNCTION', 'LIST_COMMA', 'ACTOR_POSSESSIVE', 'MANNER_ADVERBS', 'parserErrors', 'getParserErrorMessage',
+  'directionMap', 'DirectionWords', 'DirectionAbbreviations',
 ];
-
-/** parser-en-us files that may still import lang-en-us, and the one name each may take, until Phase 5. */
-const DIRECTION_TABLE_CARVE_OUT: Readonly<Record<string, string>> = {
-  'packages/parser-en-us/src/english-grammar-engine.ts': 'directionMap',
-  'packages/parser-en-us/src/slot-consumers/typed-slot-consumer.ts': 'directionMap',
-};
 
 describe('ADR-387 D1, D7: a language\'s words have one home', () => {
   const files = sourceFiles();
@@ -104,19 +99,21 @@ describe('ADR-387 D1, D7: a language\'s words have one home', () => {
     expect(hits).toEqual([]);
   });
 
-  it('lets the parser import lang-en-us only for the direction table, until Phase 5 collapses it', () => {
+  it('lets the parser import nothing from lang-en-us', () => {
     const offenders: string[] = [];
     for (const [file, text] of contents) {
       if (!file.startsWith('packages/parser-en-us/src/')) continue;
-      for (const match of text.matchAll(/import\s*\{([^}]*)\}\s*from\s*['"]@sharpee\/lang-en-us['"]/g)) {
-        const names = match[1].split(',').map((n) => n.trim().replace(/^type\s+/, '')).filter((n) => n.length > 0);
-        const allowed = DIRECTION_TABLE_CARVE_OUT[file];
-        for (const name of names) {
-          if (name !== allowed) offenders.push(`${file}: ${name}`);
-        }
-      }
-      if (/from\s*['"]@sharpee\/lang-en-us\/[^'"]+['"]/.test(text)) offenders.push(`${file}: deep import`);
+      if (/from\s*['"]@sharpee\/lang-en-us(\/[^'"]+)?['"]/.test(text)) offenders.push(file);
     }
     expect(offenders).toEqual([]);
+  });
+
+  it('declares the player-input direction table only in the language table', () => {
+    // The parser's two old maps (word → Direction constant, abbreviation → word), by their shape.
+    // Chord's author-side compass tables read story source, not player input, and stay (ADR-387 D8).
+    const abbreviationPairs = /\[\s*['"]n['"]\s*,\s*['"]north['"]\s*\]\s*,\s*\[\s*['"]s['"]\s*,\s*['"]south['"]\s*\]/;
+    const wordToConstant = /['"]north['"]\s*:\s*Direction\.NORTH/;
+    const declaringFiles = files.filter((f) => f !== TABLE && (abbreviationPairs.test(contents.get(f)!) || wordToConstant.test(contents.get(f)!)));
+    expect(declaringFiles).toEqual([]);
   });
 });

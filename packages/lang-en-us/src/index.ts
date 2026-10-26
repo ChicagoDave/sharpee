@@ -47,9 +47,7 @@ export {
   cardinalNumbers,
   parseCardinal,
   ordinalNumbers,
-  directionMap,
   englishWords,
-  abbreviations,
   irregularPlurals
 } from './data/words.js';
 

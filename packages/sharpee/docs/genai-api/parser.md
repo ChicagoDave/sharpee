@@ -31,6 +31,8 @@ export declare class EnglishParser implements Parser {
     private worldContext;
     /** Pronoun context manager for "it", "them", "him", "her" resolution (ADR-089) */
     private pronounContext;
+    /** The language's direction table as a lookup: word or abbreviation → `Direction` constant (ADR-387 D5) */
+    private readonly directions;
     constructor(language: ParserLanguageProvider, options?: ParserOptions);
     /**
      * Initialize vocabulary from language provider

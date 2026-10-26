@@ -97,33 +97,34 @@ describe('EnglishLanguageProvider', () => {
       expect(directions.length).toBeGreaterThan(0);
     });
 
+    // The canonical ids are world-model's Direction constants (ADR-387 D5)
     it('should include all cardinal directions', () => {
       const directionNames = directions.map(d => d.direction);
-      expect(directionNames).toContain('north');
-      expect(directionNames).toContain('south');
-      expect(directionNames).toContain('east');
-      expect(directionNames).toContain('west');
+      expect(directionNames).toContain('NORTH');
+      expect(directionNames).toContain('SOUTH');
+      expect(directionNames).toContain('EAST');
+      expect(directionNames).toContain('WEST');
     });
 
     it('should include ordinal directions', () => {
       const directionNames = directions.map(d => d.direction);
-      expect(directionNames).toContain('northeast');
-      expect(directionNames).toContain('northwest');
-      expect(directionNames).toContain('southeast');
-      expect(directionNames).toContain('southwest');
+      expect(directionNames).toContain('NORTHEAST');
+      expect(directionNames).toContain('NORTHWEST');
+      expect(directionNames).toContain('SOUTHEAST');
+      expect(directionNames).toContain('SOUTHWEST');
     });
 
     it('should include vertical directions', () => {
       const directionNames = directions.map(d => d.direction);
-      expect(directionNames).toContain('up');
-      expect(directionNames).toContain('down');
+      expect(directionNames).toContain('UP');
+      expect(directionNames).toContain('DOWN');
     });
 
     it('should have abbreviations for common directions', () => {
-      const north = directions.find(d => d.direction === 'north');
+      const north = directions.find(d => d.direction === 'NORTH');
       expect(north?.abbreviations).toContain('n');
-      
-      const northeast = directions.find(d => d.direction === 'northeast');
+
+      const northeast = directions.find(d => d.direction === 'NORTHEAST');
       expect(northeast?.abbreviations).toContain('ne');
     });
 

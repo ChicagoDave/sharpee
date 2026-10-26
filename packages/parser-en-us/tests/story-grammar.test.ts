@@ -54,7 +54,8 @@ const mockLanguageProvider: ParserLanguageProvider = {
   getConjunctions: () => ['and', 'or'],
   getNumbers: () => [],
   getSpecialWords: () => [],
-  getDirections: () => []
+  // The DIRECTION slot reads this table (ADR-387 D5): `push east wall` needs `east` in it
+  getDirections: () => [{ direction: 'EAST', words: ['east'], abbreviations: ['e'] }]
 };
 
 // Mock world model

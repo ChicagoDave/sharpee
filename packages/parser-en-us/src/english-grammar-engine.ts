@@ -30,8 +30,7 @@ import {
 } from '@sharpee/if-domain';
 import { type Token, type ParserLanguageProvider } from '@sharpee/if-domain';
 import { EnglishPatternCompiler } from './english-pattern-compiler.js';
-import { directionMap } from '@sharpee/lang-en-us';
-import { SlotConsumerRegistry, SlotConsumerContext, createDefaultRegistry, isSlotRefusal, phraseWordsOf, type PhraseWords, type SlotConsumeResult } from './slot-consumers/index.js';
+import { SlotConsumerRegistry, SlotConsumerContext, createDefaultRegistry, directionTableOf, isSlotRefusal, phraseWordsOf, type PhraseWords, type SlotConsumeResult } from './slot-consumers/index.js';
 import type { PartialMatchFailure } from './parse-failure.js';
 import { ReadingNamer } from './reading-names.js';
 
@@ -538,13 +537,15 @@ export class EnglishGrammarEngine extends GrammarEngine {
   }
 
   /**
-   * Extract canonical direction from a DIRECTION slot match
+   * Extract the canonical direction from a DIRECTION slot match: the
+   * language's table names it (ADR-387 D5).
+   * @param match the slot match
+   * @param language the language whose direction table is read
+   * @returns world-model's `Direction` constant, or null when the word is no direction
    */
-  static extractDirectionValue(match: SlotMatch): string | null {
+  static extractDirectionValue(match: SlotMatch, language: ParserLanguageProvider): string | null {
     if (match.slotType !== SlotType.DIRECTION) return null;
-
-    const normalized = match.text.toLowerCase();
-    return directionMap[normalized] || null;
+    return directionTableOf(language).get(match.text.toLowerCase()) ?? null;
   }
 
   /**

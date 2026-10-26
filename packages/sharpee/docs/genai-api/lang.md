@@ -209,6 +209,11 @@ export declare class EnglishLanguageProvider implements ParserLanguageProvider {
      */
     getActionMessages(actionId: string): Map<string, string> | null;
     getVerbs(): VerbVocabulary[];
+    /**
+     * The one direction table (ADR-387 D5), from the word table: each
+     * direction's canonical id, words and abbreviations.
+     * @returns a fresh copy of the table's entries
+     */
     getDirections(): DirectionVocabulary[];
     getSpecialVocabulary(): SpecialVocabulary;
     /**
@@ -2796,8 +2801,12 @@ export declare function ordinalString(value: number): string;
 ```typescript
 /**
  * @file English Word Lists
- * @description Common word lists for English parsing
+ * @description The one word table of English (ADR-387 D1): articles,
+ *   determiners, pronouns, self words, all and except words, list separators,
+ *   manner adverbs, name stopwords, the direction table and the number words.
+ *   Every reader asks the language provider, which reads it here.
  */
+import type { DirectionVocabulary } from '@sharpee/if-domain';
 /**
  * English word lists for parsing
  */
@@ -2858,9 +2867,14 @@ export declare const englishWords: {
      */
     mannerAdverbs: string[];
     /**
-     * Directions
+     * The direction table (ADR-387 D5): each direction's canonical id, which is
+     * world-model's `Direction` constant spelled as if-domain's contract names
+     * it, the English words that mean it, and its abbreviations. It holds
+     * exactly the words the standard grammar's `directions` blocks accept:
+     * `upward` and `downward` are not standard IF direction commands. The
+     * tokenizer's tag, the DIRECTION slot and going's direction all read it.
      */
-    directions: string[];
+    directions: ReadonlyArray<DirectionVocabulary>;
     /**
      * Common adjectives for parsing
      */
@@ -2884,10 +2898,6 @@ export declare const englishWords: {
  */
 export declare const irregularPlurals: Map<string, string>;
 /**
- * Common abbreviations
- */
-export declare const abbreviations: Map<string, string>;
-/**
  * Cardinal number words mapped to numeric values
  * Used by NUMBER slot type in grammar patterns
  */
@@ -2906,12 +2916,6 @@ export declare function parseCardinal(words: readonly string[]): number | null;
  * Used by ORDINAL slot type in grammar patterns
  */
 export declare const ordinalNumbers: Record<string, number>;
-/**
- * Direction vocabulary with canonical forms
- * Maps all variations (full names and abbreviations) to canonical direction names
- * Used by DIRECTION slot type in grammar patterns
- */
-export declare const directionMap: Record<string, string>;
 ```
 
 ### sound-messages

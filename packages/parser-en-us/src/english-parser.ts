@@ -48,7 +48,7 @@ import { EnglishGrammarEngine, MAX_READINGS_PER_RULE } from './english-grammar-e
 import { defineGrammar } from './grammar.js';
 import { definePlatformGrammar } from './platform-grammar.js';
 import { scope, type GrammarBuilder, type NounRank } from '@sharpee/if-domain';
-import { parseDirection } from './direction-mappings.js';
+import { directionTableOf, type DirectionTable } from './slot-consumers/index.js';
 import { analyzeBestFailure, failureOutranking } from './parse-failure.js';
 import { PronounContextManager, setPronounContextManager } from './pronoun-context.js';
 
@@ -134,10 +134,13 @@ export class EnglishParser implements Parser {
   } | null = null;
   /** Pronoun context manager for "it", "them", "him", "her" resolution (ADR-089) */
   private pronounContext: PronounContextManager;
+  /** The language's direction table as a lookup: word or abbreviation → `Direction` constant (ADR-387 D5) */
+  private readonly directions: DirectionTable;
 
   constructor(language: ParserLanguageProvider, options: ParserOptions = {}) {
     this.language = language;
     this.options = { ...DEFAULT_OPTIONS, ...options };
+    this.directions = directionTableOf(language);
 
     // Initialize grammar engine. The standard grammar is generated from the
     // Chord source (grammar/standard-en-us.story, ADR-269 D7); the ruled
@@ -454,8 +457,11 @@ export class EnglishParser implements Parser {
     if (best.extras) {
       // Check if extras contains a direction and convert it
       const extras = { ...best.extras };
+      // A rule's default names the direction by its word (a Chord
+      // `directions` block's canonical); the language's table gives the
+      // constant (ADR-387 D5). A word the table lacks stays as written.
       if (extras.direction && typeof extras.direction === 'string') {
-        const directionConstant = parseDirection(extras.direction);
+        const directionConstant = this.directions.get(extras.direction.toLowerCase());
         if (directionConstant) {
           extras.direction = directionConstant;
         }
@@ -867,8 +873,7 @@ export class EnglishParser implements Parser {
       // ADR-084: Handle direction slots - put in extras.direction
       if (slotType === SlotType.DIRECTION) {
         const directionText = slotData.text.toLowerCase();
-        const directionConstant = parseDirection(directionText);
-        extras.direction = directionConstant || directionText;
+        extras.direction = this.directions.get(directionText) ?? directionText;
         continue; // Don't also add to direct/indirect objects
       }
 

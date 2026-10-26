@@ -10,6 +10,7 @@
 import { describe, expect, it } from 'vitest';
 import { findRepoRoot } from '../repo';
 import {
+  checkDirectionsBlocks,
   checkDocsBlocksModule,
   checkGrammarModule,
   compileStandardGrammarRules,
@@ -62,6 +63,35 @@ describe('standard-grammar refusals (ADR-269 D2, D3)', () => {
     expect(() => refuseNonStandardConstructs([{ name: 'taking', patterns: [{ cardinality: ['each'] }] }])).toThrow(
       /if\.action\.taking uses → cardinality/,
     );
+  });
+});
+
+describe('directions blocks held to going\'s (ADR-387 D5)', () => {
+  const north = { canonical: 'north', aliases: ['n'] };
+  const inside = { canonical: 'in', aliases: ['inside'] };
+  const going = { name: 'going', patterns: [], directions: [north, inside] };
+
+  it('accepts blocks that repeat going\'s lines, in full or in part', () => {
+    expect(() =>
+      checkDirectionsBlocks([going, { name: 'pushing', patterns: [], directions: [north, inside] }, { name: 'steering', patterns: [], directions: [north] }]),
+    ).not.toThrow();
+  });
+
+  it('refuses a word going lacks and an alias grouped differently, naming the action and the line', () => {
+    expect(() => checkDirectionsBlocks([going, { name: 'steering', patterns: [], directions: [{ canonical: 'upward', aliases: [] }] }])).toThrow(
+      /if\.action\.steering directions line `upward` is not one of if\.action\.going's/,
+    );
+    expect(() => checkDirectionsBlocks([going, { name: 'pushing', patterns: [], directions: [{ canonical: 'north', aliases: ['n', 'no'] }] }])).toThrow(
+      /if\.action\.pushing directions line `north or n or no`/,
+    );
+  });
+
+  it('refuses a grammar whose going action has no directions block', () => {
+    expect(() => checkDirectionsBlocks([{ name: 'taking', patterns: [] }])).toThrow(/if\.action\.going declares no directions block/);
+  });
+
+  it('holds on the real standard grammar', () => {
+    expect(() => compileStandardGrammarRules(findRepoRoot())).not.toThrow();
   });
 });
 
