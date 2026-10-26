@@ -43,6 +43,8 @@ emitted rule **shape** (ADR-235 D2, applied to grammar). Every construct below i
 
 ### D1 — D15 lands: one slot production, `the <name>`, in both constructs
 
+*(Extended by ADR-380 D2/D2a, 2026-10-21: in a passage, which takes no noun, `the` is a literal word; in a block that takes nouns, an article inside `[…]` is a literal (`shoot [the] arrow at the target`), and an unused `define action` slot is `analysis.slot-unused`. `the <name>` stays the one slot spelling.)*
+
 The two EBNF productions converge on one (a simplification — two rules become one):
 
 ```
@@ -172,6 +174,8 @@ lines carry only what the player types. Only these two types exist in Chord (the
 unknown type word is a named analyzer error listing the supported ones (the ADR-271 D11 precedent for
 closed sets). Loader emission: `.slotType(slot, INSTRUMENT | TOPIC)` on the emitted rule. Rejected:
 inline `as instrument` in the pattern (mixes slot metadata into the command shape).
+
+> **Amended by ADR-383 D9 (2026-10-24):** a topic slot now reaches the action. The action binds the words the player typed under the slot's name, and it may answer them with `about …:` rows, the topic table's row form, matched by the topic table's matcher. A `takes the rest of the line` slot (D10) binds its words the same way. A topic slot with no rows stays legal: it accepts any words.
 
 ### D12 — Semantic defaults: per-pattern `means` line; direction map: a `directions` block bound to the `direction` slot (Q-6 resolved 2026-07-25)
 

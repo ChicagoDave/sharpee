@@ -38,6 +38,9 @@ import {
   expectEvent,
 } from '../../test-utils';
 
+/** English, handed to hand-built worlds as the language's words (ADR-387 D2). */
+const ENGLISH_WORDS = { selfWords: ['me', 'myself', 'self', 'yourself'], nameStopwords: ['the', 'a', 'an', 'of'] };
+
 function makeRoom(author: AuthorModel, displayName: string): IFEntity {
   const room = author.createEntity(displayName, EntityType.ROOM);
   room.add({ type: TraitType.ROOM });
@@ -58,6 +61,7 @@ function setupWallScenario(opts: {
   obstructorInParlor?: { name: string };
 }): WallScenario & { wall: IFEntity; obstructor?: IFEntity } {
   const world = new WorldModel();
+  world.setLanguageWords(ENGLISH_WORDS);
   const author = new AuthorModel(world.getDataStore(), world);
 
   const parlor = makeRoom(author, 'Parlor');

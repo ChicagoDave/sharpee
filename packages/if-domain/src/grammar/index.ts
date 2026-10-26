@@ -6,5 +6,6 @@
 export * from './grammar-builder.js';
 export * from './pattern-compiler.js';
 export * from './grammar-engine.js';
+export * from './rule-order.js';
 export * from './scope-builder.js';
 export * from './vocabulary-provider.js';

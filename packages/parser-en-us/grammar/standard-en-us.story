@@ -67,6 +67,7 @@ define action taking
     collect the item
     pick up the item
     take up the item
+    retrieve the item
 
 define action eating
   grammar
@@ -153,36 +154,33 @@ define action switching_off
     stop the device
     power off the device
 
+## ADR-378 D6: `push`, `shove` and `move` take a direction through the
+## `directions` block (ADR-267 D12), so the direction reaches the action as
+## `extras.direction`. The former literal lines (`move the target north`)
+## carried no direction at all — the word was consumed and nothing recorded it.
+
 define action pushing
   grammar
     push the target
     press the target
     shove the target
     move the target
-    move the target north
-    move the target n
-    move the target south
-    move the target s
-    move the target east
-    move the target e
-    move the target west
-    move the target w
-    move the target northeast
-    move the target ne
-    move the target northwest
-    move the target nw
-    move the target southeast
-    move the target se
-    move the target southwest
-    move the target sw
-    move the target up
-    move the target u
-    move the target down
-    move the target d
-    move the target in
-    move the target inside
-    move the target out
-    move the target outside
+    push the target the direction
+    shove the target the direction
+    move the target the direction
+  directions
+    north or n
+    south or s
+    east or e
+    west or w
+    northeast or ne
+    northwest or nw
+    southeast or se
+    southwest or sw
+    up or u
+    down or d
+    in or inside
+    out or outside
 
 define action pulling
   grammar
@@ -362,6 +360,30 @@ define action asking
     inquire of the recipient about the topic
   the topic is a topic
 
+## A request for a thing, distinct from asking about a topic by its literal
+## `for`. Recipient-first forms only: the parser seats the first slot as the
+## direct object, and the person is the direct object here.
+
+define action asking_for
+  grammar
+    ask the recipient for the item
+    beg the recipient for the item
+
+## Looking a topic up in a readable thing; its topic table answers.
+
+define action consulting
+  grammar
+    consult the source about the topic
+    look up the topic in the source
+    read about the topic in the source
+  the topic is a topic
+
+define action buying
+  grammar
+    buy the item
+    purchase the item
+    pay for the item
+
 ## GH #300: the player's farewell closes the live conversation. The literal
 ## `say goodbye` forms outrank answering's `say the response` by literal
 ## specificity (ADR-268 D3), so `say goodbye` is never an exchange answer.
@@ -487,6 +509,7 @@ define action entering
     go in the portal
     go into the portal
     board the vehicle
+      means gesture board
     get on the vehicle
 
 define action climbing
@@ -533,3 +556,173 @@ define action revealing
     reveal myself
     unhide
     stop hiding
+
+## ADR-370 — stock verbs without an object side (2026-10-13). Each is a
+## signal action: the stock line is the success message, a Chord reaction
+## speaks in its place. `wave hands` is a literal line beside `wave the
+## target`, so specificity picks it over a slot match on the word `hands`.
+## Bare `yes`/`no` are offered to an open exchange BEFORE the parse (the
+## engine's exchange-offer stage, GH #346); these lines see only what no
+## exchange claims. `say yes` stays an answering form (above).
+
+define action jumping
+  grammar
+    jump
+    leap
+    hop
+    jump up
+
+define action kissing
+  grammar
+    kiss the target
+    hug the target
+    embrace the target
+
+define action waving
+  grammar
+    wave
+    wave hands
+    wave hand
+    wave the target
+
+define action saying_yes
+  grammar
+    yes
+
+define action saying_no
+  grammar
+    no
+
+define action saying_sorry
+  grammar
+    sorry
+    apologize
+    apologise
+
+define action looking_under
+  grammar
+    look under the target
+    look beneath the target
+    look underneath the target
+
+define action emptying
+  grammar
+    empty the target
+    empty out the target
+    empty the target into or in or onto or on the destination
+
+## ADR-371 — object-side adjectives (2026-10-14). Burning is cutting's
+## shape: `flammable [with the <tool>]` gates it, the tool is an instrument.
+## Not `light the target`: that is lighting (ADR-374 D9), which switches a
+## switchable light on and lights a flame. Setting
+## carries the typed value as a topic; the thing's implementation decides
+## whether it is one of its settings. `set the target` alone refuses no_value.
+
+define action burning
+  grammar
+    burn the target
+    burn the target with or using the tool
+    ignite the target
+    set fire to the target
+  the tool is an instrument
+
+## ADR-366 D5i — the vehicle command sets. `compass` is steering: `steer
+## <direction>` and `heave to`; aboard a compass vehicle `go <direction>`
+## is the same action (the engine's vehicle command transformer). The
+## `destinations` set is setting_course, whose destination is typed free
+## text: the rooms a ship flies to are never in the player's scope.
+## ORDER IS LOAD-BEARING (ADR-268 D3): `set course for the destination`
+## must precede setting's `set the target`, which would otherwise take
+## `course for …` as its noun.
+
+define action steering
+  grammar
+    steer the direction
+    heave to
+      means gesture heave-to
+    port the turn
+      means gesture port
+    starboard the turn
+      means gesture starboard
+    port
+      means gesture port
+    starboard
+      means gesture starboard
+    hard to port
+      means gesture hard-port
+    hard to starboard
+      means gesture hard-starboard
+    ahead
+      means gesture ahead
+    come about
+      means gesture come-about
+    make sail
+      means gesture make-sail
+    shorten sail
+      means gesture shorten-sail
+    furl [the] sails
+      means gesture furl-sails
+  the turn is a topic
+  directions
+    north or n
+    south or s
+    east or e
+    west or w
+    northeast or ne
+    northwest or nw
+    southeast or se
+    southwest or sw
+    up or u
+    down or d
+
+define action setting_course
+  grammar
+    set course for the destination
+    set a course for the destination
+  the destination is a topic
+
+define action setting
+  grammar
+    set the target to the value
+    turn the target to the value
+    adjust the target to the value
+    set the target
+  the value is a topic
+
+## ADR-373 — tying attaches a held thing to an anchor; untying frees a tied
+## one. A story's own `tie` grammar (Dungeo's balloon) is story-tier and
+## outranks these stock lines.
+
+define action tying
+  grammar
+    tie the item to the anchor
+    fasten the item to the anchor
+    attach the item to the anchor
+    tie the item
+
+define action untying
+  grammar
+    untie the item
+    untie the item from the anchor
+    unfasten the item
+
+## ADR-374 D9 — lighting and putting out a light. A switchable light is
+## switched on or off (the actions delegate); a flame is lit, with its tool
+## when it needs one, or put out. `ignite` stays burning's.
+
+define action lighting
+  grammar
+    light the target
+    light the target with or using the tool
+  the tool is an instrument
+
+define action extinguishing
+  grammar
+    extinguish the target
+    put out the target
+    put the target out
+    blow out the target
+    blow the target out
+    snuff the target
+    snuff out the target
+    douse the target

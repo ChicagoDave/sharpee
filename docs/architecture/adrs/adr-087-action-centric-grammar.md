@@ -3,6 +3,8 @@
 ## Status
 ACCEPTED (Implemented)
 
+> **Amended by ADR-382 D2 (2026-10-23):** the `forAction` builder (`verbs`, `pattern`, `patterns`, `directions`) is retired. The standard grammar is Chord source registered through `GrammarBuilder.rule(spec)`, and TypeScript stories write one `define(text)` per rule.
+
 ## Context
 
 The current grammar system is **pattern-centric**: each grammar rule defines a single pattern that maps to an action. This leads to repetitive, error-prone definitions when an action has multiple verb synonyms:

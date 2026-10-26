@@ -1,4 +1,5 @@
 {
+  "claims": "upps.claims.chord",
   "seed": 42,
   "story": "upps",
   "version": 3

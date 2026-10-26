@@ -6,16 +6,35 @@ distinguished by the article: `a room` and `a supporter` are kind nouns
 
 ```chord
 create the workbench
-  a supporter with capacity 3
-  scenery
+  a supporter, scenery
+  holds 3
   in the Root Cellar
 
   A scarred oak workbench.
 ```
 
-`with` attaches settings. The last token of each setting is its value
-and the words before it are the key (`capacity 3`); several settings
-join with `and`. When a keyed value is an entity name, the article marks
+A kind noun takes no settings of its own. What a container or supporter
+can hold is its own line, `holds <n>`, a whole number of things; without
+the line it is unbounded. A container that shows what is inside it even
+when closed is `transparent`:
+
+```chord
+create the specimen jar
+  a container, openable, transparent
+  holds 2
+  in the Hold
+
+  A squat glass jar with a screw lid.
+```
+
+`transparent` belongs to containers only, and `holds` to containers and
+supporters; on anything else each is an error that names the kind it
+found. The old `with max items N`, `with max weight N` and `with
+capacity N` settings are errors whose message shows the `holds` line.
+
+`with` attaches settings to a trait adjective. The last token of each
+setting is its value and the words before it are the key; several
+settings join with `and`. When a keyed value is an entity name, the article marks
 where the name starts (`feedable with food the handful of feed`, where the
 keyword names an authored trait's data field). The built-in capability
 adjectives take their entity *directly* after `with` and use no keyword:
@@ -29,7 +48,36 @@ holding; with no implement named, any attempt reaches the entity. What the cut o
 actually *does* is never platform policy: a cuttable entity must carry
 exactly one implementation, an `on the player cutting` clause, its own or
 from a composed trait. The story fails to load with none, or with
-two. The same rule binds `diggable` to `on the player digging`.
+two. The same rule binds `diggable` to `on the player digging`, and
+`flammable` to `on the player burning` (`flammable with the disposal torch`
+names what it takes to light it; a thing that is not flammable prints
+"isn't something you can burn").
+
+A fourth adjective makes a dial out of states. `settable` on a thing whose
+states are `reversible` lets the player `set`, `turn` or `adjust` it to any
+of them: `set selector to titan` writes the same state `change the selector
+to titan` would, so `while the selector is titan`, `select on` and the verb
+all read one value. A value that is not one of the states answers with the
+list ("The guidance selector goes to ceres, titan, or kepler"). `settable`
+without a `states, reversible:` line is an error that names the line.
+
+```chord
+create the guidance selector
+  a thing, scenery, settable
+  in the Cockpit
+  aka selector, dial
+  states, reversible: ceres, titan, kepler
+
+  A three-position selector under the viewport.
+
+  on the player setting to kepler
+    refuse selector-kepler-last
+  end on
+
+  after the player setting
+    phrase selector-clicks
+  end after
+```
 
 ```chord
 create the straw bale
@@ -44,6 +92,87 @@ create the straw bale
     change the straw bale to loose
     phrase twine-cut
   end on
+```
+
+A price is a setting too. `costs 3 credits` lets the player `buy`,
+`purchase` or `pay for` the thing: the price comes off the buyer's own
+`credits` counter and the thing moves to them. Short of the price, the
+player "can't afford" it and nothing changes; a thing with no price
+"isn't for sale". The word after the number names a counter that some
+playable character must carry (`counter credits starts 5`), so each
+character the player becomes spends from a purse of its own. `on the
+player buying` and `after the player buying` work as on any action.
+
+```chord
+create the courier
+  a person, playable
+  counter credits starts 5
+
+create the ration bar
+  a thing, costs 3 credits
+  in the canteen kiosk
+
+  after the player buying
+    phrase kiosk-vends
+  end after
+```
+
+A thing can be fixed to another. `attached to the sorting machine`
+names what holds it: taking it refuses ("The route placard is fixed to
+the sorting machine.") and it stays where it is. Add `detachable` and
+the player can `pull` it free, after which it can be taken; without
+it, pulling "won't budge". `while the placard is attached` reads
+whether it is still held. The player can make the same bond in play:
+`tie twine to machine` attaches the held thing, and `untie twine`
+frees it.
+
+```chord
+create the route placard
+  a thing, attached to the sorting machine, detachable
+  in the Sorting Room
+```
+
+A light can be lit and put out. A plain `light-source` gives light;
+`starts unlit` begins it dark, and the player lights it with `light
+lantern` and puts it out with `put out`, `blow out` or `extinguish`.
+`light-source with the flint striker` means lighting it takes that
+tool in hand. A `switchable` light is switched on and off instead, and
+`light torch` does just that. A switchable container can need power:
+`powered by the power cell` (or several things joined with `and`) means
+it runs only while every one of them is inside it, so taking the cell
+out of a lit lamp leaves the switch on and the room dark. `while the
+lamp is lit` reads whether it is giving light right now.
+
+```chord
+create the blackout lantern
+  a thing, light-source with the flint striker, starts unlit
+
+create the work lamp
+  a container, light-source, switchable, powered by the power cell
+```
+
+A person can see in the dark: `night-vision` lets them examine and take
+things in a dark room, and see the room itself when they look or arrive,
+while everyone else there sees nothing.
+
+A thing can break. `breakable` lets attacking break it, and it stays
+where it was, broken. Add `fragile` and it also breaks when dropped on
+the floor or thrown; dropped into a container or onto a supporter it
+is safe. `while the jar is broken` reads it, and `starts broken`
+begins it that way. Because the platform keeps this state, a thing
+does not declare `states: whole, broken` of its own; Chord reports
+that and names `breakable`. To react to the break, whatever caused
+it, write `after the player breaking` in the thing's block (see
+[on and after](/chord/guide/behavior/on-and-after)).
+
+```chord
+create the sample jar
+  a container, transparent, breakable, fragile
+  in the Sorting Room
+
+  after the player breaking
+    phrase jar-spills
+  end after
 ```
 
 A trait can be conditional: `while` puts it under the control of a

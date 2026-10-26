@@ -1,0 +1,28 @@
+## Hunt the Wumpus's claims: what the hunt can reach, each under the rooms,
+## things and verbs that are load-bearing on the way. The test tree's
+## manifest names this file; the story never imports it. The shared set is
+## the winning hunt; a claim that needs less declares its own.
+
+claims
+  needs rooms: the Landing, the Echo Chamber, the Dripping Gallery, the Bone Hollow, the Bottomless Pit, the Sinkhole, the Bat Roost
+  needs things: the coracle, the Wumpus
+  needs verbs: enter, exit, look, steer, wait, set course for, shoot, heave to
+
+  claim the Wumpus can be slain
+    the story ends in victory
+
+  claim the hunt can be lost
+    the story ends in defeat
+
+  claim the coracle reaches the Bottomless Pit
+    the player is in the Bottomless Pit
+    needs rooms: the Landing, the Bottomless Pit
+    needs things: the coracle
+    needs verbs: enter, set course for, wait
+
+  claim the bats carry the coracle to the Bone Hollow
+    the player is in the Bone Hollow
+    needs rooms: the Landing, the Bat Roost, the Bone Hollow
+    needs things: the coracle
+    needs verbs: enter, set course for, wait, look
+end claims

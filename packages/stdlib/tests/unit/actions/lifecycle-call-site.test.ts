@@ -9,7 +9,8 @@
 import { describe, test, expect } from 'vitest';
 import * as fs from 'fs';
 import * as path from 'path';
-import { actionLifecycleDescriptors } from '../../../src/actions/lifecycle/registry';
+import { actionLifecycleDescriptors, lifecycleDescriptorFor } from '../../../src/actions/lifecycle/registry';
+import { IFActions } from '../../../src/actions/constants';
 
 const HOOKS = ['resolveLifecycle', 'getLifecycleState', 'runPreValidate', 'runPostValidate', 'runPostExecute', 'runPostReport', 'runOnBlocked'];
 const PRIMITIVES = ['runMultiObjectValidate', 'runMultiObjectExecute', 'runMultiObjectReport'];
@@ -19,7 +20,7 @@ const PRIMITIVES = ['runMultiObjectValidate', 'runMultiObjectExecute', 'runMulti
  * backed by a descriptor declaration this test checks; a new name here
  * without one fails below.
  */
-const DECLARED_HOOK_CALLERS: Record<string, 'runsOwnHooks' | 'handlesMultiObject' | 'delegation'> = {
+const DECLARED_HOOK_CALLERS: Record<string, 'runsOwnHooks' | 'handlesMultiObject' | 'consequence'> = {
   attacking: 'runsOwnHooks',      // postExecute is the combat resolution; postReport precedes death events
   answering: 'runsOwnHooks',      // post hooks only when the exchange has not gripped the response
   asking: 'runsOwnHooks',
@@ -29,8 +30,17 @@ const DECLARED_HOOK_CALLERS: Record<string, 'runsOwnHooks' | 'handlesMultiObject
   dropping: 'handlesMultiObject',
   putting: 'handlesMultiObject',
   removing: 'handlesMultiObject',
-  inserting: 'delegation'         // runs PUTTING's hooks around the phases it delegates into
+  breaking: 'consequence'         // runBreakingLifecycle: fired by the action that broke the thing (ADR-373 D3)
 };
+
+/**
+ * Actions carried out by another action (ADR-228 D6-B). They call no hook
+ * themselves: the inner action's hooks run in `delegation-shared.ts`, the one
+ * module outside the executor that may, and these actions call its three
+ * phases. A new delegating action is listed here and nowhere else.
+ */
+const DELEGATING_ACTIONS = ['inserting', 'lighting', 'extinguishing', 'pushing', 'climbing', 'exiting'];
+const DELEGATION_PHASES = ['delegateValidate', 'delegateExecute', 'delegateReport'];
 
 function actionSources(): Map<string, string> {
   const standardDir = path.join(__dirname, '../../../src/actions/standard');
@@ -78,6 +88,8 @@ describe('the lifecycle call site is the executor (ADR-337 D1)', () => {
         expect(descriptor!.contracts?.runsOwnHooks, `${file} must declare contracts.runsOwnHooks`).toEqual(expected);
       } else if (reason === 'handlesMultiObject') {
         expect(descriptor!.contracts?.handlesMultiObject, `${file} must declare contracts.handlesMultiObject`).toBe(true);
+      } else if (reason === 'consequence') {
+        expect(descriptor!.contracts?.firedAsConsequence?.causes.length, `${file} must declare contracts.firedAsConsequence with its causes`).toBeGreaterThan(0);
       }
     }
     // The other direction: every declared caller still calls something
@@ -85,6 +97,30 @@ describe('the lifecycle call site is the executor (ADR-337 D1)', () => {
     for (const dir of Object.keys(DECLARED_HOOK_CALLERS)) {
       expect(callers, `${dir} is declared but calls no hook`).toContain(dir);
     }
+  });
+
+  test('delegation runs through its one seam (ADR-228 D6-B)', () => {
+    const delegators: string[] = [];
+    for (const [file, source] of actionSources()) {
+      if (callsIn(source, DELEGATION_PHASES).length === 0) continue;
+      const dir = file.split('/')[0];
+      delegators.push(dir);
+      expect(callsIn(source, DELEGATION_PHASES), `${file} must run all three delegated phases`).toEqual(DELEGATION_PHASES);
+    }
+    expect(delegators.sort()).toEqual([...DELEGATING_ACTIONS].sort());
+    const seam = fs.readFileSync(path.join(__dirname, '../../../src/actions/standard/delegation-shared.ts'), 'utf8');
+    expect(callsIn(seam, HOOKS), 'delegation-shared.ts runs the inner action\'s hooks').toEqual(
+      ['resolveLifecycle', 'getLifecycleState', 'runPreValidate', 'runPostValidate', 'runPostExecute', 'runPostReport'],
+    );
+  });
+
+  test('exactly the declared breaking causes fire the breaking lifecycle (ADR-373 D3)', () => {
+    const callers = new Set<string>();
+    for (const [file, source] of actionSources()) {
+      if (/\brunBreakingLifecycle\(/.test(source) && !file.startsWith('breaking/')) callers.add(file.split('/')[0]);
+    }
+    const declared = lifecycleDescriptorFor(IFActions.BREAKING)!.contracts!.firedAsConsequence!.causes;
+    expect([...callers].sort()).toEqual(declared.map((id) => id.replace('if.action.', '')).sort());
   });
 
   test('the four multi-object actions call all three per-item primitives; no other action imports them', () => {

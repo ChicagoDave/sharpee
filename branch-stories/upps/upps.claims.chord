@@ -1,0 +1,65 @@
+## UPPS (United Planetary Postal Service)'s claims: what the finished story can reach, each under the
+## rooms, things and verbs that are load-bearing on the way. The test tree's
+## manifest names this file; the story never imports it.
+
+claims
+  claim the player is in the Kraken Landing
+    the player is in the Kraken Landing
+    needs rooms: the Sorting Room, the Loading Dock, the Cable Trench, the Hold, the Cockpit, the Airlock, the Landing Pad, the Collar Vestibule, the Shuttle Gate, the Kraken Landing
+    needs things: the mail satchel, the sorting machine, the route card, the dead letter, the returns bin, the disposal torch, the ration bar, the flask of coffee, the route placard, the inspection plate, the sample jar, the parcel twine, the sodium lights, the mail bundle, the dock door, the mail crates, the loader robot, the courier ship, the call button, the mail sack, the flint striker, the blackout lantern, the work lamp, the power cell, the suit locker, the space suit, the cockpit hatch, the guidance selector, the flight couch, the viewport, the flight manual, the fold drive, the outer hatch, the pressure gauge, the pad master, the tram line, the drop shuttle, the drop lever
+    needs verbs: look, wear, take, examine, read, jump, yes, no, sorry, wave, look under, empty, kiss, throw, burn, drop, buy, pull, tie, untie, lower, raise, push, light, blow out, switch on, put, board, give, open, set, turn, consult, look up hatch in, read about guidance in, enter, switch off, exit, show, close, wait
+
+  claim the player is in the Loading Dock
+    the player is in the Loading Dock
+    needs rooms: the Sorting Room, the Loading Dock
+    needs things: the mail bundle, the dock door
+    needs verbs: look, wear, take, examine, read, jump, yes, no, sorry, wave, look under, empty, kiss, throw, burn, drop, buy, pull, tie, untie
+
+  claim the player is in the Cable Trench
+    the player is in the Cable Trench
+    needs rooms: the Sorting Room, the Loading Dock, the Cable Trench
+    needs things: the mail bundle, the dock door
+    needs verbs: look, wear, take, examine, read, jump, yes, no, sorry, wave, look under, empty, kiss, throw, burn, drop, buy, pull, tie, untie, lower, raise
+
+  claim the player is in the Hold
+    the player is in the Hold
+    needs rooms: the Sorting Room, the Loading Dock, the Cable Trench, the Hold
+    needs things: the mail satchel, the sorting machine, the route card, the dead letter, the returns bin, the disposal torch, the ration bar, the flask of coffee, the route placard, the inspection plate, the sample jar, the parcel twine, the sodium lights, the mail bundle, the dock door, the mail crates, the loader robot, the courier ship, the call button, the mail sack, the flint striker, the blackout lantern, the work lamp, the power cell
+    needs verbs: look, wear, take, examine, read, jump, yes, no, sorry, wave, look under, empty, kiss, throw, burn, drop, buy, pull, tie, untie, lower, raise, push, light, blow out, switch on, put, board, give
+
+  claim the player is in the Cockpit
+    the player is in the Cockpit
+    needs rooms: the Sorting Room, the Loading Dock, the Cable Trench, the Hold, the Cockpit
+    needs things: the mail satchel, the sorting machine, the route card, the dead letter, the returns bin, the disposal torch, the ration bar, the flask of coffee, the route placard, the inspection plate, the sample jar, the parcel twine, the sodium lights, the mail bundle, the dock door, the mail crates, the loader robot, the courier ship, the call button, the mail sack, the flint striker, the blackout lantern, the work lamp, the power cell, the suit locker, the space suit, the cockpit hatch
+    needs verbs: look, wear, take, examine, read, jump, yes, no, sorry, wave, look under, empty, kiss, throw, burn, drop, buy, pull, tie, untie, lower, raise, push, light, blow out, switch on, put, board, give, open
+
+  claim the player is in the Airlock
+    the player is in the Airlock
+    needs rooms: the Sorting Room, the Loading Dock, the Cable Trench, the Hold, the Cockpit, the Airlock
+    needs things: the mail satchel, the sorting machine, the route card, the dead letter, the returns bin, the disposal torch, the ration bar, the flask of coffee, the route placard, the inspection plate, the sample jar, the parcel twine, the sodium lights, the mail bundle, the dock door, the mail crates, the loader robot, the courier ship, the call button, the mail sack, the flint striker, the blackout lantern, the work lamp, the power cell, the suit locker, the space suit, the cockpit hatch, the guidance selector, the flight couch, the viewport, the flight manual, the fold drive
+    needs verbs: look, wear, take, examine, read, jump, yes, no, sorry, wave, look under, empty, kiss, throw, burn, drop, buy, pull, tie, untie, lower, raise, push, light, blow out, switch on, put, board, give, open, set, turn, consult, look up hatch in, read about guidance in, enter, switch off, exit
+
+  claim the player is in the Landing Pad
+    the player is in the Landing Pad
+    needs rooms: the Sorting Room, the Loading Dock, the Cable Trench, the Hold, the Cockpit, the Airlock, the Landing Pad
+    needs things: the mail satchel, the sorting machine, the route card, the dead letter, the returns bin, the disposal torch, the ration bar, the flask of coffee, the route placard, the inspection plate, the sample jar, the parcel twine, the sodium lights, the mail bundle, the dock door, the mail crates, the loader robot, the courier ship, the call button, the mail sack, the flint striker, the blackout lantern, the work lamp, the power cell, the suit locker, the space suit, the cockpit hatch, the guidance selector, the flight couch, the viewport, the flight manual, the fold drive, the outer hatch, the pressure gauge
+    needs verbs: look, wear, take, examine, read, jump, yes, no, sorry, wave, look under, empty, kiss, throw, burn, drop, buy, pull, tie, untie, lower, raise, push, light, blow out, switch on, put, board, give, open, set, turn, consult, look up hatch in, read about guidance in, enter, switch off, exit
+
+  claim the player is in the Piazzi Platform
+    the player is in the Piazzi Platform
+    needs rooms: the Sorting Room, the Loading Dock, the Cable Trench, the Hold, the Cockpit, the Airlock, the Landing Pad, the Piazzi Platform
+    needs things: the mail satchel, the sorting machine, the route card, the dead letter, the returns bin, the disposal torch, the ration bar, the flask of coffee, the route placard, the inspection plate, the sample jar, the parcel twine, the sodium lights, the mail bundle, the dock door, the mail crates, the loader robot, the courier ship, the call button, the mail sack, the flint striker, the blackout lantern, the work lamp, the power cell, the suit locker, the space suit, the cockpit hatch, the guidance selector, the flight couch, the viewport, the flight manual, the fold drive, the outer hatch, the pressure gauge, the pad master, the tram line, the tram car, the brake lever
+    needs verbs: look, wear, take, examine, read, jump, yes, no, sorry, wave, look under, empty, kiss, throw, burn, drop, buy, pull, tie, untie, lower, raise, push, light, blow out, switch on, put, board, give, open, set, turn, consult, look up hatch in, read about guidance in, enter, switch off, exit, show, wait
+
+  claim the player is in the Collar Vestibule
+    the player is in the Collar Vestibule
+    needs rooms: the Sorting Room, the Loading Dock, the Cable Trench, the Hold, the Cockpit, the Airlock, the Landing Pad, the Collar Vestibule
+    needs things: the mail satchel, the sorting machine, the route card, the dead letter, the returns bin, the disposal torch, the ration bar, the flask of coffee, the route placard, the inspection plate, the sample jar, the parcel twine, the sodium lights, the mail bundle, the dock door, the mail crates, the loader robot, the courier ship, the call button, the mail sack, the flint striker, the blackout lantern, the work lamp, the power cell, the suit locker, the space suit, the cockpit hatch, the guidance selector, the flight couch, the viewport, the flight manual, the fold drive, the outer hatch, the pressure gauge, the pad master, the tram line
+    needs verbs: look, wear, take, examine, read, jump, yes, no, sorry, wave, look under, empty, kiss, throw, burn, drop, buy, pull, tie, untie, lower, raise, push, light, blow out, switch on, put, board, give, open, set, turn, consult, look up hatch in, read about guidance in, enter, switch off, exit, show, close
+
+  claim the player is in the Shuttle Gate
+    the player is in the Shuttle Gate
+    needs rooms: the Sorting Room, the Loading Dock, the Cable Trench, the Hold, the Cockpit, the Airlock, the Landing Pad, the Collar Vestibule, the Shuttle Gate
+    needs things: the mail satchel, the sorting machine, the route card, the dead letter, the returns bin, the disposal torch, the ration bar, the flask of coffee, the route placard, the inspection plate, the sample jar, the parcel twine, the sodium lights, the mail bundle, the dock door, the mail crates, the loader robot, the courier ship, the call button, the mail sack, the flint striker, the blackout lantern, the work lamp, the power cell, the suit locker, the space suit, the cockpit hatch, the guidance selector, the flight couch, the viewport, the flight manual, the fold drive, the outer hatch, the pressure gauge, the pad master, the tram line
+    needs verbs: look, wear, take, examine, read, jump, yes, no, sorry, wave, look under, empty, kiss, throw, burn, drop, buy, pull, tie, untie, lower, raise, push, light, blow out, switch on, put, board, give, open, set, turn, consult, look up hatch in, read about guidance in, enter, switch off, exit, show, close
+end claims

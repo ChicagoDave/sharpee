@@ -7,10 +7,10 @@
 
 import { type Action, type ActionContext, type ValidationResult } from '@sharpee/stdlib';
 import { type ISemanticEvent } from '@sharpee/core';
-import { IdentityTrait, IFEntity, VehicleTrait, OpenableTrait } from '@sharpee/world-model';
-import { moveVehicle, isActorInVehicle, getActorVehicle } from '@sharpee/world-model';
+import { IdentityTrait, IFEntity, OpenableTrait } from '@sharpee/world-model';
+import { currentStop, moveVehicleToStop, isActorInVehicle, getActorVehicle } from '@sharpee/world-model';
 import { FILL_ACTION_ID, FillMessages } from './types';
-import { BucketTrait } from '../../traits';
+import { BucketTrait, wellStops } from '../../traits';
 
 /**
  * Find bottle in player's inventory
@@ -134,10 +134,10 @@ export const fillAction: Action = {
 
     // If filling from bucket at well
     if (bucket) {
-      const vehicleTrait = bucket.get(VehicleTrait);
+      const stops = wellStops(bucket);
       const water = findWaterInBucket(context, bucket);
 
-      if (vehicleTrait && vehicleTrait.vehicleType === 'counterweight' && water) {
+      if (stops && water) {
         // Open bottle temporarily to move water in
         const openable = bottle.get(OpenableTrait);
         const wasOpen = openable?.isOpen ?? true;
@@ -156,21 +156,17 @@ export const fillAction: Action = {
         sharedData.filledFromBucket = true;
 
         // If bucket is at top and water was removed, it descends
-        if (vehicleTrait.currentPosition === 'top' && vehicleTrait.positionRooms) {
-          const bottomRoomId = vehicleTrait.positionRooms['bottom'];
+        const at = currentStop(world, bucket);
+        if (at === stops.top) {
+          // Move bucket to bottom, carrying whoever rides in it
+          moveVehicleToStop(world, bucket, stops.bottom);
+          sharedData.bucketDescended = true;
 
-          if (bottomRoomId) {
-            // Move bucket to bottom
-            moveVehicle(world, bucket.id, bottomRoomId);
-            vehicleTrait.currentPosition = 'bottom';
-            sharedData.bucketDescended = true;
-
-            // If player was in bucket, emit room description event
-            if (isActorInVehicle(world, player.id)) {
-              sharedData.playerDescended = true;
-            }
+          // If player was in bucket, emit room description event
+          if (isActorInVehicle(world, player.id)) {
+            sharedData.playerDescended = true;
           }
-        } else if (vehicleTrait.currentPosition === 'bottom') {
+        } else if (at === stops.bottom) {
           // Bucket already at bottom
           sharedData.bucketAlreadyAtBottom = true;
         }

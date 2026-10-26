@@ -146,6 +146,12 @@ final class TestingSurfaceViewController: NSViewController, WKScriptMessageHandl
     /// The run column's child `sharpee test --tree --json` process.
     private let testRunner = TestRunner()
 
+    /// The lock gesture's child `sharpee claim … --json` process (ADR-367
+    /// D7): its own runner, so a lock never collides with a run in flight,
+    /// with a relay that collects the one object and hands it to the page.
+    private let lockRunner = TestRunner()
+    private var lockRelay: LockRelay?
+
     /// The run in flight's stderr, kept for its exit note: the walker's
     /// refusal reasons (a malformed document, a missing CLI) exist only
     /// there, and a non-zero exit with nothing on the stream would
@@ -456,6 +462,74 @@ final class TestingSurfaceViewController: NSViewController, WKScriptMessageHandl
         relayBuild(build, entry: "buildChanged")
     }
 
+    /// Runs one step of the lock gesture (ADR-367 D7): `sharpee claim` with
+    /// the arguments the page wrote and the story appended, through the
+    /// same executable resolution and spawn path as a run. The CLI's stdout
+    /// — one JSON object — goes back to the page whole; a step that cannot
+    /// start goes back as an `error` object in the same shape, so the page
+    /// says why where the author clicked.
+    func startLock(arguments: [String]) {
+        guard let storyFile else {
+            relayLockResult(Self.lockErrorObject("No story is wired to this surface, so nothing can be locked."))
+            return
+        }
+        guard !lockRunner.isRunning else {
+            relayLockResult(Self.lockErrorObject("A lock step is already running."))
+            return
+        }
+        // The CLI reads the tree and the story from disk.
+        guard saveDocuments?() != false else {
+            relayLockResult(Self.lockErrorObject("A document could not be saved, so the lock did not start."))
+            return
+        }
+        let relay = LockRelay { [weak self] stdout, stderr, exitCode in
+            guard let self else { return }
+            let trimmed = stdout.trimmingCharacters(in: .whitespacesAndNewlines)
+            if trimmed.isEmpty {
+                let reason = stderr.trimmingCharacters(in: .whitespacesAndNewlines)
+                self.relayLockResult(Self.lockErrorObject(reason.isEmpty ? "The lock command exited \(exitCode) and printed nothing." : reason))
+            } else {
+                self.relayLockResult(stdout)
+            }
+            self.lockRelay = nil
+        }
+        lockRelay = relay
+        lockRunner.delegate = relay
+        let full = arguments + [storyFile.path]
+        let directory = storyFile.deletingLastPathComponent()
+        if let executable = sharpeeExecutableOverride {
+            lockRunner.start(executable: URL(fileURLWithPath: "/usr/bin/env"),
+                             arguments: ["node", executable.path] + full,
+                             workingDirectory: directory,
+                             environment: ShellEnvironment.buildEnvironment())
+        } else if let sharpee = ComposeRunner.resolveSharpee(near: storyFile) {
+            lockRunner.start(executable: sharpee, arguments: full,
+                             workingDirectory: directory,
+                             environment: ShellEnvironment.buildEnvironment())
+        } else {
+            lockRelay = nil
+            relayLockResult(Self.lockErrorObject("sharpee not found — install the Sharpee CLI (or open a story inside a Sharpee checkout) to lock a claim."))
+        }
+    }
+
+    /// The `error` object the page decodes like the CLI's own.
+    static func lockErrorObject(_ message: String) -> String {
+        guard let data = try? JSONSerialization.data(withJSONObject: ["kind": "error", "message": message]),
+              let text = String(data: data, encoding: .utf8) else { return "{\"kind\":\"error\",\"message\":\"the lock could not start\"}" }
+        return text
+    }
+
+    /// Hands the page the CLI's stdout for the lock step it posted.
+    private func relayLockResult(_ stdout: String) {
+        guard let data = try? JSONSerialization.data(withJSONObject: stdout, options: .fragmentsAllowed),
+              let literal = String(data: data, encoding: .utf8) else { return }
+        let script = "window.__sharpeeTestingSurface && window.__sharpeeTestingSurface.lockResult && window.__sharpeeTestingSurface.lockResult(\(literal)); true"
+        Task {
+            do { _ = try await evaluateInSurface(script) }
+            catch { NSLog("[testing-surface] lockResult not delivered: %@", String(describing: error)) }
+        }
+    }
+
     /// Hands the page a build id through one of its two build entries,
     /// `runStart` or `buildChanged`.
     private func relayBuild(_ build: String, entry: String) {
@@ -563,6 +637,15 @@ final class TestingSurfaceViewController: NSViewController, WKScriptMessageHandl
             if object["run"] as? Bool == true {
                 startTestRun()
             }
+            // One step of the lock gesture (ADR-367 D7): the page's own
+            // `sharpee claim` argument list, spawned as Run spawns `sharpee
+            // test`; its one-object stdout goes back whole through
+            // `lockResult`. The list must start with `claim` — the page
+            // writes the flags, the host only runs them.
+            if let lock = object["lock"] as? [String: Any],
+               let args = lock["args"] as? [String], args.first == "claim" {
+                startLock(arguments: args)
+            }
             // A span clicked in the run column (GH #524 Phase 2): resolve the
             // file against the story and hand the opener the place to open.
             if let open = object["openSource"] as? [String: Any],
@@ -579,6 +662,28 @@ final class TestingSurfaceViewController: NSViewController, WKScriptMessageHandl
         default:
             break
         }
+    }
+}
+
+/// Collects one `sharpee claim --json` run's streams for the lock gesture
+/// (ADR-367 D7): the lines on stdout (the one object), the stderr text, and
+/// the exit, handed on together when the process ends. The run column's
+/// delegate is the view controller; a lock has its own, so the two never
+/// mix their lines.
+private final class LockRelay: TestRunnerDelegate {
+    private var lines: [String] = []
+    private var stderr = ""
+    private let finished: (_ stdout: String, _ stderr: String, _ exitCode: Int32) -> Void
+
+    init(finished: @escaping (_ stdout: String, _ stderr: String, _ exitCode: Int32) -> Void) {
+        self.finished = finished
+    }
+
+    func runner(_ runner: TestRunner, didReceiveLine line: String) { lines.append(line) }
+    func runner(_ runner: TestRunner, didEmitStderr text: String) { stderr += text }
+    func runner(_ runner: TestRunner, didChangeState state: TestRunner.State) {}
+    func runner(_ runner: TestRunner, didExit result: TestRunner.Result) {
+        finished(lines.joined(separator: "\n"), stderr, result.exitCode)
     }
 }
 

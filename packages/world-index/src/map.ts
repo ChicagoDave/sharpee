@@ -19,7 +19,7 @@
  *   manual nudges
  */
 
-import type { StoryIR } from '@sharpee/chord';
+import type { IRCondition, StoryIR } from '@sharpee/chord';
 import { wiredEdges } from './loader-semantics.js';
 import { roomsOf, startRoomOf } from './story.js';
 
@@ -99,7 +99,20 @@ export interface MapResult {
   /** Cycles that disagree with themselves. */
   skews: DirectionSkew[];
   /** Undirected room pairs with a wired connection between them. */
-  connections: Array<{ rooms: [string, string]; via: string | null }>;
+  connections: MapConnection[];
+}
+
+/** One drawn connection between two rooms. */
+export interface MapConnection {
+  rooms: [string, string];
+  via: string | null;
+  /** A passage's first form (ADR-378 D8): the label the edge is drawn with. */
+  label?: string;
+  /**
+   * The exit's `while` condition (ADR-378 D3, D8): the way exists only while
+   * it holds. How it is drawn is the IDE's; the condition is the data.
+   */
+  condition?: IRCondition;
 }
 
 /** Options for the layout — a manual position wins over the solver. */
@@ -170,7 +183,7 @@ function nearestFreeCell(wanted: Cell, taken: ReadonlyMap<string, string>): Cell
 export function layoutMap(ir: StoryIR, options: LayoutOptions = {}): MapResult {
   const rooms = roomsOf(ir);
   const roomIds = new Set(rooms.map((room) => room.id));
-  const edges = wiredEdges(rooms, (id) => roomIds.has(id));
+  const edges = wiredEdges(rooms, (id) => roomIds.has(id), ir.entities);
 
   const outgoing = new Map<string, typeof edges>();
   for (const edge of edges) {
@@ -208,8 +221,26 @@ export function layoutMap(ir: StoryIR, options: LayoutOptions = {}): MapResult {
       const roomId = queue.shift() as string;
       const here = positions.get(roomId) as Cell;
       for (const edge of outgoing.get(roomId) ?? []) {
-        const step = STEP[edge.direction];
-        if (step === undefined) continue;
+        const step = edge.outside ? undefined : STEP[edge.direction];
+        if (step === undefined) {
+          // ADR-369 D3b: `in` and `out` have no bearing, and neither does a
+          // passage (ADR-378 D8) or a way outside a vehicle, whose far room
+          // moves with it (ADR-366 D7). A room reached only that way is placed in
+          // the first free cell beside this one rather than left unplaced;
+          // the edge is drawn like any other connection, a passage's with
+          // its first form as the label.
+          if (!positions.has(edge.to)) {
+            const beside = nearestFreeCell(here, taken);
+            if (beside === undefined) continue;
+            displaced.add(edge.to);
+            place(edge.to, beside);
+          }
+          if (!queued.has(edge.to)) {
+            queued.add(edge.to);
+            queue.push(edge.to);
+          }
+          continue;
+        }
         const wanted = { x: here.x + step.x, y: here.y + step.y, z: here.z + step.z };
 
         const already = positions.get(edge.to);
@@ -242,14 +273,24 @@ export function layoutMap(ir: StoryIR, options: LayoutOptions = {}): MapResult {
     }
   }
 
-  const connections = new Map<string, { rooms: [string, string]; via: string | null }>();
+  const connections = new Map<string, MapConnection>();
   for (const edge of edges) {
     // Code-unit order, the default sort's order, stated as a compare function.
     const pair = [edge.from, edge.to].sort((left, right) => (left < right ? -1 : left > right ? 1 : 0)) as [string, string];
     const key = pair.join('|');
     const existing = connections.get(key);
-    if (existing === undefined) connections.set(key, { rooms: pair, via: edge.via });
-    else if (existing.via === null && edge.via !== null) existing.via = edge.via;
+    if (existing === undefined) {
+      connections.set(key, {
+        rooms: pair,
+        via: edge.via,
+        ...(edge.label !== undefined ? { label: edge.label } : {}),
+        ...(edge.condition !== undefined ? { condition: edge.condition } : {}),
+      });
+      continue;
+    }
+    if (existing.via === null && edge.via !== null) existing.via = edge.via;
+    if (existing.label === undefined && edge.label !== undefined) existing.label = edge.label;
+    if (existing.condition === undefined && edge.condition !== undefined) existing.condition = edge.condition;
   }
 
   return {

@@ -5,9 +5,10 @@
  * the compiled IR, the story host, the evaluator, the engine's turn and
  * execution entries once wired, and the runtime's own mutable state — the
  * re-entrancy guards and per-turn buffers the sections set and release, and
- * the two cross-turn counters a restore resets. The five helpers every
+ * the two cross-turn counters a restore resets. The six helpers every
  * section reaches for (an NPC's dialogue turn, a raw runtime event, an
- * entity's place, narration and sourcing of scheduler events) live here
+ * entity's place, narration and sourcing of scheduler events, an action's
+ * seat roles) live here
  * beside the state. Each section is a field on the core, assigned by the
  * facade that constructs them, so a section reaches another through
  * `core.<section>` and never imports it.
@@ -24,7 +25,7 @@
  *
  * Public interface: RuntimeCore, RuntimeHost, ExecContext, RefusalVeto,
  * SchedulerTick, SchedulerDaemon, STRATEGY_SELECTOR, ChordBehaviorTrait,
- * TOPIC_GERUNDS, toEffect, knownTopicsIn, MOVE_ARRIVAL_DEPTH_CAP, ACT_DEPTH_CAP.
+ * TOPIC_GERUNDS, topicGerundServes, toEffect, knownTopicsIn, MOVE_ARRIVAL_DEPTH_CAP, ACT_DEPTH_CAP.
  * Owner context: @sharpee/story-loader.
  *
  * References:
@@ -33,7 +34,7 @@
  * - ADR-207/208 — per-world, keyed registration.
  */
 import { dialogueTurn, type KindMembership } from '@sharpee/character';
-import type { IRCondition, IRTimerClause, IRTimerDef, StoryIR } from '@sharpee/chord';
+import { actionRoles, type ActionRoles, type IRCondition, type IREntity, type IRTimerClause, type IRTimerDef, type StoryIR } from '@sharpee/chord';
 import type { ISemanticEvent } from '@sharpee/core';
 import type { Choice, StoryEndingKind } from '@sharpee/if-domain';
 import type { ActResult, ActSlots } from '@sharpee/stdlib';
@@ -42,6 +43,8 @@ import { DecisionLedger } from '../decisions.js';
 import { EvalContext, Evaluator } from '../evaluator.js';
 import type { ConversationThreadsSection } from './conversation-threads.js';
 import type { DispatchVerbsSection } from './dispatch-verbs.js';
+import type { SettableSection } from './settable.js';
+import type { PurchasableSection } from './purchasable.js';
 import type { DialogueSection } from './dialogue.js';
 import type { TopicTablesSection } from './topic-tables.js';
 import type { BindSection } from './bind.js';
@@ -77,10 +80,25 @@ export class ChordBehaviorTrait implements ITrait {
 }
 
 /**
- * The two gerunds a topic table serves (ADR-239 D1 — one table, ask and
- * tell alike). The table rides these actions' interceptor dispatch.
+ * The gerunds a topic table serves (ADR-239 D1 — one table, ask and tell
+ * alike; ADR-372 D4 — a readable thing's table answers consult). The table
+ * rides these actions' interceptor dispatch; `topicGerundServes` says which
+ * owner each one reaches.
  */
-export const TOPIC_GERUNDS = ['asking', 'telling'] as const;
+export const TOPIC_GERUNDS = ['asking', 'telling', 'consulting'] as const;
+
+/**
+ * Whether a topic table owner answers this gerund: a person answers asking
+ * and telling, a readable thing answers consulting (ADR-372 D4).
+ *
+ * @param gerund one of TOPIC_GERUNDS
+ * @param entity the table's owner
+ * @returns true when the owner's table serves the gerund
+ */
+export function topicGerundServes(gerund: string, entity: IREntity): boolean {
+  if (gerund === 'consulting') return entity.traits.some((t) => t.name === 'readable');
+  return entity.kinds.some((k) => k.name === 'person');
+}
 
 /**
  * Flatten a semantic event into the interceptor effect envelope,
@@ -231,6 +249,9 @@ export class RuntimeCore {
   dialogue!: DialogueSection;
   /** The dispatch verbs section; assigned by the facade that constructs it. */
   dispatchVerbs!: DispatchVerbsSection;
+  settable!: SettableSection;
+  /** The purchasable section (ADR-372 D5); assigned by the facade that constructs it. */
+  purchasable!: PurchasableSection;
   /** The conversation threads section; assigned by the facade that constructs it. */
   threads!: ConversationThreadsSection;
   /** Cross-turn counter: numbers every runtime-raised event id. A restore resets it. */
@@ -281,6 +302,26 @@ export class RuntimeCore {
       list.push({ clause, it: null });
       this.timerClauses.set(clause.timer, list);
     }
+  }
+
+  /** Each action's roles, computed once per action name. */
+  private readonly rolesByAction = new Map<string, ActionRoles>();
+
+  /**
+   * An action's seat table and typed slots as the story loads them — its
+   * own, else the standard action's, extended by every `extend action`
+   * aimed at it (ADR-383 D6). Dispatch and the acting statement both read
+   * this one answer.
+   *
+   * @param name the action's bare name (`giving`, `presenting`)
+   */
+  actionRoles(name: string): ActionRoles {
+    let roles = this.rolesByAction.get(name);
+    if (!roles) {
+      roles = actionRoles(name, { actions: this.ir.actions, extensions: this.ir.grammarExtensions ?? [] });
+      this.rolesByAction.set(name, roles);
+    }
+    return roles;
   }
 
   /**

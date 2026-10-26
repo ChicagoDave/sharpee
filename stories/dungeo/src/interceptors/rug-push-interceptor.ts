@@ -5,7 +5,7 @@
  * is pushed in the Living Room. Registered on RugTrait for if.action.pushing.
  *
  * postExecute: Moves trapdoor into the room, wires DOWN/UP exits between
- *   Living Room and Cellar, sets pushable state to 'pushed'.
+ *   Living Room and Cellar, marks the rug's trait revealed.
  * postReport: Emits the reveal message if the trapdoor was just revealed.
  *
  * Replaces the entity `on` handler from house-interior.ts (ISSUE-068 Phase 4).
@@ -19,11 +19,9 @@ import {
   type InterceptorReportResult,
   IFEntity,
   WorldModel,
-  PushableTrait,
   RoomBehavior,
   RoomTrait,
   Direction,
-  TraitType,
 } from '@sharpee/world-model';
 import { RugTrait } from '../traits/rug-trait';
 
@@ -35,7 +33,7 @@ export const RugPushInterceptor: ActionInterceptor = {
   /**
    * POST-EXECUTE: Reveal the trapdoor and wire room exits.
    *
-   * Only fires once — checks PushableTrait.state to prevent re-triggering.
+   * Only fires once — the rug's own trait remembers the reveal.
    */
   postExecute(
     entity: IFEntity,
@@ -43,13 +41,8 @@ export const RugPushInterceptor: ActionInterceptor = {
     _actorId: string,
     sharedData: InterceptorSharedData
   ): void {
-    const pushable = entity.get(TraitType.PUSHABLE) as PushableTrait | undefined;
-    if (pushable && pushable.state === 'pushed') {
-      return; // Already revealed — no-op
-    }
-
     const rugTrait = entity.get(RugTrait.type) as RugTrait | undefined;
-    if (!rugTrait) return;
+    if (!rugTrait || rugTrait.revealed) return; // Already revealed — no-op
 
     const { trapdoorId, cellarId } = rugTrait;
     const livingRoomId = world.getLocation(entity.id);
@@ -68,10 +61,8 @@ export const RugPushInterceptor: ActionInterceptor = {
       RoomBehavior.setExit(cellar, Direction.UP, livingRoomId, trapdoorId);
     }
 
-    // Mark as pushed (prevents re-triggering)
-    if (pushable) {
-      pushable.state = 'pushed';
-    }
+    // Mark as revealed (prevents re-triggering)
+    rugTrait.revealed = true;
 
     // ADR-209: the room prose's rug mention follows the rug's new position
     // (handler-driven snippet mutation — set, never delete). Bare fragment

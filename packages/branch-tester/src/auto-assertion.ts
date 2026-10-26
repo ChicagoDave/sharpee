@@ -68,6 +68,8 @@ export function describeAssertion(assertion: Assertion): string {
       return `event ${assertion.eventType ?? ''}`.trimEnd();
     case 'ending-assert':
       return `ending ${assertion.endingId ?? ''}`.trimEnd();
+    case 'lock-assert':
+      return `lock ${quoted(assertion.value ?? '')}`;
     case 'channel-contains':
       return `channel ${channel()} contains ${quoted(assertion.value)}`;
     case 'channel-not-contains':

@@ -83,21 +83,6 @@ export interface ParserOptions {
    * Whether to allow partial matches
    */
   allowPartial?: boolean;
-
-  /**
-   * Whether to expand abbreviations
-   */
-  expandAbbreviations?: boolean;
-
-  /**
-   * Whether to ignore articles
-   */
-  ignoreArticles?: boolean;
-
-  /**
-   * Minimum confidence threshold
-   */
-  minConfidence?: number;
 }
 
 /**

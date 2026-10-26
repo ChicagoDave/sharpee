@@ -35,7 +35,6 @@ function goCommand(direction: string): IParsedCommand {
       verb: { tokens: [0], text: 'go', head: 'go' }
     },
     pattern: 'VERB_NOUN',
-    confidence: 1,
     action: 'if.action.going',
     extras: { direction }
   } as unknown as IParsedCommand;

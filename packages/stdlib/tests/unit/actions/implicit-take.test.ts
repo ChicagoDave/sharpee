@@ -12,6 +12,9 @@ import { Action, ValidationResult } from '../../../src/actions/enhanced-types';
 import { ScopeLevel } from '../../../src/scope/types';
 import { ValidatedCommand } from '../../../src/validation/types';
 
+/** English, handed to hand-built worlds as the language's words (ADR-387 D2). */
+const ENGLISH_WORDS = { selfWords: ['me', 'myself', 'self', 'yourself'], nameStopwords: ['the', 'a', 'an', 'of'] };
+
 describe('Implicit Takes (requireCarriedOrImplicitTake)', () => {
   let world: WorldModel;
   let player: IFEntity;
@@ -32,9 +35,7 @@ describe('Implicit Takes (requireCarriedOrImplicitTake)', () => {
         action: testAction.id,
         tokens: [],
         structure: { verb: { tokens: [0], text: 'test', head: 'test' } },
-        pattern: 'VERB_NOUN',
-        confidence: 1.0
-      },
+        pattern: 'VERB_NOUN'      },
       actionId: testAction.id,
       directObject: entity ? {
         entity,
@@ -45,6 +46,7 @@ describe('Implicit Takes (requireCarriedOrImplicitTake)', () => {
 
   beforeEach(() => {
     world = new WorldModel();
+    world.setLanguageWords(ENGLISH_WORDS);
 
     // Create room
     room = world.createEntity('Test Room', EntityType.ROOM);

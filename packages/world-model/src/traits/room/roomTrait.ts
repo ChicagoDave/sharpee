@@ -4,7 +4,7 @@ import { ITrait } from '../trait.js';
 import { TraitType } from '../trait-types.js';
 import { type EntityId } from '@sharpee/core';
 import { type SnippetMap } from '@sharpee/if-domain';
-import { DirectionType } from '../../constants/directions.js';
+import { ExitKey } from '../../constants/directions.js';
 
 /**
  * Map position hint for an exit (ADR-113).
@@ -19,6 +19,18 @@ export interface IExitMapHint {
   dz?: number;
 }
 
+/**
+ * Who may take a way beyond a walker (ADR-366 D6, ADR-378 D6): the steered
+ * vehicles by id, and the pushed things — every pushable (`'any'`) or these
+ * by id. Read only by the traversal system (`TraversalBehavior.admitsMover`).
+ */
+export interface Admittance {
+  /** The steered vehicles admitted, by entity id. */
+  vehicles: string[];
+  /** The pushed things admitted: every pushable, or these entity ids. */
+  pushed: 'any' | string[];
+}
+
 export interface IExitInfo {
   /** The destination room ID (must be an entity ID, not a name) */
   destination: string;
@@ -26,17 +38,24 @@ export interface IExitInfo {
   via?: string;
   /** Optional map positioning hint (ADR-113) */
   mapHint?: IExitMapHint;
+  /**
+   * This way's own admittance (ADR-378 D6), read field by field before the
+   * destination room's: an exit line's `admits` writes both fields; a
+   * thing's `pushing` block (D6b) adds its id to `pushed` alone. A field
+   * absent here is the room's to decide.
+   */
+  admits?: Partial<Admittance>;
 }
 
 export interface IRoomData {
   /** Whether this room has been visited by the player */
   visited?: boolean;
   
-  /** Exits from this room */
-  exits?: Partial<Record<DirectionType, IExitInfo>>;
-  
+  /** Exits from this room, by compass direction or passage key (ADR-378 D1a) */
+  exits?: Partial<Record<ExitKey, IExitInfo>>;
+
   /** Custom messages for blocked exits */
-  blockedExits?: Partial<Record<DirectionType, string>>;
+  blockedExits?: Partial<Record<ExitKey, string>>;
   
   /** Whether this is an outdoor location */
   outdoor?: boolean;
@@ -92,7 +111,14 @@ export interface IRoomData {
 
   /** Tags for categorizing rooms */
   tags?: string[];
-  
+
+  /**
+   * Who may arrive here beyond a walker (ADR-366 D6, ADR-378 D6). Read by
+   * the traversal system for every way into this room whose exit does not
+   * decide the field itself; a room admits nothing by default.
+   */
+  admits?: Admittance;
+
   // Container functionality for rooms
   /** Capacity constraints for the room (optional) */
   capacity?: {
@@ -126,8 +152,8 @@ export class RoomTrait implements ITrait, IRoomData {
   
   // RoomData properties
   visited: boolean;
-  exits: Partial<Record<DirectionType, IExitInfo>>;
-  blockedExits?: Partial<Record<DirectionType, string>>;
+  exits: Partial<Record<ExitKey, IExitInfo>>;
+  blockedExits?: Partial<Record<ExitKey, string>>;
   outdoor: boolean;
   requiresLight: boolean;
   isOutdoors: boolean;
@@ -140,6 +166,7 @@ export class RoomTrait implements ITrait, IRoomData {
   regionId?: string;
   walls: string[];
   tags: string[];
+  admits: Admittance;
   
   // Container functionality
   capacity?: {
@@ -157,7 +184,7 @@ export class RoomTrait implements ITrait, IRoomData {
   constructor(data: IRoomData = {}) {
     // Set defaults and merge with provided data
     this.visited = data.visited ?? false;
-    this.exits = data.exits ?? {} as Partial<Record<DirectionType, IExitInfo>>;
+    this.exits = data.exits ?? {} as Partial<Record<ExitKey, IExitInfo>>;
     this.blockedExits = data.blockedExits;
     this.outdoor = data.outdoor ?? false;
     this.requiresLight = data.requiresLight ?? false;  // Default to lit
@@ -171,6 +198,7 @@ export class RoomTrait implements ITrait, IRoomData {
     this.regionId = data.regionId;
     this.walls = data.walls ?? [];
     this.tags = data.tags ?? [];
+    this.admits = data.admits ?? { vehicles: [], pushed: [] };
     
     // Container properties
     this.capacity = data.capacity;

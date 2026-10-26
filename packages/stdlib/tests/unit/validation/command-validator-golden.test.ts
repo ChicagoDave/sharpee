@@ -23,6 +23,9 @@ import { examiningAction } from '../../../src/actions/standard/examining';
 import { puttingAction } from '../../../src/actions/standard/putting';
 import { pushingAction } from '../../../src/actions/standard/pushing';
 
+/** English, handed to hand-built worlds as the language's words (ADR-387 D2). */
+const ENGLISH_WORDS = { selfWords: ['me', 'myself', 'self', 'yourself'], nameStopwords: ['the', 'a', 'an', 'of'] };
+
 // Mock event source for testing debug events
 class TestEventSource implements GenericEventSource<SystemEvent> {
   events: SystemEvent[] = [];
@@ -57,6 +60,7 @@ describe('CommandValidator (Golden Pattern)', () => {
   beforeEach(() => {
     // Create world model and author model for test setup
     world = new WorldModel();
+    world.setLanguageWords(ENGLISH_WORDS);
     author = new AuthorModel(world.getDataStore(), world);
     
     // Create player and room using AuthorModel to bypass sanity checks
@@ -118,13 +122,10 @@ describe('CommandValidator (Golden Pattern)', () => {
           head: 'ball',
               modifiers: [],
               articles: [],
-              determiners: [],
-              candidates: ['ball']
+              determiners: []
             }
           },
-          pattern: 'VERB_NOUN',
-          confidence: 1.0
-        };
+          pattern: 'VERB_NOUN'        };
         const result = validator.validate(manualParsed as unknown as IParsedCommand);
         expect(result.success).toBe(false);
         if (!result.success) {
@@ -163,8 +164,7 @@ describe('CommandValidator (Golden Pattern)', () => {
           head: 'box',
           modifiers: [],
           articles: [],
-          determiners: [],
-          candidates: ['box']
+          determiners: []
         }
       };
 
@@ -202,8 +202,7 @@ describe('CommandValidator (Golden Pattern)', () => {
             head: noun,
             modifiers: [],
             articles: [],
-            determiners: [],
-            candidates: [noun]
+            determiners: []
           }
         };
 
@@ -250,8 +249,7 @@ describe('CommandValidator (Golden Pattern)', () => {
           head: 'ball',
           modifiers: ['red'],
           articles: [],
-          determiners: [],
-          candidates: ['ball']
+          determiners: []
         }
       };
 
@@ -273,8 +271,7 @@ describe('CommandValidator (Golden Pattern)', () => {
           head: 'ball',
           modifiers: ['blue'],
           articles: [],
-          determiners: [],
-          candidates: ['blue', 'ball']
+          determiners: []
         }
       };
 
@@ -320,8 +317,7 @@ describe('CommandValidator (Golden Pattern)', () => {
           head: 'yellow',  // "yellow" is the head noun itself
           modifiers: [],   // No modifiers - it's a bare adjective
           articles: [],
-          determiners: [],
-          candidates: ['yellow']
+          determiners: []
         }
       };
 
@@ -353,8 +349,7 @@ describe('CommandValidator (Golden Pattern)', () => {
           head: 'ball',
           modifiers: [],
           articles: [],
-          determiners: [],
-          candidates: ['ball']
+          determiners: []
         }
       };
 
@@ -380,8 +375,7 @@ describe('CommandValidator (Golden Pattern)', () => {
           head: 'key',
           modifiers: [],
           articles: [],
-          determiners: [],
-          candidates: ['key']
+          determiners: []
         }
       };
 
@@ -455,8 +449,7 @@ describe('CommandValidator (Golden Pattern)', () => {
           head: 'box',
           modifiers: [],
           articles: [],
-          determiners: [],
-          candidates: ['box']
+          determiners: []
         }
       };
 
@@ -494,8 +487,7 @@ describe('CommandValidator (Golden Pattern)', () => {
           head: 'ball',
           modifiers: [],
           articles: [],
-          determiners: [],
-          candidates: ['ball']
+          determiners: []
         }
       };
 
@@ -536,8 +528,7 @@ describe('CommandValidator (Golden Pattern)', () => {
           head: 'ball',
           modifiers: ['small'],
           articles: [],
-          determiners: [],
-          candidates: ['small', 'ball']
+          determiners: []
         }
       };
 
@@ -569,8 +560,7 @@ describe('CommandValidator (Golden Pattern)', () => {
           head: 'container',
           modifiers: [],
           articles: [],
-          determiners: [],
-          candidates: ['container']
+          determiners: []
         }
       };
 
@@ -600,8 +590,7 @@ describe('CommandValidator (Golden Pattern)', () => {
           head: 'box',
           modifiers: [],
           articles: [],
-          determiners: [],
-          candidates: ['box']
+          determiners: []
         }
       };
 
@@ -643,8 +632,7 @@ describe('CommandValidator (Golden Pattern)', () => {
           head: 'ball',
           modifiers: [],
           articles: [],
-          determiners: [],
-          candidates: ['ball']
+          determiners: []
         },
         preposition: { tokens: [2], text: 'in' },
         indirectObject: {
@@ -653,8 +641,7 @@ describe('CommandValidator (Golden Pattern)', () => {
           head: 'box',
           modifiers: [],
           articles: [],
-          determiners: [],
-          candidates: ['box']
+          determiners: []
         }
       };
 

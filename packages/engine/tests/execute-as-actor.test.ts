@@ -29,9 +29,13 @@ import { StandardActionRegistry, standardActions, IFActions, actorConsultationId
 import { EnglishLanguageProvider } from '@sharpee/lang-en-us';
 import { EnglishParser } from '@sharpee/parser-en-us';
 
+/** English, handed to hand-built worlds as the language's words (ADR-387 D2). */
+const ENGLISH_WORDS = { selfWords: ['me', 'myself', 'self', 'yourself'], nameStopwords: ['the', 'a', 'an', 'of'] };
+
 /** Two rooms, a player and an NPC in the first, a lamp beside them, a boulder too. */
 function buildWorld() {
   const world = new WorldModel();
+  world.setLanguageWords(ENGLISH_WORDS);
 
   const hall = world.createEntity('Hall', EntityType.ROOM);
   hall.add(new RoomTrait());

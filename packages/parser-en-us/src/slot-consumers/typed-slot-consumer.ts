@@ -1,15 +1,21 @@
 /**
  * @file Typed Slot Consumer
- * @description Handles typed value slots (ADR-088, ADR-082)
+ * @description Reads typed value slots (ADR-088, ADR-082): a number, an
+ *   ordinal, a time and a direction. An ordinal, time or direction slot has
+ *   one reading, the one token its vocabulary reads; a number slot admits
+ *   every span from its start the language reads as one number, longest
+ *   first (ADR-386 D1, D8).
+ *
+ * Public interface: TypedSlotConsumer.
+ * Owner context: parser-en-us slot consumers.
  */
 
 import { SlotType, type SlotMatch } from '@sharpee/if-domain';
-import { cardinalNumbers, ordinalNumbers, directionMap } from '@sharpee/lang-en-us';
-import { SlotConsumer, SlotConsumerContext } from './slot-consumer.js';
+import { SlotConsumer, SlotConsumerContext, type SlotConsumeResult } from './slot-consumer.js';
+import { spanText } from './noun-phrase-split.js';
 
 /**
  * Consumer for typed value slots (NUMBER, ORDINAL, TIME, DIRECTION)
- * Validates input matches expected format/vocabulary
  */
 export class TypedSlotConsumer implements SlotConsumer {
   readonly slotTypes = [
@@ -19,12 +25,19 @@ export class TypedSlotConsumer implements SlotConsumer {
     SlotType.DIRECTION
   ];
 
-  consume(ctx: SlotConsumerContext): SlotMatch | null {
+  consume(ctx: SlotConsumerContext): SlotConsumeResult {
+    if (ctx.slotType === SlotType.NUMBER) {
+      return this.consumeNumber(ctx);
+    }
+    const match = this.matchOne(ctx);
+    return match ? { readings: [match] } : null;
+  }
+
+  /** The one match the slot's vocabulary reads at the start token, or null. */
+  private matchOne(ctx: SlotConsumerContext): SlotMatch | null {
     const { slotType } = ctx;
 
     switch (slotType) {
-      case SlotType.NUMBER:
-        return this.consumeNumber(ctx);
       case SlotType.ORDINAL:
         return this.consumeOrdinal(ctx);
       case SlotType.TIME:
@@ -37,40 +50,20 @@ export class TypedSlotConsumer implements SlotConsumer {
   }
 
   /**
-   * Consume a number slot (integer)
-   * Matches digits (1, 29, 100) or words (one, twenty)
+   * A number slot: every span from the start that the language reads as one
+   * number (`25`, `twenty`, `twenty five`, `twenty-five`), longest first
+   * (ADR-386 D8). A compound is at most two words, so two spans are tried.
    */
-  private consumeNumber(ctx: SlotConsumerContext): SlotMatch | null {
+  private consumeNumber(ctx: SlotConsumerContext): SlotConsumeResult {
     const { tokens, startIndex } = ctx;
-
-    if (startIndex >= tokens.length) {
-      return null;
+    const readings: SlotMatch[] = [];
+    for (let end = Math.min(tokens.length, startIndex + 2); end > startIndex; end--) {
+      const span: number[] = [];
+      for (let i = startIndex; i < end; i++) span.push(i);
+      if (ctx.language.parseCardinal(span.map((i) => tokens[i].normalized)) === null) continue;
+      readings.push({ tokens: span, text: spanText(span, tokens), slotType: SlotType.NUMBER });
     }
-
-    const token = tokens[startIndex];
-    const normalized = token.normalized;
-
-    // Check word form (using imported vocabulary from lang-en-us)
-    if (normalized in cardinalNumbers) {
-      return {
-        tokens: [startIndex],
-        text: token.word,
-        confidence: 1.0,
-        slotType: SlotType.NUMBER
-      };
-    }
-
-    // Check digit form
-    if (/^\d+$/.test(normalized)) {
-      return {
-        tokens: [startIndex],
-        text: token.word,
-        confidence: 1.0,
-        slotType: SlotType.NUMBER
-      };
-    }
-
-    return null;
+    return readings.length > 0 ? { readings } : null;
   }
 
   /**
@@ -87,12 +80,11 @@ export class TypedSlotConsumer implements SlotConsumer {
     const token = tokens[startIndex];
     const normalized = token.normalized;
 
-    // Check word form (using imported vocabulary from lang-en-us)
-    if (normalized in ordinalNumbers) {
+    // The language's ordinal words (ADR-387 D1)
+    if (normalized in ctx.language.getOrdinalNumbers()) {
       return {
         tokens: [startIndex],
         text: token.word,
-        confidence: 1.0,
         slotType: SlotType.ORDINAL
       };
     }
@@ -103,7 +95,6 @@ export class TypedSlotConsumer implements SlotConsumer {
       return {
         tokens: [startIndex],
         text: token.word,
-        confidence: 1.0,
         slotType: SlotType.ORDINAL
       };
     }
@@ -136,7 +127,6 @@ export class TypedSlotConsumer implements SlotConsumer {
         return {
           tokens: [startIndex],
           text: word,
-          confidence: 1.0,
           slotType: SlotType.TIME
         };
       }
@@ -146,11 +136,11 @@ export class TypedSlotConsumer implements SlotConsumer {
   }
 
   /**
-   * Consume a direction slot
-   * Matches built-in direction vocabulary (n, north, up, etc.)
+   * Consume a direction slot: one token that is a word or abbreviation of the
+   * language's direction table (ADR-387 D5).
    */
   private consumeDirection(ctx: SlotConsumerContext): SlotMatch | null {
-    const { tokens, startIndex } = ctx;
+    const { tokens, startIndex, words } = ctx;
 
     if (startIndex >= tokens.length) {
       return null;
@@ -159,12 +149,10 @@ export class TypedSlotConsumer implements SlotConsumer {
     const token = tokens[startIndex];
     const normalized = token.normalized;
 
-    // Check direction vocabulary (using imported vocabulary from lang-en-us)
-    if (normalized in directionMap) {
+    if (words.directions.has(normalized)) {
       return {
         tokens: [startIndex],
         text: token.word,
-        confidence: 1.0,
         slotType: SlotType.DIRECTION
       };
     }

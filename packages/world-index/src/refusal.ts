@@ -30,7 +30,7 @@
  * @packageDocumentation
  */
 
-import type { IREntity, StoryIR } from '@sharpee/chord';
+import { STDLIB_MANIFEST, type IREntity, type StoryIR } from '@sharpee/chord';
 import type { ReachResult, StrandedThing } from './reach.js';
 import { thingsOf } from './story.js';
 
@@ -66,8 +66,19 @@ export interface RefusalCause {
   fix: string;
 }
 
-/** Articles the parser drops; a command word that is one names nothing. */
-const ARTICLES = new Set(['a', 'an', 'the']);
+/**
+ * The articles of the story's locale, from the stdlib manifest (ADR-387 D1);
+ * a command word that is one names nothing.
+ *
+ * @throws Error when the manifest holds no facts for the story's locale
+ */
+function articlesOf(ir: StoryIR): ReadonlySet<string> {
+  const facts = STDLIB_MANIFEST.locales[ir.phrases.defaultLocale];
+  if (facts === undefined) {
+    throw new Error(`No stdlib manifest facts for locale ${ir.phrases.defaultLocale}: the articles are unknown`);
+  }
+  return new Set(facts.articles);
+}
 
 /**
  * Explain why the engine refused a turn, when one of the two rules can.
@@ -138,7 +149,8 @@ function explainNotWearable(ir: StoryIR, turn: RefusedTurn): RefusalCause | unde
  * noun. Articles never name anything.
  */
 function firstNamed(input: string, candidateIds: readonly string[], ir: StoryIR): { entity: IREntity; word: string } | undefined {
-  const words = input.toLowerCase().split(/\s+/).filter((word) => word.length > 0 && !ARTICLES.has(word));
+  const articles = articlesOf(ir);
+  const words = input.toLowerCase().split(/\s+/).filter((word) => word.length > 0 && !articles.has(word));
   const text = words.join(' ');
   for (const id of candidateIds) {
     const entity = ir.entities.find((candidate) => candidate.id === id);

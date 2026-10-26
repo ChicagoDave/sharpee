@@ -38,7 +38,11 @@ export const enteringLanguage = {
     'cant_enter': "{You} {can't} enter {the place}: {reason}.",
     'not_here': "{You} {don't} see {the place} here.",
     'too_small': "{capitalize the place} {verb:is place} too small for {you} to enter.",
-    'occupied': "{capitalize the place} {verb:is place} already occupied."
+    'occupied': "{capitalize the place} {verb:is place} already occupied.",
+    // A vehicle with rooms aboard (ADR-366 D7, D7a): boarded into its
+    // boarding room; `board` on anything else refuses, naming only the thing.
+    'boarded': "{You} {board} {the vehicle}.",
+    'vehicle_not_boardable': "{You} {can't} board {the vehicle}."
   },
   
   help: {

@@ -14,13 +14,13 @@
  *   ADR-158 — the formatter chain the assembler applies to a resolved message.
  */
 
-import { type LanguageProvider, type ParserLanguageProvider, type ActionHelp, type VerbVocabulary, type DirectionVocabulary, type SpecialVocabulary, type LanguageGrammarPattern, type LocaleSettings, type RenderContext } from '@sharpee/if-domain';
+import { type LanguageProvider, type ParserLanguageProvider, type ActionHelp, type VerbVocabulary, type DirectionVocabulary, type SpecialVocabulary, type LanguageWords, type DeterminerVocabulary, type LanguageGrammarPattern, type LocaleSettings, type RenderContext } from '@sharpee/if-domain';
 import type { ITextBlock } from '@sharpee/text-blocks';
 import { EnglishAssembler, registerPronounSet as registerAssemblerPronounSet } from './assembler/index.js';
 import type { PronounSetForms } from './assembler/index.js';
 import { parsePhraseTemplate } from './parser/index.js';
 import { englishVerbs } from './data/verbs.js';
-import { englishWords, irregularPlurals, abbreviations } from './data/words.js';
+import { englishWords, irregularPlurals, parseCardinal, ordinalNumbers } from './data/words.js';
 import { pluralize as pluralizeNoun } from './pluralize.js';
 import { standardActionLanguage } from './actions/index.js';
 import { npcLanguage, conversationLanguage, propagationLanguage, influenceLanguage } from './npc/index.js';
@@ -80,6 +80,28 @@ export class EnglishLanguageProvider implements ParserLanguageProvider {
   private loadCoreMessages(): void {
     const coreMessages: Record<string, string> = {
       'core.entity_not_found': "You can't see any such thing.",
+      // A list item that names nothing is named back (ADR-385 D5)
+      'core.entity_not_found_named': "You can't see any {phrase} here.",
+      // A parse-time scope violation (ADR-385 D8): the slot's base refused an
+      // entity the matcher found in view; worded by the base, naming the entity
+      'parser.error.scopeViolation.carried': "{You} aren't holding {the entity}.",
+      'parser.error.scopeViolation.touchable': "{You} {can't} reach {the entity}.",
+      'parser.error.scopeViolation.visible': "{You} {can't} see {the entity} from here.",
+      // The parser's seat questions and failure sentences (ADR-387 D3): the
+      // parse error carries the id and its params (verb, noun, slot); the
+      // `.noVerb` and `.noNoun` ids are the same failure with nothing to name.
+      // The clarification query renders missingObject and missingIndirect;
+      // the command-failed path renders the rest by its own core ids today.
+      'parser.error.noInput': "I beg your pardon?",
+      'parser.error.unknownVerb': 'I don\'t know the verb "{verb}".',
+      'parser.error.unknownVerb.noVerb': "I don't understand that sentence.",
+      'parser.error.missingObject': "What do you want to {verb}?",
+      'parser.error.missingObject.noVerb': "What do you want to do that to?",
+      'parser.error.missingIndirect': "{Verb} it where?",
+      'parser.error.missingIndirect.noVerb': "Where do you want to do that?",
+      'parser.error.entityNotFound': 'I don\'t see any "{noun}" here.',
+      'parser.error.entityNotFound.noNoun': "I don't see that here.",
+      'parser.error.notUnderstood': "I don't understand that.",
       'core.ambiguous_reference': "Which do you mean?",
       'core.disambiguation_prompt': "Which do you mean: {options}?",
       'core.command_not_understood': "I don't understand that command.",
@@ -229,11 +251,19 @@ export class EnglishLanguageProvider implements ParserLanguageProvider {
     // Step 1: Resolve perspective placeholders (ADR-089) — {You}, {your}, {take}.
     message = resolvePerspectivePlaceholders(message, this.narrativeContext, params);
 
-    // Step 2: Plain `{key}` substitution for any bound params.
+    // Step 2: Plain `{key}` substitution for any bound params. A placeholder
+    // written capitalised (`{Verb}`) takes the param capitalised, as `{You}`
+    // does beside `{you}`: a sentence-initial value is the template's to shape.
     if (params) {
-      message = message.replace(/\{([a-zA-Z_][a-zA-Z0-9_]*)\}/g, (match, key) =>
-        key in params ? String(params[key]) : match,
-      );
+      message = message.replace(/\{([a-zA-Z_]\w*)\}/g, (match, key: string) => {
+        if (key in params) return String(params[key]);
+        const lower = key.charAt(0).toLowerCase() + key.slice(1);
+        if (lower !== key && lower in params) {
+          const value = String(params[lower]);
+          return value.charAt(0).toUpperCase() + value.slice(1);
+        }
+        return match;
+      });
     }
 
     return message;
@@ -522,30 +552,52 @@ export class EnglishLanguageProvider implements ParserLanguageProvider {
     }));
   }
 
+  /**
+   * The one direction table (ADR-387 D5), from the word table: each
+   * direction's canonical id, words and abbreviations.
+   * @returns a fresh copy of the table's entries
+   */
   getDirections(): DirectionVocabulary[] {
-    return [
-      { direction: 'north', words: ['north'], abbreviations: ['n'] },
-      { direction: 'south', words: ['south'], abbreviations: ['s'] },
-      { direction: 'east', words: ['east'], abbreviations: ['e'] },
-      { direction: 'west', words: ['west'], abbreviations: ['w'] },
-      { direction: 'northeast', words: ['northeast'], abbreviations: ['ne'] },
-      { direction: 'northwest', words: ['northwest'], abbreviations: ['nw'] },
-      { direction: 'southeast', words: ['southeast'], abbreviations: ['se'] },
-      { direction: 'southwest', words: ['southwest'], abbreviations: ['sw'] },
-      { direction: 'up', words: ['up', 'upward', 'upwards'], abbreviations: ['u'] },
-      { direction: 'down', words: ['down', 'downward', 'downwards'], abbreviations: ['d'] },
-      { direction: 'in', words: ['in', 'inside'] },
-      { direction: 'out', words: ['out', 'outside'] }
-    ];
+    return englishWords.directions.map((entry) => ({
+      direction: entry.direction,
+      words: [...entry.words],
+      ...(entry.abbreviations ? { abbreviations: [...entry.abbreviations] } : {})
+    }));
   }
 
   getSpecialVocabulary(): SpecialVocabulary {
     return {
       articles: englishWords.articles,
       pronouns: englishWords.pronouns,
-      allWords: ['all', 'everything', 'every'],
-      exceptWords: ['except', 'but']
+      allWords: englishWords.allWords,
+      exceptWords: englishWords.exceptWords
     };
+  }
+
+  /**
+   * The words the world needs from English (ADR-387 D2): the self words and
+   * the name stopwords, from the one word table.
+   *
+   * @returns the language words the engine assigns to the world at install
+   */
+  getLanguageWords(): LanguageWords {
+    return { selfWords: englishWords.selfWords, nameStopwords: englishWords.nameStopwords };
+  }
+
+  getListSeparators(): string[] {
+    return [...englishWords.listSeparators];
+  }
+
+  getMannerAdverbs(): string[] {
+    return [...englishWords.mannerAdverbs];
+  }
+
+  parseCardinal(words: readonly string[]): number | null {
+    return parseCardinal(words);
+  }
+
+  getOrdinalNumbers(): Readonly<Record<string, number>> {
+    return ordinalNumbers;
   }
 
   getCommonAdjectives(): string[] {
@@ -560,8 +612,8 @@ export class EnglishLanguageProvider implements ParserLanguageProvider {
     return englishWords.prepositions;
   }
 
-  getDeterminers(): string[] {
-    return englishWords.determiners || [];
+  getDeterminers(): DeterminerVocabulary[] {
+    return [...englishWords.determiners];
   }
 
   getConjunctions(): string[] {
@@ -643,10 +695,6 @@ export class EnglishLanguageProvider implements ParserLanguageProvider {
     }
     
     return lower;
-  }
-
-  expandAbbreviation(abbreviation: string): string | null {
-    return abbreviations.get(abbreviation.toLowerCase()) || null;
   }
 
   formatList(items: string[], conjunction: 'and' | 'or' = 'and'): string {

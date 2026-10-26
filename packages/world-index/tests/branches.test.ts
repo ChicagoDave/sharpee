@@ -33,7 +33,6 @@ const FIXTURE = `story
   id: branches-sweep
   story-version: 0.0.1
   states: dawn, dusk
-  use state-machines
 
   on every turn while one chance in 12
     change Tom to alert

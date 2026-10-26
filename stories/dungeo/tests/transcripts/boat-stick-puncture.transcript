@@ -47,9 +47,9 @@ description: Test that carrying sharp stick into boat punctures and deflates
 > i
 [OK: contains "stick"]
 
-# Try to board the boat with the stick - punctures the boat silently
+# Try to get into the boat with the stick - punctures the boat silently
 # The puncture happens via event handler - no explicit message yet
-> board boat
+> enter boat
 [OK: contains "boat"]
 
 # Verify the boat is now deflated (the handler worked)
@@ -67,8 +67,8 @@ description: Test that carrying sharp stick into boat punctures and deflates
 > put stick in boat
 [OK: contains "put"]
 
-# Now board the boat - should succeed
-> board boat
+# Now get into the boat - should succeed
+> enter boat
 [OK: contains "boat"]
 
 # Verify we're in the boat

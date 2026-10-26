@@ -1,0 +1,216 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "to 180 degrees"
+        ]
+      },
+      "command": "starboard 180 degrees",
+      "id": "sailstb1",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "gathers way on 180 degrees"
+        ]
+      },
+      "command": "ahead",
+      "id": "sailahd1",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes"
+        ]
+      },
+      "command": "wait",
+      "id": "sailwat1",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes"
+        ]
+      },
+      "command": "wait",
+      "id": "sailwat2",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes"
+        ]
+      },
+      "command": "wait",
+      "id": "sailwat3",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes"
+        ]
+      },
+      "command": "wait",
+      "id": "sailwat4",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes"
+        ]
+      },
+      "command": "wait",
+      "id": "sailwat5",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You make sail."
+        ]
+      },
+      "command": "make sail",
+      "id": "sailmks1",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You make sail."
+        ]
+      },
+      "command": "make sail",
+      "id": "sailmks2",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "All sail is set."
+        ]
+      },
+      "command": "make sail",
+      "id": "sailmks3",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "to 90 degrees"
+        ]
+      },
+      "command": "hard to port",
+      "id": "sailhtp1",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "to 30 degrees",
+          "The Marigold is in irons."
+        ]
+      },
+      "command": "port 60",
+      "id": "sailprt1",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "notContains": [
+          "in irons"
+        ]
+      },
+      "command": "wait",
+      "id": "sailwat6",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "to 90 degrees"
+        ]
+      },
+      "command": "starboard 60",
+      "id": "sailstb2",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "the wind backs into the southwest"
+        ]
+      },
+      "command": "push glass",
+      "id": "sailgls1",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "settles on 0 degrees"
+        ]
+      },
+      "command": "come about",
+      "id": "sailcab1",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "How many degrees?"
+        ]
+      },
+      "command": "port",
+      "id": "sailprt2",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "loses way"
+        ]
+      },
+      "command": "heave to",
+      "id": "sailhvt1",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You furl the sails."
+        ]
+      },
+      "command": "furl sails",
+      "id": "sailfrl1",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The sails are already furled."
+        ]
+      },
+      "command": "shorten sail",
+      "id": "sailshs1",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "every sail fills"
+        ]
+      },
+      "command": "push capstan",
+      "id": "sailcap1",
+      "type": "turn"
+    }
+  ],
+  "id": "sailroot"
+}

@@ -397,7 +397,8 @@ create the souvenir penny
 
 create the park bench
   aka bench, benches, seat
-  a supporter with capacity 3, scenery
+  a supporter, scenery
+  holds 3
   in the Main Path
 
   A sturdy park bench painted forest green.

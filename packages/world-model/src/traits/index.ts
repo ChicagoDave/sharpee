@@ -13,13 +13,15 @@ export * from './room/index.js';
 export * from './openable/index.js';
 export * from './lockable/index.js';
 export * from './cuttable/index.js';
+export * from './flammable/index.js';
+export * from './purchasable/index.js';
 export * from './diggable/index.js';
 export * from './readable/index.js';
 export * from './light-source/index.js';
-export * from './exit/index.js';
 export * from './climbable/index.js';
 export * from './scenery/index.js';
 export * from './night-vision/index.js';
+export * from './backdrop/index.js';
 export * from './supporter/index.js';
 export * from './switchable/index.js';
 export * from './wearable/index.js';
@@ -51,6 +53,9 @@ export * from './deadly-room/index.js';
 export * from './vehicle/index.js';
 export * from './enterable/index.js';
 
+// Expanse traits (ADR-376)
+export * from './expanse/index.js';
+
 // NPC traits
 export * from './npc/index.js';
 export * from './open-inventory/index.js';
@@ -66,6 +71,9 @@ export * from './story-info/index.js';
 
 // Wall obstructor protocol (ADR-173 Phase 5)
 export * from './obstructor-protocol.js';
+
+// The one tool-requirement shape (Older-1)
+export * from './tool-requirement.js';
 
 // Spatial sound traits (ADR-172 Phase 2)
 export * from './acoustic/index.js';

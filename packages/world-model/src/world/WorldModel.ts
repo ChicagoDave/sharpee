@@ -10,6 +10,7 @@ import { RoomBehavior } from '../traits/room/roomBehavior.js';
 import { RegionTrait, IRegionData } from '../traits/region/regionTrait.js';
 import { SceneTrait } from '../traits/scene/sceneTrait.js';
 import { DoorTrait } from '../traits/door/index.js';
+import { PresenceBehavior } from './PresenceBehavior.js';
 import { SceneryTrait } from '../traits/scenery/index.js';
 import { DEFAULT_TRAITS } from './default-trait-registry.js';
 import { IdentityTrait } from '../traits/identity/identityTrait.js';
@@ -17,8 +18,7 @@ import { OpenableTrait } from '../traits/openable/openableTrait.js';
 import { LockableTrait } from '../traits/lockable/lockableTrait.js';
 import { WearableBehavior } from '../traits/wearable/wearableBehavior.js';
 import type { WearableTrait } from '../traits/wearable/wearableTrait.js';
-import { ExitTrait } from '../traits/exit/exitTrait.js';
-import { DirectionType, getOppositeDirection } from '../constants/directions.js';
+import { DirectionType, ExitKey, getOppositeDirection, isDirection } from '../constants/directions.js';
 import { type ISemanticEvent, type ISemanticEventSource } from '@sharpee/core';
 import { SpatialIndex } from './SpatialIndex.js';
 import { VisibilityBehavior } from './VisibilityBehavior.js';
@@ -60,7 +60,8 @@ import {
   type GamePrompt,
   DefaultPrompt,
   PROMPT_STATE_KEY,
-  type IStoryEnding
+  type IStoryEnding,
+  type LanguageWords
 } from '@sharpee/if-domain';
 import { ScopeRegistry } from '../scope/scope-registry.js';
 import { RuleScopeEvaluator } from '../scope/scope-evaluator.js';
@@ -468,7 +469,7 @@ export interface IWorldModel {
   setEnding(ending: IStoryEnding): void;
 
   // Convenience Creators
-  connectRooms(room1Id: string, room2Id: string, direction: DirectionType, doorId?: string, options?: ConnectRoomsOptions): void;
+  connectRooms(room1Id: string, room2Id: string, direction: ExitKey, doorId?: string, options?: ConnectRoomsOptions): void;
   createDoor(displayName: string, opts: {
     room1Id: string;
     room2Id: string;
@@ -586,6 +587,8 @@ export class WorldModel implements IWorldModel {
   private removalObservers: EntityRemovalObserver[] = [];
   private state: WorldState = {};
   private playerId: string | undefined;
+  /** The language's words the matcher reads (ADR-387 D2); assigned at install, never defaulted. */
+  private languageWords: LanguageWords | undefined;
   /** The ending this story reached, or undefined while play continues (ADR-347 D2a). */
   private storyEnding: IStoryEnding | undefined;
   private spatialIndex: SpatialIndex;
@@ -679,6 +682,34 @@ export class WorldModel implements IWorldModel {
 
     // Register default scope rules
     this.registerDefaultScopeRules();
+  }
+
+  /**
+   * Assign the language's words to this world (ADR-387 D2). The engine calls
+   * this at install from its language provider; a hand-built world calls it
+   * before anything derives a name.
+   *
+   * @param words the self words and name stopwords of the story's language
+   */
+  setLanguageWords(words: LanguageWords): void {
+    this.languageWords = words;
+  }
+
+  /**
+   * The language's words this world was given.
+   *
+   * @returns the self words and name stopwords
+   * @throws Error when no words were assigned: a world matches no name with
+   *   empty lists; `installStory` assigns them, and a hand-built world calls
+   *   `setLanguageWords` first
+   */
+  getLanguageWords(): LanguageWords {
+    if (!this.languageWords) {
+      throw new Error(
+        'WorldModel has no language words: installStory assigns them from the language provider; a hand-built world calls setLanguageWords first'
+      );
+    }
+    return this.languageWords;
   }
 
   // Platform event emission helper
@@ -1430,14 +1461,11 @@ export class WorldModel implements IWorldModel {
 
             pathElement = exitInfo.via;
 
-            // Get destination based on entity type
+            // The way passes through a door; anything else on `via` is not a door
             if (exitEntity.hasTrait(TraitType.DOOR)) {
               const door = exitEntity.getTrait(DoorTrait);
               targetRoom = door?.room1 === roomId ? door?.room2 : door?.room1;
-            } else if (exitEntity.hasTrait(TraitType.EXIT)) {
-              targetRoom = exitEntity.getTrait(ExitTrait)?.to;
             } else {
-              // Not a valid door/exit entity
               continue;
             }
           } else if (exitInfo.destination) {
@@ -1787,20 +1815,18 @@ export class WorldModel implements IWorldModel {
       source: 'core'
     });
 
-    // A door is present at BOTH of its rooms (ADR-234 AC-3; David's ruling
-    // 2026-07-18): referenceable from either side. Only the door enters
-    // scope this way — the far room and its contents never do.
+    // A door is present at both of its rooms (David's ruling 2026-07-18),
+    // a backdrop at every room of its list (ADR-374 D1): referenceable from
+    // each. Only the thing itself enters scope this way — the far room and
+    // its contents never do. Keyed on the actor's room, so an actor in a
+    // box or on a seat still finds them.
     this.addScopeRule({
-      id: 'default_door_visibility',
+      id: 'default_presence_visibility',
       fromLocations: '*',
-      includeEntities: (context) =>
-        this.findByTrait(TraitType.DOOR)
-          .filter((door) => {
-            const doorTrait = door.get(TraitType.DOOR) as DoorTrait | undefined;
-            return doorTrait !== undefined
-              && (doorTrait.room1 === context.currentLocation || doorTrait.room2 === context.currentLocation);
-          })
-          .map((door) => door.id),
+      includeEntities: (context) => {
+        const roomId = this.getContainingRoom(context.actorId)?.id ?? context.currentLocation;
+        return PresenceBehavior.presentAt(roomId, this).map((entity) => entity.id);
+      },
       priority: 50,
       source: 'core'
     });
@@ -1919,20 +1945,21 @@ export class WorldModel implements IWorldModel {
    * trait's room pair disagrees with the rooms passed — the primitive owns
    * the invariant that DoorTrait and the exits never disagree.
    */
-  connectRooms(room1Id: string, room2Id: string, direction: DirectionType, doorId?: string, options?: ConnectRoomsOptions): void {
+  connectRooms(room1Id: string, room2Id: string, direction: ExitKey, doorId?: string, options?: ConnectRoomsOptions): void {
     const room1 = this.getEntity(room1Id);
     const room2 = this.getEntity(room2Id);
     if (!room1 || !room2) {
       throw new Error(`connectRooms: both rooms must exist (${room1Id}, ${room2Id})`);
     }
 
-    const opposite = getOppositeDirection(direction);
-    // ADR-234 D4 `, one-way` (GH #327): the written direction only.
-    const oneWay = options?.oneWay === true;
+    // ADR-234 D4 `, one-way` (GH #327): the written direction only. A
+    // passage has no opposite (ADR-378 D1), so it is one-way by construction.
+    const oneWay = options?.oneWay === true || !isDirection(direction);
+    const opposite = isDirection(direction) ? getOppositeDirection(direction) : undefined;
 
     if (doorId === undefined) {
       RoomBehavior.setExit(room1, direction, room2Id);
-      if (!oneWay) RoomBehavior.setExit(room2, opposite, room1Id);
+      if (!oneWay && opposite !== undefined) RoomBehavior.setExit(room2, opposite, room1Id);
       return;
     }
 
@@ -1957,7 +1984,7 @@ export class WorldModel implements IWorldModel {
     }
 
     RoomBehavior.setExit(room1, direction, room2Id, doorId);
-    if (oneWay) {
+    if (oneWay || opposite === undefined) {
       doorTrait.bidirectional = false;
     } else {
       RoomBehavior.setExit(room2, opposite, room1Id, doorId);

@@ -1,47 +1,83 @@
 /**
- * exits.ts — the block's exit lines: `<direction> to <room>`, `is blocked`,
- * `is deadly`, and the room-wide `deadly:` marker.
+ * exits.ts — the block's exit lines: `<direction> to <room>`, the passage
+ * line, `is blocked`, `is deadly`, and the room-wide `deadly:` marker.
  *
  * Exit targets and `through` doors resolve like any entity reference; an
- * unresolved one is the standard unknown-entity error and leaves '' so the
- * door graph check skips what is already reported. Blocked lines on one
- * direction compose in declaration order, so a line after a condition-less
- * one can never fire and is reported as unreachable. The conditional deadly
- * exit is not wired and is refused here rather than at load. Every phrase
- * key an exit line names is required to exist. Whether the block is a room
- * at all is the host gate's question.
+ * unresolved one is the standard unknown-entity error. Its destination
+ * lowers to `unresolved` and its door to '', so the door graph check skips
+ * what is already reported. A passage is one-way by
+ * construction, so a `, one-way` on its line is refused with the fix-it to
+ * remove it; a blocked or deadly line naming a passage must name one the
+ * room declares, by any of its forms, and lowers under the passage's
+ * canonical key. An exit line's `while` lowers to its condition and its
+ * `admits` to the list the vehicle builder's resolver reads. Blocked lines
+ * on one direction compose in declaration order, so a line after a
+ * condition-less one can never fire and is reported as unreachable. The
+ * conditional deadly exit is not wired and is refused here rather than at
+ * load. Every phrase key an exit line names is required to exist. Whether
+ * the block is a room at all is the host gate's question.
  *
  * A region's exit-table rows lower through the same `lowerExit` once every
- * entity is built (the analyzer's `applyExitTables`).
+ * entity is built (the analyzer's `applyExitTables`); a row carries no
+ * tails, so it passes no tail resolvers.
  *
- * Public interface: exitsBuilder, lowerExit().
+ * Public interface: exitsBuilder, lowerExit(), passageKeyOfForm().
  * Owner context: @sharpee/chord analyzer (language frontend; browser-safe).
  *
  * References:
  * - ADR-234 D1 — `through the <door>` resolves as an entity reference.
  * - ADR-227 — deadly exits and the `deadly:` room marker.
+ * - ADR-378 D1, D3, D6 — the passage line, `while` and `admits` on an exit line.
  * - GH #315 — the unreachable blocked-line warning.
  * - Platform-issue-sweep Phase 8 #15d — `is deadly while` fails at compile.
  */
-import type { ExitDecl, NameRef } from '../../ast.js';
-import type { IRExit } from '../../ir.js';
+import type { ConditionNode, ExitDecl, NameRef } from '../../ast.js';
+import type { IRCondition, IRExit, IRExitDestination } from '../../ir.js';
 import type { EntityLineBuilder } from './context.js';
+import { passageKeyOfForm } from '../../ir.js';
+import { resolveAdmitsWord } from './vehicle.js';
+
+export { passageKeyOfForm };
+
+/** The resolvers an exit line's tails need; absent on a table row, which carries none. */
+export interface ExitTailResolvers {
+  resolveCondition: (condition: ConditionNode) => IRCondition;
+  resolveAdmits: (ref: NameRef) => string | null;
+}
 
 /**
  * Lower one parsed exit to the IR — the one lowering for a room's exit
- * lines and a region's exit-table rows (ADR-360 D3), so they cannot drift.
+ * lines, a passage line and a region's exit-table rows (ADR-360 D3), so
+ * they cannot drift.
  * @param e the parsed exit
  * @param resolve entity-name resolution (reports an unresolved name)
- * @returns the IR exit; '' marks an unresolved destination or door
+ * @param tails the `while` and `admits` resolvers (ADR-378); omitted on a table row
+ * @returns the IR exit; an unresolved destination is `unresolved`, an unresolved door ''
  */
-export function lowerExit(e: ExitDecl, resolve: (ref: NameRef) => string | null): IRExit {
+export function lowerExit(e: ExitDecl, resolve: (ref: NameRef) => string | null, tails?: ExitTailResolvers): IRExit {
+  const admits = tails && e.admits
+    ? e.admits.map((ref) => tails.resolveAdmits(ref)).filter((w): w is string => w !== null).filter((w, i, all) => all.indexOf(w) === i)
+    : undefined;
   return {
     direction: e.direction,
-    to: resolve(e.to) ?? '',
+    ...(e.passage ? { passage: e.passage } : {}),
+    // ADR-366 D7: `to outside` names no entity — the loader resolves it to
+    // the containing vehicle's room on each use. Whether the room is aboard
+    // a vehicle at all is the vehicle builder's gate.
+    to: e.toOutside ? { kind: 'outside' } : destinationOf(resolve(e.to)),
     via: e.via ? (resolve(e.via) ?? '') : null,
-    ...(e.oneWay ? { oneWay: true as const } : {}),
+    // A passage is one-way by construction (ADR-378 D1): the loader infers
+    // no reverse from its key, so the flag is never written for it.
+    ...(e.oneWay && !e.passage ? { oneWay: true as const } : {}),
+    ...(tails && e.condition ? { condition: tails.resolveCondition(e.condition) } : {}),
+    ...(admits ? { admits } : {}),
     span: e.span,
   };
+}
+
+/** A resolved room id as a destination; an unresolved name (already reported) as `unresolved`. */
+function destinationOf(id: string | null): IRExitDestination {
+  return id === null ? { kind: 'unresolved' } : { kind: 'room', id };
 }
 
 export const exitsBuilder: EntityLineBuilder = {
@@ -49,7 +85,20 @@ export const exitsBuilder: EntityLineBuilder = {
   requires: [],
   build(decl, entity, context) {
     const { scope } = entity;
-    entity.exits = decl.exits.map((e) => lowerExit(e, (ref) => context.resolveEntityId(ref)));
+    const tails: ExitTailResolvers = {
+      resolveCondition: (condition) => context.resolveCondition(condition, scope),
+      resolveAdmits: (ref) => resolveAdmitsWord(ref, context),
+    };
+    entity.exits = decl.exits.map((e) => lowerExit(e, (ref) => context.resolveEntityId(ref), tails));
+    for (const e of decl.exits) {
+      if (e.passage && e.oneWay) {
+        context.diagnostics.error(
+          'analysis.passage-one-way',
+          `A passage is one-way by construction — there is no opposite of \`${e.passage[0]}\`, so no reverse is ever inferred. Remove \`, one-way\`.`,
+          e.span,
+        );
+      }
+    }
     entity.blockedExits = decl.blockedExits.map((b, i) => {
       context.requirePhrase(b.phraseKey, b.span);
       // The first line whose condition holds supplies the refusal, and a

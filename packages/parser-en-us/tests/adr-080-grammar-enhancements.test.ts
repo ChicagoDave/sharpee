@@ -8,20 +8,21 @@ import { EnglishPatternCompiler } from '../src/english-pattern-compiler';
 import { EnglishGrammarEngine } from '../src/english-grammar-engine';
 import { EnglishParser } from '../src/english-parser';
 import { EnglishLanguageProvider } from '@sharpee/lang-en-us';
-import { SlotType, GrammarContext, vocabularyRegistry } from '@sharpee/if-domain';
+import { SlotType, GrammarContext } from '@sharpee/if-domain';
+import { PartOfSpeech } from '@sharpee/if-domain';
 
 describe('ADR-080: Grammar Enhancements', () => {
   let compiler: EnglishPatternCompiler;
   let engine: EnglishGrammarEngine;
 
   beforeEach(() => {
-    compiler = new EnglishPatternCompiler();
-    engine = new EnglishGrammarEngine();
+    compiler = new EnglishPatternCompiler(new EnglishLanguageProvider());
+    engine = new EnglishGrammarEngine(new EnglishLanguageProvider());
   });
 
   describe('Pattern Compiler - Greedy Slots (:slot...)', () => {
     it('should compile pattern with greedy slot syntax', () => {
-      const pattern = compiler.compile('say :message...');
+      const pattern = compiler.compile(compiler.parse('say :message...'));
 
       expect(pattern.tokens).toHaveLength(2);
       expect(pattern.tokens[0]).toEqual({
@@ -36,20 +37,20 @@ describe('ADR-080: Grammar Enhancements', () => {
       });
     });
 
-    it('should extract slot name correctly from greedy pattern', () => {
-      const slots = compiler.extractSlots('say :message...');
+    it('should record the greedy slot by its clean name', () => {
+      const pattern = compiler.compile(compiler.parse('say :message...'));
 
-      expect(slots).toHaveLength(1);
-      expect(slots).toContain('message');
+      expect(pattern.slots.map((slot) => slot.name)).toEqual(['message']);
+      expect(pattern.slotsByName.get('message')?.greedy).toBe(true);
     });
 
     it('should validate greedy slot patterns', () => {
-      expect(compiler.validate('say :message...')).toBe(true);
-      expect(compiler.validate('write :content... on :surface')).toBe(true);
+      expect(compiler.parse('say :message...')[1]).toEqual({ kind: 'slot', name: 'message', greedy: true });
+      expect(compiler.parse('write :content... on :surface')[1]).toEqual({ kind: 'slot', name: 'content', greedy: true });
     });
 
     it('should compile bounded greedy pattern', () => {
-      const pattern = compiler.compile('write :content... on :surface');
+      const pattern = compiler.compile(compiler.parse('write :content... on :surface'));
 
       expect(pattern.tokens).toHaveLength(4);
       expect(pattern.tokens[1]).toEqual({
@@ -65,7 +66,7 @@ describe('ADR-080: Grammar Enhancements', () => {
     });
 
     it('should handle optional greedy slots', () => {
-      const pattern = compiler.compile('speak [:message...]');
+      const pattern = compiler.compile(compiler.parse('speak [:message...]'));
 
       // Should have marker for optional and the slot
       const slotToken = pattern.tokens.find(t => t.type === 'slot' && t.value === 'message');
@@ -276,7 +277,7 @@ describe('ADR-080: Grammar Enhancements', () => {
 
       const tokens = [
         { word: 'take', normalized: 'take', position: 0, candidates: [] },
-        { word: 'all', normalized: 'all', position: 5, candidates: [] }
+        { word: 'all', normalized: 'all', position: 5, candidates: [{ partOfSpeech: PartOfSpeech.SPECIAL, mapsTo: 'ALL', priority: 100 }] }
       ];
 
       const context: GrammarContext = {
@@ -302,8 +303,8 @@ describe('ADR-080: Grammar Enhancements', () => {
 
       const tokens = [
         { word: 'take', normalized: 'take', position: 0, candidates: [] },
-        { word: 'all', normalized: 'all', position: 5, candidates: [] },
-        { word: 'but', normalized: 'but', position: 9, candidates: [] },
+        { word: 'all', normalized: 'all', position: 5, candidates: [{ partOfSpeech: PartOfSpeech.SPECIAL, mapsTo: 'ALL', priority: 100 }] },
+        { word: 'but', normalized: 'but', position: 9, candidates: [{ partOfSpeech: PartOfSpeech.SPECIAL, mapsTo: 'EXCEPT', priority: 100 }] },
         { word: 'sword', normalized: 'sword', position: 13, candidates: [] }
       ];
 
@@ -334,8 +335,8 @@ describe('ADR-080: Grammar Enhancements', () => {
 
       const tokens = [
         { word: 'drop', normalized: 'drop', position: 0, candidates: [] },
-        { word: 'all', normalized: 'all', position: 5, candidates: [] },
-        { word: 'except', normalized: 'except', position: 9, candidates: [] },
+        { word: 'all', normalized: 'all', position: 5, candidates: [{ partOfSpeech: PartOfSpeech.SPECIAL, mapsTo: 'ALL', priority: 100 }] },
+        { word: 'except', normalized: 'except', position: 9, candidates: [{ partOfSpeech: PartOfSpeech.SPECIAL, mapsTo: 'EXCEPT', priority: 100 }] },
         { word: 'sword', normalized: 'sword', position: 16, candidates: [] },
         { word: 'and', normalized: 'and', position: 22, candidates: [] },
         { word: 'shield', normalized: 'shield', position: 26, candidates: [] }
@@ -349,7 +350,8 @@ describe('ADR-080: Grammar Enhancements', () => {
       };
 
       const matches = engine.findMatches(tokens, context);
-      expect(matches).toHaveLength(1);
+      // The exclusions are read as a list and as one item (ADR-386 D6); the list first
+      expect(matches).toHaveLength(2);
 
       const match = matches[0];
       const slot = match.slots.get('item')!;
@@ -382,7 +384,8 @@ describe('ADR-080: Grammar Enhancements', () => {
       };
 
       const matches = engine.findMatches(tokens, context);
-      expect(matches).toHaveLength(1);
+      // The span is read as a list and as one item (ADR-386 D6); the list first
+      expect(matches).toHaveLength(2);
 
       const match = matches[0];
       const slot = match.slots.get('item')!;
@@ -416,7 +419,7 @@ describe('ADR-080: Grammar Enhancements', () => {
       };
 
       const matches = engine.findMatches(tokens, context);
-      expect(matches).toHaveLength(1);
+      expect(matches).toHaveLength(2);
 
       const match = matches[0];
       const slot = match.slots.get('item')!;
@@ -451,7 +454,7 @@ describe('ADR-080: Grammar Enhancements', () => {
       };
 
       const matches = engine.findMatches(tokens, context);
-      expect(matches).toHaveLength(1);
+      expect(matches).toHaveLength(2);
 
       const match = matches[0];
       const slot = match.slots.get('item')!;
@@ -485,7 +488,9 @@ describe('ADR-080: Grammar Enhancements', () => {
       };
 
       const matches = engine.findMatches(tokens, context);
-      expect(matches).toHaveLength(1);
+      // The span is read as the list and as one item (ADR-386 D6); with no
+      // world to rank by, the list comes first in search order
+      expect(matches).toHaveLength(2);
 
       const match = matches[0];
       const itemSlot = match.slots.get('item')!;
@@ -493,6 +498,7 @@ describe('ADR-080: Grammar Enhancements', () => {
       expect(itemSlot.items).toHaveLength(2);
       expect(itemSlot.items[0].text).toBe('knife');
       expect(itemSlot.items[1].text).toBe('lamp');
+      expect(matches[1].slots.get('item')!.text).toBe('knife and lamp');
 
       const containerSlot = match.slots.get('container');
       expect(containerSlot?.text).toBe('bag');
@@ -504,7 +510,6 @@ describe('ADR-080: Grammar Enhancements', () => {
     let parser: EnglishParser;
 
     beforeEach(() => {
-      vocabularyRegistry.clear();
       const provider = new EnglishLanguageProvider();
       parser = new EnglishParser(provider);
     });
@@ -734,7 +739,7 @@ describe('ADR-080: Grammar Enhancements', () => {
 
       for (const adverb of adverbs) {
         // Create fresh engine for each adverb
-        const testEngine = new EnglishGrammarEngine();
+        const testEngine = new EnglishGrammarEngine(new EnglishLanguageProvider());
         const builder = testEngine.createBuilder();
         builder.define(':manner open :target')
           .manner('manner')

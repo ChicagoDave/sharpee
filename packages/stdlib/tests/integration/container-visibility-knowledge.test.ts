@@ -8,10 +8,13 @@ import { LanguageProvider } from '@sharpee/if-domain';
 import { StandardScopeResolver } from '../../src/scope/scope-resolver';
 import { CommandValidator } from '../../src/validation/command-validator';
 import { StandardActionRegistry } from '../../src/actions/registry';
-import { parseCommand } from '../test-utils';
+import { parseCommand, TEST_MARKER_TRAIT } from '../test-utils';
 import { takingAction } from '../../src/actions/standard/taking';
 import { examiningAction } from '../../src/actions/standard/examining';
 import { openingAction } from '../../src/actions/standard/opening';
+
+/** English, handed to hand-built worlds as the language's words (ADR-387 D2). */
+const ENGLISH_WORDS = { selfWords: ['me', 'myself', 'self', 'yourself'], nameStopwords: ['the', 'a', 'an', 'of'] };
 
 describe('Container visibility and knowledge', () => {
   let world: WorldModel;
@@ -27,6 +30,7 @@ describe('Container visibility and knowledge', () => {
   beforeEach(() => {
     // 1. Create world
     world = new WorldModel();
+    world.setLanguageWords(ENGLISH_WORDS);
     author = new AuthorModel(world.getDataStore(), world);
 
     // 2. Create and connect rooms
@@ -36,17 +40,10 @@ describe('Container visibility and knowledge', () => {
     room2 = author.createEntity('Living Room', 'location');
     room2.add({ type: TraitType.ROOM });
     
-    // Connect without door
-    room1.add({ 
-      type: TraitType.EXIT,
-      direction: 'north',
-      destination: room2.id
-    });
-    room2.add({
-      type: TraitType.EXIT,
-      direction: 'south', 
-      destination: room1.id
-    });
+    // An inert marker on each room (these fixtures never traverse; the
+    // retired exit-as-entity trait used to stand here, ADR-378 D1b)
+    room1.add({ type: TEST_MARKER_TRAIT });
+    room2.add({ type: TEST_MARKER_TRAIT });
 
     // 3. Create closed box
     box = author.createEntity('box', 'container');

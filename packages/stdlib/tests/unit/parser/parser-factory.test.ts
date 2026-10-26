@@ -2,7 +2,7 @@
  * Tests for Parser Factory
  */
 
-import { ParserFactory, Parser, LanguageProvider } from '../../../src';
+import { ParserFactory, Parser, LanguageProvider } from '@sharpee/if-domain';
 
 // Mock parser implementation
 class MockParser implements Parser {
@@ -18,7 +18,6 @@ class MockParser implements Parser {
           verb: { tokens: [], text: 'mock', head: 'mock' }
         },
         pattern: 'MOCK',
-        confidence: 1.0,
         action: 'mock.action'
       }
     };

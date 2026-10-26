@@ -26,20 +26,9 @@
  */
 
 import { createEvent, type ISemanticEvent } from '@sharpee/core';
-import type { IAudibilityEvent, ISound } from '@sharpee/if-domain';
+import { SOUND_EVENT_TYPES, type IAudibilityEvent, type ISound } from '@sharpee/if-domain';
 import { TraitType, type IFEntity, type WorldModel } from '@sharpee/world-model';
 import { propagate as defaultPropagate } from './propagation.js';
-
-/**
- * Semantic-event type fired by the dispatcher when a listener perceives
- * a propagated sound. Mirrors `SOUND_EVENT_TYPES.AUDIBILITY_HEARD` in
- * `@sharpee/stdlib/channels/sound-events`. The constant is duplicated
- * here as a string literal so the engine package does not depend on
- * stdlib at compile time (engine → stdlib is the existing dependency
- * direction; the inverse would be a cycle). The string value is the
- * contract — both sides must agree.
- */
-export const AUDIBILITY_HEARD_EVENT_TYPE = 'sound.audibility.heard';
 
 /**
  * Per-turn audibility dispatcher.
@@ -139,7 +128,7 @@ function buildAudibilityEvent(
   listenerId: string,
 ): ISemanticEvent {
   return createEvent(
-    AUDIBILITY_HEARD_EVENT_TYPE,
+    SOUND_EVENT_TYPES.AUDIBILITY_HEARD,
     audibility as unknown as Record<string, unknown>,
     {
       actor: audibility.sourceEntityId,

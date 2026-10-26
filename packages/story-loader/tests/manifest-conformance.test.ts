@@ -90,6 +90,7 @@ describe('manifest ↔ registry conformance (ADR-215 AC-2)', () => {
       'north', 'south', 'east', 'west',
       'northeast', 'northwest', 'southeast', 'southwest',
       'up', 'down',
+      'in', 'out', // ADR-369 D3
     ];
     const { Direction } = await import('@sharpee/world-model');
     for (const word of PARSER_DIRECTIONS) {

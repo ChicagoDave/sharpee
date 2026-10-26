@@ -6,7 +6,8 @@
  * are kept ahead of the action's. Platform requests among the enriched
  * events go to the pending list the platform-operations stage drains.
  *
- * Public interface: `enrichEventsStage`, `enrichWithEngineContext`.
+ * Public interface: `enrichEventsStage`, `enrichWithEngineContext`,
+ *   `presenceResolver`.
  * Owner context: `@sharpee/engine` — the turn cycle.
  *
  * References: ADR-334 D4 (the one funnel).
@@ -20,8 +21,11 @@ import type { TurnStage, TurnEngine } from './context.js';
  * The presence resolver enrichment stamps events with: the current
  * player's presence at the location a producer stamped, asked of the
  * perception service. None when the engine has no perception service.
+ *
+ * @param engine the turn-facing engine surface
+ * @returns the resolver, or undefined without a perception service
  */
-function presenceResolver(engine: TurnEngine): ((locationId: string) => Presence) | undefined {
+export function presenceResolver(engine: TurnEngine): ((locationId: string) => Presence) | undefined {
   const service = engine.perceptionService;
   if (!service) return undefined;
   return (locationId) => service.presenceOf(engine.context.player, locationId, engine.world);

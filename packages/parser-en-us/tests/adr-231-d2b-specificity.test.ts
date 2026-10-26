@@ -1,18 +1,17 @@
 /**
  * @file ADR-231 D2b — Literal-before-slot specificity tests
- * @description Pins the general match-ordering contract (ADR-268 D2):
- * confidence desc → tier (story over standard) → literal specificity desc →
- * definition order. A rule whose literal tokens consume words outranks a
- * rule whose unconstrained slot swallows the same words (`get in :portal`
- * beats `get :item` for "get in basket"); the story tier is the override
- * layered on top of specificity.
+ * @description Pins the general match-ordering contract (ADR-384 D2):
+ * literal specificity desc → tier (story over standard) → definition order.
+ * A rule whose literal tokens consume words outranks a rule whose
+ * unconstrained slot swallows the same words (`get in :portal` beats
+ * `get :item` for "get in basket"); the story tier breaks ties.
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import { EnglishParser } from '../src/english-parser';
 import { EnglishGrammarEngine } from '../src/english-grammar-engine';
 import { EnglishLanguageProvider } from '@sharpee/lang-en-us';
-import { vocabularyRegistry, Token } from '@sharpee/if-domain';
+import { Token } from '@sharpee/if-domain';
 
 /** Minimal entity shape used by the mock world model in these tests */
 interface MockEntity {
@@ -84,7 +83,6 @@ describe('ADR-231 D2b — literal-before-slot specificity (full grammar)', () =>
   let parser: EnglishParser;
 
   beforeEach(() => {
-    vocabularyRegistry.clear();
     parser = new EnglishParser(new EnglishLanguageProvider());
     parser.setWorldContext(new MockWorldModel(), 'player', 'room');
   });
@@ -184,7 +182,7 @@ describe('ADR-231 D2b — ordering contract (synthetic rules)', () => {
   }
 
   beforeEach(() => {
-    engine = new EnglishGrammarEngine();
+    engine = new EnglishGrammarEngine(new EnglishLanguageProvider());
     grammar = engine.createBuilder();
   });
 
@@ -203,17 +201,17 @@ describe('ADR-231 D2b — ordering contract (synthetic rules)', () => {
     expect(matches[1].literalSpecificity).toBe(1); // "frob" only; slot swallowed "wob gizmo"
   });
 
-  it('story tier beats literal specificity (ADR-268 D2: tier-first)', () => {
+  it('literal specificity beats the story tier (ADR-384 D2)', () => {
     grammar.define('frob wob :thing').mapsTo('test.action.literal').build(); // standard tier
     engine.createBuilder('story').define('frob :thing').mapsTo('test.action.slot').build();
 
     const matches = engine.findMatches(createTokens(['frob', 'wob', 'gizmo']), context as any);
 
     expect(matches.length).toBe(2);
-    expect(matches[0].rule.action).toBe('test.action.slot');
-    expect(matches[0].rule.tier).toBe('story');
-    expect(matches[1].rule.action).toBe('test.action.literal');
-    expect(matches[1].literalSpecificity).toBe(2);
+    expect(matches[0].rule.action).toBe('test.action.literal');
+    expect(matches[0].literalSpecificity).toBe(2);
+    expect(matches[1].rule.action).toBe('test.action.slot');
+    expect(matches[1].rule.tier).toBe('story');
   });
 
   it('within a tier at equal specificity, the earlier definition wins (ADR-268 D2)', () => {

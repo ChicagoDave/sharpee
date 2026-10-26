@@ -10,7 +10,7 @@
  * registered under a given action id will ever be consulted.
  *
  * Public interface: `actionLifecycleDescriptors`,
- * `interceptorConsultingActionIds`, `lifecycleDescriptorFor`.
+ * `interceptorConsultingActionIds`, `counterpartActionIds`, `lifecycleDescriptorFor`.
  * Owner: stdlib standard-action infrastructure (ADR-228).
  *
  * NOTE: this module is deliberately NOT exported from `./index.ts` (the
@@ -63,15 +63,45 @@ import { wakingLifecycle } from '../standard/waking/waking.js';
 import { turningLifecycle } from '../standard/turning/turning.js';
 import { unlockingLifecycle } from '../standard/unlocking/unlocking.js';
 import { wearingLifecycle } from '../standard/wearing/wearing.js';
+// ADR-370: stock verbs without an object side
+import { jumpingLifecycle } from '../standard/jumping/jumping.js';
+import { kissingLifecycle } from '../standard/kissing/kissing.js';
+import { wavingLifecycle } from '../standard/waving/waving.js';
+import { sayingYesLifecycle } from '../standard/saying_yes/saying-yes.js';
+import { sayingNoLifecycle } from '../standard/saying_no/saying-no.js';
+import { sayingSorryLifecycle } from '../standard/saying_sorry/saying-sorry.js';
+import { lookingUnderLifecycle } from '../standard/looking_under/looking-under.js';
+import { emptyingLifecycle } from '../standard/emptying/emptying.js';
+// ADR-371: object-side adjectives
+import { loweringLifecycle } from '../standard/lowering/lowering.js';
+import { raisingLifecycle } from '../standard/raising/raising.js';
+import { burningLifecycle } from '../standard/burning/burning.js';
+import { settingLifecycle } from '../standard/setting/setting.js';
+// ADR-372: two-noun and conversation-shaped clauses
+import { askingForLifecycle } from '../standard/asking_for/asking-for.js';
+import { consultingLifecycle } from '../standard/consulting/consulting.js';
+import { buyingLifecycle } from '../standard/buying/buying.js';
+// ADR-373: physical state the platform enforces
+import { breakingLifecycle } from '../standard/breaking/breaking.js';
+import { tyingLifecycle } from '../standard/tying/tying.js';
+import { untyingLifecycle } from '../standard/untying/untying.js';
+import { lightingLifecycle } from '../standard/lighting/lighting.js';
+import { extinguishingLifecycle } from '../standard/extinguishing/extinguishing.js';
+// ADR-366: the vehicle command sets
+import { steeringLifecycle } from '../standard/steering/steering.js';
+import { settingCourseLifecycle } from '../standard/setting_course/setting_course.js';
 
 /**
- * The descriptor table: all 38 entity-keyed standard actions (33 per
+ * The descriptor table: all 62 entity-keyed standard actions (33 per
  * ADR-228 Consequences + cutting per ADR-230 D3c + digging + asking/telling per
- * ADR-230 Phase 6 + turning per the chord go-live G1 shortlist, 2026-07-17).
- * Structural exemptions
- * (no entity to key on: about, waiting, looking, … and the full-delegation
- * capability actions lowering/raising) are absent by design — see ADR-228
- * Context.
+ * ADR-230 Phase 6 + turning per the chord go-live G1 shortlist, 2026-07-17,
+ * + the eight ADR-370 stock verbs, 2026-10-13, + lowering, raising, burning
+ * and setting per ADR-371, 2026-10-14, + asking_for, consulting and buying
+ * per ADR-372, 2026-10-14, + breaking (a consequence id, fired by the action
+ * that broke the thing), tying and untying per ADR-373, 2026-10-14, + lighting
+ * and extinguishing per ADR-374 D9, 2026-10-15). Structural exemptions
+ * (no entity to key on: about, waiting, looking, …) are absent by design — see
+ * ADR-228 Context; lowering and raising joined with ADR-371 D1.
  */
 export const actionLifecycleDescriptors: readonly ActionLifecycleDescriptor[] = Object.freeze([
   answeringLifecycle,
@@ -115,7 +145,34 @@ export const actionLifecycleDescriptors: readonly ActionLifecycleDescriptor[] = 
   wakingLifecycle,
   turningLifecycle,
   unlockingLifecycle,
-  wearingLifecycle
+  wearingLifecycle,
+  // ADR-370: stock verbs without an object side
+  jumpingLifecycle,
+  kissingLifecycle,
+  wavingLifecycle,
+  sayingYesLifecycle,
+  sayingNoLifecycle,
+  sayingSorryLifecycle,
+  lookingUnderLifecycle,
+  emptyingLifecycle,
+  // ADR-371: object-side adjectives
+  loweringLifecycle,
+  raisingLifecycle,
+  burningLifecycle,
+  settingLifecycle,
+  // ADR-372
+  askingForLifecycle,
+  consultingLifecycle,
+  buyingLifecycle,
+  // ADR-373
+  breakingLifecycle,
+  tyingLifecycle,
+  untyingLifecycle,
+  lightingLifecycle,
+  extinguishingLifecycle,
+  // ADR-366
+  steeringLifecycle,
+  settingCourseLifecycle
 ]);
 
 // Invariant: one descriptor per action — a duplicate primary id means two
@@ -160,4 +217,15 @@ export const interceptorConsultingActionIds: ReadonlySet<string> = new Set(
   actionLifecycleDescriptors.flatMap((descriptor) =>
     descriptor.slots.flatMap((slot) => slot.actionIds)
   )
+);
+
+/**
+ * Action ids whose descriptor declares a `counterpart` on a slot (ADR-372
+ * D1): the two-noun actions a Chord head may narrow by naming the other
+ * noun. The Chord manifest's `counterpartActions` is generated from this.
+ */
+export const counterpartActionIds: ReadonlySet<string> = new Set(
+  actionLifecycleDescriptors
+    .filter((descriptor) => descriptor.slots.some((slot) => slot.counterpart !== undefined))
+    .map((descriptor) => descriptor.actionId)
 );

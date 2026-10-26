@@ -26,6 +26,7 @@
 import type { CompositionItem, CreateDecl, Declaration, NameRef, RoomGroupDecl, StoryFile } from '../ast.js';
 import type { DiagnosticBag } from '../diagnostics.js';
 import type { Span } from '../span.js';
+import { entityIdOf, isKindDecl } from './declared.js';
 
 /**
  * The most rooms one group may create. A guard against a typo (`1 to 10000`
@@ -58,14 +59,6 @@ export interface RoomGroupExpansion {
 }
 
 /**
- * The entity id a create block's name derives — the derivation the
- * analyzer's collection pass uses.
- */
-function entityIdOf(words: readonly string[]): string {
-  return words.join('-').toLowerCase();
-}
-
-/**
  * The prefix of a group's shared phrase keys: `<base>.description` and
  * `<base>.initial-description`.
  * @param regionId the region's entity id
@@ -76,7 +69,7 @@ export function groupKeyBase(regionId: string, group: RoomGroupDecl): string {
 }
 
 function isRegionDecl(decl: CreateDecl): boolean {
-  return decl.compositions.some((c) => c.article && c.words.join(' ').toLowerCase() === 'region');
+  return isKindDecl(decl, 'region');
 }
 
 /**
@@ -114,6 +107,11 @@ function refusedBodyLines(body: CreateDecl): Array<{ what: string; span: Span }>
   if (body.landing) add('a `landing` line', [body.landing]);
   add('a `wears` line', body.wears);
   add('a `carries` line', body.carries);
+  // ADR-366: a room admits vehicles (D6, copied to each room); every other
+  // vehicle line belongs in a vehicle block.
+  add('a vehicle line', body.vehicleLines.filter((l) => l.key !== 'admits'));
+  add('a `pushing` block', body.pushingBlock ? [body.pushingBlock] : []);
+  if (body.positionBlock) add('a `position` block', [body.positionBlock]);
   add('a character line', [
     ...body.pronouns,
     ...body.moods,
@@ -195,6 +193,9 @@ function createdRoom(region: CreateDecl, group: RoomGroupDecl, n: number): Creat
     states: [],
     scores: [],
     counters: [],
+    // ADR-366 D6: a group's `admits:` reaches every room it creates.
+    vehicleLines: body.vehicleLines.filter((l) => l.key === 'admits'),
+    positionBlock: null,
     phraseOverrides: body.phraseOverrides.filter((o) => o.key === 'room-name'),
     onClauses: [],
     timerClauses: [],

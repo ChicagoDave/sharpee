@@ -12,6 +12,19 @@ Actions follow the four-phase pattern (validate/execute/report/blocked) per ADR-
 - Never hardcode English strings in stdlib (or engine, world-model).
 - Pass entity-valued template parameters as `entityInfoFrom(entity)`, not `entity.name` (ADR-158). Bare strings strip the `nounType`/`properName`/`article` metadata the formatter chain needs.
 
+## Entity Resolution (ADR-385)
+
+The validator (`src/validation/command-validator.ts`) does not decide which
+entities a phrase names. It calls world-model's one noun matcher, `matchNoun`,
+over `namingSurfaceOf(world, entity, actorId)`, as the parse-time gate and the
+IDE do, and owns only what happens around the answer: scope, dominance, the
+gate's admitted ids (`INounPhrase.scope`), the soft `my` narrowing, exact
+matches out of scope, the ambiguity tiebreaks and the error it returns. A list
+resolves item by item into `IValidatedCommand.directObjects`; `all` is the
+action's to expand (`helpers/multi-object-handler.ts`), where `all but` removes
+what the matcher names. Never add a second name-matching rule in stdlib: the
+matcher is the one place, and `src/validation/README.md` describes the flow.
+
 ## Capability Dispatch, Actions, and Event Handlers (ADR-090)
 
 **CRITICAL**: Understand when to use each pattern before implementing new puzzles/mechanics.
@@ -89,11 +102,20 @@ world.registerCapabilityBehavior(BasketElevatorTrait.type, 'if.action.lowering',
 
 **Capability-effect messageIds MUST be fully-qualified** (decision 2026-07-02, dungeo
 regression findings P1). The engine's universal dispatch forwards effect payloads
-unchanged — it does NOT auto-prefix short keys the way `createCapabilityDispatchAction`
-does, and the universal path always wins when a binding exists, so short keys render
-blank. Emit story-registered IDs like `'dungeo.basket.lowered'` from
-`report()`/`blocked()` and from `validate()` error codes; never bare keys like
-`'lowered'`. The factory's short-key prefixing is legacy — do not rely on it.
+unchanged and does NOT auto-prefix short keys, and neither does the self-dispatching
+builder (`createImplementationDispatchingAction`, `standard/dispatch-shared.ts`, ADR-371),
+so short keys render blank. Emit story-registered IDs like `'dungeo.basket.lowered'`
+from `report()`/`blocked()` and from `validate()` error codes; never bare keys like
+`'lowered'`.
+
+**Self-dispatching actions (ADR-371 D1a).** Lowering, raising, setting, turning,
+cutting, digging and burning carry `dispatchesImplementations: true`: the engine's
+universal dispatch steps aside, the action runs the target's behavior inside its own
+phases, and the phase runner still consults the target's interceptors. A new verb with
+no standard semantics is built with `createImplementationDispatchingAction` (public from
+`@sharpee/stdlib`); its implementation check, `hasInterceptorImplementation`, reads
+`ActionInterceptor.claims` so an interceptor on a shared marker trait counts only for
+the entities it claims.
 
 ### Action Interceptors (ADR-118 hooks, ADR-208 registration)
 

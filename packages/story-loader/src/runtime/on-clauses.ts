@@ -22,7 +22,12 @@ import { DecisionLedger, type DecisionRecord } from '../decisions.js';
 import { LoadError } from '../errors.js';
 import { EVENT_TRIGGERS, REGION_EVENT_TRIGGERS } from '../event-contract.js';
 import { clauseOccurrenceKey } from '../state-keys.js';
-import { ExecContext, ChordBehaviorTrait, TOPIC_GERUNDS, toEffect, type RuntimeCore } from './core.js';
+import { ExecContext, ChordBehaviorTrait, TOPIC_GERUNDS, topicGerundServes, toEffect, type RuntimeCore } from './core.js';
+
+/** A typed setting value in the state register: lowercased, spaces as hyphens (ADR-371 D3). */
+function normalizeTailValue(value: unknown): string | undefined {
+  return typeof value === 'string' ? value.trim().toLowerCase().replace(/\s+/g, '-') : undefined;
+}
 
 export class OnClausesSection {
   constructor(private readonly core: RuntimeCore) {}
@@ -59,7 +64,7 @@ export class OnClausesSection {
           // interceptor (GH #341), bound below like any other gerund.
           throw new LoadError(
             `\`${clause.clauseKind} the player ${clause.action}\` — \`${clause.action}\` is a region crossing reaction (ADR-236), and \`${entity.name}\` is not a region. Put the clause on the region block whose boundary it reacts to.`,
-            clause.span,
+            clause.actionSpan ?? clause.span,
           );
         }
         // ADR-327 D1: a bare head is the owner's own action, reached through
@@ -69,7 +74,7 @@ export class OnClausesSection {
         if (clause.binding === 'self' && this.core.binding.isDispatchAction(clause.action)) {
           throw new LoadError(
             `\`${clause.clauseKind} ${clause.action}\` in \`${entity.name}\`'s block — \`${clause.action}\` is a Chord dispatch action, which consults no actor, so a bare head could never fire. React on the thing acted on instead: \`after the player ${clause.action}\` in its block.`,
-            clause.span,
+            clause.actionSpan ?? clause.span,
           );
         }
         // D5 fail-fast (ADR-228): only bind clauses something will consult.
@@ -82,7 +87,7 @@ export class OnClausesSection {
             // …but an entity `on` clause has no dispatch surface at all.
             throw new LoadError(
               `\`on the player ${clause.action}\` — \`${clause.action}\` is a Chord dispatch action, and entity \`on\` clauses never fire on the dispatch path. Move the clause into a trait (\`define trait … on the player ${clause.action}\`) and compose the trait, or react with \`after the player ${clause.action}\`.`,
-              clause.span,
+              clause.actionSpan ?? clause.span,
             );
           }
           throw this.core.binding.deadGerundError(clause);
@@ -103,7 +108,7 @@ export class OnClausesSection {
     // unconditional unknown_topic/not_interested default stands).
     for (const gerund of TOPIC_GERUNDS) {
       for (const entity of this.core.ir.entities) {
-        if (!(entity.topics ?? []).length) continue;
+        if (!(entity.topics ?? []).length || !topicGerundServes(gerund, entity)) continue;
         const list = byAction.get(gerund) ?? [];
         if (!list.some((c) => c.entity.id === entity.id)) {
           this.prepareTopicTarget(world, entity);
@@ -234,7 +239,7 @@ export class OnClausesSection {
         this.buildInterceptor(entity, clause, `${entity.id}.${action}.${clause.clauseKind}.${index}`),
       );
       const catchAll = built.length ? this.mergeArms(built) : undefined;
-      const interceptor = isTopicAction && (entity.topics ?? []).length
+      const interceptor = isTopicAction && (entity.topics ?? []).length && topicGerundServes(action, entity)
         ? this.core.threads.buildTopicArm(entity, catchAll, action)
         : catchAll ?? {};
       return { entity, interceptor };
@@ -247,6 +252,11 @@ export class OnClausesSection {
       arms.find((a) => runtime.core.host.entityId(a.entity.id) === target.id)?.interceptor;
 
     return {
+      // ADR-371 D1a: this interceptor rides the marker trait every clause
+      // owner shares, so it implements the action only for owners with an arm.
+      claims(target: IFEntity): boolean {
+        return armFor(target) !== undefined;
+      },
       preValidate(target: IFEntity, world: WorldModel, actorId: string, data: InterceptorSharedData): InterceptorResult | null {
         return armFor(target)?.preValidate?.(target, world, actorId, data) ?? null;
       },
@@ -274,14 +284,20 @@ export class OnClausesSection {
     // ADR-327 D1: the hook's target is always the owner — consulted as the
     // action's object (explicit head: fire when the head's actor is acting)
     // or as the actor itself (bare head: fire when the owner is the actor).
-    const isMine = (target: IFEntity, world: WorldModel, actorId: string): boolean =>
+    // ADR-371 D4: a `to <value>` tail fires the clause only for that value,
+    // read from the consultation's seeded `value` (the setting action's slot).
+    const isMine = (target: IFEntity, world: WorldModel, actorId: string, data?: InterceptorSharedData): boolean =>
       target.id === runtime.core.host.entityId(entity.id) &&
-      (clause.binding === 'self' ? actorId === target.id : runtime.core.moveClauses.actorMatches(clause.actor, actorId, world));
+      (clause.binding === 'self' ? actorId === target.id : runtime.core.moveClauses.actorMatches(clause.actor, actorId, world)) &&
+      (clause.valueTail === undefined || normalizeTailValue(data?.value) === clause.valueTail) &&
+      // ADR-372 D1: a counterpart tail fires only when the command's other
+      // noun — seeded by the slot as `counterpartId` — is the named thing.
+      (clause.counterpart === undefined || data?.counterpartId === runtime.core.host.entityId(clause.counterpart));
     const occurrenceKey = clauseOccurrenceKey(entity.id, entity.onClauses.indexOf(clause) + 1);
 
     return {
       preValidate(target: IFEntity, world: WorldModel, actorId: string, data: InterceptorSharedData): InterceptorResult | null {
-        if (!isMine(target, world, actorId) || clause.clauseKind === 'after') return null;
+        if (!isMine(target, world, actorId, data) || clause.clauseKind === 'after') return null;
         const bag = runtime.clauseBag(data, ns);
         const ctx: ExecContext = { world, it: entity.id };
         // D8 (ADR-228): the `while` gate is evaluated once per firing, at
@@ -304,7 +320,7 @@ export class OnClausesSection {
       },
 
       postValidate(target: IFEntity, world: WorldModel, actorId: string, data: InterceptorSharedData): InterceptorResult | null {
-        if (!isMine(target, world, actorId)) return null;
+        if (!isMine(target, world, actorId, data)) return null;
         const bag = runtime.clauseBag(data, ns);
         const ctx: ExecContext = { world, it: entity.id };
         // D8: same gate, same evaluation point (see preValidate).
@@ -325,14 +341,14 @@ export class OnClausesSection {
 
       postExecute(target: IFEntity, world: WorldModel, actorId: string, data: InterceptorSharedData): void {
         const bag = runtime.clauseBag(data, ns);
-        if (!isMine(target, world, actorId) || bag.skip === true) return;
+        if (!isMine(target, world, actorId, data) || bag.skip === true) return;
         const ctx = runtime.restoreCtx(world, entity.id, bag, 'mutations');
         runtime.core.statements.execStatements(clause.body, ctx, 'mutations');
       },
 
       postReport(target: IFEntity, world: WorldModel, actorId: string, data: InterceptorSharedData): InterceptorReportResult {
         const bag = runtime.clauseBag(data, ns);
-        if (!isMine(target, world, actorId) || bag.skip === true) return {};
+        if (!isMine(target, world, actorId, data) || bag.skip === true) return {};
         const ctx = runtime.restoreCtx(world, entity.id, bag, 'reports');
         const reports = runtime.core.statements.execStatements(clause.body, ctx, 'reports');
 

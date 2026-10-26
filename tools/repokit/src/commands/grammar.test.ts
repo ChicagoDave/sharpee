@@ -3,17 +3,20 @@
  *
  * Covers: the D10 name validation (unknown name → named error with a
  * did-you-mean; ADR-269 acceptance 9), the stdlib id extraction from source,
- * the IR expansion semantics (loader-mirroring: direction cross-product with
- * defaults, group-major order, typed slots on carrying rules only), and the
- * freshness gate against the real committed module.
+ * the standard-grammar refusals, the generated `grammar.rule()` line, the
+ * standard grammar's definition order (ADR-382 D7), and the freshness gate
+ * against the real committed module.
  */
 import { describe, expect, it } from 'vitest';
 import { findRepoRoot } from '../repo';
 import {
+  checkDirectionsBlocks,
   checkDocsBlocksModule,
   checkGrammarModule,
-  expandGrammarIr,
+  compileStandardGrammarRules,
   extractGrammarBlocks,
+  refuseNonStandardConstructs,
+  renderRuleCall,
   readReferenceEntryIds,
   readStdlibActionIds,
   validateActionNames,
@@ -45,102 +48,85 @@ describe('stdlib id extraction (source-as-data)', () => {
   });
 });
 
-describe('IR expansion (loader-mirroring, standard-flavored)', () => {
-  it('expands a directions block: alias cross-product with defaults, standalone bare forms', () => {
-    const rules = expandGrammarIr({
-      actions: [
-        {
-          name: 'going',
-          patterns: [
-            { parts: [{ kind: 'word', word: 'go' }, { kind: 'slot', word: 'direction' }], cardinality: null },
-            { parts: [{ kind: 'slot', word: 'direction' }], cardinality: null },
-          ],
-          constraints: [],
-          directions: [{ canonical: 'north', aliases: ['n'] }],
-        },
-      ],
-    });
-    expect(rules.map((r) => r.pattern)).toEqual(['go north', 'go n', 'north', 'n']);
-    for (const r of rules) {
-      expect(r.action).toBe('if.action.going');
-      expect(r.defaults).toEqual({ direction: 'north' });
-    }
+describe('standard-grammar refusals (ADR-269 D2, D3)', () => {
+  const take = { name: 'taking', patterns: [{ cardinality: null }] };
+
+  it('accepts an action with none of the refused constructs', () => {
+    expect(() => refuseNonStandardConstructs([take])).not.toThrow();
   });
 
-  it('attaches typed slots only to rules carrying the slot; means become defaults', () => {
-    const rules = expandGrammarIr({
-      actions: [
-        {
-          name: 'unlocking',
-          patterns: [
-            {
-              parts: [
-                { kind: 'word', word: 'unlock' },
-                { kind: 'slot', word: 'target' },
-                { kind: 'word', word: 'with' },
-                { kind: 'slot', word: 'key' },
-              ],
-              cardinality: null,
-              means: [{ key: 'manner', value: 'quietly' }],
-            },
-            { parts: [{ kind: 'word', word: 'unlock' }, { kind: 'slot', word: 'target' }], cardinality: null },
-          ],
-          constraints: [],
-          slotTypes: [{ slot: 'key', type: 'instrument' }],
-        },
-      ],
-    });
-    expect(rules[0]).toEqual({
-      pattern: 'unlock :target with :key',
-      action: 'if.action.unlocking',
-      defaults: { manner: 'quietly' },
-      slotTypes: { key: 'instrument' },
-    });
-    expect(rules[1].slotTypes).toEqual({});
-    expect(rules[1].defaults).toBeNull();
+  it('refuses a scope constraint, a greedy slot and → cardinality, naming the action', () => {
+    expect(() => refuseNonStandardConstructs([{ ...take, constraints: [{ slot: 'item', requirement: 'reachable' }] }])).toThrow(
+      /if\.action\.taking carries a scope constraint/,
+    );
+    expect(() => refuseNonStandardConstructs([{ ...take, greedy: ['item'] }])).toThrow(/if\.action\.taking declares a greedy slot/);
+    expect(() => refuseNonStandardConstructs([{ name: 'taking', patterns: [{ cardinality: ['each'] }] }])).toThrow(
+      /if\.action\.taking uses → cardinality/,
+    );
   });
+});
 
-  it('renders alternation and optional elements in the emitted pattern string', () => {
-    const rules = expandGrammarIr({
-      actions: [
-        {
-          name: 'searching',
-          patterns: [
-            {
-              parts: [
-                { kind: 'word', word: 'look' },
-                { kind: 'alt', words: ['in', 'inside'] },
-                { kind: 'slot', word: 'target' },
-              ],
-              cardinality: null,
-            },
-            {
-              parts: [
-                { kind: 'word', word: 'look' },
-                { kind: 'word', word: 'carefully', optional: true },
-              ],
-              cardinality: null,
-            },
-          ],
-          constraints: [],
-        },
-      ],
-    });
-    expect(rules.map((r) => r.pattern)).toEqual(['look in|inside :target', 'look [carefully]']);
-  });
+describe('directions blocks held to going\'s (ADR-387 D5)', () => {
+  const north = { canonical: 'north', aliases: ['n'] };
+  const inside = { canonical: 'in', aliases: ['inside'] };
+  const going = { name: 'going', patterns: [], directions: [north, inside] };
 
-  it('refuses a scope constraint — none exist in the standard grammar baseline', () => {
+  it('accepts blocks that repeat going\'s lines, in full or in part', () => {
     expect(() =>
-      expandGrammarIr({
-        actions: [
-          {
-            name: 'taking',
-            patterns: [{ parts: [{ kind: 'word', word: 'take' }, { kind: 'slot', word: 'item' }], cardinality: null }],
-            constraints: [{ slot: 'item', requirement: 'reachable' }],
-          },
-        ],
-      }),
-    ).toThrow(/scope constraint/);
+      checkDirectionsBlocks([going, { name: 'pushing', patterns: [], directions: [north, inside] }, { name: 'steering', patterns: [], directions: [north] }]),
+    ).not.toThrow();
+  });
+
+  it('refuses a word going lacks and an alias grouped differently, naming the action and the line', () => {
+    expect(() => checkDirectionsBlocks([going, { name: 'steering', patterns: [], directions: [{ canonical: 'upward', aliases: [] }] }])).toThrow(
+      /if\.action\.steering directions line `upward` is not one of if\.action\.going's/,
+    );
+    expect(() => checkDirectionsBlocks([going, { name: 'pushing', patterns: [], directions: [{ canonical: 'north', aliases: ['n', 'no'] }] }])).toThrow(
+      /if\.action\.pushing directions line `north or n or no`/,
+    );
+  });
+
+  it('refuses a grammar whose going action has no directions block', () => {
+    expect(() => checkDirectionsBlocks([{ name: 'taking', patterns: [] }])).toThrow(/if\.action\.going declares no directions block/);
+  });
+
+  it('holds on the real standard grammar', () => {
+    expect(() => compileStandardGrammarRules(findRepoRoot())).not.toThrow();
+  });
+});
+
+describe('generated registration line (ADR-382 Q-2)', () => {
+  it('renders a lowered rule as one grammar.rule() literal with its parts, defaults and typed slots', () => {
+    const line = renderRuleCall('if.action.opening', {
+      parts: [
+        { kind: 'word', word: 'open' },
+        { kind: 'slot', name: 'container' },
+        { kind: 'alt', words: ['with', 'using'] },
+        { kind: 'slot', name: 'tool' },
+      ],
+      pattern: 'open :container with|using :tool',
+      defaults: { manner: 'careful' },
+      slotTypes: { tool: 'instrument' },
+      seats: { container: 'direct' },
+      requirements: [],
+    });
+    expect(line).toBe(
+      '  grammar.rule({ action: "if.action.opening", pattern: "open :container with|using :tool", ' +
+        'parts: [{"kind":"word","word":"open"},{"kind":"slot","name":"container"},{"kind":"alt","words":["with","using"]},{"kind":"slot","name":"tool"}], ' +
+        'defaults: {"manner":"careful"}, slots: { "container": { seat: "direct" }, "tool": { type: SlotType.INSTRUMENT } } });',
+    );
+  });
+
+  it('omits defaults and slots when the rule has none', () => {
+    const line = renderRuleCall('if.action.looking', {
+      parts: [{ kind: 'word', word: 'look' }],
+      pattern: 'look',
+      defaults: null,
+      slotTypes: {},
+      seats: {},
+      requirements: [],
+    });
+    expect(line).toBe('  grammar.rule({ action: "if.action.looking", pattern: "look", parts: [{"kind":"word","word":"look"}] });');
   });
 });
 
@@ -205,5 +191,20 @@ describe('docs blocks derivation (ADR-272 D4/D5)', () => {
 
   it('the committed docs data module matches the Chord source', () => {
     expect(checkDocsBlocksModule(findRepoRoot())).toBe(true);
+  });
+});
+
+describe('the standard grammar registers in definition order (ADR-382 D7)', () => {
+  it('steering\'s rules follow the source lines, not grouped by `means` defaults', () => {
+    const { lowered } = compileStandardGrammarRules(findRepoRoot());
+    const steering = lowered.find((a) => a.action === 'if.action.steering')!;
+    const order = steering.rules.map((r) => r.pattern);
+    // Source order: `port :turn` (port), `starboard :turn` (starboard), `port` (port), `starboard` (starboard).
+    // Grouping by defaults would have put `port` straight after `port :turn`.
+    const at = (pattern: string) => order.indexOf(pattern);
+    expect(at('port :turn')).toBeGreaterThanOrEqual(0);
+    expect(at('starboard :turn')).toBe(at('port :turn') + 1);
+    expect(at('port')).toBe(at('starboard :turn') + 1);
+    expect(at('starboard')).toBe(at('port') + 1);
   });
 });

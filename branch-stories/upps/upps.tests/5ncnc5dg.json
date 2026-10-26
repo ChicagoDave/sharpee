@@ -1,0 +1,66 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "The loading dock door stays shut until your shift is cleared to launch."
+        ],
+        "notContains": [
+          "You push"
+        ]
+      },
+      "command": "push trolley east",
+      "id": "x7jyx666",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "the door rolls up into the ceiling"
+        ]
+      },
+      "command": "take bundle",
+      "id": "o20x43uo",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You push the mail trolley east.",
+          "Loading Dock",
+          "mail trolley"
+        ]
+      },
+      "command": "push trolley east",
+      "id": "r029plyt",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You can't go that way."
+        ],
+        "notContains": [
+          "You push"
+        ]
+      },
+      "command": "push cart east",
+      "id": "16qbdw6b",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You push the mail trolley west.",
+          "Sorting Room"
+        ]
+      },
+      "command": "push cart west",
+      "id": "0rfdofxj",
+      "type": "turn"
+    }
+  ],
+  "id": "5ncnc5dg",
+  "ordinal": 1,
+  "parent": "opejfh5t"
+}

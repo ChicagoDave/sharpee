@@ -15,7 +15,6 @@ import { ContainerTrait } from './container/containerTrait.js';
 import { DoorTrait } from './door/doorTrait.js';
 import { ClimbableTrait } from './climbable/climbableTrait.js';
 import { EdibleTrait } from './edible/edibleTrait.js';
-import { ExitTrait } from './exit/exitTrait.js';
 import { IdentityTrait } from './identity/identityTrait.js';
 import { LightSourceTrait } from './light-source/lightSourceTrait.js';
 import { LockableTrait } from './lockable/lockableTrait.js';
@@ -27,6 +26,7 @@ import { ReadableTrait } from './readable/readableTrait.js';
 import { RoomTrait } from './room/roomTrait.js';
 import { SceneryTrait } from './scenery/sceneryTrait.js';
 import { NightVisionTrait } from './night-vision/nightVisionTrait.js';
+import { BackdropTrait } from './backdrop/backdropTrait.js';
 import { SupporterTrait } from './supporter/supporterTrait.js';
 import { SwitchableTrait } from './switchable/switchableTrait.js';
 import { WearableTrait } from './wearable/wearableTrait.js';
@@ -47,7 +47,6 @@ export const Traits = {
   ContainerTrait,
   DoorTrait,
   EdibleTrait,
-  ExitTrait,
   IdentityTrait,
   LightSourceTrait,
   LockableTrait,
@@ -59,6 +58,7 @@ export const Traits = {
   RoomTrait,
   SceneryTrait,
   NightVisionTrait,
+  BackdropTrait,
   SupporterTrait,
   SwitchableTrait,
   WearableTrait,
@@ -80,7 +80,6 @@ export type {
   ContainerTrait,
   DoorTrait,
   EdibleTrait,
-  ExitTrait,
   IdentityTrait,
   LightSourceTrait,
   LockableTrait,
@@ -92,6 +91,7 @@ export type {
   RoomTrait,
   SceneryTrait,
   NightVisionTrait,
+  BackdropTrait,
   SupporterTrait,
   SwitchableTrait,
   WearableTrait,
@@ -113,7 +113,6 @@ export type AnyTrait =
   | ContainerTrait
   | DoorTrait
   | EdibleTrait
-  | ExitTrait
   | IdentityTrait
   | LightSourceTrait
   | LockableTrait
@@ -125,6 +124,7 @@ export type AnyTrait =
   | RoomTrait
   | SceneryTrait
   | NightVisionTrait
+  | BackdropTrait
   | SupporterTrait
   | SwitchableTrait
   | WearableTrait
@@ -151,10 +151,6 @@ export function isDoorTrait(trait: any): trait is DoorTrait {
 
 export function isEdibleTrait(trait: any): trait is EdibleTrait {
   return trait?.type === 'edible';
-}
-
-export function isExitTrait(trait: any): trait is ExitTrait {
-  return trait?.type === 'exit';
 }
 
 export function isIdentityTrait(trait: any): trait is IdentityTrait {
@@ -187,6 +183,10 @@ export function isSceneryTrait(trait: any): trait is SceneryTrait {
 
 export function isNightVisionTrait(trait: any): trait is NightVisionTrait {
   return trait?.type === 'if.trait.night_vision';
+}
+
+export function isBackdropTrait(trait: any): trait is BackdropTrait {
+  return trait?.type === 'if.trait.backdrop';
 }
 
 export function isSupporterTrait(trait: any): trait is SupporterTrait {

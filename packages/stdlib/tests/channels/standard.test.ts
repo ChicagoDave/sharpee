@@ -45,6 +45,9 @@ import {
   STANDARD_CHANNEL_EVENTS,
 } from '../../src/channels';
 
+/** English, handed to hand-built worlds as the language's words (ADR-387 D2). */
+const ENGLISH_WORDS = { selfWords: ['me', 'myself', 'self', 'yourself'], nameStopwords: ['the', 'a', 'an', 'of'] };
+
 function makeCtx(over: Partial<ChannelProduceContext> = {}): ChannelProduceContext {
   return {
     world: undefined,
@@ -372,6 +375,7 @@ describe('locationChannel.produce', () => {
   // shaped to the producer's calls would only assert the shape of the stub.
   function placePlayerInRoom(roomName: string) {
     const world = new WorldModel();
+    world.setLanguageWords(ENGLISH_WORDS);
     const room = world.createEntity(roomName, EntityType.ROOM);
     room.add(new RoomTrait());
     const player = world.createEntity('yourself', EntityType.ACTOR);
@@ -409,6 +413,7 @@ describe('locationChannel.produce', () => {
 
   it('returns undefined when there is no player', () => {
     const world = new WorldModel();
+    world.setLanguageWords(ENGLISH_WORDS);
     expect(locationChannel.produce(makeCtx({ world }))).toBeUndefined();
   });
 

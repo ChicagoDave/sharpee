@@ -1183,7 +1183,10 @@ final class TestingSurfaceRealPathTests: XCTestCase {
         // real story's directory (#497).
         let project = tmp.appendingPathComponent("fernhill", isDirectory: true)
         try FileManager.default.createDirectory(at: project, withIntermediateDirectories: true)
-        for name in ["fernhill.story", "fernhill.tests", "fernhill.config.json",
+        // The claims fragment rides along: the manifest names it, and since
+        // ADR-367 D5 the CLI compiles it before the tree runs — a copy without
+        // it exits 2 before any row (session ca314d).
+        for name in ["fernhill.story", "fernhill.tests", "fernhill.claims.chord", "fernhill.config.json",
                      "fernhill.world-ignore.json", "fernhill.recipe.json"] {
             let file = source.appendingPathComponent(name)
             if FileManager.default.fileExists(atPath: file.path) {
@@ -1255,6 +1258,204 @@ final class TestingSurfaceRealPathTests: XCTestCase {
         XCTAssertEqual(opened.first?.0.deletingLastPathComponent().standardizedFileURL,
                        project.standardizedFileURL, "the span resolves inside the story copy")
         XCTAssertGreaterThan(opened.first?.1 ?? 0, 0)
+    }
+
+    /// The claims section's words are the CLI report's (ADR-365 D6, ADR-367
+    /// D6), on the REAL process: the Run button spawns the real devkit CLI on a
+    /// scratch copy of devkit's claims-tier fixture whose fragment declares a
+    /// claim a line reaches, a claim nothing can reach, and a claim the walk
+    /// reaches whose lock does not hold at its card. The header is the
+    /// report's ratio line (`claimsRatioLine`), the counts are the summary's,
+    /// and each row carries the report's verdict word — the tab writes none of
+    /// these itself. The expected strings are the ones the CLI printed on
+    /// stderr for this same project (measured 2026-10-22).
+    func testClaimsSectionShowsTheReportsRatioForHeldBrokenAndUnprovenClaims() async throws {
+        try XCTSkipUnless(FileManager.default.fileExists(atPath: TestToolchain.devkitCLI.path),
+                          "devkit CLI not built — run `./repokit build`")
+        let source = TestToolchain.repoRoot.appendingPathComponent("packages/devkit/tests/fixtures/claims-tier", isDirectory: true)
+        let project = tmp.appendingPathComponent("claims-tier", isDirectory: true)
+        try FileManager.default.copyItem(at: source, to: project)
+        try """
+        claims
+          needs rooms: the Hall, the Landing
+          needs things: the note
+          needs verbs: read
+
+          claim the note has been read
+            the note is read
+
+          claim the note reaches the Landing
+            the note is in the Landing
+
+          claim the player is in the Landing
+            the player is in the Landing
+        end claims
+
+        """.write(to: project.appendingPathComponent("claims-tier.claims.chord"), atomically: true, encoding: .utf8)
+        // One typed card: `read note` reaches the first claim, and the third
+        // claim is locked there while the player is still in the Hall.
+        try """
+        {
+          "cards": [
+            {
+              "assertions": {},
+              "id": "r7t3p9ax",
+              "type": "opening"
+            },
+            {
+              "assertions": {
+                "states": [
+                  "the note is pinned"
+                ]
+              },
+              "id": "d4n6v2qe",
+              "type": "boot"
+            },
+            {
+              "assertions": {
+                "states": [
+                  "the note is pinned"
+                ]
+              },
+              "command": "read note",
+              "id": "q5w8e2rt",
+              "locks": [
+                "the player is in the Landing"
+              ],
+              "type": "turn"
+            }
+          ],
+          "id": "k2m8w1cl"
+        }
+
+        """.write(to: project.appendingPathComponent("claims-tier.tests/k2m8w1cl.json"), atomically: true, encoding: .utf8)
+
+        try await boot()
+        surface.storyFile = project.appendingPathComponent("claims-tier.story")
+        surface.sharpeeExecutableOverride = TestToolchain.devkitCLI
+
+        _ = try await surface.evaluateInSurface(
+            "document.getElementById('ts-run-btn').click();")
+        for _ in 0..<1800 {
+            if let done = try? await surface.evaluateInSurface(
+                "!!document.querySelector('.ts-run-tally')"), done as? Bool == true { break }
+            try await Task.sleep(nanoseconds: 100_000_000)
+        }
+
+        let header = try await surface.evaluateInSurface("""
+        (function () {
+          var heads = Array.from(document.querySelectorAll('.ts-run-section')).map(function (e) { return e.firstChild.textContent; });
+          return heads.find(function (h) { return h.indexOf('claims') === 0; }) || null;
+        })()
+        """) as? String
+        XCTAssertEqual(header, "claims: 2 of 3 held, 1 unproven (seed 7)", "the header is the report's ratio line")
+
+        let counts = try await surface.evaluateInSurface("""
+        (function () {
+          var section = Array.from(document.querySelectorAll('.ts-run-section')).find(function (e) { return e.firstChild.textContent.indexOf('claims') === 0; });
+          if (!section) return null;
+          return Array.from(section.querySelectorAll('[class*="ts-count-"]')).map(function (e) { return e.textContent; }).join('|');
+        })()
+        """) as? String
+        XCTAssertEqual(counts, "2 held|1 unproven", "the counts are the summary's")
+
+        let rows = try await surface.evaluateInSurface("""
+        Array.from(document.querySelectorAll('.ts-claim-row')).map(function (row) {
+          return row.querySelector('.ts-name').textContent + '=' + row.querySelector('.ts-badge').textContent;
+        }).join('|')
+        """) as? String
+        XCTAssertEqual(rows, "the note has been read=HELD|the note reaches the Landing=UNPROVEN|the player is in the Landing=HELD")
+
+        let broken = try await surface.evaluateInSurface("""
+        Array.from(document.querySelectorAll('.ts-claim-lock.ts-broken')).map(function (e) { return e.textContent; }).join('|')
+        """) as? String
+        XCTAssertEqual(broken,
+                       "lock \"the player is in the Landing\" at line k2m8w1cl \"opening-hall\" at turn 1 — NOT held there: the player is in the Hall",
+                       "the broken lock's line is the report's, and it is the only broken one")
+    }
+
+    /// The lock gesture's host seam (ADR-367 D7, AC-6), on the REAL process:
+    /// the page posts `{lock:{args}}` with the `sharpee claim` arguments it
+    /// wrote, the Swift host spawns the real devkit CLI on a scratch copy of
+    /// fernhill through its own `startLock`, and hands the one object back
+    /// through `lockResult`. Step one asks for the offer at a turn; step two
+    /// writes a lock fragment-only, and the fragment on disk carries it while
+    /// the tree is untouched — the page is the tree's writer. The page-side
+    /// gesture (Lock… → picker → sheet → pin) is the web bundle's own
+    /// real-path test; this is the host's half of the one path.
+    func testLockPostsSpawnTheRealClaimCommandAndHandBackItsObject() async throws {
+        try XCTSkipUnless(FileManager.default.fileExists(atPath: TestToolchain.devkitCLI.path),
+                          "devkit CLI not built — run `./repokit build`")
+        let source = TestToolchain.repoRoot.appendingPathComponent("branch-stories/fernhill", isDirectory: true)
+        try XCTSkipUnless(FileManager.default.fileExists(atPath: source.appendingPathComponent("fernhill.tests").path),
+                          "branch-stories/fernhill has no test tree")
+        let project = tmp.appendingPathComponent("fernhill-lock", isDirectory: true)
+        try FileManager.default.createDirectory(at: project, withIntermediateDirectories: true)
+        for name in ["fernhill.story", "fernhill.tests", "fernhill.claims.chord", "fernhill.config.json",
+                     "fernhill.world-ignore.json", "fernhill.recipe.json"] {
+            let file = source.appendingPathComponent(name)
+            if FileManager.default.fileExists(atPath: file.path) {
+                try FileManager.default.copyItem(at: file, to: project.appendingPathComponent(name))
+            }
+        }
+        let treeBefore = try FileManager.default.contentsOfDirectory(atPath: project.appendingPathComponent("fernhill.tests").path)
+            .sorted()
+            .map { try Data(contentsOf: project.appendingPathComponent("fernhill.tests").appendingPathComponent($0)) }
+
+        try await boot()
+        surface.storyFile = project.appendingPathComponent("fernhill.story")
+        surface.sharpeeExecutableOverride = TestToolchain.devkitCLI
+        surface.saveDocuments = { true }
+
+        // Capture what the host hands back, in place of the page's own entry.
+        // `; true` — a function is not a result WebKit can return.
+        _ = try await surface.evaluateInSurface("""
+        window.lockProbe = [];
+        window.__sharpeeTestingSurface.lockResult = function (text) { window.lockProbe.push(text); }; true
+        """)
+        func postLock(_ args: [String]) async throws -> [String: Any] {
+            let count = (try await surface.evaluateInSurface("window.lockProbe.length") as? Int) ?? 0
+            let argsJSON = String(data: try JSONSerialization.data(withJSONObject: args), encoding: .utf8)!
+            _ = try await surface.evaluateInSurface(
+                "window.webkit.messageHandlers.testingSurface.postMessage(JSON.stringify({ lock: { args: \(argsJSON) } })); true")
+            for _ in 0..<600 {
+                if let now = try? await surface.evaluateInSurface("window.lockProbe.length") as? Int, now > count { break }
+                try await Task.sleep(nanoseconds: 100_000_000)
+            }
+            let text = try await surface.evaluateInSurface("window.lockProbe[window.lockProbe.length - 1]") as? String
+            XCTAssertNotNil(text, "the host handed nothing back")
+            let object = try JSONSerialization.jsonObject(with: Data((text ?? "{}").utf8)) as? [String: Any]
+            return object ?? [:]
+        }
+
+        // Step one: the offer at turn 2 of the main line.
+        let offer = try await postLock(["claim", "weefpbmr", "--at", "2", "--json"])
+        XCTAssertEqual(offer["kind"] as? String, "offer", "got: \(offer)")
+        XCTAssertEqual(offer["turn"] as? Int, 2)
+        XCTAssertNotNil(offer["cardId"] as? String)
+        let facts = offer["offer"] as? [String] ?? []
+        XCTAssertTrue(facts.contains("the player is in the Gravel Drive"), "got: \(facts)")
+
+        // Step two: the write, fragment only, with the sheet's lists (things emptied), under a
+        // name the fragment does not declare yet.
+        let written = try await postLock(["claim", "weefpbmr", "the player is in the Gravel Drive", "--at", "2", "--json",
+                                          "--name", "lock probe", "--rooms", "the Iron Gates, the Gravel Drive",
+                                          "--things", "", "--verbs", "", "--fragment-only"])
+        XCTAssertEqual(written["kind"] as? String, "written", "got: \(written)")
+        XCTAssertEqual(written["pinned"] as? Bool, false)
+        XCTAssertEqual(written["created"] as? Bool, false)
+        let fragment = try String(contentsOf: project.appendingPathComponent("fernhill.claims.chord"), encoding: .utf8)
+        XCTAssertTrue(fragment.contains("\n  claim lock probe\n    the player is in the Gravel Drive\n    needs rooms: the Iron Gates, the Gravel Drive\nend claims\n"),
+                      "the lock's block is appended before `end claims`; got tail: \(fragment.suffix(240))")
+        let treeAfter = try FileManager.default.contentsOfDirectory(atPath: project.appendingPathComponent("fernhill.tests").path)
+            .sorted()
+            .map { try Data(contentsOf: project.appendingPathComponent("fernhill.tests").appendingPathComponent($0)) }
+        XCTAssertEqual(treeAfter, treeBefore, "fragment-only touches no tree file")
+
+        // A refused step comes back as an error object the page can say.
+        let refused = try await postLock(["claim", "nowhere0", "--at", "1", "--json"])
+        XCTAssertEqual(refused["kind"] as? String, "error", "got: \(refused)")
+        XCTAssertTrue((refused["message"] as? String ?? "").contains("nowhere0"))
     }
 
     // MARK: - The real client (rule 13a: no stand-ins anywhere on this path)

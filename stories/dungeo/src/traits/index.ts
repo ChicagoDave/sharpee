@@ -109,7 +109,10 @@ export {
   isMidairPosition,
   nextPositionUp,
   nextPositionDown,
-  ledgeToMidair
+  ledgeToMidair,
+  BALLOON_POSITIONS,
+  balloonPosition,
+  balloonPositionRoom
 } from './balloon-state-trait';
 
 // Balloon Receptacle (brazier in balloon basket)
@@ -179,7 +182,8 @@ export {
 export {
   BucketTrait,
   BucketTraitConfig,
-  BucketTraitConstructor
+  BucketTraitConstructor,
+  wellStops
 } from './bucket-trait';
 
 // Hades Entry (spirits blocking state)

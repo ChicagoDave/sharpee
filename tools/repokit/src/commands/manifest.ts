@@ -50,6 +50,9 @@ import { findRepoRoot } from '../repo';
 import { Command } from './command';
 import { compileStandardGrammarRules, readStdlibActionIds } from './grammar';
 
+/** Code-unit order for ids and slot names: the order a bare `sort()` gives, made explicit so the generated module never moves. */
+const byCodeUnit = (a: string, b: string): number => (a < b ? -1 : a > b ? 1 : 0);
+
 const MODULE_PATH = 'packages/chord/src/stdlib-manifest.ts';
 const CHARACTER_MODULE_PATH = 'packages/chord/src/character-manifest.ts';
 
@@ -69,20 +72,36 @@ const DIMENSION_FIELDS: ReadonlyArray<[string, string]> = [
 export function generateManifestModule(root: string): { source: string; actionIds: number; shapedActions: number } {
   const actionIds = [...readStdlibActionIds(root)].sort();
 
-  // Grammar-shape slice (ADR-276 Phase 4, census 3): the per-action pattern
-  // shapes the loader's removeRules compares by EXACT string equality —
-  // derived from the same compileStandardGrammarRules expansion that emits
+  // Grammar-shape slice (ADR-276 Phase 4, census 3; ADR-382 D6, Q-3): the
+  // per-action pattern shapes as parts, which the analyzer compares to a
+  // removal with chord's samePatternShape and renders only for display —
+  // lowered by chord's lowerActionRules from the same compile that emits
   // parser-en-us/src/grammar.ts, so the manifest and the registered rules
   // cannot drift. The platform-side exception rules (platform-grammar.ts:
   // `?`, `trace …`) are deliberately absent: `?` is unlexable in Chord and
   // `trace` derives no stdlib id, so neither is expressible as a removal —
   // the Chord grammar source IS the removable surface.
-  const { rules } = compileStandardGrammarRules(root);
+  const { lowered } = compileStandardGrammarRules(root);
   const grammarShapes = new Map<string, string[]>();
-  for (const rule of rules) {
-    const list = grammarShapes.get(rule.action) ?? [];
-    if (!list.includes(rule.pattern)) list.push(rule.pattern);
-    grammarShapes.set(rule.action, list);
+  // Seat slice (ADR-383 D4): each standard action's seat table, from the
+  // same lowering, so `extend action` starts from the seats the standard
+  // rules registered with.
+  const grammarSeats = new Map<string, Record<string, string>>();
+  // Typed-slot slice (ADR-383 D6): the slots a seat table leaves out, by the
+  // type that seats them, so an acting statement naming one seats it by type.
+  const grammarSlotTypes = new Map<string, Record<string, string>>();
+  for (const { action, rules, seats } of lowered) {
+    const list = grammarShapes.get(action) ?? [];
+    const typed: Record<string, string> = { ...grammarSlotTypes.get(action) };
+    for (const rule of rules) {
+      const shape = JSON.stringify(rule.parts);
+      if (!list.includes(shape)) list.push(shape);
+      Object.assign(typed, rule.slotTypes);
+      for (const part of rule.parts) if (part.kind === 'slot' && part.greedy) typed[part.name] = 'text';
+    }
+    grammarShapes.set(action, list);
+    if (Object.keys(seats).length > 0) grammarSeats.set(action, { ...grammarSeats.get(action), ...seats });
+    if (Object.keys(typed).length > 0) grammarSlotTypes.set(action, typed);
   }
 
   // Setting-schema slice (ADR-276 Phase 5, census 4–6): the Q-3 declarative
@@ -95,6 +114,28 @@ export function generateManifestModule(root: string): { source: string; actionId
     SETTING_SCHEMA: ReadonlyMap<string, ReadonlyMap<string, { value: string }>>;
     HIDING_POSITIONS: readonly string[];
   };
+  // Counterpart slice (ADR-372 D1): the two-noun actions a Chord head may
+  // narrow by naming the other noun — stdlib's registry derives the set from
+  // the lifecycle descriptors' `counterpart` slots, required from its BUILT
+  // dist for the same reason as the setting schema above.
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const { counterpartActionIds } = require(join(root, 'packages/stdlib/dist/index.js')) as {
+    counterpartActionIds: ReadonlySet<string>;
+  };
+  const counterpartActions = [...counterpartActionIds].sort(byCodeUnit);
+  // Language-words slice (ADR-387 D1, D2): the locale's articles, self words
+  // and name stopwords, from the language provider's BUILT dist — the one
+  // word table — so the IDE's world-index derives names and explains
+  // refusals with the same words the runtime uses, without a runtime.
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const { EnglishLanguageProvider } = require(join(root, 'packages/lang-en-us/dist/index.js')) as {
+    EnglishLanguageProvider: new () => {
+      getSpecialVocabulary(): { articles: readonly string[] };
+      getLanguageWords(): { selfWords: readonly string[]; nameStopwords: readonly string[] };
+    };
+  };
+  const englishProvider = new EnglishLanguageProvider();
+  const words = { articles: englishProvider.getSpecialVocabulary().articles, ...englishProvider.getLanguageWords() };
   const settingSchema: Array<[string, Array<[string, string]>]> = [];
   for (const [trait, entries] of SETTING_SCHEMA) {
     settingSchema.push([trait, [...entries].map(([key, spec]) => [key, spec.value])]);
@@ -108,23 +149,46 @@ export function generateManifestModule(root: string): { source: string; actionId
   lines.push(' * build) fails the build on drift.');
   lines.push(' *');
   lines.push(' * The stdlib facts the analyzer gates against at compile time. Data only —');
-  lines.push(' * chord stays platform-FREE (imports nothing) while no longer being');
-  lines.push(' * stdlib-IGNORANT (ADR-276 D1). Locale-neutral facts sit at top level;');
+  lines.push(' * chord stays platform-FREE (if-domain types only, ADR-210) while no longer');
+  lines.push(' * being stdlib-IGNORANT (ADR-276 D1). Locale-neutral facts sit at top level;');
   lines.push(' * locale-owned facts (grammar shapes, direction words) go under `locales`,');
   lines.push(' * keyed from day one (Q-2), `en-US` the sole entry.');
   lines.push(' *');
-  lines.push(' * Public interface: STDLIB_MANIFEST, StdlibManifest, StdlibLocaleFacts.');
+  lines.push(' * Public interface: STDLIB_MANIFEST, StdlibManifest, StdlibLocaleFacts, ActSlotType.');
   lines.push(' * Owner context: @sharpee/chord (generated artifact; browser-safe).');
   lines.push(' */');
   lines.push('');
-  lines.push('/** Locale-owned stdlib facts (direction words join in a later ADR-276 phase). */');
+  lines.push("import type { PatternElement, Seat } from '@sharpee/if-domain';");
+  lines.push('');
+  lines.push('/** The type a typed grammar slot carries: a seat table leaves these slots out. */');
+  lines.push("export type ActSlotType = 'instrument' | 'topic' | 'text';");
+  lines.push('');
+  lines.push('/** Locale-owned stdlib facts: the grammar shapes, seats and typed slots, and the language words the IDE reads without a runtime (ADR-387 D2). */');
   lines.push('export interface StdlibLocaleFacts {');
+  lines.push('  /** The locale\'s articles, as the language provider declares them (ADR-387 D1). */');
+  lines.push('  articles: readonly string[];');
+  lines.push('  /** The words that name the observer (ADR-387 D2). */');
+  lines.push('  selfWords: readonly string[];');
+  lines.push('  /** Words dropped when a name\'s content words are derived (ADR-387 D2). */');
+  lines.push('  nameStopwords: readonly string[];');
   lines.push('  /**');
-  lines.push("   * Standard grammar pattern shapes per action id — the loader's removable");
-  lines.push('   * surface (ADR-270 D3), rendered exactly as the registered rule patterns');
-  lines.push('   * (`take :item`); removal matching is string equality on these.');
+  lines.push("   * Standard grammar pattern shapes per action id, as parts — the loader's");
+  lines.push('   * removable surface (ADR-270 D3), compared to a removal by shape and');
+  lines.push('   * rendered only for display (ADR-382 D6).');
   lines.push('   */');
-  lines.push('  grammarShapes: Readonly<Record<string, readonly string[]>>;');
+  lines.push('  grammarShapes: Readonly<Record<string, readonly (readonly PatternElement[])[]>>;');
+  lines.push('  /**');
+  lines.push("   * Each standard action's seat table, entity slot name → seat, as the");
+  lines.push('   * standard rules registered it — the table `extend action` starts from');
+  lines.push('   * (ADR-383 D4). An action with no entity slot has no entry.');
+  lines.push('   */');
+  lines.push('  grammarSeats: Readonly<Record<string, Readonly<Record<string, Seat>>>>;');
+  lines.push('  /**');
+  lines.push("   * Each standard action's typed slots, slot name → type (`text` for a");
+  lines.push('   * greedy slot) — the slots its seat table leaves out, which an acting');
+  lines.push('   * statement seats by type (ADR-383 D6). An action with none has no entry.');
+  lines.push('   */');
+  lines.push("  grammarSlotTypes: Readonly<Record<string, Readonly<Record<string, ActSlotType>>>>;");
   lines.push('}');
   lines.push('');
   lines.push('export interface StdlibManifest {');
@@ -139,6 +203,11 @@ export function generateManifestModule(root: string): { source: string; actionId
   lines.push("  settingSchema: Readonly<Record<string, Readonly<Record<string, 'boolean' | 'number' | 'entity-ref' | 'rooms'>>>>;");
   lines.push('  /** The closed hiding-position domain (ratchet G3) — listing order is the message order. */');
   lines.push('  hidingPositions: readonly string[];');
+  lines.push('  /**');
+  lines.push("   * Two-noun action ids whose slots name a counterpart (ADR-372 D1) — the");
+  lines.push("   * gerunds a head may narrow with a counterpart tail. From stdlib's registry.");
+  lines.push('   */');
+  lines.push('  counterpartActions: ReadonlySet<string>;');
   lines.push('  /** Locale-owned facts, keyed by locale id (ADR-276 Q-2). */');
   lines.push('  locales: Readonly<Record<string, StdlibLocaleFacts>>;');
   lines.push('}');
@@ -157,11 +226,33 @@ export function generateManifestModule(root: string): { source: string; actionId
   }
   lines.push('  },');
   lines.push(`  hidingPositions: [${HIDING_POSITIONS.map((p) => JSON.stringify(p)).join(', ')}],`);
+  lines.push(`  counterpartActions: new Set([${counterpartActions.map((id) => JSON.stringify(id)).join(', ')}]),`);
   lines.push('  locales: {');
   lines.push("    'en-US': {");
+  lines.push(`      articles: [${words.articles.map((w) => JSON.stringify(w)).join(', ')}],`);
+  lines.push(`      selfWords: [${words.selfWords.map((w) => JSON.stringify(w)).join(', ')}],`);
+  lines.push(`      nameStopwords: [${words.nameStopwords.map((w) => JSON.stringify(w)).join(', ')}],`);
   lines.push('      grammarShapes: {');
   for (const [action, shapes] of [...grammarShapes.entries()].sort(([a], [b]) => a.localeCompare(b))) {
-    lines.push(`        ${JSON.stringify(action)}: [${shapes.map((s) => JSON.stringify(s)).join(', ')}],`);
+    lines.push(`        ${JSON.stringify(action)}: [`);
+    for (const shape of shapes) lines.push(`          ${shape},`);
+    lines.push('        ],');
+  }
+  lines.push('      },');
+  lines.push('      grammarSeats: {');
+  for (const [action, seats] of [...grammarSeats.entries()].sort(([a], [b]) => a.localeCompare(b))) {
+    const entries = Object.keys(seats)
+      .sort(byCodeUnit)
+      .map((slot) => `${JSON.stringify(slot)}: ${JSON.stringify(seats[slot])}`);
+    lines.push(`        ${JSON.stringify(action)}: { ${entries.join(', ')} },`);
+  }
+  lines.push('      },');
+  lines.push('      grammarSlotTypes: {');
+  for (const [action, typed] of [...grammarSlotTypes.entries()].sort(([a], [b]) => a.localeCompare(b))) {
+    const entries = Object.keys(typed)
+      .sort(byCodeUnit)
+      .map((slot) => `${JSON.stringify(slot)}: ${JSON.stringify(typed[slot])}`);
+    lines.push(`        ${JSON.stringify(action)}: { ${entries.join(', ')} },`);
   }
   lines.push('      },');
   lines.push('    },');
@@ -300,6 +391,9 @@ export const DIST_MODULES: ReadonlyArray<[path: string, exports: readonly string
   // any prior build's compiler will do, so only loading is required.
   ['packages/chord/dist/index.js', []],
   ['packages/story-loader/dist/setting-schema.js', ['SETTING_SCHEMA', 'HIDING_POSITIONS']],
+  ['packages/stdlib/dist/index.js', ['counterpartActionIds']],
+  // The language-words slice (ADR-387 D1, D2) reads the English provider's table.
+  ['packages/lang-en-us/dist/index.js', ['EnglishLanguageProvider']],
   [
     'packages/world-model/dist/traits/character-model/character-vocabulary.js',
     [

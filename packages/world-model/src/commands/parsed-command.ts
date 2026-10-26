@@ -9,9 +9,6 @@ export interface IParsedObjectReference {
   /** Original text from input */
   text: string;
   
-  /** Possible vocabulary matches */
-  candidates: string[];
-  
   /** Optional modifiers (adjectives, etc.) */
   modifiers?: string[];
 }
@@ -103,18 +100,36 @@ export interface IVerbPhrase {
 export interface INounPhrase {
   /** Indices into token array */
   tokens: number[];
-  /** Original complete text (e.g., "the small red ball") */
+  /**
+   * The content words, without the leading articles and determiners the
+   * parser split off ("small red ball" for "the small red ball"; ADR-385 D2).
+   * Empty for a bare all-phrase ("take all").
+   */
   text: string;
-  /** Head noun ("ball") */
+  /** Head noun: the last content word ("ball") */
   head: string;
-  /** Modifiers/adjectives ("small", "red") */
+  /** The content words before the head ("small", "red") */
   modifiers: string[];
-  /** Articles ("the", "a", "an") */
+  /** The leading articles the parser split off ("the", "a", "an"), normalized */
   articles: string[];
-  /** Determiners ("all", "every", "some") */
+  /**
+   * The leading determiners the parser split off ("my", "some", "all"),
+   * normalized; for an all-phrase the all word comes first ("everything").
+   */
   determiners: string[];
-  /** Vocabulary candidates for the head noun */
-  candidates: string[];
+  /**
+   * A determiner marked the phrase as the actor's own ("my"): resolution
+   * prefers what the actor carries or wears when something there matches
+   * (ADR-385 D2).
+   */
+  ownedByActor?: boolean;
+  /**
+   * The entity ids a constrained grammar slot admitted at parse time
+   * (ADR-385 D4). The validator resolves such a phrase only among its own
+   * candidates that are also here; the set narrows and never adds. Absent
+   * for a phrase from an unconstrained slot. A list item carries its own.
+   */
+  scope?: import('@sharpee/core').EntityId[];
 
   // ADR-080 additions for multi-object support
   /** True if this represents "all" (e.g., "take all") */
@@ -131,6 +146,13 @@ export interface INounPhrase {
   // ADR-104 implicit inference
   /** True if this noun phrase was a pronoun (e.g., "it", "them") */
   wasPronoun?: boolean;
+
+  /**
+   * The matched rule's slot this phrase filled (`item`, `peg`), so a reader
+   * can bind it by name whichever seat it sits in. Absent when the phrase
+   * came from no named slot.
+   */
+  slot?: string;
 }
 
 /**
@@ -168,9 +190,6 @@ export interface IParsedCommand {
   /** Which grammar pattern matched (e.g., "VERB_NOUN_PREP_NOUN") */
   pattern: string;
 
-  /** Parser confidence in this interpretation */
-  confidence: number;
-
   /** Identified action (for compatibility) */
   action: string;
 
@@ -190,14 +209,18 @@ export interface IParsedCommand {
 
   /**
    * Conversation topic for ".topic()" slots (ADR-231 D4)
-   * The parser fills `text` only (verbatim, articles preserved) — it never
-   * resolves entities. `entity` exists for shape parity with
-   * IValidatedCommand.topic and is populated by the validator's
-   * entity-first attempt, never here.
+   * The parser fills `text` (verbatim, articles preserved, for rendering and
+   * quoted-row matching) and `phrase` (the same words with their leading
+   * articles and determiners split off, ADR-385 D2, for the validator's
+   * entity-first attempt) — it never resolves entities. `entity` exists for
+   * shape parity with IValidatedCommand.topic and is populated by the
+   * validator, never here.
    */
   topic?: {
     /** Verbatim topic text as typed */
     text: string;
+    /** The topic as a noun phrase: content words, articles and determiners split once */
+    phrase: INounPhrase;
     /** Never set by the parser; see IValidatedCommand.topic */
     entity?: import('@sharpee/core').EntityId;
   };
@@ -240,17 +263,29 @@ export type ParseErrorCode =
   | 'INVALID_SYNTAX';   // Legacy: generic syntax error
 
 /**
- * Errors that can occur during parsing
+ * The bindings a parse error's language template reads: the verb the parser
+ * recognised, the content words of the phrase that named nothing, and the
+ * slot the input stopped short of. Each is present only when the parser has it.
+ */
+export interface ParseErrorParams {
+  verb?: string;
+  noun?: string;
+  slot?: string;
+}
+
+/**
+ * Errors that can occur during parsing. The error carries no sentence: the
+ * language renders `messageId` with `params` (ADR-387 D3).
  */
 export interface IParseError {
   type: 'PARSE_ERROR';
   code: ParseErrorCode;
 
-  /** Message ID for lang layer lookup (e.g., 'parser.error.unknownVerb') */
+  /** The language template that words this failure (e.g., 'parser.error.unknownVerb') */
   messageId: string;
 
-  /** Fallback message if lang layer lookup fails */
-  message: string;
+  /** The template's bindings */
+  params: ParseErrorParams;
 
   /** Original input */
   input: string;
@@ -268,6 +303,12 @@ export interface IParseError {
 
   /** Which slot failed (directObject, indirectObject) */
   slot?: string;
+
+  /** For SCOPE_VIOLATION: the entity the matcher found in view but the slot's base did not admit (ADR-385 D8) */
+  entityId?: string;
+
+  /** For SCOPE_VIOLATION: the base the slot required, which words the message */
+  requiredScope?: 'carried' | 'touchable' | 'visible';
 
   /** Suggestion for correction */
   suggestion?: string;

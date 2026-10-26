@@ -20,6 +20,7 @@
  */
 import { CHARACTER_MANIFEST } from '../../character-manifest.js';
 import type { IRGoalStep, IRResistsEntry, IRSpreads } from '../../ir.js';
+import { factIdOf } from '../declared.js';
 import { normalizeTopic } from '../topic.js';
 import type { EntityLineBuilder } from './context.js';
 
@@ -94,7 +95,7 @@ export const characterLinesBuilder: EntityLineBuilder = {
     }
     for (const t of decl.thinks) {
       if (context.checkTheoryOfMind(t.fact, 'thinks')) continue;
-      const factId = t.fact.words.join('-').toLowerCase();
+      const factId = factIdOf(t.fact.words);
       const fact = context.factById.get(factId);
       if (!fact) {
         context.diagnostics.error(

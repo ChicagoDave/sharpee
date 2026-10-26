@@ -1,0 +1,112 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "You set course for the Bat Roost."
+        ]
+      },
+      "command": "set course for the Bat Roost",
+      "id": "wcrse002",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes..."
+        ]
+      },
+      "command": "wait",
+      "id": "wwait009",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes..."
+        ]
+      },
+      "command": "wait",
+      "id": "wwait010",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The Wumpus is near."
+        ]
+      },
+      "command": "wait",
+      "id": "wwait011",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes..."
+        ]
+      },
+      "command": "wait",
+      "id": "wwait012",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes..."
+        ]
+      },
+      "command": "wait",
+      "id": "wwait013",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes..."
+        ]
+      },
+      "command": "wait",
+      "id": "wwait014",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The coracle arrives at the Bat Roost."
+        ]
+      },
+      "command": "wait",
+      "id": "wwait015",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Wings everywhere. The bats lift the coracle clear of the water and drop it somewhere else entirely."
+        ]
+      },
+      "command": "wait",
+      "id": "wwait016",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Bone Hollow",
+          "Something eats well in these caves.",
+          "In the coracle you see a Hunter."
+        ]
+      },
+      "command": "look",
+      "id": "wlook007",
+      "locks": [
+        "the bats carry the coracle to the Bone Hollow"
+      ],
+      "type": "turn"
+    }
+  ],
+  "id": "wumpbats",
+  "ordinal": 4,
+  "parent": "wumproot"
+}

@@ -1,4 +1,4 @@
-<p>A <code>use &lt;extension&gt;</code> line in the story header admits one trusted platform extension's vocabulary (<code>combat</code>, <code>state-machines</code>, <code>scoring</code>, <code>hunger</code>, <code>chapters</code>) and triggers its runtime registration; a <code>use</code>-only story stays pure IR. (NPC vocabulary is core and always on.) Each extension brings manifest-typed trait adjectives (<code>combatant with health 20 and skill 40</code>, the NPC library's <code>guard</code>/<code>patrol</code>/…), <code>use state-machines</code> adds the <code>define machine … end machine</code> block, <code>use scoring</code> the ranks and <code>award</code> (<a href="/chord/guide/flow/scoring">Scoring</a>), <code>use hunger</code> the depleting meter (<a href="/chord/guide/flow/hunger">Hunger</a>), and <code>use chapters</code> the <code>define chapters … end chapters</code> block with its <code>during</code>, <code>before</code>, and <code>after</code> conditions (<a href="/chord/guide/flow/chapters">Chapters</a>). Alongside these, the media surface (<code>define sound/image/music … from &quot;&lt;file&gt;&quot;</code>, <code>play sound</code>, <code>play ambient</code>, <code>show image</code>, <code>define channel</code> data projections, and the <code>client has &lt;capability&gt;</code> condition) lets a story drive the browser client with no story TypeScript; text-only clients degrade cleanly. The full catalog of forms lives in <a href="/chord/reference/grammar">the grammar reference</a>.</p>
+<p>A <code>use &lt;extension&gt;</code> line in the story header admits one trusted platform extension's vocabulary (<code>combat</code>, <code>scoring</code>, <code>hunger</code>, <code>chapters</code>, <code>expanses</code>, <code>sailing</code>) and triggers its runtime registration; a <code>use</code>-only story stays pure IR. (NPC vocabulary and state machines are core and always on: <code>define machine … end machine</code> needs no <code>use</code> line, and writing <code>use state-machines</code> is a compile error that says so.) Each extension brings manifest-typed trait adjectives (<code>combatant with health 20 and skill 40</code>, the NPC library's <code>guard</code>/<code>patrol</code>/…), <code>use scoring</code> the ranks and <code>award</code> (<a href="/chord/guide/flow/scoring">Scoring</a>), <code>use hunger</code> the depleting meter (<a href="/chord/guide/flow/hunger">Hunger</a>), and <code>use chapters</code> the <code>define chapters … end chapters</code> block with its <code>during</code>, <code>before</code>, and <code>after</code> conditions (<a href="/chord/guide/flow/chapters">Chapters</a>), <code>use expanses</code> the <code>expanse</code> kind — a bounded space with coordinates — and <code>movement: open</code> for a vehicle that crosses it by heading or by course, with sight in distance bands, edges, floating things that drift, and the <code>coordinates</code> command set (ADR-376), and <code>use sailing</code>, which builds on <code>use expanses</code> and must be written beside it, bearings in degrees, the <code>naval</code> command set, the expanse's <code>wind:</code>, the vehicle's <code>sailing</code> block of paces by the angle off the wind, and sails (ADR-375). Alongside these, the media surface (<code>define sound/image/music … from &quot;&lt;file&gt;&quot;</code>, <code>play sound</code>, <code>play ambient</code>, <code>show image</code>, <code>define channel</code> data projections, and the <code>client has &lt;capability&gt;</code> condition) lets a story drive the browser client with no story TypeScript; text-only clients degrade cleanly. The full catalog of forms lives in <a href="/chord/reference/grammar">the grammar reference</a>.</p>
 <pre><code class="language-chord">story
   title: Extensions
   authors:
@@ -15,3 +15,86 @@ create the Guardhouse
 create the sentry
   a person, combatant with health 20 and skill 40
   in the Guardhouse</code></pre>
+<p>An expanse and a ship on it. The skiff is steered by compass heading or sent to a cell; the Marigold is turned by degrees and makes the pace her <code>sailing</code> row gives for her angle off the wind:</p>
+<pre><code class="language-chord">story
+  title: Open Water
+  authors:
+    ref
+  id: open-water
+  story-version: 0.0.1
+  use expanses
+  use sailing
+
+create the Sargasso
+  an expanse
+  size: 40 by 40
+  wind: from northeast
+  north is blocked: ice-fields
+
+  Weed-choked water under a sky the colour of pewter.
+
+  landmarks
+    Port Royal: 3, 4
+    the Reef: 12, 30
+  end landmarks
+
+create Port Royal
+  a room
+  seen from afar: a smudge of smoke over a low green shore
+  sight: 20
+
+  The quay.
+
+create the Reef
+  a room
+  seen from afar: a line of white where the swell breaks
+
+  Coral under a foot of water.
+
+create the skiff
+  a vehicle
+  in the Sargasso at 3, 5
+  movement: open
+  carries: in
+  drive: player
+  commands: compass, coordinates
+  pace: 1 turn
+  stride: 1 unit
+  sight: 6
+  seen from afar: a glint of hull against the dark
+
+  A skiff.
+
+create the Marigold
+  a vehicle
+  in the Sargasso at 20, 20
+  movement: open
+  carries: in
+  drive: player
+  commands: naval
+  stride: 1 unit
+  sight: 8
+  seen from afar: three masts leaning to the wind
+  sails: furled, reefed, full
+  sails start: furled
+
+  A barque.
+
+  sailing
+    0 to 44 degrees: furled stopped, reefed stopped, full stopped
+    45 to 74 degrees: furled stopped, reefed 6 turns, full 4 turns
+    75 to 119 degrees: furled stopped, reefed 3 turns, full 2 turns
+    120 to 180 degrees: furled 6 turns, reefed 2 turns, full 1 turn
+    calm: stopped
+  end sailing
+
+create the cask
+  a thing, floats
+  in the Sargasso at 22, 20
+
+  A tarred cask, riding low.
+
+define phrase ice-fields
+  Ice closes the way north.
+end phrase</code></pre>
+<p>Aboard the skiff, <code>steer east</code> and <code>set course for 12, 30</code> move it; <code>look</code> names what is in sight by band and direction, <code>examine</code> a landmark shows its <code>seen from afar:</code> line, and the step whose path crosses the cask's cell stops alongside it for <code>retrieve cask</code>. Aboard the Marigold, <code>starboard 15 degrees</code> turns her, <code>ahead</code> puts her under way, <code>make sail</code> sets more canvas, and dead into the wind she lies in irons until turned out or the story writes <code>set the Sargasso's wind to southwest</code>. The Sargasso's unwritten edges are weather for her; the written one is ice.</p>

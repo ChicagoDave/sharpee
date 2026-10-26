@@ -9,17 +9,20 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { EnglishParser } from '../src/english-parser';
 import { ParserLanguageProvider, GrammarBuilder, ScopeBuilder } from '@sharpee/if-domain';
-/** Minimal entity shape used by mock world model in these tests */
-interface MockEntity {
-  id: string;
-  name: string;
-  attributes: Record<string, unknown>;
-  visible: boolean;
-  magical?: boolean;
-  portable?: boolean;
-  weapon?: boolean;
-  creature?: boolean;
-}
+import { WorldModel, type IFEntity } from '@sharpee/world-model';
+
+/** English, handed to hand-built worlds as the language's words (ADR-387 D2). */
+const ENGLISH_WORDS = { selfWords: ['me', 'myself', 'self', 'yourself'], nameStopwords: ['the', 'a', 'an', 'of'] };
+
+/**
+ * A real entity (the gate reads its naming surface through the one noun
+ * matcher, ADR-385 D3) carrying the flags the mock world's property filters read.
+ */
+type Flags = { visible: boolean; magical?: boolean; portable?: boolean; weapon?: boolean; creature?: boolean };
+type MockEntity = IFEntity & Flags;
+const scratch = new WorldModel();
+scratch.setLanguageWords(ENGLISH_WORDS);
+const thing = (name: string, flags: Flags): MockEntity => Object.assign(scratch.createEntity(name, 'item'), flags) as MockEntity;
 
 // Mock language provider
 const mockLanguageProvider: ParserLanguageProvider = {
@@ -40,42 +43,37 @@ const mockLanguageProvider: ParserLanguageProvider = {
   getNouns: () => [],
   getAdjectives: () => [],
   getPrepositions: () => ['at', 'with', 'from', 'to'],
-  getDeterminers: () => ['the', 'a', 'an'],
+  getDeterminers: () => [{ word: 'the' }, { word: 'a' }, { word: 'an' }],
+  getSpecialVocabulary: () => ({ articles: ['a', 'an', 'the'], pronouns: ['it', 'them', 'him', 'her'], allWords: ['all', 'everything'], exceptWords: ['except', 'but'] }),
+  getLanguageWords: () => ({ selfWords: ['me', 'myself', 'self', 'yourself'], nameStopwords: ['the', 'a', 'an', 'of'] }),
+  getListSeparators: () => ['and', ','],
+  getMannerAdverbs: () => [],
+  parseCardinal: (words: readonly string[]) => (words.length === 1 && /^\d+$/.test(words[0]) ? Number(words[0]) : null),
+  getOrdinalNumbers: () => ({}),
+  getNarrativePerson: () => 'second' as const,
   getConjunctions: () => ['and', 'or'],
   getNumbers: () => [],
   getSpecialWords: () => [],
-  getDirections: () => []
+  // The DIRECTION slot reads this table (ADR-387 D5): `push east wall` needs `east` in it
+  getDirections: () => [{ direction: 'EAST', words: ['east'], abbreviations: ['e'] }]
 };
 
 // Mock world model
 class MockWorldModel {
+  getLanguageWords() {
+    return { selfWords: ['me', 'myself', 'self', 'yourself'], nameStopwords: ['the', 'a', 'an', 'of'] };
+  }
   private entities: Map<string, MockEntity> = new Map();
 
   constructor() {
-    this.entities.set('crystal', {
-      id: 'crystal',
-      name: 'crystal',
-      attributes: { name: 'crystal' },
-      visible: true,
-      magical: true
-    });
-
-    this.entities.set('sword', {
-      id: 'sword',
-      name: 'sword',
-      attributes: { name: 'sword' },
-      visible: true,
-      portable: true,
-      weapon: true
-    });
-
-    this.entities.set('dragon', {
-      id: 'dragon',
-      name: 'dragon',
-      attributes: { name: 'dragon' },
-      visible: true,
-      creature: true
-    });
+    for (const e of [
+      thing('crystal', { visible: true, magical: true }),
+      thing('sword', { visible: true, portable: true, weapon: true }),
+      thing('dragon', { visible: true, creature: true })
+    ]) {
+      // keyed by name: the tests reach entities as `getEntity('sword')`
+      this.entities.set(e.name, e);
+    }
   }
 
   getEntity(id: string): MockEntity | undefined {
@@ -193,12 +191,11 @@ describe('Story Grammar API', () => {
         .mapsTo('story.action.attacking')
         .build();
 
-      // Move sword to inventory
-      world['entities'].set('sword', {
-        ...world.getEntity('sword')!,
-        visible: false
-      });
-      world['getCarriedEntities'] = () => [world.getEntity('sword')!];
+      // Move sword to inventory (the entity itself: a spread copy would lose
+      // the real entity's methods the gate reads)
+      const sword = world.getEntity('sword')!;
+      sword.visible = false;
+      world['getCarriedEntities'] = () => [sword];
 
       const result = parser.parse('attack dragon with sword');
       expect(result.success).toBe(true);
@@ -219,7 +216,7 @@ describe('Story Grammar API', () => {
       expect(before.success).toBe(true);
       if (before.success) expect(before.value.action).toBe('if.action.taking');
 
-      expect(grammar.removeRules('if.action.taking', 'get :item')).toBe(1);
+      expect(grammar.removeRules('if.action.taking', (rule) => rule.pattern === 'get :item')).toBe(1);
 
       const after = parser.parse('get crystal');
       expect(after.success ? after.value.action : null).not.toBe('if.action.taking');
@@ -230,7 +227,7 @@ describe('Story Grammar API', () => {
     });
 
     it('returns 0 on a shape the standard grammar does not carry', () => {
-      expect(grammar.removeRules('if.action.taking', 'yoink :item')).toBe(0);
+      expect(grammar.removeRules('if.action.taking', (rule) => rule.pattern === 'yoink :item')).toBe(0);
     });
   });
 });

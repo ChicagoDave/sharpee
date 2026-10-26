@@ -23,6 +23,9 @@ import {
 } from '../../test-utils';
 import { WorldModel } from '@sharpee/world-model';
 
+/** English, handed to hand-built worlds as the language's words (ADR-387 D2). */
+const ENGLISH_WORDS = { selfWords: ['me', 'myself', 'self', 'yourself'], nameStopwords: ['the', 'a', 'an', 'of'] };
+
 describe('lookingAction (Golden Pattern)', () => {
   describe('Action Metadata', () => {
     test('should have correct ID', () => {
@@ -31,7 +34,6 @@ describe('lookingAction (Golden Pattern)', () => {
 
     test('should declare required messages', () => {
       expect(lookingAction.requiredMessages).toContain('room_description');
-      expect(lookingAction.requiredMessages).toContain('room_description_brief');
       expect(lookingAction.requiredMessages).toContain('room_dark');
       expect(lookingAction.requiredMessages).toContain('contents_list');
       expect(lookingAction.requiredMessages).toContain('nothing_special');
@@ -186,6 +188,7 @@ describe('lookingAction (Golden Pattern)', () => {
   describe('Darkness Handling', () => {
     test('should handle dark room without light', () => {
       const world = new WorldModel();
+      world.setLanguageWords(ENGLISH_WORDS);
       const player = world.createEntity('yourself', 'actor');
       player.add({ type: TraitType.ACTOR });
       world.setPlayer(player.id);
@@ -216,6 +219,7 @@ describe('lookingAction (Golden Pattern)', () => {
 
     test('should see in dark room with light source', () => {
       const world = new WorldModel();
+      world.setLanguageWords(ENGLISH_WORDS);
       const player = world.createEntity('yourself', 'actor');
       player.add({ type: TraitType.ACTOR });
       world.setPlayer(player.id);
@@ -254,6 +258,7 @@ describe('lookingAction (Golden Pattern)', () => {
 
     test('should see with room light source', () => {
       const world = new WorldModel();
+      world.setLanguageWords(ENGLISH_WORDS);
       const player = world.createEntity('yourself', 'actor');
       player.add({ type: TraitType.ACTOR });
       world.setPlayer(player.id);
@@ -288,6 +293,7 @@ describe('lookingAction (Golden Pattern)', () => {
   describe('Special Locations', () => {
     test('should describe being in a container', () => {
       const world = new WorldModel();
+      world.setLanguageWords(ENGLISH_WORDS);
       const player = world.createEntity('yourself', 'actor');
       player.add({ type: TraitType.ACTOR });
       world.setPlayer(player.id);
@@ -322,6 +328,7 @@ describe('lookingAction (Golden Pattern)', () => {
 
     test('should describe being on a supporter', () => {
       const world = new WorldModel();
+      world.setLanguageWords(ENGLISH_WORDS);
       const player = world.createEntity('yourself', 'actor');
       player.add({ type: TraitType.ACTOR });
       world.setPlayer(player.id);
@@ -355,39 +362,23 @@ describe('lookingAction (Golden Pattern)', () => {
     });
   });
 
-  describe('Brief/Verbose Modes', () => {
-    test('should use brief description for visited rooms in brief mode', () => {
+  describe('Every look is verbose', () => {
+    // There is no brief mode (dropped 2026-10-13): a visited room is described
+    // in full exactly as an unvisited one is.
+    test('describes a visited room in full', () => {
       const { world, player, room } = setupBasicWorld();
-      
+      RoomBehavior.markVisited(room, player);
+
       const command = createCommand(IFActions.LOOKING);
       const context = createRealTestContext(lookingAction, world, command);
-      
-      // Note: In a real implementation, brief/verbose mode and visited locations
-      // would be tracked by the game state. This test demonstrates the expected
-      // behavior when those features are implemented.
-      
+
       const events = executeWithValidation(lookingAction, context);
 
-      // For now, should emit room description event
       expectEvent(events, 'if.event.room.description', {
         roomId: room.id,
         verbose: true
       });
-    });
-
-    test('should use full description for first visit even in brief mode', () => {
-      const { world, player, room } = setupBasicWorld();
-      
-      const command = createCommand(IFActions.LOOKING);
-      const context = createRealTestContext(lookingAction, world, command);
-      
-      const events = executeWithValidation(lookingAction, context);
-      
-      // Should use full (verbose) description
-      expectEvent(events, 'if.event.room.description', {
-        roomId: room.id,
-        verbose: true
-      });
+      expect(events.some((e) => e.data && (e.data as { messageId?: string }).messageId === 'room_description_brief')).toBe(false);
     });
   });
 

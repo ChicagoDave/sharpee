@@ -30,6 +30,7 @@ import {
   type DerivedSummary,
   type SourceSpan,
 } from './derived';
+import { claimBadgeText, claimLockText, claimLockVisit, claimNameText, claimWhyText, claimsCountsOf, claimsHeaderText, type ClaimRow, type ClaimsSummary } from './claims';
 import type { BranchPoint, TreeSessionModel } from './model';
 import {
   bootLookIndex, commandRowText, firstFailureText, restatesTextClaim, runRowVisitTarget, runRowsOf, type RunVisitTarget,
@@ -55,6 +56,8 @@ export interface CardsDelegate {
   onStatePicker(ordinal: number, anchor: HTMLElement): void;
   onEventPicker(ordinal: number, anchor: HTMLElement): void;
   onChannelPicker(ordinal: number, anchor: HTMLElement): void;
+  /** Lock… (ADR-367 D7): lock a fact true after this turn as a claim — main.ts runs `sharpee claim` through the host. */
+  onLock(ordinal: number, anchor: HTMLElement): void;
   /** Branching (D5): fork ON this card with the typed alternate. */
   onBranch(ordinal: number, command: string): void;
   /** A sibling chip was clicked — replay that line live and view it. */
@@ -117,6 +120,9 @@ interface CardRow {
   /** The END STATE mark in the card's meta line (ADR-356 D4), shown while
    *  the card declares an ending. */
   endState: HTMLElement;
+  /** The LOCK marks (ADR-367 D5/D7): one per claim the card's `locks` names,
+   *  read off the card on every render. */
+  locks: HTMLElement;
   asserts: HTMLElement;
   exactButton: HTMLButtonElement | null;
   branchButton: HTMLButtonElement | null;
@@ -423,6 +429,11 @@ export class CardsView {
     endState.className = 'ts-end-state';
     endState.style.display = 'none';
     meta.appendChild(endState);
+    // LOCK (ADR-367 D5): the claims locked on this card, from the card's
+    // own `locks` — a loaded document shows them before any replay.
+    const locks = document.createElement('span');
+    locks.className = 'ts-lock-marks';
+    meta.appendChild(locks);
 
     // Tail-cut (D4/Q-4): the card's hover ✕, armed-then-confirmed — the
     // same two-act destruction idiom as the chip's ✕. Turn cards only: the
@@ -518,6 +529,17 @@ export class CardsView {
       eventButton.addEventListener('click', () =>
         this.delegate.onEventPicker(ordinal, eventButton));
       actions.appendChild(eventButton);
+
+      // Lock… (ADR-367 D7): a typed turn's reached state becomes a claim
+      // with its set proposed from the line — through `sharpee claim`.
+      if (this.model.cardAt(ordinal)?.type === 'turn') {
+        const lockButton = document.createElement('button');
+        lockButton.textContent = 'Lock…';
+        lockButton.title = 'Lock a fact true after this turn as a claim, its necessary set proposed from this line';
+        lockButton.addEventListener('click', () =>
+          this.delegate.onLock(ordinal, lockButton));
+        actions.appendChild(lockButton);
+      }
     }
 
     // The Channel picker serves the OPENING too (David 2026-08-10): its
@@ -566,7 +588,7 @@ export class CardsView {
     row.append(column);
     this.host.appendChild(row);
     this.cards.set(ordinal, {
-      row, endState, asserts, exactButton, branchButton,
+      row, endState, locks, asserts, exactButton, branchButton,
       character, characterButton, characterOpen: false,
     });
   }
@@ -768,6 +790,16 @@ export class CardsView {
         ? `The story ended here (${ending}) — no further command lands on this card, and nothing forks from it`
         : '';
       card.endState.style.display = ending !== undefined ? '' : 'none';
+      // One LOCK mark per claim pinned on the card (ADR-367 D5/D7).
+      const lockNames = this.model.cardAt(ordinal)?.locks ?? [];
+      card.locks.textContent = '';
+      for (const name of lockNames) {
+        const mark = document.createElement('span');
+        mark.className = 'ts-lock-mark';
+        mark.textContent = `· LOCK · ${name}`;
+        mark.title = 'This claim is locked here: the run checks it holds at this card';
+        card.locks.appendChild(mark);
+      }
       card.exactButton?.classList.toggle(
         'ts-active',
         this.model.claimsOf(ordinal)?.exact !== undefined,
@@ -900,7 +932,8 @@ export class CardsView {
       id === this.model.mainLine ? this.model.hasOpening : true);
     results.innerHTML = '';
     if (!this.model.hasOpening && run.results.size === 0
-        && run.derived.length === 0 && run.derivedSummary === undefined) {
+        && run.derived.length === 0 && run.derivedSummary === undefined
+        && run.claims.length === 0 && run.claimsSummary === undefined) {
       results.innerHTML = '<span class="ts-pending-note">no tests yet</span>';
       return;
     }
@@ -1076,6 +1109,9 @@ export class CardsView {
     }
 
     if (run.derived.length > 0) this.renderDerivedRows(results, run.derived, run.derivedStale === true);
+    // The claims tier (ADR-365 D6, ADR-367 D6): after the rules, as the CLI
+    // report prints it, and only when the manifest named a fragment.
+    if (run.claims.length > 0 || run.claimsSummary !== undefined) this.renderClaimsRows(results, run.claims, run.claimsSummary);
 
     if (run.tally) {
       const tally = document.createElement('div');
@@ -1348,6 +1384,57 @@ export class CardsView {
     row.focus();
     row.scrollIntoView({ block: 'nearest' });
     return true;
+  }
+
+  /**
+   * The claims section (ADR-365 D6, ADR-367 D6; GH #555): the ratio as the
+   * header, then one row per declared claim in arrival order — its verdict,
+   * its name, and the sentence `sharpee test` prints for it — and under a
+   * claim with locks, one line per lock that visits the card it was taken
+   * on. A lock that did not hold is already a failed card in the tree
+   * section; its line here is the way to that card. Verdicts never gate
+   * (D9), so nothing here touches the tally.
+   */
+  private renderClaimsRows(results: HTMLElement, rows: ClaimRow[], summary: ClaimsSummary | undefined): void {
+    const countClass = { held: 'ts-count-pass', violated: 'ts-count-fail', unproven: 'ts-count-skip' } as const;
+    const counts = claimsCountsOf(summary, rows).map((entry): [string, string] => [entry.text, countClass[entry.verdict]]);
+    results.appendChild(this.sectionHeader(claimsHeaderText(summary, rows), counts));
+
+    for (const [index, claim] of rows.entries()) {
+      const rowEl = document.createElement('div');
+      rowEl.className = 'ts-claim-row';
+      rowEl.dataset.tsClaim = claim.verdict;
+      rowEl.dataset.tsClaimIndex = String(index);
+      const head = document.createElement('div');
+      head.className = 'ts-head';
+      const name = document.createElement('span');
+      name.className = 'ts-name';
+      name.textContent = claimNameText(claim);
+      const badge = document.createElement('span');
+      badge.className = `ts-badge ${claim.verdict === 'held' ? 'ts-pass' : claim.verdict === 'violated' ? 'ts-fail' : 'ts-open'}`;
+      badge.textContent = claimBadgeText(claim);
+      head.append(name, badge);
+      rowEl.appendChild(head);
+      const why = document.createElement('div');
+      why.className = 'ts-why';
+      why.textContent = claimWhyText(claim);
+      rowEl.appendChild(why);
+      for (const lock of claim.locks ?? []) {
+        const lockEl = document.createElement('div');
+        lockEl.className = `ts-claim-lock ts-run-row-visit${lock.outcome === 'held' ? '' : ' ts-broken'}`;
+        lockEl.setAttribute('role', 'button');
+        lockEl.tabIndex = 0;
+        lockEl.title = 'Visit the locked card';
+        lockEl.textContent = claimLockText(claim, lock);
+        const go = (): void => this.delegate.onVisitFailure(claimLockVisit(lock));
+        lockEl.addEventListener('click', go);
+        lockEl.addEventListener('keydown', (event) => {
+          if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); go(); }
+        });
+        rowEl.appendChild(lockEl);
+      }
+      results.appendChild(rowEl);
+    }
   }
 
   private renderDerivedRows(results: HTMLElement, rows: DerivedBranchRow[], stale = false): void {

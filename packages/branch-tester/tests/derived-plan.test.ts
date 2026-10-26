@@ -167,7 +167,7 @@ describe('planBranch — shapes outside the floor are named', () => {
     const skipBranches = collectClauseBranches(skipIr);
     const guarded = skipBranches.find((candidate) => candidate.clause.kind === 'on' && candidate.clause.action === 'examining')!;
     const plan = planBranch(guarded, skipIr, skipBranches, language);
-    expect(plan.kind === 'run' && plan.arrange[0]).toEqual({ kind: 'pin', expression: 'brass-lamp.flicker has expired', mustHold: true });
+    expect(plan.kind === 'run' && plan.arrange[0]).toEqual({ kind: 'pin', expression: 'brass-bell.flicker has expired', mustHold: true });
   });
 
   it('an action the language has no pattern for is a parse failure, not a skip', () => {

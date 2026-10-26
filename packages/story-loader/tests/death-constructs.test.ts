@@ -30,6 +30,8 @@ import {
 } from '@sharpee/stdlib';
 import { ChordStory, createStory } from '../src';
 import { stubStoryEngine } from './helpers/stub-story-engine';
+import { EnglishLanguageProvider } from '@sharpee/lang-en-us';
+import { EnglishParser } from '@sharpee/parser-en-us';
 
 const CHORD_FIXTURES = join(__dirname, '..', '..', 'chord', 'tests', 'fixtures');
 
@@ -67,7 +69,6 @@ function goCommand(direction: string): IParsedCommand {
     tokens: [],
     structure: { verb: { tokens: [0], text: 'go', head: 'go' } },
     pattern: 'VERB_NOUN',
-    confidence: 1,
     action: 'if.action.going',
     extras: { direction },
   } as unknown as IParsedCommand;
@@ -131,13 +132,19 @@ describe('`<direction> is deadly: <phrase>` (deadly exit)', () => {
     expect(result.extras?.originalAction).toBe('if.action.going');
   });
 
-  it('resolves single-letter direction abbreviations', () => {
+  it('a typed abbreviation reaches the deadly exit: the parser hands over the constant, no table here', () => {
     const env = loadDeathStory();
     const transformer = captureTransformer(env.story);
     env.world.moveEntity(env.playerId, env.story.entityId('cliff-top')!);
 
-    const result = transformer(goCommand('S'), env.world);
+    const parser = new EnglishParser(new EnglishLanguageProvider(), { world: env.world });
+    const parsed = parser.parse('s');
+    expect(parsed.success).toBe(true);
+    if (!parsed.success) return;
+    expect(parsed.value.extras?.direction).toBe('SOUTH');
+    const result = transformer(parsed.value as unknown as IParsedCommand, env.world);
     expect(result.action).toBe(DEADLY_ROOM_DEATH_ACTION_ID);
+    expect(result.extras?.[DEADLY_ROOM_CAUSE_KEY]).toBe('over-the-falls');
   });
 
   it('passes through safe directions, other rooms, and non-going actions', () => {

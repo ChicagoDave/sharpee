@@ -4,6 +4,7 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
+import { EnglishLanguageProvider } from '@sharpee/lang-en-us';
 import { EnglishGrammarEngine } from '../src/english-grammar-engine';
 import { Token, PartOfSpeech as VocabPartOfSpeech } from '@sharpee/if-domain';
 
@@ -12,7 +13,7 @@ describe('EnglishGrammarEngine', () => {
   let grammar: any;
   
   beforeEach(() => {
-    engine = new EnglishGrammarEngine();
+    engine = new EnglishGrammarEngine(new EnglishLanguageProvider());
     grammar = engine.createBuilder();
   });
   
@@ -53,7 +54,6 @@ describe('EnglishGrammarEngine', () => {
       
       expect(matches).toHaveLength(1);
       expect(matches[0].rule.action).toBe('if.action.looking');
-      expect(matches[0].confidence).toBeGreaterThan(0);
     });
     
     it('should match verb-noun patterns', () => {
@@ -175,7 +175,7 @@ describe('EnglishGrammarEngine', () => {
       expect(matches[0].rule.action).toBe('if.action.hanging');
     });
     
-    it('should calculate confidence based on alternate matches', () => {
+    it('counts each literal word a form consumes toward its specificity', () => {
       grammar
         .define('look at :target')
         .mapsTo('if.action.examining')
@@ -196,8 +196,8 @@ describe('EnglishGrammarEngine', () => {
       expect(matches1).toHaveLength(1);
       expect(matches2).toHaveLength(1);
       
-      // Full-literal match confidence is comparable across both forms
-      expect(matches1[0].confidence).toBeGreaterThanOrEqual(matches2[0].confidence);
+      expect(matches1[0].literalSpecificity).toBe(2); // "look" + "at"
+      expect(matches2[0].literalSpecificity).toBe(1); // "examine"
     });
   });
   
@@ -257,28 +257,8 @@ describe('EnglishGrammarEngine', () => {
       expect(matches[0].rule.action).toBe('if.action.taking');
     });
     
-    it('should limit matches based on maxMatches option', () => {
-      // Add many rules that would match
+    it('returns every matching rule, ranking a story rule defined last first at equal specificity (ADR-384 D2, D3)', () => {
       for (let i = 0; i < 20; i++) {
-        grammar
-          .define('look')
-          .mapsTo(`if.action.looking${i}`)
-          .build();
-      }
-      
-      const tokens = createTokens(['look']);
-      const context = { world: null, actorId: 'player', currentLocation: 'room', slots: new Map() };
-      const matches = engine.findMatches(tokens, context, { maxMatches: 5 });
-
-      expect(matches).toHaveLength(5);
-    });
-
-    it('story rule survives maxMatches even when defined after enough standard rules (ADR-268 D5)', () => {
-      // Fill the maxMatches budget with standard rules that all match, then
-      // register a story rule last. Story-tier-first iteration must surface
-      // it — a plain registration-order scan would exhaust the budget on the
-      // standard rules and drop the rule that outranks them all.
-      for (let i = 0; i < 5; i++) {
         grammar
           .define('look')
           .mapsTo(`if.action.looking${i}`)
@@ -291,11 +271,12 @@ describe('EnglishGrammarEngine', () => {
 
       const tokens = createTokens(['look']);
       const context = { world: null, actorId: 'player', currentLocation: 'room', slots: new Map() };
-      const matches = engine.findMatches(tokens, context, { maxMatches: 5 });
+      const matches = engine.findMatches(tokens, context);
 
-      expect(matches).toHaveLength(5);
+      expect(matches).toHaveLength(21);
       expect(matches[0].rule.action).toBe('story.action.looking');
       expect(matches[0].rule.tier).toBe('story');
+      expect(matches[1].rule.action).toBe('if.action.looking0');
     });
   });
 });

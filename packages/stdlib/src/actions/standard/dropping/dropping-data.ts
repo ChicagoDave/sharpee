@@ -7,7 +7,7 @@
 
 import { ActionDataBuilder, ActionDataConfig } from '../../data-builder-types.js';
 import { ActionContext } from '../../enhanced-types.js';
-import { WorldModel, TraitType, IdentityTrait } from '@sharpee/world-model';
+import { WorldModel, TraitType } from '@sharpee/world-model';
 import { captureEntitySnapshot } from '../../base/snapshot-utils.js';
 import { nounPhraseFor } from '../../../utils/index.js';
 
@@ -113,14 +113,11 @@ export function determineDroppingMessage(
   } else if (droppedData.toRoom) {
     // Vary the message based on how the item is dropped
     const verb = context.command.parsed.structure.verb?.text.toLowerCase() || 'drop';
-    if (verb === 'discard') {
+    if (context.sharedData.brokeOnDrop) {
+      // A declared-fragile thing broke on the floor (ADR-373 D4)
+      messageId = 'dropped_breaks';
+    } else if (verb === 'discard') {
       messageId = 'dropped_carelessly';
-    } else if (noun.has(TraitType.IDENTITY)) {
-      // Check if item name suggests it's fragile
-      const identity = noun.getTrait(IdentityTrait);
-      if (identity && identity.name?.toLowerCase().includes('glass')) {
-        messageId = 'dropped_quietly';
-      }
     }
   }
   

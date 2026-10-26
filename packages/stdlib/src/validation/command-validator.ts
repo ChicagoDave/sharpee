@@ -21,7 +21,15 @@ import type {
   WorldModel,
   IFEntity
 } from '@sharpee/world-model';
-import { IdentityTrait, WallEntity, deriveNameVocabulary } from '@sharpee/world-model';
+import {
+  WallEntity,
+  isLandmark,
+  matchNoun,
+  namingSurfaceOf,
+  vocabularyOf,
+  type NamingSurface,
+  type NounMatchTier
+} from '@sharpee/world-model';
 
 import type { ValidatedCommand, ScopeInfo } from './types.js';
 import type { SenseType } from '../scope/types.js';
@@ -48,6 +56,13 @@ export interface ActionMetadata {
    * carried black book and a guidebook on the floor means the carried one).
    */
   preferredScope?: ScopeLevel;
+  /**
+   * The entities this action's topic may name beyond what the actor sees
+   * (alignment finding F5): setting-course's destinations and landmarks,
+   * which are never in scope. The validator resolves the topic among them
+   * by name and alias, rooms included; a miss leaves the topic as text.
+   */
+  topicCandidates?: (world: WorldModel, actorId: string) => readonly string[];
 }
 
 /**
@@ -56,13 +71,10 @@ export interface ActionMetadata {
  * query content word matches the entity's vocabulary).
  */
 const MATCH_TIER_EXACT = 3;
-
-/** The words that name the current player, whatever the player entity is called (ADR-327). */
-const SELF_WORDS = new Set(['me', 'myself', 'self', 'yourself']);
 const MATCH_TIER_WORDS = 2;
 
-/** Leading articles stripped from query text before matching (D3 defect fix). */
-const QUERY_ARTICLES: ReadonlySet<string> = new Set(['the', 'a', 'an']);
+/** The matcher's tiers as the validator ranks them (higher wins). */
+const TIER_RANK: Record<NounMatchTier, number> = { exact: MATCH_TIER_EXACT, words: MATCH_TIER_WORDS };
 
 /**
  * Result of matching a noun phrase against one entity's naming surface.
@@ -173,14 +185,30 @@ export class CommandValidator implements CommandValidator {
 
     // 2. Resolve direct object if present in parsed command
     let directObject: IValidatedObjectReference | undefined;
+    let directObjects: IValidatedObjectReference[] | undefined;
     if (command.structure?.directObject) {
-      // ADR-080: Multi-object commands ("get all", "drop all but sword")
-      // Skip single-entity resolution - let the action handle expansion via expandMultiObject()
       const nounPhrase = command.structure.directObject;
-      if (nounPhrase.isAll || nounPhrase.isList) {
-        // Leave directObject undefined - action will use isMultiObjectCommand()
-        // and expandMultiObject() to handle multiple entities
+      if (nounPhrase.isAll) {
+        // `all` is the action's to expand (expandMultiObject); the validator
+        // resolves nothing for it
         directObject = undefined;
+      } else if (nounPhrase.isList && nounPhrase.items) {
+        // ADR-385 D5: each item of a list resolves by the single-noun path,
+        // in order; an item that names nothing or ties fails the command
+        // here, naming that item, so none is dropped silently
+        const metadata = this.getActionMetadata(actionHandler);
+        const scope = metadata.directObjectScope || ScopeLevel.VISIBLE;
+        directObjects = [];
+        for (const item of nounPhrase.items) {
+          const resolved = this.resolveEntity(item, 'direct', scope, command);
+          if (!resolved.success) {
+            if (resolved.error.code === 'ENTITY_NOT_FOUND') {
+              resolved.error.details = { ...resolved.error.details, listItem: true };
+            }
+            return resolved;
+          }
+          directObjects.push(resolved.value);
+        }
       } else {
         // Normal single-entity resolution
         const metadata = this.getActionMetadata(actionHandler);
@@ -222,7 +250,7 @@ export class CommandValidator implements CommandValidator {
     // fallback. Quiet resolution only — a topic NEVER produces
     // ENTITY_NOT_FOUND or a disambiguation prompt; on miss or tie the
     // verbatim text flows through with entity undefined.
-    const topic = command.topic ? this.resolveTopic(command.topic.text) : undefined;
+    const topic = command.topic ? this.resolveTopic(command.topic, this.getActionMetadata(actionHandler)) : undefined;
 
     // 4. Check scope constraints based on action metadata
     const metadata = this.getActionMetadata(actionHandler);
@@ -339,6 +367,7 @@ export class CommandValidator implements CommandValidator {
       parsed: command,
       actionId: actionHandler.id,
       directObject,
+      ...(directObjects ? { directObjects } : {}),
       indirectObject,
       instrument,
       topic,
@@ -408,10 +437,29 @@ export class CommandValidator implements CommandValidator {
       candidates = this.world.getAllEntities().filter(e =>
         e.type !== 'room' &&
         e.id !== this.world.getPlayer()?.id &&
-        this.matchEntityName(e, ref) !== null
+        this.nameMatch(e, ref) !== null
       );
     } else {
       candidates = this.findCandidates(ref);
+    }
+
+    // ADR-385 D4: a constrained grammar slot's admitted ids narrow the
+    // candidates and never add to them, so the validator never finds an
+    // entity the gate rejected and never misses one it admitted.
+    if (ref.scope) {
+      const admitted = new Set(ref.scope);
+      candidates = candidates.filter((e) => admitted.has(e.id));
+    }
+
+    // ADR-385 D2: `my` narrows the phrase to what the player carries or
+    // wears when something there matches; otherwise the phrase resolves as
+    // if the determiner were absent (`take my lantern` with the lantern on
+    // the floor takes it).
+    if (ref.ownedByActor) {
+      const owned = candidates.filter((e) => this.isOwnedByPlayer(e));
+      if (owned.length > 0) {
+        candidates = owned;
+      }
     }
 
     this.emitDebugEvent('entity_search', command, {
@@ -476,16 +524,18 @@ export class CommandValidator implements CommandValidator {
     // even when another stamp exists out of sight.
     const inScopeIds = new Set(entitiesInScope.map(e => e.id));
     const exactOutOfScope = candidates.find(
-      e => !inScopeIds.has(e.id) && this.matchEntityName(e, ref)?.tier === MATCH_TIER_EXACT
+      e => !inScopeIds.has(e.id) && this.nameMatch(e, ref)?.tier === MATCH_TIER_EXACT
     );
     // GH #245 (4): the in-scope competitor keeps the word only when the
     // query's head is ITS head noun (the last word of its name or of an
     // alias) — "stamp" for "rare stamp", never "deed" for "deed box".
     const head = (ref.head ?? '').toLowerCase();
     const lastWord = (name: string): string => name.toLowerCase().trim().split(/\s+/).pop() ?? '';
-    const headInAnInScopeName = entitiesInScope.some(e =>
-      lastWord(this.getEntityName(e)) === head || this.getEntitySynonyms(e).some(a => lastWord(a) === head)
-    );
+    const headInAnInScopeName = entitiesInScope.some(e => {
+      const surface = this.surfaceOf(e);
+      return lastWord(surface.name) === head ||
+        [...surface.aliases, ...(surface.type ? [surface.type] : [])].some(a => lastWord(a) === head);
+    });
     const bestInScopeTier = scoredMatches[0]?.tier ?? 0;
     if (exactOutOfScope && scoredMatches.length > 0 && bestInScopeTier < MATCH_TIER_EXACT && !headInAnInScopeName) {
       this.emitDebugEvent('entity_resolution', command, {
@@ -522,7 +572,6 @@ export class CommandValidator implements CommandValidator {
           parsed: command,
           details: {
             searchText: ref.text,
-            candidates: ref.candidates,
             scope: requiredScope
           }
         }
@@ -545,17 +594,9 @@ export class CommandValidator implements CommandValidator {
       // Phase 5: If user specified modifiers (adjectives) but NO candidate matches them,
       // this is ENTITY_NOT_FOUND (the specific entity doesn't exist), not AMBIGUOUS_ENTITY.
       // Example: "green ball" when only red and blue balls exist -> ENTITY_NOT_FOUND
-      //
-      // Note: The parser may not always populate modifiers, so we also extract them
-      // by comparing text to head (e.g., "green ball" vs "ball" -> modifier "green")
-      let modifiers = ref.modifiers || [];
-      if (modifiers.length === 0 && ref.text && ref.head) {
-        const head = ref.head.toLowerCase();
-        const words = ref.text.toLowerCase().split(/\s+/).filter(w => w !== head);
-        // Filter out common articles/determiners that aren't adjectives
-        const nonModifiers = ['the', 'a', 'an', 'all', 'some', 'every', 'any', 'my'];
-        modifiers = words.filter(w => !nonModifiers.includes(w));
-      }
+      // The parser fills `modifiers` with the content words before the head
+      // (ADR-385 D2); nothing is re-derived from the text here.
+      const modifiers = ref.modifiers;
 
       if (modifiers.length > 0) {
         const anyModifierMatch = viableMatches.some(m =>
@@ -613,6 +654,9 @@ export class CommandValidator implements CommandValidator {
           details: {
             ambiguousEntities: choices,
             searchText: ref.text,
+            // The tied phrase's token span (a list item's own), for the
+            // answer to be spliced into the held command (ADR-385 D11)
+            tokens: ref.tokens,
             matchCount: viableMatches.length,
             objectType  // 'direct', 'indirect', or 'instrument'
           }
@@ -648,23 +692,27 @@ export class CommandValidator implements CommandValidator {
    * match carries its EntityId (interceptors and future conversation
    * systems key on it); a miss or a tie falls back to the verbatim text.
    *
-   * @param text Verbatim topic text as typed (articles preserved)
+   * An action that names its own `topicCandidates` resolves among those
+   * instead, rooms included and with no scope filter: the places a command
+   * names that are never in sight (alignment finding F5).
+   *
+   * @param topic The parsed topic: its verbatim text, and the phrase the
+   *   parser split once (ADR-385 D2), which the matcher reads
+   * @param metadata The action's metadata, for its `topicCandidates`
    * @returns The validated topic — `entity` set only on a unique match
    */
-  private resolveTopic(text: string): { text: string; entity?: EntityId } {
-    const words = this.stripLeadingArticles(text.toLowerCase().trim()).split(/\s+/);
-    const ref: INounPhrase = {
-      tokens: [],
-      text,
-      head: words[words.length - 1] || text,
-      modifiers: [],
-      articles: [],
-      determiners: [],
-      candidates: [text]
-    };
+  private resolveTopic(
+    topic: { text: string; phrase: INounPhrase },
+    metadata: ActionMetadata
+  ): { text: string; entity?: EntityId } {
+    const { text, phrase: ref } = topic;
 
-    const candidates = this.findCandidates(ref);
-    const inScope = this.filterByScope(candidates, ScopeLevel.VISIBLE);
+    const named = metadata.topicCandidates;
+    const inScope = named
+      ? named(this.world, this.world.getPlayer()?.id ?? '')
+          .map((id) => this.world.getEntity(id))
+          .filter((entity): entity is IFEntity => entity !== undefined && this.nameMatch(entity, ref) !== null)
+      : this.filterByScope(this.findCandidates(ref), ScopeLevel.VISIBLE);
     const viable = this.dominantMatches(this.scoreEntities(inScope, ref));
 
     if (viable.length === 1) {
@@ -675,146 +723,60 @@ export class CommandValidator implements CommandValidator {
 
   /**
    * Find candidate entities the noun phrase matches at any tier
-   * (ADR-231 D3). Rooms are skipped; the player IS resolvable here: a
-   * player with an IdentityTrait ("yourself", aliases me/self/myself)
-   * must match "examine me", "x yourself", etc. (ISSUE #154).
+   * (ADR-231 D3). Rooms are skipped — except a landmark room seen across
+   * an expanse (ADR-376 D6), which is a thing in the distance the player
+   * can name and examine; the player IS resolvable here: a player with an
+   * IdentityTrait ("yourself", aliases me/self/myself) must match
+   * "examine me", "x yourself", etc. (ISSUE #154).
    */
   private findCandidates(ref: INounPhrase): IFEntity[] {
     return this.world.findWhere(entity => {
-      if (entity.type === 'room') {
+      if (entity.type === 'room' && !this.isLandmarkInSight(entity)) {
         return false;
       }
-      return this.matchEntityName(entity, ref) !== null;
+      return this.nameMatch(entity, ref) !== null;
     });
   }
 
+  /** A landmark room of an expanse the player is positioned in, seen from outside it (ADR-376 D6). */
+  private isLandmarkInSight(room: IFEntity): boolean {
+    const player = this.world.getPlayer();
+    if (!player || !isLandmark(this.world, room)) return false;
+    if (this.world.getContainingRoom(player.id)?.id === room.id) return false;
+    return this.scopeResolver.canSee(player, room);
+  }
+
   /**
-   * Match a noun phrase against one entity's naming surface (ADR-231 D3,
-   * PIN 2's tiered model).
+   * Match a noun phrase against one entity through the one noun matcher
+   * (ADR-385 D1; the tiers are ADR-231 D3's). The self words name whoever
+   * holds the player role (ADR-327), so the player is the observer.
    *
-   * Tier EXACT: the query text — tried with its leading articles restored
-   * first (so proper names beginning with an article-like word survive),
-   * then as parsed, then article-stripped — equals the full name, a full
-   * alias, or the entity type, case-insensitively.
-   *
-   * Tier WORDS: EVERY query content word (stopwords dropped by
-   * `deriveNameVocabulary`) matches a word of the entity's vocabulary
-   * (name content words + alias content words + authored adjectives).
-   * Any query word matching nothing DISQUALIFIES the candidate:
-   * "x brass sword" never resolves to the brass key.
-   *
-   * @returns The tier and matched-word count, or null when neither
-   *   tier matches.
+   * @returns The tier as the validator ranks it and the matched-word count,
+   *   or null when the phrase does not name the entity.
    */
-  private matchEntityName(entity: IFEntity, ref: INounPhrase): NameMatch | null {
-    const rawText = ref.text?.toLowerCase().trim() || '';
-    if (!rawText) {
+  private nameMatch(entity: IFEntity, ref: INounPhrase): NameMatch | null {
+    const match = matchNoun(this.surfaceOf(entity), ref);
+    if (!match) {
       return null;
-    }
-
-    // Full-text-first: reconstruct the original query (leading articles the
-    // parser split off) before trying the stripped forms.
-    const articles = (ref.articles || []).map(a => a.toLowerCase());
-    const queries: string[] = [];
-    if (articles.length > 0) {
-      queries.push(`${articles.join(' ')} ${rawText}`);
-    }
-    queries.push(rawText);
-    const stripped = this.stripLeadingArticles(rawText);
-    if (!queries.includes(stripped)) {
-      queries.push(stripped);
-    }
-
-    const name = this.getEntityName(entity).toLowerCase();
-    const aliases = this.getEntitySynonyms(entity).map(s => s.toLowerCase());
-    const wordsMatchedFor = (q: string) =>
-      Math.max(1, deriveNameVocabulary(q).length);
-
-    // The self words name whoever holds the player role (ADR-327): "me",
-    // "myself", "yourself" resolve to the current player whatever that
-    // entity is called, so a story whose player is Alex still answers
-    // `examine yourself` (GH #231's cloak suite; ISSUE #154's intent).
-    if (SELF_WORDS.has(stripped) && entity.id === this.world.getPlayer()?.id) {
-      return { tier: MATCH_TIER_EXACT, wordsMatched: 1, reasons: ['self_word'] };
-    }
-
-    // Tier EXACT — full text equals name, alias, or type
-    for (const query of queries) {
-      if (name === query) {
-        return {
-          tier: MATCH_TIER_EXACT,
-          wordsMatched: wordsMatchedFor(query),
-          reasons: ['exact_name_match']
-        };
-      }
-      if (aliases.includes(query)) {
-        // getEntitySynonyms includes the entity type, so type equality
-        // lands here too (preserves pre-D3 type matching).
-        return {
-          tier: MATCH_TIER_EXACT,
-          wordsMatched: wordsMatchedFor(query),
-          reasons: ['exact_synonym_match']
-        };
-      }
-    }
-
-    // Tier WORDS — every query content word must match the vocabulary
-    const queryWords = deriveNameVocabulary(stripped);
-    if (queryWords.length === 0) {
-      return null;
-    }
-    const vocabulary = this.getEntityVocabulary(entity);
-    for (const word of queryWords) {
-      if (!vocabulary.has(word)) {
-        return null; // disqualified — a query word matched nothing
-      }
     }
     return {
-      tier: MATCH_TIER_WORDS,
-      wordsMatched: queryWords.length,
-      reasons: queryWords.map(w => `word_match_${w}`)
+      tier: TIER_RANK[match.tier],
+      wordsMatched: match.wordsMatched,
+      reasons: [`${match.tier}_match`]
     };
   }
 
-  /**
-   * The entity's word-level matching vocabulary (PIN 2): name content
-   * words + alias content words + authored adjectives (per-side for walls
-   * via getEntityAdjectives). Always derived on demand from the CURRENT
-   * name — never stored — so renames can't leave stale vocabulary and
-   * Chord-loaded and TS-authored entities are uniform by construction.
-   */
-  private getEntityVocabulary(entity: IFEntity): Set<string> {
-    const vocabulary = new Set<string>(
-      deriveNameVocabulary(this.getEntityName(entity))
-    );
-
-    const identity = entity.getTrait(IdentityTrait);
-    if (identity?.aliases) {
-      for (const alias of identity.aliases) {
-        for (const word of deriveNameVocabulary(alias)) {
-          vocabulary.add(word);
-        }
-      }
-    }
-
-    for (const adjective of this.getEntityAdjectives(entity)) {
-      vocabulary.add(adjective.toLowerCase());
-    }
-
-    return vocabulary;
+  /** The entity's naming surface as the player sees it (ADR-385 D1). */
+  private surfaceOf(entity: IFEntity): NamingSurface {
+    return namingSurfaceOf(this.world, entity, this.world.getPlayer()?.id ?? '');
   }
 
-  /**
-   * Strip leading articles ("the", "a", "an") from query text, always
-   * keeping at least one word.
-   */
-  private stripLeadingArticles(text: string): string {
-    const words = text.split(/\s+/);
-    let start = 0;
-    while (start < words.length - 1 && QUERY_ARTICLES.has(words[start])) {
-      start++;
-    }
-    return words.slice(start).join(' ');
+  /** Whether the player carries or wears the entity (what `my` narrows to, ADR-385 D2). */
+  private isOwnedByPlayer(entity: IFEntity): boolean {
+    const player = this.world.getPlayer();
+    if (!player) return false;
+    const { carried, worn } = this.world.getCarriedAndWorn(player.id);
+    return carried.some((e) => e.id === entity.id) || worn.some((e) => e.id === entity.id);
   }
 
   /**
@@ -867,7 +829,7 @@ export class CommandValidator implements CommandValidator {
   /**
    * Score entities against a reference (ADR-231 D3 tiered model).
    *
-   * The tier and matched-word count come from `matchEntityName` and carry
+   * The tier and matched-word count come from `nameMatch` and carry
    * PIN 2's ranking; the numeric `score` is the within-tie heuristic
    * (modifier/visibility/inventory/author scope priority bonuses) that the
    * normal disambiguation flow uses to break residual ties.
@@ -877,18 +839,13 @@ export class CommandValidator implements CommandValidator {
 
     const scored: ScoredEntityMatch[] = [];
 
-    // Extract modifiers from ref, or infer from text vs head if not set
-    // (The parser may not always populate the modifiers field)
-    let modifiers = ref.modifiers || [];
-    if (modifiers.length === 0 && ref.text && ref.head) {
-      const head = ref.head.toLowerCase();
-      const words = ref.text.toLowerCase().split(/\s+/).filter(w => w !== head);
-      const nonModifiers = ['the', 'a', 'an', 'all', 'some', 'every', 'any', 'my'];
-      modifiers = words.filter(w => !nonModifiers.includes(w));
-    }
+    // The parser fills `modifiers` with the content words before the head
+    // (ADR-385 D2)
+    const modifiers = ref.modifiers;
 
     for (const entity of entities) {
-      const adjectives = this.getEntityAdjectives(entity).map(a => a.toLowerCase());
+      const surface = this.surfaceOf(entity);
+      const adjectives = surface.adjectives.map(a => a.toLowerCase());
 
       // ADR-173: walls require strict modifier match. When the user specifies
       // modifiers, a wall whose current-side adjective doesn't match at least
@@ -903,7 +860,7 @@ export class CommandValidator implements CommandValidator {
       }
 
       // Tiered name match (PIN 2) — no match at either tier disqualifies
-      const match = this.matchEntityName(entity, ref);
+      const match = this.nameMatch(entity, ref);
       if (!match) {
         continue;
       }
@@ -915,7 +872,7 @@ export class CommandValidator implements CommandValidator {
       // vocabulary covers (adjective, name word, or alias word) marks the
       // candidate as modifier-consistent for the disambiguation flow.
       if (modifiers.length > 0) {
-        const vocabulary = this.getEntityVocabulary(entity);
+        const vocabulary = vocabularyOf(surface);
         for (const modifier of modifiers) {
           if (vocabulary.has(modifier.toLowerCase())) {
             score += 5;
@@ -1015,19 +972,13 @@ export class CommandValidator implements CommandValidator {
       }
     }
 
-    // If all adjectives match for only one entity, use it
-    // Infer modifiers from text vs head (same logic as scoreEntities)
-    let modifiers = ref?.modifiers || [];
-    if (modifiers.length === 0 && ref?.text && ref?.head) {
-      const head = ref.head.toLowerCase();
-      const words = ref.text.toLowerCase().split(/\s+/).filter(w => w !== head);
-      const nonModifiers = ['the', 'a', 'an', 'all', 'some', 'every', 'any', 'my'];
-      modifiers = words.filter(w => !nonModifiers.includes(w));
-    }
+    // If all adjectives match for only one entity, use it (the parser's
+    // `modifiers`, ADR-385 D2)
+    const modifiers = ref?.modifiers ?? [];
 
     if (modifiers.length > 0) {
       const perfectMatches = matches.filter(m => {
-        const adjectives = this.getEntityAdjectives(m.entity).map(a => a.toLowerCase());
+        const adjectives = this.surfaceOf(m.entity).adjectives.map(a => a.toLowerCase());
         return modifiers.every((mod: string) => adjectives.includes(mod.toLowerCase()));
       });
 
@@ -1253,62 +1204,6 @@ export class CommandValidator implements CommandValidator {
   private getEntityDescription(entity: IFEntity): string {
     // IFEntity has a description getter that uses identity trait
     return entity.description || this.getEntityName(entity);
-  }
-
-  /**
-   * Get entity adjectives.
-   *
-   * For walls (ADR-173), adjectives are per-side: the wall entity carries
-   * an adjective for each of its two connecting rooms, and the parser
-   * resolves against the side facing the player's current room. The same
-   * wall entity therefore matches different adjectives from each side
-   * (e.g. 'oak' from the parlor, 'brick' from the library). When the
-   * player is not in either connecting room, the wall contributes no
-   * adjectives.
-   *
-   * For all other entities, adjectives come from `IdentityTrait.adjectives`.
-   */
-  private getEntityAdjectives(entity: IFEntity): string[] {
-    if (entity instanceof WallEntity) {
-      const player = this.world.getPlayer();
-      const playerRoom = player ? this.world.getLocation(player.id) : undefined;
-      if (playerRoom && (playerRoom === entity.between[0] || playerRoom === entity.between[1])) {
-        const adjective = entity.getSide(playerRoom)?.adjective;
-        return adjective ? [adjective] : [];
-      }
-      return [];
-    }
-
-    const adjectives: string[] = [];
-
-    // Get identity trait
-    const identity = entity.getTrait(IdentityTrait);
-    if (identity?.adjectives) {
-      adjectives.push(...identity.adjectives);
-    }
-
-    return adjectives;
-  }
-
-  /**
-   * Get entity synonyms
-   */
-  private getEntitySynonyms(entity: IFEntity): string[] {
-    const synonyms: string[] = [];
-
-    // Get identity trait  
-    // Note: Entities use 'aliases' not 'synonyms' (synonyms are for verbs)
-    const identity = entity.getTrait(IdentityTrait);
-    if (identity?.aliases) {
-      synonyms.push(...identity.aliases);
-    }
-
-    // Add type as synonym
-    if (entity.type) {
-      synonyms.push(entity.type);
-    }
-
-    return synonyms;
   }
 
 

@@ -38,6 +38,9 @@ import type {
   TimerClause,
 } from '../../ast.js';
 import type { DiagnosticBag } from '../../diagnostics.js';
+import { entityIdOf, hasAdjectiveDecl, isKindDecl } from '../declared.js';
+import type { VehicleDecl } from '../vehicles.js';
+import type { ExpanseDecl } from '../expanses.js';
 import type {
   IRBlockedExit,
   IRComposition,
@@ -69,6 +72,9 @@ import type {
   IRTemperamentDef,
   IRThinksEntry,
   IRTimerClause,
+  IRVehicle,
+  IRExpanse,
+  IRPushingWay,
 } from '../../ir.js';
 import type { Span } from '../../span.js';
 import type { EntitySymbol, Scope } from '../../analyzer.js';
@@ -126,6 +132,20 @@ export interface EntityDraft {
   deadly: IRDeadlyRoom | null;
   states: string[];
   counters: IRCounterDecl[];
+  /** `holds <n>` (ADR-369 D2); undefined when the block has no line. */
+  holds?: number;
+  /** The vehicle's declaration (ADR-366); undefined off a `vehicle` block. */
+  vehicle?: IRVehicle;
+  /** `admits:` (ADR-366 D6) as entity ids; undefined when the block has no line. */
+  admits?: string[];
+  /** The `pushing` block (ADR-378 D6b) as directed room pairs; undefined when the block has none. */
+  pushing?: IRPushingWay[];
+  /** The expanse's declaration (ADR-376 D2); undefined off an `expanse` block. */
+  expanse?: IRExpanse;
+  /** `sight: <n>` on a landmark room or an instrument (ADR-376 D6); undefined when absent. */
+  sight?: number;
+  /** `seen from afar:` on a landmark room (ADR-376 D6); undefined when absent. */
+  seenFromAfar?: string;
   descriptionKey: string | null;
   initialDescriptionKey: string | null;
   descriptionSource?: IRTextSource;
@@ -160,6 +180,12 @@ export interface EntityBuildContext {
   readonly groupOrigins: ReadonlyMap<CreateDecl, RoomGroupOrigin>;
 
   resolveEntityId(ref: NameRef): string | null;
+  /** Resolve a name without reporting — for a check whose owner reports the name itself. */
+  resolveEntityIdSilent(ref: NameRef): string | null;
+  /** Every `vehicle` block's declaration, by entity id (ADR-366). */
+  readonly vehicles: ReadonlyMap<string, VehicleDecl>;
+  /** Every `expanse` block's declaration, by entity id (ADR-376). */
+  readonly expanses: ReadonlyMap<string, ExpanseDecl>;
   resolveCondition(cond: ConditionNode, scope: Scope): IRCondition;
   suggestText(input: string, candidates: string[]): string;
   requirePhrase(key: string, span: Span, owner?: EntitySymbol | null): void;
@@ -202,7 +228,7 @@ export interface EntityLineBuilder {
 
 /** `a person` composed on a create block — the eligibility floor for the player role. */
 export function isPersonDecl(decl: CreateDecl): boolean {
-  return decl.compositions.some((c) => c.article && c.words.join(' ').toLowerCase() === 'person');
+  return isKindDecl(decl, 'person');
 }
 
 /**
@@ -211,9 +237,7 @@ export function isPersonDecl(decl: CreateDecl): boolean {
  * reaches parser vocabulary or the unknown-trait census gate.
  */
 export function isPlayableDecl(decl: CreateDecl): boolean {
-  return decl.compositions.some(
-    (c) => !c.article && c.words.length === 1 && c.words[0].toLowerCase() === 'playable',
-  );
+  return hasAdjectiveDecl(decl, 'playable');
 }
 
 /**
@@ -225,7 +249,7 @@ export function isPlayableDecl(decl: CreateDecl): boolean {
  */
 export function newEntityDraft(decl: CreateDecl, sym: EntitySymbol | null, scope: Scope): EntityDraft {
   return {
-    id: sym?.id ?? decl.name.words.join('-').toLowerCase(),
+    id: sym?.id ?? entityIdOf(decl.name.words),
     sym,
     isPerson: isPersonDecl(decl),
     scope,

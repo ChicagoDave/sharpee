@@ -1,0 +1,71 @@
+title: Tram — a controlled line out and back (ADR-366 D5a, D5e)
+story: vehicles
+description: The tram car runs its three stops under a brake at a pace of
+  two turns, halting at each end; a second push at the Terminus runs it
+  back. The funicular is the same line one way: at its end a further start
+  is refused with the stock line and nothing moves.
+
+---
+
+> north
+[OK: contains "Depot"]
+
+> enter tram car
+[OK: contains "get into the tram car"]
+
+# start puts it under way; the sequence anchored on `becomes under way` fires
+> push brake
+[OK: contains "The brake comes off."]
+[OK: contains "The tram car lurches into motion."]
+
+# pace: 2 turns — the start turn's tick counts, the step lands next turn
+> wait
+[OK: contains "The tram car arrives at the Midway Halt."]
+
+# Every turn ticks the pace: this look is one of the two
+> look
+[OK: contains "Midway Halt"]
+
+> wait
+[OK: contains "The tram car arrives at the Terminus."]
+
+# Halted at the end: nothing moves
+> wait
+[OK: not contains "arrives"]
+
+# The run back (a sequence is a progression: its anchor step fired once and does not re-arm)
+> push brake
+[OK: contains "The brake comes off."]
+[OK: not contains "lurches"]
+
+> wait
+[OK: contains "The tram car arrives at the Midway Halt."]
+
+> wait
+[OK: not contains "arrives"]
+
+> wait
+[OK: contains "The tram car arrives at the Depot."]
+
+> exit
+[OK: contains "You get out of the tram car."]
+
+# The one-way funicular
+> west
+[OK: contains "Lower Station"]
+
+> enter funicular
+[OK: contains "get into the funicular"]
+
+> push switch
+[OK: contains "You throw the switch."]
+[OK: contains "The funicular arrives at the Upper Station."]
+
+# At the end of a one-way line a start is refused with the stock line and nothing moves
+> push switch
+[OK: contains "You throw the switch."]
+[OK: contains "The funicular is at the end of its line."]
+[OK: not contains "arrives"]
+
+> look
+[OK: contains "Upper Station"]

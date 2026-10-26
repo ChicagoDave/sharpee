@@ -91,11 +91,8 @@ describe('ButtonTrait', () => {
     it('should work with PushableTrait', () => {
       const entity = world.createEntity('Emergency Button', 'object');
       
-      const pushableTrait = new PushableTrait({
-        pushType: 'button',
-        activates: 'alarm-system'
-      });
-      
+      const pushableTrait = new PushableTrait();
+
       const buttonTrait = new ButtonTrait({
         color: 'red',
         size: 'large',
@@ -112,8 +109,7 @@ describe('ButtonTrait', () => {
       const retrievedPushable = entity.getTrait(TraitType.PUSHABLE) as PushableTrait;
       const retrievedButton = entity.getTrait(TraitType.BUTTON) as ButtonTrait;
       
-      expect(retrievedPushable.pushType).toBe('button');
-      expect(retrievedPushable.activates).toBe('alarm-system');
+      expect(retrievedPushable.type).toBe(TraitType.PUSHABLE);
       expect(retrievedButton.color).toBe('red');
       expect(retrievedButton.label).toBe('EMERGENCY');
     });
@@ -269,13 +265,8 @@ describe('ButtonTrait', () => {
     it('should create emergency stop button', () => {
       const entity = world.createEntity('Emergency Stop', 'object');
       
-      entity.add(new PushableTrait({
-        pushType: 'button',
-        activates: 'machinery-shutdown',
-        repeatable: true,
-        pushSound: 'emergency_button.mp3'
-      }));
-      
+      entity.add(new PushableTrait());
+
       entity.add(new ButtonTrait({
         color: 'red',
         size: 'large',
@@ -284,11 +275,11 @@ describe('ButtonTrait', () => {
         material: 'metal',
         latching: true
       }));
-      
+
       const pushable = entity.getTrait(TraitType.PUSHABLE) as PushableTrait;
       const button = entity.getTrait(TraitType.BUTTON) as ButtonTrait;
-      
-      expect(pushable.activates).toBe('machinery-shutdown');
+
+      expect(pushable.type).toBe(TraitType.PUSHABLE);
       expect(button.color).toBe('red');
       expect(button.label).toBe('EMERGENCY STOP');
       expect(button.latching).toBe(true);
@@ -297,11 +288,7 @@ describe('ButtonTrait', () => {
     it('should create elevator call button', () => {
       const entity = world.createEntity('Call Button', 'object');
       
-      entity.add(new PushableTrait({
-        pushType: 'button',
-        activates: 'elevator-call',
-        repeatable: true
-      }));
+      entity.add(new PushableTrait());
       
       entity.add(new ButtonTrait({
         shape: 'round',

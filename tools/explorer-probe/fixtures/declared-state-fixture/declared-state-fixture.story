@@ -12,7 +12,6 @@ story
   ifid: 5D2C8B1E-3F4A-4C7D-9E0B-1A2B3C4D5E6F
   description: A one-room fixture for the declared-state lens.
   states: dawn, dusk
-  use state-machines
 
 create the Yard
   a room

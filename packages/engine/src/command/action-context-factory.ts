@@ -275,16 +275,12 @@ export function createActionContext(
           action: takingAction.id,
           tokens: [],
           structure: { verb: { tokens: [0], text: 'take', head: 'take' } },
-          pattern: 'VERB_NOUN',
-          confidence: 1.0
+          pattern: 'VERB_NOUN'
         },
         actionId: takingAction.id,
         directObject: {
           entity,
-          parsed: {
-            text: entity.name,
-            candidates: [entity.name]
-          }
+          parsed: { text: entity.name }
         }
       };
 

@@ -1,4 +1,4 @@
-<p>Rooms connect with direction lines. Ten directions exist: the eight compass points plus <code>up</code> and <code>down</code>. A plain exit connects both ways: the return exit is inferred in the opposite direction, so <code>north to the Herb Garden</code> on the Rose Walk also puts a <code>south</code> exit on the Herb Garden. Write <code>, one-way</code> for an exit with no way back — a landing the story reaches only by moving the player there, and leaves by walking:</p>
+<p>Rooms connect with direction lines. Twelve directions exist: the eight compass points, <code>up</code> and <code>down</code>, and <code>in</code> and <code>out</code>. A plain exit connects both ways: the return exit is inferred in the opposite direction, so <code>north to the Herb Garden</code> on the Rose Walk also puts a <code>south</code> exit on the Herb Garden, and <code>in to the Potting Shed</code> on the Rose Walk puts an <code>out</code> exit on the shed. Write <code>, one-way</code> for an exit with no way back — a landing the story reaches only by moving the player there, and leaves by walking:</p>
 <pre><code class="language-chord">create Behind the Fruit Stall
   a room
   southwest to the Fruit Stall, one-way</code></pre>
@@ -10,6 +10,11 @@
   south is blocked: hedge-too-thick
 
   Gravel crunches underfoot between the rose beds.</code></pre>
+<p><code>in</code> and <code>out</code> are exits like any other, and take <code>, one-way</code>, <code>through &lt;door&gt;</code> and a blocked line the same way. <code>in the Potting Shed</code> with an article is placement, not an exit; <code>in to the Potting Shed</code> with <code>to</code> is the exit. A player types <code>in</code>, <code>inside</code>, <code>out</code> or <code>outside</code> to use them:</p>
+<pre><code class="language-chord">create the Rose Walk
+  a room
+  in to the Potting Shed
+  in is blocked while the shed door is locked: shed-locked</code></pre>
 <p>A blocked exit refuses travel and speaks the named phrase (the key after the colon names a phrase the story defines, a single kebab-case word; dots are illegal, ADR-254). The block can be conditional:</p>
 <pre><code class="language-chord">create the Orchard
   a room
@@ -42,3 +47,63 @@ define phrases en-US
   too-dark:
     The corridor below is too dark to try.</code></pre>
 <p>A per-exit <code>, one-way</code> is not allowed inside an <code>exits:</code> line, because a comma there already separates exits. A room that mixes the two writes an <code>exits:</code> line and an <code>exits, one-way:</code> line, or single lines. An <code>exits:</code> line belongs in a room block; a region lists its rooms' exits in an <code>exits</code> table instead.</p>
+<h2 id="passages-an-exit-named-by-its-command">Passages: an exit named by its command</h2>
+<p>Some ways out of a room have no compass word. The player types <code>xyzzy</code>, or <code>climb the rope</code>, or <code>follow the cables</code>. A <code>passage</code> block names such an exit by the commands the player types, and leads somewhere exactly as a compass exit does:</p>
+<pre><code class="language-chord">create the Cable Trench
+  a room, dark
+  up to the Loading Dock
+
+  passage to the Sorting Room
+    grammar
+      follow the cables
+      crawl along the cables
+  end passage
+
+  A trench under the dock floor. Lit, the cables can be seen running
+  off toward the sorting machine.</code></pre>
+<p>The head says where the passage leads, with <code>through &lt;door&gt;</code> as on any exit. <code>grammar</code> comes first, with one command per line under it, written as an action's grammar is: <code>or</code> joins two words (<code>crawl or creep along the cables</code>) and <code>[…]</code> marks a word the player may leave out. A passage takes no nouns, so <code>the</code> is a word here, never a slot. Articles are optional for the player: <code>follow cables</code> reaches <code>follow the cables</code>. The first command names the passage on the map.</p>
+<p>A passage is one-way by construction, since there is no opposite of <code>xyzzy</code>: no return exit is inferred, and <code>, one-way</code> on the head is an error. A passage is an exit, so it appears on the map, <code>on the player going</code> fires for it, a door on the way is consulted, and the destination's <code>after the player entering</code> runs. Its commands are grammar only in the room that declares it: elsewhere <code>climb the rope</code> is the standard climbing action, and <code>xyzzy</code> is not understood, exactly as if the passage had not been written.</p>
+<p>A passage's blocked and deadly lines live inside its block, after <code>grammar</code>, at most one of each:</p>
+<pre><code class="language-chord">create the Cable Trench
+  a room, dark
+
+  passage to the Sorting Room
+    grammar
+      follow the cables
+      crawl along the cables
+    blocked while the grating is shut: grating-shut
+  end passage</code></pre>
+<h2 id="exits-that-exist-while-a-condition-holds">Exits that exist while a condition holds</h2>
+<p>A single compass exit line takes a <code>while &lt;condition&gt;</code> tail, and a passage takes a <code>while &lt;condition&gt;</code> line inside its block. While the condition is false the exit is not there: going refuses as with no exit written, a passage's commands are not grammar, and the map draws it as a conditional exit. This is a <em>hidden</em> exit, and it is not the same as a blocked one: a blocked exit exists and refuses with your phrase; a hidden exit does not exist and refuses with the platform's &quot;You can't go that way.&quot; An exit that is both hidden and blocked is hidden.</p>
+<pre><code class="language-chord">create the Crawl
+  a room
+  north to the Passage while the boulder is rolled aside
+
+create the Cable Trench
+  a room, dark
+
+  passage to the Sorting Room
+    grammar
+      follow the cables
+    while the Cable Trench is not dark
+  end passage</code></pre>
+<p>The inferred reverse of a two-way exit carries the same condition: a way is there or not from both ends. For a one-sided reveal, write <code>, one-way</code> on each side. <code>while</code> is not allowed on an <code>exits:</code> line or in a region's exit table, where the condition would run into the next exit; give the exit a line of its own.</p>
+<h2 id="who-may-take-an-exit">Who may take an exit</h2>
+<p>A room's <code>admits:</code> line names the steered vehicles that may enter it (see <a href="/chord/guide/world/kinds-traits-and-settings">vehicles</a>). The same list takes the word <code>pushing</code> for a thing pushed along the way, and a single exit line takes its own <code>admits</code> list for that one way:</p>
+<pre><code class="language-chord">create the Sorting Room
+  a room
+  east to the Loading Dock admits pushing
+  east is blocked while the dock door is sealed: dock-sealed
+
+create the mail trolley
+  a thing, pushable
+  in the Sorting Room</code></pre>
+<p>The thing can say its own ways instead, as room pairs, in a <code>pushing</code> block. <code>between</code> is both ways, <code>from … to</code> one way, and every row must name an exit the first room already has to the second, so the block can never disagree with the map. The room's <code>admits pushing</code> admits every pushable thing; the block admits this one, and the two coexist (a trolley with a block beside a boulder without one, on the same door):</p>
+<pre><code class="language-chord">create the mail trolley
+  a thing, pushable
+  in the Sorting Room
+
+  pushing
+    between the Sorting Room and the Loading Dock
+  end pushing</code></pre>
+<p>Either way, <code>push trolley east</code> moves the trolley and the player into the Loading Dock together, and the dock is described with the trolley in it. Every refusal the player's own step would meet refuses the push in the same words: no exit, a hidden way, the blocked phrase, a closed or locked door, a vehicle the player is riding. A way that exists but does not admit pushing refuses with &quot;You can't push the trolley that way.&quot; An exit line's <code>admits</code> comes after the door and <code>, one-way</code> and before <code>while</code>.</p>

@@ -20,6 +20,7 @@ import {
   TraitType,
   Direction,
   RoomTrait,
+  VehicleTrait,
   IFEntity,
   WorldModel,
   type ExitResolver
@@ -51,9 +52,9 @@ function setupComputedExitWorld(): ComputedExitFixture {
   const { world, player, room } = setupBasicWorld();
 
   const staticDestination = world.createEntity('Static Destination', 'object');
-  staticDestination.add({ type: TraitType.ROOM });
+  staticDestination.add(new RoomTrait());
   const redirectDestination = world.createEntity('Redirect Destination', 'object');
-  redirectDestination.add({ type: TraitType.ROOM });
+  redirectDestination.add(new RoomTrait());
 
   const roomTrait = room.getTrait(RoomTrait)!;
   roomTrait.exits = {
@@ -70,6 +71,11 @@ function addCarrier(
     | { computedExits: Record<string, { candidates: string[] }> }
 ): void {
   room.add({ type: CARRIER_TYPE, ...declaration } as any);
+}
+
+/** Let a fixture room admit a vehicle (ADR-366 D6). */
+function admit(room: IFEntity, vehicle: IFEntity): void {
+  room.get(RoomTrait)!.admits.vehicles.push(vehicle.id);
 }
 
 function goNorth(world: WorldModel) {
@@ -299,16 +305,72 @@ describe('goingAction × computed exits (ADR-295)', () => {
     }));
 
     const boat = world.createEntity('magic boat', 'object');
-    boat.add({ type: TraitType.VEHICLE, blocksWalkingMovement: false } as any);
+    boat.add(new VehicleTrait({ movement: { kind: 'streets' } }));
     boat.add({ type: TraitType.CONTAINER, enterable: true } as any);
     world.moveEntity(boat.id, room.id);
     world.moveEntity(player.id, boat.id);
+    admit(staticDestination, boat);
+    admit(redirectDestination, boat);
 
     executeWithValidation(goingAction, goNorth(world));
 
     // The vehicle lands where the resolver said; the player never left it.
     expect(world.getLocation(boat.id)).toBe(redirectDestination.id);
     expect(world.getLocation(player.id)).toBe(boat.id);
+  });
+
+  /** A steered boat in the fixture room with the player aboard, the resolver drawing `to`. */
+  function boatAtComputedWay(to: 'static' | 'redirect') {
+    const fixture = setupComputedExitWorld();
+    const { world, player, room, staticDestination, redirectDestination } = fixture;
+    addCarrier(room, {
+      computedExitsAll: { candidates: [staticDestination.id, redirectDestination.id] }
+    });
+    const resolver = vi.fn<ExitResolver>(() => ({
+      kind: 'exit',
+      destination: to === 'static' ? staticDestination.id : redirectDestination.id
+    }));
+    world.registerExitResolver(CARRIER_TYPE, resolver);
+    const boat = world.createEntity('magic boat', 'object');
+    boat.add(new VehicleTrait({ movement: { kind: 'streets' } }));
+    boat.add({ type: TraitType.CONTAINER, enterable: true } as any);
+    world.moveEntity(boat.id, room.id);
+    world.moveEntity(player.id, boat.id);
+    return { ...fixture, boat, resolver };
+  }
+
+  test('vehicle traversal: the drawn room decides — admitted there, the boat goes though another candidate refuses it (Q1 A)', () => {
+    const { world, player, redirectDestination, boat, resolver } = boatAtComputedWay('redirect');
+    admit(redirectDestination, boat);
+
+    executeWithValidation(goingAction, goNorth(world));
+
+    expect(world.getLocation(boat.id)).toBe(redirectDestination.id);
+    expect(world.getLocation(player.id)).toBe(boat.id);
+    expect(resolver).toHaveBeenCalledTimes(1);
+  });
+
+  test('vehicle traversal: a drawn room that does not admit the boat refuses vehicle_cannot_go and nothing moves', () => {
+    const { world, player, room, redirectDestination, boat, resolver } = boatAtComputedWay('static');
+    admit(redirectDestination, boat);
+
+    const events = executeWithValidation(goingAction, goNorth(world));
+
+    expect(events.some(e => e.data?.messageId === 'if.action.going.vehicle_cannot_go')).toBe(true);
+    expect(world.getLocation(boat.id)).toBe(room.id);
+    expect(world.getLocation(player.id)).toBe(boat.id);
+    expect(resolver).toHaveBeenCalledTimes(1);
+  });
+
+  test('vehicle traversal: no candidate admits the boat — refused at validate, and nothing is drawn', () => {
+    const { world, player, room, boat, resolver } = boatAtComputedWay('redirect');
+
+    const events = executeWithValidation(goingAction, goNorth(world));
+
+    expect(events.some(e => e.data?.messageId?.endsWith('vehicle_cannot_go'))).toBe(true);
+    expect(world.getLocation(boat.id)).toBe(room.id);
+    expect(world.getLocation(player.id)).toBe(boat.id);
+    expect(resolver).not.toHaveBeenCalled();
   });
 
   test('static rooms are untouched: no carrier trait means no resolver consultation', () => {

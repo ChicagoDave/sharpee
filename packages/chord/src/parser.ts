@@ -20,8 +20,10 @@
  * - Every AST node carries a Span.
  */
 import { SCOPE_REQUIREMENT_PREDICATES } from './catalog.js';
+import { MOVEMENT_TYPES, passageKeyOfForm } from './ir.js';
 import { CHARACTER_MANIFEST } from './character-manifest.js';
 import { STDLIB_MANIFEST } from './stdlib-manifest.js';
+import { expandCommands, lowerParts } from './patterns.js';
 import {
   ActStmt,
   ActionPattern,
@@ -147,6 +149,20 @@ import {
   ScopeConstraint,
   ScoreDecl,
   CounterDecl,
+  HoldsDecl,
+  VehicleLine,
+  PositionBlockDecl,
+  PushingBlockDecl,
+  PushingRowDecl,
+  LandmarksBlockDecl,
+  SailingBlockDecl,
+  SailingPace,
+  SailingRowDecl,
+  WindValue,
+  LandmarkRowDecl,
+  CoordinatesExpr,
+  PositionRowDecl,
+  SendStmt,
   DefineCounter,
   CounterMutateStmt,
   TimerVerbStmt,
@@ -177,13 +193,17 @@ import {
   TextValue,
   ValueExpr,
 } from './ast.js';
-import { PRONOUN_CASES, STARTS_STATE_PAIRINGS } from './catalog.js';
+import { PRONOUN_CASES, STARTS_STATE_PAIRINGS, TAILED_EVENT_VERBS } from './catalog.js';
 import { DiagnosticBag } from './diagnostics.js';
 import { levenshtein } from './edit-distance.js';
 import { lex, Line, Token } from './lexer.js';
 import { mergeSpans, Span, spanOf } from './span.js';
 
 const ARTICLES = new Set(['the', 'a', 'an']);
+/** ADR-372 D1: prepositions that may stand before a counterpart's article (`throwing at the gong`). */
+const COUNTERPART_PREPOSITIONS = new Set(['at', 'for', 'from', 'about', 'in']);
+/** ADR-372 D1: prepositions that open a counterpart with no article (`throwing at Tobias`). */
+const COUNTERPART_BARE_PREPOSITIONS = new Set(['at', 'for', 'from']);
 
 /**
  * The inflections a written verb may stand for (ADR-329 D1/Q-1: the author
@@ -212,9 +232,10 @@ function stdlibActVerbs(): Set<string> {
   const out = new Set<string>();
   for (const shapes of Object.values(STDLIB_MANIFEST.locales['en-US'].grammarShapes)) {
     for (const shape of shapes) {
-      const parts = shape.split(' ');
-      if (parts.length < 2 || parts[0].startsWith(':')) continue;
-      out.add(parts[0]);
+      const first = shape[0];
+      if (shape.length < 2 || !first || first.kind === 'slot') continue;
+      if (first.kind === 'word') out.add(first.word);
+      else for (const word of first.words) out.add(word);
     }
   }
   actVerbLexicon = out;
@@ -229,6 +250,23 @@ const DIRECTIONS = new Set([
   'north', 'south', 'east', 'west',
   'northeast', 'northwest', 'southeast', 'southwest',
   'up', 'down',
+  'in', 'out', // ADR-369 D3: `in to <room>` is an exit; `in the <room>` stays placement (the article decides)
+]);
+/** The words that end an exit's destination name: the door tail, and ADR-378's `admits` and `while` tails. */
+const EXIT_TAIL_WORDS: ReadonlySet<string> = new Set(['through', 'admits', 'while', 'during']);
+/** The kind-noun settings the loader once read (ADR-369 D2a) — each a parse error naming `holds <n>`. */
+const REMOVED_CAPACITY_SETTINGS = new Set(['max items', 'max weight', 'capacity']);
+/** The vehicle colon-line keys (ADR-366) and the room's `admits:` key; `boarded through:` is matched by its two words. */
+const VEHICLE_COLON_KEYS = new Set([
+  'movement', 'carries', 'drive', 'commands', 'stops', 'direction', 'pace', 'destinations', 'passage', 'aboard', 'admits',
+  // ADR-376: the expanse's and the open vehicle's lines.
+  'stride', 'sight', 'size', 'visibility', 'drift',
+  // ADR-375: the expanse's wind and the sailing vehicle's sails; `sails start:` is matched by its two words.
+  'wind', 'sails',
+]);
+/** The eight compass words a bearing names (ADR-375 D2), each with its bearing. */
+const COMPASS_BEARINGS: ReadonlyMap<string, number> = new Map([
+  ['north', 0], ['northeast', 45], ['east', 90], ['southeast', 135], ['south', 180], ['southwest', 225], ['west', 270], ['northwest', 315],
 ]);
 /** Z5 strategy adverbs (ADR-211 Decision 4). `ordered`/`once` are retired — load errors naming their replacement. */
 const STRATEGIES = new Set(['randomly', 'cycling', 'stopping', 'sticky', 'first-time']);
@@ -241,7 +279,8 @@ const ORDINALS: Record<string, number> = {
 /** Words that terminate a noun phrase in condition/statement positions. */
 // `feels`/`knows` joined for the ADR-310 D13 interior-state predicates;
 // `was` joined for the ADR-320 D9 `was discussed` predicate (frozen 2026-08-17).
-const PHRASE_STOPS = new Set(['is', 'has', 'holds', 'wears', 'can', 'feels', 'knows', 'was', 'and', 'or', 'then', 'to', 'while', 'with']);
+// `are` joins the stops for ADR-375 D7's `<vehicle>'s sails are <setting>`: a name read as a condition's subject ends at it.
+const PHRASE_STOPS = new Set(['is', 'are', 'has', 'holds', 'wears', 'can', 'feels', 'knows', 'was', 'and', 'or', 'then', 'to', 'while', 'with']);
 /** Stop words ending an emit-payload value expression (ADR-216). */
 const EMIT_VALUE_STOPS = new Set(['and', 'when']);
 /**
@@ -418,6 +457,12 @@ function newCreateDecl(name: NameRef, span: Span): CreateDecl {
     statesReversible: false,
     scores: [],
     counters: [],
+    holds: [],
+    vehicleLines: [],
+    positionBlock: null,
+    pushingBlock: null,
+    landmarksBlock: null,
+    sailingBlock: null,
     description: null,
     initialDescription: null,
     phraseOverrides: [],
@@ -456,7 +501,7 @@ function looksLikeComment(line: Line): boolean {
 const STATEMENT_OPENERS = new Set([
   'refuse', 'phrase', 'emit', 'set', 'change', 'move', 'make', 'remove', 'award', 'win', 'lose', 'kill',
   'raise', 'lower',
-  'start', 'restart', 'reset', 'interrupt',
+  'start', 'restart', 'reset', 'interrupt', 'send',
   'if', 'select', 'each', 'end', 'else', 'or', 'when', 'at',
   // ADR-320 conversation-row statements (frozen 2026-08-17):
   'then', 'deflect', 'leave', 'hold',
@@ -848,7 +893,7 @@ class Parser {
         );
         // ADR-261 D2 / ADR-263 D1: `use scoring` (rank ladder) and `use hunger`
         // (satiety meter) are the `use` lines that take an indented body.
-        // `use combat` and `use state-machines` take none.
+        // `use combat` and `use chapters` take none.
         const body: Line[] = [];
         while (this.pos < this.lines.length && this.lines[this.pos].indent > useLine.indent) {
           body.push(this.lines[this.pos++]);
@@ -882,13 +927,16 @@ class Parser {
         continue;
       }
       if (peekedWord === 'on' || peekedWord === 'after') {
-        const clause = this.parseOnClause(peeked.indent, peekedWord);
-        span = mergeSpans(span, clause.span);
+        const clauses = this.parseOnClauses(peeked.indent, peekedWord);
+        span = mergeSpans(span, clauses[0].span);
+        // A listed head expands to several clauses sharing one span; the
+        // story-clause error is about the head, so report it once.
+        const clause = clauses[0];
         if (clause.clauseKind === 'on' && clause.binding === 'every-turn') {
           onClauses.push(clause);
         } else if (!(clause.clauseKind === 'after' && clause.binding === 'every-turn')) {
           // (`after every turn` already got its own parse error inside
-          // parseOnClause — don't stack a second diagnostic on it.)
+          // parseOnClauses — don't stack a second diagnostic on it.)
           this.diagnostics.error(
             'parse.story-clause',
             'The story header hosts only `on every turn` clauses (ADR-236 D7) — action and event clauses belong to the entity they are about.',
@@ -1756,7 +1804,461 @@ class Parser {
     return { kind: 'move-clause', mover, condition, body, span: mergeSpans(lineSpan(headLine), endSpan) };
   }
 
-  /** `counter <name> [starts <n>] [between <lo> and <hi>]` in a `create` block (ADR-264 D1). */
+  /**
+   * One vehicle colon line or an `admits:` line (ADR-366): the key word, the
+   * colon, then the shape the key takes — a closed word (`movement:`,
+   * `carries:`, `drive:`, `direction:`), a turn count (`pace:`, `passage:`),
+   * a list of one-word sets (`commands:`), a list of names (`stops:`,
+   * `destinations:`, `aboard:`, `admits:`) or one name (`boarded through:`).
+   * A shape that does not fit is `parse.vehicle-line`, naming the form. Which
+   * block may carry the line, and under which movement type, is the
+   * analyzer's gate.
+   * @param line the line, at its key word
+   * @returns the parsed line, or null when reported
+   */
+  private parseVehicleLine(line: Line): VehicleLine | null {
+    const c = new Cursor(line.tokens, line);
+    const keyTok = c.next()!;
+    let key = keyTok.text;
+    if (key === 'boarded') {
+      c.next(); // through
+      key = 'boarded-through';
+    } else if (key === 'seen') {
+      c.next(); // from
+      c.next(); // afar
+      key = 'seen-from-afar';
+    } else if (key === 'sails' && c.isWord('start')) {
+      c.next(); // start
+      key = 'sails-start';
+    }
+    c.next(); // colon
+    const span = lineSpan(line);
+    const fail = (form: string): null => {
+      this.diagnostics.error('parse.vehicle-line', `Expected \`${form}\`.`, c.atEnd() ? span : c.restSpan());
+      return null;
+    };
+    const closedWord = <T extends string>(choices: readonly T[], form: string): T | null => {
+      const t = c.next();
+      if (!t || t.kind !== 'word' || !(choices as readonly string[]).includes(t.text) || !c.atEnd()) return fail(form);
+      return t.text as T;
+    };
+    const turnCount = (form: string): number | null => {
+      const n = c.next();
+      const unit = c.next();
+      if (!n || n.kind !== 'number' || !unit || unit.kind !== 'word' || (unit.text !== 'turn' && unit.text !== 'turns') || !c.atEnd()) {
+        return fail(form);
+      }
+      const turns = Number(n.text);
+      if (!Number.isInteger(turns) || turns < 1) return fail(form);
+      return turns;
+    };
+    const nameList = (form: string): NameRef[] | null => {
+      const names: NameRef[] = [];
+      for (;;) {
+        const name = this.parseNameRef(c, (t) => t.kind === 'comma');
+        if (name.words.length === 0) return fail(form);
+        names.push(name);
+        if (c.atEnd()) return names;
+        if (c.peek()?.kind !== 'comma') return fail(form);
+        c.next();
+      }
+    };
+    // A whole number of one or more, then the unit words, then the end of the line.
+    const countThen = (form: string, units: readonly string[]): number | null => {
+      const n = c.next();
+      if (!n || n.kind !== 'number') return fail(form);
+      for (const unit of units) {
+        const u = c.next();
+        if (!u || u.kind !== 'word' || u.text !== unit) return fail(form);
+      }
+      if (!c.atEnd()) return fail(form);
+      const value = Number(n.text);
+      if (!Number.isInteger(value) || value < 1) return fail(form);
+      return value;
+    };
+    switch (key) {
+      case 'movement': {
+        // `open` is `use expanses`' type (ADR-376 D3); the analyzer gates the use line.
+        const value = closedWord(MOVEMENT_TYPES, `movement: ${MOVEMENT_TYPES.join(' | ')}`);
+        return value === null ? null : { key: 'movement', value, span };
+      }
+      case 'stride': {
+        const unitTok = c.peek(1);
+        const units = countThen('stride: <n> unit | units', [unitTok?.kind === 'word' && unitTok.text === 'units' ? 'units' : 'unit']);
+        return units === null ? null : { key: 'stride', units, span };
+      }
+      case 'sight':
+      case 'visibility': {
+        const value = countThen(`${key}: <n>`, []);
+        return value === null ? null : { key, value, span };
+      }
+      case 'size': {
+        const w = c.next();
+        const by = c.next();
+        const h = c.next();
+        const form = 'size: <width> by <height>';
+        if (!w || w.kind !== 'number' || !by || by.kind !== 'word' || by.text !== 'by' || !h || h.kind !== 'number' || !c.atEnd()) return fail(form);
+        const width = Number(w.text);
+        const height = Number(h.text);
+        if (!Number.isInteger(width) || width < 1 || !Number.isInteger(height) || height < 1) return fail(form);
+        return { key: 'size', width, height, span };
+      }
+      case 'drift': {
+        // `drift: 1 unit every <n> turn[s]` — the one unit is fixed by ADR-376 D10.
+        const form = 'drift: 1 unit every <n> turn | turns';
+        const one = c.next();
+        const unit = c.next();
+        const every = c.next();
+        if (!one || one.kind !== 'number' || Number(one.text) !== 1 || !unit || unit.kind !== 'word' || unit.text !== 'unit' || !every || every.kind !== 'word' || every.text !== 'every') {
+          return fail(form);
+        }
+        const turns = turnCount(form);
+        return turns === null ? null : { key: 'drift', turns, span };
+      }
+      case 'seen-from-afar': {
+        const text = restText(c);
+        if (text === '') return fail('seen from afar: <text>');
+        return { key: 'seen-from-afar', text, span };
+      }
+      case 'wind': {
+        // ADR-375 D4: `wind: from <direction | n degrees>` or `wind: calm`.
+        const form = 'wind: from <direction> | from <n> degrees | calm';
+        if (c.isWord('calm')) {
+          c.next();
+          return c.atEnd() ? { key: 'wind', wind: { kind: 'calm' }, span } : fail(form);
+        }
+        if (!c.matchWord('from')) return fail(form);
+        const wind = this.parseWindValue(c);
+        return wind === null || !c.atEnd() ? fail(form) : { key: 'wind', wind, span };
+      }
+      case 'sails': {
+        // ADR-375 D7: `sails: <setting>, <setting>, …` — one word each, least to most canvas.
+        const settings: Array<{ word: string; span: Span }> = [];
+        for (;;) {
+          const t = c.next();
+          if (!t || t.kind !== 'word') return fail('sails: <setting>, <setting>, …');
+          settings.push({ word: t.text, span: t.span });
+          if (c.atEnd()) return { key: 'sails', settings, span };
+          if (c.peek()?.kind !== 'comma') return fail('sails: <setting>, <setting>, …');
+          c.next();
+        }
+      }
+      case 'sails-start': {
+        const t = c.next();
+        if (!t || t.kind !== 'word' || !c.atEnd()) return fail('sails start: <setting>');
+        return { key: 'sails-start', setting: { word: t.text, span: t.span }, span };
+      }
+      case 'carries': {
+        const value = closedWord(['in', 'on'] as const, 'carries: in | on');
+        return value === null ? null : { key: 'carries', value, span };
+      }
+      case 'drive': {
+        const value = closedWord(['state', 'control', 'player'] as const, 'drive: state | control | player');
+        return value === null ? null : { key: 'drive', value, span };
+      }
+      case 'direction': {
+        const value = closedWord(['both', 'one-way'] as const, 'direction: both | one-way');
+        return value === null ? null : { key: 'direction', value, span };
+      }
+      case 'pace': {
+        const turns = turnCount('pace: <n> turn | turns');
+        return turns === null ? null : { key: 'pace', turns, span };
+      }
+      case 'passage':
+        // ADR-380 D3: a flight's trip time is its pace; `passage` names only the passage block.
+        this.diagnostics.error(
+          'parse.passage-is-pace',
+          '`passage:` is retired — a flight vehicle\'s trip time is `pace: <n> turns`, the line every moving vehicle uses.',
+          span,
+        );
+        return null;
+      case 'commands': {
+        const sets: Array<{ word: string; span: Span }> = [];
+        for (;;) {
+          const t = c.next();
+          if (!t || t.kind !== 'word') return fail('commands: <set>, <set>, …');
+          sets.push({ word: t.text, span: t.span });
+          if (c.atEnd()) return { key: 'commands', sets, span };
+          if (c.peek()?.kind !== 'comma') return fail('commands: <set>, <set>, …');
+          c.next();
+        }
+      }
+      case 'stops':
+      case 'destinations':
+      case 'aboard':
+      case 'admits': {
+        const names = nameList(`${key}: <name>, <name>, …`);
+        return names === null ? null : { key, names, span };
+      }
+      case 'boarded-through': {
+        const name = this.parseNameRef(c, () => false);
+        if (name.words.length === 0 || !c.atEnd()) return fail('boarded through: <room>');
+        return { key: 'boarded-through', name, span };
+      }
+      default:
+        return fail(`${key}: …`);
+    }
+  }
+
+  /**
+   * `position … end position` (ADR-366 D5a): `when <condition>: <stop>`
+   * rows, then `otherwise: <stop>`. A row of any other shape is
+   * `parse.position-row`; a row after `otherwise` is
+   * `parse.position-after-otherwise`. A missing `otherwise` is the analyzer's
+   * gate, as are the stops themselves.
+   * @param headLine the `position` line, already consumed
+   */
+  private parsePositionBlock(headLine: Line): PositionBlockDecl {
+    const rows: PositionRowDecl[] = [];
+    let otherwise: PositionBlockDecl['otherwise'] = null;
+    while (this.pos < this.lines.length) {
+      const line = this.lines[this.pos];
+      if (line.indent <= headLine.indent) break;
+      if (looksLikeComment(line)) {
+        this.skipCommentInsideBlock(line);
+        continue;
+      }
+      this.pos++;
+      const colonIndex = line.tokens.map((t) => t.kind === 'colon').lastIndexOf(true);
+      const first = line.tokens[0];
+      if (!first || first.kind !== 'word' || colonIndex === -1 || colonIndex >= line.tokens.length - 1) {
+        this.diagnostics.error('parse.position-row', 'Expected `when <condition>: <stop>` or `otherwise: <stop>` in the `position` block.', lineSpan(line));
+        continue;
+      }
+      const stopCursor = new Cursor(line.tokens.slice(colonIndex + 1), line);
+      const stop = this.parseNameRef(stopCursor, () => false);
+      if (stop.words.length === 0 || !stopCursor.atEnd()) {
+        this.diagnostics.error('parse.position-row', 'Expected one stop name after the colon in this `position` row.', stopCursor.restSpan());
+        continue;
+      }
+      if (otherwise) {
+        this.diagnostics.error('parse.position-after-otherwise', '`otherwise` is the last row of a `position` block — nothing follows it.', lineSpan(line));
+        continue;
+      }
+      if (first.text === 'otherwise' && colonIndex === 1) {
+        otherwise = { stop, span: lineSpan(line) };
+      } else if (first.text === 'when' && colonIndex > 1) {
+        const condition = this.parseCondition(new Cursor(line.tokens.slice(1, colonIndex), line), line);
+        rows.push({ condition, stop, span: lineSpan(line) });
+      } else {
+        this.diagnostics.error('parse.position-row', 'Expected `when <condition>: <stop>` or `otherwise: <stop>` in the `position` block.', lineSpan(line));
+      }
+    }
+    const endSpan = this.consumeEnd('position', headLine);
+    return { kind: 'position-block', rows, otherwise, span: mergeSpans(lineSpan(headLine), endSpan) };
+  }
+
+  /**
+   * `pushing … end pushing` (ADR-378 D6b): the ways a pushable thing may be
+   * pushed along, one row per way — `between <room> and <room>` for both
+   * ways, `from <room> to <room>` for one. A row of any other shape is
+   * `parse.pushing-row`. Whether the rooms are rooms, and connected, is the
+   * analyzer's gate.
+   * @param headLine the `pushing` line, already consumed
+   */
+  private parsePushingBlock(headLine: Line): PushingBlockDecl {
+    const rows: PushingRowDecl[] = [];
+    while (this.pos < this.lines.length) {
+      const line = this.lines[this.pos];
+      if (line.indent <= headLine.indent) break;
+      if (looksLikeComment(line)) {
+        this.skipCommentInsideBlock(line);
+        continue;
+      }
+      this.pos++;
+      const c = new Cursor(line.tokens, line);
+      const bothWays = c.isWord('between');
+      if (!bothWays && !c.isWord('from')) {
+        this.diagnostics.error('parse.pushing-row', 'A `pushing` row is `between <room> and <room>` or `from <room> to <room>`.', lineSpan(line));
+        continue;
+      }
+      c.next();
+      const joiner = bothWays ? 'and' : 'to';
+      const from = this.parseNameRef(c, (t) => t.kind === 'word' && t.text === joiner);
+      if (from.words.length === 0 || !c.matchWord(joiner)) {
+        this.diagnostics.error('parse.pushing-row', `Expected \`${bothWays ? 'between' : 'from'} <room> ${joiner} <room>\` in this \`pushing\` row.`, lineSpan(line));
+        continue;
+      }
+      const to = this.parseNameRef(c, () => false);
+      if (to.words.length === 0 || !c.atEnd()) {
+        this.diagnostics.error('parse.pushing-row', `Expected one room name after \`${joiner}\` in this \`pushing\` row.`, c.atEnd() ? lineSpan(line) : c.restSpan());
+        continue;
+      }
+      rows.push({ from, to, bothWays, span: lineSpan(line) });
+    }
+    const endSpan = this.consumeEnd('pushing', headLine);
+    return { kind: 'pushing-block', rows, span: mergeSpans(lineSpan(headLine), endSpan) };
+  }
+
+  /**
+   * `landmarks … end landmarks` (ADR-376 D2): `<Room>: <x>, <y>` rows. A row
+   * of any other shape is `parse.landmark-row`. That each room exists, lies
+   * inside the size and is named once is the analyzer's gate.
+   * @param headLine the `landmarks` line, already consumed
+   */
+  private parseLandmarksBlock(headLine: Line): LandmarksBlockDecl {
+    const rows: LandmarkRowDecl[] = [];
+    while (this.pos < this.lines.length) {
+      const line = this.lines[this.pos];
+      if (line.indent <= headLine.indent) break;
+      if (looksLikeComment(line)) {
+        this.skipCommentInsideBlock(line);
+        continue;
+      }
+      this.pos++;
+      const c = new Cursor(line.tokens, line);
+      const room = this.parseNameRef(c, (t) => t.kind === 'colon');
+      const colon = c.next();
+      const x = c.next();
+      const comma = c.next();
+      const y = c.next();
+      if (
+        room.words.length === 0 || !colon || colon.kind !== 'colon' || !x || x.kind !== 'number' || !comma || comma.kind !== 'comma' ||
+        !y || y.kind !== 'number' || !c.atEnd() || !Number.isInteger(Number(x.text)) || !Number.isInteger(Number(y.text))
+      ) {
+        this.diagnostics.error('parse.landmark-row', 'Expected `<room>: <x>, <y>` in the `landmarks` block.', lineSpan(line));
+        continue;
+      }
+      rows.push({ room, x: Number(x.text), y: Number(y.text), span: lineSpan(line) });
+    }
+    const endSpan = this.consumeEnd('landmarks', headLine);
+    return { kind: 'landmarks-block', rows, span: mergeSpans(lineSpan(headLine), endSpan) };
+  }
+
+  /**
+   * `sailing … end sailing` (ADR-375 D5, D7): rows `<a> to <b> degrees: <pace>`
+   * — one pace cell, or with sails one `<setting> <pace>` cell per setting,
+   * comma-separated — and one `calm: <pace>` row, where a pace is `<n>
+   * turn[s]` or `stopped`. A row of any other shape is `parse.sailing-row`.
+   * That the bands cover 0 to 180 once, every setting is named, and the
+   * calm row is present is the analyzer's gate.
+   * @param headLine the `sailing` line, already consumed
+   */
+  private parseSailingBlock(headLine: Line): SailingBlockDecl {
+    const rows: SailingRowDecl[] = [];
+    let calm: SailingPace | null = null;
+    const paceCell = (c: Cursor): SailingPace | null => {
+      if (c.isWord('stopped')) {
+        c.next();
+        return 'stopped';
+      }
+      const n = c.next();
+      const unit = c.next();
+      if (!n || n.kind !== 'number' || !unit || unit.kind !== 'word' || (unit.text !== 'turn' && unit.text !== 'turns')) return null;
+      const turns = Number(n.text);
+      return Number.isInteger(turns) && turns >= 1 ? turns : null;
+    };
+    while (this.pos < this.lines.length) {
+      const line = this.lines[this.pos];
+      if (line.indent <= headLine.indent) break;
+      if (looksLikeComment(line)) {
+        this.skipCommentInsideBlock(line);
+        continue;
+      }
+      this.pos++;
+      const c = new Cursor(line.tokens, line);
+      const bad = (): void => {
+        this.diagnostics.error('parse.sailing-row', 'Expected `<a> to <b> degrees: <n> turns | stopped` (with sails, `<setting> <n> turns, …`) or `calm: <n> turns | stopped` in the `sailing` block.', lineSpan(line));
+      };
+      if (c.isWord('calm') && c.peek(1)?.kind === 'colon') {
+        c.next();
+        c.next();
+        const pace = paceCell(c);
+        if (pace === null || !c.atEnd()) {
+          bad();
+          continue;
+        }
+        if (calm !== null) this.diagnostics.error('parse.sailing-row', 'A `sailing` block has one `calm:` row — this is the second.', lineSpan(line));
+        calm = pace;
+        continue;
+      }
+      const a = c.next();
+      const to = c.next();
+      const b = c.next();
+      const degrees = c.next();
+      const colon = c.next();
+      if (!a || a.kind !== 'number' || !to || to.kind !== 'word' || to.text !== 'to' || !b || b.kind !== 'number' || !degrees || degrees.kind !== 'word' || degrees.text !== 'degrees' || !colon || colon.kind !== 'colon') {
+        bad();
+        continue;
+      }
+      const from = Number(a.text);
+      const upTo = Number(b.text);
+      if (!Number.isInteger(from) || !Number.isInteger(upTo) || from < 0 || upTo > 180 || from > upTo) {
+        bad();
+        continue;
+      }
+      const paces: SailingRowDecl['paces'] = [];
+      let ok = true;
+      for (;;) {
+        const start = c.peek();
+        if (!start) {
+          ok = false;
+          break;
+        }
+        // A named setting precedes its pace: a word that is neither `stopped` nor a number.
+        let setting: string | null = null;
+        if (start.kind === 'word' && start.text !== 'stopped') {
+          setting = start.text;
+          c.next();
+        }
+        const pace = paceCell(c);
+        if (pace === null) {
+          ok = false;
+          break;
+        }
+        paces.push({ setting, pace, span: mergeSpans(start.span, c.peek(-1)?.span ?? start.span) });
+        if (c.atEnd()) break;
+        if (c.peek()?.kind !== 'comma') {
+          ok = false;
+          break;
+        }
+        c.next();
+      }
+      if (!ok) {
+        bad();
+        continue;
+      }
+      rows.push({ from, to: upTo, paces, span: lineSpan(line) });
+    }
+    const endSpan = this.consumeEnd('sailing', headLine);
+    return { kind: 'sailing-block', rows, calm, span: mergeSpans(lineSpan(headLine), endSpan) };
+  }
+
+  /**
+   * A wind or a heading's direction form (ADR-375 D2, D4): a compass word, or
+   * `<n> degrees` with n in 0..359. Null, with the cursor moved past what
+   * was read, when the tokens are neither.
+   */
+  private parseWindValue(c: Cursor): WindValue | null {
+    const t = c.next();
+    if (!t) return null;
+    if (t.kind === 'word' && COMPASS_BEARINGS.has(t.text)) return { kind: 'direction', direction: t.text };
+    if (t.kind === 'number') {
+      const bearing = Number(t.text);
+      if (!Number.isInteger(bearing) || bearing < 0 || bearing > 359 || !c.matchWord('degrees')) return null;
+      return { kind: 'bearing', bearing };
+    }
+    return null;
+  }
+
+  /**
+   * `holds <n>` (ADR-369 D2): one whole number of one or more. Anything
+   * else — a word, zero, a negative, a fraction, trailing words — is
+   * `parse.holds-number`. Which kinds may carry the line is the analyzer's
+   * gate (`analysis.holds-owner`).
+   */
+  private parseHoldsLine(line: Line): HoldsDecl | null {
+    const c = new Cursor(line.tokens, line);
+    c.matchWord('holds');
+    const tok = c.next();
+    const count = tok && tok.kind === 'number' ? Number(tok.text) : NaN;
+    if (!Number.isInteger(count) || count < 1 || !c.atEnd()) {
+      this.diagnostics.error('parse.holds-number', '`holds` takes a whole number of one or more: `holds 2`.', tok ? mergeSpans(tok.span, c.restSpan()) : c.restSpan());
+      return null;
+    }
+    return { kind: 'holds', count, span: lineSpan(line) };
+  }
+
   private parseCounterLine(line: Line): CounterDecl | null {
     const c = new Cursor(line.tokens, line);
     c.matchWord('counter');
@@ -2026,6 +2528,69 @@ class Parser {
         this.pos++;
         const cc = this.parseCounterLine(line);
         if (cc) decl.counters.push(cc);
+      } else if (word && VEHICLE_COLON_KEYS.has(word) && line.tokens[1]?.kind === 'colon') {
+        // ADR-366: a vehicle colon line, or a room's `admits:` line. The
+        // colon is what tells `carries: in` from the start-inventory
+        // `carries <name>` below.
+        this.pos++;
+        const v = this.parseVehicleLine(line);
+        if (v) decl.vehicleLines.push(v);
+      } else if (word === 'boarded' && cur.isWord('through', 1) && line.tokens[2]?.kind === 'colon') {
+        // ADR-366 D7: `boarded through: <room>` — the room `to outside` lands in.
+        this.pos++;
+        const v = this.parseVehicleLine(line);
+        if (v) decl.vehicleLines.push(v);
+      } else if (word === 'seen' && cur.isWord('from', 1) && cur.isWord('afar', 2) && line.tokens[3]?.kind === 'colon') {
+        // ADR-376 D6: `seen from afar: <text>` — distant prose of a landmark room or an open vehicle.
+        this.pos++;
+        const v = this.parseVehicleLine(line);
+        if (v) decl.vehicleLines.push(v);
+      } else if (word === 'sails' && cur.isWord('start', 1) && line.tokens[2]?.kind === 'colon') {
+        // ADR-375 D7: `sails start: <setting>` — the setting a sailing vehicle starts in.
+        this.pos++;
+        const v = this.parseVehicleLine(line);
+        if (v) decl.vehicleLines.push(v);
+      } else if (word === 'sailing' && line.tokens.length === 1) {
+        // ADR-375 D5: the `sailing … end sailing` block of a sailing vehicle.
+        this.pos++;
+        const block = this.parseSailingBlock(line);
+        if (decl.sailingBlock) {
+          this.diagnostics.error('parse.sailing-duplicate', 'A vehicle has one `sailing` block — this is the second.', block.span);
+        } else {
+          decl.sailingBlock = block;
+        }
+      } else if (word === 'landmarks' && line.tokens.length === 1) {
+        // ADR-376 D2: the `landmarks … end landmarks` block of an expanse.
+        this.pos++;
+        const block = this.parseLandmarksBlock(line);
+        if (decl.landmarksBlock) {
+          this.diagnostics.error('parse.landmarks-duplicate', 'An expanse has one `landmarks` block — this is the second.', block.span);
+        } else {
+          decl.landmarksBlock = block;
+        }
+      } else if (word === 'position' && line.tokens.length === 1) {
+        // ADR-366 D5a: the `position … end position` block of a `drive: state` line.
+        this.pos++;
+        const block = this.parsePositionBlock(line);
+        if (decl.positionBlock) {
+          this.diagnostics.error('parse.position-duplicate', 'A vehicle has one `position` block — this is the second.', block.span);
+        } else {
+          decl.positionBlock = block;
+        }
+      } else if (word === 'pushing' && line.tokens.length === 1) {
+        // ADR-378 D6b: the `pushing … end pushing` block of a pushable thing.
+        this.pos++;
+        const block = this.parsePushingBlock(line);
+        if (decl.pushingBlock) {
+          this.diagnostics.error('parse.pushing-duplicate', 'A thing has one `pushing` block — this is the second.', block.span);
+        } else {
+          decl.pushingBlock = block;
+        }
+      } else if (word === 'holds') {
+        // ADR-369 D2: the item capacity of a container or supporter.
+        this.pos++;
+        const h = this.parseHoldsLine(line);
+        if (h) decl.holds.push(h);
       } else if (word === 'wears') {
         this.pos++;
         cur.matchWord('wears');
@@ -2071,16 +2636,16 @@ class Parser {
         // Before the placement branch: `on the player taking` (ADR-327 D1)
         // and `on the table` both open with an article — block structure
         // tells them apart, not the article.
-        decl.onClauses.push(this.parseOnClause(line.indent, 'on'));
+        decl.onClauses.push(...this.parseOnClauses(line.indent, 'on'));
       } else if ((word === 'in' || word === 'on') && line.tokens[1] && line.tokens[1].kind === 'word' && ARTICLES.has(line.tokens[1].text)) {
         this.pos++;
         cur.next();
         decl.placement = this.finishPlacement(word as 'in' | 'on', cur, line);
         decl.placementLines.push(decl.placement);
       } else if (word === 'on') {
-        decl.onClauses.push(this.parseOnClause(line.indent, 'on'));
+        decl.onClauses.push(...this.parseOnClauses(line.indent, 'on'));
       } else if (word === 'after') {
-        decl.onClauses.push(this.parseOnClause(line.indent, 'after'));
+        decl.onClauses.push(...this.parseOnClauses(line.indent, 'after'));
       } else if (this.isTimerClauseHead(line)) {
         decl.timerClauses.push(this.parseTimerClause());
       } else if (this.isMoveClauseHead(line)) {
@@ -2146,7 +2711,7 @@ class Parser {
         }
       } else if (word && DIRECTIONS.has(word) && cur.isWord('to', 1)) {
         this.pos++;
-        const { to, via } = this.parseExitCore(cur, line);
+        const { to, via, toOutside } = this.parseExitCore(cur, line);
         // `, one-way` (ADR-234 D4's reservation, wired 2026-09-03 for GH
         // #327): the exit is traversable in the written direction only —
         // the loader infers no reverse exit, and a door on the line is
@@ -2157,28 +2722,31 @@ class Parser {
           cur.next();
           oneWay = true;
         }
-        // ADR-362 D5 (GH #573): the exit line ends at its destination, door
-        // and `, one-way`. Words left over used to be dropped, so `, one way`
-        // compiled as a two-way exit.
-        if (!cur.atEnd()) {
-          const leftover = restText(cur);
-          const hint = nearOneWay(leftover)
-            ? ' Did you mean `, one-way`?'
-            : ' An exit line is `<direction> to <room>`, optionally followed by `through <door>` and `, one-way`.';
-          this.diagnostics.error(
-            'parse.exit-trailing',
-            `Unexpected words at the end of this exit line: \`${leftover}\`.${hint}`,
-            cur.restSpan(),
-          );
-        }
+        // ADR-378 D6/D3: the `admits <list>` and `while <condition>` tails.
+        // ADR-362 D5 (GH #573): the exit line ends there. Words left over
+        // used to be dropped, so `, one way` compiled as a two-way exit.
+        const tails = this.parseExitLineTails(
+          cur,
+          line,
+          true,
+          'An exit line is `<direction> to <room>`, optionally followed by `through <door>`, `, one-way`, `admits <list>` and `while <condition>`.',
+        );
         decl.exits.push({
           kind: 'exit',
           direction: word,
           to,
           via,
           ...(oneWay ? { oneWay: true as const } : {}),
+          ...(toOutside ? { toOutside: true as const } : {}),
+          ...(tails.admits ? { admits: tails.admits } : {}),
+          ...(tails.condition ? { condition: tails.condition } : {}),
           span: lineSpan(line),
         } as ExitDecl);
+      } else if (word === 'passage' && line.tokens[1]?.kind !== 'colon') {
+        // ADR-380 D1: the `passage to <room> … end passage` block; the
+        // colon tells it from the retired vehicle line `passage:`.
+        this.pos++;
+        this.parsePassageBlock(line, decl);
       } else if (word === 'exits' && isExitsLineHead(line)) {
         // ADR-362 D2: a room's exits on one line; room-only is the analyzer's gate.
         this.pos++;
@@ -2244,11 +2812,38 @@ class Parser {
    * @param line the line, for spans
    * @returns the destination, the door if any, and the span the exit covers
    */
-  private parseExitCore(c: Cursor, line: Line): { direction: string; to: NameRef; via: NameRef | null; span: Span } {
+  private parseExitCore(c: Cursor, line: Line): { direction: string; to: NameRef; via: NameRef | null; toOutside?: true; span: Span } {
     const dirTok = c.next()!;
     c.next(); // to
-    const to = this.parseNameRef(c, (t) => t.kind === 'word' && t.text === 'through');
-    let span = mergeSpans(dirTok.span, to.span);
+    const tail = this.parseExitDestination(c, line, dirTok.span);
+    return { direction: dirTok.text, ...tail };
+  }
+
+  /**
+   * The destination half of the shared `exit` production, after `to`:
+   * `( <room> | outside ) [ through <door> ]`. A compass exit and a passage
+   * line (ADR-378 D1) both end this way, so the door tail is parsed once.
+   * @param c positioned just after `to`
+   * @param line the line, for spans and diagnostics
+   * @param headSpan the span of what came before `to` (the direction, or the passage's words)
+   */
+  private parseExitDestination(c: Cursor, line: Line, headSpan: Span): { to: NameRef; via: NameRef | null; toOutside?: true; span: Span } {
+    // ADR-366 D7: `to outside` — the containing vehicle's current room. The
+    // word stands alone before `through`, a comma or the end of the line.
+    let toOutside: true | undefined;
+    let to: NameRef;
+    // The words that end a destination name: the door tail, and (ADR-378)
+    // the `admits` and `while` tails of a single exit line.
+    const endsName = (t: Token): boolean => t.kind === 'word' && EXIT_TAIL_WORDS.has(t.text);
+    const after = c.peek(1);
+    if (c.isWord('outside') && (after === null || after.kind === 'comma' || endsName(after))) {
+      const outsideTok = c.next()!;
+      to = { kind: 'name', article: null, words: ['outside'], span: outsideTok.span };
+      toOutside = true;
+    } else {
+      to = this.parseNameRef(c, endsName);
+    }
+    let span = mergeSpans(headSpan, to.span);
     let via: NameRef | null = null;
     if (c.matchWord('through')) {
       const doorRef = this.parseNameRef(c, () => false);
@@ -2263,7 +2858,235 @@ class Parser {
         span = mergeSpans(span, doorRef.span);
       }
     }
-    return { direction: dirTok.text, to, via, span };
+    return { to, via, ...(toOutside ? { toOutside } : {}), span };
+  }
+
+  /**
+   * The tails a single exit line takes after its destination, door and
+   * `, one-way` (ADR-378): `admits <name>, …` (D6; a compass exit only — a
+   * passage is not a direction, so nothing is pushed through it) and
+   * `while <condition>` (D3), in that order, the condition running to the
+   * end of the line. Leftover words are `parse.exit-trailing`, as on any
+   * exit line.
+   * @param c positioned after the exit's destination (and `, one-way`)
+   * @param line the exit line
+   * @param admitsAllowed false on a passage line
+   * @param shape the line's shape, for the trailing-words hint
+   */
+  private parseExitLineTails(
+    c: Cursor,
+    line: Line,
+    admitsAllowed: boolean,
+    shape: string,
+  ): { admits?: NameRef[]; condition?: ConditionNode } {
+    const out: { admits?: NameRef[]; condition?: ConditionNode } = {};
+    if (c.isWord('admits') && admitsAllowed) {
+      c.next(); // admits
+      const admits: NameRef[] = [];
+      for (;;) {
+        const ref = this.parseNameRef(c, (t) => t.kind === 'word' && (t.text === 'while' || t.text === 'during'));
+        if (ref.words.length === 0) {
+          this.diagnostics.error(
+            'parse.exit-admits',
+            '`admits` on an exit line names who may take this way: a steered vehicle, or `pushing` for a pushed thing (`east to the Dock admits the car, pushing`).',
+            c.atEnd() ? lineSpan(line) : c.restSpan(),
+          );
+          return out;
+        }
+        admits.push(ref);
+        if (c.peek()?.kind !== 'comma') break;
+        c.next(); // comma
+      }
+      out.admits = admits;
+    }
+    if (c.matchWord('while') || c.isWord('during')) {
+      const condTokens: Token[] = [];
+      while (!c.atEnd()) condTokens.push(c.next()!);
+      out.condition = this.parseCondition(new Cursor(condTokens, line), line);
+    }
+    if (!c.atEnd()) {
+      const leftover = restText(c);
+      const hint = nearOneWay(leftover)
+        ? ' Did you mean `, one-way`?'
+        : c.isWord('admits')
+          ? ' A passage is not a direction, so nothing is pushed through it and it takes no `admits`.'
+          : ` ${shape}`;
+      this.diagnostics.error(
+        'parse.exit-trailing',
+        `Unexpected words at the end of this exit line: \`${leftover}\`.${hint}`,
+        c.restSpan(),
+      );
+    }
+    return out;
+  }
+
+  /**
+   * The `passage to <room> … end passage` block (ADR-380 D1), lowered here
+   * to the exit, blocked-exit and deadly-exit declarations a room's other
+   * exits use, so every reader downstream sees one shape. The head names
+   * where it leads (`through <door>` as on any exit; a `, one-way` is
+   * carried for the analyzer to refuse, and anything else on the head is
+   * `parse.exit-trailing`). `grammar` is the first inner line, its patterns
+   * indented under it and written in the `define action` pattern language,
+   * except that `the` is a word here, not a slot (D2); each pattern expands
+   * to the commands it admits. After it, in any order, at most one `while
+   * <condition>`, one `blocked [while <condition>]: <phrase>` and one
+   * `deadly: <phrase>`; a second of any is `parse.passage-line-duplicate`,
+   * anything else is `parse.passage-line`. The exit key is
+   * `passage:<first command, hyphenated>`. The retired one-line form
+   * `passage <words> to …` is `parse.passage-line-form`, with the block as
+   * its fix-it (D4).
+   * @param head the `passage` line, already consumed
+   * @param decl the room block the passage belongs to
+   */
+  private parsePassageBlock(head: Line, decl: CreateDecl): void {
+    const c = new Cursor(head.tokens, head);
+    const headTok = c.next()!; // passage
+    if (!c.isWord('to')) {
+      this.diagnostics.error(
+        'parse.passage-line-form',
+        'A passage is a block: `passage to <room>`, then `grammar` with one command per line under it, and `end passage`. ' +
+          'For example:\n  passage to the Loft\n    grammar\n      climb the rope\n  end passage',
+        lineSpan(head),
+      );
+      return;
+    }
+    const toTok = c.next()!; // to
+    const { to, via, toOutside, span } = this.parseExitDestination(c, head, mergeSpans(headTok.span, toTok.span));
+    let oneWay = false;
+    if (c.peek()?.kind === 'comma' && c.isWord('one-way', 1)) {
+      c.next();
+      c.next();
+      oneWay = true;
+    }
+    if (!c.atEnd()) {
+      const hint = c.isWord('admits')
+        ? ' A passage is not a direction, so nothing is pushed through it and it takes no `admits`.'
+        : c.isWord('while') || c.isWord('during')
+          ? ' A passage\'s `while` is a line inside the block.'
+          : ' The head is `passage to <room>`, optionally followed by `through <door>`.';
+      this.diagnostics.error('parse.exit-trailing', `Unexpected words at the end of this passage's head: \`${restText(c)}\`.${hint}`, c.restSpan());
+    }
+
+    let forms: string[] | null = null;
+    let condition: ConditionNode | undefined;
+    let blocked: BlockedExitDecl | null = null;
+    let deadly: DeadlyExitDecl | null = null;
+    const seen = new Map<string, Span>();
+    const duplicate = (what: string, at: Span): boolean => {
+      const first = seen.get(what);
+      if (first) {
+        this.diagnostics.error('parse.passage-line-duplicate', `This passage already has a \`${what}\` line (line ${first.line}) — one of each.`, at);
+        return true;
+      }
+      seen.set(what, at);
+      return false;
+    };
+    let first = true;
+    while (this.pos < this.lines.length) {
+      const line = this.lines[this.pos];
+      if (line.indent <= head.indent) break;
+      if (looksLikeComment(line)) {
+        this.skipCommentInsideBlock(line);
+        continue;
+      }
+      this.pos++;
+      const lc = new Cursor(line.tokens, line);
+      const word = line.tokens[0]?.kind === 'word' ? line.tokens[0].text : '';
+      if (word === 'grammar' && line.tokens.length === 1) {
+        if (!first) {
+          this.diagnostics.error('parse.passage-line', '`grammar` is the first line of a passage block.', lineSpan(line));
+        }
+        if (!duplicate('grammar', lineSpan(line))) forms = this.parsePassagePatterns(line);
+        else this.parsePassagePatterns(line);
+      } else if (first) {
+        this.diagnostics.error('parse.passage-line', 'A passage block begins with `grammar`, the commands the player types, one per line under it.', lineSpan(line));
+      } else if (word === 'while' || word === 'during') {
+        const at = lineSpan(line);
+        if (word === 'while') lc.next();
+        const cond = this.parseCondition(lc, line);
+        if (!duplicate('while', at)) condition = cond;
+      } else if (word === 'blocked' || word === 'deadly') {
+        // `blocked [while <condition>]: <phrase>` / `deadly: <phrase>` read as
+        // the exit lines they lower to, with the passage's key as their way.
+        const parsed = word === 'blocked' ? this.parseBlockedExit('', line, true) : this.parseDeadlyExit('', line, true);
+        if (!duplicate(word, lineSpan(line)) && parsed) {
+          if (parsed.kind === 'blocked-exit') blocked = parsed;
+          else deadly = parsed;
+        }
+      } else {
+        this.diagnostics.error(
+          'parse.passage-line',
+          'A passage block holds `grammar` and its commands, then at most one each of `while <condition>`, `blocked: <phrase>` and `deadly: <phrase>`.',
+          lineSpan(line),
+        );
+      }
+      first = false;
+    }
+    const endSpan = this.consumeEnd('passage', head);
+    if (forms === null) {
+      if (!seen.has('grammar')) {
+        this.diagnostics.error('parse.passage-line', 'A passage names the commands that take it — add `grammar` with one command per line under it.', lineSpan(head));
+      }
+      return;
+    }
+    if (forms.length === 0) return; // each empty pattern is already reported
+    const key = passageKeyOfForm(forms[0]);
+    decl.exits.push({
+      kind: 'exit',
+      direction: key,
+      passage: forms,
+      to,
+      via,
+      ...(oneWay ? { oneWay: true as const } : {}),
+      ...(toOutside ? { toOutside: true as const } : {}),
+      ...(condition ? { condition } : {}),
+      span: mergeSpans(span, endSpan),
+    } as ExitDecl);
+    if (blocked) decl.blockedExits.push({ ...blocked, direction: key });
+    if (deadly) decl.deadlyExits.push({ ...deadly, direction: key });
+  }
+
+  /**
+   * The pattern lines under a passage's `grammar` line, each expanded to
+   * the commands it admits (ADR-380 D1, D2): `or` joins words into one
+   * alternation, `[…]` marks an optional element, and `the` is a word, so
+   * no pattern holds a slot. An optional element yields the command with it
+   * first, so the first expansion of the first line is the line as written,
+   * the canonical command. A line holding a `→` cardinality or a `means`
+   * default is an action's, and is `parse.passage-line`.
+   * @param grammarLine the `grammar` line
+   * @returns the commands, in order, each once
+   */
+  private parsePassagePatterns(grammarLine: Line): string[] {
+    const commands: string[] = [];
+    let any = false;
+    while (this.pos < this.lines.length && this.lines[this.pos].indent > grammarLine.indent) {
+      const line = this.lines[this.pos++];
+      any = true;
+      const c = new Cursor(line.tokens, line);
+      if (c.isWord('means') || line.tokens.some((t) => t.kind === 'punct' && t.text === '→')) {
+        this.diagnostics.error('parse.passage-line', 'A passage\'s commands take no `means` line and no `→` — those belong to an action\'s grammar.', lineSpan(line));
+        continue;
+      }
+      const parts: PatternPart[] = [];
+      let ok = true;
+      while (!c.atEnd()) {
+        const part = this.parsePatternElem(c, true);
+        if (part) parts.push(part);
+        else ok = false;
+      }
+      if (!ok) continue;
+      if (parts.length === 0 || parts.every((p) => p.optional)) {
+        this.diagnostics.error('parse.action-pattern', 'A passage\'s command needs at least one word the player must type.', lineSpan(line));
+        continue;
+      }
+      for (const command of expandCommands(lowerParts(parts))) if (!commands.includes(command)) commands.push(command);
+    }
+    if (!any) {
+      this.diagnostics.error('parse.passage-line', 'A `grammar` line holds the passage\'s commands, one per line, indented under it.', lineSpan(grammarLine));
+    }
+    return commands;
   }
 
   /**
@@ -2322,6 +3145,7 @@ class Parser {
         to: core.to,
         via: core.via,
         ...(oneWay ? { oneWay: true as const } : {}),
+        ...(core.toOutside ? { toOutside: true as const } : {}),
         exitsLine,
         span: core.span,
       } as ExitDecl);
@@ -2330,6 +3154,24 @@ class Parser {
         this.diagnostics.error(
           'parse.exits-line-one-way',
           'An exit on an `exits:` line takes no `, one-way` of its own — a comma there separates exits. Put the one-way exits on an `exits, one-way:` line instead.',
+          c.restSpan(),
+        );
+        return;
+      }
+      // ADR-378 D3/D6: the `while` and `admits` tails belong to a single
+      // exit line, where the condition and the list have a line to run to.
+      if (c.isWord('while') || c.isWord('during')) {
+        this.diagnostics.error(
+          'parse.exits-line-while',
+          `An exit on an \`exits:\` line takes no \`while\` of its own — the condition would run into the next exit. Give \`${core.direction} to ${core.to.words.join(' ')}\` a line of its own and write \`while\` there.`,
+          c.restSpan(),
+        );
+        return;
+      }
+      if (c.isWord('admits')) {
+        this.diagnostics.error(
+          'parse.exits-line-admits',
+          `An exit on an \`exits:\` line takes no \`admits\` of its own — the list would run into the next exit. Give \`${core.direction} to ${core.to.words.join(' ')}\` a line of its own and write \`admits\` there.`,
           c.restSpan(),
         );
         return;
@@ -2421,6 +3263,7 @@ class Parser {
         to: core.to,
         via: core.via,
         ...(oneWay ? { oneWay: true as const } : {}),
+        ...(core.toOutside ? { toOutside: true as const } : {}),
         span: core.span,
       } as ExitDecl);
       if (c.atEnd()) break;
@@ -2428,6 +3271,16 @@ class Parser {
         this.diagnostics.error(
           'parse.exit-row-one-way',
           'An exit in a table row takes no `, one-way` of its own — put the row in an `exits, one-way` table instead.',
+          c.restSpan(),
+        );
+        return null;
+      }
+      // ADR-378 D3/D6: as on an `exits:` line, the tails need a line of their own.
+      if (c.isWord('while') || c.isWord('during') || c.isWord('admits')) {
+        const tail = c.isWord('admits') ? 'admits' : 'while';
+        this.diagnostics.error(
+          tail === 'admits' ? 'parse.exit-row-admits' : 'parse.exit-row-while',
+          `An exit in a table row takes no \`${tail}\` of its own. Give the room a block with \`in the <region>\` and write \`${core.direction} to ${core.to.words.join(' ')} ${tail} …\` there.`,
           c.restSpan(),
         );
         return null;
@@ -3211,19 +4064,60 @@ class Parser {
   }
 
   private finishPlacement(relation: Placement['relation'], c: Cursor, line: Line): Placement {
-    const place = this.parseNameRef(c, () => false);
-    if (place.words.length === 0) {
+    // ADR-374 D2: a placement may list places — `, ` between them and a
+    // final `and`. Which relation and which thing may take a list is the
+    // analyzer's question; a one-place line is unchanged.
+    const isAnd = (t: Token) => t.kind === 'word' && t.text === 'and';
+    // ADR-376 D3: `at` followed by a number opens the coordinates tail, so
+    // a place name stops there; `at` elsewhere stays part of the name.
+    const isAt = (t: Token) => t.kind === 'word' && t.text === 'at' && c.peek(1)?.kind === 'number';
+    const places: NameRef[] = [];
+    for (;;) {
+      const place = this.parseNameRef(c, (t) => isAnd(t) || isAt(t));
+      places.push(place);
+      if (c.peek()?.kind === 'comma') {
+        c.next();
+        c.matchWord('and'); // Oxford `and` after the comma
+      } else if (!c.matchWord('and')) {
+        break;
+      }
+    }
+    if (places.some((p) => p.words.length === 0)) {
       this.diagnostics.error('parse.placement', 'Expected a place name.', lineSpan(line));
     }
-    return { kind: 'placement', relation, place, span: lineSpan(line) };
+    const [place, ...more] = places;
+    const placement: Placement =
+      more.length > 0 ? { kind: 'placement', relation, place, more, span: lineSpan(line) } : { kind: 'placement', relation, place, span: lineSpan(line) };
+    // ADR-376 D3, D10: `in <expanse> at <x>, <y>` — a position in an expanse.
+    // `parseNameRef` stops at `at`, so the tail is read here.
+    if (c.isWord('at')) {
+      const atTok = c.next()!;
+      const x = c.next();
+      const comma = c.next();
+      const y = c.next();
+      if (!x || x.kind !== 'number' || !comma || comma.kind !== 'comma' || !y || y.kind !== 'number' || !c.atEnd() || !Number.isInteger(Number(x.text)) || !Number.isInteger(Number(y.text))) {
+        this.diagnostics.error('parse.placement-at', 'Expected `at <x>, <y>` after the place — two whole numbers.', c.atEnd() ? atTok.span : c.restSpan());
+      } else {
+        placement.at = { x: Number(x.text), y: Number(y.text), span: mergeSpans(atTok.span, y.span) };
+      }
+    }
+    return placement;
   }
 
-  private parseBlockedExit(direction: string, line: Line): BlockedExitDecl | null {
-    // <direction> is blocked [while <condition>]: <phrase-key>
-    // (conditional form: grammar log 2026-07-10, Phase B)
+  /**
+   * `<direction> is blocked [while <condition>]: <phrase-key>` (conditional
+   * form: grammar log 2026-07-10, Phase B). A passage block's `blocked
+   * [while <condition>]: <phrase>` line (ADR-380 D1) reads the same tail.
+   * @param direction the compass word, or a passage key
+   * @param line the line
+   * @param inPassage true for a passage block's line, which begins at `blocked`
+   */
+  private parseBlockedExit(direction: string, line: Line, inPassage = false): BlockedExitDecl | null {
     const c = new Cursor(line.tokens, line);
-    c.next(); // direction
-    c.next(); // is
+    if (!inPassage) {
+      c.next(); // direction
+      c.next(); // is
+    }
     c.next(); // blocked
     let condition: ConditionNode | null = null;
     if (c.matchWord('while') || c.isWord('during')) {
@@ -3244,12 +4138,20 @@ class Parser {
     return { kind: 'blocked-exit', direction, phraseKey: key, condition, span: lineSpan(line) };
   }
 
-  private parseDeadlyExit(direction: string, line: Line): DeadlyExitDecl | null {
-    // <direction> is deadly [while <condition>]: <phrase-key> (ADR-227) —
-    // mirrors the blocked-exit grammar exactly.
+  /**
+   * `<direction> is deadly [while <condition>]: <phrase-key>` (ADR-227) —
+   * mirrors the blocked-exit grammar exactly; a passage block's `deadly:
+   * <phrase>` line (ADR-380 D1) reads the same tail.
+   * @param direction the compass word, or a passage key
+   * @param line the line
+   * @param inPassage true for a passage block's line, which begins at `deadly`
+   */
+  private parseDeadlyExit(direction: string, line: Line, inPassage = false): DeadlyExitDecl | null {
     const c = new Cursor(line.tokens, line);
-    c.next(); // direction
-    c.next(); // is
+    if (!inPassage) {
+      c.next(); // direction
+      c.next(); // is
+    }
     c.next(); // deadly
     let condition: ConditionNode | null = null;
     if (c.matchWord('while') || c.isWord('during')) {
@@ -3337,6 +4239,133 @@ class Parser {
         break;
       }
 
+      // ADR-372 D5: `costs <amount> <currency>` — a price, spent from the
+      // buyer's own counter named by the currency word. Lowered to the
+      // `costs` adjective with `price` and `currency` settings.
+      if (c.isWord('costs')) {
+        const costsTok = c.next()!;
+        const amountTok = c.peek();
+        const currencyTok = c.peek(1);
+        if (amountTok?.kind === 'number' && currencyTok?.kind === 'word') {
+          c.next();
+          c.next();
+          items.push({
+            kind: 'composition',
+            article: null,
+            words: ['costs'],
+            config: [
+              { key: ['price'], value: amountTok.text, valueKind: 'number', span: amountTok.span },
+              { key: ['currency'], value: currencyTok.text, valueKind: 'word', span: currencyTok.span },
+            ],
+            condition: null,
+            span: mergeSpans(costsTok.span, currencyTok.span),
+          });
+          if (c.peek()?.kind === 'comma') {
+            c.next();
+            continue;
+          }
+          break;
+        }
+        this.diagnostics.error(
+          'parse.costs',
+          'Expected `costs <amount> <currency>` — a whole number and the counter it spends, e.g. `costs 3 credits`.',
+          amountTok ? amountTok.span : costsTok.span,
+        );
+        while (!c.atEnd()) c.next(); // resynchronize: one mistake, one diagnostic
+        break;
+      }
+
+      // ADR-373 D1: `attached to <the thing>` — the anchor is the adjective's
+      // single-entity value (the keyless `with` form, spelled `to`). Lowered
+      // to the `attached` adjective with that value under the empty key.
+      if (c.isWord('attached')) {
+        const attachedTok = c.next()!;
+        const toTok = c.peek();
+        const articleTok = c.peek(1);
+        if (toTok?.kind === 'word' && toTok.text === 'to' && articleTok?.kind === 'word' && ARTICLES.has(articleTok.text)) {
+          c.next(); // to
+          c.next(); // article
+          const nameWords: string[] = [];
+          let lastTok = articleTok;
+          while (!c.atEnd() && c.peek()!.kind === 'word') {
+            lastTok = c.next()!;
+            nameWords.push(lastTok.text);
+          }
+          if (nameWords.length > 0) {
+            items.push({
+              kind: 'composition',
+              article: null,
+              words: ['attached'],
+              config: [{ key: [], value: nameWords.join(' '), valueKind: 'name', span: mergeSpans(articleTok.span, lastTok.span) }],
+              condition: null,
+              span: mergeSpans(attachedTok.span, lastTok.span),
+            });
+            if (c.peek()?.kind === 'comma') {
+              c.next();
+              continue;
+            }
+            break;
+          }
+        }
+        this.diagnostics.error(
+          'parse.attached-to',
+          'Expected `attached to <the thing>` — the thing it is fixed to, e.g. `attached to the sorting machine`.',
+          toTok ? toTok.span : attachedTok.span,
+        );
+        while (!c.atEnd()) c.next(); // resynchronize: one mistake, one diagnostic
+        break;
+      }
+
+      // ADR-374 D10: `powered by <the thing> [and <the thing>]` — the device
+      // has power while every named thing is inside it. Lowered to the
+      // `powered` adjective, one keyless entity value per power source.
+      if (c.isWord('powered')) {
+        const poweredTok = c.next()!;
+        const byTok = c.peek();
+        const sources: ConfigSetting[] = [];
+        let lastTok = poweredTok;
+        if (byTok?.kind === 'word' && byTok.text === 'by') {
+          c.next(); // by
+          for (;;) {
+            const articleTok = c.peek();
+            if (!(articleTok?.kind === 'word' && ARTICLES.has(articleTok.text))) break;
+            c.next();
+            const nameWords: string[] = [];
+            let nameEnd = articleTok;
+            while (!c.atEnd() && c.peek()!.kind === 'word' && !c.isWord('and')) {
+              nameEnd = c.next()!;
+              nameWords.push(nameEnd.text);
+            }
+            if (nameWords.length === 0) break;
+            sources.push({ key: [], value: nameWords.join(' '), valueKind: 'name', span: mergeSpans(articleTok.span, nameEnd.span) });
+            lastTok = nameEnd;
+            if (!c.matchWord('and')) break;
+          }
+        }
+        if (sources.length > 0 && (c.atEnd() || c.peek()?.kind === 'comma')) {
+          items.push({
+            kind: 'composition',
+            article: null,
+            words: ['powered'],
+            config: sources,
+            condition: null,
+            span: mergeSpans(poweredTok.span, lastTok.span),
+          });
+          if (c.peek()?.kind === 'comma') {
+            c.next();
+            continue;
+          }
+          break;
+        }
+        this.diagnostics.error(
+          'parse.powered-by',
+          'Expected `powered by <the thing>` — what it needs inside it to run, e.g. `powered by the battery` or `powered by the cell and the spare cell`.',
+          byTok ? byTok.span : poweredTok.span,
+        );
+        while (!c.atEnd()) c.next(); // resynchronize: one mistake, one diagnostic
+        break;
+      }
+
       let article: string | null = null;
       const first = c.peek();
       if (first && first.kind === 'word' && ARTICLES.has(first.text)) {
@@ -3360,7 +4389,15 @@ class Parser {
       const config: ConfigSetting[] = [];
       let condition: ConditionNode | null = null;
       if (c.matchWord('with')) {
-        config.push(...this.parseConfigSettings(c, line));
+        const settings = this.parseConfigSettings(c, line);
+        if (article !== null) {
+          // ADR-369 D2a: a kind noun takes no `with` settings. The three the
+          // loader once read get a fix-it naming the `holds <n>` line; any
+          // other names the mistake.
+          this.reportKindSetting(words.join(' '), settings, line);
+        } else {
+          config.push(...settings);
+        }
       }
       if (c.matchWord('while') || c.isWord('during')) {
         condition = this.parseCondition(c, line);
@@ -3386,6 +4423,33 @@ class Parser {
       else this.diagnostics.error('parse.composition-trailing', `Unexpected trailing text in composition line: \`${c.peek()!.text}\`.`, c.restSpan());
     }
     return items;
+  }
+
+  /**
+   * ADR-369 D2a: `a <kind> with …` is an error. `max items`, `max weight`
+   * and `capacity` were the settings the loader read and are
+   * `parse.removed-capacity-setting`, whose fix-it is the `holds <n>` line;
+   * any other setting on a kind noun is `parse.kind-setting`.
+   */
+  private reportKindSetting(kindWord: string, settings: ConfigSetting[], line: Line): void {
+    const first = settings[0];
+    const span = first ? mergeSpans(first.span, settings[settings.length - 1].span) : lineSpan(line);
+    const key = first ? first.key.join(' ') : '';
+    if (REMOVED_CAPACITY_SETTINGS.has(key)) {
+      const count = /^\d+$/.test(first.value) ? first.value : '<n>';
+      const weight = key === 'max weight' ? ' Weight is not a Chord concept; `holds` counts things.' : '';
+      this.diagnostics.error(
+        'parse.removed-capacity-setting',
+        `\`with ${key}\` was removed — write the capacity as its own line: \`holds ${count}\`.${weight}`,
+        span,
+      );
+      return;
+    }
+    this.diagnostics.error(
+      'parse.kind-setting',
+      `A kind takes no \`with\` settings — \`${kindWord}\` is a kind. A setting belongs to an adjective (\`lockable with the iron key\`); a capacity is its own line (\`holds <n>\`).`,
+      span,
+    );
   }
 
   private parseConfigSettings(c: Cursor, line: Line): ConfigSetting[] {
@@ -4537,9 +5601,9 @@ class Parser {
         this.pos++;
         phrases = this.parsePhrasesBlock(line, 1);
       } else if (word === 'on') {
-        onClauses.push(this.parseOnClause(line.indent, 'on'));
+        onClauses.push(...this.parseOnClauses(line.indent, 'on'));
       } else if (word === 'after') {
-        onClauses.push(this.parseOnClause(line.indent, 'after'));
+        onClauses.push(...this.parseOnClauses(line.indent, 'after'));
       } else {
         this.diagnostics.error('parse.trait-section', `Unrecognized line in \`define trait\`: \`${line.raw.trim()}\` — expected data, states, score, phrases, or an \`on\`/\`after\` clause.`, lineSpan(line));
         this.pos++;
@@ -4648,10 +5712,19 @@ class Parser {
       this.pos++;
       return null;
     }
+    // ADR-378 D5 (ADR-370 D7): `define action <name> while <condition>` —
+    // the action's grammar is a rule only while the condition holds.
+    let condition: ConditionNode | undefined;
+    if (c.isWord('while') || c.isWord('during')) {
+      if (c.isWord('while')) c.next();
+      const condTokens: Token[] = [];
+      while (!c.atEnd()) condTokens.push(c.next()!);
+      condition = this.parseCondition(new Cursor(condTokens, headLine), headLine);
+    }
     this.pos++;
 
     const parts = this.parseActionBlockParts(headLine);
-    return { kind: 'define-action', name: nameTok.text, ...parts };
+    return { kind: 'define-action', name: nameTok.text, ...(condition ? { condition } : {}), ...parts };
   }
 
   /**
@@ -4668,6 +5741,7 @@ class Parser {
     const musts: MustRequirement[] = [];
     const refusals: ActionRefusal[] = [];
     let otherwise: DefineAction['otherwise'] = null;
+    const topics: TopicRow[] = [];
     const scores: ScoreDecl[] = [];
     let phrases: DefinePhrases | null = null;
     const body: Statement[] = [];
@@ -4740,6 +5814,15 @@ class Parser {
       } else if (word === 'phrases') {
         this.pos++;
         phrases = this.parsePhrasesBlock(line, 1);
+      } else if (word === 'about') {
+        // `about …:` rows answer the action's topic slot (ADR-383 D9) — the
+        // topic table's row form; parseTopicRow consumes the row's lines.
+        const row = this.parseTopicRow(line, 'action');
+        if (row) {
+          topics.push(row);
+          span = mergeSpans(span, row.span);
+        }
+        continue;
       } else {
         const stmt = this.parseStatement(line, 'action');
         if (stmt) body.push(stmt);
@@ -4747,7 +5830,7 @@ class Parser {
       span = mergeSpans(span, lineSpan(line));
     }
 
-    return { patterns, constraints, greedy, slotTypes, directions, musts, refusals, otherwise, scores, phrases, body, span };
+    return { patterns, constraints, greedy, slotTypes, directions, musts, refusals, otherwise, topics, scores, phrases, body, span };
   }
 
   /**
@@ -4922,8 +6005,15 @@ class Parser {
    * Removed slot spellings (`(word)`, `:word`) and stray `or`/brackets are
    * named parse errors. Returns null after reporting — always having
    * consumed at least one token, so callers cannot loop in place.
+   *
+   * `the` is a word, not a slot, as the whole of a bracket (ADR-380 D2a:
+   * `[the] arrow` is an optional article and the word `arrow`; `[the
+   * target]` stays an optional slot) and everywhere in a passage's
+   * patterns, which take no nouns (D2).
+   * @param c the cursor, at the element
+   * @param theIsWord true where `the` is a word rather than a slot's head
    */
-  private parsePatternElem(c: Cursor): PatternPart | null {
+  private parsePatternElem(c: Cursor, theIsWord = false): PatternPart | null {
     const t = c.next()!;
     if (t.kind === 'lbracket') {
       if (c.atEnd() || c.peek()!.kind === 'rbracket') {
@@ -4935,7 +6025,11 @@ class Parser {
         this.diagnostics.error('parse.pattern-bracket', 'Brackets do not nest in a pattern — one `[ ]` per optional element.', c.peek()!.span);
         return null;
       }
-      const inner = this.parsePatternElem(c);
+      // `[the]` is the optional article (ADR-380 D2a); `[the target]` is an
+      // optional slot (ADR-267 D9). A bracket holds one element, so `the`
+      // with the bracket closing right after it can only be the word.
+      const articleOnly = c.isWord('the') && c.peek(1)?.kind === 'rbracket';
+      const inner = this.parsePatternElem(c, theIsWord || articleOnly);
       if (!inner) return null;
       const close = c.next();
       if (!close || close.kind !== 'rbracket') {
@@ -4944,7 +6038,7 @@ class Parser {
       }
       return { ...inner, optional: true, span: mergeSpans(t.span, close.span) };
     }
-    if (t.kind === 'word' && t.text === 'the') {
+    if (t.kind === 'word' && t.text === 'the' && !theIsWord) {
       const slot = c.next();
       if (!slot || slot.kind !== 'word') {
         this.diagnostics.error('parse.action-slot', 'Expected a slot name after `the` in the grammar pattern.', t.span);
@@ -5227,10 +6321,25 @@ class Parser {
       } else if (sc.isWord('when')) {
         // `when <owner> becomes <state>` — state anchor (ratchet D10).
         sc.next();
-        owner = this.parseNameRef(sc, (t) => t.kind === 'word' && t.text === 'becomes');
-        if (sc.matchWord('becomes')) {
+        owner = this.parseNameRef(sc, (t) => t.kind === 'word' && (t.text === 'becomes' || t.text === 'comes'));
+        if (sc.isWord('comes')) {
+          // ADR-376 D7: `when <thing> comes into sight` — one fixed phrase,
+          // carried as the state `in sight` beside `under way`.
+          sc.next();
+          if (sc.matchWord('into') && sc.matchWord('sight')) {
+            timing = 'becomes';
+            state = 'in sight';
+          } else {
+            this.diagnostics.error('parse.sequence-anchor', 'Expected `when <thing> comes into sight` in the step anchor.', sc.restSpan());
+          }
+        } else if (sc.matchWord('becomes')) {
           const st = sc.next();
-          if (st && st.kind === 'word') {
+          if (st && st.kind === 'word' && st.text === 'under' && sc.isWord('way')) {
+            // ADR-366 D5e: `when <vehicle> becomes under way` — one fixed phrase.
+            sc.next();
+            timing = 'becomes';
+            state = 'under way';
+          } else if (st && st.kind === 'word') {
             timing = 'becomes';
             state = st.text;
           } else {
@@ -5321,8 +6430,13 @@ class Parser {
    * Free-text tier: `about "<text>"[, "<text>" …]:` — comma-separated
    * quoted aliases (spelling ruled 2026-07-18). The response is either the
    * rest of the line (one statement) or an indented statement body.
+   *
+   * @param headLine the `about …:` line
+   * @param blockKeyword the statement context of the row body — `topics`
+   *   for a topic table; `action` for a `define action`'s rows (ADR-383 D9),
+   *   where the conversation-only statements stay refused
    */
-  private parseTopicRow(headLine: Line): TopicRow | null {
+  private parseTopicRow(headLine: Line, blockKeyword: 'topics' | 'action' = 'topics'): TopicRow | null {
     const c = new Cursor(headLine.tokens, headLine);
     c.next(); // about
     let filter: TopicRow['filter'];
@@ -5375,13 +6489,13 @@ class Parser {
       // One-line response: the rest of the line is a single statement.
       // parseStatement consumes this.lines[this.pos] (the row line itself).
       const rest: Line = { ...headLine, tokens: headLine.tokens.slice(c.i) };
-      const stmt = this.parseStatement(rest, 'topics');
+      const stmt = this.parseStatement(rest, blockKeyword);
       if (!stmt) return null; // the statement error is already reported
       body = [stmt];
     } else {
       // Indented statement body on the following lines.
       this.pos++;
-      body = this.parseStatements(headLine.indent, 'topics');
+      body = this.parseStatements(headLine.indent, blockKeyword);
       if (body.length > 0) span = mergeSpans(span, body[body.length - 1].span);
     }
     if (body.length === 0) {
@@ -6262,16 +7376,32 @@ class Parser {
    * trailing `it` is the removed pre-ADR-327 spelling (`parse.removed-head-it`);
    * the rest of the clause still parses so one migration line yields one
    * diagnostic.
+   *
+   * A head may list gerunds after the first, comma-separated (ADR-368 D1):
+   * `on the player taking, touching, pushing`. The list ends at a modifier
+   * comma (`, once`, `, before <trait>`, `, after <trait>`), `anything`,
+   * `while`, `during` or the end of the line. The head expands to one
+   * clause per gerund, in the order written, sharing actor, tail, modifiers,
+   * body and `span`; each carries its own `actionSpan`. A repeated gerund is
+   * `parse.head-gerund-repeated`; a comma item that is neither one word nor
+   * a modifier is `parse.head-gerund`. `on every turn` takes no list.
+   *
+   * Returns at least one clause.
    */
-  private parseOnClause(indent: number, clauseKind: 'on' | 'after'): OnClause {
+  private parseOnClauses(indent: number, clauseKind: 'on' | 'after'): OnClause[] {
     const headLine = this.lines[this.pos++];
     const c = new Cursor(headLine.tokens, headLine);
     c.matchWord(clauseKind);
 
     let actionWord = '';
+    let actionSpan: Span = lineSpan(headLine);
+    /** ADR-368 D1: the gerunds after the first, each with its own span. */
+    const moreGerunds: Array<{ text: string; span: Span }> = [];
     let actor: ValueExpr | null = null;
     let binding: OnClause['binding'] = 'object';
     let role: string | null = null;
+    let valueTail: string | null = null;
+    let counterpart: ValueExpr | null = null;
     let condition: ConditionNode | null = null;
     let once = false;
     let ordering: OnClause['ordering'] = null;
@@ -6290,9 +7420,15 @@ class Parser {
       const headWords: Token[] = [];
       while (!c.atEnd()) {
         const t = c.peek()!;
-        if (t.kind !== 'word' || t.text === 'while' || t.text === 'during' || t.text === 'anything') break;
+        if (t.kind !== 'word' || t.text === 'while' || t.text === 'during' || t.text === 'anything' || t.text === 'to') break;
         headWords.push(t);
         c.next();
+      }
+      // ADR-372 D1: a counterpart tail, read from the end of the head.
+      const tail = headWords.length > 0 ? splitCounterpartTail(headWords) : null;
+      if (tail) {
+        counterpart = this.headActorExpr(headWords.slice(tail.nameStart));
+        headWords.length = tail.start;
       }
       if (headWords.length === 0) {
         this.diagnostics.error('parse.on-head', `Expected \`${clauseKind} <who acts> <action>\` — e.g. \`${clauseKind} the player taking\`.`, c.restSpan());
@@ -6319,6 +7455,34 @@ class Parser {
           binding = 'self';
         }
         actionWord = gerundTok.text;
+        actionSpan = gerundTok.span;
+        this.parseGerundList(c, actionWord, moreGerunds);
+        // ADR-371 D4: `to <value>` — the clause fires only for that value
+        // (legal on a `setting` head; the analyzer gates the gerund).
+        // ADR-372 D1: several words after `to`, or an article, are a
+        // counterpart (`giving to Mrs Kettle`); one word stays a value tail,
+        // which the analyzer reads as a counterpart on a two-noun gerund.
+        if (c.matchWord('to')) {
+          const toWords: Token[] = [];
+          while (!c.atEnd()) {
+            const t = c.peek()!;
+            if (t.kind !== 'word' || t.text === 'while' || t.text === 'during' || t.text === 'anything') break;
+            toWords.push(t);
+            c.next();
+          }
+          if (toWords.length === 0) {
+            this.diagnostics.error('parse.head-value-tail', `Expected a value after \`to\` — e.g. \`${clauseKind} the player setting to high\`.`, c.peek()?.span ?? c.restSpan());
+          } else if (counterpart !== null) {
+            this.diagnostics.error('parse.head-counterpart-twice', `This head already names the other noun — write one: \`${clauseKind} the player ${actionWord} to ${toWords.map((t) => t.text).join(' ')}\`.`, mergeSpans(toWords[0].span, toWords[toWords.length - 1].span));
+          } else if (toWords.length === 1 && !ARTICLES.has(toWords[0].text)) {
+            valueTail = toWords[0].text;
+          } else {
+            counterpart = this.headActorExpr(toWords);
+          }
+        }
+        if (counterpart !== null && moreGerunds.length > 0) {
+          this.diagnostics.error('parse.head-counterpart-list', `A head that names the other noun takes one action word — split it into one clause per action.`, counterpart.span);
+        }
       }
 
       if (c.matchWord('anything')) {
@@ -6377,20 +7541,81 @@ class Parser {
       ? this.parseStatements(headLine.indent, 'every-turn', 'on every turn')
       : this.parseStatements(headLine.indent, clauseKind);
     const endSpan = this.consumeEnd(clauseKind, headLine);
+    const span = mergeSpans(lineSpan(headLine), endSpan);
 
-    return {
-      kind: 'on-clause',
+    // ADR-368 D3: one node per listed gerund, sharing everything but the
+    // action and its span. The body is shared, not cloned — the analyzer
+    // reads statements and never writes into them.
+    const gerunds = [{ text: actionWord, span: actionSpan }, ...moreGerunds];
+    return gerunds.map((g) => ({
+      kind: 'on-clause' as const,
       clauseKind,
-      action: actionWord,
+      action: g.text,
+      actionSpan: g.span,
       actor,
       binding,
       role,
+      ...(valueTail !== null ? { valueTail } : {}),
+      ...(counterpart !== null ? { counterpart } : {}),
       condition,
       once,
       ordering,
       body,
-      span: mergeSpans(lineSpan(headLine), endSpan),
+      span,
+    }));
+  }
+
+  /**
+   * The comma-separated gerunds after a head's first (ADR-368 D1), read
+   * until a modifier comma, `anything`, `while`, `during` or EOL. Appends to
+   * `into`; the cursor is left on the first token not consumed. `first` is
+   * the head's first gerund, for the repeat check.
+   */
+  private parseGerundList(c: Cursor, first: string, into: Array<{ text: string; span: Span }>): void {
+    const seen = new Set<string>([first]);
+    const isModifierItem = (): boolean => {
+      const w = c.peek(1);
+      if (!w || w.kind !== 'word') return false;
+      if (w.text === 'once') return true;
+      return (w.text === 'before' || w.text === 'after') && c.peek(2)?.kind === 'word';
     };
+    while (c.peek()?.kind === 'comma' && !isModifierItem()) {
+      c.next(); // the comma
+      const item: Token[] = [];
+      while (!c.atEnd()) {
+        const t = c.peek()!;
+        if (t.kind !== 'word' || t.text === 'while' || t.text === 'during' || t.text === 'anything' || t.text === 'to') break;
+        item.push(t);
+        c.next();
+      }
+      if (item.length === 1) {
+        const word = item[0].text;
+        if (seen.has(word)) {
+          this.diagnostics.error('parse.head-gerund-repeated', `\`${word}\` is listed twice on this head.`, item[0].span);
+          continue;
+        }
+        seen.add(word);
+        into.push({ text: word, span: item[0].span });
+        continue;
+      }
+      if (item.length === 0) {
+        this.diagnostics.error('parse.head-gerund', 'Expected an action word after the comma.', c.restSpan());
+        return;
+      }
+      // More than one word: quote from the first `and`/`or` when there is
+      // one (`touching or pushing` → `or pushing`), else the whole item, and
+      // show the comma form built from the words.
+      const joinAt = item.findIndex((t) => t.text === 'and' || t.text === 'or');
+      const quoted = (joinAt > 0 ? item.slice(joinAt) : item).map((t) => t.text).join(' ');
+      const words = item.filter((t) => t.text !== 'and' && t.text !== 'or').map((t) => t.text);
+      const listed = [first, ...into.map((g) => g.text), ...words].join(', ');
+      this.diagnostics.error(
+        'parse.head-gerund',
+        `Expected one action word after the comma, not \`${quoted}\`. List the actions with commas: \`${listed}\`.`,
+        mergeSpans(item[0].span, item[item.length - 1].span),
+      );
+      return;
+    }
   }
 
   /**
@@ -7191,6 +8416,10 @@ class Parser {
       return null;
     }
     if (!c.matchWord('from')) {
+      // ADR-374 D6: a sound may be a sound in the world only, with no file.
+      if (assetKind === 'sound' && c.atEnd()) {
+        return { kind: 'define-asset', assetKind, name: nameTok.text, path: null, span: lineSpan(line) };
+      }
       this.diagnostics.error('parse.asset-from', `Expected \`from "<file>"\` in the ${assetKind} declaration.`, c.restSpan());
       return null;
     }
@@ -7680,6 +8909,23 @@ class Parser {
           this.diagnostics.error('parse.set-to', `Expected \`to <value>\` in the \`set\` statement.${this.misparseHint(line)}`, c.restSpan());
           return null;
         }
+        if (target.kind === 'possessive' && target.field.length === 1 && target.field[0] === 'wind') {
+          // ADR-375 D4: `set the <expanse>'s wind to <direction | n degrees | calm>`.
+          const first = c.peek();
+          const wind: WindValue | null = c.isWord('calm') ? (c.next(), { kind: 'calm' }) : this.parseWindValue(c);
+          if (!wind || !first) {
+            this.diagnostics.error('parse.set-wind', 'Expected `to <direction>`, `to <n> degrees` or `to calm` after `wind`.', first?.span ?? c.restSpan());
+            return null;
+          }
+          const valueSpan = mergeSpans(first.span, c.peek(-1)?.span ?? first.span);
+          const stmtWhen = this.parseStatementWhen(c, line);
+          if (!c.atEnd()) {
+            this.diagnostics.error('parse.set-trailing', `Unexpected words after the \`set\` value: \`${c.peek()!.text}\`.`, c.restSpan());
+            return null;
+          }
+          const value: ValueExpr = { kind: 'bare', words: [wind.kind === 'calm' ? 'calm' : wind.kind === 'direction' ? wind.direction : `${wind.bearing} degrees`], span: valueSpan };
+          return { kind: 'set', target, value, wind, stmtWhen, span: lineSpan(line) } as SetStmt;
+        }
         const value = this.parseValueExpr(c, line, new Set(['when']));
         const stmtWhen = this.parseStatementWhen(c, line);
         if (!c.atEnd()) {
@@ -7692,13 +8938,71 @@ class Parser {
       case 'restart':
       case 'reset':
       case 'interrupt': {
-        // ADR-325 D3c: `<verb> <timer> [when <cond>]`.
+        // ADR-325 D3c: `<verb> <timer> [when <cond>]`. ADR-366 D5c: `start
+        // <vehicle> heading <direction>` — the analyzer resolves the name.
         this.pos++;
         c.next();
-        const target = this.parseValueExpr(c, line, new Set(['when']));
+        const target = this.parseValueExpr(c, line, new Set(['when', 'heading']));
         if (target.kind === 'bare' && target.words.length === 0) return null;
+        let heading: TimerVerbStmt['heading'];
+        if (c.isWord('heading')) {
+          const headingTok = c.next()!;
+          const dirTok = c.peek();
+          if (dirTok?.kind === 'number' && c.isWord('degrees', 1)) {
+            // ADR-375 D2: a bearing in whole degrees, 0..359.
+            c.next();
+            const degTok = c.next()!;
+            const bearing = Number(dirTok.text);
+            if (!Number.isInteger(bearing) || bearing < 0 || bearing > 359) {
+              this.diagnostics.error('parse.heading-direction', 'Expected a bearing of 0 to 359 degrees after `heading`.', dirTok.span);
+              return null;
+            }
+            heading = { bearing, span: mergeSpans(headingTok.span, degTok.span) };
+          } else {
+            c.next();
+            if (!dirTok || dirTok.kind !== 'word' || !DIRECTIONS.has(dirTok.text)) {
+              this.diagnostics.error('parse.heading-direction', 'Expected a direction after `heading` (`start the Marigold heading north`, or `heading 135 degrees`).', dirTok?.span ?? c.restSpan());
+              return null;
+            }
+            heading = { direction: dirTok.text, span: mergeSpans(headingTok.span, dirTok.span) };
+          }
+        }
         const stmtWhen = this.parseStatementWhen(c, line);
-        return { kind: 'timer-verb', verb: word, target, stmtWhen, span: lineSpan(line) } as TimerVerbStmt;
+        return { kind: 'timer-verb', verb: word, target, ...(heading ? { heading } : {}), stmtWhen, span: lineSpan(line) } as TimerVerbStmt;
+      }
+      case 'send': {
+        // ADR-366 D5d: `send <vehicle> to <destination> [when <cond>]`.
+        this.pos++;
+        c.next();
+        const vehicle = this.parseNameRef(c, (t) => t.kind === 'word' && t.text === 'to');
+        if (vehicle.words.length === 0 || !c.matchWord('to')) {
+          this.diagnostics.error('parse.send', 'Expected `send <vehicle> to <destination>`.', c.restSpan());
+          return null;
+        }
+        let destination: SendStmt['destination'];
+        if (c.peek()?.kind === 'number') {
+          // ADR-376 D3: `send <vehicle> to <x>, <y>` — a course to a cell.
+          const x = c.next()!;
+          const comma = c.next();
+          const y = c.next();
+          if (!comma || comma.kind !== 'comma' || !y || y.kind !== 'number' || !Number.isInteger(Number(x.text)) || !Number.isInteger(Number(y.text))) {
+            this.diagnostics.error('parse.send', 'Expected `send <vehicle> to <x>, <y>` — two whole numbers.', c.atEnd() ? x.span : c.restSpan());
+            return null;
+          }
+          destination = { kind: 'coordinates', x: Number(x.text), y: Number(y.text), span: mergeSpans(x.span, y.span) };
+        } else {
+          destination = this.parseNameRef(c, (t) => t.kind === 'word' && t.text === 'when');
+          if (destination.words.length === 0) {
+            this.diagnostics.error('parse.send', 'Expected a destination after `to` in the `send` statement.', c.restSpan());
+            return null;
+          }
+        }
+        const stmtWhen = this.parseStatementWhen(c, line);
+        if (!c.atEnd()) {
+          this.diagnostics.error('parse.send', `Unexpected words after the destination: \`${restText(c)}\`.`, c.restSpan());
+          return null;
+        }
+        return { kind: 'send', vehicle, destination, stmtWhen, span: lineSpan(line) } as SendStmt;
       }
       case 'raise':
       case 'lower': {
@@ -8827,6 +10131,63 @@ class Parser {
           span: mergeSpans(subject.span, cls.span ?? t.span),
         };
       }
+      // ADR-376 D7: the sight reads — `is in sight`, `is close by`, `is in
+      // the distance`, `is on the horizon` — each a fixed phrase that stands
+      // alone (the recency rule), so a room named Sight keeps `is in <room>`;
+      // and `is within <n> of <landmark | x, y>`. The analyzer gates the use
+      // line and the subject.
+      // ADR-375 D5: `is in irons` — a fixed phrase, as `is in sight` is.
+      if (c.isWord('in') && c.isWord('irons', 1) && this.isBareConditionRef(c, 1)) {
+        const inTok = c.next()!;
+        const ironsTok = c.next()!;
+        const span = mergeSpans(inTok.span, ironsTok.span);
+        return { kind: 'predicate', subject, predicate: { kind: 'in-irons', negated, span }, span: mergeSpans(subject.span, span) };
+      }
+      if (c.isWord('in') && c.isWord('sight', 1) && this.isBareConditionRef(c, 1)) {
+        const inTok = c.next()!;
+        const sightTok = c.next()!;
+        const span = mergeSpans(inTok.span, sightTok.span);
+        return { kind: 'predicate', subject, predicate: { kind: 'in-sight', negated, span }, span: mergeSpans(subject.span, span) };
+      }
+      {
+        const bandOf = (): { band: 'close-by' | 'in-the-distance' | 'on-the-horizon'; length: number } | null => {
+          if (c.isWord('close') && c.isWord('by', 1) && this.isBareConditionRef(c, 1)) return { band: 'close-by', length: 2 };
+          if (c.isWord('in') && c.isWord('the', 1) && c.isWord('distance', 2) && this.isBareConditionRef(c, 2)) return { band: 'in-the-distance', length: 3 };
+          if (c.isWord('on') && c.isWord('the', 1) && c.isWord('horizon', 2) && this.isBareConditionRef(c, 2)) return { band: 'on-the-horizon', length: 3 };
+          return null;
+        };
+        const found = bandOf();
+        if (found) {
+          const first = c.next()!;
+          let last = first;
+          for (let i = 1; i < found.length; i++) last = c.next()!;
+          const span = mergeSpans(first.span, last.span);
+          return { kind: 'predicate', subject, predicate: { kind: 'sight-band', negated, band: found.band, span }, span: mergeSpans(subject.span, span) };
+        }
+      }
+      if (c.isWord('within') && c.peek(1)?.kind === 'number' && c.isWord('of', 2)) {
+        const withinTok = c.next()!;
+        const n = c.next()!;
+        c.next(); // of
+        const distance = Number(n.text);
+        const bad = (span: Span): ConditionNode => {
+          this.diagnostics.error('parse.within', 'Expected `is within <n> of <landmark>` or `is within <n> of <x>, <y>` — a whole number, then a landmark name or two whole numbers.', span);
+          return { kind: 'predicate', subject, predicate: { kind: 'within', negated, distance: 0, of: { kind: 'coordinates', x: 0, y: 0, span }, span }, span: mergeSpans(subject.span, span) };
+        };
+        if (!Number.isInteger(distance) || distance < 0) return bad(n.span);
+        if (c.peek()?.kind === 'number') {
+          const x = c.next()!;
+          const comma = c.next();
+          const y = c.next();
+          if (!comma || comma.kind !== 'comma' || !y || y.kind !== 'number' || !Number.isInteger(Number(x.text)) || !Number.isInteger(Number(y.text))) return bad(c.atEnd() ? x.span : c.restSpan());
+          const span = mergeSpans(withinTok.span, y.span);
+          return { kind: 'predicate', subject, predicate: { kind: 'within', negated, distance, of: { kind: 'coordinates', x: Number(x.text), y: Number(y.text), span: mergeSpans(x.span, y.span) }, span }, span: mergeSpans(subject.span, span) };
+        }
+        const of = this.parseNameRef(c, (tok) => tok.kind === 'word' && PHRASE_STOPS.has(tok.text));
+        if (of.words.length === 0) return bad(c.atEnd() ? withinTok.span : c.restSpan());
+        const span = mergeSpans(withinTok.span, of.span);
+        return { kind: 'predicate', subject, predicate: { kind: 'within', negated, distance, of, span }, span: mergeSpans(subject.span, span) };
+      }
       if (c.isWord('in')) {
         c.next();
         const place = this.parsePlace(c, line, new Set());
@@ -8903,6 +10264,42 @@ class Parser {
         };
         return negated ? { kind: 'not', operand: node, span: node.span } : node;
       }
+      // ADR-366: the vehicle reads — `is under way` (one fixed phrase), `is
+      // at <place>` (after the comparison words have had their turn, so `at
+      // least` stays a comparison) and `is heading <direction>`. The analyzer
+      // gates the subject and the movement type.
+      if (c.isWord('under') && c.isWord('way', 1)) {
+        const underTok = c.next()!;
+        const wayTok = c.next()!;
+        const span = mergeSpans(underTok.span, wayTok.span);
+        return { kind: 'predicate', subject, predicate: { kind: 'under-way', negated, span }, span: mergeSpans(subject.span, span) };
+      }
+      if (c.isWord('at')) {
+        c.next();
+        const place = this.parseNameRef(c, (tok) => tok.kind === 'word' && PHRASE_STOPS.has(tok.text));
+        return { kind: 'predicate', subject, predicate: { kind: 'at', negated, place, span: place.span }, span: mergeSpans(subject.span, place.span) };
+      }
+      if (c.isWord('heading')) {
+        const dirTok = c.peek(1);
+        if (dirTok && dirTok.kind === 'word' && DIRECTIONS.has(dirTok.text)) {
+          const headingTok = c.next()!;
+          c.next();
+          const span = mergeSpans(headingTok.span, dirTok.span);
+          return { kind: 'predicate', subject, predicate: { kind: 'heading', negated, direction: dirTok.text, span }, span: mergeSpans(subject.span, span) };
+        }
+        if (dirTok && dirTok.kind === 'number' && c.isWord('degrees', 2)) {
+          // ADR-375 D2: `is heading <n> degrees`.
+          const headingTok = c.next()!;
+          c.next();
+          const degTok = c.next()!;
+          const span = mergeSpans(headingTok.span, degTok.span);
+          const bearing = Number(dirTok.text);
+          if (!Number.isInteger(bearing) || bearing < 0 || bearing > 359) {
+            this.diagnostics.error('parse.heading-direction', 'Expected a bearing of 0 to 359 degrees after `heading`.', dirTok.span);
+          }
+          return { kind: 'predicate', subject, predicate: { kind: 'heading', negated, bearing, span }, span: mergeSpans(subject.span, span) };
+        }
+      }
       const value = this.parseValueExpr(c, line, new Set());
       return {
         kind: 'predicate',
@@ -8910,6 +10307,18 @@ class Parser {
         predicate: { kind: 'is', negated, value, span: value.span },
         span: mergeSpans(subject.span, value.span),
       };
+    }
+
+    if (t.text === 'are' && subject.kind === 'possessive' && subject.field.length === 1 && subject.field[0] === 'sails') {
+      // ADR-375 D7: `<vehicle>'s sails are [not] <setting>`.
+      c.next();
+      const negated = !!c.matchWord('not');
+      const setting = c.next();
+      if (!setting || setting.kind !== 'word' || !c.atEnd()) {
+        this.diagnostics.error('parse.sails-setting', 'Expected one setting word after `sails are` (`the Marigold\'s sails are full`).', setting?.span ?? c.restSpan());
+        return { kind: 'predicate', subject, predicate: { kind: 'sails', negated, setting: '', span: t.span }, span: mergeSpans(subject.span, t.span) };
+      }
+      return { kind: 'predicate', subject, predicate: { kind: 'sails', negated, setting: setting.text, span: setting.span }, span: mergeSpans(subject.span, setting.span) };
     }
 
     if (t.text === 'has' && this.isTimerHasRead(c)) {
@@ -9027,4 +10436,35 @@ class Parser {
     c.next();
     return { kind: 'condition-ref', name: t.text, span: t.span };
   }
+}
+
+/**
+ * ADR-372 D1: where a head's counterpart tail starts, read from the end.
+ * The tail opens at the head's last article, extended one word left over a
+ * preposition standing before it (`at the gong`); with no usable article, at
+ * the last bare preposition (`at Tobias`). A tail is taken only when an
+ * actor and a gerund — two words — stand before it, so `the player giving`
+ * and `the wandering mercenaries giving` take none. Syntactic, never guessed.
+ * The one exception is a tailed event verb (ADR-374 D6, `TAILED_EVENT_VERBS`)
+ * standing alone and followed by an article: `hearing the depot-klaxon`,
+ * where the hearer is the block's owner and has no word of its own.
+ *
+ * @param words - The head's words (actor, gerund, tail), `to` excluded.
+ * @returns `start` (first tail word, preposition included) and `nameStart`
+ *   (first word of the counterpart's name), or null when the head has none.
+ */
+export function splitCounterpartTail(words: readonly Token[]): { start: number; nameStart: number } | null {
+  if (words.length >= 3 && TAILED_EVENT_VERBS.has(words[0].text) && ARTICLES.has(words[1].text)) {
+    return { start: 1, nameStart: 2 };
+  }
+  const last = words.length - 1;
+  for (let i = last - 1; i >= 2; i--) {
+    if (!ARTICLES.has(words[i].text)) continue;
+    const start = COUNTERPART_PREPOSITIONS.has(words[i - 1].text) && i - 1 >= 2 ? i - 1 : i;
+    return { start, nameStart: i };
+  }
+  for (let i = last - 1; i >= 2; i--) {
+    if (COUNTERPART_BARE_PREPOSITIONS.has(words[i].text)) return { start: i, nameStart: i + 1 };
+  }
+  return null;
 }

@@ -20,10 +20,13 @@ export const takingLanguage = {
     'already_have': "{You} already {have} {the item}.",
     'cant_take_room': "{You} {can't} take {the item}.",
     'fixed_in_place': "{capitalize the item} {verb:is item} fixed in place.",
+    'attached': "{capitalize the item} {verb:is item} fixed to {the anchor}.",
     'container_full': "{You're} carrying too much already.",
     'too_heavy': "{Your} load is too heavy. {You} will have to leave something behind.",
     'cannot_take': "{You} {can't} take {the item}.",
     'taken': "Taken.",
+    // ADR-376 D10: a floating thing hauled in alongside.
+    'retrieved': "{You} {haul} {the item} aboard.",
     // TAKE ALL with no takeable candidates (P7): a wink instead of a shrug.
     'nothing_to_take': "{You} {take} in everything {you} {see} and {enjoy} the moment.",
     'taken_from': "{You} {take} {the item} from {the container}.",

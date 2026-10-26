@@ -27,6 +27,7 @@ import {
   InflatableTrait,
   BalloonStateTrait,
   BalloonPosition,
+  BALLOON_POSITIONS,
   isLedgePosition,
   isMidairPosition,
   nextPositionUp,
@@ -449,23 +450,24 @@ function createBalloonObjects(world: WorldModel, roomIds: VolcanoRoomIds): Volca
   }));
   balloon.add(new ContainerTrait({ capacity: { maxItems: 10, maxWeight: 100 } }));
   balloon.add(new EnterableTrait());
+  // A line whose stops are the balloon's positions, in BALLOON_POSITIONS order;
+  // the balloon daemon and the tie action drive it
+  const positionRooms: Record<BalloonPosition, string> = {
+    'vlbot': roomIds.volcanoBottom,
+    'vair1': roomIds.volcanoCore,
+    'vair2': roomIds.volcanoNearSmallLedge,
+    'vair3': roomIds.volcanoNearViewingLedge,
+    'vair4': roomIds.volcanoNearWideLedge,
+    'ledg2': roomIds.narrowLedge,
+    'ledg3': roomIds.volcanoView,
+    'ledg4': roomIds.wideLedge,
+  };
   balloon.add(new VehicleTrait({
-    vehicleType: 'aircraft',
-    transparent: true,
-    blocksWalkingMovement: true,
-    requiresExitBeforeLeaving: true,
-    currentPosition: 'vlbot',
-    isOperational: false,
-    notOperationalReason: 'The balloon is not inflated.',
-    positionRooms: {
-      'vlbot': roomIds.volcanoBottom,
-      'vair1': roomIds.volcanoCore,
-      'vair2': roomIds.volcanoNearSmallLedge,
-      'vair3': roomIds.volcanoNearViewingLedge,
-      'vair4': roomIds.volcanoNearWideLedge,
-      'ledg2': roomIds.narrowLedge,
-      'ledg3': roomIds.volcanoView,
-      'ledg4': roomIds.wideLedge,
+    movement: {
+      kind: 'line',
+      stops: BALLOON_POSITIONS.map(position => positionRooms[position]),
+      oneWay: false,
+      drive: 'control'
     }
   }));
   balloon.add(new BalloonStateTrait({

@@ -3,7 +3,7 @@
  *
  * Self-contained: constructs a WorldModel with explicit traits — no story build
  * or platform load required. Asserts the manifest projection derived from the
- * Behavior Statement (category derivation, player/door/exit exclusion, sparse
+ * Behavior Statement (category derivation, player/door exclusion, sparse
  * trait summary, manifest header).
  */
 import { describe, it, expect, beforeAll } from 'vitest';
@@ -17,7 +17,6 @@ import {
   ActorTrait,
   RegionTrait,
   DoorTrait,
-  ExitTrait,
 } from '@sharpee/world-model';
 import { isProjectManifest, type ProjectManifest } from '@sharpee/ide-protocol';
 import { buildManifest } from './introspect.js';
@@ -58,11 +57,9 @@ beforeAll(() => {
   const trinket = world.createEntity('brass lantern', EntityType.ITEM);
   trinket.add(new IdentityTrait({ name: 'brass lantern' }));
 
-  // Door and exit entities — excluded (they surface under room exits).
+  // A door entity — excluded (it surfaces under room exits).
   const door = world.createEntity('wooden door', EntityType.ITEM);
   door.add(new DoorTrait({ room1: 'r-x', room2: 'r-y' }));
-  const exit = world.createEntity('passage', EntityType.ITEM);
-  exit.add(new ExitTrait({ from: 'r-x', to: 'r-y', command: 'north' }));
 
   ids = {
     player: player.id,
@@ -72,7 +69,6 @@ beforeAll(() => {
     region: region.id,
     trinket: trinket.id,
     door: door.id,
-    exit: exit.id,
   };
 
   manifest = buildManifest(world, 'test-story', 'cli');
@@ -101,9 +97,8 @@ describe('buildManifest — exclusions', () => {
     expect(find(ids.player)).toBeUndefined();
   });
 
-  it('excludes door and exit entities', () => {
+  it('excludes door entities', () => {
     expect(find(ids.door)).toBeUndefined();
-    expect(find(ids.exit)).toBeUndefined();
   });
 
   it('includes exactly the five authored entities', () => {

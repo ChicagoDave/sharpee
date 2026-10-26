@@ -154,6 +154,31 @@ export interface DirectionVocabulary {
 }
 
 /**
+ * The words a world needs from its language, with no words in them (ADR-387
+ * D2). The language fills the shape; the engine assigns it to the world when
+ * it loads the language, and the matcher reads it from there.
+ */
+export interface LanguageWords {
+  /** The words that name the observer, whatever the observer is called ("me", "myself"). */
+  readonly selfWords: readonly string[];
+  /** Words dropped when a name's content words are derived ("the", "of"). */
+  readonly nameStopwords: readonly string[];
+}
+
+/** The grammatical person a possessive determiner refers to. */
+export type PossessivePerson = 'first' | 'second' | 'third';
+
+/**
+ * One determiner of the language, and whose it is when it is a possessive
+ * (ADR-387 D6): `my` is first person, `your` second, `her` third; `this`
+ * and `some` are no one's.
+ */
+export interface DeterminerVocabulary {
+  readonly word: string;
+  readonly possessive?: PossessivePerson;
+}
+
+/**
  * Special vocabulary for pronouns and references
  */
 export interface SpecialVocabulary {
@@ -176,36 +201,6 @@ export interface SpecialVocabulary {
    * Common articles to ignore
    */
   articles: string[];
-}
-
-/**
- * Dynamic vocabulary entry from an entity
- */
-export interface EntityVocabulary {
-  /**
-   * Entity ID this vocabulary belongs to
-   */
-  entityId: string;
-  
-  /**
-   * Nouns that refer to this entity
-   */
-  nouns: string[];
-  
-  /**
-   * Adjectives that can describe this entity
-   */
-  adjectives: string[];
-  
-  /**
-   * Whether this entity is in scope
-   */
-  inScope?: boolean;
-  
-  /**
-   * Priority for disambiguation
-   */
-  priority?: number;
 }
 
 /**

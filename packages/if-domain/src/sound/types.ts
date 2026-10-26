@@ -139,6 +139,29 @@ export interface ISound {
   readonly content?: ISoundContent;
 }
 
+/**
+ * Semantic-event types of the sound subsystem — one home for the engine
+ * (which fires them) and stdlib (which routes them), since both depend on
+ * this package and neither may depend on the other.
+ */
+export const SOUND_EVENT_TYPES = {
+  /**
+   * A sound was made in the world (ADR-374 D6). Event `data` is an `ISound`;
+   * the engine's sound stage gathers every such event of the turn into the
+   * sound buffer, beside the sounds actions emit through `context.emitSound`.
+   */
+  EMITTED: 'sound.emitted',
+  /**
+   * A listener perceived a propagated sound. Event `data` is an
+   * `IAudibilityEvent` (per-listener tier, source-room, optional
+   * crossing wall, content if content-bearing). The sound stage applies
+   * these through the world's event handlers, so a listener can react.
+   */
+  AUDIBILITY_HEARD: 'sound.audibility.heard',
+} as const;
+
+export type SoundEventType = typeof SOUND_EVENT_TYPES[keyof typeof SOUND_EVENT_TYPES];
+
 // =============================================================================
 // AudibilityEvent — per-listener delivery shape
 // =============================================================================

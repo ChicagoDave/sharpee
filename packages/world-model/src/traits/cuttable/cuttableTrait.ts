@@ -1,24 +1,17 @@
 // packages/world-model/src/traits/cuttable/cuttableTrait.ts
 
-import { type EntityId } from '@sharpee/core';
 import { ITrait } from '../trait.js';
 import { TraitType } from '../trait-types.js';
+import { IToolGated, ToolRequirement } from '../tool-requirement.js';
 
 /**
  * Data for the cuttable trait (ADR-230 D3c).
  *
- * Tool fields mirror ILockableData's key config (PIN 2 shared shape with
- * OpenableTrait's tool fields): a declared requirement makes the cutting
- * action refuse wrong/missing tools; no requirement means any explicit
- * tool (or none) passes validation.
+ * A declared tool requirement makes the cutting action refuse wrong or
+ * missing tools; no requirement means any explicit tool (or none) passes
+ * validation.
  */
-export interface ICuttableData {
-  /** Single tool entity required to cut this (mirrors ILockableData.keyId) */
-  toolId?: EntityId;
-
-  /** Multiple tool entities that can cut this (mirrors ILockableData.keyIds) */
-  toolIds?: EntityId[];
-}
+export type ICuttableData = IToolGated;
 
 /**
  * Cuttable trait — marks an entity the cutting action may target.
@@ -30,18 +23,16 @@ export interface ICuttableData {
  * implementation is an authoring error (load-time in Chord; runtime
  * safety-net refusal otherwise).
  *
- * This trait contains only data - eligibility/tool logic is in
- * CuttableBehavior.
+ * This trait contains only data; the tool check is the shared
+ * tool-requirement resolver's.
  */
 export class CuttableTrait implements ITrait, ICuttableData {
   static readonly type = TraitType.CUTTABLE;
   readonly type = TraitType.CUTTABLE;
 
-  toolId?: EntityId;
-  toolIds?: EntityId[];
+  toolRequirement?: ToolRequirement;
 
   constructor(data: ICuttableData = {}) {
-    this.toolId = data.toolId;
-    this.toolIds = data.toolIds;
+    this.toolRequirement = data.toolRequirement;
   }
 }

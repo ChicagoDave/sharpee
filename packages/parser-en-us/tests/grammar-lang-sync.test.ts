@@ -8,6 +8,7 @@
  */
 
 import { describe, it, expect, beforeAll } from 'vitest';
+import { EnglishLanguageProvider } from '@sharpee/lang-en-us';
 import { EnglishGrammarEngine } from '../src/english-grammar-engine';
 import { defineGrammar } from '../src/grammar';
 import { standardActionLanguage } from '@sharpee/lang-en-us';
@@ -75,7 +76,7 @@ describe('ADR-087 Phase 9: Grammar/Language Sync Verification', () => {
   beforeAll(() => {
     // Extract verbs from grammar definitions
     grammarVerbs = {};
-    const engine = new EnglishGrammarEngine();
+    const engine = new EnglishGrammarEngine(new EnglishLanguageProvider());
     const builder = engine.createBuilder();
     defineGrammar(builder);
     const rules = builder.getRules();

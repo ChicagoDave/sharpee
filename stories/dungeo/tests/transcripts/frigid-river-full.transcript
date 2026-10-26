@@ -54,8 +54,8 @@ description: Full Frigid River test - boat from Dam Base to End of Rainbow via
 > put stick in boat
 [OK: contains "put"]
 
-# Board the boat
-> board boat
+# Get into the boat
+> enter boat
 [OK: contains "boat"]
 
 # ============================================================================
@@ -119,8 +119,8 @@ description: Full Frigid River test - boat from Dam Base to End of Rainbow via
 > s
 [OK: contains "Rocky Shore"]
 
-# Board boat again
-> board boat
+# Get into the boat again
+> enter boat
 [OK: contains "boat"]
 
 # ============================================================================

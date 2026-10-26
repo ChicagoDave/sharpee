@@ -16,6 +16,9 @@ import type {
   ParsedCommand
 } from '@sharpee/world-model';
 
+/** English, handed to hand-built worlds as the language's words (ADR-387 D2). */
+const ENGLISH_WORDS = { selfWords: ['me', 'myself', 'self', 'yourself'], nameStopwords: ['the', 'a', 'an', 'of'] };
+
 // Mock Language Provider that demonstrates the new pattern
 class MockLanguageProvider implements Partial<LanguageProvider> {
   private actionPatterns = new Map<string, string[]>([
@@ -74,8 +77,7 @@ class MockLanguageProvider implements Partial<LanguageProvider> {
       structure: {
         verb: { tokens: [0], text: verb, head: verb }
       },
-      pattern: 'VERB_ONLY',
-      confidence: actionId ? 1.0 : 0.5
+      pattern: 'VERB_ONLY'
     } as unknown as ParsedCommand;
   }
 }
@@ -98,6 +100,7 @@ describe('Action Integration Test Pattern', () => {
     
     // Setup world model
     world = new WorldModel();
+    world.setLanguageWords(ENGLISH_WORDS);
     player = world.createEntity('Player', 'actor');
     player.add({ type: TraitType.ACTOR, isPlayer: true });
     world.setPlayer(player.id); // Set player in world model
@@ -201,6 +204,7 @@ describe('Testing Complex Actions with Dependencies', () => {
   test('example: action that checks preconditions', () => {
     // Example of testing an action with more complex validation
     const world = new WorldModel();
+    world.setLanguageWords(ENGLISH_WORDS);
     const player = world.createEntity('Player', 'actor');
     player.add({ type: TraitType.ACTOR, isPlayer: true });
     world.setPlayer(player.id); // Set player in world model

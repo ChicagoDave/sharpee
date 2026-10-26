@@ -1,53 +1,42 @@
 /**
- * Lowering Action (ADR-090 Capability Dispatch)
+ * Lowering action (ADR-090 capability dispatch + ADR-228 lifecycle; ADR-371 D1).
  *
- * This action dispatches to trait behaviors instead of having fixed semantics.
- * Entities that can be lowered declare the 'if.action.lowering' capability
- * and register a behavior to handle it.
+ * LOWER has no standard semantics — a basket descends, a drawbridge drops,
+ * blinds come down. The action performs NO mutation itself; the outcome is
+ * the target's own registered implementation, on either surface:
+ *   - an ADR-090 capability behavior registered for if.action.lowering
+ *     (the Dungeo basket), or
+ *   - an ADR-228 interceptor (a Chord `on the player lowering` clause).
+ * A target with neither refuses with cant_lower_that, as it always has.
  *
- * Examples: basket elevator, drawbridge, blinds, levers
+ * Public interface: loweringAction, loweringLifecycle, LoweringMessages.
+ * Owner context: stdlib / standard actions / manipulation
  */
 
-import { createCapabilityDispatchAction } from '../../capability-dispatch.js';
 import { IFActions } from '../../constants.js';
+import { createImplementationDispatchingAction } from '../dispatch-shared.js';
+import type { ActionLifecycleDescriptor } from '../../lifecycle/index.js';
 
-/**
- * Lowering action - dispatches to capability behaviors.
- *
- * Usage:
- * 1. Create a trait that declares `static capabilities = ['if.action.lowering']`
- * 2. Create a behavior implementing CapabilityBehavior
- * 3. Register the behavior with world.registerCapabilityBehavior() in your
- *    story's initializeWorld() (per-world binding, ADR-207)
- * 4. Add the trait to your entity
- *
- * @example
- * ```typescript
- * // In trait:
- * class BasketElevatorTrait implements ITrait {
- *   static readonly capabilities = ['if.action.lowering', 'if.action.raising'];
- *   // ...
- * }
- *
- * // In behavior:
- * const BasketLoweringBehavior: CapabilityBehavior = {
- *   validate(entity, world, actorId) { ... },
- *   execute(entity, world, actorId) { ... },
- *   report(entity, world, actorId) { ... },
- *   blocked(entity, world, actorId, error) { ... }
- * };
- *
- * // Registration (in the story's initializeWorld(world)):
- * world.registerCapabilityBehavior(
- *   BasketElevatorTrait.type,
- *   'if.action.lowering',
- *   BasketLoweringBehavior
- * );
- * ```
- */
-export const loweringAction = createCapabilityDispatchAction({
+/** Message ids for the lowering action (texts in lang-en-us). */
+export const LoweringMessages = {
+  NO_TARGET: 'no_target',
+  CANT_LOWER_THAT: 'cant_lower_that',
+  ALREADY_DOWN: 'already_down',
+  LOWERED: 'lowered'
+} as const;
+
+const built = createImplementationDispatchingAction({
   actionId: IFActions.LOWERING,
   group: 'manipulation',
-  noTargetError: 'no_target',
-  cantDoThatError: 'cant_lower_that'
+  reportEventType: 'if.event.lowered',
+  blockedEventType: 'if.event.lower_blocked',
+  messages: {
+    noTarget: LoweringMessages.NO_TARGET,
+    cantDoThat: LoweringMessages.CANT_LOWER_THAT,
+    done: LoweringMessages.LOWERED
+  },
+  extraMessages: [LoweringMessages.ALREADY_DOWN]
 });
+
+export const loweringAction = built.action;
+export const loweringLifecycle: ActionLifecycleDescriptor = built.lifecycle;

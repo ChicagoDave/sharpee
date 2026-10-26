@@ -17,15 +17,18 @@
  * - Unknown constructs throw LoadError: the compiler gates should make
  *   these unreachable; reaching one is a loader bug, not author error.
  */
-import type { IRCondition, IREntity, IRTimerDef, IRValue, StoryIR } from '@sharpee/chord';
+import { qualifiedTimerKey, type IRCondition, type IREntity, type IRTimerDef, type IRValue, type StoryIR } from '@sharpee/chord';
 import { createSeededRandom, type RandomService, type SeededRandom } from '@sharpee/core';
 import { exitBlockedKey } from '@sharpee/stdlib';
 import { classifiesAs } from './kind-classification.js';
 import {
+  AttachedBehavior,
+  BreakableBehavior,
   CharacterModelTrait,
-  LightSourceTrait,
+  LightSourceBehavior,
   LockableBehavior,
   LockableTrait,
+  PresenceBehavior,
   RoomBehavior,
   type DirectionType,
   MOOD_AXES,
@@ -42,6 +45,8 @@ import {
   type MoodModifier,
 } from '@sharpee/world-model';
 import { sceneWith } from '@sharpee/world-model';
+import { bearingOf, distance, type IFEntity, inSight, isUnderWay, landmarkCellOf, lookoutOf, placeOf, sightingOf, VehicleTrait } from '@sharpee/world-model';
+import { directionOfWord } from './direction-words.js';
 import { askedWordFor, dialogueTurn, recencyWordFor } from '@sharpee/character';
 import { CHAPTER_CURRENT_KEY } from '@sharpee/ext-chapters';
 import { LoadError } from './errors.js';
@@ -203,7 +208,7 @@ export class Evaluator {
       case 'timer-has': {
         // ADR-325 D3d: `has started` = running, stopped, or expired; `has
         // expired` = over. Idle (never started, or reset) answers no to both.
-        const record = this.timerRecord(cond.timer, ctx);
+        const record = this.timerRecord(this.timerKeyOf(cond.name, cond.owner, ctx), ctx);
         return cond.what === 'started' ? record.phase !== 'idle' : record.phase === 'expired';
       }
       case 'client-has': {
@@ -214,6 +219,65 @@ export class Evaluator {
         const capabilities = this.capabilitiesProvider?.();
         if (!capabilities) return false;
         return (capabilities as Record<string, unknown>)[cond.capability] === true;
+      }
+      case 'vehicle-under-way': {
+        // ADR-366 D5e: the vehicle's machine is moving it — read off the trait.
+        const vehicle = ctx.world.getEntity(this.entityValue(cond.vehicle, ctx));
+        return vehicle !== undefined && isUnderWay(vehicle);
+      }
+      case 'vehicle-at':
+        // ADR-366 D9: the vehicle's location is the one fact, read here.
+        return ctx.world.getLocation(this.entityValue(cond.vehicle, ctx)) === this.entityValue(cond.place, ctx);
+      case 'vehicle-heading': {
+        // ADR-366 D5c, ADR-376 D3: a compass or open vehicle's heading, null
+        // when it has none. ADR-375 D2: a bearing compares as a number, and a
+        // compass word names its bearing, so `is heading east` holds a ship
+        // on 90 degrees too.
+        const model = ctx.world.getEntity(this.entityValue(cond.vehicle, ctx))?.get(VehicleTrait)?.movement;
+        if (model?.kind !== 'compass' && model?.kind !== 'open') return false;
+        if (model.heading === null) return false;
+        const named = cond.direction === undefined ? undefined : directionOfWord(cond.direction);
+        if (cond.bearing === undefined && typeof model.heading === 'string') return model.heading === named;
+        const want = cond.bearing ?? (named === undefined ? undefined : bearingOf(named));
+        const have = bearingOf(model.heading);
+        return want !== undefined && have !== undefined && want === have;
+      }
+      case 'in-irons': {
+        // ADR-375 D5: lying still in a `stopped` band under the fullest setting.
+        const model = ctx.world.getEntity(this.entityValue(cond.vehicle, ctx))?.get(VehicleTrait)?.movement;
+        return model?.kind === 'open' && model.inIrons;
+      }
+      case 'vehicle-sails': {
+        // ADR-375 D7: the current setting.
+        const model = ctx.world.getEntity(this.entityValue(cond.vehicle, ctx))?.get(VehicleTrait)?.movement;
+        return model?.kind === 'open' && model.sails?.current === cond.setting;
+      }
+      case 'in-sight': {
+        // ADR-376 D6, D7: within the player's sight from where they look —
+        // their open vehicle, their own cell out of it, or a landmark room
+        // with `sight:`. False when either is positioned in no expanse.
+        const player = ctx.world.getPlayer();
+        const thing = ctx.world.getEntity(this.entityValue(cond.thing, ctx));
+        return player !== undefined && thing !== undefined && inSight(ctx.world, player, thing);
+      }
+      case 'sight-band': {
+        const player = ctx.world.getPlayer();
+        const thing = ctx.world.getEntity(this.entityValue(cond.thing, ctx));
+        const lookout = player ? lookoutOf(ctx.world, player) : undefined;
+        const sighting = lookout && thing ? sightingOf(ctx.world, lookout, thing) : undefined;
+        return sighting?.band === cond.band;
+      }
+      case 'vehicle-within': {
+        // ADR-376 D7: an open vehicle's straight-line distance from a
+        // landmark's cell or a literal cell of its expanse. A vehicle at a
+        // landmark measures from that landmark's row (the place system's answer).
+        const vehicle = ctx.world.getEntity(this.entityValue(cond.vehicle, ctx));
+        const place = vehicle ? placeOf(ctx.world, vehicle) : undefined;
+        if (!place) return false;
+        const target = 'kind' in cond.of
+          ? landmarkCellOf(place.trait, this.entityValue(cond.of, ctx))
+          : { x: cond.of.x, y: cond.of.y };
+        return target !== undefined && distance(place.cell, target) <= cond.distance;
       }
       case 'any-of':
         // E1 (ratchet 2026-07-12): true iff some entity satisfies the
@@ -399,6 +463,9 @@ export class Evaluator {
         if (subjectId === playerId) return raw(true);
         const playerRoom = ctx.world.getContainingRoom(playerId)?.id ?? ctx.world.getLocation(playerId);
         if (ctx.world.getEntity(subjectId)?.has(TraitType.ROOM)) return raw(playerRoom === subjectId);
+        // A door or backdrop is here wherever it is present (ADR-374 D1).
+        const subject = ctx.world.getEntity(subjectId);
+        if (subject && playerRoom !== undefined && PresenceBehavior.roomsBeyondHome(subject).includes(playerRoom)) return raw(true);
         const subjectRoom = ctx.world.getContainingRoom(subjectId)?.id ?? ctx.world.getLocation(subjectId);
         return raw(subjectRoom !== undefined && subjectRoom === playerRoom);
       }
@@ -421,14 +488,11 @@ export class Evaluator {
       }
       case 'can-see':
       case 'can-reach': {
-        // Phase B semantics: co-location — subject and object share a
-        // containing room. (Full perception/reach services are a later
-        // refinement; this matches the Zoo constructs' intent.)
+        // ADR-374 D4: the platform's own answers — light, night vision,
+        // containers, presence in many rooms — not co-location.
         const subjectId = this.entityValue(cond.subject, ctx);
         const objectId = this.entityValue(cond.object, ctx);
-        const subjectRoom = ctx.world.getContainingRoom(subjectId)?.id ?? ctx.world.getLocation(subjectId);
-        const objectRoom = ctx.world.getContainingRoom(objectId)?.id ?? ctx.world.getLocation(objectId);
-        return raw(subjectRoom !== undefined && subjectRoom === objectRoom);
+        return raw(cond.pred === 'can-see' ? ctx.world.canSee(subjectId, objectId) : ctx.world.canReach(subjectId, objectId));
       }
     }
   }
@@ -454,7 +518,7 @@ export class Evaluator {
           const state = ctx.world.getStateValue(CHORD_STATE_PREFIX + irId);
           if (state !== undefined && state === symbol) return true;
         }
-        const adjective = this.stateAdjectiveHolds(entity, symbol);
+        const adjective = this.stateAdjectiveHolds(entity, symbol, ctx.world);
         if (adjective !== null) return adjective;
         // ADR-310 D16 / ADR-318: interior classification — mood, threat,
         // and pressure-band words read the character-model trait, the
@@ -509,11 +573,11 @@ export class Evaluator {
 
   /**
    * State adjectives (ratchet D1): `open`/`closed`, `locked`/`unlocked`,
-   * `on`/`off`, `worn`, `lit` — pure reads of world trait state. Null when
+   * `on`/`off`, `worn`, `lit`, `broken`, `attached` — pure reads of world trait state. Null when
    * `symbol` is not a state adjective (or the trait is absent, so the
    * adjective cannot hold either way).
    */
-  private stateAdjectiveHolds(entity: NonNullable<ReturnType<WorldModel['getEntity']>>, symbol: string): boolean | null {
+  private stateAdjectiveHolds(entity: NonNullable<ReturnType<WorldModel['getEntity']>>, symbol: string, world: WorldModel): boolean | null {
     switch (symbol) {
       case 'open':
       case 'closed': {
@@ -538,11 +602,21 @@ export class Evaluator {
         if (!wearable) return null;
         return wearable.worn === true;
       }
-      case 'lit': {
-        const source = entity.get(TraitType.LIGHT_SOURCE) as LightSourceTrait | undefined;
-        if (!source) return null;
-        return source.isLit === true;
+      case 'lit':
+        // ADR-374 D10: the one reading of "gives light" — lit, switched on
+        // and powered — that the room's light check uses.
+        if (!entity.has(TraitType.LIGHT_SOURCE)) return null;
+        return LightSourceBehavior.givesLight(entity, world);
+      case 'broken': {
+        // ADR-373 D2: the behavior's reading of what attacking, dropping and
+        // throwing write.
+        if (!entity.has(TraitType.BREAKABLE)) return null;
+        return BreakableBehavior.isBroken(entity);
       }
+      case 'attached':
+        // ADR-373 D1: one reading of "attached", shared with taking and pulling.
+        if (!entity.has(TraitType.ATTACHED)) return null;
+        return AttachedBehavior.isAttached(entity);
       default:
         return null;
     }
@@ -577,23 +651,18 @@ export class Evaluator {
       case 'timer': {
         // ADR-325 D3d: the timer's current named turn, `expired` once over,
         // and no value (null) before it starts or after a reset.
-        const record = this.timerRecord(value.timer, ctx);
+        const qualified = this.timerKeyOf(value.name, value.owner, ctx);
+        const record = this.timerRecord(qualified, ctx);
         if (record.phase === 'idle') return null;
         if (record.phase === 'expired') return 'expired';
-        const def = this.timerDefs.get(value.timer);
+        const def = this.timerDefs.get(qualified);
         return record.index >= 1 && def ? def.states[record.index - 1] ?? null : null;
       }
       case 'counter': {
         // ADR-264 D3: read a counter's current value from world state. The
-        // owner (per-entity) resolves to an IR entity id, matching how the
-        // loader seeds and the runtime mutates the counter.
-        let ownerId: string | null = null;
-        if (value.owner) {
-          if (value.owner.kind === 'entity') ownerId = value.owner.id;
-          else if (value.owner.kind === 'it') ownerId = ctx.it ?? null;
-        }
-        const key = counterKey(value.name, ownerId ?? undefined);
-        return Number(ctx.world.getStateValue(key) ?? 0);
+        // owner resolves through the one resolution the writes use.
+        const ownerId = value.owner ? this.ownerIrId(value.owner, ctx) : undefined;
+        return Number(ctx.world.getStateValue(counterKey(value.name, ownerId)) ?? 0);
       }
       case 'slot': {
         const bound = ctx.slots?.[value.name];
@@ -608,6 +677,9 @@ export class Evaluator {
         if (!ctx.match) throw new LoadError('`the match` used outside an `each` block.');
         return this.requireWorldId(ctx.match);
       }
+      case 'unresolved':
+        // The analyzer's error result: a story that compiled with errors never loads.
+        throw new LoadError('A name in this story did not resolve — compile it and fix the reported errors.');
     }
   }
 
@@ -783,10 +855,39 @@ export class Evaluator {
       .map((e) => e.id);
   }
 
+  /**
+   * The key of the timer a read, condition or verb names: its owner resolved
+   * now, through the one owner resolution counters use — so `the player's
+   * wound` is the wound of the character holding the role this turn.
+   *
+   * @throws LoadError when the owner does not resolve to a story entity
+   */
+  timerKeyOf(name: string, owner: IRValue | null, ctx: EvalContext): string {
+    return qualifiedTimerKey(name, owner === null ? null : this.ownerIrId(owner, ctx));
+  }
+
   /** A timer's persisted record (ADR-325 D3g); idle when never written. */
   timerRecord(qualified: string, ctx: EvalContext): TimerRecord {
     const stored = ctx.world.getStateValue(timerKey(qualified)) as TimerRecord | undefined;
     return stored ?? { ...IDLE_TIMER_RECORD };
+  }
+
+  /**
+   * The IR id of the entity a value names, for keying owned state (a
+   * counter, a timer). The one owner resolution: reads and writes both call
+   * it, so `the player's` names the character holding the role now.
+   *
+   * @throws LoadError when `it` is unbound or the value is not a story entity
+   */
+  ownerIrId(value: IRValue, ctx: EvalContext): string {
+    if (value.kind === 'entity') return value.id;
+    if (value.kind === 'it') {
+      if (!ctx.it) throw new LoadError('`it` used outside an entity-scoped clause.');
+      return ctx.it;
+    }
+    const irId = this.ids.irIdOf(this.entityValue(value, ctx));
+    if (!irId) throw new LoadError('Only a story entity owns state.');
+    return irId;
   }
 
   /** Evaluate a value that must be an entity (world id). */
@@ -923,3 +1024,4 @@ export class Evaluator {
     return pick;
   }
 }
+

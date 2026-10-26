@@ -76,10 +76,6 @@ function analyzeHelpRequest(context: ActionContext): HelpState {
       'special_commands'
     ];
     eventData.sections = helpSections;
-
-    // Include hints availability
-    const hintsEnabled = (gameMeta?.hintsEnabled as boolean | undefined) ?? true;
-    eventData.hintsAvailable = hintsEnabled;
   }
   
   return {
@@ -105,8 +101,6 @@ export const helpAction: Action & { metadata: ActionMetadata } = {
     'help_objects',
     'help_special',
     'first_time',
-    'hints_available',
-    'hints_disabled',
     'stuck_help',
     'help_footer'
   ],
@@ -162,8 +156,7 @@ export const helpAction: Action & { metadata: ActionMetadata } = {
         messageId,
         params: {
           topic: sharedData.eventData.helpRequest,
-          sections: sharedData.eventData.sections,
-          hintsAvailable: sharedData.eventData.hintsAvailable
+          sections: sharedData.eventData.sections
         },
         // Domain data
         ...sharedData.eventData

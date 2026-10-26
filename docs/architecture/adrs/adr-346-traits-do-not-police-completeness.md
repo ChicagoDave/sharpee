@@ -87,7 +87,7 @@ A story declares a door where the door is. Where it *leads* may not exist yet �
 
 **D6. Tests assert the new shape, not the old.** `door.test.ts`'s four throw-assertions are replaced by one-sided construction and a `connectRooms` fill-in test. The two stdlib fixtures that provoked this are now `new DoorTrait({ room1: room.id })`, with no invented destination.
 
-**D7. `ExitTrait` follows D1 too.** `from`, `to` and `command` are optional and the constructor throws nothing. The check is not lost: `ExitBehavior.createBidirectional` already performed the identical validation on its own data before constructing anything (`exitBehavior.ts:216-218`), which is the behavior layer doing what D1 says is its job. `ExitBehavior.matchesCommand` now compares `command` only when it is set, so an exit that has not been named matches nothing typed — unreachable, which is what an unnamed exit is.
+**D7. `ExitTrait` follows D1 too.** `from`, `to` and `command` are optional and the constructor throws nothing. The check is not lost: `ExitBehavior.createBidirectional` already performed the identical validation on its own data before constructing anything (`exitBehavior.ts:216-218`), which is the behavior layer doing what D1 says is its job. `ExitBehavior.matchesCommand` now compares `command` only when it is set, so an exit that has not been named matches nothing typed — unreachable, which is what an unnamed exit is. *(Retired 2026-10-19, session b86789, ADR-378 D1b, David: "ExitTrait is retired": the trait and behavior were the unwired exit-as-entity vocabulary; a room owns its exits (ADR-234 D1), and a passage named by a command is a room line keyed by `passage:<words>`. D7's rule stands; its subject is gone.)*
 
 ## Consequences
 

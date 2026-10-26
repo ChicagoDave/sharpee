@@ -867,21 +867,35 @@ export interface EvaluationContext {
 /**
  * StateMachinePlugin - Wraps state machine registry as a TurnPlugin (ADR-119, ADR-120)
  *
- * Priority 75: Runs after NPCs (100) but before scheduler (50).
- * Evaluates state machine transitions after each successful player action.
+ * Public interface: `StateMachinePlugin`, `StateMachinePluginOptions`.
+ * Owner context: plugin-state-machine, the one turn host for every machine
+ * a story runs: its own `define machine` blocks and each vehicle's built-in
+ * machine (ADR-377 D3). Evaluates state machine transitions after each
+ * successful player action, then steps every vehicle.
  */
 import { type ISemanticEvent } from '@sharpee/core';
 import { type TurnPlugin, type TurnPluginContext } from '@sharpee/plugins';
 import { StateMachineRegistry } from './state-machine-runtime.js';
+import { type VehiclePositionResolver } from './vehicle-machine.js';
+/** What the host lends the plugin's vehicle phase. */
+export interface StateMachinePluginOptions {
+    /**
+     * The host's reading of a `drive: state` line's `position` block (ADR-366
+     * D5a). Omit when the host lowers no state-driven lines; every other
+     * model steps without it.
+     */
+    vehiclePosition?: VehiclePositionResolver;
+}
 /**
  * The {@link TurnPlugin} that drives declarative state machines (ADR-119).
  *
  * Platform-phases band (ADR-332): after the scheduler's story reactions and
  * the actor phase, before scene evaluation — a machine reacts to what the
  * turn did.
- * Each turn it evaluates every machine in its {@link StateMachineRegistry} and
- * returns the events produced by any transitions that fired. Register the
- * plugin with the engine, then add machines via {@link getRegistry}.
+ * Each turn it evaluates every machine in its {@link StateMachineRegistry},
+ * then steps every vehicle's built-in machine (ADR-366 D5e, ADR-377 D3),
+ * and returns the events both produced. Register the plugin with the
+ * engine, then add machines via {@link getRegistry}.
  */
 export declare class StateMachinePlugin implements TurnPlugin {
     /** Stable plugin id. */
@@ -889,8 +903,12 @@ export declare class StateMachinePlugin implements TurnPlugin {
     /** Run order within a turn: after the actor phase, before scene evaluation (ADR-332). */
     priority: number;
     private registry;
-    constructor();
-    /** Evaluate all registered machines for this turn and return their events. */
+    private readonly vehiclePosition?;
+    constructor(options?: StateMachinePluginOptions);
+    /**
+     * Evaluate all registered machines for this turn, then step every
+     * vehicle's machine, and return the events of both in that order.
+     */
     onAfterAction(ctx: TurnPluginContext): ISemanticEvent[];
     /** Serialize all machine instances for saving. */
     getState(): unknown;
@@ -992,4 +1010,86 @@ import { Effect, EntityBindings } from './types.js';
  * @returns The events produced by the effects.
  */
 export declare function executeEffects(effects: Effect[], world: WorldModel, bindings: EntityBindings, playerId: EntityId, machineId: string): ISemanticEvent[];
+```
+
+### vehicle-machine
+
+```typescript
+/**
+ * Vehicle Machine - the per-turn phase that steps every vehicle's built-in machine and drifts every expanse
+ *
+ * Public interface: `VehiclePositionResolver` (the host's answer for a
+ * `drive: state` line's `position` block), `VehicleTickOptions`, and
+ * `tickVehicles` (one turn over every vehicle and every expanse in the
+ * world, returning the facts the steps recorded). The event types and the
+ * stock lines are world-model's `VEHICLE_EVENT_TYPES` and
+ * `VEHICLE_REPORT_MESSAGES`; none is spelled here.
+ *
+ * Owner context: plugin-state-machine. The vehicle's machine is a phase of
+ * the state-machine plugin, run after the story's own machines each turn
+ * (ADR-377 D3). The stepping itself is world-model's `stepVehicle` and the
+ * drift world-model's `driftExpanse`; this module only decides which
+ * vehicles to step, hands a state-driven line the stop its `position` block
+ * names, draws drift from the session's random service, and records each
+ * step as a past-tense fact. The engine applies every fact a plugin records
+ * to the world, so a story's handlers and `when <thing> moves` clauses
+ * hear them; who reads what is decided here in two voices:
+ *
+ * - A rider (the player aboard) is told of every move by containment, lit
+ *   or dark: arrived, stopped, alongside, an edge (the author's phrase,
+ *   `edgePhraseOf`, through going's blocked-movement line, else the stock
+ *   line), caught in irons. A departure is not told to a rider.
+ * - A watcher (anyone not aboard) sees a move where it happened, as any
+ *   seen thing: the fact carries its place and a sight rendering, so
+ *   perception shows it in a lit room, hides it in a dark one, and the
+ *   client hides it from a player elsewhere. A watcher sees a vehicle
+ *   depart, arrive, stop, come alongside and lie in irons, and sees a
+ *   floating thing drift and wash up. An edge is a rider's experience and
+ *   is recorded silently for a watcher.
+ *
+ * A passenger of a vehicle with no rooms aboard is carried into the room it
+ * reaches, so each one arrives (`if.event.actor_moved`) as a walker does
+ * and the story's `after … entering` clauses fire. A vehicle with rooms
+ * aboard is unchanged: its passengers are in a room aboard and arrive by
+ * walking out.
+ *
+ * References:
+ * - ADR-366 D5e — the machine is ticked by the engine's turn cycle here.
+ * - ADR-366 D5a — a `drive: state` line reads its `position` block each turn.
+ * - ADR-366 D7a — `vehicle-arrived` and `vehicle-stopped` are stock lines.
+ * - ADR-376 D8, D10 — the edge and alongside reports; drift from the seeded service.
+ * - ADR-377 D3 — no second turn host; the vehicle phase runs in this plugin.
+ * - Alignment fixes Phase 4 — F4, D13 (one declaration, past-tense facts),
+ *   D11 (drift becomes events), Q5 C (riders and watchers), Q6 A
+ *   (passengers arrive).
+ */
+import { type ISemanticEvent, type RandomService } from '@sharpee/core';
+import { type IFEntity, WorldModel } from '@sharpee/world-model';
+/**
+ * The host's reading of a `drive: state` line's `position` block (ADR-366
+ * D5a): the stop the block names this turn, or undefined when the vehicle
+ * has no block. The block's guards are compiled code the loader holds, so
+ * the host that lowered them answers; the trait carries only data (D5g).
+ */
+export type VehiclePositionResolver = (vehicle: IFEntity, world: WorldModel) => string | undefined;
+/** What the host lends the tick. */
+export interface VehicleTickOptions {
+    positionOf?: VehiclePositionResolver;
+}
+/**
+ * Step every vehicle's machine once (ADR-366 D5e), drift every expanse
+ * (ADR-376 D10), and return the facts both recorded, each in the voice its
+ * reader is owed. A vehicle at rest and a thing held still record nothing;
+ * a world with no vehicles and no expanses costs two trait lookups.
+ *
+ * @param world - The live world
+ * @param playerId - The player: aboard, they are told; elsewhere, they watch
+ * @param random - The session's random service, for drift (ADR-293) and
+ *   for a computed way a compass vehicle's heading meets (ADR-295 D4)
+ * @param options - The host's `position` block reader, absent when the host
+ *   lowers no `drive: state` line
+ * @returns the turn's departed, arrived, stopped, alongside, edge-reached,
+ *   caught-in-irons, passenger-arrival, drifted and washed-up facts
+ */
+export declare function tickVehicles(world: WorldModel, playerId: string, random: RandomService, options?: VehicleTickOptions): ISemanticEvent[];
 ```

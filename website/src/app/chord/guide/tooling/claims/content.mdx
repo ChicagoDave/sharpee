@@ -129,3 +129,59 @@ prints the budget that stopped the walk, how many things its set carried,
 and how many of them the claim's rules never reach: the states to exhaust
 double with every independent thing, so the remedy is a tighter set, not a
 larger budget, and the count says how much tighter it can be.
+
+## Locking a reached state
+
+A claim can also be written after the fact. When a played line of your test
+tree reaches a state worth keeping, lock it: the claim is written into the
+fragment for you, and its `needs` set is proposed from the line that
+reached it rather than typed. In Chord Writer, every typed turn's card has
+a **Lock…** button: it lists the facts that are true after that turn and
+were not true at boot, you pick one, and a sheet shows the proposed name
+and the three lists as chips, with the things the claim cannot depend on
+struck through and off. **Keep** writes the claim and pins it on the card.
+From the command line the same gesture is `sharpee claim`:
+
+```text
+sharpee claim weefpbmr                               # the facts true at the line's last turn
+sharpee claim weefpbmr "the deed box is open" --at 22 --propose   # the proposed block, written nowhere
+sharpee claim weefpbmr "the deed box is open" --at 22             # write it and pin the card
+```
+
+The line is a segment id of the tree (or its first typed command, when
+only one line starts with it), and `--at` is the turn as you count them.
+The proposed set is the rooms the line entered, the things it touched or
+changed, and the verbs it typed, trimmed to what the claim can depend on;
+`--rooms`, `--things` and `--verbs` write your own lists instead. A story
+with no fragment gets one, and its manifest the `claims` key. The written
+block is an ordinary claim: at run time nothing tells a locked claim from
+a hand-written one.
+
+Two things follow from the lock. Every line of the tree is a proof for
+every positive claim it reaches, so a claim some line reaches is reported
+**held, by line** with the line and turn, and never walked: a story whose
+tree reaches its claims proves them in the time the tree takes. And the
+card the lock was taken on checks the claim there on every run. The
+fragment keeps one shape, the lock's: a hand edit that reorders or
+re-indents a block is refused by `sharpee test`, by block and line, before
+anything runs.
+
+## When a lock breaks
+
+A story edit that breaks a locked claim is a failed card, in the claim's
+own words:
+
+```text
+✗ opening-iron-gates — open deed box with locket: lock "the deed box is open" not held here: the deed box is closed
+    The locket's catch does not fit.
+```
+
+The story's output on that turn prints under the cite, the line fails as
+any failed card fails it, and the run exits 1: this is the one place a
+broken claim is loud. The claims report then says where the claim stands
+without the lock. If another line still reaches it, `HELD … by line …`
+with the broken lock named beside it; if no line does, `not reached by any
+line` followed by the walk's verdict. Those verdicts still never change
+the exit code. In Chord Writer the same run fills the claims section under
+the derived rules, one row per claim with its verdict and the report's
+sentence, and a lock's line visits the card it was taken on.

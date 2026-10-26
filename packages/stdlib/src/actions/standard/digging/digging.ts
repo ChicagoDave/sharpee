@@ -24,13 +24,14 @@ import { Action, ActionContext, ValidationResult } from '../../enhanced-types.js
 import { type ISemanticEvent } from '@sharpee/core';
 import {
   TraitType,
-  DiggableBehavior,
+  DiggableTrait,
   findTraitWithCapability,
   type CapabilityEffect,
   type CapabilitySharedData,
   IFEntity
 } from '@sharpee/world-model';
 import { IFActions } from '../../constants.js';
+import { hasInterceptorImplementation } from '../dispatch-shared.js';
 import { ActionMetadata } from '../../../validation/index.js';
 import { ScopeLevel } from '../../../scope/types.js';
 import { DiggingMessages } from './digging-messages.js';
@@ -108,6 +109,9 @@ export const diggingAction: Action & { metadata: ActionMetadata } = {
 
   requiresHolding: false,
 
+  // ADR-371 D1a: this action dispatches to the target's implementation itself.
+  dispatchesImplementations: true,
+
   requiredMessages: [
     'no_target',
     'not_diggable',
@@ -152,9 +156,7 @@ export const diggingAction: Action & { metadata: ActionMetadata } = {
       context,
       noun,
       explicitTool,
-      DiggableBehavior.requiresTool(noun),
-      (toolId) => DiggableBehavior.canDigWith(noun, toolId),
-      DiggableBehavior.requiredTools(noun)
+      noun.get(DiggableTrait)?.toolRequirement
     );
     if (toolResolution.failure) {
       return toolResolution.failure;
@@ -169,7 +171,7 @@ export const diggingAction: Action & { metadata: ActionMetadata } = {
     const behavior = capabilityTrait
       ? context.world.getBehaviorForCapability(capabilityTrait, IFActions.DIGGING)
       : undefined;
-    const hasInterceptor = !!context.world.getInterceptorForAction(noun, IFActions.DIGGING);
+    const hasInterceptor = hasInterceptorImplementation(context.world, noun, IFActions.DIGGING);
 
     if (!behavior && !hasInterceptor) {
       // Runtime safety net — the Chord loader's post-load check is the

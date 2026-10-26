@@ -4,12 +4,47 @@
 
 ## Parser vs Language Layer
 
-**Parser owns grammar, language layer owns text.**
+**Parser owns grammar, language layer owns text and words.**
 
 | Package        | Owns                | Examples                                            |
 | -------------- | ------------------- | --------------------------------------------------- |
-| `parser-en-us` | Grammar patterns    | `grammar/standard-en-us.story`: the standard grammar (Chord source) |
-| `lang-en-us`   | Messages, help text | `searching.ts`: error messages, action descriptions |
+| `parser-en-us` | Grammar patterns, the search, the parser's own state | `grammar/standard-en-us.story`: the standard grammar (Chord source); `pronoun-context.ts`: one pronoun context per parser |
+| `lang-en-us`   | Messages, help text, the word table | `searching.ts`: error messages, action descriptions; `data/words.ts`: articles, determiners, directions, list separators; `parser.error.*`: the seat questions |
+
+### Words and state (ADR-387)
+
+- **The parser holds no English word and no sentence a player reads.** Every
+  word list (articles, determiners and whose possessive each is, self words,
+  all and except words, list separators, manner adverbs, name stopwords, the
+  direction table, number words) is declared once in lang-en-us's
+  `data/words.ts` and reaches the parser through the `ParserLanguageProvider`
+  it was constructed with. `slot-consumers/slot-consumer.ts` derives the
+  consumers' `PhraseWords` (list separators, the actor's possessives, manner
+  adverbs, the direction lookup) from the provider once per parse, and the
+  grammar engine hands it to every consumer through `SlotConsumerContext`.
+  `import … from '@sharpee/lang-en-us'` in `src/` is a structural test
+  failure (`lang-en-us/tests/one-home.test.ts`).
+- **A parse failure carries a message id and its bindings**, never a sentence
+  (`parse-failure.ts`, `buildParseError`): `parser.error.missingIndirect` with
+  `{ verb }` is what reaches the engine, and lang-en-us words "Unlock it where?".
+  A quote-delimited sentence in `src/` is a test failure
+  (`tests/adr-387-d3-no-sentences.test.ts`).
+- **The possessive is by person.** `my lantern` and, in the default
+  second-person voice, `your lantern` mark the phrase the actor's own;
+  `her key` narrows nothing. The person comes from the provider's
+  `getNarrativePerson()`, read per parse because the story's voice is set at
+  install.
+- **One direction table.** The tokenizer's DIRECTION tag, the typed DIRECTION
+  slot, going's `extras.direction` and `extractDirectionValue` all read the
+  provider's `getDirections()`, whose ids are world-model's `Direction`
+  constants; a word is a direction everywhere or nowhere. `upward` is in no
+  table. `./repokit grammar --check` holds every `directions` block of the
+  standard grammar to going's.
+- **Parser state is per instance.** `EnglishParser` owns its
+  `VocabularyRegistry` and its `PronounContextManager`; constructing a second
+  parser touches nothing of the first (`tests/adr-387-d4-two-parsers.test.ts`).
+  There is no module-level registry or pronoun manager, and entity names are
+  not vocabulary: the noun matcher resolves them over the world (ADR-385).
 
 ## The Standard Grammar Is Chord (ADR-269)
 
@@ -33,45 +68,140 @@ editable source is `grammar/standard-en-us.story` (a Chord *grammar file*:
 - Patterns in `lang-en-us` action files are for documentation/help, not parsing.
 - Stories can extend grammar for story-specific commands via `extendParser()`.
 
-## Grammar Patterns (ADR-087)
+## Grammar Patterns (ADR-382)
 
-Use the **action-centric** `.forAction()` API for standard verb patterns:
+A grammar rule reaches the engine as **structured parts** (`PatternElement[]`
+from `@sharpee/if-domain`). There are two entries, and both end in the same
+compiled pattern:
+
+- **`grammar.rule(spec)`** takes the parts directly — action, parts, display
+  text, per-rule defaults, per-slot types and constraints, and an optional
+  gate. The Chord loader and the generated `src/grammar.ts` register through
+  it, and no text is parsed.
+- **`grammar.define(text)`** is the text front end for TypeScript stories.
+  `EnglishPatternCompiler.parse` turns the text into parts once, at the
+  definition, and refuses malformed brackets and multi-word optionals
+  (`[look at]`) with `PatternSyntaxError`.
 
 ```typescript
-// Preferred: action-centric with verb aliases
+// One rule per line; verb aliases are separate rules
 grammar
-  .forAction('if.action.pushing')
-  .verbs(['push', 'press', 'shove', 'move'])
-  .pattern(':target')
+  .define('push :target')
   .where('target', (scope) => scope.touchable())
+  .mapsTo('if.action.pushing')
   .build();
-// Generates: push :target, press :target, shove :target, move :target
 
-// Direction commands with aliases
-grammar
-  .forAction('if.action.going')
-  .directions({
-    north: ['north', 'n'],
-    south: ['south', 's'],
-    // ...
-  })
-  .build();
-```
-
-Use `.define()` only for:
-
-- **Phrasal verbs**: `pick up :item`, `put down :item`
-- **Complex patterns**: `unlock :door with :key`
-- **Story-specific commands**: `incant :word`
-
-```typescript
-// Phrasal verb — can't use forAction because verb has space
 grammar
   .define('pick up :item')
-  .where('item', (scope) => scope.visible().matching({ portable: true }))
   .mapsTo('if.action.taking')
   .build();
 ```
+
+A slot's configuration (`.where()`, `.instrument()`, …) has to name a slot the
+pattern carries. A name the pattern lacks throws at build. Nothing reads
+`rule.pattern` back as a pattern: it is display text only.
+
+### Seats (ADR-383)
+
+Every entity slot carries a **seat**, `direct` or `indirect`, set on its
+compiled slot at build. The parser puts each noun in the command by its seat,
+and failure messages ask by it ("What do you want to give?" is the missing
+`direct` seat). Nothing guesses a seat from a slot's name or its position in
+the parser.
+
+- **The default is positional, and lives in if-domain.** With nothing
+  declared, the first entity slot is `direct` and the second `indirect`;
+  optional slots count. Instrument, topic, text and other typed slots take no
+  seat.
+- **Declare a seat for an indirect-first line**: `.seat(name, seat)` beside
+  `.instrument(name)`, or `slots[name].seat` in a `rule(spec)`.
+
+  ```typescript
+  grammar
+    .define('hand :recipient :item')
+    .seat('item', 'direct')
+    .mapsTo('if.action.giving')
+    .build();
+  ```
+
+  A seat on a non-entity slot, two slots in one seat, or a third entity slot
+  throws at build and registers nothing.
+- **Chord seats by name.** An action's slot name keeps one seat across all
+  its lines (`hand the recipient the item` seats like `give the item to the
+  recipient`), and the generated `src/grammar.ts` writes every seat out.
+- **The verb and preposition are the literals the rule matched**, not
+  vocabulary tags: the verb phrase is the input those literals consumed
+  before the first slot (`examine light` has the verb `examine`), and the
+  preposition is the input between the two seats.
+
+### Noun phrases and constrained slots (ADR-385)
+
+- **Articles and determiners are split once**, in the slot consumer
+  (`slot-consumers/noun-phrase-split.ts`), from the tokens' parts of speech the
+  language registered. The noun phrase carries `articles`, `determiners`,
+  `modifiers`, `text` and `head`; nothing downstream strips again. A possessive
+  of the actor's person marks the phrase as the actor's own (`my`, and `your`
+  in the second-person voice; ADR-387 D6); the all and except words come from
+  the language (`take everything`, `take all coins`, `take all but the lantern`).
+- **A `.where()` constraint asks the one noun matcher.** The gate
+  (`grammar-scope-resolver.ts`) admits the base's entities that world-model's
+  `matchNoun` names, exactly as the validator does, so an adjective admits and a
+  substring never does. The admitted ids travel on the slot match and the noun
+  phrase (`scope`), and the validator resolves only among them.
+- **A pronoun is a whole item** and passes the same gate; it may be a list item
+  (`take it and the box`). Followed by a noun word it is a determiner (`her key`).
+- **A gate failure names the phrase and the reason.** A name found in sight but
+  outside the slot's base is `SCOPE_VIOLATION` with the entity's id and
+  `requiredScope`; nothing found is `NO_MATCH` naming the content words. The
+  language renders "You aren't holding the brass lantern." and the like.
+- **Pronoun context follows the command's roles** (`pronoun-context.ts`): the
+  direct object, else the indirect object, else the instrument; a list sets
+  `them` to every entity it resolved. The context is the parser's own, handed
+  to the consumers as `SlotConsumerContext.pronouns` (ADR-387 D4).
+
+### Slot extents and readings (ADR-386)
+
+- **A slot consumer returns every extent it admits**, not one. `SlotConsumeResult`
+  is `{ readings: SlotMatch[] } | SlotRefusal | null` (`slot-consumers/slot-consumer.ts`).
+  No consumer looks at the next pattern token; nothing stops a slot at "the
+  next literal", and there is no shortest-span rule. A constrained slot admits
+  an extent only when the gate names something for each of its items; when no
+  extent is admitted the refusal is for the longest span.
+- **The engine searches** (`english-grammar-engine.ts`, `readingsOfRule`): it
+  walks the pattern with backtracking, takes each optional element and pattern
+  article before it skips it, tries a slot at every extent (shorter first when
+  another element follows, longest first when it ends the pattern), and keeps
+  every path that consumes the whole input as a reading. A typed article before
+  a literal the pattern does not spell is skipped at no cost (articles are
+  optional in both directions, with ADR-380 D2). `MAX_READINGS_PER_RULE` (256)
+  caps one rule's search; the parser emits a `readings_capped` debug event
+  naming the rule.
+- **Every reading is ranked by its nouns** (`reading-names.ts`, `ReadingNamer`):
+  each entity item is named through world-model's `matchNoun` over the world
+  (a gated item by its admitted ids, a pronoun by its referent, an all phrase
+  as one exact name; text and topic slots name nothing). The noun rank
+  `{ unnamed, named, exact }` enters `compareGrammarRank` as described under
+  Story Grammar Extension below. Without a real `WorldModel` the rank is
+  neutral, so a bare-engine test ranks by specificity and search order.
+- **A failure can outrank a reading** (`parse-failure.ts`, `failureOutranking`),
+  in one case only: the best reading has an item naming nothing and the best
+  verb-matched failure names strictly more distinct entities. That is how
+  `unlock door with` (key held) asks for the key instead of trying to unlock
+  "door with". `take widget` still reaches the validator's refusal.
+- **`and` and a comma are readings, never hard splits**. The tokenizer gives a
+  comma its own token; inside an entity slot a span holding `and`, `,` or
+  `, and` is read both as the list split there and as one item across it, and
+  the noun rank decides (`take salt and pepper shaker` is one item when only
+  the shaker is present, two when a salt is too). A separator with nothing after
+  it closes no item. `parseChain`'s comma-then-verb command split is unchanged.
+- **The quick reject counts what the match requires**: `minTokens` discounts
+  pattern articles after the first element, and the short-input verb test reads
+  an alternation (`push|press :target`) as well as a literal, so bare `press`
+  asks what to press.
+- **A number slot reads a compound number**: the provider's `parseCardinal`
+  (lang-en-us's, for English) reads digits, one number word, or a tens-and-units
+  pair (`twenty five`, `twenty-five`); the number consumer admits every span it
+  reads, longest first.
 
 ## Story Grammar Extension
 
@@ -98,13 +228,19 @@ extendParser(parser: Parser): void {
 **Key points**:
 
 - Use `.define()` for literal patterns or phrasal verbs.
-- Story grammar automatically outranks the standard grammar: `getStoryGrammar()`
-  registers rules at the story tier (ADR-268 — there is no numeric priority;
-  resolution is confidence → tier → literal specificity → definition order).
+- Story grammar wins ties with the standard grammar: `getStoryGrammar()`
+  registers rules at the story tier. There is no numeric priority; resolution
+  is fewest unnamed items → literal specificity → tier → definition order →
+  most named → most exact (ADR-384 D2 as amended by ADR-386 D4/D5,
+  `compareGrammarRank` in if-domain), and a skipped optional word costs a rule
+  nothing. A more specific standard line beats a broader story line: to take
+  its words, remove it (`removeRules`, or `remove from action` in Chord).
 - Definition order is semantic: when two story patterns tie on specificity,
   the one defined earlier wins. Don't reorder grammar lines casually.
-- Stdlib grammar uses `.forAction()` — stories usually don't need this.
-- **Removing standard rules (ADR-270)**: `grammar.removeRules(actionId, pattern)`
-  removes a standard-tier rule by shape and returns the count (0 = no match —
-  check it; the call never throws). Chord stories spell the same thing as
+- The standard grammar registers through `rule(spec)` (generated); TS stories use `.define()`.
+- **Removing standard rules (ADR-270, ADR-382 D6)**:
+  `grammar.removeRules(actionId, rule => …)` removes the standard-tier rules of
+  that action the test accepts and returns the count (0 = no match — check it;
+  the call never throws). Chord's loader passes `samePatternShape(rule.parts, …)`
+  from `@sharpee/chord`. Chord stories spell the same thing as
   `remove from action <name>` / `extend action <name>` blocks.

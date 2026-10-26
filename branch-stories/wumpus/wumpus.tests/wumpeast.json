@@ -1,0 +1,54 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "You steer the coracle east."
+        ]
+      },
+      "command": "steer east",
+      "id": "wster001",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes..."
+        ],
+        "notContains": [
+          "Wumpus"
+        ]
+      },
+      "command": "wait",
+      "id": "wwait001",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes..."
+        ],
+        "notContains": [
+          "Wumpus"
+        ]
+      },
+      "command": "wait",
+      "id": "wwait002",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "A smell reaches you across the water: wet fur, old meat, and something sweet underneath. The Wumpus is near.",
+          "The coracle arrives at the Echo Chamber."
+        ]
+      },
+      "command": "wait",
+      "id": "wwait003",
+      "type": "turn"
+    }
+  ],
+  "id": "wumpeast",
+  "ordinal": 1,
+  "parent": "wumproot"
+}

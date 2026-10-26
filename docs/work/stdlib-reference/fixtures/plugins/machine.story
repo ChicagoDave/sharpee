@@ -2,7 +2,6 @@ story "The Ferry" by "ref"
   id: plugins-machine
   version: 0.0.1
   states: waiting, signaled
-  use state-machines
 
 create the Slipway
   a room

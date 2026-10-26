@@ -33,7 +33,7 @@
           "Landing Pad"
         ]
       },
-      "command": "west",
+      "command": "exit",
       "id": "ckvktaj2",
       "type": "turn"
     },
@@ -50,5 +50,5 @@
   ],
   "id": "8alivtpe",
   "ordinal": 1,
-  "parent": "opejfh5t"
+  "parent": "a6ekwu94"
 }

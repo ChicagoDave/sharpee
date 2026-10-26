@@ -22,6 +22,7 @@
 
 import type { IParser, IValidatedCommand, WorldModel } from '@sharpee/world-model';
 import type { ISemanticEvent } from '@sharpee/core';
+import type { Token } from '@sharpee/if-domain';
 
 /**
  * What a parser may additionally offer the engine. Every method is
@@ -46,35 +47,43 @@ export interface IEngineAwareParser extends IParser {
 
   /**
    * Record the entities a successful command resolved, so pronouns
-   * (`it`, `them`, `him`, `her`) refer to them afterwards.
+   * (`it`, `them`, `him`, `her`) refer to them afterwards (ADR-385 D7).
    * @param command the validated command with resolved entity ids
-   * @param turnNumber the current turn, for context decay
    */
-  updatePronounContext?(command: IValidatedCommand, turnNumber: number): void;
+  updatePronounContext?(command: IValidatedCommand): void;
 
   /**
    * Record one entity as the pronoun referent by id and text — what a
    * refused turn names (GH #97).
    * @param entityId the entity's id
    * @param text the text the player used for it
-   * @param turnNumber the current turn, for context decay
    */
-  registerPronounEntity?(entityId: string, text: string, turnNumber: number): void;
+  registerPronounEntity?(entityId: string, text: string): void;
 
   /** Clear the pronoun context, on restart or player switch. */
   resetPronounContext?(): void;
+
+  /**
+   * Tokenize input without parsing, each token carrying the parts of
+   * speech it may be. The held-command stage reads it to drop an
+   * answer's articles (ADR-385 D11).
+   * @param input the raw text
+   * @returns the tokens, in order
+   */
+  tokenize?(input: string): Token[];
 }
 
 /**
- * The shape the engine calls: `parse` plus the five engine-facing
+ * The shape the engine calls: `parse` plus the six engine-facing
  * methods, every one present. Produced by `adaptParser`.
  */
 export interface EngineParser extends IParser {
   setWorldContext(world: WorldModel, actorId: string, currentLocation: string): void;
   setPlatformEventEmitter(emitter: ((event: ISemanticEvent) => void) | undefined): void;
-  updatePronounContext(command: IValidatedCommand, turnNumber: number): void;
-  registerPronounEntity(entityId: string, text: string, turnNumber: number): void;
+  updatePronounContext(command: IValidatedCommand): void;
+  registerPronounEntity(entityId: string, text: string): void;
   resetPronounContext(): void;
+  tokenize(input: string): Token[];
 }
 
 const ENGINE_METHODS = [
@@ -83,7 +92,21 @@ const ENGINE_METHODS = [
   'updatePronounContext',
   'registerPronounEntity',
   'resetPronounContext',
+  'tokenize',
 ] as const;
+
+/**
+ * The tokenizer a parser without one gets: whitespace words, each with
+ * no part of speech, so nothing is taken for an article.
+ * @param input the raw text
+ * @returns one token per word
+ */
+function plainTokens(input: string): Token[] {
+  return input
+    .split(/\s+/)
+    .filter((word) => word.length > 0)
+    .map((word, position) => ({ word, normalized: word.toLowerCase(), position, candidates: [] }));
+}
 
 type EngineMethod = (typeof ENGINE_METHODS)[number];
 
@@ -119,11 +142,12 @@ export function adaptParser(parser: IParser): EngineParser {
       ? (emitter) => aware.setPlatformEventEmitter!(emitter)
       : noop,
     updatePronounContext: aware.updatePronounContext
-      ? (command, turnNumber) => aware.updatePronounContext!(command, turnNumber)
+      ? (command) => aware.updatePronounContext!(command)
       : noop,
     registerPronounEntity: aware.registerPronounEntity
-      ? (entityId, text, turnNumber) => aware.registerPronounEntity!(entityId, text, turnNumber)
+      ? (entityId, text) => aware.registerPronounEntity!(entityId, text)
       : noop,
     resetPronounContext: aware.resetPronounContext ? () => aware.resetPronounContext!() : noop,
+    tokenize: aware.tokenize ? (input) => aware.tokenize!(input) : plainTokens,
   };
 }

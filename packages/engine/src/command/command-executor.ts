@@ -18,12 +18,13 @@
  */
 
 import { type ISemanticEvent, type ISystemEvent, type IGenericEventSource, QuerySource, QueryType, Result, type RandomService } from '@sharpee/core';
-import { type IParser, type IValidatedCommand, type IParsedCommand, type IValidationError, type IFEntity, type DirectionType } from '@sharpee/world-model';
-import { type ISound } from '@sharpee/if-domain';
+import { type IParser, type IValidatedCommand, type IParsedCommand, type IValidationError, type IParseError as CoreParseError, type IFEntity, type DirectionType, PartOfSpeech } from '@sharpee/world-model';
+import { type ISound, type NounPhrase } from '@sharpee/if-domain';
 import { adaptParser, type EngineParser } from '../ports/parser-interface.js';
 import { SharedDataKeys, EngineSharedData } from './shared-data-keys.js';
 import { WorldModel } from '@sharpee/world-model';
 import { EventProcessor } from '@sharpee/event-processor';
+import { withWorldReactions } from '../events/world-reactions.js';
 import {
   CommandValidator,
   type ActionRegistry,
@@ -35,10 +36,11 @@ import {
   runValidatePhase,
   runExecutePhase,
   runReportPhase,
-  runBlockedPhase
+  runBlockedPhase,
+  nounPhraseFor,
 } from '@sharpee/stdlib';
 
-import { GameContext, TurnResult, EngineConfig } from '../types.js';
+import { GameContext, TurnResult, EngineConfig, type HeldCommand } from '../types.js';
 import { createActionContext } from './action-context-factory.js';
 import {
   checkCapabilityDispatch,
@@ -131,16 +133,57 @@ function syntheticParsed(request: ActorCommand): IParsedCommand {
     tokens: [],
     structure: { verb: { tokens: [0], text: request.actionId, head: request.actionId } },
     pattern: 'PROGRAMMATIC',
-    confidence: 1.0,
     ...(request.direction ? { extras: { direction: request.direction } } : {})
   };
+}
+
+/**
+ * A thrown validation error's extra data: the validator's error details,
+ * read back when the failure is rendered (ADR-385 D5).
+ */
+interface ValidationFailure extends Error {
+  validation?: { listItem?: boolean; searchText?: string };
+  /** The story loader's LoadError flag: a rule's own diagnostic (GH #345) */
+  storyRule?: boolean;
+}
+
+/** The data a `command.failed` event carries for a parse failure at a constrained slot (ADR-385 D5, D8). */
+interface CommandFailedEventData {
+  reason: string;
+  input: string;
+  /** The content words of a phrase that named nothing, named back */
+  phrase?: string;
+  /** A language message to render, with the found entity as its parameter */
+  messageId?: string;
+  params?: { entity: NounPhrase };
 }
 
 /** Wrap an already-resolved entity as a validated slot reference. */
 function slotReference(entity: IFEntity | undefined) {
   return entity
-    ? { entity, parsed: { text: entity.name, candidates: [entity.name] } }
+    ? { entity, parsed: { text: entity.name } }
     : undefined;
+}
+
+/**
+ * Where an answer to a disambiguation prompt is inserted (ADR-385 D11):
+ * the tied phrase's first content word, after the article and determiner
+ * tokens that lead it (the parser's own split, ADR-385 D2). The last
+ * token of the span is content whatever it is tagged.
+ * @param parsed the parsed command whose tokens the span indexes
+ * @param span the tied phrase's token indices, from the validator
+ * @returns the token index to insert at, or undefined for an empty span
+ */
+function insertionPoint(parsed: IParsedCommand, span: readonly number[]): number | undefined {
+  if (span.length === 0) return undefined;
+  for (let i = 0; i < span.length - 1; i++) {
+    const token = parsed.tokens[span[i]];
+    const leading = token?.partOfSpeech.some(
+      (part) => part === PartOfSpeech.ARTICLE || part === PartOfSpeech.DETERMINER
+    );
+    if (!leading) return span[i];
+  }
+  return span[span.length - 1];
 }
 
 export class CommandExecutor {
@@ -282,12 +325,13 @@ export class CommandExecutor {
       }
       
       if (!parseResult.success) {
-        const parseError = parseResult.error as { code?: string; messageId?: string; message?: string; verb?: string; slot?: string };
+        const parseError = parseResult.error as CoreParseError;
         // GH #318 (ADR-225's missing-object orphaning): a command missing its
         // object or indirect object becomes a clarification query — the
-        // parser's question reaches the player, and the engine holds the
-        // input for one more input to complete it. Every other parse
-        // failure keeps the standing path.
+        // language's seat question reaches the player (its id and bindings
+        // ride the query, ADR-387 D3), and the engine holds the input for
+        // one more input to complete it. Every other parse failure keeps the
+        // standing path.
         if (parseError?.code === 'MISSING_OBJECT' || parseError?.code === 'MISSING_INDIRECT') {
           const queryEvent: ISemanticEvent = {
             id: `query_clarify_${turn}_${Date.now()}`,
@@ -298,7 +342,7 @@ export class CommandExecutor {
               source: QuerySource.CLARIFICATION,
               type: QueryType.CLARIFICATION,
               messageId: parseError.messageId,
-              message: parseError.message,
+              params: parseError.params,
               code: parseError.code,
               verb: parseError.verb,
               slot: parseError.slot,
@@ -311,8 +355,17 @@ export class CommandExecutor {
             success: false,
             needsInput: true,
             events: [queryEvent],
-            error: 'CLARIFICATION_NEEDED'
+            error: 'CLARIFICATION_NEEDED',
+            // The missing seat is answered at the end: no insertion point
+            hold: { input, tokens: input.trim().split(/\s+/) }
           };
+        }
+        // ADR-385 D8: a failure at a constrained slot says what was found and
+        // why it was refused, through the language — a scope violation names
+        // the entity by its message id and params; a phrase naming nothing is
+        // named back
+        if (parseError?.code === 'SCOPE_VIOLATION' || parseError?.code === 'ENTITY_NOT_FOUND') {
+          return this.parseRefusalResult(turn, input, parseError, world, config, timing);
         }
         throw new Error(`Parse failed: ${parseError?.code || 'UNKNOWN'}`);
       }
@@ -331,6 +384,14 @@ export class CommandExecutor {
         if (validationResult.error.code === 'AMBIGUOUS_ENTITY') {
           const details = validationResult.error.details || {};
           const candidates = details.ambiguousEntities || [];
+          // ADR-385 D11: hold the command with the tied phrase's span, so
+          // the next input can answer the prompt in place
+          const span: number[] = Array.isArray(details.tokens) ? details.tokens : [];
+          const hold: HeldCommand = {
+            input,
+            tokens: parsedCommand.tokens.map((token) => token.word),
+            insertAt: insertionPoint(parsedCommand, span)
+          };
 
           // Emit client.query event for disambiguation
           const queryEvent: ISemanticEvent = {
@@ -355,12 +416,16 @@ export class CommandExecutor {
             success: false,
             needsInput: true,
             events: [queryEvent],
-            error: 'DISAMBIGUATION_NEEDED'
+            error: 'DISAMBIGUATION_NEEDED',
+            hold
           };
         }
 
-        // Other validation errors still throw
-        throw new Error(`Validation failed: ${validationResult.error.code}`);
+        // Other validation errors still throw; the error carries the
+        // validator's details so the failure can name what it refused
+        throw Object.assign(new Error(`Validation failed: ${validationResult.error.code}`), {
+          validation: validationResult.error.details
+        });
       }
 
       if (!player) {
@@ -467,17 +532,24 @@ export class CommandExecutor {
       command.directObject?.entity,
       command.indirectObject?.entity
     ];
-    const capabilityCheck = checkCapabilityDispatchMulti(
-      world,
-      command.actionId,
-      involvedEntities
-    );
+    // ADR-371 D1a: an action that dispatches to the target's implementation
+    // itself (turning, cutting, …) is never pre-empted — the behavior runs
+    // inside it and the target's interceptors are still consulted.
+    const selfDispatching = (action as { dispatchesImplementations?: boolean }).dispatchesImplementations === true;
+    const capabilityCheck = selfDispatching
+      ? { shouldDispatch: false }
+      : checkCapabilityDispatchMulti(
+          world,
+          command.actionId,
+          involvedEntities
+        );
 
     // Run action's four phases: validate → execute → report (or blocked).
     // The phase runner puts the interceptor lifecycle (ADR-228) around each
     // phase for every wired action — this is the one call site (ADR-337
     // D1). If capability dispatch applies, the capability behavior replaces
-    // the action's phases outright and consults no interceptors, as before.
+    // the action's phases outright and consults no interceptors — except for
+    // the self-dispatching actions above (ADR-371 D1a).
     let actionValidation = capabilityCheck.shouldDispatch
       ? executeCapabilityValidate(capabilityCheck, actionContext)
       : runValidatePhase(action, actionContext);
@@ -547,11 +619,13 @@ export class CommandExecutor {
             inferenceResult.inferredTarget,
             command.indirectObject?.entity
           ];
-          const inferredCapabilityCheck = checkCapabilityDispatchMulti(
-            world,
-            command.actionId,
-            inferredInvolvedEntities
-          );
+          const inferredCapabilityCheck = selfDispatching
+            ? { shouldDispatch: false }
+            : checkCapabilityDispatchMulti(
+                world,
+                command.actionId,
+                inferredInvolvedEntities
+              );
 
           // Re-validate with inferred target (using capability dispatch if applicable)
           const retryValidation = inferredCapabilityCheck.shouldDispatch
@@ -621,32 +695,10 @@ export class CommandExecutor {
       executionTime = Date.now() - executionStart;
     }
 
-    // Process events and collect reactions (ADR-052 entity handlers)
-    let allEvents = events;
-    if (events.length > 0) {
-      const processed = this.eventProcessor.processEvents(events);
-      // Add reaction events from entity handlers
-      if (processed.reactions && processed.reactions.length > 0) {
-        allEvents = [...events, ...processed.reactions];
-      }
-      // An event whose application threw — a chain handler raising a runtime
-      // diagnostic (the loader's `runtime.*` LoadErrors) — surfaces on the
-      // same `command.failed` event this executor's own catch produces. The
-      // processor records the failure; nothing read it, so a diagnostic
-      // raised from a chain-fired clause vanished (found 2026-08-29, ADR-329
-      // Phase 9b). The command itself stands: the action ran; a reaction did not.
-      for (const failure of processed.failed) {
-        allEvents = [...allEvents, {
-          id: `cmd_failed_${turn}_${Date.now()}_${allEvents.length}`,
-          type: 'command.failed',
-          timestamp: Date.now(),
-          entities: {},
-          // A chain-fired clause's failure is a story rule's diagnostic by
-          // construction (GH #345): rendered as such, never as a parse failure.
-          data: { reason: failure.reason, input, eventType: failure.event.type, storyRule: true }
-        }];
-      }
-    }
+    // Process events and collect reactions (ADR-052 entity handlers). A
+    // reaction that throws surfaces as `command.failed`; the command itself
+    // stands — the action ran, a reaction did not (ADR-329 Phase 9b).
+    const allEvents = withWorldReactions(this.eventProcessor, events, turn, input);
 
     const result: TurnResult = {
       turn,
@@ -675,6 +727,51 @@ export class CommandExecutor {
   /**
    * Build the failure result both entries return instead of throwing.
    */
+  /**
+   * The turn result for a parse failure at a constrained slot (ADR-385 D8).
+   *
+   * A SCOPE_VIOLATION carries the language's message id for the base the slot
+   * required and the found entity as `params.entity`, a noun phrase the
+   * formatter chain names ("You aren't holding the brass lantern."). An
+   * ENTITY_NOT_FOUND carries the phrase's content words, named back as a
+   * list item's are ("You can't see any widget here.").
+   */
+  private parseRefusalResult(
+    turn: number,
+    input: string,
+    parseError: CoreParseError,
+    world: WorldModel,
+    config: EngineConfig | undefined,
+    timing: PhaseTiming
+  ): TurnResult {
+    const reason = `Parse failed: ${parseError.code}`;
+    const entity = parseError.entityId ? world.getEntity(parseError.entityId) : undefined;
+    const data: CommandFailedEventData = { reason, input };
+    if (parseError.code === 'SCOPE_VIOLATION' && entity) {
+      data.messageId = parseError.messageId;
+      data.params = { entity: nounPhraseFor(entity) };
+    } else if (parseError.code === 'ENTITY_NOT_FOUND' && parseError.failedWord) {
+      data.phrase = parseError.failedWord;
+    }
+    const result: TurnResult = {
+      turn,
+      input,
+      success: false,
+      events: [{
+        id: `cmd_failed_${turn}_${Date.now()}`,
+        type: 'command.failed',
+        timestamp: Date.now(),
+        entities: {},
+        data
+      }],
+      error: reason
+    };
+    if (config?.collectTiming) {
+      result.timing = { parsing: timing.parseTime, execution: 0, total: Date.now() - timing.startTime };
+    }
+    return result;
+  }
+
   private failedResult(
     turn: number,
     input: string,
@@ -687,7 +784,11 @@ export class CommandExecutor {
     // that failed at run time, GH #345) is a story rule's diagnostic: the
     // command parsed, a rule blew up. The flag rides the event so the prose
     // pipeline renders it as such, never as the parser's own refusal.
-    const storyRule = (error as { storyRule?: unknown }).storyRule === true;
+    const storyRule = (error as ValidationFailure).storyRule === true;
+    // A list item that named nothing (ADR-385 D5) is named back: the
+    // validator's details carry the item's phrase
+    const validation = (error as ValidationFailure).validation;
+    const phrase = validation?.listItem === true && typeof validation.searchText === 'string' ? validation.searchText : undefined;
     const result: TurnResult = {
       turn,
       input,
@@ -697,7 +798,7 @@ export class CommandExecutor {
         type: 'command.failed',
         timestamp: Date.now(),
         entities: {},
-        data: { reason: error.message, input, ...(storyRule ? { storyRule: true } : {}) }
+        data: { reason: error.message, input, ...(storyRule ? { storyRule: true } : {}), ...(phrase ? { phrase } : {}) }
       }],
       error: error.message
     };

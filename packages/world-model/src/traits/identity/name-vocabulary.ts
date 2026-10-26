@@ -9,20 +9,13 @@
  * match time, so Chord-loaded and TS-authored entities behave identically
  * by construction, and runtime renames can never leave stale vocabulary.
  *
- * Public interface: `deriveNameVocabulary(name)`, `NAME_VOCABULARY_STOPWORDS`.
+ * The stopwords are the language's (ADR-387 D2): the caller hands them in,
+ * from the world's language words or the compiler's locale facts, and this
+ * module holds no English.
+ *
+ * Public interface: `deriveNameVocabulary(name, stopwords)`.
  * Owner context: world-model identity area (naming/identity utilities).
  */
-
-/**
- * Stopwords dropped from name vocabulary (PIN 2's content-word definition).
- * "bag of holding" → {bag, holding}; "the crystal skull" → {crystal, skull}.
- */
-export const NAME_VOCABULARY_STOPWORDS: ReadonlySet<string> = new Set([
-  'the',
-  'a',
-  'an',
-  'of'
-]);
 
 /**
  * Derive the content-word vocabulary of an entity name.
@@ -31,12 +24,13 @@ export const NAME_VOCABULARY_STOPWORDS: ReadonlySet<string> = new Set([
  * (invariant: vocabulary is always a derivation of the CURRENT name).
  *
  * @param name The entity's display name (any casing/whitespace).
+ * @param stopwords The language's name stopwords (English: the, a, an, of).
  * @returns Lowercased content words in order of appearance, deduplicated:
- *   whitespace-tokenized, stopwords ({the, a, an, of}) removed. Hyphenated
- *   tokens stay single words ("jack-in-the-box" → ["jack-in-the-box"]).
- *   Empty or stopword-only names yield [].
+ *   whitespace-tokenized, stopwords removed. Hyphenated tokens stay single
+ *   words ("jack-in-the-box" → ["jack-in-the-box"]). Empty or stopword-only
+ *   names yield [].
  */
-export function deriveNameVocabulary(name: string): string[] {
+export function deriveNameVocabulary(name: string, stopwords: readonly string[]): string[] {
   if (!name) {
     return [];
   }
@@ -45,7 +39,7 @@ export function deriveNameVocabulary(name: string): string[] {
   const words: string[] = [];
 
   for (const token of name.toLowerCase().split(/\s+/)) {
-    if (!token || NAME_VOCABULARY_STOPWORDS.has(token)) {
+    if (!token || stopwords.includes(token)) {
       continue;
     }
     if (!seen.has(token)) {

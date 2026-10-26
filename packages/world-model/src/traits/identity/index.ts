@@ -3,3 +3,4 @@
 export * from './identityTrait.js';
 export * from './identityBehavior.js';
 export * from './name-vocabulary.js';
+export * from './noun-match.js';

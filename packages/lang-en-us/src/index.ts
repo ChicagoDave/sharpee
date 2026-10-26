@@ -45,15 +45,12 @@ export { countWord } from './number-words.js';
 // Export vocabulary data for parser use (ADR-082)
 export {
   cardinalNumbers,
+  parseCardinal,
   ordinalNumbers,
-  directionMap,
   englishWords,
-  abbreviations,
   irregularPlurals
 } from './data/words.js';
 
-// Export parser error messages (Phase 1.2 recommendations)
-export { parserErrors, getParserErrorMessage } from './data/messages.js';
 
 // Export spatial sound prose defaults (ADR-172)
 export {

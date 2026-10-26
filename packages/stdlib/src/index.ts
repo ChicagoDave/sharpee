@@ -17,9 +17,7 @@ export * from './actions/index.js';
 // Language providers are now in language-specific packages like @sharpee/lang-en-us
 // Messages are handled by language providers
 export * from './events/index.js';
-export * from './parser/index.js';
 export * from './validation/index.js';
-export * from './vocabulary/index.js';
 export * from './capabilities/index.js';
 export * from './query-handlers/index.js';
 export * from './scope/index.js';

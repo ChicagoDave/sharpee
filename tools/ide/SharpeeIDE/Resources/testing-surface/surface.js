@@ -849,7 +849,7 @@
   }
   function validateCard(value, path) {
     if (!isPlainObject(value)) return `'${path}' must be an object`;
-    const unknownKey = firstUnknownKey(value, ["id", "type", "command", "assertions", "skip", "ending"]);
+    const unknownKey = firstUnknownKey(value, ["id", "type", "command", "assertions", "skip", "ending", "locks"]);
     if (unknownKey !== void 0) return `unknown key '${unknownKey}' in '${path}'`;
     const type = value["type"];
     if (type !== "opening" && type !== "boot" && type !== "turn") {
@@ -872,6 +872,13 @@
     }
     if (value["skip"] !== void 0 && typeof value["skip"] !== "boolean") {
       return `'${path}.skip' must be a boolean`;
+    }
+    const locks = value["locks"];
+    if (locks !== void 0) {
+      if (!Array.isArray(locks) || locks.length === 0 || locks.some((name) => typeof name !== "string" || name === "")) {
+        return `'${path}.locks' must be a non-empty array of claim names`;
+      }
+      if (type !== "turn") return `'${path}' is type '${type}' and cannot carry 'locks'`;
     }
     if (value["assertions"] !== void 0) {
       const problem = validateAssertions(value["assertions"], `${path}.assertions`);
@@ -935,6 +942,40 @@
   }
   function firstUnknownKey(value, allowed) {
     return Object.keys(value).find((key) => !allowed.includes(key));
+  }
+  function turnOfCard(document2, cardId) {
+    const visit = (cards2, before) => {
+      let typed = before;
+      for (const card of cards2) {
+        if (card.type === "turn") typed += 1;
+        if (card.id === cardId) return card.type === "turn" ? typed : void 0;
+        for (const branch of card.branches ?? []) {
+          const found = visit(branch.cards, typed);
+          if (found !== void 0) return found;
+        }
+      }
+      return void 0;
+    };
+    return visit(document2.cards, 0);
+  }
+  function lockOnCard(document2, cardId, name) {
+    const visit = (cards2) => {
+      for (const card of cards2) {
+        if (card.id === cardId) {
+          if (card.locks?.includes(name)) return "already";
+          card.locks = [...card.locks ?? [], name];
+          return "locked";
+        }
+        for (const branch of card.branches ?? []) {
+          const found2 = visit(branch.cards);
+          if (found2 !== void 0) return found2;
+        }
+      }
+      return void 0;
+    };
+    const found = visit(document2.cards);
+    if (found === void 0) throw new Error(`no card ${cardId} in the tree`);
+    return found === "locked";
   }
 
   // tools/ide/web/testing-surface/src/boot-document.ts
@@ -1032,6 +1073,79 @@
     return gap.file !== null ? `${gap.file}:${gap.line}` : `line ${gap.line}`;
   }
 
+  // packages/branch-tester/src/claims/claim-report.ts
+  function claimTitle(row) {
+    return `${row.name}${row.never ? " (never)" : ""}`;
+  }
+  function claimVerdictWord(row) {
+    return row.verdict.toUpperCase();
+  }
+  function claimSentence(row) {
+    const unreached = row.floored && !row.never ? "not reached by any line; " : "";
+    switch (row.settledBy) {
+      case "line": {
+        const broken = (row.locks ?? []).filter((lock) => lock.outcome !== "held").map((lock) => `; its lock at line ${lock.lineId} "${lock.label}" turn ${lock.turn} is NOT held there`).join("");
+        return `by line ${row.line?.id} "${row.line?.label}" at turn ${row.line?.turn}${broken}`;
+      }
+      case "witness":
+        return `${unreached}${row.floored && !row.never ? "by walk " : ""}at depth ${row.depth}: ${row.witness?.join(" / ")}`;
+      case "exhaustion":
+        return `${unreached}${row.never ? "every reachable state under its set was tried" : "no reachable state under its set satisfies it"} (${row.set})`;
+      case "budget": {
+        const stopped = row.stopped ? `${row.stopped.reason} after ${row.stopped.states} states` : "a budget";
+        const cost = row.inertInSet > 0 ? `its set carries ${row.thingsInSet} things, ${row.inertInSet} of which the claim's rules never reach; each independent thing doubles the states to exhaust` : `its set carries ${row.thingsInSet} things, and each independent thing doubles the states to exhaust`;
+        return `${unreached}the walk stopped at ${stopped}; ${cost}`;
+      }
+    }
+  }
+  function claimLockLine(name, lock) {
+    const where = `line ${lock.lineId} "${lock.label}" at turn ${lock.turn}`;
+    if (lock.outcome === "held") return `  lock "${name}" at ${where} \u2014 held there`;
+    if (lock.outcome === "not-held") return `  lock "${name}" at ${where} \u2014 NOT held there: ${lock.message}`;
+    return `  lock "${name}" at ${where} \u2014 lock-unknown-claim: the fragment declares no claim of that name`;
+  }
+  function claimsRatioLine(summary) {
+    return `claims: ${summary.held} of ${summary.declared} held${summary.violated ? `, ${summary.violated} violated` : ""}${summary.unproven ? `, ${summary.unproven} unproven` : ""}${summary.seed !== void 0 ? ` (seed ${summary.seed})` : ""}`;
+  }
+  function claimsPendingLine(arrived) {
+    return `claims: ${arrived} so far`;
+  }
+  function claimCounts(summary, rows) {
+    const countOf = (verdict) => summary !== void 0 ? summary[verdict] : rows.filter((row) => row.verdict === verdict).length;
+    return ["held", "violated", "unproven"].map((verdict) => ({ verdict, count: countOf(verdict), text: `${countOf(verdict)} ${verdict}` })).filter((entry) => entry.count > 0);
+  }
+
+  // tools/ide/web/testing-surface/src/claims.ts
+  function claimRowOf(event) {
+    const { schemaVersion: _v, seq: _s, elapsedMs: _e, type: _t, ...row } = event;
+    return row;
+  }
+  function claimsSummaryOf(event) {
+    const { schemaVersion: _v, seq: _s, elapsedMs: _e, type: _t, ...summary } = event;
+    return summary;
+  }
+  function claimsHeaderText(summary, rows) {
+    return summary ? claimsRatioLine(summary) : claimsPendingLine(rows.length);
+  }
+  function claimsCountsOf(summary, rows) {
+    return claimCounts(summary, rows);
+  }
+  function claimNameText(row) {
+    return claimTitle(row);
+  }
+  function claimBadgeText(row) {
+    return claimVerdictWord(row);
+  }
+  function claimWhyText(row) {
+    return claimSentence(row);
+  }
+  function claimLockText(row, lock) {
+    return claimLockLine(row.name, lock).trimStart();
+  }
+  function claimLockVisit(lock) {
+    return { lineId: lock.lineId, ...lock.cardId !== void 0 ? { cardId: lock.cardId } : {} };
+  }
+
   // packages/ide-protocol/src/run-events.ts
   var RUN_EVENT_SCHEMA_VERSION = 2;
   function isObject(v) {
@@ -1125,12 +1239,26 @@
     if (!isObject(branches) || !isObject(endings) || !isObject(rooms)) return false;
     return typeof branches.declared === "number" && typeof branches.exercised === "number" && typeof branches.passed === "number" && typeof branches.failed === "number" && Array.isArray(branches.gaps) && branches.gaps.every(isDerivedBranchGap) && typeof endings.declared === "number" && typeof endings.reached === "number" && Array.isArray(endings.unreached) && endings.unreached.every(isDerivedEndingGap) && Array.isArray(endings.unnamed) && endings.unnamed.every(isDerivedEndingGap) && typeof rooms.declared === "number" && typeof rooms.entered === "number" && isStringArray(rooms.unentered);
   }
+  function isClaimLock(value) {
+    if (!isObject(value)) return false;
+    return typeof value.lineId === "string" && typeof value.label === "string" && typeof value.turn === "number" && (value.cardId === void 0 || typeof value.cardId === "string") && (value.outcome === "held" || value.outcome === "not-held" || value.outcome === "unknown-claim") && (value.message === void 0 || typeof value.message === "string");
+  }
+  function isClaimResultEvent(value) {
+    if (!isObject(value)) return false;
+    const line = value.line;
+    const stopped = value.stopped;
+    return hasEnvelopeAndType(value, "claim-result") && typeof value.name === "string" && typeof value.never === "boolean" && typeof value.kind === "string" && (value.verdict === "held" || value.verdict === "violated" || value.verdict === "unproven") && (value.settledBy === "line" || value.settledBy === "witness" || value.settledBy === "exhaustion" || value.settledBy === "budget") && typeof value.set === "string" && typeof value.thingsInSet === "number" && typeof value.inertInSet === "number" && (line === void 0 || isObject(line) && typeof line.id === "string" && typeof line.label === "string" && typeof line.turn === "number") && (value.witness === void 0 || isStringArray(value.witness)) && (value.depth === void 0 || typeof value.depth === "number") && (stopped === void 0 || isObject(stopped) && typeof stopped.reason === "string" && typeof stopped.states === "number") && typeof value.floored === "boolean" && (value.locks === void 0 || Array.isArray(value.locks) && value.locks.every(isClaimLock));
+  }
+  function isClaimsSummaryEvent(value) {
+    if (!isObject(value)) return false;
+    return hasEnvelopeAndType(value, "claims-summary") && typeof value.source === "string" && typeof value.declared === "number" && typeof value.held === "number" && typeof value.violated === "number" && typeof value.unproven === "number" && typeof value.walks === "number" && typeof value.totalWalkMs === "number" && (value.seed === void 0 || typeof value.seed === "number") && typeof value.floored === "boolean";
+  }
   function isRunEndEvent(value) {
     if (!isObject(value)) return false;
     return hasEnvelopeAndType(value, "run-end") && typeof value.totalPassed === "number" && typeof value.totalFailed === "number" && typeof value.totalExpectedFailures === "number" && typeof value.totalSkipped === "number" && typeof value.totalErrors === "number" && typeof value.totalUnreached === "number" && typeof value.totalDuration === "number" && typeof value.exitCode === "number";
   }
   function isRunEvent(value) {
-    return isRunStartEvent(value) || isPhaseEvent(value) || isTranscriptStartEvent(value) || isCommandResultEvent(value) || isTranscriptEndEvent(value) || isProgressEvent(value) || isCoverageEvent(value) || isDerivedBranchEvent(value) || isDerivedRunSummaryEvent(value) || isRunEndEvent(value);
+    return isRunStartEvent(value) || isPhaseEvent(value) || isTranscriptStartEvent(value) || isCommandResultEvent(value) || isTranscriptEndEvent(value) || isProgressEvent(value) || isCoverageEvent(value) || isDerivedBranchEvent(value) || isDerivedRunSummaryEvent(value) || isClaimResultEvent(value) || isClaimsSummaryEvent(value) || isRunEndEvent(value);
   }
 
   // tools/ide/web/testing-surface/src/run.ts
@@ -1158,7 +1286,8 @@
       labels: /* @__PURE__ */ new Map(),
       pendingCommands: /* @__PURE__ */ new Map(),
       replaying: /* @__PURE__ */ new Set(),
-      derived: []
+      derived: [],
+      claims: []
     };
   }
   function beginRun(state) {
@@ -1169,6 +1298,8 @@
     state.replaying.clear();
     state.derived = [];
     delete state.derivedSummary;
+    state.claims = [];
+    delete state.claimsSummary;
     delete state.tally;
     delete state.note;
     delete state.baseline;
@@ -1321,6 +1452,14 @@
       }
       case "derived-summary": {
         state.derivedSummary = derivedSummaryOf(event);
+        return;
+      }
+      case "claim-result": {
+        state.claims.push(claimRowOf(event));
+        return;
+      }
+      case "claims-summary": {
+        state.claimsSummary = claimsSummaryOf(event);
         return;
       }
       default:
@@ -1584,6 +1723,9 @@
       endState.className = "ts-end-state";
       endState.style.display = "none";
       meta.appendChild(endState);
+      const locks = document.createElement("span");
+      locks.className = "ts-lock-marks";
+      meta.appendChild(locks);
       if (this.model.cardAt(ordinal)?.type === "turn") {
         const cut = document.createElement("button");
         cut.className = "ts-card-delete";
@@ -1657,6 +1799,13 @@
         eventButton.title = "Assert an event this turn emitted";
         eventButton.addEventListener("click", () => this.delegate.onEventPicker(ordinal, eventButton));
         actions.appendChild(eventButton);
+        if (this.model.cardAt(ordinal)?.type === "turn") {
+          const lockButton = document.createElement("button");
+          lockButton.textContent = "Lock\u2026";
+          lockButton.title = "Lock a fact true after this turn as a claim, its necessary set proposed from this line";
+          lockButton.addEventListener("click", () => this.delegate.onLock(ordinal, lockButton));
+          actions.appendChild(lockButton);
+        }
       }
       const channelButton = document.createElement("button");
       channelButton.textContent = "Channel\u2026";
@@ -1693,6 +1842,7 @@
       this.cards.set(ordinal, {
         row,
         endState,
+        locks,
         asserts,
         exactButton,
         branchButton,
@@ -1873,6 +2023,15 @@
         card.endState.textContent = ending !== void 0 ? `\xB7 END STATE \xB7 ${ending}` : "";
         card.endState.title = ending !== void 0 ? `The story ended here (${ending}) \u2014 no further command lands on this card, and nothing forks from it` : "";
         card.endState.style.display = ending !== void 0 ? "" : "none";
+        const lockNames = this.model.cardAt(ordinal)?.locks ?? [];
+        card.locks.textContent = "";
+        for (const name of lockNames) {
+          const mark = document.createElement("span");
+          mark.className = "ts-lock-mark";
+          mark.textContent = `\xB7 LOCK \xB7 ${name}`;
+          mark.title = "This claim is locked here: the run checks it holds at this card";
+          card.locks.appendChild(mark);
+        }
         card.exactButton?.classList.toggle(
           "ts-active",
           this.model.claimsOf(ordinal)?.exact !== void 0
@@ -1980,7 +2139,7 @@
       this.renderFailureNav();
       const lineIds = this.model.lineIds().filter((id) => id === this.model.mainLine ? this.model.hasOpening : true);
       results.innerHTML = "";
-      if (!this.model.hasOpening && run.results.size === 0 && run.derived.length === 0 && run.derivedSummary === void 0) {
+      if (!this.model.hasOpening && run.results.size === 0 && run.derived.length === 0 && run.derivedSummary === void 0 && run.claims.length === 0 && run.claimsSummary === void 0) {
         results.innerHTML = '<span class="ts-pending-note">no tests yet</span>';
         return;
       }
@@ -2119,6 +2278,7 @@
         }
       }
       if (run.derived.length > 0) this.renderDerivedRows(results, run.derived, run.derivedStale === true);
+      if (run.claims.length > 0 || run.claimsSummary !== void 0) this.renderClaimsRows(results, run.claims, run.claimsSummary);
       if (run.tally) {
         const tally = document.createElement("div");
         tally.className = "ts-run-tally";
@@ -2357,6 +2517,58 @@
       row.focus();
       row.scrollIntoView({ block: "nearest" });
       return true;
+    }
+    /**
+     * The claims section (ADR-365 D6, ADR-367 D6; GH #555): the ratio as the
+     * header, then one row per declared claim in arrival order — its verdict,
+     * its name, and the sentence `sharpee test` prints for it — and under a
+     * claim with locks, one line per lock that visits the card it was taken
+     * on. A lock that did not hold is already a failed card in the tree
+     * section; its line here is the way to that card. Verdicts never gate
+     * (D9), so nothing here touches the tally.
+     */
+    renderClaimsRows(results, rows, summary) {
+      const countClass = { held: "ts-count-pass", violated: "ts-count-fail", unproven: "ts-count-skip" };
+      const counts = claimsCountsOf(summary, rows).map((entry) => [entry.text, countClass[entry.verdict]]);
+      results.appendChild(this.sectionHeader(claimsHeaderText(summary, rows), counts));
+      for (const [index, claim] of rows.entries()) {
+        const rowEl = document.createElement("div");
+        rowEl.className = "ts-claim-row";
+        rowEl.dataset.tsClaim = claim.verdict;
+        rowEl.dataset.tsClaimIndex = String(index);
+        const head = document.createElement("div");
+        head.className = "ts-head";
+        const name = document.createElement("span");
+        name.className = "ts-name";
+        name.textContent = claimNameText(claim);
+        const badge = document.createElement("span");
+        badge.className = `ts-badge ${claim.verdict === "held" ? "ts-pass" : claim.verdict === "violated" ? "ts-fail" : "ts-open"}`;
+        badge.textContent = claimBadgeText(claim);
+        head.append(name, badge);
+        rowEl.appendChild(head);
+        const why = document.createElement("div");
+        why.className = "ts-why";
+        why.textContent = claimWhyText(claim);
+        rowEl.appendChild(why);
+        for (const lock of claim.locks ?? []) {
+          const lockEl = document.createElement("div");
+          lockEl.className = `ts-claim-lock ts-run-row-visit${lock.outcome === "held" ? "" : " ts-broken"}`;
+          lockEl.setAttribute("role", "button");
+          lockEl.tabIndex = 0;
+          lockEl.title = "Visit the locked card";
+          lockEl.textContent = claimLockText(claim, lock);
+          const go = () => this.delegate.onVisitFailure(claimLockVisit(lock));
+          lockEl.addEventListener("click", go);
+          lockEl.addEventListener("keydown", (event) => {
+            if (event.key === "Enter" || event.key === " ") {
+              event.preventDefault();
+              go();
+            }
+          });
+          rowEl.appendChild(lockEl);
+        }
+        results.appendChild(rowEl);
+      }
     }
     renderDerivedRows(results, rows, stale = false) {
       const groups = groupDerivedRows(rows);
@@ -3117,6 +3329,29 @@
       }
       return void 0;
     }
+    /**
+     * The line that OWNS a card — the segment whose `cards` hold it — or
+     * undefined when no line does. A lock is taken on the owning line, which
+     * may be an ancestor of the active one (ADR-367 D7).
+     */
+    lineOfCard(cardId) {
+      for (const [lineId, cards2] of this.lineCards) {
+        if (cards2.some((card) => card.id === cardId)) return lineId;
+      }
+      return void 0;
+    }
+    /**
+     * Lock a claim's name on a card (ADR-367 D5), through the same function
+     * `sharpee claim` locks with (D7). Returns true when the document
+     * changed; false when the card already carried the name.
+     */
+    lockOnCard(cardId, name) {
+      return lockOnCard(this.doc, cardId, name);
+    }
+    /** Name the claims fragment in the manifest (ADR-365 D7's field), when a lock created it. */
+    setClaimsFile(file) {
+      this.doc.claims = file;
+    }
     roomOf(ordinal) {
       return this.roomByOrdinal.get(ordinal);
     }
@@ -3643,9 +3878,12 @@
     }
   }
   function mountPicker(anchor) {
+    return mountAnchored(anchor, "ts-picker");
+  }
+  function mountAnchored(anchor, className) {
     closePicker();
     const menu = document.createElement("div");
-    menu.className = "ts-picker";
+    menu.className = className;
     const rect = anchor.getBoundingClientRect();
     menu.style.left = `${Math.max(8, Math.min(rect.left, window.innerWidth - 340))}px`;
     menu.style.top = `${rect.bottom + 4}px`;
@@ -3658,6 +3896,16 @@
       if (outsideListener) document.addEventListener("mousedown", outsideListener);
     }, 0);
     return menu;
+  }
+  function showNotice(anchor, head, text3) {
+    const menu = mountPicker(anchor);
+    const header = document.createElement("div");
+    header.className = "ts-picker-head";
+    header.textContent = head;
+    const body = document.createElement("div");
+    body.className = "ts-picker-notice";
+    body.textContent = text3;
+    menu.append(header, body);
   }
   function showListPicker(anchor, head, items, onPick) {
     const menu = mountPicker(anchor);
@@ -3755,6 +4003,137 @@
     filter.addEventListener("input", render);
     render();
     filter.focus();
+  }
+
+  // packages/ide-protocol/src/claim-output.ts
+  function isObject2(v) {
+    return typeof v === "object" && v !== null;
+  }
+  function isStringArray2(v) {
+    return Array.isArray(v) && v.every((entry) => typeof entry === "string");
+  }
+  function hasWhere(v) {
+    const line = v.line;
+    return isObject2(line) && typeof line.id === "string" && typeof line.label === "string" && typeof v.turn === "number" && (v.cardId === void 0 || typeof v.cardId === "string");
+  }
+  function isClaimJsonOutput(value) {
+    if (!isObject2(value)) return false;
+    switch (value.kind) {
+      case "offer":
+        return hasWhere(value) && isStringArray2(value.offer);
+      case "proposal":
+        return hasWhere(value) && typeof value.name === "string" && typeof value.fact === "string" && isStringArray2(value.rooms) && isStringArray2(value.things) && isStringArray2(value.trimmed) && isStringArray2(value.verbs) && typeof value.block === "string";
+      case "written":
+        return hasWhere(value) && typeof value.name === "string" && typeof value.fact === "string" && typeof value.claimsFile === "string" && typeof value.created === "boolean" && typeof value.pinned === "boolean" && (value.manifestKey === void 0 || typeof value.manifestKey === "string") && isStringArray2(value.files);
+      case "error":
+        return typeof value.message === "string";
+      default:
+        return false;
+    }
+  }
+
+  // tools/ide/web/testing-surface/src/lock.ts
+  function applyLockWritten(model2, cardId, written) {
+    if (written.manifestKey !== void 0) model2.setClaimsFile(written.manifestKey);
+    return model2.lockOnCard(cardId, written.name);
+  }
+  function lockArgumentsOf(step) {
+    const args = ["claim", step.line, "--at", String(step.turn), "--json"];
+    if (step.fact === void 0) return args;
+    args.splice(2, 0, step.fact);
+    if (step.name !== void 0 && step.name !== step.fact) args.push("--name", step.name);
+    if (step.needs === void 0) {
+      args.push("--propose");
+      return args;
+    }
+    args.push("--rooms", step.needs.rooms.join(", "), "--things", step.needs.things.join(", "), "--verbs", step.needs.verbs.join(", "), "--fragment-only");
+    return args;
+  }
+  function decodeLockResult(text3) {
+    const line = text3.split("\n").map((entry) => entry.trim()).find((entry) => entry.startsWith("{"));
+    if (line === void 0) return { kind: "error", message: text3.trim().length > 0 ? text3.trim() : "the lock command printed nothing" };
+    try {
+      const parsed = JSON.parse(line);
+      if (isClaimJsonOutput(parsed)) return parsed;
+      return { kind: "error", message: `the lock command printed an object the tab does not recognise: ${line.slice(0, 200)}` };
+    } catch {
+      return { kind: "error", message: `the lock command printed something that is not JSON: ${line.slice(0, 200)}` };
+    }
+  }
+
+  // tools/ide/web/testing-surface/src/lock-sheet.ts
+  function showLockSheet(anchor, proposal, onKeep) {
+    const sheet = mountAnchored(anchor, "ts-picker ts-lock-sheet");
+    const head = document.createElement("div");
+    head.className = "ts-picker-head";
+    head.textContent = "lock this claim";
+    sheet.appendChild(head);
+    const fact = document.createElement("div");
+    fact.className = "ts-lock-fact";
+    fact.textContent = proposal.fact;
+    sheet.appendChild(fact);
+    const nameInput = document.createElement("input");
+    nameInput.className = "ts-picker-filter ts-lock-name";
+    nameInput.value = proposal.name;
+    nameInput.title = "The claim's name in the fragment";
+    sheet.appendChild(nameInput);
+    const trimmed = new Set(proposal.trimmed);
+    const rows = [
+      { key: "rooms", label: "needs rooms", names: proposal.rooms },
+      { key: "things", label: "needs things", names: [...proposal.things, ...proposal.trimmed.filter((name) => !proposal.things.includes(name))] },
+      { key: "verbs", label: "needs verbs", names: proposal.verbs }
+    ];
+    const chips = /* @__PURE__ */ new Map();
+    for (const row of rows) {
+      const label = document.createElement("div");
+      label.className = "ts-picker-section";
+      label.textContent = row.label;
+      sheet.appendChild(label);
+      const list = document.createElement("div");
+      list.className = "ts-lock-chips";
+      list.dataset.tsLockList = row.key;
+      const states = row.names.map((name) => ({ name, on: !trimmed.has(name) }));
+      chips.set(row.key, states);
+      for (const state of states) {
+        const chip = document.createElement("button");
+        chip.type = "button";
+        chip.className = `ts-lock-chip${state.on ? " ts-on" : ""}${trimmed.has(state.name) ? " ts-trimmed" : ""}`;
+        chip.textContent = state.name;
+        chip.title = trimmed.has(state.name) ? "the claim cannot depend on this \u2014 kept off unless you turn it on" : "click to leave it out";
+        chip.addEventListener("click", () => {
+          state.on = !state.on;
+          chip.classList.toggle("ts-on", state.on);
+        });
+        list.appendChild(chip);
+      }
+      if (states.length === 0) {
+        const none = document.createElement("span");
+        none.className = "ts-picker-empty";
+        none.textContent = "(none)";
+        list.appendChild(none);
+      }
+      sheet.appendChild(list);
+    }
+    const actions = document.createElement("div");
+    actions.className = "ts-lock-actions";
+    const keep = document.createElement("button");
+    keep.type = "button";
+    keep.className = "ts-lock-keep";
+    keep.textContent = "Keep";
+    keep.addEventListener("click", () => {
+      const picked = (key) => (chips.get(key) ?? []).filter((state) => state.on).map((state) => state.name);
+      const name = nameInput.value.trim() || proposal.fact;
+      closePicker();
+      onKeep(name, { rooms: picked("rooms"), things: picked("things"), verbs: picked("verbs") });
+    });
+    const cancel = document.createElement("button");
+    cancel.type = "button";
+    cancel.className = "ts-lock-cancel";
+    cancel.textContent = "Cancel";
+    cancel.addEventListener("click", () => closePicker());
+    actions.append(keep, cancel);
+    sheet.appendChild(actions);
+    nameInput.focus();
   }
 
   // tools/ide/web/testing-surface/src/staleness.ts
@@ -4046,6 +4425,20 @@
         if (model.addEvent(ordinal, event)) update();
       });
     },
+    onLock(ordinal, anchor) {
+      if (replayActive || driverBusy || pendingLock !== void 0) return;
+      const card = model.cardAt(ordinal);
+      const cardId = card?.id;
+      const lineId = cardId !== void 0 ? model.lineOfCard(cardId) : void 0;
+      const turn = cardId !== void 0 ? turnOfCard(model.document, cardId) : void 0;
+      if (card?.type !== "turn" || cardId === void 0 || lineId === void 0 || turn === void 0) {
+        showNotice(anchor, "lock", "This card is not a typed turn on a saved line, so nothing can be locked here yet.");
+        return;
+      }
+      update();
+      pendingLock = { ordinal, anchor, cardId, step: { line: lineId, turn } };
+      postToBridge({ lock: { args: lockArgumentsOf(pendingLock.step) } });
+    },
     onChannelPicker(ordinal, anchor) {
       const source = ordinal === 0 && bootRecordOrdinal !== void 0 ? records.get(bootRecordOrdinal) : records.get(ordinal);
       const captures = source?.captures ?? [];
@@ -4139,6 +4532,39 @@
     foldRunLine(runState, text3);
     cards.render();
     renderOutline();
+  }
+  var pendingLock;
+  function deliverLockResult(text3) {
+    const pending = pendingLock;
+    pendingLock = void 0;
+    if (pending === void 0) return;
+    const result = decodeLockResult(text3);
+    const next = (step) => {
+      pendingLock = { ...pending, step };
+      postToBridge({ lock: { args: lockArgumentsOf(step) } });
+    };
+    switch (result.kind) {
+      case "offer":
+        if (result.offer.length === 0) {
+          showNotice(pending.anchor, "lock", "Nothing this line changed by this turn can be stated as a claim.");
+          return;
+        }
+        showListPicker(pending.anchor, "true now and not at boot \u2014 lock one", result.offer, (fact) => next({ ...pending.step, fact }));
+        return;
+      case "proposal":
+        showLockSheet(pending.anchor, result, (name, needs) => next({ ...pending.step, fact: result.fact, name, needs }));
+        return;
+      case "written": {
+        applyLockWritten(model, pending.cardId, result);
+        clearUndo();
+        update();
+        trace(`lock: pinned "${result.name}" on card ${pending.cardId} (${result.files.join(", ")})`);
+        return;
+      }
+      case "error":
+        showNotice(pending.anchor, "lock refused", result.message);
+        return;
+    }
   }
   function deliverRunExit(ok, note) {
     finishRun(runState, ok, note);
@@ -4580,7 +5006,8 @@
     runLine: deliverRunLine,
     runExit: deliverRunExit,
     runStart: deliverRunStart,
-    buildChanged: deliverBuildChanged
+    buildChanged: deliverBuildChanged,
+    lockResult: deliverLockResult
   };
   cards.ensureLayout();
   attachOutline();

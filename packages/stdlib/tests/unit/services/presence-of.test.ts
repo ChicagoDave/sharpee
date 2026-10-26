@@ -19,6 +19,9 @@ import {
 } from '@sharpee/world-model';
 import { PerceptionService } from '../../../src/services/PerceptionService';
 
+/** English, handed to hand-built worlds as the language's words (ADR-387 D2). */
+const ENGLISH_WORDS = { selfWords: ['me', 'myself', 'self', 'yourself'], nameStopwords: ['the', 'a', 'an', 'of'] };
+
 describe('PerceptionService.presenceOf (ADR-328 D3)', () => {
   let world: WorldModel;
   let service: PerceptionService;
@@ -29,6 +32,7 @@ describe('PerceptionService.presenceOf (ADR-328 D3)', () => {
 
   beforeEach(() => {
     world = new WorldModel();
+    world.setLanguageWords(ENGLISH_WORDS);
     service = new PerceptionService();
     player = world.createEntity('player', EntityType.ACTOR);
     world.setPlayer(player.id);

@@ -21,13 +21,16 @@ import { IFActions } from '../../../src/actions/constants';
 import { standardActions } from '../../../src/actions/standard';
 
 describe('wired-action registry (ADR-228 D5)', () => {
-  test('covers all 42 entity-keyed standard actions with unique primary ids', () => {
+  test('covers all 64 entity-keyed standard actions with unique primary ids', () => {
     // 33 per ADR-228 Consequences + cutting (ADR-230 D3c) + digging,
     // asking, telling (ADR-230 Phase 6) + turning (chord go-live G1
-    // shortlist, 2026-07-17)
-    expect(actionLifecycleDescriptors).toHaveLength(42);
+    // shortlist, 2026-07-17) + the eight ADR-370 stock verbs (2026-10-13)
+    // + lowering, raising, burning, setting (ADR-371, 2026-10-14)
+    // + asking_for, consulting, buying (ADR-372, 2026-10-14)
+    // + steering, setting_course (ADR-366 D5i, 2026-10-18)
+    expect(actionLifecycleDescriptors).toHaveLength(64);
     const primaryIds = actionLifecycleDescriptors.map((d) => d.actionId);
-    expect(new Set(primaryIds).size).toBe(42);
+    expect(new Set(primaryIds).size).toBe(64);
     for (const descriptor of actionLifecycleDescriptors) {
       expect(descriptor.slots.length).toBeGreaterThan(0);
       for (const slot of descriptor.slots) {
@@ -68,9 +71,9 @@ describe('wired-action registry (ADR-228 D5)', () => {
     expect(interceptorConsultingActionIds.has(IFActions.ENTERING_ROOM)).toBe(true);
   });
 
-  test('excludes full-delegation capability actions and unimplemented constants', () => {
-    expect(interceptorConsultingActionIds.has(IFActions.LOWERING)).toBe(false);
-    expect(interceptorConsultingActionIds.has(IFActions.RAISING)).toBe(false);
+  test('includes lowering and raising (ADR-371 D1) and excludes unimplemented constants', () => {
+    expect(interceptorConsultingActionIds.has(IFActions.LOWERING)).toBe(true);
+    expect(interceptorConsultingActionIds.has(IFActions.RAISING)).toBe(true);
     expect(interceptorConsultingActionIds.has('if.action.tasting')).toBe(false);
     expect(interceptorConsultingActionIds.has('if.action.looking')).toBe(false);
   });
@@ -97,6 +100,7 @@ describe('grammar reachability gate (ADR-230 D1)', () => {
   /** PERMANENT: internal redirect targets, by design never player-typeable. */
   const permanentUnreachable = new Set<string>([
     IFActions.ENTERING_ROOM, // ADR-126 room-entry consultation seam
+    IFActions.BREAKING, // ADR-373 D3: fired by the action that broke the thing, never typed
     'if.action.deadly_room_death' // ADR-227 internal death redirect
   ]);
 

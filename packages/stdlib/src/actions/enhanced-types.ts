@@ -684,6 +684,17 @@ export interface Action {
   requiresHolding?: boolean;
 
   /**
+   * The action finds and runs the target's capability behavior itself
+   * (ADR-371 D1a): turning, cutting, digging, burning, lowering, raising,
+   * setting. The executor's universal capability dispatch skips such an
+   * action, so the behavior runs inside it and the phase runner still
+   * consults the target's interceptors (its Chord clauses) around it —
+   * a behavior and a clause on one thing for one verb both fire, and the
+   * action's own gates (cutting's tool check) are never bypassed.
+   */
+  dispatchesImplementations?: boolean;
+
+  /**
    * Whether to allow implicit inference for this action.
    *
    * When true (default), if the target doesn't meet targetRequirements

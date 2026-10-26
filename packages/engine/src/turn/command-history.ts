@@ -106,7 +106,7 @@ function updateCommandHistory(engine: TurnEngine, result: TurnResult, input: str
  * referent, so `it` next turn means that. The first such phrase wins; a
  * turn naming nothing leaves the context alone.
  */
-function registerBlockedReferent(engine: TurnEngine, events: ISemanticEvent[], turn: number): void {
+function registerBlockedReferent(engine: TurnEngine, events: ISemanticEvent[]): void {
   const parser = engine.parser;
   for (const event of events) {
     const params = (event.data as { params?: Record<string, unknown> } | undefined)?.params;
@@ -114,7 +114,7 @@ function registerBlockedReferent(engine: TurnEngine, events: ISemanticEvent[], t
     for (const value of Object.values(params)) {
       const np = value as { kind?: unknown; referableId?: unknown; name?: unknown } | null;
       if (np && typeof np === 'object' && np.kind === 'noun' && typeof np.referableId === 'string') {
-        parser.registerPronounEntity(np.referableId, typeof np.name === 'string' ? np.name : np.referableId, turn);
+        parser.registerPronounEntity(np.referableId, typeof np.name === 'string' ? np.name : np.referableId);
         return;
       }
     }
@@ -131,15 +131,14 @@ export const commandHistoryStage: TurnStage = {
     if (result.success) {
       updateCommandHistory(engine, result, context.input, turn);
       if (result.validatedCommand) {
-        engine.parser.updatePronounContext(result.validatedCommand, turn);
+        engine.parser.updatePronounContext(result.validatedCommand);
       }
     }
     registerBlockedReferent(
       engine,
       result.success
         ? result.events.filter((e) => (e.data as { blocked?: unknown } | undefined)?.blocked === true)
-        : result.events,
-      turn
+        : result.events
     );
     return 'continue';
   }

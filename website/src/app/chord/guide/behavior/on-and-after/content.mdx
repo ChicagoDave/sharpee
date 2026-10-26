@@ -85,3 +85,168 @@ create Marguerite
 That bare head is her own going. Outside a person's block it is an error
 (`analysis.head-bare-outside-actor`) — a hive box does not open things, so
 `on opening` there has no one to mean.
+
+## One head, several actions
+
+When several actions get the same response, list them on one head with
+commas. The head means one clause per action, each with the same actor,
+condition, modifiers and body.
+
+```chord
+create the farmland view
+  aka view, meadows, farms
+  a thing, scenery
+  in the Top of the Post
+
+  The view is spectacular, but you don't have time to waste gawking.
+
+  on the player taking, touching, pushing, pulling, climbing, searching
+    refuse view-too-far
+  end on
+```
+
+The list works on `after` heads and bare heads too, and anything after it
+applies to every action listed: `on taking, dropping while the shop is
+closed, once`. Commas are the only separator; `taking, touching or
+pushing` is an error that shows the comma form, and an action listed twice
+on one head is an error at the repeated word. A diagnostic about one of the
+listed actions points at that word in the list.
+
+## Verbs with nothing to act on
+
+Some verbs have no object side, or need none: `jump`, `yes`, `no`, `sorry`,
+`wave`. Each exists in the standard library with a stock line ("You jump on
+the spot. Nothing comes of it."), and a clause speaks in its place. A verb
+with no object is written on the **room** the player is in; a verb with one
+goes in the thing's block as usual.
+
+```chord
+create the Landing Pad
+  a room
+  aka pad, pad 14
+
+  Pad 14 is a circle of old cement under a black sky.
+
+  on the player jumping
+    phrase pad-jump
+  end on
+
+create the pad master
+  a person
+  in the Landing Pad
+  states: unconvinced, waved-through
+
+  on the player saying_yes while the pad master is unconvinced
+    phrase quint-takes-yes-as-the-card
+  end on
+
+  on the player saying_no, saying_sorry
+    phrase quint-shrugs
+  end on
+```
+
+`yes`, `no` and `sorry` go in the block of the person the player is talking
+to — the clause fires while a conversation with them is live — or on a room,
+for an answer given to nobody. Inside an open `define exchange`, `yes` and
+`no` are the exchange's answer and never reach these clauses. Two-word
+verbs are written with an underscore, as `switching_on` and `taking_off`
+are: `saying_yes`, `saying_no`, `saying_sorry`, `looking_under`. `wave` on
+its own consults the room; `wave <thing>` consults the thing, which must be
+held. `look under <thing>` reveals the `concealed` things it holds, as
+`search` does; `empty <thing>` spills a container onto the floor, or into
+another container with `empty <thing> into <other>`, and both take a clause
+in the container's block (`on the player looking_under`, `after the player
+emptying`).
+
+## A value on the head
+
+`set <thing> to <value>` carries a word, and a `setting` head can name it:
+`on the player setting to kepler` fires only when that is the value set,
+and `after the player setting` with no tail fires for every value. The tail
+is for `setting` alone (`on the player taking to x` is an error naming
+`while <thing> is x` as the form for other verbs), and the word must be one
+of the thing's states.
+
+## The other noun on the head
+
+Throwing, giving, showing, putting, inserting, tying and asking for a
+thing each involve two nouns, and a clause on either one fires. `on the player
+throwing` in a bin's block fires for anything thrown at the bin; to say
+*which* thing, name it at the end of the head. The clause then fires only
+when that noun is the one in the command.
+
+```chord
+create the returns bin
+  a container, scenery
+  in the Sorting Room
+
+  on the player throwing the dead letter
+    move the dead letter to the returns bin
+    phrase letter-returned
+  end on
+
+create the dead letter
+  a thing
+  in the returns bin
+
+  on the player throwing at the sorting machine
+    phrase machine-spits-letter
+  end on
+```
+
+The tail is read from the end of the head. The last `the`, `a` or `an`
+opens it, and a preposition just before that article (`at`, `for`,
+`from`, `about`, `in`) goes with it; `at`, `for` and `from` open a tail
+on their own when the name has no article (`at Tobias`), and `giving to
+Tobias` works as you would read it. The preposition is there for
+reading and changes nothing. A tail goes on a head with one action only,
+names a thing in the story, and is never the block's own owner; each of
+those is an error that says so. If a name has an article inside it (`the
+king of the hill`), the tail splits at the inner one; refer to the thing
+by an alias without the article.
+
+There is no word in the body for the other noun: the tail is how a clause
+names it, and then the body can name it too.
+
+`ask <person> for <thing>` is its own action, `asking_for`, separate from
+`ask <person> about <topic>`. Nothing is handed over unless a clause does
+it; with none, the person "doesn't seem inclined to hand over" the thing.
+
+```chord
+create the pad master
+  a person
+  in the Landing Pad
+  states: unconvinced, waved-through
+
+  on the player asking_for the tram token
+    refuse when the pad master is unconvinced: quint-no-token
+    move the tram token to the player
+    phrase quint-hands-token
+  end on
+```
+
+## Reacting to a break
+
+A `breakable` thing can break more than one way: attacking it, and
+dropping or throwing it when it is also `fragile`. Each of those fires
+`breaking` on the thing after its own line, so one clause in the thing's
+block reacts to all of them. Its phrase speaks after the action's line,
+and its body changes the world: sweep up the pieces, spill what was
+inside.
+
+```chord
+create the sample jar
+  a container, transparent, breakable, fragile
+  in the Sorting Room
+  states, reversible: sealed, spilled
+
+  after the player breaking
+    change the sample jar to spilled
+    phrase jar-spills
+  end after
+```
+
+Only `after` works here. By the time `breaking` fires the thing is
+already broken, so there is nothing for `on` to refuse; Chord reports
+`on the player breaking` and points you at the clause that can still
+stop it, `on the player attacking` (or dropping, or throwing).

@@ -1,20 +1,48 @@
 /**
  * @file Entity Slot Consumer
- * @description Handles entity resolution slots including multi-object parsing (ADR-088)
- *              and pronoun resolution (ADR-089)
+ * @description Reads entity and instrument slots: single nouns, lists ("X and
+ *   Y", "X, Y", ADR-088), all phrases ("all", "all but X") and pronouns
+ *   (ADR-089). It returns every extent the slot could take from its start,
+ *   longest first (ADR-386 D1); the engine's search chooses among them. A
+ *   span that holds a list separator is read both ways, as the list split at
+ *   the separators and as one item across them (ADR-386 D6); the noun rank
+ *   decides. Every item has its leading articles and determiners split once
+ *   (ADR-385 D2); a constrained slot admits an extent only when the gate
+ *   names something for each of its items and records the admitted ids on
+ *   the item (D3, D4); a pronoun is a whole item, may be a list item, and
+ *   passes the same gate (D6).
+ *
+ * Public interface: EntitySlotConsumer.
+ * Owner context: parser-en-us slot consumers.
  */
 
 import {
   SlotType,
   type SlotMatch,
-  type PatternToken,
   type SlotConstraint,
+  type Token,
+  type GrammarContext,
   ScopeBuilderImpl,
   type ScopeConstraintBuilder
 } from '@sharpee/if-domain';
-import { SlotConsumer, SlotConsumerContext, getNextPatternToken, isPatternDelimiter } from './slot-consumer.js';
+import { SlotConsumer, SlotConsumerContext, isSlotRefusal, type PhraseWords, type SlotConsumeResult, type SlotRefusal } from './slot-consumer.js';
 import { GrammarScopeResolver } from '../grammar-scope-resolver.js';
-import { isRecognizedPronoun, getPronounContextManager } from '../pronoun-context.js';
+import { isRecognizedPronoun } from '../pronoun-context.js';
+import type { RequiredScope } from '../parse-failure.js';
+import { isAllWord, isExceptWord, isListSeparator, spanText, splitAtSeparators, splitLeadingWords, startsNounPhrase } from './noun-phrase-split.js';
+
+/** A slot's gate: its constraints and the world they are asked against. */
+interface Gate {
+  constraints: SlotConstraint;
+  context: GrammarContext;
+}
+
+/** The token indices from `start` up to but not including `end`. */
+const range = (start: number, end: number): number[] => {
+  const out: number[] = [];
+  for (let i = start; i < end; i++) out.push(i);
+  return out;
+};
 
 /**
  * Consumer for entity slots (ENTITY, INSTRUMENT)
@@ -23,461 +51,272 @@ import { isRecognizedPronoun, getPronounContextManager } from '../pronoun-contex
 export class EntitySlotConsumer implements SlotConsumer {
   readonly slotTypes = [SlotType.ENTITY, SlotType.INSTRUMENT];
 
-  consume(ctx: SlotConsumerContext): SlotMatch | null {
-    const { tokens, startIndex, slotType } = ctx;
-    const DEBUG = ctx.DEBUG || false;
-    const nextPatternToken = getNextPatternToken(ctx);
-
-    // Check for pronoun at start (ADR-089)
-    if (startIndex < tokens.length) {
-      const firstWord = tokens[startIndex].normalized;
-      if (DEBUG) {
-        console.log(`consumeEntitySlot: startIndex=${startIndex}, token.word='${tokens[startIndex]?.word}', token.normalized='${firstWord}'`);
-      }
-
-      // Try to resolve as pronoun first
-      if (isRecognizedPronoun(firstWord)) {
-        const pronounResult = this.tryResolvePronoun(ctx, firstWord, DEBUG);
-        if (pronounResult) {
-          return pronounResult;
-        }
-        // If pronoun resolution failed, fall through to standard entity resolution
-        // This handles cases like "take it" when there's no previous object
-        if (DEBUG) {
-          console.log(`Pronoun '${firstWord}' could not be resolved, trying standard entity resolution`);
-        }
-      }
+  consume(ctx: SlotConsumerContext): SlotConsumeResult {
+    const { tokens, startIndex } = ctx;
+    if (startIndex >= tokens.length) {
+      return null;
     }
-
-    // Check for "all" keyword at start
-    if (startIndex < tokens.length && tokens[startIndex].normalized === 'all') {
-      if (DEBUG) {
-        console.log('Detected "all" keyword, calling consumeAllSlot');
-      }
-      return this.consumeAllSlot(ctx, nextPatternToken, DEBUG);
+    if (isAllWord(tokens[startIndex])) {
+      return this.allReadings(ctx);
     }
+    return this.itemReadings(ctx);
+  }
 
-    // Standard entity consumption with "and" list detection
-    return this.consumeEntityWithListDetection(ctx, DEBUG);
+  /** The slot's gate, when it is constrained and a world is there to ask. */
+  private gateOf(ctx: SlotConsumerContext): Gate | undefined {
+    const constraints = ctx.rule.slots.get(ctx.slotName);
+    return constraints && constraints.constraints.length > 0 && ctx.context.world
+      ? { constraints, context: ctx.context }
+      : undefined;
   }
 
   /**
-   * Try to resolve a pronoun token using the pronoun context (ADR-089)
+   * The readings of an all phrase: the all word, the noun words that may
+   * follow it ("all coins"), and an optional except word with its exclusions
+   * ("all but X and Y"), at every extent from the longest down to the bare
+   * all word. The match's `determiners` lead with the all word, so the
+   * parser's split leaves the noun words as the phrase's content.
    */
-  private tryResolvePronoun(
-    ctx: SlotConsumerContext,
-    pronoun: string,
-    DEBUG: boolean
-  ): SlotMatch | null {
-    const { tokens, startIndex, slotType, context } = ctx;
-    const pronounContext = getPronounContextManager();
+  private allReadings(ctx: SlotConsumerContext): SlotConsumeResult {
+    const { tokens, startIndex, slotType, words } = ctx;
+    const allWord = tokens[startIndex];
+    const readings: SlotMatch[] = [];
 
-    if (!pronounContext) {
-      if (DEBUG) {
-        console.log('No pronoun context manager available');
+    for (let end = tokens.length; end > startIndex; end--) {
+      const rest = range(startIndex + 1, end);
+      const exceptAt = rest.findIndex((i) => isExceptWord(tokens[i]));
+      const nounSpan = exceptAt >= 0 ? rest.slice(0, exceptAt) : rest;
+      if (nounSpan.some((i) => isListSeparator(tokens[i], words) || isExceptWord(tokens[i]))) continue;
+
+      // The exclusions are read as a list split at the separators and, when
+      // there is a separator, as one item across them (ADR-386 D6)
+      const exclusionReadings: Array<SlotMatch[] | undefined> = [undefined];
+      if (exceptAt >= 0) {
+        const exclusionSpan = rest.slice(exceptAt + 1);
+        const exclusionSpans = splitAtSeparators(exclusionSpan, tokens, words);
+        if (!exclusionSpans) continue;
+        exclusionReadings[0] = exclusionSpans.map((span) => this.itemMatch(span, tokens, words));
+        if (exclusionSpans.length > 1) exclusionReadings.push([this.itemMatch(exclusionSpan, tokens, words)]);
       }
-      return null;
-    }
 
-    const resolved = pronounContext.resolve(pronoun);
-    if (!resolved || resolved.length === 0) {
-      if (DEBUG) {
-        console.log(`Pronoun '${pronoun}' did not resolve to any entity`);
+      const split = nounSpan.length > 0 ? splitLeadingWords(nounSpan, tokens, words) : undefined;
+      for (const excluded of exclusionReadings) {
+        readings.push({
+          tokens: range(startIndex, end),
+          text: spanText([startIndex, ...nounSpan], tokens),
+          slotType,
+          articles: split?.articles ?? [],
+          determiners: [allWord.normalized, ...(split?.determiners ?? [])],
+          ...(split?.ownedByActor ? { ownedByActor: true } : {}),
+          isAll: true,
+          ...(excluded ? { excluded } : {})
+        });
       }
-      return null;
     }
 
-    if (DEBUG) {
-      console.log(`Pronoun '${pronoun}' resolved to: ${resolved.map(r => r.entityId).join(', ')}`);
+    return readings.length > 0 ? { readings } : null;
+  }
+
+  /**
+   * The readings of one or more items ("X", "X and Y", "X, Y", "it and the
+   * box"): every span from the start, longest first; a span with a separator
+   * is read as the list split at the separators and as one item across them
+   * (ADR-386 D6), the list first; each item is a name or a whole-item
+   * pronoun, gated by the slot's constraints when it has any. A span with an
+   * empty part (a leading, trailing or doubled separator) is no extent. When
+   * a gate refuses every extent, the refusal for the longest span is returned
+   * (ADR-385 D8).
+   */
+  private itemReadings(ctx: SlotConsumerContext): SlotConsumeResult {
+    const { tokens, startIndex, slotType, words } = ctx;
+    const gate = this.gateOf(ctx);
+    const readings: SlotMatch[] = [];
+    let refusal: SlotRefusal | undefined;
+
+    for (let end = tokens.length; end > startIndex; end--) {
+      const span = range(startIndex, end);
+      const itemSpans = splitAtSeparators(span, tokens, words);
+      if (!itemSpans) continue;
+
+      const ways = itemSpans.length > 1 ? [itemSpans, [span]] : [itemSpans];
+      for (const way of ways) {
+        const read = this.readItems(way, ctx, gate);
+        if (read === null) continue;
+        if (isSlotRefusal(read)) {
+          refusal ??= read;
+          continue;
+        }
+        readings.push(this.matchOf(span, read, tokens, slotType));
+      }
     }
 
-    // Single entity resolution
-    if (resolved.length === 1) {
-      const ref = resolved[0];
-      // Use resolved entity's original text for entity resolution
-      // Store pronoun metadata as extended properties
-      const result: SlotMatch = {
-        tokens: [startIndex],
-        text: ref.text, // Use resolved entity text for entity resolution
-        confidence: 1.0,
-        slotType,
-        entityId: ref.entityId,
-        resolvedText: ref.text,
-        isPronoun: true
-      };
-      return result;
-    }
+    if (readings.length > 0) return { readings };
+    return refusal ?? null;
+  }
 
-    // Multiple entities (e.g., "them" referring to multiple objects)
-    // Use extended type for items with entityId
-    const result: SlotMatch = {
-      tokens: [startIndex],
-      text: pronoun,
-      confidence: 1.0,
+  /**
+   * Read each item span of one way of splitting a span.
+   * @returns The items, the first gate refusal met, or null when a span is
+   *   not an item at all
+   */
+  private readItems(itemSpans: readonly number[][], ctx: SlotConsumerContext, gate: Gate | undefined): SlotMatch[] | SlotRefusal | null {
+    const items: SlotMatch[] = [];
+    for (const itemSpan of itemSpans) {
+      const consumed = this.consumeItem(itemSpan, ctx, gate);
+      if (consumed === null) return null;
+      if (isSlotRefusal(consumed)) return consumed;
+      items.push(...consumed);
+    }
+    return items;
+  }
+
+  /** One item is the slot's own match; several make a list whose items carry their own splits, scopes and entity ids. */
+  private matchOf(span: number[], items: SlotMatch[], tokens: Token[], slotType: SlotType): SlotMatch {
+    if (items.length === 1) {
+      return { ...items[0], slotType };
+    }
+    return {
+      tokens: span,
+      text: this.wordsOf(span, tokens),
       slotType,
       isList: true,
-      isPronoun: true,
-      items: resolved.map(ref => ({
-        tokens: [startIndex],
-        text: ref.text,
-        entityId: ref.entityId
-      }))
-    };
-    return result;
-  }
-
-  /**
-   * Consume "all" and optionally "all but/except X"
-   */
-  private consumeAllSlot(
-    ctx: SlotConsumerContext,
-    nextPatternToken: PatternToken | undefined,
-    DEBUG: boolean
-  ): SlotMatch | null {
-    const { tokens, startIndex, slotType } = ctx;
-    const consumedIndices: number[] = [startIndex];
-    let currentIndex = startIndex + 1;
-    const excluded: SlotMatch[] = [];
-
-    // Check for "but" or "except" after "all"
-    if (currentIndex < tokens.length) {
-      const nextWord = tokens[currentIndex].normalized;
-      if (nextWord === 'but' || nextWord === 'except') {
-        consumedIndices.push(currentIndex);
-        currentIndex++;
-
-        // Consume excluded entities (handles "X and Y" in exclusions)
-        const excludedResult = this.consumeExcludedEntities(
-          ctx, currentIndex, nextPatternToken, DEBUG
-        );
-
-        if (excludedResult) {
-          consumedIndices.push(...excludedResult.tokens);
-          excluded.push(...excludedResult.items);
-        }
-      }
-    }
-
-    if (DEBUG) {
-      console.log(`Consumed "all" slot with ${excluded.length} exclusions`);
-    }
-
-    return {
-      tokens: consumedIndices,
-      text: 'all',
-      confidence: 1.0,
-      slotType,
-      isAll: true,
-      excluded: excluded.length > 0 ? excluded : undefined
+      items,
+      ...(items.every((item) => item.isPronoun) ? { isPronoun: true } : {})
     };
   }
 
   /**
-   * Consume entities after "but/except" with "and" support
+   * Read one item from its span: a whole-item pronoun with a referent, else
+   * a name. Returns the item matches (a plural pronoun gives several), the
+   * gate's refusal with its reason (ADR-385 D8), or null when the span is not
+   * an item at all (a pronoun with a referent followed by the words of a new
+   * noun phrase, which the one-token span already reads).
    */
-  private consumeExcludedEntities(
-    ctx: SlotConsumerContext,
-    startIndex: number,
-    nextPatternToken: PatternToken | undefined,
-    DEBUG: boolean
-  ): { tokens: number[]; items: SlotMatch[] } | null {
-    const { tokens } = ctx;
-    const items: SlotMatch[] = [];
-    const allTokens: number[] = [];
-    let currentIndex = startIndex;
+  private consumeItem(span: number[], ctx: SlotConsumerContext, gate: Gate | undefined): SlotMatch[] | SlotRefusal | null {
+    const { tokens, words, pronouns } = ctx;
+    const first = tokens[span[0]];
 
-    while (currentIndex < tokens.length) {
-      // Check for pattern delimiter
-      if (nextPatternToken) {
-        const currentWord = tokens[currentIndex].normalized;
-        if (nextPatternToken.type === 'literal' && currentWord === nextPatternToken.value) {
-          break;
-        }
-        if (nextPatternToken.type === 'alternates' &&
-            nextPatternToken.alternates!.includes(currentWord)) {
-          break;
-        }
-      }
-
-      // Skip "and" conjunctions
-      if (tokens[currentIndex].normalized === 'and') {
-        allTokens.push(currentIndex);
-        currentIndex++;
-        continue;
-      }
-
-      // Consume entity tokens (noun phrase)
-      const entityTokens: number[] = [];
-      const entityWords: string[] = [];
-
-      while (currentIndex < tokens.length) {
-        const word = tokens[currentIndex].normalized;
-
-        // Stop at "and", pattern delimiter, or other keywords
-        if (word === 'and') break;
-        if (nextPatternToken?.type === 'literal' && word === nextPatternToken.value) break;
-        if (nextPatternToken?.type === 'alternates' &&
-            nextPatternToken.alternates!.includes(word)) break;
-
-        entityTokens.push(currentIndex);
-        entityWords.push(tokens[currentIndex].word);
-        currentIndex++;
-      }
-
-      if (entityTokens.length > 0) {
-        items.push({
-          tokens: entityTokens,
-          text: entityWords.join(' ')
-        });
-        allTokens.push(...entityTokens);
-      }
-    }
-
-    if (items.length === 0) {
-      return null;
-    }
-
-    return { tokens: allTokens, items };
-  }
-
-  /**
-   * Consume entity slot with "and" list detection
-   */
-  private consumeEntityWithListDetection(
-    ctx: SlotConsumerContext,
-    DEBUG: boolean
-  ): SlotMatch | null {
-    const { slotName, tokens, startIndex, pattern, slotTokenIndex, rule, context, slotType } = ctx;
-    const nextPatternToken = pattern.tokens[slotTokenIndex + 1];
-    const items: SlotMatch[] = [];
-    const allTokens: number[] = [];
-    const allWords: string[] = [];
-    let currentIndex = startIndex;
-
-    // When next pattern token is a slot (consecutive slots like "give :recipient :item"),
-    // we need to be conservative and find entity boundaries via constraint matching
-    const nextIsSlot = nextPatternToken?.type === 'slot';
-
-    // Main loop: consume entity, check for "and", repeat
-    while (currentIndex < tokens.length) {
-      // Check for pattern delimiter first
-      if (nextPatternToken) {
-        const currentWord = tokens[currentIndex].normalized;
-        if (nextPatternToken.type === 'literal' && currentWord === nextPatternToken.value) {
-          break;
-        }
-        if (nextPatternToken.type === 'alternates' &&
-            nextPatternToken.alternates!.includes(currentWord)) {
-          break;
-        }
-      }
-
-      // Consume entity tokens (single noun phrase until "and" or delimiter)
-      const entityTokens: number[] = [];
-      const entityWords: string[] = [];
-
-      // For consecutive slots, use constraint-aware consumption
-      if (nextIsSlot && items.length === 0) {
-        // Try to find the shortest match that satisfies constraints
-        const slotConstraints = rule.slots.get(slotName);
-        let bestMatch: { tokens: number[]; words: string[]; confidence: number } | null = null;
-
-        // Try progressively longer phrases until we find a match or run out
-        for (let tryLength = 1; tryLength <= tokens.length - currentIndex; tryLength++) {
-          const tryTokens: number[] = [];
-          const tryWords: string[] = [];
-
-          for (let i = 0; i < tryLength && currentIndex + i < tokens.length; i++) {
-            const word = tokens[currentIndex + i].normalized;
-            // Stop at "and" - that would indicate a list
-            if (word === 'and') break;
-            tryTokens.push(currentIndex + i);
-            tryWords.push(tokens[currentIndex + i].word);
-          }
-
-          if (tryTokens.length === 0) break;
-
-          const tryText = tryWords.join(' ');
-
-          // Check if this matches constraints
-          if (slotConstraints && slotConstraints.constraints.length > 0 && context.world) {
-            const confidence = this.evaluateSlotConstraints(tryText, slotConstraints, context);
-            if (confidence > 0) {
-              bestMatch = { tokens: tryTokens, words: tryWords, confidence };
-              // Found a match - use it (greedy: first match wins)
-              break;
+    // A recognised pronoun is a pronoun only as the whole item (ADR-385
+    // D6): alone, or followed by a word that opens a new noun phrase
+    // (`give her the key`). Followed by a noun word it is a determiner
+    // (`her key`) and the name path below splits it.
+    if (isRecognizedPronoun(first.normalized)) {
+      const referents = pronouns.resolve(first.normalized);
+      if (referents && referents.length > 0) {
+        if (span.length > 1) {
+          if (startsNounPhrase(tokens[span[1]])) return null;
+        } else {
+          // The pronoun's entity must be one the slot's base admits, or the
+          // slot fails exactly as a name would: a scope violation naming it
+          if (gate) {
+            const outside = referents.find((ref) => !this.admitsEntity(ref.entityId, gate));
+            if (outside) {
+              return this.refuse(gate, outside.entityId);
             }
-          } else {
-            // No constraints - take first word only for consecutive slots
-            bestMatch = { tokens: tryTokens, words: tryWords, confidence: 1.0 };
-            break;
           }
-        }
-
-        if (bestMatch) {
-          entityTokens.push(...bestMatch.tokens);
-          entityWords.push(...bestMatch.words);
-          allTokens.push(...bestMatch.tokens);
-          allWords.push(...bestMatch.words);
-          currentIndex += bestMatch.tokens.length;
-        }
-      } else {
-        // Standard consumption with delimiter detection
-        while (currentIndex < tokens.length) {
-          const word = tokens[currentIndex].normalized;
-
-          // Stop at "and" or pattern delimiter
-          if (word === 'and') break;
-          if (nextPatternToken?.type === 'literal' && word === nextPatternToken.value) break;
-          if (nextPatternToken?.type === 'alternates' &&
-              nextPatternToken.alternates!.includes(word)) break;
-
-          entityTokens.push(currentIndex);
-          entityWords.push(tokens[currentIndex].word);
-          allTokens.push(currentIndex);
-          allWords.push(tokens[currentIndex].word);
-          currentIndex++;
+          return referents.map((ref) => ({
+            tokens: [span[0]],
+            text: ref.text,
+            entityId: ref.entityId,
+            resolvedText: ref.text,
+            isPronoun: true
+          }));
         }
       }
-
-      if (entityTokens.length > 0) {
-        items.push({
-          tokens: entityTokens,
-          text: entityWords.join(' ')
-        });
-      }
-
-      // Check if next token is "and" - if so, consume it and continue
-      if (currentIndex < tokens.length && tokens[currentIndex].normalized === 'and') {
-        allTokens.push(currentIndex);
-        allWords.push(tokens[currentIndex].word);
-        currentIndex++;
-        // Continue the outer loop to consume more items
-      } else {
-        // No more "and", we're done
-        break;
-      }
+      // No referent yet ("take it" before anything was mentioned): the word
+      // is tried as a name
     }
 
-    // Must consume at least one token
-    if (allTokens.length === 0) {
-      return null;
+    const item = this.itemMatch(span, tokens, words);
+    if (!gate) {
+      return [item];
     }
-
-    // Check constraints on each item
-    const slotConstraints = rule.slots.get(slotName);
-    let confidence = 1.0;
-
-    if (DEBUG) {
-      console.log(`Checking constraints for slot '${slotName}':`);
-      console.log(`  slotConstraints exists: ${!!slotConstraints}`);
-      console.log(`  constraints count: ${slotConstraints?.constraints?.length ?? 0}`);
-      console.log(`  context.world exists: ${!!context.world}`);
+    const admitted = this.admittedFor(item, gate);
+    if (admitted.length === 0) {
+      return this.refusalFor(item, gate);
     }
-
-    if (slotConstraints && slotConstraints.constraints.length > 0 && context.world) {
-      // For lists, check constraints on each item
-      for (const item of items) {
-        const itemConfidence = this.evaluateSlotConstraints(
-          item.text,
-          slotConstraints,
-          context
-        );
-        confidence = Math.min(confidence, itemConfidence);
-      }
-
-      if (confidence === 0) {
-        if (DEBUG) {
-          console.log(`Failed to consume slot '${slotName}'`);
-        }
-        return null;
-      }
-    }
-
-    const result: SlotMatch = {
-      tokens: allTokens,
-      text: allWords.join(' '),
-      confidence,
-      slotType
-    };
-
-    // If we have multiple items, mark as list
-    if (items.length > 1) {
-      result.isList = true;
-      result.items = items;
-      if (DEBUG) {
-        console.log(`Consumed list slot with ${items.length} items: ${items.map(i => i.text).join(', ')}`);
-      }
-    }
-
-    return result;
+    return [{ ...item, scope: admitted }];
   }
 
   /**
-   * Evaluate slot constraints and return confidence
+   * The gate's refusal of a named item (ADR-385 D8): the matcher is asked
+   * once more over everything the actor can see. A name found is a scope
+   * violation naming that entity and the base the slot required; nothing
+   * found is NO_MATCH naming the phrase's content words.
    */
-  private evaluateSlotConstraints(
-    slotText: string,
-    slotConstraints: SlotConstraint,
-    context: any // GrammarContext
-  ): number {
-    // For each constraint, check if any entities match
-    let hasMatchingEntity = false;
-
-    if (process.env.PARSER_DEBUG === 'true') {
-      console.log(`Evaluating constraints for slot text: "${slotText}"`);
+  private refusalFor(item: SlotMatch, gate: Gate): SlotRefusal {
+    const query = { text: this.contentTextOf(item), articles: item.articles ?? [] };
+    const inView = GrammarScopeResolver.findEntitiesByName(query, new ScopeBuilderImpl().visible().build(), gate.context);
+    if (inView.length > 0) {
+      return this.refuse(gate, inView[0].id);
     }
+    return { refused: true, failure: { reason: 'NO_MATCH', unknownWord: query.text } };
+  }
 
+  /** A scope violation: the entity found, and the base the slot's first constraint required. */
+  private refuse(gate: Gate, entityId: string): SlotRefusal {
+    return { refused: true, failure: { reason: 'SCOPE_VIOLATION', entityId, requiredScope: this.requiredScopeOf(gate) } };
+  }
+
+  /** The base the slot required, as the language words it: carried, touchable, or visible for every other base. */
+  private requiredScopeOf(gate: Gate): RequiredScope {
+    const base = this.scopesOf(gate)[0]?.base;
+    return base === 'carried' || base === 'touchable' ? base : 'visible';
+  }
+
+  /** A slot match for one item span, its leading articles and determiners split off. */
+  private itemMatch(span: number[], tokens: Token[], words: PhraseWords): SlotMatch {
+    const split = splitLeadingWords(span, tokens, words);
+    return {
+      tokens: span,
+      text: this.wordsOf(span, tokens),
+      articles: split.articles,
+      determiners: split.determiners,
+      ...(split.ownedByActor ? { ownedByActor: true } : {})
+    };
+  }
+
+  /** The typed words at the indices, as the player wrote them. */
+  private wordsOf(indices: readonly number[], tokens: Token[]): string {
+    return spanText(indices, tokens);
+  }
+
+  /** An item's content words: its text after the split prefix. */
+  private contentTextOf(item: SlotMatch): string {
+    const prefix = (item.articles?.length ?? 0) + (item.determiners?.length ?? 0);
+    return item.text.split(' ').slice(prefix).join(' ');
+  }
+
+  /** The scope constraints a gate's builders describe. */
+  private scopesOf(gate: Gate) {
     // ADR-231 D2a Amendment 1: `.where()` takes a ScopeConstraintBuilder and
-    // nothing else, so every constraint here is a scope-builder callback. The
-    // property- and function-constraint branches this loop used to carry only
-    // ever emitted "not yet supported" warnings; both forms were removed from
-    // `.where()` rather than left as silent no-ops. Property and function
-    // predicates still reach the resolver, via `ScopeBuilder.matching()`.
-    for (const constraint of slotConstraints.constraints) {
-      const scopeBuilder = new ScopeBuilderImpl();
-      const scope = (constraint as ScopeConstraintBuilder)(scopeBuilder);
-      const scopeConstraint = scope.build();
+    // nothing else, so every constraint here is a scope-builder callback.
+    return gate.constraints.constraints.map((constraint) => (constraint as ScopeConstraintBuilder)(new ScopeBuilderImpl()).build());
+  }
 
-      // Find entities matching the text within the scope
-      const matchingEntities = GrammarScopeResolver.findEntitiesByName(
-        slotText,
-        scopeConstraint,
-        context
-      );
-
-      if (process.env.PARSER_DEBUG === 'true') {
-        console.log(`Found ${matchingEntities.length} matching entities for "${slotText}"`);
-        // Show scope details
-        console.log(`  Scope base: ${scopeConstraint.base}, filters: ${scopeConstraint.filters.length}`);
-        // Show what entities are in scope before filtering
-        const allInScope = GrammarScopeResolver.getEntitiesInScope(
-          { ...scopeConstraint, filters: [] }, // Without filters
-          context
-        );
-        console.log(`  Entities in ${scopeConstraint.base} scope: ${allInScope.length}`);
-        for (const e of allInScope.slice(0, 5)) {
-          const eAny = e as unknown as Record<string, unknown>;
-          const getFn = eAny.get as ((type: string) => Record<string, unknown> | undefined) | undefined;
-          const identity = getFn?.('identity');
-          const name = identity?.name || e.id;
-          const enterable = eAny.enterable;
-          console.log(`    - ${name} (enterable=${enterable})`);
-        }
-        if (allInScope.length > 5) {
-          console.log(`    ... and ${allInScope.length - 5} more`);
-        }
-      }
-
-      if (matchingEntities.length > 0) {
-        hasMatchingEntity = true;
-        // Store matched entities in context for later resolution
-        const existingEntities = context.slots.get(slotText) || [];
-        context.slots.set(slotText, [...existingEntities, ...matchingEntities]);
+  /**
+   * The ids of the entities the gate admits for an item: those in any
+   * constraint's scope base that the one noun matcher names (ADR-385 D3).
+   * @returns The admitted ids, each once; empty when the gate refuses
+   */
+  private admittedFor(item: SlotMatch, gate: Gate): string[] {
+    const query = { text: this.contentTextOf(item), articles: item.articles ?? [] };
+    const admitted: string[] = [];
+    for (const scope of this.scopesOf(gate)) {
+      for (const entity of GrammarScopeResolver.findEntitiesByName(query, scope, gate.context)) {
+        if (!admitted.includes(entity.id)) admitted.push(entity.id);
       }
     }
+    if (process.env.PARSER_DEBUG === 'true') {
+      console.log(`Gate for "${query.text}": admitted ${admitted.length} (${admitted.join(', ')})`);
+    }
+    return admitted;
+  }
 
-    // Return confidence based on whether we found matching entities
-    return hasMatchingEntity ? 1.0 : 0.0;
+  /** Whether any constraint's scope base holds the entity (a pronoun's referent, ADR-385 D6). */
+  private admitsEntity(entityId: string, gate: Gate): boolean {
+    return this.scopesOf(gate).some((scope) =>
+      GrammarScopeResolver.getEntitiesInScope(scope, gate.context).some((e) => e.id === entityId)
+    );
   }
 }

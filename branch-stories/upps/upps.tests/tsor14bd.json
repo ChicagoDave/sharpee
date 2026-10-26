@@ -1,0 +1,89 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "notContains": [
+          "A canvas mail sack"
+        ]
+      },
+      "command": "examine sack",
+      "id": "a374xsk1",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Loading Dock"
+        ]
+      },
+      "command": "up",
+      "id": "a374up01",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The loader robot rolls to the grating",
+          "comes back up a moment later with a mail sack"
+        ]
+      },
+      "command": "push button",
+      "id": "a374btn1",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "A canvas mail sack, dropped through the grating"
+        ]
+      },
+      "command": "examine sack",
+      "id": "a374xsk2",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Taken."
+        ]
+      },
+      "command": "take striker",
+      "id": "a374tak1",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Taken."
+        ]
+      },
+      "command": "take lantern",
+      "id": "a374tak2",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You light the blackout lantern."
+        ]
+      },
+      "command": "light lantern",
+      "id": "a374lgt1",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Cable Trench",
+          "power cables run in bundles"
+        ]
+      },
+      "command": "down",
+      "id": "a374dwn2",
+      "type": "turn"
+    }
+  ],
+  "id": "tsor14bd",
+  "ordinal": 0,
+  "parent": "jmlo6o6e"
+}

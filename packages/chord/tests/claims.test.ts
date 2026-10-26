@@ -11,7 +11,7 @@
  * span; nothing here defaults.
  */
 import { describe, expect, it } from 'vitest';
-import { compile, compileClaims, type IRClaimSet } from '../src';
+import { claimsFragmentWith, compile, compileClaims, renderClaimBlock, spliceClaimIntoFragment, type IRClaimSet } from '../src';
 
 const STORY = `story
   title: Claims Fixture
@@ -305,5 +305,37 @@ describe('resolution errors, each by code and naming the claim', () => {
     expect(codes('the kettle is not hot')).toEqual(['claims.predicate-negated']);
     expect(codes('the kettle is hot or the kettle is cold')).toEqual(['claims.predicate-unsupported']);
     expect(codes('the note is here')).toEqual(['claims.predicate-unsupported']);
+  });
+});
+
+describe('writing a claim — the fragment syntax Chord writes beside its parser', () => {
+  it('a positive claim renders a block that compiles back to the same claim, needs and all', () => {
+    const block = renderClaimBlock({ name: 'the note gets read', predicate: 'the note is read', needs: { rooms: ['the Hall'], things: ['the note'], verbs: ['read'] } });
+    expect(block).toBe('  claim the note gets read\n    the note is read\n    needs rooms: the Hall\n    needs things: the note\n    needs verbs: read\n');
+    const result = compileClaims(STORY, claimsFragmentWith('Claims Fixture', block));
+    expect(result.diagnostics.filter((d) => d.severity === 'error')).toEqual([]);
+    expect(result.claims?.claims).toEqual([
+      { name: 'the note gets read', needs: { rooms: ['hall'], things: ['note'], verbs: ['read'] }, flag: { thing: 'note', trait: 'readable', field: 'hasBeenRead', value: true } },
+    ]);
+  });
+
+  it('a negative claim is written `never`, and an empty list writes no `needs` line', () => {
+    const block = renderClaimBlock({ name: 'the box leaves the Hall', never: true, predicate: 'the box is not in the Hall', needs: { rooms: [], things: ['the box'] } });
+    expect(block).toBe('  never the box leaves the Hall\n    the box is not in the Hall\n    needs things: the box\n');
+    const result = compileClaims(STORY, `claims\n${block}end claims\n`);
+    expect(result.claims?.claims[0]).toMatchObject({ name: 'the box leaves the Hall', never: true, placement: { thing: 'box', notIn: 'hall' } });
+  });
+
+  it('a second claim spliced before `end claims` compiles beside the first', () => {
+    const first = renderClaimBlock({ name: 'a', predicate: 'the note is read' });
+    const second = renderClaimBlock({ name: 'b', predicate: 'the kettle is hot' });
+    const fragment = spliceClaimIntoFragment(claimsFragmentWith('Claims Fixture', first), second);
+    expect(compileClaims(STORY, fragment).claims?.claims.map((claim) => claim.name)).toEqual(['a', 'b']);
+  });
+
+  it('refuses a claim with no name or no predicate, and a fragment with no `end claims`', () => {
+    expect(() => renderClaimBlock({ name: ' ', predicate: 'the note is read' })).toThrow(/needs a name/);
+    expect(() => renderClaimBlock({ name: 'a', predicate: '' })).toThrow(/"a" needs a predicate/);
+    expect(() => spliceClaimIntoFragment('claims\n', '  claim a\n    the note is read\n')).toThrow(/no `end claims` line/);
   });
 });

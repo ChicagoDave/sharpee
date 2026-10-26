@@ -12,9 +12,10 @@ import { TraitType } from '../trait-types.js';
  * a cat, a creature of the deep. Its presence is the fact; there is no data.
  *
  * Checked by `VisibilityBehavior` at the two darkness gates (`canSee`,
- * `getVisible`). It says nothing about light itself: a room stays dark for
- * everyone else, and the observer's own arrival description still reads as
- * a dark room's.
+ * `getVisible`) and by `isDarkFor`, which looking, arrival and the
+ * perception filter ask, so a night-vision observer also sees the dark room
+ * it stands in (ADR-374 D5). It says nothing about light itself: the room
+ * stays dark for everyone else, and `isDark(room)` is unchanged.
  */
 export class NightVisionTrait implements ITrait {
   static readonly type = TraitType.NIGHT_VISION;

@@ -130,6 +130,50 @@ import { eatingLanguage } from './eating.js';
 import { drinkingLanguage } from './drinking.js';
 import { attackingLanguage } from './attacking.js';
 import { hidingLanguage, revealingLanguage } from './hiding.js';
+// ADR-370: stock verbs without an object side
+import { jumpingLanguage } from './jumping.js';
+import { kissingLanguage } from './kissing.js';
+import { wavingLanguage } from './waving.js';
+import { sayingYesLanguage } from './saying-yes.js';
+import { sayingNoLanguage } from './saying-no.js';
+import { sayingSorryLanguage } from './saying-sorry.js';
+import { lookingUnderLanguage } from './looking-under.js';
+import { emptyingLanguage } from './emptying.js';
+// ADR-371: object-side adjectives
+import { burningLanguage } from './burning.js';
+import { settingLanguage } from './setting.js';
+// ADR-372: two-noun and conversation-shaped clauses
+import { askingForLanguage } from './asking-for.js';
+import { consultingLanguage } from './consulting.js';
+import { buyingLanguage } from './buying.js';
+// ADR-373: tying
+import { tyingLanguage } from './tying.js';
+import { untyingLanguage } from './untying.js';
+// ADR-374: lamps that work as lamps
+import { lightingLanguage } from './lighting.js';
+import { extinguishingLanguage } from './extinguishing.js';
+// ADR-366: the vehicle command sets
+import { steeringLanguage } from './steering.js';
+import { settingCourseLanguage } from './setting-course.js';
+export * from './jumping.js';
+export * from './kissing.js';
+export * from './waving.js';
+export * from './saying-yes.js';
+export * from './saying-no.js';
+export * from './saying-sorry.js';
+export * from './looking-under.js';
+export * from './emptying.js';
+export * from './burning.js';
+export * from './setting.js';
+export * from './asking-for.js';
+export * from './consulting.js';
+export * from './buying.js';
+export * from './tying.js';
+export * from './untying.js';
+export * from './lighting.js';
+export * from './extinguishing.js';
+export * from './steering.js';
+export * from './setting-course.js';
 import { waitingLanguage } from './waiting.js';
 import { sleepingLanguage } from './sleeping.js';
 import { wakingLanguage } from './waking.js';
@@ -230,4 +274,29 @@ export const standardActionLanguage = [
   // Concealment actions (ADR-148)
   hidingLanguage,
   revealingLanguage,
+  // ADR-370: stock verbs without an object side
+  jumpingLanguage,
+  kissingLanguage,
+  wavingLanguage,
+  sayingYesLanguage,
+  sayingNoLanguage,
+  sayingSorryLanguage,
+  lookingUnderLanguage,
+  emptyingLanguage,
+  // ADR-371: object-side adjectives
+  burningLanguage,
+  settingLanguage,
+  // ADR-372: two-noun and conversation-shaped clauses
+  askingForLanguage,
+  consultingLanguage,
+  buyingLanguage,
+  // ADR-373: tying
+  tyingLanguage,
+  untyingLanguage,
+  // ADR-374: lamps that work as lamps
+  lightingLanguage,
+  extinguishingLanguage,
+  // ADR-366: the vehicle command sets
+  steeringLanguage,
+  settingCourseLanguage,
 ];

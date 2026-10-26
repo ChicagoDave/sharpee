@@ -292,5 +292,22 @@
  * **4.0.0** (David's ruling, 2026-10-05). The number moves at that publish,
  * which waits until the rest of ADR-359 is ruled; until then only the EBNF
  * hash is re-recorded.
+ *
+ * The 4.0 set, ready for the bump (2026-10-21, session ca314d, Chord 4.0
+ * plan Phase 18 — the number still moves at publish, David's, no date):
+ * breaking, ADR-359 (the kind leads every block), ADR-361 (hatches
+ * removed), ADR-360 (a region declares its rooms); additive, ADR-362
+ * (blocks fold), ADR-365 (the `claims` fragment), ADR-368 (a head lists
+ * its gerunds), ADR-369 (`transparent`, `holds <n>`, `in`/`out` exits),
+ * ADR-371 (`flammable`, `settable`, the `to <value>` tail), ADR-372 (the
+ * counterpart tail, `define topics` on a readable, `costs`), ADR-373
+ * (`attached to`, `detachable`, `breakable`, `fragile`, `starts broken`),
+ * ADR-374 (list placements, `night-vision`, `listener`, `hearing`,
+ * `define sound`, `play sound`, `powered by`, `starts lit`), ADR-366 (the
+ * `vehicle` kind and its lines, `admits`, `to outside`, the driving
+ * statements and predicates), ADR-377 (`use state-machines` withdrawn),
+ * ADR-376 (`use expanses`), ADR-375 (`use sailing`), ADR-378 (passages,
+ * exit tails, `define action … while`, the `pushing` block). ADR-367's
+ * lock and ADR-370's verbs changed no grammar.
  */
 export const CHORD_LANGUAGE_VERSION = '3.6.0';

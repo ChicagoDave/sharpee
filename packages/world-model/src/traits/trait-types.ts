@@ -18,12 +18,16 @@ export const TraitType = {
   SCENERY: 'scenery',
   /** Sees in the dark (ADR-328 D5) — presence is the fact */
   NIGHT_VISION: 'if.trait.night_vision',
+  /** Present in many rooms (ADR-374 D1) */
+  BACKDROP: 'if.trait.backdrop',
 
   // Interactive traits
   OPENABLE: 'openable',
   LOCKABLE: 'lockable',
   CUTTABLE: 'cuttable',
   DIGGABLE: 'diggable',
+  FLAMMABLE: 'flammable',
+  PURCHASABLE: 'purchasable', // ADR-372 D5
   SWITCHABLE: 'switchable',
   READABLE: 'readable',
   LIGHT_SOURCE: 'lightSource',
@@ -46,9 +50,6 @@ export const TraitType = {
   // Basic traits
   ACTOR: 'actor',
 
-  // New traits
-  EXIT: 'exit',
-  
   // Combat traits
   WEAPON: 'weapon',
   BREAKABLE: 'breakable',
@@ -71,7 +72,14 @@ export const TraitType = {
 
   // Transport traits
   VEHICLE: 'vehicle',
+  ABOARD: 'aboard',
   ENTERABLE: 'enterable',
+
+  // Expanse traits (ADR-376)
+  EXPANSE: 'expanse',
+  FLOATING: 'floating',
+  SIGHT: 'sight',
+  LANDMARK: 'landmark',
 
   // Concealment traits (ADR-148)
   CONCEALMENT: 'if.trait.concealment',
@@ -118,12 +126,15 @@ export const TRAIT_CATEGORIES: Record<TraitType, TraitCategory> = {
   [TraitType.EDIBLE]: TraitCategory.STANDARD,
   [TraitType.SCENERY]: TraitCategory.STANDARD,
   [TraitType.NIGHT_VISION]: TraitCategory.STANDARD,
+  [TraitType.BACKDROP]: TraitCategory.STANDARD,
 
   // Interactive
   [TraitType.OPENABLE]: TraitCategory.INTERACTIVE,
   [TraitType.LOCKABLE]: TraitCategory.INTERACTIVE,
   [TraitType.CUTTABLE]: TraitCategory.INTERACTIVE,
   [TraitType.DIGGABLE]: TraitCategory.INTERACTIVE,
+  [TraitType.FLAMMABLE]: TraitCategory.INTERACTIVE,
+  [TraitType.PURCHASABLE]: TraitCategory.INTERACTIVE,
   [TraitType.SWITCHABLE]: TraitCategory.INTERACTIVE,
   [TraitType.READABLE]: TraitCategory.INTERACTIVE,
   [TraitType.LIGHT_SOURCE]: TraitCategory.INTERACTIVE,
@@ -138,7 +149,6 @@ export const TRAIT_CATEGORIES: Record<TraitType, TraitCategory> = {
   // Spatial
   [TraitType.DOOR]: TraitCategory.STANDARD,
   [TraitType.CLIMBABLE]: TraitCategory.INTERACTIVE,
-  [TraitType.EXIT]: TraitCategory.STANDARD,
   [TraitType.REGION]: TraitCategory.STANDARD,
   [TraitType.SCENE]: TraitCategory.STANDARD,
 
@@ -169,7 +179,14 @@ export const TRAIT_CATEGORIES: Record<TraitType, TraitCategory> = {
 
   // Transport traits
   [TraitType.VEHICLE]: TraitCategory.INTERACTIVE,
+  [TraitType.ABOARD]: TraitCategory.INTERACTIVE,
   [TraitType.ENTERABLE]: TraitCategory.INTERACTIVE,
+
+  // Expanse traits (ADR-376)
+  [TraitType.EXPANSE]: TraitCategory.INTERACTIVE,
+  [TraitType.FLOATING]: TraitCategory.INTERACTIVE,
+  [TraitType.SIGHT]: TraitCategory.INTERACTIVE,
+  [TraitType.LANDMARK]: TraitCategory.INTERACTIVE,
 
   // Concealment traits (ADR-148)
   [TraitType.CONCEALMENT]: TraitCategory.INTERACTIVE,

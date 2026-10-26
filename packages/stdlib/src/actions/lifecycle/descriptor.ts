@@ -92,6 +92,22 @@ export interface EntitySlotSpec {
     entity: IFEntity,
     multiObjectItem?: IFEntity
   ): Record<string, unknown>;
+
+  /**
+   * The noun on the other side of a two-noun command, as seen from this
+   * slot (the target for the thrown item, the item for the target). The
+   * engine seeds its id into the consultation's sharedData as
+   * `counterpartId`, so a hook can fire only for one counterpart — a Chord
+   * head's counterpart tail (`on the player throwing at the gong`) is the
+   * consumer. Declaring it on a descriptor's slots is what makes an action
+   * a counterpart action (`counterpartActionIds` in the registry).
+   *
+   * @param context - The action context.
+   * @param multiObjectItem - As for `seedData`: the item of a per-item
+   *   resolution, when this slot is the shared one.
+   * @returns The other noun, or `undefined` when the command has none.
+   */
+  counterpart?(context: ActionContext, multiObjectItem?: IFEntity): IFEntity | undefined;
 }
 
 /**
@@ -134,6 +150,19 @@ export interface LifecycleContracts {
    * executor still runs them for the action's single-object commands.
    */
   handlesMultiObject?: boolean;
+
+  /**
+   * The id has no grammar and is never executed: another action fires its
+   * lifecycle as a consequence of its own outcome — breaking, fired by
+   * attacking, dropping and throwing when the thing breaks (ADR-373 D3),
+   * through `runBreakingLifecycle`, which runs postExecute and postReport
+   * only. The executor never runs this descriptor's hooks.
+   *
+   * `causes` is the one declaration of which actions fire it, the most
+   * direct first: the call-site test holds the code to it, and tooling that
+   * must reach the id through play (the derived runner) reads it.
+   */
+  firedAsConsequence?: { readonly causes: readonly string[] };
 }
 
 /**

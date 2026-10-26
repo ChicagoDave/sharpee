@@ -40,6 +40,17 @@ describe('the grammar header (ADR-269 D8)', () => {
     expect(result.ir!.grammarFile).toEqual({ name: 'standard-en-us' });
   });
 
+  it('a grammar file gives no slot-unused warning: its actions are stdlib TypeScript, which reads the seats (parser review G2)', () => {
+    const result = compile(`${GRAMMAR}define action giving\n  grammar\n    give the item to the recipient\n    hand the recipient the item\n`);
+    expect(result.diagnostics.filter((d) => d.code === 'analysis.slot-unused')).toEqual([]);
+  });
+
+  it('a grammar file\'s `→` cardinality is refused too: nothing there can expand it either (parser review B2)', () => {
+    expect(codesOf(`${GRAMMAR}define action taking\n  grammar\n    take the item → each reachable item\n`)).toEqual([
+      'analysis.cardinality-unsupported',
+    ]);
+  });
+
   it('a story IR never carries the grammarFile marker', () => {
     const result = compile(
       'story\n  title: T\n  authors:\n    N\n\ncreate the Barn\n  a room\n\n  A barn.\n\ncreate Alex\n  a person\n  playable\n  starts in the Barn\n\n  You.\n\nbefore the game starts\n  change the player to Alex\nend before\n',

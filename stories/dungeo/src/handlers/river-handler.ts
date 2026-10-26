@@ -8,10 +8,10 @@
  * Note: Falls death is handled separately by falls-death-handler.ts
  */
 
-import { WorldModel, type IParsedCommand, VehicleTrait, TraitType, RoomTrait, type DirectionType } from '@sharpee/world-model';
+import { WorldModel, type IParsedCommand, TraitType, RoomTrait, type DirectionType } from '@sharpee/world-model';
 import { type ParsedCommandTransformer } from '@sharpee/engine';
 import { RIVER_BLOCKED_ACTION_ID } from '../actions/river-blocked/types';
-import { RiverNavigationTrait } from '../traits';
+import { RiverNavigationTrait, InflatableTrait } from '../traits';
 
 /**
  * Check if player is in an inflated boat
@@ -26,11 +26,8 @@ function isPlayerInBoat(world: WorldModel): boolean {
   const locationEntity = world.getEntity(playerLocation);
   if (!locationEntity) return false;
 
-  // Check if location has VehicleTrait with watercraft type
-  if (!locationEntity.has(TraitType.VEHICLE)) return false;
-
-  const vehicleTrait = locationEntity.get(VehicleTrait);
-  return vehicleTrait?.vehicleType === 'watercraft';
+  // The boat is the inflatable vehicle (it is a vehicle only while inflated)
+  return locationEntity.has(TraitType.VEHICLE) && locationEntity.get(InflatableTrait) !== undefined;
 }
 
 /**

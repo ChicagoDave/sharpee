@@ -21,6 +21,8 @@ import { OpenableTrait } from './openable/openableTrait.js';
 import { LockableTrait } from './lockable/lockableTrait.js';
 import { CuttableTrait } from './cuttable/cuttableTrait.js';
 import { DiggableTrait } from './diggable/diggableTrait.js';
+import { FlammableTrait } from './flammable/flammableTrait.js';
+import { PurchasableTrait } from './purchasable/purchasableTrait.js';
 import { SwitchableTrait } from './switchable/switchableTrait.js';
 import { ReadableTrait } from './readable/readableTrait.js';
 import { LightSourceTrait } from './light-source/lightSourceTrait.js';
@@ -34,8 +36,6 @@ import { SceneTrait } from './scene/sceneTrait.js';
 // Basic traits
 import { ActorTrait } from './actor/actorTrait.js';
 
-// New traits
-import { ExitTrait } from './exit/exitTrait.js';
 
 // Manipulation traits
 import { PullableTrait } from './pullable/pullableTrait.js';
@@ -64,7 +64,14 @@ import { CharacterModelTrait } from './character-model/characterModelTrait.js';
 
 // Transport traits
 import { VehicleTrait } from './vehicle/vehicleTrait.js';
+import { AboardTrait } from './vehicle/aboardTrait.js';
 import { EnterableTrait } from './enterable/enterableTrait.js';
+
+// Expanse traits (ADR-376)
+import { ExpanseTrait } from './expanse/expanseTrait.js';
+import { FloatingTrait } from './expanse/floatingTrait.js';
+import { SightTrait } from './expanse/sightTrait.js';
+import { LandmarkTrait } from './expanse/landmarkTrait.js';
 
 // Concealment traits (ADR-148)
 import { ConcealmentTrait } from './concealment/concealmentTrait.js';
@@ -78,6 +85,7 @@ import { ListenerTrait } from './listener/listenerTrait.js';
 // System traits
 import { StoryInfoTrait } from './story-info/storyInfoTrait.js';
 import { NightVisionTrait } from './night-vision/nightVisionTrait.js';
+import { BackdropTrait } from './backdrop/backdropTrait.js';
 
 /**
  * Map of trait types to their constructors
@@ -90,6 +98,7 @@ export const TRAIT_IMPLEMENTATIONS: Record<TraitType, ITraitConstructor> = {
   [TraitType.ROOM]: RoomTrait,
   [TraitType.WEARABLE]: WearableTrait,
   [TraitType.NIGHT_VISION]: NightVisionTrait,
+  [TraitType.BACKDROP]: BackdropTrait,
   [TraitType.EDIBLE]: EdibleTrait,
   [TraitType.SCENERY]: SceneryTrait,
 
@@ -98,6 +107,8 @@ export const TRAIT_IMPLEMENTATIONS: Record<TraitType, ITraitConstructor> = {
   [TraitType.LOCKABLE]: LockableTrait,
   [TraitType.CUTTABLE]: CuttableTrait,
   [TraitType.DIGGABLE]: DiggableTrait,
+  [TraitType.FLAMMABLE]: FlammableTrait,
+  [TraitType.PURCHASABLE]: PurchasableTrait,
   [TraitType.SWITCHABLE]: SwitchableTrait,
   [TraitType.READABLE]: ReadableTrait,
   [TraitType.LIGHT_SOURCE]: LightSourceTrait,
@@ -111,8 +122,6 @@ export const TRAIT_IMPLEMENTATIONS: Record<TraitType, ITraitConstructor> = {
   // Basic traits
   [TraitType.ACTOR]: ActorTrait,
 
-  // New traits
-  [TraitType.EXIT]: ExitTrait,
 
   // Manipulation traits
   [TraitType.PULLABLE]: PullableTrait,
@@ -141,7 +150,14 @@ export const TRAIT_IMPLEMENTATIONS: Record<TraitType, ITraitConstructor> = {
 
   // Transport traits
   [TraitType.VEHICLE]: VehicleTrait,
+  [TraitType.ABOARD]: AboardTrait,
   [TraitType.ENTERABLE]: EnterableTrait,
+
+  // Expanse traits (ADR-376)
+  [TraitType.EXPANSE]: ExpanseTrait,
+  [TraitType.FLOATING]: FloatingTrait,
+  [TraitType.SIGHT]: SightTrait,
+  [TraitType.LANDMARK]: LandmarkTrait,
 
   // Concealment traits (ADR-148)
   [TraitType.CONCEALMENT]: ConcealmentTrait as unknown as ITraitConstructor,
@@ -234,6 +250,8 @@ export {
   LockableTrait,
   CuttableTrait,
   DiggableTrait,
+  FlammableTrait,
+  PurchasableTrait,
   SwitchableTrait,
   ReadableTrait,
   LightSourceTrait,
@@ -246,8 +264,6 @@ export {
   // Basic
   ActorTrait,
 
-  // New traits
-  ExitTrait,
   ClimbableTrait,
 
   // Manipulation traits
@@ -279,7 +295,14 @@ export {
 
   // Transport traits
   VehicleTrait,
+  AboardTrait,
   EnterableTrait,
+
+  // Expanse traits (ADR-376)
+  ExpanseTrait,
+  FloatingTrait,
+  SightTrait,
+  LandmarkTrait,
 
   // System traits
   StoryInfoTrait

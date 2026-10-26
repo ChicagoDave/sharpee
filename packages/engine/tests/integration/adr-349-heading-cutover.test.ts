@@ -22,6 +22,7 @@ import {
   VehicleTrait,
   ContainerTrait,
   EnterableTrait,
+  OpenableTrait,
   registerLocationName,
   clearLocationNames,
 } from '@sharpee/world-model';
@@ -45,8 +46,8 @@ interface WellWorld {
  * half of AC-4's claim, and it is true by construction here.
  *
  * @param opts `transparent` decides whether the bucket takes the enclosure slot
- *   (AC-4) or the place slot (AC-7); the distinction is the vehicle's own
- *   transparency, not its kind (D4a).
+ *   (AC-4) or the place slot (AC-7); the distinction is whether the player
+ *   sees out of the enclosure, not its kind (D4a, as amended by ADR-366 D3).
  */
 function makeWellStory(opts: { transparent: boolean }): { story: Story; ids: WellWorld } {
   const ids: WellWorld = { topId: '', bottomId: '', bucketId: '', playerId: '' };
@@ -64,7 +65,10 @@ function makeWellStory(opts: { transparent: boolean }): { story: Story; ids: Wel
       const bucket = world.createEntity('bucket', EntityType.CONTAINER);
       bucket.add(new ContainerTrait({}));
       bucket.add(new EnterableTrait({}));
-      bucket.add(new VehicleTrait({ vehicleType: 'counterweight', transparent: opts.transparent }));
+      bucket.add(new VehicleTrait());
+      // ADR-366 D3: a lidless bucket is seen out of; a closed opaque lid makes it the place.
+      // The lid starts open so the player can climb in; AC-7 closes it behind them.
+      if (!opts.transparent) bucket.add(new OpenableTrait({ isOpen: true }));
       bucket.add(new IdentityTrait({ name: 'bucket', description: 'A wooden bucket.' }));
       world.moveEntity(bucket.id, top.id);
 
@@ -218,6 +222,8 @@ describe('ADR-349 — the location heading through an assembled engine', () => {
     ]);
 
     world.moveEntity(ids.playerId, ids.bucketId);
+    world.getEntity(ids.bucketId)!.get(OpenableTrait)!.isOpen = false;
+    expect(world.getLocation(ids.playerId)).toBe(ids.bucketId);
     const inside = await eng.executeTurn('look');
 
     // The surrounding room is NOT named: `getContainingRoom` would have said

@@ -170,19 +170,14 @@ describe('MoveableSceneryTrait', () => {
         blockedExits: ['north']
       }));
       
-      entity.add(new PushableTrait({
-        pushType: 'heavy',
-        requiresStrength: 50,
-        pushDirection: 'north',
-        pushSound: 'boulder_roll.mp3'
-      }));
-      
+      entity.add(new PushableTrait());
+
       const moveableTrait = entity.getTrait(TraitType.MOVEABLE_SCENERY) as MoveableSceneryTrait;
       const pushableTrait = entity.getTrait(TraitType.PUSHABLE) as PushableTrait;
-      
+
       expect(moveableTrait.weightClass).toBe('immense');
       expect(moveableTrait.revealsWhenMoved).toBe(true);
-      expect(pushableTrait.requiresStrength).toBe(50);
+      expect(pushableTrait.type).toBe(TraitType.PUSHABLE);
     });
 
     it('should work with both PushableTrait and PullableTrait', () => {
@@ -193,11 +188,8 @@ describe('MoveableSceneryTrait', () => {
         moveSound: 'wooden_scrape.mp3'
       }));
       
-      entity.add(new PushableTrait({
-        pushType: 'moveable',
-        pushDirection: 'any'
-      }));
-      
+      entity.add(new PushableTrait());
+
       entity.add(new PullableTrait({
         pullType: 'heavy',
         requiresStrength: 20
@@ -309,12 +301,7 @@ describe('MoveableSceneryTrait', () => {
         peopleRequired: 3
       }));
       
-      entity.add(new PushableTrait({
-        pushType: 'heavy',
-        pushDirection: 'north',
-        requiresStrength: 60,
-        maxPushes: 1
-      }));
+      entity.add(new PushableTrait());
       
       const moveableTrait = entity.getTrait(TraitType.MOVEABLE_SCENERY) as MoveableSceneryTrait;
       
@@ -335,19 +322,13 @@ describe('MoveableSceneryTrait', () => {
         originalRoom: 'library'
       }));
       
-      entity.add(new PushableTrait({
-        pushType: 'heavy',
-        pushDirection: 'east',
-        requiresStrength: 30,
-        revealsPassage: true
-      }));
-      
+      entity.add(new PushableTrait());
+
       const moveableTrait = entity.getTrait(TraitType.MOVEABLE_SCENERY) as MoveableSceneryTrait;
-      const pushableTrait = entity.getTrait(TraitType.PUSHABLE) as PushableTrait;
-      
+
       expect(moveableTrait.revealsWhenMoved).toBe(true);
       expect(moveableTrait.reveals).toBe('secret-room');
-      expect(pushableTrait.revealsPassage).toBe(true);
+      expect(entity.hasTrait(TraitType.PUSHABLE)).toBe(true);
     });
 
     it('should create a light moveable crate', () => {
@@ -358,11 +339,7 @@ describe('MoveableSceneryTrait', () => {
         moveSound: 'crate_slide.mp3'
       }));
       
-      entity.add(new PushableTrait({
-        pushType: 'moveable',
-        pushDirection: 'any',
-        requiresStrength: 10
-      }));
+      entity.add(new PushableTrait());
       
       entity.add(new PullableTrait({
         pullType: 'heavy',

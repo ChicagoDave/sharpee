@@ -152,6 +152,9 @@ export function resolveLifecycle(
       const data: InterceptorSharedData = slot.seedData
         ? { ...slot.seedData(context, entity, multiObjectItem) }
         : {};
+      // ADR-372 D1: the other noun's id, for a counterpart-tailed hook.
+      const counterpart = slot.counterpart?.(context, multiObjectItem);
+      if (counterpart) data.counterpartId = counterpart.id;
       consultations.push({
         slotId: slot.id,
         actionId,

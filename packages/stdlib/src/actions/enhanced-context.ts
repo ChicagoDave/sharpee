@@ -190,16 +190,12 @@ class InternalActionContext implements ActionContext {
         action: takingAction.id,
         tokens: [],
         structure: { verb: { tokens: [0], text: 'take', head: 'take' } },
-        pattern: 'VERB_NOUN',
-        confidence: 1.0
+        pattern: 'VERB_NOUN'
       },
       actionId: takingAction.id,
       directObject: {
         entity,
-        parsed: {
-          text: entity.name,
-          candidates: [entity.name]
-        }
+        parsed: { text: entity.name }
       }
     };
 
@@ -365,7 +361,7 @@ class InternalActionContext implements ActionContext {
    * `event.data.data` is dereferenced nowhere in packages/ source (engine
    * prose pipeline, event-processor, if-services, channel-service, chord,
    * story-loader all read top-level fields); capability-dispatch effect
-   * payloads (`capability-dispatch.ts` effectsToEvents) and lifecycle
+   * payloads (`standard/dispatch-shared.ts` effectsToEvents) and lifecycle
    * interceptor emissions are flat `{messageId, ...}` shapes that the wrap
    * actively broke under this context. The tolerant readers
    * (`tests/test-utils` expectEvent, searching-interceptor's
@@ -488,8 +484,7 @@ export function createMockActionContext(
       action: action.id,
       tokens: [],
       structure: { verb: { tokens: [0], text: 'test', head: 'test' } },
-      pattern: 'VERB_ONLY',
-      confidence: 1.0
+      pattern: 'VERB_ONLY'
     },
     actionId: action.id,
     ...command

@@ -1,0 +1,59 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "Echo Chamber",
+          "Nothing lives here but the echo.",
+          "In the coracle you see a Hunter.",
+          "The Wumpus, in the distance, to the east.",
+          "The Bottomless Pit, in the distance, to the northwest.",
+          "The Landing, in the distance, to the west.",
+          "The Bone Hollow, on the horizon, to the northeast."
+        ]
+      },
+      "command": "look",
+      "id": "wlook003",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The arrow goes out across the water and is gone. Somewhere in the dark, something snorts."
+        ],
+        "notContains": [
+          "can't see",
+          "Wumpus has you"
+        ]
+      },
+      "command": "shoot wumpus",
+      "id": "wshot006",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You steer the coracle east."
+        ]
+      },
+      "command": "steer east",
+      "id": "wster002",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The arrow goes out across the water and is gone.",
+          "The water heaves, the coracle tips, and the Wumpus has you. It does not hurry."
+        ]
+      },
+      "command": "shoot wumpus",
+      "ending": "eaten",
+      "id": "wshot008",
+      "type": "turn"
+    }
+  ],
+  "id": "wumpeatn",
+  "ordinal": 1,
+  "parent": "wumpeast"
+}

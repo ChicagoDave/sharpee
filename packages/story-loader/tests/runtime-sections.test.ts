@@ -17,7 +17,7 @@ import { compileSource } from './helpers/boot-engine';
 
 const RUNTIME_DIR = join(__dirname, '..', 'src', 'runtime');
 
-/** The thirteen sections ADR-335 D1 names, one module each. */
+/** The thirteen sections ADR-335 D1 names, one module each, plus `settable` (ADR-371 D3) and `purchasable` (ADR-372 D5). */
 const SECTIONS = [
   'bind',
   'event-clauses',
@@ -32,6 +32,8 @@ const SECTIONS = [
   'derived',
   'statements',
   'phrases',
+  'settable',
+  'purchasable',
 ];
 
 /** Order faults in a `requires` list: each entry's requirement must exist and come earlier. */

@@ -137,6 +137,8 @@ Since `forAction().build()` flattens to registered `GrammarRule`s, the acceptanc
 constraints present on the correct slots of every slotted rule, priorities 150/140 — not merely that
 the verbs parse.
 
+> **Amended by ADR-382 D2 (2026-10-23):** `fullPattern(string)` and the whole `forAction` family are retired. The loader registers each rule chord's `lowerActionRules` lowers through `GrammarBuilder.rule(spec)`, as parts, in definition order, with constraints and slot types on each rule that carries the slot.
+
 **Rejected — verb-factoring heuristic**: splitting each Chord line into verb + template to fit
 `verbs() × patterns()` requires knowing where the verb ends (`pick up :item`), which is English
 knowledge the loader must not own.

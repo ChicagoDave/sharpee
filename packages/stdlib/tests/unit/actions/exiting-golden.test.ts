@@ -21,6 +21,9 @@ import {
   createCommand
 } from '../../test-utils';
 
+/** English, handed to hand-built worlds as the language's words (ADR-387 D2). */
+const ENGLISH_WORDS = { selfWords: ['me', 'myself', 'self', 'yourself'], nameStopwords: ['the', 'a', 'an', 'of'] };
+
 describe('exitingAction (Golden Pattern)', () => {
   describe('Action Metadata', () => {
     test('should have correct ID', () => {
@@ -123,6 +126,7 @@ describe('exitingAction (Golden Pattern)', () => {
 
     test('should fail when container has no parent location', () => {
       const world = new WorldModel();
+      world.setLanguageWords(ENGLISH_WORDS);
       const player = world.createEntity('yourself', EntityType.ACTOR);
       player.add({ type: TraitType.ACTOR, isPlayer: true });
       world.setPlayer(player.id);
@@ -335,6 +339,7 @@ describe('World State Mutations', () => {
 
   test('should NOT move player when container has no parent location', () => {
     const world = new WorldModel();
+    world.setLanguageWords(ENGLISH_WORDS);
     const player = world.createEntity('yourself', EntityType.ACTOR);
     player.add({ type: TraitType.ACTOR, isPlayer: true });
     world.setPlayer(player.id);

@@ -105,11 +105,16 @@ export const SETTING_SCHEMA: ReadonlyMap<string, ReadonlyMap<string, SettingSpec
     ]),
   ],
   // Keyless v1 entity refs (`openable with the crowbar`, `lockable with the
-  // iron key`, `cuttable/diggable with the <tool>`): the key is implicit in
-  // the spelling — these entries declare the value type the ADR-276 census
+  // iron key`, `cuttable/diggable/flammable with the <tool>`, `light-source
+  // with the match`, `attached to the hull`): the key is implicit in the
+  // spelling — these entries declare the value type the ADR-276 census
   // entry 6 compile gate and the manifest generator need.
   ['openable', new Map<string, SettingSpec>([['tool', { value: 'entity-ref' }]])],
   ['lockable', new Map<string, SettingSpec>([['key', { value: 'entity-ref' }]])],
   ['cuttable', new Map<string, SettingSpec>([['tool', { value: 'entity-ref' }]])],
   ['diggable', new Map<string, SettingSpec>([['tool', { value: 'entity-ref' }]])],
+  ['flammable', new Map<string, SettingSpec>([['tool', { value: 'entity-ref' }]])], // ADR-371 D2
+  ['light-source', new Map<string, SettingSpec>([['tool', { value: 'entity-ref' }]])], // ADR-374 D9
+  ['attached', new Map<string, SettingSpec>([['anchor', { value: 'entity-ref' }]])], // ADR-373 D1
+  ['powered', new Map<string, SettingSpec>([['source', { value: 'entity-ref' }]])], // ADR-374 D10 (one per power source)
 ]);

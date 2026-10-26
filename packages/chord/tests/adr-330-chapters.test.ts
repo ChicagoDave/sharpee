@@ -86,7 +86,8 @@ end chapters
 `;
     const { ir, errors } = compileStory('  use chapters\n  states: calm, chase', body);
     expect(errors).toEqual([]);
-    expect(ir.chapters![1].trigger).toEqual({ kind: 'timer-expires', timer: 'player.bell' });
+    // Jack is the one playable character, so the player's bell is his.
+    expect(ir.chapters![1].trigger).toEqual({ kind: 'timer-expires', timer: 'jack.bell' });
     expect(ir.chapters![2].trigger).toEqual({ kind: 'becomes', owner: 'street', state: 'busy' });
   });
 

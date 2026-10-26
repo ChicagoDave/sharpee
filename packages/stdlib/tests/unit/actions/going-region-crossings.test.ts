@@ -14,9 +14,13 @@ import { IFActions } from '../../../src/actions/constants';
 import { TraitType, WorldModel, Direction, RoomTrait, EntityType } from '@sharpee/world-model';
 import { createRealTestContext, executeWithValidation, createCommand } from '../../test-utils';
 
+/** English, handed to hand-built worlds as the language's words (ADR-387 D2). */
+const ENGLISH_WORDS = { selfWords: ['me', 'myself', 'self', 'yourself'], nameStopwords: ['the', 'a', 'an', 'of'] };
+
 /** Two rooms joined north/south, each optionally assigned to a region. */
 function twoRooms(fromRegion?: string, toRegion?: string) {
   const world = new WorldModel();
+  world.setLanguageWords(ENGLISH_WORDS);
   world.createRegion('reg-forest', { name: 'Forest' });
   world.createRegion('reg-underground', { name: 'Underground' });
 

@@ -40,4 +40,21 @@ export interface ExtensionManifest {
    */
   core?: boolean;
   traitAdjectives: ManifestAdjective[];
+  /**
+   * Kind nouns the extension contributes (`expanse`), admitted only under its
+   * `use` line (ADR-366 D12, ADR-376 D2). Absent means none.
+   */
+  kindNouns?: string[];
+  /**
+   * Movement types the extension adds to the vehicle's `movement:` line
+   * (`open`), admitted only under its `use` line (ADR-366 D12). Absent means
+   * none.
+   */
+  movementTypes?: string[];
+  /**
+   * Extensions this one builds on (ADR-366 D12): `use <name>` without each
+   * of them is `analysis.<name>-needs-<required>`; no `use` line turns on
+   * another. Absent means none.
+   */
+  requires?: string[];
 }

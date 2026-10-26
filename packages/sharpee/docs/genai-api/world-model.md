@@ -419,8 +419,6 @@ export declare const EntityType: {
     readonly SUPPORTER: "supporter";
     /** Fixed decorative objects that can't be taken */
     readonly SCENERY: "scenery";
-    /** A directional exit (rarely used as entity) */
-    readonly EXIT: "exit";
     /** A physical adjacency between two rooms (ADR-173) */
     readonly WALL: "wall";
     /** A geographic grouping of rooms (ADR-149) */
@@ -668,6 +666,10 @@ export interface IWorldQuery {
         worn: IFEntity[];
     };
 }
+/** The world operations a behavior that places an item needs: the queries, and the move. */
+export interface IWorldPlacement extends IWorldQuery {
+    moveEntity(entityId: string, targetId: string | null): boolean;
+}
 /**
  * Behavior for entities that can contain other entities.
  *
@@ -717,13 +719,17 @@ export declare class ContainerBehavior extends Behavior {
      */
     static getExcludedTypes(container: IFEntity): string[] | undefined;
     /**
-     * Add an item to a container
+     * Put an item in a container: when the container is open, does not already
+     * hold the item, takes its type and has room for it, the item moves into
+     * the container. Behaviors own mutations, so this is the one place an
+     * item enters a container.
      * @param container The container to add to
      * @param item The item to add
-     * @param world World query interface for getting current state
-     * @returns Result describing what happened
+     * @param world The world, for the checks and the move
+     * @returns What happened; `success` is true only when the item moved, and a
+     *   failure names its reason and leaves the item where it was
      */
-    static addItem(container: IFEntity, item: IFEntity, world: IWorldQuery): IAddItemResult;
+    static addItem(container: IFEntity, item: IFEntity, world: IWorldPlacement): IAddItemResult;
     /**
      * Remove an item from a container
      * @param container The container to remove from
@@ -879,6 +885,7 @@ export declare class ReadableBehavior {
 ```typescript
 import { Behavior } from '../../behaviors/behavior.js';
 import { IFEntity } from '../../entities/if-entity.js';
+import type { WorldModel } from '../../world/WorldModel.js';
 /**
  * Behavior for light source entities.
  *
@@ -892,6 +899,17 @@ export declare class LightSourceBehavior extends Behavior {
      */
     static light(source: IFEntity): boolean;
     /**
+     * A switchable light's switch has just gone on: the light lights, if it
+     * has fuel, and the answer is whether it gives light now — the fact
+     * `if.event.lit` records, whatever mechanism (a switch or a flame) made it
+     * so (D20, Q8). Call only after the switch has gone on.
+     *
+     * @param source - The light source whose switch went on
+     * @param world - The world, for a powered device's power sources
+     * @returns true when the light is giving light now
+     */
+    static switchedOn(source: IFEntity, world: WorldModel): boolean;
+    /**
      * Turn off the light source
      */
     static extinguish(source: IFEntity): void;
@@ -904,6 +922,17 @@ export declare class LightSourceBehavior extends Behavior {
      * 3. Default to lit (for inherently glowing items)
      */
     static isLit(source: IFEntity): boolean;
+    /**
+     * Whether the light is giving light now — the one reading of it (ADR-374
+     * D10), for the room's light check and for seeing a lit lamp in the dark.
+     * A switchable light that needs power and has none gives no light, whatever
+     * its switch says; otherwise the light's own state (`isLit`).
+     *
+     * @param source - The light source
+     * @param world - The world, for a powered device's power sources
+     * @returns true when it is lighting its surroundings
+     */
+    static givesLight(source: IFEntity, world: WorldModel): boolean;
     /**
      * Get the brightness level
      */
@@ -932,61 +961,6 @@ export declare class LightSourceBehavior extends Behavior {
      * @returns 0-100, or undefined if unlimited fuel
      */
     static getFuelPercentage(source: IFEntity): number | undefined;
-}
-```
-
-### traits/exit/exitBehavior
-
-```typescript
-import { IFEntity } from '../../entities/if-entity.js';
-import { ExitTrait } from './exitTrait.js';
-import { type ISemanticEvent } from '@sharpee/core';
-/**
- * Behavior for exit entities.
- * Handles all logic related to movement through exits.
- */
-export declare class ExitBehavior {
-    static readonly requiredTraits: "exit"[];
-    /**
-     * Check if an exit matches a command
-     */
-    static matchesCommand(exit: IFEntity, command: string): boolean;
-    /**
-     * Check if an exit can be used
-     */
-    static canUse(exit: IFEntity, actor: IFEntity, world?: any): boolean;
-    /**
-     * Use an exit to move between locations
-     */
-    static use(exit: IFEntity, actor: IFEntity, world?: any): ISemanticEvent[];
-    /**
-     * Get reason why exit is blocked
-     */
-    static getBlockedReason(exit: IFEntity): string;
-    /**
-     * Get all exits from a location
-     */
-    static getExitsFrom(locationId: string, world: any): IFEntity[];
-    /**
-     * Get visible exits from a location
-     */
-    static getVisibleExitsFrom(locationId: string, world: any): IFEntity[];
-    /**
-     * Get listed exits from a location (for room descriptions)
-     */
-    static getListedExitsFrom(locationId: string, world: any): IFEntity[];
-    /**
-     * Create a bidirectional exit (creates reverse exit entity)
-     */
-    static createBidirectional(exitData: Partial<ExitTrait>, world?: any): IFEntity[];
-    /**
-     * Get reverse direction for standard directions
-     */
-    static getReverseDirection(direction?: string): string | undefined;
-    /**
-     * Get reverse command for standard commands
-     */
-    static getReverseCommand(command: string): string;
 }
 ```
 
@@ -1034,7 +1008,6 @@ export declare class ClimbableBehavior {
 ### traits/openable/openableBehavior
 
 ```typescript
-import { type EntityId } from '@sharpee/core';
 import { Behavior } from '../../behaviors/behavior.js';
 import { IFEntity } from '../../entities/if-entity.js';
 /**
@@ -1074,21 +1047,6 @@ export declare class OpenableBehavior extends Behavior {
      * Check if an entity can be closed
      */
     static canClose(entity: IFEntity): boolean;
-    /**
-     * Check if this entity requires a tool to open (ADR-230 D3b;
-     * mirrors LockableBehavior.requiresKey)
-     */
-    static requiresTool(entity: IFEntity): boolean;
-    /**
-     * The declared tools that open this entity, in declaration order —
-     * empty when it needs none. The implicit-instrument resolution (GH
-     * #241) reads this to find a held tool the player did not name.
-     */
-    static requiredTools(entity: IFEntity): EntityId[];
-    /**
-     * Check if a tool can open this entity (mirrors LockableBehavior.canUnlockWith)
-     */
-    static canOpenWith(entity: IFEntity, toolId: EntityId): boolean;
     /**
      * Open the entity
      * @returns Result describing what happened
@@ -1305,6 +1263,13 @@ export declare class BreakableBehavior extends Behavior {
      * @returns Result describing what happened
      */
     static break(entity: IFEntity, world: WorldModel): IBreakResult;
+    /**
+     * Whether a fall or a throw breaks the entity (ADR-373 D4): breakable,
+     * declared fragile, and not already broken.
+     * @param entity The entity to test
+     * @returns true when dropping it on a floor or throwing it would break it
+     */
+    static isFragile(entity: IFEntity): boolean;
     /**
      * Check if entity is broken
      */
@@ -1689,6 +1654,31 @@ export declare function getOppositeDirection(direction: DirectionType): Directio
  * Check if a value is a valid Direction constant
  */
 export declare function isDirection(value: unknown): value is DirectionType;
+/**
+ * The key of a passage: an exit reached by its own command words rather than
+ * a compass word (ADR-378 D1). `passage:` followed by the passage's first
+ * form, words hyphenated (`passage:climb-the-rope`). A passage has no
+ * opposite, so no reverse exit is ever inferred for one.
+ */
+export type PassageKey = `passage:${string}`;
+/**
+ * What a room's exits are keyed by (ADR-378 D1a): a compass direction or a
+ * passage. Every reader of exits takes this, not `DirectionType`.
+ */
+export type ExitKey = DirectionType | PassageKey;
+/** The prefix every passage key carries. */
+export declare const PASSAGE_KEY_PREFIX = "passage:";
+/**
+ * Check if a value is a passage key
+ */
+export declare function isPassageKey(value: unknown): value is PassageKey;
+/**
+ * Build a passage key from a passage's first form.
+ *
+ * @param words - The form's words, as the author wrote them
+ * @returns `passage:<words-hyphenated>`, lower-cased
+ */
+export declare function passageKey(words: readonly string[]): PassageKey;
 ```
 
 ### commands/parsed-command
@@ -1702,8 +1692,6 @@ export declare function isDirection(value: unknown): value is DirectionType;
 export interface IParsedObjectReference {
     /** Original text from input */
     text: string;
-    /** Possible vocabulary matches */
-    candidates: string[];
     /** Optional modifiers (adjectives, etc.) */
     modifiers?: string[];
 }
@@ -1782,18 +1770,36 @@ export interface IVerbPhrase {
 export interface INounPhrase {
     /** Indices into token array */
     tokens: number[];
-    /** Original complete text (e.g., "the small red ball") */
+    /**
+     * The content words, without the leading articles and determiners the
+     * parser split off ("small red ball" for "the small red ball"; ADR-385 D2).
+     * Empty for a bare all-phrase ("take all").
+     */
     text: string;
-    /** Head noun ("ball") */
+    /** Head noun: the last content word ("ball") */
     head: string;
-    /** Modifiers/adjectives ("small", "red") */
+    /** The content words before the head ("small", "red") */
     modifiers: string[];
-    /** Articles ("the", "a", "an") */
+    /** The leading articles the parser split off ("the", "a", "an"), normalized */
     articles: string[];
-    /** Determiners ("all", "every", "some") */
+    /**
+     * The leading determiners the parser split off ("my", "some", "all"),
+     * normalized; for an all-phrase the all word comes first ("everything").
+     */
     determiners: string[];
-    /** Vocabulary candidates for the head noun */
-    candidates: string[];
+    /**
+     * A determiner marked the phrase as the actor's own ("my"): resolution
+     * prefers what the actor carries or wears when something there matches
+     * (ADR-385 D2).
+     */
+    ownedByActor?: boolean;
+    /**
+     * The entity ids a constrained grammar slot admitted at parse time
+     * (ADR-385 D4). The validator resolves such a phrase only among its own
+     * candidates that are also here; the set narrows and never adds. Absent
+     * for a phrase from an unconstrained slot. A list item carries its own.
+     */
+    scope?: import('@sharpee/core').EntityId[];
     /** True if this represents "all" (e.g., "take all") */
     isAll?: boolean;
     /** True if this is a list of objects (e.g., "take knife and lamp") */
@@ -1804,6 +1810,12 @@ export interface INounPhrase {
     entityId?: string;
     /** True if this noun phrase was a pronoun (e.g., "it", "them") */
     wasPronoun?: boolean;
+    /**
+     * The matched rule's slot this phrase filled (`item`, `peg`), so a reader
+     * can bind it by name whichever seat it sits in. Absent when the phrase
+     * came from no named slot.
+     */
+    slot?: string;
 }
 /**
  * Preposition phrase structure
@@ -1835,8 +1847,6 @@ export interface IParsedCommand {
     };
     /** Which grammar pattern matched (e.g., "VERB_NOUN_PREP_NOUN") */
     pattern: string;
-    /** Parser confidence in this interpretation */
-    confidence: number;
     /** Identified action (for compatibility) */
     action: string;
     /** Additional parsed elements */
@@ -1849,14 +1859,18 @@ export interface IParsedCommand {
     instrument?: INounPhrase;
     /**
      * Conversation topic for ".topic()" slots (ADR-231 D4)
-     * The parser fills `text` only (verbatim, articles preserved) — it never
-     * resolves entities. `entity` exists for shape parity with
-     * IValidatedCommand.topic and is populated by the validator's
-     * entity-first attempt, never here.
+     * The parser fills `text` (verbatim, articles preserved, for rendering and
+     * quoted-row matching) and `phrase` (the same words with their leading
+     * articles and determiners split off, ADR-385 D2, for the validator's
+     * entity-first attempt) — it never resolves entities. `entity` exists for
+     * shape parity with IValidatedCommand.topic and is populated by the
+     * validator, never here.
      */
     topic?: {
         /** Verbatim topic text as typed */
         text: string;
+        /** The topic as a noun phrase: content words, articles and determiners split once */
+        phrase: INounPhrase;
         /** Never set by the parser; see IValidatedCommand.topic */
         entity?: import('@sharpee/core').EntityId;
     };
@@ -1883,15 +1897,26 @@ export interface IParsedCommand {
  */
 export type ParseErrorCode = 'NO_VERB' | 'UNKNOWN_VERB' | 'MISSING_OBJECT' | 'MISSING_INDIRECT' | 'ENTITY_NOT_FOUND' | 'SCOPE_VIOLATION' | 'AMBIGUOUS_INPUT' | 'UNKNOWN_COMMAND' | 'INVALID_SYNTAX';
 /**
- * Errors that can occur during parsing
+ * The bindings a parse error's language template reads: the verb the parser
+ * recognised, the content words of the phrase that named nothing, and the
+ * slot the input stopped short of. Each is present only when the parser has it.
+ */
+export interface ParseErrorParams {
+    verb?: string;
+    noun?: string;
+    slot?: string;
+}
+/**
+ * Errors that can occur during parsing. The error carries no sentence: the
+ * language renders `messageId` with `params` (ADR-387 D3).
  */
 export interface IParseError {
     type: 'PARSE_ERROR';
     code: ParseErrorCode;
-    /** Message ID for lang layer lookup (e.g., 'parser.error.unknownVerb') */
+    /** The language template that words this failure (e.g., 'parser.error.unknownVerb') */
     messageId: string;
-    /** Fallback message if lang layer lookup fails */
-    message: string;
+    /** The template's bindings */
+    params: ParseErrorParams;
     /** Original input */
     input: string;
     /** Character position of error (if applicable) */
@@ -1902,6 +1927,10 @@ export interface IParseError {
     failedWord?: string;
     /** Which slot failed (directObject, indirectObject) */
     slot?: string;
+    /** For SCOPE_VIOLATION: the entity the matcher found in view but the slot's base did not admit (ADR-385 D8) */
+    entityId?: string;
+    /** For SCOPE_VIOLATION: the base the slot required, which words the message */
+    requiredScope?: 'carried' | 'touchable' | 'visible';
     /** Suggestion for correction */
     suggestion?: string;
     /** For AMBIGUOUS_INPUT: the candidates */
@@ -1940,8 +1969,15 @@ export interface IValidatedCommand {
     parsed: IParsedCommand;
     /** ID of the action that will handle this command */
     actionId: string;
-    /** Resolved direct object if present */
+    /** Resolved direct object if present (a single noun; unset for a list or `all`) */
     directObject?: IValidatedObjectReference;
+    /**
+     * The resolved items of a list direct object (`take sword and lantern`),
+     * in the order typed (ADR-385 D5). Each resolved by the single-noun path;
+     * an item that named nothing or tied failed validation instead. Unset for
+     * a single noun and for `all`, whose expansion stays with the action.
+     */
+    directObjects?: IValidatedObjectReference[];
     /** Resolved indirect object if present */
     indirectObject?: IValidatedObjectReference;
     /**
@@ -2105,10 +2141,14 @@ export declare const TraitType: {
     readonly SCENERY: "scenery";
     /** Sees in the dark (ADR-328 D5) — presence is the fact */
     readonly NIGHT_VISION: "if.trait.night_vision";
+    /** Present in many rooms (ADR-374 D1) */
+    readonly BACKDROP: "if.trait.backdrop";
     readonly OPENABLE: "openable";
     readonly LOCKABLE: "lockable";
     readonly CUTTABLE: "cuttable";
     readonly DIGGABLE: "diggable";
+    readonly FLAMMABLE: "flammable";
+    readonly PURCHASABLE: "purchasable";
     readonly SWITCHABLE: "switchable";
     readonly READABLE: "readable";
     readonly LIGHT_SOURCE: "lightSource";
@@ -2122,7 +2162,6 @@ export declare const TraitType: {
     readonly REGION: "region";
     readonly SCENE: "scene";
     readonly ACTOR: "actor";
-    readonly EXIT: "exit";
     readonly WEAPON: "weapon";
     readonly BREAKABLE: "breakable";
     readonly DESTRUCTIBLE: "destructible";
@@ -2134,7 +2173,12 @@ export declare const TraitType: {
     readonly OPEN_INVENTORY: "openInventory";
     readonly CHARACTER_MODEL: "characterModel";
     readonly VEHICLE: "vehicle";
+    readonly ABOARD: "aboard";
     readonly ENTERABLE: "enterable";
+    readonly EXPANSE: "expanse";
+    readonly FLOATING: "floating";
+    readonly SIGHT: "sight";
+    readonly LANDMARK: "landmark";
     readonly CONCEALMENT: "if.trait.concealment";
     readonly CONCEALED_STATE: "if.trait.concealed_state";
     readonly ACOUSTIC: "if.trait.acoustic";
@@ -2205,6 +2249,8 @@ import { OpenableTrait } from './openable/openableTrait.js';
 import { LockableTrait } from './lockable/lockableTrait.js';
 import { CuttableTrait } from './cuttable/cuttableTrait.js';
 import { DiggableTrait } from './diggable/diggableTrait.js';
+import { FlammableTrait } from './flammable/flammableTrait.js';
+import { PurchasableTrait } from './purchasable/purchasableTrait.js';
 import { SwitchableTrait } from './switchable/switchableTrait.js';
 import { ReadableTrait } from './readable/readableTrait.js';
 import { LightSourceTrait } from './light-source/lightSourceTrait.js';
@@ -2213,7 +2259,6 @@ import { ClimbableTrait } from './climbable/climbableTrait.js';
 import { RegionTrait } from './region/regionTrait.js';
 import { SceneTrait } from './scene/sceneTrait.js';
 import { ActorTrait } from './actor/actorTrait.js';
-import { ExitTrait } from './exit/exitTrait.js';
 import { PullableTrait } from './pullable/pullableTrait.js';
 import { AttachedTrait } from './attached/attachedTrait.js';
 import { PushableTrait } from './pushable/pushableTrait.js';
@@ -2230,7 +2275,12 @@ import { NpcTrait } from './npc/npcTrait.js';
 import { OpenInventoryTrait } from './open-inventory/openInventoryTrait.js';
 import { CharacterModelTrait } from './character-model/characterModelTrait.js';
 import { VehicleTrait } from './vehicle/vehicleTrait.js';
+import { AboardTrait } from './vehicle/aboardTrait.js';
 import { EnterableTrait } from './enterable/enterableTrait.js';
+import { ExpanseTrait } from './expanse/expanseTrait.js';
+import { FloatingTrait } from './expanse/floatingTrait.js';
+import { SightTrait } from './expanse/sightTrait.js';
+import { LandmarkTrait } from './expanse/landmarkTrait.js';
 import { StoryInfoTrait } from './story-info/storyInfoTrait.js';
 /**
  * Map of trait types to their constructors
@@ -2268,7 +2318,7 @@ export declare function createTrait(type: TraitType, data?: any): InstanceType<I
 export declare function rehydrateTrait(traitData: {
     type: string;
 } & Record<string, unknown>): ITrait;
-export { IdentityTrait, ContainerTrait, SupporterTrait, RoomTrait, WearableTrait, EdibleTrait, SceneryTrait, OpenableTrait, LockableTrait, CuttableTrait, DiggableTrait, SwitchableTrait, ReadableTrait, LightSourceTrait, DoorTrait, RegionTrait, SceneTrait, ActorTrait, ExitTrait, ClimbableTrait, PullableTrait, AttachedTrait, PushableTrait, ButtonTrait, MoveableSceneryTrait, WeaponTrait, BreakableTrait, DestructibleTrait, CombatantTrait, EquippedTrait, HealthTrait, DeadlyRoomTrait, NpcTrait, OpenInventoryTrait, CharacterModelTrait, VehicleTrait, EnterableTrait, StoryInfoTrait };
+export { IdentityTrait, ContainerTrait, SupporterTrait, RoomTrait, WearableTrait, EdibleTrait, SceneryTrait, OpenableTrait, LockableTrait, CuttableTrait, DiggableTrait, FlammableTrait, PurchasableTrait, SwitchableTrait, ReadableTrait, LightSourceTrait, DoorTrait, RegionTrait, SceneTrait, ActorTrait, ClimbableTrait, PullableTrait, AttachedTrait, PushableTrait, ButtonTrait, MoveableSceneryTrait, WeaponTrait, BreakableTrait, DestructibleTrait, CombatantTrait, EquippedTrait, HealthTrait, DeadlyRoomTrait, NpcTrait, OpenInventoryTrait, CharacterModelTrait, VehicleTrait, AboardTrait, EnterableTrait, ExpanseTrait, FloatingTrait, SightTrait, LandmarkTrait, StoryInfoTrait };
 ```
 
 ### state-adjectives
@@ -2629,14 +2679,13 @@ export declare class IdentityBehavior extends Behavior {
  * match time, so Chord-loaded and TS-authored entities behave identically
  * by construction, and runtime renames can never leave stale vocabulary.
  *
- * Public interface: `deriveNameVocabulary(name)`, `NAME_VOCABULARY_STOPWORDS`.
+ * The stopwords are the language's (ADR-387 D2): the caller hands them in,
+ * from the world's language words or the compiler's locale facts, and this
+ * module holds no English.
+ *
+ * Public interface: `deriveNameVocabulary(name, stopwords)`.
  * Owner context: world-model identity area (naming/identity utilities).
  */
-/**
- * Stopwords dropped from name vocabulary (PIN 2's content-word definition).
- * "bag of holding" → {bag, holding}; "the crystal skull" → {crystal, skull}.
- */
-export declare const NAME_VOCABULARY_STOPWORDS: ReadonlySet<string>;
 /**
  * Derive the content-word vocabulary of an entity name.
  *
@@ -2644,12 +2693,121 @@ export declare const NAME_VOCABULARY_STOPWORDS: ReadonlySet<string>;
  * (invariant: vocabulary is always a derivation of the CURRENT name).
  *
  * @param name The entity's display name (any casing/whitespace).
+ * @param stopwords The language's name stopwords (English: the, a, an, of).
  * @returns Lowercased content words in order of appearance, deduplicated:
- *   whitespace-tokenized, stopwords ({the, a, an, of}) removed. Hyphenated
- *   tokens stay single words ("jack-in-the-box" → ["jack-in-the-box"]).
- *   Empty or stopword-only names yield [].
+ *   whitespace-tokenized, stopwords removed. Hyphenated tokens stay single
+ *   words ("jack-in-the-box" → ["jack-in-the-box"]). Empty or stopword-only
+ *   names yield [].
  */
-export declare function deriveNameVocabulary(name: string): string[];
+export declare function deriveNameVocabulary(name: string, stopwords: readonly string[]): string[];
+```
+
+### traits/identity/noun-match
+
+```typescript
+/**
+ * The one noun matcher.
+ *
+ * Purpose: decide whether a noun phrase names an entity, and how well. Every
+ * reader that asks "which entities does this phrase name" calls `matchNoun`,
+ * so the parse-time gate, the validator, list expansion and the IDE's
+ * Incomplete view cannot disagree.
+ *
+ * The tiers, in order:
+ * - the self words name the observer, at the exact tier;
+ * - exact: the whole phrase equals the name, an alias or the type, tried
+ *   first with the leading articles restored (so "The Grail" survives),
+ *   then as given;
+ * - words: every content word of the phrase is in the vocabulary (name
+ *   words, alias words, adjectives);
+ * - any content word found nowhere matches nothing.
+ *
+ * `matchNoun` reads a naming surface, never an entity. `namingSurfaceOf`
+ * builds the surface from the world, and is the only code that knows walls
+ * have per-side adjectives or who the observer is.
+ *
+ * Public interface: `matchNoun`, `namingSurfaceOf`, `vocabularyOf`, `NamingSurface`,
+ * `NounQuery`, `NounMatch`, `NounMatchTier`.
+ * Owner context: world-model identity area (naming).
+ *
+ * The self words and the name stopwords are the language's: the surface
+ * carries the world's language words, assigned at install, and this module
+ * holds no English.
+ *
+ * References: ADR-385 D1 (one matcher), ADR-231 D3 and PIN 2 (the tiers),
+ * ADR-173 (per-side wall adjectives), ADR-327 (the self words name the
+ * player role), ADR-387 D2 (the words come from the world).
+ */
+import type { EntityId } from '@sharpee/core';
+import type { LanguageWords } from '@sharpee/if-domain';
+import type { IFEntity } from '../../entities/if-entity.js';
+import type { WorldModel } from '../../world/WorldModel.js';
+/** What a noun phrase is matched against: an entity's naming, as data. */
+export interface NamingSurface {
+    /** The display name. */
+    readonly name: string;
+    /** Whole alternative names. Their words join the vocabulary. */
+    readonly aliases: readonly string[];
+    /** Authored adjectives. They join the vocabulary. */
+    readonly adjectives: readonly string[];
+    /** The entity type, matched only as a whole phrase. */
+    readonly type?: string;
+    /** True when the self words name this entity. */
+    readonly isObserver: boolean;
+    /** The language's self words and name stopwords, from the world this surface was built from. */
+    readonly words: LanguageWords;
+}
+/**
+ * A noun phrase as the matcher reads it. An `INounPhrase` is one. The
+ * English parser has already split the leading articles and determiners off
+ * `text` (ADR-385 D2); the matcher strips nothing itself.
+ */
+export interface NounQuery {
+    /** The phrase's content words (leading articles and determiners split off). */
+    readonly text: string;
+    /** The leading articles the parser split off, for the article-first exact try. */
+    readonly articles?: readonly string[];
+}
+/** The tier a match reached: exact outranks words. */
+export type NounMatchTier = 'exact' | 'words';
+/** How well a phrase names a surface. More matched words wins within a tier. */
+export interface NounMatch {
+    readonly tier: NounMatchTier;
+    readonly wordsMatched: number;
+}
+/**
+ * Match a noun phrase against a naming surface.
+ *
+ * @param surface the entity's naming, from `namingSurfaceOf`
+ * @param query the phrase, with any leading articles the parser split off
+ * @returns the tier and the matched-word count, or null when the phrase does
+ *   not name the surface
+ */
+export declare function matchNoun(surface: NamingSurface, query: NounQuery): NounMatch | null;
+/**
+ * The words a surface answers to at the words tier: name content words,
+ * alias content words and adjectives, lowercased. Derived on demand, never
+ * stored, so a rename cannot leave stale vocabulary.
+ *
+ * @param surface the entity's naming
+ * @returns the vocabulary set
+ */
+export declare function vocabularyOf(surface: NamingSurface): Set<string>;
+/**
+ * Build an entity's naming surface as the observer sees it.
+ *
+ * A wall's adjectives are those of the side facing the observer's room, and
+ * none when the observer is in neither of its rooms (ADR-173). Every other
+ * entity's come from its identity trait.
+ *
+ * @param world the world the entity lives in
+ * @param entity the entity to name
+ * @param observerId the entity doing the naming (the player, or an actor)
+ * @returns the surface `matchNoun` reads, derived from the current state
+ * @throws Error when the world was never given its language words
+ *   (`WorldModel.getLanguageWords`)
+ */
+export declare function namingSurfaceOf(world: WorldModel, entity: IFEntity, observerId: EntityId): NamingSurface;
 ```
 
 ### traits/container/containerTrait
@@ -2740,7 +2898,7 @@ export declare function hasContainerProperties(trait: any): trait is IContainerC
 ```typescript
 import { ITrait } from '../trait.js';
 import { type SnippetMap } from '@sharpee/if-domain';
-import { DirectionType } from '../../constants/directions.js';
+import { ExitKey } from '../../constants/directions.js';
 /**
  * Map position hint for an exit (ADR-113).
  * Overrides direction-based positioning in the auto-mapper.
@@ -2753,6 +2911,17 @@ export interface IExitMapHint {
     /** Grid offset Z (-1 = down, +1 = up) */
     dz?: number;
 }
+/**
+ * Who may take a way beyond a walker (ADR-366 D6, ADR-378 D6): the steered
+ * vehicles by id, and the pushed things — every pushable (`'any'`) or these
+ * by id. Read only by the traversal system (`TraversalBehavior.admitsMover`).
+ */
+export interface Admittance {
+    /** The steered vehicles admitted, by entity id. */
+    vehicles: string[];
+    /** The pushed things admitted: every pushable, or these entity ids. */
+    pushed: 'any' | string[];
+}
 export interface IExitInfo {
     /** The destination room ID (must be an entity ID, not a name) */
     destination: string;
@@ -2760,14 +2929,21 @@ export interface IExitInfo {
     via?: string;
     /** Optional map positioning hint (ADR-113) */
     mapHint?: IExitMapHint;
+    /**
+     * This way's own admittance (ADR-378 D6), read field by field before the
+     * destination room's: an exit line's `admits` writes both fields; a
+     * thing's `pushing` block (D6b) adds its id to `pushed` alone. A field
+     * absent here is the room's to decide.
+     */
+    admits?: Partial<Admittance>;
 }
 export interface IRoomData {
     /** Whether this room has been visited by the player */
     visited?: boolean;
-    /** Exits from this room */
-    exits?: Partial<Record<DirectionType, IExitInfo>>;
+    /** Exits from this room, by compass direction or passage key (ADR-378 D1a) */
+    exits?: Partial<Record<ExitKey, IExitInfo>>;
     /** Custom messages for blocked exits */
-    blockedExits?: Partial<Record<DirectionType, string>>;
+    blockedExits?: Partial<Record<ExitKey, string>>;
     /** Whether this is an outdoor location */
     outdoor?: boolean;
     /**
@@ -2811,6 +2987,12 @@ export interface IRoomData {
     walls?: string[];
     /** Tags for categorizing rooms */
     tags?: string[];
+    /**
+     * Who may arrive here beyond a walker (ADR-366 D6, ADR-378 D6). Read by
+     * the traversal system for every way into this room whose exit does not
+     * decide the field itself; a room admits nothing by default.
+     */
+    admits?: Admittance;
     /** Capacity constraints for the room (optional) */
     capacity?: {
         /** Maximum total weight the room can hold (in kg) */
@@ -2836,8 +3018,8 @@ export declare class RoomTrait implements ITrait, IRoomData {
     static readonly type: "room";
     readonly type: "room";
     visited: boolean;
-    exits: Partial<Record<DirectionType, IExitInfo>>;
-    blockedExits?: Partial<Record<DirectionType, string>>;
+    exits: Partial<Record<ExitKey, IExitInfo>>;
+    blockedExits?: Partial<Record<ExitKey, string>>;
     outdoor: boolean;
     requiresLight: boolean;
     isOutdoors: boolean;
@@ -2850,6 +3032,7 @@ export declare class RoomTrait implements ITrait, IRoomData {
     regionId?: string;
     walls: string[];
     tags: string[];
+    admits: Admittance;
     capacity?: {
         maxWeight?: number;
         maxVolume?: number;
@@ -2872,7 +3055,7 @@ import { ITrait } from '../trait.js';
 import { IExitInfo } from './roomTrait.js';
 import { IComputedExitDeclaration } from './computedExitContract.js';
 import { type ISemanticEvent } from '@sharpee/core';
-import { DirectionType } from '../../constants/directions.js';
+import { ExitKey } from '../../constants/directions.js';
 import type { ExitResolution, ExitResolverContext } from '../../capabilities/exit-resolver-binding.js';
 /**
  * Behavior for room entities.
@@ -2885,35 +3068,35 @@ export declare class RoomBehavior extends Behavior {
     /**
      * Get the exit in a given direction
      */
-    static getExit(room: IFEntity, direction: DirectionType): IExitInfo | null;
+    static getExit(room: IFEntity, direction: ExitKey): IExitInfo | null;
     /**
      * Check if an exit exists in a direction
      */
-    static hasExit(room: IFEntity, direction: DirectionType): boolean;
+    static hasExit(room: IFEntity, direction: ExitKey): boolean;
     /**
      * Check if an exit is blocked
      */
-    static isExitBlocked(room: IFEntity, direction: DirectionType): boolean;
+    static isExitBlocked(room: IFEntity, direction: ExitKey): boolean;
     /**
      * Get blocked exit message
      */
-    static getBlockedMessage(room: IFEntity, direction: DirectionType): string | undefined;
+    static getBlockedMessage(room: IFEntity, direction: ExitKey): string | undefined;
     /**
      * Add or update an exit in this room
      */
-    static setExit(room: IFEntity, direction: DirectionType, destination: string, via?: string): void;
+    static setExit(room: IFEntity, direction: ExitKey, destination: string, via?: string): void;
     /**
      * Block an exit with a message
      */
-    static blockExit(room: IFEntity, direction: DirectionType, message: string): ISemanticEvent[];
+    static blockExit(room: IFEntity, direction: ExitKey, message: string): ISemanticEvent[];
     /**
      * Unblock an exit
      */
-    static unblockExit(room: IFEntity, direction: DirectionType): ISemanticEvent[];
+    static unblockExit(room: IFEntity, direction: ExitKey): ISemanticEvent[];
     /**
      * Remove an exit from this room
      */
-    static removeExit(room: IFEntity, direction: DirectionType): void;
+    static removeExit(room: IFEntity, direction: ExitKey): void;
     /**
      * Mark room as visited
      */
@@ -2925,11 +3108,11 @@ export declare class RoomBehavior extends Behavior {
     /**
      * Get all exits from the room
      */
-    static getAllExits(room: IFEntity): Map<DirectionType, IExitInfo>;
+    static getAllExits(room: IFEntity): Map<ExitKey, IExitInfo>;
     /**
      * Get available (non-blocked) exits
      */
-    static getAvailableExits(room: IFEntity): Map<DirectionType, IExitInfo>;
+    static getAvailableExits(room: IFEntity): Map<ExitKey, IExitInfo>;
     /**
      * Find the computed-exit declaration governing a direction, if any (ADR-295 D3).
      *
@@ -2946,7 +3129,7 @@ export declare class RoomBehavior extends Behavior {
      * @returns The declaring trait and its declaration, or null when the
      *   direction is not governed by a computed exit
      */
-    static getComputedExitDeclaration(room: IFEntity, direction: DirectionType): {
+    static getComputedExitDeclaration(room: IFEntity, direction: ExitKey): {
         trait: ITrait;
         declaration: IComputedExitDeclaration;
     } | null;
@@ -2966,7 +3149,7 @@ export declare class RoomBehavior extends Behavior {
      *   topology governs (no declaration, no registered resolver — warned as a
      *   story wiring defect, ADR-295 D3 — or the resolver deferred)
      */
-    static resolveExit(room: IFEntity, direction: DirectionType, ctx: ExitResolverContext): ExitResolution;
+    static resolveExit(room: IFEntity, direction: ExitKey, ctx: ExitResolverContext): ExitResolution;
     /**
      * Check if room is outdoors
      */
@@ -3011,7 +3194,7 @@ export declare class RoomBehavior extends Behavior {
  * `isComputedExitCarrier`.
  * Owner: world-model (room domain, ADR-295 D3).
  */
-import type { DirectionType } from '../../constants/directions.js';
+import type { ExitKey } from '../../constants/directions.js';
 import type { ITrait } from '../trait.js';
 /**
  * The declared outcome space of one computed exit (ADR-295 D3).
@@ -3023,6 +3206,13 @@ import type { ITrait } from '../trait.js';
 export interface IComputedExitDeclaration {
     /** Room entity ids the resolver may return for this direction. */
     candidates: string[];
+    /**
+     * The door every traversal of this way passes, whatever the destination
+     * drawn (a vehicle's hatch, ADR-366 D7) — pure data, so the traversal
+     * system's door gate reads it at validate time as it reads a static
+     * exit's. Absent when the way has no door of its own.
+     */
+    via?: string;
 }
 /**
  * The data shape a computed-exit-declaring trait carries (ADR-295 D3).
@@ -3034,7 +3224,7 @@ export interface IComputedExitDeclaration {
  *   exposes statically; contributes no existence beyond the static map.
  */
 export interface IComputedExitCarrier {
-    computedExits?: Partial<Record<DirectionType, IComputedExitDeclaration>>;
+    computedExits?: Partial<Record<ExitKey, IComputedExitDeclaration>>;
     computedExitsAll?: IComputedExitDeclaration;
 }
 /**
@@ -3049,9 +3239,9 @@ export declare function isComputedExitCarrier(trait: ITrait): trait is ITrait & 
 ### traits/openable/openableTrait
 
 ```typescript
-import { type EntityId } from '@sharpee/core';
 import { ITrait } from '../trait.js';
-export interface IOpenableData {
+import { IToolGated, ToolRequirement } from '../tool-requirement.js';
+export interface IOpenableData extends IToolGated {
     /** Whether the entity is currently open */
     isOpen?: boolean;
     /** Whether the entity starts open */
@@ -3076,10 +3266,8 @@ export interface IOpenableData {
     openDescription?: string;
     /** Description when closed (used by computed description getter on IFEntity) */
     closedDescription?: string;
-    /** Single tool entity required to open this (ADR-230 D3b; mirrors ILockableData.keyId) */
-    toolId?: EntityId;
-    /** Multiple tool entities that can open this (mirrors ILockableData.keyIds) */
-    toolIds?: EntityId[];
+    /** The tool opening needs (ADR-230 D3b); absent, opening needs none */
+    toolRequirement?: ToolRequirement;
 }
 /**
  * Openable trait for entities that can be opened and closed.
@@ -3103,8 +3291,7 @@ export declare class OpenableTrait implements ITrait, IOpenableData {
     closeSound?: string;
     openDescription?: string;
     closedDescription?: string;
-    toolId?: EntityId;
-    toolIds?: EntityId[];
+    toolRequirement?: ToolRequirement;
     constructor(data?: IOpenableData);
 }
 ```
@@ -3175,22 +3362,16 @@ export declare class LockableTrait implements ITrait, ILockableData {
 ### traits/cuttable/cuttableTrait
 
 ```typescript
-import { type EntityId } from '@sharpee/core';
 import { ITrait } from '../trait.js';
+import { IToolGated, ToolRequirement } from '../tool-requirement.js';
 /**
  * Data for the cuttable trait (ADR-230 D3c).
  *
- * Tool fields mirror ILockableData's key config (PIN 2 shared shape with
- * OpenableTrait's tool fields): a declared requirement makes the cutting
- * action refuse wrong/missing tools; no requirement means any explicit
- * tool (or none) passes validation.
+ * A declared tool requirement makes the cutting action refuse wrong or
+ * missing tools; no requirement means any explicit tool (or none) passes
+ * validation.
  */
-export interface ICuttableData {
-    /** Single tool entity required to cut this (mirrors ILockableData.keyId) */
-    toolId?: EntityId;
-    /** Multiple tool entities that can cut this (mirrors ILockableData.keyIds) */
-    toolIds?: EntityId[];
-}
+export type ICuttableData = IToolGated;
 /**
  * Cuttable trait — marks an entity the cutting action may target.
  *
@@ -3201,70 +3382,99 @@ export interface ICuttableData {
  * implementation is an authoring error (load-time in Chord; runtime
  * safety-net refusal otherwise).
  *
- * This trait contains only data - eligibility/tool logic is in
- * CuttableBehavior.
+ * This trait contains only data; the tool check is the shared
+ * tool-requirement resolver's.
  */
 export declare class CuttableTrait implements ITrait, ICuttableData {
     static readonly type: "cuttable";
     readonly type: "cuttable";
-    toolId?: EntityId;
-    toolIds?: EntityId[];
+    toolRequirement?: ToolRequirement;
     constructor(data?: ICuttableData);
 }
 ```
 
-### traits/cuttable/cuttableBehavior
+### traits/flammable/flammableTrait
 
 ```typescript
-import { type EntityId } from '@sharpee/core';
-import { Behavior } from '../../behaviors/behavior.js';
-import { IFEntity } from '../../entities/if-entity.js';
 /**
- * Behavior for cuttable entities (ADR-230 D3c).
+ * Flammable trait (ADR-371 D2) — marks an entity the burning action may
+ * target, and carries its tool requirement. Cuttable's shape, for burning.
  *
- * Pure predicates only — the cutting action's validate() consults these;
- * the cut mutation itself belongs to the entity's registered
- * implementation, never here.
+ * Public interface: FlammableTrait, IFlammableData.
+ * Owner context: @sharpee/world-model / traits
  */
-export declare class CuttableBehavior extends Behavior {
-    static requiredTraits: "cuttable"[];
-    /**
-     * Check if this entity requires a tool to cut (mirrors
-     * LockableBehavior.requiresKey / OpenableBehavior.requiresTool)
-     */
-    static requiresTool(entity: IFEntity): boolean;
-    /**
-     * The declared tools that cut this entity, in declaration order —
-     * empty when it needs none. The implicit-instrument resolution (GH
-     * #241) reads this to find a held tool the player did not name.
-     */
-    static requiredTools(entity: IFEntity): EntityId[];
-    /**
-     * Check if a tool can cut this entity (mirrors LockableBehavior.canUnlockWith)
-     */
-    static canCutWith(entity: IFEntity, toolId: EntityId): boolean;
+import { ITrait } from '../trait.js';
+import { IToolGated, ToolRequirement } from '../tool-requirement.js';
+/**
+ * Data for the flammable trait. A declared tool requirement makes the
+ * burning action refuse wrong or missing tools; no requirement means any
+ * explicit tool (or none) passes validation.
+ */
+export type IFlammableData = IToolGated;
+/**
+ * Flammable trait — eligibility and tool data only. The burn OUTCOME is the
+ * entity's own registered implementation (an ADR-090 capability behavior, or
+ * a Chord `on the player burning` interceptor) — the standard burning action
+ * never mutates state itself. A flammable entity with no implementation is an
+ * authoring error (load-time in Chord; runtime safety-net refusal otherwise).
+ */
+export declare class FlammableTrait implements ITrait, IFlammableData {
+    static readonly type: "flammable";
+    readonly type: "flammable";
+    toolRequirement?: ToolRequirement;
+    constructor(data?: IFlammableData);
+}
+```
+
+### traits/purchasable/purchasableTrait
+
+```typescript
+/**
+ * Purchasable trait (ADR-372 D5) — marks a thing the buying action may
+ * target and carries its price. The money itself is not here: whoever
+ * registers the buying capability behavior on this trait owns the purse
+ * (the Chord story-loader spends a counter on the buyer named by
+ * `currency`; a TypeScript story registers its own).
+ *
+ * Public interface: PurchasableTrait, IPurchasableData.
+ * Owner context: @sharpee/world-model / traits
+ */
+import { ITrait } from '../trait.js';
+/** Data for the purchasable trait: a price in one named currency. */
+export interface IPurchasableData {
+    /** What the thing costs, a non-negative whole number */
+    price: number;
+    /** The currency word the price is in (`credits`) — the purse the behavior spends */
+    currency: string;
+}
+/**
+ * Purchasable trait — eligibility and price only. The sale's outcome is the
+ * thing's registered implementation of `if.action.buying` (an ADR-090
+ * capability behavior); the standard buying action never mutates state.
+ */
+export declare class PurchasableTrait implements ITrait, IPurchasableData {
+    static readonly type: "purchasable";
+    static readonly capabilities: readonly ["if.action.buying"];
+    readonly type: "purchasable";
+    price: number;
+    currency: string;
+    constructor(data: IPurchasableData);
 }
 ```
 
 ### traits/diggable/diggableTrait
 
 ```typescript
-import { type EntityId } from '@sharpee/core';
 import { ITrait } from '../trait.js';
+import { IToolGated, ToolRequirement } from '../tool-requirement.js';
 /**
  * Data for the diggable trait (ADR-230 Phase 6 (sketch ruling 6)).
  *
- * Tool fields mirror ILockableData's key config (PIN 2 shared shape with
- * OpenableTrait's tool fields): a declared requirement makes the digging
- * action refuse wrong/missing tools; no requirement means any explicit
- * tool (or none) passes validation.
+ * A declared tool requirement makes the digging action refuse wrong or
+ * missing tools; no requirement means any explicit tool (or none) passes
+ * validation.
  */
-export interface IDiggableData {
-    /** Single tool entity required to dig this (mirrors ILockableData.keyId) */
-    toolId?: EntityId;
-    /** Multiple tool entities that can dig this (mirrors ILockableData.keyIds) */
-    toolIds?: EntityId[];
-}
+export type IDiggableData = IToolGated;
 /**
  * Diggable trait — marks an entity the digging action may target.
  *
@@ -3275,48 +3485,14 @@ export interface IDiggableData {
  * implementation is an authoring error (load-time in Chord; runtime
  * safety-net refusal otherwise).
  *
- * This trait contains only data - eligibility/tool logic is in
- * DiggableBehavior.
+ * This trait contains only data; the tool check is the shared
+ * tool-requirement resolver's.
  */
 export declare class DiggableTrait implements ITrait, IDiggableData {
     static readonly type: "diggable";
     readonly type: "diggable";
-    toolId?: EntityId;
-    toolIds?: EntityId[];
+    toolRequirement?: ToolRequirement;
     constructor(data?: IDiggableData);
-}
-```
-
-### traits/diggable/diggableBehavior
-
-```typescript
-import { type EntityId } from '@sharpee/core';
-import { Behavior } from '../../behaviors/behavior.js';
-import { IFEntity } from '../../entities/if-entity.js';
-/**
- * Behavior for diggable entities (ADR-230 Phase 6 (sketch ruling 6)).
- *
- * Pure predicates only — the digging action's validate() consults these;
- * the cut mutation itself belongs to the entity's registered
- * implementation, never here.
- */
-export declare class DiggableBehavior extends Behavior {
-    static requiredTraits: "diggable"[];
-    /**
-     * Check if this entity requires a tool to cut (mirrors
-     * LockableBehavior.requiresKey / OpenableBehavior.requiresTool)
-     */
-    static requiresTool(entity: IFEntity): boolean;
-    /**
-     * The declared tools that dig this entity, in declaration order —
-     * empty when it needs none. The implicit-instrument resolution (GH
-     * #241) reads this to find a held tool the player did not name.
-     */
-    static requiredTools(entity: IFEntity): EntityId[];
-    /**
-     * Check if a tool can cut this entity (mirrors LockableBehavior.canUnlockWith)
-     */
-    static canDigWith(entity: IFEntity, toolId: EntityId): boolean;
 }
 ```
 
@@ -3365,13 +3541,14 @@ export declare class ReadableTrait implements ITrait {
 
 ```typescript
 import { ITrait } from '../trait.js';
+import { IToolGated, ToolRequirement } from '../tool-requirement.js';
 /**
  * LightSource trait allows entities to provide illumination.
  *
  * This is a pure data structure - all validation and logic
  * should be handled by LightSourceBehavior.
  */
-export declare class LightSourceTrait implements ITrait {
+export declare class LightSourceTrait implements ITrait, IToolGated {
     static readonly type: "lightSource";
     readonly type: "lightSource";
     /** Light output level (1-10) */
@@ -3383,6 +3560,11 @@ export declare class LightSourceTrait implements ITrait {
      * - undefined: use switchable state or default to lit
      */
     isLit?: boolean;
+    /**
+     * The tool that lights it — a match for a lantern (ADR-374 D9). Absent:
+     * lighting needs no tool.
+     */
+    toolRequirement?: ToolRequirement;
     /** Optional fuel/battery remaining (undefined = infinite) */
     fuelRemaining?: number;
     /** Maximum fuel capacity (for refillable lights) */
@@ -3401,56 +3583,6 @@ export declare class LightSourceTrait implements ITrait {
      */
     detailWhenLit?: string;
     constructor(data?: Partial<LightSourceTrait>);
-}
-```
-
-### traits/exit/exitTrait
-
-```typescript
-import { ITrait } from '../trait.js';
-/**
- * Exit trait for entities that represent passages between locations.
- * Used for doors, passages, portals, and any custom exits like "xyzzy".
- *
- * `from`, `to` and `command` may each be unset while a story is still composing
- * the passage — the trait polices nothing (ADR-346 D7). `ExitBehavior` is where a
- * passage is required to be complete before it is used: `createBidirectional`
- * already refuses incomplete data of its own accord.
- *
- * This trait contains only data - all behavior is in ExitBehavior.
- */
-export declare class ExitTrait implements ITrait {
-    static readonly type: "exit";
-    readonly type: "exit";
-    /** Source location ID (an entity ID, not a name) — unset while unplaced. */
-    from?: string;
-    /** Destination location ID (an entity ID, not a name) — unset until the story supplies it. */
-    to?: string;
-    /** Standard direction (north, south, up, etc.) - optional */
-    direction?: string;
-    /** Command to use this exit (e.g., "go north", "enter portal", "xyzzy") — unset until named. */
-    command?: string;
-    /** Alternative commands that work for this exit */
-    aliases?: string[];
-    /** Whether this exit is visible to players */
-    visible: boolean;
-    /** Whether this exit appears in room descriptions */
-    listed: boolean;
-    /** Whether this exit works in reverse (bidirectional) */
-    bidirectional: boolean;
-    /** The reverse command if bidirectional */
-    reverseCommand?: string;
-    /** The reverse direction if bidirectional */
-    reverseDirection?: string;
-    /** Custom message when using this exit */
-    useMessage?: string;
-    /** Custom message when this exit is blocked */
-    blockedMessage?: string;
-    /** Whether this exit requires special conditions */
-    conditional: boolean;
-    /** Condition identifier (checked by behaviors) */
-    conditionId?: string;
-    constructor(data?: Partial<ExitTrait>);
 }
 ```
 
@@ -3536,13 +3668,42 @@ import { ITrait } from '../trait.js';
  * a cat, a creature of the deep. Its presence is the fact; there is no data.
  *
  * Checked by `VisibilityBehavior` at the two darkness gates (`canSee`,
- * `getVisible`). It says nothing about light itself: a room stays dark for
- * everyone else, and the observer's own arrival description still reads as
- * a dark room's.
+ * `getVisible`) and by `isDarkFor`, which looking, arrival and the
+ * perception filter ask, so a night-vision observer also sees the dark room
+ * it stands in (ADR-374 D5). It says nothing about light itself: the room
+ * stays dark for everyone else, and `isDark(room)` is unchanged.
  */
 export declare class NightVisionTrait implements ITrait {
     static readonly type: "if.trait.night_vision";
     readonly type: "if.trait.night_vision";
+}
+```
+
+### traits/backdrop/backdropTrait
+
+```typescript
+import { ITrait } from '../trait.js';
+/**
+ * Initialization data for a backdrop.
+ */
+export interface IBackdropData {
+    /** Every room the backdrop is present at, the first being where it lives. */
+    roomIds?: string[];
+}
+/**
+ * A backdrop is one scenery thing present in many rooms (ADR-374 D1): the
+ * sky over a landing field, the sea along a coast. It lives in the first
+ * room of its list, like any thing, and is present at the others the way a
+ * door is present at its far side — visible and reachable, never listed.
+ *
+ * Read by `PresenceBehavior`, which the scope rule and the visibility gates
+ * consult. Carries no state of its own beyond the room list.
+ */
+export declare class BackdropTrait implements ITrait, IBackdropData {
+    static readonly type: "if.trait.backdrop";
+    readonly type: "if.trait.backdrop";
+    roomIds: string[];
+    constructor(data?: IBackdropData);
 }
 ```
 
@@ -3581,7 +3742,7 @@ export declare class SupporterTrait implements ITrait {
 ```typescript
 import { Behavior } from '../../behaviors/behavior.js';
 import { IFEntity } from '../../entities/if-entity.js';
-import { IWorldQuery } from '../container/containerBehavior.js';
+import { IWorldPlacement, IWorldQuery } from '../container/containerBehavior.js';
 /**
  * Result of adding an item to a supporter
  */
@@ -3645,13 +3806,17 @@ export declare class SupporterBehavior extends Behavior {
      */
     static getExcludedTypes(supporter: IFEntity): string[] | undefined;
     /**
-     * Add an item to a supporter
+     * Put an item on a supporter: when the supporter does not already hold the
+     * item, takes its type and has room for it, the item moves onto the
+     * supporter. Behaviors own mutations, so this is the one place an item
+     * lands on a supporter.
      * @param supporter The supporter receiving the item
      * @param item The item being added
-     * @param world World query interface
-     * @returns Result describing what happened
+     * @param world The world, for the checks and the move
+     * @returns What happened; `success` is true only when the item moved, and a
+     *   failure names its reason and leaves the item where it was
      */
-    static addItem(supporter: IFEntity, item: IFEntity, world: IWorldQuery): IAddItemToSupporterResult;
+    static addItem(supporter: IFEntity, item: IFEntity, world: IWorldPlacement): IAddItemToSupporterResult;
     /**
      * Remove an item from a supporter
      * @param supporter The supporter losing the item
@@ -3676,8 +3841,13 @@ export interface ISwitchableData {
     powerConsumption?: number;
     /** Whether this requires power to operate */
     requiresPower?: boolean;
-    /** Whether power is currently available */
+    /** Whether power is currently available (a story's own flag; ignored when power sources are declared) */
     hasPower?: boolean;
+    /**
+     * The things that power it (ADR-374 D10): it has power exactly while every
+     * one of them is directly inside it. Declaring any implies `requiresPower`.
+     */
+    powerSourceIds?: string[];
     /** Custom message when turning on */
     onMessage?: string;
     /** Custom message when turning off */
@@ -3726,6 +3896,7 @@ export declare class SwitchableTrait implements ITrait, ISwitchableData {
     powerConsumption: number;
     requiresPower: boolean;
     hasPower: boolean;
+    powerSourceIds?: string[];
     onMessage?: string;
     offMessage?: string;
     alreadyOnMessage?: string;
@@ -3749,6 +3920,7 @@ export declare class SwitchableTrait implements ITrait, ISwitchableData {
 import { Behavior } from '../../behaviors/behavior.js';
 import { IFEntity } from '../../entities/if-entity.js';
 import { type ISemanticEvent } from '@sharpee/core';
+import type { WorldModel } from '../../world/WorldModel.js';
 export interface ISwitchOnResult {
     success: boolean;
     wasOn?: boolean;
@@ -3773,9 +3945,28 @@ export interface ISwitchOffResult {
 export declare class SwitchableBehavior extends Behavior {
     static requiredTraits: "switchable"[];
     /**
+     * Whether the device has power (ADR-374 D10). With power sources declared,
+     * that is every one of them directly inside it — the battery goes in and
+     * comes out by ordinary containment; without, the story's own `hasPower`
+     * flag. A device that does not require power always has it.
+     *
+     * @param entity - The switchable device
+     * @param world - The world, for where its power sources are
+     * @returns true when the device can run
+     */
+    static hasPower(entity: IFEntity, world: WorldModel): boolean;
+    /**
+     * Whether the device is on and has power — running, not merely switched on.
+     *
+     * @param entity - The switchable device
+     * @param world - The world, for its power sources
+     * @returns true when it is on and powered
+     */
+    static isRunning(entity: IFEntity, world: WorldModel): boolean;
+    /**
      * Check if the device can be turned on
      */
-    static canSwitchOn(entity: IFEntity): boolean;
+    static canSwitchOn(entity: IFEntity, world: WorldModel): boolean;
     /**
      * Check if the device can be turned off
      */
@@ -3784,7 +3975,7 @@ export declare class SwitchableBehavior extends Behavior {
      * Turn the entity on
      * @returns Result object describing what happened
      */
-    static switchOn(entity: IFEntity): ISwitchOnResult;
+    static switchOn(entity: IFEntity, world: WorldModel): ISwitchOnResult;
     /**
      * Turn the entity off
      * @returns Result object describing what happened
@@ -3794,7 +3985,7 @@ export declare class SwitchableBehavior extends Behavior {
      * Toggle on/off state
      * @returns Result from either switch on or off
      */
-    static toggle(entity: IFEntity): ISwitchOnResult | ISwitchOffResult;
+    static toggle(entity: IFEntity, world: WorldModel): ISwitchOnResult | ISwitchOffResult;
     /**
      * Update power state
      * @returns Events if device was forced off due to power loss
@@ -4367,31 +4558,25 @@ export declare class ActorBehavior extends Behavior {
 /**
  * playerRole.ts — the player role's own vocabulary (ADR-327 D9/D10).
  *
- * Public interface: `PLAYER_ROLE_ALIASES`, `addPlayerRoleVocabulary`,
- * `movePlayerRoleVocabulary`.
+ * Public interface: `addPlayerRoleVocabulary`, `movePlayerRoleVocabulary`.
  *
- * Owner context: world-model. `me`, `myself` and `self` name whoever is
- * currently playing, not a particular character — so they belong to the ROLE
- * and travel with it when the role moves. Both the story loader (stamping the
- * opening protagonist) and the engine (`switchPlayer`) need the same set and
- * the same move, which is why it lives here rather than in either of them.
+ * Owner context: world-model. The self words name whoever is currently
+ * playing, not a particular character — so they belong to the ROLE and travel
+ * with it when the role moves. The words themselves are the language's
+ * (ADR-387 D2): the engine hands them in from the world's language words at
+ * install and on `switchPlayer`, and this module holds no English.
  */
 import type { IFEntity } from '../../entities/if-entity.js';
-/**
- * The words that name the current player character rather than any particular
- * character. Deliberately small: a character's own names and `aka` aliases are
- * theirs and never move.
- */
-export declare const PLAYER_ROLE_ALIASES: readonly string[];
 /**
  * Give an entity the role's vocabulary.
  *
  * @param entity the entity taking the player role
+ * @param selfWords the language's self words (the world's language words)
  * @returns nothing; the entity's IdentityTrait gains any missing role alias.
  *   An entity with no IdentityTrait is left alone — it has no alias list to
  *   add to, and inventing one would fabricate a name for it.
  */
-export declare function addPlayerRoleVocabulary(entity: IFEntity): void;
+export declare function addPlayerRoleVocabulary(entity: IFEntity, selfWords: readonly string[]): void;
 /**
  * Move the role's vocabulary from the outgoing player character to the incoming
  * one (ADR-327 Q2, ruled 2026-08-26).
@@ -4402,8 +4587,9 @@ export declare function addPlayerRoleVocabulary(entity: IFEntity): void;
  *
  * @param from the outgoing PC, or null on the first assignment
  * @param to the incoming PC
+ * @param selfWords the language's self words (the world's language words)
  */
-export declare function movePlayerRoleVocabulary(from: IFEntity | null | undefined, to: IFEntity): void;
+export declare function movePlayerRoleVocabulary(from: IFEntity | null | undefined, to: IFEntity, selfWords: readonly string[]): void;
 ```
 
 ### traits/attached/attachedTrait
@@ -4450,8 +4636,8 @@ export interface IAttachedData {
 /**
  * Attached trait for objects that are attached, fastened, or connected to something
  *
- * This trait contains only data - all logic for detachment
- * is handled by the pulling action.
+ * This trait contains only data - attaching and detaching are AttachedBehavior's
+ * (ADR-373 D1, D6), which tying, untying, pulling and the story loader call.
  */
 export declare class AttachedTrait implements ITrait, IAttachedData {
     static readonly type: "attached";
@@ -4468,6 +4654,74 @@ export declare class AttachedTrait implements ITrait, IAttachedData {
         leavesResidue?: boolean;
     };
     constructor(data?: IAttachedData);
+}
+```
+
+### traits/attached/attachedBehavior
+
+```typescript
+/**
+ * Behavior for attached entities (ADR-373 D1, D6) — the one owner of an
+ * attachment's mutations: tying or fastening a thing to an anchor, and
+ * pulling or untying it free.
+ *
+ * Public interface: AttachedBehavior (isAttached, isDetachable, anchorOf,
+ * attach, detach), IDetachResult.
+ * Owner context: @sharpee/world-model / traits
+ */
+import { Behavior } from '../../behaviors/behavior.js';
+import { IFEntity } from '../../entities/if-entity.js';
+import { IAttachedData } from './attachedTrait.js';
+/** Result of detaching an entity. */
+export interface IDetachResult {
+    /** Whether the entity was freed */
+    success: boolean;
+    /** The anchor it was attached to, when it was attached */
+    anchorId?: string;
+    /** Why it was not freed: not attached at all, or attached and not detachable */
+    reason?: 'not_attached' | 'not_detachable';
+}
+/**
+ * Attachment rules. An entity is attached while its `AttachedTrait` names an
+ * anchor and is not `loose`; detaching clears the anchor and leaves the
+ * entity where it is.
+ */
+export declare class AttachedBehavior extends Behavior {
+    static requiredTraits: "attached"[];
+    /**
+     * Whether the entity is held fast to an anchor.
+     * @param entity The entity to test
+     * @returns true when it carries an anchor and is not loose
+     */
+    static isAttached(entity: IFEntity): boolean;
+    /**
+     * Whether an attached entity can be pulled or untied free.
+     * @param entity The entity to test
+     * @returns true when it is attached and detachable
+     */
+    static isDetachable(entity: IFEntity): boolean;
+    /**
+     * The anchor's entity id, when the entity is attached.
+     * @param entity The entity to read
+     * @returns The anchor id, or undefined
+     */
+    static anchorOf(entity: IFEntity): string | undefined;
+    /**
+     * Attach the entity to an anchor, adding the trait when it has none.
+     * @param entity The entity to attach
+     * @param anchorId The anchor's entity id
+     * @param attachmentType How it is attached
+     * @param detachable Whether it can be pulled or untied free
+     * @throws Error when the entity would be attached to itself
+     */
+    static attach(entity: IFEntity, anchorId: string, attachmentType: NonNullable<IAttachedData['attachmentType']>, detachable: boolean): void;
+    /**
+     * Free a detachable attached entity: clears its anchor, leaves it in place.
+     * @param entity The entity to free
+     * @returns success with the former anchor, or the refusal reason; nothing
+     *          changes on a refusal
+     */
+    static detach(entity: IFEntity): IDetachResult;
 }
 ```
 
@@ -4690,84 +4944,28 @@ export declare class PullableTrait implements ITrait, IPullableData {
 
 ```typescript
 /**
- * Pushable trait implementation
+ * PushableTrait — the marker for a thing that can be pushed.
+ *
+ * The thing says it can be pushed; the way says whether a push moves it
+ * between rooms (`admits pushing` on the exit line or the room, read by
+ * `TraversalBehavior`), and a switchable thing is toggled by the press. The
+ * trait itself carries no fields, as `SceneryTrait` does not: every field
+ * the old shape carried either moved to the way (`pushDirection`,
+ * `revealsPassage` — now `while` on the exit), or was read by nothing
+ * (`pushType`, `pushSound`, `requiresStrength`, `repeatable`, `state`,
+ * `pushCount`, `maxPushes`, `activates`, `effects`). A story that needs a
+ * fire-once guard keeps it on its own trait.
+ *
+ * Public interface: PushableTrait.
+ * Owner context: world-model — traits.
+ *
+ * References:
+ * - ADR-378 D6, D6a — the marker; the way decides the move.
  */
 import { ITrait } from '../trait.js';
-export interface IPushableData {
-    /**
-     * Type of pushable object - determines behavior
-     */
-    pushType?: 'button' | 'heavy' | 'moveable';
-    /**
-     * Whether pushing reveals a hidden passage
-     */
-    revealsPassage?: boolean;
-    /**
-     * Sound made when pushed
-     */
-    pushSound?: string;
-    /**
-     * Minimum strength required to push (for heavy objects)
-     */
-    requiresStrength?: number;
-    /**
-     * Whether this can be pushed multiple times
-     */
-    repeatable?: boolean;
-    /**
-     * Current state for toggleable pushables
-     */
-    state?: 'default' | 'pushed' | 'activated';
-    /**
-     * Number of times this has been pushed
-     */
-    pushCount?: number;
-    /**
-     * Maximum number of pushes allowed
-     */
-    maxPushes?: number;
-    /**
-     * Direction it can be pushed (for moveable objects)
-     */
-    pushDirection?: 'north' | 'south' | 'east' | 'west' | 'any';
-    /**
-     * Entity ID that this activates when pushed
-     */
-    activates?: string;
-    /**
-     * Custom effects when pushed
-     */
-    effects?: {
-        onPush?: string;
-        onMaxPushes?: string;
-        onMove?: string;
-    };
-}
-/**
- * Pushable trait for objects that can be pushed
- *
- * This trait contains only data - all logic for pushing
- * is handled by the pushing action.
- */
-export declare class PushableTrait implements ITrait, IPushableData {
+export declare class PushableTrait implements ITrait {
     static readonly type: "pushable";
     readonly type: "pushable";
-    pushType: 'button' | 'heavy' | 'moveable';
-    revealsPassage?: boolean;
-    pushSound?: string;
-    requiresStrength?: number;
-    repeatable: boolean;
-    state: 'default' | 'pushed' | 'activated';
-    pushCount: number;
-    maxPushes?: number;
-    pushDirection?: 'north' | 'south' | 'east' | 'west' | 'any';
-    activates?: string;
-    effects?: {
-        onPush?: string;
-        onMaxPushes?: string;
-        onMove?: string;
-    };
-    constructor(data?: IPushableData);
 }
 ```
 
@@ -4905,72 +5103,217 @@ export declare class NpcTrait implements ITrait, INpcData {
 
 ```typescript
 /**
- * Vehicle Trait - For enterable containers that transport actors
+ * Vehicle Trait - an enterable thing that carries what it holds when it moves
  *
- * Vehicles are enterable containers (bucket, boat, basket, balloon) where:
- * - Actor enters the vehicle (ENTER BUCKET)
- * - Vehicle moves, taking its contents with it
- * - Actor exits the vehicle (EXIT BUCKET)
+ * Public interface: `VehicleTrait` (data: the movement model `movement`, the
+ * player's command sets and the room it is `boardedThrough`), the movement
+ * types `VehicleMovement`, `VehicleNoneMovement`,
+ * `VehicleLineMovement`, `VehicleStreetsMovement`, `VehicleCompassMovement`,
+ * `VehicleFlightMovement`, `VehicleOpenMovement`, their declaration shapes
+ * `VehicleMovementConfig`, the type guard `isVehicleTrait`, and the factory
+ * `createVehicleTrait`.
  *
- * Based on Infocom's vehicle concept from Zork.
+ * Owner context: world-model traits. The trait carries exactly what the
+ * language can write about a vehicle and nothing else: its movement model,
+ * which is the declaration of the vehicle's built-in machine, and the
+ * machine's own state as plain fields beside it, so a voyage survives a
+ * save with every other trait field. Where the vehicle is, which stop it is
+ * at, and whether it holds its riders in or on are read from the world (the
+ * vehicle's location) and from `EnterableTrait.preposition`, never copied
+ * here.
+ *
+ * Moving a vehicle moves what it holds: containment is relational, so
+ * `WorldModel.moveEntity` on the vehicle carries every held entity at every
+ * depth, with no vehicle-specific move.
+ *
+ * References:
+ * - ADR-366 D5, D5a–D5d — the five movement types and what each declares.
+ * - ADR-366 D5e, D5g — the machine is the vehicle's own; its state is trait data.
+ * - ADR-366 D8, D9 — nothing else on the trait; location is read, never copied.
+ * - ADR-366 D4 — moving a vehicle moves what it holds.
+ * - ADR-376 D3, D5 — the open model under `use expanses`: heading or course,
+ *   a position held only while the vehicle is in the expanse.
+ * - ADR-375 D2, D5, D7 — under `use sailing`: a bearing, the pace table by
+ *   the angle off the wind, the sails, and irons.
  */
 import { ITrait } from '../trait.js';
+import type { ExpanseSide, IExpanseCell } from '../expanse/expanseTrait.js';
+/** One pace cell of a sailing band (ADR-375 D5): turns per step, or `stopped`. */
+export type SailingPace = number | 'stopped';
+/** One band of a sailing table (ADR-375 D5, D7): `from` to `to` degrees off the wind, a pace per setting. */
+export interface SailingBand {
+    from: number;
+    to: number;
+    /** The setting `null` is the one cell of a vehicle without sails. */
+    paces: Array<{
+        setting: string | null;
+        pace: SailingPace;
+    }>;
+}
+/** The `sailing` block (ADR-375 D5): the bands and the calm row. */
+export interface SailingTable {
+    bands: SailingBand[];
+    calm: SailingPace;
+}
+/** A vehicle that does not move (ADR-366 D5): a bathtub, a crate the player sits in. */
+export interface VehicleNoneMovement {
+    kind: 'none';
+}
 /**
- * Vehicle type determines movement behavior
+ * The line (ADR-366 D5a): ordered stops the vehicle runs between. GO from
+ * inside is refused; the player rides, the world's state or the story drives.
  */
-export type VehicleType = 'counterweight' | 'watercraft' | 'aircraft' | 'cable' | 'generic';
+export interface VehicleLineMovement {
+    kind: 'line';
+    /** Room ids of the stops, in line order. At least two, no repeats. */
+    stops: string[];
+    /** True for `direction: one-way`: the line is travelled first to last only. */
+    oneWay: boolean;
+    /** `drive: state` (its `position` rows decide) or `drive: control` (`start`/`stop`). */
+    drive: 'state' | 'control';
+    /** Turns per step under `drive: control`, one or more. */
+    pace?: number;
+    /** Machine state: the vehicle is stepping along the line. */
+    underWay: boolean;
+    /** Machine state: which way along the stops it is travelling. */
+    travelDirection: 'onward' | 'back';
+    /** Machine state: turns left before the next step. */
+    turnsToStep: number;
+}
 /**
- * Trait for vehicles - enterable containers that transport actors
+ * The streets (ADR-366 D5b): GO from inside moves the vehicle along the
+ * current room's exit when the destination room admits it.
+ */
+export interface VehicleStreetsMovement {
+    kind: 'streets';
+}
+/**
+ * The compass (ADR-366 D5c): the vehicle keeps a heading and moves one room
+ * that way every `pace` turns while the way is admitted.
+ */
+export interface VehicleCompassMovement {
+    kind: 'compass';
+    drive: 'player' | 'control';
+    /** Turns per step, one or more. */
+    pace: number;
+    /** Machine state: the heading, or null when not under way. */
+    heading: string | null;
+    /** Machine state: turns left before the next step. */
+    turnsToStep: number;
+}
+/**
+ * Free flight (ADR-366 D5d): any destination to any other, nowhere for the
+ * trip, then arrival. A flight's step is the whole trip, so its pace is the
+ * trip's length (ADR-380 D3).
+ */
+export interface VehicleFlightMovement {
+    kind: 'flight';
+    drive: 'player' | 'control';
+    /** Room ids the vehicle may fly between. At least two, each once. */
+    destinations: string[];
+    /** Turns the trip takes, one or more. */
+    pace: number;
+    /** Machine state: where it is bound, or null when not under way. */
+    destination: string | null;
+    /** Machine state: turns left in the trip. */
+    turnsRemaining: number;
+}
+/**
+ * Open movement (ADR-376 D3, `use expanses`): a position in an expanse
+ * rather than a room, stepped `stride` units every `pace` turns along a
+ * heading or toward a course. Under way means exactly one of `heading` and
+ * `course` is set; at rest both are null. `position` is held only while the
+ * vehicle is in the expanse room (D5): at a landmark it is null and the
+ * vehicle's location is the one record.
+ */
+export interface VehicleOpenMovement {
+    kind: 'open';
+    drive: 'player' | 'control';
+    /** Turns per step, one or more. Under sail (`sailing` present) the table sets the pace and this is unread. */
+    pace: number;
+    /** Units per step, one or more. */
+    stride: number;
+    /** How far one sees from aboard, in expanse units (D6). */
+    sight: number;
+    /** What the vehicle shows when seen from a distance (D6, `seen from afar:`). */
+    seenFromAfar?: string;
+    /**
+     * The `sailing` block (ADR-375 D5): present on a sailing vehicle, whose
+     * heading is then a bearing and whose pace is the band's.
+     */
+    sailing?: SailingTable;
+    /** `sails:` (ADR-375 D7): the settings, least to most canvas, and the current one (machine state). */
+    sails?: {
+        settings: string[];
+        current: string;
+    };
+    /**
+     * Machine state: the heading — one of the eight compass words, or a
+     * bearing in degrees under sail (ADR-375 D2). Null when the vehicle has
+     * none; a sailing vehicle keeps its bearing when hove to.
+     */
+    heading: string | number | null;
+    /** Machine state: the cell the vehicle is bound for, or null when not on a course. */
+    course: IExpanseCell | null;
+    /** Machine state: the coordinates in the expanse (fractional under sail), or null at a landmark (D5). */
+    position: IExpanseCell | null;
+    /** Machine state: whether the machine is moving the vehicle. */
+    underWay: boolean;
+    /** Machine state: turns left before the next step. */
+    turnsToStep: number;
+    /** Machine state: the edge the vehicle stopped at, refusing headings toward it until it steps away (D8). */
+    atEdge: ExpanseSide | null;
+    /** Machine state (ADR-375 D5): lying still in a `stopped` band under the fullest setting, reported once. */
+    inIrons: boolean;
+}
+/** How a vehicle moves — the declaration of its built-in machine, with the machine's state beside it. */
+export type VehicleMovement = VehicleNoneMovement | VehicleLineMovement | VehicleStreetsMovement | VehicleCompassMovement | VehicleFlightMovement | VehicleOpenMovement;
+type LineState = 'underWay' | 'travelDirection' | 'turnsToStep';
+type CompassState = 'heading' | 'turnsToStep';
+type FlightState = 'destination' | 'turnsRemaining';
+type OpenState = 'heading' | 'course' | 'position' | 'underWay' | 'turnsToStep' | 'atEdge' | 'inIrons';
+/**
+ * A model as declared: the machine's state fields are optional and start at
+ * rest (not under way, onward, no heading, no destination).
+ */
+export type VehicleMovementConfig = VehicleNoneMovement | VehicleStreetsMovement | (Omit<VehicleLineMovement, LineState> & Partial<Pick<VehicleLineMovement, LineState>>) | (Omit<VehicleCompassMovement, CompassState> & Partial<Pick<VehicleCompassMovement, CompassState>>) | (Omit<VehicleFlightMovement, FlightState> & Partial<Pick<VehicleFlightMovement, FlightState>>) | (Omit<VehicleOpenMovement, OpenState> & Partial<Pick<VehicleOpenMovement, OpenState>>);
+/**
+ * Configuration options for VehicleTrait
+ */
+export interface VehicleTraitConfig {
+    /** `movement:` and the lines its type takes (ADR-366 D5). */
+    movement?: VehicleMovementConfig;
+    /** The player's command sets (`commands:`), present on a player-driven vehicle. */
+    commands?: string[];
+    /** The room `boarded through:` names (ADR-366 D7), present on a vehicle with rooms aboard. */
+    boardedThrough?: string;
+}
+/**
+ * Trait for vehicles - enterable things that transport what they hold
  */
 export declare class VehicleTrait implements ITrait {
     static readonly type: "vehicle";
     readonly type: "vehicle";
-    /** Type of vehicle determines default behavior */
-    vehicleType: VehicleType;
+    /** The movement model (`movement:`); undefined means the vehicle does not move under GO. */
+    movement?: VehicleMovement;
+    /** The player's command sets (ADR-366 D5i); absent when the player drives nothing. */
+    commands?: string[];
     /**
-     * When vehicle moves, all contents (including actors) move with it.
-     * This is always true for vehicles.
+     * The room id `boarded through:` names (ADR-366 D7): `enter` and `board`
+     * put the player there. Absent on a vehicle with no rooms aboard, which
+     * is entered as any enterable thing is.
      */
-    readonly movesWithContents: boolean;
+    boardedThrough?: string;
+    constructor(config?: VehicleTraitConfig);
     /**
-     * If true, actor cannot use GO/walk commands while in vehicle.
-     * Movement must be through vehicle-specific actions.
-     * - Bucket: POUR/FILL moves it
-     * - Boat: row, current moves it
-     * - Balloon: burn/release moves it
+     * Build a movement model from its declaration, holding the invariants the analyzer
+     * reports first: two stops, none repeated; two destinations, none repeated; a pace, a
+     * stride of at least one; an open vehicle on at most one of heading and
+     * course. The machine's state starts at rest unless the declaration
+     * carries it.
+     * @throws when an invariant is broken
      */
-    blocksWalkingMovement: boolean;
-    /**
-     * If true, actor must EXIT vehicle before leaving the room on foot.
-     * Prevents "GO EAST" while sitting in a bucket.
-     */
-    requiresExitBeforeLeaving: boolean;
-    /**
-     * Current location/state of the vehicle (e.g., 'top', 'bottom', 'river-1')
-     * Used by vehicle-specific logic to track position.
-     */
-    currentPosition?: string;
-    /**
-     * Map of position names to room IDs.
-     * e.g., { 'top': 'top-of-well', 'bottom': 'well-bottom' }
-     */
-    positionRooms?: Record<string, string>;
-    /**
-     * Whether the vehicle is currently operational/usable.
-     * Boat might need to be inflated, balloon might need fuel.
-     */
-    isOperational: boolean;
-    /**
-     * Reason the vehicle is not operational (for error messages).
-     */
-    notOperationalReason?: string;
-    /**
-     * If true, visibility passes through to the containing room.
-     * - Bucket, raft, boat: transparent (can see the room you're in)
-     * - Airplane, submarine: not transparent (see vehicle interior only)
-     */
-    transparent: boolean;
-    constructor(options?: Partial<Omit<VehicleTrait, 'type' | 'movesWithContents'>>);
+    private static buildMovement;
 }
 /**
  * Type guard for VehicleTrait
@@ -4979,22 +5322,120 @@ export declare function isVehicleTrait(trait: ITrait): trait is VehicleTrait;
 /**
  * Factory function for creating VehicleTrait
  */
-export declare function createVehicleTrait(options?: Partial<Omit<VehicleTrait, 'type' | 'movesWithContents'>>): VehicleTrait;
+export declare function createVehicleTrait(config?: VehicleTraitConfig): VehicleTrait;
+export {};
+```
+
+### traits/vehicle/aboardTrait
+
+```typescript
+/**
+ * Aboard Trait - a room inside a vehicle, and its exits to outside
+ *
+ * Public interface: `AboardTrait` (data: the vehicle the room is aboard and
+ * the directions that lead outside, each a computed exit whose candidates
+ * are the rooms the vehicle can be in), `IAboardData`, `isAboardTrait`.
+ *
+ * Owner context: world-model traits. A room aboard a vehicle is that
+ * vehicle's interior: whoever is in it is aboard for every purpose, and an
+ * exit written `to outside` lands wherever the vehicle is. The trait is
+ * pure data; the traversal-time answer is the vehicle exit resolver in
+ * `vehicleBehavior.ts`, registered per world under this trait's type, as
+ * every computed exit's resolver is.
+ *
+ * References:
+ * - ADR-366 D7 — rooms aboard, the boarding room, `<direction> to outside`.
+ * - ADR-295 D3, D4 — computed exits: declared candidates, a registered resolver.
+ */
+import type { DirectionType } from '../../constants/directions.js';
+import type { IComputedExitCarrier, IComputedExitDeclaration } from '../room/computedExitContract.js';
+import { ITrait } from '../trait.js';
+/**
+ * One `to outside` exit of a room aboard a vehicle: a computed-exit
+ * declaration, whose `via` is the hatch the line named, if any.
+ */
+export type IOutsideExit = IComputedExitDeclaration;
+export interface IAboardData {
+    /** The vehicle this room is inside. */
+    vehicleId: string;
+    /** The directions that lead outside, each with the rooms the vehicle can be in. */
+    outside?: Partial<Record<DirectionType, IOutsideExit>>;
+}
+/**
+ * Trait for a room aboard a vehicle. Its `computedExits` are the room's
+ * `to outside` exits — one record each, the candidates and the door — so the
+ * room behavior's computed-exit lookup finds them without knowing vehicles
+ * exist, and the outside-exit resolver reads the door from the same record.
+ */
+export declare class AboardTrait implements ITrait, IComputedExitCarrier {
+    static readonly type: "aboard";
+    readonly type: "aboard";
+    vehicleId: string;
+    /** The `to outside` exits (ADR-366 D7), each a computed-exit declaration (ADR-295 D3) with its door. */
+    computedExits: Partial<Record<DirectionType, IOutsideExit>>;
+    constructor(data: IAboardData);
+}
+/**
+ * Type guard for AboardTrait
+ */
+export declare function isAboardTrait(trait: ITrait): trait is AboardTrait;
 ```
 
 ### traits/vehicle/vehicleBehavior
 
 ```typescript
 /**
- * Vehicle Behavior - Handles vehicle movement and actor transport
+ * Vehicle Behavior - the rules a vehicle's movement model decides
  *
- * Provides utilities for:
- * - Moving a vehicle (and its contents) between rooms
- * - Checking if an actor is in a vehicle
- * - Getting the vehicle an actor is in
+ * Public interface: `isVehicle`, `isActorInVehicle`, `getActorVehicle`,
+ * `getVehicleOccupants`, `isAboardVehicle`, `getVehicleAboard`,
+ * `takesCommandSet` (where an actor rides and what they may say there),
+ * `goingFromVehicle` (what GO means from inside),
+ * `isUnderWay`, the driving statements `startVehicle`, `stopVehicle` and
+ * `sendVehicle`, the machine's per-turn step `stepVehicle` with its result
+ * `VehicleStep`, the line model's `isStop`, `currentStop` and
+ * `moveVehicleToStop`, and the rooms-aboard half:
+ * `vehicleOutsideExitResolver` and `registerVehicleExitResolver` (an exit
+ * `to outside` lands where the vehicle is) and `outsideWayOf` with its
+ * result `OutsideWay` (which way out traversal grants), the expanse half of
+ * exiting and entering: `leaveVehicleIntoExpanse` and `boardFromExpanse`
+ * (ADR-376 D9), `edgeAhead`, `edgeRefusalOf` and `edgePhraseOf` (D8), and the sailing half
+ * (ADR-375): `turnHeading`, `comeAbout`, `setSails`, `makeSail`,
+ * `shortenSail`, `furlSails`, `paceUnderSail`, `windOf`. Each mutation an
+ * action may be refused names its refusal as a check that mutates nothing —
+ * `comeAboutRefusal`, `sailChangeRefusal`, `edgeRefusalOf` — so actions ask
+ * it rather than copy it.
+ *
+ * Owner context: world-model vehicle behavior. Every answer is read from
+ * the world and the trait's model; nothing here keeps a position of its own.
+ * Moving a vehicle is `WorldModel.moveEntity`, which carries what the
+ * vehicle holds because containment is relational. The stepping functions
+ * are the whole of the vehicle's built-in machine: the turn host that calls
+ * them once per turn decides nothing about movement.
+ *
+ * References:
+ * - ADR-366 D4 — moving a vehicle moves what it holds.
+ * - ADR-366 D5, D5a–D5d — what GO means from inside; what a step is per type.
+ * - ADR-366 D5e, D5g — the machine is the vehicle's own; its state is trait data.
+ * - ADR-366 D6 — a room admits the steered vehicles it names.
+ * - ADR-366 D7 — rooms aboard; `to outside` resolves to the vehicle's room,
+ *   and refuses with `vehicle-under-way` while the vehicle is nowhere.
+ * - ADR-366 D9 — the vehicle's location is the one fact, read, never copied.
+ * - ADR-295 D4 — the exit resolver seam the outside exit rides.
+ * - ADR-376 D3, D5, D8, D9, D10 — the open model's step: a path walked cell by
+ *   cell, arrival, alongside, the edge, departure from a landmark, the hold
+ *   while the player is out.
+ * - ADR-375 D2, D3, D5, D7 — a bearing's step, the pace by the angle off the
+ *   wind, irons, coming about, the sails.
  */
-import { WorldModel } from '../../world/WorldModel.js';
-import { IFEntity } from '../../entities/if-entity.js';
+import type { RandomService } from '@sharpee/core';
+import type { ExitResolver } from '../../capabilities/exit-resolver-binding.js';
+import type { WorldModel } from '../../world/WorldModel.js';
+import type { IFEntity } from '../../entities/if-entity.js';
+import { type DirectionType } from '../../constants/directions.js';
+import { type TraversalMover, type WayRefusal } from '../../world/TraversalBehavior.js';
+import { type ExpanseSide, type ExpanseWind, type IExpanseCell } from '../expanse/expanseTrait.js';
+import type { SailingPace } from './vehicleTrait.js';
 /**
  * Check if an entity is a vehicle
  */
@@ -5012,40 +5453,830 @@ export declare function getActorVehicle(world: WorldModel, actorId: string): IFE
  */
 export declare function getVehicleOccupants(world: WorldModel, vehicleId: string): IFEntity[];
 /**
- * Move a vehicle to a new room, transporting all contents with it.
- * Returns true if movement succeeded.
+ * What GO means for an actor, decided by the vehicle they are in (D5).
+ * `on-foot`: not in a vehicle, GO is walking. `steers`: GO moves the
+ * vehicle (the destination still has to admit it, which the traversal
+ * system answers).
+ * `rides`: a line vehicle; the player rides and the story drives.
+ * `stays`: a vehicle with no movement model does not move under GO.
+ */
+export type VehicleGoing = {
+    kind: 'on-foot';
+} | {
+    kind: 'steers';
+    vehicle: IFEntity;
+} | {
+    kind: 'rides';
+    vehicle: IFEntity;
+} | {
+    kind: 'stays';
+    vehicle: IFEntity;
+};
+/**
+ * Decide what GO means for an actor from where they are.
  *
- * This is the core vehicle transport function - when a vehicle moves,
- * everything inside it (including actors) moves with it.
+ * @param world - The world model
+ * @param actorId - The actor trying to go
+ * @returns on-foot when the actor is not in a vehicle; otherwise the model's answer
  */
-export declare function moveVehicle(world: WorldModel, vehicleId: string, destinationRoomId: string): boolean;
+export declare function goingFromVehicle(world: WorldModel, actorId: string): VehicleGoing;
 /**
- * Check if a vehicle can move (is operational)
- */
-export declare function canVehicleMove(vehicle: IFEntity): {
-    canMove: boolean;
-    reason?: string;
-};
-/**
- * Check if an actor can exit their current location.
- * If in a vehicle that requires exit, they cannot simply walk out.
- */
-export declare function canActorLeaveLocation(world: WorldModel, actorId: string): {
-    canLeave: boolean;
-    mustExitVehicle?: IFEntity;
-};
-/**
- * Check if an actor in a vehicle can use GO/walk commands.
- * Some vehicles block walking movement entirely.
+ * Whether a vehicle's machine is moving it (ADR-366 D5e): a line stepping
+ * along its stops, a compass vehicle on a heading, a flight vehicle on its
+ * trip, an open vehicle on a heading or a course. A `none` or streets
+ * vehicle is never under way.
  *
- * Returns:
- * - canWalk: true if actor can use GO commands (not in vehicle, or in walkable vehicle)
- * - vehicle: the vehicle entity if actor is in one (undefined if not in a vehicle)
+ * @param vehicle - A vehicle; false when it has no model
  */
-export declare function canActorWalkInVehicle(world: WorldModel, actorId: string): {
-    canWalk: boolean;
-    vehicle?: IFEntity;
+export declare function isUnderWay(vehicle: IFEntity): boolean;
+/**
+ * `start <vehicle> [heading <direction>]` (ADR-366 D5a, D5c, D5f; ADR-376
+ * D3): put the vehicle's machine under way. A line steps from its current
+ * stop in its travel direction, turning back at a `both` line's end; a
+ * compass vehicle takes the heading; an open vehicle takes one of the eight
+ * headings, dropping any course, and leaves its landmark for the expanse
+ * at the landmark's cell (D5). The first step comes after `pace` turns;
+ * stepping is the machine's per-turn work.
+ *
+ * @param world - The world model
+ * @param vehicle - A line, compass or open vehicle
+ * @param heading - The heading, for a compass or open vehicle
+ * @returns false when the vehicle cannot start: a one-way line at its end
+ *   (`vehicle-at-end`), a compass or open vehicle with no heading, an open
+ *   vehicle with a heading that is not one of the eight or that points
+ *   toward the edge it is at (D8, the edge's phrase), one outside any
+ *   expanse, or a type with no `start`
+ */
+export declare function startVehicle(world: WorldModel, vehicle: IFEntity, heading?: string | number): boolean;
+/**
+ * The wind an open vehicle sails in (ADR-375 D4): its expanse's `wind`, or
+ * undefined when the expanse carries none or the vehicle is in no expanse.
+ */
+export declare function windOf(world: WorldModel, vehicle: IFEntity): ExpanseWind | undefined;
+/**
+ * The pace a sailing vehicle makes now (ADR-375 D5, D7): the cell of its
+ * band for the angle off the wind, under its sail setting — or `stopped`.
+ * Undefined when the vehicle does not sail or has no heading.
+ *
+ * @param world - The world model
+ * @param vehicle - An open vehicle with a `sailing` table
+ * @param setting - A setting to read instead of the current one (the
+ *   fullest, for irons)
+ */
+export declare function paceUnderSail(world: WorldModel, vehicle: IFEntity, setting?: string): SailingPace | undefined;
+/**
+ * `port <n>` / `starboard <n>` (ADR-375 D3): turn a sailing vehicle's
+ * bearing by `degrees` — negative to port, positive to starboard — under
+ * way or not; a ship with no bearing yet is taken as pointing north. Only
+ * a sailing vehicle turns by degrees.
+ *
+ * @returns the new bearing, or undefined when the vehicle does not sail
+ */
+export declare function turnHeading(vehicle: IFEntity, degrees: number): number | undefined;
+/** Why `come about` was refused (ADR-375 D3). */
+export type ComeAboutRefusal = 'no-wind' | 'cannot';
+/**
+ * `come about` (ADR-375 D3): tack through the wind — the bearing turns to
+ * the same angle off the wind on the other side of it (wind from 45,
+ * heading 90, comes about to 0). Refused with `no-wind` aboard a vehicle
+ * that does not sail or in a calm, and with `cannot` dead into or dead
+ * before the wind, where there is no other side.
+ *
+ * @returns the new bearing, or the refusal
+ */
+export declare function comeAbout(world: WorldModel, vehicle: IFEntity): number | ComeAboutRefusal;
+/**
+ * Why `come about` would be refused now (ADR-375 D3), or undefined when it
+ * would tack: `no-wind` aboard a vehicle that does not sail or in a calm,
+ * `cannot` dead into or dead before the wind. Mutates nothing — the check an
+ * action asks before `comeAbout`.
+ */
+export declare function comeAboutRefusal(world: WorldModel, vehicle: IFEntity): ComeAboutRefusal | undefined;
+/**
+ * The bearing a vehicle holds (ADR-375 D2, D3): an open vehicle's heading
+ * as degrees, north when it has none; undefined for any other vehicle.
+ * Steering `ahead` starts on it; port, starboard and coming about turn from it.
+ */
+export declare function currentBearing(vehicle: IFEntity): number | undefined;
+/**
+ * `set the <vehicle>'s sails to <setting>` (ADR-375 D7): the current
+ * setting, from the next step. False when the vehicle has no sails or the
+ * setting is not one of its own.
+ */
+export declare function setSails(vehicle: IFEntity, setting: string): boolean;
+/** A change to an open vehicle's sails (ADR-375 D7). */
+export type SailChange = 'make' | 'shorten' | 'furl';
+/** Why a sail change would be refused (ADR-375 D7). */
+export type SailChangeRefusal = 'no-sails' | 'at-full' | 'already-furled';
+/**
+ * Why a sail change would be refused now, or undefined when it would take:
+ * `no-sails` on a vehicle without them, `at-full` making sail at the fullest
+ * setting, `already-furled` shortening or furling at the first. Mutates
+ * nothing — the check an action asks before the change.
+ */
+export declare function sailChangeRefusal(vehicle: IFEntity, change: SailChange): SailChangeRefusal | undefined;
+/** `make sail` (ADR-375 D7): one setting up. False when `sailChangeRefusal` refuses it. */
+export declare function makeSail(vehicle: IFEntity): boolean;
+/** `shorten sail` (ADR-375 D7): one setting down. False when `sailChangeRefusal` refuses it. */
+export declare function shortenSail(vehicle: IFEntity): boolean;
+/** `furl sails` (ADR-375 D7): to the first setting. False when `sailChangeRefusal` refuses it. */
+export declare function furlSails(vehicle: IFEntity): boolean;
+/**
+ * The edge an open vehicle is at when a way with any component toward it is
+ * asked for (ADR-376 D8), or undefined when the way is open. The actions
+ * read it to refuse with the edge's phrase before `startVehicle` or
+ * `sendVehicle` would.
+ *
+ * @param vehicle - An open vehicle
+ * @param vector - The direction's components, x east and y north (a
+ *   heading's unit vector, or the signs of a course's first leg)
+ */
+export declare function edgeAhead(vehicle: IFEntity, vector: IExpanseCell): ExpanseSide | undefined;
+/**
+ * The refusal of a way toward the edge an open vehicle is at (ADR-376 D8),
+ * or undefined when the way is open: the side, and the edge's phrase when
+ * the story gave one (the expanse borrows the exit message key for its side).
+ * Steering and setting a course both refuse on it, each in its own words.
+ *
+ * @param world - The world model
+ * @param vehicle - An open vehicle
+ * @param vector - The way asked for, as a direction vector
+ */
+export declare function edgeRefusalOf(world: WorldModel, vehicle: IFEntity, vector: IExpanseCell): {
+    side: ExpanseSide;
+    message?: string;
+} | undefined;
+/**
+ * The phrase the story wrote for one edge of an expanse (ADR-376 D8), or
+ * undefined for an unwritten side, which reads the stock line. The expanse
+ * borrows the exit message key for its side, so the phrase is resolved
+ * where every blocked way's is, each time it is asked: a varied phrase
+ * varies. The one lookup steering, setting a course and the machine share.
+ *
+ * @param world - The world model
+ * @param expanse - The expanse entity
+ * @param side - The edge
+ */
+export declare function edgePhraseOf(world: WorldModel, expanse: IFEntity, side: ExpanseSide): string | undefined;
+/**
+ * `stop <vehicle>` (ADR-366 D5f; ADR-376 D3): take the vehicle's machine
+ * out of the way where it is — a line halts at its stop, a compass vehicle
+ * loses its heading, an open vehicle loses heading and course and keeps
+ * its position.
+ *
+ * @returns false when the type has no `stop`
+ */
+export declare function stopVehicle(vehicle: IFEntity): boolean;
+/**
+ * `send <vehicle> to <destination>` (ADR-366 D5d; ADR-376 D3): a flight
+ * vehicle leaves its room and is nowhere for the trip, then arrives; an
+ * open vehicle takes a course for a landmark's cell or a cell of its
+ * expanse, dropping any heading, and leaves its landmark for the expanse
+ * (D5). The departure and the arrival are the machine's per-turn work; this
+ * records where it is bound.
+ *
+ * @param world - The world model
+ * @param vehicle - A flight or open vehicle
+ * @param destination - A room id (a flight destination, or an open vehicle's
+ *   landmark), or a cell for an open vehicle
+ * @returns false when the vehicle takes no `send`, the room is not one of
+ *   its destinations or landmarks, the cell lies outside its expanse
+ *   (`coordinates-outside-expanse`), the course's first leg heads into the
+ *   edge it is at (D8), or the vehicle is in no expanse
+ */
+export declare function sendVehicle(world: WorldModel, vehicle: IFEntity, destination: string | IExpanseCell): boolean;
+/**
+ * The resolver for a room aboard a vehicle (ADR-366 D7): an exit `to
+ * outside` leads to the room the vehicle is in, through the door the line
+ * named, and is blocked with `vehicle-under-way` while the vehicle is nowhere.
+ * Defers to static topology for a direction the trait does not declare.
+ */
+export declare const vehicleOutsideExitResolver: ExitResolver;
+/**
+ * Register the outside-exit resolver on a world. Idempotent; a story that
+ * has rooms aboard a vehicle registers it at load.
+ */
+export declare function registerVehicleExitResolver(world: WorldModel): void;
+/** The way between a room aboard and outside, as traversal answers it. */
+export type OutsideWay = 
+/** The room has no `to outside` exit. */
+{
+    kind: 'none';
+}
+/** Traversal grants exactly this one. */
+ | {
+    kind: 'way';
+    key: DirectionType;
+}
+/** Traversal grants none: the first way's refusal. */
+ | {
+    kind: 'refused';
+    key: DirectionType;
+    reason: WayRefusal;
+    message?: string;
+    door?: IFEntity;
+}
+/** Traversal grants more than one: the platform does not choose. */
+ | {
+    kind: 'ambiguous';
+    keys: DirectionType[];
 };
+/**
+ * The way between a room aboard a vehicle and outside (ADR-366 D7;
+ * alignment findings F9, F10, David's Q2 answer). Leaving (`'out'`),
+ * traversal is asked of each `to outside` exit and the one it grants is the
+ * way. Boarding (`'in'`) takes the same ways in reverse, so it reads the
+ * gates that hold in both directions — the way exists (its `while`) and its
+ * hatch is neither closed nor locked — but not a blocked line, which is
+ * written for one side and, as ADR-378 has it, never carried to the other.
+ * With none granted, the first way's refusal is the answer; with more than
+ * one, the way is ambiguous — no declaration order decides.
+ *
+ * @param world - The world model
+ * @param room - A room aboard a vehicle (anything else has no outside way)
+ * @param mover - Who is taking it: the walker leaving, or the one boarding
+ * @param side - `'out'` leaving the vehicle, `'in'` boarding it
+ */
+export declare function outsideWayOf(world: WorldModel, room: IFEntity, mover: TraversalMover, side?: 'out' | 'in'): OutsideWay;
+/**
+ * Whether a room is one of a line vehicle's stops.
+ *
+ * @param vehicle - A vehicle; false when it has no line model
+ * @param roomId - The room to test
+ */
+export declare function isStop(vehicle: IFEntity, roomId: string): boolean;
+/**
+ * The stop a line vehicle is at, read from its location (D9).
+ *
+ * @returns the stop's room id, or undefined when the vehicle has no line or is between stops
+ */
+export declare function currentStop(world: WorldModel, vehicle: IFEntity): string | undefined;
+/**
+ * Move a line vehicle, and everything it holds, to one of its stops (D5a).
+ *
+ * @param world - The world model
+ * @param vehicle - A vehicle with a line model
+ * @param stopId - The stop to move to
+ * @throws when the vehicle has no line or the room is not one of its stops
+ */
+export declare function moveVehicleToStop(world: WorldModel, vehicle: IFEntity, stopId: string): void;
+/**
+ * Whether an entity is aboard a vehicle: inside it at any depth, or in a
+ * room aboard it (D7). An actor in a box in the hold is aboard the ship.
+ *
+ * @param world - The world model
+ * @param entityId - The entity to test, usually an actor
+ * @param vehicleId - The vehicle
+ */
+export declare function isAboardVehicle(world: WorldModel, entityId: string, vehicleId: string): boolean;
+/**
+ * What one turn of the vehicle's machine did (D5e): it reached a room
+ * (`vehicle-arrived`, a stop, the room in its heading, its destination, or
+ * a landmark), it ran out of way or reached its course and took itself out
+ * of the way (`vehicle-stopped`, reported once), it left its room for the
+ * trip (`departed`, which no stock line reports: the fold is the
+ * author's sequence on `becomes under way`), it came alongside a floating
+ * thing and stopped (`vehicle-alongside`, ADR-376 D10), or it reached an
+ * edge of its expanse and stopped (`expanse-edge` or the edge's own phrase,
+ * which `edgePhraseOf` answers at report time, ADR-376 D8).
+ */
+export type VehicleStep = {
+    kind: 'arrived';
+    roomId: string;
+} | {
+    kind: 'stopped';
+} | {
+    kind: 'departed';
+} | {
+    kind: 'alongside';
+    thingId: string;
+} | {
+    kind: 'edge';
+    side: ExpanseSide;
+    sailing?: boolean;
+}
+/** ADR-375 D5: a sailing vehicle lies in irons, reported once. */
+ | {
+    kind: 'in-irons';
+};
+/**
+ * One turn of the vehicle's built-in machine (ADR-366 D5e). The types share
+ * one machine and differ only in what a step is (D5f): a line steps to the
+ * next stop or to where its `position` block says, a compass vehicle steps
+ * along the exit in its heading, a flight vehicle leaves, is nowhere for
+ * the trip, and arrives. Every move is `WorldModel.moveEntity`, so what
+ * the vehicle holds comes along (D4), and every piece of machine state
+ * written here is a trait field (D5g).
+ *
+ * @param world - The world model
+ * @param vehicle - A vehicle; nothing happens without a model that moves
+ * @param positionAnswer - For a `drive: state` line, the stop its
+ *   `position` block names this turn; the caller evaluates the block,
+ *   since its guards are code the trait cannot hold. Ignored by every
+ *   other model.
+ * @param random - The session's random service, which a computed way's
+ *   resolver may draw on (ADR-295 D4); world-model never makes one. Needed
+ *   only when a compass vehicle's heading meets a computed way.
+ * @returns what the step did, or undefined when the vehicle stayed put
+ * @throws Error when a compass vehicle meets a computed way and no random
+ *   service was passed (a host wiring defect, never a silent stop)
+ */
+export declare function stepVehicle(world: WorldModel, vehicle: IFEntity, positionAnswer?: string, random?: RandomService): VehicleStep | undefined;
+/**
+ * ADR-376 D9: an actor leaves an open vehicle that is positioned in its
+ * expanse. They are put in the expanse room holding the vehicle's cell on
+ * a floating trait of their own (added when they have none), so the
+ * machine holds while they are out and `enter` reaches any open vehicle in
+ * that cell. Nothing happens when the vehicle is at a landmark or
+ * anywhere else: the caller's ordinary exit applies.
+ *
+ * @param world - The world model
+ * @param actor - The actor leaving
+ * @param vehicle - The open vehicle they are in
+ * @returns true when the actor was put out into the expanse
+ */
+export declare function leaveVehicleIntoExpanse(world: WorldModel, actor: IFEntity, vehicle: IFEntity): boolean;
+/**
+ * ADR-376 D9: an actor out in the expanse boards a vehicle, dropping the
+ * position they held; the machine resumes on its next step. The move into
+ * the vehicle is entering's own.
+ *
+ * @returns true when the actor held a position
+ */
+export declare function boardFromExpanse(actor: IFEntity): boolean;
+/**
+ * The vehicle an actor is aboard (D7): the vehicle they are inside at any
+ * depth, or the vehicle whose room they stand in. Undefined on foot.
+ *
+ * @param world - The world model
+ * @param actorId - The actor
+ */
+export declare function getVehicleAboard(world: WorldModel, actorId: string): IFEntity | undefined;
+/**
+ * Whether a vehicle lists a command set (ADR-366 D5i): the words are always
+ * grammar, so a set the vehicle does not take is the action's refusal,
+ * `vehicle-no-such-command`.
+ *
+ * @param vehicle - A vehicle
+ * @param set - `compass`, `destinations`, or an extension's set
+ */
+export declare function takesCommandSet(vehicle: IFEntity, set: string): boolean;
+```
+
+### traits/vehicle/vehicleEvents
+
+```typescript
+/**
+ * Vehicle events — the facts a vehicle's machine, an expanse's drift and
+ * the driving statements record, and the stock lines they render through.
+ *
+ * One home below every emitter and reader: the vehicle machine (plugin-
+ * state-machine), going and the vehicle actions (stdlib), the story
+ * loader's driving statements and its `when <thing> moves` clauses. None of
+ * those may depend on another, and all depend on world-model, which owns
+ * the vehicle domain. Every type is a past-tense fact (alignment findings
+ * F4, D13; David's Q11 d answer).
+ *
+ * Public interface: `VEHICLE_EVENT_TYPES`, `VehicleEventType`,
+ * `VEHICLE_REPORT_MESSAGES`.
+ * Owner context: world-model — vehicles (ADR-366, ADR-375, ADR-376).
+ */
+/** The semantic-event types of the vehicle domain. */
+export declare const VEHICLE_EVENT_TYPES: {
+    /** A vehicle reached a room (ADR-366 D5e). */
+    readonly ARRIVED: "if.event.vehicle_arrived";
+    /** A vehicle left the room it was in (Q5). */
+    readonly DEPARTED: "if.event.vehicle_departed";
+    /** A vehicle ran out of way and halted. */
+    readonly STOPPED: "if.event.vehicle_stopped";
+    /** An open vehicle stopped alongside a floating thing (ADR-376 D10). */
+    readonly ALONGSIDE: "if.event.vehicle_alongside";
+    /** An open vehicle reached an edge of its expanse (ADR-376 D8). */
+    readonly EDGE_REACHED: "if.event.expanse_edge_reached";
+    /** A sailing vehicle was caught in irons (ADR-375 D5), once. */
+    readonly CAUGHT_IN_IRONS: "if.event.vehicle_caught_in_irons";
+    /** A line vehicle reached the end of its line on `send` (ADR-366 D5f). */
+    readonly REACHED_END: "if.event.vehicle_reached_end";
+    /** A floating thing drifted one cell (ADR-376 D10; D11, David's answer a). */
+    readonly DRIFTED: "if.event.drifted";
+    /** A floating thing drifted into a landmark and washed up in its room (ADR-376 D10). */
+    readonly WASHED_UP: "if.event.washed_up";
+};
+export type VehicleEventType = typeof VEHICLE_EVENT_TYPES[keyof typeof VEHICLE_EVENT_TYPES];
+/**
+ * The stock lines vehicle reports render through (ADR-366 D7a, ADR-375,
+ * ADR-376 D8, D10). They live in going's message set; every emitter and
+ * every action that words the same fact reads them here, so none spells a
+ * literal and lang holds each line once.
+ */
+export declare const VEHICLE_REPORT_MESSAGES: {
+    readonly ARRIVED: "if.action.going.vehicle_arrived";
+    readonly DEPARTED: "if.action.going.vehicle_departed";
+    readonly STOPPED: "if.action.going.vehicle_stopped";
+    readonly ALONGSIDE: "if.action.going.vehicle_alongside";
+    /** The stock line for an edge with no phrase: steering, setting a course and the machine alike. */
+    readonly EXPANSE_EDGE: "if.action.going.expanse_edge";
+    /** ADR-375 D6: the unwritten edge of a sea under sail is weather. */
+    readonly SAILING_EDGE: "if.action.going.sailing_edge";
+    readonly IN_IRONS: "if.action.going.vehicle_in_irons";
+    readonly AT_END: "if.action.going.vehicle_at_end";
+    /** Going's line for an authored refusal, rendering the phrase verbatim (an edge's phrase). */
+    readonly MOVEMENT_BLOCKED: "if.action.going.movement_blocked";
+    readonly DRIFTED: "if.action.going.thing_drifted";
+    readonly WASHED_UP: "if.action.going.thing_washed_up";
+};
+```
+
+### traits/expanse/expanseTrait
+
+```typescript
+/**
+ * Expanse Trait - a bounded space with coordinates, held by the room an expanse lowers to
+ *
+ * Public interface: `ExpanseTrait` (data: the size, the landmark rooms and
+ * their cells, the optional sight cap and drift interval, and the drift
+ * machine's state), `IExpanseCell`, `ExpanseSide`,
+ * `IExpanseData`, `isExpanseTrait`, `isInsideExpanse`, `sameCell`, and the
+ * value checks `isExpanseVisibility`, `isExpanseWind`.
+ *
+ * Owner context: world-model traits. An expanse is a room (its heading,
+ * looking and scope read it as one) carrying this trait, so an open vehicle
+ * or a floating thing between landmarks is simply *in* that room, and where
+ * in it is the position on the holder's own trait. The expanse stores its
+ * size and its landmarks, never its cells, so a thousand-unit sea costs what
+ * a twenty-unit pond does. Coordinates are whole units: `x` runs east from 0
+ * to `width - 1`, `y` runs north from 0 to `height - 1`.
+ *
+ * References:
+ * - ADR-376 D2 — the expanse kind, its size and landmarks; it lowers to a room.
+ * - ADR-376 D6 — `visibility:` caps every looker's sight in it.
+ * - ADR-376 D8 — edges are never crossed; a side's phrase is its blocked-exit
+ *   line, read through the exit message key (`edgePhraseOf`), not held here.
+ * - ADR-376 D10 — `drift:`, the interval floating things move on.
+ * - ADR-375 D4 — `wind:`, the bearing the wind comes from, or a calm.
+ * - ADR-375 D2 — a sailing vehicle's coordinates are fractional; a cell is a rounded coordinate.
+ * - ADR-366 D5g — machine state is trait data, so `turnsToDrift` rides a save.
+ */
+import { ITrait } from '../trait.js';
+import type { DirectionType } from '../../constants/directions.js';
+/** A cell of an expanse: whole-unit coordinates, x east, y north. */
+export interface IExpanseCell {
+    x: number;
+    y: number;
+}
+/** The four sides an expanse's edge lines may name (ADR-376 D8): a subset of the one `Direction` value (D15). */
+export type ExpanseSide = Extract<DirectionType, 'NORTH' | 'SOUTH' | 'EAST' | 'WEST'>;
+/** A wind (ADR-375 D4): the bearing it comes from, 0 north clockwise, or a calm. */
+export type ExpanseWind = number | 'calm';
+export interface IExpanseData {
+    /** `size: <w> by <h>` — cells run 0..width-1 east. One or more. */
+    width: number;
+    /** `size: <w> by <h>` — cells run 0..height-1 north. One or more. */
+    height: number;
+    /** The landmark rooms by entity id, each at its cell inside the size. */
+    landmarks?: Record<string, IExpanseCell>;
+    /** `visibility: <n>` — a cap on every looker's sight here; absent means uncapped. */
+    visibility?: number;
+    /** `drift: 1 unit every <n> turns` — turns between drift steps; absent means floating things hold still. */
+    drift?: number;
+    /** Machine state: turns left before the next drift step. */
+    turnsToDrift?: number;
+    /** `wind: from <bearing>` / `wind: calm` (ADR-375 D4); absent means the expanse carries no wind. */
+    wind?: ExpanseWind;
+}
+/**
+ * Trait for an expanse. The landmark map is the one record of where a
+ * landmark room lies; a vehicle at that landmark holds no coordinates of
+ * its own (ADR-376 D5).
+ */
+export declare class ExpanseTrait implements ITrait, IExpanseData {
+    static readonly type: "expanse";
+    readonly type: "expanse";
+    width: number;
+    height: number;
+    landmarks: Record<string, IExpanseCell>;
+    visibility?: number;
+    drift?: number;
+    turnsToDrift: number;
+    wind?: ExpanseWind;
+    /**
+     * Build the trait, holding the invariants the analyzer reports first: a
+     * size of whole units one or more on each axis, every landmark inside it,
+     * a drift interval of one turn or more, a visibility of zero or more.
+     * @throws when an invariant is broken
+     */
+    constructor(data: IExpanseData);
+}
+/** Whether a value is a visibility an expanse can hold: a number, zero or more. */
+export declare function isExpanseVisibility(value: unknown): value is number;
+/** Whether a value is a wind an expanse can hold: a whole bearing 0 to 359, or `calm`. */
+export declare function isExpanseWind(value: unknown): value is ExpanseWind;
+/**
+ * Whether a cell lies inside an expanse's size.
+ *
+ * @param expanse - The expanse's trait
+ * @param cell - The cell to test
+ */
+export declare function isInsideExpanse(expanse: Pick<IExpanseData, 'width' | 'height'>, cell: IExpanseCell): boolean;
+/** The cell a coordinate lies in: each axis rounded (ADR-375 D2, fractional positions under sail). */
+export declare function cellOf(at: IExpanseCell): IExpanseCell;
+/** Whether two coordinates lie in the same cell. */
+export declare function sameCell(a: IExpanseCell, b: IExpanseCell): boolean;
+/**
+ * Type guard for ExpanseTrait
+ */
+export declare function isExpanseTrait(trait: ITrait): trait is ExpanseTrait;
+```
+
+### traits/expanse/floatingTrait
+
+```typescript
+/**
+ * Floating Trait - a position in an expanse for something that is not a vehicle
+ *
+ * Public interface: `FloatingTrait` (data: the cell, held only while the
+ * holder is in an expanse), `IFloatingData`, `isFloatingTrait`.
+ *
+ * Owner context: world-model traits. Two things hold one: a thing marked
+ * `floats`, which drifts on the expanse's interval and is retrieved
+ * alongside, and a player out of their vehicle in the expanse, who holds
+ * the vehicle's cell while they are out and never drifts. In either case
+ * the position is held only while the holder is in the expanse room; at a
+ * landmark, or anywhere else, it is null and the holder's location is the
+ * one record, as for a vehicle (ADR-376 D5).
+ *
+ * References:
+ * - ADR-376 D10 — floating things: marked, positioned, drifting, retrieved.
+ * - ADR-376 D9 — the player out of the vehicle holds a floating position of their own.
+ */
+import { ITrait } from '../trait.js';
+import type { IExpanseCell } from './expanseTrait.js';
+export interface IFloatingData {
+    /** The cell in the expanse the holder is in, or null when it is not in one. */
+    position?: IExpanseCell | null;
+}
+/**
+ * Trait for a floating position. Pure data; the drift and the retrieval
+ * rules are `expanseBehavior.ts` and the actions.
+ */
+export declare class FloatingTrait implements ITrait, IFloatingData {
+    static readonly type: "floating";
+    readonly type: "floating";
+    position: IExpanseCell | null;
+    constructor(data?: IFloatingData);
+}
+/**
+ * Type guard for FloatingTrait
+ */
+export declare function isFloatingTrait(trait: ITrait): trait is FloatingTrait;
+```
+
+### traits/expanse/sightTrait
+
+```typescript
+/**
+ * Sight Trait - an instrument: a thing one looks through to see farther in an expanse
+ *
+ * Public interface: `SightTrait` (data: how far it sees, in expanse units),
+ * `ISightData`, `isSightTrait`.
+ *
+ * Owner context: world-model traits. `sight:` on a thing makes it an
+ * instrument; `look through <instrument>` looks once with this sight in
+ * place of the looker's own, still capped by the expanse's visibility. It is
+ * a trait rather than a field on identity so the verb can dispatch on it
+ * (ADR-090): the trait claims `if.action.searching`, where `look through`
+ * maps, and the host registers the looking-through behavior per world. A vehicle's sight is on its open model and a landmark room's on
+ * its `LandmarkTrait`; this trait is the instrument's alone.
+ *
+ * References:
+ * - ADR-376 D6 — instruments, and the visibility cap that still applies through one.
+ */
+import { ITrait } from '../trait.js';
+export interface ISightData {
+    /** How far the instrument sees, in expanse units; zero or more. */
+    sight: number;
+}
+/**
+ * Trait for an instrument's reach.
+ */
+export declare class SightTrait implements ITrait, ISightData {
+    static readonly type: "sight";
+    readonly type: "sight";
+    /** The action an instrument takes over (ADR-090): `look through` is searching's. */
+    static readonly capabilities: readonly ["if.action.searching"];
+    sight: number;
+    /** @throws when the sight is not a number of zero or more */
+    constructor(data: ISightData);
+}
+/**
+ * Type guard for SightTrait
+ */
+export declare function isSightTrait(trait: ITrait): trait is SightTrait;
+```
+
+### traits/expanse/landmarkTrait
+
+```typescript
+/**
+ * Landmark Trait - a room an expanse holds: how far one sees from it, and how it looks from afar
+ *
+ * Public interface: `LandmarkTrait` (data: the room's outlook over its
+ * expanse and its distant prose), `ILandmarkData`, `isLandmarkTrait`.
+ *
+ * Owner context: world-model traits, the expanse extension's own (`use
+ * expanses`). A room named in an expanse's `landmarks` block carries it; no
+ * core trait holds the extension's data. Where the landmark is — its cell —
+ * stays the expanse's `landmarks` record, the one fact.
+ *
+ * References:
+ * - ADR-376 D2 — landmarks occupy their cells.
+ * - ADR-376 D6 — a landmark's outlook (`sight:`) and `seen from afar:`.
+ * - Alignment finding D19, David's Q7 answer A (2026-10-21).
+ */
+import { ITrait } from '../trait.js';
+export interface ILandmarkData {
+    /** How far one sees from the room over its expanse, in expanse units; zero sees nothing. */
+    sight?: number;
+    /** What the room shows when seen from a distance (`seen from afar:`). */
+    seenFromAfar?: string;
+}
+/**
+ * Trait for a landmark room of an expanse.
+ */
+export declare class LandmarkTrait implements ITrait, ILandmarkData {
+    static readonly type: "landmark";
+    readonly type: "landmark";
+    sight: number;
+    seenFromAfar?: string;
+    /** @throws when the sight is not a number of zero or more */
+    constructor(data?: ILandmarkData);
+}
+/**
+ * Type guard for LandmarkTrait
+ */
+export declare function isLandmarkTrait(trait: ITrait): trait is LandmarkTrait;
+```
+
+### traits/expanse/expanseBehavior
+
+```typescript
+/**
+ * Expanse Behavior - the geometry of an expanse, where things in it are, and the drift of what floats
+ *
+ * Public interface: the compass over cells (`COMPASS_HEADINGS`,
+ * `headingVector`, `directionOf`), the wind angles (`signedAngleOffWind`,
+ * `angleOffWind`), `distance`, the distance bands
+ * (`SightBand`, `sightBandOf`), `landmarkAt`, `landmarkCellOf`, `expanseOfLandmark`,
+ * `floatingThingsAt`, `receiveInExpanse` (what becomes of a thing that
+ * lands in an expanse), `clearFloatingPosition`, the weather setters
+ * `setExpanseVisibility` and `setExpanseWind`, and the drift step
+ * `driftExpanse` with its result `DriftStep`. Where a thing is in an
+ * expanse is a system of its own (`world/ExpansePlaceBehavior.ts`), as is
+ * sight across one (`world/SightBehavior.ts`).
+ *
+ * Owner context: world-model expanse behavior. Every answer is read from the
+ * world and the traits; nothing here keeps a position of its own. The
+ * mutations are the expanse's visibility and wind, drift (a floating thing's
+ * cell, or a wash-up into a landmark's room), a thing received by the expanse (afloat at a cell, or
+ * lost offstage, D9/D10), and a floating thing taken out of it. The vehicle's own
+ * stepping is `vehicleBehavior.ts`, which reads this module for the
+ * landmarks, the floating things and the compass.
+ *
+ * References:
+ * - ADR-376 D2 — landmarks occupy their cells; the expanse is the room between them.
+ * - ADR-376 D3 — x grows east, y grows north; the eight headings.
+ * - ADR-376 D6 — distance bands at thirds of the sight in use, with a direction.
+ * - ADR-376 D10 — drift: one unit a random way per interval, never past an edge,
+ *   washing up on a landmark; drawn from the seeded random service (ADR-293).
+ */
+import { type RandomService } from '@sharpee/core';
+import type { WorldModel } from '../../world/WorldModel.js';
+import type { IFEntity } from '../../entities/if-entity.js';
+import { ExpanseTrait, type ExpanseWind, type IExpanseCell } from './expanseTrait.js';
+import { type DirectionType } from '../../constants/directions.js';
+/** The eight compass headings a vehicle or a drift may take: a subset of the one `Direction` value (D15). */
+export type CompassHeading = Extract<DirectionType, 'NORTH' | 'NORTHEAST' | 'EAST' | 'SOUTHEAST' | 'SOUTH' | 'SOUTHWEST' | 'WEST' | 'NORTHWEST'>;
+/** The eight headings clockwise from north, so a heading's index times 45 is its bearing. */
+export declare const COMPASS_HEADINGS: readonly CompassHeading[];
+/**
+ * The unit vector of a heading (D3: x east, y north) — one of the eight
+ * words, or a bearing in degrees (ADR-375 D2, 0 north, clockwise) — or
+ * undefined for a word that is not one of the eight.
+ */
+export declare function headingVector(heading: string | number): IExpanseCell | undefined;
+/** A compass word's bearing (ADR-375 D2), or undefined for any other word. */
+export declare function bearingOf(heading: string | number): number | undefined;
+/**
+ * The signed angle from the bearing a wind comes from to a heading (ADR-375
+ * D3, D5): 0 dead into the wind, positive clockwise of it, in -180 < a <= 180
+ * — 180 is dead before it. Coming about mirrors it; the pace reads its size.
+ */
+export declare function signedAngleOffWind(heading: number, wind: number): number;
+/**
+ * The angle between a bearing and the bearing a wind comes from (ADR-375
+ * D5): 0 dead into the wind, 180 dead before it.
+ */
+export declare function angleOffWind(heading: number, wind: number): number;
+/**
+ * The compass direction from one cell to another, to the nearest of the
+ * eight points; undefined when they are the same cell.
+ */
+export declare function directionOf(from: IExpanseCell, to: IExpanseCell): CompassHeading | undefined;
+/** The straight-line distance between two cells, in units. */
+export declare function distance(a: IExpanseCell, b: IExpanseCell): number;
+/** The three distance bands (D6), fixed at thirds of the sight in use. */
+export type SightBand = 'close-by' | 'in-the-distance' | 'on-the-horizon';
+/**
+ * The band a distance falls in for a given sight, or undefined when it is
+ * out of sight. Thirds: close by to a third, in the distance to two thirds,
+ * on the horizon to the sight itself.
+ */
+export declare function sightBandOf(d: number, sight: number): SightBand | undefined;
+/** The landmark room at a cell, by id, or undefined when the cell is open. */
+export declare function landmarkAt(expanse: ExpanseTrait, cell: IExpanseCell): string | undefined;
+/** A landmark room's cell in an expanse, or undefined when the room is not one of its landmarks. */
+export declare function landmarkCellOf(expanse: ExpanseTrait, roomId: string): IExpanseCell | undefined;
+/**
+ * The expanse a room is a landmark of, or undefined. A room is a landmark
+ * of at most one expanse; the first match is the answer.
+ */
+export declare function expanseOfLandmark(world: WorldModel, roomId: string): IFEntity | undefined;
+/**
+ * The floating things (not actors) in an expanse room at a cell.
+ *
+ * @param world - The world model
+ * @param expanseId - The expanse room
+ * @param cell - The cell to look at
+ */
+export declare function floatingThingsAt(world: WorldModel, expanseId: string, cell: IExpanseCell): IFEntity[];
+/** What became of a thing that landed in an expanse (D9, D10). */
+export type ExpanseReceipt = 'floats' | 'lost';
+/**
+ * A thing lands in an expanse at a cell (D9, D10): one that floats takes the
+ * cell and is in the expanse room; anything else is lost — offstage, with
+ * no position. The caller reports `lost-overboard`; the move itself is the
+ * ordinary `WorldModel.moveEntity`.
+ *
+ * @param world - The world model
+ * @param thing - The thing dropped, thrown or moved into the expanse
+ * @param expanseId - The expanse room
+ * @param cell - Where it lands, the dropper's cell
+ */
+export declare function receiveInExpanse(world: WorldModel, thing: IFEntity, expanseId: string, cell: IExpanseCell): ExpanseReceipt;
+/**
+ * A floating thing leaves the expanse (D10, retrieved; D9, the player boards
+ * again): its position is dropped. The move that takes it out is the
+ * caller's — taking's, entering's.
+ *
+ * @returns true when the thing held a position
+ */
+export declare function clearFloatingPosition(thing: IFEntity): boolean;
+/**
+ * Set the cap on every looker's sight in an expanse (D6), for fog and night.
+ *
+ * @returns false, changing nothing, when the entity is not an expanse or the
+ *   value is not zero or more
+ */
+export declare function setExpanseVisibility(expanse: IFEntity, visibility: number): boolean;
+/**
+ * Set the wind an expanse carries (ADR-375 D4); the sailing table reads it
+ * on the next step.
+ *
+ * @returns false, changing nothing, when the entity is not an expanse or the
+ *   wind is neither a bearing 0 to 359 nor `calm`
+ */
+export declare function setExpanseWind(expanse: IFEntity, wind: ExpanseWind): boolean;
+/** What one drift step did to one floating thing (D10). */
+export type DriftStep = {
+    kind: 'drifted';
+    thingId: string;
+    heading: CompassHeading;
+    cell: IExpanseCell;
+} | {
+    kind: 'held';
+    thingId: string;
+    heading: CompassHeading;
+} | {
+    kind: 'washed-up';
+    thingId: string;
+    heading: CompassHeading;
+    roomId: string;
+};
+/**
+ * One turn of an expanse's drift (ADR-376 D10). Every `drift` turns, each
+ * floating thing in the expanse (actors never drift, D9) moves one unit in
+ * a compass direction drawn from the seeded service at the point
+ * `vehicle.drift.<expanseId>`: a drift that would leave the expanse is not
+ * taken, and one that enters a landmark's cell washes the thing up into
+ * that room, where it holds no position. The interval is the trait's
+ * `turnsToDrift`, so a drift due survives a save.
+ *
+ * @param world - The world model
+ * @param expanse - The expanse room; nothing happens without a `drift:`
+ * @param random - The session's random service
+ * @returns what moved this turn, empty between drift steps
+ */
+export declare function driftExpanse(world: WorldModel, expanse: IFEntity, random: RandomService): DriftStep[];
 ```
 
 ### traits/story-info/storyInfoTrait
@@ -6662,6 +7893,52 @@ export interface IObstructorTraitMatch<T extends ITrait> {
 export declare function findTraitsOnObstructors<T extends ITrait>(wall: WallEntity, traitType: string, world: IObstructorQueryWorld): IObstructorTraitMatch<T>[];
 ```
 
+### traits/tool-requirement
+
+```typescript
+/**
+ * The one tool-requirement shape every tool-gated trait holds.
+ *
+ * A trait that needs a tool — Cuttable, Diggable, Flammable, Openable,
+ * LightSource — carries an optional `toolRequirement`: absent means no tool
+ * is needed, present means one of its `tools` must be used. The standard
+ * actions read it through one resolver, so a new tool-gated verb adds no
+ * fields of its own. The value is plain data, so it saves and restores with
+ * the trait.
+ *
+ * Public interface: `ToolRequirement`, `IToolGated`, `toolRequirement()`,
+ * `accepts()`.
+ *
+ * Owner context: `@sharpee/world-model` — traits.
+ *
+ * References: alignment-fixes Q12 (Older-1). `LockableTrait`'s key is not a
+ * tool requirement: a key is the lock's own concept.
+ */
+import { type EntityId } from '@sharpee/core';
+/** The tools that satisfy a requirement, in declaration order. Never empty. */
+export interface ToolRequirement {
+    readonly tools: readonly EntityId[];
+}
+/** A trait whose action needs a tool. Absent `toolRequirement`: no tool needed. */
+export interface IToolGated {
+    toolRequirement?: ToolRequirement;
+}
+/**
+ * Builds a tool requirement.
+ * @param tools the accepted tool ids, in declaration order
+ * @returns the requirement
+ * @throws when no tool is given — an empty requirement could never be met
+ */
+export declare function toolRequirement(...tools: EntityId[]): ToolRequirement;
+/**
+ * Whether a tool satisfies a requirement.
+ * @param requirement the requirement
+ * @param toolId the offered tool
+ * @returns true when the tool is one the requirement accepts
+ */
+export declare function accepts(requirement: ToolRequirement, toolId: EntityId): boolean;
+```
+
 ### traits/enterable/enterableTrait
 
 ```typescript
@@ -6974,6 +8251,8 @@ import { ITrait } from '../trait.js';
 export interface IBreakableData {
     /** Whether this object is already broken */
     broken?: boolean;
+    /** Whether dropping it on a floor or throwing it breaks it (ADR-373 D4) */
+    fragile?: boolean;
 }
 /**
  * Breakable trait indicates an entity can be broken with a single hit.
@@ -6986,6 +8265,7 @@ export declare class BreakableTrait implements ITrait, IBreakableData {
     static readonly type: "breakable";
     readonly type: "breakable";
     broken: boolean;
+    fragile: boolean;
     constructor(data?: IBreakableData);
 }
 ```
@@ -7291,8 +8571,9 @@ export declare class DeadlyRoomBehavior extends Behavior {
 import { IFEntity } from '../entities/if-entity.js';
 import { WallEntity, IWallSpec, IWallsSpec } from '../entities/wall-entity.js';
 import { TraitType } from '../traits/trait-types.js';
-import { DirectionType } from '../constants/directions.js';
+import { DirectionType, ExitKey } from '../constants/directions.js';
 import { type ISemanticEvent, type ISemanticEventSource } from '@sharpee/core';
+import type { LanguageWords } from '@sharpee/if-domain';
 import { IDataStore } from './AuthorModel.js';
 import { ICapabilityData, ICapabilityRegistration } from './capabilities.js';
 import { ITrait } from '../traits/trait.js';
@@ -7641,7 +8922,7 @@ export interface IWorldModel {
     setPlayer(entityId: string): void;
     getEnding(): IStoryEnding | undefined;
     setEnding(ending: IStoryEnding): void;
-    connectRooms(room1Id: string, room2Id: string, direction: DirectionType, doorId?: string, options?: ConnectRoomsOptions): void;
+    connectRooms(room1Id: string, room2Id: string, direction: ExitKey, doorId?: string, options?: ConnectRoomsOptions): void;
     createDoor(displayName: string, opts: {
         room1Id: string;
         room2Id: string;
@@ -7716,6 +8997,8 @@ export declare class WorldModel implements IWorldModel {
     private removalObservers;
     private state;
     private playerId;
+    /** The language's words the matcher reads (ADR-387 D2); assigned at install, never defaulted. */
+    private languageWords;
     /** The ending this story reached, or undefined while play continues (ADR-347 D2a). */
     private storyEnding;
     private spatialIndex;
@@ -7759,6 +9042,23 @@ export declare class WorldModel implements IWorldModel {
     private scopeEvaluator;
     private grammarVocabularyProvider;
     constructor(config?: WorldConfig, platformEvents?: ISemanticEventSource);
+    /**
+     * Assign the language's words to this world (ADR-387 D2). The engine calls
+     * this at install from its language provider; a hand-built world calls it
+     * before anything derives a name.
+     *
+     * @param words the self words and name stopwords of the story's language
+     */
+    setLanguageWords(words: LanguageWords): void;
+    /**
+     * The language's words this world was given.
+     *
+     * @returns the self words and name stopwords
+     * @throws Error when no words were assigned: a world matches no name with
+     *   empty lists; `installStory` assigns them, and a hand-built world calls
+     *   `setLanguageWords` first
+     */
+    getLanguageWords(): LanguageWords;
     private emitPlatformEvent;
     registerCapability(name: string, registration?: Partial<ICapabilityRegistration>): ICapabilityData;
     updateCapability(name: string, updates: Partial<ICapabilityData>): void;
@@ -8000,7 +9300,7 @@ export declare class WorldModel implements IWorldModel {
      * trait's room pair disagrees with the rooms passed — the primitive owns
      * the invariant that DoorTrait and the exits never disagree.
      */
-    connectRooms(room1Id: string, room2Id: string, direction: DirectionType, doorId?: string, options?: ConnectRoomsOptions): void;
+    connectRooms(room1Id: string, room2Id: string, direction: ExitKey, doorId?: string, options?: ConnectRoomsOptions): void;
     /**
      * Create a door entity and wire it into both rooms' exit data.
      * The door is placed in room1 spatially (for scope resolution).
@@ -8196,9 +9496,23 @@ export declare class VisibilityBehavior extends Behavior {
      * fact applies unchanged (static `dark`, hand-written TS stories).
      */
     private static roomRequiresLight;
+    /** Whether the observer sees without light — carries `NightVisionTrait`. */
+    private static seesInDark;
+    /**
+     * Whether a room is dark to this observer: dark, and the observer does
+     * not see in the dark (ADR-374 D5). Looking and the perception filter
+     * ask this; `isDark` stays the room's own fact.
+     *
+     * @param observer - The one looking
+     * @param room - The room it is in
+     * @param world - The world model
+     * @returns true when the observer cannot see the room
+     */
+    static isDarkFor(observer: IFEntity, room: IFEntity, world: WorldModel): boolean;
     /**
      * Determines if a room is effectively dark (no usable light sources).
-     * This is the single source of truth for darkness checking.
+     * This is the single source of truth for darkness checking; whether it
+     * is dark to a given observer is `isDarkFor`.
      *
      * A room is dark if:
      * 1. It has RoomTrait with requiresLight = true
@@ -8208,19 +9522,7 @@ export declare class VisibilityBehavior extends Behavior {
      * @param world - The world model
      * @returns true if the room is dark and has no accessible light sources
      */
-    /** Whether the observer sees without light — carries `NightVisionTrait`. */
-    private static seesInDark;
     static isDark(room: IFEntity, world: WorldModel): boolean;
-    /**
-     * Determines if a light source entity is currently providing light.
-     * Checks isLit property first, falls back to switchable state, defaults to lit.
-     *
-     * Priority order:
-     * 1. Explicit isLit property (e.g., lit torch, extinguished candle)
-     * 2. Switchable trait state (e.g., flashlight isOn: true)
-     * 3. Default to lit (e.g., glowing gems, phosphorescent moss)
-     */
-    private static isLightActive;
     /**
      * Whether an entity is still concealed (hidden until SEARCH or a game event
      * reveals it). This is the SINGLE shared definition of item concealment for
@@ -8248,6 +9550,18 @@ export declare class VisibilityBehavior extends Behavior {
      * Determines if an observer can see a target entity
      */
     static canSee(observer: IFEntity, target: IFEntity, world: WorldModel): boolean;
+    /**
+     * The expanse's answer for a target positioned in the observer's expanse
+     * (ADR-376 D6), or undefined when the ordinary rules apply: the observer
+     * has no lookout, the target and everything holding it is unpositioned,
+     * or the target rides the observer's own holder (their vehicle, or
+     * themself out of it).
+     *
+     * A positioned thing itself is visible iff in sight; something held in
+     * one is unseen out of sight and otherwise left to the room and
+     * line-of-sight rules, so a distant ship's cabin stays dark.
+     */
+    private static seenAcrossExpanse;
     /**
      * Gets all entities visible to an observer
      */
@@ -8316,10 +9630,9 @@ export declare class VisibilityBehavior extends Behavior {
     static isVisible(entity: IFEntity, world: WorldModel): boolean;
     /**
      * Gets the location that should be described when an observer looks around.
-     * Accounts for vehicle/container transparency:
-     * - In a transparent vehicle → describe the room
-     * - In an open container → describe the room
-     * - In a closed container → describe the container
+     * One rule over any enclosure (container, supporter, vehicle):
+     * - In or on an enclosure that does not block sight → describe the room
+     * - In a closed, opaque, openable container → describe the container
      * - In a room → describe the room
      *
      * @returns The entity to describe and optionally the immediate container
@@ -8328,6 +9641,20 @@ export declare class VisibilityBehavior extends Behavior {
         location: IFEntity;
         immediateContainer: IFEntity | null;
     };
+    /** Something an actor can be in or on: a container, a supporter or a vehicle. */
+    private static isEnclosure;
+    /**
+     * Whether an entity blocks sight between its inside and outside: a
+     * container that is openable, closed and not transparent. Anything held
+     * on top (a supporter, a vehicle ridden `on`) never does, nor does an
+     * open, lidless or transparent container. The one definition for
+     * scope, reach, the describable location, and every action that asks
+     * whether a container's contents can be seen (searching, examining).
+     *
+     * @param entity - Any entity
+     * @returns true when its inside cannot be seen from outside, nor out from in
+     */
+    static blocksSight(entity: IFEntity): boolean;
 }
 ```
 
@@ -8376,6 +9703,8 @@ export declare class ReachabilityBehavior extends Behavior {
      * @returns true if the target is physically reachable
      */
     static canReach(observer: IFEntity, target: IFEntity, world: WorldModel): boolean;
+    /** False when the target's positioned holder lies in the observer's expanse at another cell. */
+    private static reachableAcrossExpanse;
     /**
      * Gets all entities the observer can physically reach.
      *
@@ -8387,6 +9716,434 @@ export declare class ReachabilityBehavior extends Behavior {
      * @returns Array of entities that are physically reachable
      */
     static getReachable(observer: IFEntity, world: WorldModel): IFEntity[];
+}
+```
+
+### world/SightBehavior
+
+```typescript
+/**
+ * SightBehavior — where a looker looks from in an expanse, how far they see, and what is in sight
+ *
+ * A system in ADR-379's sense: one rule over the whole world, read by
+ * visibility and reachability, the story's sight conditions and scheduler
+ * constructs, and the looking, examining, throwing and look-through
+ * actions. A looker is an actor: aboard an open vehicle under way they see
+ * from its cell with its sight; out of it in the expanse they see from
+ * their own floating position with the sight of the open vehicles in that
+ * cell, since they are beside one; in a landmark room — aboard a vehicle
+ * moored there too — they see from its row with the landmark's outlook,
+ * and nothing without the line. Nothing here mutates.
+ *
+ * Public interface: `lookoutOf` with its result `Lookout` (the place a
+ * looker sees from and their naked sight there), `sightOf` (the sight in
+ * use, through an instrument or not, capped by the expanse), `sightingOf`
+ * with its result `Sighting` (one thing's distance, band and direction from
+ * a lookout), `inSight`, `sightings` (everything in sight from a lookout,
+ * nearest first — the looking report's rows and scope's additions), and
+ * `seenFromAfar` (the distant prose of a thing seen across the expanse).
+ * Owner context: world-model — sight across an expanse (the system's home).
+ *
+ * References:
+ * - ADR-376 D6 — sight, bands, instruments, the visibility cap, a landmark's outlook.
+ * - ADR-376 D7 — the sight conditions read the same answers.
+ * - ADR-376 D9 — the player out of the vehicle sees with the vehicle's sight.
+ * - GH #612 — aboard at a landmark, the landmark's outlook.
+ */
+import type { WorldModel } from './WorldModel.js';
+import type { IFEntity } from '../entities/if-entity.js';
+import { type CompassHeading, type SightBand } from '../traits/expanse/expanseBehavior.js';
+import { type ExpansePlace } from './ExpansePlaceBehavior.js';
+/** Where a looker sees from, and how far with the naked eye. */
+export interface Lookout extends ExpansePlace {
+    /** Naked sight from here, before the expanse's cap; zero from a landmark room without `sight:`. */
+    sight: number;
+}
+/**
+ * The lookout of an actor (D6, D9): their vehicle's place and sight when
+ * aboard an open vehicle under way in an expanse, their own place beside
+ * the open vehicles of their cell when out of it, or their landmark room's
+ * row and outlook — aboard a vehicle moored at that landmark too. Undefined
+ * when the actor is positioned in no expanse.
+ *
+ * @param world - The world model
+ * @param actor - The looker
+ */
+export declare function lookoutOf(world: WorldModel, actor: IFEntity): Lookout | undefined;
+/**
+ * The sight in use from a lookout (D6): the instrument's when looking
+ * through one, else the naked sight, either capped by the expanse's
+ * `visibility` when it has one.
+ *
+ * @param lookout - Where the looker looks from
+ * @param instrument - A thing with `SightTrait`, when looking through it
+ */
+export declare function sightOf(lookout: Lookout, instrument?: IFEntity): number;
+/** One thing seen from a lookout: how far, in which band, which way. */
+export interface Sighting {
+    thing: IFEntity;
+    distance: number;
+    band: SightBand;
+    /** Undefined when the thing shares the looker's cell. */
+    direction: CompassHeading | undefined;
+}
+/**
+ * The sighting of a thing from a lookout, or undefined when it is in
+ * another expanse, in no expanse, or beyond the sight in use. Rooms never
+ * see rooms: a landmark room is a thing here only when the looker is not
+ * in one. A vehicle moored at a landmark is seen as part of its room, not
+ * on its own.
+ *
+ * @param world - The world model
+ * @param lookout - Where the looker looks from
+ * @param thing - An open vehicle, a floating thing or a landmark room
+ * @param instrument - A thing with `SightTrait`, when looking through it
+ */
+export declare function sightingOf(world: WorldModel, lookout: Lookout, thing: IFEntity, instrument?: IFEntity): Sighting | undefined;
+/**
+ * Everything in sight from a lookout (D6): the expanse's landmark rooms,
+ * its open vehicles and its floating things within the sight in use,
+ * nearest first, never the looker's own holder nor an actor. The looking
+ * report's rows and scope's additions both read this.
+ *
+ * @param world - The world model
+ * @param lookout - Where the looker looks from
+ * @param instrument - A thing with `SightTrait`, when looking through it
+ * @param ownHolderId - The vehicle the looker is aboard, or the looker
+ *   themself out of it, excluded from the list
+ */
+export declare function sightings(world: WorldModel, lookout: Lookout, instrument?: IFEntity, ownHolderId?: string): Sighting[];
+/**
+ * Whether a thing is within an actor's sight in their expanse (D6, D7).
+ * False when either is positioned in no expanse.
+ */
+export declare function inSight(world: WorldModel, actor: IFEntity, thing: IFEntity, instrument?: IFEntity): boolean;
+/**
+ * The distant prose of a thing an actor sees only from afar (D6): a
+ * landmark room or an open vehicle that is placed itself (not held in
+ * another), in sight, and not where the looker is — its `seen from afar:`
+ * line. Undefined when the thing is near, out of sight, carries no such
+ * line (a floating thing), or the looker is in no expanse; examining then
+ * shows the description as ever.
+ *
+ * @param world - The world model
+ * @param actor - The looker
+ * @param thing - The thing looked at
+ */
+export declare function seenFromAfar(world: WorldModel, actor: IFEntity, thing: IFEntity): string | undefined;
+```
+
+### world/ExpansePlaceBehavior
+
+```typescript
+/**
+ * ExpansePlaceBehavior — where a thing is in an expanse.
+ *
+ * A system in ADR-379's sense: one answer to "where is this in an
+ * expanse?", consulted by sight, reach, the vehicle machine, setting a
+ * course and the story's conditions alike. An entity directly in an
+ * expanse room holds a cell of its own (an open vehicle, a floating thing,
+ * a player out of the vehicle); a landmark room's cell is its row; an open
+ * vehicle moored at a landmark holds no cell (ADR-376 D5) and is at that
+ * landmark's row. `holderOf` names the positioned thing an entity is in or
+ * is, whose place is the entity's for sight and reach. `isLandmark` says
+ * whether a room is one of an expanse's landmarks.
+ *
+ * Public interface: `placeOf` with its result `ExpansePlace`, `holderOf`,
+ *   `isLandmark`.
+ * Owner context: world-model — expanse place (the system's home). Nothing
+ * here mutates.
+ *
+ * References: ADR-376 D2 (landmarks occupy their cells), D5 (a vehicle at a
+ * landmark holds no position), D6 and D10 (a held thing's place is its
+ * holder's).
+ */
+import type { WorldModel } from './WorldModel.js';
+import type { IFEntity } from '../entities/if-entity.js';
+import { ExpanseTrait, type IExpanseCell } from '../traits/expanse/expanseTrait.js';
+/**
+ * Where something is in an expanse: the expanse room, its trait, and the
+ * cell — and, when the cell is a landmark's row, that landmark room.
+ */
+export interface ExpansePlace {
+    expanse: IFEntity;
+    trait: ExpanseTrait;
+    cell: IExpanseCell;
+    /**
+     * The landmark room whose row this is: the room itself, or the room an
+     * open vehicle is moored in. Absent for a cell held in the open.
+     */
+    landmark?: IFEntity;
+}
+/**
+ * The place of an entity in an expanse.
+ *
+ * @param world - The world model
+ * @param entity - A landmark room; an open vehicle, positioned or moored at
+ *   a landmark; a floating thing; an actor out of a vehicle
+ * @returns the place, or undefined when the entity is in no expanse
+ */
+export declare function placeOf(world: WorldModel, entity: IFEntity): ExpansePlace | undefined;
+/**
+ * Whether a room is a landmark: one of an expanse's landmark rooms, which
+ * holds a cell of that expanse and is seen across it (ADR-376 D2, D6).
+ *
+ * @param world - The world model
+ * @param room - Any entity; only a room can be a landmark
+ * @returns true when the entity is a room some expanse names as a landmark
+ */
+export declare function isLandmark(world: WorldModel, room: IFEntity): boolean;
+/**
+ * The positioned thing an entity is, or is held in at any depth: an open
+ * vehicle, a floating thing, or an actor out of a vehicle with a position;
+ * or the landmark room it is in. Undefined when nothing on the way up is
+ * placed. The holder's place is the entity's place for sight and reach
+ * (D6, D10): a lamp in a distant ship is as far off as the ship, and a
+ * vehicle moored at a landmark is wherever its room is.
+ *
+ * @param world - The world model
+ * @param entity - Any entity
+ */
+export declare function holderOf(world: WorldModel, entity: IFEntity): IFEntity | undefined;
+```
+
+### world/PresenceBehavior
+
+```typescript
+/**
+ * PresenceBehavior — where a thing is present beyond the one room that
+ * contains it (ADR-374 D1).
+ *
+ * A thing lives in one place. Two kinds are present at more rooms than
+ * that: a door at both of its rooms (David's ruling 2026-07-18), and a
+ * backdrop at every room of its list. This is the one rule for both; the
+ * scope rule and the visibility gates read it instead of re-deriving the
+ * door case.
+ *
+ * Public interface: PresenceBehavior.roomsBeyondHome, isPresentAt, presentAt.
+ * Owner context: world-model — scope and visibility.
+ */
+import { IFEntity } from '../entities/if-entity.js';
+import type { WorldModel } from './WorldModel.js';
+export declare class PresenceBehavior {
+    /**
+     * The rooms an entity is present at by its own nature: a door's two
+     * rooms, a backdrop's list. Empty for everything else.
+     *
+     * @param entity - The entity to ask about
+     * @returns Room ids (may include the room that contains it)
+     */
+    static roomsBeyondHome(entity: IFEntity): readonly string[];
+    /**
+     * Whether an entity is present at a room: contained in it, or a door or
+     * backdrop that lists it.
+     *
+     * @param entity - The entity to ask about
+     * @param roomId - The room
+     * @param world - The world model
+     * @returns true when the entity is present at the room
+     */
+    static isPresentAt(entity: IFEntity, roomId: string, world: WorldModel): boolean;
+    /**
+     * The doors and backdrops present at a room by their own nature —
+     * including any whose home is that room.
+     *
+     * @param roomId - The room
+     * @param world - The world model
+     * @returns The entities, doors first
+     */
+    static presentAt(roomId: string, world: WorldModel): IFEntity[];
+}
+```
+
+### world/TraversalBehavior
+
+```typescript
+/**
+ * TraversalBehavior — the one answer to "may this mover take this way now?"
+ *
+ * A system in ADR-379's sense: one rule over the whole world, consulted by
+ * every mover (the walking player, a steered vehicle, a pushed thing, an NPC)
+ * from one place, so that a gate added here is a gate for all of them. Before
+ * this module each mover carried its own copy of the gates and they
+ * disagreed (ADR-379 Context).
+ *
+ * The gates, in order (ADR-378 D0, D3): the way exists (an exit hidden by its
+ * `while` condition is absent); the way is not blocked (ADR-240's live key,
+ * else the stamped map); any door on the way is open and unlocked; the
+ * destination exists; the way admits the mover (ADR-366 D6 for a steered
+ * vehicle, ADR-378 D6 for a pushed thing), read from the exit's own `admits`
+ * field by field, else the destination room's.
+ *
+ * A computed way (ADR-295) has two halves and both live here. At validate
+ * time `wayFor` refuses it when no candidate destination admits the mover;
+ * at traversal time `resolveComputed` draws the destination once and
+ * refuses it when the destination reached does not admit the mover. Every
+ * mover takes a computed way through `resolveComputed`, so none re-checks
+ * admittance against the candidates.
+ *
+ * Public interface: TraversalBehavior.wayFor, resolveComputed, exitOf,
+ *   isExitHidden, isExitBlocked, blockedMessage, doorOf, doorRefusal,
+ *   admitsMover; the key
+ *   builders exitHiddenKey, exitBlockedKey, exitMessageKey; the types
+ *   TraversalMover, Way, WayRefusal, ResolvedWay.
+ * Owner context: world-model — traversal (the system's home).
+ */
+import { IFEntity } from '../entities/if-entity.js';
+import { IExitInfo } from '../traits/room/roomTrait.js';
+import { IComputedExitDeclaration } from '../traits/room/computedExitContract.js';
+import type { ExitResolution, ExitResolverContext } from '../capabilities/exit-resolver-binding.js';
+import type { ExitKey } from '../constants/directions.js';
+import type { WorldModel } from './WorldModel.js';
+/**
+ * Who is trying to take the way: an actor on foot, a vehicle the actor
+ * steers, or an NPC. A walker or a steered vehicle may push a thing along
+ * the way with it (ADR-378 D6, D7); the way must admit both, so they are one
+ * party asking once, and a computed way is drawn once for the two.
+ */
+export type TraversalMover = {
+    kind: 'walker';
+    entity: IFEntity;
+    pushing?: IFEntity;
+} | {
+    kind: 'steered';
+    vehicle: IFEntity;
+    pushing?: IFEntity;
+} | {
+    kind: 'npc';
+    entity: IFEntity;
+};
+/** Why a way refused. */
+export type WayRefusal = 'hidden' | 'no_exit' | 'blocked' | 'door_closed' | 'door_locked' | 'destination_missing' | 'not_admitted' | 'pushing_not_admitted';
+/** The query's answer. */
+export type Way = {
+    kind: 'exit';
+    key: ExitKey;
+    exit: IExitInfo;
+    destination: IFEntity;
+    door?: IFEntity;
+} | {
+    /** The way is a computed exit (ADR-295): its destination is drawn by the caller's one resolution. */
+    kind: 'computed';
+    key: ExitKey;
+    declaration: IComputedExitDeclaration;
+    exit: IExitInfo | null;
+} | {
+    kind: 'refused';
+    key: ExitKey;
+    reason: WayRefusal;
+    message?: string;
+    door?: IFEntity;
+};
+/**
+ * A computed way taken (ADR-295 D5): the resolver's exit or block, passed
+ * through, or traversal's own refusal of the destination it reached.
+ */
+export type ResolvedWay = NonNullable<ExitResolution> | {
+    kind: 'refused';
+    reason: WayRefusal;
+};
+/** Derived key: is this way hidden now? (ADR-378 D3; registered by the story's `while` on the exit line) */
+export declare function exitHiddenKey(roomId: string, key: ExitKey): string;
+/** Derived key: is this way blocked now? (ADR-240; registered by the story's `is blocked` line) */
+export declare function exitBlockedKey(roomId: string, key: ExitKey): string;
+/** Derived key: the blocked way's refusal message, resolved at refusal time (ADR-240). */
+export declare function exitMessageKey(roomId: string, key: ExitKey): string;
+export declare class TraversalBehavior {
+    /**
+     * Whether the way is hidden: its `while` condition is registered and false.
+     * With nothing registered the way is not hidden.
+     *
+     * @param world - The live world
+     * @param room - The room the way leaves
+     * @param key - The way
+     */
+    static isExitHidden(world: WorldModel, room: IFEntity, key: ExitKey): boolean;
+    /**
+     * The exit for a way, or null when there is none or it is hidden (ADR-378 D3).
+     *
+     * @param world - The live world
+     * @param room - The room the way leaves
+     * @param key - The way
+     */
+    static exitOf(world: WorldModel, room: IFEntity, key: ExitKey): IExitInfo | null;
+    /**
+     * Whether the way is blocked: a registered evaluator is authoritative;
+     * with none, the stamped `RoomTrait.blockedExits` map applies.
+     *
+     * @param world - The live world
+     * @param room - The room the way leaves
+     * @param key - The way
+     */
+    static isExitBlocked(world: WorldModel, room: IFEntity, key: ExitKey): boolean;
+    /**
+     * The blocked way's message: the registered evaluator first, the trait map as fallback.
+     *
+     * @param world - The live world
+     * @param room - The room the way leaves
+     * @param key - The way
+     */
+    static blockedMessage(world: WorldModel, room: IFEntity, key: ExitKey): string | undefined;
+    /**
+     * The door on a way: the static exit's, else the computed way's own (a
+     * vehicle's hatch, ADR-366 D7). Undefined when the way has none.
+     *
+     * @param world - The live world
+     * @param room - The room the way leaves
+     * @param key - The way
+     */
+    static doorOf(world: WorldModel, room: IFEntity, key: ExitKey): IFEntity | undefined;
+    /**
+     * Whether a door bars a way, and how: locked before closed. The door gate
+     * every traversal reads, in either direction through the door.
+     *
+     * @param door - The door on the way
+     * @returns `door_locked`, `door_closed`, or undefined when it lets one through
+     */
+    static doorRefusal(door: IFEntity): 'door_locked' | 'door_closed' | undefined;
+    /**
+     * Whether a way admits a mover: each field of the exit's own `admits`
+     * when it has it, else the destination room's (ADR-366 D6, ADR-378 D6).
+     * A walker and an NPC need no admitting; a steered vehicle does, and so
+     * does a thing pushed along with either.
+     *
+     * @param exit - The exit being taken; null for a computed way with no static exit
+     * @param destination - The room it leads to
+     * @param mover - Who is taking it
+     */
+    static admitsMover(exit: IExitInfo | null, destination: IFEntity, mover: TraversalMover): boolean;
+    /**
+     * Why a way does not admit a mover, or null when it does: `not_admitted`
+     * for a steered vehicle it does not name, `pushing_not_admitted` for a
+     * pushed thing it does not admit. The vehicle is asked first.
+     */
+    private static admittanceRefusal;
+    /**
+     * Take a computed way (ADR-295 D5): draw its destination once and refuse
+     * it when that destination does not admit the mover (ADR-366 D6). A
+     * resolver that defers hands the way to its static exit, admitted the
+     * same way. Calls the resolver, which may draw, so a caller calls this
+     * exactly once per traversal.
+     *
+     * @param world - The live world
+     * @param room - The room the way leaves
+     * @param key - The way
+     * @param mover - Who is taking it
+     * @param ctx - The resolver's context (world, actor, random service)
+     * @returns The resolved way, or undefined when the way is not computed
+     */
+    static resolveComputed(world: WorldModel, room: IFEntity, key: ExitKey, mover: TraversalMover, ctx: ExitResolverContext): ResolvedWay | undefined;
+    /**
+     * The way for a mover out of a room by a key, or the refusal (ADR-378 D0).
+     *
+     * @param world - The live world
+     * @param room - The room the way leaves (must carry RoomTrait)
+     * @param key - The way: a compass direction or a passage key
+     * @param mover - Who is taking it
+     * @returns The exit and its destination; a computed declaration for the
+     *   caller to resolve once; or the refusal with its reason
+     */
+    static wayFor(world: WorldModel, room: IFEntity, key: ExitKey, mover: TraversalMover): Way;
 }
 ```
 
@@ -8838,10 +10595,10 @@ export declare class ScopeRegistry {
  * @description Evaluates scope rules to determine which entities are "in scope"
  * for a given actor at a given location.
  *
- * Pipeline role: PRE-PARSE — called via WorldModel.evaluateScope() →
- * VocabularyManager.updateScopeVocabulary() to populate the parser's entity
- * vocabulary before each turn. Stories can add/remove rules via
- * world.addScopeRule() / world.removeScopeRule().
+ * Pipeline role: answers WorldModel.evaluateScope() — which entities an actor
+ * may refer to. Entity names are not parser vocabulary (ADR-385, ADR-387 D4):
+ * the noun matcher resolves them over the world. Stories can add/remove rules
+ * via world.addScopeRule() / world.removeScopeRule().
  *
  * NOT the same as the parser's GrammarScopeResolver (grammar constraint
  * evaluation) or the stdlib's StandardScopeResolver (validation-phase entity
@@ -9779,6 +11536,18 @@ export interface ActionInterceptor {
      * }
      */
     onBlocked?(entity: IFEntity, world: WorldModel, actorId: string, error: string, sharedData: InterceptorSharedData, random?: RandomService): InterceptorBlockedResult | null;
+    /**
+     * Whether this interceptor implements the action for this entity
+     * (ADR-371 D1a). An implementation-dispatching action (turning, cutting,
+     * lowering, …) counts an interceptor as the entity's implementation only
+     * when this answers true. One interceptor registered on a shared marker
+     * trait can serve many entities and implement the action for only some;
+     * absent means it implements the action for every entity that carries it.
+     *
+     * @param entity - The entity the action targets
+     * @returns true when this interceptor owns the action's outcome for it
+     */
+    claims?(entity: IFEntity): boolean;
 }
 ```
 
@@ -9864,7 +11633,7 @@ import type { ISemanticEvent, EntityId, RandomService } from '@sharpee/core';
 import type { IFEntity } from '../entities/if-entity.js';
 import type { ITrait } from '../traits/trait.js';
 import type { WorldModel } from '../world/WorldModel.js';
-import type { DirectionType } from '../constants/directions.js';
+import type { ExitKey } from '../constants/directions.js';
 import type { IExitInfo } from '../traits/room/roomTrait.js';
 /**
  * Context handed to an exit resolver at traversal time (ADR-295 D4).
@@ -9916,7 +11685,7 @@ export type ExitResolution = {
  * @param ctx - Live world, actor, and injected random service
  * @returns The resolution, or `undefined` to defer to static topology
  */
-export type ExitResolver = (room: IFEntity, trait: ITrait, direction: DirectionType, staticExit: IExitInfo | null, ctx: ExitResolverContext) => ExitResolution;
+export type ExitResolver = (room: IFEntity, trait: ITrait, direction: ExitKey, staticExit: IExitInfo | null, ctx: ExitResolverContext) => ExitResolution;
 ```
 
 ### capabilities/dialogue-selector-binding

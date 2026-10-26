@@ -54,6 +54,31 @@ public sealed class TestingSurfacePostsTests
         Assert.Null(TestingSurfacePosts.ReadOpenSource(body));
     }
 
+    // ── the lock gesture (ADR-367 D7): the page's `sharpee claim` arguments ──
+
+    [Fact]
+    public void ReadsALockRequestsArgumentsVerbatim()
+    {
+        var args = TestingSurfacePosts.ReadLock(
+            "{\"lock\":{\"args\":[\"claim\",\"mainline\",\"the player is in the Landing\",\"--at\",\"2\",\"--json\",\"--propose\"]}}");
+
+        Assert.NotNull(args);
+        Assert.Equal(new[] { "claim", "mainline", "the player is in the Landing", "--at", "2", "--json", "--propose" }, args!);
+    }
+
+    [Theory]
+    [InlineData("{\"run\":true}")]
+    [InlineData("{\"lock\":{}}")]
+    [InlineData("{\"lock\":{\"args\":[]}}")]
+    [InlineData("{\"lock\":{\"args\":[\"test\",\"--tree\"]}}")]
+    [InlineData("{\"lock\":{\"args\":[\"claim\",7]}}")]
+    [InlineData("{\"lock\":{\"args\":\"claim mainline\"}}")]
+    [InlineData("not json at all")]
+    public void ALockPostMustCarryAClaimArgumentListOfStrings(string body)
+    {
+        Assert.Null(TestingSurfacePosts.ReadLock(body));
+    }
+
     // ── the tree write (ADR-355): only the files a change touched ──
 
     [Fact]

@@ -23,17 +23,11 @@ import { ScopeLevel } from '../../../scope/types.js';
 import { type ISemanticEvent } from '@sharpee/core';
 import { IFActions } from '../../constants.js';
 import { puttingAction, puttingLifecycle } from '../putting/index.js';
-import { createActionContext } from '../../enhanced-context.js';
+import { Delegation, delegateValidate, delegateExecute, delegateReport } from '../delegation-shared.js';
 import { InsertingMessages } from './inserting-messages.js';
 import { nounPhraseFor } from '../../../utils/index.js';
 import {
   ActionLifecycleDescriptor,
-  resolveLifecycle,
-  getLifecycleState,
-  runPreValidate,
-  runPostValidate,
-  runPostExecute,
-  runPostReport,
   blockedMessageId
 } from '../../lifecycle/index.js';
 
@@ -56,6 +50,7 @@ export const insertingLifecycle: ActionLifecycleDescriptor = {
       id: 'item',
       actionIds: [IFActions.INSERTING],
       resolve: (ctx) => ctx.command.directObject?.entity,
+      counterpart: (ctx) => ctx.command.indirectObject?.entity,
       seedData: (ctx, entity) => ({
         itemId: entity.id,
         itemName: entity.name,
@@ -67,6 +62,7 @@ export const insertingLifecycle: ActionLifecycleDescriptor = {
       id: 'container',
       actionIds: [IFActions.INSERTING],
       resolve: (ctx) => ctx.command.indirectObject?.entity,
+      counterpart: (ctx, multiObjectItem) => multiObjectItem ?? ctx.command.directObject?.entity,
       seedData: (ctx, entity) => ({
         itemId: ctx.command.directObject?.entity?.id,
         itemName: ctx.command.directObject?.entity?.name,
@@ -81,7 +77,8 @@ export const insertingLifecycle: ActionLifecycleDescriptor = {
  * Shared data passed between execute and report phases
  */
 interface InsertingSharedData {
-  modifiedContext?: ActionContext;
+  /** Putting `in`, carried from validate (it holds any implicit take). */
+  delegation?: Delegation;
 }
 
 function getInsertingSharedData(context: ActionContext): InsertingSharedData {
@@ -126,7 +123,8 @@ export const insertingAction: Action & { metadata: ActionMetadata } = {
     'already_there',
     'inserted',
     'wont_fit',
-    'container_closed'
+    'container_closed',
+    'no_room'
   ],
   group: 'object_manipulation',
 
@@ -162,69 +160,17 @@ export const insertingAction: Action & { metadata: ActionMetadata } = {
       };
     }
 
-    // Create modified command with 'in' preposition for delegation to putting
-    const modifiedCommand = createModifiedCommand(context);
-
-    // Create a new context for the putting action with the modified command
-    // (inherits the outer context's action RNG stream — ADR-231 D6)
-    const modifiedContext = createActionContext(
-      context.world,
-      context.actor,
-      puttingAction,
-      modifiedCommand,
-      context.random
-    );
-
-    // Store modified context for execute/report phases (preserves implicit take events)
-    const sharedData = getInsertingSharedData(context);
-    sharedData.modifiedContext = modifiedContext;
-
-    // D6-B delegation seam: the executor runs the INSERTING-id hooks on
-    // the outer context; this action runs the PUTTING-id hooks on the
-    // delegated context itself, because the executor never sees the
-    // delegated call (ADR-337 D1). Order is unchanged: inserting's
-    // preValidate, then putting's, then putting's postValidate, then
-    // inserting's.
-    const puttingState = resolveLifecycle(modifiedContext, puttingLifecycle);
-    const puttingPreVeto = runPreValidate(modifiedContext, puttingState);
-    if (puttingPreVeto) return puttingPreVeto;
-
-    // Delegate validation to putting action
-    // This includes implicit take check - events stored in modifiedContext.sharedData
-    const puttingValidation = puttingAction.validate(modifiedContext);
-
-    if (!puttingValidation.valid) {
-      return puttingValidation as ValidationResult;
-    }
-
-    const puttingPostVeto = runPostValidate(modifiedContext, puttingState);
-    if (puttingPostVeto) return puttingPostVeto;
-
-    return { valid: true };
+    // D6-B delegation seam (delegation-shared.ts): putting `in`, with the
+    // PUTTING-id hooks run on its own context; the executor runs inserting's.
+    // Putting's validate includes the implicit take, kept on that context.
+    const { delegation, result } = delegateValidate(context, puttingAction, puttingLifecycle, createModifiedCommand(context));
+    getInsertingSharedData(context).delegation = delegation;
+    return result;
   },
 
   execute(context: ActionContext): void {
-    // Reuse the modified context from validate (preserves implicit take events)
-    const sharedData = getInsertingSharedData(context);
-    const modifiedContext = sharedData.modifiedContext;
-
-    if (!modifiedContext) {
-      // Shouldn't happen, but create one defensively
-      const modifiedCommand = createModifiedCommand(context);
-      sharedData.modifiedContext = createActionContext(
-        context.world,
-        context.actor,
-        puttingAction,
-        modifiedCommand,
-        context.random
-      );
-    }
-
-    // Execute putting action, then the PUTTING-id postExecute hooks on the
-    // delegated context (the executor runs inserting's own after this).
-    puttingAction.execute(sharedData.modifiedContext!);
-    const puttingState = getLifecycleState(sharedData.modifiedContext!);
-    if (puttingState) runPostExecute(sharedData.modifiedContext!, puttingState);
+    // Validate always set the delegation before a valid verdict.
+    delegateExecute(getInsertingSharedData(context).delegation!);
   },
 
   /**
@@ -233,10 +179,9 @@ export const insertingAction: Action & { metadata: ActionMetadata } = {
    * Delegates to putting action which uses simplified event pattern (ADR-097).
    */
   report(context: ActionContext): ISemanticEvent[] {
-    const sharedData = getInsertingSharedData(context);
-    const modifiedContext = sharedData.modifiedContext;
+    const delegation = getInsertingSharedData(context).delegation;
 
-    if (!modifiedContext) {
+    if (!delegation) {
       // Shouldn't happen, but handle gracefully with domain event
       const item = context.command.directObject?.entity;
       const container = context.command.indirectObject?.entity;
@@ -255,18 +200,9 @@ export const insertingAction: Action & { metadata: ActionMetadata } = {
       })];
     }
 
-    // Delegate to putting action's report, then the PUTTING-id postReport
-    // hooks on the delegated context; the executor runs inserting's own
-    // after this. Inserting is always 'in', so the primary event is put_in.
-    if ('report' in puttingAction && typeof puttingAction.report === 'function') {
-      const events = puttingAction.report(modifiedContext);
-      const puttingState = getLifecycleState(modifiedContext);
-      if (puttingState) runPostReport(modifiedContext, puttingState, events, 'if.event.put_in');
-      return events;
-    }
-
-    // Shouldn't happen since putting is migrated
-    return [];
+    // Putting's report and its postReport hooks; inserting is always `in`,
+    // so putting's primary event is put_in. The executor runs inserting's.
+    return delegateReport(delegation);
   },
 
   /**

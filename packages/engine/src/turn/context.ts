@@ -29,11 +29,11 @@
 
 import type { ISemanticEvent, ISemanticEventSource, IPlatformEvent } from '@sharpee/core';
 import type { WorldModel, IParsedCommand } from '@sharpee/world-model';
-import type { Parser, StandardActionRegistry, IPerceptionService } from '@sharpee/stdlib';
+import type { StandardActionRegistry, IPerceptionService } from '@sharpee/stdlib';
 import type { ISound } from '@sharpee/if-domain';
 import type { ITextBlock } from '@sharpee/text-blocks';
 import type { PluginRegistry } from '@sharpee/plugins';
-import type { EngineConfig, GameContext, GameEngineEvents, InputModeHandler, TurnResult } from '../types.js';
+import type { EngineConfig, GameContext, GameEngineEvents, HeldCommand, InputModeHandler, TurnResult } from '../types.js';
 import type { CommandExecutor } from '../command/command-executor.js';
 import type { EngineRandomService } from '../session/engine-random-service.js';
 import type { IProsePipeline } from '../prose-pipeline/index.js';
@@ -134,22 +134,26 @@ export interface TurnEngine {
   turnEventsOf(turn: number): ISemanticEvent[];
   /** Append events to a turn's stored list, rendered at turn end and cleared after. */
   storeTurnEvents(turn: number, events: readonly ISemanticEvent[]): void;
+  /**
+   * Apply events through the world's handlers (ADR-052), as an action's
+   * events are applied: the events, then the reactions, then a
+   * `command.failed` per handler that threw (events/world-reactions.ts).
+   */
+  withWorldReactions(events: ISemanticEvent[], turn: number): ISemanticEvent[];
   /** Empty a turn's stored list once it has been rendered. */
   clearTurnEvents(turn: number): void;
   /** Emit one of the engine's lifecycle events. */
   emit<K extends keyof GameEngineEvents>(event: K, ...args: Parameters<GameEngineEvents[K]>): void;
   /** Emit a game event and store it in the current turn's events (nothing stored before turn one). */
   emitGameEvent(event: ISemanticEvent): void;
-  /** Refresh the parser's scope vocabulary for the player's current surroundings. */
-  updateScopeVocabulary(): void;
   /** Make another playable actor the player (ADR-327); throws for a missing or unplayable entity. */
   switchPlayer(entityId: string): void;
   /** Run an input as a turn of its own (command chaining, AGAIN). */
   executeTurn(input: string): Promise<TurnResult>;
-  /** Remember a clarification for the next input (GH #318). */
-  holdCommand(input: string): void;
+  /** Remember a question's command for the next input (GH #318, ADR-385 D11); a new hold replaces an open one. */
+  holdCommand(held: HeldCommand): void;
   /** Take the held command, if any, clearing the hold — exactly one input spends it (GH #318). */
-  takeHeldCommand(): string | undefined;
+  takeHeldCommand(): HeldCommand | undefined;
   /** Count a turn (and a move when it succeeded) in the session statistics. */
   countSessionTurn(success: boolean): void;
   /** What a platform operation needs of the engine: the hooks, save data, stop, undo, repeat (ADR-334 D3). */

@@ -7,6 +7,9 @@ import { WorldModel, TraitType, EntityType, IFEntity, IdentityTrait } from '@sha
 import { StandardScopeResolver } from '../../../src/scope/scope-resolver';
 import { ScopeLevel } from '../../../src/scope/types';
 
+/** English, handed to hand-built worlds as the language's words (ADR-387 D2). */
+const ENGLISH_WORDS = { selfWords: ['me', 'myself', 'self', 'yourself'], nameStopwords: ['the', 'a', 'an', 'of'] };
+
 describe('StandardScopeResolver', () => {
   let world: WorldModel;
   let resolver: StandardScopeResolver;
@@ -15,6 +18,7 @@ describe('StandardScopeResolver', () => {
 
   beforeEach(() => {
     world = new WorldModel();
+    world.setLanguageWords(ENGLISH_WORDS);
     resolver = new StandardScopeResolver(world);
 
     // Create basic test world
@@ -573,6 +577,7 @@ describe('StandardScopeResolver', () => {
 
       // Create a fresh world and load from JSON
       const world2 = new WorldModel();
+      world2.setLanguageWords(ENGLISH_WORDS);
       world2.loadJSON(json);
 
       // Create new resolver for the restored world
@@ -641,6 +646,7 @@ describe('StandardScopeResolver', () => {
       // Serialize and restore
       const json = world.toJSON();
       const world2 = new WorldModel();
+      world2.setLanguageWords(ENGLISH_WORDS);
       world2.loadJSON(json);
       const resolver2 = new StandardScopeResolver(world2);
 

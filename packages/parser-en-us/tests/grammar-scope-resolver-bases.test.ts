@@ -18,8 +18,11 @@ import {
 import type { GrammarContext, ScopeConstraint } from '@sharpee/if-domain';
 import { GrammarScopeResolver } from '../src/grammar-scope-resolver';
 
+/** English, handed to hand-built worlds as the language's words (ADR-387 D2). */
+const ENGLISH_WORDS = { selfWords: ['me', 'myself', 'self', 'yourself'], nameStopwords: ['the', 'a', 'an', 'of'] };
+
 function constraint(base: ScopeConstraint['base']): ScopeConstraint {
-  return { base, filters: [], traitFilters: [], explicitEntities: [], includeRules: [] };
+  return { base, filters: [], traitFilters: [], explicitEntities: [] };
 }
 
 describe('GrammarScopeResolver scope bases against a real WorldModel (ADR-273)', () => {
@@ -35,6 +38,7 @@ describe('GrammarScopeResolver scope bases against a real WorldModel (ADR-273)',
 
   beforeEach(() => {
     world = new WorldModel();
+    world.setLanguageWords(ENGLISH_WORDS);
 
     room = world.createEntity('Room', 'room');
     room.add(new RoomTrait());
@@ -111,26 +115,27 @@ describe('GrammarScopeResolver scope bases against a real WorldModel (ADR-273)',
   });
 
   it('findEntitiesByName resolves within the touchable base (the parse-time gate path)', () => {
-    const matches = GrammarScopeResolver.findEntitiesByName('rock', constraint('touchable'), context);
+    const matches = GrammarScopeResolver.findEntitiesByName({ text: 'rock' }, constraint('touchable'), context);
     expect(matches.map((e) => e.id)).toEqual([rock.id]);
 
     // The firefly is findable by name in `visible` but not in `touchable`
-    expect(GrammarScopeResolver.findEntitiesByName('firefly', constraint('visible'), context)).toHaveLength(1);
-    expect(GrammarScopeResolver.findEntitiesByName('firefly', constraint('touchable'), context)).toHaveLength(0);
+    expect(GrammarScopeResolver.findEntitiesByName({ text: 'firefly' }, constraint('visible'), context)).toHaveLength(1);
+    expect(GrammarScopeResolver.findEntitiesByName({ text: 'firefly' }, constraint('touchable'), context)).toHaveLength(0);
   });
 
-  it('leading articles are stripped when the original text matches nothing', () => {
-    expect(GrammarScopeResolver.findEntitiesByName('the rock', constraint('touchable'), context).map((e) => e.id)).toEqual([rock.id]);
-    expect(GrammarScopeResolver.findEntitiesByName('a rock', constraint('touchable'), context).map((e) => e.id)).toEqual([rock.id]);
-    // Stripping does not weaken the gate: the articled firefly still fails touchable
-    expect(GrammarScopeResolver.findEntitiesByName('the firefly', constraint('touchable'), context)).toHaveLength(0);
+  it('asks the one noun matcher over the base (ADR-385 D3): the rock by name, never the firefly behind glass', () => {
+    expect(GrammarScopeResolver.findEntitiesByName({ text: 'rock' }, constraint('touchable'), context).map((e) => e.id)).toEqual([rock.id]);
+    // The gate is not weakened: the firefly still fails touchable
+    expect(GrammarScopeResolver.findEntitiesByName({ text: 'firefly' }, constraint('touchable'), context)).toHaveLength(0);
+    // A substring names nothing
+    expect(GrammarScopeResolver.findEntitiesByName({ text: 'ock' }, constraint('touchable'), context)).toHaveLength(0);
   });
 
-  it('an entity genuinely named with a leading article wins before stripping', () => {
+  it('an entity genuinely named with a leading article matches with the split articles restored', () => {
     const grail = world.createEntity('The Grail', 'item');
     world.moveEntity(grail.id, room.id);
 
-    const matches = GrammarScopeResolver.findEntitiesByName('the grail', constraint('touchable'), context);
+    const matches = GrammarScopeResolver.findEntitiesByName({ text: 'grail', articles: ['the'] }, constraint('touchable'), context);
     expect(matches.map((e) => e.id)).toEqual([grail.id]);
   });
 
@@ -138,7 +143,7 @@ describe('GrammarScopeResolver scope bases against a real WorldModel (ADR-273)',
     const top = world.createEntity('top of the ladder', 'item');
     world.moveEntity(top.id, room.id);
 
-    expect(GrammarScopeResolver.findEntitiesByName('top of the ladder', constraint('touchable'), context).map((e) => e.id)).toEqual([top.id]);
+    expect(GrammarScopeResolver.findEntitiesByName({ text: 'top of the ladder' }, constraint('touchable'), context).map((e) => e.id)).toEqual([top.id]);
   });
 
   it('missing world fails closed to zero candidates (D3), not a throw', () => {
@@ -154,6 +159,7 @@ describe('GH #312: the parse-time bases include the actor', () => {
 
   beforeEach(() => {
     world = new WorldModel();
+    world.setLanguageWords(ENGLISH_WORDS);
     const room = world.createEntity('Room', 'room');
     room.add(new RoomTrait());
     room.add(new ContainerTrait());

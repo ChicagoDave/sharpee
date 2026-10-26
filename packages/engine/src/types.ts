@@ -148,6 +148,30 @@ export interface TurnResult {
    * a follow-up response before continuing.
    */
   needsInput?: boolean;
+
+  /**
+   * The command to hold for the next input, when this turn asked a
+   * question — a missing-object clarification (GH #318) or a
+   * disambiguation prompt (ADR-385 D11). The execute stage hands it to
+   * the engine; the held-command stage spends it on the next input.
+   */
+  hold?: HeldCommand;
+}
+
+/**
+ * A command held for one more input after a question (GH #318, ADR-385
+ * D11). `tokens` are the input's words; `insertAt` is the index where an
+ * answer's words are inserted — the tied phrase's first content word,
+ * after its articles and determiners. Absent, the answer is appended (the
+ * missing-object hold). Turn state: never saved.
+ */
+export interface HeldCommand {
+  /** The input as typed. */
+  input: string;
+  /** The input's token words, in order. */
+  tokens: string[];
+  /** Where an answer's words go; absent means at the end. */
+  insertAt?: number;
 }
 
 /**

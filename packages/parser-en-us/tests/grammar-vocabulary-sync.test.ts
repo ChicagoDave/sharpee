@@ -26,7 +26,7 @@ describe('Grammar/Vocabulary sync (Phase 6)', () => {
   let vocabularyActionIds: Set<string>;
 
   beforeAll(() => {
-    const engine = new EnglishGrammarEngine();
+    const engine = new EnglishGrammarEngine(new EnglishLanguageProvider());
     const builder = engine.createBuilder();
     defineGrammar(builder);
 

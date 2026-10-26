@@ -11,7 +11,7 @@
 import { describe, test, expect, beforeEach } from 'vitest';
 import { climbingAction } from '../../../src/actions/standard/climbing';
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType, WorldModel, EntityType, RoomTrait } from '@sharpee/world-model';
+import { TraitType, WorldModel, EntityType, RoomTrait, Direction } from '@sharpee/world-model';
 import {
   createRealTestContext,
   expectEvent,
@@ -22,6 +22,9 @@ import {
   setupBasicWorld
 } from '../../test-utils';
 import type { ActionContext } from '../../../src/actions/enhanced-types';
+
+/** English, handed to hand-built worlds as the language's words (ADR-387 D2). */
+const ENGLISH_WORDS = { selfWords: ['me', 'myself', 'self', 'yourself'], nameStopwords: ['the', 'a', 'an', 'of'] };
 
 describe('climbingAction (Golden Pattern)', () => {
   describe('Action Metadata', () => {
@@ -102,9 +105,9 @@ describe('climbingAction (Golden Pattern)', () => {
     });
 
     test('should fail for invalid directions', () => {
-      const { world, player } = setupBasicWorld();
+      const { world, player, room } = setupBasicWorld();
       const command = createCommand(IFActions.CLIMBING);
-      command.parsed.extras = { direction: 'north' }; // Invalid for climbing
+      command.parsed.extras = { direction: Direction.NORTH }; // Invalid for climbing
 
       const context = createRealTestContext(climbingAction, world, command);
 
@@ -114,16 +117,18 @@ describe('climbingAction (Golden Pattern)', () => {
         messageId: 'if.action.climbing.cant_go_that_way',
         reason: 'cant_go_that_way'
       });
+      expect(world.getLocation(player.id)).toBe(room.id);
     });
 
     test('should fail when no exit in climb direction', () => {
       const world = new WorldModel();
+      world.setLanguageWords(ENGLISH_WORDS);
 
       const room = world.createEntity('Ground Floor', EntityType.ROOM);
       room.add({
         type: TraitType.ROOM,
         exits: {
-          north: { to: 'room2' }  // No up/down exits
+          [Direction.NORTH]: { destination: 'room2' }  // No up/down exits
         }
       });
 
@@ -133,7 +138,7 @@ describe('climbingAction (Golden Pattern)', () => {
       world.moveEntity(player.id, room.id);
 
       const command = createCommand(IFActions.CLIMBING);
-      command.parsed.extras = { direction: 'up' };
+      command.parsed.extras = { direction: Direction.UP };
 
       const context = createRealTestContext(climbingAction, world, command);
 
@@ -147,6 +152,7 @@ describe('climbingAction (Golden Pattern)', () => {
 
     test('should fail when not in a room for directional climbing', () => {
       const world = new WorldModel();
+      world.setLanguageWords(ENGLISH_WORDS);
 
       const container = world.createEntity('box', EntityType.CONTAINER);
       container.add({ type: TraitType.CONTAINER });
@@ -157,7 +163,7 @@ describe('climbingAction (Golden Pattern)', () => {
       world.moveEntity(player.id, container.id);
 
       const command = createCommand(IFActions.CLIMBING);
-      command.parsed.extras = { direction: 'up' };
+      command.parsed.extras = { direction: Direction.UP };
 
       const context = createRealTestContext(climbingAction, world, command);
 
@@ -173,12 +179,13 @@ describe('climbingAction (Golden Pattern)', () => {
   describe('Successful Climbing', () => {
     test('should climb up when exit exists', () => {
       const world = new WorldModel();
+      world.setLanguageWords(ENGLISH_WORDS);
       
       const groundFloor = world.createEntity('Ground Floor', EntityType.ROOM);
       groundFloor.add({
         type: TraitType.ROOM,
         exits: {
-          up: { to: 'attic' }
+          [Direction.UP]: { destination: 'attic' }
         }
       });
       
@@ -186,13 +193,13 @@ describe('climbingAction (Golden Pattern)', () => {
       attic.add({
         type: TraitType.ROOM,
         exits: {
-          down: { to: groundFloor.id }
+          [Direction.DOWN]: { destination: groundFloor.id }
         }
       });
       
       // Update ground floor exit to use actual ID
       const roomTrait = groundFloor.getTrait(RoomTrait)!;
-      roomTrait.exits.up.to = attic.id;
+      roomTrait.exits[Direction.UP]!.destination = attic.id;
       
       const player = world.createEntity('yourself', EntityType.ACTOR);
       player.add({ type: TraitType.ACTOR, isPlayer: true });
@@ -200,7 +207,7 @@ describe('climbingAction (Golden Pattern)', () => {
       world.moveEntity(player.id, groundFloor.id);
       
       const command = createCommand(IFActions.CLIMBING);
-      command.parsed.extras = { direction: 'up' };
+      command.parsed.extras = { direction: Direction.UP };
       
       const context = createRealTestContext(climbingAction, world, command);
       
@@ -209,22 +216,22 @@ describe('climbingAction (Golden Pattern)', () => {
       // Should emit CLIMBED event with messageId for text rendering
       expectEvent(events, 'if.event.climbed', {
         messageId: 'if.action.climbing.climbed_up',
-        direction: 'up',
+        direction: Direction.UP,
         method: 'directional',
         destinationId: attic.id
       });
 
-      // Should emit movement event
-      expectEvent(events, 'if.event.moved', {
-        direction: 'up',
+      // The move is going's (ADR-378 D7): the climber's actor_moved, from going
+      expectEvent(events, 'if.event.actor_moved', {
         fromRoom: groundFloor.id,
-        toRoom: attic.id,
-        method: 'climbing'
+        toRoom: attic.id
       });
+      expect(world.getLocation(player.id)).toBe(attic.id);
     });
 
     test('should climb down when exit exists', () => {
       const world = new WorldModel();
+      world.setLanguageWords(ENGLISH_WORDS);
 
       const groundFloor = world.createEntity('Ground Floor', EntityType.ROOM);
       groundFloor.add({ type: TraitType.ROOM });
@@ -233,7 +240,7 @@ describe('climbingAction (Golden Pattern)', () => {
       attic.add({
         type: TraitType.ROOM,
         exits: {
-          down: { to: groundFloor.id }
+          [Direction.DOWN]: { destination: groundFloor.id }
         }
       });
 
@@ -243,7 +250,7 @@ describe('climbingAction (Golden Pattern)', () => {
       world.moveEntity(player.id, attic.id);
 
       const command = createCommand(IFActions.CLIMBING);
-      command.parsed.extras = { direction: 'down' };
+      command.parsed.extras = { direction: Direction.DOWN };
 
       const context = createRealTestContext(climbingAction, world, command);
 
@@ -251,10 +258,11 @@ describe('climbingAction (Golden Pattern)', () => {
 
       expectEvent(events, 'if.event.climbed', {
         messageId: 'if.action.climbing.climbed_down',
-        direction: 'down',
+        direction: Direction.DOWN,
         method: 'directional',
         destinationId: groundFloor.id
       });
+      expect(world.getLocation(player.id)).toBe(groundFloor.id);
     });
 
     test('should climb onto enterable supporter', () => {
@@ -382,12 +390,13 @@ describe('climbingAction (Golden Pattern)', () => {
 
     test('should handle direction normalization', () => {
       const world = new WorldModel();
+      world.setLanguageWords(ENGLISH_WORDS);
       
       const room1 = world.createEntity('Room', EntityType.ROOM);
       room1.add({
         type: TraitType.ROOM,
         exits: {
-          up: { to: 'room2' }
+          [Direction.UP]: { destination: 'room2' }
         }
       });
       
@@ -396,7 +405,7 @@ describe('climbingAction (Golden Pattern)', () => {
       
       // Update exit to use actual ID
       const roomTrait = room1.getTrait(RoomTrait)!;
-      roomTrait.exits.up.to = room2.id;
+      roomTrait.exits[Direction.UP]!.destination = room2.id;
       
       const player = world.createEntity('yourself', EntityType.ACTOR);
       player.add({ type: TraitType.ACTOR, isPlayer: true });
@@ -404,14 +413,15 @@ describe('climbingAction (Golden Pattern)', () => {
       world.moveEntity(player.id, room1.id);
       
       const command = createCommand(IFActions.CLIMBING);
-      command.parsed.extras = { direction: 'UP' }; // Uppercase
-      
+      command.parsed.extras = { direction: Direction.UP }; // The parser's constant
+
       const context = createRealTestContext(climbingAction, world, command);
-      
+
       const events = executeWithValidation(climbingAction, context);
-      
+
+      // Carried as the constant, never re-spelled as a word
       expectEvent(events, 'if.event.climbed', {
-        direction: 'up' // Normalized to lowercase
+        direction: Direction.UP
       });
     });
   });
@@ -453,6 +463,7 @@ describe('climbingAction (Golden Pattern)', () => {
   describe('World State Mutations', () => {
     test('should move player to destination room when climbing up', () => {
       const world = new WorldModel();
+      world.setLanguageWords(ENGLISH_WORDS);
 
       const groundFloor = world.createEntity('Ground Floor', EntityType.ROOM);
       groundFloor.add({ type: TraitType.ROOM });
@@ -461,7 +472,7 @@ describe('climbingAction (Golden Pattern)', () => {
       attic.add({ type: TraitType.ROOM });
 
       const roomTrait = groundFloor.get(TraitType.ROOM);
-      roomTrait.exits = { up: { to: attic.id } };
+      roomTrait.exits = { [Direction.UP]: { destination: attic.id } };
 
       const player = world.createEntity('yourself', EntityType.ACTOR);
       player.add({ type: TraitType.ACTOR, isPlayer: true });
@@ -472,7 +483,7 @@ describe('climbingAction (Golden Pattern)', () => {
       expectLocation(world, player.id, groundFloor.id);
 
       const command = createCommand(IFActions.CLIMBING);
-      command.parsed.extras = { direction: 'up' };
+      command.parsed.extras = { direction: Direction.UP };
       const context = createRealTestContext(climbingAction, world, command);
 
       const validation = climbingAction.validate(context);
@@ -485,6 +496,7 @@ describe('climbingAction (Golden Pattern)', () => {
 
     test('should move player to destination room when climbing down', () => {
       const world = new WorldModel();
+      world.setLanguageWords(ENGLISH_WORDS);
 
       const groundFloor = world.createEntity('Ground Floor', EntityType.ROOM);
       groundFloor.add({ type: TraitType.ROOM });
@@ -493,7 +505,7 @@ describe('climbingAction (Golden Pattern)', () => {
       attic.add({ type: TraitType.ROOM });
 
       const atticRoom = attic.get(TraitType.ROOM);
-      atticRoom.exits = { down: { to: groundFloor.id } };
+      atticRoom.exits = { [Direction.DOWN]: { destination: groundFloor.id } };
 
       const player = world.createEntity('yourself', EntityType.ACTOR);
       player.add({ type: TraitType.ACTOR, isPlayer: true });
@@ -504,7 +516,7 @@ describe('climbingAction (Golden Pattern)', () => {
       expectLocation(world, player.id, attic.id);
 
       const command = createCommand(IFActions.CLIMBING);
-      command.parsed.extras = { direction: 'down' };
+      command.parsed.extras = { direction: Direction.DOWN };
       const context = createRealTestContext(climbingAction, world, command);
 
       const validation = climbingAction.validate(context);

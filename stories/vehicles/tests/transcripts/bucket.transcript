@@ -1,0 +1,35 @@
+title: Bucket — a state-driven line (ADR-366 D5a)
+story: vehicles
+description: The bucket is a line whose position block answers from what it
+  holds. Fill it and it rises with the player aboard; empty it and it falls.
+  The machine reports the arrival to the rider; a turn with no change moves
+  nothing.
+
+---
+
+> take water
+[OK: contains "Taken"]
+
+> enter bucket
+[OK: contains "get into the bucket"]
+
+# Fill: the position block now answers the Top of the Well
+> put water in bucket
+[OK: contains "The bucket arrives at the Top of the Well."]
+
+> look
+[OK: contains "Top of the Well"]
+
+# Nothing changed: nothing moves
+> wait
+[OK: not contains "arrives"]
+
+# Empty: the position block answers the Well Bottom again
+> take water
+[OK: contains "The bucket arrives at the Well Bottom."]
+
+> look
+[OK: contains "Well Bottom"]
+
+> exit
+[OK: contains "You get out of the bucket."]

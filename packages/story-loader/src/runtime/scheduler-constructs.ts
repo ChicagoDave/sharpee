@@ -14,12 +14,19 @@
  */
 import type { IREntity, IROnClause, IRStatement } from '@sharpee/chord';
 import type { ISemanticEvent } from '@sharpee/core';
-import { HealthTrait, WorldModel } from '@sharpee/world-model';
+import { HealthTrait, type IFEntity, inSight, isUnderWay, TraitType, WorldModel } from '@sharpee/world-model';
 import { CHORD_OCCURRENCE_PREFIX, CHORD_STATE_PREFIX, CHORD_STORY_STATE_KEY, CHORD_TRAIT_PREFIX, clauseOccurrenceKey } from '../state-keys.js';
 import { ExecContext, SchedulerDaemon, knownTopicsIn, type RuntimeCore } from './core.js';
 
 export class SchedulerConstructsSection {
   constructor(private readonly core: RuntimeCore) {}
+
+  /** The built vehicle an IR entity id names, or undefined when it is no vehicle. */
+  private vehicleOf(irId: string, world: WorldModel): IFEntity | undefined {
+    const worldId = this.core.host.entityId(irId);
+    const entity = worldId !== undefined ? world.getEntity(worldId) : undefined;
+    return entity?.has(TraitType.VEHICLE) ? entity : undefined;
+  }
 
   /**
    * Build the story's scheduler daemons (`once` / `every N turns` /
@@ -61,6 +68,20 @@ export class SchedulerConstructsSection {
             if (!step.anchor) return false;
             if (step.anchor.owner === 'story') {
               return world.getStateValue(CHORD_STORY_STATE_KEY) === step.anchor.state;
+            }
+            // ADR-366 D5e, D9: `becomes under way` is the vehicle's machine,
+            // read off the trait — never a second record in Chord state.
+            const vehicle = step.anchor.state === 'under way' ? this.vehicleOf(step.anchor.owner, world) : undefined;
+            if (vehicle) return isUnderWay(vehicle);
+            // ADR-376 D7: `comes into sight` is read live off the traits each
+            // turn — the first turn the thing is within the player's sight
+            // arms the step, which covers a step that crossed the boundary
+            // mid-path and ended inside it.
+            if (step.anchor.state === 'in sight') {
+              const worldId = this.core.host.entityId(step.anchor.owner);
+              const thing = worldId !== undefined ? world.getEntity(worldId) : undefined;
+              const player = world.getPlayer();
+              return thing !== undefined && player !== undefined && inSight(world, player, thing);
             }
             return world.getStateValue(CHORD_STATE_PREFIX + step.anchor.owner) === step.anchor.state;
           }

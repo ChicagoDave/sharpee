@@ -38,10 +38,13 @@ describe('adaptParser (Phase 6)', () => {
     expect(() => {
       adapted.setWorldContext({} as WorldModel, 'a1', 'r1');
       adapted.setPlatformEventEmitter(undefined);
-      adapted.updatePronounContext({} as IValidatedCommand, 3);
-      adapted.registerPronounEntity('i1', 'lamp', 3);
+      adapted.updatePronounContext({} as IValidatedCommand);
+      adapted.registerPronounEntity('i1', 'lamp');
       adapted.resetPronounContext();
     }).not.toThrow();
+    // A parser without a tokenizer gets plain words with no part of speech
+    expect(adapted.tokenize('take the lamp').map((t) => [t.word, t.normalized, t.candidates.length]))
+      .toEqual([['take', 'take', 0], ['the', 'the', 0], ['lamp', 'lamp', 0]]);
   });
 
   it('forwards each present method with the same arguments and no-ops the rest', () => {
@@ -51,15 +54,15 @@ describe('adaptParser (Phase 6)', () => {
     const adapted = adaptParser(parser);
     const world = {} as WorldModel;
     adapted.setWorldContext(world, 'a1', 'r1');
-    adapted.registerPronounEntity('i1', 'lamp', 7);
-    adapted.updatePronounContext({} as IValidatedCommand, 7);
+    adapted.registerPronounEntity('i1', 'lamp');
+    adapted.updatePronounContext({} as IValidatedCommand);
     adapted.resetPronounContext();
     expect(setWorldContext).toHaveBeenCalledWith(world, 'a1', 'r1');
-    expect(registerPronounEntity).toHaveBeenCalledWith('i1', 'lamp', 7);
+    expect(registerPronounEntity).toHaveBeenCalledWith('i1', 'lamp');
     expect(adapted).not.toBe(parser);
   });
 
-  it('returns a parser that already offers all five methods as it is, and is idempotent', () => {
+  it('returns a parser that already offers all six methods as it is, and is idempotent', () => {
     const full = {
       ...bareParser(),
       setWorldContext: vi.fn(),
@@ -67,6 +70,7 @@ describe('adaptParser (Phase 6)', () => {
       updatePronounContext: vi.fn(),
       registerPronounEntity: vi.fn(),
       resetPronounContext: vi.fn(),
+      tokenize: vi.fn(() => []),
     } as unknown as IParser;
     expect(adaptParser(full)).toBe(full);
     const adapted = adaptParser(bareParser());

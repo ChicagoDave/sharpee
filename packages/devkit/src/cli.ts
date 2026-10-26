@@ -30,6 +30,7 @@ import { runIfidCommand } from './standalone/ifid.js';
 import { runRegister, runList } from './commands/register.js';
 import { runTestCommand } from './commands/test.js';
 import { runPlayCommand } from './commands/play.js';
+import { runClaimCommand } from './commands/claim.js';
 import { runWorldIndex } from './commands/world-index.js';
 import { lookupStory } from './registry.js';
 
@@ -56,6 +57,11 @@ Usage:
                                          continues:; runs every root-to-leaf
                                          path (ADR-302)
   sharpee play [name|path]               Play the project interactively (REPL)
+  sharpee claim <line> ["<fact>"] [--at <turn>] [--name "<n>"] [--propose] [name|path]
+                                         Lock a fact true at a card of a played
+                                         line as a claim; its needs are proposed
+                                         from the line (ADR-367). No fact: list
+                                         the facts the line reached
 
 build (Chord .story): compiles the story, derives all metadata from the Story IR
   (ADR-252 — no package.json), and emits a self-contained browser app to
@@ -188,6 +194,8 @@ async function main(argv: string[]): Promise<number> {
       return runTestCommand(rest);
     case 'play':
       return runPlayCommand(rest);
+    case 'claim':
+      return runClaimCommand(rest);
     case 'world-index':
       return runWorldIndex(rest);
     default:

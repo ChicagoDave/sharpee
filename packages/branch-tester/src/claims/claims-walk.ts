@@ -23,45 +23,22 @@
  * computed once before the walk. It is report data for the author who
  * trims the set; the walk, the identity, and the candidates never read it.
  *
- * Public interface: `walkClaims`, `necessaryIdentity`, `ClaimsWalkOptions`,
- *   `ClaimsWalkReport`, `ClaimVerdict`, `ClaimOutcome`, `WalkStopReason`.
+ * Public interface: `walkClaims`, `necessaryIdentity`, `ClaimsWalkOptions`.
+ *   The walk reports in `claim-results`' shapes (`ClaimsWalkReport`,
+ *   `ClaimVerdict`).
  * Owner context: @sharpee/branch-tester — the claims runner (ADR-365 D10).
  */
 
 import { createHash } from 'node:crypto';
-import { CHORD_IR_ID_ATTRIBUTE, CHORD_STATE_PREFIX, CHORD_STORY_STATE_KEY, clauseOccurrenceKey } from '@sharpee/story-loader';
+import { CHORD_IR_ID_ATTRIBUTE, CHORD_STATE_PREFIX, CHORD_STORY_STATE_KEY } from '@sharpee/story-loader';
 import { captureSave, restoreSave } from '@sharpee/transcript-tester';
 import { claimCone, type IRClaim, type StoryIR } from '@sharpee/chord';
-import type { Claim, ClaimGroup, ClaimKind, NecessarySet } from './claim-set.js';
-import { claimHolds } from './claim-predicates.js';
-import { candidateCommands, deriveCommandVocabulary, type CandidateBreadth } from './claim-candidates.js';
+import type { Claim, ClaimGroup, NecessarySet } from './claim-set.js';
+import { claimHolds, clauseKeysByFiredOf, entityIdByIrOf } from './claim-predicates.js';
+import { candidateCommands, deriveCommandVocabulary } from './claim-candidates.js';
+import type { CandidateBreadth, ClaimVerdict, ClaimsWalkReport, WalkStopReason } from './claim-results.js';
 import type { ClaimsGame, ClaimsTurnEvent, WorldSnapshot } from './claims-game.js';
 import { irIdOf, readWorldSnapshot } from './claims-game.js';
-
-/** Why a walk stopped. Only the first two exhaust the frontier. */
-export type WalkStopReason = 'frontier-exhausted' | 'all-claims-settled' | 'max-states' | 'max-seconds' | 'max-depth-reached';
-
-/** The three outcomes of a claim (ADR-322 D11's held / violated / unproven). */
-export type ClaimOutcome = 'held' | 'violated' | 'unproven';
-
-/** One claim's verdict after its walk. */
-export interface ClaimVerdict {
-  readonly set: string;
-  readonly index: number;
-  readonly name: string;
-  readonly never: boolean;
-  readonly kind: ClaimKind;
-  readonly verdict: ClaimOutcome;
-  /** How the verdict was reached: a witness path, the frontier's exhaustion, or a budget stop that left it open. */
-  readonly settledBy: 'witness' | 'exhaustion' | 'budget';
-  /** The first path to a state satisfying the claim — present with `settledBy: 'witness'`. */
-  readonly witness?: readonly string[];
-  readonly depth?: number;
-  /** How many things the claim's set carries — each independent one doubles the states to exhaust. */
-  readonly thingsInSet: number;
-  /** How many of those things the claim can never depend on under this set (ADR-365 D12) — the ones to trim. */
-  readonly inertInSet: number;
-}
 
 /** The budgets and breadth of one walk. */
 export interface ClaimsWalkOptions {
@@ -69,25 +46,6 @@ export interface ClaimsWalkOptions {
   readonly maxStates?: number;
   readonly maxSeconds?: number;
   readonly maxDepth?: number;
-}
-
-/** What one walk reports. */
-export interface ClaimsWalkReport {
-  readonly set: string;
-  readonly necessary: { readonly rooms: number; readonly things: number; readonly verbs: number };
-  readonly budgets: { readonly maxStates: number; readonly maxSeconds: number; readonly maxDepth: number };
-  readonly breadth: CandidateBreadth;
-  readonly stopReason: WalkStopReason;
-  readonly walkMs: number;
-  readonly statesDiscovered: number;
-  readonly commandsExecuted: number;
-  readonly restores: number;
-  readonly saves: number;
-  readonly deadEnds: number;
-  readonly queueRemaining: number;
-  readonly roomsReached: readonly string[];
-  readonly frontierByDepth: Readonly<Record<number, number>>;
-  readonly claims: readonly ClaimVerdict[];
 }
 
 const DEFAULT_OPTIONS = { breadth: 'basic' as CandidateBreadth, maxStates: 5000, maxSeconds: 120, maxDepth: 40 };
@@ -225,25 +183,12 @@ export async function walkClaims(game: ClaimsGame, ir: StoryIR, group: ClaimGrou
 
   const vocabulary = deriveCommandVocabulary(ir, engine);
   const nameByIrId = new Map<string, string>();
-  const entityIdByIr = new Map<string, string>();
   for (const entity of world.getAllEntities()) {
     const irId = irIdOf(entity);
-    if (irId === undefined) continue;
-    nameByIrId.set(irId, entity.name);
-    entityIdByIr.set(irId, entity.id);
+    if (irId !== undefined) nameByIrId.set(irId, entity.name);
   }
-  // `<thing> has been <participle>` → the counters of the thing's own `on`
-  // clauses for that action, by clause position (the compiler's `fired`
-  // text names the thing and the action; the loader's key names the clause).
-  const clauseKeysByFired = new Map<string, string[]>();
-  for (const entity of ir.entities) {
-    entity.onClauses.forEach((clause, index) => {
-      const fired = `${entity.id}.${clause.action}`;
-      const keys = clauseKeysByFired.get(fired) ?? [];
-      keys.push(clauseOccurrenceKey(entity.id, index + 1));
-      clauseKeysByFired.set(fired, keys);
-    });
-  }
+  const entityIdByIr = entityIdByIrOf(world);
+  const clauseKeysByFired = clauseKeysByFiredOf(ir);
 
   const roomsSeen = new Set<string>();
   const noteRoom = () => {

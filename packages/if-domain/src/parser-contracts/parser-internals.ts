@@ -27,11 +27,6 @@ export interface CandidateCommand {
   nounText?: string;
   
   /**
-   * Possible interpretations of the noun
-   */
-  nounCandidates?: string[];
-  
-  /**
    * Preposition between nouns
    */
   preposition?: string;
@@ -40,11 +35,6 @@ export interface CandidateCommand {
    * Raw text for the secondary noun
    */
   secondNounText?: string;
-  
-  /**
-   * Possible interpretations of the second noun
-   */
-  secondNounCandidates?: string[];
   
   /**
    * Original input text
@@ -60,12 +50,7 @@ export interface CandidateCommand {
    * Grammar pattern that was matched
    */
   pattern?: string;
-  
-  /**
-   * Parser confidence (0-1)
-   */
-  confidence?: number;
-  
+
   /**
    * Any special flags (ALL, EXCEPT, etc.)
    */

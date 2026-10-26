@@ -19,6 +19,43 @@ Three kinds: a **sound** is a one-shot cue, **music** is a track, an
 and the kind — a `play music` of a `define sound` is a diagnostic, and a
 misspelled asset carries a nearest-match suggestion.
 
+## Sounds in the world
+
+A sound is heard in the world as well as on the player's speakers. `play
+sound` plays the file, if it has one, and also makes the sound in the room
+of the block it is written in. A `listener`, which can be a person or a
+thing, reacts with `after hearing the <sound>` in its own block, in the
+same turn, if the sound carries far enough to reach it. A sound with no
+file is heard in the world and played on no speaker.
+
+```chord
+define sound depot-klaxon
+
+create the call button
+  a thing, scenery, pushable
+  in the Loading Dock
+
+  after the player pushing
+    play sound depot-klaxon
+  end after
+
+create the loader robot
+  a person, listener
+  in the Loading Dock
+
+  after hearing the depot-klaxon
+    move the mail sack to the Loading Dock
+    phrase robot-fetches-sack
+  end after
+```
+
+How far a sound carries, through open exits and past walls, is the
+platform's to work out; a story only says who listens. `hearing` takes no
+`on` form, since a sound cannot be refused after it was made. A `play sound`
+written `when client has sound` is a sound the world hears only on clients
+that play audio, so leave that condition off a sound something in the story
+must hear.
+
 ## Playing and showing
 
 ```chord

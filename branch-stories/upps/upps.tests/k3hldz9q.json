@@ -1,0 +1,121 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "a coil of strapping"
+        ]
+      },
+      "command": "look",
+      "id": "q1unl8st",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "A coil of cargo strapping, the kind the robot cuts to length."
+        ]
+      },
+      "command": "examine strapping",
+      "id": "q2exstrp",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "In the specimen jar you see: a beetle."
+        ]
+      },
+      "command": "look in jar",
+      "id": "q3lkinjr",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Whatever is inside is on show whether the lid is on or off.",
+          "beetle"
+        ]
+      },
+      "command": "examine jar",
+      "id": "q4exjar1",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Taken."
+        ]
+      },
+      "command": "take jar",
+      "id": "q5tkjar0",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You open the specimen jar."
+        ]
+      },
+      "command": "open jar",
+      "id": "q6opjar0",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You take the beetle from the specimen jar."
+        ]
+      },
+      "command": "take beetle",
+      "id": "q7tkbtl0",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Cockpit"
+        ]
+      },
+      "command": "north",
+      "id": "q8north0",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You put the specimen jar in the card slot."
+        ]
+      },
+      "command": "put jar in slot",
+      "id": "q9ptjar0",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "There's no room in the card slot."
+        ],
+        "notContains": [
+          "You put the beetle"
+        ]
+      },
+      "command": "put beetle in slot",
+      "id": "qaptbtl0",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "In the card slot you see a specimen jar."
+        ]
+      },
+      "command": "examine slot",
+      "id": "qbexslot",
+      "type": "turn"
+    }
+  ],
+  "id": "k3hldz9q",
+  "ordinal": 2,
+  "parent": "a6ekwu94"
+}

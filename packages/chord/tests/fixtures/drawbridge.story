@@ -5,7 +5,6 @@ story
   id: drawbridge
   story-version: 0.0.1
   states: calm, stormy
-  use state-machines
 
 create the Gatehouse
   a room

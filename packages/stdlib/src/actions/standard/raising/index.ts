@@ -1,1 +1,1 @@
-export { raisingAction } from './raising.js';
+export { raisingAction, raisingLifecycle, RaisingMessages } from './raising.js';

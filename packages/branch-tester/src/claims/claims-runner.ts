@@ -16,34 +16,31 @@
  * the claim can never depend on (D12, the compiler's cone of influence),
  * and the budget that stopped the walk, which is what the author tightens.
  *
- * Public interface: `runClaims`, `formatClaimsRun`, `ClaimsRunOptions`,
- *   `ClaimsRunResult`.
+ * Public interface: `runClaims`, `formatClaimsRun`, `ClaimsRunOptions`. A
+ *   run is a `ClaimsRunResult` (`claim-results`).
  * Owner context: @sharpee/branch-tester — the claims runner (ADR-365 D10).
  */
 
 import type { StoryIR } from '@sharpee/chord';
 import { groupClaimsBySet, type ClaimSet } from './claim-set.js';
 import type { ClaimsGameLoader } from './claims-game.js';
-import { walkClaims, type ClaimVerdict, type ClaimsWalkOptions, type ClaimsWalkReport } from './claims-walk.js';
+import type { ClaimFloorReading } from './claim-floor.js';
+import type { ClaimVerdict, ClaimsRunResult, ClaimsWalkReport } from './claim-results.js';
+import { claimHeadline, claimLockLine, claimResultRowOf, claimSentence, claimsRatioLine, claimsSummaryRowOf, lockRowOf } from './claim-report.js';
+import { walkClaims, type ClaimsWalkOptions } from './claims-walk.js';
 
 /** The run's budgets (per walk) and the seed the report names. */
 export interface ClaimsRunOptions extends ClaimsWalkOptions {
   /** The seed the loader boots at — recorded, not applied; the loader owns the boot. */
   readonly seed?: number;
+  /**
+   * What the tree run's floor saw (ADR-367 D5): a positive claim some line
+   * reached is held by that line and not walked; a lock's check at its card
+   * rides the report. Absent when no tree ran before the claims.
+   */
+  readonly floor?: ClaimFloorReading;
 }
 
-/** A whole run: every walk, every verdict, and the held-over-declared ratio (D6). */
-export interface ClaimsRunResult {
-  readonly source: string;
-  readonly seed?: number;
-  readonly walks: readonly ClaimsWalkReport[];
-  readonly claims: readonly ClaimVerdict[];
-  readonly declared: number;
-  readonly held: number;
-  readonly violated: number;
-  readonly unproven: number;
-  readonly totalWalkMs: number;
-}
 
 /**
  * Run every claim in the set, one walk per distinct necessary set.
@@ -55,13 +52,35 @@ export interface ClaimsRunResult {
  * @returns the verdicts and the walks behind them
  */
 export async function runClaims(ir: StoryIR, claimSet: ClaimSet, loadGame: ClaimsGameLoader, options: ClaimsRunOptions = {}): Promise<ClaimsRunResult> {
-  const { seed, ...walkOptions } = options;
+  const { seed, floor, ...walkOptions } = options;
+  // The floor (ADR-367 D5): a positive claim a line reached is held by that
+  // line, and only the rest are walked. Verdict indices are the declaration's.
+  const byLine: ClaimVerdict[] = [];
+  const toWalk = claimSet.claims.filter((claim) => {
+    const reach = floor?.reached.get(claim.index);
+    if (claim.never || reach === undefined) return true;
+    byLine.push({
+      set: claim.ownSet ? `the set of "${claim.name}"` : 'the declared set',
+      index: claim.index,
+      name: claim.name,
+      never: false,
+      kind: claim.predicate.kind,
+      verdict: 'held',
+      settledBy: 'line',
+      line: { id: reach.lineId, label: reach.label, turn: reach.turn },
+      thingsInSet: claim.set.things.length,
+      inertInSet: 0,
+    });
+    return false;
+  });
   const walks: ClaimsWalkReport[] = [];
-  for (const group of groupClaimsBySet(claimSet)) {
-    const game = await loadGame();
-    walks.push(await walkClaims(game, ir, group, walkOptions));
+  if (toWalk.length > 0 || claimSet.claims.length === 0) {
+    for (const group of groupClaimsBySet({ ...claimSet, claims: toWalk })) {
+      const game = await loadGame();
+      walks.push(await walkClaims(game, ir, group, walkOptions));
+    }
   }
-  const claims = walks.flatMap((walk) => walk.claims).sort((a, b) => a.index - b.index);
+  const claims = [...byLine, ...walks.flatMap((walk) => walk.claims)].sort((a, b) => a.index - b.index);
   const count = (verdict: ClaimVerdict['verdict']) => claims.filter((claim) => claim.verdict === verdict).length;
   return {
     source: claimSet.source,
@@ -73,6 +92,8 @@ export async function runClaims(ir: StoryIR, claimSet: ClaimSet, loadGame: Claim
     violated: count('violated'),
     unproven: count('unproven'),
     totalWalkMs: walks.reduce((total, walk) => total + walk.walkMs, 0),
+    floored: floor !== undefined,
+    locks: floor?.locks ?? [],
   };
 }
 
@@ -89,27 +110,17 @@ function seconds(ms: number): string {
  */
 export function formatClaimsRun(result: ClaimsRunResult): string {
   const lines: string[] = [];
-  lines.push(`claims: ${result.held} of ${result.declared} held${result.violated ? `, ${result.violated} violated` : ''}${result.unproven ? `, ${result.unproven} unproven` : ''}${result.seed !== undefined ? ` (seed ${result.seed})` : ''}`);
+  lines.push(claimsRatioLine(claimsSummaryRowOf(result)));
   lines.push(`${result.walks.length} walk${result.walks.length === 1 ? '' : 's'}, ${seconds(result.totalWalkMs)} in all`);
   for (const walk of result.walks) {
     lines.push(`  under ${walk.set}: ${walk.necessary.rooms} rooms, ${walk.necessary.things} things, ${walk.necessary.verbs} verbs — ${walk.statesDiscovered} states, ${walk.commandsExecuted} commands, ${seconds(walk.walkMs)}, stopped: ${walk.stopReason}`);
   }
-  const walkBySet = new Map(result.walks.map((walk) => [walk.set, walk]));
+  // One vocabulary with the Testing tab (ADR-367 D6): every sentence below is
+  // built from the wire's own row, so the tab's claims section reads the same.
   for (const claim of result.claims) {
-    const head = `${claim.verdict.toUpperCase()}  ${claim.name}${claim.never ? ' (never)' : ''}`;
-    if (claim.settledBy === 'witness') {
-      lines.push(`${head} — at depth ${claim.depth}: ${claim.witness?.join(' / ')}`);
-    } else if (claim.settledBy === 'exhaustion') {
-      lines.push(`${head} — ${claim.never ? 'every reachable state under its set was tried' : 'no reachable state under its set satisfies it'} (${claim.set})`);
-    } else {
-      const walk = walkBySet.get(claim.set);
-      const stopped = walk ? `${walk.stopReason} after ${walk.statesDiscovered} states` : 'a budget';
-      const cost =
-        claim.inertInSet > 0
-          ? `its set carries ${claim.thingsInSet} things, ${claim.inertInSet} of which the claim's rules never reach; each independent thing doubles the states to exhaust`
-          : `its set carries ${claim.thingsInSet} things, and each independent thing doubles the states to exhaust`;
-      lines.push(`${head} — the walk stopped at ${stopped}; ${cost}`);
-    }
+    const row = claimResultRowOf(claim, result);
+    lines.push(`${claimHeadline(row)} — ${claimSentence(row)}`);
   }
+  for (const lock of result.locks) lines.push(claimLockLine(lock.claim, lockRowOf(lock)));
   return lines.join('\n');
 }

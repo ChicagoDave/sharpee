@@ -42,7 +42,6 @@ const MACHINE_STORY = `story
   id: gate
   story-version: 0.0.1
   states: calm, chase
-  use state-machines
 
 define machine the watch
   starts waiting
@@ -81,14 +80,32 @@ function bootHeadless(source: string, uses?: string[]) {
   return { story, engine, plugins };
 }
 
-describe('gatedConstruct — the rogue-IR backstop at engine-ready', () => {
-  it('`define machine` without `use state-machines` throws the named LoadError', () => {
-    const { story, engine } = bootHeadless(MACHINE_STORY, []);
-    expect(() => story.onEngineReady(engine)).toThrow(LoadError);
-    expect(() => story.onEngineReady(engine)).toThrow('`define machine` needs `use state-machines` in the story header.');
-  });
+const NO_MACHINE_STORY = `story
+  title: Still
+  authors:
+    T
+  id: still
+  story-version: 0.0.1
 
-  it('with the `use`, the machine is lowered into a registered state-machine plugin', () => {
+create the Camp
+  a room
+
+  A cold camp.
+
+create Alex
+  a person
+  playable
+  starts in the Camp
+
+  You.
+
+before the game starts
+  change the player to Alex
+end before
+`;
+
+describe('state machines are core (ADR-377 D2) — the loader installs the plugin for every story', () => {
+  it('`define machine` with no `use` line is lowered into a registered state-machine plugin', () => {
     const { story, engine, plugins } = bootHeadless(MACHINE_STORY);
     story.onEngineReady(engine);
     const sm = plugins.find((p) => p.id === 'sharpee.plugin.state-machine') as
@@ -96,6 +113,58 @@ describe('gatedConstruct — the rogue-IR backstop at engine-ready', () => {
       | undefined;
     expect(sm).toBeDefined();
     expect(sm!.getRegistry().getMachineState('chord.machine.the-watch')).toBe('waiting');
+  });
+
+  it('a story with no machine still registers the plugin, empty (AC-1)', () => {
+    const { story, engine, plugins } = bootHeadless(NO_MACHINE_STORY);
+    story.onEngineReady(engine);
+    const sm = plugins.find((p) => p.id === 'sharpee.plugin.state-machine') as
+      | { getRegistry(): { getState(): { instances: unknown[] } } }
+      | undefined;
+    expect(sm).toBeDefined();
+    expect(sm!.getRegistry().getState().instances).toEqual([]);
+  });
+
+  it('the registry carries no state-machines entry', () => {
+    expect(EXTENSION_REGISTRY.has('state-machines')).toBe(false);
+  });
+});
+
+const CHAPTERS_STORY = `story
+  title: Chapters
+  authors:
+    T
+  id: chapters
+  story-version: 0.0.1
+  use chapters
+
+define chapters
+  one - Chapter I
+    begins when the game starts
+end chapters
+
+create the Camp
+  a room
+
+  A cold camp.
+
+create Alex
+  a person
+  playable
+  starts in the Camp
+
+  You.
+
+before the game starts
+  change the player to Alex
+end before
+`;
+
+describe('gatedConstruct — the rogue-IR backstop at engine-ready', () => {
+  it('`define chapters` without `use chapters` throws the named LoadError', () => {
+    const { story, engine } = bootHeadless(CHAPTERS_STORY, []);
+    expect(() => story.onEngineReady(engine)).toThrow(LoadError);
+    expect(() => story.onEngineReady(engine)).toThrow('`define chapters` needs `use chapters` in the story header.');
   });
 });
 
@@ -142,6 +211,10 @@ describe('install order — the registry\'s order, not the header\'s', () => {
     };
     order('sharpee.ext.scoring.rank-watcher', 'sharpee.ext.hunger.crossing-watcher');
     order('chord.story.promotion-narrator', 'chord.story.hunger-narrator');
+    // ADR-377 D2: the core state-machine plugin is installed before any
+    // `use`d extension's plugins, on the same footing as the NPC service.
+    order('sharpee.plugin.state-machine', 'sharpee.ext.scoring.rank-watcher');
+    order('sharpee.plugin.state-machine', 'chord.story.hunger-narrator');
     // The registry pairs share a priority, so registration order is their run order.
     const at = (id: string) => plugins.find((p) => p.id === id)!.priority;
     expect(at('chord.story.promotion-narrator')).toBe(at('chord.story.hunger-narrator'));

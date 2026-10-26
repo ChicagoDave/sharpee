@@ -8,8 +8,8 @@
     {
       "assertions": {
         "states": [
-          "the brass lamp is dark",
-          "the lamp is not lit",
+          "the brass bell is still",
+          "the bell is not ringing",
           "the first partner is waiting",
           "the story is calm",
           "story.state = calm"
@@ -21,11 +21,11 @@
     {
       "assertions": {
         "contains": [
-          "The lamp flares."
+          "The bell rings."
         ],
         "states": [
-          "the brass lamp is lit",
-          "the brass lamp is not dark",
+          "the brass bell is ringing",
+          "the brass bell is not still",
           "the first partner is waiting",
           "the story is alarmed",
           "story.state = alarmed"
@@ -38,7 +38,7 @@
     {
       "assertions": {
         "states": [
-          "the brass lamp is lit",
+          "the brass bell is ringing",
           "the story is alarmed"
         ]
       },

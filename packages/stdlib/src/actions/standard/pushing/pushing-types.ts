@@ -6,26 +6,25 @@
  * interceptor fields live here.
  */
 
+import type { Delegation } from '../delegation-shared.js';
+
 /**
  * Typed shared data for pushing action
  */
 export interface PushingSharedData {
   targetId: string;
   targetName: string;
+  /** The compass direction of a push between rooms (ADR-378 D6). */
   direction?: string;
-  pushType?: 'button' | 'heavy' | 'moveable';
-  // For button types
-  activated?: boolean;
+  // For the press of a switchable thing
   willToggle?: boolean;
   currentState?: boolean;
   newState?: boolean;
-  sound?: string;
-  // For heavy/moveable
+  // For a push between rooms
+  /** Set by validate when the push carries a direction: going, on its own context. */
+  delegation?: Delegation;
   moved?: boolean;
-  moveDirection?: string;
-  nudged?: boolean;
-  revealsPassage?: boolean;
-  requiresStrength?: number;
+  destinationId?: string;
   // Message data
   messageId?: string;
   messageParams?: Record<string, any>;

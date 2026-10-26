@@ -506,4 +506,17 @@ export interface ActionInterceptor {
     sharedData: InterceptorSharedData,
     random?: RandomService
   ): InterceptorBlockedResult | null;
+
+  /**
+   * Whether this interceptor implements the action for this entity
+   * (ADR-371 D1a). An implementation-dispatching action (turning, cutting,
+   * lowering, …) counts an interceptor as the entity's implementation only
+   * when this answers true. One interceptor registered on a shared marker
+   * trait can serve many entities and implement the action for only some;
+   * absent means it implements the action for every entity that carries it.
+   *
+   * @param entity - The entity the action targets
+   * @returns true when this interceptor owns the action's outcome for it
+   */
+  claims?(entity: IFEntity): boolean;
 }

@@ -379,44 +379,6 @@ describe('GameEngine', () => {
     });
   });
 
-  describe('vocabulary management', () => {
-    beforeEach(() => {
-      const setup = setupTestEngine();
-      engine = setup.engine;
-      world = setup.world;
-      engine.installStory(story);
-      engine.start();
-    });
-
-    afterEach(() => {
-      engine.stop();
-    });
-
-    it('should update vocabulary for entities in scope', () => {
-      // updateScopeVocabulary delegates to the internal VocabularyManager
-      // Verify it completes without error
-      expect(() => engine.updateScopeVocabulary()).not.toThrow();
-    });
-
-    it('should mark entities correctly as in/out of scope', () => {
-      const world = engine.getWorld();
-      const entity = world.createEntity('Test Item', EntityType.OBJECT);
-      
-      // Out of scope initially
-      engine.updateEntityVocabulary(entity, false);
-      
-      // Move to player's location
-      const player = story.getPlayer();
-      const room = story.getRoom();
-      if (player && room) {
-        world.moveEntity(entity.id, room.id);
-        
-        // Now in scope
-        engine.updateEntityVocabulary(entity, true);
-      }
-    });
-  });
-
   describe('event handling', () => {
     beforeEach(() => {
       const setup = setupTestEngine();

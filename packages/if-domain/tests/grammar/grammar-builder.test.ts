@@ -5,46 +5,37 @@
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import { GrammarEngine } from '../../src/grammar/grammar-engine';
-import { PatternCompiler, CompiledPattern } from '../../src/grammar/pattern-compiler';
+import { PatternCompiler } from '../../src/grammar/pattern-compiler';
+import { CompiledPattern, CompiledSlot, PatternElement, PatternToken, SlotType } from '../../src/grammar/grammar-builder';
 import { scope } from '../../src/grammar/scope-builder';
 import { Token } from '../../src/parser-contracts/parser-types';
 
-// Mock pattern compiler for testing
+// Mock pattern compiler for testing: plain words, `a|b` alternates, `:slot`
 class MockPatternCompiler implements PatternCompiler {
-  compile(pattern: string): CompiledPattern {
-    const tokens = pattern.split(' ').map((word, index) => {
-      if (word.startsWith(':')) {
-        return { type: 'slot' as const, value: word.substring(1) };
-      } else if (word.includes('|')) {
-        return { type: 'alternates' as const, value: word.split('|')[0], alternates: word.split('|') };
-      } else {
-        return { type: 'literal' as const, value: word };
-      }
+  parse(pattern: string): PatternElement[] {
+    return pattern.split(' ').map((word): PatternElement => {
+      if (word.startsWith(':')) return { kind: 'slot', name: word.substring(1) };
+      if (word.includes('|')) return { kind: 'alt', words: word.split('|') };
+      return { kind: 'word', word };
     });
-    
-    const slots = new Map<string, number>();
-    tokens.forEach((token, index) => {
-      if (token.type === 'slot') {
-        slots.set(token.value, index);
+  }
+
+  compile(parts: readonly PatternElement[]): CompiledPattern {
+    const slots: CompiledSlot[] = [];
+    const tokens = parts.map((part, index): PatternToken => {
+      if (part.kind === 'slot') {
+        slots.push({ name: part.name, tokenIndex: index, optional: false, greedy: false, slotType: SlotType.ENTITY });
+        return { type: 'slot', value: part.name };
       }
+      if (part.kind === 'alt') return { type: 'alternates', value: part.words[0], alternates: [...part.words] };
+      return { type: 'literal', value: part.word };
     });
-    
     return {
       tokens,
       slots,
-      minTokens: tokens.length,
-      maxTokens: tokens.length
+      slotsByName: new Map(slots.map((slot) => [slot.name, slot])),
+      minTokens: tokens.length
     };
-  }
-  
-  validate(pattern: string): boolean {
-    return pattern.length > 0 && !pattern.includes('||');
-  }
-  
-  extractSlots(pattern: string): string[] {
-    return pattern.split(' ')
-      .filter(word => word.startsWith(':'))
-      .map(word => word.substring(1));
   }
 }
 
@@ -91,7 +82,8 @@ describe('GrammarBuilder', () => {
       expect(rule.pattern).toBe('take :item');
       expect(rule.action).toBe('if.action.taking');
       expect(rule.compiledPattern).toBeDefined();
-      expect(rule.compiledPattern.slots.has('item')).toBe(true);
+      expect(rule.compiledPattern.slotsByName.has('item')).toBe(true);
+      expect(rule.parts).toEqual([{ kind: 'word', word: 'take' }, { kind: 'slot', name: 'item' }]);
     });
     
     it('should handle alternates in patterns', () => {
@@ -221,71 +213,38 @@ describe('GrammarBuilder', () => {
     });
   });
   
-  describe('forAction fullPattern emission (ADR-271 D3)', () => {
-    it('registers one rule per full-pattern line, sharing the action id and tier', () => {
-      engine.createBuilder('story')
-        .forAction('chord.action.petting')
-        .fullPattern('pet :animal')
-        .fullPattern('pat :animal')
-        .build();
+  describe('rule(spec) registration (ADR-382 D2, D7)', () => {
+    const words = (text: string): PatternElement[] => new MockPatternCompiler().parse(text);
+
+    it('registers each spec as one rule at the builder tier, in the order given', () => {
+      const story = engine.createBuilder('story');
+      for (const text of ['pet :animal', 'hide under :thing', 'pat :animal', 'hide behind :thing']) {
+        story.rule({ action: 'chord.action.petting', parts: words(text), pattern: text });
+      }
 
       const rules = engine.getRulesForAction('chord.action.petting');
-      expect(rules).toHaveLength(2);
-      expect(rules.map(r => r.pattern).sort()).toEqual(['pat :animal', 'pet :animal']);
-      for (const rule of rules) {
-        expect(rule.action).toBe('chord.action.petting');
-        expect(rule.tier).toBe('story');
-      }
+      expect(rules.map(r => r.pattern)).toEqual(['pet :animal', 'hide under :thing', 'pat :animal', 'hide behind :thing']);
+      for (const rule of rules) expect(rule.tier).toBe('story');
     });
 
-    it('does not cross full-pattern lines with verbs()', () => {
-      engine.createBuilder()
-        .forAction('chord.action.lowering')
-        .verbs(['lower'])
-        .pattern(':target')
-        .fullPattern('winch :target down')
-        .build();
+    it('carries per-rule defaults and per-slot constraints on the registered rule', () => {
+      engine.createBuilder().rule({
+        action: 'chord.action.hiding',
+        parts: words('hide under :thing'),
+        pattern: 'hide under :thing',
+        defaults: { spatialRelation: 'under' },
+        slots: { thing: { constraints: [s => s.touchable()] } },
+      });
 
-      const rules = engine.getRulesForAction('chord.action.lowering');
-      expect(rules.map(r => r.pattern).sort()).toEqual(['lower :target', 'winch :target down']);
+      const [rule] = engine.getRulesForAction('chord.action.hiding');
+      expect(rule.defaultSemantics).toEqual({ spatialRelation: 'under' });
+      expect(rule.slots.get('thing')!.constraints).toHaveLength(1);
+      expect(rule.parts).toEqual(words('hide under :thing'));
     });
 
-    it('attaches .where() constraints to every line carrying the slot', () => {
-      engine.createBuilder()
-        .forAction('chord.action.petting')
-        .fullPattern('pet :animal')
-        .fullPattern('stroke :animal')
-        .where('animal', scope => scope.touchable())
-        .build();
-
-      const rules = engine.getRulesForAction('chord.action.petting');
-      expect(rules).toHaveLength(2);
-      for (const rule of rules) {
-        const constraint = rule.slots.get('animal');
-        expect(constraint, rule.pattern).toBeDefined();
-        expect(constraint!.constraints).toHaveLength(1);
-      }
-    });
-
-    it('skips slot-scoped config on lines that do not carry the slot', () => {
-      engine.createBuilder()
-        .forAction('chord.action.waving')
-        .fullPattern('wave :thing')
-        .fullPattern('wave hands')
-        .where('thing', scope => scope.visible())
-        .build();
-
-      const rules = engine.getRulesForAction('chord.action.waving');
-      const slotted = rules.find(r => r.pattern === 'wave :thing')!;
-      const bare = rules.find(r => r.pattern === 'wave hands')!;
-      expect(slotted.slots.get('thing')?.constraints).toHaveLength(1);
-      expect(bare.slots.has('thing')).toBe(false);
-    });
-
-    it('rejects an empty pattern line', () => {
-      expect(() => {
-        engine.createBuilder().forAction('chord.action.x').fullPattern('  ');
-      }).toThrow('fullPattern() requires a non-empty pattern line');
+    it('refuses a spec with no action and registers nothing', () => {
+      expect(() => engine.createBuilder().rule({ action: '', parts: words('wave'), pattern: 'wave' })).toThrow('must have an action');
+      expect(engine.getRules()).toHaveLength(0);
     });
   });
 
@@ -319,7 +278,7 @@ describe('removeRules (ADR-270 D3)', () => {
   });
 
   it('removes the matching standard-tier rule from getRules and the action index, returning 1', () => {
-    const removed = engine.removeRules('if.action.taking', 'get :item');
+    const removed = engine.removeRules('if.action.taking', (rule) => rule.pattern === 'get :item');
 
     expect(removed).toBe(1);
     expect(engine.getRules().map((r) => r.pattern)).toEqual(['take :item', 'drop :item']);
@@ -328,14 +287,22 @@ describe('removeRules (ADR-270 D3)', () => {
 
   it('preserves the definition order of survivors (ADR-268: order is semantic)', () => {
     builder.define('snag :item').mapsTo('if.action.taking').build();
-    engine.removeRules('if.action.taking', 'get :item');
+    engine.removeRules('if.action.taking', (rule) => rule.pattern === 'get :item');
 
     expect(engine.getRules().map((r) => r.pattern)).toEqual(['take :item', 'drop :item', 'snag :item']);
   });
 
+  it('removes every rule the shape test accepts in one call, returning the count; an unknown action removes nothing and does not throw', () => {
+    expect(engine.removeRules('if.action.taking', (rule) => rule.parts[1]?.kind === 'slot')).toBe(2);
+    expect(engine.getRules().map((r) => r.pattern)).toEqual(['drop :item']);
+    expect(engine.getRulesForAction('if.action.taking')).toEqual([]);
+    expect(engine.removeRules('if.action.nonesuch', () => true)).toBe(0);
+    expect(engine.getRules()).toHaveLength(1);
+  });
+
   it('returns 0 on a shape no rule carries, leaving every rule in place', () => {
-    expect(engine.removeRules('if.action.taking', 'grab :item')).toBe(0);
-    expect(engine.removeRules('if.action.eating', 'take :item')).toBe(0);
+    expect(engine.removeRules('if.action.taking', (rule) => rule.pattern === 'grab :item')).toBe(0);
+    expect(engine.removeRules('if.action.eating', (rule) => rule.pattern === 'take :item')).toBe(0);
     expect(engine.getRules()).toHaveLength(3);
   });
 
@@ -343,7 +310,7 @@ describe('removeRules (ADR-270 D3)', () => {
     const storyBuilder = engine.createBuilder('story');
     storyBuilder.define('get :item').mapsTo('if.action.taking').build();
 
-    expect(engine.removeRules('if.action.taking', 'get :item')).toBe(1);
+    expect(engine.removeRules('if.action.taking', (rule) => rule.pattern === 'get :item')).toBe(1);
     const remaining = engine.getRules().filter((r) => r.pattern === 'get :item');
     expect(remaining).toHaveLength(1);
     expect(remaining[0].tier).toBe('story');
@@ -353,17 +320,17 @@ describe('removeRules (ADR-270 D3)', () => {
     const storyBuilder = engine.createBuilder('story');
     storyBuilder.define('yoink :item').mapsTo('if.action.taking').build();
 
-    expect(engine.removeRules('if.action.taking', 'yoink :item', 'story')).toBe(1);
+    expect(engine.removeRules('if.action.taking', (rule) => rule.pattern === 'yoink :item', 'story')).toBe(1);
     expect(engine.getRules().some((r) => r.pattern === 'yoink :item')).toBe(false);
   });
 
   it('empties the action index when the last rule of an action is removed', () => {
-    engine.removeRules('if.action.dropping', 'drop :item');
+    engine.removeRules('if.action.dropping', (rule) => rule.pattern === 'drop :item');
     expect(engine.getRulesForAction('if.action.dropping')).toEqual([]);
   });
 
   it('is reachable through the builder surface (dual-surface, umbrella D8)', () => {
-    expect(builder.removeRules('if.action.taking', 'get :item')).toBe(1);
+    expect(builder.removeRules('if.action.taking', (rule) => rule.pattern === 'get :item')).toBe(1);
     expect(builder.getRules().map((r: any) => r.pattern)).toEqual(['take :item', 'drop :item']);
   });
 });

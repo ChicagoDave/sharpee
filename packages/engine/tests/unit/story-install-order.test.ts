@@ -20,7 +20,7 @@ import { requiresOrderViolations } from '../../src/turn/runner';
 import type { GameEngine } from '../../src/game-engine';
 import type { NarrativeSettings } from '../../src/install/narrative';
 import type { StoryConfig, CustomVocabulary } from '../../src/install/story';
-import { vocabularyRegistry } from '@sharpee/stdlib';
+import type { EnglishParser } from '@sharpee/parser-en-us';
 import type { ISemanticEvent } from '@sharpee/core';
 import { MinimalTestStory } from '../stories';
 import { setupTestEngine, setupTestEngineWithStory } from '../test-helpers/setup-test-engine';
@@ -31,7 +31,9 @@ const INSTALL_ORDER = [
   'narrative-settings',
   'concealed-visibility',
   'initialize-world',
+  'language-words',
   'create-player',
+  'stamp-player-self-words',
   'validate-role-holder',
   'listener-trait',
   'validate-room-snippets',
@@ -64,7 +66,8 @@ describe('the story installation list (ADR-334 A1)', () => {
     const player = swapped.findIndex((s) => s.name === 'create-player');
     [swapped[world], swapped[player]] = [swapped[player], swapped[world]];
     expect(requiresOrderViolations(swapped)).toEqual([
-      { name: 'create-player', requires: 'initialize-world' }
+      { name: 'create-player', requires: 'initialize-world' },
+      { name: 'language-words', requires: 'initialize-world' }
     ]);
   });
 
@@ -166,11 +169,13 @@ describe('what the steps leave behind', () => {
         return { verbs: [{ actionId: 'test.action.grokking', verbs: ['grokify'] }] };
       }
     }
-    expect(vocabularyRegistry.hasWord('grokify', 'verb')).toBe(false);
+    // The parser's own registry (ADR-387 D4): a fresh parser knows no story verb
     const { engine } = setupTestEngine();
+    const vocabulary = (engine.getParser() as EnglishParser).getVocabularyRegistry();
+    expect(vocabulary.hasWord('grokify', 'verb')).toBe(false);
     engine.installStory(new VocabularyStory());
-    expect(vocabularyRegistry.hasWord('grokify', 'verb')).toBe(true);
-    expect(vocabularyRegistry.lookup('grokify', 'verb').map((e) => e.mapsTo)).toContain('test.action.grokking');
+    expect(vocabulary.hasWord('grokify', 'verb')).toBe(true);
+    expect(vocabulary.lookup('grokify', 'verb').map((e) => e.mapsTo)).toContain('test.action.grokking');
   });
 
   it('narrative-settings and implicit-actions are adopted from a non-default config', () => {

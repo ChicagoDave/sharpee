@@ -172,9 +172,12 @@ function openingResult(
   const passed = assertionResults.every((r) => r.passed);
   const firstFailure = assertionResults.find((r) => !r.passed && r.message)?.message;
 
+  // The opening's output IS what its claims read (GH #585): a failed
+  // opening claim shows the banner and prologue it was checked against, in
+  // the tab and the CLI alike, instead of an empty string.
   return {
     command,
-    actualOutput: '',
+    actualOutput: openingOutput,
     actualEvents: [],
     passed,
     expectedFailure: false,

@@ -11,8 +11,8 @@
     "dev": "tsc --watch",
     "clean": "rimraf dist dist-esm tsconfig.tsbuildinfo tsconfig.esm.tsbuildinfo",
     "build:npm": "tsc --outDir dist",
-    "test": "vitest run",
-    "test:ci": "vitest run"
+    "test": "vitest run --exclude tests/claims-fernhill.test.ts && vitest run tests/claims-fernhill.test.ts",
+    "test:ci": "vitest run --exclude tests/claims-fernhill.test.ts && vitest run tests/claims-fernhill.test.ts"
   },
   "dependencies": {
     "@sharpee/bootstrap": "workspace:*",
@@ -28,10 +28,10 @@
     "chalk": "^4.1.2",
     "glob": "^10.3.10",
     "@sharpee/chord": "workspace:*",
-    "@sharpee/world-index": "workspace:*"
+    "@sharpee/world-index": "workspace:*",
+    "@sharpee/ide-protocol": "workspace:*"
   },
   "devDependencies": {
-    "@sharpee/ide-protocol": "workspace:*",
     "@types/node": "^20.11.19",
     "rimraf": "^5.0.5",
     "typescript": "^5.3.3",

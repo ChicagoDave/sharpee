@@ -18,7 +18,7 @@
  */
 
 import { type ISemanticEvent } from '@sharpee/core';
-import { WorldModel, IdentityTrait, OpenableTrait, ContainerTrait, VehicleTrait, moveVehicle } from '@sharpee/world-model';
+import { WorldModel, IdentityTrait, OpenableTrait, ContainerTrait, moveVehicleToStop } from '@sharpee/world-model';
 import { killPlayer } from '@sharpee/stdlib';
 import { type ISchedulerService, type Daemon, type SchedulerContext } from '@sharpee/plugin-scheduler';
 import { DungeoSchedulerMessages } from './scheduler-messages';
@@ -28,6 +28,8 @@ import {
   BalloonPosition,
   nextPositionUp,
   nextPositionDown,
+  balloonPosition,
+  balloonPositionRoom,
   isMidairPosition,
   isLedgePosition
 } from '../traits';
@@ -68,14 +70,11 @@ function getBalloonState(world: WorldModel, balloonEntityId: string): { entity: 
 }
 
 /**
- * Get the balloon's current position from VehicleTrait (authoritative)
+ * Get the balloon's current position from its location on its line
  */
 function getCurrentPosition(world: WorldModel, balloonEntityId: string): BalloonPosition | null {
   const balloon = world.getEntity(balloonEntityId);
-  if (!balloon) return null;
-
-  const vehicle = balloon.get(VehicleTrait);
-  return (vehicle?.currentPosition as BalloonPosition) || null;
+  return balloon ? balloonPosition(world, balloon) : null;
 }
 
 /**
@@ -228,11 +227,11 @@ function createBalloonDaemon(balloonEntityId: string, receptacleEntityId: string
       lastFireTurn = ctx.turn;
 
       // Physically move balloon entity to the new room
-      const vehicle = balloon.entity.get(VehicleTrait);
-      const destRoomId = vehicle?.positionRooms?.[newPosition];
-      if (destRoomId) {
-        moveVehicle(ctx.world, balloonEntityId, destRoomId);
+      const destRoomId = balloonPositionRoom(balloon.entity, newPosition);
+      if (!destRoomId) {
+        throw new Error(`balloon has no stop for position ${newPosition}; its vehicle line is missing`);
       }
+      moveVehicleToStop(ctx.world, balloon.entity, destRoomId);
 
       // Emit movement message if player is in balloon
       if (playerInBalloon) {

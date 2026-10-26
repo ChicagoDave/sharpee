@@ -138,8 +138,7 @@ describe('ParsedCommand types', () => {
         head: 'ball',
         modifiers: [],
         articles: [],
-        determiners: [],
-        candidates: ['ball']
+        determiners: []
       };
 
       expect(nounPhrase.tokens).toEqual([1]);
@@ -148,7 +147,6 @@ describe('ParsedCommand types', () => {
       expect(nounPhrase.modifiers).toHaveLength(0);
       expect(nounPhrase.articles).toHaveLength(0);
       expect(nounPhrase.determiners).toHaveLength(0);
-      expect(nounPhrase.candidates).toEqual(['ball']);
     });
 
     test('should represent nouns with articles', () => {
@@ -158,8 +156,7 @@ describe('ParsedCommand types', () => {
         head: 'ball',
         modifiers: [],
         articles: ['the'],
-        determiners: [],
-        candidates: ['ball']
+        determiners: []
       };
 
       expect(nounPhrase.tokens).toEqual([1, 2]);
@@ -174,8 +171,7 @@ describe('ParsedCommand types', () => {
         head: 'balls',
         modifiers: ['red'],
         articles: ['the'],
-        determiners: ['all'],
-        candidates: ['ball', 'balls']
+        determiners: ['all']
       };
 
       expect(nounPhrase.tokens).toEqual([1, 2, 3, 4]);
@@ -186,22 +182,6 @@ describe('ParsedCommand types', () => {
       expect(nounPhrase.determiners).toEqual(['all']);
     });
 
-    test('should support multiple candidates', () => {
-      const nounPhrase: NounPhrase = {
-        tokens: [1],
-        text: 'box',
-        head: 'box',
-        modifiers: [],
-        articles: [],
-        determiners: [],
-        candidates: ['small_box', 'large_box', 'wooden_box']
-      };
-
-      expect(nounPhrase.candidates).toHaveLength(3);
-      expect(nounPhrase.candidates).toContain('small_box');
-      expect(nounPhrase.candidates).toContain('large_box');
-      expect(nounPhrase.candidates).toContain('wooden_box');
-    });
   });
 
   describe('PrepPhrase structure', () => {
@@ -250,7 +230,6 @@ describe('ParsedCommand types', () => {
           }
         },
         pattern: 'VERB_ONLY',
-        confidence: 1.0,
         action: 'if.action.looking'
       };
 
@@ -259,7 +238,6 @@ describe('ParsedCommand types', () => {
       expect(command.structure.verb).toBeDefined();
       expect(command.structure.directObject).toBeUndefined();
       expect(command.pattern).toBe('VERB_ONLY');
-      expect(command.confidence).toBe(1.0);
       expect(command.action).toBe('if.action.looking');
     });
 
@@ -298,12 +276,10 @@ describe('ParsedCommand types', () => {
             head: 'ball',
             modifiers: [],
             articles: [],
-            determiners: [],
-            candidates: ['ball']
+            determiners: []
           }
         },
         pattern: 'VERB_NOUN',
-        confidence: 0.9,
         action: 'if.action.taking'
       };
 
@@ -328,8 +304,7 @@ describe('ParsedCommand types', () => {
             head: 'ball',
             modifiers: [],
             articles: [],
-            determiners: [],
-            candidates: ['ball']
+            determiners: []
           },
           preposition: {
             tokens: [2],
@@ -341,12 +316,10 @@ describe('ParsedCommand types', () => {
             head: 'box',
             modifiers: [],
             articles: [],
-            determiners: [],
-            candidates: ['box']
+            determiners: []
           }
         },
         pattern: 'VERB_NOUN_PREP_NOUN',
-        confidence: 0.85,
         action: 'if.action.putting'
       };
 
@@ -369,7 +342,6 @@ describe('ParsedCommand types', () => {
           }
         },
         pattern: 'VERB_ONLY',
-        confidence: 1.0,
         action: 'if.action.looking',
         extras: {
           isAbbreviated: false,
@@ -390,13 +362,14 @@ describe('ParsedCommand types', () => {
       const error: ParseError = {
         type: 'PARSE_ERROR',
         code: 'UNKNOWN_COMMAND',
-        message: 'I don\'t understand that command.',
+        messageId: 'parser.error.notUnderstood',
+        params: {},
         input: 'xyzzy'
       };
 
       expect(error.type).toBe('PARSE_ERROR');
       expect(error.code).toBe('UNKNOWN_COMMAND');
-      expect(error.message).toContain('understand');
+      expect(error.messageId).toBe('parser.error.notUnderstood');
       expect(error.input).toBe('xyzzy');
     });
 
@@ -404,7 +377,8 @@ describe('ParsedCommand types', () => {
       const error: ParseError = {
         type: 'PARSE_ERROR',
         code: 'INVALID_SYNTAX',
-        message: 'Invalid syntax near "in"',
+        messageId: 'parser.error.notUnderstood',
+        params: { verb: 'take' },
         input: 'take in box',
         position: 5
       };
@@ -417,12 +391,13 @@ describe('ParsedCommand types', () => {
       const error: ParseError = {
         type: 'PARSE_ERROR',
         code: 'AMBIGUOUS_INPUT',
-        message: 'Which box do you mean?',
+        messageId: 'core.ambiguous_reference',
+        params: { noun: 'box' },
         input: 'take box'
       };
 
       expect(error.code).toBe('AMBIGUOUS_INPUT');
-      expect(error.message).toContain('Which');
+      expect(error.params.noun).toBe('box');
     });
   });
 
@@ -433,7 +408,6 @@ describe('ParsedCommand types', () => {
         action: 'if.action.taking',
         directObject: {
           text: 'ball',
-          candidates: ['ball'],
           modifiers: []
         }
       };
@@ -447,12 +421,10 @@ describe('ParsedCommand types', () => {
     test('should support ParsedObjectReference', () => {
       const objRef: ParsedObjectReference = {
         text: 'red ball',
-        candidates: ['ball_1', 'ball_2'],
         modifiers: ['red']
       };
 
       expect(objRef.text).toBe('red ball');
-      expect(objRef.candidates).toHaveLength(2);
       expect(objRef.modifiers).toContain('red');
     });
   });
@@ -496,7 +468,6 @@ describe('Language-agnostic design', () => {
         verb: { tokens: [0], text: 'test', head: 'test' }
       },
       pattern: 'TEST_PATTERN',
-      confidence: 1.0,
       action: 'test.action'
     };
 
@@ -505,7 +476,6 @@ describe('Language-agnostic design', () => {
     expect(command).toHaveProperty('tokens');
     expect(command).toHaveProperty('structure');
     expect(command).toHaveProperty('pattern');
-    expect(command).toHaveProperty('confidence');
 
     // No English-specific fields
     expect(command).not.toHaveProperty('englishGrammar');
@@ -559,7 +529,6 @@ describe('Language-agnostic design', () => {
       tokens: [],
       structure: { verb: { tokens: [0], text: 'test', head: 'test' } },
       pattern: 'ENGLISH_SPECIFIC_PATTERN_NAME',
-      confidence: 1.0,
       action: 'test.action'
     };
 
@@ -572,7 +541,6 @@ describe('Language-agnostic design', () => {
       tokens: [],
       structure: { verb: { tokens: [0], text: 'test', head: 'test' } },
       pattern: 'JAPANESE_SPECIFIC_PATTERN_NAME',
-      confidence: 1.0,
       action: 'test.action'
     };
 

@@ -3,9 +3,10 @@
  * a declared channel registers on stdlib's REAL StdlibChannelRegistry and
  * projects only its `take` fields from the last matching event;
  * `client has sound` runs against two REAL capability objects (one
- * sound-capable, one text-only) — the capable run emits the media event,
- * the text-only run emits the fallback phrase (AC-3's explicit
- * dual-capability requirement). REAL-PATH: no stubs of any owned
+ * sound-capable, one text-only) — both runs emit the sound's cue and its
+ * world sound (a `play sound` is never gated on the client, Q9), and the
+ * text-only run also emits the fallback phrase (AC-3's dual-capability
+ * requirement, as amended). REAL-PATH: no stubs of any owned
  * dependency; the engine-capabilities getter is exercised via
  * onEngineReady's structural surface exactly as GameEngine provides it.
  */
@@ -16,7 +17,7 @@ import { compile, StoryIR } from '@sharpee/chord';
 import type { ISemanticEvent } from '@sharpee/core';
 import { StdlibChannelRegistry } from '@sharpee/stdlib';
 import { WorldModel } from '@sharpee/world-model';
-import type { ClientCapabilities } from '@sharpee/if-domain';
+import { SOUND_EVENT_TYPES, type ClientCapabilities } from '@sharpee/if-domain';
 import { createStory, SchedulerDaemon } from '../src';
 import { stubStoryEngine } from './helpers/stub-story-engine';
 
@@ -74,21 +75,27 @@ describe('custom channels + client has (ADR-216 AC-3/AC-4, REAL-PATH)', () => {
     expect(compass.produce({ events: [] } as never)).toBeUndefined();
   });
 
-  it('AC-3: a sound-capable client gets the media event, not the text fallback', () => {
+  // A `play sound` is never gated on the client (Q9): the world sound and
+  // the cue are the same for every client, so game state never differs by
+  // client; a client without audio does not play the cue. The fallback
+  // phrase is still the story's to gate.
+  it('AC-3: a sound-capable client gets the cue and the world sound, not the text fallback', () => {
     const { events } = load(SOUND_CLIENT);
     expect(events.some((e) => e.type === 'media.sound.play')).toBe(true);
+    expect(events.some((e) => e.type === SOUND_EVENT_TYPES.EMITTED)).toBe(true);
     expect(messageIdsOf(events)).not.toContain('roar-text');
   });
 
-  it('AC-3: a text-only client gets the fallback phrase, not the media event', () => {
+  it('AC-3: a text-only client gets the same cue and world sound, and the fallback phrase', () => {
     const { events } = load(TEXT_ONLY);
-    expect(events.some((e) => e.type === 'media.sound.play')).toBe(false);
+    expect(events.some((e) => e.type === 'media.sound.play')).toBe(true);
+    expect(events.some((e) => e.type === SOUND_EVENT_TYPES.EMITTED)).toBe(true);
     expect(messageIdsOf(events)).toContain('roar-text');
   });
 
   it('with NO capability source at all, gateable flags read false (text-only default)', () => {
     const { events } = load(undefined);
-    expect(events.some((e) => e.type === 'media.sound.play')).toBe(false);
+    expect(events.some((e) => e.type === SOUND_EVENT_TYPES.EMITTED)).toBe(true);
     expect(messageIdsOf(events)).toContain('roar-text');
   });
 });

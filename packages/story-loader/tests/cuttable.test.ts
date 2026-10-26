@@ -11,7 +11,7 @@ import { describe, expect, it } from 'vitest';
 import { compile, StoryIR } from '@sharpee/chord';
 import type { ISemanticEvent } from '@sharpee/core';
 import { cuttingAction } from '@sharpee/stdlib';
-import { IFEntity, TraitType, WorldModel, CuttableTrait } from '@sharpee/world-model';
+import { IFEntity, TraitType, WorldModel, CuttableTrait, DiggableTrait, FlammableTrait, LightSourceTrait } from '@sharpee/world-model';
 import { ChordStory, createStory, LoadError } from '../src';
 import { runValidatePhase, runExecutePhase, runReportPhase } from '@sharpee/stdlib';
 
@@ -93,8 +93,8 @@ describe('cuttable trait adjective (ADR-230 D3c)', () => {
     const cuttable = rope.get(TraitType.CUTTABLE) as CuttableTrait;
     expect(cuttable).toBeDefined();
     // The lockable-bug class: config must NOT be the display-name string.
-    expect(cuttable.toolId).toBe(knifeWorldId);
-    expect(cuttable.toolId).not.toBe('knife');
+    expect(cuttable.toolRequirement?.tools).toEqual([knifeWorldId]);
+    expect(cuttable.toolRequirement?.tools).not.toContain('knife');
   });
 
   it('backstop: rejects rogue IR whose cuttable has no cutting implementation (ADR-276 census 13 — the compiler gates this as analysis.gerund-implementation)', () => {
@@ -181,9 +181,9 @@ end phrase
     const shovelWorldId = story.entityId('shovel')!;
 
     // Diggable trait stamped with the resolved WORLD id.
-    const diggable = sand.get('diggable' as never) as { toolId?: string };
+    const diggable = sand.get('diggable' as never) as DiggableTrait;
     expect(diggable).toBeDefined();
-    expect(diggable.toolId).toBe(shovelWorldId);
+    expect(diggable.toolRequirement?.tools).toEqual([shovelWorldId]);
 
     // `carries the shovel` actually lands in the player's inventory —
     // previously this line compiled silently and did nothing.
@@ -270,5 +270,51 @@ end phrase`);
     expect(world.getLocation(rope.id)).toBe(story.entityId('bin')!);
     // The cut event fired (the clause's phrase rides the interceptor).
     expect(events.some((e) => e.type === 'if.event.cut')).toBe(true);
+  });
+});
+
+describe('the loader writes one tool-requirement shape (Older-1)', () => {
+  const TOOL_GATED = `create the letter
+  in the Shed
+  a thing, flammable with the knife
+
+  A letter.
+
+  on the player burning
+    phrase letter-burns
+  end on
+
+define phrase letter-burns
+  The letter curls into ash.
+end phrase
+
+create the lantern
+  in the Shed
+  a thing, light-source with the knife, starts unlit
+
+  A lantern.
+
+create the lamp
+  in the Shed
+  a thing, light-source, starts unlit
+
+  A lamp.`;
+
+  it('stamps flammable and light-source with the named tool as a resolved WORLD id', () => {
+    const { story, world } = loadStory(storyWith(TOOL_GATED));
+    const knifeWorldId = story.entityId('knife')!;
+    const letter = world.getEntity(story.entityId('letter')!)!;
+    const lantern = world.getEntity(story.entityId('lantern')!)!;
+
+    expect(letter.get(FlammableTrait)?.toolRequirement?.tools).toEqual([knifeWorldId]);
+    expect(lantern.get(LightSourceTrait)?.toolRequirement?.tools).toEqual([knifeWorldId]);
+  });
+
+  it('leaves the requirement absent when no tool is named', () => {
+    const { story, world } = loadStory(storyWith(TOOL_GATED));
+    const lamp = world.getEntity(story.entityId('lamp')!)!;
+
+    expect(lamp.get(LightSourceTrait)).toBeDefined();
+    expect(lamp.get(LightSourceTrait)?.toolRequirement).toBeUndefined();
   });
 });

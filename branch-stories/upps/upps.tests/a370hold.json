@@ -1,0 +1,110 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "You find nothing under the suit locker."
+        ]
+      },
+      "command": "look under locker",
+      "id": "a370lku3",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The specimen jar is closed."
+        ]
+      },
+      "command": "empty jar",
+      "id": "a370emp2",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You open the specimen jar."
+        ]
+      },
+      "command": "open jar",
+      "id": "a370opn1",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You close the suit locker."
+        ]
+      },
+      "command": "close locker",
+      "id": "a370cls1",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The suit locker is closed."
+        ],
+        "notContains": [
+          "legs up"
+        ]
+      },
+      "command": "empty jar into locker",
+      "id": "a370emp3",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You open the suit locker, which is empty."
+        ]
+      },
+      "command": "open locker",
+      "id": "a370opn2",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You empty the specimen jar into the suit locker: a beetle."
+        ]
+      },
+      "command": "empty jar into locker",
+      "id": "a370emp4",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "In the suit locker you see: a beetle."
+        ]
+      },
+      "command": "look in locker",
+      "id": "a370lki1",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The specimen jar is already empty."
+        ]
+      },
+      "command": "empty jar",
+      "id": "a370emp5",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You can't empty the coil of strapping."
+        ]
+      },
+      "command": "empty strapping",
+      "id": "a370emp6",
+      "type": "turn"
+    }
+  ],
+  "id": "a370hold",
+  "ordinal": 3,
+  "parent": "a6ekwu94"
+}

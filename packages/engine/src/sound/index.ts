@@ -18,11 +18,10 @@
  *    propagate to every `ListenerTrait` entity and emit one
  *    `sound.audibility.heard` semantic event per non-silent result
  *    (Phase 6 Step 6.2).
- *  - `AUDIBILITY_HEARD_EVENT_TYPE` — the semantic-event type string
- *    fired by the dispatcher.
+ *  - The event types it fires are `SOUND_EVENT_TYPES` in `@sharpee/if-domain`.
  *
  * @see ADR-172 — Spatial Sound Propagation
  */
 
 export { propagate, clarityToTier } from './propagation.js';
-export { SoundDispatcher, AUDIBILITY_HEARD_EVENT_TYPE } from './dispatcher.js';
+export { SoundDispatcher } from './dispatcher.js';

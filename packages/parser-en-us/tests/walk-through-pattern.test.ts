@@ -7,8 +7,13 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
+import { EnglishLanguageProvider } from '@sharpee/lang-en-us';
 import { EnglishGrammarEngine } from '../src/english-grammar-engine';
 import { Token } from '@sharpee/if-domain';
+import { WorldModel, IdentityTrait } from '@sharpee/world-model';
+
+/** English, handed to hand-built worlds as the language's words (ADR-387 D2). */
+const ENGLISH_WORDS = { selfWords: ['me', 'myself', 'self', 'yourself'], nameStopwords: ['the', 'a', 'an', 'of'] };
 
 describe('Walk Through Pattern Matching', () => {
   let engine: EnglishGrammarEngine;
@@ -25,7 +30,7 @@ describe('Walk Through Pattern Matching', () => {
   }
 
   beforeEach(() => {
-    engine = new EnglishGrammarEngine();
+    engine = new EnglishGrammarEngine(new EnglishLanguageProvider());
     grammar = engine.createBuilder();
   });
 
@@ -100,6 +105,7 @@ describe('Walk Through Pattern Matching', () => {
       // Mock context with NO south wall entity
       const contextNoEntity = {
         world: {
+          getLanguageWords: () => ENGLISH_WORDS,
           // ADR-273: the real WorldModel surface GrammarScopeResolver consumes
           getReachable: () => [],
           getVisible: () => [],
@@ -118,7 +124,7 @@ describe('Walk Through Pattern Matching', () => {
       expect(matchesNoEntity.length).toBe(0);
     });
 
-    it('should match entity by attributes.name', () => {
+    it('should match an entity by its name', () => {
       grammar
         .define('walk through :target')
         .where('target', (scope: any) => scope.touchable())
@@ -127,23 +133,18 @@ describe('Walk Through Pattern Matching', () => {
 
       const tokens = createTokens(['walk', 'through', 'south', 'wall']);
 
-      // Entity with attributes.name set (legacy pattern)
-      const southWallEntity = {
-        id: 'south-wall',
-        attributes: {
-          name: 'south wall',
-          displayName: 'south wall'
-        }
-      };
+      // A real entity: the gate reads its naming surface (ADR-385 D3)
+      const southWallEntity = new WorldModel().createEntity('south wall', 'item');
 
       const contextWithEntity = {
         world: {
+          getLanguageWords: () => ENGLISH_WORDS,
           // ADR-273: the real WorldModel surface GrammarScopeResolver consumes
           getReachable: () => [southWallEntity],
           getVisible: () => [southWallEntity],
           getCarriedAndWorn: () => ({ carried: [], worn: [] }),
           getAllEntities: () => [southWallEntity],
-          getEntity: (id: string) => id === 'south-wall' ? southWallEntity : null
+          getEntity: (id: string) => id === southWallEntity.id ? southWallEntity : null
         },
         actorId: 'player',
         currentLocation: 'room',
@@ -165,29 +166,19 @@ describe('Walk Through Pattern Matching', () => {
 
       const tokens = createTokens(['walk', 'through', 'south', 'wall']);
 
-      // Entity with IdentityTrait-style .get() method and aliases
-      const southWallEntity = {
-        id: 'south-wall',
-        attributes: {},
-        get: (traitName: string) => {
-          if (traitName === 'identity') {
-            return {
-              name: 'wall',  // Primary name is just "wall"
-              aliases: ['south wall', 's wall', 'southern wall']  // But aliases include "south wall"
-            };
-          }
-          return undefined;
-        }
-      };
+      // A real entity named "wall" whose aliases include "south wall"
+      const southWallEntity = new WorldModel().createEntity('wall', 'item');
+      southWallEntity.add(new IdentityTrait({ name: 'wall', aliases: ['south wall', 's wall', 'southern wall'] }));
 
       const contextWithEntity = {
         world: {
+          getLanguageWords: () => ENGLISH_WORDS,
           // ADR-273: the real WorldModel surface GrammarScopeResolver consumes
           getReachable: () => [southWallEntity],
           getVisible: () => [southWallEntity],
           getCarriedAndWorn: () => ({ carried: [], worn: [] }),
           getAllEntities: () => [southWallEntity],
-          getEntity: (id: string) => id === 'south-wall' ? southWallEntity : null
+          getEntity: (id: string) => id === southWallEntity.id ? southWallEntity : null
         },
         actorId: 'player',
         currentLocation: 'room',

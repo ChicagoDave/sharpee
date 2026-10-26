@@ -37,7 +37,6 @@ export const IFActions = {
   EXAMINING: 'if.action.examining',
   SEARCHING: 'if.action.searching',
   LOOKING_UNDER: 'if.action.looking_under',
-  LOOKING_BEHIND: 'if.action.looking_behind',
   LISTENING: 'if.action.listening',
   SMELLING: 'if.action.smelling',
   TOUCHING: 'if.action.touching',
@@ -83,15 +82,29 @@ export const IFActions = {
   // Communication actions
   TALKING: 'if.action.talking',
   ASKING: 'if.action.asking',
+  ASKING_FOR: 'if.action.asking_for', // ADR-372 D3
   TELLING: 'if.action.telling',
   ANSWERING: 'if.action.answering',
   SAYING_GOODBYE: 'if.action.saying_goodbye',
+  // ADR-370 D2: bare yes / no / sorry outside an open exchange
+  SAYING_YES: 'if.action.saying_yes',
+  SAYING_NO: 'if.action.saying_no',
+  SAYING_SORRY: 'if.action.saying_sorry',
   SHOWING: 'if.action.showing',
   GIVING: 'if.action.giving',
+  BUYING: 'if.action.buying', // ADR-372 D5
+  TYING: 'if.action.tying', // ADR-373 D6
+  UNTYING: 'if.action.untying', // ADR-373 D6
+  LIGHTING: 'if.action.lighting', // ADR-374 D9
+  EXTINGUISHING: 'if.action.extinguishing', // ADR-374 D9
+  STEERING: 'if.action.steering', // ADR-366 D5c, D5i: the `compass` command set
+  SETTING_COURSE: 'if.action.setting_course', // ADR-366 D5d, D5i: the `destinations` command set
   
   // Combat/interaction actions
   ATTACKING: 'if.action.attacking',
   KISSING: 'if.action.kissing',
+  BURNING: 'if.action.burning', // ADR-371 D2
+  BREAKING: 'if.action.breaking', // ADR-373 D3: no grammar; fired by the action that broke the thing
   WAVING: 'if.action.waving',
 
   // Concealment actions (ADR-148)
@@ -103,8 +116,7 @@ export const IFActions = {
   LOWERING: 'if.action.lowering',
   RAISING: 'if.action.raising',
   
-  // Using actions
-  // USING: 'if.action.using', // Removed - USE is not idiomatic IF
+  // Reference actions
   CONSULTING: 'if.action.consulting',
   READING: 'if.action.reading',
   
@@ -120,10 +132,8 @@ export const IFActions = {
   UNDOING: 'if.action.undoing',
   AGAIN: 'if.action.again',
   SCORING: 'if.action.scoring',
-  VERIFYING: 'if.action.verifying',
   VERSION: 'if.action.version',
   HELP: 'if.action.help',
-  HINTS: 'if.action.hints',
   ABOUT: 'if.action.about',
 } as const;
 

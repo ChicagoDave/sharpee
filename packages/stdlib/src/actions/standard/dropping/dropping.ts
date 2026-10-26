@@ -21,11 +21,15 @@ import {
   ContainerBehavior,
   WearableBehavior,
   ActorBehavior,
+  BreakableBehavior,
   type IDropItemResult,
-  IFEntity
+  IFEntity,
+  FloatingTrait,
+  receiveInExpanse,
 } from '@sharpee/world-model';
 import { buildEventData } from '../../data-builder-types.js';
 import { IFActions } from '../../constants.js';
+import { runBreakingLifecycle } from '../breaking/breaking.js';
 import { ActionMetadata } from '../../../validation/index.js';
 import { ScopeLevel } from '../../../scope/types.js';
 import { nounPhraseFor } from '../../../utils/index.js';
@@ -134,15 +138,18 @@ function validateSingleEntity(context: ActionContext, noun: IFEntity): Validatio
 }
 
 /**
- * Execute dropping a single entity. Mutation results are written into
- * `scratch` — the single-object sharedData or the item's multi-object
- * itemData (ADR-228 D4).
+ * Execute dropping a single entity — the one drop rule, called once per
+ * item by the multi-object path and once by the single-object path.
+ * Mutation results are written into `scratch` — the single-object
+ * sharedData or the item's multi-object itemData (ADR-228 D4).
+ *
+ * @returns the actor behavior's drop result
  */
 function executeSingleEntity(
   context: ActionContext,
   noun: IFEntity,
   scratch: DroppingItemScratch
-): void {
+): IDropItemResult {
   const actor = context.actor;
 
   // Store the drop location before the move (player's current location)
@@ -150,12 +157,38 @@ function executeSingleEntity(
   scratch.dropLocation = dropLocation;
 
   // Delegate to ActorBehavior for dropping validation
-  ActorBehavior.dropItem(actor, noun, context.world);
+  const result = ActorBehavior.dropItem(actor, noun, context.world);
+
+  // Into an expanse (ADR-376 D9, D10): out of the vehicle, the player
+  // drops into the expanse at their cell — a floating thing floats there,
+  // anything else is lost offstage.
+  const cell = actor.get(FloatingTrait)?.position;
+  if (dropLocation && cell && context.world.getEntity(dropLocation)?.has(TraitType.EXPANSE)) {
+    scratch.overboard = receiveInExpanse(context.world, noun, dropLocation, cell);
+    return result;
+  }
 
   // Actually move the item to the drop location
   if (dropLocation) {
     context.world.moveEntity(noun.id, dropLocation);
   }
+  scratch.brokeOnDrop = breakIfFragileOnFloor(context, noun, dropLocation);
+  return result;
+}
+
+/**
+ * A declared-fragile thing dropped onto a room's floor breaks (ADR-373 D4);
+ * dropped while inside a container or on a supporter, it does not.
+ *
+ * @param context The action context
+ * @param noun The dropped entity
+ * @param dropLocation Where it landed
+ * @returns true when it broke
+ */
+function breakIfFragileOnFloor(context: ActionContext, noun: IFEntity, dropLocation: string | undefined): boolean {
+  if (!dropLocation || !BreakableBehavior.isFragile(noun)) return false;
+  if (!context.world.getEntity(dropLocation)?.has(TraitType.ROOM)) return false;
+  return BreakableBehavior.break(noun, context.world).success;
 }
 
 /**
@@ -202,7 +235,11 @@ function reportSingleSuccess(
   }
 
   // Use compact format for multi-object commands
-  if (isMultiObject) {
+  if (scratch.overboard) {
+    messageKey = scratch.overboard === 'floats' ? DroppingMessages.DROPPED_AFLOAT : DroppingMessages.LOST_OVERBOARD;
+  } else if (scratch.brokeOnDrop) {
+    messageKey = DroppingMessages.DROPPED_BREAKS;
+  } else if (isMultiObject) {
     messageKey = DroppingMessages.DROPPED_MULTI;
   } else if (toContainer) {
     messageKey = DroppingMessages.DROPPED_IN;
@@ -228,6 +265,11 @@ function reportSingleSuccess(
     toSupporter,
     toRoom
   }));
+
+  // The fall broke it: fire the breaking id after the drop's own line (ADR-373 D3)
+  if (scratch.brokeOnDrop) {
+    events.push(...runBreakingLifecycle(context, noun));
+  }
 }
 
 /**
@@ -277,6 +319,7 @@ export const droppingAction: Action & { metadata: ActionMetadata } = {
     'dropped',
     'dropped_in',
     'dropped_on',
+    'dropped_breaks',
     'nothing_to_drop'
   ],
 
@@ -335,23 +378,10 @@ export const droppingAction: Action & { metadata: ActionMetadata } = {
       return;
     }
 
-    // Single object execution
+    // Single object execution: the same rule as each item above.
     const sharedData = getDroppingSharedData(context);
-    const actor = context.actor;
     const noun = context.command.directObject!.entity!;
-
-    // Delegate to ActorBehavior for dropping validation
-    const result: IDropItemResult = ActorBehavior.dropItem(actor, noun, context.world);
-
-    // Actually move the item to the drop location
-    const dropLocation = context.world.getLocation(actor.id);
-    if (dropLocation) {
-      context.world.moveEntity(noun.id, dropLocation);
-    }
-
-    // Store result for report phase using sharedData
-    sharedData.dropResult = result;
-
+    sharedData.dropResult = executeSingleEntity(context, noun, sharedData);
   },
 
   report(context: ActionContext): ISemanticEvent[] {
@@ -378,8 +408,12 @@ export const droppingAction: Action & { metadata: ActionMetadata } = {
     const actor = context.actor;
     const noun = context.command.directObject!.entity!;
 
-    // Determine success message
-    const { messageId, params } = determineDroppingMessage(droppedData, context);
+    // Determine success message; into an expanse (ADR-376 D9, D10) the
+    // receipt decides it.
+    const determined = determineDroppingMessage(droppedData, context);
+    const overboard = getDroppingSharedData(context).overboard;
+    const messageId = overboard ? (overboard === 'floats' ? DroppingMessages.DROPPED_AFLOAT : DroppingMessages.LOST_OVERBOARD) : determined.messageId;
+    const params = determined.params;
 
     // Build events array
     const events: ISemanticEvent[] = [
@@ -394,6 +428,11 @@ export const droppingAction: Action & { metadata: ActionMetadata } = {
         actorId: actor.id
       })
     ];
+
+    // The fall broke it: fire the breaking id after the drop's own line (ADR-373 D3)
+    if (getDroppingSharedData(context).brokeOnDrop) {
+      events.push(...runBreakingLifecycle(context, noun));
+    }
 
     return events;
   },

@@ -31,6 +31,7 @@ import {
   ActorTrait,
   ContainerTrait,
   RoomTrait,
+  BreakableTrait,
 } from '@sharpee/world-model';
 import { Story, StoryConfig } from '../src/install/story';
 import { setupTestEngine } from './test-helpers/setup-test-engine';
@@ -45,11 +46,11 @@ type EnginePrivate = {
 };
 
 /**
- * Story fixture: the player carries six fragile items (their names hit
- * the throwing action's fragile keywords) and the room holds a stationary
- * statue. Every `throw X at statue` draws a hit roll (90%) and, on a hit,
- * a fragile-break roll (80%) from `context.random` — outcomes
- * misses_target / hits_target / breaks_against are all reachable.
+ * Story fixture: the player carries six declared-fragile items
+ * (`BreakableTrait { fragile: true }`, ADR-373 D4) and the room holds a
+ * stationary statue. Every `throw X at statue` draws a hit roll (90%) from
+ * `context.random`; a fragile item that hits always breaks — outcomes
+ * misses_target / breaks_against are both reachable.
  */
 class ThrowRngTestStory implements Story {
   config: StoryConfig = {
@@ -91,12 +92,13 @@ class ThrowRngTestStory implements Story {
           article: 'a',
         }),
       );
+      item.add(new BreakableTrait({ fragile: true }));
       // ADR-327 D10: the player does not exist yet — createPlayer runs second
       // now — so the carried items are recorded and handed over there.
       this._carriedIds.push(item.id);
     }
 
-    // Stationary throw target (non-actor: 90% hit, then 80% break).
+    // Stationary throw target (non-actor: 90% hit; a fragile hit breaks).
     const statue = world.createEntity('stone statue', 'object');
     statue.add(
       new IdentityTrait({
@@ -186,10 +188,12 @@ describe('ADR-231 D6 — dedicated persisted action RNG stream', () => {
     await throwAndObserve(source.engine, 'throw jar at statue');
 
     const saved = (source.engine as unknown as EnginePrivate).createSaveData();
-    // The throwing draws landed on declared points and ride the unified map.
+    // The throwing draw landed on its declared point and rides the unified
+    // map (the break roll was retired by ADR-373 D4: fragile always breaks).
     expect(Object.keys(saved.engineState.streamStates ?? {})).toEqual(
-      expect.arrayContaining(['stdlib.throwing.hit-stationary', 'stdlib.throwing.breaks']),
+      expect.arrayContaining(['stdlib.throwing.hit-stationary']),
     );
+    expect(Object.keys(saved.engineState.streamStates ?? {})).not.toContain('stdlib.throwing.breaks');
 
     const unbrokenOutcomes: ThrowOutcome[] = [];
     for (const command of REPLAY_COMMANDS) {

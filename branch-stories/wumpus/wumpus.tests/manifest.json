@@ -1,0 +1,6 @@
+{
+  "claims": "wumpus.claims.chord",
+  "seed": 42,
+  "story": "wumpus",
+  "version": 3
+}

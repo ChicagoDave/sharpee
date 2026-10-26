@@ -29,8 +29,16 @@ export interface IValidatedCommand {
   /** ID of the action that will handle this command */
   actionId: string;
 
-  /** Resolved direct object if present */
+  /** Resolved direct object if present (a single noun; unset for a list or `all`) */
   directObject?: IValidatedObjectReference;
+
+  /**
+   * The resolved items of a list direct object (`take sword and lantern`),
+   * in the order typed (ADR-385 D5). Each resolved by the single-noun path;
+   * an item that named nothing or tied failed validation instead. Unset for
+   * a single noun and for `all`, whose expansion stays with the action.
+   */
+  directObjects?: IValidatedObjectReference[];
 
   /** Resolved indirect object if present */
   indirectObject?: IValidatedObjectReference;

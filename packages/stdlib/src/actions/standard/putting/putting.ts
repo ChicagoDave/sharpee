@@ -69,6 +69,7 @@ export const puttingLifecycle: ActionLifecycleDescriptor = {
       id: 'item',
       actionIds: [IFActions.PUTTING],
       resolve: (ctx) => ctx.command.directObject?.entity,
+      counterpart: (ctx) => ctx.command.indirectObject?.entity,
       seedData: (ctx, entity) => ({
         itemId: entity.id,
         itemName: entity.name,
@@ -81,6 +82,7 @@ export const puttingLifecycle: ActionLifecycleDescriptor = {
       id: 'container',
       actionIds: [IFActions.PUTTING],
       resolve: (ctx) => ctx.command.indirectObject?.entity,
+      counterpart: (ctx, multiObjectItem) => multiObjectItem ?? ctx.command.directObject?.entity,
       seedData: (ctx, entity, multiObjectItem) => {
         const item = multiObjectItem ?? ctx.command.directObject?.entity;
         return {
@@ -257,7 +259,7 @@ function executeSingleEntity(
 ): void {
   scratch.targetPreposition = targetPreposition;
 
-  // Delegate to appropriate behavior
+  // The behavior checks and moves the item (behaviors own mutations).
   if (targetPreposition === 'in') {
     const putResult: IAddItemResult = ContainerBehavior.addItem(target, item, context.world);
     scratch.putResult = putResult;
@@ -265,9 +267,6 @@ function executeSingleEntity(
     const putResult: IAddItemToSupporterResult = SupporterBehavior.addItem(target, item, context.world);
     scratch.putResult = putResult;
   }
-
-  // Actually move the item to the target
-  context.world.moveEntity(item.id, target.id);
 }
 
 /**

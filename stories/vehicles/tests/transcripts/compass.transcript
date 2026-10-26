@@ -1,0 +1,67 @@
+title: Marigold — a compass vehicle on admitting water (ADR-366 D5c, D5g, D6)
+story: vehicles
+description: Steered north at a pace of two turns the Marigold crosses the
+  Open Water region, which admits it, and stops at the Shoal, which does not.
+  A save made under way restores the heading and the step count so the next
+  step lands on schedule. The anchor stops it from a story clause.
+
+---
+
+> north
+[OK: contains "Depot"]
+
+> east
+[OK: contains "Harbour"]
+
+> enter marigold
+[OK: contains "get into the Marigold"]
+
+# pace: 2 turns — the steer turn's tick counts; the step lands next turn
+> steer north
+[OK: contains "You steer the Marigold north."]
+[OK: not contains "arrives"]
+
+# Under way with one tick to go: save here
+$save marigold-under-way
+
+> wait
+[OK: contains "The Marigold arrives at the Sound."]
+
+# Restore mid-step: heading and step count ride the save, so the same wait arrives
+$restore marigold-under-way
+
+> wait
+[OK: contains "The Marigold arrives at the Sound."]
+
+> wait
+[OK: not contains "arrives"]
+
+> wait
+[OK: contains "The Marigold arrives at the Strait."]
+
+# The Shoal does not admit the Marigold: the heading clears and it stops, once
+> wait
+[OK: not contains "arrives"]
+
+> wait
+[OK: contains "The Marigold comes to a stop."]
+[OK: not contains "arrives"]
+
+> look
+[OK: contains "Strait"]
+
+> wait
+[OK: not contains "stop"]
+
+# Steered back, then stopped from a story clause before the step lands
+> steer south
+[OK: contains "You steer the Marigold south."]
+
+> pull anchor
+[OK: contains "The anchor goes over the side"]
+
+> wait
+[OK: not contains "arrives"]
+
+> look
+[OK: contains "Strait"]

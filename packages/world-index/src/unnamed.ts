@@ -51,7 +51,7 @@ import { isPortableByDefault } from './loader-semantics.js';
 import type { ProseSite } from './prose.js';
 import type { MentionRole } from './roles.js';
 import { isDoor, isRegion, isRoom } from './story.js';
-import { entityVocabulary } from './vocabulary.js';
+import { entityVocabulary, localeWordsOf } from './vocabulary.js';
 
 /** A thing the mechanics require, that nothing in the story announces. */
 export interface UnnamedTool {
@@ -169,6 +169,7 @@ export function deriveUnnamedTools(
   prose: readonly ProseSite[],
 ): UnnamedTool[] {
   const index = holderIndex(ir);
+  const words = localeWordsOf(ir);
 
   const found: UnnamedTool[] = [];
   for (const entity of ir.entities) {
@@ -176,7 +177,7 @@ export function deriveUnnamedTools(
     if (!isMechanical(role) || isNotAThingToUse(entity)) continue;
     if (isAnnouncedByTheRoomListing(entity, index)) continue;
 
-    const vocabulary = [...entityVocabulary(entity)];
+    const vocabulary = [...entityVocabulary(entity, words)];
     // A thing with no naming surface at all cannot be reported unannounced: there is
     // nothing to have searched for, so the row would assert an absence it never
     // looked for.

@@ -1,7 +1,7 @@
 /**
  * The plugin-tick stage: after a successful player action, run every
- * turn plugin in priority order and route each one's events through the
- * enrichment funnel.
+ * turn plugin in priority order, apply each one's new facts to the world,
+ * and route its events through the enrichment funnel.
  *
  * The tick's view of the action reports GENUINE success: the executor's
  * flag only checks for `action.error` events, but modern `blocked()`
@@ -21,12 +21,17 @@ import { isPlatformRequestEvent, type IPlatformEvent, type ISemanticEvent } from
 import type { TurnPluginContext } from '@sharpee/plugins';
 import type { TurnStage, TurnEngine } from './context.js';
 import { enrichWithEngineContext } from './enrich-events.js';
+import { unappliedOf } from '../events/world-reactions.js';
 
 /**
- * Route one plugin's events through the enrichment funnel and deliver
- * them: into the turn's stored events, the event source (queueing any
- * platform request), the config's `onEvent` callback, and the engine's
- * emitter — the same four destinations the action's events reach.
+ * Apply one plugin's new facts to the world, then route the batch through
+ * the enrichment funnel and deliver it: into the turn's stored events, the
+ * event source (queueing any platform request), the config's `onEvent`
+ * callback, and the engine's emitter — the same destinations the action's
+ * events reach. A batch may carry events already applied (an NPC's act ran
+ * through the execution entry; a Chord acting statement's drained events);
+ * those are delivered as they are, never applied again. The world's
+ * reactions to the new facts follow the batch.
  */
 function processPluginEvents(
   engine: TurnEngine,
@@ -35,7 +40,10 @@ function processPluginEvents(
   playerLocation: string | null | undefined,
   pluginId: string
 ): void {
-  const processed = enrichWithEngineContext(engine, events, turn, playerLocation, { kind: 'plugin', pluginId });
+  const fresh = unappliedOf(events);
+  const reactions = fresh.length > 0 ? engine.withWorldReactions(fresh, turn).slice(fresh.length) : [];
+  const batch = reactions.length > 0 ? [...events, ...reactions] : events;
+  const processed = enrichWithEngineContext(engine, batch, turn, playerLocation, { kind: 'plugin', pluginId });
 
   // Add to turn events
   engine.storeTurnEvents(turn, processed);

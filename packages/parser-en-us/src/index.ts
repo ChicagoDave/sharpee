@@ -8,6 +8,10 @@
 export { EnglishParser } from './english-parser.js';
 export { EnglishParser as Parser } from './english-parser.js'; // For convenience
 
+// The English implementation of if-domain's PatternCompiler (ADR-382 D3):
+// `parse` is the define(text) front end, `compile` turns parts into tokens.
+export { EnglishPatternCompiler } from './english-pattern-compiler.js';
+
 // Re-export the parser interface for type checking
 export type { Parser as ParserInterface } from '@sharpee/if-domain';
 
@@ -17,7 +21,8 @@ export type {
   SlotFailure,
   MatchFailureReason
 } from './parse-failure.js';
-export { analyzeBestFailure } from './parse-failure.js';
+export { analyzeBestFailure, bestFailure, failureOutranking } from './parse-failure.js';
+export { ReadingNamer } from './reading-names.js';
 
 // Export pronoun context types (ADR-089)
 export type { EntityReference, PronounContext, RecognizedPronoun } from './pronoun-context.js';
@@ -40,8 +45,7 @@ export const metadata = {
     'VERB_ONLY',
     'VERB_NOUN',
     'VERB_PREP_NOUN',
-    'VERB_NOUN_PREP_NOUN',
-    'DIRECTION_ONLY'
+    'VERB_NOUN_PREP_NOUN'
   ],
   features: [
     'compound-verbs',

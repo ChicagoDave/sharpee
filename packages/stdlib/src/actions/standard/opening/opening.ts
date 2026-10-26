@@ -13,7 +13,7 @@
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types.js';
 import { type ISemanticEvent, type EntityId } from '@sharpee/core';
-import { TraitType, OpenableBehavior, LockableBehavior, type IOpenResult } from '@sharpee/world-model';
+import { TraitType, OpenableBehavior, OpenableTrait, LockableBehavior, type IOpenResult } from '@sharpee/world-model';
 import { buildEventData } from '../../data-builder-types.js';
 import { IFActions } from '../../constants.js';
 import { OpenedEventData, ExitRevealedEventData } from './opening-events.js';
@@ -148,9 +148,7 @@ export const openingAction: Action & { metadata: ActionMetadata } = {
       context,
       noun,
       explicitTool,
-      OpenableBehavior.requiresTool(noun),
-      (toolId) => OpenableBehavior.canOpenWith(noun, toolId),
-      OpenableBehavior.requiredTools(noun)
+      noun.get(OpenableTrait)?.toolRequirement
     );
     if (toolResolution.failure) {
       return toolResolution.failure;

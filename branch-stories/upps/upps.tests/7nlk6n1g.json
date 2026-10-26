@@ -34,10 +34,10 @@
       "assertions": {
         "contains": [
           "Hold",
-          "The Sparrow's hold, a steel room no wider than a corridor, ribbed with cargo netting. A suit locker stands bolted to the aft bulkhead, and a ladder climbs to the cockpit hatch at the forward end. The ramp slopes down to the dock."
+          "The Sparrow's hold, a steel room no wider than a corridor, ribbed with cargo netting. A suit locker stands bolted to the aft bulkhead, and a ladder climbs to the cockpit hatch at the forward end. The ramp is aft."
         ]
       },
-      "command": "up",
+      "command": "board ship",
       "id": "83h47zgf",
       "type": "turn"
     },
@@ -51,6 +51,106 @@
       },
       "command": "north",
       "id": "axckc2h1",
+      "locks": [
+        "the player is in the Cockpit"
+      ],
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The pointer rests on CERES."
+        ]
+      },
+      "command": "examine selector",
+      "id": "a371sel1",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The guidance selector goes to ceres, titan, or kepler."
+        ]
+      },
+      "command": "set selector to mars",
+      "id": "a371set1",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Set the guidance selector to what?"
+        ]
+      },
+      "command": "set selector",
+      "id": "a371set2",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The flight couch isn't something you can set."
+        ]
+      },
+      "command": "set couch to titan",
+      "id": "a371set3",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You set the guidance selector to titan.",
+          "The selector clicks home and the console takes a moment to agree."
+        ]
+      },
+      "command": "set selector to titan",
+      "id": "a371set4",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The pointer rests on TITAN."
+        ],
+        "notContains": [
+          "CERES."
+        ]
+      },
+      "command": "examine selector",
+      "id": "a371sel2",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Kepler Station is the last stop on Route 7. The card says Ceres first."
+        ],
+        "notContains": [
+          "You set the guidance selector"
+        ]
+      },
+      "command": "set selector to kepler",
+      "id": "a371set5",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The pointer rests on TITAN."
+        ]
+      },
+      "command": "examine selector",
+      "id": "a371sel3",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You set the guidance selector to ceres."
+        ]
+      },
+      "command": "turn selector to ceres",
+      "id": "a371set6",
       "type": "turn"
     },
     {
@@ -61,6 +161,56 @@
       },
       "command": "examine viewport",
       "id": "kultk6wb",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "FOLD DRIVE, p. 41"
+        ]
+      },
+      "command": "consult manual about the fold",
+      "id": "a372cns1",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "PORT AIRLOCK, p. 58"
+        ]
+      },
+      "command": "look up hatch in manual",
+      "id": "a372cns2",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "GUIDANCE SELECTOR, p. 12"
+        ]
+      },
+      "command": "read about guidance in manual",
+      "id": "a372cns3",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You find nothing about that in the flight manual."
+        ]
+      },
+      "command": "consult manual about vance",
+      "id": "a372cns4",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The flight couch isn't something you can look things up in."
+        ]
+      },
+      "command": "consult couch about the fold",
+      "id": "a372cns5",
       "type": "turn"
     },
     {
@@ -91,9 +241,6 @@
         "contains": [
           "The fold drive hums to life.",
           "the hangar folds away like a letter."
-        ],
-        "states": [
-          "the courier ship is underway"
         ]
       },
       "command": "switch on drive",
@@ -103,5 +250,5 @@
   ],
   "id": "7nlk6n1g",
   "ordinal": 0,
-  "parent": "opejfh5t"
+  "parent": "a6ekwu94"
 }

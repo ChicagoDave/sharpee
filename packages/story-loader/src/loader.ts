@@ -22,6 +22,7 @@
  *   platform reads it today (dual-mode, ADR-107).
  */
 import {
+  ADMITS_PUSHING,
   IR_FORMAT,
   type IRChannelReturn,
   type IRComposition,
@@ -30,10 +31,21 @@ import {
   type IREntity,
   type IRPhrase,
   type IRTraitDef,
+  commandParts,
+  lowerActionRules,
+  type LowerableAction,
+  lowerParts,
+  renderPattern,
+  samePatternShape,
   SCOPE_REQUIREMENT_PREDICATES,
+  type SeatTable,
+  seatTable,
+  STDLIB_MANIFEST,
   type StoryIR,
+  vehicleAboard,
+  vehicleCandidateRoomIds,
 } from '@sharpee/chord';
-import type { IRActionPattern, IRPatternPart, IRProseValue, ScopeRequirementWord } from '@sharpee/chord';
+import type { IRProseValue, ScopeRequirementWord } from '@sharpee/chord';
 import type { IROnClause } from '@sharpee/chord';
 
 /**
@@ -58,7 +70,7 @@ function arrivalNarratedTopicsOf(onClauses: readonly IROnClause[]): ReadonlySet<
   }
   return topics;
 }
-import type { Choice, GrammarBuilder, IChannelRegistry, IOChannel, Literal, Phrase, ScopeBuilder, SemanticProperties, SnippetEntry, SnippetMap } from '@sharpee/if-domain';
+import type { Choice, GrammarBuilder, GrammarRuleSlotSpec, ScopeConstraintBuilder, IChannelRegistry, IOChannel, Literal, Phrase, ScopeBuilder, SemanticProperties, SnippetEntry, SnippetMap } from '@sharpee/if-domain';
 import {
   registerSnippetGate,
   IFActions,
@@ -95,8 +107,13 @@ import {
   createWandererBehavior,
 } from '@sharpee/stdlib';
 import {
+  AboardTrait,
   ActorTrait,
-  addPlayerRoleVocabulary,
+  AttachedBehavior,
+  BackdropTrait,
+  BreakableTrait,
+  NightVisionTrait,
+  ListenerTrait,
   ClimbableTrait,
   CombatantTrait,
   ConcealmentTrait,
@@ -106,13 +123,15 @@ import {
   AuthorModel,
   CuttableTrait,
   DiggableTrait,
+  FlammableTrait,
   DeadlyRoomTrait,
-  Direction,
   DoorTrait,
   type DirectionType,
   getOppositeDirection,
   EdibleTrait,
   EnterableTrait,
+  ExpanseTrait,
+  FloatingTrait,
   findTraitWithCapability,
   IFEntity,
   IdentityTrait,
@@ -129,21 +148,34 @@ import {
   RoomBehavior,
   RoomTrait,
   SceneryTrait,
+  SightTrait,
+  LandmarkTrait,
   SupporterTrait,
   SwitchableTrait,
+  registerVehicleExitResolver,
+  VehicleTrait,
+  type VehicleMovementConfig,
   type TemperamentDef,
   TraitType,
+  TraversalBehavior,
+  type Admittance,
+  isPassageKey,
+  type ExitKey,
   WeaponTrait,
   WearableTrait,
   WorldModel,
   registerLocationName,
   clearLocationNames,
   type LocationNameArm,
+  type IToolGated,
+  toolRequirement,
 } from '@sharpee/world-model';
 import { LoadError } from './errors.js';
+import { exitKeyOfWord } from './direction-words.js';
 import { assertSelectIds, sweepRetiredSelectKeys } from './select-ids.js';
 import { translateEventId } from './event-id-map.js';
 import { COMBAT_FIELD_ROUTES, EXTENSION_REGISTRY, NPC_BEHAVIOR_ADJECTIVES, NPC_FIELD_ROUTES, type ExtensionInstallContext } from './extension-registry.js';
+import { installStateMachines } from './state-machines.js';
 import { HIDING_POSITIONS } from './setting-schema.js';
 import { Evaluator } from './evaluator.js';
 import { classifiesAs } from './kind-classification.js';
@@ -261,6 +293,283 @@ export class ChordStory implements Story {
     return { irRefId: target.id, ownerName: owner.name, span, apply };
   }
 
+  /** Queue a tool-gated trait's requirement (`cuttable with the knife`): the
+   *  named tool becomes its `toolRequirement` once every entity exists. No
+   *  tool named, no requirement. */
+  private queueToolRequirement(gated: IToolGated, trait: IRComposition, owner: IREntity): void {
+    const toolName = entityConfigValue(trait);
+    if (toolName === undefined) return;
+    this.pendingEntityRefs.push(
+      this.entityRefFor(toolName, 'tool', owner, trait.span, (worldId) => {
+        gated.toolRequirement = toolRequirement(worldId);
+      }),
+    );
+  }
+
+  /**
+   * The `position` block of a `drive: state` line vehicle (ADR-366 D5a), or
+   * undefined when the vehicle has none. Read by the vehicle's machine each
+   * turn; the first row whose guard holds names the stop, else the fallback.
+   * @param vehicleWorldId the vehicle's world entity id
+   */
+  getVehiclePosition(vehicleWorldId: string): { rows: Array<{ guard: (world: WorldModel) => boolean; stopId: string }>; otherwise: string } | undefined {
+    return this.vehiclePositions.get(vehicleWorldId);
+  }
+
+  /**
+   * The stop a `drive: state` line's `position` block names this turn
+   * (ADR-366 D5a): the first row whose guard holds, else `otherwise`.
+   * The vehicle's machine moves the vehicle there when it differs from
+   * where it is.
+   * @param vehicleWorldId the vehicle's world entity id
+   * @param world the live world the guards read
+   * @returns the stop's world id, or undefined for a vehicle with no block
+   */
+  vehiclePositionAnswer(vehicleWorldId: string, world: WorldModel): string | undefined {
+    const block = this.vehiclePositions.get(vehicleWorldId);
+    if (!block) return undefined;
+    return block.rows.find((row) => row.guard(world))?.stopId ?? block.otherwise;
+  }
+
+  /**
+   * ADR-366 D5, D5a–D5d, D5i: the vehicle's movement model, every stop and
+   * destination resolved to its world id, and the `position` rows as live
+   * guards. The analyzer has already refused every line outside the type's
+   * row, so the IR is read as true; the trait's constructor keeps the
+   * invariants the analyzer reports first.
+   */
+  private wireVehicle(world: WorldModel, irEntity: IREntity, entity: IFEntity): void {
+    const v = irEntity.vehicle!;
+    const ids = (list: string[] | undefined) => (list ?? []).map((id) => this.requireWorldId(id, irEntity));
+    let movement: VehicleMovementConfig;
+    switch (v.movement) {
+      case 'none':
+      case 'streets':
+        movement = { kind: v.movement };
+        break;
+      case 'line':
+        movement = {
+          kind: 'line',
+          stops: ids(v.stops),
+          oneWay: v.direction === 'one-way',
+          drive: v.drive === 'state' ? 'state' : 'control',
+          ...(v.pace !== undefined ? { pace: v.pace } : {}),
+        };
+        break;
+      case 'compass':
+        movement = { kind: 'compass', drive: v.drive === 'control' ? 'control' : 'player', pace: v.pace ?? 1 };
+        break;
+      case 'flight':
+        movement = {
+          kind: 'flight',
+          drive: v.drive === 'control' ? 'control' : 'player',
+          destinations: ids(v.destinations),
+          pace: v.pace ?? 1,
+        };
+        break;
+      case 'open':
+        // ADR-376 D3, D5: a position in an expanse, from the placement's
+        // `at` tail; null when the vehicle starts in a landmark room, where
+        // its location is the one record. `pace:`, `stride:` and `sight:`
+        // are required by the analyzer. ADR-375 D5, D7: the sailing table
+        // stands in for `pace:`; the sails start in their declared setting.
+        movement = {
+          kind: 'open',
+          drive: v.drive === 'control' ? 'control' : 'player',
+          pace: v.pace ?? 1,
+          stride: v.stride ?? 1,
+          sight: v.sight ?? 0,
+          ...(v.seenFromAfar !== undefined ? { seenFromAfar: v.seenFromAfar } : {}),
+          position: this.openVehicleStart(world, irEntity, entity),
+          ...(v.sailing ? { sailing: { bands: v.sailing.bands.map((b) => ({ from: b.from, to: b.to, paces: b.paces.map((p) => ({ setting: p.setting, pace: p.pace })) })), calm: v.sailing.calm } } : {}),
+          ...(v.sails ? { sails: { settings: [...v.sails.settings], current: v.sails.start } } : {}),
+        };
+        break;
+    }
+    entity.add(new VehicleTrait({
+      movement,
+      ...(v.commands !== undefined ? { commands: v.commands } : {}),
+      // D7: `boarded through:` is where `enter` and `board` put the player.
+      ...(v.boardedThrough !== undefined ? { boardedThrough: this.requireWorldId(v.boardedThrough, irEntity) } : {}),
+    }));
+    if (v.position) {
+      this.vehiclePositions.set(entity.id, {
+        rows: v.position.rows.map((row) => ({
+          guard: (w: WorldModel) => this.evaluator.evalCondition(row.condition, { world: w, it: irEntity.id }),
+          stopId: this.requireWorldId(row.stop, irEntity),
+        })),
+        otherwise: this.requireWorldId(v.position.otherwise, irEntity),
+      });
+    }
+  }
+
+  /** ADR-376 D2: whether some expanse names this room in its `landmarks` block. */
+  private isLandmarkRoom(irId: string): boolean {
+    return this.ir.entities.some((e) => e.expanse?.landmarks.some((row) => row.room === irId));
+  }
+
+  /**
+   * ADR-376 D3, D5: where an open vehicle starts. Placed `in <expanse> at
+   * <x>, <y>` on an open cell, it is in the expanse room at that cell; on a
+   * landmark's cell, it is in the landmark's room with no position, since
+   * at a landmark the location is the one record. Pass 2 has already placed
+   * it in the expanse room; a landmark start moves it on.
+   */
+  private openVehicleStart(world: WorldModel, irEntity: IREntity, entity: IFEntity): { x: number; y: number } | null {
+    const at = irEntity.placement?.at;
+    if (!at || !irEntity.placement) return null;
+    const expanse = this.ir.entities.find((e) => e.id === irEntity.placement!.place)?.expanse;
+    const landmark = expanse?.landmarks.find((row) => row.x === at.x && row.y === at.y);
+    if (landmark) {
+      world.moveEntity(entity.id, this.requireWorldId(landmark.room, irEntity));
+      return null;
+    }
+    return { x: at.x, y: at.y };
+  }
+
+  /**
+   * ADR-376 D2, D6, D10: the expanse's size, each landmark row resolved
+   * to its room's world id, the sight cap and the drift interval. Its edges
+   * (D8) are its blocked-exit lines, registered as every room's are, and
+   * read through the exit message key.
+   */
+  private wireExpanse(irEntity: IREntity, entity: IFEntity): void {
+    const x = irEntity.expanse!;
+    const landmarks: Record<string, { x: number; y: number }> = {};
+    for (const row of x.landmarks) landmarks[this.requireWorldId(row.room, irEntity)] = { x: row.x, y: row.y };
+    entity.add(new ExpanseTrait({
+      width: x.width,
+      height: x.height,
+      landmarks,
+      ...(x.visibility !== undefined ? { visibility: x.visibility } : {}),
+      ...(x.drift !== undefined ? { drift: x.drift } : {}),
+      // ADR-375 D4: the wind, a bearing it comes from or a calm.
+      ...(x.wind !== undefined ? { wind: x.wind === 'calm' ? 'calm' : x.wind.bearing } : {}),
+    }));
+  }
+
+  /**
+   * ADR-378 D6: an exit line's own `admits` rides the exit, on both sides of
+   * a two-way connection as the connection itself does. Stamped in a pass
+   * after every exit is wired, because a far room's own line back is a
+   * later `connectRooms` that rewrites both entries and would drop a stamp
+   * made as the first side was wired. A far room that writes its own line
+   * back keeps that line's list (or none): only an inferred reverse carries
+   * this one.
+   */
+  private stampExitAdmits(world: WorldModel): void {
+    for (const irEntity of this.ir.entities) {
+      for (const exit of irEntity.exits) {
+        if (!exit.admits || exit.to.kind !== 'room') continue;
+        const farId = exit.to.id;
+        const entity = world.getEntity(this.requireWorldId(irEntity.id, irEntity));
+        if (!entity) continue;
+        const direction = toDirection(exit.direction, irEntity);
+        // The line decides both fields for this way: its vehicles, and
+        // every pushable when it names `pushing`, else none.
+        const admits = this.admittanceOf(exit.admits, irEntity);
+        const forward = RoomBehavior.getExit(entity, direction);
+        if (forward) forward.admits = copyAdmittance(admits);
+        if (exit.oneWay || isPassageKey(direction)) continue;
+        const reverseDirection = getOppositeDirection(direction as DirectionType);
+        const far = this.ir.entities.find((e) => e.id === farId);
+        if (far?.exits.some((e) => toDirection(e.direction, far) === reverseDirection)) continue;
+        const reverse = RoomBehavior.getExit(world.getEntity(this.requireWorldId(farId, irEntity))!, reverseDirection);
+        if (reverse && reverse.destination === entity.id) reverse.admits = copyAdmittance(admits);
+      }
+    }
+  }
+
+  /**
+   * An IR `admits` list as an admittance (ADR-378 D6): entity ids are the
+   * steered vehicles, and the class word `pushing` admits every pushable.
+   */
+  private admittanceOf(list: readonly string[], irEntity: IREntity): Admittance {
+    return {
+      vehicles: list.filter((id) => id !== ADMITS_PUSHING).map((id) => this.requireWorldId(id, irEntity)),
+      pushed: list.includes(ADMITS_PUSHING) ? 'any' : [],
+    };
+  }
+
+  /**
+   * ADR-378 D6b: a thing's `pushing` block adds the thing's id to each named
+   * way's admitted pushed things — the compass exit from the first room to
+   * the second, which the compiler has checked exists. Runs after every exit
+   * is wired and every exit line stamped. A way that already admits every
+   * pushable, by its own line or by its room's `admits pushing` (static: a
+   * story never changes it), needs no grant, and writing one would narrow
+   * the way to this thing alone.
+   */
+  private stampPushingWays(world: WorldModel): void {
+    for (const irEntity of this.ir.entities) {
+      if (!irEntity.pushing?.length) continue;
+      const thingId = this.requireWorldId(irEntity.id, irEntity);
+      for (const way of irEntity.pushing) {
+        const from = world.getEntity(this.requireWorldId(way.from, irEntity));
+        const toId = this.requireWorldId(way.to, irEntity);
+        if (!from) continue;
+        for (const [key, exit] of RoomBehavior.getAllExits(from)) {
+          if (isPassageKey(key) || exit.destination !== toId) continue;
+          const pushed = exit.admits?.pushed ?? world.getEntity(toId)?.get(RoomTrait)?.admits.pushed ?? [];
+          if (pushed === 'any') continue;
+          const own = exit.admits?.pushed;
+          if (Array.isArray(own)) {
+            if (!own.includes(thingId)) own.push(thingId);
+          } else {
+            exit.admits = { ...exit.admits, pushed: [thingId] };
+          }
+        }
+      }
+    }
+  }
+
+  /**
+   * ADR-366 D6: `admits:` lands on RoomTrait.admits — the room's own, or
+   * every member room's when written on a region. A room admits no vehicle
+   * unless it names it, so the list only ever grows.
+   */
+  private wireAdmits(world: WorldModel, irEntity: IREntity, entity: IFEntity): void {
+    // ADR-378 D6: the class word `pushing` admits every pushable.
+    const admits = this.admittanceOf(irEntity.admits ?? [], irEntity);
+    const rooms = entity.has(TraitType.ROOM)
+      ? [entity]
+      : (irEntity.containing ?? []).map((member) => world.getEntity(this.requireWorldId(member.id, irEntity))!);
+    for (const room of rooms) {
+      const trait = room.get(RoomTrait);
+      if (!trait) continue;
+      for (const id of admits.vehicles) {
+        if (!trait.admits.vehicles.includes(id)) trait.admits.vehicles.push(id);
+      }
+      if (admits.pushed === 'any') trait.admits.pushed = 'any';
+    }
+  }
+
+  /**
+   * ADR-366 D7: a room some vehicle lists aboard carries AboardTrait, and
+   * each of its `to outside` exits is a computed exit whose candidates are
+   * the rooms the vehicle can be in — a line's stops, a flight's
+   * destinations, or the rooms that admit a steered vehicle. The resolver
+   * answers with the vehicle's room on each use. A door on the line is
+   * resolved and placed in the room; its room pair is the vehicle's to
+   * decide at each use, so no DoorTrait is stamped (the hatch work lands
+   * with the rooms-aboard phase).
+   */
+  private wireOutsideExits(world: WorldModel, irEntity: IREntity, entity: IFEntity): void {
+    const host = vehicleAboard(this.ir.entities, irEntity.id);
+    if (!host) return;
+    const outside: Record<string, { candidates: string[]; via?: string }> = {};
+    const candidates = vehicleCandidateRoomIds(this.ir.entities, host).map((id) => this.requireWorldId(id, host));
+    for (const exit of irEntity.exits) {
+      if (exit.to.kind !== 'outside') continue;
+      const direction = toDirection(exit.direction, irEntity);
+      const via = exit.via ? this.requireWorldId(exit.via, irEntity) : undefined;
+      if (via !== undefined) new AuthorModel(world.getDataStore(), world).moveEntity(via, entity.id);
+      outside[direction] = { candidates, ...(via !== undefined ? { via } : {}) };
+    }
+    entity.add(new AboardTrait({ vehicleId: this.requireWorldId(host.id, irEntity), outside }));
+    registerVehicleExitResolver(world);
+  }
+
   /**
    * Deadly exits (ADR-227): world room id → DIRECTION → derived
    * cause/messageId (both the phrase key). Lowered in `onEngineReady` to ONE
@@ -271,6 +580,13 @@ export class ChordStory implements Story {
   private readonly deadlyExits = new Map<string, Map<string, { cause: string; messageId: string }>>();
   /** World entity ID → IR entity ID (state lookups in the evaluator). */
   private readonly irIds = new Map<string, string>();
+  /**
+   * A `drive: state` line's `position` block (ADR-366 D5a), by world vehicle
+   * id: the rows in order, each a live guard over the world and the stop it
+   * names, then the fallback stop. Guards are code, not state — the trait
+   * holds only data (D5g) — so the vehicle's machine reads them from here.
+   */
+  private readonly vehiclePositions = new Map<string, { rows: Array<{ guard: (world: WorldModel) => boolean; stopId: string }>; otherwise: string }>();
   private world: WorldModel | null = null;
   /** True once initializeWorld has built the world content. */
   private worldBuilt = false;
@@ -313,9 +629,14 @@ export class ChordStory implements Story {
     return this.irIds.get(worldId);
   }
 
-  /** The player's world id, once createPlayer has run. */
+  /**
+   * The player's world id: the role holder once createPlayer has run, and
+   * inside the start block the character it has assigned so far — so a line
+   * after `change the player to Alex` that names the player's own state
+   * (`start the player's bell`) means Alex's.
+   */
   playerWorldId(): string | undefined {
-    return this.playerId;
+    return this.playerId ?? this.runtime.assignedPlayerId;
   }
   private playerId: string | undefined;
 
@@ -370,6 +691,15 @@ export class ChordStory implements Story {
       // `starts in <room>`.
       if (irEntity.placement) {
         author.moveEntity(entity.id, this.requireWorldId(irEntity.placement.place, irEntity));
+        // ADR-374 D1: a backdrop lives in its first room and is present at
+        // every room of its list.
+        if (irEntity.placement.places) {
+          entity.add(new BackdropTrait({ roomIds: irEntity.placement.places.map((id) => this.requireWorldId(id, irEntity)) }));
+        }
+        // ADR-376 D10: a `floats` thing placed `in <expanse> at <x>, <y>`
+        // holds that cell; an open vehicle's cell is on its model (wireVehicle).
+        const floating = entity.get(FloatingTrait);
+        if (floating && irEntity.placement.at) floating.position = { x: irEntity.placement.at.x, y: irEntity.placement.at.y };
       }
       // `carries the X` / `wears the X` are facts about the holder, whoever it
       // is — a character's inventory is world construction exactly as its
@@ -422,12 +752,17 @@ export class ChordStory implements Story {
         );
       }
       for (const exit of irEntity.exits) {
-        const toId = this.requireWorldId(exit.to, irEntity);
+        // ADR-366 D7: `to outside` names no room — it is wired as the aboard
+        // room's computed exit below, resolved on each use to the vehicle's room.
+        if (exit.to.kind === 'outside') continue;
+        if (exit.to.kind === 'unresolved') throw new LoadError(`\`${irEntity.name}\`: the \`${exit.direction}\` exit names no room.`, exit.span);
+        const toId = this.requireWorldId(exit.to.id, irEntity);
         const direction = toDirection(exit.direction, irEntity);
         // `, one-way` (ADR-234 D4, GH #327): the written direction only —
         // no reverse exit is inferred, so a room reached by an authorial
-        // move and left by walking has no back door.
-        const oneWay = exit.oneWay === true;
+        // move and left by walking has no back door. A passage is one-way
+        // by construction (ADR-378 D1): there is no opposite of its words.
+        const oneWay = exit.oneWay === true || isPassageKey(direction);
         if (exit.via === null) {
           // Defensive (Phase 8 #6, belt-and-suspenders with the analyzer's
           // door-plain-mirror gate): connectRooms stamps BOTH directions, so
@@ -436,10 +771,10 @@ export class ChordStory implements Story {
           // here means rogue IR. A one-way exit stamps nothing on the far
           // room, so it cannot unwire anything.
           const targetRoomTrait = world.getEntity(toId)?.get(TraitType.ROOM) as RoomTrait | undefined;
-          const reverseExit = targetRoomTrait?.exits?.[getOppositeDirection(direction)];
+          const reverseExit = oneWay ? undefined : targetRoomTrait?.exits?.[getOppositeDirection(direction as DirectionType)];
           if (!oneWay && reverseExit?.via && reverseExit.destination === entity.id) {
             throw new LoadError(
-              `\`${irEntity.name}\`: plain \`${exit.direction}\` exit mirrors a door-wired exit on \`${exit.to}\` — rogue IR (the compiler's door-plain-mirror gate refuses this).`,
+              `\`${irEntity.name}\`: plain \`${exit.direction}\` exit mirrors a door-wired exit on \`${exit.to.id}\` — rogue IR (the compiler's door-plain-mirror gate refuses this).`,
               exit.span,
             );
           }
@@ -469,6 +804,12 @@ export class ChordStory implements Story {
         door?.add(new DoorTrait({ room1: entity.id, room2: toId }));
         world.connectRooms(entity.id, toId, direction, doorId, { oneWay });
       }
+      // ADR-366: the vehicle's model, the rooms that admit it, and the rooms
+      // aboard it — every id resolvable now that every entity is built.
+      if (irEntity.vehicle) this.wireVehicle(world, irEntity, entity);
+      if (irEntity.expanse) this.wireExpanse(irEntity, entity);
+      if (irEntity.admits) this.wireAdmits(world, irEntity, entity);
+      this.wireOutsideExits(world, irEntity, entity);
       // Blocked exits — ADR-240 D2 (Option A): ALL of them, conditional and
       // unconditional alike, are registered as live evaluators by the
       // runtime's bind(); nothing is stamped onto RoomTrait.blockedExits
@@ -497,7 +838,7 @@ export class ChordStory implements Story {
         }
         const direction = toDirection(deadly.direction, irEntity);
         const byRoom = this.deadlyExits.get(entity.id) ?? new Map<string, { cause: string; messageId: string }>();
-        byRoom.set(String(direction).toUpperCase(), { cause: deadly.phraseKey, messageId: deadly.phraseKey });
+        byRoom.set(direction, { cause: deadly.phraseKey, messageId: deadly.phraseKey });
         this.deadlyExits.set(entity.id, byRoom);
       }
       if (irEntity.states.length > 0) {
@@ -514,6 +855,10 @@ export class ChordStory implements Story {
       // and every other described entity alike (GH #364).
       this.compileDescriptionSnippets(world, irEntity, entity);
     }
+
+    // ADR-378 D6: every exit is wired, so a stamp cannot be rewritten now.
+    this.stampExitAdmits(world);
+    this.stampPushingWays(world);
 
     // ADR-234 D3 backstop (rogue IR — the compiler's `door-unconnected`
     // gate refuses this): a door no `through` exit wired has no room pair
@@ -637,7 +982,8 @@ export class ChordStory implements Story {
     const player = world.getEntity(this.playerId)!;
     const actor = player.get(TraitType.ACTOR) as ActorTrait | undefined;
     if (actor) actor.isPlayer = true;
-    addPlayerRoleVocabulary(player);
+    // The player's self aliases are stamped by the engine at install from the
+    // world's language words (ADR-387 D2); the loader knows no language.
     return player;
   }
 
@@ -1022,6 +1368,21 @@ export class ChordStory implements Story {
       evalCondition: (condition, world) => this.evaluator.evalCondition(condition, { world }),
       execMachineBody: (statements, world) => this.runtime.execMachineBody(statements, world),
     };
+
+    // ADR-377 D2: state machines are core. Every story gets one
+    // state-machine plugin, with its `define machine` blocks lowered in,
+    // before the `use`d extensions — the same footing as the NPC service
+    // above. A story with no machines still carries the plugin: it is the
+    // host every vehicle's built-in machine ticks in (ADR-366 D5e), reading
+    // each `drive: state` line's `position` block through this loader's
+    // compiled guards (D5a).
+    installStateMachines(
+      this.ir,
+      engine,
+      installContext,
+      (vehicleWorldId, world) => this.vehiclePositionAnswer(vehicleWorldId, world),
+    );
+
     for (const [name, registration] of EXTENSION_REGISTRY) {
       if (!uses.includes(name)) continue;
       registration.registerPlugin?.(engine.getPluginRegistry());
@@ -1112,12 +1473,6 @@ export class ChordStory implements Story {
    */
   private buildDeadlyExitTransformer(): (parsed: IParsedCommand, world: WorldModel) => IParsedCommand {
     const deadlyExits = this.deadlyExits;
-    // Single-letter direction abbreviations some parsers surface in extras.
-    const ABBREV: Record<string, string> = {
-      N: 'NORTH', S: 'SOUTH', E: 'EAST', W: 'WEST',
-      NE: 'NORTHEAST', NW: 'NORTHWEST', SE: 'SOUTHEAST', SW: 'SOUTHWEST',
-      U: 'UP', D: 'DOWN',
-    };
     return (parsed: IParsedCommand, world: WorldModel): IParsedCommand => {
       const actionId = parsed.action?.toLowerCase() ?? '';
       if (actionId !== 'if.action.going' && actionId !== 'going') return parsed;
@@ -1129,9 +1484,9 @@ export class ChordStory implements Story {
       const byRoom = deadlyExits.get(roomId);
       if (!byRoom) return parsed;
 
-      const raw = String(parsed.extras?.direction ?? '').toUpperCase();
-      const direction = ABBREV[raw] ?? raw;
-      const hit = byRoom.get(direction);
+      // The parser hands the way over as the platform's exit key (a
+      // Direction constant or a passage key), the value it is stored by.
+      const hit = byRoom.get(String(parsed.extras?.direction ?? ''));
       if (!hit) return parsed;
 
       return {
@@ -1218,10 +1573,10 @@ export class ChordStory implements Story {
   }
 
   /**
-   * Register `define action` grammar patterns as story grammar (ADR-087),
-   * action-centrically (ADR-271 D3): one `forAction()` block per action,
-   * grammar lines as complete `fullPattern()` calls, and the action's
-   * scope constraints attached as `.where()` slot gates (D2). The param is
+   * Register `define action` grammar patterns as story grammar: one
+   * `rule(spec)` per lowered rule, in definition order (ADR-382 D2, D7),
+   * with the action's scope constraints as slot constraints (ADR-271 D2)
+   * on the rules that carry the slot. The param is
    * the Story contract's stdlib Parser; `getStoryGrammar` is accessed
    * structurally (the Parser contract doesn't declare it) but returns the
    * real if-domain GrammarBuilder — the ADR-266-era three-method cast is
@@ -1230,10 +1585,10 @@ export class ChordStory implements Story {
   extendParser(parser: Parameters<NonNullable<Story['extendParser']>>[0]): void {
     const grammar = (parser as unknown as { getStoryGrammar(): GrammarBuilder }).getStoryGrammar();
     for (const action of this.ir.actions) {
-      // Bare-verb prefixes ride only full `define action` dispatch actions
-      // (platform-issue-sweep Phase 8 #13) — never alteration blocks.
-      this.registerActionGrammar(grammar, `chord.action.${action.name}`, action, { bareVerbForms: true });
+      this.registerActionGrammar(grammar, `chord.action.${action.name}`, action, {});
     }
+
+    this.registerPassageGrammar(grammar);
 
     // ADR-270 D2: `extend action` — grammar lines onto an EXISTING action.
     // Story-first resolution (a story-defined action of the name wins, the
@@ -1243,8 +1598,12 @@ export class ChordStory implements Story {
     const storyActionNames = new Set(this.ir.actions.map((a) => a.name));
     for (const ext of this.ir.grammarExtensions ?? []) {
       let actionId: string;
+      // ADR-383 D4: an extension seats from its target's table — the story
+      // action's own, else the standard action's from the manifest.
+      let inheritedSeats: SeatTable;
       if (storyActionNames.has(ext.action)) {
         actionId = `chord.action.${ext.action}`;
+        inheritedSeats = seatTable(this.ir.actions.find((a) => a.name === ext.action)!).table;
       } else {
         const derived = `if.action.${ext.action}`;
         if (!STDLIB_ACTION_IDS.has(derived)) {
@@ -1255,10 +1614,11 @@ export class ChordStory implements Story {
           );
         }
         actionId = derived;
+        inheritedSeats = STDLIB_MANIFEST.locales['en-US'].grammarSeats[derived] ?? {};
       }
       // No dispatch conveniences (ADR-270 D2, mirroring ADR-269 D3): the
       // extension registers exactly the stated lines at story tier.
-      this.registerActionGrammar(grammar, actionId, ext, { bareVerbForms: false });
+      this.registerActionGrammar(grammar, actionId, ext, { inheritedSeats });
     }
 
     // ADR-270 D3: `remove from action` — standard-tier rules removed by
@@ -1275,8 +1635,10 @@ export class ChordStory implements Story {
         );
       }
       for (const pattern of removal.patterns) {
-        const text = pattern.parts.map((part) => renderPatternPart(part, [])).join(' ');
-        const removed = grammar.removeRules(derived, text);
+        // ADR-382 D6: removal by shape — slot names ignored, words
+        // lowercased, alternations as sets — the analyzer's census-3 test.
+        const parts = lowerParts(pattern.parts);
+        const removed = grammar.removeRules(derived, (rule) => samePatternShape(rule.parts, parts));
         if (removed === 0) {
           // ADR-276 census 3: the compiler's gate refuses this
           // (analysis.unmatched-removal-pattern, from the manifest's
@@ -1286,7 +1648,7 @@ export class ChordStory implements Story {
             .filter((rule) => rule.action === derived && rule.tier === 'standard')
             .map((rule) => `\`${rule.pattern}\``);
           throw new LoadError(
-            `\`remove from action ${removal.action}\` — no standard rule matches \`${text}\`. The action's standard patterns are: ${actual.join(', ') || '(none)'}.`,
+            `\`remove from action ${removal.action}\` — no standard rule matches \`${renderPattern(parts)}\`. The action's standard patterns are: ${actual.join(', ') || '(none)'}.`,
           );
         }
       }
@@ -1294,124 +1656,91 @@ export class ChordStory implements Story {
   }
 
   /**
-   * Register one action's grammar surfaces (ADR-271 D3 emission, shared by
-   * `define action` and ADR-270 `extend action`): pattern strings with
-   * per-pattern semantic defaults, `.where()` scope gates, `.slotType()`
-   * lines, and the `directions` cross-product — at story tier, grouped by
-   * identical defaults. `bareVerbForms` adds each pattern's literal verb
-   * prefix as its own rule (dispatch actions only).
+   * Register one action's grammar surfaces (shared by `define action` and
+   * ADR-270 `extend action`) at story tier: the rules chord's
+   * `lowerActionRules` lowers the action to, each through `rule(spec)` in
+   * definition order with its own `means` defaults (ADR-382 D7). The
+   * loader's one piece of grammar work is mapping each scope requirement
+   * word to its predicate. Exactly the written lines register: no rule for a
+   * line's verb alone (ADR-384 D5).
+   * Every entity slot is registered with its seat from the action's seat
+   * table, started from `inheritedSeats` for an extension (ADR-383 D3, D4).
    */
   private registerActionGrammar(
     grammar: GrammarBuilder,
     actionId: string,
-    def: {
-      patterns: IRActionPattern[];
-      constraints: Array<{ slot: string; requirement: ScopeRequirementWord }>;
-      greedy?: string[];
-      slotTypes?: Array<{ slot: string; type: 'instrument' | 'topic' }>;
-      directions?: Array<{ canonical: string; aliases: string[] }>;
-    },
-    opts: { bareVerbForms: boolean },
+    def: LowerableAction & { constraints: Array<{ slot: string; requirement: ScopeRequirementWord }>; condition?: IRCondition },
+    opts: { inheritedSeats?: SeatTable },
   ): void {
-    {
-      const action = def;
-      const greedy = action.greedy ?? [];
-      const directions = action.directions ?? [];
+    // ADR-378 D5 (ADR-370 D7, GH #317): `define action … while` gates every
+    // rule the action registers — where the
+    // condition is false the input parses as though the action did not
+    // exist. Read against the live world at match time.
+    const condition = def.condition;
+    const gate = condition
+      ? (ctx: { world: unknown }) => this.evaluator.evalCondition(condition, { world: ctx.world as WorldModel })
+      : undefined;
 
-      // ADR-267 D12: collect the emitted pattern strings first, each with
-      // its per-pattern semantic defaults (`means` lines; the `directions`
-      // cross-product adds `direction: <canonical>`). Rules then register
-      // grouped by identical defaults — one forAction block per group, so
-      // defaults stay PER-PATTERN (never leak action-wide) while the
-      // pre-267 no-defaults path emits exactly as before.
-      const emissions: Array<{ text: string; defaults: Record<string, string> | null }> = [];
-      const bareForms = new Set<string>();
-      for (const pattern of action.patterns) {
-        if (pattern.cardinality) continue; // `→ each …` expansion is engine-owned (Phase C)
-        const means = pattern.means?.length
-          ? Object.fromEntries(pattern.means.map((m) => [m.key, m.value]))
-          : null;
-        const usesDirection =
-          directions.length > 0 && pattern.parts.some((p) => p.kind === 'slot' && p.word === 'direction');
-
-        if (usesDirection) {
-          // Expansion: one rule per alias × pattern, `direction: <canonical>`
-          // as that rule's default. A bare `the direction` pattern registers
-          // the standalone forms (`port`, `p`, …).
-          const isBare = pattern.parts.length === 1;
-          for (const entry of directions) {
-            for (const alias of [entry.canonical, ...entry.aliases]) {
-              const text = isBare
-                ? alias
-                : pattern.parts
-                    .map((part) =>
-                      part.kind === 'slot' && part.word === 'direction' ? alias : renderPatternPart(part, greedy),
-                    )
-                    .join(' ');
-              emissions.push({ text, defaults: { ...(means ?? {}), direction: entry.canonical } });
-            }
-          }
-        } else {
-          const text = pattern.parts.map((part) => renderPatternPart(part, greedy)).join(' ');
-          emissions.push({ text, defaults: means });
-        }
-
-        // Bare-verb forms (platform-issue-sweep Phase 8 #13, David's ruling:
-        // ALL dispatch actions): each pattern's literal prefix registers as
-        // its own rule below the slotted forms — computed from the original
-        // parts, direction expansion included (the prefix is the verb).
-        const slotIndex = pattern.parts.findIndex((part) => part.kind === 'slot');
-        if (opts.bareVerbForms && slotIndex > 0) {
-          const bare = pattern.parts
-            .slice(0, slotIndex)
-            .map((part) => renderPatternPart(part, greedy))
-            .join(' ');
-          if (bare) bareForms.add(bare);
-        }
+    for (const lowered of lowerActionRules(def, opts)) {
+      const slots: Record<string, GrammarRuleSlotSpec> = {};
+      for (const { slot, requirement } of lowered.requirements) {
+        const predicate = SCOPE_REQUIREMENT_PREDICATES[requirement as ScopeRequirementWord];
+        const constraint: ScopeConstraintBuilder = (scope) => applyScopePredicate(scope, predicate);
+        slots[slot] = { ...slots[slot], constraints: [...(slots[slot]?.constraints ?? []), constraint] };
       }
-
-      // One builder per distinct defaults object; shared slot configuration
-      // (.where() gates, ADR-271 D2; .slotType(), ADR-267 D11) is applied to
-      // every group — it attaches only to rules that carry the slot.
-      const groups = new Map<string, { defaults: Record<string, string> | null; texts: string[] }>();
-      for (const e of emissions) {
-        const key = JSON.stringify(e.defaults);
-        const group = groups.get(key) ?? { defaults: e.defaults, texts: [] };
-        group.texts.push(e.text);
-        groups.set(key, group);
+      for (const [slot, type] of Object.entries(lowered.slotTypes)) {
+        slots[slot] = { ...slots[slot], type: type === 'instrument' ? SlotType.INSTRUMENT : SlotType.TOPIC };
       }
-      for (const group of groups.values()) {
-        // Story tier (ADR-268 D2): the builder from getStoryGrammar()
-        // registers 'story', which outranks the standard grammar outright —
-        // the old 150/140 priorities collapsed into that single tier.
-        const slotted = grammar.forAction(actionId);
-        if (group.defaults) {
-          // The cast is deliberate: `means` keys are author vocabulary and
-          // direction words are per-action vocabulary (ship directions,
-          // D12) — both wider than SemanticProperties' compass-typed union.
-          slotted.withDefaultSemantics(group.defaults as unknown as Partial<SemanticProperties>);
-        }
-        for (const text of group.texts) slotted.fullPattern(text);
-        for (const constraint of action.constraints) {
-          const predicate = SCOPE_REQUIREMENT_PREDICATES[constraint.requirement];
-          // No `: ScopeBuilder` annotation needed — `.where()` narrowed to a
-          // single callback type, so `scope` is contextually typed
-          // (ADR-231 D2a Amendment 1).
-          slotted.where(constraint.slot, (scope) => applyScopePredicate(scope, predicate));
-        }
-        for (const st of action.slotTypes ?? []) {
-          slotted.slotType(st.slot, st.type === 'instrument' ? SlotType.INSTRUMENT : SlotType.TOPIC);
-        }
-        slotted.build();
+      for (const [slot, seat] of Object.entries(lowered.seats)) {
+        slots[slot] = { ...slots[slot], seat };
       }
+      // Story tier: the builder from getStoryGrammar() registers 'story',
+      // which wins ties with the standard grammar (ADR-384 D2).
+      grammar.rule({
+        action: actionId,
+        parts: lowered.parts,
+        pattern: lowered.pattern,
+        ...(lowered.defaults ? { defaults: lowered.defaults } : {}),
+        slots,
+        ...(gate ? { when: gate } : {}),
+      });
+    }
+  }
 
-      // Bare-verb prefixes carry no `.where()` gate — the `refuse without`
-      // arm owns the no-target case (D2). They register after the slotted
-      // forms; specificity orders them below the slotted forms anyway.
-      if (bareForms.size > 0) {
-        const bare = grammar.forAction(actionId);
-        for (const form of bareForms) bare.fullPattern(form);
-        bare.build();
+  /**
+   * ADR-378 D2: a passage's words are grammar only where the passage is.
+   * Each command a room's passage block admits registers as a story-tier
+   * rule for `if.action.going` with the passage key as its direction, as
+   * written; that `climb rope` reaches `climb the rope` is the parser's
+   * work, which treats every article as optional (ADR-380 D2). The rule is
+   * gated on the actor's room having that way live: hidden
+   * (D3) or absent, the words are not a rule and the input falls through
+   * to the standard grammar or the parser's own not-understood. Two rooms
+   * writing the same first form share the key and the rule.
+   */
+  private registerPassageGrammar(grammar: GrammarBuilder): void {
+    const formsByKey = new Map<string, Set<string>>();
+    for (const irEntity of this.ir.entities) {
+      for (const exit of irEntity.exits) {
+        if (!exit.passage) continue;
+        const forms = formsByKey.get(exit.direction) ?? new Set<string>();
+        for (const form of exit.passage) forms.add(form.toLowerCase());
+        formsByKey.set(exit.direction, forms);
+      }
+    }
+    for (const [key, forms] of formsByKey) {
+      const gate = (ctx: { world: unknown; actorId: string }): boolean => {
+        const world = ctx.world as WorldModel;
+        const actor = world.getEntity(ctx.actorId);
+        const room = world.getContainingRoom(ctx.actorId);
+        if (!actor || !room) return false;
+        const way = TraversalBehavior.wayFor(world, room, key as ExitKey, { kind: 'walker', entity: actor });
+        return !(way.kind === 'refused' && (way.reason === 'hidden' || way.reason === 'no_exit'));
+      };
+      // ADR-382 D8: each command as word parts, through the same entry.
+      for (const form of forms) {
+        const parts = commandParts(form);
+        grammar.rule({ action: 'if.action.going', parts, pattern: renderPattern(parts), defaults: { direction: key }, when: gate });
       }
     }
   }
@@ -1503,8 +1832,8 @@ export class ChordStory implements Story {
         // everywhere — `starts open` is the author's escape hatch.
         entity = world.createEntity(irEntity.name, 'object');
         entity.add(new IdentityTrait({ name: irEntity.name, descriptionId, aliases }));
-        entity.add(new ContainerTrait());
-        this.applyContainerConfig(entity, irEntity.kinds[0]);
+        // ADR-369 D2: `holds <n>` is the item capacity; absent means unbounded.
+        entity.add(new ContainerTrait(irEntity.holds !== undefined ? { capacity: { maxItems: irEntity.holds } } : {}));
         break;
       }
       case 'person': {
@@ -1542,7 +1871,27 @@ export class ChordStory implements Story {
       case 'supporter': {
         entity = world.createEntity(irEntity.name, 'object');
         entity.add(new IdentityTrait({ name: irEntity.name, descriptionId, aliases }));
-        entity.add(new SupporterTrait({ capacity: supporterCapacity(irEntity.kinds[0]) }));
+        // ADR-369 D2: `holds <n>` is the item capacity; absent means unbounded.
+        entity.add(new SupporterTrait(irEntity.holds !== undefined ? { capacity: { maxItems: irEntity.holds } } : {}));
+        break;
+      }
+      case 'vehicle': {
+        // ADR-366 D1, D2: a vehicle is enterable by construction, in or on it
+        // as `carries:` says (EnterableTrait.preposition, which entering,
+        // exiting and the location heading already read), and what may be
+        // put inside is the container or supporter behavior it composes,
+        // bounded by `holds` exactly as any container. A vehicle with rooms
+        // aboard (D7) is never entered itself and composes neither. The
+        // movement model needs every stop and destination built, so it is
+        // wired in pass 2 (`wireVehicle`).
+        entity = world.createEntity(irEntity.name, 'object');
+        entity.add(new IdentityTrait({ name: irEntity.name, descriptionId, aliases }));
+        const carries = irEntity.vehicle?.carries;
+        if (carries !== undefined) {
+          entity.add(new EnterableTrait({ preposition: carries }));
+          const capacity = irEntity.holds !== undefined ? { capacity: { maxItems: irEntity.holds } } : {};
+          entity.add(carries === 'on' ? new SupporterTrait(capacity) : new ContainerTrait(capacity));
+        }
         break;
       }
       case 'region': {
@@ -1581,10 +1930,34 @@ export class ChordStory implements Story {
         entity.add(new IdentityTrait({ name: irEntity.name, descriptionId, aliases }));
         break;
       }
+      case 'expanse': {
+        // ADR-376 D2: an expanse is a room — its heading, looking and scope
+        // read it as one — carrying ExpanseTrait, wired in pass 2 once its
+        // landmark rooms are built (`wireExpanse`).
+        entity = world.createEntity(irEntity.name, 'room');
+        entity.add(new RoomTrait({}));
+        entity.add(new IdentityTrait({ name: irEntity.name, descriptionId, aliases }));
+        break;
+      }
       default:
         // ADR-276 census 17: the compiler's gate refuses this
         // (analysis.unknown-kind-noun) — defensive backstop.
         throw new LoadError(`\`${irEntity.name}\`: unknown kind noun \`${kind}\`.`, irEntity.span);
+    }
+
+    // ADR-376 D6: `sight:` off a vehicle is a landmark room's outlook or an
+    // instrument's reach. A room an expanse names in its `landmarks` block
+    // carries the extension's own trait with its outlook and its `seen from
+    // afar:` (D19, Q7); an open vehicle's distant prose rides its model.
+    if (entity.has(TraitType.ROOM)) {
+      if (this.isLandmarkRoom(irEntity.id)) {
+        entity.add(new LandmarkTrait({
+          ...(irEntity.sight !== undefined ? { sight: irEntity.sight } : {}),
+          ...(irEntity.seenFromAfar !== undefined ? { seenFromAfar: irEntity.seenFromAfar } : {}),
+        }));
+      }
+    } else if (irEntity.sight !== undefined) {
+      entity.add(new SightTrait({ sight: irEntity.sight }));
     }
 
     this.applyTraitAdjectives(entity, irEntity, kind);
@@ -1661,6 +2034,7 @@ export class ChordStory implements Story {
     const toolGatedGerunds: Array<{ adjective: string; gerund: string; actionId: string }> = [
       { adjective: 'cuttable', gerund: 'cutting', actionId: 'if.action.cutting' },
       { adjective: 'diggable', gerund: 'digging', actionId: 'if.action.digging' }, // ADR-230 Phase 6
+      { adjective: 'flammable', gerund: 'burning', actionId: 'if.action.burning' }, // ADR-371 D2
     ];
     for (const { adjective, gerund, actionId } of toolGatedGerunds) {
       for (const irEntity of this.ir.entities) {
@@ -1761,19 +2135,12 @@ export class ChordStory implements Story {
         case 'openable': {
           // Defect D3 fix (2026-07-17, ratchet G4): `openable with the
           // crowbar` (keyless per R3) gates opening on holding the tool
-          // (OpenableTrait.toolId, ADR-230 D3b). Name → world id via the
-          // shared pending mechanism — never the raw display-name string
-          // (the lockable-bug class).
+          // (ADR-230 D3b). Name → world id via the shared pending
+          // mechanism — never the raw display-name string (the
+          // lockable-bug class).
           if (entity.has(TraitType.OPENABLE)) break;
           const openable = new OpenableTrait();
-          const openToolName = entityConfigValue(trait);
-          if (openToolName !== undefined) {
-            this.pendingEntityRefs.push(
-              this.entityRefFor(openToolName, 'tool', irEntity, trait.span, (worldId) => {
-                openable.toolId = worldId;
-              }),
-            );
-          }
+          this.queueToolRequirement(openable, trait, irEntity);
           entity.add(openable);
           break;
         }
@@ -1801,21 +2168,15 @@ export class ChordStory implements Story {
           break;
         }
         case 'cuttable':
-        case 'diggable': {
+        case 'diggable':
+        case 'flammable': {
           // ADR-230 D3c / Phase 6. Tool names resolve name → IR entity here
           // and IR → world id after every entity is built (forward refs are
           // legal) — do NOT copy the lockable raw-string config bug.
-          const traitType = trait.name === 'cuttable' ? TraitType.CUTTABLE : TraitType.DIGGABLE;
+          const traitType = trait.name === 'cuttable' ? TraitType.CUTTABLE : trait.name === 'diggable' ? TraitType.DIGGABLE : TraitType.FLAMMABLE;
           if (entity.has(traitType)) break;
-          const toolGated = trait.name === 'cuttable' ? new CuttableTrait() : new DiggableTrait();
-          const toolName = entityConfigValue(trait);
-          if (toolName !== undefined) {
-            this.pendingEntityRefs.push(
-              this.entityRefFor(toolName, 'tool', irEntity, trait.span, (worldId) => {
-                toolGated.toolId = worldId;
-              }),
-            );
-          }
+          const toolGated = trait.name === 'cuttable' ? new CuttableTrait() : trait.name === 'diggable' ? new DiggableTrait() : new FlammableTrait();
+          this.queueToolRequirement(toolGated, trait, irEntity);
           entity.add(toolGated);
           break;
         }
@@ -1838,8 +2199,9 @@ export class ChordStory implements Story {
         case 'pushable':
           // Defect D1 fix (2026-07-17): the catalog accepted these two but
           // the loader had no case — `--check` passed stories that load
-          // rejected. Default config (button-style, repeatable).
-          if (!entity.has(TraitType.PUSHABLE)) entity.add(new PushableTrait({}));
+          // rejected. A marker (ADR-378 D6a): the way says whether a push
+          // moves the thing.
+          if (!entity.has(TraitType.PUSHABLE)) entity.add(new PushableTrait());
           break;
         case 'pullable':
           if (!entity.has(TraitType.PULLABLE)) entity.add(new PullableTrait({}));
@@ -1852,6 +2214,17 @@ export class ChordStory implements Story {
           entity.add(new OpenInventoryTrait());
           break;
         }
+        case 'settable':
+          // ADR-371 D3: marker adjective — the thing's own reversible states
+          // are its dial. Nothing lowers here; the runtime's settable section
+          // adds the capability trait and registers the setting behavior at
+          // bind, reading the states from the IR.
+          break;
+        case 'costs':
+          // ADR-372 D5: the price. Nothing lowers here; the runtime's
+          // purchasable section adds PurchasableTrait from the `price` and
+          // `currency` settings and registers the buying behavior at bind.
+          break;
         case 'concealed': {
           // Ratchet G2 (2026-07-17): marker adjective — hidden from normal
           // view until searching reveals it (IdentityTrait.concealed).
@@ -1867,6 +2240,57 @@ export class ChordStory implements Story {
           if (identity) identity.contentsUnlisted = true;
           break;
         }
+        case 'floats': {
+          // ADR-376 D10: marker adjective — the thing may hold a position in
+          // an expanse and drift there; its starting cell is written in
+          // pass 2 from the placement's `at` tail.
+          if (!entity.has(TraitType.FLOATING)) entity.add(new FloatingTrait());
+          break;
+        }
+        case 'transparent': {
+          // ADR-369 D1: marker adjective — a closed container still shows its
+          // contents (ContainerTrait.isTransparent, read by VisibilityBehavior
+          // and searching). The analyzer admits it on containers only.
+          const container = entity.get(TraitType.CONTAINER) as ContainerTrait | undefined;
+          if (container) container.isTransparent = true;
+          break;
+        }
+        case 'attached': {
+          // ADR-373 D1: the anchor resolves name → world id after every
+          // entity is built (forward refs legal), and the behavior that owns
+          // an attachment makes it. `detachable` is read from the sibling
+          // word here, so the two compose in either order.
+          const detachable = irEntity.traits.some((t) => t.name === 'detachable');
+          const anchorName = entityConfigValue(trait);
+          if (anchorName !== undefined) {
+            this.pendingEntityRefs.push(
+              this.entityRefFor(anchorName, 'anchor', irEntity, trait.span, (worldId) => {
+                AttachedBehavior.attach(entity, worldId, 'stuck', detachable);
+              }),
+            );
+          }
+          break;
+        }
+        case 'breakable':
+          // ADR-373 D2/D4: `fragile` is read from the sibling word, so the
+          // two compose in either order. `starts broken` runs after
+          // composition (applyStartsStates).
+          if (!entity.has(TraitType.BREAKABLE)) {
+            entity.add(new BreakableTrait({ fragile: irEntity.traits.some((t) => t.name === 'fragile') }));
+          }
+          break;
+        case 'listener':
+          // ADR-374 D6: ADR-172's listener — what it hears reaches it.
+          if (!entity.has(TraitType.LISTENER)) entity.add(new ListenerTrait());
+          break;
+        case 'night-vision':
+          // ADR-374 D3: the observer-side darkness marker (ADR-328 D5).
+          if (!entity.has(TraitType.NIGHT_VISION)) entity.add(new NightVisionTrait());
+          break;
+        case 'detachable':
+        case 'fragile':
+          // ADR-373: qualifiers, applied by `attached` and `breakable` above.
+          break;
         case 'hiding-spot': {
           // Ratchet G3 (2026-07-17): bare = the actor may hide at any
           // position; `with position <word>` narrows to exactly one. The
@@ -1897,8 +2321,27 @@ export class ChordStory implements Story {
         case 'climbable': // ADR-218 §1a (ratchet F2) — default config
           if (!entity.has(TraitType.CLIMBABLE)) entity.add(new ClimbableTrait());
           break;
-        case 'light-source':
-          entity.add(new LightSourceTrait());
+        case 'light-source': {
+          // ADR-374 D9: `light-source with the <tool>` — lighting needs that
+          // tool held; resolved after every entity is built.
+          if (entity.has(TraitType.LIGHT_SOURCE)) break;
+          const lightSource = new LightSourceTrait();
+          this.queueToolRequirement(lightSource, trait, irEntity);
+          entity.add(lightSource);
+          break;
+        }
+        case 'powered':
+          // ADR-374 D10: each power source resolves after every entity is
+          // built — by then `switchable` is composed whatever the order.
+          for (const source of trait.config.filter((c) => c.key === '' && c.valueKind === 'name')) {
+            this.pendingEntityRefs.push(
+              this.entityRefFor(source.value, 'source', irEntity, trait.span, (worldId) => {
+                const switchable = entity.get(TraitType.SWITCHABLE) as SwitchableTrait;
+                switchable.powerSourceIds = [...(switchable.powerSourceIds ?? []), worldId];
+                switchable.requiresPower = true;
+              }),
+            );
+          }
           break;
         case 'guard':
         case 'passive':
@@ -2152,18 +2595,6 @@ export class ChordStory implements Story {
       }
     }
     return values;
-  }
-
-  private applyContainerConfig(entity: IFEntity, kind: IRComposition): void {
-    const maxItems = configValue(kind, 'max items');
-    const maxWeight = configValue(kind, 'max weight');
-    if (maxItems === undefined && maxWeight === undefined) return;
-    const container = entity.get(TraitType.CONTAINER) as ContainerTrait | undefined;
-    if (!container) return;
-    container.capacity = {
-      ...(maxItems !== undefined ? { maxItems: Number(maxItems) } : {}),
-      ...(maxWeight !== undefined ? { maxWeight: Number(maxWeight) } : {}),
-    };
   }
 
   // -------------------------------------------------------------- helpers
@@ -2535,11 +2966,14 @@ const STARTS_STATE_TRAIT_FIELDS: ReadonlyMap<
   ['open', { traitType: TraitType.OPENABLE, traitName: 'openable', field: 'isOpen', value: true }],
   ['off', { traitType: TraitType.SWITCHABLE, traitName: 'switchable', field: 'isOn', value: false }],
   ['on', { traitType: TraitType.SWITCHABLE, traitName: 'switchable', field: 'isOn', value: true }],
+  ['broken', { traitType: TraitType.BREAKABLE, traitName: 'breakable', field: 'broken', value: true }], // ADR-373 D7
+  ['lit', { traitType: TraitType.LIGHT_SOURCE, traitName: 'light-source', field: 'isLit', value: true }], // ADR-374 D9
+  ['unlit', { traitType: TraitType.LIGHT_SOURCE, traitName: 'light-source', field: 'isLit', value: false }],
 ]);
 
-/** Chord direction word → world-model DirectionType. */
-function toDirection(word: string, at?: IREntity): DirectionType {
-  const dir = (Direction as Record<string, DirectionType>)[word.toUpperCase()];
+/** Chord exit word → world-model exit key, or a load error for a word that names none. */
+function toDirection(word: string, at?: IREntity): ExitKey {
+  const dir = exitKeyOfWord(word);
   // ADR-276 census 16: pre-gated by the PARSER — chord's closed exit
   // DIRECTIONS set (parser.ts) is a strict subset of the Direction enum, so
   // gate-clean IR cannot carry an unknown word here. Defensive backstop
@@ -2549,10 +2983,9 @@ function toDirection(word: string, at?: IREntity): DirectionType {
   return dir;
 }
 
-/** `with capacity N` on a supporter kind. */
-function supporterCapacity(kind: IRComposition): { maxItems?: number } {
-  const capacity = configValue(kind, 'capacity');
-  return capacity !== undefined ? { maxItems: Number(capacity) } : {};
+/** A copy of an admittance, so each way's lists are its own to grow. */
+function copyAdmittance(admits: Admittance): Admittance {
+  return { vehicles: [...admits.vehicles], pushed: admits.pushed === 'any' ? 'any' : [...admits.pushed] };
 }
 
 function configValue(comp: IRComposition, key: string): string | undefined {
@@ -2683,19 +3116,4 @@ function editDistance(a: string, b: string, max: number): number {
   return prev[b.length];
 }
 
-/**
- * One IR pattern element → its Sharpee pattern-string token (ADR-267):
- * alternation → `a|b` (D8, one rule), optional → `[…]` (D9), a slot named
- * by a greedy line → `:slot...` (D10, TEXT_GREEDY). Plain words and slots
- * pass through as before — pre-267 patterns emit byte-identical strings.
- */
-function renderPatternPart(part: IRPatternPart, greedy: readonly string[]): string {
-  const core =
-    part.kind === 'alt'
-      ? part.words.join('|')
-      : part.kind === 'slot'
-        ? `:${part.word}${greedy.includes(part.word) ? '...' : ''}`
-        : part.word;
-  return part.optional ? `[${core}]` : core;
-}
 

@@ -47,13 +47,15 @@ export * from './traits/room/index.js';
 export * from './traits/openable/index.js';
 export * from './traits/lockable/index.js';
 export * from './traits/cuttable/index.js';
+export * from './traits/flammable/index.js';
+export * from './traits/purchasable/index.js';
 export * from './traits/diggable/index.js';
 export * from './traits/readable/index.js';
 export * from './traits/light-source/index.js';
-export * from './traits/exit/index.js';
 export * from './traits/climbable/index.js';
 export * from './traits/scenery/index.js';
 export * from './traits/night-vision/index.js';
+export * from './traits/backdrop/index.js';
 export * from './traits/supporter/index.js';
 export * from './traits/switchable/index.js';
 export * from './traits/wearable/index.js';
@@ -67,12 +69,14 @@ export * from './traits/pullable/index.js';
 export * from './traits/pushable/index.js';
 export * from './traits/npc/index.js';
 export * from './traits/vehicle/index.js';
+export * from './traits/expanse/index.js';
 export * from './traits/story-info/index.js';
 export * from './traits/character-model/index.js';
 export * from './traits/concealment/index.js';
 export * from './traits/acoustic/index.js';
 export * from './traits/listener/index.js';
 export * from './traits/obstructor-protocol.js';
+export * from './traits/tool-requirement.js';
 
 // Root-barrel hygiene fix (2026-07-14): these trait subdirs shipped with leaf
 // barrels and a mid-level traits/index.ts export but were never enumerated in

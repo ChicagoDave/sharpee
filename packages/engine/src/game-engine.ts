@@ -16,24 +16,24 @@ import {
   StoryInfoTrait,
 } from '@sharpee/world-model';
 import { EventProcessor, type Effect } from '@sharpee/event-processor';
+import { withWorldReactions } from './events/world-reactions.js';
 import {
   type ActionRegistry,
   StandardActionRegistry,
   standardActions,
-  type Parser,
-  ParserFactory,
   CommandHistoryCapabilitySchema,
   IFActions,
   type IPerceptionService,
   registerStandardChains,
   channelRegistry,
   createDeadlyRoomTransformer,
+  createVehicleCommandTransformer,
   type INpcService,
   type ActSlots,
   type ActResult,
   ENGINE_VERSION,
 } from '@sharpee/stdlib';
-import { type LanguageProvider, type IEventProcessorWiring, type ClientCapabilities, type ISound } from '@sharpee/if-domain';
+import { type LanguageProvider, type IEventProcessorWiring, type ClientCapabilities, type ISound, type Parser } from '@sharpee/if-domain';
 import { IProsePipeline, ProsePipeline, type SlotContributor, type SlotEntry } from './prose-pipeline/index.js';
 import type { ITextBlock } from '@sharpee/text-blocks';
 import { ChannelService } from '@sharpee/channel-service';
@@ -52,7 +52,8 @@ import {
   EngineConfig,
   InputModeHandler,
   INPUT_MODE_STATE_KEY,
-  type GameEngineEvents
+  type GameEngineEvents,
+  type HeldCommand
 } from './types.js';
 import { introspect as introspectEngine, type EngineIntrospection } from './introspection/introspect.js';
 import { Story, type StoryEngine } from './install/story.js';
@@ -67,7 +68,6 @@ import { resolveRoute } from './turn/parse.js';
 import type { TurnEngine, TurnStageContext } from './turn/context.js';
 import { adaptParser, type EngineParser } from './ports/parser-interface.js';
 import { hasNarrativeSettings } from './ports/language-provider-interface.js';
-import { VocabularyManager, createVocabularyManager } from './ports/vocabulary-manager.js';
 import { SaveRestoreService, createSaveRestoreService, ISaveRestoreStateProvider } from './session/save-restore-service.js';
 import type { PlatformOperationHost } from './turn/platform-dispatcher.js';
 import { projectStoryInfo, findStoryInfoTrait } from './install/story-info-projection.js';
@@ -349,7 +349,7 @@ export class GameEngine implements StoryEngine {
    * #318, ADR-225 as amended): consumed by the very next input, answer or
    * not. Never serialized — a restore starts with no question pending.
    */
-  private heldCommand?: { input: string };
+  private heldCommand?: HeldCommand;
   private perceptionService?: IPerceptionService;
   private pluginRegistry: PluginRegistry;
   private actorTurnPlugin!: ActorTurnPlugin;
@@ -388,7 +388,6 @@ export class GameEngine implements StoryEngine {
   // Alternate input mode handlers (ADR-137)
   private inputModeHandlers = new Map<string, InputModeHandler>();
 
-  private vocabularyManager: VocabularyManager;
   private saveRestoreService: SaveRestoreService;
 
   /** `game.initialized` is emitted once per engine, on the first `start()`. */
@@ -489,7 +488,6 @@ export class GameEngine implements StoryEngine {
     this.randomService = new EngineRandomService(this.masterSeed);
     this.narrativeSettings = buildNarrativeSettings(); // Default: 2nd person
 
-    this.vocabularyManager = createVocabularyManager();
     this.saveRestoreService = createSaveRestoreService({
       maxSnapshots: this.config.maxUndoSnapshots ?? 10
     });
@@ -532,6 +530,11 @@ export class GameEngine implements StoryEngine {
     this.commandExecutor.registerParsedCommandTransformer(
       createDeadlyRoomTransformer(this.randomService),
     );
+
+    // ADR-366 D5b, D5c, D7: aboard a vehicle, `go` and `steer` land on the
+    // action the vehicle's model owns, and `exit` in a boarding room takes
+    // its `to outside` exit. Early-returns for a player on foot.
+    this.commandExecutor.registerParsedCommandTransformer(createVehicleCommandTransformer());
 
     // Query handling is now managed by the platform layer
     // Platform owns the QueryManager and handles all queries
@@ -1027,20 +1030,20 @@ export class GameEngine implements StoryEngine {
         stored.push(...events);
       },
       clearTurnEvents: (turn) => { engine.turnEvents.set(turn, []); },
+      withWorldReactions: (events, turn) => withWorldReactions(engine.eventProcessor, events, turn),
       get pendingPlatformOps() { return engine.pendingPlatformOps; },
       get soundBuffer() { return engine.soundBuffer; },
       get soundDispatcher() { return engine.soundDispatcher; },
       get inputModeHandlers() { return engine.inputModeHandlers; },
       emit: (event, ...args) => this.emit(event, ...args),
       emitGameEvent: (event) => this.emitGameEvent(event),
-      updateScopeVocabulary: () => this.updateScopeVocabulary(),
       switchPlayer: (entityId) => this.switchPlayer(entityId),
       executeTurn: (input) => this.executeTurn(input),
-      holdCommand: (input) => { this.heldCommand = { input }; },
+      holdCommand: (held) => { this.heldCommand = held; },
       takeHeldCommand: () => {
         const held = this.heldCommand;
         this.heldCommand = undefined;
-        return held?.input;
+        return held;
       },
       countSessionTurn: (success) => {
         this.sessionTurns++;
@@ -1117,7 +1120,7 @@ export class GameEngine implements StoryEngine {
     // being played, not a character, so they move with the role. They live on
     // the entity's IdentityTrait, which `syncPlayerState` does not touch —
     // without this, `x me` keeps naming the old PC after every switch.
-    movePlayerRoleVocabulary(oldPlayer, newPlayer);
+    movePlayerRoleVocabulary(oldPlayer, newPlayer, this.world.getLanguageWords().selfWords);
 
     // Update WorldModel canonical reference
     this.world.setPlayer(entityId);
@@ -1180,7 +1183,6 @@ export class GameEngine implements StoryEngine {
     this.engineParser.setWorldContext(this.world, newPlayerId, playerLocation);
     this.engineParser.resetPronounContext();
 
-    this.updateScopeVocabulary();
     configureLanguageProviderNarrative(this.languageProvider, this.narrativeSettings, newPlayer);
   }
 
@@ -1619,20 +1621,6 @@ export class GameEngine implements StoryEngine {
 
     // Return most recent
     return allEvents.slice(-count);
-  }
-
-  /**
-   * Update vocabulary for an entity
-   */
-  updateEntityVocabulary(entity: IFEntity, inScope: boolean): void {
-    this.vocabularyManager.updateEntityVocabulary(entity, inScope);
-  }
-
-  /**
-   * Update vocabulary for all entities in scope
-   */
-  updateScopeVocabulary(): void {
-    this.vocabularyManager.updateScopeVocabulary(this.world, this.context.player.id);
   }
 
   /**

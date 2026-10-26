@@ -6,6 +6,9 @@ import { standardActions } from '../../src/actions/standard/index';
 import { ParsedCommand, NounPhrase } from '@sharpee/world-model';
 import { createSemanticEventSource, SystemEvent } from '@sharpee/core';
 
+/** English, handed to hand-built worlds as the language's words (ADR-387 D2). */
+const ENGLISH_WORDS = { selfWords: ['me', 'myself', 'self', 'yourself'], nameStopwords: ['the', 'a', 'an', 'of'] };
+
 describe('Entity alias resolution', () => {
   let world: WorldModel;
   let validator: CommandValidator;
@@ -16,6 +19,7 @@ describe('Entity alias resolution', () => {
 
   beforeEach(() => {
     world = new WorldModel();
+    world.setLanguageWords(ENGLISH_WORDS);
     registry = new StandardActionRegistry();
     
     // Register standard actions
@@ -87,7 +91,6 @@ describe('Entity alias resolution', () => {
   it('should find entity by its primary name', async () => {
     const command: ParsedCommand = {
       pattern: 'VERB_NOUN',
-      confidence: 1,
       action: 'if.action.examining',
       structure: {
         verb: 'examine',
@@ -112,7 +115,6 @@ describe('Entity alias resolution', () => {
   it('should find entity by alias "hook"', async () => {
     const command: ParsedCommand = {
       pattern: 'VERB_NOUN',
-      confidence: 1,
       action: 'if.action.examining',
       structure: {
         verb: 'examine',
@@ -137,7 +139,6 @@ describe('Entity alias resolution', () => {
   it('should find entity by alias "peg"', async () => {
     const command: ParsedCommand = {
       pattern: 'VERB_NOUN',
-      confidence: 1,
       action: 'if.action.examining',
       structure: {
         verb: 'examine',
@@ -173,7 +174,6 @@ describe('Entity alias resolution', () => {
     
     const command: ParsedCommand = {
       pattern: 'VERB_NOUN_PREP_NOUN',
-      confidence: 1,
       action: 'if.action.putting',
       structure: {
         verb: 'hang',
@@ -224,7 +224,6 @@ describe('Entity alias resolution', () => {
     it('should resolve multi-word alias "bush babies" via full text match', async () => {
       const command: ParsedCommand = {
         pattern: 'VERB_NOUN',
-        confidence: 1,
         action: 'if.action.examining',
         structure: {
           verb: 'examine',
@@ -249,7 +248,6 @@ describe('Entity alias resolution', () => {
     it('should resolve single-word alias "galagos" normally', async () => {
       const command: ParsedCommand = {
         pattern: 'VERB_NOUN',
-        confidence: 1,
         action: 'if.action.examining',
         structure: {
           verb: 'examine',
@@ -275,7 +273,6 @@ describe('Entity alias resolution', () => {
       // "bush babies" is the entity name, not just an alias
       const command: ParsedCommand = {
         pattern: 'VERB_NOUN',
-        confidence: 1,
         action: 'if.action.examining',
         structure: {
           verb: 'examine',
@@ -310,7 +307,6 @@ describe('Entity alias resolution', () => {
       // not the "babies" entity (which only matches the head token)
       const command: ParsedCommand = {
         pattern: 'VERB_NOUN',
-        confidence: 1,
         action: 'if.action.examining',
         structure: {
           verb: 'examine',
@@ -341,7 +337,6 @@ describe('Entity alias resolution', () => {
       // ruling removes.
       const command: ParsedCommand = {
         pattern: 'VERB_NOUN',
-        confidence: 1,
         action: 'if.action.examining',
         structure: {
           verb: 'examine',
@@ -382,7 +377,6 @@ describe('Entity alias resolution', () => {
     // Player should only see the hook in their current room
     const command: ParsedCommand = {
       pattern: 'VERB_NOUN',
-      confidence: 1,
       action: 'if.action.examining',
       structure: {
         verb: 'examine',

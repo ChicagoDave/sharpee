@@ -4,16 +4,18 @@ import { Behavior } from '../behaviors/behavior.js';
 import { IFEntity } from '../entities/if-entity.js';
 import { WorldModel } from './WorldModel.js';
 import { TraitType } from '../traits/trait-types.js';
-import { SwitchableBehavior } from '../traits/switchable/switchableBehavior.js';
-import { VehicleTrait } from '../traits/vehicle/vehicleTrait.js';
+import { LightSourceBehavior } from '../traits/light-source/lightSourceBehavior.js';
+import { EnterableTrait } from '../traits/enterable/enterableTrait.js';
 import { RoomTrait } from '../traits/room/roomTrait.js';
 import { ContainerTrait } from '../traits/container/containerTrait.js';
 import { OpenableTrait } from '../traits/openable/openableTrait.js';
-import { LightSourceTrait } from '../traits/light-source/lightSourceTrait.js';
 import { SceneryTrait } from '../traits/scenery/sceneryTrait.js';
 import { IdentityTrait } from '../traits/identity/identityTrait.js';
-import { DoorTrait } from '../traits/door/doorTrait.js';
+import { PresenceBehavior } from './PresenceBehavior.js';
 import { findTraitWithCapability } from '../capabilities/index.js';
+import { holderOf } from './ExpansePlaceBehavior.js';
+import { lookoutOf, sightingOf, sightings } from './SightBehavior.js';
+import { getVehicleAboard } from '../traits/vehicle/vehicleBehavior.js';
 
 /**
  * Standard capability ID for visibility control.
@@ -47,9 +49,29 @@ export class VisibilityBehavior extends Behavior {
     return Boolean(roomTrait && roomTrait.requiresLight);
   }
 
+  /** Whether the observer sees without light — carries `NightVisionTrait`. */
+  private static seesInDark(observer: IFEntity): boolean {
+    return observer.hasTrait(TraitType.NIGHT_VISION);
+  }
+
+  /**
+   * Whether a room is dark to this observer: dark, and the observer does
+   * not see in the dark (ADR-374 D5). Looking and the perception filter
+   * ask this; `isDark` stays the room's own fact.
+   *
+   * @param observer - The one looking
+   * @param room - The room it is in
+   * @param world - The world model
+   * @returns true when the observer cannot see the room
+   */
+  static isDarkFor(observer: IFEntity, room: IFEntity, world: WorldModel): boolean {
+    return !this.seesInDark(observer) && this.isDark(room, world);
+  }
+
   /**
    * Determines if a room is effectively dark (no usable light sources).
-   * This is the single source of truth for darkness checking.
+   * This is the single source of truth for darkness checking; whether it
+   * is dark to a given observer is `isDarkFor`.
    *
    * A room is dark if:
    * 1. It has RoomTrait with requiresLight = true
@@ -59,42 +81,11 @@ export class VisibilityBehavior extends Behavior {
    * @param world - The world model
    * @returns true if the room is dark and has no accessible light sources
    */
-  /** Whether the observer sees without light — carries `NightVisionTrait`. */
-  private static seesInDark(observer: IFEntity): boolean {
-    return observer.hasTrait(TraitType.NIGHT_VISION);
-  }
-
   static isDark(room: IFEntity, world: WorldModel): boolean {
     if (!this.roomRequiresLight(room, world)) {
       return false; // Room isn't dark (live evaluator or static trait fact)
     }
     return !this.hasLightSource(room, world);
-  }
-
-  /**
-   * Determines if a light source entity is currently providing light.
-   * Checks isLit property first, falls back to switchable state, defaults to lit.
-   *
-   * Priority order:
-   * 1. Explicit isLit property (e.g., lit torch, extinguished candle)
-   * 2. Switchable trait state (e.g., flashlight isOn: true)
-   * 3. Default to lit (e.g., glowing gems, phosphorescent moss)
-   */
-  private static isLightActive(entity: IFEntity): boolean {
-    const lightTrait = entity.getTrait(LightSourceTrait);
-
-    // Explicit isLit property takes precedence
-    if (lightTrait?.isLit !== undefined) {
-      return lightTrait.isLit === true;
-    }
-
-    // Fall back to switchable state
-    if (entity.hasTrait(TraitType.SWITCHABLE)) {
-      return SwitchableBehavior.isOn(entity);
-    }
-
-    // Default: light sources without explicit state are lit
-    return true;
   }
 
   /**
@@ -180,6 +171,14 @@ export class VisibilityBehavior extends Behavior {
       }
     }
 
+    // In an expanse, scope is sight (ADR-376 D6): a positioned thing — an
+    // open vehicle, a floating thing, a landmark room — or anything held in
+    // one is seen only within the looker's sight. Answered here, before the
+    // room rule, so two ships thirty units apart in one room do not see
+    // each other; undefined means the ordinary rules decide.
+    const expanseAnswer = this.seenAcrossExpanse(observer, target, world);
+    if (expanseAnswer !== undefined) return expanseAnswer;
+
     // Get rooms
     const observerRoom = world.getContainingRoom(observer.id);
     const targetRoom = world.getContainingRoom(target.id);
@@ -194,47 +193,58 @@ export class VisibilityBehavior extends Behavior {
       return false;
     }
 
-    // A door is present at BOTH of its rooms (ADR-234 AC-3; David's ruling
-    // 2026-07-18): visible from either side. Only the door itself is
-    // two-sided — the far room and its contents stay unseen.
-    const targetDoor = target.getTrait(DoorTrait);
-    const doorPresent = !!targetDoor && !!observerRoom &&
-      (targetDoor.room1 === observerRoom.id || targetDoor.room2 === observerRoom.id);
+    // A door is present at both of its rooms (David's ruling 2026-07-18),
+    // a backdrop at every room of its list (ADR-374 D1): visible from each.
+    // Only the thing itself is present — the far room and its contents
+    // stay unseen.
+    const presentHere = !!observerRoom && PresenceBehavior.roomsBeyondHome(target).includes(observerRoom.id);
 
-    if (!observerRoom || (!doorPresent && observerRoom.id !== targetRoom?.id)) {
+    if (!observerRoom || (!presentHere && observerRoom.id !== targetRoom?.id)) {
       return false;
     }
 
-    // Check if room is dark (live evaluator first — ADR-240). An observer
-    // with night vision needs no light (ADR-328 D5).
-    if (this.roomRequiresLight(observerRoom, world) && !this.seesInDark(observer)) {
-      // In a dark room, need light to see
-      if (!this.hasLightSource(observerRoom, world)) {
-        // Special cases in darkness:
-        // 1. Can see lit light sources
-        if (target.hasTrait(TraitType.LIGHT_SOURCE) &&
-            target.getTrait(LightSourceTrait)?.isLit === true) {
-          return true;
-        }
-        // 2. Can see items you're carrying (by feel)
-        const targetLocation = world.getLocation(target.id);
-        if (targetLocation === observer.id) {
-          return true;
-        }
-        // Otherwise can't see in darkness
-        return false;
+    // Dark to this observer (ADR-240, ADR-328 D5): only a light giving
+    // light, and what you carry (by feel), are seen.
+    if (this.isDarkFor(observer, observerRoom, world)) {
+      if (target.hasTrait(TraitType.LIGHT_SOURCE) && LightSourceBehavior.givesLight(target, world)) {
+        return true;
       }
+      return world.getLocation(target.id) === observer.id;
     }
 
-    // A far-side door sits at the room boundary — container occlusion
-    // cannot apply across it.
-    if (doorPresent && observerRoom.id !== targetRoom?.id) {
+    // A far-side door sits at the room boundary, and a backdrop away from
+    // its home room stands in the open — container occlusion cannot apply.
+    if (presentHere && observerRoom.id !== targetRoom?.id) {
       return true;
     }
 
     // Check line of sight through containers
     const hasLineOfSight = this.hasLineOfSight(observer.id, target.id, world);
     return hasLineOfSight;
+  }
+
+  /**
+   * The expanse's answer for a target positioned in the observer's expanse
+   * (ADR-376 D6), or undefined when the ordinary rules apply: the observer
+   * has no lookout, the target and everything holding it is unpositioned,
+   * or the target rides the observer's own holder (their vehicle, or
+   * themself out of it).
+   *
+   * A positioned thing itself is visible iff in sight; something held in
+   * one is unseen out of sight and otherwise left to the room and
+   * line-of-sight rules, so a distant ship's cabin stays dark.
+   */
+  private static seenAcrossExpanse(observer: IFEntity, target: IFEntity, world: WorldModel): boolean | undefined {
+    const holder = holderOf(world, target);
+    if (!holder) return undefined;
+    const own = getVehicleAboard(world, observer.id)?.id ?? observer.id;
+    if (holder.id === own) return undefined;
+    const lookout = lookoutOf(world, observer);
+    if (!lookout) return undefined;
+    if (holder.hasTrait(TraitType.ROOM) && world.getContainingRoom(observer.id)?.id === holder.id) return undefined;
+    const seen = sightingOf(world, lookout, holder) !== undefined;
+    if (holder.id === target.id) return seen;
+    return seen ? undefined : false;
   }
 
   /**
@@ -253,13 +263,8 @@ export class VisibilityBehavior extends Behavior {
       seen.add(observerRoom.id);
     }
 
-    // Check if room is dark (live evaluator first — ADR-240). An observer
-    // with night vision needs no light (ADR-328 D5).
-    const isDark = this.roomRequiresLight(observerRoom, world) && !this.seesInDark(observer);
-    const hasLight = this.hasLightSource(observerRoom, world);
-    
-    // If it's dark and no light, only see specific things
-    if (isDark && !hasLight) {
+    // Dark to this observer (ADR-240, ADR-328 D5): only specific things
+    if (this.isDarkFor(observer, observerRoom, world)) {
       // Can always see what you're carrying (by feel)
       const carried = world.getContents(observer.id);
       for (const entity of carried) {
@@ -269,15 +274,12 @@ export class VisibilityBehavior extends Behavior {
         }
       }
       
-      // Add any lit light sources in the room
+      // Add any light in the room that is giving light (ADR-374 D10)
       const roomContents = world.getAllContents(observerRoom.id, { recursive: true });
       for (const entity of roomContents) {
-        if (entity.hasTrait(TraitType.LIGHT_SOURCE)) {
-          const light = entity.getTrait(LightSourceTrait);
-          if (light && light.isLit === true && !seen.has(entity.id)) {
-            visible.push(entity);
-            seen.add(entity.id);
-          }
+        if (entity.hasTrait(TraitType.LIGHT_SOURCE) && LightSourceBehavior.givesLight(entity, world) && !seen.has(entity.id)) {
+          visible.push(entity);
+          seen.add(entity.id);
         }
       }
       return visible;
@@ -306,15 +308,29 @@ export class VisibilityBehavior extends Behavior {
       }
     }
     
-    // Doors of this room whose spatial home is the far side (ADR-234 AC-3;
-    // David's ruling 2026-07-18): a door is present at both of its rooms.
-    for (const door of world.findByTrait(TraitType.DOOR)) {
-      if (seen.has(door.id)) continue;
-      const doorTrait = door.getTrait(DoorTrait);
-      if (!doorTrait || (doorTrait.room1 !== observerRoom.id && doorTrait.room2 !== observerRoom.id)) continue;
-      if (this.canSee(observer, door, world)) {
-        visible.push(door);
-        seen.add(door.id);
+    // Doors and backdrops present here though their home is elsewhere
+    // (David's ruling 2026-07-18; ADR-374 D1).
+    for (const present of PresenceBehavior.presentAt(observerRoom.id, world)) {
+      if (seen.has(present.id)) continue;
+      if (this.canSee(observer, present, world)) {
+        visible.push(present);
+        seen.add(present.id);
+      }
+    }
+
+    // In an expanse (ADR-376 D6): the landmark rooms, open vehicles and
+    // floating things within sight, wherever the looker stands — a
+    // landmark room's outlook reaches things in the expanse room, and a
+    // ship's lookout reaches the landmark rooms.
+    const lookout = lookoutOf(world, observer);
+    if (lookout) {
+      const own = getVehicleAboard(world, observer.id)?.id ?? observer.id;
+      for (const sighting of sightings(world, lookout, undefined, own)) {
+        if (seen.has(sighting.thing.id)) continue;
+        if (this.canSee(observer, sighting.thing, world)) {
+          visible.push(sighting.thing);
+          seen.add(sighting.thing.id);
+        }
       }
     }
 
@@ -370,18 +386,9 @@ export class VisibilityBehavior extends Behavior {
     seen: Set<string>,
     world: WorldModel
   ): void {
-    // Check if we can see inside this container
-    if (container.hasTrait(TraitType.CONTAINER)) {
-      const containerTrait = container.getTrait(ContainerTrait);
-      const isTransparent = containerTrait?.isTransparent ?? false;
-
-      if (!isTransparent && container.hasTrait(TraitType.OPENABLE)) {
-        const openable = container.getTrait(OpenableTrait);
-        const isOpen = openable?.isOpen ?? false;
-        if (!isOpen) {
-          return; // Can't see inside closed opaque container
-        }
-      }
+    // Can't see inside a closed opaque container
+    if (this.blocksSight(container)) {
+      return;
     }
 
     // Contents that pass the shared per-entity filter (concealed, invisible
@@ -414,8 +421,8 @@ export class VisibilityBehavior extends Behavior {
     for (const entity of contents) {
       if (!entity.hasTrait(TraitType.LIGHT_SOURCE)) continue;
 
-      // Check if light is active (isLit, switchable, or default)
-      if (!this.isLightActive(entity)) continue;
+      // Is it giving light — lit, switched on, powered (ADR-374 D10)
+      if (!LightSourceBehavior.givesLight(entity, world)) continue;
 
       // Check if the light is accessible (not in a closed container)
       if (!this.isAccessible(entity.id, room.id, world)) continue;
@@ -467,16 +474,8 @@ export class VisibilityBehavior extends Behavior {
       }
 
       // Opaque + closed containers block the path
-      if (container.hasTrait(TraitType.CONTAINER)) {
-        const containerTrait = container.getTrait(ContainerTrait);
-        const isTransparent = containerTrait?.isTransparent ?? false;
-        if (!isTransparent && container.hasTrait(TraitType.OPENABLE)) {
-          const openable = container.getTrait(OpenableTrait);
-          const isOpen = openable?.isOpen ?? false;
-          if (!isOpen) {
-            return false;
-          }
-        }
+      if (this.blocksSight(container)) {
+        return false;
       }
 
       // Stop at rooms (natural top of containment)
@@ -537,10 +536,9 @@ export class VisibilityBehavior extends Behavior {
 
   /**
    * Gets the location that should be described when an observer looks around.
-   * Accounts for vehicle/container transparency:
-   * - In a transparent vehicle → describe the room
-   * - In an open container → describe the room
-   * - In a closed container → describe the container
+   * One rule over any enclosure (container, supporter, vehicle):
+   * - In or on an enclosure that does not block sight → describe the room
+   * - In a closed, opaque, openable container → describe the container
    * - In a room → describe the room
    *
    * @returns The entity to describe and optionally the immediate container
@@ -565,38 +563,41 @@ export class VisibilityBehavior extends Behavior {
       return { location: immediateLocation, immediateContainer: null };
     }
 
-    // Check if we're in a vehicle
-    if (immediateLocation.hasTrait(TraitType.VEHICLE)) {
-      const vehicleTrait = immediateLocation.getTrait(VehicleTrait);
-      if (vehicleTrait?.transparent) {
-        // Transparent vehicle - describe the room
-        const room = world.getContainingRoom(observer.id);
-        if (room) {
-          return { location: room, immediateContainer: immediateLocation };
-        }
+    // One rule for any enclosure the observer is in (ADR-366 D3): they see
+    // out unless it blocks sight, and then the enclosure is the place.
+    if (this.isEnclosure(immediateLocation) && !this.blocksSight(immediateLocation)) {
+      const room = world.getContainingRoom(observer.id);
+      if (room) {
+        return { location: room, immediateContainer: immediateLocation };
       }
-      // Opaque vehicle - describe the vehicle interior
-      return { location: immediateLocation, immediateContainer: null };
     }
 
-    // Check if we're in a container
-    if (immediateLocation.hasTrait(TraitType.CONTAINER)) {
-      // Check if container is open (visibility passes through)
-      if (immediateLocation.hasTrait(TraitType.OPENABLE)) {
-        const openable = immediateLocation.getTrait(OpenableTrait);
-        if (openable?.isOpen) {
-          // Open container - describe the room
-          const room = world.getContainingRoom(observer.id);
-          if (room) {
-            return { location: room, immediateContainer: immediateLocation };
-          }
-        }
-      }
-      // Closed container - describe the container
-      return { location: immediateLocation, immediateContainer: null };
-    }
-
-    // Default: describe what we're in
     return { location: immediateLocation, immediateContainer: null };
+  }
+
+  /** Something an actor can be in or on: a container, a supporter or a vehicle. */
+  private static isEnclosure(entity: IFEntity): boolean {
+    return entity.hasTrait(TraitType.CONTAINER)
+      || entity.hasTrait(TraitType.SUPPORTER)
+      || entity.hasTrait(TraitType.VEHICLE);
+  }
+
+  /**
+   * Whether an entity blocks sight between its inside and outside: a
+   * container that is openable, closed and not transparent. Anything held
+   * on top (a supporter, a vehicle ridden `on`) never does, nor does an
+   * open, lidless or transparent container. The one definition for
+   * scope, reach, the describable location, and every action that asks
+   * whether a container's contents can be seen (searching, examining).
+   *
+   * @param entity - Any entity
+   * @returns true when its inside cannot be seen from outside, nor out from in
+   */
+  static blocksSight(entity: IFEntity): boolean {
+    if (!entity.hasTrait(TraitType.CONTAINER)) return false;
+    if (entity.getTrait(EnterableTrait)?.preposition === 'on') return false;
+    if (entity.getTrait(ContainerTrait)?.isTransparent) return false;
+    if (!entity.hasTrait(TraitType.OPENABLE)) return false;
+    return !(entity.getTrait(OpenableTrait)?.isOpen ?? false);
   }
 }

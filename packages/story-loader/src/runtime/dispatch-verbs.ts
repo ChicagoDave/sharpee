@@ -13,7 +13,7 @@
  * References:
  * - ADR-335 D1 — one module per runtime section over a shared core.
  */
-import type { IRActionDef, IROnClause, IRTraitDef, Span } from '@sharpee/chord';
+import { type IRActionDef, type IROnClause, type IRTopicRow, type IRTraitDef, type Span } from '@sharpee/chord';
 import type { ISemanticEvent } from '@sharpee/core';
 import type { Choice } from '@sharpee/if-domain';
 import { type ActionInterceptor, type CapabilityBehavior, type CapabilityEffect, type CapabilitySharedData, type CapabilityValidationResult, Direction, IFEntity, type InterceptorReportResult, type InterceptorResult, type InterceptorSharedData, WorldModel } from '@sharpee/world-model';
@@ -310,11 +310,23 @@ export class DispatchVerbsSection {
     // `hang the item on the target` with `the item is an instrument` has
     // `target` as its primary slot wherever the instrument sits.
     const instrumentSlotNames = new Set((def.slotTypes ?? []).filter((t) => t.type === 'instrument').map((t) => t.slot));
-    const isEntitySlot = (word: string) => !(hasDirections && word === 'direction') && !instrumentSlotNames.has(word);
-    const primarySlot = def.patterns
-      .flatMap((p) => p.parts)
-      .filter((part): part is { kind: 'slot'; word: string } => part.kind === 'slot')
-      .find((part) => isEntitySlot(part.word))?.word;
+    // ADR-383 D9: a topic slot and a `takes the rest of the line` slot bind
+    // the words the player typed, never an entity.
+    const topicSlotNames = (def.slotTypes ?? []).filter((t) => t.type === 'topic').map((t) => t.slot);
+    const greedySlotNames = def.greedy ?? [];
+    const isEntitySlot = (word: string) =>
+      !(hasDirections && word === 'direction') &&
+      !instrumentSlotNames.has(word) &&
+      !topicSlotNames.includes(word) &&
+      !greedySlotNames.includes(word);
+    // An action that answers in `about` rows carries semantics of its own,
+    // as a body does: it needs no behavior host and no entity.
+    const topicRows = def.topics ?? [];
+    const hasOwnSemantics = def.body.length > 0 || topicRows.length > 0;
+    // ADR-383 D6: a command with no slot names (an act through the execution
+    // entry) binds each object to every name the action's table seats there.
+    const seatedNames = { direct: [] as string[], indirect: [] as string[] };
+    for (const [name, seat] of Object.entries(runtime.core.actionRoles(def.name).seats)) seatedNames[seat].push(name);
     const hasEntityLessPattern = def.patterns.some(
       (p) => !p.parts.some((part) => part.kind === 'slot' && isEntitySlot((part as { word: string }).word)),
     );
@@ -324,6 +336,14 @@ export class DispatchVerbsSection {
     const semanticKeys = new Set<string>();
     if (hasDirections) semanticKeys.add('direction');
     for (const p of def.patterns) for (const m of p.means ?? []) semanticKeys.add(m.key);
+    // The entity slots this action's patterns declare: a parsed object binds
+    // under its slot name only when the name is one of these.
+    const entitySlotNames = new Set<string>();
+    for (const p of def.patterns) {
+      for (const part of p.parts) {
+        if (part.kind === 'slot' && isEntitySlot((part as { word: string }).word)) entitySlotNames.add((part as { word: string }).word);
+      }
+    }
 
     interface DispatchContext {
       world: WorldModel;
@@ -333,7 +353,21 @@ export class DispatchVerbsSection {
       // ADR-275 D2 (review fix): `parsed.extras` carries the matched rule's
       // defaultSemantics (merged parser-side, ADR-148) — the access seam
       // for semantic word bindings.
-      command: { directObject?: { entity?: IFEntity }; instrument?: { entity?: IFEntity }; parsed?: { extras?: Record<string, unknown> } };
+      // The parsed structure names the slot each object filled
+      // (`INounPhrase.slot`), so both objects bind by name.
+      command: {
+        directObject?: { entity?: IFEntity };
+        indirectObject?: { entity?: IFEntity };
+        instrument?: { entity?: IFEntity };
+        /** The typed topic, with the in-scope entity it named, if one (ADR-231 D4). */
+        topic?: { text: string; entity?: string };
+        parsed?: {
+          extras?: Record<string, unknown>;
+          /** Text and rest-of-line slots' words, by slot name. */
+          textSlots?: Map<string, string>;
+          structure?: { directObject?: { slot?: string }; indirectObject?: { slot?: string } };
+        };
+      };
       sharedData: Record<string, unknown>;
       event(type: string, data: Record<string, unknown>): ISemanticEvent;
     }
@@ -343,7 +377,20 @@ export class DispatchVerbsSection {
       // `the actor` is whoever performs the action — a character acting
       // through the execution entry (ADR-329 D1/D10) as much as the player.
       const slots: Record<string, string> = { actor: (context.actor ?? context.player).id };
-      if (entity && primarySlot) slots[primarySlot] = entity.id;
+      // Each parsed object binds under the slot it filled in the matched
+      // rule, so a two-noun pattern's second noun reads by name. An object
+      // whose slot is not one of the action's own names — a command with no
+      // slot names (an act through the execution entry), or an `extend
+      // action` line's new name — binds under every name the action's seat
+      // table gives its seat.
+      const structure = context.command.parsed?.structure;
+      const bindSeat = (slotName: string | undefined, seated: IFEntity | undefined, names: readonly string[]) => {
+        if (!seated) return;
+        const named = slotName !== undefined && entitySlotNames.has(slotName) ? [slotName] : names;
+        for (const name of named) if (slots[name] === undefined) slots[name] = seated.id;
+      };
+      bindSeat(structure?.directObject?.slot, entity, seatedNames.direct);
+      bindSeat(structure?.indirectObject?.slot, context.command.indirectObject?.entity, seatedNames.indirect);
       // GH #333: an instrument-typed slot (`the item is an instrument`) is
       // parsed into the command's instrument seat, never the direct object —
       // bind it under its own slot name so `{the item}` in a clause body
@@ -353,6 +400,18 @@ export class DispatchVerbsSection {
         for (const typed of def.slotTypes ?? []) {
           if (typed.type === 'instrument' && slots[typed.slot] === undefined) slots[typed.slot] = instrumentEntity.id;
         }
+      }
+      // ADR-383 D9: a topic slot binds the words the player typed, whether
+      // or not they named an entity, and a rest-of-line slot binds its
+      // words — a text value, which a phrase renders as typed.
+      const topicText = context.command.topic?.text;
+      if (topicText !== undefined) {
+        for (const name of topicSlotNames) if (slots[name] === undefined) slots[name] = topicText;
+      }
+      const textSlots = context.command.parsed?.textSlots;
+      for (const name of greedySlotNames) {
+        const words = textSlots?.get(name);
+        if (words !== undefined && slots[name] === undefined) slots[name] = words;
       }
       const extras = context.command.parsed?.extras ?? {};
       for (const key of semanticKeys) {
@@ -375,13 +434,18 @@ export class DispatchVerbsSection {
       validate(context: DispatchContext): { valid: boolean; error?: string } {
         const entity = context.command.directObject?.entity;
         const slots = bindings(entity, context);
+        // Carried before any refusal, so a refusal's phrase renders the
+        // command's bindings too (`{the subject}` in `otherwise refuse`).
+        context.sharedData.chordSlotMap = slots;
         const evalCtx: ExecContext = { world: context.world, slots };
         for (const refusal of def.refusals) {
           if (refusal.kind === 'without') {
             // ADR-275 D1: the arm fires when the named binding is absent on
-            // THIS command — an entity slot needs the entity, a semantic
-            // key needs its word.
-            const bound = semanticKeys.has(refusal.slot ?? '') ? slots[refusal.slot!] !== undefined : !!entity;
+            // THIS command — an entity slot needs its entity, read by name
+            // so a second noun's absence is seen, and a semantic key needs
+            // its word.
+            const named = refusal.slot !== undefined && (semanticKeys.has(refusal.slot) || entitySlotNames.has(refusal.slot));
+            const bound = named ? slots[refusal.slot!] !== undefined : !!entity;
             if (!bound) return { valid: false, error: refusal.phraseKey };
           }
           if (refusal.kind === 'when') {
@@ -398,7 +462,7 @@ export class DispatchVerbsSection {
         // ADR-275 D1: entity-less dispatch exists only for actions that
         // declare an entity-less shape AND carry a body (the body IS the
         // semantics — no behavior host without an entity).
-        if (!entity && !(hasEntityLessPattern && def.body.length > 0)) {
+        if (!entity && !(hasEntityLessPattern && hasOwnSemantics)) {
           return { valid: false, error: def.otherwise ?? 'cant' };
         }
 
@@ -415,6 +479,20 @@ export class DispatchVerbsSection {
           if (!runtime.core.evaluator.evalCondition(must.condition, evalCtx)) {
             return { valid: false, error: must.phraseKey };
           }
+        }
+
+        // ADR-383 D9: `about` rows answer the topic with the topic tables'
+        // own matcher — the entity the validator resolved quietly first,
+        // then the typed text. No row matching is the `otherwise` miss.
+        let topicRow: IRTopicRow | undefined;
+        if (topicRows.length > 0) {
+          const topic = context.command.topic;
+          const index = runtime.core.dialogue.matchTopicFilters(
+            topicRows.map((row) => row.filter),
+            { text: topic?.text, topicEntityId: topic?.entity },
+          );
+          if (index < 0) return { valid: false, error: def.otherwise ?? 'cant' };
+          topicRow = topicRows[index];
         }
 
         // Dispatch: the first trait on the target with a behavior bound for
@@ -449,20 +527,24 @@ export class DispatchVerbsSection {
         // (§5.4: the body IS the action's semantics — photographing has no
         // per-trait behavior by design). No claiming behavior AND no body =
         // the dispatch miss.
-        if (!behavior && def.body.length === 0) return { valid: false, error: def.otherwise ?? 'cant' };
-        if (def.body.length) {
-          // The body's own validate partition (leading refusals/musts).
-          // Routing is decided by the mutations pass, not here (ADR-289 D1).
+        if (!behavior && !hasOwnSemantics) return { valid: false, error: def.otherwise ?? 'cant' };
+        // The body's own validate partition (leading refusals/musts), then
+        // the matched row's: the body runs first, then the row, in every
+        // phase. Routing is decided by the mutations pass, not here
+        // (ADR-289 D1).
+        for (const statements of [def.body, topicRow?.body ?? []]) {
+          if (statements.length === 0) continue;
           const bodyCtx: ExecContext = { world: context.world, slots };
-          const refusal = runtime.core.statements.findRefusal(def.body, bodyCtx);
+          const refusal = runtime.core.statements.findRefusal(statements, bodyCtx);
           if (refusal) return { valid: false, ...refusal };
         }
+        context.sharedData.chordTopicRow = topicRow;
         context.sharedData.capEntity = entity;
         context.sharedData.capBehavior = behavior;
         context.sharedData.capShared = capShared;
         // ADR-275: one binding source — validate's map (entity ids +
-        // semantic words) carries to execute/report via sharedData.
-        context.sharedData.chordSlotMap = slots;
+        // semantic words), set on entry, carries to execute/report/blocked
+        // via sharedData.
         return { valid: true };
       },
       execute(context: DispatchContext): void {
@@ -473,6 +555,10 @@ export class DispatchVerbsSection {
         }
         if (def.body.length) {
           runtime.core.statements.execStatements(def.body, runtime.actionBodyCtxFromSlots(context, 'mutations'), 'mutations');
+        }
+        const topicRow = context.sharedData.chordTopicRow as IRTopicRow | undefined;
+        if (topicRow) {
+          runtime.core.statements.execStatements(topicRow.body, runtime.actionBodyCtxFromSlots(context, 'mutations'), 'mutations');
         }
       },
       report(context: DispatchContext): ISemanticEvent[] {
@@ -491,6 +577,10 @@ export class DispatchVerbsSection {
         }
         if (def.body.length) {
           events.push(...runtime.core.statements.execStatements(def.body, runtime.actionBodyCtxFromSlots(context, 'reports'), 'reports'));
+        }
+        const topicRow = context.sharedData.chordTopicRow as IRTopicRow | undefined;
+        if (topicRow) {
+          events.push(...runtime.core.statements.execStatements(topicRow.body, runtime.actionBodyCtxFromSlots(context, 'reports'), 'reports'));
         }
         // After-clauses bind to the target entity — an entity-less command
         // has no owner to react (ADR-275 D1).
@@ -512,16 +602,11 @@ export class DispatchVerbsSection {
         if (key === 'cant') {
           return [context.event('action.blocked', { messageId: 'scope.out_of_scope', reason: 'cant' })];
         }
-        const event = runtime.core.phrases.phraseEvent(key, { world: context.world });
+        const slots = context.sharedData.chordSlotMap as Record<string, string> | undefined;
+        const event = runtime.core.phrases.phraseEvent(key, { world: context.world, ...(slots ? { slots } : {}) });
         return [context.event(event.type, (event.data ?? {}) as Record<string, unknown>)];
       },
     };
-  }
-
-  private slotBindings(primarySlot: string | undefined, entity: IFEntity, player: IFEntity): Record<string, string> {
-    const slots: Record<string, string> = { actor: player.id };
-    if (primarySlot) slots[primarySlot] = entity.id;
-    return slots;
   }
 
   /**

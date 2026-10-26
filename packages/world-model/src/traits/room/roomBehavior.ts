@@ -8,7 +8,7 @@ import { RoomTrait, IExitInfo } from './roomTrait.js';
 import { IComputedExitDeclaration, isComputedExitCarrier } from './computedExitContract.js';
 import { type ISemanticEvent, type EntityId } from '@sharpee/core';
 import { IFEvents } from '../../constants/if-events.js';
-import { Direction, DirectionType, getOppositeDirection } from '../../constants/directions.js';
+import { Direction, DirectionType, ExitKey, getOppositeDirection } from '../../constants/directions.js';
 import { IWorldQuery } from '../container/containerBehavior.js';
 import type { ExitResolution, ExitResolverContext } from '../../capabilities/exit-resolver-binding.js';
 
@@ -24,7 +24,7 @@ export class RoomBehavior extends Behavior {
   /**
    * Get the exit in a given direction
    */
-  static getExit(room: IFEntity, direction: DirectionType): IExitInfo | null {
+  static getExit(room: IFEntity, direction: ExitKey): IExitInfo | null {
     const roomTrait = RoomBehavior.require<RoomTrait>(room, TraitType.ROOM);
     if (!roomTrait.exits) {
       return null;
@@ -36,14 +36,14 @@ export class RoomBehavior extends Behavior {
   /**
    * Check if an exit exists in a direction
    */
-  static hasExit(room: IFEntity, direction: DirectionType): boolean {
+  static hasExit(room: IFEntity, direction: ExitKey): boolean {
     return this.getExit(room, direction) !== undefined;
   }
   
   /**
    * Check if an exit is blocked
    */
-  static isExitBlocked(room: IFEntity, direction: DirectionType): boolean {
+  static isExitBlocked(room: IFEntity, direction: ExitKey): boolean {
     const roomTrait = RoomBehavior.require<RoomTrait>(room, TraitType.ROOM);
     return roomTrait.blockedExits?.hasOwnProperty(direction) ?? false;
   }
@@ -51,7 +51,7 @@ export class RoomBehavior extends Behavior {
   /**
    * Get blocked exit message
    */
-  static getBlockedMessage(room: IFEntity, direction: DirectionType): string | undefined {
+  static getBlockedMessage(room: IFEntity, direction: ExitKey): string | undefined {
     const roomTrait = RoomBehavior.require<RoomTrait>(room, TraitType.ROOM);
     return roomTrait.blockedExits?.[direction];
   }
@@ -59,12 +59,12 @@ export class RoomBehavior extends Behavior {
   /**
    * Add or update an exit in this room
    */
-  static setExit(room: IFEntity, direction: DirectionType, destination: string, via?: string): void {
+  static setExit(room: IFEntity, direction: ExitKey, destination: string, via?: string): void {
     const roomTrait = RoomBehavior.require<RoomTrait>(room, TraitType.ROOM);
     
     // Initialize exits if needed
     if (!roomTrait.exits) {
-      roomTrait.exits = {} as Partial<Record<DirectionType, IExitInfo>>;
+      roomTrait.exits = {} as Partial<Record<ExitKey, IExitInfo>>;
     }
     
     roomTrait.exits[direction] = {
@@ -81,11 +81,11 @@ export class RoomBehavior extends Behavior {
   /**
    * Block an exit with a message
    */
-  static blockExit(room: IFEntity, direction: DirectionType, message: string): ISemanticEvent[] {
+  static blockExit(room: IFEntity, direction: ExitKey, message: string): ISemanticEvent[] {
     const roomTrait = RoomBehavior.require<RoomTrait>(room, TraitType.ROOM);
     
     if (!roomTrait.blockedExits) {
-      roomTrait.blockedExits = {} as Partial<Record<DirectionType, string>>;
+      roomTrait.blockedExits = {} as Partial<Record<ExitKey, string>>;
     }
     
     roomTrait.blockedExits[direction] = message;
@@ -107,7 +107,7 @@ export class RoomBehavior extends Behavior {
   /**
    * Unblock an exit
    */
-  static unblockExit(room: IFEntity, direction: DirectionType): ISemanticEvent[] {
+  static unblockExit(room: IFEntity, direction: ExitKey): ISemanticEvent[] {
     const roomTrait = RoomBehavior.require<RoomTrait>(room, TraitType.ROOM);
     
     if (!roomTrait.blockedExits) {
@@ -137,7 +137,7 @@ export class RoomBehavior extends Behavior {
   /**
    * Remove an exit from this room
    */
-  static removeExit(room: IFEntity, direction: DirectionType): void {
+  static removeExit(room: IFEntity, direction: ExitKey): void {
     const roomTrait = RoomBehavior.require<RoomTrait>(room, TraitType.ROOM);
     
     // Remove the exit if exits exist
@@ -189,26 +189,26 @@ export class RoomBehavior extends Behavior {
   /**
    * Get all exits from the room
    */
-  static getAllExits(room: IFEntity): Map<DirectionType, IExitInfo> {
+  static getAllExits(room: IFEntity): Map<ExitKey, IExitInfo> {
     const roomTrait = RoomBehavior.require<RoomTrait>(room, TraitType.ROOM);
     if (!roomTrait.exits) {
       return new Map();
     }
-    return new Map(Object.entries(roomTrait.exits) as [DirectionType, IExitInfo][]);
+    return new Map(Object.entries(roomTrait.exits) as [ExitKey, IExitInfo][]);
   }
   
   /**
    * Get available (non-blocked) exits
    */
-  static getAvailableExits(room: IFEntity): Map<DirectionType, IExitInfo> {
+  static getAvailableExits(room: IFEntity): Map<ExitKey, IExitInfo> {
     const roomTrait = RoomBehavior.require<RoomTrait>(room, TraitType.ROOM);
-    const available = new Map<DirectionType, IExitInfo>();
+    const available = new Map<ExitKey, IExitInfo>();
     
     if (!roomTrait.exits) {
       return available;
     }
     
-    for (const [direction, exitInfo] of Object.entries(roomTrait.exits) as [DirectionType, IExitInfo][]) {
+    for (const [direction, exitInfo] of Object.entries(roomTrait.exits) as [ExitKey, IExitInfo][]) {
       if (!this.isExitBlocked(room, direction)) {
         available.set(direction, exitInfo);
       }
@@ -235,7 +235,7 @@ export class RoomBehavior extends Behavior {
    */
   static getComputedExitDeclaration(
     room: IFEntity,
-    direction: DirectionType
+    direction: ExitKey
   ): { trait: ITrait; declaration: IComputedExitDeclaration } | null {
     for (const trait of room.traits.values()) {
       if (!isComputedExitCarrier(trait)) continue;
@@ -270,7 +270,7 @@ export class RoomBehavior extends Behavior {
    */
   static resolveExit(
     room: IFEntity,
-    direction: DirectionType,
+    direction: ExitKey,
     ctx: ExitResolverContext
   ): ExitResolution {
     const found = this.getComputedExitDeclaration(room, direction);

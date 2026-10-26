@@ -11,6 +11,9 @@ import { describe, test, expect } from 'vitest';
 import { WorldModel, IdentityTrait, EntityType, OpenableTrait } from '@sharpee/world-model';
 import { nounPhraseFor } from '../../../src/utils/noun-phrase';
 
+/** English, handed to hand-built worlds as the language's words (ADR-387 D2). */
+const ENGLISH_WORDS = { selfWords: ['me', 'myself', 'self', 'yourself'], nameStopwords: ['the', 'a', 'an', 'of'] };
+
 function makeEntity(world: WorldModel, name: string, identity?: Partial<IdentityTrait>) {
   const entity = world.createEntity(name, EntityType.OBJECT);
   if (identity !== undefined) {
@@ -22,6 +25,7 @@ function makeEntity(world: WorldModel, name: string, identity?: Partial<Identity
 describe('nounPhraseFor', () => {
   test('no IdentityTrait → minimal indefinite singular noun with referableId', () => {
     const world = new WorldModel();
+    world.setLanguageWords(ENGLISH_WORDS);
     const thing = makeEntity(world, 'thing');
 
     const np = nounPhraseFor(thing);
@@ -35,6 +39,7 @@ describe('nounPhraseFor', () => {
 
   test('common noun → indefinite singular; no adjectives/plural/properName', () => {
     const world = new WorldModel();
+    world.setLanguageWords(ENGLISH_WORDS);
     const sword = makeEntity(world, 'sword', { article: 'a' });
 
     const np = nounPhraseFor(sword);
@@ -49,6 +54,7 @@ describe('nounPhraseFor', () => {
 
   test('the legacy article literal is NOT mapped onto the NounPhrase', () => {
     const world = new WorldModel();
+    world.setLanguageWords(ENGLISH_WORDS);
     const sword = makeEntity(world, 'sword', { article: 'an' });
 
     const np = nounPhraseFor(sword);
@@ -59,6 +65,7 @@ describe('nounPhraseFor', () => {
 
   test('plural override → pluralForm', () => {
     const world = new WorldModel();
+    world.setLanguageWords(ENGLISH_WORDS);
     const goose = makeEntity(world, 'goose', { plural: 'geese' });
 
     expect(nounPhraseFor(goose).pluralForm).toBe('geese');
@@ -66,6 +73,7 @@ describe('nounPhraseFor', () => {
 
   test('adjectives → copied (not the same array reference)', () => {
     const world = new WorldModel();
+    world.setLanguageWords(ENGLISH_WORDS);
     const chest = makeEntity(world, 'chest', { adjectives: ['small', 'iron'] });
 
     const np = nounPhraseFor(chest);
@@ -77,6 +85,7 @@ describe('nounPhraseFor', () => {
 
   test('mass nounType → number "mass", articleType "some"', () => {
     const world = new WorldModel();
+    world.setLanguageWords(ENGLISH_WORDS);
     const sand = makeEntity(world, 'sand', { nounType: 'mass' });
 
     const np = nounPhraseFor(sand);
@@ -87,6 +96,7 @@ describe('nounPhraseFor', () => {
 
   test('proper nounType → properName true, articleType "none"', () => {
     const world = new WorldModel();
+    world.setLanguageWords(ENGLISH_WORDS);
     const alice = makeEntity(world, 'Alice', { nounType: 'proper' });
 
     const np = nounPhraseFor(alice);
@@ -97,6 +107,7 @@ describe('nounPhraseFor', () => {
 
   test('properName flag (no nounType) → properName true, articleType "none"', () => {
     const world = new WorldModel();
+    world.setLanguageWords(ENGLISH_WORDS);
     const bob = makeEntity(world, 'Bob', { properName: true });
 
     const np = nounPhraseFor(bob);
@@ -107,6 +118,7 @@ describe('nounPhraseFor', () => {
 
   test('explicit article "the" → articleType "definite"', () => {
     const world = new WorldModel();
+    world.setLanguageWords(ENGLISH_WORDS);
     const gate = makeEntity(world, 'staff gate', { article: 'the' });
 
     expect(nounPhraseFor(gate).articleType).toBe('definite');
@@ -114,6 +126,7 @@ describe('nounPhraseFor', () => {
 
   test('explicit article "some" → articleType "some" (number unaffected)', () => {
     const world = new WorldModel();
+    world.setLanguageWords(ENGLISH_WORDS);
     const gliders = makeEntity(world, 'sugar gliders', { article: 'some' });
 
     const np = nounPhraseFor(gliders);
@@ -124,6 +137,7 @@ describe('nounPhraseFor', () => {
 
   test('explicit article "some" + grammaticalNumber plural (the book\'s zoo shape)', () => {
     const world = new WorldModel();
+    world.setLanguageWords(ENGLISH_WORDS);
     const signs = makeEntity(world, 'direction signs', {
       article: 'some',
       grammaticalNumber: 'plural',
@@ -137,6 +151,7 @@ describe('nounPhraseFor', () => {
 
   test('explicit empty article → articleType "none"', () => {
     const world = new WorldModel();
+    world.setLanguageWords(ENGLISH_WORDS);
     const self = makeEntity(world, 'yourself', { article: '' });
 
     expect(nounPhraseFor(self).articleType).toBe('none');
@@ -144,6 +159,7 @@ describe('nounPhraseFor', () => {
 
   test('semantic noun signals outrank the explicit article', () => {
     const world = new WorldModel();
+    world.setLanguageWords(ENGLISH_WORDS);
     const alice = makeEntity(world, 'Alice', { properName: true, article: 'the' });
     const water = makeEntity(world, 'water', { nounType: 'mass', article: 'the' });
 
@@ -153,6 +169,7 @@ describe('nounPhraseFor', () => {
 
   test('unique nounType → articleType "definite" (ADR-095: "the sun")', () => {
     const world = new WorldModel();
+    world.setLanguageWords(ENGLISH_WORDS);
     const sun = makeEntity(world, 'sun', { nounType: 'unique' });
 
     expect(nounPhraseFor(sun).articleType).toBe('definite');
@@ -160,6 +177,7 @@ describe('nounPhraseFor', () => {
 
   test('grammaticalNumber "plural" → number "plural"', () => {
     const world = new WorldModel();
+    world.setLanguageWords(ENGLISH_WORDS);
     const coins = makeEntity(world, 'coins', { grammaticalNumber: 'plural' });
 
     expect(nounPhraseFor(coins).number).toBe('plural');
@@ -167,6 +185,7 @@ describe('nounPhraseFor', () => {
 
   test('nounType "plural" → number "plural"', () => {
     const world = new WorldModel();
+    world.setLanguageWords(ENGLISH_WORDS);
     const scissors = makeEntity(world, 'scissors', { nounType: 'plural' });
 
     expect(nounPhraseFor(scissors).number).toBe('plural');
@@ -174,6 +193,7 @@ describe('nounPhraseFor', () => {
 
   test('referableId is the entity id', () => {
     const world = new WorldModel();
+    world.setLanguageWords(ENGLISH_WORDS);
     const lamp = makeEntity(world, 'lamp', {});
 
     expect(nounPhraseFor(lamp).referableId).toBe(lamp.id);
@@ -181,6 +201,7 @@ describe('nounPhraseFor', () => {
 
   test('empty trait name falls back to entity.name', () => {
     const world = new WorldModel();
+    world.setLanguageWords(ENGLISH_WORDS);
     const entity = world.createEntity('fallback', EntityType.OBJECT);
     entity.add(new IdentityTrait({ name: '' }));
 
@@ -191,6 +212,7 @@ describe('nounPhraseFor', () => {
 describe('nounPhraseFor — state-derived adjectives (ADR-193)', () => {
   test('default (no opts) → no state adjectives (open box stays "box")', () => {
     const world = new WorldModel();
+    world.setLanguageWords(ENGLISH_WORDS);
     const box = makeEntity(world, 'box', {});
     box.add(new OpenableTrait({ isOpen: true }));
 
@@ -199,6 +221,7 @@ describe('nounPhraseFor — state-derived adjectives (ADR-193)', () => {
 
   test('AC-2: opt-in prepends the live state adjective ("open box")', () => {
     const world = new WorldModel();
+    world.setLanguageWords(ENGLISH_WORDS);
     const box = makeEntity(world, 'box', {});
     box.add(new OpenableTrait({ isOpen: true }));
 
@@ -207,6 +230,7 @@ describe('nounPhraseFor — state-derived adjectives (ADR-193)', () => {
 
   test('AC-3: state adjectives prepend before static ones', () => {
     const world = new WorldModel();
+    world.setLanguageWords(ENGLISH_WORDS);
     const box = makeEntity(world, 'box', { adjectives: ['wooden'] });
     box.add(new OpenableTrait({ isOpen: true }));
 
@@ -215,6 +239,7 @@ describe('nounPhraseFor — state-derived adjectives (ADR-193)', () => {
 
   test('a closed box contributes nothing even when opted in', () => {
     const world = new WorldModel();
+    world.setLanguageWords(ENGLISH_WORDS);
     const box = makeEntity(world, 'box', { adjectives: ['iron'] });
     box.add(new OpenableTrait({ isOpen: false }));
 

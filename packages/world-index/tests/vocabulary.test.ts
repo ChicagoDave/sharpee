@@ -91,7 +91,7 @@ describe('the published vocabulary surface (D11)', () => {
 
       for (const site of collectProse(ir)) {
         for (const noun of extractNounPhrases(site.text)) {
-          const viaIndex = resolvePhrase(index, noun.phrase, noun.words).sort();
+          const viaIndex = resolvePhrase(index, noun.phrase).sort();
           const viaSurface = resolveFromSurface(surface, noun.phrase, noun.words).sort();
           expect(viaSurface, `${name}: "${noun.phrase}"`).toEqual(viaIndex);
           compared += 1;

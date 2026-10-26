@@ -7,7 +7,7 @@ define action petting
   grammar
     pet the animal
     pat the animal
-    stroke the animal → each nearby creature
+    stroke the animal
   the animal must be reachable
   score gentle-hands worth 5
   refuse without animal: pet-what
@@ -32,9 +32,8 @@ Reading it line by line:
 - **`grammar`** lists the surface patterns. `the <word>` marks a slot,
   and the slot name *is* the value name used everywhere else in the
   action. Because the pattern says `the animal`, the requirements and
-  phrases all refer to `the animal`. The `→` gives a pattern's
-  cardinality: `stroke the animal → each nearby creature` marks that
-  form as applying to each match rather than a single object.
+  phrases all refer to `the animal`. `→` cardinality on a pattern is
+  reserved: it is refused at compile time until it is implemented.
 - **`the animal must be reachable`** is a scope constraint (no colon):
   a precondition on a slot the parser enforces during resolution.
   Reachable means what it does in play: the animal is in the same place
@@ -168,6 +167,31 @@ later can never be worn by that phrase. To react to a standard action on
 one thing, put an `on` clause on the thing (`on the player wearing`)
 and leave the phrase to the standard action; reserve a story action's
 grammar for phrases that are the story's own.
+
+## Claiming a verb only where it makes sense
+
+When a story action should exist only somewhere, or only sometimes, the
+head takes `while <condition>`. The action's grammar is a rule only while
+the condition holds; elsewhere the input parses as though the action did
+not exist, so a shadowed standard verb reaches its own grammar and its own
+clarifications:
+
+```chord
+define action releasing while the player is in the Yard
+  grammar
+    drop
+  phrase let-go
+
+  phrases en-US
+    let-go:
+      You let go of the rope.
+```
+
+In the Yard, bare `drop` lets go. Anywhere else, bare `drop` is the
+standard dropping action and prints its "What do you want to drop?". The
+condition is read before any slot binds, so it names no slot — rooms,
+states and the player, not `the item`. Refusals inside the claim stay
+`refuse when`.
 
 ## The standard slot names
 

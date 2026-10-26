@@ -10,7 +10,20 @@
  * This trait persists through checkpoint save/restore.
  */
 
-import { type ITrait, type ITraitConstructor } from '@sharpee/world-model';
+import { type IFEntity, type ITrait, type ITraitConstructor, VehicleTrait } from '@sharpee/world-model';
+
+/**
+ * The bucket's two stops, read from its line (written top first). The
+ * bucket's position is its location, never a copy.
+ *
+ * @returns the top and bottom room ids, or undefined when the entity has no line
+ */
+export function wellStops(bucket: IFEntity): { top: string; bottom: string } | undefined {
+  const model = bucket.get(VehicleTrait)?.movement;
+  if (model?.kind !== 'line') return undefined;
+  const [top, bottom] = model.stops;
+  return { top, bottom };
+}
 
 /**
  * Configuration for the bucket trait

@@ -63,10 +63,9 @@ function takeAxe(world: WorldModel, player: IFEntity, axe: IFEntity, actor: IFEn
       tokens: [],
       structure: { verb: { tokens: [0], text: 'take', head: 'take' } },
       pattern: 'PROGRAMMATIC',
-      confidence: 1.0,
     },
     actionId: IFActions.TAKING,
-    directObject: { entity: axe, parsed: { text: 'axe', candidates: ['axe'] } },
+    directObject: { entity: axe, parsed: { text: 'axe' } },
   };
   const context = createActionContext(world, player, takingAction, command, createFixtureRandomService(1), undefined, actor);
   // ADR-337 D1: the phase runner resolves the lifecycle, which is what

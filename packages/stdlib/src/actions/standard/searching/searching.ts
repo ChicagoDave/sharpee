@@ -16,10 +16,7 @@
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types.js';
 import { type ISemanticEvent } from '@sharpee/core';
-import {
-  TraitType,
-  OpenableBehavior
-} from '@sharpee/world-model';
+import { VisibilityBehavior } from '@sharpee/world-model';
 import { IFActions } from '../../constants.js';
 import { SearchedEventData } from './searching-events.js';
 import { ActionMetadata } from '../../../validation/index.js';
@@ -88,7 +85,9 @@ export const searchingAction: Action & { metadata: ActionMetadata } = {
     'searched_object',
     'found_concealed_in_container',
     'found_concealed_on_supporter',
-    'found_concealed_here'
+    'found_concealed_here',
+    'looked_through',
+    'looked_through_nothing'
   ],
   metadata: {
     requiresDirectObject: true,
@@ -100,15 +99,14 @@ export const searchingAction: Action & { metadata: ActionMetadata } = {
     const target = context.command.directObject?.entity;
 
     // If no target, we'll search the current location (always valid).
-    // The container-open check only applies to a targeted search.
-    if (target && target.has(TraitType.CONTAINER) && target.has(TraitType.OPENABLE)) {
-      if (!OpenableBehavior.isOpen(target)) {
-        return {
-          valid: false,
-          error: 'container_closed',
-          params: { target: nounPhraseFor(target) }
-        };
-      }
+    // A targeted search of a container whose inside cannot be seen — closed
+    // and opaque (ADR-369 D1a) — is refused: visibility's one answer.
+    if (target && VisibilityBehavior.blocksSight(target)) {
+      return {
+        valid: false,
+        error: 'container_closed',
+        params: { target: nounPhraseFor(target) }
+      };
     }
 
     return { valid: true };

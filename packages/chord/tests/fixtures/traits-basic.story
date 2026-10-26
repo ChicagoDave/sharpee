@@ -57,7 +57,7 @@ end trait
 define action snoozing
   grammar
     snooze
-    nap → each quiet corner
+    nap
   score napped worth 1
   otherwise refuse no-napping
 

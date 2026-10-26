@@ -10,6 +10,7 @@
  * Public interface: every exported node type; StoryFile is the root.
  * Owner context: @sharpee/chord (language frontend; browser-safe).
  */
+import type { IRVehicleMovement } from './ir.js';
 import type { Span } from './span.js';
 
 /** Root of a parsed `.story` file. */
@@ -255,6 +256,136 @@ export interface CounterDecl {
   span: Span;
 }
 
+/**
+ * One vehicle colon line (ADR-366 D2, D5, D5a–D5d, D5i, D7) or a room's
+ * `admits:` line (D6). The parser reads the shape; which lines a block may
+ * carry, and under which movement type, is the analyzer's gate.
+ */
+export type VehicleLine =
+  /** The base types, and `open` under `use expanses` (ADR-376 D3). */
+  | { key: 'movement'; value: IRVehicleMovement; span: Span }
+  /** `carries: in` / `carries: on` — the colon tells it from `carries <name>`. */
+  | { key: 'carries'; value: 'in' | 'on'; span: Span }
+  | { key: 'drive'; value: 'state' | 'control' | 'player'; span: Span }
+  /** `commands: compass, destinations` — the player's command sets, each one word. */
+  | { key: 'commands'; sets: Array<{ word: string; span: Span }>; span: Span }
+  /** `stops:` / `destinations:` / `aboard:` / `admits:` — comma-separated entity names. */
+  | { key: 'stops' | 'destinations' | 'aboard' | 'admits'; names: NameRef[]; span: Span }
+  | { key: 'direction'; value: 'both' | 'one-way'; span: Span }
+  /** `pace: <n> turn[s]` / `passage: <n> turn[s]` — a whole number of one or more. */
+  | { key: 'pace'; turns: number; span: Span }
+  | { key: 'boarded-through'; name: NameRef; span: Span }
+  /** `stride: <n> unit[s]` (ADR-376 D3) — an open vehicle's units per step, one or more. */
+  | { key: 'stride'; units: number; span: Span }
+  /** `sight: <n>` (ADR-376 D6) — expanse units; on a vehicle, a landmark room or an instrument. */
+  | { key: 'sight'; value: number; span: Span }
+  /** `size: <w> by <h>` (ADR-376 D2) — an expanse's two axes, each one or more. */
+  | { key: 'size'; width: number; height: number; span: Span }
+  /** `visibility: <n>` (ADR-376 D6) — an expanse's cap on every looker's sight. */
+  | { key: 'visibility'; value: number; span: Span }
+  /** `drift: 1 unit every <n> turn[s]` (ADR-376 D10) — an expanse's drift interval. */
+  | { key: 'drift'; turns: number; span: Span }
+  /** `seen from afar: <text>` (ADR-376 D6) — the distant prose of a landmark room or an open vehicle. */
+  | { key: 'seen-from-afar'; text: string; span: Span }
+  /** `wind: from <direction | n degrees>` / `wind: calm` (ADR-375 D4) — an expanse's wind. */
+  | { key: 'wind'; wind: WindValue; span: Span }
+  /** `sails: <setting>, …` (ADR-375 D7) — a sailing vehicle's settings, least to most canvas. */
+  | { key: 'sails'; settings: Array<{ word: string; span: Span }>; span: Span }
+  /** `sails start: <setting>` (ADR-375 D7) — the setting the vehicle starts in. */
+  | { key: 'sails-start'; setting: { word: string; span: Span }; span: Span };
+
+/** A wind as written (ADR-375 D4): a compass direction it comes from, a bearing in degrees, or a calm. */
+export type WindValue =
+  | { kind: 'direction'; direction: string }
+  | { kind: 'bearing'; bearing: number }
+  | { kind: 'calm' };
+
+/** One pace cell of a `sailing` row (ADR-375 D5, D7): `<n> turn[s]`, or `stopped`. */
+export type SailingPace = number | 'stopped';
+
+/** One `<a> to <b> degrees: …` row of a `sailing` block (ADR-375 D5, D7). */
+export interface SailingRowDecl {
+  from: number;
+  to: number;
+  /** One cell without sails (`setting` null); one per setting with them. */
+  paces: Array<{ setting: string | null; pace: SailingPace; span: Span }>;
+  span: Span;
+}
+
+/** `sailing … end sailing` (ADR-375 D5): the pace by angle off the wind, and the calm row. */
+export interface SailingBlockDecl {
+  kind: 'sailing-block';
+  rows: SailingRowDecl[];
+  /** The `calm:` row's pace, or null when the row is missing (the analyzer reports it). */
+  calm: SailingPace | null;
+  span: Span;
+}
+
+/** One `<Room>: <x>, <y>` row of a `landmarks` block (ADR-376 D2). */
+export interface LandmarkRowDecl {
+  room: NameRef;
+  x: number;
+  y: number;
+  span: Span;
+}
+
+/** `landmarks … end landmarks` (ADR-376 D2): the rooms an expanse holds, each at its coordinates. */
+export interface LandmarksBlockDecl {
+  kind: 'landmarks-block';
+  rows: LandmarkRowDecl[];
+  span: Span;
+}
+
+/** One `when <condition>: <stop>` row of a `position` block (ADR-366 D5a). */
+export interface PositionRowDecl {
+  condition: ConditionNode;
+  stop: NameRef;
+  span: Span;
+}
+
+/**
+ * `position … end position` (ADR-366 D5a): where a `drive: state` line
+ * vehicle is, read top to bottom; `otherwise` is null when the block lacks
+ * its last row (the analyzer reports it).
+ */
+export interface PositionBlockDecl {
+  kind: 'position-block';
+  rows: PositionRowDecl[];
+  otherwise: { stop: NameRef; span: Span } | null;
+  span: Span;
+}
+
+/**
+ * One row of a thing's `pushing` block (ADR-378 D6b): `between <room> and
+ * <room>` (two-way) or `from <room> to <room>` (one-way).
+ */
+export interface PushingRowDecl {
+  from: NameRef;
+  to: NameRef;
+  /** `between … and …`: the row holds both ways. */
+  bothWays: boolean;
+  span: Span;
+}
+
+/**
+ * `pushing … end pushing` on a pushable thing (ADR-378 D6b): the ways the
+ * thing may be pushed along, as room pairs the analyzer checks against the
+ * map. One block per thing (the parser's gate).
+ */
+export interface PushingBlockDecl {
+  kind: 'pushing-block';
+  rows: PushingRowDecl[];
+  span: Span;
+}
+
+/** `holds <n>` (ADR-369 D2) — the item capacity of a container or supporter. */
+export interface HoldsDecl {
+  kind: 'holds';
+  /** A whole number of one or more (the parser refuses anything else). */
+  count: number;
+  span: Span;
+}
+
 export type Declaration =
   | CreateDecl
   | DefineCondition
@@ -270,7 +401,7 @@ export type Declaration =
   | DefineChapters
   // ADR-264 story-global numeric counter:
   | DefineCounter
-  // ADR-215 `use state-machines` depth (spelling A, David 2026-07-18):
+  // ADR-119 machine depth (spelling A, David 2026-07-18; core under ADR-377):
   | DefineMachine
   // ADR-216 declared media assets (DATA references, never hatches):
   | DefineAsset
@@ -852,6 +983,21 @@ export interface CreateDecl {
   scores: ScoreDecl[];
   /** `counter <name> …` lines — per-entity numeric counters (ADR-264 D1). */
   counters: CounterDecl[];
+  /** `holds <n>` lines (ADR-369 D2) — collected so the analyzer can refuse a second one. */
+  holds: HoldsDecl[];
+  /**
+   * The vehicle colon lines and `admits:` lines (ADR-366), in declaration
+   * order. Which a block may carry is the analyzer's gate.
+   */
+  vehicleLines: VehicleLine[];
+  /** The `position … end position` block (ADR-366 D5a), or null. */
+  positionBlock: PositionBlockDecl | null;
+  /** The `pushing … end pushing` block (ADR-378 D6b), or null. */
+  pushingBlock: PushingBlockDecl | null;
+  /** The `landmarks … end landmarks` block (ADR-376 D2), or null. */
+  landmarksBlock: LandmarksBlockDecl | null;
+  /** `sailing … end sailing` on a vehicle (ADR-375 D5), or null. */
+  sailingBlock: SailingBlockDecl | null;
   /** First bare indented paragraph. */
   description: TextValue | null;
   /**
@@ -1264,12 +1410,48 @@ export interface Placement {
   /** 'in' | 'on' | 'starts-in' */
   relation: 'in' | 'on' | 'starts-in';
   place: NameRef;
+  /**
+   * ADR-374 D2: the rest of a list placement (`in the Pad, the Platform and
+   * the Gate`), after `place`. Absent on a one-place line.
+   */
+  more?: NameRef[];
+  /**
+   * ADR-376 D3, D10: the `at <x>, <y>` tail of a placement in an expanse.
+   * The parser reads the shape; that the place is an expanse and the thing
+   * an `open` vehicle or a `floats` thing is the analyzer's gate. Absent on
+   * a plain placement.
+   */
+  at?: { x: number; y: number; span: Span };
   span: Span;
 }
 
 export interface ExitDecl {
   kind: 'exit';
+  /**
+   * The exit's key: a compass word, or for a passage line (ADR-378 D1) the
+   * key `passage:<first form, words hyphenated>` — `passage:climb-the-rope`.
+   */
   direction: string;
+  /**
+   * `passage <words> { or <words> } to <room>` (ADR-378 D1): the forms the
+   * player types, as written, the first one canonical. A passage is one-way
+   * by construction; its words are grammar only where it is (D2). Present
+   * only on a passage line.
+   */
+  passage?: string[];
+  /**
+   * `while <condition>` tail on a single exit line (ADR-378 D3): the exit
+   * exists only while the condition holds — hidden, for every reader,
+   * which is not the same as blocked. Present only when written.
+   */
+  condition?: ConditionNode;
+  /**
+   * `admits <name>, …` tail on a single exit line (ADR-378 D6): the steered
+   * vehicles and, as the class word `pushing`, the pushed things that may
+   * take this way. The same list a room's `admits:` line takes. Present
+   * only when written.
+   */
+  admits?: NameRef[];
   to: NameRef;
   /**
    * `through the <door>` tail (ADR-234 D1, ratchet R2) — the one door
@@ -1284,6 +1466,13 @@ export interface ExitDecl {
    * stories without it stay byte-identical).
    */
   oneWay?: true;
+  /**
+   * `<direction> to outside` (ADR-366 D7): the destination is the containing
+   * vehicle's current room, resolved on each use. `to` then carries the
+   * word `outside` and is never resolved as a name. Present only when
+   * written.
+   */
+  toOutside?: true;
   /**
    * The head of the `exits:` / `exits, one-way:` line this exit was folded
    * onto (ADR-362 D2) — absent on a single exit line and a table row. The
@@ -1321,6 +1510,7 @@ export interface ExitTableDecl {
 
 export interface BlockedExitDecl {
   kind: 'blocked-exit';
+  /** A compass word, or a passage key (`passage <words> is blocked …`, ADR-378 D1). */
   direction: string;
   /** Phrase key emitted when the exit is tried. */
   phraseKey: string;
@@ -1340,6 +1530,7 @@ export interface BlockedExitDecl {
  */
 export interface DeadlyExitDecl {
   kind: 'deadly-exit';
+  /** A compass word, or a passage key (`passage <words> is deadly …`, ADR-378 D1). */
   direction: string;
   /** Phrase key carrying the death text (also the derived cause). */
   phraseKey: string;
@@ -1404,6 +1595,12 @@ export interface OnClause {
   /** The action word as written (gerund), e.g. `reading`; `every turn` clauses use 'every-turn'. */
   action: string;
   /**
+   * The gerund's own span (ADR-368 D3). A head that lists gerunds expands to
+   * one node per gerund, all sharing `span`; a diagnostic about this node's
+   * action lands here, on the word in the list. The head line for `every turn`.
+   */
+  actionSpan: Span;
+  /**
    * Who acts (ADR-327 D1): the words before the gerund — `the player` or a
    * character's name — as a value expression the analyzer resolves. Null for
    * a bare head (`self`) and for `every turn`.
@@ -1419,6 +1616,18 @@ export interface OnClause {
   binding: 'object' | 'role' | 'every-turn' | 'self';
   /** Role name for `anything as the <role>` clauses. */
   role: string | null;
+  /**
+   * The `to <value>` head tail (ADR-371 D4): the clause fires only when the
+   * value set is this word. Legal only on a `setting` head (analyzer gate).
+   */
+  valueTail?: string | null;
+  /**
+   * The counterpart tail (ADR-372 D1): the noun on the other side of a
+   * two-noun action (`throwing at the gong`, `giving the sherry bottle`).
+   * The clause fires only when the command's other noun is this one. Legal
+   * only on a single two-noun gerund (analyzer gate).
+   */
+  counterpart?: ValueExpr | null;
   /** `while <condition>` qualifier (all bindings since the ownership package). */
   condition: ConditionNode | null;
   /** `, once` clause modifier — one lifetime firing (ratchet D5). */
@@ -1536,7 +1745,8 @@ export interface DefineAsset {
   kind: 'define-asset';
   assetKind: 'sound' | 'image' | 'music';
   name: string;
-  path: string;
+  /** The file. Optional for a sound only: one with none is heard in the world and played to no speaker (ADR-374 D6). */
+  path: string | null;
   span: Span;
 }
 
@@ -1633,6 +1843,13 @@ export interface DefineAction {
   kind: 'define-action';
   /** The action name as written (gerund), e.g. `petting`. */
   name: string;
+  /**
+   * `define action <name> while <condition>` (ADR-378 D5, ADR-370 D7): the
+   * action's grammar is a rule only while the condition holds — elsewhere
+   * the input parses as though the action did not exist. Read before any
+   * slot binds, so the condition names no slot. Present only when written.
+   */
+  condition?: ConditionNode;
   /** `grammar` block pattern lines. */
   patterns: ActionPattern[];
   /** `the <slot> must be <requirement>` lines (scope kit, no phrase key). */
@@ -1649,6 +1866,11 @@ export interface DefineAction {
   refusals: ActionRefusal[];
   /** `otherwise refuse <key>` — the dispatch-miss phrase. */
   otherwise: { phraseKey: string; span: Span } | null;
+  /**
+   * `about …:` rows answering the action's topic slot (ADR-383 D9) — the
+   * row form `define topics` uses; empty when none are written.
+   */
+  topics: TopicRow[];
   /** `score <name> worth N` lines — action-owned scores (D12). */
   scores: ScoreDecl[];
   /** Embedded `phrases <locale>` block, if any. */
@@ -1742,6 +1964,7 @@ export interface ExtendAction {
   musts: MustRequirement[];
   refusals: ActionRefusal[];
   otherwise: { phraseKey: string; span: Span } | null;
+  topics: TopicRow[];
   scores: ScoreDecl[];
   phrases: DefinePhrases | null;
   body: Statement[];
@@ -1785,8 +2008,9 @@ export interface ActionRefusal {
 // and story-owned schedules.
 
 /**
- * `define machine <name> … end machine` — the ADR-119 depth under
- * `use state-machines` (ADR-215; spelling A ratified by David 2026-07-18).
+ * `define machine <name> … end machine` — the ADR-119 depth, core
+ * vocabulary with no `use` line (ADR-377; spelling A ratified by David
+ * 2026-07-18 under ADR-215).
  * Role lines bind names to entities; `starts <state>`; one `state` block
  * per state carrying transition lines and `on enter`/`on exit` bodies.
  */
@@ -2008,7 +2232,9 @@ export type Statement =
   | ThenOpenStmt
   | DeflectStmt
   | LeaveStmt
-  | HoldTongueStmt;
+  | HoldTongueStmt
+  // ADR-366 D5d: the flight vehicle's driving statement.
+  | SendStmt;
 
 /**
  * `then asks <exchange-key>` / `then invites <exchange-key>` (ADR-320
@@ -2162,6 +2388,8 @@ export interface SetStmt {
   kind: 'set';
   target: ValueExpr;
   value: ValueExpr;
+  /** `set the <expanse>'s wind to <direction | n degrees | calm>` (ADR-375 D4): the wind as written. */
+  wind?: WindValue;
   /** Statement `when` suffix (ratchet D7) — execute only if it holds. */
   stmtWhen: ConditionNode | null;
   span: Span;
@@ -2306,6 +2534,33 @@ export interface TimerVerbStmt {
   kind: 'timer-verb';
   verb: 'start' | 'stop' | 'restart' | 'reset' | 'interrupt';
   target: ValueExpr;
+  /**
+   * `start <vehicle> heading <direction>` (ADR-366 D5c): the compass
+   * vehicle's heading. Present only when written; the analyzer resolves
+   * the target by name, so a timer never carries one.
+   */
+  heading?: { direction?: string; bearing?: number; span: Span };
+  stmtWhen: ConditionNode | null;
+  span: Span;
+}
+
+/** `<x>, <y>` written as a place (ADR-376 D3, D7): a `send` destination or a `within … of` target. */
+export interface CoordinatesExpr {
+  kind: 'coordinates';
+  x: number;
+  y: number;
+  span: Span;
+}
+
+/**
+ * `send <vehicle> to <destination> [when <cond>]` (ADR-366 D5d) — a flight
+ * vehicle's voyage; under `use expanses` the destination may be `<x>, <y>`
+ * or a landmark of an open vehicle's expanse (ADR-376 D3).
+ */
+export interface SendStmt {
+  kind: 'send';
+  vehicle: NameRef;
+  destination: NameRef | CoordinatesExpr;
   stmtWhen: ConditionNode | null;
   span: Span;
 }
@@ -2581,6 +2836,22 @@ export type Predicate =
    * its ordinary is-value parse.
    */
   | { kind: 'concluded'; negated: boolean; span: Span }
+  /** `<vehicle> is under way` (ADR-366 D5e) — the vehicle's machine is moving it. */
+  | { kind: 'under-way'; negated: boolean; span: Span }
+  /** `<vehicle> is at <place>` (ADR-366 D5) — the vehicle is at the named stop, room or destination. */
+  | { kind: 'at'; negated: boolean; place: NameRef; span: Span }
+  /** `<vehicle> is heading <direction>` (ADR-366 D5c) — a compass vehicle's heading. */
+  | { kind: 'heading'; negated: boolean; direction?: string; bearing?: number; span: Span }
+  /** `<vehicle> is in irons` (ADR-375 D5): lying still in a `stopped` band. */
+  | { kind: 'in-irons'; negated: boolean; span: Span }
+  /** `<vehicle>'s sails are <setting>` (ADR-375 D7). */
+  | { kind: 'sails'; negated: boolean; setting: string; span: Span }
+  /** `<thing> is in sight` (ADR-376 D7) — within the looker's sight in its expanse. */
+  | { kind: 'in-sight'; negated: boolean; span: Span }
+  /** `<thing> is close by | in the distance | on the horizon` (ADR-376 D7) — the distance band it is seen in. */
+  | { kind: 'sight-band'; negated: boolean; band: 'close-by' | 'in-the-distance' | 'on-the-horizon'; span: Span }
+  /** `<vehicle> is within <n> of <landmark | x, y>` (ADR-376 D7) — an open vehicle's distance. */
+  | { kind: 'within'; negated: boolean; distance: number; of: NameRef | CoordinatesExpr; span: Span }
   /**
    * `must be any <open-condition>` membership (David, 2026-07-12 — each
    * package P3): the subject satisfies the named open condition. Parsed

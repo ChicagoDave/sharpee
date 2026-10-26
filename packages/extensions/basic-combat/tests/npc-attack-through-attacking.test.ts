@@ -55,7 +55,7 @@ describe('an NPC attacks through the real attacking action (ADR-328 D5; ADR-227 
         confidence: 1.0,
       },
       actionId: IFActions.ATTACKING,
-      directObject: { entity: target, parsed: { text: target.name, candidates: [target.name] } },
+      directObject: { entity: target, parsed: { text: target.name } },
     };
     const context = createActionContext(world, player, attackingAction, command, random, undefined, attacker);
     // ADR-337 D1: the phases run through the phase runner, which is what
@@ -167,7 +167,7 @@ describe('an NPC attacks through the real attacking action (ADR-328 D5; ADR-227 
         confidence: 1.0,
       },
       actionId: IFActions.ATTACKING,
-      directObject: { entity: you, parsed: { text: 'yourself', candidates: ['yourself'] } },
+      directObject: { entity: you, parsed: { text: 'yourself' } },
     };
     const context = createActionContext(bare, you, attackingAction, command, createFixtureRandomService(1), undefined, brute);
     expect(runValidatePhase(attackingAction, context)).toMatchObject({ valid: false, error: 'violence_not_the_answer' });

@@ -7,8 +7,17 @@
  * 3. Balloon operational state management
  */
 
-import { WorldModel, type IWorldModel, IdentityTrait, OpenableTrait, ContainerTrait, VehicleTrait, type IParsedCommand } from '@sharpee/world-model';
-import { InflatableTrait, BurnableTrait, BalloonStateTrait, BalloonPosition, isLedgePosition, isMidairPosition } from '../traits';
+import { WorldModel, type IWorldModel, IdentityTrait, OpenableTrait, ContainerTrait, type IParsedCommand } from '@sharpee/world-model';
+import {
+  InflatableTrait,
+  BurnableTrait,
+  BalloonStateTrait,
+  BalloonPosition,
+  isLedgePosition,
+  isMidairPosition,
+  balloonPosition,
+  balloonPositionRoom
+} from '../traits';
 import { type ISemanticEvent } from '@sharpee/core';
 import { type ISchedulerService, type Daemon, type Fuse, type SchedulerContext } from '@sharpee/plugin-scheduler';
 import { DungeoSchedulerMessages } from '../scheduler/scheduler-messages';
@@ -232,10 +241,8 @@ export function createBalloonExitTransformer() {
     const balloonLoc = balloonAt(world, playerLocation);
     if (!balloonLoc) return parsed;
 
-    const vehicleTrait = balloonLoc.entity.get(VehicleTrait);
-    if (!vehicleTrait) return parsed;
-
-    const position = vehicleTrait.currentPosition as BalloonPosition;
+    const position = balloonPosition(world, balloonLoc.entity);
+    if (!position) return parsed;
 
     // At mid-air (not near a ledge) - block exit
     if (isMidairPosition(position)) {
@@ -273,12 +280,10 @@ export const balloonExitAction: Action = {
       return { valid: false, error: 'not_in_balloon' };
     }
 
-    const vehicleTrait = balloonLoc.entity.get(VehicleTrait);
-    if (!vehicleTrait) {
+    const position = balloonPosition(context.world, balloonLoc.entity);
+    if (!position) {
       return { valid: false, error: 'balloon_state_not_found' };
     }
-
-    const position = vehicleTrait.currentPosition as BalloonPosition;
 
     // Block exit in mid-air UNLESS at a dockable position (near a ledge)
     // vair2 is near Narrow Ledge, vair4 is near Wide Ledge
@@ -298,17 +303,13 @@ export const balloonExitAction: Action = {
   },
 
   execute(context: ActionContext): void {
-    const position = context.sharedData.balloonPosition as string;
+    const position = context.sharedData.balloonPosition as BalloonPosition;
     const balloon = context.world.getEntity(context.sharedData.balloonId as string);
 
     if (!balloon) return;
 
-    // Get the vehicle trait for position rooms
-    const vehicleTrait = balloon.get(VehicleTrait);
-    if (!vehicleTrait?.positionRooms) return;
-
-    // Get the destination room for this position
-    const destinationRoom = vehicleTrait.positionRooms[position];
+    // The room the balloon stands at is the one the player steps out into
+    const destinationRoom = balloonPositionRoom(balloon, position);
     if (!destinationRoom) return;
 
     // Move player to the destination room

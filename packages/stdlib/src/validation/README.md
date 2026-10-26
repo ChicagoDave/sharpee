@@ -1,179 +1,127 @@
-# Enhanced CommandValidator Documentation
+# CommandValidator
 
 ## Overview
 
-The CommandValidator is responsible for the second phase of command processing in the Sharpee Interactive Fiction Platform. It takes a world-agnostic ParsedCommand from the parser and validates it against the current world state, resolving entity references and checking preconditions.
+The CommandValidator is the second phase of command processing. It takes the
+parser's world-agnostic `IParsedCommand`, finds the action, resolves each noun
+phrase to an entity against the current world state, checks the action's scope
+requirements, and returns an `IValidatedCommand` or a typed validation error.
 
-## Key Features
+Which entities a phrase names is not the validator's decision. It asks the
+platform's one noun matcher, `matchNoun` in `@sharpee/world-model`, the same
+function the parse-time gate, list expansion and the IDE's Incomplete view call
+(ADR-385 D1). The validator owns what happens around that answer: scope,
+dominance, narrowing, ambiguity and the error it returns.
 
-### 1. Advanced Entity Resolution
+## Entity resolution
 
-The validator implements sophisticated entity matching with a scoring system:
+For a single noun phrase (`resolveEntity`):
 
-- **Exact name match**: 10 points
-- **Name contains word**: 5 points
-- **Type match**: 4 points
-- **Adjective match**: 3 points
-- **Synonym match**: 2 points
-- **Visibility bonus**: 1 point
-- **Reachability bonus**: 1 point
-- **Recent interaction bonus**: 3 points
-- **In inventory bonus**: 2 points
+1. **Candidates.** Every entity in the actor's sight (or, for `AWARE` scope,
+   every entity but rooms and the player) that `matchNoun` names at either tier:
+   `exact` (the whole phrase equals the name, an alias or the type, tried first
+   with its leading articles restored so "The Grail" survives) or `words` (every
+   content word is a name word, alias word or authored adjective). A content word
+   found nowhere disqualifies the entity. The tiers are ADR-231 D3's.
+2. **The gate's answer narrows, never adds** (ADR-385 D4). A phrase from a
+   constrained grammar slot carries the ids the parse-time gate admitted as
+   `INounPhrase.scope`; the candidates are intersected with them.
+3. **`my` narrows softly** (ADR-385 D2). When the phrase carries the actor's
+   possessive and some candidate is carried or worn, only those remain;
+   otherwise the determiner is ignored.
+4. **Scope filter.** Candidates outside the action's required scope level
+   (`visible`, `reachable`, `touchable`, `carried`) are set aside.
+5. **Exact match out of scope** (GH #206, #245). An out-of-scope entity the
+   phrase names exactly resolves ahead of in-scope word matches that do not carry
+   the phrase's head as their own head noun, flagged `exactOutOfScope`, so the
+   action's own validate refuses it by name.
+6. **Dominance** (ADR-231 PIN 2). Among in-scope matches the higher tier wins
+   outright; within a tier more matched words win outright. A single survivor
+   resolves.
+7. **Ties.** A phrase with modifiers that no survivor's vocabulary covers is
+   `ENTITY_NOT_FOUND` ("green ball" when only red and blue exist). Otherwise the
+   automatic tiebreaks run in order: every modifier matched by exactly one;
+   the action's `preferredScope` holds exactly one; exactly one is visible and
+   reachable. What remains is `AMBIGUOUS_ENTITY`, carrying the choices and the
+   tied phrase's token span so the engine can hold the command and splice the
+   player's answer into it (ADR-385 D11).
 
-### 2. Adjective Matching
+Articles and determiners are never stripped here. The parser splits them once
+and fills `articles`, `determiners`, `modifiers`, `text` and `head`
+(ADR-385 D2); the validator reads those fields.
 
-Distinguishes between similar objects using adjectives:
+## Lists, `all`, topics
 
-```typescript
-// Input: "take red ball"
-// Resolves to the ball with adjective "red", not "blue"
-```
+- **A list** (`take sword and lantern`) resolves each item by the path above, in
+  order, into `IValidatedCommand.directObjects` (ADR-385 D5). An item naming
+  nothing fails the command with `ENTITY_NOT_FOUND` and `listItem: true`, naming
+  that item; a tied item fails with `AMBIGUOUS_ENTITY` carrying that item's span.
+  Nothing is dropped silently.
+- **`all`** resolves nothing here. The action expands it through
+  `expandMultiObject` (`helpers/multi-object-handler.ts`), where `all but`
+  removes every candidate the matcher names for an exclusion phrase.
+- **A topic** (ADR-231 D4) resolves quietly against sight, or against the
+  action's `topicCandidates`: a unique match sets `topic.entity`, a miss or tie
+  leaves the verbatim text. A topic never produces an error or a prompt.
+- **Pronouns** reach the validator already resolved: the parser's
+  `PronounContextManager` sets the referent from the previous command's roles
+  (ADR-385 D7) and the slot consumer puts the entity on the phrase.
 
-### 3. Scope Rules
+## Scope checks after resolution
 
-Three levels of scope enforcement:
-
-- **visible**: Entity must be visible to the player
-- **reachable**: Entity must be reachable (visible + not blocked)
-- **touchable**: Entity must be touchable (reachable + not intangible)
-
-### 4. Pronoun Resolution
-
-Tracks recent interactions for pronoun resolution:
-
-- "it", "that" → last single entity interacted with
-- "them", "these", "those" → last group of entities
-- "him", "her" → gendered pronouns for NPCs
-
-### 5. Ambiguity Resolution
-
-Automatic resolution strategies:
-
-1. **Score threshold**: If top match scores 50% higher than second
-2. **Perfect modifier match**: All adjectives match exactly
-3. **Only reachable**: Single entity is both visible and reachable
-
-### 6. Debug Event Support
-
-Emits detailed debug events for troubleshooting:
-
-- `entity_resolution`: How entities were matched
-- `scope_check`: Which entities were considered
-- `ambiguity_resolution`: How conflicts were resolved
-- `validation_error`: Why validation failed
-
-## Usage
-
-```typescript
-import { CommandValidator } from '@sharpee/stdlib/validation';
-import { WorldModel } from '@sharpee/world-model';
-import { ActionRegistry } from '@sharpee/stdlib/actions';
-
-// Create validator
-const validator = new CommandValidator(world, actionRegistry);
-
-// Enable debug events (optional)
-validator.setSystemEventSource(systemEventSource);
-
-// Validate a parsed command
-const parsed: ParsedCommand = {
-  rawInput: 'take red ball',
-  action: 'TAKE',
-  directObject: {
-    text: 'red ball',
-    candidates: ['red', 'ball'],
-    modifiers: ['red']
-  }
-};
-
-const result = validator.validate(parsed);
-
-if (result.success) {
-  const validated = result.value;
-  // validated.actionHandler - the action to execute
-  // validated.directObject.entity - the resolved red ball entity
-} else {
-  const error = result.error;
-  // error.code - type of error
-  // error.message - human-readable message
-}
-```
-
-## Action Metadata
-
-Actions can declare their requirements via metadata:
+The action's metadata declares `directObjectScope` and `indirectObjectScope`.
+A resolved entity outside the declared level fails with `ENTITY_NOT_VISIBLE`,
+whose details carry the level that failed (`checkEntityScope`: `NOT_CARRIED`,
+`NOT_REACHABLE`, `NOT_VISIBLE`, `NOT_AWARE`). An `exactOutOfScope` resolution
+skips this check on purpose and reaches the action.
 
 ```typescript
 interface ActionMetadata {
   requiresDirectObject: boolean;
   requiresIndirectObject: boolean;
-  directObjectScope?: 'visible' | 'reachable' | 'touchable';
-  indirectObjectScope?: 'visible' | 'reachable' | 'touchable';
+  directObjectScope?: ScopeLevel;
+  indirectObjectScope?: ScopeLevel;
+  preferredScope?: ScopeLevel;
+  topicCandidates?: (world: WorldModel, actorId: string) => readonly string[];
   validPrepositions?: string[];
 }
-
-// Example action with metadata
-const takeAction: Action = {
-  id: 'TAKE',
-  metadata: {
-    requiresDirectObject: true,
-    requiresIndirectObject: false,
-    directObjectScope: 'reachable'
-  },
-  execute: (command) => { /* ... */ }
-};
 ```
 
-## Error Messages
+## Error codes
 
-The validator generates user-friendly error messages:
+`ACTION_NOT_AVAILABLE`, `ENTITY_NOT_FOUND`, `AMBIGUOUS_ENTITY`,
+`ENTITY_NOT_VISIBLE`, `PRECONDITION_FAILED` (the action's declared
+preconditions). The validator emits no prose; the engine turns each into a
+`command.failed` event and `lang-en-us` renders it.
 
-- "I don't understand the word 'frobnicate'."
-- "What do you want to take?"
-- "You can't see any green ball here."
-- "Which ball do you mean? (I can see 2 of them)"
-- "You can't reach the ball."
-- "You can't put something beside that."
+## Debug events
 
-## Integration with Parser
+With a system event source set (`setSystemEventSource`), the validator emits
+`entity_search`, `entity_resolution`, `ambiguity_resolution`,
+`disambiguation_required` and `validation_error` events describing each
+decision above.
 
-The validator expects ParsedCommand objects with:
+## Usage
 
 ```typescript
-interface ParsedCommand {
-  rawInput: string;
-  action: string;
-  directObject?: {
-    text: string;
-    candidates: string[];
-    modifiers?: string[];
-  };
-  indirectObject?: {
-    text: string;
-    candidates: string[];
-    modifiers?: string[];
-  };
-  preposition?: string;
+import { CommandValidator } from '@sharpee/stdlib/validation';
+
+const validator = new CommandValidator(world, actionRegistry);
+const result = validator.validate(parsedCommand);
+
+if (result.success) {
+  const validated = result.value;
+  // validated.actionHandler, validated.directObject?.entity,
+  // validated.directObjects (a list), validated.topic
+} else {
+  // result.error.code, result.error.details
 }
 ```
 
-## Testing
+## Tests
 
-The validator includes comprehensive tests covering:
-
-- Basic validation scenarios
-- Adjective matching
-- Scope rules enforcement
-- Ambiguity resolution
-- Synonym resolution
-- Preposition validation
-- Pronoun resolution
-- Debug event emission
-
-## Future Enhancements
-
-- Support for "all" commands (take all, drop all)
-- Multiple object selection (take the sword and the shield)
-- More sophisticated pronoun tracking
-- Custom disambiguation strategies
-- Internationalization support
+`packages/stdlib/tests/unit/validation/` pins the behavior above:
+`word-vocabulary-resolution` (tiers and dominance), `self-words`,
+`wall-resolution`, `exact-out-of-scope`, `preferred-scope-disambiguation`,
+`scoped-resolution` (the gate's ids), `list-resolution`, `adr-231-d4-topic`,
+`command-validator-golden`.

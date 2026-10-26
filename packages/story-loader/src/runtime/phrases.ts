@@ -16,6 +16,7 @@ import type { IREmitField, IREmitValue, IRPhrase, IRPhraseVariant, IRStatement, 
 import type { ISemanticEvent } from '@sharpee/core';
 import type { Choice, Literal } from '@sharpee/if-domain';
 import { CharacterModelTrait, type DispositionWord, TraitType, WorldModel } from '@sharpee/world-model';
+import { nounPhraseFor } from '@sharpee/stdlib';
 import { LoadError } from '../errors.js';
 import { withLineBreaks } from '../text.js';
 import { ExecContext, STRATEGY_SELECTOR, type RuntimeCore } from './core.js';
@@ -82,12 +83,12 @@ export class PhrasesSection {
 
     const params: Record<string, unknown> = {};
     // Authored `with <param> = <value>` bindings (zoo-chain follow-up,
-    // 2026-07-12): entity values pass as their display name (the template's
-    // article hint does the rest); scalars pass through.
+    // 2026-07-12): entity values pass as their noun phrase, so a proper name
+    // keeps no article whatever the template's hint; scalars pass through.
     for (const p of stmtParams ?? []) {
       const value = this.core.evaluator.evalValue(p.value, ctx);
       const asEntity = typeof value === 'string' ? ctx.world.getEntity(value) : undefined;
-      params[p.param] = asEntity ? asEntity.name : (value as string | number | boolean);
+      params[p.param] = asEntity ? nounPhraseFor(asEntity) : (value as string | number | boolean);
     }
     this.stagePhraseParams(params, overrideKey, phrase ?? null, bookVariants, ctx, counter);
     return this.core.rawEvent('chord.phrase', { messageId: overrideKey, params });
@@ -115,9 +116,10 @@ export class PhrasesSection {
     counter?: { entityId: string; messageKey: string },
   ): void {
     // Grammar-slot params (`{the target}` in a dispatch-action or trait
-    // clause body, zoo-chain fixes 2026-07-12): the slot entity's name
-    // binds as the NounPhrase-default string — the template's own article
-    // hint supplies `the`/`a`.
+    // clause body, zoo-chain fixes 2026-07-12): the slot entity binds as its
+    // noun phrase. The template's article hint supplies `the`/`a`, and a
+    // proper name ("to Bob") keeps none (ADR-192; the assembler reads
+    // `properName`, GH #323).
     // ADR-275 D2: a WORD binding (semantic value — `direction`, `means`
     // keys) has no entity to resolve and renders VERBATIM — bound as a
     // Literal atom, which the template binder passes through untouched
@@ -127,7 +129,7 @@ export class PhrasesSection {
       for (const [name, worldId] of Object.entries(ctx.slots)) {
         if (params[name] !== undefined) continue;
         const slotEntity = ctx.world.getEntity(worldId);
-        params[name] = slotEntity ? slotEntity.name : ({ kind: 'literal', text: worldId } satisfies Literal);
+        params[name] = slotEntity ? nounPhraseFor(slotEntity) : ({ kind: 'literal', text: worldId } satisfies Literal);
       }
     }
     if (phrase?.verbatim) {

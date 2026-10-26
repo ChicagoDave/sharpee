@@ -24,20 +24,10 @@ export interface ThrownEventData {
   hit?: boolean;
   /** Whether the item will break */
   willBreak: boolean;
-  /** Final location of the item (null if destroyed) */
+  /** Where the item came to rest — a broken item still lands (ADR-373 D4) */
   finalLocation: string | null;
-}
-
-export interface ItemDestroyedEventData {
-  /** ID of the destroyed item */
-  item: string;
-  /** Name of the item for display */
-  itemName: string;
-  /** Cause of destruction */
-  cause: string;
 }
 
 export interface ThrowingEventMap {
   'if.event.thrown': ThrownEventData;
-  'if.event.item_destroyed': ItemDestroyedEventData;
 }

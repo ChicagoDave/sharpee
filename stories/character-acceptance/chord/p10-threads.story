@@ -5,7 +5,6 @@ story
   id: p10-threads
   story-version: 0.0.1
   states: quiet-day, next-day
-  use state-machines
   description: Frozen mechanical fixture for conversation threads driven
     by the player's continuation prompts. One Prompter carries a
     four-beat thread about the shortfall to its conclusion; each of the

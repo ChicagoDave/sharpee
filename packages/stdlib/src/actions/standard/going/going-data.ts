@@ -181,32 +181,6 @@ export const buildActorEnteredData: ActionDataBuilder<Record<string, unknown>> =
 };
 
 /**
- * Determine the success message for going action
- */
-export function determineGoingMessage(
-  movedData: Record<string, unknown>,
-): { messageId: string; params: Record<string, any> } {
-  const messageId = movedData.firstVisit ? 'first_visit' : 'moved_to';
-
-  const destinationRoom = movedData.destinationRoom as Record<string, unknown> | undefined;
-  const destinationName = destinationRoom?.name ||
-                          (destinationRoom?.attributes as Record<string, unknown>)?.name ||
-                          destinationRoom?.id ||
-                          'unknown';
-
-  const rawDirection = movedData.direction as DirectionType;
-  const direction = rawDirection.toLowerCase();
-
-  return {
-    messageId,
-    params: {
-      direction,
-      destination: destinationName
-    }
-  };
-}
-
-/**
  * Configuration for going data builders
  */
 export const actorMovedDataConfig: ActionDataConfig<Record<string, unknown>> = {

@@ -3,7 +3,7 @@
  */
 
 import { EnglishParser } from '../../src/english-parser';
-import { ParserLanguageProvider, vocabularyRegistry, ParserFactory, PartOfSpeech } from '@sharpee/if-domain';
+import { ParserLanguageProvider, ParserFactory, PartOfSpeech } from '@sharpee/if-domain';
 import { ParsedCommand, CommandResult, ParseError, Direction } from '@sharpee/world-model';
 import { ISystemEvent } from '@sharpee/core';
 
@@ -49,14 +49,15 @@ class MockLanguageProvider implements ParserLanguageProvider {
     ];
   }
 
+  // The canonical id is world-model's Direction constant (ADR-387 D5)
   getDirections() {
     return [
-      { direction: 'north', words: ['north', 'n'] },
-      { direction: 'south', words: ['south', 's'] },
-      { direction: 'east', words: ['east', 'e'] },
-      { direction: 'west', words: ['west', 'w'] },
-      { direction: 'up', words: ['up', 'u'] },
-      { direction: 'down', words: ['down', 'd'] }
+      { direction: 'NORTH', words: ['north'], abbreviations: ['n'] },
+      { direction: 'SOUTH', words: ['south'], abbreviations: ['s'] },
+      { direction: 'EAST', words: ['east'], abbreviations: ['e'] },
+      { direction: 'WEST', words: ['west'], abbreviations: ['w'] },
+      { direction: 'UP', words: ['up'], abbreviations: ['u'] },
+      { direction: 'DOWN', words: ['down'], abbreviations: ['d'] }
     ];
   }
 
@@ -162,8 +163,32 @@ class MockLanguageProvider implements ParserLanguageProvider {
   }
 
   // Missing methods for vocabulary registration
-  getDeterminers(): string[] {
-    return ['the', 'a', 'an', 'all', 'every', 'some'];
+  getDeterminers() {
+    return ['the', 'a', 'an', 'all', 'every', 'some'].map((word) => ({ word }));
+  }
+
+  getLanguageWords() {
+    return { selfWords: ['me', 'myself', 'self', 'yourself'], nameStopwords: ['the', 'a', 'an', 'of'] };
+  }
+
+  getListSeparators(): string[] {
+    return ['and', ','];
+  }
+
+  getMannerAdverbs(): string[] {
+    return [];
+  }
+
+  parseCardinal(words: readonly string[]): number | null {
+    return words.length === 1 && /^\d+$/.test(words[0]) ? Number(words[0]) : null;
+  }
+
+  getOrdinalNumbers(): Readonly<Record<string, number>> {
+    return {};
+  }
+
+  getNarrativePerson(): 'first' | 'second' | 'third' {
+    return 'second';
   }
 
   getConjunctions(): string[] {
@@ -200,7 +225,7 @@ describe('EnglishParser', () => {
     // Register test vocabulary for nouns
     // The parser doesn't automatically register common nouns from language provider
     // In a real system, these would come from entity vocabulary or story vocabulary
-    vocabularyRegistry.registerProvider({
+    parser.getVocabularyRegistry().registerProvider({
       id: 'test-nouns',
       getVocabulary: () => [
         { word: 'ball', partOfSpeech: PartOfSpeech.NOUN, mapsTo: 'ball', source: 'story' },
@@ -222,7 +247,6 @@ describe('EnglishParser', () => {
 
   afterEach(() => {
     // Clean up vocabulary registry
-    vocabularyRegistry.clear();
     // Clean up parser registry
     ParserFactory.clearRegistry();
   });
@@ -247,7 +271,6 @@ describe('EnglishParser', () => {
         expect(result.value.action).toBe('if.action.taking');
         expect(result.value.structure.directObject).toBeDefined();
         expect(result.value.structure.directObject?.text).toBe('ball');
-        expect(result.value.structure.directObject?.candidates).toEqual(['ball']);
       }
     });
 
@@ -257,7 +280,6 @@ describe('EnglishParser', () => {
       expect(result.success).toBe(true);
       if (result.success) {
         expect(result.value.action).toBe('if.action.going');
-        expect(result.value.pattern).toBe('DIRECTION_ONLY');
         expect(result.value.extras?.direction).toBe(Direction.NORTH);
       }
     });
@@ -287,7 +309,6 @@ describe('EnglishParser', () => {
         expect(result.value.structure.directObject?.articles).toEqual(['the']);
         expect(result.value.structure.directObject?.text).toBe('ball');
         expect(result.value.structure.directObject?.head).toBe('ball');
-        expect(result.value.structure.directObject?.candidates).toContain('ball');
       }
     });
 
@@ -435,15 +456,6 @@ describe('EnglishParser', () => {
       expect(result.errors.length).toBeGreaterThan(0);
       expect(result.errors[0].type).toBe('UNKNOWN_WORD');
     });
-
-    test('should filter by confidence', () => {
-      const result = parser.parseWithErrors('take ball', { minConfidence: 0.9 });
-
-      const lowConfidenceCandidates = result.candidates.filter(
-        c => (c.confidence || 0) < 0.9
-      );
-      expect(lowConfidenceCandidates).toHaveLength(0);
-    });
   });
 
   describe('complex scenarios', () => {
@@ -464,8 +476,9 @@ describe('EnglishParser', () => {
       expect(result.success).toBe(true);
       if (result.success) {
         expect(result.value.action).toBe('if.action.examining');
-        // 'look at' is parsed as a single verb pattern, not compound
-        expect(result.value.structure.verb.text).toBe('look');
+        // The verb phrase is the rule's literals before its first slot
+        // (ADR-383 D7), so `look at :target` has the verb `look at`
+        expect(result.value.structure.verb.text).toBe('look at');
         // ADR-231 D3: the leading article is split off the noun phrase
         expect(result.value.structure.directObject?.text).toBe('mirror');
         expect(result.value.structure.directObject?.articles).toEqual(['the']);

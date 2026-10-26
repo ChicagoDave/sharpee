@@ -45,6 +45,10 @@
  * command is typed — the item a `must have` precondition holds, else what
  * the player carries; a person in the room, else the first declared person
  * brought in — and a slot nothing fills is SKIPPED `object-unreachable`.
+ * A clause with a counterpart tail types the two-slot pattern naming both
+ * nouns, the counterpart in hand when the subject is fixed (throwing the
+ * letter at the bin); a readable thing's topics are typed as consulting,
+ * a person's as asking.
  *
  * Three compositions of floor forms are arranged as compositions, not
  * named as shapes: a named condition expands to its body with `it` bound
@@ -73,10 +77,12 @@
  * not re-walk the IR); ADR-293 D12 (real path only).
  */
 
-import type { IRCondition, IRStatement, IRValue, Span, StoryIR } from '@sharpee/chord';
+import { timerKeysFor, type IRCondition, type IRStatement, type IRValue, type Span, type StoryIR } from '@sharpee/chord';
 import { collectClauseBranches, type BranchClause, type BranchPrecondition, type ClauseBranch } from '@sharpee/world-index';
 import { arrange, CHORD_GONE_PREFIX, CHORD_IR_ID_ATTRIBUTE, CHORD_STATE_PREFIX, counterKey, parsePin } from '@sharpee/story-loader';
 import { evaluateStateExpression, runCommand, type AssertionResult, type TestEventInfo, type TranscriptCommand } from '@sharpee/transcript-tester';
+import { lifecycleDescriptorFor, SOUND_EVENT_TYPES } from '@sharpee/stdlib';
+import type { ToolRequirement } from '@sharpee/world-model';
 import { CHORD_STORY_STATE_KEYS } from './runner.js';
 
 // ---------------------------------------------------------------------------
@@ -136,7 +142,10 @@ export interface SlotFiller {
  * the booted world). A standard-action command carries its unfilled slots
  * as `fillers`, resolved and substituted before the command is typed.
  */
-export type CommandPlan = { kind: 'typed'; input: string; fillers?: SlotFiller[] } | { kind: 'none' };
+export type CommandPlan =
+  /** `counterpartLeads`: a counterpart tail's other noun takes the first slot, the one a held-object action needs in hand (ADR-372 D1). */
+  | { kind: 'typed'; input: string; fillers?: SlotFiller[]; counterpartLeads?: boolean }
+  | { kind: 'none' };
 
 /** One claim the body's effects map to (ADR-356 D3's table). */
 export type ClaimPlan =
@@ -225,7 +234,7 @@ interface TraitFlags {
   isOpen?: boolean;
   isLocked?: boolean;
   isOn?: boolean;
-  toolId?: string;
+  toolRequirement?: ToolRequirement;
   keyId?: string;
   /** The identity trait's parser-facing words. */
   name?: string;
@@ -282,6 +291,7 @@ export interface DerivedRunOptions {
 /** IR statement kinds whose effects the table maps; anything else is `unmapped`. */
 const MAPPED_EFFECTS = new Set([
   'change', 'move', 'remove', 'change-player', 'win', 'lose', 'kill', 'phrase', 'refuse', 'emit', 'award', 'raise', 'lower',
+  'play-sound',
 ]);
 
 /**
@@ -290,7 +300,7 @@ const MAPPED_EFFECTS = new Set([
  * satisfy (ADR-356 D2). Read off the live trait at run time; an entity
  * without the trait gets no term.
  */
-const STANDARD_PRECONDITIONS = new Set(['opening', 'closing', 'locking', 'unlocking', 'switching_on', 'switching_off', 'cutting', 'digging']);
+const STANDARD_PRECONDITIONS = new Set(['opening', 'closing', 'locking', 'unlocking', 'switching_on', 'switching_off', 'cutting', 'digging', 'burning']);
 
 /** Room-lifecycle clauses fire on movement, not on a typed verb naming the room. */
 const LIFECYCLE_ACTIONS = new Set(['entering', 'leaving']);
@@ -305,8 +315,21 @@ const HELD_ACTIONS = new Set(['wearing', 'giving', 'showing', 'dropping', 'putti
 /** The slot tokens a language pattern can carry. */
 const SLOT_TOKEN = /\[(something|someone)\]/g;
 
+/** Language slots that name a thing by its role in the action; any thing fills them. */
+const THING_ROLE_SLOT = /\[(target|object|thing|weapon|container|clothing)\]/g;
+
 /** Standard actions whose `with [something]` slot is the lockable's key. */
 const KEYED_ACTIONS = new Set(['locking', 'unlocking']);
+
+/**
+ * The action a branch is typed as. An id fired only as a consequence (a
+ * break, ADR-373 D3) has no grammar of its own, so the runner types its
+ * most direct declared cause — the descriptor's own list, not a copy here.
+ */
+function typedActionId(action: string): string {
+  const actionId = `if.action.${action}`;
+  return lifecycleDescriptorFor(actionId)?.contracts?.firedAsConsequence?.causes[0] ?? actionId;
+}
 
 /**
  * The state adjectives the floor writes as trait flags, each with the trait
@@ -379,7 +402,17 @@ export function planBranch(
       }
     }
   } else {
+    // A body that writes one fact twice (a robot sent into the trench and
+    // back) leaves only the last write standing when the turn ends, so only
+    // the last write is a claim; an earlier one is neither claimed nor unmapped.
+    const lastWriter = new Map<string, IRStatement>();
     for (const effect of branch.effects) {
+      const fact = writtenFact(effect, branch.subject);
+      if (fact !== null) lastWriter.set(fact, effect);
+    }
+    for (const effect of branch.effects) {
+      const fact = writtenFact(effect, branch.subject);
+      if (fact !== null && lastWriter.get(fact) !== effect) continue;
       if (!MAPPED_EFFECTS.has(effect.kind)) {
         unmapped.push(effect.kind);
         continue;
@@ -403,7 +436,7 @@ export function planBranch(
 
   // Only a branch with something to claim needs a command; a body with
   // nothing to assert is named as such whatever its command looks like.
-  const command = commandPlan(branch, ir, actionPatterns);
+  const command = commandPlan(branch, ir, actionPatterns, settingValue(branch, ir, branches));
   if (command.kind === 'skip' || command.kind === 'no-vocabulary') return command;
 
   if (command.kind === 'none' && claims.some((claim) => claim.kind === 'pin' && claim.expression.startsWith('emitted '))) {
@@ -451,10 +484,19 @@ export function planBranch(
     // unless a term already places it. A person subject (the viewer, the
     // recipient) stands in its own room, where the player was just placed.
     const standardAction = branch.command.kind === 'action' && !ir.actions.some((action) => action.name === (branch.command as { action: string }).action);
+    // When a counterpart leads, it is the thing in hand and the subject is
+    // only reached (ADR-372 D1).
+    const leads = command.kind === 'typed' && command.counterpartLeads === true;
+    const counterpart = branch.clause.kind === 'on' ? branch.clause.counterpart : undefined;
+    const placedPin = (entity: string): RegExp => new RegExp(`^(${entity}\\.location\\s*=|player\\.inventory contains ${entity}$)`);
     if (standardAction && branch.command.kind === 'action' && !isPerson(ir, reachTarget)) {
-      const placed = new RegExp(`^(${reachTarget}\\.location\\s*=|player\\.inventory contains ${reachTarget}$)`);
-      if (!terms.some((term) => term.kind === 'pin' && term.mustHold && placed.test(term.expression))) {
-        terms.push({ kind: 'reach-noun', entity: reachTarget, want: HELD_ACTIONS.has(branch.command.action) ? 'held' : 'present' });
+      if (!terms.some((term) => term.kind === 'pin' && term.mustHold && placedPin(reachTarget).test(term.expression))) {
+        terms.push({ kind: 'reach-noun', entity: reachTarget, want: HELD_ACTIONS.has(branch.command.action) && !leads ? 'held' : 'present' });
+      }
+    }
+    if (standardAction && branch.command.kind === 'action' && leads && counterpart !== undefined && HELD_ACTIONS.has(branch.command.action)) {
+      if (!terms.some((term) => term.kind === 'pin' && term.mustHold && placedPin(counterpart).test(term.expression))) {
+        terms.push({ kind: 'reach-noun', entity: counterpart, want: 'held' });
       }
     }
   }
@@ -477,6 +519,13 @@ function interceptingGuards(branch: ClauseBranch, branches: ClauseBranch[]): { g
   for (const candidate of branches) {
     if (candidate.subject !== branch.subject) continue;
     if (candidate.clause.kind !== 'on' || candidate.clause.clauseKind !== 'on' || candidate.clause.action !== action) continue;
+    // ADR-371 D4: a `to <value>` refusal intercepts only that value. The
+    // run types the branch's own tail, or a value no tail names, so a
+    // refusal tailed to another value never fires on it.
+    if (candidate.clause.valueTail !== undefined && candidate.clause.valueTail !== branch.clause.valueTail) continue;
+    // ADR-372 D1: likewise a counterpart-tailed refusal intercepts only
+    // commands naming that other noun.
+    if (candidate.clause.counterpart !== undefined && candidate.clause.counterpart !== branch.clause.counterpart) continue;
     if (candidate.leaf.kind === 'refused') {
       const own = candidate.precondition[candidate.precondition.length - 1];
       if (own?.kind === 'condition') guards.push({ kind: 'condition', condition: own.condition, holds: !own.holds });
@@ -638,8 +687,18 @@ function conditionTerms(
           return { shape: `predicate-${condition.pred}`, detail: `\`${condition.pred}\` is not a floor form` };
       }
     }
-    case 'timer-has':
-      return { terms: [{ kind: 'pin', expression: `${condition.timer} has ${condition.what}`, mustHold: holds }] };
+    case 'timer-has': {
+      // A pin names one timer by its key; `the player's` names one only when one character is playable.
+      const owner = condition.owner;
+      const keys = owner === null ? timerKeysFor(scope.ir, condition.name, null)
+        : owner.kind === 'entity' ? timerKeysFor(scope.ir, condition.name, owner.id)
+        : owner.kind === 'player' ? timerKeysFor(scope.ir, condition.name, 'player')
+        : [];
+      if (keys.length !== 1) {
+        return { shape: 'condition-timer-has', detail: `\`${condition.name}\` names ${keys.length} timers (the player's, one per playable character) — a pin names one` };
+      }
+      return { terms: [{ kind: 'pin', expression: `${keys[0]} has ${condition.what}`, mustHold: holds }] };
+    }
     case 'asked':
       return { terms: [{ kind: 'pin', expression: `it asked ${condition.word.replace('-', ' ')}`, mustHold: holds }] };
     case 'discussed':
@@ -674,10 +733,34 @@ function valueName(value: IRValue, subject: string | null): string | null {
 }
 
 /** The command that fires the branch, or the named reason none can be typed. */
+/**
+ * The value a `setting` branch types (ADR-371 D4): the clause's own tail;
+ * else the subject's first state that no tailed sibling clause on the same
+ * subject names, so an untailed reaction is reached without tripping a
+ * refusal tailed to another value. Undefined for every other action.
+ * @param branch the branch being planned
+ * @param ir the story
+ * @param branches every branch of the story
+ * @returns the state word to type after `to`
+ */
+function settingValue(branch: ClauseBranch, ir: StoryIR, branches: ClauseBranch[]): string | undefined {
+  if (branch.clause.kind !== 'on' || branch.clause.action !== 'setting') return undefined;
+  if (branch.clause.valueTail !== undefined) return branch.clause.valueTail;
+  const states = ir.entities.find((entity) => entity.id === branch.subject)?.states ?? [];
+  const tailed = new Set(
+    branches
+      .filter((candidate) => candidate.subject === branch.subject && candidate.clause.kind === 'on' && candidate.clause.action === 'setting')
+      .map((candidate) => (candidate.clause.kind === 'on' ? candidate.clause.valueTail : undefined))
+      .filter((tail): tail is string => tail !== undefined),
+  );
+  return states.find((state) => !tailed.has(state)) ?? states[0];
+}
+
 function commandPlan(
   branch: ClauseBranch,
   ir: StoryIR,
-  actionPatterns: ActionPatterns
+  actionPatterns: ActionPatterns,
+  value?: string
 ): CommandPlan | { kind: 'skip'; shape: string; detail: string } | { kind: 'no-vocabulary'; detail: string } {
   const command = branch.command;
   switch (command.kind) {
@@ -688,7 +771,9 @@ function commandPlan(
     case 'ask': {
       const owner = entityName(ir, command.owner) ?? command.owner;
       const topic = command.filter.kind === 'text' ? command.filter.primary : entityName(ir, command.filter.id) ?? command.filter.id;
-      return { kind: 'typed', input: `ask ${owner} about ${topic}` };
+      // ADR-372 D4: a readable thing's topics answer consulting; asking is
+      // a person's verb and refuses a book as no one to talk to.
+      return { kind: 'typed', input: isPerson(ir, command.owner) ? `ask ${owner} about ${topic}` : `consult ${owner} about ${topic}` };
     }
     case 'action': {
       if (command.actor !== 'player') {
@@ -720,7 +805,7 @@ function commandPlan(
         }
         return { kind: 'typed', input: words.join(' ') };
       }
-      const actionId = `if.action.${command.action}`;
+      const actionId = typedActionId(command.action);
       const patterns = actionPatterns(actionId);
       if (!patterns || patterns.length === 0) {
         return { kind: 'no-vocabulary', detail: `no language pattern for ${actionId}` };
@@ -762,7 +847,36 @@ function commandPlan(
       if (!pattern) {
         return { kind: 'skip', shape: 'command-shape', detail: `no pattern of ${actionId} has a slot for its subject` };
       }
-      const input = pattern.replace(subjectToken, objectName).trim();
+      // ADR-372 D1: a counterpart tail names the other noun, so the command
+      // is a two-slot pattern with the counterpart in the slot the subject
+      // does not take. Between two `[something]` slots the first is the
+      // thing in hand: a fixed subject (scenery, a person, a place) takes the
+      // second and the counterpart leads; any other subject leads.
+      const counterpart = branch.clause.kind === 'on' ? branch.clause.counterpart : undefined;
+      if (counterpart !== undefined) {
+        const counterpartToken = isPerson(ir, counterpart) ? '[someone]' : '[something]';
+        // Code-unit order on both sides, so the comparison is order-free
+        const byCodeUnit = (a: string, b: string): number => (a < b ? -1 : a > b ? 1 : 0);
+        const wanted = [subjectToken, counterpartToken].sort(byCodeUnit).join(' ');
+        // The language names some thing slots by role (`throw [something]
+        // at [target]`); each is a `[something]` to the typed command.
+        const paired = patterns
+          .map((candidate) => candidate.replace(THING_ROLE_SLOT, '[something]'))
+          .find((candidate) => [...slotsOf(candidate)].sort(byCodeUnit).join(' ') === wanted);
+        if (!paired) {
+          return { kind: 'skip', shape: 'command-shape', detail: `no pattern of ${actionId} has slots for its subject and ${counterpart}` };
+        }
+        const slots = slotsOf(paired);
+        const subjectAt =
+          subjectToken !== counterpartToken ? slots.indexOf(subjectToken)
+          : isFixed(ir, command.object) && !isFixed(ir, counterpart) ? 1
+          : 0;
+        let at = 0;
+        const typed = paired.replace(SLOT_TOKEN, (token) => (at++ === subjectAt ? objectName : token)).trim();
+        return { kind: 'typed', input: typed, fillers: [{ token: counterpartToken, entity: counterpart }], counterpartLeads: subjectAt !== 0 };
+      }
+      // ADR-371 D4: a setting pattern's `[value]` takes the planned state word.
+      const input = pattern.replace(subjectToken, objectName).replace('[value]', value ?? '[value]').trim();
       // The preposition before a slot names what fills it: `in` / `into` a
       // container, `on` / `onto` a supporter, `with` the lockable's key for
       // locking and unlocking. Any other slot takes any thing.
@@ -782,6 +896,24 @@ function commandPlan(
     default:
       return { kind: 'skip', shape: `command-${command.kind}`, detail: 'no player command fires this branch' };
   }
+}
+
+/**
+ * The world fact an unconditional effect writes — a thing's place or its
+ * state — or null for anything else (a conditional write may not happen, so
+ * it supersedes nothing).
+ */
+function writtenFact(effect: IRStatement, subject: string | null): string | null {
+  if ('stmtWhen' in effect && effect.stmtWhen) return null;
+  if (effect.kind === 'change') {
+    const entity = valueName(effect.entity, subject);
+    return entity ? `state:${entity}` : null;
+  }
+  if (effect.kind === 'move' || effect.kind === 'remove') {
+    const entity = valueName(effect.entity, subject);
+    return entity ? `place:${entity}` : null;
+  }
+  return null;
 }
 
 /** The claim one effect statement maps to (ADR-356 D3's table), or null when it has none. */
@@ -818,6 +950,9 @@ function effectClaim(effect: IRStatement, subject: string | null, ir: StoryIR): 
       return { kind: 'pin', expression: `emitted ${effect.phraseKey}` };
     case 'emit':
       return { kind: 'pin', expression: `emitted ${effect.event}` };
+    case 'play-sound':
+      // ADR-374 D6: the world sound is always made; the cue only with a file.
+      return { kind: 'pin', expression: `emitted ${SOUND_EVENT_TYPES.EMITTED}` };
     case 'award': {
       if (effect.expression.length !== 1) return null;
       const name = effect.expression[0];
@@ -865,6 +1000,12 @@ function negativeRead(effect: IRStatement, subject: string | null, ir: StoryIR):
 /** Whether the IR declares the entity `a person` — the kind that fills a `[someone]` slot. */
 function isPerson(ir: StoryIR, irId: string): boolean {
   return ir.entities.find((entity) => entity.id === irId)?.kinds.some((kind) => kind.name === 'person') ?? false;
+}
+
+/** Whether the entity stays put for a held-object verb: scenery, a person, or a place. */
+function isFixed(ir: StoryIR, irId: string): boolean {
+  const entity = ir.entities.find((candidate) => candidate.id === irId);
+  return entity !== undefined && (isPerson(ir, irId) || isPlace(ir, irId) || entity.traits.some((trait) => trait.name === 'scenery'));
 }
 
 function isPlace(ir: StoryIR, irId: string): boolean {
@@ -1637,9 +1778,13 @@ function standardPreconditions(action: string, entity: DerivedEntity, keep: stri
       if (switchable && switchable.isOn === false && !kept('off')) expressions.push(`${entity.id}.isOn = true`);
       break;
     case 'cutting':
-    case 'digging': {
-      const gated = entity.get(action === 'cutting' ? 'cuttable' : 'diggable');
-      if (gated?.toolId) expressions.push(`player.inventory contains ${gated.toolId}`);
+    case 'digging':
+    case 'burning': {
+      // ADR-371 D2: burning is cutting's shape — a declared tool in hand
+      // (any one the requirement accepts; the first is arranged).
+      const gated = entity.get(action === 'cutting' ? 'cuttable' : action === 'digging' ? 'diggable' : 'flammable');
+      const tool = gated?.toolRequirement?.tools[0];
+      if (tool) expressions.push(`player.inventory contains ${tool}`);
       break;
     }
   }

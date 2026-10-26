@@ -9,7 +9,8 @@
  *   Event and Channel pickers are plain lists over the turn's record.
  *
  * Public interface: showStatePicker(anchor, facts, onPick),
- *   showListPicker(anchor, head, items, onPick), closePicker(), StateFact.
+ *   showListPicker(anchor, head, items, onPick), showNotice(anchor, head, text),
+ *   mountAnchored(anchor, className), closePicker(), StateFact.
  * Owner context: tools/ide — the testing play surface's web bundle.
  */
 
@@ -37,9 +38,21 @@ export function closePicker(): void {
 }
 
 function mountPicker(anchor: HTMLElement): HTMLElement {
+  return mountAnchored(anchor, 'ts-picker');
+}
+
+/**
+ * Mount an anchored floating panel under a button — the picker's own
+ * placement and outside-click dismissal, for the lock sheet too.
+ *
+ * @param anchor the button the panel hangs from
+ * @param className the panel's classes
+ * @returns the mounted, empty panel
+ */
+export function mountAnchored(anchor: HTMLElement, className: string): HTMLElement {
   closePicker();
   const menu = document.createElement('div');
-  menu.className = 'ts-picker';
+  menu.className = className;
   const rect = anchor.getBoundingClientRect();
   menu.style.left = `${Math.max(8, Math.min(rect.left, window.innerWidth - 340))}px`;
   menu.style.top = `${rect.bottom + 4}px`;
@@ -52,6 +65,25 @@ function mountPicker(anchor: HTMLElement): HTMLElement {
     if (outsideListener) document.addEventListener('mousedown', outsideListener);
   }, 0);
   return menu;
+}
+
+/**
+ * A notice under a button: a head and one line of text, dismissed like a
+ * picker. What a refused lock says, where the author clicked.
+ *
+ * @param anchor the button
+ * @param head the small caps head
+ * @param text the line
+ */
+export function showNotice(anchor: HTMLElement, head: string, text: string): void {
+  const menu = mountPicker(anchor);
+  const header = document.createElement('div');
+  header.className = 'ts-picker-head';
+  header.textContent = head;
+  const body = document.createElement('div');
+  body.className = 'ts-picker-notice';
+  body.textContent = text;
+  menu.append(header, body);
 }
 
 /** A plain list picker (Event…, Channel…): head + clickable rows. */

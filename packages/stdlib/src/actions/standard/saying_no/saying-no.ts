@@ -1,0 +1,24 @@
+/**
+ * Saying-no action — bare `no` outside an open exchange (ADR-370).
+ *
+ * Built from the shared bare-answer shape (`saying-shared.ts`): a signal
+ * action whose stock line is "Nobody asked you anything.", consulted on the
+ * scene speaker else the room.
+ *
+ * Public interface: sayingNoAction, sayingNoLifecycle.
+ * Owner context: stdlib / standard actions / social
+ */
+
+import { IFActions } from '../../constants.js';
+import { createSayingAction } from '../saying-shared.js';
+import type { ActionLifecycleDescriptor } from '../../lifecycle/index.js';
+
+const built = createSayingAction({
+  actionId: IFActions.SAYING_NO,
+  reportEventType: 'if.event.said_no',
+  blockedEventType: 'if.event.say_no_blocked',
+  stockMessage: 'nobody_asked'
+});
+
+export const sayingNoAction = built.action;
+export const sayingNoLifecycle: ActionLifecycleDescriptor = built.lifecycle;

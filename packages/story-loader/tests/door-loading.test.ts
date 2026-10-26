@@ -114,7 +114,7 @@ describe('rogue-IR backstops (compiler door gates bypassed)', () => {
   it('a second wiring to a different pair throws LoadError', () => {
     const ir = compileFixture('door-redundant.story');
     const hall = ir.entities.find((e) => e.id === 'hall')!;
-    hall.exits[0].to = 'hall'; // mirror line now claims a different pair
+    hall.exits[0].to = { kind: 'room', id: 'hall' }; // mirror line now claims a different pair
     const story = createStory(ir);
     expect(() => story.initializeWorld(new WorldModel()))
       .toThrow(/rogue IR/);

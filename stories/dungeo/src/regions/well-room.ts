@@ -286,16 +286,9 @@ function createBucket(
   }));
   bucket.add(new EnterableTrait());
   bucket.add(new OpenableTrait({ isOpen: true }));
+  // A line with two stops, written top first; the story drives it by water weight
   bucket.add(new VehicleTrait({
-    vehicleType: 'counterweight',
-    blocksWalkingMovement: true,
-    requiresExitBeforeLeaving: true,
-    currentPosition: 'bottom',
-    positionRooms: {
-      'top': topOfWellId,
-      'bottom': wellBottomId
-    },
-    isOperational: true
+    movement: { kind: 'line', stops: [topOfWellId, wellBottomId], oneWay: false, drive: 'control' }
   }));
   bucket.add(new BucketTrait({ hasWater: false }));
   world.moveEntity(bucket.id, startRoomId);

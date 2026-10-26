@@ -2,6 +2,8 @@
 
 ## Status: ACCEPTED (2026-07-14 — direction fixed by ADR-214 §6/OQ3; designed via interview the same session; all six open questions resolved)
 
+**Amended 2026-10-15 by ADR-374 D6** (session 39d4c7): `play sound` is no longer compile-time sugar for a `media-sound-play` emit. A sound is also heard in the world, so `play sound` lowers to its own IR statement, `play-sound`, which the loader carries out as this ADR's cue (when the sound has a file) and as an ADR-172 world sound. `define sound <name>` may omit `from` for a sound heard in the world only. The other media forms are unchanged.
+
 > **`define channel` syntax superseded in part by ADR-253 (2026-07-22).** The
 > `from event <key>` + `take <field>` lines are replaced by one `return
 > <construct> from <event>` clause (`take` removed; the return construct may be
@@ -160,6 +162,17 @@ Inherits ADR-214 AC-1..AC-4. Concretely:
 - **AC-3 — capability degradation.** A `when client has sound: … / otherwise: …`
   fixture emits sound for a capable client and the text fallback for a text-only
   client (asserted against both capability sets).
+  **Amended 2026-10-22 (chord-4-0 alignment-fixes Phase 9, David's Q9 answer C):**
+  a `play sound` is never gated on the client. Since ADR-374 D6 a sound has a
+  world side, and a client-capability condition on it would make game state differ
+  by client, so `play sound … when client has <capability>` is a compile error
+  (`analysis.play-sound-client-has`, fix-it: leave the condition off; a client
+  without audio does not play the cue). Both capability sets now get the cue and
+  the world sound; the text-only set also gets the fallback phrase, which stays
+  the story's to gate (`phrase … when not client has sound`). The `when client
+  has sound: play sound …` example above is no longer valid Chord.
+  `play ambient`, `play music` and `show image` have no world side and may still
+  be gated.
 - **AC-4 — pure IR + custom channel.** A story using emit/sugar/assets/a declared
   custom channel (reusing a built-in renderer) is `hasHatches: false` and browser-
   loadable; cloak/zoo compile unchanged.

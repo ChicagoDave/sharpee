@@ -1,0 +1,107 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "\"Nobody rides north off my pad until I've signed for what's come in.\""
+        ]
+      },
+      "command": "enter tram car",
+      "id": "tramblk1",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "\"Route 7. Addressee delivery, no proxy signature.\""
+        ],
+        "states": [
+          "the pad master is waved-through"
+        ]
+      },
+      "command": "show card to quint",
+      "id": "tramshw1",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You get into the tram car."
+        ]
+      },
+      "command": "enter tram car",
+      "id": "trament1",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The brake comes off with a clank and the car takes up the slack."
+        ],
+        "notContains": [
+          "arrives"
+        ]
+      },
+      "command": "push brake",
+      "id": "trambrk1",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The tram car arrives at the Piazzi Platform."
+        ]
+      },
+      "command": "wait",
+      "id": "tramwat1",
+      "locks": [
+        "the player is in the Piazzi Platform"
+      ],
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Piazzi Platform",
+          "a turnstile that takes"
+        ]
+      },
+      "command": "look",
+      "id": "tramlok1",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The brake comes off with a clank and the car takes up the slack."
+        ]
+      },
+      "command": "push brake",
+      "id": "trambrk2",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The tram car arrives at the Landing Pad."
+        ]
+      },
+      "command": "wait",
+      "id": "tramwat2",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You get out of the tram car."
+        ]
+      },
+      "command": "exit",
+      "id": "tramext1",
+      "type": "turn"
+    }
+  ],
+  "id": "trampad2",
+  "ordinal": 2,
+  "parent": "w7eqlqnb"
+}

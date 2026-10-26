@@ -25,10 +25,11 @@
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types.js';
 import { ActionMetadata } from '../../../validation/index.js';
 import { type ISemanticEvent } from '@sharpee/core';
-import { TraitType, SceneryBehavior, ActorBehavior, WearableBehavior, ContainerBehavior, IdentityBehavior, IFEntity, IdentityTrait } from '@sharpee/world-model';
+import { TraitType, SceneryBehavior, ActorBehavior, WearableBehavior, ContainerBehavior, IdentityBehavior, IFEntity, IdentityTrait, clearFloatingPosition } from '@sharpee/world-model';
 import { IFActions } from '../../constants.js';
 import { ScopeLevel } from '../../../scope/types.js';
 import { TakingMessages } from './taking-messages.js';
+import { attachedRefusal } from '../attachment-shared.js';
 import { nounPhraseFor } from '../../../utils/index.js';
 import {
   ActionLifecycleDescriptor,
@@ -110,6 +111,11 @@ function validateSingleEntity(context: ActionContext, noun: IFEntity): Validatio
       params: { item: nounPhraseFor(noun) }
     };
   }
+
+  // Held fast to an anchor until pulled or untied free (ADR-373 D1) —
+  // before scenery, so a fixed thing names what holds it
+  const attached = attachedRefusal(context, noun);
+  if (attached) return attached;
 
   // Can't take scenery (fixed in place)
   if (noun.has(TraitType.SCENERY)) {
@@ -197,6 +203,8 @@ function executeSingleEntity(
 
   // Perform the actual move
   context.world.moveEntity(noun.id, actor.id);
+  // ADR-376 D10: a floating thing taken leaves the expanse and its cell.
+  scratch.retrieved = clearFloatingPosition(noun);
 
   // Score points for taking items with points value (ADR-129). The score is
   // the protagonist's: a non-player actor taking a pointed item (the thief
@@ -251,6 +259,8 @@ function reportSingleSuccess(
   let messageKey: string;
   if (isMultiObject) {
     messageKey = TakingMessages.TAKEN_MULTI;
+  } else if (scratch.retrieved) {
+    messageKey = TakingMessages.RETRIEVED;
   } else if (isFromContainerOrSupporter) {
     messageKey = TakingMessages.TAKEN_FROM;
   } else {
@@ -324,6 +334,7 @@ export const takingAction: Action & { metadata: ActionMetadata } = {
     'already_have',
     'cant_take_room',
     'fixed_in_place',
+    'attached',
     'container_full',
     'too_heavy',
     'taken',

@@ -13,10 +13,11 @@
  * References:
  * - ADR-335 D1 — one module per runtime section over a shared core.
  */
-import type { IRStatement } from '@sharpee/chord';
+import { seatActBindings, type IRStatement, type IRTimerDef } from '@sharpee/chord';
 import type { ISemanticEvent } from '@sharpee/core';
 import type { ActResult, ActSlots } from '@sharpee/stdlib';
-import { Direction, type DirectionType, IFEntity, WorldModel } from '@sharpee/world-model';
+import { IFEntity, WorldModel } from '@sharpee/world-model';
+import { directionOfWord } from '../direction-words.js';
 import { LoadError } from '../errors.js';
 import { clauseOccurrenceKey, timerKey, type TimerRecord } from '../state-keys.js';
 import { ExecContext, SchedulerTick, ACT_DEPTH_CAP, type RuntimeCore } from './core.js';
@@ -101,24 +102,29 @@ export class TimersSection {
     }
     const storyDef = this.core.ir.actions.find((a) => a.name === stmt.action);
     const actionId = storyDef ? `chord.action.${stmt.action}` : `if.action.${stmt.action}`;
-    const instrumentSlots = new Set((storyDef?.slotTypes ?? []).filter((t) => t.type === 'instrument').map((t) => t.slot));
 
     const slots: ActSlots = {};
-    let entitySlots = 0;
-    for (const bound of stmt.slots) {
-      if (bound.slot === 'direction') {
-        const word = bound.value.kind === 'literal' ? bound.value.value : this.core.evaluator.entityValue(bound.value, ctx);
-        const direction = (Direction as Record<string, DirectionType>)[word.toUpperCase()];
+    const bound: Array<{ slot: string; value: IFEntity }> = [];
+    for (const binding of stmt.slots) {
+      if (binding.slot === 'direction') {
+        const word = binding.value.kind === 'literal' ? binding.value.value : this.core.evaluator.entityValue(binding.value, ctx);
+        const direction = directionOfWord(word);
         if (!direction) throw new LoadError(`Unknown direction \`${word}\`.`, stmt.span);
         slots.direction = direction;
         continue;
       }
-      const entity = world.getEntity(this.core.evaluator.entityValue(bound.value, ctx));
-      if (!entity) throw new LoadError(`\`${bound.slot}\` names nothing in the world.`, stmt.span);
-      if (instrumentSlots.has(bound.slot)) slots.instrument = entity;
-      else if (entitySlots++ === 0) slots.directObject = entity;
-      else slots.indirectObject = entity;
+      const entity = world.getEntity(this.core.evaluator.entityValue(binding.value, ctx));
+      if (!entity) throw new LoadError(`\`${binding.slot}\` names nothing in the world.`, stmt.span);
+      bound.push({ slot: binding.slot, value: entity });
     }
+    // ADR-383 D6: each slot takes the seat the action's table gives its
+    // name, so the order the statement names them in never moves a noun.
+    // The compiler refuses a slot with no seat; this is the backstop.
+    const seated = seatActBindings(bound, this.core.actionRoles(stmt.action));
+    if (!seated.ok) {
+      throw new LoadError(`runtime.act-unseated-slot: \`${seated.slot}\` has no seat in \`${stmt.action}\`.`, stmt.span);
+    }
+    Object.assign(slots, seated.seating);
 
     const link = `${actorName} ${stmt.action}`;
     if (this.core.actDepth >= ACT_DEPTH_CAP) {
@@ -177,7 +183,14 @@ export class TimersSection {
     }
   }
 
-  /** Mark a timer expired and fire its `when … expires` clauses (once per run). */
+  /**
+   * Mark a timer expired and fire its `when … expires` clauses (once per run).
+   * What the clauses report happened to the timer's owner, where the owner
+   * is: it is sourced to them, so `{You}` reads in the owner's person — the
+   * player's own words when they hold the role, a witness's otherwise — and
+   * perception decides who sees it. A story timer's, or an owner with no
+   * place (GH #372), goes out unsourced and speaks from the player.
+   */
   private expireTimer(qualified: string, world: WorldModel): ISemanticEvent[] {
     const record = this.timerRecord(qualified, world);
     this.writeTimer(qualified, world, { ...record, phase: 'expired' });
@@ -187,7 +200,18 @@ export class TimersSection {
       if (clause.condition && !this.core.evaluator.evalCondition(clause.condition, evalCtx)) continue;
       out.push(...this.core.statements.execStatements(clause.body, evalCtx));
     }
-    return out;
+    return this.sourcedToOwner(out, this.core.timerDefs.get(qualified), world);
+  }
+
+  /**
+   * Tag a timer's report with its owner and the owner's place (ADR-328 D3, D4).
+   *
+   * @returns the events sourced to an entity owner with a place, else unchanged
+   */
+  private sourcedToOwner(events: ISemanticEvent[], def: IRTimerDef | undefined, world: WorldModel): ISemanticEvent[] {
+    const owner = timerOwnerEntity(def);
+    const at = owner === undefined ? undefined : this.core.placeOf(owner, world);
+    return owner !== undefined && at ? this.core.sourced(events, owner, world, at) : events;
   }
 
   /**
@@ -205,7 +229,8 @@ export class TimersSection {
       const record = this.timerRecord(def.qualified, world);
       if (record.phase !== 'running') continue;
       if (record.startedTurn === tick.turn) continue; // first named turn is next turn
-      const ownerCtx: ExecContext = def.owner && def.owner !== 'player' ? { world, it: def.owner } : { world };
+      const owner = timerOwnerEntity(def);
+      const ownerCtx: ExecContext = owner !== undefined ? { world, it: owner } : { world };
       if (def.interrupted !== null && this.core.evaluator.evalCondition({ kind: 'chance', n: def.interrupted }, ownerCtx)) {
         out.push(...this.expireTimer(def.qualified, world));
         continue;
@@ -226,8 +251,7 @@ export class TimersSection {
         // turn speaks from the player instead (GH #372, David's ruling): the
         // line goes out unsourced and the funnel defaults it to the player.
         const spoken = this.core.phrases.phraseEvent(`${def.qualified}.${state}`, { world });
-        const at = def.owner && def.owner !== 'player' ? this.core.placeOf(def.owner, world) : undefined;
-        out.push(...(at ? this.core.sourced([spoken], def.owner!, world, at) : [spoken]));
+        out.push(...this.sourcedToOwner([spoken], def, world));
       }
       if (def.meanwhile && (def.meanwhile.chance === null || this.core.evaluator.evalCondition({ kind: 'chance', n: def.meanwhile.chance }, ownerCtx))) {
         out.push(...this.core.statements.execStatements(def.meanwhile.body, ownerCtx));
@@ -281,4 +305,13 @@ export class TimersSection {
     });
     return out;
   }
+}
+
+/**
+ * The entity a timer belongs to, or undefined for the story's — and for
+ * `player`, the stand-in owner of a player timer in a story with no playable
+ * character, which never loads.
+ */
+function timerOwnerEntity(def: IRTimerDef | undefined): string | undefined {
+  return def?.owner != null && def.owner !== 'player' ? def.owner : undefined;
 }

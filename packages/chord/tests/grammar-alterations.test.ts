@@ -112,6 +112,19 @@ describe('remove from action (ADR-270 D3/D6)', () => {
     );
   });
 
+  it('`→` cardinality on an extension pattern is analysis.cardinality-unsupported (parser review B2)', () => {
+    expect(codesOf(`${STORY}extend action taking\n  grammar\n    hoover the item → each reachable item\n`)).toEqual([
+      'analysis.cardinality-unsupported',
+    ]);
+  });
+
+  it('`→` cardinality on a define-action pattern is analysis.cardinality-unsupported, and a plain line is not', () => {
+    const action = (line: string) =>
+      `${STORY}define action hoovering\n  grammar\n    ${line}\n  otherwise refuse no\n\n  phrases en-US\n    no:\n      No.\n`;
+    expect(codesOf(action('hoover the room → banana split sundae'))).toEqual(['analysis.cardinality-unsupported']);
+    expect(codesOf(action('hoover the room'))).toEqual([]);
+  });
+
   it('an empty removal block is parse.remove-from-action', () => {
     expect(codesOf(`${STORY}remove from action taking\n`)).toContain('parse.remove-from-action');
   });

@@ -1,14 +1,13 @@
 /**
  * playerRole.ts — the player role's own vocabulary (ADR-327 D9/D10).
  *
- * Public interface: `PLAYER_ROLE_ALIASES`, `addPlayerRoleVocabulary`,
- * `movePlayerRoleVocabulary`.
+ * Public interface: `addPlayerRoleVocabulary`, `movePlayerRoleVocabulary`.
  *
- * Owner context: world-model. `me`, `myself` and `self` name whoever is
- * currently playing, not a particular character — so they belong to the ROLE
- * and travel with it when the role moves. Both the story loader (stamping the
- * opening protagonist) and the engine (`switchPlayer`) need the same set and
- * the same move, which is why it lives here rather than in either of them.
+ * Owner context: world-model. The self words name whoever is currently
+ * playing, not a particular character — so they belong to the ROLE and travel
+ * with it when the role moves. The words themselves are the language's
+ * (ADR-387 D2): the engine hands them in from the world's language words at
+ * install and on `switchPlayer`, and this module holds no English.
  */
 
 import type { IFEntity } from '../../entities/if-entity.js';
@@ -16,25 +15,19 @@ import { TraitType } from '../trait-types.js';
 import type { IdentityTrait } from '../identity/identityTrait.js';
 
 /**
- * The words that name the current player character rather than any particular
- * character. Deliberately small: a character's own names and `aka` aliases are
- * theirs and never move.
- */
-export const PLAYER_ROLE_ALIASES: readonly string[] = ['me', 'myself', 'self'];
-
-/**
  * Give an entity the role's vocabulary.
  *
  * @param entity the entity taking the player role
+ * @param selfWords the language's self words (the world's language words)
  * @returns nothing; the entity's IdentityTrait gains any missing role alias.
  *   An entity with no IdentityTrait is left alone — it has no alias list to
  *   add to, and inventing one would fabricate a name for it.
  */
-export function addPlayerRoleVocabulary(entity: IFEntity): void {
+export function addPlayerRoleVocabulary(entity: IFEntity, selfWords: readonly string[]): void {
   const identity = entity.get(TraitType.IDENTITY) as IdentityTrait | undefined;
   if (!identity) return;
   identity.aliases ??= [];
-  for (const alias of PLAYER_ROLE_ALIASES) {
+  for (const alias of selfWords) {
     if (!identity.aliases.includes(alias)) identity.aliases.push(alias);
   }
 }
@@ -49,11 +42,12 @@ export function addPlayerRoleVocabulary(entity: IFEntity): void {
  *
  * @param from the outgoing PC, or null on the first assignment
  * @param to the incoming PC
+ * @param selfWords the language's self words (the world's language words)
  */
-export function movePlayerRoleVocabulary(from: IFEntity | null | undefined, to: IFEntity): void {
+export function movePlayerRoleVocabulary(from: IFEntity | null | undefined, to: IFEntity, selfWords: readonly string[]): void {
   const previous = from?.get(TraitType.IDENTITY) as IdentityTrait | undefined;
   if (previous?.aliases) {
-    previous.aliases = previous.aliases.filter((a) => !PLAYER_ROLE_ALIASES.includes(a));
+    previous.aliases = previous.aliases.filter((a) => !selfWords.includes(a));
   }
-  addPlayerRoleVocabulary(to);
+  addPlayerRoleVocabulary(to, selfWords);
 }

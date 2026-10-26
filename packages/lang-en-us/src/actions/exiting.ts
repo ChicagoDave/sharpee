@@ -31,7 +31,11 @@ export const exitingLanguage = {
     'not_in_that': "But {you} {aren't} in {the container}.",
     'not_on_that': "But {you} {aren't} on {the container}.",
     'exit_blocked': "The way out is blocked.",
-    'must_stand_first': "{You}'ll need to stand up first."
+    'must_stand_first': "{You}'ll need to stand up first.",
+    // Aboard a vehicle (ADR-366 D7, D7a): only the boarding room has a way off.
+    'vehicle_not_at_hatch': "There's no way off from here.",
+    // More than one way off is open, and nothing says which (David's ruling, 2026-10-21).
+    'outside_ambiguous': "{You} ponder the reality of being outside..."
   },
   
   help: {

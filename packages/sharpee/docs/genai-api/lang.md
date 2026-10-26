@@ -22,7 +22,7 @@ English language provider, message resolution, formatters.
  *   ADR-174 — the prose pipeline became the sole consumer of getMessage.
  *   ADR-158 — the formatter chain the assembler applies to a resolved message.
  */
-import { type ParserLanguageProvider, type ActionHelp, type VerbVocabulary, type DirectionVocabulary, type SpecialVocabulary, type LanguageGrammarPattern, type LocaleSettings, type RenderContext } from '@sharpee/if-domain';
+import { type ParserLanguageProvider, type ActionHelp, type VerbVocabulary, type DirectionVocabulary, type SpecialVocabulary, type LanguageWords, type DeterminerVocabulary, type LanguageGrammarPattern, type LocaleSettings, type RenderContext } from '@sharpee/if-domain';
 import type { ITextBlock } from '@sharpee/text-blocks';
 import type { PronounSetForms } from './assembler/index.js';
 import { NarrativeContext } from './perspective/index.js';
@@ -209,17 +209,32 @@ export declare class EnglishLanguageProvider implements ParserLanguageProvider {
      */
     getActionMessages(actionId: string): Map<string, string> | null;
     getVerbs(): VerbVocabulary[];
+    /**
+     * The one direction table (ADR-387 D5), from the word table: each
+     * direction's canonical id, words and abbreviations.
+     * @returns a fresh copy of the table's entries
+     */
     getDirections(): DirectionVocabulary[];
     getSpecialVocabulary(): SpecialVocabulary;
+    /**
+     * The words the world needs from English (ADR-387 D2): the self words and
+     * the name stopwords, from the one word table.
+     *
+     * @returns the language words the engine assigns to the world at install
+     */
+    getLanguageWords(): LanguageWords;
+    getListSeparators(): string[];
+    getMannerAdverbs(): string[];
+    parseCardinal(words: readonly string[]): number | null;
+    getOrdinalNumbers(): Readonly<Record<string, number>>;
     getCommonAdjectives(): string[];
     getCommonNouns(): string[];
     getPrepositions(): string[];
-    getDeterminers(): string[];
+    getDeterminers(): DeterminerVocabulary[];
     getConjunctions(): string[];
     getNumbers(): string[];
     getGrammarPatterns(): LanguageGrammarPattern[];
     lemmatize(word: string): string;
-    expandAbbreviation(abbreviation: string): string | null;
     formatList(items: string[], conjunction?: 'and' | 'or'): string;
     getIndefiniteArticle(noun: string): string;
     pluralize(noun: string): string;
@@ -292,7 +307,6 @@ export declare const IFActions: {
     readonly PUSHING: "if.action.pushing";
     readonly PULLING: "if.action.pulling";
     readonly TURNING: "if.action.turning";
-    readonly USING: "if.action.using";
     readonly GIVING: "if.action.giving";
     readonly SHOWING: "if.action.showing";
     readonly THROWING: "if.action.throwing";
@@ -313,6 +327,25 @@ export declare const IFActions: {
     readonly REMOVING: "if.action.removing";
     readonly HIDING: "if.action.hiding";
     readonly REVEALING: "if.action.revealing";
+    readonly JUMPING: "if.action.jumping";
+    readonly KISSING: "if.action.kissing";
+    readonly WAVING: "if.action.waving";
+    readonly SAYING_YES: "if.action.saying_yes";
+    readonly SAYING_NO: "if.action.saying_no";
+    readonly SAYING_SORRY: "if.action.saying_sorry";
+    readonly LOOKING_UNDER: "if.action.looking_under";
+    readonly EMPTYING: "if.action.emptying";
+    readonly BURNING: "if.action.burning";
+    readonly SETTING: "if.action.setting";
+    readonly ASKING_FOR: "if.action.asking_for";
+    readonly CONSULTING: "if.action.consulting";
+    readonly BUYING: "if.action.buying";
+    readonly TYING: "if.action.tying";
+    readonly UNTYING: "if.action.untying";
+    readonly LIGHTING: "if.action.lighting";
+    readonly EXTINGUISHING: "if.action.extinguishing";
+    readonly STEERING: "if.action.steering";
+    readonly SETTING_COURSE: "if.action.setting_course";
     readonly INVENTORY: "if.action.inventory";
     readonly WAITING: "if.action.waiting";
     readonly SLEEPING: "if.action.sleeping";
@@ -561,6 +594,25 @@ export * from './quitting.js';
 export * from './restarting.js';
 export * from './undoing.js';
 export * from './again.js';
+export * from './jumping.js';
+export * from './kissing.js';
+export * from './waving.js';
+export * from './saying-yes.js';
+export * from './saying-no.js';
+export * from './saying-sorry.js';
+export * from './looking-under.js';
+export * from './emptying.js';
+export * from './burning.js';
+export * from './setting.js';
+export * from './asking-for.js';
+export * from './consulting.js';
+export * from './buying.js';
+export * from './tying.js';
+export * from './untying.js';
+export * from './lighting.js';
+export * from './extinguishing.js';
+export * from './steering.js';
+export * from './setting-course.js';
 /**
  * All standard action language definitions
  */
@@ -573,10 +625,12 @@ export declare const standardActionLanguage: ({
         already_have: string;
         cant_take_room: string;
         fixed_in_place: string;
+        attached: string;
         container_full: string;
         too_heavy: string;
         cannot_take: string;
         taken: string;
+        retrieved: string;
         nothing_to_take: string;
         taken_from: string;
         taken_multi: string;
@@ -592,12 +646,15 @@ export declare const standardActionLanguage: ({
     messages: {
         no_target: string;
         not_held: string;
+        lost_overboard: string;
         nothing_to_drop: string;
         dropped: string;
         still_worn: string;
         dropped_in: string;
         dropped_on: string;
         dropped_multi: string;
+        dropped_breaks: string;
+        dropped_afloat: string;
     };
     help: {
         description: string;
@@ -609,18 +666,20 @@ export declare const standardActionLanguage: ({
     patterns: string[];
     messages: {
         room_description: string;
-        room_description_brief: string;
         in_container: string;
         on_supporter: string;
         examine_surroundings: string;
         hidden_at: string;
         room_dark: string;
-        exits: string;
         you_see: string;
         contents_list: string;
         nothing_special: string;
         container_contents: string;
         surface_contents: string;
+        sighting_close_by: string;
+        sighting_in_the_distance: string;
+        sighting_on_the_horizon: string;
+        sighting_here: string;
     };
     help: {
         description: string;
@@ -683,6 +742,7 @@ export declare const standardActionLanguage: ({
         surface_contents: string;
         worn_by_you: string;
         worn_by_other: string;
+        seen_from_afar: string;
     };
     help: {
         description: string;
@@ -706,6 +766,20 @@ export declare const standardActionLanguage: ({
         nowhere_to_go: string;
         no_direction: string;
         not_in_room: string;
+        vehicle_ride: string;
+        vehicle_cannot_walk: string;
+        vehicle_cannot_go: string;
+        vehicle_under_way: string;
+        vehicle_arrived: string;
+        vehicle_stopped: string;
+        vehicle_departed: string;
+        vehicle_at_end: string;
+        expanse_edge: string;
+        vehicle_alongside: string;
+        thing_drifted: string;
+        thing_washed_up: string;
+        vehicle_in_irons: string;
+        sailing_edge: string;
         no_exits: string;
         movement_blocked: string;
         destination_not_found: string;
@@ -715,6 +789,7 @@ export declare const standardActionLanguage: ({
         departs: string;
         arrives: string;
         cant_go: string;
+        stays_by_vehicle: string;
     };
     help: {
         description: string;
@@ -795,6 +870,7 @@ export declare const standardActionLanguage: ({
         inserted: string;
         wont_fit: string;
         container_closed: string;
+        no_room: string;
     };
     help: {
         description: string;
@@ -814,6 +890,7 @@ export declare const standardActionLanguage: ({
         removed_from_surface: string;
         cant_reach: string;
         already_have: string;
+        attached: string;
     };
     help: {
         description: string;
@@ -897,42 +974,6 @@ export declare const standardActionLanguage: ({
     patterns: string[];
     messages: {
         no_target: string;
-        not_cuttable: string;
-        cant_cut: string;
-        no_tool: string;
-        needs_tool: string;
-        tool_not_held: string;
-        wrong_tool: string;
-        cut: string;
-    };
-    help: {
-        description: string;
-        examples: string;
-        summary: string;
-    };
-} | {
-    actionId: string;
-    patterns: string[];
-    messages: {
-        no_target: string;
-        not_diggable: string;
-        cant_dig: string;
-        no_tool: string;
-        needs_tool: string;
-        tool_not_held: string;
-        wrong_tool: string;
-        dug: string;
-    };
-    help: {
-        description: string;
-        examples: string;
-        summary: string;
-    };
-} | {
-    actionId: string;
-    patterns: string[];
-    messages: {
-        no_target: string;
         not_enterable: string;
         already_inside: string;
         container_closed: string;
@@ -943,6 +984,8 @@ export declare const standardActionLanguage: ({
         not_here: string;
         too_small: string;
         occupied: string;
+        boarded: string;
+        vehicle_not_boardable: string;
     };
     help: {
         description: string;
@@ -963,6 +1006,8 @@ export declare const standardActionLanguage: ({
         not_on_that: string;
         exit_blocked: string;
         must_stand_first: string;
+        vehicle_not_at_hatch: string;
+        outside_ambiguous: string;
     };
     help: {
         description: string;
@@ -1009,6 +1054,8 @@ export declare const standardActionLanguage: ({
         found_concealed_in_container: string;
         found_concealed_on_supporter: string;
         found_concealed_here: string;
+        looked_through: string;
+        looked_through_nothing: string;
     };
     help: {
         description: string;
@@ -1163,13 +1210,13 @@ export declare const standardActionLanguage: ({
         not_reachable: string;
         too_heavy: string;
         wearing_it: string;
+        carrying_it: string;
+        cannot_push_that_way: string;
         button_pushed: string;
         button_clicks: string;
         switch_toggled: string;
         pushed_direction: string;
         pushed_nudged: string;
-        pushed_with_effort: string;
-        reveals_passage: string;
         wont_budge: string;
         pushing_does_nothing: string;
         fixed_in_place: string;
@@ -1189,8 +1236,10 @@ export declare const standardActionLanguage: ({
         cant_pull_that: string;
         worn: string;
         already_pulled: string;
+        wont_budge: string;
         pulled: string;
         nothing_happens: string;
+        detached: string;
     };
     help: {
         description: string;
@@ -1424,11 +1473,11 @@ export declare const standardActionLanguage: ({
         target_not_visible: string;
         target_not_here: string;
         no_exit: string;
+        cant_throw_that_way: string;
         too_heavy: string;
         self: string;
         thrown: string;
         thrown_down: string;
-        thrown_gently: string;
         thrown_at: string;
         hits_target: string;
         misses_target: string;
@@ -1443,6 +1492,8 @@ export declare const standardActionLanguage: ({
         target_ducks: string;
         target_catches: string;
         target_angry: string;
+        thrown_afloat: string;
+        lost_overboard: string;
     };
     help: {
         description: string;
@@ -1602,6 +1653,38 @@ export declare const standardActionLanguage: ({
     actionId: string;
     patterns: string[];
     messages: {
+        behind: string;
+        under: string;
+        on: string;
+        inside: string;
+        nothing_to_hide: string;
+        cant_hide_there_behind: string;
+        cant_hide_there_under: string;
+        cant_hide_there_on: string;
+        cant_hide_there_inside: string;
+        already_hidden: string;
+    };
+    help: {
+        description: string;
+        examples: string;
+        summary: string;
+    };
+} | {
+    actionId: string;
+    patterns: string[];
+    messages: {
+        revealed: string;
+        not_hidden: string;
+    };
+    help: {
+        description: string;
+        examples: string;
+        summary: string;
+    };
+} | {
+    actionId: string;
+    patterns: string[];
+    messages: {
         waited: string;
         waited_patiently: string;
         time_passes: string;
@@ -1694,8 +1777,6 @@ export declare const standardActionLanguage: ({
         help_objects: string;
         help_special: string;
         first_time: string;
-        hints_available: string;
-        hints_disabled: string;
         stuck_help: string;
         help_footer: string;
     };
@@ -1876,16 +1957,14 @@ export declare const standardActionLanguage: ({
     actionId: string;
     patterns: string[];
     messages: {
-        behind: string;
-        under: string;
-        on: string;
-        inside: string;
-        nothing_to_hide: string;
-        cant_hide_there_behind: string;
-        cant_hide_there_under: string;
-        cant_hide_there_on: string;
-        cant_hide_there_inside: string;
-        already_hidden: string;
+        no_target: string;
+        not_cuttable: string;
+        cant_cut: string;
+        no_tool: string;
+        needs_tool: string;
+        tool_not_held: string;
+        wrong_tool: string;
+        cut: string;
     };
     help: {
         description: string;
@@ -1896,8 +1975,295 @@ export declare const standardActionLanguage: ({
     actionId: string;
     patterns: string[];
     messages: {
-        revealed: string;
-        not_hidden: string;
+        no_target: string;
+        not_diggable: string;
+        cant_dig: string;
+        no_tool: string;
+        needs_tool: string;
+        tool_not_held: string;
+        wrong_tool: string;
+        dug: string;
+    };
+    help: {
+        description: string;
+        examples: string;
+        summary: string;
+    };
+} | {
+    actionId: string;
+    patterns: string[];
+    messages: {
+        jumped: string;
+    };
+    help: {
+        description: string;
+        examples: string;
+        summary: string;
+    };
+} | {
+    actionId: string;
+    patterns: string[];
+    messages: {
+        no_target: string;
+        kissed_person: string;
+        kissed_thing: string;
+    };
+    help: {
+        description: string;
+        examples: string;
+        summary: string;
+    };
+} | {
+    actionId: string;
+    patterns: string[];
+    messages: {
+        not_held: string;
+        waved_hands: string;
+        waved: string;
+    };
+    help: {
+        description: string;
+        examples: string;
+        summary: string;
+    };
+} | {
+    actionId: string;
+    patterns: string[];
+    messages: {
+        nobody_asked: string;
+    };
+    help: {
+        description: string;
+        examples: string;
+        summary: string;
+    };
+} | {
+    actionId: string;
+    patterns: string[];
+    messages: {
+        nothing_to_apologize_for: string;
+    };
+    help: {
+        description: string;
+        examples: string;
+        summary: string;
+    };
+} | {
+    actionId: string;
+    patterns: string[];
+    messages: {
+        no_target: string;
+        nothing_under: string;
+        found_under: string;
+    };
+    help: {
+        description: string;
+        examples: string;
+        summary: string;
+    };
+} | {
+    actionId: string;
+    patterns: string[];
+    messages: {
+        no_target: string;
+        not_a_container: string;
+        container_closed: string;
+        already_empty: string;
+        into_itself: string;
+        cant_empty_into: string;
+        destination_closed: string;
+        emptied_here: string;
+        emptied_into: string;
+        destination_full: string;
+    };
+    help: {
+        description: string;
+        examples: string;
+        summary: string;
+    };
+} | {
+    actionId: string;
+    patterns: string[];
+    messages: {
+        no_target: string;
+        not_flammable: string;
+        cant_burn: string;
+        no_tool: string;
+        needs_tool: string;
+        tool_not_held: string;
+        wrong_tool: string;
+        burned: string;
+    };
+    help: {
+        description: string;
+        examples: string;
+        summary: string;
+    };
+} | {
+    actionId: string;
+    patterns: string[];
+    messages: {
+        no_target: string;
+        no_value: string;
+        cant_set_that: string;
+        not_a_setting: string;
+        set: string;
+    };
+    help: {
+        description: string;
+        examples: string;
+        summary: string;
+    };
+} | {
+    actionId: string;
+    patterns: string[];
+    messages: {
+        no_target: string;
+        no_item: string;
+        not_visible: string;
+        too_far: string;
+        not_actor: string;
+        self: string;
+        already_have: string;
+        refused: string;
+    };
+    help: {
+        description: string;
+        examples: string;
+        summary: string;
+    };
+} | {
+    actionId: string;
+    patterns: string[];
+    messages: {
+        no_target: string;
+        no_topic: string;
+        not_consultable: string;
+        nothing_found: string;
+    };
+    help: {
+        description: string;
+        examples: string;
+        summary: string;
+    };
+} | {
+    actionId: string;
+    patterns: string[];
+    messages: {
+        no_target: string;
+        not_for_sale: string;
+        already_have: string;
+        cant_afford: string;
+        bought: string;
+    };
+    help: {
+        description: string;
+        examples: string;
+        summary: string;
+    };
+} | {
+    actionId: string;
+    patterns: string[];
+    messages: {
+        no_target: string;
+        no_anchor: string;
+        self: string;
+        not_to_people: string;
+        tied: string;
+    };
+    help: {
+        description: string;
+        examples: string;
+        summary: string;
+    };
+} | {
+    actionId: string;
+    patterns: string[];
+    messages: {
+        no_target: string;
+        not_tied: string;
+        untied: string;
+    };
+    help: {
+        description: string;
+        examples: string;
+        summary: string;
+    };
+} | {
+    actionId: string;
+    patterns: string[];
+    messages: {
+        no_target: string;
+        not_light_source: string;
+        already_lit: string;
+        no_fuel: string;
+        no_tool: string;
+        needs_tool: string;
+        tool_not_held: string;
+        wrong_tool: string;
+        lit: string;
+        lit_in_darkness: string;
+    };
+    help: {
+        description: string;
+        examples: string;
+        summary: string;
+    };
+} | {
+    actionId: string;
+    patterns: string[];
+    messages: {
+        no_target: string;
+        not_light_source: string;
+        not_lit: string;
+        extinguished: string;
+        extinguished_into_darkness: string;
+    };
+    help: {
+        description: string;
+        examples: string;
+        summary: string;
+    };
+} | {
+    actionId: string;
+    patterns: string[];
+    messages: {
+        not_in_vehicle: string;
+        vehicle_no_such_command: string;
+        cannot_steer: string;
+        not_under_way: string;
+        naval_how_far: string;
+        naval_no_wind: string;
+        naval_cannot_come_about: string;
+        sails_at_full: string;
+        sails_already_furled: string;
+        steered: string;
+        hove_to: string;
+        turned: string;
+        ahead: string;
+        came_about: string;
+        sail_made: string;
+        sail_shortened: string;
+        sails_furled: string;
+    };
+    help: {
+        description: string;
+        examples: string;
+        summary: string;
+    };
+} | {
+    actionId: string;
+    patterns: string[];
+    messages: {
+        not_in_vehicle: string;
+        vehicle_no_such_command: string;
+        no_destination: string;
+        not_a_destination: string;
+        already_there: string;
+        vehicle_under_way: string;
+        coordinates_outside_expanse: string;
+        course_set: string;
+        course_set_cell: string;
     };
     help: {
         description: string;
@@ -2343,6 +2709,10 @@ export declare function realizeLocationHeading(parts: ReadonlyArray<Pick<Heading
  *    subject param to agree with. The subject must be a bound param.
  *  - `{verbatim:name}` → a `Verbatim` atom (ADR-200): the param's value rendered
  *    as opaque, whitespace-exempt text. The param must be bound.
+ *  - `{direction:name}` → the English word for a bound `Direction` constant
+ *    (`NORTH` → "north"), as a `Verbatim` atom: actions pass the constant and
+ *    the word is this package's (alignment finding D15). An unknown value
+ *    raises `PhraseParseError`.
  *  - `{number:coins}` / `{number:coins words}` / `{number:floor ordinal}` → a
  *    `Numeral` atom (ADR-198): the numeric param, optional format. Must be bound.
  *  - `{pronoun:subject}` / `{pronoun:object}` / `{pronoun:possessive}` → a `Pronoun`
@@ -2431,8 +2801,12 @@ export declare function ordinalString(value: number): string;
 ```typescript
 /**
  * @file English Word Lists
- * @description Common word lists for English parsing
+ * @description The one word table of English (ADR-387 D1): articles,
+ *   determiners, pronouns, self words, all and except words, list separators,
+ *   manner adverbs, name stopwords, the direction table and the number words.
+ *   Every reader asks the language provider, which reads it here.
  */
+import type { DirectionVocabulary } from '@sharpee/if-domain';
 /**
  * English word lists for parsing
  */
@@ -2458,13 +2832,49 @@ export declare const englishWords: {
      */
     conjunctions: string[];
     /**
-     * Common determiners
+     * Common determiners, each possessive with the person it refers to
+     * (ADR-387 D6): `my` and `our` are the first person's, `your` the
+     * second's, `his`, `her`, `its` and `their` the third's.
      */
-    determiners: string[];
+    determiners: ReadonlyArray<{
+        word: string;
+        possessive?: "first" | "second" | "third";
+    }>;
     /**
-     * Directions
+     * The words that mean "everything" and the words that mean "except", in
+     * a typed noun phrase (`take all but the lantern`).
      */
-    directions: string[];
+    allWords: string[];
+    exceptWords: string[];
+    /**
+     * The words that name the observer, whatever the observer is called
+     * (ADR-327, ADR-387 D2). The engine hands them to the world at install.
+     */
+    selfWords: string[];
+    /**
+     * Words dropped when a name's content words are derived (ADR-231 D3,
+     * PIN 2): "the bag of holding" answers to "bag" and "holding".
+     */
+    nameStopwords: string[];
+    /**
+     * The words that separate list items in typed input (ADR-386 D6): "and"
+     * and the comma, which the tokenizer gives its own token.
+     */
+    listSeparators: string[];
+    /**
+     * The manner adverbs a MANNER slot accepts. Stories extend the list
+     * through their vocabulary, never by editing it.
+     */
+    mannerAdverbs: string[];
+    /**
+     * The direction table (ADR-387 D5): each direction's canonical id, which is
+     * world-model's `Direction` constant spelled as if-domain's contract names
+     * it, the English words that mean it, and its abbreviations. It holds
+     * exactly the words the standard grammar's `directions` blocks accept:
+     * `upward` and `downward` are not standard IF direction commands. The
+     * tokenizer's tag, the DIRECTION slot and going's direction all read it.
+     */
+    directions: ReadonlyArray<DirectionVocabulary>;
     /**
      * Common adjectives for parsing
      */
@@ -2488,57 +2898,24 @@ export declare const englishWords: {
  */
 export declare const irregularPlurals: Map<string, string>;
 /**
- * Common abbreviations
- */
-export declare const abbreviations: Map<string, string>;
-/**
  * Cardinal number words mapped to numeric values
  * Used by NUMBER slot type in grammar patterns
  */
 export declare const cardinalNumbers: Record<string, number>;
 /**
+ * Read a cardinal number from typed words (ADR-386 D8): digits, one number
+ * word, or a tens-and-units compound written as two words (`twenty five`) or
+ * hyphenated (`twenty-five`). Nothing else composes: ordinals, times and
+ * larger constructions are not numbers here.
+ * @param words The typed words, in order (case does not matter)
+ * @returns The number, or null when the words are not one number
+ */
+export declare function parseCardinal(words: readonly string[]): number | null;
+/**
  * Ordinal number words mapped to numeric values
  * Used by ORDINAL slot type in grammar patterns
  */
 export declare const ordinalNumbers: Record<string, number>;
-/**
- * Direction vocabulary with canonical forms
- * Maps all variations (full names and abbreviations) to canonical direction names
- * Used by DIRECTION slot type in grammar patterns
- */
-export declare const directionMap: Record<string, string>;
-```
-
-### data/messages
-
-```typescript
-/**
- * English parser error messages: the text the player reads when a command
- * fails to parse, keyed by the parse error's message id.
- *
- * Public interface: `parserErrors` (the template table) and
- * `getParserErrorMessage(messageId, context)` (template resolution).
- *
- * Owner context: `@sharpee/lang-en-us`, the English language layer.
- */
-/**
- * Parser error messages
- * Keys match the messageId from ParseErrorCode analysis
- *
- * Template variables:
- * - {verb} - The recognized verb
- * - {noun} - The word that failed to resolve
- * - {slot} - The slot name (target, container, etc.)
- * - {options} - Comma-separated list of disambiguation options
- */
-export declare const parserErrors: Record<string, string | ((ctx: Record<string, any>) => string)>;
-/**
- * Get a parser error message by ID
- * @param messageId The message ID (e.g., 'parser.error.unknownVerb')
- * @param context Template variables to substitute
- * @returns The formatted error message
- */
-export declare function getParserErrorMessage(messageId: string, context?: Record<string, any>): string;
 ```
 
 ### sound-messages

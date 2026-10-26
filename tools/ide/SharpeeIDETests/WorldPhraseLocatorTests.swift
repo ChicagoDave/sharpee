@@ -1,8 +1,9 @@
 // WorldPhraseLocatorTests.swift
 // A finding points at its phrase, not at the top of the passage that holds it
 // (ADR-321 Amendment 2). Runs against the REAL Ides of March source where it can,
-// because the case that made this necessary — *tiring-house door* on line 37 of a
-// passage that starts on 34 — only exists in real prose.
+// because the case that made this necessary — *tiring-house door* on line 36 of a
+// passage that starts on 33 — only exists in real prose. (One line up since
+// 2026-10-18: ADR-377 dropped the header's `use state-machines` line.)
 
 import XCTest
 @testable import SharpeeIDE
@@ -10,7 +11,7 @@ import XCTest
 @MainActor
 final class WorldPhraseLocatorTests: XCTestCase {
 
-    private let passage = WorldSourceSpan(line: 34, column: 3, endLine: 38, endColumn: 14)
+    private let passage = WorldSourceSpan(line: 33, column: 3, endLine: 37, endColumn: 14)
 
     /// A four-line description, as the author wrote it — phrase on the fourth line.
     private let source = """
@@ -81,7 +82,7 @@ final class WorldPhraseLocatorTests: XCTestCase {
 
         let located = try XCTUnwrap(WorldPhraseLocator.locate(phrase: "tiring-house door",
                                                               in: text, passage: passage))
-        XCTAssertEqual(located.line, 37,
-                       "stage.description spans 34-38 and the door is named on 37 — the row used to select 34")
+        XCTAssertEqual(located.line, 36,
+                       "stage.description spans 33-37 and the door is named on 36 — the row used to select the first line")
     }
 }

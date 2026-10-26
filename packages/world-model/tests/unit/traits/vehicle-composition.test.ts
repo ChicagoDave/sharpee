@@ -1,16 +1,12 @@
 /**
- * Vehicle Composition Tests
+ * Vehicle model tests (ADR-366 D3, D4, D5, D6, D8, D9)
  *
- * Tests how VehicleTrait composes with other traits (Container, Supporter)
- * to create different types of vehicles.
- *
- * Scenarios:
- * 1. Boat in river - container vehicle, moves between river locations
- * 2. Car on street - container vehicle, moves along roads
- * 3. Tram on cable - supporter vehicle (you stand on it), moves on fixed path
- * 4. Elevator - container vehicle, moves between floors
+ * A vehicle carries only its movement model; where it is, which stop it is
+ * at, and whether the player sees out are read from the world. Each test
+ * asserts on world state (locations, the describable place), not on a copy.
  */
 
+import { describe, it, expect, beforeEach } from 'vitest';
 import { WorldModel } from '../../../src/world/WorldModel';
 import { IFEntity } from '../../../src/entities/if-entity';
 import { EntityType } from '../../../src/entities/entity-types';
@@ -18,308 +14,311 @@ import { IdentityTrait } from '../../../src/traits/identity/identityTrait';
 import { ContainerTrait } from '../../../src/traits/container/containerTrait';
 import { SupporterTrait } from '../../../src/traits/supporter/supporterTrait';
 import { OpenableTrait } from '../../../src/traits/openable/openableTrait';
+import { EnterableTrait } from '../../../src/traits/enterable/enterableTrait';
 import { RoomTrait } from '../../../src/traits/room/roomTrait';
+import { ActorTrait } from '../../../src/traits/actor/actorTrait';
 import { VehicleTrait } from '../../../src/traits/vehicle/vehicleTrait';
-import { TraitType } from '../../../src/traits/trait-types';
-import { isVehicle, isActorInVehicle, canActorWalkInVehicle } from '../../../src/traits/vehicle/vehicleBehavior';
+import { VisibilityBehavior } from '../../../src/world/VisibilityBehavior';
+import { AboardTrait } from '../../../src/traits/vehicle/aboardTrait';
+import { RoomBehavior } from '../../../src/traits/room/roomBehavior';
+import { TraversalBehavior } from '../../../src/world/TraversalBehavior';
+import {
+  currentStop,
+  goingFromVehicle,
+  isStop,
+  isUnderWay,
+  moveVehicleToStop,
+  registerVehicleExitResolver,
+  sendVehicle,
+  startVehicle,
+  stopVehicle,
+} from '../../../src/traits/vehicle/vehicleBehavior';
 
-describe('Vehicle Composition', () => {
+describe('Vehicle model', () => {
   let world: WorldModel;
+  let top: IFEntity;
+  let bottom: IFEntity;
+  let elsewhere: IFEntity;
+  let player: IFEntity;
+
+  function room(name: string): IFEntity {
+    const r = world.createEntity(name, EntityType.ROOM);
+    r.add(new RoomTrait({ exits: {} }));
+    r.add(new IdentityTrait({ name }));
+    return r;
+  }
+
+  function vehicle(name: string, trait: VehicleTrait): IFEntity {
+    const v = world.createEntity(name, EntityType.ITEM);
+    v.add(new IdentityTrait({ name }));
+    v.add(new ContainerTrait());
+    v.add(new EnterableTrait());
+    v.add(trait);
+    return v;
+  }
 
   beforeEach(() => {
     world = new WorldModel();
+    top = room('Top of Well');
+    bottom = room('Well Bottom');
+    elsewhere = room('Elsewhere');
+    player = world.createEntity('player', EntityType.ACTOR);
+    player.add(new ActorTrait());
+    world.moveEntity(player.id, top.id);
   });
 
-  describe('Trait Composition Basics', () => {
-    it('should allow VehicleTrait + ContainerTrait on same entity', () => {
-      const boat = world.createEntity('boat', EntityType.ITEM);
-      boat.add(new IdentityTrait({ name: 'rowboat' }));
-      boat.add(new ContainerTrait({ capacity: { maxItems: 5 }, enterable: true }));
-      boat.add(new VehicleTrait({ vehicleType: 'watercraft', blocksWalkingMovement: true }));
-
-      expect(boat.has(TraitType.CONTAINER)).toBe(true);
-      expect(boat.has(TraitType.VEHICLE)).toBe(true);
-
-      const container = boat.get(TraitType.CONTAINER) as ContainerTrait;
-      expect(container.enterable).toBe(true);
-
-      const vehicle = boat.get(TraitType.VEHICLE) as VehicleTrait;
-      expect(vehicle.vehicleType).toBe('watercraft');
+  describe('the trait (D8)', () => {
+    it('refuses a line with fewer than two stops', () => {
+      expect(() => new VehicleTrait({ movement: { kind: 'line', stops: [top.id], oneWay: false, drive: 'control' } }))
+        .toThrow('at least two stops');
     });
 
-    it('should allow VehicleTrait + SupporterTrait on same entity', () => {
+    it('refuses a line that names a stop twice', () => {
+      expect(() => new VehicleTrait({ movement: { kind: 'line', stops: [top.id, top.id], oneWay: false, drive: 'control' } }))
+        .toThrow('each stop once');
+    });
+
+    it('owns its stops: changing the array it was built from changes nothing', () => {
+      const stops = [top.id, bottom.id];
+      const trait = new VehicleTrait({ movement: { kind: 'line', stops, oneWay: false, drive: 'control' } });
+      stops.push(elsewhere.id);
+      expect(trait.movement).toEqual({ kind: 'line', stops: [top.id, bottom.id], oneWay: false, drive: 'control', underWay: false, travelDirection: 'onward', turnsToStep: 0 });
+    });
+  });
+
+  describe('the line (D5a, D4, D9)', () => {
+    let bucket: IFEntity;
+
+    beforeEach(() => {
+      bucket = vehicle('bucket', new VehicleTrait({
+        movement: { kind: 'line', stops: [top.id, bottom.id], oneWay: false, drive: 'control' }
+      }));
+      world.moveEntity(bucket.id, top.id);
+    });
+
+    it('reads the current stop from the vehicle\'s location', () => {
+      expect(currentStop(world, bucket)).toBe(top.id);
+      world.moveEntity(bucket.id, elsewhere.id);
+      expect(currentStop(world, bucket)).toBeUndefined();
+      expect(isStop(bucket, bottom.id)).toBe(true);
+      expect(isStop(bucket, elsewhere.id)).toBe(false);
+    });
+
+    it('moving to a stop carries the rider and what is held at every depth', () => {
+      const box = world.createEntity('box', EntityType.ITEM);
+      box.add(new ContainerTrait());
+      const coin = world.createEntity('coin', EntityType.ITEM);
+      world.moveEntity(box.id, bucket.id);
+      world.moveEntity(coin.id, box.id);
+      world.moveEntity(player.id, bucket.id);
+
+      moveVehicleToStop(world, bucket, bottom.id);
+
+      expect(world.getLocation(bucket.id)).toBe(bottom.id);
+      expect(world.getLocation(player.id)).toBe(bucket.id);
+      expect(world.getLocation(box.id)).toBe(bucket.id);
+      expect(world.getLocation(coin.id)).toBe(box.id);
+      expect(world.getContainingRoom(player.id)?.id).toBe(bottom.id);
+      expect(world.getContainingRoom(coin.id)?.id).toBe(bottom.id);
+      expect(currentStop(world, bucket)).toBe(bottom.id);
+    });
+
+    it('refuses a room that is not a stop, and does not move', () => {
+      expect(() => moveVehicleToStop(world, bucket, elsewhere.id)).toThrow('is not a stop');
+      expect(world.getLocation(bucket.id)).toBe(top.id);
+    });
+
+    it('refuses a vehicle with no line, and does not move it', () => {
+      const tub = vehicle('tub', new VehicleTrait());
+      world.moveEntity(tub.id, top.id);
+      expect(() => moveVehicleToStop(world, tub, bottom.id)).toThrow('has no line');
+      expect(world.getLocation(tub.id)).toBe(top.id);
+    });
+
+    it('GO from inside rides: the player does not walk', () => {
+      world.moveEntity(player.id, bucket.id);
+      expect(goingFromVehicle(world, player.id)).toEqual({ kind: 'rides', vehicle: bucket });
+    });
+  });
+
+  describe('what GO means from where the actor is (D5)', () => {
+    it('on foot outside any vehicle', () => {
+      expect(goingFromVehicle(world, player.id)).toEqual({ kind: 'on-foot' });
+    });
+
+    it('a vehicle with no model stays put', () => {
+      const tub = vehicle('tub', new VehicleTrait());
+      world.moveEntity(tub.id, top.id);
+      world.moveEntity(player.id, tub.id);
+      expect(goingFromVehicle(world, player.id)).toEqual({ kind: 'stays', vehicle: tub });
+    });
+
+    it('a streets vehicle is steered', () => {
+      const car = vehicle('car', new VehicleTrait({ movement: { kind: 'streets' } }));
+      world.moveEntity(car.id, top.id);
+      world.moveEntity(player.id, car.id);
+      expect(goingFromVehicle(world, player.id)).toEqual({ kind: 'steers', vehicle: car });
+    });
+  });
+
+  describe('admits (D6)', () => {
+    it('a room admits no vehicle until it names it, as traversal reads it', () => {
+      const car = vehicle('car', new VehicleTrait({ movement: { kind: 'streets' } }));
+      const steered = { kind: 'steered', vehicle: car } as const;
+      expect(TraversalBehavior.admitsMover(null, bottom, steered)).toBe(false);
+      bottom.get(RoomTrait)!.admits.vehicles.push(car.id);
+      expect(TraversalBehavior.admitsMover(null, bottom, steered)).toBe(true);
+      expect(TraversalBehavior.admitsMover(null, elsewhere, steered)).toBe(false);
+    });
+  });
+
+  describe('seeing out is the enclosure\'s rule (D3)', () => {
+    function placeOf(): { place: string; enclosure: string | undefined } {
+      const { location, immediateContainer } = VisibilityBehavior.getDescribableLocation(player, world);
+      return { place: location.id, enclosure: immediateContainer?.id };
+    }
+
+    it('a lidless vehicle shows the room around it', () => {
+      const bucket = vehicle('bucket', new VehicleTrait());
+      world.moveEntity(bucket.id, top.id);
+      world.moveEntity(player.id, bucket.id);
+      expect(placeOf()).toEqual({ place: top.id, enclosure: bucket.id });
+    });
+
+    it('a lidless container that is not a vehicle shows the room too (GH #467)', () => {
+      const basket = world.createEntity('basket', EntityType.ITEM);
+      basket.add(new ContainerTrait());
+      world.moveEntity(basket.id, top.id);
+      world.moveEntity(player.id, basket.id);
+      expect(placeOf()).toEqual({ place: top.id, enclosure: basket.id });
+    });
+
+    it('a closed transparent vehicle shows the room through its windows', () => {
+      const car = vehicle('car', new VehicleTrait());
+      car.get(ContainerTrait)!.isTransparent = true;
+      world.moveEntity(car.id, top.id);
+      world.moveEntity(player.id, car.id);
+      car.add(new OpenableTrait({ isOpen: false }));
+      expect(placeOf()).toEqual({ place: top.id, enclosure: car.id });
+    });
+
+    it('a closed opaque vehicle is the place, and opening it shows the room', () => {
+      const tube = vehicle('tube', new VehicleTrait());
+      world.moveEntity(tube.id, top.id);
+      world.moveEntity(player.id, tube.id);
+      tube.add(new OpenableTrait({ isOpen: false }));
+      expect(placeOf()).toEqual({ place: tube.id, enclosure: undefined });
+
+      tube.get(OpenableTrait)!.isOpen = true;
+      expect(placeOf()).toEqual({ place: top.id, enclosure: tube.id });
+    });
+
+    it('a vehicle ridden on, even closed and opaque, shows the room', () => {
+      const raft = vehicle('raft', new VehicleTrait());
+      raft.get(EnterableTrait)!.preposition = 'on';
+      world.moveEntity(raft.id, top.id);
+      world.moveEntity(player.id, raft.id);
+      raft.add(new OpenableTrait({ isOpen: false }));
+      expect(placeOf()).toEqual({ place: top.id, enclosure: raft.id });
+    });
+
+    it('a supporter shows the room around it', () => {
       const tram = world.createEntity('tram', EntityType.ITEM);
-      tram.add(new IdentityTrait({ name: 'cable tram' }));
-      tram.add(new SupporterTrait({ capacity: { maxItems: 10 }, enterable: true }));
-      tram.add(new VehicleTrait({ vehicleType: 'cable', blocksWalkingMovement: true }));
-
-      expect(tram.has(TraitType.SUPPORTER)).toBe(true);
-      expect(tram.has(TraitType.VEHICLE)).toBe(true);
-
-      const supporter = tram.get(TraitType.SUPPORTER) as SupporterTrait;
-      expect(supporter.enterable).toBe(true);
-    });
-
-    it('should find enterable property on ContainerTrait', () => {
-      const elevator = world.createEntity('elevator', EntityType.ITEM);
-      elevator.add(new IdentityTrait({ name: 'elevator' }));
-      elevator.add(new ContainerTrait({ capacity: { maxItems: 5 }, enterable: true }));
-      elevator.add(new OpenableTrait({ isOpen: true }));
-      elevator.add(new VehicleTrait({ vehicleType: 'generic', blocksWalkingMovement: true }));
-
-      // This is what the scope evaluator needs to check
-      const containerTrait = elevator.get(TraitType.CONTAINER) as ContainerTrait;
-      expect(containerTrait).toBeDefined();
-      expect(containerTrait.enterable).toBe(true);
-    });
-
-    it('should find enterable property on SupporterTrait', () => {
-      const platform = world.createEntity('platform', EntityType.ITEM);
-      platform.add(new IdentityTrait({ name: 'moving platform' }));
-      platform.add(new SupporterTrait({ capacity: { maxItems: 3 }, enterable: true }));
-      platform.add(new VehicleTrait({ vehicleType: 'generic', blocksWalkingMovement: true }));
-
-      const supporterTrait = platform.get(TraitType.SUPPORTER) as SupporterTrait;
-      expect(supporterTrait).toBeDefined();
-      expect(supporterTrait.enterable).toBe(true);
-    });
-  });
-
-  describe('Boat in River Scenario', () => {
-    let riverBank: IFEntity;
-    let middleRiver: IFEntity;
-    let farShore: IFEntity;
-    let boat: IFEntity;
-    let player: IFEntity;
-
-    beforeEach(() => {
-      // Create river locations
-      riverBank = world.createEntity('river-bank', EntityType.ROOM);
-      riverBank.add(new RoomTrait({ exits: {} }));
-      riverBank.add(new IdentityTrait({ name: 'River Bank', description: 'The near shore of a wide river.' }));
-
-      middleRiver = world.createEntity('middle-river', EntityType.ROOM);
-      middleRiver.add(new RoomTrait({ exits: {} }));
-      middleRiver.add(new IdentityTrait({ name: 'Middle of River', description: 'You are in the middle of the river.' }));
-
-      farShore = world.createEntity('far-shore', EntityType.ROOM);
-      farShore.add(new RoomTrait({ exits: {} }));
-      farShore.add(new IdentityTrait({ name: 'Far Shore', description: 'The far shore of the river.' }));
-
-      // Create boat - an enterable container that is also a vehicle
-      boat = world.createEntity('boat', EntityType.ITEM);
-      boat.add(new IdentityTrait({
-        name: 'rowboat',
-        aliases: ['boat', 'small boat'],
-        description: 'A small wooden rowboat.'
-      }));
-      boat.add(new ContainerTrait({
-        capacity: { maxItems: 5, maxWeight: 100 },
-        enterable: true
-      }));
-      boat.add(new VehicleTrait({
-        vehicleType: 'watercraft',
-        blocksWalkingMovement: true
-      }));
-      world.moveEntity(boat.id, riverBank.id);
-
-      // Create player
-      player = world.createEntity('player', EntityType.ACTOR);
-      player.add(new IdentityTrait({ name: 'player' }));
-      world.moveEntity(player.id, riverBank.id);
-    });
-
-    it('should allow player to enter the boat', () => {
-      // Player enters boat
-      world.moveEntity(player.id, boat.id);
-
-      expect(world.getLocation(player.id)).toBe(boat.id);
-    });
-
-    it('should move player with boat when boat moves', () => {
-      // Player enters boat
-      world.moveEntity(player.id, boat.id);
-
-      // Boat moves to middle of river
-      world.moveEntity(boat.id, middleRiver.id);
-
-      // Player should still be in boat
-      expect(world.getLocation(player.id)).toBe(boat.id);
-      // Boat should be in middle river
-      expect(world.getLocation(boat.id)).toBe(middleRiver.id);
-    });
-
-    it('should allow player to exit boat', () => {
-      // Player in boat, boat in middle river
-      world.moveEntity(player.id, boat.id);
-      world.moveEntity(boat.id, middleRiver.id);
-
-      // Player exits to the room the boat is in
-      const boatLocation = world.getLocation(boat.id);
-      world.moveEntity(player.id, boatLocation!);
-
-      expect(world.getLocation(player.id)).toBe(middleRiver.id);
-    });
-  });
-
-  describe('Elevator Between Floors Scenario', () => {
-    let floor1: IFEntity;
-    let floor2: IFEntity;
-    let floor3: IFEntity;
-    let elevator: IFEntity;
-    let player: IFEntity;
-
-    beforeEach(() => {
-      // Create floors
-      floor1 = world.createEntity('floor-1', EntityType.ROOM);
-      floor1.add(new RoomTrait({ exits: {} }));
-      floor1.add(new IdentityTrait({ name: 'First Floor' }));
-
-      floor2 = world.createEntity('floor-2', EntityType.ROOM);
-      floor2.add(new RoomTrait({ exits: {} }));
-      floor2.add(new IdentityTrait({ name: 'Second Floor' }));
-
-      floor3 = world.createEntity('floor-3', EntityType.ROOM);
-      floor3.add(new RoomTrait({ exits: {} }));
-      floor3.add(new IdentityTrait({ name: 'Third Floor' }));
-
-      // Create elevator - openable container vehicle
-      elevator = world.createEntity('elevator', EntityType.ITEM);
-      elevator.add(new IdentityTrait({
-        name: 'elevator',
-        aliases: ['lift', 'elevator car'],
-        description: 'A small elevator with buttons for floors 1-3.'
-      }));
-      elevator.add(new ContainerTrait({
-        capacity: { maxItems: 10, maxWeight: 500 },
-        enterable: true
-      }));
-      elevator.add(new OpenableTrait({ isOpen: true }));
-      elevator.add(new VehicleTrait({
-        vehicleType: 'generic',
-        blocksWalkingMovement: true
-      }));
-      world.moveEntity(elevator.id, floor1.id);
-
-      // Create player
-      player = world.createEntity('player', EntityType.ACTOR);
-      player.add(new IdentityTrait({ name: 'player' }));
-      world.moveEntity(player.id, floor1.id);
-    });
-
-    it('should allow entering elevator when open', () => {
-      world.moveEntity(player.id, elevator.id);
-      expect(world.getLocation(player.id)).toBe(elevator.id);
-    });
-
-    it('should transport player between floors', () => {
-      // Enter elevator on floor 1
-      world.moveEntity(player.id, elevator.id);
-
-      // Elevator goes to floor 3
-      world.moveEntity(elevator.id, floor3.id);
-
-      // Player is still in elevator
-      expect(world.getLocation(player.id)).toBe(elevator.id);
-      // Elevator is on floor 3
-      expect(world.getLocation(elevator.id)).toBe(floor3.id);
-
-      // Exit elevator
-      world.moveEntity(player.id, floor3.id);
-      expect(world.getLocation(player.id)).toBe(floor3.id);
-    });
-  });
-
-  describe('Cable Tram Scenario', () => {
-    let station1: IFEntity;
-    let station2: IFEntity;
-    let tram: IFEntity;
-    let player: IFEntity;
-
-    beforeEach(() => {
-      station1 = world.createEntity('station-1', EntityType.ROOM);
-      station1.add(new RoomTrait({ exits: {} }));
-      station1.add(new IdentityTrait({ name: 'Lower Station' }));
-
-      station2 = world.createEntity('station-2', EntityType.ROOM);
-      station2.add(new RoomTrait({ exits: {} }));
-      station2.add(new IdentityTrait({ name: 'Upper Station' }));
-
-      // Tram as a supporter (you stand ON it, not IN it)
-      tram = world.createEntity('tram', EntityType.ITEM);
-      tram.add(new IdentityTrait({
-        name: 'cable tram',
-        aliases: ['tram', 'cable car'],
-        description: 'An open-air tram suspended from a cable.'
-      }));
-      tram.add(new SupporterTrait({
-        capacity: { maxItems: 8 },
-        enterable: true
-      }));
-      tram.add(new VehicleTrait({
-        vehicleType: 'cable',
-        blocksWalkingMovement: true
-      }));
-      world.moveEntity(tram.id, station1.id);
-
-      player = world.createEntity('player', EntityType.ACTOR);
-      player.add(new IdentityTrait({ name: 'player' }));
-      world.moveEntity(player.id, station1.id);
-    });
-
-    it('should allow boarding tram (supporter)', () => {
+      tram.add(new SupporterTrait({ enterable: true }));
+      world.moveEntity(tram.id, top.id);
       world.moveEntity(player.id, tram.id);
-      expect(world.getLocation(player.id)).toBe(tram.id);
-    });
-
-    it('should transport player on tram', () => {
-      world.moveEntity(player.id, tram.id);
-      world.moveEntity(tram.id, station2.id);
-
-      expect(world.getLocation(player.id)).toBe(tram.id);
-      expect(world.getLocation(tram.id)).toBe(station2.id);
+      expect(placeOf()).toEqual({ place: top.id, enclosure: tram.id });
     });
   });
 
-  describe('Vehicle Behavior Utilities', () => {
-    let room: IFEntity;
-    let vehicle: IFEntity;
-    let player: IFEntity;
-
-    beforeEach(() => {
-      room = world.createEntity('room', EntityType.ROOM);
-      room.add(new RoomTrait({ exits: {} }));
-
-      vehicle = world.createEntity('car', EntityType.ITEM);
-      vehicle.add(new IdentityTrait({ name: 'car' }));
-      vehicle.add(new ContainerTrait({ enterable: true }));
-      vehicle.add(new VehicleTrait({ vehicleType: 'generic', blocksWalkingMovement: true }));
-      world.moveEntity(vehicle.id, room.id);
-
-      player = world.createEntity('player', EntityType.ACTOR);
-      world.moveEntity(player.id, room.id);
+  describe('the five models and the machine state they carry (D5, D5g)', () => {
+    it('a compass model starts with no heading; a flight model with no destination', () => {
+      const ship = new VehicleTrait({ movement: { kind: 'compass', drive: 'player', pace: 2 }, commands: ['compass'] });
+      expect(ship.movement).toEqual({ kind: 'compass', drive: 'player', pace: 2, heading: null, turnsToStep: 0 });
+      expect(ship.commands).toEqual(['compass']);
+      const courier = new VehicleTrait({ movement: { kind: 'flight', drive: 'control', destinations: [top.id, bottom.id], pace: 5 } });
+      expect(courier.movement).toEqual({ kind: 'flight', drive: 'control', destinations: [top.id, bottom.id], pace: 5, destination: null, turnsRemaining: 0 });
     });
 
-    it('isVehicle should return true for entities with VehicleTrait', () => {
-      expect(isVehicle(vehicle)).toBe(true);
-      expect(isVehicle(room)).toBe(false);
+    it('refuses a pace under one turn, a flight with one destination, and a flight naming a destination twice', () => {
+      expect(() => new VehicleTrait({ movement: { kind: 'compass', drive: 'player', pace: 0 } })).toThrow('pace');
+      expect(() => new VehicleTrait({ movement: { kind: 'flight', drive: 'control', destinations: [top.id, bottom.id], pace: 0 } })).toThrow('pace');
+      expect(() => new VehicleTrait({ movement: { kind: 'flight', drive: 'control', destinations: [top.id], pace: 1 } })).toThrow('two destinations');
+      expect(() => new VehicleTrait({ movement: { kind: 'flight', drive: 'control', destinations: [top.id, bottom.id, top.id], pace: 1 } })).toThrow('each destination once');
     });
 
-    it('isActorInVehicle should detect when player is in a vehicle', () => {
-      expect(isActorInVehicle(world, player.id)).toBe(false);
+    it('GO from inside a compass or flight vehicle rides; from a `none` vehicle it stays', () => {
+      const ship = vehicle('ship', new VehicleTrait({ movement: { kind: 'compass', drive: 'player', pace: 1 } }));
+      world.moveEntity(ship.id, top.id);
+      world.moveEntity(player.id, ship.id);
+      expect(goingFromVehicle(world, player.id)).toEqual({ kind: 'rides', vehicle: ship });
+      const tub = vehicle('tub', new VehicleTrait({ movement: { kind: 'none' } }));
+      world.moveEntity(tub.id, top.id);
+      world.moveEntity(player.id, tub.id);
+      expect(goingFromVehicle(world, player.id)).toEqual({ kind: 'stays', vehicle: tub });
+    });
+  });
 
-      world.moveEntity(player.id, vehicle.id);
-      expect(isActorInVehicle(world, player.id)).toBe(true);
+  describe('the driving statements set the machine state (D5f)', () => {
+    it('start puts a controlled line under way from its stop, turning back at a both-ways end', () => {
+      const tram = vehicle('tram', new VehicleTrait({ movement: { kind: 'line', stops: [top.id, bottom.id], oneWay: false, drive: 'control', pace: 2 } }));
+      world.moveEntity(tram.id, bottom.id);
+      expect(isUnderWay(tram)).toBe(false);
+      expect(startVehicle(world, tram)).toBe(true);
+      expect(tram.get(VehicleTrait)!.movement).toMatchObject({ underWay: true, travelDirection: 'back', turnsToStep: 2 });
+      expect(isUnderWay(tram)).toBe(true);
+      expect(stopVehicle(tram)).toBe(true);
+      expect(tram.get(VehicleTrait)!.movement).toMatchObject({ underWay: false, turnsToStep: 0 });
     });
 
-    it('canActorWalkInVehicle should return false when in blocking vehicle', () => {
-      const resultOutside = canActorWalkInVehicle(world, player.id);
-      expect(resultOutside.canWalk).toBe(true);
+    it('start refuses a one-way line at its end', () => {
+      const funicular = vehicle('funicular', new VehicleTrait({ movement: { kind: 'line', stops: [top.id, bottom.id], oneWay: true, drive: 'control', pace: 1 } }));
+      world.moveEntity(funicular.id, bottom.id);
+      expect(startVehicle(world, funicular)).toBe(false);
+      expect(isUnderWay(funicular)).toBe(false);
+    });
 
-      world.moveEntity(player.id, vehicle.id);
-      const resultInside = canActorWalkInVehicle(world, player.id);
-      expect(resultInside.canWalk).toBe(false);
-      expect(resultInside.vehicle).toBe(vehicle);
+    it('start heading sets a compass vehicle\'s heading; stop clears it', () => {
+      const ship = vehicle('ship', new VehicleTrait({ movement: { kind: 'compass', drive: 'control', pace: 3 } }));
+      expect(startVehicle(world, ship)).toBe(false);
+      expect(startVehicle(world, ship, 'NORTH')).toBe(true);
+      expect(ship.get(VehicleTrait)!.movement).toMatchObject({ heading: 'NORTH', turnsToStep: 3 });
+      expect(isUnderWay(ship)).toBe(true);
+      stopVehicle(ship);
+      expect(ship.get(VehicleTrait)!.movement).toMatchObject({ heading: null });
+    });
+
+    it('send binds a flight vehicle to one of its destinations and nothing else', () => {
+      const courier = vehicle('courier', new VehicleTrait({ movement: { kind: 'flight', drive: 'control', destinations: [top.id, bottom.id], pace: 4 } }));
+      expect(sendVehicle(world, courier, elsewhere.id)).toBe(false);
+      // A refused send leaves the voyage unset, and a cell is no flight destination.
+      expect(courier.get(VehicleTrait)!.movement).toMatchObject({ destination: null, turnsRemaining: 0 });
+      expect(sendVehicle(world, courier, { x: 1, y: 1 })).toBe(false);
+      expect(courier.get(VehicleTrait)!.movement).toMatchObject({ destination: null, turnsRemaining: 0 });
+      expect(isUnderWay(courier)).toBe(false);
+      expect(sendVehicle(world, courier, bottom.id)).toBe(true);
+      expect(courier.get(VehicleTrait)!.movement).toMatchObject({ destination: bottom.id, turnsRemaining: 4 });
+      expect(isUnderWay(courier)).toBe(true);
+    });
+  });
+
+  describe('rooms aboard and the outside exit (D7)', () => {
+    it('resolves to the vehicle\'s room on each use, through the door, and is blocked under way', () => {
+      const courier = vehicle('courier', new VehicleTrait({ movement: { kind: 'flight', drive: 'control', destinations: [top.id, bottom.id], pace: 4 } }));
+      world.moveEntity(courier.id, top.id);
+      const airlock = room('Airlock');
+      airlock.add(new AboardTrait({ vehicleId: courier.id, outside: { WEST: { candidates: [top.id, bottom.id], via: 'd-hatch' } } }));
+      registerVehicleExitResolver(world);
+      const ctx = { world, actorId: player.id, random: { draw: () => 0 } as never };
+      // One record per outside exit (F11): the declaration and its door together.
+      expect(airlock.get(AboardTrait)!.computedExits.WEST).toEqual({ candidates: [top.id, bottom.id], via: 'd-hatch' });
+      expect('outside' in airlock.get(AboardTrait)!).toBe(false);
+      expect(RoomBehavior.resolveExit(airlock, 'WEST', ctx)).toEqual({ kind: 'exit', destination: top.id, via: 'd-hatch' });
+      world.moveEntity(courier.id, bottom.id);
+      expect(RoomBehavior.resolveExit(airlock, 'WEST', ctx)).toEqual({ kind: 'exit', destination: bottom.id, via: 'd-hatch' });
+      sendVehicle(world, courier, top.id);
+      expect(RoomBehavior.resolveExit(airlock, 'WEST', ctx)).toMatchObject({ kind: 'blocked', messageId: 'if.action.going.vehicle_under_way' });
+      expect(RoomBehavior.resolveExit(airlock, 'EAST', ctx)).toBeUndefined();
     });
   });
 });

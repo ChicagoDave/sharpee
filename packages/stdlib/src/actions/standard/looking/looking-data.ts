@@ -12,13 +12,14 @@ import { captureRoomSnapshot, captureEntitySnapshots } from '../../base/snapshot
 import { nounPhraseFor } from '../../../utils/index.js';
 
 /**
- * Check if a location is dark (needs light but has none).
- * Delegates to VisibilityBehavior.isDark() as the single source of truth.
+ * Check if the actor's room is dark to the actor: dark, and the actor
+ * does not see in the dark (ADR-374 D5). Delegates to
+ * VisibilityBehavior.isDarkFor() as the single source of truth.
  */
 function checkIfDark(context: ActionContext): boolean {
   const room = context.world.getContainingRoom(context.actor.id);
   if (!room) return false;
-  return VisibilityBehavior.isDark(room, context.world);
+  return VisibilityBehavior.isDarkFor(context.actor, room, context.world);
 }
 
 /**
@@ -96,13 +97,9 @@ export const buildRoomDescriptionData: ActionDataBuilder<Record<string, unknown>
   const roomSnapshot = captureRoomSnapshot(location, context.world, false);
   const visibleSnapshots = captureEntitySnapshots(visible, context.world);
 
-  // Determine if verbose mode
-  // TODO: Wire verbose mode from game-meta state when brief/verbose commands are implemented
-  const verboseMode = true;
   // First-visit state is captured in looking.ts execute() BEFORE the room is
   // marked visited, and handed forward via sharedData (mirrors going.ts).
   const firstVisit = context.sharedData?.isFirstVisit === true;
-  const isVerbose = verboseMode || firstVisit;
 
   // Get identity trait for ID fields (ADR-107 dual-mode)
   const identity = location.getTrait(IdentityTrait);
@@ -143,7 +140,9 @@ export const buildRoomDescriptionData: ActionDataBuilder<Record<string, unknown>
     // room handler to run the splice pass over the description text.
     ...(roomTrait?.snippets ? { roomSnippets: roomTrait.snippets } : {}),
     includeContents: true,
-    verbose: isVerbose,
+    // Every look describes the room in full: the teletype-era brief/verbose
+    // modes are not a Sharpee feature (David, 2026-10-12).
+    verbose: true,
     contents: visible.map(entity => ({
       id: entity.id,
       name: entity.name,
@@ -351,11 +350,7 @@ export function determineLookingMessage(
     };
   }
 
-  // Check for brief/verbose mode (firstVisit computed above from sharedData)
-  // TODO: Wire verbose mode from game-meta state when brief/verbose commands are implemented
-  const verboseMode = true;
-
-  let messageId = (!verboseMode && !firstVisit) ? 'room_description_brief' : 'room_description';
+  const messageId = 'room_description';
 
   // Check for visible items
   const visible = context.getVisible().filter(
@@ -397,7 +392,7 @@ export function determineLookingMessage(
       items: directInRoom.map(e => nounPhraseFor(e)),
     };
     return {
-      messageId,  // room_description or room_description_brief
+      messageId,
       params: {
         items: itemList,
         count: directInRoom.length,

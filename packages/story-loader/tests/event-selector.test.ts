@@ -11,16 +11,22 @@
  */
 import { describe, expect, it } from 'vitest';
 import { EVENT_VERBS } from '@sharpee/chord';
-import { EVENT_PAYLOAD_FIELDS, EVENT_TRIGGERS, REGION_EVENT_TRIGGERS } from '../src';
+import { EVENT_PAYLOAD_FIELDS, EVENT_TRIGGERS, LISTENER_EVENT_TRIGGERS, REGION_EVENT_TRIGGERS } from '../src';
 
 describe('AC-9: event-selector map sync', () => {
-  it('every curated chord event verb has a trigger binding (room-side or region-side)', () => {
+  it('every curated chord event verb has a trigger binding (room-, region- or listener-side)', () => {
     for (const verb of EVENT_VERBS) {
       expect(
-        EVENT_TRIGGERS[verb] ?? REGION_EVENT_TRIGGERS[verb],
+        EVENT_TRIGGERS[verb] ?? REGION_EVENT_TRIGGERS[verb] ?? LISTENER_EVENT_TRIGGERS[verb],
         `trigger for \`${verb}\``,
       ).toBeDefined();
     }
+  });
+
+  it('pins the listener contract (ADR-374 D6): hearing rides ADR-172 delivery, nowhere else', () => {
+    expect(LISTENER_EVENT_TRIGGERS.hearing).toBe('sound.audibility.heard');
+    expect(EVENT_TRIGGERS.hearing).toBeUndefined();
+    expect(REGION_EVENT_TRIGGERS.hearing).toBeUndefined();
   });
 
   it('pins the region crossing contract (ADR-236 D6, ratchet R3)', () => {

@@ -347,8 +347,7 @@ describe('Multi-object provenance (ADR-228 D4 + ADR-231 D1)', () => {
       },
     });
 
-    const command = createCommand(IFActions.TAKING, { entity: gem, text: 'all' });
-    (command.parsed.structure.directObject as any).isAll = true;
+    const command = createCommand(IFActions.TAKING, { entity: gem, all: true });
     const context = createRealTestContext(takingAction, world, command);
 
     const validation = runValidatePhase(takingAction, context);

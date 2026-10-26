@@ -93,6 +93,8 @@ export {
   type StreamableTranscriptResult,
   type StreamableDerivedOutcome,
   type StreamableDerivedSummary,
+  type StreamableClaimResult,
+  type StreamableClaimsSummary,
 } from './run-event-stream.js';
 
 // Aggregation + the DEPRECATED `test --json` record builders (ADR-277 D1). The

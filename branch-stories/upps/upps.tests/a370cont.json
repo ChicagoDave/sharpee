@@ -1,0 +1,147 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "\"Nobody rides north off my pad until I've signed for what's come in.\""
+        ],
+        "notContains": [
+          "You can't go that way."
+        ]
+      },
+      "command": "north",
+      "id": "z3ogl75p",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "\"Everything that lands on 14 gets signed for by me. That's the rule.\""
+        ]
+      },
+      "command": "ask quint about the mail",
+      "id": "4klj79ui",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "I don't know any Vance."
+        ],
+        "notContains": [
+          "I don't know anything about that."
+        ]
+      },
+      "command": "ask quint about vance",
+      "id": "01rreqtx",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "\"It isn't saying.\""
+        ]
+      },
+      "command": "ask quint about the dome",
+      "id": "aryzbst2",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You show the route card to the pad master.",
+          "\"Route 7. Addressee delivery, no proxy signature.\""
+        ],
+        "states": [
+          "the pad master is waved-through"
+        ]
+      },
+      "command": "show card to quint",
+      "id": "amoxx3xo",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You board the courier ship.",
+          "Hold"
+        ]
+      },
+      "command": "board ship",
+      "id": "ku62m66z",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Hold",
+          "a mail bundle"
+        ]
+      },
+      "command": "look",
+      "id": "eiunxym5",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The ramp has been sealed since the fold."
+        ],
+        "notContains": [
+          "Loading Dock"
+        ]
+      },
+      "command": "down",
+      "id": "0yrho4bt",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Taken."
+        ]
+      },
+      "command": "take bundle",
+      "id": "hidi4tne",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Airlock"
+        ]
+      },
+      "command": "west",
+      "id": "250grjrn",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Landing Pad"
+        ]
+      },
+      "command": "exit",
+      "id": "1n7gmrah",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You give the mail bundle to the pad master.",
+          "Route 7 has nothing left to deliver."
+        ],
+        "notContains": [
+          "Tram's that way."
+        ]
+      },
+      "command": "give bundle to quint",
+      "ending": "parcel-signed-away",
+      "id": "25ds4nyx",
+      "type": "turn"
+    }
+  ],
+  "id": "a370cont",
+  "ordinal": 0,
+  "parent": "w7eqlqnb"
+}

@@ -93,7 +93,7 @@ describe('PronounContext', () => {
 
         // Manually set context for testing
         const context = manager.getContext() as PronounContext;
-        context.it = { entityId: 'lamp', text: 'the lamp', turnNumber: 1 };
+        context.it = { entityId: 'lamp', text: 'the lamp' };
 
         const result = manager.resolve('it');
         expect(result).not.toBeNull();
@@ -106,8 +106,7 @@ describe('PronounContext', () => {
         const context = manager.getContext() as PronounContext;
         context.animateByPronoun.set('him', {
           entityId: 'bob',
-          text: 'Bob',
-          turnNumber: 1
+          text: 'Bob'
         });
 
         const result = manager.resolve('him');
@@ -120,8 +119,7 @@ describe('PronounContext', () => {
         const context = manager.getContext() as PronounContext;
         context.animateByPronoun.set('her', {
           entityId: 'alice',
-          text: 'Alice',
-          turnNumber: 1
+          text: 'Alice'
         });
 
         const result = manager.resolve('her');
@@ -133,8 +131,8 @@ describe('PronounContext', () => {
       it('should resolve "them" to plural inanimate first', () => {
         const context = manager.getContext() as PronounContext;
         context.them = [
-          { entityId: 'coin1', text: 'gold coin', turnNumber: 1 },
-          { entityId: 'coin2', text: 'silver coin', turnNumber: 1 }
+          { entityId: 'coin1', text: 'gold coin' },
+          { entityId: 'coin2', text: 'silver coin' }
         ];
 
         const result = manager.resolve('them');
@@ -146,8 +144,7 @@ describe('PronounContext', () => {
         const context = manager.getContext() as PronounContext;
         context.animateByPronoun.set('them', {
           entityId: 'sam',
-          text: 'Sam',
-          turnNumber: 1
+          text: 'Sam'
         });
 
         const result = manager.resolve('them');
@@ -160,8 +157,7 @@ describe('PronounContext', () => {
         const context = manager.getContext() as PronounContext;
         context.animateByPronoun.set('xem', {
           entityId: 'alex',
-          text: 'Alex',
-          turnNumber: 1
+          text: 'Alex'
         });
 
         const result = manager.resolve('xem');
@@ -174,8 +170,8 @@ describe('PronounContext', () => {
     describe('reset', () => {
       it('should clear all pronoun references', () => {
         const context = manager.getContext() as PronounContext;
-        context.it = { entityId: 'lamp', text: 'lamp', turnNumber: 1 };
-        context.animateByPronoun.set('him', { entityId: 'bob', text: 'Bob', turnNumber: 1 });
+        context.it = { entityId: 'lamp', text: 'lamp' };
+        context.animateByPronoun.set('him', { entityId: 'bob', text: 'Bob' });
 
         manager.reset();
 
@@ -197,7 +193,7 @@ describe('PronounContext', () => {
           })
         };
 
-        manager.registerEntity('lamp', 'the lamp', mockWorld, 1);
+        manager.registerEntity('lamp', 'the lamp', mockWorld);
 
         const result = manager.resolve('it');
         expect(result).not.toBeNull();
@@ -216,7 +212,7 @@ describe('PronounContext', () => {
           })
         };
 
-        manager.registerEntity('coins', 'gold coins', mockWorld, 1);
+        manager.registerEntity('coins', 'gold coins', mockWorld);
 
         const result = manager.resolve('them');
         expect(result).not.toBeNull();
@@ -236,7 +232,7 @@ describe('PronounContext', () => {
           })
         };
 
-        manager.registerEntity('alice', 'Alice', mockWorld, 1);
+        manager.registerEntity('alice', 'Alice', mockWorld);
 
         const result = manager.resolve('her');
         expect(result).not.toBeNull();
@@ -257,7 +253,7 @@ describe('PronounContext', () => {
           })
         };
 
-        manager.registerEntity('alex', 'Alex', mockWorld, 1);
+        manager.registerEntity('alex', 'Alex', mockWorld);
 
         // Should resolve both "him" and "them" to Alex
         const himResult = manager.resolve('him');
@@ -283,7 +279,7 @@ describe('PronounContext', () => {
 
         const mockWorld = { getEntity: () => null };
 
-        manager.updateFromCommand(mockCommand, mockWorld, 1);
+        manager.updateFromCommand(mockCommand, mockWorld);
 
         expect(manager.getLastCommand()).toBe(mockCommand.parsed);
       });

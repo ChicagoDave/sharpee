@@ -7,3 +7,4 @@ export * from './state-machine-plugin.js';
 export * from './state-machine-runtime.js';
 export { evaluateGuard, resolveRef } from './guard-evaluator.js';
 export { executeEffects } from './effect-executor.js';
+export * from './vehicle-machine.js';

@@ -105,7 +105,7 @@ describe('AC-3 — exit to nowhere', () => {
   beforeAll(() => {
     const faulted = faultable(fernhill);
     const kitchen = entity(faulted, 'kitchen');
-    kitchen.exits.push({ direction: 'east', to: 'scullery', via: null, span: kitchen.exits[0].span });
+    kitchen.exits.push({ direction: 'east', to: { kind: 'room', id: 'scullery' }, via: null, span: kitchen.exits[0].span });
     reach = deriveReach(faulted);
   });
 

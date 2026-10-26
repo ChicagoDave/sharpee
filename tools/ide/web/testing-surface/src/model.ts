@@ -50,6 +50,7 @@ import {
   emptyTreeDocument,
   ensureSegmentIds,
   mainLineLabelOf,
+  lockOnCard,
   roomSlugOf,
   segmentTree,
   type TreeAssertions,
@@ -331,6 +332,32 @@ export class TreeSessionModel {
       if (this.cardByOrdinal.get(ordinal)?.id === cardId) return ordinal;
     }
     return undefined;
+  }
+
+  /**
+   * The line that OWNS a card — the segment whose `cards` hold it — or
+   * undefined when no line does. A lock is taken on the owning line, which
+   * may be an ancestor of the active one (ADR-367 D7).
+   */
+  lineOfCard(cardId: string): string | undefined {
+    for (const [lineId, cards] of this.lineCards) {
+      if (cards.some(card => card.id === cardId)) return lineId;
+    }
+    return undefined;
+  }
+
+  /**
+   * Lock a claim's name on a card (ADR-367 D5), through the same function
+   * `sharpee claim` locks with (D7). Returns true when the document
+   * changed; false when the card already carried the name.
+   */
+  lockOnCard(cardId: string, name: string): boolean {
+    return lockOnCard(this.doc, cardId, name);
+  }
+
+  /** Name the claims fragment in the manifest (ADR-365 D7's field), when a lock created it. */
+  setClaimsFile(file: string): void {
+    this.doc.claims = file;
   }
 
   roomOf(ordinal: number): string | undefined {

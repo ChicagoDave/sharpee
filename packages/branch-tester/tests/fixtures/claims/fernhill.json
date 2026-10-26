@@ -1,6 +1,6 @@
 {
   "story": "fernhill",
-  "source": "the file's set is the winning line in branch-stories/fernhill/WALKTHROUGH.txt (29 commands), read off by hand 2026-10-10; each claim that needs less declares its own set",
+  "source": "the file's set is the winning line in branch-stories/fernhill/WALKTHROUGH.txt (29 commands), read off by hand 2026-10-10; each claim that needs less declares its own set. The tenth claim was locked by `sharpee claim hpjuaufx \"the deed box is open\" --at 22` on 2026-10-20 (ADR-367), its set proposed from the line and trimmed by the cone",
   "rooms": [
     "iron-gates", "gravel-drive", "fountain-court", "boiler-shed",
     "entrance-hall", "kitchen", "greenhouse", "folly-hill", "folly"
@@ -71,6 +71,15 @@
         "rooms": ["iron-gates", "gravel-drive", "fountain-court", "boiler-shed"],
         "things": ["stopcock"],
         "verbs": ["turn"]
+      }
+    },
+    {
+      "name": "the deed box is open",
+      "flag": { "thing": "deed-box", "trait": "openable", "field": "isOpen", "value": true },
+      "needs": {
+        "rooms": ["iron-gates", "gravel-drive", "fountain-court", "boiler-shed", "entrance-hall", "kitchen", "greenhouse", "folly-hill", "folly"],
+        "things": ["tobias", "stopcock", "boiler", "primer-plunger", "vine", "garden-shears", "silver-locket", "folly-door", "fuse", "deed-box"],
+        "verbs": ["ask", "turn", "push", "switch on", "take", "give", "prune", "open"]
       }
     }
   ]

@@ -181,14 +181,15 @@ describe('the witnessed-mover templates (ADR-328 D5) — emitted only for a non-
 
   it('render a non-player mover by name, in the third person, with the surface direction', () => {
     const p = new EnglishLanguageProvider();
-    const params = { [ACTOR_PARAM_KEY]: thief, direction: 'north' };
+    // The action passes the Direction constant; the word is lang's (D15).
+    const params = { [ACTOR_PARAM_KEY]: thief, direction: 'NORTH' };
     expect(text(p.renderMessage(ids.departs, params, makeCtx(params)))).toBe('The thief leaves to the north.');
-    expect(text(p.renderMessage(ids.arrives, { ...params, direction: 'south' }, makeCtx({ ...params, direction: 'south' })))).toBe('The thief enters from the south.');
+    expect(text(p.renderMessage(ids.arrives, { ...params, direction: 'SOUTH' }, makeCtx({ ...params, direction: 'SOUTH' })))).toBe('The thief enters from the south.');
   });
 
   it('agree a plural mover', () => {
     const p = new EnglishLanguageProvider();
-    const params = { [ACTOR_PARAM_KEY]: mercenaries, direction: 'east' };
+    const params = { [ACTOR_PARAM_KEY]: mercenaries, direction: 'EAST' };
     expect(text(p.renderMessage(ids.departs, params, makeCtx(params)))).toBe('The mercenaries leave to the east.');
   });
 });

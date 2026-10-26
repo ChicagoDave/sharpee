@@ -21,6 +21,7 @@ export {
   isInitialState,
   undirectedExits,
   wiredEdges,
+  outsideRoomsOf,
   oppositeDirection,
   doorStartsLocked,
   isPortableByDefault,
@@ -80,6 +81,7 @@ export type {
 export {
   buildVocabularyIndex,
   entityVocabulary,
+  irNamingSurface,
   publishVocabulary,
   resolvePhrase,
 } from './vocabulary.js';

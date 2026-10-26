@@ -28,7 +28,6 @@ export {
   validateStoryConfig,
   CommandExecutor,
   createCommandExecutor,
-  VocabularyManager,
   SaveRestoreService,
   type NarrativeConfig,
   SharedDataKeys,
@@ -67,14 +66,14 @@ export * from '@sharpee/world-model';
 export {
   type LanguageProvider,
   type GrammarBuilder,
+  type Parser,
+  type Token,
+  type ParseError,
 } from '@sharpee/if-domain';
 
 // ─── Standard library ─────────────────────────────────────────────
 export {
-  Parser,
-  type Token,
   type ValidatedCommand,
-  type ParseError,
   CommandValidator,
   type Action,
   type ActionContext,

@@ -2,59 +2,15 @@
  * Device manipulation event handlers
  * 
  * These handlers process events for device interactions like
- * pushing, pulling, turning, and using objects.
+ * pulling, turning, and using objects. Pushing has no handler: a press
+ * toggles through `SwitchableBehavior` in the action's execute and a push
+ * between rooms moves the thing there, so the behavior is the one writer
+ * and nothing here mirrors the event's prediction over it.
  */
 
 import { type ISemanticEvent, getUntypedEventData } from '@sharpee/core';
 import { WorldModel, TraitType, type EventHandler } from '@sharpee/world-model';
 import { IFEvents } from '@sharpee/if-domain';
-
-/**
- * Handle PUSHED event - process pushing objects/buttons
- */
-export const handlePushed: EventHandler = (event: ISemanticEvent, world: any) => {
-  const { target, location } = event.entities;
-  const data = getUntypedEventData(event);
-  const pushType = String(data?.pushType || '');
-  
-  if (!target) return;
-  
-  // Get the actual entity from the world model
-  const targetEntity = world.getEntity(target);
-  if (!targetEntity) return;
-  
-  switch (pushType) {
-    case 'button':
-      // If it's a switchable button, toggle its state
-      if (targetEntity.has(TraitType.SWITCHABLE) && data?.willToggle) {
-        const switchable = targetEntity.get(TraitType.SWITCHABLE) as { isOn?: boolean };
-        switchable.isOn = data?.newState as boolean;
-        
-        // This might trigger other device activations
-        // Future: Add support for linked devices
-      }
-      break;
-      
-    case 'moveable':
-    case 'heavy':
-      // If the object moved in a direction
-      if (data?.moved && data?.moveDirection && location) {
-        // Future: Actually move the object to adjacent location
-        // For now, we just record that it moved
-        
-        // If it reveals a passage
-        if (data?.revealsPassage) {
-          // Future: Add new exit to room or reveal hidden object
-          // This would require modifying room exits or revealing concealed items
-        }
-      }
-      break;
-      
-    case 'fixed':
-      // No state changes for fixed objects
-      break;
-  }
-};
 
 /**
  * Handle PULLED event - process pulling objects
@@ -176,7 +132,6 @@ export const handleUsed: EventHandler = (event: ISemanticEvent, world: any) => {
  * Register all device manipulation handlers
  */
 export function registerDeviceHandlers(world: WorldModel): void {
-  world.registerEventHandler(IFEvents.PUSHED, handlePushed);
   world.registerEventHandler(IFEvents.PULLED, handlePulled);
   world.registerEventHandler(IFEvents.TURNED, handleTurned);
   world.registerEventHandler(IFEvents.USED, handleUsed);

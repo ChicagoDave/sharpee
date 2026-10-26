@@ -15,7 +15,7 @@
 import { describe, test, expect } from 'vitest';
 import { cuttingAction } from '../../../src/actions/standard/cutting';
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType, WorldModel } from '@sharpee/world-model';
+import { TraitType, WorldModel, toolRequirement, type IToolGated, type ITrait } from '@sharpee/world-model';
 import {
   createRealTestContext,
   createCommand,
@@ -41,7 +41,7 @@ const setup = (opts: { toolRequired?: boolean } = {}) => {
   const rope = world.createEntity('thick rope', 'object');
   rope.add({
     type: TraitType.CUTTABLE,
-    ...(opts.toolRequired ? { toolId: knife.id } : {})
+    ...(opts.toolRequired ? { toolRequirement: toolRequirement(knife.id) } : {})
   } as any);
   // Inert marker trait — the target-side registration key.
   rope.add({ type: TEST_MARKER_TRAIT } as any);
@@ -105,6 +105,35 @@ describe('Cutting eligibility and tool requirement (ADR-230 D3c)', () => {
     expect(validation.valid).toBe(true);
     expect((context.sharedData.resolvedTool as { id: string } | undefined)?.id).toBe(knife.id);
     expect(world.getStateValue(CUT_FLAG)).toBe(true);
+  });
+
+  test('a requirement listing two tools accepts the second when it is named — cuts', () => {
+    const { world, player, rope, knife } = setup();
+    const shears = world.createEntity('garden shears', 'object');
+    world.moveEntity(shears.id, player.id);
+    rope.get<IToolGated & ITrait>(TraitType.CUTTABLE)!.toolRequirement = toolRequirement(knife.id, shears.id);
+    implementViaInterceptor(world);
+
+    const { validation, context } = drive(world, rope, shears);
+
+    expect(validation.valid).toBe(true);
+    expect((context.sharedData.resolvedTool as { id: string } | undefined)?.id).toBe(shears.id);
+    expect(world.getStateValue(CUT_FLAG)).toBe(true);
+  });
+
+  test('a requirement listing two tools refuses a third with wrong_tool — no state change', () => {
+    const { world, player, rope, knife } = setup();
+    const shears = world.createEntity('garden shears', 'object');
+    const spoon = world.createEntity('tin spoon', 'object');
+    world.moveEntity(spoon.id, player.id);
+    rope.get<IToolGated & ITrait>(TraitType.CUTTABLE)!.toolRequirement = toolRequirement(knife.id, shears.id);
+    implementViaInterceptor(world);
+
+    const { validation } = drive(world, rope, spoon);
+
+    expect(validation.valid).toBe(false);
+    expect(validation.error).toBe('wrong_tool');
+    expect(world.getStateValue(CUT_FLAG)).toBeUndefined();
   });
 
   test('GH #241: requirement + no tool named, the declared tool not held — refuses with needs_tool naming it, no state change', () => {

@@ -5,7 +5,6 @@ story
   id: gatehouse
   story-version: 0.0.1
   use combat
-  use state-machines
 
   on every turn
     emit gatehouse-watch-report with post the player's location and alarm "quiet"
@@ -67,7 +66,7 @@ define machine drawbridge
   state lowering
     on enter
       phrase chains-groan
-      play sound clank when client has sound
+      play sound clank
     end on
     when event gatehouse-bridge-seated: lowered
 

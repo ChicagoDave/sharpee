@@ -19,7 +19,7 @@ import { ScopeLevel } from '../../../scope/types.js';
 import { captureEntitySnapshot } from '../../base/snapshot-utils.js';
 import { emitIllustrations } from '../../helpers/emit-illustrations.js';
 import { buildEventData } from '../../data-builder-types.js';
-import { getStateClauses } from '@sharpee/world-model';
+import { getStateClauses, seenFromAfar } from '@sharpee/world-model';
 import {
   ActionLifecycleDescriptor,
   blockedMessageId
@@ -68,6 +68,7 @@ export const examiningAction: Action & { metadata: ActionMetadata } = {
     'examined_door',
     'examined_wall',
     'nothing_special',
+    'seen_from_afar',
     'default_description',
     'default_description_self',
     'description',
@@ -106,6 +107,23 @@ export const examiningAction: Action & { metadata: ActionMetadata } = {
   report(context: ActionContext): ISemanticEvent[] {
     // report() is only called on success - validation passed
     const noun = context.command.directObject!.entity!;
+
+    // Across an expanse (ADR-376 D6): a thing seen only from afar shows its
+    // `seen from afar:` line, the author's distant prose — sight's answer.
+    // A floating thing carries none and shows its description as ever.
+    const afar = seenFromAfar(context.world, context.actor, noun);
+    if (afar !== undefined) {
+      return [
+        context.event('if.event.examined', {
+          messageId: `${context.action.id}.seen_from_afar`,
+          params: { target: nounPhraseFor(noun), description: afar },
+          targetId: noun.id,
+          targetName: noun.name,
+          seenFromAfar: true,
+          actorId: context.actor.id
+        })
+      ];
+    }
 
     // Use data builder to create event data
     const eventData = buildEventData(examiningDataConfig, context);

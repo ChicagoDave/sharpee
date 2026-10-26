@@ -439,6 +439,7 @@ export type WorldChangeType = 'move' | 'create' | 'delete' | 'modify' | 'relate'
  */
 import type { ITextBlock } from '@sharpee/text-blocks';
 import type { LocaleSettings, RenderContext } from './phrase.js';
+import type { LanguageWords } from './vocabulary-contracts/vocabulary-types.js';
 /**
  * Structured help information for an action
  */
@@ -511,7 +512,15 @@ export interface LanguageProvider {
      *
      * @returns 'first' | 'second' | 'third'
      */
-    getNarrativePerson?(): 'first' | 'second' | 'third';
+    getNarrativePerson(): 'first' | 'second' | 'third';
+    /**
+     * The words a world needs from this language (ADR-387 D2): the self words
+     * and the name stopwords. The engine assigns them to the world at install;
+     * world-model never imports a language package.
+     *
+     * @returns the language's words for the world
+     */
+    getLanguageWords(): LanguageWords;
     /**
      * Render a message to text blocks through the phrase pipeline (ADR-192 §6).
      *
@@ -608,7 +617,7 @@ export interface LanguageProviderRegistry {
  * and parser vocabulary/grammar rules.
  */
 import { LanguageProvider } from './language-provider.js';
-import { VerbVocabulary, DirectionVocabulary, SpecialVocabulary } from './vocabulary-contracts/vocabulary-types.js';
+import { VerbVocabulary, DirectionVocabulary, SpecialVocabulary, DeterminerVocabulary } from './vocabulary-contracts/vocabulary-types.js';
 /**
  * Language-specific grammar pattern definition
  * Different from the vocabulary-types GrammarPattern
@@ -648,10 +657,34 @@ export interface ParserLanguageProvider extends LanguageProvider {
      */
     getPrepositions(): string[];
     /**
-     * Get determiners for the language
-     * @returns Array of determiner strings
+     * Get determiners for the language, each with whose it is when it is a
+     * possessive (ADR-387 D6)
+     * @returns Array of determiner entries
      */
-    getDeterminers(): string[];
+    getDeterminers(): DeterminerVocabulary[];
+    /**
+     * The words that separate list items in typed input (ADR-386 D6, ADR-387 D6):
+     * English "and" and the comma.
+     * @returns Array of separator words
+     */
+    getListSeparators(): string[];
+    /**
+     * The manner adverbs a MANNER slot accepts (ADR-387 D6).
+     * @returns Array of adverbs
+     */
+    getMannerAdverbs(): string[];
+    /**
+     * Read a cardinal number from typed words (ADR-386 D8): digits, one number
+     * word, or a compound the language writes as two words or hyphenated.
+     * @param words The typed words, in order
+     * @returns The number, or null when the words are not one number
+     */
+    parseCardinal(words: readonly string[]): number | null;
+    /**
+     * The ordinal words of the language, each with its value.
+     * @returns word → ordinal value
+     */
+    getOrdinalNumbers(): Readonly<Record<string, number>>;
     /**
      * Get conjunctions for the language
      * @returns Array of conjunction strings
@@ -673,12 +706,6 @@ export interface ParserLanguageProvider extends LanguageProvider {
      * @returns The base form of the word
      */
     lemmatize(word: string): string;
-    /**
-     * Expand an abbreviation
-     * @param abbreviation The abbreviation to expand
-     * @returns The expanded form or null if not recognized
-     */
-    expandAbbreviation(abbreviation: string): string | null;
     /**
      * Format a list of items with proper conjunction
      * @param items Array of strings to format
@@ -731,31 +758,6 @@ export interface ParserLanguageProvider extends LanguageProvider {
      * @returns The pattern string or undefined
      */
     getVerbPattern?(actionId: string): string | undefined;
-    /**
-     * Get direction mappings (alternative to getDirections)
-     * @returns Record mapping directions to word arrays
-     */
-    getDirectionMappings?(): Record<string, string[]>;
-    /**
-     * Get pronouns (alternative to getSpecialVocabulary)
-     * @returns Array of pronoun strings
-     */
-    getPronouns?(): string[];
-    /**
-     * Get all words (alternative to getSpecialVocabulary)
-     * @returns Array of words meaning "all"
-     */
-    getAllWords?(): string[];
-    /**
-     * Get except words (alternative to getSpecialVocabulary)
-     * @returns Array of words meaning "except"
-     */
-    getExceptWords?(): string[];
-    /**
-     * Get articles (alternative to getSpecialVocabulary)
-     * @returns Array of article strings
-     */
-    getArticles?(): string[];
 }
 ```
 
@@ -835,18 +837,6 @@ export interface ParserOptions {
      * Whether to allow partial matches
      */
     allowPartial?: boolean;
-    /**
-     * Whether to expand abbreviations
-     */
-    expandAbbreviations?: boolean;
-    /**
-     * Whether to ignore articles
-     */
-    ignoreArticles?: boolean;
-    /**
-     * Minimum confidence threshold
-     */
-    minConfidence?: number;
 }
 /**
  * Parser interface - extends the BaseParser
@@ -919,10 +909,6 @@ export interface CandidateCommand {
      */
     nounText?: string;
     /**
-     * Possible interpretations of the noun
-     */
-    nounCandidates?: string[];
-    /**
      * Preposition between nouns
      */
     preposition?: string;
@@ -930,10 +916,6 @@ export interface CandidateCommand {
      * Raw text for the secondary noun
      */
     secondNounText?: string;
-    /**
-     * Possible interpretations of the second noun
-     */
-    secondNounCandidates?: string[];
     /**
      * Original input text
      */
@@ -946,10 +928,6 @@ export interface CandidateCommand {
      * Grammar pattern that was matched
      */
     pattern?: string;
-    /**
-     * Parser confidence (0-1)
-     */
-    confidence?: number;
     /**
      * Any special flags (ALL, EXCEPT, etc.)
      */
@@ -1207,6 +1185,28 @@ export interface DirectionVocabulary {
     abbreviations?: string[];
 }
 /**
+ * The words a world needs from its language, with no words in them (ADR-387
+ * D2). The language fills the shape; the engine assigns it to the world when
+ * it loads the language, and the matcher reads it from there.
+ */
+export interface LanguageWords {
+    /** The words that name the observer, whatever the observer is called ("me", "myself"). */
+    readonly selfWords: readonly string[];
+    /** Words dropped when a name's content words are derived ("the", "of"). */
+    readonly nameStopwords: readonly string[];
+}
+/** The grammatical person a possessive determiner refers to. */
+export type PossessivePerson = 'first' | 'second' | 'third';
+/**
+ * One determiner of the language, and whose it is when it is a possessive
+ * (ADR-387 D6): `my` is first person, `your` second, `her` third; `this`
+ * and `some` are no one's.
+ */
+export interface DeterminerVocabulary {
+    readonly word: string;
+    readonly possessive?: PossessivePerson;
+}
+/**
  * Special vocabulary for pronouns and references
  */
 export interface SpecialVocabulary {
@@ -1226,31 +1226,6 @@ export interface SpecialVocabulary {
      * Common articles to ignore
      */
     articles: string[];
-}
-/**
- * Dynamic vocabulary entry from an entity
- */
-export interface EntityVocabulary {
-    /**
-     * Entity ID this vocabulary belongs to
-     */
-    entityId: string;
-    /**
-     * Nouns that refer to this entity
-     */
-    nouns: string[];
-    /**
-     * Adjectives that can describe this entity
-     */
-    adjectives: string[];
-    /**
-     * Whether this entity is in scope
-     */
-    inScope?: boolean;
-    /**
-     * Priority for disambiguation
-     */
-    priority?: number;
 }
 /**
  * Grammar pattern for verb syntax
@@ -1318,21 +1293,24 @@ export type GrammarPatternName = keyof typeof GrammarPatterns;
 
 ```typescript
 /**
- * Vocabulary Registry - Central management of all vocabulary in the system
+ * Vocabulary Registry - the words one parser's typed input may carry
  *
- * The registry aggregates vocabulary from multiple sources:
+ * One registry per parser instance (ADR-387 D4): the parser constructs its
+ * own and registers the language's words and the story's verbs into it. There
+ * is no shared instance. Entity names are not vocabulary: the noun matcher
+ * resolves them over the world (ADR-385).
+ *
+ * Sources:
  * - Base vocabulary from language packages
  * - Extension vocabulary
  * - Story-specific vocabulary
- * - Dynamic entity vocabulary
  */
-import { VocabularyEntry, VocabularySet, VocabularyProvider, PartOfSpeech, EntityVocabulary, VerbVocabulary, DirectionVocabulary, SpecialVocabulary } from './vocabulary-types.js';
+import { VocabularyEntry, VocabularySet, VocabularyProvider, PartOfSpeech, VerbVocabulary, DirectionVocabulary, SpecialVocabulary, DeterminerVocabulary } from './vocabulary-types.js';
 /**
  * Central vocabulary registry
  */
 export declare class VocabularyRegistry {
     private providers;
-    private entityVocabulary;
     private cachedVocabulary;
     private dirtyCache;
     /**
@@ -1343,18 +1321,6 @@ export declare class VocabularyRegistry {
      * Unregister a vocabulary provider
      */
     unregisterProvider(providerId: string): void;
-    /**
-     * Register vocabulary for an entity
-     */
-    registerEntity(vocab: EntityVocabulary): void;
-    /**
-     * Unregister vocabulary for an entity
-     */
-    unregisterEntity(entityId: string): void;
-    /**
-     * Update entity scope status
-     */
-    updateEntityScope(entityId: string, inScope: boolean): void;
     /**
      * Get all vocabulary
      */
@@ -1371,10 +1337,6 @@ export declare class VocabularyRegistry {
      * Check if a word exists in vocabulary
      */
     hasWord(word: string, partOfSpeech?: PartOfSpeech): boolean;
-    /**
-     * Get vocabulary for entities in scope
-     */
-    getInScopeEntities(): EntityVocabulary[];
     /**
      * Clear all vocabulary
      */
@@ -1399,7 +1361,7 @@ export declare class VocabularyRegistry {
     /**
      * Register determiners (beyond articles)
      */
-    registerDeterminers(determiners: string[]): void;
+    registerDeterminers(determiners: readonly DeterminerVocabulary[]): void;
     /**
      * Register conjunctions
      */
@@ -1413,7 +1375,6 @@ export declare class VocabularyRegistry {
      */
     registerSpecial(special: SpecialVocabulary): void;
 }
-export declare const vocabularyRegistry: VocabularyRegistry;
 ```
 
 ### vocabulary-contracts/vocabulary-adapters
@@ -1430,11 +1391,15 @@ import { ParserLanguageProvider } from '../parser-language-provider.js';
  */
 export declare function adaptVerbVocabulary(languageProvider: ParserLanguageProvider): VerbVocabulary[];
 /**
- * Adapt direction vocabulary from language provider format
+ * Adapt direction vocabulary from the language provider. The provider's
+ * table is the one direction table (ADR-387 D5); nothing is built from
+ * a fallback.
  */
 export declare function adaptDirectionVocabulary(languageProvider: ParserLanguageProvider): DirectionVocabulary[];
 /**
- * Adapt special vocabulary from language provider format
+ * Adapt special vocabulary from the language provider. The provider's table
+ * is the one home of the articles, pronouns, all and except words (ADR-387
+ * D1); no English fallback stands in for a provider that lacks them.
  */
 export declare function adaptSpecialVocabulary(languageProvider: ParserLanguageProvider): SpecialVocabulary;
 ```
@@ -1447,6 +1412,7 @@ export declare function adaptSpecialVocabulary(languageProvider: ParserLanguageP
  * @description Language-agnostic interfaces for defining grammar rules
  */
 import { type IEntity } from '@sharpee/core';
+import type { NounRank } from './rule-order.js';
 /**
  * Slot types for grammar patterns
  * Controls how the parser handles slot matching
@@ -1456,7 +1422,7 @@ export declare enum SlotType {
     ENTITY = "entity",
     /** Capture raw text without entity resolution (single token) */
     TEXT = "text",
-    /** Capture raw text until next pattern element or end (greedy) */
+    /** Capture raw text; the consumer admits every extent to the end of the input and the engine's search chooses (greedy, ADR-386 D1) */
     TEXT_GREEDY = "text_greedy",
     /** Resolve entity but mark as instrument for the action */
     INSTRUMENT = "instrument",
@@ -1513,9 +1479,7 @@ export interface ScopeBuilder {
     carried(): ScopeBuilder;
     nearby(): ScopeBuilder;
     matching(constraint: PropertyConstraint | FunctionConstraint): ScopeBuilder;
-    kind(kind: string): ScopeBuilder;
     orExplicitly(entityIds: string[]): ScopeBuilder;
-    orRule(ruleId: string): ScopeBuilder;
     /**
      * Require the entity to have a specific trait
      * @param traitType The trait type constant (e.g., TraitType.PORTABLE)
@@ -1532,7 +1496,6 @@ export interface ScopeConstraint {
     /** Required trait types the entity must have */
     traitFilters: string[];
     explicitEntities: string[];
-    includeRules: string[];
 }
 /**
  * ADR-082: Typed slot value for non-entity slots
@@ -1601,30 +1564,29 @@ export interface PatternBuilder {
      */
     instrument(slot: string): PatternBuilder;
     /**
+     * Declare an entity slot's seat (ADR-383 D2), for a line written
+     * indirect-first: `define('hand :recipient :item').seat('item', 'direct')`.
+     * Undeclared entity slots take the seats left free, in pattern order.
+     * @param slot The slot name from the pattern
+     * @param seat Where the slot's noun goes in the parsed command
+     */
+    seat(slot: string, seat: Seat): PatternBuilder;
+    /**
      * Map this pattern to an action
      * @param action The action identifier
      */
     mapsTo(action: string): PatternBuilder;
     /**
-     * Add semantic mappings for verbs
-     * @param verbs Map of verb text to semantic properties
-     */
-    withSemanticVerbs(verbs: Record<string, Partial<SemanticProperties>>): PatternBuilder;
-    /**
-     * Add semantic mappings for prepositions
-     * @param prepositions Map of preposition text to spatial relations
-     */
-    withSemanticPrepositions(prepositions: Record<string, string>): PatternBuilder;
-    /**
-     * Add semantic mappings for directions
-     * @param directions Map of direction text to normalized directions
-     */
-    withSemanticDirections(directions: Record<string, string>): PatternBuilder;
-    /**
      * Set default semantic properties
      * @param defaults Default semantic properties
      */
     withDefaultSemantics(defaults: Partial<SemanticProperties>): PatternBuilder;
+    /**
+     * Gate this rule on the live world (ADR-378 D5): skipped while the
+     * predicate answers false, as though the rule did not exist.
+     * @param predicate Read against the GrammarContext at match time
+     */
+    when(predicate: GrammarGate): PatternBuilder;
     /**
      * Mark a slot as a number (integer)
      * Matches digits (1, 29, 100) or words (one, twenty)
@@ -1717,21 +1679,15 @@ export interface GrammarBuilder {
      */
     define(pattern: string): PatternBuilder;
     /**
-     * ADR-087: Define grammar patterns for an action with verb aliases
-     * @param actionId The action identifier to map patterns to
-     * @returns An ActionGrammarBuilder for fluent configuration
-     *
-     * @example
-     * ```typescript
-     * grammar
-     *   .forAction('if.action.pushing')
-     *   .verbs(['push', 'press', 'shove', 'move'])
-     *   .pattern(':target')
-     *   .where('target', scope => scope.touchable())
-     *   .build();
-     * ```
+     * Register one rule from structured parts (ADR-382 D2), at this
+     * builder's tier. The Chord loader's and the generated standard
+     * grammar's entry: no text is parsed.
+     * @param spec The rule's action, parts, display text and per-slot configuration
+     * @throws PatternSyntaxError when the parts are malformed; Error when a
+     *   slot configuration names a slot the parts lack, or types a greedy slot
+     *   as anything but TEXT_GREEDY
      */
-    forAction(actionId: string): ActionGrammarBuilder;
+    rule(spec: GrammarRuleSpec): void;
     /**
      * Get all defined rules
      */
@@ -1741,104 +1697,21 @@ export interface GrammarBuilder {
      */
     clear(): void;
     /**
-     * ADR-270 D3: remove registered rules by shape — (action id, pattern
-     * string, tier). Diagnostic-free: returns the count removed (0 = no rule
-     * matched); the caller owns any miss diagnostic. `tier` defaults to
-     * 'standard' — the alteration model removes platform rules, never story
-     * rules, unless explicitly asked.
+     * ADR-270 D3: remove registered rules by shape — (action id, shape,
+     * tier), the shape test supplied by the caller over each rule (ADR-382 D6;
+     * Chord's is `samePatternShape` on `rule.parts`). Diagnostic-free:
+     * returns the count removed (0 = no rule matched); the caller owns any
+     * miss diagnostic. `tier` defaults to 'standard' — the alteration model
+     * removes platform rules, never story rules, unless explicitly asked.
      */
-    removeRules(action: string, pattern: string, tier?: GrammarTier): number;
+    removeRules(action: string, shapeMatches: (rule: GrammarRule) => boolean, tier?: GrammarTier): number;
 }
 /**
- * ADR-087: Action-centric grammar builder
- * Allows defining multiple patterns for an action with verb aliases
- */
-export interface ActionGrammarBuilder {
-    /**
-     * Define verb aliases for this action
-     * Each verb will generate a separate pattern
-     * @param verbs Array of verb strings (e.g., ['push', 'press', 'shove'])
-     */
-    verbs(verbs: string[]): ActionGrammarBuilder;
-    /**
-     * Define a pattern template (without verb)
-     * Will be combined with each verb to create full patterns
-     * @param pattern Pattern template (e.g., ':target' becomes 'push :target', 'press :target', etc.)
-     */
-    pattern(pattern: string): ActionGrammarBuilder;
-    /**
-     * Define multiple pattern templates
-     * Each pattern will be combined with each verb
-     * @param patterns Array of pattern templates
-     *
-     * @example
-     * ```typescript
-     * grammar
-     *   .forAction('if.action.pushing')
-     *   .verbs(['push', 'press'])
-     *   .patterns([':target', ':target :direction'])
-     *   .build();
-     * // Generates: push :target, press :target, push :target :direction, press :target :direction
-     * ```
-     */
-    patterns(patterns: string[]): ActionGrammarBuilder;
-    /**
-     * ADR-271 D3: Define a complete pattern line, verb included
-     * (e.g. 'pet :animal'). Emitted as its own rule with the action's shared
-     * configuration applied — NOT crossed with verbs(). Slot-scoped
-     * configuration (.where(), slotType()) attaches only to lines that carry
-     * the slot. This is the Chord compiler's emission path, where grammar
-     * lines arrive whole rather than as verb + template.
-     * @param pattern Complete pattern line including its verb (non-empty)
-     */
-    fullPattern(pattern: string): ActionGrammarBuilder;
-    /**
-     * Define direction patterns with aliases
-     * Creates standalone direction patterns (no verb prefix)
-     * @param directionMap Map of canonical direction to aliases
-     *
-     * @example
-     * ```typescript
-     * grammar
-     *   .forAction('if.action.going')
-     *   .directions({
-     *     'north': ['north', 'n'],
-     *     'south': ['south', 's'],
-     *   })
-     *   .build();
-     * // Generates patterns 'north', 'n', 'south', 's' each with direction semantics
-     * ```
-     */
-    directions(directionMap: Record<string, string[]>): ActionGrammarBuilder;
-    /**
-     * Define a scope constraint for a slot (applies to all generated patterns).
-     * `.where()` scope constraints are the one parse-time gating mechanism;
-     * trait-based refusal lives in each action's validate().
-     * @param slot The slot name from the pattern
-     * @param constraint A scope-builder callback, e.g. `scope => scope.touchable()`
-     */
-    where(slot: string, constraint: ScopeConstraintBuilder): ActionGrammarBuilder;
-    /**
-     * Set default semantic properties for all generated patterns
-     * @param defaults Default semantic properties
-     */
-    withDefaultSemantics(defaults: Partial<SemanticProperties>): ActionGrammarBuilder;
-    /**
-     * Mark a slot as a specific type (applies to all generated patterns)
-     * @param slot The slot name
-     * @param slotType The slot type
-     */
-    slotType(slot: string, slotType: SlotType): ActionGrammarBuilder;
-    /**
-     * Build all patterns and add them to the grammar
-     * Generates patterns from: verbs × patterns combinations
-     */
-    build(): void;
-}
-/**
- * Grammar tier (ADR-268 D2): which layer defined the rule. Story-tier rules
- * outrank standard-tier rules unconditionally (before specificity is
- * consulted) — "story overrides platform". Set at the registration entry
+ * Grammar tier: which layer defined the rule. At equal literal specificity a
+ * story-tier rule outranks a standard-tier one; a more specific standard rule
+ * still wins, and a story replaces one by removing it (ADR-384 D2,
+ * `compareGrammarRank`; a reading with an item naming nothing ranks below
+ * both, ADR-386 D5). Set at the registration entry
  * point: the standard grammar's builder registers 'standard'; the story
  * grammar surface (getStoryGrammar()) and the Chord loader register 'story'.
  */
@@ -1846,17 +1719,29 @@ export type GrammarTier = 'standard' | 'story';
 /**
  * A compiled grammar rule
  */
+/**
+ * A rule-level gate (ADR-378 D5, GH #317): read against the live world
+ * before matching. A rule whose gate answers false is skipped — neither a
+ * match nor a failure — so the input parses as though the rule did not
+ * exist. Story-tier only in practice: a Chord `define action … while
+ * <condition>` head, or a passage's command words gated to the room that
+ * declares the passage.
+ */
+export type GrammarGate = (context: GrammarContext) => boolean;
 export interface GrammarRule {
     id: string;
+    /** Display text for diagnostics and failure messages; nothing parses it (ADR-382 D2). */
     pattern: string;
+    /** The rule's structure — the only source of its words and slots. */
+    parts: readonly PatternElement[];
     compiledPattern?: CompiledPattern;
     slots: Map<string, SlotConstraint>;
     action: string;
     /** ADR-268 D2: resolution layer — story outranks standard */
     tier: GrammarTier;
-    semantics?: SemanticMapping;
+    /** ADR-378 D5: skip the rule while this answers false (absent = always on) */
+    when?: GrammarGate;
     defaultSemantics?: Partial<SemanticProperties>;
-    experimentalConfidence?: number;
 }
 /**
  * Semantic properties that can be derived from grammar
@@ -1866,27 +1751,22 @@ export interface SemanticProperties {
     manner?: 'normal' | 'careful' | 'careless' | 'forceful' | 'stealthy' | 'quick';
     /** Spatial relationship for placement actions */
     spatialRelation?: 'in' | 'on' | 'under' | 'behind' | 'beside' | 'above' | 'below';
-    /** Direction for movement */
-    direction?: 'north' | 'south' | 'east' | 'west' | 'up' | 'down' | 'northeast' | 'northwest' | 'southeast' | 'southwest' | 'in' | 'out';
+    /**
+     * The direction a movement rule carries, as the action's own vocabulary
+     * names it: a compass word (`world-model`'s `DirectionType`, `in` and
+     * `out` included), a passage key (`passage:<name>`, ADR-378 D1 — a way
+     * answered by a custom command rather than a compass word), or a ship
+     * direction under `use sailing` (`port`, `starboard`, `ahead`, ADR-375).
+     * The word is per action, so the contract does not close the set; the
+     * consumer that reads it resolves it against the ways it knows.
+     */
+    direction?: string;
     /** Whether the preposition was implicit */
     implicitPreposition?: boolean;
     /** Whether a direction was implicit */
     implicitDirection?: boolean;
     /** Custom properties for specific actions */
     [key: string]: any;
-}
-/**
- * Mapping from text variations to semantic properties
- */
-export interface SemanticMapping {
-    /** Map verb variations to properties */
-    verbs?: Record<string, Partial<SemanticProperties>>;
-    /** Map preposition variations to spatial relations */
-    prepositions?: Record<string, string>;
-    /** Map direction variations to normalized directions */
-    directions?: Record<string, string>;
-    /** Function to compute dynamic semantics based on match */
-    compute?: (match: any) => Partial<SemanticProperties>;
 }
 /**
  * Slot constraint definition
@@ -1898,6 +1778,8 @@ export interface SlotConstraint {
     slotType?: SlotType;
     /** For VOCABULARY slots: the category name to match against */
     vocabularyCategory?: string;
+    /** Declared seat of an entity slot (ADR-383 D1) */
+    seat?: Seat;
 }
 /**
  * Token in a pattern
@@ -1912,13 +1794,83 @@ export interface PatternToken {
     vocabularyCategory?: string;
 }
 /**
+ * One element of a grammar pattern, as a rule is registered (ADR-382 D1).
+ * A rule crosses into the engine as these parts, never as text to re-split:
+ * a word, an alternation of words, or a named slot, each optionally
+ * optional. No element fixes where a slot ends: each slot admits every
+ * extent it can read and the engine searches them (ADR-386 D1, D2); a
+ * greedy slot is a text slot whose extents run to the end of the input.
+ */
+export type PatternElement = {
+    kind: 'word';
+    word: string;
+    optional?: boolean;
+} | {
+    kind: 'alt';
+    words: readonly string[];
+    optional?: boolean;
+} | {
+    kind: 'slot';
+    name: string;
+    optional?: boolean;
+    greedy?: boolean;
+};
+/**
+ * Where an entity slot's noun goes in the parsed command (ADR-383 D1).
+ * Every other slot type is seated by its type (instrument, topic, text,
+ * vocabulary, manner, direction).
+ */
+export type Seat = 'direct' | 'indirect';
+/**
+ * Per-slot configuration on a rule spec: the slot's type, its scope
+ * constraints and, for an entity slot, its declared seat. Keyed by slot
+ * name; a name no part carries is a build error.
+ */
+export interface GrammarRuleSlotSpec {
+    type?: SlotType;
+    constraints?: readonly ScopeConstraintBuilder[];
+    /** For VOCABULARY slots: the category name to match against */
+    vocabularyCategory?: string;
+    /** The entity slot's seat; undeclared seats take the positional default (ADR-383 D2). */
+    seat?: Seat;
+}
+/**
+ * A grammar rule, as data (ADR-382 D2) — what `GrammarBuilder.rule()` takes.
+ */
+export interface GrammarRuleSpec {
+    action: string;
+    parts: readonly PatternElement[];
+    /** How the rule displays in diagnostics and failure messages; never parsed. */
+    pattern: string;
+    defaults?: Partial<SemanticProperties>;
+    slots?: Readonly<Record<string, GrammarRuleSlotSpec>>;
+    when?: GrammarGate;
+}
+/**
+ * One slot of a compiled pattern (ADR-382 D4): the single source of a
+ * slot's name, position, optionality, greediness and resolved type.
+ */
+export interface CompiledSlot {
+    name: string;
+    /** Index of the slot's token in `CompiledPattern.tokens`. */
+    tokenIndex: number;
+    optional: boolean;
+    greedy: boolean;
+    /** The configured type, `TEXT_GREEDY` for a greedy slot, else `ENTITY`. */
+    slotType: SlotType;
+    /** Set on every ENTITY slot at build (ADR-383 D1, D2); absent on every other slot type. */
+    seat?: Seat;
+}
+/**
  * Compiled pattern for efficient matching
  */
 export interface CompiledPattern {
     tokens: PatternToken[];
-    slots: Map<string, number>;
+    /** Every slot, in pattern order. */
+    slots: CompiledSlot[];
+    /** The same slot records, by name. */
+    slotsByName: ReadonlyMap<string, CompiledSlot>;
     minTokens: number;
-    maxTokens: number;
 }
 /**
  * Slot match data with multi-object support
@@ -1927,7 +1879,10 @@ export interface SlotMatch {
     tokens: number[];
     text: string;
     slotType?: SlotType;
-    confidence?: number;
+    articles?: string[];
+    determiners?: string[];
+    ownedByActor?: boolean;
+    scope?: string[];
     isAll?: boolean;
     isList?: boolean;
     items?: SlotMatch[];
@@ -1944,23 +1899,39 @@ export interface SlotMatch {
  */
 export interface PatternMatch {
     rule: GrammarRule;
-    confidence: number;
     slots: Map<string, SlotMatch>;
     consumed: number;
     /**
      * Literal specificity (ADR-231 D2b): count of input words consumed by the
      * pattern's literal/alternate tokens (as opposed to slots). A rule whose
      * literals consume words outranks a rule whose unconstrained slot swallows
-     * the same words. Resolution order (ADR-268 D2): confidence desc → tier
-     * (story over standard) → literalSpecificity desc → definition order.
+     * the same words. Resolution order (ADR-386 D5, ADR-384 D2,
+     * `compareGrammarRank`): items naming nothing asc → literalSpecificity
+     * desc → tier (story over standard) → definition order → names desc →
+     * exact names desc.
      */
     literalSpecificity?: number;
+    /**
+     * How the reading's entity items resolve through the one noun matcher
+     * (ADR-386 D4): items naming nothing, distinct entities named, items named
+     * exactly. The engine computes it for every complete reading and ranks by
+     * it; the parser compares it with the best failure's (D5).
+     */
+    nounRank: NounRank;
     semantics?: SemanticProperties;
-    matchedTokens?: {
-        verb?: string;
-        preposition?: string;
-        direction?: string;
-    };
+    /**
+     * Every literal (word or alternation) element, in pattern order, with the
+     * input tokens it consumed (ADR-383 D7) — where the verb phrase and the
+     * preposition are read from.
+     */
+    literals: readonly MatchedElement[];
+}
+/** One pattern element as it matched the input (ADR-383 D7). */
+export interface MatchedElement {
+    /** Index of the element in `rule.compiledPattern.tokens`. */
+    tokenIndex: number;
+    /** Input token indices it consumed; empty for a skipped optional or article. */
+    inputTokens: readonly number[];
 }
 ```
 
@@ -1969,32 +1940,36 @@ export interface PatternMatch {
 ```typescript
 /**
  * @file Pattern Compiler Interface
- * @description Language-agnostic interface for compiling grammar patterns
+ * @description Language-agnostic interface for compiling grammar patterns.
+ *
+ * Public interface: PatternCompiler (parse, compile), PatternSyntaxError.
+ * Owner context: if-domain grammar contract. A rule's structure crosses as
+ * PatternElement parts (ADR-382 D1); text is parsed once, at the boundary,
+ * by `parse`, and nothing downstream reads pattern text again.
  */
-import { CompiledPattern } from './grammar-builder.js';
+import { CompiledPattern, PatternElement } from './grammar-builder.js';
 /**
  * Pattern compiler interface
  * Language-specific implementations handle their own syntax
  */
 export interface PatternCompiler {
     /**
-     * Compile a pattern string into tokens
-     * @param pattern The pattern string (e.g., "put :item in|into :container")
-     * @returns Compiled pattern with tokens and metadata
+     * Parse pattern text into structured parts — the `define(text)` front end
+     * (ADR-382 D3). The only place pattern text is read.
+     * @param pattern The pattern text (e.g., "put :item in|into :container")
+     * @returns The pattern's elements, in order
+     * @throws PatternSyntaxError, with the offending offset, on malformed text
      */
-    compile(pattern: string): CompiledPattern;
+    parse(pattern: string): PatternElement[];
     /**
-     * Validate a pattern string
-     * @param pattern The pattern to validate
-     * @returns True if valid, false otherwise
+     * Compile structured parts into the matcher's tokens and slot records.
+     * @param parts The pattern's elements
+     * @param source The rule's display text, quoted in error messages only
+     * @returns Compiled pattern with tokens and one record per slot
+     * @throws PatternSyntaxError on an empty pattern, an invalid or duplicate
+     *   slot name, or an empty alternation
      */
-    validate(pattern: string): boolean;
-    /**
-     * Extract slot names from a pattern
-     * @param pattern The pattern string
-     * @returns Array of slot names
-     */
-    extractSlots(pattern: string): string[];
+    compile(parts: readonly PatternElement[], source?: string): CompiledPattern;
 }
 /**
  * Pattern syntax error
@@ -2020,10 +1995,6 @@ import { PatternCompiler } from './pattern-compiler.js';
  * Grammar matching options
  */
 export interface GrammarMatchOptions {
-    /** Minimum confidence threshold */
-    minConfidence?: number;
-    /** Maximum number of matches to return */
-    maxMatches?: number;
     /** Whether to allow partial matches */
     allowPartial?: boolean;
 }
@@ -2040,8 +2011,9 @@ export declare abstract class GrammarEngine {
      * Add a grammar rule.
      *
      * ADR-268: insertion is deliberately unsorted — registration order IS
-     * definition order, the final tiebreak of the resolution order
-     * (confidence → tier → literal specificity → definition order). Do not
+     * definition order, the last of the rule keys of the resolution order
+     * (items naming nothing → literal specificity → tier → definition order →
+     * names → exact names, `compareGrammarRank`, ADR-386 D5). Do not
      * reintroduce a sort here; it would erase the semantics of file order.
      */
     addRule(rule: GrammarRule): void;
@@ -2063,20 +2035,21 @@ export declare abstract class GrammarEngine {
     clear(): void;
     /**
      * ADR-270 D3: remove registered rules by shape — the alteration model's
-     * removal primitive. Identity is (action id, pattern string, tier); rule
-     * ids are nondeterministic and never part of identity.
+     * removal primitive. Identity is (action id, shape, tier); the shape test
+     * is the caller's (ADR-382 D6: Chord passes `samePatternShape` over the
+     * rule's parts). Rule ids are nondeterministic and never part of identity.
      *
      * Diagnostic-free by contract: returns the number of rules removed and
      * never throws — the CALLER owns the miss diagnostic (the Chord loader
      * raises its LoadError on 0; a TS story checks the return itself).
      *
      * @param action The action id whose rule is removed (e.g. 'if.action.taking').
-     * @param pattern The exact registered pattern string (e.g. 'get :item').
+     * @param shapeMatches Whether a rule of that action and tier has the shape to remove.
      * @param tier The tier to remove from — 'standard' (default) targets the
      *   platform grammar; story-tier rules are never touched unless asked.
      * @returns The number of rules removed (0 = no rule matched the shape).
      */
-    removeRules(action: string, pattern: string, tier?: GrammarTier): number;
+    removeRules(action: string, shapeMatches: (rule: GrammarRule) => boolean, tier?: GrammarTier): number;
     /**
      * Get all rules
      */
@@ -2097,12 +2070,78 @@ export declare abstract class GrammarEngine {
 }
 ```
 
+### grammar/rule-order
+
+```typescript
+/**
+ * @file Grammar rank comparator — the one ordering of grammar readings
+ * @description Orders the readings of grammar rules, and the failures the
+ * parser classifies, by their nouns and their rule: items naming nothing
+ * (fewer first), then literal specificity (more first), then tier (story
+ * before standard), then definition order (earlier first), then names (more
+ * first) and exact names (more first). Every reader that ranks readings
+ * calls this; no other ordering of grammar rules exists.
+ *
+ * Public interface: NounRank, GrammarRank, compareGrammarRank.
+ * Owner context: if-domain grammar contract (the English grammar engine and
+ * the parser's failure classifier are the callers).
+ *
+ * References: ADR-386 D4, D5 (the noun rank), ADR-384 D2 (supersedes
+ * ADR-268 D2; the rule keys), ADR-231 D2b (literal specificity).
+ */
+import type { GrammarTier } from './grammar-builder.js';
+/**
+ * How a reading's entity items resolve, counted: the parser ranks by it and
+ * the validator resolves, so no entity id leaves the rank.
+ */
+export interface NounRank {
+    /** Items naming nothing in the world */
+    unnamed: number;
+    /** Distinct entities the items name */
+    named: number;
+    /** Items named at the exact tier */
+    exact: number;
+}
+/**
+ * What a reading is ranked by.
+ */
+export interface GrammarRank {
+    /** How the reading's items resolve */
+    nounRank: NounRank;
+    /** Input words consumed by the rule's literal and alternate elements */
+    literalSpecificity: number;
+    /** The registration layer: story outranks standard at equal specificity */
+    tier: GrammarTier;
+    /** The rule's position in registration (definition) order */
+    definitionIndex: number;
+}
+/**
+ * Compare two ranks for sorting, best first. Only `unnamed` stands above the
+ * rule's own keys, so a literal line still beats a slot reading of the same
+ * words; `named` and `exact` decide between the readings of one rule.
+ * @param a The first rank
+ * @param b The second rank
+ * @returns Negative when `a` ranks first, positive when `b` does, zero only
+ *   for the same noun rank, specificity, tier and definition index
+ */
+export declare function compareGrammarRank(a: GrammarRank, b: GrammarRank): number;
+```
+
 ### grammar/scope-builder
 
 ```typescript
 /**
  * @file Scope Builder Implementation
- * @description Concrete implementation of the scope builder interface
+ * @description Concrete implementation of the scope builder interface. A
+ *   constraint is a base (visible, touchable, carried, nearby, all), property
+ *   or function filters, required traits, and explicit entity ids — exactly
+ *   what the scope resolver reads, and nothing it does not.
+ *
+ * Public interface: `scope()`, `ScopeBuilderImpl`.
+ * Owner context: if-domain grammar contracts.
+ *
+ * References: ADR-385 D9 (the rule-inclusion list nothing read, and the
+ * alias of `matching({ kind })`, are gone).
  */
 import { ScopeBuilder, ScopeConstraint, PropertyConstraint, FunctionConstraint } from './grammar-builder.js';
 /**
@@ -2115,9 +2154,7 @@ export declare class ScopeBuilderImpl implements ScopeBuilder {
     carried(): ScopeBuilder;
     nearby(): ScopeBuilder;
     matching(constraint: PropertyConstraint | FunctionConstraint): ScopeBuilder;
-    kind(kind: string): ScopeBuilder;
     orExplicitly(entityIds: string[]): ScopeBuilder;
-    orRule(ruleId: string): ScopeBuilder;
     hasTrait(traitType: string): ScopeBuilder;
     build(): ScopeConstraint;
 }
@@ -2973,6 +3010,27 @@ export interface ISound {
     readonly volumeTier: VolumeTier;
     readonly content?: ISoundContent;
 }
+/**
+ * Semantic-event types of the sound subsystem — one home for the engine
+ * (which fires them) and stdlib (which routes them), since both depend on
+ * this package and neither may depend on the other.
+ */
+export declare const SOUND_EVENT_TYPES: {
+    /**
+     * A sound was made in the world (ADR-374 D6). Event `data` is an `ISound`;
+     * the engine's sound stage gathers every such event of the turn into the
+     * sound buffer, beside the sounds actions emit through `context.emitSound`.
+     */
+    readonly EMITTED: "sound.emitted";
+    /**
+     * A listener perceived a propagated sound. Event `data` is an
+     * `IAudibilityEvent` (per-listener tier, source-room, optional
+     * crossing wall, content if content-bearing). The sound stage applies
+     * these through the world's event handlers, so a listener can react.
+     */
+    readonly AUDIBILITY_HEARD: "sound.audibility.heard";
+};
+export type SoundEventType = typeof SOUND_EVENT_TYPES[keyof typeof SOUND_EVENT_TYPES];
 /**
  * The per-listener event the propagation function produces and the sound
  * channel routes. Carries enough context for both prose rendering and

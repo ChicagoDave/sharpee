@@ -6,3 +6,14 @@
     phrase tobias-folly-reply
 end topics</code></pre>
 <p>A row can also be gated on how recently a topic came up — see <a href="/chord/guide/characters-and-conversation/topic-recency">Topic recency</a>, which extends this same <code>define topics</code> block, and <a href="/chord/guide/characters-and-conversation">Characters &amp; Conversation</a> for the wider dialogue layers built on it.</p>
+<p>A <strong>readable thing</strong> can carry a topic table too, and then <code>consult &lt;thing&gt; about &lt;topic&gt;</code>, <code>look up &lt;topic&gt; in &lt;thing&gt;</code> and <code>read about &lt;topic&gt; in &lt;thing&gt;</code> answer from its rows, matched the same way. With no matching row the player finds &quot;nothing about that&quot; in it, and a thing that is not readable is not something to look things up in. A book has no memory of being asked, so its table is plain <code>about</code> rows: exchanges, threads and <code>knows</code> gating are for people, and an error names the line that uses one.</p>
+<pre><code class="language-chord">create the flight manual
+  a thing, readable with text &quot;UPPS COURIER FLIGHT MANUAL, REV. 9&quot;
+  in the Cockpit
+  aka manual
+
+define topics for the flight manual
+  about &quot;the fold&quot;, &quot;the fold drive&quot;, &quot;folding&quot;: phrase manual-fold
+  about &quot;the airlock&quot;, &quot;the outer hatch&quot;: phrase manual-airlock
+end topics</code></pre>
+<p><code>on the player consulting</code> in the source's block is consulted first, as <code>on the player asking</code> is for a person.</p>

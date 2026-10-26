@@ -18,9 +18,12 @@ import {
   type IFEntity,
 } from '@sharpee/world-model';
 import { hasTraversableExit, canActorLeave } from '../../../src/actions/helpers/exit-legality';
-import { exitBlockedKey } from '../../../src/actions/standard/going/going';
+import { exitBlockedKey } from '@sharpee/world-model';
 import { createFixtureRandomService } from '../../test-utils/fixture-random-service';
 import { ActorTrait, EntityType as ET } from '@sharpee/world-model';
+
+/** English, handed to hand-built worlds as the language's words (ADR-387 D2). */
+const ENGLISH_WORDS = { selfWords: ['me', 'myself', 'self', 'yourself'], nameStopwords: ['the', 'a', 'an', 'of'] };
 
 describe('hasTraversableExit (ADR-320 D8)', () => {
   let world: WorldModel;
@@ -37,6 +40,7 @@ describe('hasTraversableExit (ADR-320 D8)', () => {
 
   beforeEach(() => {
     world = new WorldModel();
+    world.setLanguageWords(ENGLISH_WORDS);
     room = makeRoom('Tiring House');
     yard = makeRoom('Yard');
   });
@@ -114,6 +118,7 @@ describe('canActorLeave — going`s own validate, run for the leaver (ADR-328 D5
 
   beforeEach(() => {
     world = new WorldModel();
+    world.setLanguageWords(ENGLISH_WORDS);
     room = makeRoom('Tiring House');
     yard = makeRoom('Yard');
     player = world.createEntity('You', ET.ACTOR);

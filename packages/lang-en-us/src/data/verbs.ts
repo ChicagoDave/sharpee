@@ -39,8 +39,7 @@ export const IFActions = {
   PUSHING: 'if.action.pushing',
   PULLING: 'if.action.pulling',
   TURNING: 'if.action.turning',
-  USING: 'if.action.using',
-  
+
   // Social actions
   GIVING: 'if.action.giving',
   SHOWING: 'if.action.showing',
@@ -70,6 +69,30 @@ export const IFActions = {
   // Concealment (ADR-148)
   HIDING: 'if.action.hiding',
   REVEALING: 'if.action.revealing',
+
+  // Stock verbs without an object side (ADR-370)
+  JUMPING: 'if.action.jumping',
+  KISSING: 'if.action.kissing',
+  WAVING: 'if.action.waving',
+  SAYING_YES: 'if.action.saying_yes',
+  SAYING_NO: 'if.action.saying_no',
+  SAYING_SORRY: 'if.action.saying_sorry',
+  LOOKING_UNDER: 'if.action.looking_under',
+  EMPTYING: 'if.action.emptying',
+  BURNING: 'if.action.burning',
+  SETTING: 'if.action.setting',
+  // Two-noun and conversation-shaped clauses (ADR-372)
+  ASKING_FOR: 'if.action.asking_for',
+  CONSULTING: 'if.action.consulting',
+  BUYING: 'if.action.buying',
+  // Physical state (ADR-373)
+  TYING: 'if.action.tying',
+  UNTYING: 'if.action.untying',
+  LIGHTING: 'if.action.lighting',
+  EXTINGUISHING: 'if.action.extinguishing',
+  // Vehicle command sets (ADR-366 D5i)
+  STEERING: 'if.action.steering',
+  SETTING_COURSE: 'if.action.setting_course',
 
   // Meta actions
   INVENTORY: 'if.action.inventory',
@@ -112,12 +135,14 @@ export const englishVerbs: VerbDefinition[] = [
   },
   {
     action: IFActions.ENTERING,
-    verbs: ['enter', 'go in', 'go into'],
+    // `board` and `get on` (ADR-366 D7): without them the parser leaves the
+    // verb phrase empty and entering cannot tell `board` from `enter`.
+    verbs: ['enter', 'go in', 'go into', 'board', 'get on'],
     requiresObject: true
   },
   {
     action: IFActions.EXITING,
-    verbs: ['exit', 'leave', 'go out', 'get out'],
+    verbs: ['exit', 'leave', 'go out', 'get out', 'disembark', 'get off', 'alight'],
     requiresObject: false
   },
   {
@@ -169,7 +194,7 @@ export const englishVerbs: VerbDefinition[] = [
   // Manipulation
   {
     action: IFActions.TAKING,
-    verbs: ['take', 'get', 'pick', 'grab', 'acquire', 'pick up', 'take up'],
+    verbs: ['take', 'get', 'pick', 'grab', 'acquire', 'pick up', 'take up', 'retrieve'],
     requiresObject: true
   },
   {
@@ -315,7 +340,112 @@ export const englishVerbs: VerbDefinition[] = [
     verbs: ['goodbye', 'bye', 'farewell'],
     requiresObject: false
   },
-  
+
+  // Stock verbs without an object side (ADR-370)
+  {
+    action: IFActions.JUMPING,
+    verbs: ['jump', 'leap', 'hop'],
+    requiresObject: false
+  },
+  {
+    action: IFActions.KISSING,
+    verbs: ['kiss', 'hug', 'embrace'],
+    requiresObject: true
+  },
+  {
+    action: IFActions.WAVING,
+    verbs: ['wave'],
+    requiresObject: false
+  },
+  {
+    action: IFActions.SAYING_YES,
+    verbs: ['yes'],
+    requiresObject: false
+  },
+  {
+    action: IFActions.SAYING_NO,
+    verbs: ['no'],
+    requiresObject: false
+  },
+  {
+    action: IFActions.SAYING_SORRY,
+    verbs: ['sorry', 'apologize', 'apologise'],
+    requiresObject: false
+  },
+  {
+    // `look under` shares `look` with looking/examining/searching; the
+    // grammar's literal `under` decides.
+    action: IFActions.LOOKING_UNDER,
+    verbs: ['look under', 'look beneath', 'look underneath'],
+    requiresObject: true
+  },
+  {
+    action: IFActions.EMPTYING,
+    verbs: ['empty'],
+    requiresObject: true
+  },
+  // ADR-371: object-side adjectives
+  {
+    action: IFActions.BURNING,
+    verbs: ['burn', 'ignite', 'set fire to'],
+    requiresObject: true
+  },
+  {
+    // `set` shares its word with `set fire to`; the grammar's literals decide.
+    action: IFActions.SETTING,
+    verbs: ['set', 'adjust'],
+    requiresObject: true
+  },
+  {
+    // `ask` shares its word with asking; the grammar's literal `for` decides.
+    action: IFActions.ASKING_FOR,
+    verbs: ['ask', 'beg'],
+    requiresObject: true
+  },
+  {
+    action: IFActions.CONSULTING,
+    verbs: ['consult', 'look up', 'read about'],
+    requiresObject: true
+  },
+  {
+    action: IFActions.BUYING,
+    verbs: ['buy', 'purchase', 'pay for'],
+    requiresObject: true
+  },
+  {
+    action: IFActions.TYING,
+    verbs: ['tie', 'fasten', 'attach'],
+    requiresObject: true
+  },
+  {
+    action: IFActions.UNTYING,
+    verbs: ['untie', 'unfasten'],
+    requiresObject: true
+  },
+  {
+    action: IFActions.LIGHTING,
+    verbs: ['light'],
+    requiresObject: true
+  },
+  {
+    action: IFActions.EXTINGUISHING,
+    verbs: ['extinguish', 'put out', 'blow out', 'snuff', 'douse'],
+    requiresObject: true
+  },
+  // ADR-366 D5i: the vehicle command sets
+  {
+    action: IFActions.STEERING,
+    // ADR-375 D3, D7: the naval set's words ride the same action.
+    verbs: ['steer', 'heave to', 'port', 'starboard', 'hard to port', 'hard to starboard', 'ahead', 'come about', 'make sail', 'shorten sail', 'furl sails', 'furl'],
+    requiresObject: false
+  },
+  {
+    // `set course` shares its word with setting; the grammar's literals decide.
+    action: IFActions.SETTING_COURSE,
+    verbs: ['set course for', 'set a course for'],
+    requiresObject: true
+  },
+
   // Meta commands
   {
     action: IFActions.INVENTORY,

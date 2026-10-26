@@ -49,9 +49,12 @@
  *   unreachable segment is MALFORMED — never repaired, never thrown.
  * - The grammar is closed: unknown keys and unknown file names are
  *   malformed, and so is any shape the writer cannot emit (an empty
- *   continuation, a card without an id). Additive fields arrive with a
- *   version bump, never silently. File names beginning with `.`
- *   (`.DS_Store`) are not the tree's and are ignored.
+ *   continuation, a card without an id). The version number is dormant
+ *   until a released story exists (David, 2026-10-20: "there is no legacy
+ *   (yet)"): an additive field such as a card's `locks` arrives without a
+ *   bump, and no tree written by an older build is owed a reader. File
+ *   names beginning with `.` (`.DS_Store`) are not the tree's and are
+ *   ignored.
  * - The reader does NOT check formatting — any valid JSON of the right
  *   shape reads — so a hand edit is flagged, not made unreadable. Formatting
  *   is the canonical gate's ({@link checkCanonicalTree}): a tree file whose
@@ -67,19 +70,17 @@
  * createSegmentId, emptyTreeDocument, ensureSegmentIds, segmentTree,
  * assembleTree, diffTreeFiles, checkCanonicalTree, TreeCanonicalCheck,
  * channelIdsReferencedBy, splitChannelClaimId,
- * endingIdsDeclaredBy, roomSlugOf, mainLineLabelOf, branchLineLabelOf.
+ * endingIdsDeclaredBy, roomSlugOf, mainLineLabelOf, branchLineLabelOf,
+ * turnOfCard.
  * Owner context: @sharpee/branch-tester — the Chord/IDE testing world's
  * harness (transcript-tester's text world is a different format and is
  * untouched by this module).
  */
 
 /**
- * The newest tree version this build reads and writes (the manifest's).
- *
- * 2 (ADR-356 D4): a turn card may declare `ending`.
- * 3 (ADR-355): the tree is a directory of segments and a manifest.
- * Older versions are read as malformed — there is no shim; a one-shot
- * conversion wrote every tree in the repository at version 3.
+ * The tree version this build reads and writes (the manifest's). Dormant:
+ * no story has shipped, so the number does not move for an additive field
+ * and no older tree is owed a reader (see the header's invariants).
  */
 export const TREE_DOCUMENT_VERSION = 3;
 
@@ -152,6 +153,13 @@ export interface TreeCard {
    * on a `'turn'` card.
    */
   ending?: string;
+  /**
+   * The claims locked at this card (ADR-367 D5): names of claims in the
+   * manifest's fragment whose predicate the lock saw hold here. The run
+   * evaluates each at this card; a name the fragment no longer declares is
+   * reported as `lock-unknown-claim`. Written by the lock, never by hand.
+   */
+  locks?: string[];
   /** Forks taken from this card, in sibling order. */
   branches?: TreeBranch[];
   /**
@@ -926,7 +934,7 @@ function validateCards(value: unknown, path: string): string | undefined {
  */
 function validateCard(value: unknown, path: string): string | undefined {
   if (!isPlainObject(value)) return `'${path}' must be an object`;
-  const unknownKey = firstUnknownKey(value, ['id', 'type', 'command', 'assertions', 'skip', 'ending']);
+  const unknownKey = firstUnknownKey(value, ['id', 'type', 'command', 'assertions', 'skip', 'ending', 'locks']);
   if (unknownKey !== undefined) return `unknown key '${unknownKey}' in '${path}'`;
 
   const type = value['type'];
@@ -955,6 +963,16 @@ function validateCard(value: unknown, path: string): string | undefined {
 
   if (value['skip'] !== undefined && typeof value['skip'] !== 'boolean') {
     return `'${path}.skip' must be a boolean`;
+  }
+
+  // A lock names claims (ADR-367 D5); only a typed turn can carry one, since
+  // a claim is a fact the line reached by playing.
+  const locks = value['locks'];
+  if (locks !== undefined) {
+    if (!Array.isArray(locks) || locks.length === 0 || locks.some((name) => typeof name !== 'string' || name === '')) {
+      return `'${path}.locks' must be a non-empty array of claim names`;
+    }
+    if (type !== 'turn') return `'${path}' is type '${type}' and cannot carry 'locks'`;
   }
 
   if (value['assertions'] !== undefined) {
@@ -1034,4 +1052,63 @@ function firstUnknownKey(
   allowed: readonly string[],
 ): string | undefined {
   return Object.keys(value).find((key) => !allowed.includes(key));
+}
+
+/**
+ * A card's turn number as a player counts it (ADR-367's "turn 41"): the
+ * typed turns from the root through the card, the boot look excluded, on
+ * whichever line the card sits. Browser-safe — the Testing tab asks it for
+ * the `--at` a lock takes, and the lock computes the same number from the
+ * line it replays.
+ *
+ * @param document the tree
+ * @param cardId the card's id
+ * @returns the turn, or `undefined` when no card carries the id or the card is not a typed turn
+ */
+export function turnOfCard(document: TreeDocument, cardId: string): number | undefined {
+  const visit = (cards: readonly TreeCard[], before: number): number | undefined => {
+    let typed = before;
+    for (const card of cards) {
+      if (card.type === 'turn') typed += 1;
+      if (card.id === cardId) return card.type === 'turn' ? typed : undefined;
+      for (const branch of card.branches ?? []) {
+        const found = visit(branch.cards, typed);
+        if (found !== undefined) return found;
+      }
+    }
+    return undefined;
+  };
+  return visit(document.cards, 0);
+}
+
+/**
+ * Lock a claim's name on a card (ADR-367 D5): the card gains `locks` or the
+ * name is appended once. Mutates the document the caller then writes
+ * through `segmentTree`. The CLI and the Testing tab both lock through this
+ * one function (D7: two surfaces, one path).
+ *
+ * @param document the tree
+ * @param cardId the card the lock was taken at
+ * @param name the claim's name
+ * @returns true when the document changed
+ * @throws when no card in the tree carries the id
+ */
+export function lockOnCard(document: TreeDocument, cardId: string, name: string): boolean {
+  const visit = (cards: TreeCard[]): 'locked' | 'already' | undefined => {
+    for (const card of cards) {
+      if (card.id === cardId) {
+        if (card.locks?.includes(name)) return 'already';
+        card.locks = [...(card.locks ?? []), name];
+        return 'locked';
+      }
+      for (const branch of card.branches ?? []) {
+        const found = visit(branch.cards);
+        if (found !== undefined) return found;
+      }
+    }
+    return undefined;
+  };
+  const found = visit(document.cards);
+  if (found === undefined) throw new Error(`no card ${cardId} in the tree`);
+  return found === 'locked';
 }

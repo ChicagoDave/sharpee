@@ -167,11 +167,13 @@ function serializeAssertionTag(assertion: Assertion): string {
     case 'channel-absent':
     case 'channel-present':
     case 'ending-assert':
+    case 'lock-assert':
       // The claim type set is shared with the tree world (ADR-340 D1), but the
-      // `.transcript` grammar never gained these five kinds (ADR-307 — the tree
+      // `.transcript` grammar never gained these six kinds (ADR-307 — the tree
       // work does not change what a transcript may say; ADR-356 D4's END STATE
-      // claim is the tree walker's own). A tree-document claim reaching this
-      // writer is a caller error, named rather than dropped.
+      // claim and ADR-367 D6's lock verdict are the tree walker's own). A
+      // tree-document claim reaching this writer is a caller error, named
+      // rather than dropped.
       throw new Error(
         `cannot serialize a "${assertion.type}" claim: the .transcript grammar has no form for it`
       );

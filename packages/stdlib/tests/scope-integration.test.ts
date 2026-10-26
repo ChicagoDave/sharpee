@@ -13,6 +13,9 @@ import { throwingAction } from '../src/actions/standard/throwing/throwing';
 import { listeningAction } from '../src/actions/standard/listening/listening';
 import { smellingAction } from '../src/actions/standard/smelling/smelling';
 
+/** English, handed to hand-built worlds as the language's words (ADR-387 D2). */
+const ENGLISH_WORDS = { selfWords: ['me', 'myself', 'self', 'yourself'], nameStopwords: ['the', 'a', 'an', 'of'] };
+
 describe('Scope Integration Tests', () => {
   let world: WorldModel;
   let author: AuthorModel;
@@ -24,6 +27,7 @@ describe('Scope Integration Tests', () => {
   
   beforeEach(() => {
     world = new WorldModel();
+    world.setLanguageWords(ENGLISH_WORDS);
     author = new AuthorModel(world.getDataStore(), world);
     registry = new StandardActionRegistry();
     scopeResolver = new StandardScopeResolver(world);
@@ -70,13 +74,10 @@ describe('Scope Integration Tests', () => {
           verb: { tokens: [0], text: 'take', head: 'take' },
           directObject: { 
             text: 'gem',
-            candidates: ['gem'],
             modifiers: []
           }
         },
-        pattern: 'VERB_OBJECT',
-        confidence: 1.0
-      };
+        pattern: 'VERB_OBJECT'      };
       
       
       const result = validator.validate(command);
@@ -105,13 +106,10 @@ describe('Scope Integration Tests', () => {
           verb: { tokens: [0], text: 'take', head: 'take' },
           directObject: { 
             text: 'coin',
-            candidates: ['coin'],
             modifiers: []
           }
         },
-        pattern: 'VERB_OBJECT',
-        confidence: 1.0
-      };
+        pattern: 'VERB_OBJECT'      };
       
       const result = validator.validate(command);
       expect(result.success).toBe(true);
@@ -139,19 +137,15 @@ describe('Scope Integration Tests', () => {
           verb: { tokens: [0], text: 'throw', head: 'throw' },
           directObject: {
             text: 'rock',
-            candidates: ['rock'],
             modifiers: []
           },
           preposition: 'at',
           indirectObject: {
             text: 'window',
-            candidates: ['window'],
             modifiers: []
           }
         },
-        pattern: 'VERB_OBJECT_PREP_OBJECT',
-        confidence: 1.0
-      };
+        pattern: 'VERB_OBJECT_PREP_OBJECT'      };
 
       const result = validator.validate(command);
       // Rock is REACHABLE (in the room), and throwing requires REACHABLE scope
@@ -175,19 +169,15 @@ describe('Scope Integration Tests', () => {
           verb: { tokens: [0], text: 'throw', head: 'throw' },
           directObject: { 
             text: 'rock',
-            candidates: ['rock'],
             modifiers: []
           },
           preposition: 'at',
           indirectObject: {
             text: 'window',
-            candidates: ['window'],
             modifiers: []
           }
         },
-        pattern: 'VERB_OBJECT_PREP_OBJECT',
-        confidence: 1.0
-      };
+        pattern: 'VERB_OBJECT_PREP_OBJECT'      };
       
       const result = validator.validate(command);
       expect(result.success).toBe(true);
@@ -225,13 +215,10 @@ describe('Scope Integration Tests', () => {
           preposition: 'to',
           directObject: { 
             text: 'chime',
-            candidates: ['chime'],
             modifiers: []
           }
         },
-        pattern: 'VERB_PREP_OBJECT',
-        confidence: 1.0
-      };
+        pattern: 'VERB_PREP_OBJECT'      };
       
       const result = validator.validate(command);
       
@@ -265,13 +252,10 @@ describe('Scope Integration Tests', () => {
           verb: { tokens: [0], text: 'smell', head: 'smell' },
           directObject: { 
             text: 'cheese',
-            candidates: ['cheese'],
             modifiers: []
           }
         },
-        pattern: 'VERB_OBJECT',
-        confidence: 1.0
-      };
+        pattern: 'VERB_OBJECT'      };
       
       const result = validator.validate(command);
       expect(result.success).toBe(true);
@@ -306,13 +290,10 @@ describe('Scope Integration Tests', () => {
           verb: { tokens: [0], text: 'smell', head: 'smell' },
           directObject: {
             text: 'cheese',
-            candidates: ['cheese'],
             modifiers: []
           }
         },
-        pattern: 'VERB_OBJECT',
-        confidence: 1.0
-      };
+        pattern: 'VERB_OBJECT'      };
 
       const result = validator.validate(command);
 
@@ -335,13 +316,10 @@ describe('Scope Integration Tests', () => {
           verb: { tokens: [0], text: 'take', head: 'take' },
           directObject: { 
             text: 'coin',
-            candidates: ['coin'],
             modifiers: []
           }
         },
-        pattern: 'VERB_OBJECT',
-        confidence: 1.0
-      };
+        pattern: 'VERB_OBJECT'      };
       
       const result = validator.validate(command);
       expect(result.success).toBe(true);

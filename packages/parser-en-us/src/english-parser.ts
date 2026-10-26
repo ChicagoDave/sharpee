@@ -16,7 +16,7 @@ import {
   ParseErrorType,
   PartOfSpeech as VocabPartOfSpeech,
   GrammarPatterns,
-  vocabularyRegistry,
+  VocabularyRegistry,
   type ParserLanguageProvider,
   adaptVerbVocabulary,
   adaptDirectionVocabulary,
@@ -24,6 +24,7 @@ import {
   type VerbVocabulary,
   type VocabularyEntry,
   type PatternMatch,
+  type SlotMatch,
   SlotType
 } from '@sharpee/if-domain';
 
@@ -32,6 +33,7 @@ import type {
   IValidatedCommand,
   IParseError as CoreParseError,
   ParseErrorCode,
+  ParseErrorParams,
   IToken,
   ITokenCandidate,
   IVerbPhrase,
@@ -42,13 +44,13 @@ import type {
 import { PartOfSpeech } from '@sharpee/world-model';
 
 import type { ISystemEvent, Result } from '@sharpee/core';
-import { EnglishGrammarEngine } from './english-grammar-engine.js';
+import { EnglishGrammarEngine, MAX_READINGS_PER_RULE } from './english-grammar-engine.js';
 import { defineGrammar } from './grammar.js';
 import { definePlatformGrammar } from './platform-grammar.js';
-import { scope, type GrammarBuilder } from '@sharpee/if-domain';
-import { parseDirection } from './direction-mappings.js';
-import { analyzeBestFailure } from './parse-failure.js';
-import { PronounContextManager, setPronounContextManager } from './pronoun-context.js';
+import { scope, type GrammarBuilder, type NounRank } from '@sharpee/if-domain';
+import { directionTableOf, type DirectionTable } from './slot-consumers/index.js';
+import { analyzeBestFailure, failureOutranking } from './parse-failure.js';
+import { PronounContextManager } from './pronoun-context.js';
 
 // Type alias for clarity
 type CommandResult<T, E> = Result<T, E>;
@@ -57,10 +59,7 @@ type CommandResult<T, E> = Result<T, E>;
  * Default parser options
  */
 const DEFAULT_OPTIONS: ParserOptions = {
-  allowPartial: true,
-  expandAbbreviations: true,
-  ignoreArticles: false, // We preserve everything in the English parser
-  minConfidence: 0.1
+  allowPartial: true
 };
 
 /**
@@ -80,9 +79,10 @@ function mapPartOfSpeech(vocabPos: VocabPartOfSpeech): PartOfSpeech {
       return PartOfSpeech.PREPOSITION;
     case VocabPartOfSpeech.PRONOUN:
       return PartOfSpeech.PRONOUN;
-    // Note: stdlib doesn't have DETERMINER, but we map special words to DETERMINER
+    case VocabPartOfSpeech.DETERMINER:
+      return PartOfSpeech.DETERMINER;
+    // The all and except words are registered as SPECIAL; they read as determiners
     case VocabPartOfSpeech.SPECIAL:
-      // Special words could be determiners
       return PartOfSpeech.DETERMINER;
     default:
       return PartOfSpeech.UNKNOWN;
@@ -99,24 +99,23 @@ interface RichCandidate {
   preposition?: IPrepPhrase;
   indirectObject?: INounPhrase;
   pattern: string;
-  confidence: number;
-  /** Grammar rule tier (ADR-268 D2: story outranks standard) */
-  tier: 'standard' | 'story';
-  /** Words consumed by literal pattern tokens (ADR-231 D2b literal-before-slot tiebreak) */
-  literalSpecificity: number;
   action: string;
   // ADR-080 additions
   textSlots?: Map<string, string>;
   instrument?: INounPhrase;
   excluded?: INounPhrase[]; // For "all but X" patterns
-  // ADR-231 D4: first-class conversation topic (verbatim free text)
-  topic?: { text: string };
+  // ADR-231 D4: first-class conversation topic (verbatim free text), with
+  // its articles and determiners split once as `phrase` (ADR-385 D2)
+  topic?: { text: string; phrase: INounPhrase };
   // ADR-082 additions
   vocabularySlots?: Map<string, { word: string; category: string }>;
   manner?: string;
-  // Direction and extras for grammar matches
-  direction?: string;
+  // Extras for grammar matches; a direction arrives here, from the matched
+  // rule's semantics or its direction slot
   extras?: Record<string, unknown>;
+  // How the reading's items resolve (ADR-386 D4), compared with the best
+  // failure's by the failure-versus-reading rule (D5)
+  nounRank: NounRank;
 }
 
 /**
@@ -133,62 +132,64 @@ export class EnglishParser implements Parser {
     actorId: string;
     currentLocation: string;
   } | null = null;
-  /** Pronoun context manager for "it", "them", "him", "her" resolution (ADR-089) */
-  private pronounContext: PronounContextManager;
+  /** This parser's pronoun context for "it", "them", "him", "her" (ADR-089; one per parser, ADR-387 D4) */
+  private readonly pronounContext: PronounContextManager;
+  /** This parser's vocabulary: the language's words and the story's verbs (one per parser, ADR-387 D4) */
+  private readonly vocabulary: VocabularyRegistry;
+  /** The language's direction table as a lookup: word or abbreviation → `Direction` constant (ADR-387 D5) */
+  private readonly directions: DirectionTable;
 
   constructor(language: ParserLanguageProvider, options: ParserOptions = {}) {
     this.language = language;
     this.options = { ...DEFAULT_OPTIONS, ...options };
+    this.directions = directionTableOf(language);
+    this.pronounContext = new PronounContextManager();
+    this.vocabulary = new VocabularyRegistry();
 
     // Initialize grammar engine. The standard grammar is generated from the
     // Chord source (grammar/standard-en-us.story, ADR-269 D7); the ruled
     // platform-side exception rules (`?`, `trace …`) register after it.
-    this.grammarEngine = new EnglishGrammarEngine();
+    this.grammarEngine = new EnglishGrammarEngine(language, undefined, this.pronounContext);
     const grammar = this.grammarEngine.createBuilder();
     defineGrammar(grammar);
     definePlatformGrammar(grammar);
-
-    // Initialize pronoun context (ADR-089)
-    this.pronounContext = new PronounContextManager();
-    setPronounContextManager(this.pronounContext);
 
     this.initializeVocabulary();
   }
 
   /**
-   * Initialize vocabulary from language provider
+   * Register the language's words into this parser's own vocabulary. A fresh
+   * parser is a fresh registry: nothing is cleared, and no other parser is
+   * touched (ADR-387 D4).
    */
   private initializeVocabulary(): void {
-    // Clear any existing vocabulary
-    vocabularyRegistry.clear();
-    
     // Register verbs (adapting from language provider format)
     const verbs = adaptVerbVocabulary(this.language);
-    vocabularyRegistry.registerVerbs(verbs);
+    this.vocabulary.registerVerbs(verbs);
     
     // Register directions (adapting from language provider format)
     const directions = adaptDirectionVocabulary(this.language);
-    vocabularyRegistry.registerDirections(directions);
+    this.vocabulary.registerDirections(directions);
     
     // Register special vocabulary (adapting from language provider format)
     const special = adaptSpecialVocabulary(this.language);
-    vocabularyRegistry.registerSpecial(special);
+    this.vocabulary.registerSpecial(special);
     
     // Register prepositions
     const prepositions = this.language.getPrepositions();
-    vocabularyRegistry.registerPrepositions(prepositions);
+    this.vocabulary.registerPrepositions(prepositions);
     
     // Register determiners
     const determiners = this.language.getDeterminers();
-    vocabularyRegistry.registerDeterminers(determiners);
+    this.vocabulary.registerDeterminers(determiners);
     
     // Register conjunctions
     const conjunctions = this.language.getConjunctions();
-    vocabularyRegistry.registerConjunctions(conjunctions);
+    this.vocabulary.registerConjunctions(conjunctions);
     
     // Register numbers
     const numbers = this.language.getNumbers();
-    vocabularyRegistry.registerNumbers(numbers);
+    this.vocabulary.registerNumbers(numbers);
   }
 
   /**
@@ -239,7 +240,7 @@ export class EnglishParser implements Parser {
    */
   registerVerbs(verbs: VerbVocabulary[]): void {
     // Register with vocabulary registry
-    vocabularyRegistry.registerDynamicVerbs(verbs, 'story');
+    this.vocabulary.registerDynamicVerbs(verbs, 'story');
   }
 
   /**
@@ -330,8 +331,7 @@ export class EnglishParser implements Parser {
       candidateCount: candidates.length,
       patterns: candidates.map(c => ({
         pattern: c.pattern,
-        action: c.action,
-        confidence: c.confidence
+        action: c.action
       }))
     });
     
@@ -346,19 +346,25 @@ export class EnglishParser implements Parser {
           input,
           patternsAttempted: candidates.map(c => ({
             name: c.pattern,
-            matched: true,
-            confidence: c.confidence
+            matched: true
           })),
           totalCandidates: candidates.length
         }
       });
     }
     
-    if (candidates.length === 0) {
+    // ADR-386 D5: the one place a failure is compared with a reading. The
+    // best verb-matched failure wins over the best reading only when it
+    // names strictly more entities (`unlock door with`, where the full line
+    // consumed the door and the short line read `door with`); a reading with
+    // as many names stands and reaches the validator (`take widget`).
+    const failures = this.grammarEngine.getLastFailures();
+    const outranking = candidates.length > 0 ? failureOutranking(failures, candidates[0].nounRank) : undefined;
+
+    if (candidates.length === 0 || outranking) {
       // Analyze failures to determine the best error message
-      const failures = this.grammarEngine.getLastFailures();
       const hadVerb = tokens.some(t => t.partOfSpeech.includes(PartOfSpeech.VERB));
-      const errorAnalysis = analyzeBestFailure(failures, input, hadVerb);
+      const errorAnalysis = analyzeBestFailure(outranking ? [outranking] : failures, input, hadVerb);
 
       // Emit parse error platform event
       this.emitPlatformEvent('parse_failed', {
@@ -400,20 +406,8 @@ export class EnglishParser implements Parser {
       };
     }
     
-    // Full candidate ordering (ADR-268 D2): confidence desc → tier (story
-    // over standard) → literal specificity desc → definition order
-    // (candidates arrive in engine order; Array.prototype.sort is stable).
-    // This mirrors EnglishGrammarEngine.findMatches — a confidence-only
-    // re-sort here would silently drop the tier and specificity tiebreaks.
-    candidates.sort((a, b) => {
-      if (b.confidence !== a.confidence) {
-        return b.confidence - a.confidence;
-      }
-      if (a.tier !== b.tier) {
-        return a.tier === 'story' ? -1 : 1;
-      }
-      return b.literalSpecificity - a.literalSpecificity;
-    });
+    // Candidates arrive ranked by EnglishGrammarEngine.findMatches
+    // (compareGrammarRank); the first is the best.
     const best = candidates[0];
     
     // Emit candidate selection debug event
@@ -428,10 +422,9 @@ export class EnglishParser implements Parser {
           candidates: candidates.map((c, i) => ({
             action: c.action,
             pattern: c.pattern,
-            confidence: c.confidence,
             selected: i === 0
           })),
-          selectionReason: candidates.length === 1 ? 'only_candidate' : 'highest_confidence'
+          selectionReason: candidates.length === 1 ? 'only_candidate' : 'highest_ranked'
         }
       });
     }
@@ -447,7 +440,6 @@ export class EnglishParser implements Parser {
         indirectObject: best.indirectObject
       },
       pattern: best.pattern,
-      confidence: best.confidence,
       action: best.action,
       // ADR-080 additions
       textSlots: best.textSlots,
@@ -461,17 +453,14 @@ export class EnglishParser implements Parser {
     };
 
     // Add extras if present
-    if (best.direction) {
-      // Convert direction string to Direction constant
-      const directionConstant = parseDirection(best.direction);
-      parsed.extras = {
-        direction: directionConstant || best.direction
-      };
-    } else if (best.extras) {
+    if (best.extras) {
       // Check if extras contains a direction and convert it
       const extras = { ...best.extras };
+      // A rule's default names the direction by its word (a Chord
+      // `directions` block's canonical); the language's table gives the
+      // constant (ADR-387 D5). A word the table lacks stays as written.
       if (extras.direction && typeof extras.direction === 'string') {
-        const directionConstant = parseDirection(extras.direction);
+        const directionConstant = this.directions.get(extras.direction.toLowerCase());
         if (directionConstant) {
           extras.direction = directionConstant;
         }
@@ -484,7 +473,6 @@ export class EnglishParser implements Parser {
       input,
       action: parsed.action,
       pattern: parsed.pattern,
-      confidence: parsed.confidence,
       structure: {
         verb: parsed.structure.verb?.text,
         directObject: parsed.structure.directObject?.text,
@@ -572,7 +560,7 @@ export class EnglishParser implements Parser {
     const firstWord = firstWordMatch[1].toLowerCase();
 
     // Check if it's a known verb
-    const isVerb = vocabularyRegistry.hasWord(firstWord, VocabPartOfSpeech.VERB);
+    const isVerb = this.vocabulary.hasWord(firstWord, VocabPartOfSpeech.VERB);
 
     if (isVerb) {
       // It's a verb - split into separate commands
@@ -666,9 +654,14 @@ export class EnglishParser implements Parser {
       quoteIndex++;
     }
     
-    // Now tokenize the processed input
-    const words = processedInput.trim().split(/(\s+)/); // Keep whitespace for position tracking
-    
+    // Now tokenize the processed input: split on whitespace, keeping it for
+    // position tracking, and give each comma its own token (ADR-386 D6) so a
+    // list separator is never glued to the word before it
+    const words = processedInput
+      .trim()
+      .split(/(\s+)/)
+      .flatMap((segment) => (/^\s+$/.test(segment) ? [segment] : segment.split(/(,)/).filter((piece) => piece.length > 0)));
+
     for (const segment of words) {
       // Skip pure whitespace segments
       if (/^\s+$/.test(segment)) {
@@ -757,7 +750,19 @@ export class EnglishParser implements Parser {
     
     // Use grammar engine to find matches
     const matches = this.grammarEngine.findMatches(internalTokens, context);
-    
+
+    // ADR-386 D2: a rule whose readings hit the cap is never silent
+    const capped = this.grammarEngine.getLastCapped();
+    if (capped.length > 0 && this.onDebugEvent) {
+      this.onDebugEvent({
+        id: `parser_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        timestamp: Date.now(),
+        subsystem: 'parser',
+        type: 'readings_capped',
+        data: { input, rules: capped, cap: MAX_READINGS_PER_RULE }
+      });
+    }
+
     // Convert grammar matches to RichCandidates
     const candidates: RichCandidate[] = [];
     
@@ -765,8 +770,6 @@ export class EnglishParser implements Parser {
       const candidate = this.convertGrammarMatch(match, tokens);
       if (candidate) {
         candidates.push(candidate);
-      } else if (input.includes('throw')) {
-        console.log('Failed to convert match:', match.rule.pattern);
       }
     }
     
@@ -778,21 +781,16 @@ export class EnglishParser implements Parser {
    */
   private convertGrammarMatch(match: PatternMatch, tokens: IToken[]): RichCandidate | null {
     const rule = match.rule;
-    
-    // Extract verb tokens from the beginning of the match
-    const verbTokenIndices: number[] = [];
-    let verbEndIndex = 0;
-    
-    // Find verb tokens at the start
-    for (let i = 0; i < tokens.length; i++) {
-      if (tokens[i].partOfSpeech.includes(PartOfSpeech.VERB)) {
-        verbTokenIndices.push(i);
-        verbEndIndex = i + 1;
-      } else {
-        break;
-      }
-    }
-    
+    const compiled = rule.compiledPattern!;
+
+    // ADR-383 D7: the verb phrase is the input the rule's literals before
+    // its first slot consumed — never the words a vocabulary tags as verbs,
+    // so `examine light` has the verb `examine` and a story verb its own word.
+    const firstSlotIndex = compiled.slots.length > 0 ? Math.min(...compiled.slots.map((s) => s.tokenIndex)) : Infinity;
+    const literalTokensWhere = (inRange: (tokenIndex: number) => boolean): number[] =>
+      match.literals.filter((element) => inRange(element.tokenIndex)).flatMap((element) => [...element.inputTokens]);
+    const verbTokenIndices = literalTokensWhere((index) => index < firstSlotIndex);
+
     // Build verb phrase
     const verbPhrase: IVerbPhrase = {
       tokens: verbTokenIndices,
@@ -812,32 +810,19 @@ export class EnglishParser implements Parser {
     let preposition: IPrepPhrase | undefined;
     let indirectObject: INounPhrase | undefined;
     let extras: any = {};
-    
-    // Analyze the pattern to understand the expected structure
-    const patternParts = rule.pattern.split(/\s+/);
-    const slotPositions: { [slotName: string]: number } = {};
-    let positionCounter = 0;
-    
-    // Map slot names to their positions in the pattern. An INSTRUMENT slot
-    // (ADR-080 `.instrument()`) takes no positional seat: it is set aside
-    // below, so the first NON-instrument slot is the direct object wherever
-    // the instrument sits in the pattern — `hang :item on :target` with
-    // `:item` the instrument seats the target as the direct object (GH #333).
-    for (const part of patternParts) {
-      if (part.startsWith(':')) {
-        const slotName = part.substring(1);
-        if (match.slots.get(slotName)?.slotType === SlotType.INSTRUMENT) continue;
-        slotPositions[slotName] = positionCounter++;
-      }
-    }
-    
+
+    // Each entity slot's seat was settled when the rule was built (ADR-383
+    // D1, D2): declared, else the first free of direct and indirect in
+    // pattern order, instrument and other typed slots never seated.
+    const compiledSlots = rule.compiledPattern!.slotsByName;
+
     // ADR-080: Track text slots, instruments, and excluded items
     let textSlots: Map<string, string> | undefined;
     let instrument: INounPhrase | undefined;
     let excluded: INounPhrase[] | undefined;
 
     // ADR-231 D4: Track the conversation topic
-    let topic: { text: string } | undefined;
+    let topic: { text: string; phrase: INounPhrase } | undefined;
 
     // ADR-082: Track vocabulary slots and manner
     let vocabularySlots: Map<string, { word: string; category: string }> | undefined;
@@ -862,7 +847,7 @@ export class EnglishParser implements Parser {
       // NOT a positional noun phrase, so it never becomes indirectObject
       // and never enters entity resolution as a scope-rejectable slot.
       if (slotType === SlotType.TOPIC) {
-        topic = { text: slotData.text };
+        topic = { text: slotData.text, phrase: this.nounPhraseFrom(slotData) };
         continue; // Don't also add to direct/indirect objects
       }
 
@@ -887,67 +872,26 @@ export class EnglishParser implements Parser {
       // ADR-084: Handle direction slots - put in extras.direction
       if (slotType === SlotType.DIRECTION) {
         const directionText = slotData.text.toLowerCase();
-        const directionConstant = parseDirection(directionText);
-        extras.direction = directionConstant || directionText;
+        extras.direction = this.directions.get(directionText) ?? directionText;
         continue; // Don't also add to direct/indirect objects
       }
 
-      // Build base noun phrase.
-      // ADR-231 D3: leading ARTICLE-tagged tokens are split into the
-      // `articles` field and stripped from text/head/candidates. The
-      // validator restores the full text (articles + text) first when
-      // matching, so proper names beginning with an article-like word
-      // survive.
-      const np = this.splitLeadingArticles(slotData.tokens, tokens, slotData.text);
-      const phrase: INounPhrase = {
-        tokens: slotData.tokens,
-        text: np.text,
-        head: np.head,
-        modifiers: [],
-        articles: np.articles,
-        determiners: [],
-        candidates: [np.text]
-      };
+      // Build the noun phrase from the slot consumer's one split of its
+      // leading articles and determiners (ADR-385 D2). The seat is chosen
+      // below; the slot it came from travels with it.
+      const phrase: INounPhrase = { ...this.nounPhraseFrom(slotData), slot: slotName };
 
       // ADR-080 Phase 2: Add multi-object support
       if (slotData.isAll) {
         phrase.isAll = true;
         // Extract excluded items for "all but X" patterns
         if (slotData.excluded && slotData.excluded.length > 0) {
-          excluded = slotData.excluded.map((item) => {
-            const itemNp = this.splitLeadingArticles(item.tokens, tokens, item.text);
-            return {
-              tokens: item.tokens,
-              text: itemNp.text,
-              head: itemNp.head,
-              modifiers: [],
-              articles: itemNp.articles,
-              determiners: [],
-              candidates: [itemNp.text]
-            };
-          });
+          excluded = slotData.excluded.map((item) => this.nounPhraseFrom(item));
         }
       }
       if (slotData.isList && slotData.items) {
         phrase.isList = true;
-        phrase.items = slotData.items.map((item) => {
-          const itemNp = this.splitLeadingArticles(item.tokens, tokens, item.text);
-          return {
-            tokens: item.tokens,
-            text: itemNp.text,
-            head: itemNp.head,
-            modifiers: [],
-            articles: itemNp.articles,
-            determiners: [],
-            candidates: [itemNp.text],
-            entityId: item.entityId // ADR-089: preserve pre-resolved entity ID
-          };
-        });
-      }
-
-      // ADR-089: Copy pre-resolved entity ID from pronoun resolution
-      if (slotData.entityId) {
-        phrase.entityId = slotData.entityId;
+        phrase.items = slotData.items.map((item) => this.nounPhraseFrom(item));
       }
 
       // ADR-104: Mark if this was a pronoun (for implicit inference)
@@ -961,97 +905,30 @@ export class EnglishParser implements Parser {
         continue; // Don't also add to direct/indirect objects
       }
 
-      // Determine where this slot should go based on the pattern.
-      // (Deleted 2026-07-16, David's ruling during ADR-229 R3: the legacy
-      // "slot after literal 'with' → extras" shunt is superseded by
-      // ADR-080's `.instrument()` slot typing — handled above — and had no
-      // remaining consumer. With-slots now follow positional assignment
-      // like any other slot.)
-      if (rule.pattern.includes('give :recipient :item')) {
-        // Special case for give patterns
-        if (slotName === 'item') {
-          directObject = phrase;
-        } else if (slotName === 'recipient') {
-          indirectObject = phrase;
-        }
-      } else if (rule.pattern.includes('give :item to :recipient')) {
-        // Give with 'to' pattern
-        if (slotName === 'item') {
-          directObject = phrase;
-        } else if (slotName === 'recipient') {
-          indirectObject = phrase;
-        }
-      } else if (rule.pattern.includes('show :recipient :item')) {
-        // Special case for show recipient item
-        if (slotName === 'item') {
-          directObject = phrase;
-        } else if (slotName === 'recipient') {
-          indirectObject = phrase;
-        }
-      } else if (rule.pattern.includes('show :item to :recipient')) {
-        // Show with 'to' pattern
-        if (slotName === 'item') {
-          directObject = phrase;
-        } else if (slotName === 'recipient') {
-          indirectObject = phrase;
-        }
-      } else if (rule.pattern.includes(':item from :container')) {
-        // Take from pattern
-        if (slotName === 'item') {
-          directObject = phrase;
-        } else if (slotName === 'container') {
-          indirectObject = phrase;
-        }
-      } else {
-        // General case: first slot is direct object, second is indirect object
-        const slotPosition = slotPositions[slotName];
-        if (slotPosition === 0 && !directObject) {
-          directObject = phrase;
-        } else if (slotPosition === 1 && !indirectObject) {
-          indirectObject = phrase;
-        } else {
-          // Additional slots or already assigned slots go to extras
-          if (!extras[slotName]) {
-            extras[slotName] = phrase;
-          }
-        }
+      // The entity phrase takes its slot's seat (ADR-383 D5). A typed value
+      // slot with no handler above (number, ordinal, time, quoted text)
+      // carries no seat and travels in extras under its own name.
+      const seat = compiledSlots.get(slotName)?.seat;
+      if (seat === 'direct') {
+        directObject = phrase;
+      } else if (seat === 'indirect') {
+        indirectObject = phrase;
+      } else if (!extras[slotName]) {
+        extras[slotName] = phrase;
       }
     }
     
-    // Find prepositions between direct and indirect objects
+    // ADR-383 D7: the preposition is the input the literals between the
+    // direct and the indirect slot consumed, in pattern order; absent when
+    // they consumed none.
     if (directObject && indirectObject) {
-      const directObjLastToken = directObject.tokens[directObject.tokens.length - 1];
-      const indirectObjFirstToken = indirectObject.tokens[0];
-      
-      for (let i = directObjLastToken + 1; i < indirectObjFirstToken; i++) {
-        if (tokens[i].partOfSpeech.includes(PartOfSpeech.PREPOSITION)) {
-          preposition = {
-            tokens: [i],
-            text: tokens[i].word
-          };
-          break;
-        }
-      }
-    }
-    
-    // For direction commands, handle specially
-    if (rule.action === 'if.action.going' && !directObject) {
-      // Extract direction from pattern — check vocabulary registry tags
-      // (no hardcoded word list; the registry is updated when vocabulary changes)
-      const directionToken = tokens.find(t =>
-        t.candidates.some((c: any) => c.type === VocabPartOfSpeech.DIRECTION)
-      );
-      
-      if (directionToken) {
-        return {
-          tokens,
-          verb: verbPhrase,
-          pattern: 'DIRECTION_ONLY',
-          confidence: match.confidence,
-          tier: rule.tier,
-          literalSpecificity: match.literalSpecificity ?? 0,
-          action: rule.action,
-          direction: directionToken.normalized
+      const seatIndex = (phrase: INounPhrase) => compiled.slotsByName.get(phrase.slot!)!.tokenIndex;
+      const [from, to] = [seatIndex(directObject), seatIndex(indirectObject)].sort((a, b) => a - b);
+      const prepositionTokens = literalTokensWhere((index) => index > from && index < to);
+      if (prepositionTokens.length > 0) {
+        preposition = {
+          tokens: prepositionTokens,
+          text: prepositionTokens.map((i) => tokens[i].word).join(' ')
         };
       }
     }
@@ -1075,9 +952,6 @@ export class EnglishParser implements Parser {
       preposition,
       indirectObject,
       pattern,
-      confidence: match.confidence,
-      tier: rule.tier,
-      literalSpecificity: match.literalSpecificity ?? 0,
       action: rule.action,
       // ADR-080 additions
       textSlots,
@@ -1087,7 +961,9 @@ export class EnglishParser implements Parser {
       topic,
       // ADR-082 additions
       vocabularySlots,
-      manner
+      manner,
+      // ADR-386 D4
+      nounRank: match.nounRank
     };
 
     // Merge grammar default semantics into extras (ADR-148)
@@ -1109,57 +985,35 @@ export class EnglishParser implements Parser {
   }
 
   /**
-   * Split leading ARTICLE-tagged tokens off a consumed noun-phrase span
-   * (ADR-231 D3 defect fix — `INounPhrase.articles` was hardcoded `[]`).
+   * A noun phrase from a slot match (ADR-385 D2).
    *
-   * @param tokenIndices Indices of the consumed span into `tokens`.
-   * @param tokens The full rich-token array for the input.
-   * @param originalText The slot's consumed text (used verbatim when the
-   *   span does not textually reconstruct it, e.g. pronoun-resolved text).
-   * @returns The leading articles, the article-stripped text, and the head
-   *   (last word of the stripped text, normalized). When every token is an
-   *   article, nothing is stripped (the phrase keeps at least one word).
+   * The slot consumer split the leading articles and determiners once; the
+   * words of `text` after that split are the phrase's content: `text`, the
+   * `head` (its last word) and the `modifiers` (the words before the head).
+   * A pronoun-resolved match carries the referent's name as its text with
+   * no split, so the whole of it is content. A bare all-phrase has no
+   * content words. A constrained slot's admitted ids travel as `scope`
+   * (ADR-385 D4).
+   *
+   * @param slot The slot match, its items or exclusions
+   * @returns The noun phrase, with any pre-resolved entity id (ADR-089)
    */
-  private splitLeadingArticles(
-    tokenIndices: number[],
-    tokens: IToken[],
-    originalText: string
-  ): { articles: string[]; text: string; head: string } {
-    const spanTokens = tokenIndices.map(i => tokens[i]);
-    const fallback = {
-      articles: [] as string[],
-      text: originalText,
-      head: originalText.split(' ').pop() || originalText
-    };
-
-    // Only strip when the span textually reconstructs the slot text —
-    // pronoun-resolved slots carry substituted text ("them" → "brass
-    // lantern") whose tokens don't correspond word-for-word.
-    if (spanTokens.some(t => !t) ||
-        spanTokens.map(t => t.word).join(' ') !== originalText) {
-      return fallback;
-    }
-
-    let start = 0;
-    while (
-      start < spanTokens.length - 1 &&
-      spanTokens[start].partOfSpeech.includes(PartOfSpeech.ARTICLE)
-    ) {
-      start++;
-    }
-    if (start === 0) {
-      return {
-        articles: [],
-        text: originalText,
-        head: spanTokens[spanTokens.length - 1].normalized
-      };
-    }
-
-    const rest = spanTokens.slice(start);
+  private nounPhraseFrom(slot: SlotMatch): INounPhrase {
+    const articles = slot.articles ?? [];
+    const determiners = slot.determiners ?? [];
+    const words = slot.text ? slot.text.split(' ') : [];
+    const content = words.slice(articles.length + determiners.length);
+    const normalized = content.map((w) => w.toLowerCase());
     return {
-      articles: spanTokens.slice(0, start).map(t => t.normalized),
-      text: rest.map(t => t.word).join(' '),
-      head: rest[rest.length - 1].normalized
+      tokens: slot.tokens,
+      text: content.join(' '),
+      head: normalized[normalized.length - 1] ?? '',
+      modifiers: normalized.slice(0, -1),
+      articles,
+      determiners,
+      ...(slot.ownedByActor ? { ownedByActor: true } : {}),
+      ...(slot.scope ? { scope: slot.scope } : {}),
+      ...(slot.entityId ? { entityId: slot.entityId } : {})
     };
   }
 
@@ -1207,7 +1061,7 @@ export class EnglishParser implements Parser {
    * Get candidate interpretations for a token
    */
   private getTokenCandidates(word: string): InternalTokenCandidate[] {
-    const entries = vocabularyRegistry.lookup(word);
+    const entries = this.vocabulary.lookup(word);
     return entries.map((entry: any) => ({
       partOfSpeech: entry.partOfSpeech,
       mapsTo: entry.mapsTo,
@@ -1277,14 +1131,12 @@ export class EnglishParser implements Parser {
         action: result.value.action,
         originalInput: input,
         tokens: this.tokenize(input),
-        pattern: result.value.pattern,
-        confidence: result.value.confidence
+        pattern: result.value.pattern
       };
       
       // Add noun information
       if (result.value.structure.directObject) {
         candidate.nounText = result.value.structure.directObject.text;
-        candidate.nounCandidates = result.value.structure.directObject.candidates;
       }
       
       // Add preposition
@@ -1295,18 +1147,10 @@ export class EnglishParser implements Parser {
       // Add indirect object
       if (result.value.structure.indirectObject) {
         candidate.secondNounText = result.value.structure.indirectObject.text;
-        candidate.secondNounCandidates = result.value.structure.indirectObject.candidates;
       }
       
-      // Filter by confidence if specified
-      const candidateConfidence = candidate.confidence || 0;
-      const candidates = mergedOptions.minConfidence !== undefined && 
-                       candidateConfidence < mergedOptions.minConfidence 
-                       ? [] 
-                       : [candidate];
-      
       return {
-        candidates,
+        candidates: [candidate],
         errors,
         partial: hasUnknownWords && (mergedOptions.allowPartial === true)
       };
@@ -1323,7 +1167,7 @@ export class EnglishParser implements Parser {
       // Other parsing errors
       const error: ParseError = {
         type: ParseErrorType.PATTERN_MISMATCH,
-        message: result.error.message,
+        message: result.error.messageId,
         position: result.error.position
       };
       
@@ -1350,7 +1194,7 @@ export class EnglishParser implements Parser {
       prepositions
     };
     
-    vocabularyRegistry.registerDynamicVerbs([verbDef], 'story');
+    this.vocabulary.registerDynamicVerbs([verbDef], 'story');
     
     // Also register grammar patterns for the verb (story tier, ADR-268 D2)
     const grammarBuilder = this.grammarEngine.createBuilder('story');
@@ -1451,7 +1295,7 @@ export class EnglishParser implements Parser {
    * @param word The preposition to add
    */
   addPreposition(word: string): void {
-    vocabularyRegistry.registerPrepositions([word]);
+    this.vocabulary.registerPrepositions([word]);
 
     // Also register common grammar patterns that use this preposition
     // This allows actions like "put X <preposition> Y" to work
@@ -1480,63 +1324,32 @@ export class EnglishParser implements Parser {
   }
 
   /**
-   * Build a detailed parse error from failure analysis
+   * Build the parse error from the failure analysis: the language's template
+   * id and its bindings, and no sentence (ADR-387 D3).
    */
   private buildParseError(
     input: string,
     analysis: { code: ParseErrorCode; messageId: string; context: Record<string, any> }
   ): CoreParseError {
     const { code, messageId, context } = analysis;
-
-    // Generate fallback message based on error code and context
-    let message: string;
-    switch (code) {
-      case 'NO_VERB':
-        message = "I beg your pardon?";
-        break;
-      case 'UNKNOWN_VERB':
-        message = context.verb
-          ? `I don't know the verb "${context.verb}".`
-          : "I don't understand that sentence.";
-        break;
-      case 'MISSING_OBJECT':
-        message = context.verb
-          ? `What do you want to ${context.verb}?`
-          : "What do you want to do that to?";
-        break;
-      case 'MISSING_INDIRECT':
-        message = context.verb
-          ? `${capitalize(context.verb)} it where?`
-          : "Where do you want to do that?";
-        break;
-      case 'ENTITY_NOT_FOUND':
-        message = context.noun
-          ? `I don't see any "${context.noun}" here.`
-          : "I don't see that here.";
-        break;
-      case 'SCOPE_VIOLATION':
-        message = context.noun
-          ? `You can't reach the ${context.noun}.`
-          : "You can't reach that.";
-        break;
-      case 'AMBIGUOUS_INPUT':
-        message = context.noun
-          ? `Which ${context.noun} do you mean?`
-          : "Which do you mean?";
-        break;
-      default:
-        message = "I don't understand that.";
-    }
+    const params: ParseErrorParams = {
+      ...(context.verb ? { verb: context.verb } : {}),
+      ...(context.noun ? { noun: context.noun } : {}),
+      ...(context.slot ? { slot: context.slot } : {})
+    };
 
     return {
       type: 'PARSE_ERROR',
       code,
       messageId,
-      message,
+      params,
       input,
       verb: context.verb,
       failedWord: context.noun || context.verb,
-      slot: context.slot
+      slot: context.slot,
+      // ADR-385 D8: what the gate found and the base it required
+      ...(context.entityId ? { entityId: context.entityId } : {}),
+      ...(context.requiredScope ? { requiredScope: context.requiredScope } : {})
     };
   }
 
@@ -1546,13 +1359,13 @@ export class EnglishParser implements Parser {
 
   /**
    * Update pronoun context after a successful command execution
-   * Called by the engine after command execution succeeds
+   * Called by the engine after command execution succeeds; the referent
+   * follows the command's roles (ADR-385 D7)
    * @param command The validated command with resolved entity IDs
-   * @param turnNumber Current turn number
    */
-  updatePronounContext(command: IValidatedCommand, turnNumber: number): void {
+  updatePronounContext(command: IValidatedCommand): void {
     if (this.worldContext?.world) {
-      this.pronounContext.updateFromCommand(command, this.worldContext.world, turnNumber);
+      this.pronounContext.updateFromCommand(command, this.worldContext.world);
     }
   }
 
@@ -1561,11 +1374,10 @@ export class EnglishParser implements Parser {
    * Used when entities are referenced outside of standard parsing
    * @param entityId The entity's ID
    * @param text How the player referred to it
-   * @param turnNumber Current turn number
    */
-  registerPronounEntity(entityId: string, text: string, turnNumber: number): void {
+  registerPronounEntity(entityId: string, text: string): void {
     if (this.worldContext?.world) {
-      this.pronounContext.registerEntity(entityId, text, this.worldContext.world, turnNumber);
+      this.pronounContext.registerEntity(entityId, text, this.worldContext.world);
     }
   }
 
@@ -1591,11 +1403,12 @@ export class EnglishParser implements Parser {
   getPronounContextManager(): PronounContextManager {
     return this.pronounContext;
   }
-}
 
-/**
- * Capitalize the first letter of a string
- */
-function capitalize(s: string): string {
-  return s.charAt(0).toUpperCase() + s.slice(1);
+  /**
+   * This parser's vocabulary registry (for testing/debugging): the language's
+   * words and the story's verbs, no other parser's.
+   */
+  getVocabularyRegistry(): VocabularyRegistry {
+    return this.vocabulary;
+  }
 }

@@ -16,8 +16,14 @@ export interface ISwitchableData {
   /** Whether this requires power to operate */
   requiresPower?: boolean;
   
-  /** Whether power is currently available */
+  /** Whether power is currently available (a story's own flag; ignored when power sources are declared) */
   hasPower?: boolean;
+
+  /**
+   * The things that power it (ADR-374 D10): it has power exactly while every
+   * one of them is directly inside it. Declaring any implies `requiresPower`.
+   */
+  powerSourceIds?: string[];
   
   /** Custom message when turning on */
   onMessage?: string;
@@ -82,6 +88,7 @@ export class SwitchableTrait implements ITrait, ISwitchableData {
   powerConsumption: number;
   requiresPower: boolean;
   hasPower: boolean;
+  powerSourceIds?: string[];
   onMessage?: string;
   offMessage?: string;
   alreadyOnMessage?: string;
@@ -101,6 +108,10 @@ export class SwitchableTrait implements ITrait, ISwitchableData {
     this.startsOn = data.startsOn ?? false;
     this.requiresPower = data.requiresPower ?? false;
     this.hasPower = data.hasPower ?? true;
+    if (data.powerSourceIds && data.powerSourceIds.length > 0) {
+      this.powerSourceIds = [...data.powerSourceIds];
+      this.requiresPower = true;
+    }
     this.isOn = data.isOn ?? (this.startsOn && this.hasPower);
     this.powerConsumption = data.powerConsumption ?? 1;
     this.onMessage = data.onMessage;

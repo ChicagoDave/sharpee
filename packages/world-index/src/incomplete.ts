@@ -421,12 +421,12 @@ function classify(
   | { kind: 'ambiguous'; candidates: string[]; matched: string }
   | { kind: 'no-object' }
   | { kind: 'resolved'; entity: string } {
-  const candidates = resolvePhrase(index, noun.phrase, noun.words);
+  const candidates = resolvePhrase(index, noun.phrase);
   if (candidates.length === 1) return { kind: 'resolved', entity: candidates[0] };
   if (candidates.length > 1) return { kind: 'ambiguous', candidates, matched: noun.phrase };
 
   const head = noun.words[noun.words.length - 1];
-  const headMatches = resolvePhrase(index, head, [head]);
+  const headMatches = resolvePhrase(index, head);
   if (headMatches.length === 0) return { kind: 'no-object' };
   if (headMatches.length > 1) return { kind: 'ambiguous', candidates: headMatches, matched: head };
 

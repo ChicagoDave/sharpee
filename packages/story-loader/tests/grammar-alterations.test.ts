@@ -113,6 +113,20 @@ describe('remove from action → the removal primitive (ADR-270 D3, acceptance 4
     expect(standard).toEqual(['take :item', 'pick up :item']);
   });
 
+  it('removes by shape: other slot names and another alternation order still match (ADR-382 D6)', () => {
+    const story = createStory(compileSource('remove from action taking\n  get the thing\n'));
+    const engine = captureGrammarEngine(story, seedTaking);
+    expect(engine.getRules().filter((r) => r.tier === 'standard').map((r) => r.pattern)).toEqual(['take :item', 'pick up :item']);
+    expect(engine.getRulesForAction('if.action.taking').map((r) => r.pattern)).toEqual(['take :item', 'pick up :item']);
+
+    const inserting = createStory(compileSource('remove from action inserting\n  put the thing inside or into or in the box\n'));
+    const engine2 = captureGrammarEngine(inserting, (builder) => {
+      builder.define('put :item in|into|inside :container').mapsTo('if.action.inserting').build();
+      builder.define('insert :item in|into :container').mapsTo('if.action.inserting').build();
+    });
+    expect(engine2.getRules().map((r) => r.pattern)).toEqual(['insert :item in|into :container']);
+  });
+
   it('backstop: an unmatched shape in rogue IR is a LoadError listing the action’s actual standard patterns (the compiler gates this as analysis.unmatched-removal-pattern, ADR-276)', () => {
     // Gate-clean compile (`get :item` matches), then swap the word in the IR.
     const ir = compileSource('remove from action taking\n  get the item\n');

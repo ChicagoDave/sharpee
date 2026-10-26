@@ -5,6 +5,7 @@ import { IFEntity } from '../../entities/if-entity.js';
 import { TraitType } from '../trait-types.js';
 import { LightSourceTrait } from './lightSourceTrait.js';
 import { SwitchableBehavior } from '../switchable/switchableBehavior.js';
+import type { WorldModel } from '../../world/WorldModel.js';
 
 /**
  * Behavior for light source entities.
@@ -30,6 +31,21 @@ export class LightSourceBehavior extends Behavior {
     return true;
   }
   
+  /**
+   * A switchable light's switch has just gone on: the light lights, if it
+   * has fuel, and the answer is whether it gives light now — the fact
+   * `if.event.lit` records, whatever mechanism (a switch or a flame) made it
+   * so (D20, Q8). Call only after the switch has gone on.
+   *
+   * @param source - The light source whose switch went on
+   * @param world - The world, for a powered device's power sources
+   * @returns true when the light is giving light now
+   */
+  static switchedOn(source: IFEntity, world: WorldModel): boolean {
+    if (!LightSourceBehavior.light(source)) return false;
+    return LightSourceBehavior.givesLight(source, world);
+  }
+
   /**
    * Turn off the light source
    */
@@ -63,6 +79,21 @@ export class LightSourceBehavior extends Behavior {
     return true;
   }
   
+  /**
+   * Whether the light is giving light now — the one reading of it (ADR-374
+   * D10), for the room's light check and for seeing a lit lamp in the dark.
+   * A switchable light that needs power and has none gives no light, whatever
+   * its switch says; otherwise the light's own state (`isLit`).
+   *
+   * @param source - The light source
+   * @param world - The world, for a powered device's power sources
+   * @returns true when it is lighting its surroundings
+   */
+  static givesLight(source: IFEntity, world: WorldModel): boolean {
+    if (source.hasTrait(TraitType.SWITCHABLE) && !SwitchableBehavior.hasPower(source, world)) return false;
+    return LightSourceBehavior.isLit(source);
+  }
+
   /**
    * Get the brightness level
    */

@@ -35,13 +35,13 @@ create the Hall
 
   A hall.
 
-create the brass lamp
+create the brass bell
   a thing, scenery
-  aka lamp
-  states, reversible: dark, lit
+  aka bell
+  states, reversible: still, ringing
   in the Hall
 
-  A lamp.
+  A bell.
 
 create the oak chest
   a container
@@ -98,7 +98,7 @@ describe('GH #355 — the loader stamps the IR id on every entity it creates', (
     const world = build();
     const expected: Record<string, string> = {
       Hall: 'hall',
-      'brass lamp': 'brass-lamp',
+      'brass bell': 'brass-bell',
       'oak chest': 'oak-chest',
       table: 'table',
       pebble: 'pebble',
@@ -120,9 +120,9 @@ describe('GH #355 — the loader stamps the IR id on every entity it creates', (
 
   it('the stamped id reaches the entity\'s own state key in the same world', () => {
     const world = build();
-    const lamp = byName(world, 'brass lamp')!;
-    const irId = lamp.attributes[CHORD_IR_ID_ATTRIBUTE] as string;
-    expect(world.getStateValue(CHORD_STATE_PREFIX + irId)).toBe('dark');
+    const bell = byName(world, 'brass bell')!;
+    const irId = bell.attributes[CHORD_IR_ID_ATTRIBUTE] as string;
+    expect(world.getStateValue(CHORD_STATE_PREFIX + irId)).toBe('still');
     const partner = byName(world, 'first partner')!;
     expect(world.getStateValue(CHORD_STATE_PREFIX + (partner.attributes[CHORD_IR_ID_ATTRIBUTE] as string))).toBe('waiting');
   });

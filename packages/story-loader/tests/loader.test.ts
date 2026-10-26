@@ -83,7 +83,7 @@ describe('cloak.story loads into a playable world', () => {
     expect(foyerRoom.blockedExits?.[Direction.NORTH]).toBeUndefined();
   });
 
-  it('builds the hook as scenery supporter with capacity 1, in the cloakroom', () => {
+  it('builds the hook as a scenery supporter that holds 1, in the cloakroom', () => {
     const hook = entity('brass-hook');
     expect(hook.has(TraitType.SCENERY)).toBe(true);
     const supporter = hook.get(TraitType.SUPPORTER) as SupporterTrait;
@@ -104,13 +104,14 @@ describe('cloak.story loads into a playable world', () => {
     expect(world.evaluate(darkKey(entity('foyer-bar').id))).toBe(true);
   });
 
-  it('returns the named protagonist, carrying the role vocabulary, placed in the foyer', () => {
+  it('returns the named protagonist, placed in the foyer, with no role vocabulary of its own', () => {
     // ADR-327 D10: the player is a character the story names, not a synthetic
-    // `yourself` actor. What the ROLE contributes is the self-vocabulary and
-    // the carrying capacity; the name and description are the character's own.
+    // `yourself` actor. The ROLE's self-vocabulary is the language's (ADR-387
+    // D2): the engine stamps it at install from the world's language words,
+    // so the loader, which knows no language, leaves the aliases alone.
     const identity = player.get(TraitType.IDENTITY) as IdentityTrait;
     expect(identity.name).toBe('Alex');
-    expect(identity.aliases).toEqual(expect.arrayContaining(['self', 'me', 'myself']));
+    expect(identity.aliases ?? []).not.toEqual(expect.arrayContaining(['me']));
     // ADR-333 D1a: the description rides as a key (ADR-107 id mode); the
     // text is what the story registers under it.
     const registered = new Map<string, string>();
@@ -213,7 +214,7 @@ describe('coverage: container config, plural, non-wearable wears', () => {
     return result.ir;
   };
 
-  it('applies max items / max weight config to a container kind', () => {
+  it('applies `holds <n>` to a container kind as its item capacity (ADR-369 D2)', () => {
     const ir = compileSource(`story
   title: Coverage
   authors:
@@ -227,7 +228,8 @@ create the Pantry
   A pantry.
 
 create the bread box
-  a container with max items 5 and max weight 20
+  a container
+  holds 5
   in the Pantry
 
   A box.
@@ -257,7 +259,7 @@ end before
 
     const box = world.getEntity(story.entityId('bread-box')!)!;
     const container = box.get(TraitType.CONTAINER) as ContainerTrait;
-    expect(container.capacity).toMatchObject({ maxItems: 5, maxWeight: 20 });
+    expect(container.capacity).toEqual({ maxItems: 5 });
 
     const signs = world.getEntity(story.entityId('direction-signs')!)!;
     const identity = signs.get(TraitType.IDENTITY) as IdentityTrait;

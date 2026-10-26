@@ -22,8 +22,15 @@
  * line, with the trimmed line proposed. The set the runner takes is never
  * changed by it.
  *
+ * The fragment's syntax is written here too, beside the compile that reads
+ * it: a tool that adds a claim (the lock, ADR-367 D4) renders the block,
+ * splices it before `end claims`, or starts a fresh fragment through
+ * `renderClaimBlock`, `spliceClaimIntoFragment` and `claimsFragmentWith`,
+ * and never spells a claims line itself.
+ *
  * Public interface: `compileClaims`, `IRClaimSet`, `IRClaim`,
- *   `ClaimsCompileResult`, `CompileClaimsOptions`.
+ *   `ClaimsCompileResult`, `CompileClaimsOptions`, `ClaimBlockSource`,
+ *   `renderClaimBlock`, `spliceClaimIntoFragment`, `claimsFragmentWith`.
  * Owner context: Chord language frontend. Browser-safe, filesystem-free.
  */
 
@@ -437,6 +444,80 @@ function stemsOf(word: string): Set<string> {
     }
   }
   return stems;
+}
+
+/** One claim to write: its name, its one predicate sentence, and its own needs, names as the fragment spells them. */
+export interface ClaimBlockSource {
+  readonly name: string;
+  /** A negative claim: written `never <name>`. */
+  readonly never?: boolean;
+  readonly predicate: string;
+  readonly needs?: { readonly rooms?: readonly string[]; readonly things?: readonly string[]; readonly verbs?: readonly string[] };
+}
+
+/**
+ * Render one claim as the block a `claims` fragment holds: the head, the
+ * predicate line, and a `needs` line for each non-empty list, two-space
+ * indented as it sits inside `claims … end claims`. No comment line is
+ * written: `##` is legal only at the top level, outside every block.
+ *
+ * @param claim the claim
+ * @returns the block, ending in a newline
+ * @throws when the name or the predicate is empty
+ */
+export function renderClaimBlock(claim: ClaimBlockSource): string {
+  if (claim.name.trim() === '') throw new Error('a claim needs a name');
+  if (claim.predicate.trim() === '') throw new Error(`the claim "${claim.name}" needs a predicate`);
+  const lines = [`  ${claim.never ? 'never' : 'claim'} ${claim.name}`, `    ${claim.predicate}`];
+  for (const key of ['rooms', 'things', 'verbs'] as const) {
+    const names = claim.needs?.[key] ?? [];
+    if (names.length > 0) lines.push(`    needs ${key}: ${names.join(', ')}`);
+  }
+  return `${lines.join('\n')}\n`;
+}
+
+/**
+ * Splice a rendered block into a claims fragment before its last
+ * `end claims` line, preceded by one blank line. Every other byte stays
+ * where it was.
+ *
+ * @param fragment the fragment's text
+ * @param block the rendered block (`renderClaimBlock`)
+ * @returns the new text
+ * @throws when the fragment has no `end claims` line
+ */
+export function spliceClaimIntoFragment(fragment: string, block: string): string {
+  const lines = fragment.split('\n');
+  let at = -1;
+  for (let i = lines.length - 1; i >= 0; i--) {
+    if (lines[i].trim() === 'end claims') { at = i; break; }
+  }
+  if (at === -1) throw new Error('the claims fragment has no `end claims` line to write before');
+  const blockLines = block.replace(/\n$/, '').split('\n');
+  const head = lines.slice(0, at);
+  while (head.length > 0 && head[head.length - 1].trim() === '') head.pop();
+  return [...head, '', ...blockLines, ...lines.slice(at)].join('\n');
+}
+
+/**
+ * A fresh claims fragment holding one block: the header the story's author
+ * reads, an empty shared set, and the block.
+ *
+ * @param storyTitle the story's title, for the header
+ * @param block the rendered block (`renderClaimBlock`)
+ * @returns the fragment's text
+ */
+export function claimsFragmentWith(storyTitle: string, block: string): string {
+  return [
+    `## ${storyTitle}'s claims: what the finished story can reach, each under the`,
+    '## rooms, things and verbs that are load-bearing on the way. The test tree\'s',
+    '## manifest names this file; the story never imports it.',
+    '',
+    'claims',
+    block.replace(/\n$/, ''),
+    'end claims',
+    '',
+  ].join('\n');
 }
 
 /** Stamp `file` onto every span under `node` that carries none. */

@@ -6,7 +6,6 @@ story
   ifid: 83A52F59-437D-4A27-BEFA-B9B3DEE7A84D
   story-version: 0.1.0
   states: first-day, second-day, third-day
-  use state-machines
   description: The last three days before Julius Caesar opens the new
     Globe. You are Henslowe's man, slipped in among the hired players.
     Bring the clown to the Admiral's Men and the play-book across

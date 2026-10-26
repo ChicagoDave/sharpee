@@ -1,13 +1,13 @@
 /**
- * bare-verb-dispatch.test.ts — platform-issue-sweep Phase 8 #13 (David's
- * ruling: ALL dispatch actions). Dispatch validate always handled the
- * no-target case (`refuse without` arm, else the platform default), but
- * compiler-emitted grammar only carried slotted patterns, so a bare `pet` /
- * `feed` / `lower` never parsed far enough to reach it. extendParser now
- * registers each pattern's literal prefix as a bare rule below the slotted
- * forms; the `'cant'` default (an action with no authored otherwise) renders
- * the platform's generic refusal instead of throwing phraseEvent's
- * missing-phrase LoadError.
+ * bare-verb-dispatch.test.ts — what a define-action registers for its verb
+ * alone, and the `'cant'` default. Platform-issue-sweep Phase 8 #13 added a
+ * bare rule per pattern prefix so a targetless verb reached the action's
+ * no-target arm; ADR-384 D5 retired them, because such a rule took over a
+ * standard verb typed alone, and the parser's failure classifier now asks
+ * for the missing seat by the matched verb. A story that wants its action to
+ * answer the bare verb writes the bare line. The `'cant'` default (an action
+ * with no authored otherwise) renders the platform's generic refusal
+ * instead of throwing phraseEvent's missing-phrase LoadError.
  */
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -34,29 +34,26 @@ function compileFixture(name: string): StoryIR {
 
 /**
  * Captures grammar registrations against a real if-domain GrammarEngine
- * (ADR-271 D3 — the loader now emits action-centrically via forAction()).
+ * (the loader registers each lowered rule through rule(spec), ADR-382 D2).
  */
 function captureGrammar(story: ChordStory): Array<{ pattern: string; action: string; tier: string }> {
   return captureGrammarRules(story).map((r) => ({ pattern: r.pattern, action: r.action, tier: r.tier }));
 }
 
-describe('bare-verb grammar for every define-action (Phase 8 #13)', () => {
-  it('registers each pattern literal prefix as a bare story-tier rule (ADR-268 D2)', () => {
+describe('a define-action registers only its written lines (ADR-384 D5, superseding Phase 8 #13)', () => {
+  it('registers the slotted forms and no rule for a verb alone', () => {
     const story = createStory(compileFixture('zoo-actions.story'));
     const rules = captureGrammar(story);
 
-    // Slotted forms as before.
     expect(rules).toContainEqual({ pattern: 'pet :animal', action: 'chord.action.petting', tier: 'story' });
     expect(rules).toContainEqual({ pattern: 'pat :animal', action: 'chord.action.petting', tier: 'story' });
     expect(rules).toContainEqual({ pattern: 'feed :animal', action: 'chord.action.feeding', tier: 'story' });
 
-    // NEW: bare-verb forms — a targetless `pet` / `pat` / `feed` parses and
-    // reaches dispatch validate's no-target arm (`refuse without` → pet-what).
-    // Specificity keeps them below the slotted forms (ADR-268: the old
-    // 150/140 priorities collapsed into the single story tier).
-    expect(rules).toContainEqual({ pattern: 'pet', action: 'chord.action.petting', tier: 'story' });
-    expect(rules).toContainEqual({ pattern: 'pat', action: 'chord.action.petting', tier: 'story' });
-    expect(rules).toContainEqual({ pattern: 'feed', action: 'chord.action.feeding', tier: 'story' });
+    // A targetless `pet` fails `pet :animal` with its verb matched, and the
+    // parser asks for the missing seat; no bare rule reaches the action.
+    for (const pattern of ['pet', 'pat', 'feed']) {
+      expect(rules.some((r) => r.pattern === pattern)).toBe(false);
+    }
   });
 });
 

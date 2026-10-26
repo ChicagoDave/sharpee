@@ -8,7 +8,8 @@
  * function so the derivation never re-derives them ad hoc, and so AC-6 can pin one
  * test per rule against platform behavior rather than against a source line.
  *
- * Public interface: initialStateOf, isInitialState, undirectedExits, doorStartsLocked,
+ * Public interface: initialStateOf, isInitialState, undirectedExits, wiredEdges,
+ * outsideRoomsOf, doorStartsLocked,
  * isPortableByDefault, platformTraitForState, isPlatformStateWord,
  * isStartableStateWord, platformStateWordsFor.
  *
@@ -21,8 +22,12 @@
  */
 
 import {
+  exitRoomId,
   PLATFORM_STATE_PAIRS,
   STARTS_STATE_PAIRINGS,
+  vehicleAboard,
+  vehicleCandidateRoomIds,
+  type IRCondition,
   type IREntity,
 } from '@sharpee/chord';
 
@@ -61,23 +66,35 @@ export function isInitialState(states: readonly string[] | undefined, state: str
  * @param rooms the story's room entities
  * @param isKnownRoom predicate identifying a destination id as a real room; a
  *   destination failing it is a broken exit and contributes no adjacency
+ * @param entities every story entity, for the vehicle a room is aboard
  * @returns room id to the set of room ids reachable in one move, both directions
  */
 export function undirectedExits(
   rooms: readonly IREntity[],
   isKnownRoom: (id: string) => boolean,
+  entities: readonly IREntity[],
 ): Map<string, Set<string>> {
   const adjacency = new Map<string, Set<string>>();
   for (const room of rooms) adjacency.set(room.id, new Set<string>());
 
-  for (const room of rooms) {
-    for (const exit of room.exits ?? []) {
-      if (!isKnownRoom(exit.to)) continue;
-      adjacency.get(room.id)?.add(exit.to);
-      adjacency.get(exit.to)?.add(room.id);
-    }
+  for (const edge of wiredEdges(rooms, isKnownRoom, entities)) {
+    adjacency.get(edge.from)?.add(edge.to);
+    adjacency.get(edge.to)?.add(edge.from);
   }
   return adjacency;
+}
+
+/**
+ * Where a room's `to outside` exits lead: every room the vehicle it is aboard
+ * can be in, read by the loader's own rule (`vehicleCandidateRoomIds`).
+ *
+ * @param entities every story entity
+ * @param roomId the room aboard
+ * @returns the candidate room ids, or none when the room is aboard no vehicle
+ */
+export function outsideRoomsOf(entities: readonly IREntity[], roomId: string): string[] {
+  const host = vehicleAboard(entities, roomId);
+  return host ? vehicleCandidateRoomIds(entities, host) : [];
 }
 
 /**
@@ -216,6 +233,20 @@ export interface WiredEdge {
   via: string | null;
   /** False when this edge is the loader's mirror rather than an authored row. */
   authored: boolean;
+  /** A passage's first form (ADR-378 D8): the edge's label; absent on a compass exit. */
+  label?: string;
+  /**
+   * The way out of a room aboard a vehicle (ADR-366 D7): `to` is one room the
+   * vehicle can be in, so the direction carries no bearing on the map.
+   * Absent on a room-to-room exit.
+   */
+  outside?: true;
+  /**
+   * The exit's `while` condition (ADR-378 D3, D8): the way exists only while
+   * it holds. A mirror carries its row's condition, as the loader's inferred
+   * reverse does. Absent on an unconditional exit.
+   */
+  condition?: IRCondition;
 }
 
 /**
@@ -226,34 +257,52 @@ export interface WiredEdge {
  * rows reports one-way exits that do not exist; reading them as undirected loses
  * the direction a gate is declared on.
  *
+ * A room aboard a vehicle reaches outside to every room the vehicle can be in,
+ * since the loader resolves `to outside` to the vehicle's room on each use.
+ *
  * @param rooms the story's room entities
  * @param isKnownRoom predicate identifying a destination id as a real room; a
  *   destination failing it yields no edge in either direction
+ * @param entities every story entity, for the vehicle a room is aboard
  * @returns every wired edge, authored rows first, each mirror following its row
  */
 export function wiredEdges(
   rooms: readonly IREntity[],
   isKnownRoom: (id: string) => boolean,
+  entities: readonly IREntity[],
 ): WiredEdge[] {
   const edges: WiredEdge[] = [];
   for (const room of rooms) {
     for (const exit of room.exits ?? []) {
-      if (!isKnownRoom(exit.to)) continue;
+      const condition = exit.condition !== undefined ? { condition: exit.condition } : {};
+      if (exit.to.kind === 'outside') {
+        // No mirror: the way back aboard is boarding, not the opposite word.
+        for (const to of outsideRoomsOf(entities, room.id).filter(isKnownRoom)) {
+          edges.push({ from: room.id, to, direction: exit.direction, via: exit.via, authored: true, outside: true, ...condition });
+        }
+        continue;
+      }
+      const to = exitRoomId(exit);
+      if (to === undefined || !isKnownRoom(to)) continue;
       edges.push({
         from: room.id,
-        to: exit.to,
+        to,
         direction: exit.direction,
         via: exit.via,
         authored: true,
+        ...(exit.passage !== undefined ? { label: exit.passage[0] } : {}),
+        ...condition,
       });
+      // A passage has no opposite (ADR-378 D1), so no mirror follows it.
       const back = oppositeDirection(exit.direction);
       if (back === undefined) continue;
       edges.push({
-        from: exit.to,
+        from: to,
         to: room.id,
         direction: back,
         via: exit.via,
         authored: false,
+        ...condition,
       });
     }
   }

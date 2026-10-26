@@ -15,6 +15,10 @@
  * parse-time gate must not guess) and WARNS: silent degradation is the
  * defect class ADR-273 exists to kill.
  *
+ * Which entities a phrase names is the one noun matcher's answer (ADR-385
+ * D3): `findEntitiesByName` asks `matchNoun` over each entity's naming
+ * surface, exactly as the validator does, so the two layers cannot disagree.
+ *
  * NOT the same as the world-model's RuleScopeEvaluator (rule-based pre-parse
  * vocabulary) or the stdlib's StandardScopeResolver (validation-phase entity
  * resolution with disambiguation).
@@ -27,6 +31,7 @@ import {
   type GrammarContext 
 } from '@sharpee/if-domain';
 import { type IEntity } from '@sharpee/core';
+import { matchNoun, namingSurfaceOf, type IFEntity, type NounQuery, type WorldModel } from '@sharpee/world-model';
 
 /**
  * Entity with optional trait methods (duck-typed for IFEntity compatibility).
@@ -248,92 +253,29 @@ export class GrammarScopeResolver {
   }
 
   /**
-   * Get entity names and aliases for matching
-   * Supports both legacy attributes.name and IdentityTrait patterns
-   */
-  private static getEntityNames(entity: IEntity): string[] {
-    const names: string[] = [];
-
-    // Check attributes (legacy pattern)
-    if (entity.attributes) {
-      if (entity.attributes.displayName) {
-        names.push(String(entity.attributes.displayName));
-      }
-      if (entity.attributes.name) {
-        names.push(String(entity.attributes.name));
-      }
-    }
-
-    // Check IdentityTrait (via .get() method)
-    const traitEntity = entity as ITraitAwareEntity;
-    if (typeof traitEntity.get === 'function') {
-      const identity = traitEntity.get('identity');
-      if (identity && typeof identity === 'object') {
-        if (identity.name) {
-          names.push(String(identity.name));
-        }
-        // Also check aliases
-        if (Array.isArray(identity.aliases)) {
-          names.push(...identity.aliases.map(String));
-        }
-      }
-    }
-
-    return names;
-  }
-
-  /**
-   * Find entities by name in a given scope.
+   * The entities in a scope base that a noun phrase names (ADR-385 D3).
    *
-   * Matching is original-text-first: an entity whose name genuinely begins
-   * with an article ("The Grail") wins its exact match before any article
-   * stripping is attempted. Only when the original text matches nothing is
-   * a leading English article (the/a/an) stripped and the search retried —
-   * articles are noise in entity references platform-wide (the
-   * unconstrained resolution path already ignores them), so `wind the
-   * clock` must gate the same as `wind clock`. Non-article determiners
-   * (`my`, `that`, `some`) are NOT handled here — a known limit of the
-   * constrained path; the fuller fix is determiner-tagged token stripping
-   * in the slot consumer.
+   * Asks the one noun matcher over each entity's naming surface, so an
+   * adjective admits here as it does in the validator and a substring never
+   * does. The query is the phrase's content words with the articles the slot
+   * consumer split off (ADR-385 D2), so a name beginning with an article
+   * ("The Grail") still matches exactly.
+   *
+   * @param query The phrase: content text and its leading articles
+   * @param constraint The slot's scope constraint (base and filters)
+   * @param context The grammar context (world, actor, location)
+   * @returns The admitted entities, in the base's order
    */
   static findEntitiesByName(
-    name: string,
+    query: NounQuery,
     constraint: ScopeConstraint,
     context: GrammarContext
   ): IEntity[] {
-    const entitiesInScope = this.getEntitiesInScope(constraint, context);
-
-    const matchesFor = (searchName: string): IEntity[] => {
-      // Try exact match first (name or any alias)
-      const exactMatches = entitiesInScope.filter(e => {
-        if (!e) return false;
-        const names = this.getEntityNames(e);
-        return names.some(n => n.toLowerCase() === searchName);
-      });
-
-      if (exactMatches.length > 0) {
-        return exactMatches;
-      }
-
-      // Try partial match
-      return entitiesInScope.filter(e => {
-        if (!e) return false;
-        const names = this.getEntityNames(e);
-        return names.some(n => n.toLowerCase().includes(searchName));
-      });
-    };
-
-    const searchName = name.toLowerCase();
-    const originalMatches = matchesFor(searchName);
-    if (originalMatches.length > 0) {
-      return originalMatches;
-    }
-
-    const stripped = searchName.replace(/^(?:the|a|an)\s+/, '');
-    if (stripped !== searchName && stripped.length > 0) {
-      return matchesFor(stripped);
-    }
-
-    return [];
+    const world = context.world as WorldModel;
+    // The world's scope surfaces hand back its own entities (IFEntity), typed
+    // here as the core IEntity the grammar contracts speak of
+    return this.getEntitiesInScope(constraint, context).filter(
+      (e) => !!e && matchNoun(namingSurfaceOf(world, e as IFEntity, context.actorId), query) !== null
+    );
   }
 }

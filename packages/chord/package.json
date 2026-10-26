@@ -22,6 +22,9 @@
     "test:ci": "vitest run",
     "golden:lexer": "UPDATE_GOLDEN=1 vitest run lexer-golden"
   },
+  "dependencies": {
+    "@sharpee/if-domain": "workspace:*"
+  },
   "devDependencies": {
     "@types/node": "^20.11.19",
     "rimraf": "^5.0.5",

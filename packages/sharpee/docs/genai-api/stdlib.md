@@ -628,6 +628,16 @@ export interface Action {
      */
     requiresHolding?: boolean;
     /**
+     * The action finds and runs the target's capability behavior itself
+     * (ADR-371 D1a): turning, cutting, digging, burning, lowering, raising,
+     * setting. The executor's universal capability dispatch skips such an
+     * action, so the behavior runs inside it and the phase runner still
+     * consults the target's interceptors (its Chord clauses) around it —
+     * a behavior and a clause on one thing for one verb both fire, and the
+     * action's own gates (cutting's tool check) are never bypassed.
+     */
+    dispatchesImplementations?: boolean;
+    /**
      * Whether to allow implicit inference for this action.
      *
      * When true (default), if the target doesn't meet targetRequirements
@@ -1122,7 +1132,6 @@ export declare const IFActions: {
     readonly EXAMINING: "if.action.examining";
     readonly SEARCHING: "if.action.searching";
     readonly LOOKING_UNDER: "if.action.looking_under";
-    readonly LOOKING_BEHIND: "if.action.looking_behind";
     readonly LISTENING: "if.action.listening";
     readonly SMELLING: "if.action.smelling";
     readonly TOUCHING: "if.action.touching";
@@ -1152,13 +1161,26 @@ export declare const IFActions: {
     readonly DRINKING: "if.action.drinking";
     readonly TALKING: "if.action.talking";
     readonly ASKING: "if.action.asking";
+    readonly ASKING_FOR: "if.action.asking_for";
     readonly TELLING: "if.action.telling";
     readonly ANSWERING: "if.action.answering";
     readonly SAYING_GOODBYE: "if.action.saying_goodbye";
+    readonly SAYING_YES: "if.action.saying_yes";
+    readonly SAYING_NO: "if.action.saying_no";
+    readonly SAYING_SORRY: "if.action.saying_sorry";
     readonly SHOWING: "if.action.showing";
     readonly GIVING: "if.action.giving";
+    readonly BUYING: "if.action.buying";
+    readonly TYING: "if.action.tying";
+    readonly UNTYING: "if.action.untying";
+    readonly LIGHTING: "if.action.lighting";
+    readonly EXTINGUISHING: "if.action.extinguishing";
+    readonly STEERING: "if.action.steering";
+    readonly SETTING_COURSE: "if.action.setting_course";
     readonly ATTACKING: "if.action.attacking";
     readonly KISSING: "if.action.kissing";
+    readonly BURNING: "if.action.burning";
+    readonly BREAKING: "if.action.breaking";
     readonly WAVING: "if.action.waving";
     readonly HIDING: "if.action.hiding";
     readonly REVEALING: "if.action.revealing";
@@ -1177,10 +1199,8 @@ export declare const IFActions: {
     readonly UNDOING: "if.action.undoing";
     readonly AGAIN: "if.action.again";
     readonly SCORING: "if.action.scoring";
-    readonly VERIFYING: "if.action.verifying";
     readonly VERSION: "if.action.version";
     readonly HELP: "if.action.help";
-    readonly HINTS: "if.action.hints";
     readonly ABOUT: "if.action.about";
 };
 export type IFActionType = typeof IFActions[keyof typeof IFActions];
@@ -1274,6 +1294,21 @@ export interface EntitySlotSpec {
      *   itself (where `entity` IS the item).
      */
     seedData?(context: ActionContext, entity: IFEntity, multiObjectItem?: IFEntity): Record<string, unknown>;
+    /**
+     * The noun on the other side of a two-noun command, as seen from this
+     * slot (the target for the thrown item, the item for the target). The
+     * engine seeds its id into the consultation's sharedData as
+     * `counterpartId`, so a hook can fire only for one counterpart — a Chord
+     * head's counterpart tail (`on the player throwing at the gong`) is the
+     * consumer. Declaring it on a descriptor's slots is what makes an action
+     * a counterpart action (`counterpartActionIds` in the registry).
+     *
+     * @param context - The action context.
+     * @param multiObjectItem - As for `seedData`: the item of a per-item
+     *   resolution, when this slot is the shared one.
+     * @returns The other noun, or `undefined` when the command has none.
+     */
+    counterpart?(context: ActionContext, multiObjectItem?: IFEntity): IFEntity | undefined;
 }
 /**
  * Rare, explicit special contracts (ADR-228 D7.3). A contract changes the
@@ -1313,6 +1348,20 @@ export interface LifecycleContracts {
      * executor still runs them for the action's single-object commands.
      */
     handlesMultiObject?: boolean;
+    /**
+     * The id has no grammar and is never executed: another action fires its
+     * lifecycle as a consequence of its own outcome — breaking, fired by
+     * attacking, dropping and throwing when the thing breaks (ADR-373 D3),
+     * through `runBreakingLifecycle`, which runs postExecute and postReport
+     * only. The executor never runs this descriptor's hooks.
+     *
+     * `causes` is the one declaration of which actions fire it, the most
+     * direct first: the call-site test holds the code to it, and tooling that
+     * must reach the id through play (the derived runner) reads it.
+     */
+    firedAsConsequence?: {
+        readonly causes: readonly string[];
+    };
 }
 /**
  * An action's declarative interceptor surface (ADR-228 D0-B).
@@ -1720,7 +1769,7 @@ export declare function runMultiObjectReport(context: ActionContext, itemStates:
  * registered under a given action id will ever be consulted.
  *
  * Public interface: `actionLifecycleDescriptors`,
- * `interceptorConsultingActionIds`, `lifecycleDescriptorFor`.
+ * `interceptorConsultingActionIds`, `counterpartActionIds`, `lifecycleDescriptorFor`.
  * Owner: stdlib standard-action infrastructure (ADR-228).
  *
  * NOTE: this module is deliberately NOT exported from `./index.ts` (the
@@ -1730,13 +1779,16 @@ export declare function runMultiObjectReport(context: ActionContext, itemStates:
  */
 import { ActionLifecycleDescriptor } from './descriptor.js';
 /**
- * The descriptor table: all 38 entity-keyed standard actions (33 per
+ * The descriptor table: all 62 entity-keyed standard actions (33 per
  * ADR-228 Consequences + cutting per ADR-230 D3c + digging + asking/telling per
- * ADR-230 Phase 6 + turning per the chord go-live G1 shortlist, 2026-07-17).
- * Structural exemptions
- * (no entity to key on: about, waiting, looking, … and the full-delegation
- * capability actions lowering/raising) are absent by design — see ADR-228
- * Context.
+ * ADR-230 Phase 6 + turning per the chord go-live G1 shortlist, 2026-07-17,
+ * + the eight ADR-370 stock verbs, 2026-10-13, + lowering, raising, burning
+ * and setting per ADR-371, 2026-10-14, + asking_for, consulting and buying
+ * per ADR-372, 2026-10-14, + breaking (a consequence id, fired by the action
+ * that broke the thing), tying and untying per ADR-373, 2026-10-14, + lighting
+ * and extinguishing per ADR-374 D9, 2026-10-15). Structural exemptions
+ * (no entity to key on: about, waiting, looking, …) are absent by design — see
+ * ADR-228 Context; lowering and raising joined with ADR-371 D1.
  */
 export declare const actionLifecycleDescriptors: readonly ActionLifecycleDescriptor[];
 /**
@@ -1749,6 +1801,12 @@ export declare const actionLifecycleDescriptors: readonly ActionLifecycleDescrip
  */
 export declare function lifecycleDescriptorFor(actionId: string): ActionLifecycleDescriptor | undefined;
 export declare const interceptorConsultingActionIds: ReadonlySet<string>;
+/**
+ * Action ids whose descriptor declares a `counterpart` on a slot (ADR-372
+ * D1): the two-noun actions a Chord head may narrow by naming the other
+ * noun. The Chord manifest's `counterpartActions` is generated from this.
+ */
+export declare const counterpartActionIds: ReadonlySet<string>;
 ```
 
 ### actions/lifecycle/phase-runner
@@ -1870,7 +1928,7 @@ export type { RemovingEventMap } from './removing/removing-events.js';
 export * from './giving/index.js';
 export * from './showing/index.js';
 export { throwingAction } from './throwing/index.js';
-export type { ThrownEventData, ItemDestroyedEventData } from './throwing/throwing-events.js';
+export type { ThrownEventData } from './throwing/throwing-events.js';
 export * from './pushing/index.js';
 export * from './pulling/index.js';
 export * from './lowering/index.js';
@@ -1892,6 +1950,28 @@ export * from './restarting/index.js';
 export * from './undoing/index.js';
 export * from './again/index.js';
 export * from './hiding/index.js';
+export { createImplementationDispatchingAction, hasInterceptorImplementation, type ImplementationDispatchSpec } from './dispatch-shared.js';
+export * from './jumping/index.js';
+export * from './kissing/index.js';
+export * from './waving/index.js';
+export * from './saying_yes/index.js';
+export * from './saying_no/index.js';
+export * from './saying_sorry/index.js';
+export * from './looking_under/index.js';
+export * from './emptying/index.js';
+export * from './burning/index.js';
+export * from './setting/index.js';
+export * from './asking_for/index.js';
+export * from './consulting/index.js';
+export * from './buying/index.js';
+export * from './breaking/index.js';
+export * from './tying/index.js';
+export * from './untying/index.js';
+export * from './lighting/index.js';
+export * from './extinguishing/index.js';
+export * from './steering/index.js';
+export * from './setting_course/index.js';
+export * from './vehicle-command-transformer.js';
 import { TraceAction } from '../author/index.js';
 export declare const standardActions: (import("../enhanced-types.js").Action | TraceAction)[];
 ```
@@ -2281,6 +2361,13 @@ export interface ActionMetadata {
      * carried black book and a guidebook on the floor means the carried one).
      */
     preferredScope?: ScopeLevel;
+    /**
+     * The entities this action's topic may name beyond what the actor sees
+     * (alignment finding F5): setting-course's destinations and landmarks,
+     * which are never in scope. The validator resolves the topic among them
+     * by name and alias, rooms included; a miss leaves the topic as text.
+     */
+    topicCandidates?: (world: WorldModel, actorId: string) => readonly string[];
 }
 /**
  * Slot types that can have entity selections
@@ -2327,49 +2414,40 @@ export declare class CommandValidator implements CommandValidator {
      * match carries its EntityId (interceptors and future conversation
      * systems key on it); a miss or a tie falls back to the verbatim text.
      *
-     * @param text Verbatim topic text as typed (articles preserved)
+     * An action that names its own `topicCandidates` resolves among those
+     * instead, rooms included and with no scope filter: the places a command
+     * names that are never in sight (alignment finding F5).
+     *
+     * @param topic The parsed topic: its verbatim text, and the phrase the
+     *   parser split once (ADR-385 D2), which the matcher reads
+     * @param metadata The action's metadata, for its `topicCandidates`
      * @returns The validated topic — `entity` set only on a unique match
      */
     private resolveTopic;
     /**
      * Find candidate entities the noun phrase matches at any tier
-     * (ADR-231 D3). Rooms are skipped; the player IS resolvable here: a
-     * player with an IdentityTrait ("yourself", aliases me/self/myself)
-     * must match "examine me", "x yourself", etc. (ISSUE #154).
+     * (ADR-231 D3). Rooms are skipped — except a landmark room seen across
+     * an expanse (ADR-376 D6), which is a thing in the distance the player
+     * can name and examine; the player IS resolvable here: a player with an
+     * IdentityTrait ("yourself", aliases me/self/myself) must match
+     * "examine me", "x yourself", etc. (ISSUE #154).
      */
     private findCandidates;
+    /** A landmark room of an expanse the player is positioned in, seen from outside it (ADR-376 D6). */
+    private isLandmarkInSight;
     /**
-     * Match a noun phrase against one entity's naming surface (ADR-231 D3,
-     * PIN 2's tiered model).
+     * Match a noun phrase against one entity through the one noun matcher
+     * (ADR-385 D1; the tiers are ADR-231 D3's). The self words name whoever
+     * holds the player role (ADR-327), so the player is the observer.
      *
-     * Tier EXACT: the query text — tried with its leading articles restored
-     * first (so proper names beginning with an article-like word survive),
-     * then as parsed, then article-stripped — equals the full name, a full
-     * alias, or the entity type, case-insensitively.
-     *
-     * Tier WORDS: EVERY query content word (stopwords dropped by
-     * `deriveNameVocabulary`) matches a word of the entity's vocabulary
-     * (name content words + alias content words + authored adjectives).
-     * Any query word matching nothing DISQUALIFIES the candidate:
-     * "x brass sword" never resolves to the brass key.
-     *
-     * @returns The tier and matched-word count, or null when neither
-     *   tier matches.
+     * @returns The tier as the validator ranks it and the matched-word count,
+     *   or null when the phrase does not name the entity.
      */
-    private matchEntityName;
-    /**
-     * The entity's word-level matching vocabulary (PIN 2): name content
-     * words + alias content words + authored adjectives (per-side for walls
-     * via getEntityAdjectives). Always derived on demand from the CURRENT
-     * name — never stored — so renames can't leave stale vocabulary and
-     * Chord-loaded and TS-authored entities are uniform by construction.
-     */
-    private getEntityVocabulary;
-    /**
-     * Strip leading articles ("the", "a", "an") from query text, always
-     * keeping at least one word.
-     */
-    private stripLeadingArticles;
+    private nameMatch;
+    /** The entity's naming surface as the player sees it (ADR-385 D1). */
+    private surfaceOf;
+    /** Whether the player carries or wears the entity (what `my` narrows to, ADR-385 D2). */
+    private isOwnedByPlayer;
     /**
      * Keep only the dominant (tier, wordsMatched) group of an already-sorted
      * scored list (PIN 2: higher tier wins; within a tier, more matched
@@ -2383,7 +2461,7 @@ export declare class CommandValidator implements CommandValidator {
     /**
      * Score entities against a reference (ADR-231 D3 tiered model).
      *
-     * The tier and matched-word count come from `matchEntityName` and carry
+     * The tier and matched-word count come from `nameMatch` and carry
      * PIN 2's ranking; the numeric `score` is the within-tie heuristic
      * (modifier/visibility/inventory/author scope priority bonuses) that the
      * normal disambiguation flow uses to break residual ties.
@@ -2430,24 +2508,6 @@ export declare class CommandValidator implements CommandValidator {
      * Get entity description
      */
     private getEntityDescription;
-    /**
-     * Get entity adjectives.
-     *
-     * For walls (ADR-173), adjectives are per-side: the wall entity carries
-     * an adjective for each of its two connecting rooms, and the parser
-     * resolves against the side facing the player's current room. The same
-     * wall entity therefore matches different adjectives from each side
-     * (e.g. 'oak' from the parlor, 'brick' from the library). When the
-     * player is not in either connecting room, the wall contributes no
-     * adjectives.
-     *
-     * For all other entities, adjectives come from `IdentityTrait.adjectives`.
-     */
-    private getEntityAdjectives;
-    /**
-     * Get entity synonyms
-     */
-    private getEntitySynonyms;
     /**
      * Get action metadata
      */
@@ -2500,37 +2560,6 @@ export interface ValidatedCommand extends CoreValidatedCommand {
  * Extended validation error codes
  */
 export type ValidationErrorCode = 'ENTITY_NOT_FOUND' | 'ENTITY_NOT_VISIBLE' | 'ENTITY_NOT_REACHABLE' | 'ENTITY_NOT_AUDIBLE' | 'ENTITY_NOT_DETECTABLE' | 'NOT_CARRIED' | 'ACTION_NOT_AVAILABLE' | 'PRECONDITION_FAILED' | 'NO_PLAYER' | 'AMBIGUOUS_ENTITY';
-```
-
-### vocabulary/standard-english
-
-```typescript
-/**
- * Standard English vocabulary for Sharpee
- *
- * This provides the base vocabulary for standard IF commands
- */
-import { VerbVocabulary, DirectionVocabulary, SpecialVocabulary } from '../parser/index.js';
-/**
- * Standard verb vocabulary
- */
-export declare const standardVerbs: VerbVocabulary[];
-/**
- * Standard direction vocabulary
- */
-export declare const standardDirections: DirectionVocabulary[];
-/**
- * Special vocabulary
- */
-export declare const specialVocabulary: SpecialVocabulary;
-/**
- * Common prepositions
- */
-export declare const commonPrepositions: string[];
-/**
- * Register all standard vocabulary
- */
-export declare function registerStandardVocabulary(): void;
 ```
 
 ### capabilities
@@ -4774,22 +4803,12 @@ export type MediaChannelId = (typeof MEDIA_CHANNEL_IDS)[keyof typeof MEDIA_CHANN
  * @see ADR-163 — Channel-Service Platform §6, §7 (closure-per-channel)
  */
 import type { IOChannel } from '@sharpee/if-domain';
-import type { IAudibilityEvent } from '@sharpee/if-domain';
+import { type IAudibilityEvent } from '@sharpee/if-domain';
 /**
- * Semantic-event types emitted by the sound subsystem. Phase 6's
- * dispatcher fires `AUDIBILITY_HEARD` once per listener per propagated
- * sound; the event's `data` field carries the listener-specific
- * `IAudibilityEvent` payload.
+ * Semantic-event types of the sound subsystem. Defined in if-domain, the
+ * one package both the engine (which fires them) and stdlib share.
  */
-export declare const SOUND_EVENT_TYPES: {
-    /**
-     * A listener perceived a propagated sound. Event `data` is an
-     * `IAudibilityEvent` (per-listener tier, source-room, optional
-     * crossing wall, content if content-bearing).
-     */
-    readonly AUDIBILITY_HEARD: "sound.audibility.heard";
-};
-export type SoundEventType = typeof SOUND_EVENT_TYPES[keyof typeof SOUND_EVENT_TYPES];
+export { SOUND_EVENT_TYPES, type SoundEventType } from '@sharpee/if-domain';
 /**
  * `audibility` — append-mode channel carrying every `AudibilityEvent`
  * delivered to listeners during the turn just executed.
@@ -4895,9 +4914,7 @@ export declare const BANNER_KEYS: ReadonlySet<string>;
  */
 export * from './actions/index.js';
 export * from './events/index.js';
-export * from './parser/index.js';
 export * from './validation/index.js';
-export * from './vocabulary/index.js';
 export * from './capabilities/index.js';
 export * from './query-handlers/index.js';
 export * from './scope/index.js';

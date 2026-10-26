@@ -11,6 +11,7 @@ export const TakingMessages = {
   ALREADY_HAVE: 'already_have',
   CANT_TAKE_ROOM: 'cant_take_room',
   FIXED_IN_PLACE: 'fixed_in_place',
+  ATTACHED: 'attached',  // held fast to an anchor (ADR-373 D1)
   CONTAINER_FULL: 'container_full',
   TOO_HEAVY: 'too_heavy',
   CANNOT_TAKE: 'cannot_take',
@@ -21,6 +22,8 @@ export const TakingMessages = {
   TAKEN: 'taken',
   TAKEN_FROM: 'taken_from',
   TAKEN_MULTI: 'taken_multi',  // Compact format for multi-object: "{item}: Taken."
+  /** ADR-376 D10: a floating thing hauled in from the expanse. */
+  RETRIEVED: 'retrieved',
 } as const;
 
 export type TakingMessageId = typeof TakingMessages[keyof typeof TakingMessages];

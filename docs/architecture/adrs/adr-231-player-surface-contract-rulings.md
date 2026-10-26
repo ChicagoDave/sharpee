@@ -218,6 +218,11 @@ recur. Because it re-scores many parses subtly, delivery requires the
 full dungeo walkthrough chain (one good run = baseline), the unit
 transcripts, and the parser suite before it merges.
 
+> **Amendment note (2026-10-24, ADR-384):** literal specificity stands as
+> the first ranking key; "confidence" and per-rule priority do not. ADR-384
+> D1 removed match confidence, and D2 orders matches by specificity, then
+> tier, then definition order (`compareGrammarRank`).
+
 ### D3: Word-level name vocabulary with scored matching (ruled by David, 2026-07-17)
 
 Ruled against the north star — 100% Sharpee↔Chord alignment and a
@@ -237,6 +242,15 @@ so proper names survive) rides as the defect fix it always was.
 Story-wide behavior change is accepted: entities sharing a word now
 disambiguate where they previously missed — that is the correct IF
 behavior, verified via the walkthrough chain and unit transcripts.
+
+> **Amendment note (2026-10-25, ADR-385):** the tiers stand (exact over
+> words, more matched words win, an unmatched word disqualifies) but their
+> home is no longer the validator. They live in world-model's one noun
+> matcher, `matchNoun` (ADR-385 D1), which the validator, the parse-time
+> gate, list expansion and world-index all call. Articles are no longer
+> stripped before matching: the English parser splits articles and
+> determiners once (ADR-385 D2), and the matcher tries the exact tier with
+> the articles restored, so a name beginning with one still matches.
 
 ### D4: First-class topic field, entity-first resolution (ruled by David, 2026-07-17)
 

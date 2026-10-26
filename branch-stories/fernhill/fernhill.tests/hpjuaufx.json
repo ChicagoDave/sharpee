@@ -9,6 +9,9 @@
       },
       "command": "open deed box with locket",
       "id": "mawc61yb",
+      "locks": [
+        "the deed box is open"
+      ],
       "type": "turn"
     },
     {

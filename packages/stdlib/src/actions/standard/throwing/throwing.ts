@@ -18,30 +18,32 @@ import { ActionMetadata } from '../../../validation/index.js';
 import { type ISemanticEvent, definePoint } from '@sharpee/core';
 
 // Choice points (ADR-293 D2): every throwing draw goes through a declared
-// point on its own stream. Grouping ruled at implementation time: the three
-// fragile-break rolls are ONE point (same outcome class — "did it break" —
-// with the branch context supplying the message), the two hit rolls stay
-// split (hitting an actor and hitting a stationary target are distinct
-// coverage rows an author play-tests separately).
+// point on its own stream. The two hit rolls stay split (hitting an actor
+// and hitting a stationary target are distinct coverage rows an author
+// play-tests separately). Breaking is not a roll: a declared-fragile thing
+// always breaks (ADR-373 D4 retired the `stdlib.throwing.breaks` point).
 const HIT_ACTOR_POINT = definePoint('stdlib.throwing.hit-actor', { classes: ['yes', 'no'] });
 const CATCH_POINT = definePoint('stdlib.throwing.catch', { classes: ['yes', 'no'] });
 const HIT_STATIONARY_POINT = definePoint('stdlib.throwing.hit-stationary', { classes: ['yes', 'no'] });
-const BREAKS_POINT = definePoint('stdlib.throwing.breaks', { classes: ['yes', 'no'] });
 import {
   TraitType,
-  IdentityTrait,
   IdentityBehavior,
+  BreakableBehavior,
   ActorBehavior,
   RoomBehavior,
   OpenableBehavior,
-  Direction,
   type DirectionType,
+  isDirection,
   findTraitWithCapability,
   type CapabilityBehavior,
   type CapabilityEffect,
-  type ITrait
+  type ITrait,
+  getVehicleAboard,
+  lookoutOf,
+  receiveInExpanse,
 } from '@sharpee/world-model';
 import { IFActions } from '../../constants.js';
+import { runBreakingLifecycle } from '../breaking/breaking.js';
 import { ScopeLevel } from '../../../scope/types.js';
 import { ThrowingEventMap } from './throwing-events.js';
 import { nounPhraseFor } from '../../../utils/index.js';
@@ -68,6 +70,7 @@ export const throwingLifecycle: ActionLifecycleDescriptor = {
       id: 'item',
       actionIds: [IFActions.THROWING],
       resolve: (ctx) => ctx.command.directObject?.entity,
+      counterpart: (ctx) => ctx.command.indirectObject?.entity,
       seedData: (ctx, entity) => ({
         itemId: entity.id,
         itemName: entity.name,
@@ -79,6 +82,7 @@ export const throwingLifecycle: ActionLifecycleDescriptor = {
       id: 'target',
       actionIds: [IFActions.THROWING],
       resolve: (ctx) => ctx.command.indirectObject?.entity,
+      counterpart: (ctx, multiObjectItem) => multiObjectItem ?? ctx.command.directObject?.entity,
       seedData: (ctx, entity) => ({
         itemId: ctx.command.directObject?.entity?.id,
         itemName: ctx.command.directObject?.entity?.name,
@@ -90,37 +94,11 @@ export const throwingLifecycle: ActionLifecycleDescriptor = {
 };
 
 /**
- * Helper to convert a string direction to Direction constant
+ * The direction the command names: the parser hands over the `Direction`
+ * constant, so anything else names none.
  */
-function parseDirectionString(dir: string | undefined): DirectionType | null {
-  if (!dir) return null;
-
-  const directionMap: Record<string, DirectionType> = {
-    'north': Direction.NORTH,
-    'south': Direction.SOUTH,
-    'east': Direction.EAST,
-    'west': Direction.WEST,
-    'northeast': Direction.NORTHEAST,
-    'northwest': Direction.NORTHWEST,
-    'southeast': Direction.SOUTHEAST,
-    'southwest': Direction.SOUTHWEST,
-    'up': Direction.UP,
-    'down': Direction.DOWN,
-    'in': Direction.IN,
-    'out': Direction.OUT,
-    'n': Direction.NORTH,
-    's': Direction.SOUTH,
-    'e': Direction.EAST,
-    'w': Direction.WEST,
-    'ne': Direction.NORTHEAST,
-    'nw': Direction.NORTHWEST,
-    'se': Direction.SOUTHEAST,
-    'sw': Direction.SOUTHWEST,
-    'u': Direction.UP,
-    'd': Direction.DOWN
-  };
-
-  return directionMap[dir.toLowerCase()] || null;
+function parseDirectionString(dir: unknown): DirectionType | null {
+  return isDirection(dir) ? dir : null;
 }
 
 /**
@@ -176,11 +154,11 @@ export const throwingAction: Action & { metadata: ActionMetadata } = {
     'target_not_visible',
     'target_not_here',
     'no_exit',
+    'cant_throw_that_way',
     'too_heavy',
     'self',
     'thrown',
     'thrown_down',
-    'thrown_gently',
     'thrown_at',
     'hits_target',
     'misses_target',
@@ -194,7 +172,9 @@ export const throwingAction: Action & { metadata: ActionMetadata } = {
     'fragile_breaks',
     'target_ducks',
     'target_catches',
-    'target_angry'
+    'target_angry',
+    'thrown_afloat',
+    'lost_overboard'
   ],
 
   metadata: {
@@ -208,10 +188,17 @@ export const throwingAction: Action & { metadata: ActionMetadata } = {
     const actor = context.actor;
     const item = context.command.directObject?.entity;
     const target = context.command.indirectObject?.entity;
-    const direction = context.command.parsed.extras?.direction as string;
+    const named = context.command.parsed.extras?.direction;
+    const direction = parseDirectionString(named);
 
     if (!item) {
       return { valid: false, error: 'no_item' };
+    }
+
+    // Only the parser's Direction constant names a direction; any other
+    // value is a way this action cannot read, refused in its own words
+    if (named !== undefined && !direction) {
+      return { valid: false, error: 'cant_throw_that_way', params: { item: nounPhraseFor(item) } };
     }
 
     // Item must be carried (or implicitly takeable)
@@ -238,20 +225,14 @@ export const throwingAction: Action & { metadata: ActionMetadata } = {
         return { valid: false, error: 'self' };
       }
     } else if (direction) {
-      const throwDirection = parseDirectionString(direction);
-
-      if (!throwDirection) {
-        return { valid: false, error: 'no_exit' };
-      }
-
       const currentRoom = context.currentLocation;
       if (currentRoom.has(TraitType.ROOM)) {
-        const exit = RoomBehavior.getExit(currentRoom, throwDirection);
+        const exit = RoomBehavior.getExit(currentRoom, direction);
         if (!exit) {
           return {
             valid: false,
             error: 'no_exit',
-            params: { direction: throwDirection }
+            params: { direction }
           };
         }
       }
@@ -299,14 +280,9 @@ export const throwingAction: Action & { metadata: ActionMetadata } = {
     // Check item properties
     sharedData.weight = IdentityBehavior.getWeight(item);
 
-    // Check if item is fragile
-    const itemName = item.name.toLowerCase();
-    const identity = item.getTrait(IdentityTrait);
-    const description = (identity?.description || '').toLowerCase();
-    const fragileKeywords = ['glass', 'crystal', 'delicate', 'fragile', 'bottle', 'vase', 'china', 'porcelain'];
-    sharedData.isFragile = fragileKeywords.some(keyword =>
-      itemName.includes(keyword) || description.includes(keyword)
-    );
+    // Fragility is declared on the breakable trait, never guessed from
+    // the name (ADR-373 D4)
+    sharedData.isFragile = BreakableBehavior.isFragile(item);
 
     // Initialize params — EntityInfo for formatter chain (ADR-158)
     sharedData.params = { item: nounPhraseFor(item) };
@@ -359,10 +335,8 @@ export const throwingAction: Action & { metadata: ActionMetadata } = {
         sharedData.targetAngry = target.has(TraitType.ACTOR);
 
         if (sharedData.isFragile) {
-          sharedData.willBreak = context.random.chance(BREAKS_POINT, 0.8);
-          if (sharedData.willBreak) {
-            sharedData.messageId = 'breaks_against';
-          }
+          sharedData.willBreak = true;
+          sharedData.messageId = 'breaks_against';
         }
 
         // Check if item lands on/in target
@@ -398,10 +372,8 @@ export const throwingAction: Action & { metadata: ActionMetadata } = {
           sharedData.messageId = 'sails_through';
 
           if (sharedData.isFragile) {
-            sharedData.willBreak = context.random.chance(BREAKS_POINT, 0.5);
-            if (sharedData.willBreak) {
-              sharedData.messageId = 'breaks_on_impact';
-            }
+            sharedData.willBreak = true;
+            sharedData.messageId = 'breaks_on_impact';
           }
         } else {
           sharedData.messageId = 'thrown_direction';
@@ -410,28 +382,38 @@ export const throwingAction: Action & { metadata: ActionMetadata } = {
     } else {
       // General throw
       if (sharedData.isFragile) {
-        sharedData.willBreak = context.random.chance(BREAKS_POINT, 0.3);
-        if (sharedData.willBreak) {
-          sharedData.messageId = 'fragile_breaks';
-        } else {
-          sharedData.messageId = 'thrown_gently';
-        }
+        sharedData.willBreak = true;
+        sharedData.messageId = 'fragile_breaks';
       } else {
         sharedData.messageId = 'thrown_down';
       }
     }
 
-    sharedData.finalLocation = sharedData.willBreak ? null : finalLocation;
+    sharedData.finalLocation = finalLocation;
 
-    // Perform the actual move - this is the critical mutation!
-    // Move to final location, or remove from world if destroyed
+    // Into an expanse (ADR-376 D9, D10): thrown from the vehicle or beside
+    // it, a thing that would land in the expanse room lands at the
+    // thrower's cell — afloat if it floats, lost offstage otherwise.
+    const lookout = finalLocation ? lookoutOf(context.world, actor) : undefined;
+    const overTheSide = sharedData.throwType !== 'at_target' && finalLocation === context.world.getLocation(actor.id) && getVehicleAboard(context.world, actor.id)?.id === finalLocation;
+    if (lookout && (finalLocation === lookout.expanse.id || overTheSide)) {
+      const receipt = receiveInExpanse(context.world, item, lookout.expanse.id, lookout.cell);
+      sharedData.messageId = receipt === 'floats' ? 'thrown_afloat' : 'lost_overboard';
+      // Where it truly landed: the expanse room, or nowhere.
+      sharedData.finalLocation = receipt === 'floats' ? lookout.expanse.id : null;
+      if (sharedData.willBreak) BreakableBehavior.break(item, context.world);
+      return;
+    }
+
+    // Perform the actual move - this is the critical mutation! A broken
+    // thing is still a thing: it lands where it falls, broken, and removing
+    // it is the story's call in an `after the player breaking` body
+    // (ADR-373 D4)
     if (sharedData.finalLocation) {
       context.world.moveEntity(item.id, sharedData.finalLocation);
-    } else if (sharedData.willBreak) {
-      // Item is destroyed - move to limbo/remove from play
-      // For now, we'll mark it as destroyed by setting location to null
-      // The event system will handle actual removal if needed
-      context.world.moveEntity(item.id, ''); // Empty string = nowhere
+    }
+    if (sharedData.willBreak) {
+      BreakableBehavior.break(item, context.world);
     }
 
   },
@@ -508,14 +490,11 @@ export const throwingAction: Action & { metadata: ActionMetadata } = {
     // Create THROWN event with messageId
     events.push(context.event('if.event.thrown', eventData));
 
-    // If item breaks, create ITEM_DESTROYED event
+    // The throw broke it: fire the breaking id after the throw's own line
+    // (ADR-373 D3)
     if (sharedData.willBreak) {
-      const destroyedData: ThrowingEventMap['if.event.item_destroyed'] = {
-        item: sharedData.itemId,
-        itemName: sharedData.itemName,
-        cause: 'thrown'
-      };
-      events.push(context.event('if.event.item_destroyed', destroyedData));
+      const item = context.world.getEntity(sharedData.itemId);
+      if (item) events.push(...runBreakingLifecycle(context, item));
     }
 
     // Add target reaction for actors as additional event

@@ -206,25 +206,6 @@ describe('Engine Integration Tests', () => {
     });
   });
 
-  describe('Vocabulary integration', () => {
-    it('should update vocabulary as player moves', async () => {
-      const setup = setupTestEngine();
-      const engine = setup.engine;
-      const story = new ComplexWorldTestStory();
-      engine.installStory(story);
-      engine.start();
-      
-      // Initial vocabulary update
-      const updateSpy = vi.spyOn(engine, 'updateScopeVocabulary');
-      
-      await engine.executeTurn('go north');
-      
-      expect(updateSpy).toHaveBeenCalled();
-      
-      engine.stop();
-    });
-  });
-
   describe('Standard engine setup', () => {
     it('should create functional standard engine', () => {
       const { engine, world, player } = setupTestEngineWithStory({

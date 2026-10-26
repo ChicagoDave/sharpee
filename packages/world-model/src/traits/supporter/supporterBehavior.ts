@@ -5,7 +5,7 @@ import { IFEntity } from '../../entities/if-entity.js';
 import { TraitType } from '../trait-types.js';
 import { SupporterTrait } from './supporterTrait.js';
 import { IdentityBehavior } from '../identity/identityBehavior.js';
-import { IWorldQuery } from '../container/containerBehavior.js';
+import { IWorldPlacement, IWorldQuery } from '../container/containerBehavior.js';
 
 /**
  * Result of adding an item to a supporter
@@ -174,13 +174,17 @@ export class SupporterBehavior extends Behavior {
   }
   
   /**
-   * Add an item to a supporter
+   * Put an item on a supporter: when the supporter does not already hold the
+   * item, takes its type and has room for it, the item moves onto the
+   * supporter. Behaviors own mutations, so this is the one place an item
+   * lands on a supporter.
    * @param supporter The supporter receiving the item
    * @param item The item being added
-   * @param world World query interface
-   * @returns Result describing what happened
+   * @param world The world, for the checks and the move
+   * @returns What happened; `success` is true only when the item moved, and a
+   *   failure names its reason and leaves the item where it was
    */
-  static addItem(supporter: IFEntity, item: IFEntity, world: IWorldQuery): IAddItemToSupporterResult {
+  static addItem(supporter: IFEntity, item: IFEntity, world: IWorldPlacement): IAddItemToSupporterResult {
     // Check if item is already on supporter
     const currentLocation = world.getLocation(item.id);
     if (currentLocation === supporter.id) {
@@ -227,10 +231,10 @@ export class SupporterBehavior extends Behavior {
       };
     }
     
-    // All checks passed - adding is valid
+    const moved = world.moveEntity(item.id, supporter.id);
     return {
-      success: true,
-      stateChanged: true
+      success: moved,
+      stateChanged: moved
     };
   }
   

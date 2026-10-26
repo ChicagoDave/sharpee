@@ -10,7 +10,7 @@
  * runs through the real parser and engine, and every fork is the engine's
  * own save/restore. No stub of any owned dependency.
  *
- * Nine claims, eight distinct sets, eight walks: every predicate kind is
+ * Ten claims, nine distinct sets, nine walks: every predicate kind is
  * exercised (ending, placement in, event, state, placement notIn, room,
  * never-room, flag, fired) and every verdict (held by witness, held by
  * exhaustion, violated). The corpus lives beside the spike's measurement
@@ -18,6 +18,10 @@
  *
  * Skipped, like the corpus sweeps, when the repository's corpus is not
  * configured (a published tarball).
+ *
+ * The package's test scripts run this file on its own, after the rest of
+ * the suite: AC-2's wall-clock bound measures the walks, and the parallel
+ * pool's contention would add 3-28% to them.
  *
  * Owner context: branch-tester test suite (tooling).
  */
@@ -28,7 +32,8 @@ import { claimCone, compile, type StoryIR } from '@sharpee/chord';
 import { createStory } from '@sharpee/story-loader';
 import { assembleGame } from '@sharpee/bootstrap';
 import { normalizeClaimSet } from '../src/claims/claim-set.js';
-import { runClaims, type ClaimsRunResult } from '../src/claims/claims-runner.js';
+import { runClaims } from '../src/claims/claims-runner.js';
+import type { ClaimsRunResult } from '../src/claims/claim-results.js';
 import type { ClaimsGame } from '../src/claims/claims-game.js';
 
 const SEED = 1209;
@@ -70,7 +75,7 @@ describeWithCorpus('REAL-PATH — Fernhill\'s claims through the real engine (AD
     return run;
   };
 
-  it('settles all nine claims with the measured verdicts and witness depths', async () => {
+  it('settles all ten claims with the measured verdicts and witness depths', async () => {
     const result = await fernhill();
     const verdicts = result.claims.map((claim) => [claim.name, claim.verdict, claim.depth ?? null]);
     expect(verdicts).toEqual([
@@ -83,8 +88,10 @@ describeWithCorpus('REAL-PATH — Fernhill\'s claims through the real engine (AD
       ['the Study is reached without the sherry', 'held', null],
       ['the auction notice has been read', 'held', 1],
       ['the stopcock has been turned', 'held', 4],
+      // Locked from the tree's deed line on 2026-10-20 (ADR-367); walked here, held by line under `sharpee test`.
+      ['the deed box is open', 'held', 20],
     ]);
-    expect([result.declared, result.held, result.violated, result.unproven]).toEqual([9, 8, 1, 0]);
+    expect([result.declared, result.held, result.violated, result.unproven]).toEqual([10, 9, 1, 0]);
   }, 300_000);
 
   it('runs one walk per distinct set; every walk is settled by its claims or by exhaustion, never by a budget', async () => {
@@ -98,14 +105,15 @@ describeWithCorpus('REAL-PATH — Fernhill\'s claims through the real engine (AD
       ['the set of "the Study is reached without the sherry"', 'frontier-exhausted'],
       ['the set of "the auction notice has been read"', 'all-claims-settled'],
       ['the set of "the stopcock has been turned"', 'all-claims-settled'],
+      ['the set of "the deed box is open"', 'all-claims-settled'],
     ]);
     // The negative claim held by exhaustion: fifteen states, the spike's measurement.
     expect(result.walks[5].statesDiscovered).toBe(15);
   }, 300_000);
 
-  it('AC-2: the whole run finishes inside the 90-second bound', async () => {
+  it('AC-2: the whole run finishes inside the 120-second bound', async () => {
     const result = await fernhill();
-    expect(result.totalWalkMs).toBeLessThan(90_000);
+    expect(result.totalWalkMs).toBeLessThan(120_000);
   }, 300_000);
 
   it('the witnesses are the measured paths: the 24-command line to victory, and the 14 commands that carry the deed box out of the Folly', async () => {
@@ -150,6 +158,8 @@ describeWithCorpus('REAL-PATH — Fernhill\'s claims through the real engine (AD
       'the Study is reached without the sherry': ['garden-shears'],
       'the auction notice has been read': [],
       'the stopcock has been turned': [],
+      // The lock already trimmed the sherry bottle and Mrs Kettle from this set (ADR-367 D2).
+      'the deed box is open': [],
     });
   }, 300_000);
 });

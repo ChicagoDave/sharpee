@@ -10,6 +10,12 @@ exports[`traits-basic.story (design.md §2.2/§3.2 + ownership package) > matche
       "onClauses": [
         {
           "action": "opening",
+          "actionSpan": {
+            "column": 17,
+            "endColumn": 24,
+            "endLine": 22,
+            "line": 22,
+          },
           "actor": {
             "kind": "ref",
             "ref": {
@@ -473,6 +479,12 @@ exports[`traits-basic.story (design.md §2.2/§3.2 + ownership package) > matche
       "onClauses": [
         {
           "action": "opening",
+          "actionSpan": {
+            "column": 17,
+            "endColumn": 24,
+            "endLine": 38,
+            "line": 38,
+          },
           "actor": {
             "kind": "ref",
             "ref": {
@@ -703,6 +715,12 @@ exports[`traits-basic.story (design.md §2.2/§3.2 + ownership package) > matche
       "onClauses": [
         {
           "action": "taking",
+          "actionSpan": {
+            "column": 17,
+            "endColumn": 23,
+            "endLine": 52,
+            "line": 52,
+          },
           "actor": {
             "kind": "ref",
             "ref": {
@@ -900,11 +918,7 @@ exports[`traits-basic.story (design.md §2.2/§3.2 + ownership package) > matche
           },
         },
         {
-          "cardinality": [
-            "each",
-            "quiet",
-            "corner",
-          ],
+          "cardinality": null,
           "means": [],
           "parts": [
             {
@@ -920,7 +934,7 @@ exports[`traits-basic.story (design.md §2.2/§3.2 + ownership package) > matche
           ],
           "span": {
             "column": 5,
-            "endColumn": 28,
+            "endColumn": 8,
             "endLine": 60,
             "line": 60,
           },
@@ -980,6 +994,7 @@ exports[`traits-basic.story (design.md §2.2/§3.2 + ownership package) > matche
         "endLine": 64,
         "line": 57,
       },
+      "topics": [],
     },
     {
       "aka": [],
@@ -1045,12 +1060,14 @@ exports[`traits-basic.story (design.md §2.2/§3.2 + ownership package) > matche
       "exits": [],
       "feels": [],
       "goals": [],
+      "holds": [],
       "honors": [],
       "influences": [],
       "initialDescription": null,
       "kind": "create",
       "knows": [],
       "landing": null,
+      "landmarksBlock": null,
       "moods": [],
       "moveClauses": [],
       "name": {
@@ -1073,9 +1090,12 @@ exports[`traits-basic.story (design.md §2.2/§3.2 + ownership package) > matche
       "phraseOverrides": [],
       "placement": null,
       "placementLines": [],
+      "positionBlock": null,
       "pronouns": [],
+      "pushingBlock": null,
       "resists": [],
       "roomGroups": [],
+      "sailingBlock": null,
       "scores": [],
       "span": {
         "column": 1,
@@ -1090,6 +1110,7 @@ exports[`traits-basic.story (design.md §2.2/§3.2 + ownership package) > matche
       "temperaments": [],
       "thinks": [],
       "timerClauses": [],
+      "vehicleLines": [],
       "wears": [],
     },
     {
@@ -1136,12 +1157,14 @@ exports[`traits-basic.story (design.md §2.2/§3.2 + ownership package) > matche
       "exits": [],
       "feels": [],
       "goals": [],
+      "holds": [],
       "honors": [],
       "influences": [],
       "initialDescription": null,
       "kind": "create",
       "knows": [],
       "landing": null,
+      "landmarksBlock": null,
       "moods": [],
       "moveClauses": [],
       "name": {
@@ -1212,9 +1235,12 @@ exports[`traits-basic.story (design.md §2.2/§3.2 + ownership package) > matche
           },
         },
       ],
+      "positionBlock": null,
       "pronouns": [],
+      "pushingBlock": null,
       "resists": [],
       "roomGroups": [],
+      "sailingBlock": null,
       "scores": [],
       "span": {
         "column": 1,
@@ -1229,6 +1255,7 @@ exports[`traits-basic.story (design.md §2.2/§3.2 + ownership package) > matche
       "temperaments": [],
       "thinks": [],
       "timerClauses": [],
+      "vehicleLines": [],
       "wears": [],
     },
     {
@@ -1310,12 +1337,14 @@ exports[`traits-basic.story (design.md §2.2/§3.2 + ownership package) > matche
       "exits": [],
       "feels": [],
       "goals": [],
+      "holds": [],
       "honors": [],
       "influences": [],
       "initialDescription": null,
       "kind": "create",
       "knows": [],
       "landing": null,
+      "landmarksBlock": null,
       "moods": [],
       "moveClauses": [],
       "name": {
@@ -1337,9 +1366,12 @@ exports[`traits-basic.story (design.md §2.2/§3.2 + ownership package) > matche
       "phraseOverrides": [],
       "placement": null,
       "placementLines": [],
+      "positionBlock": null,
       "pronouns": [],
+      "pushingBlock": null,
       "resists": [],
       "roomGroups": [],
+      "sailingBlock": null,
       "scores": [],
       "span": {
         "column": 1,
@@ -1354,6 +1386,7 @@ exports[`traits-basic.story (design.md §2.2/§3.2 + ownership package) > matche
       "temperaments": [],
       "thinks": [],
       "timerClauses": [],
+      "vehicleLines": [],
       "wears": [],
     },
     {
@@ -1513,12 +1546,14 @@ exports[`zoo-actions.story (design.md §3.4 + ownership package) > matches the g
       "exits": [],
       "feels": [],
       "goals": [],
+      "holds": [],
       "honors": [],
       "influences": [],
       "initialDescription": null,
       "kind": "create",
       "knows": [],
       "landing": null,
+      "landmarksBlock": null,
       "moods": [],
       "moveClauses": [],
       "name": {
@@ -1541,9 +1576,12 @@ exports[`zoo-actions.story (design.md §3.4 + ownership package) > matches the g
       "phraseOverrides": [],
       "placement": null,
       "placementLines": [],
+      "positionBlock": null,
       "pronouns": [],
+      "pushingBlock": null,
       "resists": [],
       "roomGroups": [],
+      "sailingBlock": null,
       "scores": [],
       "span": {
         "column": 1,
@@ -1558,6 +1596,7 @@ exports[`zoo-actions.story (design.md §3.4 + ownership package) > matches the g
       "temperaments": [],
       "thinks": [],
       "timerClauses": [],
+      "vehicleLines": [],
       "wears": [],
     },
     {
@@ -1617,12 +1656,14 @@ exports[`zoo-actions.story (design.md §3.4 + ownership package) > matches the g
       "exits": [],
       "feels": [],
       "goals": [],
+      "holds": [],
       "honors": [],
       "influences": [],
       "initialDescription": null,
       "kind": "create",
       "knows": [],
       "landing": null,
+      "landmarksBlock": null,
       "moods": [],
       "moveClauses": [],
       "name": {
@@ -1692,9 +1733,12 @@ exports[`zoo-actions.story (design.md §3.4 + ownership package) > matches the g
           },
         },
       ],
+      "positionBlock": null,
       "pronouns": [],
+      "pushingBlock": null,
       "resists": [],
       "roomGroups": [],
+      "sailingBlock": null,
       "scores": [],
       "span": {
         "column": 1,
@@ -1709,6 +1753,7 @@ exports[`zoo-actions.story (design.md §3.4 + ownership package) > matches the g
       "temperaments": [],
       "thinks": [],
       "timerClauses": [],
+      "vehicleLines": [],
       "wears": [],
     },
     {
@@ -1900,6 +1945,7 @@ exports[`zoo-actions.story (design.md §3.4 + ownership package) > matches the g
         "endLine": 30,
         "line": 22,
       },
+      "topics": [],
     },
     {
       "body": [],
@@ -2058,6 +2104,7 @@ exports[`zoo-actions.story (design.md §3.4 + ownership package) > matches the g
         "endLine": 43,
         "line": 36,
       },
+      "topics": [],
     },
     {
       "data": [
@@ -2087,6 +2134,12 @@ exports[`zoo-actions.story (design.md §3.4 + ownership package) > matches the g
       "onClauses": [
         {
           "action": "petting",
+          "actionSpan": {
+            "column": 17,
+            "endColumn": 24,
+            "endLine": 64,
+            "line": 64,
+          },
           "actor": {
             "kind": "ref",
             "ref": {
@@ -2473,6 +2526,12 @@ exports[`zoo-actions.story (design.md §3.4 + ownership package) > matches the g
       "onClauses": [
         {
           "action": "feeding",
+          "actionSpan": {
+            "column": 17,
+            "endColumn": 24,
+            "endLine": 92,
+            "line": 92,
+          },
           "actor": {
             "kind": "ref",
             "ref": {
@@ -2931,12 +2990,14 @@ exports[`zoo-actions.story (design.md §3.4 + ownership package) > matches the g
       "exits": [],
       "feels": [],
       "goals": [],
+      "holds": [],
       "honors": [],
       "influences": [],
       "initialDescription": null,
       "kind": "create",
       "knows": [],
       "landing": null,
+      "landmarksBlock": null,
       "moods": [],
       "moveClauses": [],
       "name": {
@@ -2958,6 +3019,12 @@ exports[`zoo-actions.story (design.md §3.4 + ownership package) > matches the g
       "onClauses": [
         {
           "action": "feeding",
+          "actionSpan": {
+            "column": 20,
+            "endColumn": 27,
+            "endLine": 111,
+            "line": 111,
+          },
           "actor": {
             "kind": "ref",
             "ref": {
@@ -3089,9 +3156,12 @@ exports[`zoo-actions.story (design.md §3.4 + ownership package) > matches the g
           },
         },
       ],
+      "positionBlock": null,
       "pronouns": [],
+      "pushingBlock": null,
       "resists": [],
       "roomGroups": [],
+      "sailingBlock": null,
       "scores": [
         {
           "kind": "score",
@@ -3118,6 +3188,7 @@ exports[`zoo-actions.story (design.md §3.4 + ownership package) > matches the g
       "temperaments": [],
       "thinks": [],
       "timerClauses": [],
+      "vehicleLines": [],
       "wears": [],
     },
     {
@@ -3164,12 +3235,14 @@ exports[`zoo-actions.story (design.md §3.4 + ownership package) > matches the g
       "exits": [],
       "feels": [],
       "goals": [],
+      "holds": [],
       "honors": [],
       "influences": [],
       "initialDescription": null,
       "kind": "create",
       "knows": [],
       "landing": null,
+      "landmarksBlock": null,
       "moods": [],
       "moveClauses": [],
       "name": {
@@ -3241,9 +3314,12 @@ exports[`zoo-actions.story (design.md §3.4 + ownership package) > matches the g
           },
         },
       ],
+      "positionBlock": null,
       "pronouns": [],
+      "pushingBlock": null,
       "resists": [],
       "roomGroups": [],
+      "sailingBlock": null,
       "scores": [],
       "span": {
         "column": 1,
@@ -3258,6 +3334,7 @@ exports[`zoo-actions.story (design.md §3.4 + ownership package) > matches the g
       "temperaments": [],
       "thinks": [],
       "timerClauses": [],
+      "vehicleLines": [],
       "wears": [],
     },
     {
@@ -3333,12 +3410,14 @@ exports[`zoo-actions.story (design.md §3.4 + ownership package) > matches the g
       "exits": [],
       "feels": [],
       "goals": [],
+      "holds": [],
       "honors": [],
       "influences": [],
       "initialDescription": null,
       "kind": "create",
       "knows": [],
       "landing": null,
+      "landmarksBlock": null,
       "moods": [],
       "moveClauses": [],
       "name": {
@@ -3409,9 +3488,12 @@ exports[`zoo-actions.story (design.md §3.4 + ownership package) > matches the g
           },
         },
       ],
+      "positionBlock": null,
       "pronouns": [],
+      "pushingBlock": null,
       "resists": [],
       "roomGroups": [],
+      "sailingBlock": null,
       "scores": [],
       "span": {
         "column": 1,
@@ -3426,6 +3508,7 @@ exports[`zoo-actions.story (design.md §3.4 + ownership package) > matches the g
       "temperaments": [],
       "thinks": [],
       "timerClauses": [],
+      "vehicleLines": [],
       "wears": [],
     },
     {
@@ -3566,12 +3649,14 @@ exports[`zoo-timeline.story (design.md §3.3 + ownership package) > matches the 
       "exits": [],
       "feels": [],
       "goals": [],
+      "holds": [],
       "honors": [],
       "influences": [],
       "initialDescription": null,
       "kind": "create",
       "knows": [],
       "landing": null,
+      "landmarksBlock": null,
       "moods": [],
       "moveClauses": [],
       "name": {
@@ -3593,9 +3678,12 @@ exports[`zoo-timeline.story (design.md §3.3 + ownership package) > matches the 
       "phraseOverrides": [],
       "placement": null,
       "placementLines": [],
+      "positionBlock": null,
       "pronouns": [],
+      "pushingBlock": null,
       "resists": [],
       "roomGroups": [],
+      "sailingBlock": null,
       "scores": [],
       "span": {
         "column": 1,
@@ -3610,6 +3698,7 @@ exports[`zoo-timeline.story (design.md §3.3 + ownership package) > matches the 
       "temperaments": [],
       "thinks": [],
       "timerClauses": [],
+      "vehicleLines": [],
       "wears": [],
     },
     {
@@ -3669,12 +3758,14 @@ exports[`zoo-timeline.story (design.md §3.3 + ownership package) > matches the 
       "exits": [],
       "feels": [],
       "goals": [],
+      "holds": [],
       "honors": [],
       "influences": [],
       "initialDescription": null,
       "kind": "create",
       "knows": [],
       "landing": null,
+      "landmarksBlock": null,
       "moods": [],
       "moveClauses": [],
       "name": {
@@ -3742,9 +3833,12 @@ exports[`zoo-timeline.story (design.md §3.3 + ownership package) > matches the 
           },
         },
       ],
+      "positionBlock": null,
       "pronouns": [],
+      "pushingBlock": null,
       "resists": [],
       "roomGroups": [],
+      "sailingBlock": null,
       "scores": [],
       "span": {
         "column": 1,
@@ -3759,6 +3853,7 @@ exports[`zoo-timeline.story (design.md §3.3 + ownership package) > matches the 
       "temperaments": [],
       "thinks": [],
       "timerClauses": [],
+      "vehicleLines": [],
       "wears": [],
     },
     {
@@ -3768,6 +3863,12 @@ exports[`zoo-timeline.story (design.md §3.3 + ownership package) > matches the 
       "onClauses": [
         {
           "action": "every-turn",
+          "actionSpan": {
+            "column": 3,
+            "endColumn": 64,
+            "endLine": 23,
+            "line": 23,
+          },
           "actor": null,
           "binding": "every-turn",
           "body": [
@@ -3891,6 +3992,12 @@ exports[`zoo-timeline.story (design.md §3.3 + ownership package) > matches the 
       "onClauses": [
         {
           "action": "every-turn",
+          "actionSpan": {
+            "column": 3,
+            "endColumn": 64,
+            "endLine": 29,
+            "line": 29,
+          },
           "actor": null,
           "binding": "every-turn",
           "body": [
@@ -4539,12 +4646,14 @@ exports[`zoo-timeline.story (design.md §3.3 + ownership package) > matches the 
       "exits": [],
       "feels": [],
       "goals": [],
+      "holds": [],
       "honors": [],
       "influences": [],
       "initialDescription": null,
       "kind": "create",
       "knows": [],
       "landing": null,
+      "landmarksBlock": null,
       "moods": [],
       "moveClauses": [],
       "name": {
@@ -4567,9 +4676,12 @@ exports[`zoo-timeline.story (design.md §3.3 + ownership package) > matches the 
       "phraseOverrides": [],
       "placement": null,
       "placementLines": [],
+      "positionBlock": null,
       "pronouns": [],
+      "pushingBlock": null,
       "resists": [],
       "roomGroups": [],
+      "sailingBlock": null,
       "scores": [],
       "span": {
         "column": 1,
@@ -4584,6 +4696,7 @@ exports[`zoo-timeline.story (design.md §3.3 + ownership package) > matches the 
       "temperaments": [],
       "thinks": [],
       "timerClauses": [],
+      "vehicleLines": [],
       "wears": [],
     },
     {
@@ -4631,12 +4744,14 @@ exports[`zoo-timeline.story (design.md §3.3 + ownership package) > matches the 
       "exits": [],
       "feels": [],
       "goals": [],
+      "holds": [],
       "honors": [],
       "influences": [],
       "initialDescription": null,
       "kind": "create",
       "knows": [],
       "landing": null,
+      "landmarksBlock": null,
       "moods": [],
       "moveClauses": [],
       "name": {
@@ -4659,6 +4774,12 @@ exports[`zoo-timeline.story (design.md §3.3 + ownership package) > matches the 
       "onClauses": [
         {
           "action": "every-turn",
+          "actionSpan": {
+            "column": 3,
+            "endColumn": 40,
+            "endLine": 99,
+            "line": 99,
+          },
           "actor": null,
           "binding": "every-turn",
           "body": [
@@ -4882,9 +5003,12 @@ exports[`zoo-timeline.story (design.md §3.3 + ownership package) > matches the 
           },
         },
       ],
+      "positionBlock": null,
       "pronouns": [],
+      "pushingBlock": null,
       "resists": [],
       "roomGroups": [],
+      "sailingBlock": null,
       "scores": [],
       "span": {
         "column": 1,
@@ -4899,6 +5023,7 @@ exports[`zoo-timeline.story (design.md §3.3 + ownership package) > matches the 
       "temperaments": [],
       "thinks": [],
       "timerClauses": [],
+      "vehicleLines": [],
       "wears": [],
     },
     {
@@ -5000,12 +5125,14 @@ exports[`zoo-timeline.story (design.md §3.3 + ownership package) > matches the 
       "exits": [],
       "feels": [],
       "goals": [],
+      "holds": [],
       "honors": [],
       "influences": [],
       "initialDescription": null,
       "kind": "create",
       "knows": [],
       "landing": null,
+      "landmarksBlock": null,
       "moods": [],
       "moveClauses": [],
       "name": {
@@ -5073,9 +5200,12 @@ exports[`zoo-timeline.story (design.md §3.3 + ownership package) > matches the 
           },
         },
       ],
+      "positionBlock": null,
       "pronouns": [],
+      "pushingBlock": null,
       "resists": [],
       "roomGroups": [],
+      "sailingBlock": null,
       "scores": [],
       "span": {
         "column": 1,
@@ -5090,6 +5220,7 @@ exports[`zoo-timeline.story (design.md §3.3 + ownership package) > matches the 
       "temperaments": [],
       "thinks": [],
       "timerClauses": [],
+      "vehicleLines": [],
       "wears": [],
     },
     {

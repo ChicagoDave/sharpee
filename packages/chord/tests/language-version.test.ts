@@ -141,7 +141,84 @@ const PINNED = {
   // `verb-phrase`, `claim-decl` and `claim-predicate`. Additive, and outside
   // the story file entirely (a block met in a story is analysis.claims-in-story);
   // same unpublished 4.0.0 set (the number moves at publish, David's ruling).
-  ebnfSha256: '8040e4a007dd20b6c4ff8bbc941e638d2c836aad7d8948bf0e3aa042816531c7',
+  // Re-pinned 2026-10-13 (session 92017b, ADR-368 D1): a clause head lists
+  // its gerunds — `head` gains `{ "," gerund }` on both forms, one clause per
+  // gerund. Additive; same unpublished 4.0.0 set (the number moves at publish).
+  // Re-pinned 2026-10-13 (session 92017b, ADR-369 D2, D2a, D3): `holds-line`
+  // joins `create-line`; `DIRECTION` gains `in` and `out`; the composition
+  // note records that a kind noun takes no `with` settings (the three the
+  // loader read are a removal with a fix-it). Additive plus one removal;
+  // same unpublished 4.0.0 set (the number moves at publish).
+  // Re-recorded 2026-10-14 (ADR-371 D4, session 8196a4): the `to <value>`
+  // head tail. Additive, on the unpublished 4.0 surface — no bump.
+  // Re-recorded 2026-10-14 (ADR-372 D1, D5, session a0b591): the counterpart
+  // tail on a clause head (and `to <name>` as a counterpart) and the
+  // `costs <amount> <currency>` composition. Additive, on the unpublished
+  // 4.0 surface — no bump.
+  // Re-recorded 2026-10-14 (ADR-373 D1, D7, session 39d4c7): the
+  // `attached to <the thing>` composition and `starts broken`. Additive, on
+  // the unpublished 4.0 surface — no bump.
+  // Re-recorded 2026-10-15 (ADR-374 D2, D6, D9, D10, session 39d4c7): list
+  // and region placements for a backdrop, `hearing the <sound>` heads,
+  // `define sound` without a file, `play sound` as its own statement,
+  // `powered by`, and `starts lit`/`unlit`. Additive, on the unpublished
+  // 4.0 surface — no bump.
+  // Re-recorded 2026-10-18 (ADR-377 D1, session d76183): state machines are
+  // core — `use state-machines` leaves the `use-plain-line` note's gated
+  // list and joins npc as core vocabulary (writing it is
+  // analysis.extension-core); the machine depth's section heading says so.
+  // Comment-only EBNF motion; one `use` name withdrawn, on the unpublished
+  // 4.0 surface — no bump.
+  // Re-recorded 2026-10-18 (ADR-366 D1, D2, D5–D5i, D6, D7, session d76183,
+  // Chord 4.0 Phase 11 Slice 1): `KIND-NOUN` gains `vehicle`; `create-line`
+  // gains `vehicle-line`, `admits-line` and `position-block`; `group-line`
+  // gains `admits-line`; the `exit` destination admits `outside`; the timer
+  // verbs take `heading DIRECTION`; `send` joins `statement`; `is under way`,
+  // `is at <name>` and `is heading DIRECTION` join `predicate`; the state
+  // anchor admits `under way`. Additive, on the unpublished 4.0 surface — no
+  // bump.
+  // 2026-10-18 (ADR-376, Chord 4.0 Phase 13 Slice 1): `use expanses` —
+  // KIND-NOUN gains `expanse`; `movement:` gains `open`; `vehicle-line` gains
+  // `stride`, `sight-line` and `seen-from-afar-line`; `create-line` gains
+  // `expanse-line`, `sight-line`, `seen-from-afar-line` and `landmarks-block`;
+  // `placement` takes an `at NUMBER , NUMBER` tail; `predicate` gains the
+  // sight reads and `within`; `send` takes `NUMBER , NUMBER`; `step-anchor`
+  // admits `comes into sight`. Additive, on the unpublished 4.0 surface — no
+  // bump.
+  // Re-pinned 2026-10-19 (session 2fb329, ADR-375, Chord 4.0 Phase 13 Slice
+  // 5): `use sailing` — `heading` takes `NUMBER degrees`; `expanse-line`
+  // gains `wind`; `vehicle-line` gains `sails`, `sails start` and the
+  // `sailing-block`; `commands:` admits `naval`; `set … wind` and `set …
+  // sails`; `predicate` gains `in irons` and `are WORD` on a sails subject.
+  // Additive, on the unpublished 4.0 surface — no bump.
+  // Re-pinned 2026-10-19 (session d4875a; Chord 4.0 Phase 14, Slice 3):
+  // ADR-378 — the `passage` room line (D1), `while` and `admits` tails on
+  // a single exit line (D3, D6), `pushing` in an `admits` list, blocked and
+  // deadly lines by `exit-key`, and `define action … while` (D5). Additive,
+  // on the unpublished 4.0 surface — no bump. Re-pinned 2026-10-20 (same
+  // session) for ADR-378 D6b, the thing's `pushing … end pushing` block of
+  // room pairs — additive, no bump.
+  // Ready for the bump (2026-10-21, session ca314d, Chord 4.0 plan Phase
+  // 18): the hash below is the 4.0 surface as the evidence run measured it.
+  // Phases 15–17 (ADR-366's UPPS conveyances, ADR-367's lock and its
+  // gesture) changed no grammar — a locked claim is an ordinary `claim`
+  // block, and the card's `locks` pin is tree data, not Chord. The publish
+  // is David's, with no date: when it comes, raise CHORD_LANGUAGE_VERSION
+  // to 4.0.0 (ADR-359 and ADR-361 make it a MAJOR), set `languageVersion`
+  // below to match, and leave this hash as it stands unless the grammar
+  // moved in between.
+  // Re-pinned 2026-10-22 (session 51f88b, alignment-fixes Phase 7, ADR-380):
+  // the grammar moved. `passage-line` becomes `passage-block` (`passage to
+  // <room> … end passage` with a slot-free `grammar`, and `while`, `blocked`,
+  // `deadly` lines inside it); the blocked and deadly lines take `DIRECTION`
+  // again (`exit-key` removed); a vehicle's `passage:` line is retired for
+  // `pace:`; `pattern-elem` gains `[the]`. BREAKING, on the same unpublished
+  // 4.0.0 surface — no bump; the number moves at publish.
+  // Re-pinned 2026-10-24 (session b0a093, parser review step 3 Phase 7,
+  // ADR-383 D9): `action-line` gains `topic-row` — `about …:` rows answering
+  // a `define action`'s topic slot — and `extend-action`'s behavior-line list
+  // names it. Additive, on the same unpublished 4.0.0 surface — no bump.
+  ebnfSha256: '873a6cd24576d9abf5981c44b352e26bd7ea93fc4a86746c8305d1020ae688b8',
 };
 
 // Colocated with the version pin it gates (2026-08-14). It previously lived at

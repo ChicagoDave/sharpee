@@ -7,7 +7,7 @@ story
 
   on every turn
     emit chord-compass-updated with heading "north" and target the well and windspeed 12
-    play sound roar when client has sound
+    play sound roar
     phrase roar-text when not client has sound
   end on
 

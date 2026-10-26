@@ -84,7 +84,7 @@ export function revealConcealedItems(items: IFEntity[]): void {
  * Bridge a list of entities to a `PhraseList` message param (ADR-192): the
  * assembler owns articles/joining, so params never carry pre-joined strings.
  */
-function phraseListFor(items: IFEntity[]): Phrase {
+export function phraseListFor(items: IFEntity[]): Phrase {
   return {
     kind: 'list',
     conj: 'and',

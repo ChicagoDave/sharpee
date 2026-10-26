@@ -29,23 +29,12 @@ export class MetaCommandRegistry {
     'if.action.version',     // VERSION
     'if.action.about',       // ABOUT
     'if.action.help',        // HELP
-    
-    // Transcript commands
-    'transcript',            // TRANSCRIPT ON/OFF
-    'transcript_on',         // TRANSCRIPT ON
-    'transcript_off',        // TRANSCRIPT OFF
-    
+
     // Undo system
     'if.action.again',       // AGAIN (repeat last command)
     'if.action.undoing',     // UNDO (action ID)
     'undo',                  // UNDO (grammar pattern)
-    
-    // Preference commands
-    'verbose',          // VERBOSE mode
-    'brief',            // BRIEF mode
-    'superbrief',       // SUPERBRIEF mode
-    'notify',           // NOTIFY ON/OFF
-    
+
     // Debug/Author commands (will be auto-registered by MetaAction)
     // Listed here for documentation
     // 'author.trace',
@@ -133,14 +122,7 @@ export class MetaCommandRegistry {
       'if.action.about',
       'if.action.help',
       'if.action.again',
-      'transcript',
-      'transcript_on',
-      'transcript_off',
-      'undo',
-      'verbose',
-      'brief',
-      'superbrief',
-      'notify'
+      'undo'
     ]);
   }
   
@@ -162,8 +144,7 @@ export class MetaCommandRegistry {
     const defaults = new Set([
       'if.action.saving', 'if.action.restoring', 'if.action.quitting', 'if.action.restarting',
       'if.action.undoing', 'if.action.scoring', 'if.action.version', 'if.action.about', 'if.action.help',
-      'if.action.again', 'transcript', 'transcript_on', 'transcript_off',
-      'undo', 'verbose', 'brief', 'superbrief', 'notify'
+      'if.action.again', 'undo'
     ]);
 
     for (const cmd of this.metaCommands) {
@@ -186,7 +167,6 @@ export class MetaCommandRegistry {
     // Meta-commands (match MetaCommandRegistry)
     'undo', 'save', 'restore', 'restart', 'quit',
     'score', 'version', 'about', 'help',
-    'verbose', 'brief', 'superbrief', 'notify',
     'again', 'g',
     // Info commands (don't change game state)
     'look', 'l',

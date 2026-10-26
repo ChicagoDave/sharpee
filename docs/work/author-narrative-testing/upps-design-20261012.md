@@ -47,6 +47,8 @@ Open spaces 1, 2 and 5 are `a region` blocks with `rooms` groups and an `exits` 
 
 ### The ship and its three doors
 
+*(Superseded 2026-10-13 by ADR-366 D7: the Sparrow becomes one `vehicle` with its rooms `aboard:` and one hull opening, `west to outside` from the Airlock, resolved to wherever the ship is; the tram car and drop shuttle become line vehicles rather than rooms. Rewritten at Chord 4.0 plan Phase 15 (2026-10-20); the table below is the pre-vehicle design and stays as the record of what the gap cost.)*
+
 Chord has no vehicle and no exit whose destination varies with state (ADR-350). So the Sparrow gets one fixed hull opening per world, each blocked off its leg:
 
 | Leg | Opening | Out |

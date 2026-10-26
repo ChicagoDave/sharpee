@@ -12,6 +12,7 @@
 
 import type { ITextBlock } from '@sharpee/text-blocks';
 import type { LocaleSettings, RenderContext } from './phrase.js';
+import type { LanguageWords } from './vocabulary-contracts/vocabulary-types.js';
 
 /**
  * Structured help information for an action
@@ -94,7 +95,16 @@ export interface LanguageProvider {
    *
    * @returns 'first' | 'second' | 'third'
    */
-  getNarrativePerson?(): 'first' | 'second' | 'third';
+  getNarrativePerson(): 'first' | 'second' | 'third';
+
+  /**
+   * The words a world needs from this language (ADR-387 D2): the self words
+   * and the name stopwords. The engine assigns them to the world at install;
+   * world-model never imports a language package.
+   *
+   * @returns the language's words for the world
+   */
+  getLanguageWords(): LanguageWords;
 
   /**
    * Render a message to text blocks through the phrase pipeline (ADR-192 §6).

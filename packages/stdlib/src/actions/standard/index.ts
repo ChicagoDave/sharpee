@@ -52,7 +52,7 @@ export * from './showing/index.js';
 
 // Throwing action with its unique events
 export { throwingAction } from './throwing/index.js';
-export type { ThrownEventData, ItemDestroyedEventData } from './throwing/throwing-events.js';
+export type { ThrownEventData } from './throwing/throwing-events.js';
 
 export * from './pushing/index.js';
 export * from './pulling/index.js';
@@ -157,6 +157,58 @@ import { deadlyRoomDeathAction } from './deadly-room-death/index.js';
 // Concealment actions (ADR-148)
 import { hidingAction } from './hiding/index.js';
 import { revealingAction } from './hiding/index.js';
+// ADR-370: stock verbs without an object side
+import { jumpingAction } from './jumping/index.js';
+import { kissingAction } from './kissing/index.js';
+import { wavingAction } from './waving/index.js';
+import { sayingYesAction } from './saying_yes/index.js';
+import { sayingNoAction } from './saying_no/index.js';
+import { sayingSorryAction } from './saying_sorry/index.js';
+import { lookingUnderAction } from './looking_under/index.js';
+import { emptyingAction } from './emptying/index.js';
+// ADR-371: the builder for implementation-dispatching verbs, public so a
+// story can build its own (a verb with no standard semantics).
+export {
+  createImplementationDispatchingAction,
+  hasInterceptorImplementation,
+  type ImplementationDispatchSpec
+} from './dispatch-shared.js';
+// ADR-371: object-side adjectives
+import { burningAction } from './burning/index.js';
+import { settingAction } from './setting/index.js';
+// ADR-372: two-noun and conversation-shaped clauses
+import { askingForAction } from './asking_for/index.js';
+import { consultingAction } from './consulting/index.js';
+import { buyingAction } from './buying/index.js';
+// ADR-373: physical state the platform enforces
+import { tyingAction } from './tying/index.js';
+import { untyingAction } from './untying/index.js';
+// ADR-374: lamps that work as lamps
+import { lightingAction } from './lighting/index.js';
+import { extinguishingAction } from './extinguishing/index.js';
+import { steeringAction } from './steering/index.js';
+import { settingCourseAction } from './setting_course/index.js';
+export * from './jumping/index.js';
+export * from './kissing/index.js';
+export * from './waving/index.js';
+export * from './saying_yes/index.js';
+export * from './saying_no/index.js';
+export * from './saying_sorry/index.js';
+export * from './looking_under/index.js';
+export * from './emptying/index.js';
+export * from './burning/index.js';
+export * from './setting/index.js';
+export * from './asking_for/index.js';
+export * from './consulting/index.js';
+export * from './buying/index.js';
+export * from './breaking/index.js';
+export * from './tying/index.js';
+export * from './untying/index.js';
+export * from './lighting/index.js';
+export * from './extinguishing/index.js';
+export * from './steering/index.js';
+export * from './setting_course/index.js';
+export * from './vehicle-command-transformer.js';
 
 // Import author/debug actions
 import { TraceAction } from '../author/index.js';
@@ -225,6 +277,31 @@ export const standardActions = [
   // Concealment actions (ADR-148)
   hidingAction,
   revealingAction,
+  // ADR-370: stock verbs without an object side
+  jumpingAction,
+  kissingAction,
+  wavingAction,
+  sayingYesAction,
+  sayingNoAction,
+  sayingSorryAction,
+  lookingUnderAction,
+  emptyingAction,
+  // ADR-371: object-side adjectives
+  burningAction,
+  settingAction,
+  // ADR-372: two-noun and conversation-shaped clauses
+  askingForAction,
+  consultingAction,
+  buyingAction,
+  // ADR-373: physical state the platform enforces
+  tyingAction,
+  untyingAction,
+  // ADR-374: lamps that work as lamps
+  lightingAction,
+  extinguishingAction,
+  // ADR-366: the vehicle command sets
+  steeringAction,
+  settingCourseAction,
   // Author/debug actions
   traceAction
 ];

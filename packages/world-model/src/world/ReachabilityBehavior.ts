@@ -6,6 +6,10 @@ import { WorldModel } from './WorldModel.js';
 import { TraitType } from '../traits/trait-types.js';
 import { OpenableTrait } from '../traits/openable/openableTrait.js';
 import { VisibilityBehavior } from './VisibilityBehavior.js';
+import { holderOf, placeOf } from './ExpansePlaceBehavior.js';
+import { lookoutOf } from './SightBehavior.js';
+import { sameCell } from '../traits/expanse/expanseTrait.js';
+import { getVehicleAboard } from '../traits/vehicle/vehicleBehavior.js';
 
 /**
  * The platform's ONE definition of physical reachability — the sibling of
@@ -57,6 +61,14 @@ export class ReachabilityBehavior extends Behavior {
       return true;
     }
 
+    // In an expanse (ADR-376 D10): a thing positioned in it, or held in
+    // one, is within reach only from its own cell — aboard a vehicle there,
+    // or out of the vehicle at that cell. Sight reached thirty units; hands
+    // do not.
+    if (!this.reachableAcrossExpanse(observer, target, world)) {
+      return false;
+    }
+
     // In same immediate location (e.g., both on a table)
     const observerLocation = world.getLocation(observer.id);
     const targetLocation = world.getLocation(target.id);
@@ -94,6 +106,21 @@ export class ReachabilityBehavior extends Behavior {
 
     // Default: reachable if in same room and visible
     return true;
+  }
+
+  /** False when the target's positioned holder lies in the observer's expanse at another cell. */
+  private static reachableAcrossExpanse(observer: IFEntity, target: IFEntity, world: WorldModel): boolean {
+    const holder = holderOf(world, target);
+    if (!holder) return true;
+    // A landmark room is within reach only from inside it: seen across the
+    // expanse, it and what it holds are out of reach.
+    if (holder.hasTrait(TraitType.ROOM)) return world.getContainingRoom(observer.id)?.id === holder.id;
+    const own = getVehicleAboard(world, observer.id)?.id ?? observer.id;
+    if (holder.id === own) return true;
+    const lookout = lookoutOf(world, observer);
+    const place = placeOf(world, holder);
+    if (!lookout || !place || place.expanse.id !== lookout.expanse.id) return true;
+    return sameCell(place.cell, lookout.cell);
   }
 
   /**

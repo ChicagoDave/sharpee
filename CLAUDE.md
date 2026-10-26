@@ -76,6 +76,7 @@ Be deliberate about where logic belongs:
 | ------------------- | --------------------------------------------- | ----------------------------------- |
 | **engine**          | Turn cycle, command execution, event dispatch | SchedulerService, NPC turn phase    |
 | **world-model**     | Traits, behaviors, entity state               | LightSourceBehavior, ContainerTrait |
+| **world-model/src/world** (systems) | One rule over the whole world with one home, consulted by every mover and action that asks its question (ADR-379); a rule is a system once more than one mover, action, or Chord condition asks it | TraversalBehavior.wayFor, VisibilityBehavior |
 | **stdlib**          | Standard actions, common patterns             | Opening action, guard behavior      |
 | **parser-{locale}** | Grammar patterns, command parsing             | `core-grammar.ts`, verb patterns    |
 | **lang-{locale}**   | All user-facing text                          | Error messages, descriptions        |
@@ -173,6 +174,14 @@ node dist/cli/sharpee.js --test stories/dungeo/tests/transcripts/rug-trapdoor.tr
 # Run all unit test transcripts
 node dist/cli/sharpee.js --test stories/dungeo/tests/transcripts/*.transcript
 ```
+
+**Dungeo is a regression floor only up to its own requirements** (David, 2026-10-25).
+Where a decision takes the platform past what Dungeo ever required of it (the parser
+review's search, ADR-386, is the first), Dungeo's lines follow the platform: a line the
+decision moves is re-recorded after the phase's census is reviewed, not taken to David
+one at a time. A move that looks like a defect, and any move on an input the decision
+does not touch, is still a regression and still stops for a ruling. The dividing line is
+step 6 of the parser review (ADR-385): records before it keep their per-line clauses.
 
 **IMPORTANT — Don't modify working transcripts:**
 - If a transcript was passing before, don't change its commands. Control-flow directives (`[WHILE:]`, `[RETRY:]`, `[DO]`/`[UNTIL]`, `[IF:]`, `[ENSURES:]`, `[REQUIRES:]`, `[NAVIGATE TO:]`) are removed grammar (ADR-294 D4) — the parser rejects each by name; never add them.

@@ -27,24 +27,13 @@
  */
 
 import type { IOChannel } from '@sharpee/if-domain';
-import type { IAudibilityEvent } from '@sharpee/if-domain';
+import { SOUND_EVENT_TYPES, type IAudibilityEvent } from '@sharpee/if-domain';
 
 /**
- * Semantic-event types emitted by the sound subsystem. Phase 6's
- * dispatcher fires `AUDIBILITY_HEARD` once per listener per propagated
- * sound; the event's `data` field carries the listener-specific
- * `IAudibilityEvent` payload.
+ * Semantic-event types of the sound subsystem. Defined in if-domain, the
+ * one package both the engine (which fires them) and stdlib share.
  */
-export const SOUND_EVENT_TYPES = {
-  /**
-   * A listener perceived a propagated sound. Event `data` is an
-   * `IAudibilityEvent` (per-listener tier, source-room, optional
-   * crossing wall, content if content-bearing).
-   */
-  AUDIBILITY_HEARD: 'sound.audibility.heard',
-} as const;
-
-export type SoundEventType = typeof SOUND_EVENT_TYPES[keyof typeof SOUND_EVENT_TYPES];
+export { SOUND_EVENT_TYPES, type SoundEventType } from '@sharpee/if-domain';
 
 /**
  * `audibility` — append-mode channel carrying every `AudibilityEvent`

@@ -17,7 +17,7 @@ import type { ISemanticEvent, EntityId, RandomService } from '@sharpee/core';
 import type { IFEntity } from '../entities/if-entity.js';
 import type { ITrait } from '../traits/trait.js';
 import type { WorldModel } from '../world/WorldModel.js';
-import type { DirectionType } from '../constants/directions.js';
+import type { ExitKey } from '../constants/directions.js';
 import type { IExitInfo } from '../traits/room/roomTrait.js';
 
 /**
@@ -69,7 +69,7 @@ export type ExitResolution =
 export type ExitResolver = (
   room: IFEntity,
   trait: ITrait,
-  direction: DirectionType,
+  direction: ExitKey,
   staticExit: IExitInfo | null,
   ctx: ExitResolverContext
 ) => ExitResolution;

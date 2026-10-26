@@ -32,7 +32,8 @@ describe('Improved Error Messages', () => {
         tokensConsumed: 1,
         reason: 'NOT_ENOUGH_TOKENS',
         matchedVerb: 'take',
-        expected: ':target'
+        expected: { kind: 'slot', name: 'target' },
+        missingSeats: ['direct']
       }];
 
       const result = analyzeBestFailure(failures, 'take', true);
@@ -63,7 +64,7 @@ describe('Improved Error Messages', () => {
       expect(result.context.noun).toBe('grue');
     });
 
-    it('should return SCOPE_VIOLATION when entity found but out of scope', () => {
+    it('should return SCOPE_VIOLATION naming the entity found and the base the slot required (ADR-385 D8)', () => {
       const failures: PartialMatchFailure[] = [{
         pattern: 'take :target',
         action: 'if.action.taking',
@@ -75,34 +76,37 @@ describe('Improved Error Messages', () => {
           slotName: 'target',
           attemptedText: 'lamp',
           reason: 'SCOPE_VIOLATION',
-          outOfScopeEntities: ['brass-lamp']
+          entityId: 'brass-lamp',
+          requiredScope: 'carried'
         }
       }];
 
       const result = analyzeBestFailure(failures, 'take lamp', true);
       expect(result.code).toBe('SCOPE_VIOLATION');
-      expect(result.messageId).toBe('parser.error.scopeViolation');
+      expect(result.messageId).toBe('parser.error.scopeViolation.carried');
+      expect(result.context.entityId).toBe('brass-lamp');
+      expect(result.context.requiredScope).toBe('carried');
     });
 
-    it('should return AMBIGUOUS_INPUT when multiple entities match', () => {
+    it('names the phrase\'s content words on NO_MATCH, never its first token (ADR-385 D8)', () => {
       const failures: PartialMatchFailure[] = [{
-        pattern: 'take :target',
-        action: 'if.action.taking',
+        pattern: 'wind :target',
+        action: 'story.winding',
         progress: 0.5,
         tokensConsumed: 1,
         reason: 'SLOT_FAILED',
-        matchedVerb: 'take',
+        matchedVerb: 'wind',
         slotFailure: {
           slotName: 'target',
-          attemptedText: 'book',
-          reason: 'AMBIGUOUS',
-          candidates: ['red book', 'blue book']
+          attemptedText: 'the widget',
+          reason: 'NO_MATCH',
+          unknownWord: 'widget'
         }
       }];
 
-      const result = analyzeBestFailure(failures, 'take book', true);
-      expect(result.code).toBe('AMBIGUOUS_INPUT');
-      expect(result.messageId).toBe('parser.error.ambiguous');
+      const result = analyzeBestFailure(failures, 'wind the widget', true);
+      expect(result.code).toBe('ENTITY_NOT_FOUND');
+      expect(result.context.noun).toBe('widget');
     });
 
     it('should prefer higher progress failures', () => {
@@ -113,7 +117,8 @@ describe('Improved Error Messages', () => {
           progress: 0.1,
           tokensConsumed: 0,
           reason: 'VERB_MISMATCH',
-          expected: 'look'
+          nounRank: { unnamed: 0, named: 0, exact: 0 },
+          expected: { kind: 'word', word: 'look' }
         },
         {
           pattern: 'take :target',
@@ -121,6 +126,7 @@ describe('Improved Error Messages', () => {
           progress: 0.5,
           tokensConsumed: 1,
           reason: 'SLOT_FAILED',
+          nounRank: { unnamed: 0, named: 0, exact: 0 },
           matchedVerb: 'take',
           slotFailure: {
             slotName: 'target',
@@ -161,7 +167,7 @@ describe('Improved Error Messages', () => {
         tokensConsumed: 2,
         reason: 'NOT_ENOUGH_TOKENS',
         matchedVerb: 'put',
-        expected: ':container'
+        expected: { kind: 'slot', name: 'container' }
       }];
 
       const result = analyzeBestFailure(failures, 'put lamp', true);
@@ -178,7 +184,8 @@ describe('Improved Error Messages', () => {
         tokensConsumed: 2,
         reason: 'NOT_ENOUGH_TOKENS',
         matchedVerb: 'put',
-        expected: 'in'
+        expected: { kind: 'word', word: 'in' },
+        followingSlot: 'container'
       }];
 
       const result = analyzeBestFailure(failures, 'put lamp', true);
@@ -188,8 +195,8 @@ describe('Improved Error Messages', () => {
 
     it('GH #318: a verb-matched failure outranks a higher-progress failure that matched nothing', () => {
       const failures: PartialMatchFailure[] = [
-        { pattern: '[look]', action: 'if.action.looking', progress: 0.9, tokensConsumed: 0, reason: 'LEFTOVER_TOKENS', failedAtToken: 'drop' },
-        { pattern: 'drop :item', action: 'if.action.dropping', progress: 0.5, tokensConsumed: 1, reason: 'NOT_ENOUGH_TOKENS', matchedVerb: 'drop', expected: ':item' },
+        { pattern: '[look]', action: 'if.action.looking', progress: 0.9, tokensConsumed: 0, reason: 'LEFTOVER_TOKENS', nounRank: { unnamed: 0, named: 0, exact: 0 }, failedAtToken: 'drop' },
+        { pattern: 'drop :item', action: 'if.action.dropping', progress: 0.5, tokensConsumed: 1, reason: 'NOT_ENOUGH_TOKENS', nounRank: { unnamed: 0, named: 0, exact: 0 }, matchedVerb: 'drop', expected: { kind: 'slot', name: 'item' }, missingSeats: ['direct'] },
       ];
 
       const result = analyzeBestFailure(failures, 'drop', true);
@@ -199,5 +206,5 @@ describe('Improved Error Messages', () => {
   });
 });
 
-// Note: getParserErrorMessage tests are in lang-en-us package
+// The templates these ids name are pinned in lang-en-us (parser-error-templates.test.ts, ADR-387 D3)
 // They are omitted here due to slow import times in vitest

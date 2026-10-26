@@ -59,8 +59,8 @@ describe('cloak.story IR', () => {
   it('resolves exits and placement to entity IDs', () => {
     const foyer = ir.entities[0];
     expect(foyer.exits).toMatchObject([
-      { direction: 'west', to: 'cloakroom' },
-      { direction: 'south', to: 'foyer-bar' },
+      { direction: 'west', to: { kind: 'room', id: 'cloakroom' } },
+      { direction: 'south', to: { kind: 'room', id: 'foyer-bar' } },
     ]);
     expect(foyer.blockedExits).toMatchObject([{ direction: 'north', phraseKey: 'cant-leave' }]);
     const hook = ir.entities[5];
@@ -85,7 +85,8 @@ describe('cloak.story IR', () => {
       },
     ]);
     const hook = ir.entities[5];
-    expect(hook.kinds).toMatchObject([{ name: 'supporter', config: [{ key: 'capacity', value: '1', valueKind: 'number' }] }]);
+    expect(hook.kinds).toMatchObject([{ name: 'supporter', config: [] }]);
+    expect(hook.holds).toBe(1);
     expect(hook.traits).toMatchObject([{ name: 'scenery' }]);
   });
 

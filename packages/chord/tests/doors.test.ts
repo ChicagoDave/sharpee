@@ -54,7 +54,7 @@ describe('`through` exit-line tail (ADR-234 D1/D2, ratchet R2)', () => {
     expect(result.diagnostics.filter((d) => d.code !== 'analysis.missing-ifid')).toEqual([]);
     expect(result.ok).toBe(true);
     const kitchen = result.ir.entities.find((e) => e.id === 'kitchen')!;
-    expect(kitchen.exits).toMatchObject([{ direction: 'north', to: 'hall', via: 'oak-door' }]);
+    expect(kitchen.exits).toMatchObject([{ direction: 'north', to: { kind: 'room', id: 'hall' }, via: 'oak-door' }]);
     const hall = result.ir.entities.find((e) => e.id === 'hall')!;
     expect(hall.exits).toEqual([]); // reverse is inferred, never written
     const door = result.ir.entities.find((e) => e.id === 'oak-door')!;
@@ -67,8 +67,8 @@ describe('`through` exit-line tail (ADR-234 D1/D2, ratchet R2)', () => {
     expect(result.diagnostics.filter((d) => d.code !== 'analysis.missing-ifid')).toEqual([]);
     const kitchen = result.ir.entities.find((e) => e.id === 'kitchen')!;
     const hall = result.ir.entities.find((e) => e.id === 'hall')!;
-    expect(kitchen.exits).toMatchObject([{ direction: 'north', to: 'hall', via: 'oak-door' }]);
-    expect(hall.exits).toMatchObject([{ direction: 'south', to: 'kitchen', via: 'oak-door' }]);
+    expect(kitchen.exits).toMatchObject([{ direction: 'north', to: { kind: 'room', id: 'hall' }, via: 'oak-door' }]);
+    expect(hall.exits).toMatchObject([{ direction: 'south', to: { kind: 'room', id: 'kitchen' }, via: 'oak-door' }]);
   });
 
   it('plain exits carry via: null — the unadorned form is untouched', () => {
@@ -88,7 +88,7 @@ create the Cellar
     );
     expect(result.diagnostics.filter((d) => d.code !== 'analysis.missing-ifid')).toEqual([]);
     const attic = result.ir.entities.find((e) => e.id === 'attic')!;
-    expect(attic.exits).toMatchObject([{ direction: 'down', to: 'cellar', via: null }]);
+    expect(attic.exits).toMatchObject([{ direction: 'down', to: { kind: 'room', id: 'cellar' }, via: null }]);
   });
 
   it('rejects a bare `through` with no door name (parse.exit-through)', () => {
@@ -109,7 +109,7 @@ create the Hall
     )));
     expect(doored.ok).toBe(true);
     const kitchenDoored = doored.ir!.entities.find((e) => e.id === 'kitchen')!;
-    expect(kitchenDoored.exits[0]).toMatchObject({ direction: 'north', to: 'hall', via: 'oak-door', oneWay: true });
+    expect(kitchenDoored.exits[0]).toMatchObject({ direction: 'north', to: { kind: 'room', id: 'hall' }, via: 'oak-door', oneWay: true });
 
     const plain = compile(story(`create the Kitchen
   a room
@@ -121,7 +121,7 @@ create the Hall
 `));
     expect(plain.ok).toBe(true);
     const kitchenPlain = plain.ir!.entities.find((e) => e.id === 'kitchen')!;
-    expect(kitchenPlain.exits[0]).toMatchObject({ direction: 'north', to: 'hall', via: null, oneWay: true });
+    expect(kitchenPlain.exits[0]).toMatchObject({ direction: 'north', to: { kind: 'room', id: 'hall' }, via: null, oneWay: true });
   });
 
   it('a plain exit without the modifier carries no `oneWay` field (IR byte-identical)', () => {

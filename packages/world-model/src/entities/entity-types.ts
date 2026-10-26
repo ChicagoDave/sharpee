@@ -26,9 +26,6 @@ export const EntityType = {
   /** Fixed decorative objects that can't be taken */
   SCENERY: 'scenery',
   
-  /** A directional exit (rarely used as entity) */
-  EXIT: 'exit',
-
   /** A physical adjacency between two rooms (ADR-173) */
   WALL: 'wall',
 
@@ -67,7 +64,6 @@ export function getEntityTypePrefix(type: EntityType): string {
     [EntityType.CONTAINER]: 'c',
     [EntityType.SUPPORTER]: 's',
     [EntityType.SCENERY]: 'y',
-    [EntityType.EXIT]: 'e',
     [EntityType.WALL]: 'w',
     [EntityType.REGION]: 'rg',
     [EntityType.SCENE]: 'sc',

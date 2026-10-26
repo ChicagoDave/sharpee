@@ -3,14 +3,15 @@
  * @description Registry for slot consumption strategies (ADR-088)
  */
 
-import { SlotType, type SlotMatch } from '@sharpee/if-domain';
-import { SlotConsumer, SlotConsumerContext } from './slot-consumer.js';
+import { SlotType } from '@sharpee/if-domain';
+import { SlotConsumer, SlotConsumerContext, type SlotConsumeResult } from './slot-consumer.js';
 import { EntitySlotConsumer } from './entity-slot-consumer.js';
 import { TextSlotConsumer } from './text-slot-consumer.js';
 import { TypedSlotConsumer } from './typed-slot-consumer.js';
 import { VocabularySlotConsumer } from './vocabulary-slot-consumer.js';
 
-export { SlotConsumer, SlotConsumerContext, getNextPatternToken, isPatternDelimiter } from './slot-consumer.js';
+export { SlotConsumer, SlotConsumerContext, isSlotRefusal, isSlotReadings, phraseWordsOf, directionTableOf } from './slot-consumer.js';
+export type { SlotRefusal, SlotReadings, SlotConsumeResult, PhraseWords, DirectionTable } from './slot-consumer.js';
 export { EntitySlotConsumer } from './entity-slot-consumer.js';
 export { TextSlotConsumer } from './text-slot-consumer.js';
 export { TypedSlotConsumer } from './typed-slot-consumer.js';
@@ -42,10 +43,10 @@ export class SlotConsumerRegistry {
   /**
    * Consume tokens for a slot type
    * @param ctx The consumption context
-   * @returns SlotMatch if successful, null if no match
+   * @returns The slot's readings, a SlotRefusal with its reason, or null if no match
    * @throws Error if no consumer registered for the slot type
    */
-  consume(ctx: SlotConsumerContext): SlotMatch | null {
+  consume(ctx: SlotConsumerContext): SlotConsumeResult {
     const consumer = this.consumers.get(ctx.slotType);
     if (!consumer) {
       throw new Error(`No consumer registered for slot type: ${ctx.slotType}`);

@@ -28,6 +28,7 @@ export const KIND_NOUNS: ReadonlySet<string> = new Set([
   'container',
   'supporter',
   'region', // ratchet R1 (ADR-236 D1, 2026-07-17) — named room group; membership via `containing`
+  'vehicle', // ADR-366 D1 (2026-10-18) — enterable by construction; its movement model is its own lines
 ]);
 
 /** v1 trait adjectives (bare, no article). */
@@ -54,6 +55,17 @@ export const TRAIT_ADJECTIVES: ReadonlySet<string> = new Set([
   'proper', // ratchet H1 (ADR-242 D1, 2026-07-19) — person-only, unconditional: IdentityTrait.properName (bare name, no article)
   'open-inventory', // GH #313 (2026-09-03) — composes OpenInventoryTrait: what the holder carries is reachable, not just visible (ADR-273 D4 opt-in)
   'unlisted', // 2026-09-06 — marker: IdentityTrait.contentsUnlisted = true; a holder whose contents its own prose describes — the room never prints "On/In the X you see …"; the contents stay in scope
+  'costs', // ADR-372 D5 — `costs <amount> <currency>`: composes PurchasableTrait; the buying behavior spends the buyer's counter named by the currency
+  'flammable', // ADR-371 D2 — composes FlammableTrait; `with the <tool>` config; requires exactly one burning implementation (cutting's shape)
+  'settable', // ADR-371 D3 — marker: the thing's own `states, reversible:` line is its dial; the loader registers the setting behavior; requires that line (analyzer gates)
+  'transparent', // ADR-369 D1 — marker: ContainerTrait.isTransparent = true; container blocks only, unconditional (analyzer gates); a closed one still shows its contents
+  'attached', // ADR-373 D1 — `attached to <the thing>`: composes AttachedTrait; taking refuses it, pulling detaches it when detachable
+  'detachable', // ADR-373 D1 — marker beside `attached to` only (analyzer gate): AttachedTrait.detachable = true
+  'breakable', // ADR-373 D2 — composes BreakableTrait; attacking breaks it; `broken` reads it
+  'powered', // ADR-374 D10 — `powered by <the thing> [and <the thing>]`: SwitchableTrait.powerSourceIds; switchable containers only (analyzer gates); has power while every source is inside it
+  'listener', // ADR-374 D6 — composes ListenerTrait (ADR-172): it hears the story's sounds; `after hearing the <sound>` reacts
+  'night-vision', // ADR-374 D3 — person-only, unconditional marker: NightVisionTrait; the visibility gates and the observer's own view read it
+  'fragile', // ADR-373 D4 — marker beside `breakable` only (analyzer gate): BreakableTrait.fragile = true; dropping on a floor or throwing breaks it
 ]);
 
 /**
@@ -86,6 +98,8 @@ export const STATE_ADJECTIVES: ReadonlySet<string> = new Set([
   'off',
   'worn',
   'lit',
+  'broken', // ADR-373 D2 — BreakableTrait.broken
+  'attached', // ADR-373 D1 — AttachedTrait.attachedTo set and not loose
 ]);
 
 /**
@@ -99,6 +113,7 @@ export const PLATFORM_STATE_PAIRS: ReadonlyArray<{ pair: [string, string]; trait
   { pair: ['on', 'off'], trait: 'switchable' },
   { pair: ['lit', 'unlit'], trait: 'light-source' },
   { pair: ['worn', 'unworn'], trait: 'wearable' },
+  { pair: ['whole', 'broken'], trait: 'breakable' }, // ADR-373 D2
 ];
 
 /**
@@ -119,6 +134,9 @@ export const STARTS_STATE_PAIRINGS: ReadonlyMap<string, string> = new Map([
   ['open', 'openable'],
   ['off', 'switchable'],
   ['on', 'switchable'],
+  ['broken', 'breakable'], // ADR-373 D7
+  ['lit', 'light-source'], // ADR-374 D9 — a flame light can begin lit or not
+  ['unlit', 'light-source'],
 ]);
 
 /**
@@ -129,7 +147,16 @@ export const STARTS_STATE_PAIRINGS: ReadonlyMap<string, string> = new Map([
  * `leaving` (ratchet R3, ADR-236 D6) exists only as a region crossing
  * reaction — the loader refuses it on any other owner.
  */
-export const EVENT_VERBS: ReadonlySet<string> = new Set(['entering', 'leaving']);
+export const EVENT_VERBS: ReadonlySet<string> = new Set(['entering', 'leaving', 'hearing']);
+
+/**
+ * Event verbs whose clause names its object as a tail with no actor before
+ * it (ADR-374 D6): `after hearing the depot-klaxon` in a listener's own
+ * block — the hearer is the owner, so there is no actor to write. The one
+ * exception to the head rule that a tail needs an actor and a gerund
+ * before it (parser `splitCounterpartTail`); a closed list, never guessed.
+ */
+export const TAILED_EVENT_VERBS: ReadonlySet<string> = new Set(['hearing']);
 
 /**
  * Client capability flags (ADR-216 `client has <capability>` and channel

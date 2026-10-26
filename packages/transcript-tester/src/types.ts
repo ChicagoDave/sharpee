@@ -239,10 +239,16 @@ export interface GoldenRecording {
 export interface Assertion {
   type: 'ok' | 'ok-contains' | 'ok-not-contains'
       | 'fail' | 'skip' | 'todo'
-      | 'event-assert' | 'state-assert' | 'ending-assert'
+      | 'event-assert' | 'state-assert' | 'ending-assert' | 'lock-assert'
       | 'channel-contains' | 'channel-not-contains'
       | 'channel-is' | 'channel-is-not' | 'channel-absent' | 'channel-present';
-  value?: string;      // For contains/not-contains
+  /**
+   * For contains/not-contains, the text. For `lock-assert` (ADR-367 D6),
+   * the locked claim's name: the tree walker records a card's lock verdicts
+   * as assertions of this type, evaluated by the claims floor against the
+   * world, never by the assertion core, and with no `.transcript` spelling.
+   */
+  value?: string;
   reason?: string;     // For fail/todo
 
   /**

@@ -636,7 +636,13 @@ export interface GoldenRecording {
  * grammar — at a pinned seed there is exactly one output.
  */
 export interface Assertion {
-    type: 'ok' | 'ok-contains' | 'ok-not-contains' | 'fail' | 'skip' | 'todo' | 'event-assert' | 'state-assert' | 'ending-assert' | 'channel-contains' | 'channel-not-contains' | 'channel-is' | 'channel-is-not' | 'channel-absent' | 'channel-present';
+    type: 'ok' | 'ok-contains' | 'ok-not-contains' | 'fail' | 'skip' | 'todo' | 'event-assert' | 'state-assert' | 'ending-assert' | 'lock-assert' | 'channel-contains' | 'channel-not-contains' | 'channel-is' | 'channel-is-not' | 'channel-absent' | 'channel-present';
+    /**
+     * For contains/not-contains, the text. For `lock-assert` (ADR-367 D6),
+     * the locked claim's name: the tree walker records a card's lock verdicts
+     * as assertions of this type, evaluated by the claims floor against the
+     * world, never by the assertion core, and with no `.transcript` spelling.
+     */
     value?: string;
     reason?: string;
     /**
@@ -2069,9 +2075,9 @@ export declare function writeReportToFile(result: TestRunResult, outputDir: stri
  * Public interface: `RunEventStream`, `ndjsonEventLine`, and the five
  * `Streamable*` result shapes its methods take — kept (ADR-340 D4) because
  * they are the parameter types of public methods; the barrel exports them.
- * The two derived shapes (ADR-356) are the wire's own payloads minus the
- * envelope: `branch-tester` maps its outcomes onto them, this module
- * sequences them.
+ * The two derived shapes (ADR-356) and the two claims shapes (ADR-365 D6,
+ * ADR-367 D6) are the wire's own payloads minus the envelope:
+ * `branch-tester` maps its outcomes onto them, this module sequences them.
  * Owner context: transcript-tester (testing tooling). The wire SHAPES are owned
  *   by `@sharpee/ide-protocol`; this module only builds and sequences them.
  *
@@ -2079,7 +2085,7 @@ export declare function writeReportToFile(result: TestRunResult, outputDir: stri
  *   stream, because records built from a completed result cannot announce a
  *   transcript before it runs.
  */
-import type { RunEvent, RunMode, BudgetUse, ProgressEvent, DerivedBranchEvent, DerivedRunSummaryEvent, RunEventEnvelope, CommandCause } from '@sharpee/ide-protocol';
+import type { RunEvent, RunMode, BudgetUse, ProgressEvent, DerivedBranchEvent, DerivedRunSummaryEvent, ClaimResultEvent, ClaimsSummaryEvent, RunEventEnvelope, CommandCause } from '@sharpee/ide-protocol';
 /**
  * One derived branch's outcome as the wire carries it (ADR-356 D1 to D3):
  * the `derived-branch` payload without its envelope. `branch-tester`'s
@@ -2094,6 +2100,14 @@ export type StreamableDerivedOutcome = Omit<DerivedBranchEvent, keyof RunEventEn
  * the CLI report prints.
  */
 export type StreamableDerivedSummary = Omit<DerivedRunSummaryEvent, keyof RunEventEnvelope | 'type'>;
+/**
+ * One claim's verdict as the wire carries it (ADR-365 D6, ADR-367 D6): the
+ * `claim-result` payload without its envelope, built by `branch-tester`'s
+ * `claimResultRowOf` beside the sentence both surfaces read it in.
+ */
+export type StreamableClaimResult = Omit<ClaimResultEvent, keyof RunEventEnvelope | 'type'>;
+/** The claims tier's ratio as the wire carries it: the `claims-summary` payload without its envelope. */
+export type StreamableClaimsSummary = Omit<ClaimsSummaryEvent, keyof RunEventEnvelope | 'type'>;
 /**
  * What the stream needs from ONE command's outcome — structurally, not by name.
  *
@@ -2296,6 +2310,14 @@ export declare class RunEventStream {
     derivedBranch(outcome: StreamableDerivedOutcome): void;
     /** The derived tier's three ratios and gap lists (ADR-356 D5) — once per run. */
     derivedSummary(summary: StreamableDerivedSummary): void;
+    /**
+     * One claim's verdict (ADR-365 D6, ADR-367 D5/D6) — emitted after the
+     * derived tier, one per declared claim. `branch-tester`'s
+     * `claimResultRowOf` builds the payload; this only sequences it.
+     */
+    claimResult(row: StreamableClaimResult): void;
+    /** The claims tier's held-over-declared ratio (ADR-365 D6) — once per run, after every `claim-result`. */
+    claimsSummary(summary: StreamableClaimsSummary): void;
     /**
      * Close the stream.
      *

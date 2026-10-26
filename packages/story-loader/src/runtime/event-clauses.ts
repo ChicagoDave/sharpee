@@ -15,7 +15,7 @@
 import type { IREntity, IROnClause } from '@sharpee/chord';
 import type { ISemanticEvent } from '@sharpee/core';
 import { WorldModel } from '@sharpee/world-model';
-import { crossingRegionId, enteringDestination, EVENT_TRIGGERS, movedActorId, REGION_EVENT_TRIGGERS } from '../event-contract.js';
+import { crossingRegionId, enteringDestination, EVENT_TRIGGERS, heardSound, LISTENER_EVENT_TRIGGERS, movedActorId, REGION_EVENT_TRIGGERS } from '../event-contract.js';
 import { CHORD_VISITED_PREFIX, clauseOccurrenceKey } from '../state-keys.js';
 import { ExecContext, type RuntimeCore } from './core.js';
 
@@ -65,6 +65,10 @@ export class EventClausesSection {
 
   /** The clause's trigger event type by owner kind, or undefined for non-event clauses. */
   eventTriggerFor(entity: IREntity, clause: IROnClause): string | undefined {
+    // ADR-374 D6: a listener hears what ADR-172's propagation delivers to it,
+    // whatever kind of thing it is.
+    const heard = LISTENER_EVENT_TRIGGERS[clause.action];
+    if (heard) return heard;
     const isRegionOwner = entity.kinds.some((k) => k.name === 'region');
     if (isRegionOwner) return REGION_EVENT_TRIGGERS[clause.action];
     // GH #341: the arrival event is a ROOM's story of a move. A THING's
@@ -100,7 +104,11 @@ export class EventClausesSection {
     // crossing event names which boundary was crossed — fire only for this
     // region's own boundary (the emitter's getRegionCrossings already made
     // parent reactions crossing-accurate; no transitive widening here).
-    if (entity.kinds.some((k) => k.name === 'region')) {
+    if (LISTENER_EVENT_TRIGGERS[clause.action]) {
+      // ADR-374 D6: this listener heard this sound, read through the contract.
+      const heard = heardSound(event);
+      if (!heard || heard.listenerId !== this.core.host.entityId(entity.id) || heard.kind !== clause.sound) return null;
+    } else if (entity.kinds.some((k) => k.name === 'region')) {
       if (crossingRegionId(event.data) !== this.core.host.entityId(entity.id)) return null;
     } else if (clause.action === 'entering' && enteringDestination(event.data) !== this.core.host.entityId(entity.id)) {
       // Room/enterable owners: `after the player entering` fires when the

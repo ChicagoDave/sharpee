@@ -31,8 +31,12 @@ import { createActionContext } from '../../../src/actions/enhanced-context';
 import { createCommand } from '../../test-utils';
 import { createFixtureRandomService } from '../../test-utils/fixture-random-service';
 
+/** English, handed to hand-built worlds as the language's words (ADR-387 D2). */
+const ENGLISH_WORDS = { selfWords: ['me', 'myself', 'self', 'yourself'], nameStopwords: ['the', 'a', 'an', 'of'] };
+
 function buildWorld() {
   const world = new WorldModel();
+  world.setLanguageWords(ENGLISH_WORDS);
   const hall = world.createEntity('Hall', EntityType.ROOM);
   const cellar = world.createEntity('Cellar', EntityType.ROOM);
   hall.add(new RoomTrait({ exits: { [Direction.NORTH]: { destination: cellar.id } } }));
@@ -75,9 +79,9 @@ describe('a witnessed mover (ADR-328 D3/D5)', () => {
     const exited = events.find(e => e.type === 'if.event.actor_exited')!;
     const entered = events.find(e => e.type === 'if.event.actor_entered')!;
     expect(exited.entities).toMatchObject({ actor: npc.id, location: hall.id });
-    expect(exited.data).toMatchObject({ messageId: 'if.action.going.departs', params: { direction: 'north' } });
+    expect(exited.data).toMatchObject({ messageId: 'if.action.going.departs', params: { direction: Direction.NORTH } });
     expect(entered.entities).toMatchObject({ actor: npc.id, location: cellar.id });
-    expect(entered.data).toMatchObject({ messageId: 'if.action.going.arrives', params: { direction: 'south' } });
+    expect(entered.data).toMatchObject({ messageId: 'if.action.going.arrives', params: { direction: Direction.SOUTH } });
   });
 
   it('a mover that does not announce its movement moves unremarked — the events carry no messages', () => {

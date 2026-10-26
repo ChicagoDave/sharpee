@@ -1,6 +1,6 @@
 # ADR-215: Chord Extension-Use Surface & Combat
 
-## Status: ACCEPTED (2026-07-14 — direction fixed by ADR-214 §5/OQ2/OQ6; designed via interview the same session; all six open questions resolved; third-party extensions deferred to a later ADR)
+## Status: ACCEPTED (2026-07-14 — direction fixed by ADR-214 §5/OQ2/OQ6; designed via interview the same session; all six open questions resolved; third-party extensions deferred to a later ADR). **Superseded in part by ADR-377** (2026-10-17, session 32f84f, at David's "fix and accept"): state machines are core, as NPCs are; `use state-machines` is `analysis.extension-core`. Combat stays gated; everything else here stands.
 
 > Child of ADR-214 (parity). ADR-214 §5 audited the plugin/extension system;
 > OQ2 resolved a top-level **`use <extension>`** declaration that admits an
@@ -15,7 +15,8 @@
 ## Context
 
 The platform runs three turn plugins (priority-ordered NPC 100, state-machine 75,
-scheduler 50) plus opt-in extensions like basic combat — **all TypeScript-
+scheduler 50 — as measured 2026-07-14; the state-machine plugin now runs at 240,
+`TURN_BANDS.platformPhases.floor + 40`, under ADR-332) plus opt-in extensions like basic combat — **all TypeScript-
 registered**. Chord has **no** `use`/`enable`/`register` surface (confirmed
 2026-07-14: `catalog.ts` has no combat/NPC vocabulary; `person` maps to a bare
 `h.actor`, no `NpcTrait`/`CombatantTrait`; only the scheduler plugin is auto-wired
@@ -61,7 +62,7 @@ coarse bundles — one subsystem per `use`.
 **Exception — the NPC plugin auto-wires (Q4).** NPCs are common enough to be
 **core**: the NPC plugin registers by default (as the scheduler does today) and
 its behavior vocabulary is always in the catalog — there is **no `use npcs`**.
-Combat and state-machine remain `use`-gated. This deliberately breaks the uniform
+Combat and state-machine remain `use`-gated *(state machines no longer: core under ADR-377, 2026-10-17)*. This deliberately breaks the uniform
 "one `use` per extension" rule for the common case (owner call, 2026-07-14).
 
 ### Vocabulary contribution — a static data manifest (resolved 2026-07-14)
@@ -108,7 +109,9 @@ non-boolean trait state in Chord.
   canMove, allowedRooms) follow the same `with`-data pattern.
 - **State machines**: the full ADR-119 depth — `onEnter`/`onExit` effects,
   `terminal` states, named machines, and `$role` bindings — is reachable under
-  **`use state-machines`**. **Gating scope (pinned 2026-07-14):** `use
+  **`use state-machines`**. *(Superseded by ADR-377, 2026-10-17: the depth is
+  core and needs no `use` line; the line is `analysis.extension-core`. The
+  invariant below, that the existing `states:` surface is never gated, stands.)* **Gating scope (pinned 2026-07-14):** `use
   state-machines` gates **only the new ADR-119 depth**; Chord's **existing core
   `states:` + `select on` + `change` surface stays unconditional** (no `use`
   required) exactly as it works in shipped stories. This is deliberate — gating

@@ -230,56 +230,6 @@ describe('Text Processing', () => {
     });
   });
 
-  describe('expandAbbreviation()', () => {
-    describe('direction abbreviations', () => {
-      it('should expand cardinal directions', () => {
-        expect(provider.expandAbbreviation('n')).toBe('north');
-        expect(provider.expandAbbreviation('s')).toBe('south');
-        expect(provider.expandAbbreviation('e')).toBe('east');
-        expect(provider.expandAbbreviation('w')).toBe('west');
-      });
-
-      it('should expand ordinal directions', () => {
-        expect(provider.expandAbbreviation('ne')).toBe('northeast');
-        expect(provider.expandAbbreviation('nw')).toBe('northwest');
-        expect(provider.expandAbbreviation('se')).toBe('southeast');
-        expect(provider.expandAbbreviation('sw')).toBe('southwest');
-      });
-
-      it('should expand vertical directions', () => {
-        expect(provider.expandAbbreviation('u')).toBe('up');
-        expect(provider.expandAbbreviation('d')).toBe('down');
-      });
-    });
-
-    describe('command abbreviations', () => {
-      it('should expand common command abbreviations', () => {
-        expect(provider.expandAbbreviation('l')).toBe('look');
-        expect(provider.expandAbbreviation('x')).toBe('examine');
-        expect(provider.expandAbbreviation('i')).toBe('inventory');
-        expect(provider.expandAbbreviation('z')).toBe('wait');
-        expect(provider.expandAbbreviation('q')).toBe('quit');
-        expect(provider.expandAbbreviation('g')).toBe('again');
-      });
-    });
-
-    describe('unknown abbreviations', () => {
-      it('should return null for unknown abbreviations', () => {
-        expect(provider.expandAbbreviation('xyz')).toBeNull();
-        expect(provider.expandAbbreviation('abc')).toBeNull();
-        expect(provider.expandAbbreviation('')).toBeNull();
-      });
-    });
-
-    describe('case handling', () => {
-      it('should be case insensitive', () => {
-        expect(provider.expandAbbreviation('N')).toBe('north');
-        expect(provider.expandAbbreviation('NE')).toBe('northeast');
-        expect(provider.expandAbbreviation('L')).toBe('look');
-      });
-    });
-  });
-
   describe('formatList()', () => {
     describe('empty and single item lists', () => {
       it('should return empty string for empty list', () => {

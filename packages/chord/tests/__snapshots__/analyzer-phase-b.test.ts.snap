@@ -250,6 +250,12 @@ exports[`zoo-actions IR (§3.4 + ownership package) > matches the golden IR snap
       "onClauses": [
         {
           "action": "feeding",
+          "actionSpan": {
+            "column": 20,
+            "endColumn": 27,
+            "endLine": 111,
+            "line": 111,
+          },
           "actor": {
             "kind": "player",
           },
@@ -843,6 +849,12 @@ exports[`zoo-actions IR (§3.4 + ownership package) > matches the golden IR snap
       "onClauses": [
         {
           "action": "petting",
+          "actionSpan": {
+            "column": 17,
+            "endColumn": 24,
+            "endLine": 64,
+            "line": 64,
+          },
           "actor": {
             "kind": "player",
           },
@@ -1037,6 +1049,12 @@ exports[`zoo-actions IR (§3.4 + ownership package) > matches the golden IR snap
       "onClauses": [
         {
           "action": "feeding",
+          "actionSpan": {
+            "column": 17,
+            "endColumn": 24,
+            "endLine": 92,
+            "line": 92,
+          },
           "actor": {
             "kind": "player",
           },

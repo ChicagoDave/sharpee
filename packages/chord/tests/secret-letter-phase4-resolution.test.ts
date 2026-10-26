@@ -214,7 +214,7 @@ create the Hall
     expect(clause.condition).toMatchObject({ pred: 'is', subject: { kind: 'entity', id }, object: { kind: 'symbol', name: 'new' } });
     expect(clause.body[0]).toMatchObject({ kind: 'change', entity: { kind: 'entity', id }, state: 'greeted' });
     const hall = result.ir!.entities.find((e) => e.id === 'hall')!;
-    expect(hall.exits.find((x) => x.direction === 'east')?.to).toBe(id);
+    expect(hall.exits.find((x) => x.direction === 'east')?.to).toEqual({ kind: 'room', id });
   });
 
   it('still reads `and` as the connective after a predicate', () => {

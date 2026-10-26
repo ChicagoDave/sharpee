@@ -11,14 +11,12 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { EnglishParser } from '../src/english-parser';
 import { EnglishLanguageProvider } from '@sharpee/lang-en-us';
-import { vocabularyRegistry } from '@sharpee/if-domain';
 
 describe('ADR-231 D4: first-class topic field', () => {
   let parser: EnglishParser;
   let language: EnglishLanguageProvider;
 
   beforeEach(() => {
-    vocabularyRegistry.clear();
     language = new EnglishLanguageProvider();
     parser = new EnglishParser(language);
   });
@@ -30,7 +28,9 @@ describe('ADR-231 D4: first-class topic field', () => {
     if (result.success) {
       expect(result.value.action).toBe('if.action.asking');
       // Verbatim free text — the article is preserved, not stripped.
-      expect(result.value.topic).toEqual({ text: 'the weather' });
+      expect(result.value.topic).toMatchObject({ text: 'the weather' });
+      // ADR-385 D2: the topic also carries its one split, for the validator's matcher
+      expect(result.value.topic!.phrase).toMatchObject({ text: 'weather', head: 'weather', articles: ['the'], determiners: [], modifiers: [] });
       // The recipient is the direct object; the topic is NOT a noun phrase.
       expect(result.value.structure.directObject?.text).toBe('guard');
       expect(result.value.structure.indirectObject).toBeUndefined();
@@ -45,7 +45,7 @@ describe('ADR-231 D4: first-class topic field', () => {
 
     expect(result.success).toBe(true);
     if (result.success) {
-      expect(result.value.topic).toEqual({ text: 'the ancient stone door' });
+      expect(result.value.topic).toMatchObject({ text: 'the ancient stone door' });
       expect(result.value.structure.indirectObject).toBeUndefined();
     }
   });
@@ -56,7 +56,7 @@ describe('ADR-231 D4: first-class topic field', () => {
     expect(result.success).toBe(true);
     if (result.success) {
       expect(result.value.action).toBe('if.action.telling');
-      expect(result.value.topic).toEqual({ text: 'treasure' });
+      expect(result.value.topic).toMatchObject({ text: 'treasure' });
       expect(result.value.structure.directObject?.text).toBe('guard');
       expect(result.value.structure.indirectObject).toBeUndefined();
     }
@@ -67,14 +67,14 @@ describe('ADR-231 D4: first-class topic field', () => {
     expect(question.success).toBe(true);
     if (question.success) {
       expect(question.value.action).toBe('if.action.asking');
-      expect(question.value.topic).toEqual({ text: 'dragons' });
+      expect(question.value.topic).toMatchObject({ text: 'dragons' });
     }
 
     const inquire = parser.parse('inquire of guard about dragons');
     expect(inquire.success).toBe(true);
     if (inquire.success) {
       expect(inquire.value.action).toBe('if.action.asking');
-      expect(inquire.value.topic).toEqual({ text: 'dragons' });
+      expect(inquire.value.topic).toMatchObject({ text: 'dragons' });
     }
   });
 
@@ -84,7 +84,7 @@ describe('ADR-231 D4: first-class topic field', () => {
     expect(result.success).toBe(true);
     if (result.success) {
       expect(result.value.action).toBe('if.action.telling');
-      expect(result.value.topic).toEqual({ text: 'dragons' });
+      expect(result.value.topic).toMatchObject({ text: 'dragons' });
     }
   });
 

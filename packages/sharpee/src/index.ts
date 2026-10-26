@@ -44,12 +44,15 @@ export {
 } from '@sharpee/core';
 
 export {
-  Parser,
-  type Token,
   type ValidatedCommand,
-  type ParseError,
   CommandValidator
 } from '@sharpee/stdlib';
+// The parser contracts live in if-domain (ADR-387 D4 deleted stdlib's re-export)
+export {
+  type Parser,
+  type Token,
+  type ParseError
+} from '@sharpee/if-domain';
 
 // Language support
 export { EnglishLanguageProvider } from '@sharpee/lang-en-us';

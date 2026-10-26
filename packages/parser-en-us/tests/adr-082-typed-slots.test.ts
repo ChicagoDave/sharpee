@@ -4,15 +4,20 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
+import { EnglishLanguageProvider } from '@sharpee/lang-en-us';
 import { EnglishGrammarEngine } from '../src/english-grammar-engine';
 import { Token, SlotType } from '@sharpee/if-domain';
+import { Direction } from '@sharpee/world-model';
+
+/** The language whose direction table the DIRECTION slot reads (ADR-387 D5). */
+const language = new EnglishLanguageProvider();
 
 describe('ADR-082: Typed Slots', () => {
   let engine: EnglishGrammarEngine;
   let grammar: any;
 
   beforeEach(() => {
-    engine = new EnglishGrammarEngine();
+    engine = new EnglishGrammarEngine(new EnglishLanguageProvider());
     grammar = engine.createBuilder();
   });
 
@@ -91,7 +96,7 @@ describe('ADR-082: Typed Slots', () => {
       const matches = engine.findMatches(tokens, context);
 
       const nSlot = matches[0].slots.get('n');
-      const value = EnglishGrammarEngine.extractNumberValue(nSlot!);
+      const value = EnglishGrammarEngine.extractNumberValue(nSlot!, new EnglishLanguageProvider());
       expect(value).toBe(414);
     });
 
@@ -107,7 +112,7 @@ describe('ADR-082: Typed Slots', () => {
       const matches = engine.findMatches(tokens, context);
 
       const nSlot = matches[0].slots.get('n');
-      const value = EnglishGrammarEngine.extractNumberValue(nSlot!);
+      const value = EnglishGrammarEngine.extractNumberValue(nSlot!, new EnglishLanguageProvider());
       expect(value).toBe(20);
     });
   });
@@ -147,7 +152,7 @@ describe('ADR-082: Typed Slots', () => {
         expect(matches).toHaveLength(1);
 
         const ordSlot = matches[0].slots.get('ord');
-        const value = EnglishGrammarEngine.extractOrdinalValue(ordSlot!);
+        const value = EnglishGrammarEngine.extractOrdinalValue(ordSlot!, new EnglishLanguageProvider());
         expect(value).toBe(expected);
       }
     });
@@ -164,7 +169,7 @@ describe('ADR-082: Typed Slots', () => {
       const matches = engine.findMatches(tokens, context);
 
       const ordSlot = matches[0].slots.get('ord');
-      const value = EnglishGrammarEngine.extractOrdinalValue(ordSlot!);
+      const value = EnglishGrammarEngine.extractOrdinalValue(ordSlot!, new EnglishLanguageProvider());
       expect(value).toBe(5);
     });
   });
@@ -256,8 +261,8 @@ describe('ADR-082: Typed Slots', () => {
       expect(matches).toHaveLength(1);
 
       const dirSlot = matches[0].slots.get('dir');
-      const canonical = EnglishGrammarEngine.extractDirectionValue(dirSlot!);
-      expect(canonical).toBe('north');
+      const canonical = EnglishGrammarEngine.extractDirectionValue(dirSlot!, language);
+      expect(canonical).toBe(Direction.NORTH);
     });
 
     it('should match ordinal directions (ne, sw, etc.)', () => {
@@ -267,7 +272,7 @@ describe('ADR-082: Typed Slots', () => {
         .mapsTo('go')
         .build();
 
-      for (const [abbrev, full] of [['ne', 'northeast'], ['sw', 'southwest']]) {
+      for (const [abbrev, full] of [['ne', Direction.NORTHEAST], ['sw', Direction.SOUTHWEST]]) {
         const tokens = createTokens(['go', abbrev]);
         const context = { world: null, actorId: 'player', currentLocation: 'room', slots: new Map() };
         const matches = engine.findMatches(tokens, context);
@@ -275,7 +280,7 @@ describe('ADR-082: Typed Slots', () => {
         expect(matches).toHaveLength(1);
 
         const dirSlot = matches[0].slots.get('dir');
-        const canonical = EnglishGrammarEngine.extractDirectionValue(dirSlot!);
+        const canonical = EnglishGrammarEngine.extractDirectionValue(dirSlot!, language);
         expect(canonical).toBe(full);
       }
     });
@@ -287,7 +292,7 @@ describe('ADR-082: Typed Slots', () => {
         .mapsTo('go')
         .build();
 
-      for (const [dir, canonical] of [['up', 'up'], ['down', 'down'], ['u', 'up'], ['d', 'down']]) {
+      for (const [dir, canonical] of [['up', Direction.UP], ['down', Direction.DOWN], ['u', Direction.UP], ['d', Direction.DOWN]]) {
         const tokens = createTokens(['go', dir]);
         const context = { world: null, actorId: 'player', currentLocation: 'room', slots: new Map() };
         const matches = engine.findMatches(tokens, context);
@@ -295,7 +300,7 @@ describe('ADR-082: Typed Slots', () => {
         expect(matches).toHaveLength(1);
 
         const dirSlot = matches[0].slots.get('dir');
-        const result = EnglishGrammarEngine.extractDirectionValue(dirSlot!);
+        const result = EnglishGrammarEngine.extractDirectionValue(dirSlot!, language);
         expect(result).toBe(canonical);
       }
     });
@@ -389,10 +394,10 @@ describe('ADR-082: Typed Slots', () => {
       expect(matches).toHaveLength(1);
 
       const nSlot = matches[0].slots.get('n');
-      expect(EnglishGrammarEngine.extractNumberValue(nSlot!)).toBe(5);
+      expect(EnglishGrammarEngine.extractNumberValue(nSlot!, new EnglishLanguageProvider())).toBe(5);
 
       const dirSlot = matches[0].slots.get('dir');
-      expect(EnglishGrammarEngine.extractDirectionValue(dirSlot!)).toBe('north');
+      expect(EnglishGrammarEngine.extractDirectionValue(dirSlot!, language)).toBe(Direction.NORTH);
     });
 
     it('should handle ordinal with entity pattern', () => {
@@ -409,7 +414,7 @@ describe('ADR-082: Typed Slots', () => {
       expect(matches).toHaveLength(1);
 
       const ordSlot = matches[0].slots.get('ord');
-      expect(EnglishGrammarEngine.extractOrdinalValue(ordSlot!)).toBe(2);
+      expect(EnglishGrammarEngine.extractOrdinalValue(ordSlot!, new EnglishLanguageProvider())).toBe(2);
 
       const itemSlot = matches[0].slots.get('item');
       expect(itemSlot?.text).toBe('key');

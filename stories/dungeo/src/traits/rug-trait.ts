@@ -28,6 +28,13 @@ export class RugTrait implements ITrait {
   /** Room ID of the cellar */
   cellarId: string;
 
+  /**
+   * Whether the trap door has been revealed — the interceptor's fire-once
+   * guard. It lived on PushableTrait.state until that trait became a marker
+   * (ADR-378 D6a); a story's own state belongs on its own trait.
+   */
+  revealed = false;
+
   constructor(config: RugTraitConfig) {
     this.trapdoorId = config.trapdoorId;
     this.cellarId = config.cellarId;

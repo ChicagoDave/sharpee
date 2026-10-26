@@ -15,7 +15,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { EnglishParser } from '../src/english-parser';
 import { EnglishLanguageProvider } from '@sharpee/lang-en-us';
-import { vocabularyRegistry } from '@sharpee/if-domain';
 
 /** The frozen prompt list (ADR-320 D14; conversation-threads-design.md §7). */
 const CONTINUATION_PROMPTS = ['tell me more', 'continue', 'go on', 'and?'];
@@ -24,7 +23,6 @@ describe('continuation prompts (ADR-320 D14)', () => {
   let parser: EnglishParser;
 
   beforeEach(() => {
-    vocabularyRegistry.clear();
     parser = new EnglishParser(new EnglishLanguageProvider());
   });
 

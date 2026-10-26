@@ -76,7 +76,7 @@ describe('GH #359: a timer read is accepted on `phrase detail while`', () => {
     expect(errors(result)).toEqual([]);
     const detail = result.ir!.phrases.locales['en-US']['mercenaries.detail'];
     expect(detail).toBeDefined();
-    expect(detail.condition).toEqual({ kind: 'timer-has', timer: 'player.pole-destruction', what: 'started' });
+    expect(detail.condition).toEqual({ kind: 'timer-has', name: 'pole-destruction', owner: { kind: 'player' }, what: 'started' });
   });
 
   it('compiles the negated read (`has not started`) the same way', () => {
@@ -85,7 +85,7 @@ describe('GH #359: a timer read is accepted on `phrase detail while`', () => {
     const detail = result.ir!.phrases.locales['en-US']['mercenaries.detail'];
     expect(detail.condition).toEqual({
       kind: 'not',
-      operand: { kind: 'timer-has', timer: 'player.pole-destruction', what: 'started' },
+      operand: { kind: 'timer-has', name: 'pole-destruction', owner: { kind: 'player' }, what: 'started' },
     });
   });
 

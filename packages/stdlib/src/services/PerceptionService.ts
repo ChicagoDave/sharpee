@@ -72,13 +72,16 @@ export class PerceptionService implements IPerceptionService {
       // for the perceiver's highest-precedence available sense. This is generic —
       // it keys off the presence of `renderings`, not off NPC/movement specifics —
       // so future witnessable facts (combat, object sounds, smells) reuse it.
-      const renderings = (event.data as { renderings?: PerSenseRenderings } | undefined)
-        ?.renderings;
+      // The fact stays the fact: its type and domain data are kept, and only
+      // the line it renders through becomes the chosen sense's.
+      const data = event.data as ({ renderings?: PerSenseRenderings } & Record<string, unknown>) | undefined;
+      const renderings = data?.renderings;
       if (renderings !== undefined) {
         for (const sense of SENSE_PRECEDENCE) {
           const r = renderings[sense];
           if (r && this.canPerceive(actor, location, world, sense)) {
-            return { ...event, type: r.messageId, data: r.params };
+            const { renderings: _chosen, ...facts } = data!;
+            return { ...event, data: { ...facts, messageId: r.messageId, params: r.params } };
           }
         }
         // Present but nothing perceivable (incl. empty `{}`) ⇒ imperceptible.
@@ -173,10 +176,11 @@ export class PerceptionService implements IPerceptionService {
       return false;
     }
 
-    // Check environmental darkness
-    // Note: VisibilityBehavior.isDark expects a concrete WorldModel
+    // Check environmental darkness, as this actor meets it: a night-vision
+    // observer sees its own dark room (ADR-374 D5).
+    // Note: VisibilityBehavior expects a concrete WorldModel
     // We cast here since IWorldModel is compatible
-    if (VisibilityBehavior.isDark(location, world as WorldModel)) {
+    if (VisibilityBehavior.isDarkFor(actor, location, world as WorldModel)) {
       return false;
     }
 
@@ -308,7 +312,7 @@ export class PerceptionService implements IPerceptionService {
       return 'blindfolded';
     }
 
-    if (VisibilityBehavior.isDark(location, world as WorldModel)) {
+    if (VisibilityBehavior.isDarkFor(actor, location, world as WorldModel)) {
       return 'darkness';
     }
 

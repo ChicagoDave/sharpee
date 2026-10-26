@@ -1,0 +1,88 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "You get out of the coracle."
+        ]
+      },
+      "command": "exit",
+      "id": "wexit001",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Landing",
+          "The Bottomless Pit, in the distance, to the northeast.",
+          "The Echo Chamber, in the distance, to the east.",
+          "The Dripping Gallery, on the horizon, to the north."
+        ],
+        "notContains": [
+          "Wumpus,"
+        ]
+      },
+      "command": "look",
+      "id": "wlook001",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The arrow goes out across the water and is gone."
+        ]
+      },
+      "command": "shoot the bottomless pit",
+      "id": "wshot001",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The arrow goes out across the water and is gone."
+        ]
+      },
+      "command": "shoot pit",
+      "id": "wshot002",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The arrow goes out across the water and is gone."
+        ]
+      },
+      "command": "shoot pit",
+      "id": "wshot003",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The arrow goes out across the water and is gone."
+        ],
+        "notContains": [
+          "last arrow"
+        ]
+      },
+      "command": "shoot pit",
+      "id": "wshot004",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The arrow goes out across the water and is gone.",
+          "That was your last arrow, and it is somewhere in the dark now."
+        ]
+      },
+      "command": "shoot pit",
+      "ending": "out-of-arrows",
+      "id": "wshot005",
+      "type": "turn"
+    }
+  ],
+  "id": "wumpshor",
+  "ordinal": 0,
+  "parent": "wumproot"
+}

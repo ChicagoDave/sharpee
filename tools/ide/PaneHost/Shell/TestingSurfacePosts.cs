@@ -9,9 +9,13 @@
 // view state and not its business, so every reader here answers "not this" rather than
 // throwing.
 //
+// The page also posts `{lock:{args}}` (ADR-367 D7): the `sharpee claim` argument list for one
+// step of the lock gesture, which the host spawns and whose one-object stdout it hands back
+// through `lockResult`.
+//
 // Public interface: TestingSurfacePosts.ReadOpenSource, TestingSurfacePosts.ReadTreeWrite,
-// TestingSurfacePosts.IsTreeFileName, TestingSurfacePosts.ApplyTreeWrite, OpenSourceRequest,
-// TreeWrite.
+// TestingSurfacePosts.ReadLock, TestingSurfacePosts.IsTreeFileName,
+// TestingSurfacePosts.ApplyTreeWrite, OpenSourceRequest, TreeWrite.
 // Owner context: tools/ide — the Avalonia desktop head's shell.
 
 using System.Text;
@@ -126,6 +130,35 @@ internal static class TestingSurfacePosts
         {
             var path = Path.Combine(directory, name);
             if (IsTreeFileName(name) && File.Exists(path)) File.Delete(path);
+        }
+    }
+
+    /// <summary>
+    /// The `lock` request in a post (ADR-367 D7), or null when the post is anything else.
+    /// The page writes the whole `sharpee claim` argument list itself — one spelling of the
+    /// CLI's flags, in the page — and this host only spawns it; so the list must start with
+    /// `claim` and hold strings alone, and the host appends the project. Any other shape is
+    /// "not this".
+    /// </summary>
+    /// <param name="body">The raw JSON the page posted.</param>
+    /// <returns>The arguments after the executable, or null.</returns>
+    public static IReadOnlyList<string>? ReadLock(string body)
+    {
+        try
+        {
+            if (JsonNode.Parse(body)?["lock"] is not JsonObject lock_) return null;
+            if (lock_["args"] is not JsonArray array || array.Count == 0) return null;
+            var args = new List<string>(array.Count);
+            foreach (var entry in array)
+            {
+                if (entry is not JsonValue value || !value.TryGetValue<string>(out var text)) return null;
+                args.Add(text);
+            }
+            return args[0] == "claim" ? args : null;
+        }
+        catch
+        {
+            return null;
         }
     }
 }

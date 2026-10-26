@@ -139,16 +139,9 @@ export const inflateAction: Action = {
       boat.add(new EnterableTrait({ preposition: 'in' }));
     }
 
-    // Add VehicleTrait for watercraft behavior
-    // blocksWalkingMovement: false allows GO commands while in boat
+    // The inflated boat is steered by GO into the rooms that admit it
     if (!boat.has(TraitType.VEHICLE)) {
-      boat.add(new VehicleTrait({
-        vehicleType: 'watercraft',
-        blocksWalkingMovement: false,
-        requiresExitBeforeLeaving: false,
-        isOperational: true,
-        transparent: true
-      }));
+      boat.add(new VehicleTrait({ movement: { kind: 'streets' } }));
     }
   },
 

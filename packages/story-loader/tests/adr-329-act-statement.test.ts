@@ -8,7 +8,7 @@
  * named diagnostics. No doubles anywhere: the engine's own `executeTurn`,
  * the engine's own plugins, the stdlib actions, the loader's world.
  */
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import type { ISemanticEvent } from '@sharpee/core';
 import { createSemanticEventSource } from '@sharpee/core';
 import { GameEngine, SaveRestoreService, type ISaveRestoreStateProvider, type Story } from '@sharpee/engine';
@@ -97,7 +97,12 @@ interface Booted {
 
 /** The boot-engine helper's shape, plus an in-order capture of the turn stream. */
 async function boot(source: string, seed = 11): Promise<Booted> {
-  const story = createStory(compileSource(source), { seed });
+  return bootIr(compileSource(source), seed);
+}
+
+/** Boot from compiled IR, for a test that must hand the loader IR the compiler would never emit. */
+async function bootIr(ir: ReturnType<typeof compileSource>, seed = 11): Promise<Booted> {
+  const story = createStory(ir, { seed });
   const world = new WorldModel();
   const language = new EnglishLanguageProvider();
   const parser = new EnglishParser(language, { world });
@@ -257,5 +262,42 @@ describe('the guards take the sword — ADR-329 Acceptance item 2, through a rea
     expect(result.success).toBe(true);
     expect(b.at('sword')).toBe(guards.id);
     expect(result.events.some((e) => e.type === 'if.event.taken' && e.entities.actor === guards.id)).toBe(true);
+  });
+});
+
+/**
+ * An act's direction slot (alignment finding D15): the IR carries the Chord
+ * word (`west`), the loader converts it once (`directionOfWord`) and the
+ * real going runs with the constant. A word naming no direction — IR the
+ * analyzer never emits — is a named load error, not a silent no-move.
+ */
+describe('an acting statement with a direction', () => {
+  const GUARDS_GO_WEST = { guards: '  on every turn\n    the guards go west\n  end on\n' };
+
+  it('`the guards go west` moves the guards through the Yard\'s west exit', async () => {
+    const b = await boot(SOURCE(GUARDS_GO_WEST));
+    expect(b.at('guards')).toBe(b.id('yard'));
+    const result = await b.engine.executeTurn('wait');
+    expect(result.success).toBe(true);
+    expect(b.at('guards')).toBe(b.id('cellar'));
+  });
+
+  it('a direction word that names no direction is refused by name', async () => {
+    const ir = compileSource(SOURCE(GUARDS_GO_WEST));
+    const patched = JSON.parse(JSON.stringify(ir).replace('"value":"west"', '"value":"sideways"')) as typeof ir;
+    expect(JSON.stringify(patched)).toContain('"value":"sideways"');
+    const b = await bootIr(patched);
+    // The act runs in an every-turn daemon, and the scheduler logs a
+    // daemon's error rather than failing the turn, so the console is where
+    // the named refusal surfaces.
+    const logged = vi.spyOn(console, 'error').mockImplementation(() => {});
+    try {
+      await b.engine.executeTurn('wait');
+      const errors = logged.mock.calls.flat().filter((arg): arg is Error => arg instanceof Error);
+      expect(errors.some((e) => e.message.includes('Unknown direction `sideways`'))).toBe(true);
+    } finally {
+      logged.mockRestore();
+    }
+    expect(b.at('guards')).toBe(b.id('yard'));
   });
 });

@@ -18,7 +18,8 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 import type { StoryIR } from '@sharpee/chord';
 import { deriveIncomplete, extractNounPhrases, publishFilters, readsAsThing } from '../src/incomplete.js';
-import { buildVocabularyIndex, entityVocabulary, resolvePhrase } from '../src/vocabulary.js';
+import { matchNoun, type NounMatchTier } from '@sharpee/world-model';
+import { buildVocabularyIndex, entityVocabulary, irNamingSurface, localeWordsOf, resolvePhrase } from '../src/vocabulary.js';
 import { collectProse } from '../src/prose.js';
 import { CORPUS, compileSource, compileStory, entity } from './corpus.js';
 
@@ -55,7 +56,30 @@ end before
 /** Resolve a phrase against a compiled fixture, the way the parser would. */
 function resolve(ir: StoryIR, phrase: string): string[] {
   const index = buildVocabularyIndex(ir);
-  return resolvePhrase(index, phrase, phrase.split(/\s+/)).sort();
+  return resolvePhrase(index, phrase).sort();
+}
+
+/**
+ * The entities `matchNoun` names at its best tier, asked of every entity with
+ * no index in between — the answer `resolvePhrase` must reproduce (ADR-385 D10).
+ */
+function resolveByMatcher(ir: StoryIR, phrase: string): string[] {
+  const rank: Record<NounMatchTier, number> = { exact: 2, words: 1 };
+  let best = 0;
+  let named: string[] = [];
+  const words = localeWordsOf(ir);
+  for (const declared of ir.entities) {
+    if (declared.isPlayable) continue;
+    const match = matchNoun(irNamingSurface(declared, words), { text: phrase });
+    if (match === null) continue;
+    if (rank[match.tier] > best) {
+      best = rank[match.tier];
+      named = [declared.id];
+    } else if (rank[match.tier] === best) {
+      named.push(declared.id);
+    }
+  }
+  return named.sort();
 }
 
 describe('AC-7 — the canonical adjective cases, with no `adjectives` declared', () => {
@@ -122,7 +146,7 @@ create the potted plant
         expect(Object.keys(declared)).not.toContain('adjectives');
       }
     }
-    expect([...entityVocabulary(entity(balls, 'red-ball'))].sort()).toEqual(['ball', 'red']);
+    expect([...entityVocabulary(entity(balls, 'red-ball'), localeWordsOf(balls))].sort()).toEqual(['ball', 'red']);
   });
 
   it('says nothing about prose that names a ball by its colour', () => {
@@ -163,6 +187,83 @@ create the blue ball
       phrase: 'ball',
       candidates: expect.arrayContaining(['red-ball', 'green-ball', 'blue-ball']),
     });
+  });
+});
+
+// ADR-385 D10: the Incomplete view answers the validator's question with the
+// validator's code. The index is only a prefilter; the decision is `matchNoun`'s,
+// so the two must never differ — on the fixtures here and on every phrase the
+// extractor pulls out of the three corpus stories.
+describe('ADR-385 D10 — resolvePhrase decides with the one noun matcher', () => {
+  let balls: StoryIR;
+  let aliased: StoryIR;
+
+  beforeAll(() => {
+    balls = compileSource(`${ROOMS}
+create the red ball
+  a thing
+  in the Hall
+
+  A red ball.
+
+create the green ball
+  a thing
+  in the Hall
+
+  A green ball.
+`);
+    aliased = compileSource(`${ROOMS}
+create the brass key
+  a thing
+  in the Hall
+
+  A brass key.
+
+create the ring
+  a thing
+  aka key
+  in the Hall
+
+  A ring.
+`);
+  });
+
+  it('agrees with matchNoun on the fixture phrases, tier for tier', () => {
+    for (const [ir, phrases] of [
+      [balls, ['ball', 'red ball', 'red', 'red green', 'brass ball', 'the red ball']],
+      [aliased, ['key', 'brass key', 'ring', 'brass', 'the key']],
+    ] as Array<[StoryIR, string[]]>) {
+      for (const phrase of phrases) {
+        expect(resolve(ir, phrase), phrase).toEqual(resolveByMatcher(ir, phrase));
+      }
+    }
+  });
+
+  it('lets the exact tier win: an alias equal to the phrase outranks a name word', () => {
+    expect(resolve(aliased, 'key')).toEqual(['ring']);
+    expect(resolveByMatcher(aliased, 'key')).toEqual(['ring']);
+    expect(resolve(aliased, 'brass key')).toEqual(['brass-key']);
+  });
+
+  it('agrees with matchNoun on every phrase and every head in the corpus', () => {
+    let compared = 0;
+    for (const path of [CORPUS.fernhill, CORPUS.alderman, CORPUS.idesOfMarch]) {
+      const ir = compileStory(path);
+      const index = buildVocabularyIndex(ir);
+      const phrases = new Set<string>();
+      for (const site of collectProse(ir)) {
+        for (const noun of extractNounPhrases(site.text)) {
+          phrases.add(noun.phrase);
+          phrases.add(noun.words[noun.words.length - 1]);
+        }
+      }
+      for (const phrase of phrases) {
+        expect(resolvePhrase(index, phrase).sort(), `${path}: "${phrase}"`).toEqual(resolveByMatcher(ir, phrase));
+        compared += 1;
+      }
+    }
+    // A pin that compared nothing would pass silently.
+    expect(compared).toBeGreaterThan(500);
   });
 });
 
@@ -497,13 +598,15 @@ create the lantern
 
   // SAY WHERE, EXACTLY (Amendment 2). A description spans several lines and the phrase
   // sits in one of them; publishing only the first line can only ever select the wrong
-  // one. Stage's description runs 34-38 and holds *tiring-house door* on 37.
+  // one. Stage's description runs 33-37 and holds *tiring-house door* on 36
+  // (one line up since 2026-10-18: ADR-377 dropped the header's `use
+  // state-machines` line).
   it('publishes the whole passage span, not its first line', () => {
     const stage = deriveIncomplete(idesOfMarch)
       .edges.map((edge) => edge.site)
       .find((site) => site.key === 'stage.description');
 
-    expect(stage?.span).toMatchObject({ line: 34, endLine: 38 });
+    expect(stage?.span).toMatchObject({ line: 33, endLine: 37 });
     expect(stage?.span?.endLine).toBeGreaterThan(stage?.span?.line ?? 0);
   });
 

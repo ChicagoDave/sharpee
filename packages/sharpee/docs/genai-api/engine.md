@@ -12,10 +12,10 @@ GameEngine, Story interface, turn cycle, command executor, save/restore, vocabul
  *
  * Manages game state, turn execution, and coordinates all subsystems
  */
-import { WorldModel, IFEntity } from '@sharpee/world-model';
+import { WorldModel } from '@sharpee/world-model';
 import { EventProcessor } from '@sharpee/event-processor';
-import { type Parser, type IPerceptionService, type INpcService, type ActSlots, type ActResult } from '@sharpee/stdlib';
-import { type LanguageProvider, type ClientCapabilities } from '@sharpee/if-domain';
+import { type IPerceptionService, type INpcService, type ActSlots, type ActResult } from '@sharpee/stdlib';
+import { type LanguageProvider, type ClientCapabilities, type Parser } from '@sharpee/if-domain';
 import { IProsePipeline, type SlotContributor, type SlotEntry } from './prose-pipeline/index.js';
 import { type ISemanticEvent, type ISaveRestoreHooks, type ISemanticEventSource } from '@sharpee/core';
 import { EngineRandomService } from './session/engine-random-service.js';
@@ -215,7 +215,6 @@ export declare class GameEngine implements StoryEngine {
     private randomService;
     private narrativeSettings;
     private inputModeHandlers;
-    private vocabularyManager;
     private saveRestoreService;
     /** `game.initialized` is emitted once per engine, on the first `start()`. */
     private hasEmittedInitialized;
@@ -654,14 +653,6 @@ export declare class GameEngine implements StoryEngine {
      */
     getRecentEvents(count?: number): ISemanticEvent[];
     /**
-     * Update vocabulary for an entity
-     */
-    updateEntityVocabulary(entity: IFEntity, inScope: boolean): void;
-    /**
-     * Update vocabulary for all entities in scope
-     */
-    updateScopeVocabulary(): void;
-    /**
      * Emit a platform event with turn metadata
      */
     emitPlatformEvent(event: Omit<ISemanticEvent, 'id' | 'timestamp'>): void;
@@ -828,6 +819,28 @@ export interface TurnResult {
      * a follow-up response before continuing.
      */
     needsInput?: boolean;
+    /**
+     * The command to hold for the next input, when this turn asked a
+     * question — a missing-object clarification (GH #318) or a
+     * disambiguation prompt (ADR-385 D11). The execute stage hands it to
+     * the engine; the held-command stage spends it on the next input.
+     */
+    hold?: HeldCommand;
+}
+/**
+ * A command held for one more input after a question (GH #318, ADR-385
+ * D11). `tokens` are the input's words; `insertAt` is the index where an
+ * answer's words are inserted — the tied phrase's first content word,
+ * after its articles and determiners. Absent, the answer is appended (the
+ * missing-object hold). Turn state: never saved.
+ */
+export interface HeldCommand {
+    /** The input as typed. */
+    input: string;
+    /** The input's token words, in order. */
+    tokens: string[];
+    /** Where an answer's words go; absent means at the end. */
+    insertAt?: number;
 }
 /**
  * Union of all command execution results.
@@ -1023,8 +1036,8 @@ export interface GameEngineEvents {
  * Story configuration and interfaces
  */
 import { WorldModel, IFEntity, type IGameEvent, type SimpleEventHandler } from '@sharpee/world-model';
-import { type LanguageProvider, type IChannelRegistry, type ClientCapabilities } from '@sharpee/if-domain';
-import { type Parser, type INpcService, type ActSlots, type ActResult } from '@sharpee/stdlib';
+import { type LanguageProvider, type IChannelRegistry, type ClientCapabilities, type Parser } from '@sharpee/if-domain';
+import { type INpcService, type ActSlots, type ActResult } from '@sharpee/stdlib';
 import { EventProcessor } from '@sharpee/event-processor';
 import { PluginRegistry } from '@sharpee/plugins';
 import { type ISemanticEvent, type RandomService } from '@sharpee/core';
@@ -1592,6 +1605,16 @@ export declare class CommandExecutor {
     /**
      * Build the failure result both entries return instead of throwing.
      */
+    /**
+     * The turn result for a parse failure at a constrained slot (ADR-385 D8).
+     *
+     * A SCOPE_VIOLATION carries the language's message id for the base the slot
+     * required and the found entity as `params.entity`, a noun phrase the
+     * formatter chain names ("You aren't holding the brass lantern."). An
+     * ENTITY_NOT_FOUND carries the phrase's content words, named back as a
+     * list item's are ("You can't see any widget here.").
+     */
+    private parseRefusalResult;
     private failedResult;
 }
 export declare function createCommandExecutor(world: WorldModel, actionRegistry: ActionRegistry, eventProcessor: EventProcessor, parser: IParser, systemEvents?: IGenericEventSource<ISystemEvent>, randomService?: RandomService): CommandExecutor;
@@ -1724,7 +1747,7 @@ import type { StandardActionRegistry, IPerceptionService } from '@sharpee/stdlib
 import type { ISound } from '@sharpee/if-domain';
 import type { ITextBlock } from '@sharpee/text-blocks';
 import type { PluginRegistry } from '@sharpee/plugins';
-import type { EngineConfig, GameContext, GameEngineEvents, InputModeHandler, TurnResult } from '../types.js';
+import type { EngineConfig, GameContext, GameEngineEvents, HeldCommand, InputModeHandler, TurnResult } from '../types.js';
 import type { CommandExecutor } from '../command/command-executor.js';
 import type { EngineRandomService } from '../session/engine-random-service.js';
 import type { IProsePipeline } from '../prose-pipeline/index.js';
@@ -1819,22 +1842,26 @@ export interface TurnEngine {
     turnEventsOf(turn: number): ISemanticEvent[];
     /** Append events to a turn's stored list, rendered at turn end and cleared after. */
     storeTurnEvents(turn: number, events: readonly ISemanticEvent[]): void;
+    /**
+     * Apply events through the world's handlers (ADR-052), as an action's
+     * events are applied: the events, then the reactions, then a
+     * `command.failed` per handler that threw (events/world-reactions.ts).
+     */
+    withWorldReactions(events: ISemanticEvent[], turn: number): ISemanticEvent[];
     /** Empty a turn's stored list once it has been rendered. */
     clearTurnEvents(turn: number): void;
     /** Emit one of the engine's lifecycle events. */
     emit<K extends keyof GameEngineEvents>(event: K, ...args: Parameters<GameEngineEvents[K]>): void;
     /** Emit a game event and store it in the current turn's events (nothing stored before turn one). */
     emitGameEvent(event: ISemanticEvent): void;
-    /** Refresh the parser's scope vocabulary for the player's current surroundings. */
-    updateScopeVocabulary(): void;
     /** Make another playable actor the player (ADR-327); throws for a missing or unplayable entity. */
     switchPlayer(entityId: string): void;
     /** Run an input as a turn of its own (command chaining, AGAIN). */
     executeTurn(input: string): Promise<TurnResult>;
-    /** Remember a clarification for the next input (GH #318). */
-    holdCommand(input: string): void;
+    /** Remember a question's command for the next input (GH #318, ADR-385 D11); a new hold replaces an open one. */
+    holdCommand(held: HeldCommand): void;
     /** Take the held command, if any, clearing the hold — exactly one input spends it (GH #318). */
-    takeHeldCommand(): string | undefined;
+    takeHeldCommand(): HeldCommand | undefined;
     /** Count a turn (and a move when it succeeded) in the session statistics. */
     countSessionTurn(success: boolean): void;
     /** What a platform operation needs of the engine: the hooks, save data, stop, undo, repeat (ADR-334 D3). */
@@ -2240,45 +2267,6 @@ export declare class SaveRestoreService {
  * Create a save/restore service instance
  */
 export declare function createSaveRestoreService(config?: UndoConfig): SaveRestoreService;
-```
-
-### ports/vocabulary-manager
-
-```typescript
-/**
- * Vocabulary Manager - Manages entity vocabulary for parser scope resolution
- *
- * Extracted from GameEngine as part of Phase 4 remediation.
- * Handles registering entity nouns/adjectives with the vocabulary registry
- * to enable parser noun resolution within the current scope.
- */
-import { IFEntity, WorldModel } from '@sharpee/world-model';
-/**
- * Manages vocabulary registration for entities in scope
- */
-export declare class VocabularyManager {
-    /**
-     * Update vocabulary for a single entity
-     *
-     * @param entity - The entity to register
-     * @param inScope - Whether the entity is currently in scope
-     */
-    updateEntityVocabulary(entity: IFEntity, inScope: boolean): void;
-    /**
-     * Update vocabulary for all entities based on current scope
-     *
-     * Marks all entities as out of scope first, then marks
-     * entities visible to the player as in scope.
-     *
-     * @param world - The world model
-     * @param playerId - The player entity ID
-     */
-    updateScopeVocabulary(world: WorldModel, playerId: string): void;
-}
-/**
- * Create a vocabulary manager instance
- */
-export declare function createVocabularyManager(): VocabularyManager;
 ```
 
 ### plugins/actor-turn-plugin

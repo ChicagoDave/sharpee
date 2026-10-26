@@ -1,16 +1,72 @@
 /**
- * Vehicle Behavior - Handles vehicle movement and actor transport
+ * Vehicle Behavior - the rules a vehicle's movement model decides
  *
- * Provides utilities for:
- * - Moving a vehicle (and its contents) between rooms
- * - Checking if an actor is in a vehicle
- * - Getting the vehicle an actor is in
+ * Public interface: `isVehicle`, `isActorInVehicle`, `getActorVehicle`,
+ * `getVehicleOccupants`, `isAboardVehicle`, `getVehicleAboard`,
+ * `takesCommandSet` (where an actor rides and what they may say there),
+ * `goingFromVehicle` (what GO means from inside),
+ * `isUnderWay`, the driving statements `startVehicle`, `stopVehicle` and
+ * `sendVehicle`, the machine's per-turn step `stepVehicle` with its result
+ * `VehicleStep`, the line model's `isStop`, `currentStop` and
+ * `moveVehicleToStop`, and the rooms-aboard half:
+ * `vehicleOutsideExitResolver` and `registerVehicleExitResolver` (an exit
+ * `to outside` lands where the vehicle is) and `outsideWayOf` with its
+ * result `OutsideWay` (which way out traversal grants), the expanse half of
+ * exiting and entering: `leaveVehicleIntoExpanse` and `boardFromExpanse`
+ * (ADR-376 D9), `edgeAhead`, `edgeRefusalOf` and `edgePhraseOf` (D8), and the sailing half
+ * (ADR-375): `turnHeading`, `comeAbout`, `setSails`, `makeSail`,
+ * `shortenSail`, `furlSails`, `paceUnderSail`, `windOf`. Each mutation an
+ * action may be refused names its refusal as a check that mutates nothing —
+ * `comeAboutRefusal`, `sailChangeRefusal`, `edgeRefusalOf` — so actions ask
+ * it rather than copy it.
+ *
+ * Owner context: world-model vehicle behavior. Every answer is read from
+ * the world and the trait's model; nothing here keeps a position of its own.
+ * Moving a vehicle is `WorldModel.moveEntity`, which carries what the
+ * vehicle holds because containment is relational. The stepping functions
+ * are the whole of the vehicle's built-in machine: the turn host that calls
+ * them once per turn decides nothing about movement.
+ *
+ * References:
+ * - ADR-366 D4 — moving a vehicle moves what it holds.
+ * - ADR-366 D5, D5a–D5d — what GO means from inside; what a step is per type.
+ * - ADR-366 D5e, D5g — the machine is the vehicle's own; its state is trait data.
+ * - ADR-366 D6 — a room admits the steered vehicles it names.
+ * - ADR-366 D7 — rooms aboard; `to outside` resolves to the vehicle's room,
+ *   and refuses with `vehicle-under-way` while the vehicle is nowhere.
+ * - ADR-366 D9 — the vehicle's location is the one fact, read, never copied.
+ * - ADR-295 D4 — the exit resolver seam the outside exit rides.
+ * - ADR-376 D3, D5, D8, D9, D10 — the open model's step: a path walked cell by
+ *   cell, arrival, alongside, the edge, departure from a landmark, the hold
+ *   while the player is out.
+ * - ADR-375 D2, D3, D5, D7 — a bearing's step, the pace by the angle off the
+ *   wind, irons, coming about, the sails.
  */
 
-import { WorldModel } from '../../world/WorldModel.js';
-import { IFEntity } from '../../entities/if-entity.js';
+import type { RandomService } from '@sharpee/core';
+import type { ExitResolver } from '../../capabilities/exit-resolver-binding.js';
+import type { WorldModel } from '../../world/WorldModel.js';
+import type { IFEntity } from '../../entities/if-entity.js';
+import { isDirection, type DirectionType } from '../../constants/directions.js';
 import { TraitType } from '../trait-types.js';
-import { VehicleTrait } from './vehicleTrait.js';
+import { RoomBehavior } from '../room/roomBehavior.js';
+import { OpenableBehavior } from '../openable/openableBehavior.js';
+import { TraversalBehavior, exitMessageKey, type TraversalMover, type WayRefusal } from '../../world/TraversalBehavior.js';
+import { AboardTrait } from './aboardTrait.js';
+import { VehicleTrait, VehicleCompassMovement, VehicleFlightMovement, VehicleLineMovement, VehicleOpenMovement } from './vehicleTrait.js';
+import { cellOf, ExpanseTrait, isInsideExpanse, sameCell, type ExpanseSide, type ExpanseWind, type IExpanseCell } from '../expanse/expanseTrait.js';
+import { FloatingTrait } from '../expanse/floatingTrait.js';
+import {
+  angleOffWind,
+  signedAngleOffWind,
+  bearingOf,
+  floatingThingsAt,
+  headingVector,
+  landmarkAt,
+  landmarkCellOf,
+} from '../expanse/expanseBehavior.js';
+import { placeOf } from '../../world/ExpansePlaceBehavior.js';
+import type { SailingPace } from './vehicleTrait.js';
 
 /**
  * Check if an entity is a vehicle
@@ -23,13 +79,7 @@ export function isVehicle(entity: IFEntity): boolean {
  * Check if an actor is currently inside a vehicle
  */
 export function isActorInVehicle(world: WorldModel, actorId: string): boolean {
-  const location = world.getLocation(actorId);
-  if (!location) return false;
-
-  const locationEntity = world.getEntity(location);
-  if (!locationEntity) return false;
-
-  return isVehicle(locationEntity);
+  return getActorVehicle(world, actorId) !== undefined;
 }
 
 /**
@@ -42,11 +92,7 @@ export function getActorVehicle(world: WorldModel, actorId: string): IFEntity | 
   const locationEntity = world.getEntity(location);
   if (!locationEntity) return undefined;
 
-  if (isVehicle(locationEntity)) {
-    return locationEntity;
-  }
-
-  return undefined;
+  return isVehicle(locationEntity) ? locationEntity : undefined;
 }
 
 /**
@@ -58,113 +104,939 @@ export function getVehicleOccupants(world: WorldModel, vehicleId: string): IFEnt
 }
 
 /**
- * Move a vehicle to a new room, transporting all contents with it.
- * Returns true if movement succeeded.
- *
- * This is the core vehicle transport function - when a vehicle moves,
- * everything inside it (including actors) moves with it.
+ * What GO means for an actor, decided by the vehicle they are in (D5).
+ * `on-foot`: not in a vehicle, GO is walking. `steers`: GO moves the
+ * vehicle (the destination still has to admit it, which the traversal
+ * system answers).
+ * `rides`: a line vehicle; the player rides and the story drives.
+ * `stays`: a vehicle with no movement model does not move under GO.
  */
-export function moveVehicle(
-  world: WorldModel,
-  vehicleId: string,
-  destinationRoomId: string
-): boolean {
-  const vehicle = world.getEntity(vehicleId);
-  if (!vehicle) return false;
+export type VehicleGoing =
+  | { kind: 'on-foot' }
+  | { kind: 'steers'; vehicle: IFEntity }
+  | { kind: 'rides'; vehicle: IFEntity }
+  | { kind: 'stays'; vehicle: IFEntity };
 
-  const vehicleTrait = vehicle.get(TraitType.VEHICLE) as VehicleTrait | undefined;
-  if (!vehicleTrait) return false;
+/**
+ * Decide what GO means for an actor from where they are.
+ *
+ * @param world - The world model
+ * @param actorId - The actor trying to go
+ * @returns on-foot when the actor is not in a vehicle; otherwise the model's answer
+ */
+export function goingFromVehicle(world: WorldModel, actorId: string): VehicleGoing {
+  const vehicle = getActorVehicle(world, actorId);
+  if (!vehicle) return { kind: 'on-foot' };
 
-  // Move the vehicle to the new room
-  world.moveEntity(vehicleId, destinationRoomId);
+  const model = vehicle.get(VehicleTrait)?.movement;
+  if (model?.kind === 'streets') return { kind: 'steers', vehicle };
+  if (model?.kind === 'line' || model?.kind === 'compass' || model?.kind === 'flight' || model?.kind === 'open') return { kind: 'rides', vehicle };
+  return { kind: 'stays', vehicle };
+}
 
-  // Update vehicle position if using position tracking
-  if (vehicleTrait.positionRooms) {
-    // Find position name for this room
-    const positionEntry = Object.entries(vehicleTrait.positionRooms)
-      .find(([_, roomId]) => roomId === destinationRoomId);
-
-    if (positionEntry) {
-      vehicleTrait.currentPosition = positionEntry[0];
-    }
+/**
+ * Whether a vehicle's machine is moving it (ADR-366 D5e): a line stepping
+ * along its stops, a compass vehicle on a heading, a flight vehicle on its
+ * trip, an open vehicle on a heading or a course. A `none` or streets
+ * vehicle is never under way.
+ *
+ * @param vehicle - A vehicle; false when it has no model
+ */
+export function isUnderWay(vehicle: IFEntity): boolean {
+  const model = vehicle.get(VehicleTrait)?.movement;
+  switch (model?.kind) {
+    case 'line':
+      return model.underWay;
+    case 'compass':
+      return model.heading !== null;
+    case 'flight':
+      return model.destination !== null;
+    case 'open':
+      return model.underWay;
+    default:
+      return false;
   }
+}
 
+/**
+ * `start <vehicle> [heading <direction>]` (ADR-366 D5a, D5c, D5f; ADR-376
+ * D3): put the vehicle's machine under way. A line steps from its current
+ * stop in its travel direction, turning back at a `both` line's end; a
+ * compass vehicle takes the heading; an open vehicle takes one of the eight
+ * headings, dropping any course, and leaves its landmark for the expanse
+ * at the landmark's cell (D5). The first step comes after `pace` turns;
+ * stepping is the machine's per-turn work.
+ *
+ * @param world - The world model
+ * @param vehicle - A line, compass or open vehicle
+ * @param heading - The heading, for a compass or open vehicle
+ * @returns false when the vehicle cannot start: a one-way line at its end
+ *   (`vehicle-at-end`), a compass or open vehicle with no heading, an open
+ *   vehicle with a heading that is not one of the eight or that points
+ *   toward the edge it is at (D8, the edge's phrase), one outside any
+ *   expanse, or a type with no `start`
+ */
+export function startVehicle(world: WorldModel, vehicle: IFEntity, heading?: string | number): boolean {
+  const model = vehicle.get(VehicleTrait)?.movement;
+  if (model?.kind === 'line') {
+    const stop = currentStop(world, vehicle);
+    const index = stop === undefined ? -1 : model.stops.indexOf(stop);
+    if (index === model.stops.length - 1) {
+      if (model.oneWay) return false;
+      model.travelDirection = 'back';
+    } else if (index === 0) {
+      model.travelDirection = 'onward';
+    }
+    model.underWay = true;
+    model.turnsToStep = model.pace ?? 1;
+    return true;
+  }
+  if (model?.kind === 'compass') {
+    if (heading === undefined || typeof heading !== 'string') return false;
+    model.heading = heading;
+    model.turnsToStep = model.pace;
+    return true;
+  }
+  if (model?.kind === 'open') {
+    // ADR-375 D2, D3: under sail the heading is a bearing (a compass word
+    // names one), and `ahead` — no heading given — goes on the bearing held.
+    let next: string | number | null = heading ?? null;
+    if (model.sailing) {
+      if (next === null) next = model.heading;
+      else next = bearingOf(next) ?? null;
+    } else if (next === null && typeof model.heading === 'number') {
+      // `ahead` on a ship steered by degrees without a sailing table (ADR-375 D4, "always wind").
+      next = model.heading;
+    } else if (typeof next === 'number') {
+      next = bearingOf(next) ?? null;
+    }
+    const vector = next !== null ? headingVector(next) : undefined;
+    if (!vector || headsIntoEdge(model.atEdge, vector)) return false;
+    if (!departLandmark(world, vehicle, model)) return false;
+    model.heading = next;
+    model.course = null;
+    model.underWay = true;
+    model.inIrons = false;
+    const pace = model.sailing ? paceUnderSail(world, vehicle) : model.pace;
+    model.turnsToStep = typeof pace === 'number' ? pace : 0;
+    return true;
+  }
+  return false;
+}
+
+/**
+ * The wind an open vehicle sails in (ADR-375 D4): its expanse's `wind`, or
+ * undefined when the expanse carries none or the vehicle is in no expanse.
+ */
+export function windOf(world: WorldModel, vehicle: IFEntity): ExpanseWind | undefined {
+  const model = vehicle.get(VehicleTrait)?.movement;
+  if (model?.kind !== 'open') return undefined;
+  return placeOf(world, vehicle)?.trait.wind;
+}
+
+/**
+ * The pace a sailing vehicle makes now (ADR-375 D5, D7): the cell of its
+ * band for the angle off the wind, under its sail setting — or `stopped`.
+ * Undefined when the vehicle does not sail or has no heading.
+ *
+ * @param world - The world model
+ * @param vehicle - An open vehicle with a `sailing` table
+ * @param setting - A setting to read instead of the current one (the
+ *   fullest, for irons)
+ */
+export function paceUnderSail(world: WorldModel, vehicle: IFEntity, setting?: string): SailingPace | undefined {
+  const model = vehicle.get(VehicleTrait)?.movement;
+  if (model?.kind !== 'open' || !model.sailing || model.heading === null) return undefined;
+  const wind = windOf(world, vehicle);
+  if (wind === undefined || wind === 'calm') return model.sailing.calm;
+  const bearing = bearingOf(model.heading);
+  if (bearing === undefined) return 'stopped';
+  const angle = angleOffWind(bearing, wind);
+  const band = model.sailing.bands.find((b) => angle >= b.from && angle <= b.to);
+  if (!band) return 'stopped';
+  const want = model.sails ? (setting ?? model.sails.current) : null;
+  const cell = band.paces.find((p) => p.setting === want) ?? band.paces[0];
+  return cell?.pace ?? 'stopped';
+}
+
+/**
+ * `port <n>` / `starboard <n>` (ADR-375 D3): turn a sailing vehicle's
+ * bearing by `degrees` — negative to port, positive to starboard — under
+ * way or not; a ship with no bearing yet is taken as pointing north. Only
+ * a sailing vehicle turns by degrees.
+ *
+ * @returns the new bearing, or undefined when the vehicle does not sail
+ */
+export function turnHeading(vehicle: IFEntity, degrees: number): number | undefined {
+  const model = vehicle.get(VehicleTrait)?.movement;
+  if (model?.kind !== 'open') return undefined;
+  const next = (((bearingAboard(model) + degrees) % 360) + 360) % 360;
+  model.heading = next;
+  model.course = null;
+  return next;
+}
+
+/** Why `come about` was refused (ADR-375 D3). */
+export type ComeAboutRefusal = 'no-wind' | 'cannot';
+
+/**
+ * `come about` (ADR-375 D3): tack through the wind — the bearing turns to
+ * the same angle off the wind on the other side of it (wind from 45,
+ * heading 90, comes about to 0). Refused with `no-wind` aboard a vehicle
+ * that does not sail or in a calm, and with `cannot` dead into or dead
+ * before the wind, where there is no other side.
+ *
+ * @returns the new bearing, or the refusal
+ */
+export function comeAbout(world: WorldModel, vehicle: IFEntity): number | ComeAboutRefusal {
+  const refusal = comeAboutRefusal(world, vehicle);
+  if (refusal) return refusal;
+  const model = vehicle.get(VehicleTrait)!.movement as VehicleOpenMovement;
+  const wind = windOf(world, vehicle) as number;
+  const next = (((wind - signedAngleOffWind(bearingAboard(model), wind)) % 360) + 360) % 360;
+  model.heading = next;
+  model.course = null;
+  return next;
+}
+
+/**
+ * Why `come about` would be refused now (ADR-375 D3), or undefined when it
+ * would tack: `no-wind` aboard a vehicle that does not sail or in a calm,
+ * `cannot` dead into or dead before the wind. Mutates nothing — the check an
+ * action asks before `comeAbout`.
+ */
+export function comeAboutRefusal(world: WorldModel, vehicle: IFEntity): ComeAboutRefusal | undefined {
+  const model = vehicle.get(VehicleTrait)?.movement;
+  if (model?.kind !== 'open' || !model.sailing) return 'no-wind';
+  const wind = windOf(world, vehicle);
+  if (wind === undefined || wind === 'calm') return 'no-wind';
+  const off = signedAngleOffWind(bearingAboard(model), wind);
+  return off === 0 || off === 180 ? 'cannot' : undefined;
+}
+
+/** The bearing an open vehicle holds: its heading's, or north with none. */
+function bearingAboard(model: VehicleOpenMovement): number {
+  return model.heading === null ? 0 : bearingOf(model.heading) ?? 0;
+}
+
+/**
+ * The bearing a vehicle holds (ADR-375 D2, D3): an open vehicle's heading
+ * as degrees, north when it has none; undefined for any other vehicle.
+ * Steering `ahead` starts on it; port, starboard and coming about turn from it.
+ */
+export function currentBearing(vehicle: IFEntity): number | undefined {
+  const model = vehicle.get(VehicleTrait)?.movement;
+  return model?.kind === 'open' ? bearingAboard(model) : undefined;
+}
+
+/**
+ * `set the <vehicle>'s sails to <setting>` (ADR-375 D7): the current
+ * setting, from the next step. False when the vehicle has no sails or the
+ * setting is not one of its own.
+ */
+export function setSails(vehicle: IFEntity, setting: string): boolean {
+  const model = vehicle.get(VehicleTrait)?.movement;
+  if (model?.kind !== 'open' || !model.sails || !model.sails.settings.includes(setting)) return false;
+  model.sails.current = setting;
+  return true;
+}
+
+/** A change to an open vehicle's sails (ADR-375 D7). */
+export type SailChange = 'make' | 'shorten' | 'furl';
+
+/** Why a sail change would be refused (ADR-375 D7). */
+export type SailChangeRefusal = 'no-sails' | 'at-full' | 'already-furled';
+
+/**
+ * Why a sail change would be refused now, or undefined when it would take:
+ * `no-sails` on a vehicle without them, `at-full` making sail at the fullest
+ * setting, `already-furled` shortening or furling at the first. Mutates
+ * nothing — the check an action asks before the change.
+ */
+export function sailChangeRefusal(vehicle: IFEntity, change: SailChange): SailChangeRefusal | undefined {
+  const model = vehicle.get(VehicleTrait)?.movement;
+  if (model?.kind !== 'open' || !model.sails) return 'no-sails';
+  const index = model.sails.settings.indexOf(model.sails.current);
+  if (change === 'make') return index >= model.sails.settings.length - 1 ? 'at-full' : undefined;
+  return index <= 0 ? 'already-furled' : undefined;
+}
+
+/** `make sail` (ADR-375 D7): one setting up. False when `sailChangeRefusal` refuses it. */
+export function makeSail(vehicle: IFEntity): boolean {
+  if (sailChangeRefusal(vehicle, 'make')) return false;
+  const sails = (vehicle.get(VehicleTrait)!.movement as VehicleOpenMovement).sails!;
+  sails.current = sails.settings[sails.settings.indexOf(sails.current) + 1];
+  return true;
+}
+
+/** `shorten sail` (ADR-375 D7): one setting down. False when `sailChangeRefusal` refuses it. */
+export function shortenSail(vehicle: IFEntity): boolean {
+  if (sailChangeRefusal(vehicle, 'shorten')) return false;
+  const sails = (vehicle.get(VehicleTrait)!.movement as VehicleOpenMovement).sails!;
+  sails.current = sails.settings[sails.settings.indexOf(sails.current) - 1];
+  return true;
+}
+
+/** `furl sails` (ADR-375 D7): to the first setting. False when `sailChangeRefusal` refuses it. */
+export function furlSails(vehicle: IFEntity): boolean {
+  if (sailChangeRefusal(vehicle, 'furl')) return false;
+  const sails = (vehicle.get(VehicleTrait)!.movement as VehicleOpenMovement).sails!;
+  sails.current = sails.settings[0];
   return true;
 }
 
 /**
- * Check if a vehicle can move (is operational)
- */
-export function canVehicleMove(vehicle: IFEntity): { canMove: boolean; reason?: string } {
-  const vehicleTrait = vehicle.get(TraitType.VEHICLE) as VehicleTrait | undefined;
-  if (!vehicleTrait) {
-    return { canMove: false, reason: 'Not a vehicle' };
-  }
-
-  if (!vehicleTrait.isOperational) {
-    return {
-      canMove: false,
-      reason: vehicleTrait.notOperationalReason ?? 'The vehicle is not operational'
-    };
-  }
-
-  return { canMove: true };
-}
-
-/**
- * Check if an actor can exit their current location.
- * If in a vehicle that requires exit, they cannot simply walk out.
- */
-export function canActorLeaveLocation(
-  world: WorldModel,
-  actorId: string
-): { canLeave: boolean; mustExitVehicle?: IFEntity } {
-  const vehicle = getActorVehicle(world, actorId);
-
-  if (!vehicle) {
-    return { canLeave: true };
-  }
-
-  const vehicleTrait = vehicle.get(TraitType.VEHICLE) as VehicleTrait | undefined;
-  if (!vehicleTrait) {
-    return { canLeave: true };
-  }
-
-  if (vehicleTrait.requiresExitBeforeLeaving) {
-    return { canLeave: false, mustExitVehicle: vehicle };
-  }
-
-  return { canLeave: true };
-}
-
-/**
- * Check if an actor in a vehicle can use GO/walk commands.
- * Some vehicles block walking movement entirely.
+ * The edge an open vehicle is at when a way with any component toward it is
+ * asked for (ADR-376 D8), or undefined when the way is open. The actions
+ * read it to refuse with the edge's phrase before `startVehicle` or
+ * `sendVehicle` would.
  *
- * Returns:
- * - canWalk: true if actor can use GO commands (not in vehicle, or in walkable vehicle)
- * - vehicle: the vehicle entity if actor is in one (undefined if not in a vehicle)
+ * @param vehicle - An open vehicle
+ * @param vector - The direction's components, x east and y north (a
+ *   heading's unit vector, or the signs of a course's first leg)
  */
-export function canActorWalkInVehicle(
+export function edgeAhead(vehicle: IFEntity, vector: IExpanseCell): ExpanseSide | undefined {
+  const model = vehicle.get(VehicleTrait)?.movement;
+  if (model?.kind !== 'open' || model.atEdge === null) return undefined;
+  return headsIntoEdge(model.atEdge, vector) ? model.atEdge : undefined;
+}
+
+/**
+ * The refusal of a way toward the edge an open vehicle is at (ADR-376 D8),
+ * or undefined when the way is open: the side, and the edge's phrase when
+ * the story gave one (the expanse borrows the exit message key for its side).
+ * Steering and setting a course both refuse on it, each in its own words.
+ *
+ * @param world - The world model
+ * @param vehicle - An open vehicle
+ * @param vector - The way asked for, as a direction vector
+ */
+export function edgeRefusalOf(world: WorldModel, vehicle: IFEntity, vector: IExpanseCell): { side: ExpanseSide; message?: string } | undefined {
+  const side = edgeAhead(vehicle, vector);
+  if (!side) return undefined;
+  const expanse = placeOf(world, vehicle)?.expanse;
+  const message = expanse ? edgePhraseOf(world, expanse, side) : undefined;
+  return message !== undefined ? { side, message } : { side };
+}
+
+/**
+ * The phrase the story wrote for one edge of an expanse (ADR-376 D8), or
+ * undefined for an unwritten side, which reads the stock line. The expanse
+ * borrows the exit message key for its side, so the phrase is resolved
+ * where every blocked way's is, each time it is asked: a varied phrase
+ * varies. The one lookup steering, setting a course and the machine share.
+ *
+ * @param world - The world model
+ * @param expanse - The expanse entity
+ * @param side - The edge
+ */
+export function edgePhraseOf(world: WorldModel, expanse: IFEntity, side: ExpanseSide): string | undefined {
+  const message = world.evaluate(exitMessageKey(expanse.id, side));
+  return typeof message === 'string' && message.length > 0 ? message : undefined;
+}
+
+/** Whether a direction has a component toward the edge the vehicle is at (D8). */
+function headsIntoEdge(atEdge: ExpanseSide | null, vector: IExpanseCell): boolean {
+  switch (atEdge) {
+    case 'NORTH': return vector.y > 0;
+    case 'SOUTH': return vector.y < 0;
+    case 'EAST': return vector.x > 0;
+    case 'WEST': return vector.x < 0;
+    default: return false;
+  }
+}
+
+/**
+ * Leaving a landmark on `start` or `send` (D3, D5): the vehicle takes the
+ * landmark's cell as its position and moves into the expanse room, with
+ * everything it holds. Nothing to do when already positioned.
+ * @returns false when the vehicle is in no expanse
+ */
+function departLandmark(world: WorldModel, vehicle: IFEntity, model: VehicleOpenMovement): boolean {
+  const found = placeOf(world, vehicle);
+  if (!found) return false;
+  if (model.position) return true;
+  model.position = { x: found.cell.x, y: found.cell.y };
+  world.moveEntity(vehicle.id, found.expanse.id);
+  return true;
+}
+
+/**
+ * `stop <vehicle>` (ADR-366 D5f; ADR-376 D3): take the vehicle's machine
+ * out of the way where it is — a line halts at its stop, a compass vehicle
+ * loses its heading, an open vehicle loses heading and course and keeps
+ * its position.
+ *
+ * @returns false when the type has no `stop`
+ */
+export function stopVehicle(vehicle: IFEntity): boolean {
+  const model = vehicle.get(VehicleTrait)?.movement;
+  if (model?.kind === 'line') {
+    model.underWay = false;
+    model.turnsToStep = 0;
+    return true;
+  }
+  if (model?.kind === 'compass') {
+    model.heading = null;
+    model.turnsToStep = 0;
+    return true;
+  }
+  if (model?.kind === 'open') {
+    // ADR-375 D3: hove to, a ship keeps its bearing for `ahead`.
+    if (!model.sailing && typeof model.heading !== 'number') model.heading = null;
+    model.course = null;
+    model.underWay = false;
+    model.inIrons = false;
+    model.turnsToStep = 0;
+    return true;
+  }
+  return false;
+}
+
+/**
+ * `send <vehicle> to <destination>` (ADR-366 D5d; ADR-376 D3): a flight
+ * vehicle leaves its room and is nowhere for the trip, then arrives; an
+ * open vehicle takes a course for a landmark's cell or a cell of its
+ * expanse, dropping any heading, and leaves its landmark for the expanse
+ * (D5). The departure and the arrival are the machine's per-turn work; this
+ * records where it is bound.
+ *
+ * @param world - The world model
+ * @param vehicle - A flight or open vehicle
+ * @param destination - A room id (a flight destination, or an open vehicle's
+ *   landmark), or a cell for an open vehicle
+ * @returns false when the vehicle takes no `send`, the room is not one of
+ *   its destinations or landmarks, the cell lies outside its expanse
+ *   (`coordinates-outside-expanse`), the course's first leg heads into the
+ *   edge it is at (D8), or the vehicle is in no expanse
+ */
+export function sendVehicle(world: WorldModel, vehicle: IFEntity, destination: string | IExpanseCell): boolean {
+  const model = vehicle.get(VehicleTrait)?.movement;
+  if (model?.kind === 'flight') {
+    if (typeof destination !== 'string' || !model.destinations.includes(destination)) return false;
+    model.destination = destination;
+    model.turnsRemaining = model.pace;
+    return true;
+  }
+  if (model?.kind !== 'open') return false;
+  const found = placeOf(world, vehicle);
+  if (!found) return false;
+  const target = typeof destination === 'string' ? landmarkCellOf(found.trait, destination) : { x: destination.x, y: destination.y };
+  if (!target || !isInsideExpanse(found.trait, target)) return false;
+  const from = found.cell;
+  if (headsIntoEdge(model.atEdge, { x: Math.sign(target.x - from.x), y: Math.sign(target.y - from.y) })) return false;
+  if (!departLandmark(world, vehicle, model)) return false;
+  model.course = target;
+  if (!model.sailing && typeof model.heading !== 'number') model.heading = null;
+  model.underWay = true;
+  model.inIrons = false;
+  const pace = model.sailing ? paceUnderSail(world, vehicle) : model.pace;
+  model.turnsToStep = typeof pace === 'number' ? pace : 0;
+  return true;
+}
+
+/**
+ * The resolver for a room aboard a vehicle (ADR-366 D7): an exit `to
+ * outside` leads to the room the vehicle is in, through the door the line
+ * named, and is blocked with `vehicle-under-way` while the vehicle is nowhere.
+ * Defers to static topology for a direction the trait does not declare.
+ */
+export const vehicleOutsideExitResolver: ExitResolver = (_room, trait, direction, _staticExit, ctx) => {
+  const aboard = trait as AboardTrait;
+  // A `to outside` exit is written with a compass word; a passage key names none.
+  const outside = isDirection(direction) ? aboard.computedExits[direction] : undefined;
+  if (!outside) return undefined;
+  const vehicle = ctx.world.getEntity(aboard.vehicleId);
+  const location = ctx.world.getLocation(aboard.vehicleId);
+  if (!vehicle || location === undefined || isUnderWay(vehicle)) {
+    return { kind: 'blocked', messageId: 'if.action.going.vehicle_under_way', params: { vehicle: vehicle?.name ?? aboard.vehicleId } };
+  }
+  return { kind: 'exit', destination: location, ...(outside.via !== undefined ? { via: outside.via } : {}) };
+};
+
+/**
+ * Register the outside-exit resolver on a world. Idempotent; a story that
+ * has rooms aboard a vehicle registers it at load.
+ */
+export function registerVehicleExitResolver(world: WorldModel): void {
+  world.registerExitResolver(AboardTrait.type, vehicleOutsideExitResolver);
+}
+
+/** The way between a room aboard and outside, as traversal answers it. */
+export type OutsideWay =
+  /** The room has no `to outside` exit. */
+  | { kind: 'none' }
+  /** Traversal grants exactly this one. */
+  | { kind: 'way'; key: DirectionType }
+  /** Traversal grants none: the first way's refusal. */
+  | { kind: 'refused'; key: DirectionType; reason: WayRefusal; message?: string; door?: IFEntity }
+  /** Traversal grants more than one: the platform does not choose. */
+  | { kind: 'ambiguous'; keys: DirectionType[] };
+
+/**
+ * The way between a room aboard a vehicle and outside (ADR-366 D7;
+ * alignment findings F9, F10, David's Q2 answer). Leaving (`'out'`),
+ * traversal is asked of each `to outside` exit and the one it grants is the
+ * way. Boarding (`'in'`) takes the same ways in reverse, so it reads the
+ * gates that hold in both directions — the way exists (its `while`) and its
+ * hatch is neither closed nor locked — but not a blocked line, which is
+ * written for one side and, as ADR-378 has it, never carried to the other.
+ * With none granted, the first way's refusal is the answer; with more than
+ * one, the way is ambiguous — no declaration order decides.
+ *
+ * @param world - The world model
+ * @param room - A room aboard a vehicle (anything else has no outside way)
+ * @param mover - Who is taking it: the walker leaving, or the one boarding
+ * @param side - `'out'` leaving the vehicle, `'in'` boarding it
+ */
+export function outsideWayOf(world: WorldModel, room: IFEntity, mover: TraversalMover, side: 'out' | 'in' = 'out'): OutsideWay {
+  const keys = Object.keys(room.get(AboardTrait)?.computedExits ?? {}) as DirectionType[];
+  if (keys.length === 0) return { kind: 'none' };
+  const granted: DirectionType[] = [];
+  let first: Extract<OutsideWay, { kind: 'refused' }> | undefined;
+  for (const key of keys) {
+    if (side === 'in') {
+      const door = TraversalBehavior.doorOf(world, room, key);
+      const reason: WayRefusal | undefined = TraversalBehavior.isExitHidden(world, room, key) ? 'hidden' : door ? TraversalBehavior.doorRefusal(door) : undefined;
+      if (!reason) granted.push(key);
+      else first ??= { kind: 'refused', key, reason, ...(door ? { door } : {}) };
+      continue;
+    }
+    const way = TraversalBehavior.wayFor(world, room, key, mover);
+    if (way.kind !== 'refused') granted.push(key);
+    else first ??= { kind: 'refused', key, reason: way.reason, ...(way.message !== undefined ? { message: way.message } : {}), ...(way.door ? { door: way.door } : {}) };
+  }
+  if (granted.length === 1) return { kind: 'way', key: granted[0] };
+  if (granted.length > 1) return { kind: 'ambiguous', keys: granted };
+  return first!;
+}
+
+function lineOf(vehicle: IFEntity): VehicleLineMovement | undefined {
+  const model = vehicle.get(VehicleTrait)?.movement;
+  return model?.kind === 'line' ? model : undefined;
+}
+
+/**
+ * Whether a room is one of a line vehicle's stops.
+ *
+ * @param vehicle - A vehicle; false when it has no line model
+ * @param roomId - The room to test
+ */
+export function isStop(vehicle: IFEntity, roomId: string): boolean {
+  return lineOf(vehicle)?.stops.includes(roomId) ?? false;
+}
+
+/**
+ * The stop a line vehicle is at, read from its location (D9).
+ *
+ * @returns the stop's room id, or undefined when the vehicle has no line or is between stops
+ */
+export function currentStop(world: WorldModel, vehicle: IFEntity): string | undefined {
+  const location = world.getLocation(vehicle.id);
+  return location !== undefined && isStop(vehicle, location) ? location : undefined;
+}
+
+/**
+ * Move a line vehicle, and everything it holds, to one of its stops (D5a).
+ *
+ * @param world - The world model
+ * @param vehicle - A vehicle with a line model
+ * @param stopId - The stop to move to
+ * @throws when the vehicle has no line or the room is not one of its stops
+ */
+export function moveVehicleToStop(world: WorldModel, vehicle: IFEntity, stopId: string): void {
+  if (!lineOf(vehicle)) {
+    throw new Error(`moveVehicleToStop: ${vehicle.id} has no line`);
+  }
+  if (!isStop(vehicle, stopId)) {
+    throw new Error(`moveVehicleToStop: ${stopId} is not a stop of ${vehicle.id}`);
+  }
+  world.moveEntity(vehicle.id, stopId);
+}
+
+/**
+ * Whether an entity is aboard a vehicle: inside it at any depth, or in a
+ * room aboard it (D7). An actor in a box in the hold is aboard the ship.
+ *
+ * @param world - The world model
+ * @param entityId - The entity to test, usually an actor
+ * @param vehicleId - The vehicle
+ */
+export function isAboardVehicle(world: WorldModel, entityId: string, vehicleId: string): boolean {
+  const seen = new Set<string>();
+  let current: string | undefined = world.getLocation(entityId);
+  while (current !== undefined && !seen.has(current)) {
+    if (current === vehicleId) return true;
+    seen.add(current);
+    const entity = world.getEntity(current);
+    const aboard = entity?.get(AboardTrait);
+    if (aboard?.vehicleId === vehicleId) return true;
+    current = world.getLocation(current);
+  }
+  return false;
+}
+
+/**
+ * What one turn of the vehicle's machine did (D5e): it reached a room
+ * (`vehicle-arrived`, a stop, the room in its heading, its destination, or
+ * a landmark), it ran out of way or reached its course and took itself out
+ * of the way (`vehicle-stopped`, reported once), it left its room for the
+ * trip (`departed`, which no stock line reports: the fold is the
+ * author's sequence on `becomes under way`), it came alongside a floating
+ * thing and stopped (`vehicle-alongside`, ADR-376 D10), or it reached an
+ * edge of its expanse and stopped (`expanse-edge` or the edge's own phrase,
+ * which `edgePhraseOf` answers at report time, ADR-376 D8).
+ */
+export type VehicleStep =
+  | { kind: 'arrived'; roomId: string }
+  | { kind: 'stopped' }
+  | { kind: 'departed' }
+  | { kind: 'alongside'; thingId: string }
+  | { kind: 'edge'; side: ExpanseSide; sailing?: boolean }
+  /** ADR-375 D5: a sailing vehicle lies in irons, reported once. */
+  | { kind: 'in-irons' };
+
+/**
+ * One turn of the vehicle's built-in machine (ADR-366 D5e). The types share
+ * one machine and differ only in what a step is (D5f): a line steps to the
+ * next stop or to where its `position` block says, a compass vehicle steps
+ * along the exit in its heading, a flight vehicle leaves, is nowhere for
+ * the trip, and arrives. Every move is `WorldModel.moveEntity`, so what
+ * the vehicle holds comes along (D4), and every piece of machine state
+ * written here is a trait field (D5g).
+ *
+ * @param world - The world model
+ * @param vehicle - A vehicle; nothing happens without a model that moves
+ * @param positionAnswer - For a `drive: state` line, the stop its
+ *   `position` block names this turn; the caller evaluates the block,
+ *   since its guards are code the trait cannot hold. Ignored by every
+ *   other model.
+ * @param random - The session's random service, which a computed way's
+ *   resolver may draw on (ADR-295 D4); world-model never makes one. Needed
+ *   only when a compass vehicle's heading meets a computed way.
+ * @returns what the step did, or undefined when the vehicle stayed put
+ * @throws Error when a compass vehicle meets a computed way and no random
+ *   service was passed (a host wiring defect, never a silent stop)
+ */
+export function stepVehicle(world: WorldModel, vehicle: IFEntity, positionAnswer?: string, random?: RandomService): VehicleStep | undefined {
+  const model = vehicle.get(VehicleTrait)?.movement;
+  switch (model?.kind) {
+    case 'line':
+      return model.drive === 'state' ? stepStateLine(world, vehicle, model, positionAnswer) : stepControlLine(world, vehicle, model);
+    case 'compass':
+      return stepCompass(world, vehicle, model, random);
+    case 'flight':
+      return stepFlight(world, vehicle, model);
+    case 'open':
+      return stepOpen(world, vehicle, model);
+    default:
+      return undefined;
+  }
+}
+
+/** D5a, `drive: state`: the block's answer differs from where the vehicle is, so it moves there. */
+function stepStateLine(world: WorldModel, vehicle: IFEntity, model: VehicleLineMovement, positionAnswer: string | undefined): VehicleStep | undefined {
+  if (positionAnswer === undefined || !model.stops.includes(positionAnswer)) return undefined;
+  if (world.getLocation(vehicle.id) === positionAnswer) return undefined;
+  world.moveEntity(vehicle.id, positionAnswer);
+  return { kind: 'arrived', roomId: positionAnswer };
+}
+
+/**
+ * D5a, `drive: control`: every `pace` turns under way, one stop in the
+ * travel direction; the machine halts itself at the line's end. A vehicle
+ * found off its stops (a `move` the author wrote) halts where it is.
+ */
+function stepControlLine(world: WorldModel, vehicle: IFEntity, model: VehicleLineMovement): VehicleStep | undefined {
+  if (!model.underWay) return undefined;
+  const stop = currentStop(world, vehicle);
+  if (stop === undefined) {
+    model.underWay = false;
+    model.turnsToStep = 0;
+    return { kind: 'stopped' };
+  }
+  model.turnsToStep -= 1;
+  if (model.turnsToStep > 0) return undefined;
+
+  // `startVehicle` turned a `both` line at its end and refused a one-way
+  // one, and arriving at an end halts below, so the next stop always exists.
+  const index = model.stops.indexOf(stop);
+  const nextIndex = model.travelDirection === 'onward' ? index + 1 : index - 1;
+  const next = model.stops[nextIndex];
+  world.moveEntity(vehicle.id, next);
+  const atEnd = nextIndex === 0 || nextIndex === model.stops.length - 1;
+  if (atEnd) {
+    model.underWay = false;
+    model.turnsToStep = 0;
+  } else {
+    model.turnsToStep = model.pace ?? 1;
+  }
+  return { kind: 'arrived', roomId: next };
+}
+
+/**
+ * D5c: every `pace` turns on a heading, one room along the way that way
+ * while traversal grants it to a steered vehicle (ADR-378 D0: the way
+ * exists and is not hidden or blocked, no closed or locked door bars it, and
+ * the destination admits the vehicle, D6); when it cannot, the heading
+ * clears and the vehicle is stopped, once. A computed way is taken as every
+ * mover takes one: drawn once, and admitted by the room it reaches.
+ */
+function stepCompass(
   world: WorldModel,
-  actorId: string
-): { canWalk: boolean; vehicle?: IFEntity } {
-  const vehicle = getActorVehicle(world, actorId);
+  vehicle: IFEntity,
+  model: VehicleCompassMovement,
+  random: RandomService | undefined
+): VehicleStep | undefined {
+  if (model.heading === null) return undefined;
+  model.turnsToStep -= 1;
+  if (model.turnsToStep > 0) return undefined;
 
-  if (!vehicle) {
-    return { canWalk: true };
+  const location = world.getLocation(vehicle.id);
+  const room = location !== undefined ? world.getEntity(location) : undefined;
+  const key = model.heading as DirectionType;
+  const mover = { kind: 'steered', vehicle } as const;
+  const way = room !== undefined ? TraversalBehavior.wayFor(world, room, key, mover) : undefined;
+  let destinationId: string | undefined;
+  if (way?.kind === 'exit') {
+    destinationId = way.destination.id;
+  } else if (way?.kind === 'computed') {
+    if (!random) {
+      throw new Error(`stepVehicle: ${vehicle.id}'s heading meets a computed way out of ${room!.id} and no random service was passed.`);
+    }
+    const taken = TraversalBehavior.resolveComputed(world, room!, key, mover, { world, actorId: vehicle.id, random });
+    if (taken?.kind === 'exit') destinationId = taken.destination;
   }
-
-  const vehicleTrait = vehicle.get(TraitType.VEHICLE) as VehicleTrait | undefined;
-  if (!vehicleTrait) {
-    // In something with no VehicleTrait - treat as blocking container
-    return { canWalk: false, vehicle };
+  if (destinationId === undefined) {
+    model.heading = null;
+    model.turnsToStep = 0;
+    return { kind: 'stopped' };
   }
+  world.moveEntity(vehicle.id, destinationId);
+  model.turnsToStep = model.pace;
+  return { kind: 'arrived', roomId: destinationId };
+}
 
-  if (vehicleTrait.blocksWalkingMovement) {
-    return { canWalk: false, vehicle };
+/**
+ * D5d: bound for a destination, the vehicle leaves its room on the first
+ * turn and is nowhere; the trip counts down a turn at a time; at zero
+ * it arrives and is no longer under way.
+ */
+function stepFlight(world: WorldModel, vehicle: IFEntity, model: VehicleFlightMovement): VehicleStep | undefined {
+  if (model.destination === null) return undefined;
+  if (world.getLocation(vehicle.id) !== undefined) {
+    world.moveEntity(vehicle.id, null);
+    return { kind: 'departed' };
   }
+  model.turnsRemaining -= 1;
+  if (model.turnsRemaining > 0) return undefined;
+  const destination = model.destination;
+  world.moveEntity(vehicle.id, destination);
+  model.destination = null;
+  model.turnsRemaining = 0;
+  return { kind: 'arrived', roomId: destination };
+}
 
-  // In a walkable vehicle - return the vehicle so caller knows player is in one
-  return { canWalk: true, vehicle };
+/**
+ * ADR-376 D3: every `pace` turns under way, one step of `stride` along the
+ * heading or toward the course — diagonal until one axis matches, then
+ * straight, never overshooting. The path from the old cell to the new is
+ * walked cell by cell, and the first of these ends the step: a landmark's
+ * cell (the vehicle moves into its room, drops its position and stops:
+ * `arrived`), a floating thing's cell (`alongside`, stopped there, D10), a
+ * cell past an edge (stopped at the last cell inside, `atEdge` set, D8).
+ * A course reached is `stopped`. While any actor out of the vehicle holds
+ * its cell the machine holds and the turn is not counted (D9). A vehicle
+ * found in no expanse stops where it is.
+ */
+function stepOpen(world: WorldModel, vehicle: IFEntity, model: VehicleOpenMovement): VehicleStep | undefined {
+  if (!model.underWay) return undefined;
+  const found = placeOf(world, vehicle);
+  if (!found || !model.position) {
+    halt(model);
+    return { kind: 'stopped' };
+  }
+  if (actorOutAt(world, found.expanse.id, model.position)) return undefined;
+
+  if (model.sailing && model.course === null) {
+    // ADR-375 D5, D7: the band for the angle off the wind, read live, sets
+    // the pace; in a `stopped` band the ship holds — in irons, reported
+    // once, only when the fullest setting would be stopped too — and moves
+    // again the turn a turn or a wind shift takes it out.
+    const pace = paceUnderSail(world, vehicle);
+    if (pace === undefined || pace === 'stopped') {
+      const fullest = model.sails ? model.sails.settings[model.sails.settings.length - 1] : undefined;
+      const stuck = paceUnderSail(world, vehicle, fullest) === 'stopped';
+      model.turnsToStep = 0;
+      if (stuck && !model.inIrons) {
+        model.inIrons = true;
+        return { kind: 'in-irons' };
+      }
+      if (!stuck) model.inIrons = false;
+      return undefined;
+    }
+    model.inIrons = false;
+    if (model.turnsToStep <= 0) model.turnsToStep = pace;
+  }
+  model.turnsToStep -= 1;
+  if (model.turnsToStep > 0) return undefined;
+
+  const from = model.position;
+  const delta = stepDelta(model, from);
+  const legs = Math.max(1, Math.ceil(Math.max(Math.abs(delta.x), Math.abs(delta.y))));
+  let last = from;
+  for (let i = 1; i <= legs; i++) {
+    const at = { x: from.x + (delta.x * i) / legs, y: from.y + (delta.y * i) / legs };
+    const cell = cellOf(at);
+    if (!isInsideExpanse(found.trait, cell)) {
+      const side = sideCrossed(found.trait, cell);
+      model.position = cellOf(last);
+      model.atEdge = side;
+      halt(model);
+      return { kind: 'edge', side, ...(model.sailing ? { sailing: true } : {}) };
+    }
+    const landmark = landmarkAt(found.trait, cell);
+    if (landmark !== undefined) {
+      model.position = null;
+      model.atEdge = null;
+      halt(model);
+      world.moveEntity(vehicle.id, landmark);
+      return { kind: 'arrived', roomId: landmark };
+    }
+    const [floating] = floatingThingsAt(world, found.expanse.id, cell);
+    if (floating) {
+      model.position = cell;
+      model.atEdge = null;
+      halt(model);
+      return { kind: 'alongside', thingId: floating.id };
+    }
+    last = at;
+  }
+  model.position = model.sailing && model.course === null ? last : cellOf(last);
+  model.atEdge = null;
+  if (model.course !== null && sameCell(last, model.course)) {
+    model.course = null;
+    halt(model);
+    return { kind: 'stopped' };
+  }
+  const next = model.sailing && model.course === null ? paceUnderSail(world, vehicle) : model.pace;
+  model.turnsToStep = typeof next === 'number' ? next : 0;
+  return undefined;
+}
+
+/** Take an open vehicle out of the way where it is; a ship keeps its bearing (ADR-375 D3), a compass word clears. */
+function halt(model: VehicleOpenMovement): void {
+  if (!model.sailing && typeof model.heading !== 'number') model.heading = null;
+  model.course = null;
+  model.underWay = false;
+  model.inIrons = false;
+  model.turnsToStep = 0;
+}
+
+/**
+ * The displacement of one step: `stride` along the heading — a compass
+ * word's unit vector, or a bearing's sine and cosine (ADR-375 D2) — or
+ * toward the course without overshooting. A course outranks a heading.
+ */
+function stepDelta(model: VehicleOpenMovement, from: IExpanseCell): IExpanseCell {
+  if (model.course === null && model.heading !== null) {
+    const vector = headingVector(model.heading) ?? { x: 0, y: 0 };
+    return { x: vector.x * model.stride, y: vector.y * model.stride };
+  }
+  const course = model.course ?? from;
+  const clamp = (d: number) => Math.sign(d) * Math.min(Math.abs(d), model.stride);
+  return { x: clamp(course.x - from.x), y: clamp(course.y - from.y) };
+}
+
+/** Which side a cell outside the expanse lies past; north and south before east and west. */
+function sideCrossed(trait: ExpanseTrait, cell: IExpanseCell): ExpanseSide {
+  if (cell.y >= trait.height) return 'NORTH';
+  if (cell.y < 0) return 'SOUTH';
+  if (cell.x >= trait.width) return 'EAST';
+  return 'WEST';
+}
+
+/** Whether an actor out of a vehicle holds a floating position at a cell of the expanse (D9). */
+function actorOutAt(world: WorldModel, expanseId: string, cell: IExpanseCell): boolean {
+  return world.getContents(expanseId).some((e) => {
+    if (!e.has(TraitType.ACTOR)) return false;
+    const position = e.get(FloatingTrait)?.position;
+    return position !== undefined && position !== null && sameCell(position, cell);
+  });
+}
+
+/**
+ * ADR-376 D9: an actor leaves an open vehicle that is positioned in its
+ * expanse. They are put in the expanse room holding the vehicle's cell on
+ * a floating trait of their own (added when they have none), so the
+ * machine holds while they are out and `enter` reaches any open vehicle in
+ * that cell. Nothing happens when the vehicle is at a landmark or
+ * anywhere else: the caller's ordinary exit applies.
+ *
+ * @param world - The world model
+ * @param actor - The actor leaving
+ * @param vehicle - The open vehicle they are in
+ * @returns true when the actor was put out into the expanse
+ */
+export function leaveVehicleIntoExpanse(world: WorldModel, actor: IFEntity, vehicle: IFEntity): boolean {
+  const model = vehicle.get(VehicleTrait)?.movement;
+  if (model?.kind !== 'open' || !model.position) return false;
+  const location = world.getLocation(vehicle.id);
+  if (location === undefined || !world.getEntity(location)?.has(TraitType.EXPANSE)) return false;
+  let floating = actor.get(FloatingTrait);
+  if (!floating) {
+    floating = new FloatingTrait();
+    actor.add(floating);
+  }
+  floating.position = { x: model.position.x, y: model.position.y };
+  world.moveEntity(actor.id, location);
+  return true;
+}
+
+/**
+ * ADR-376 D9: an actor out in the expanse boards a vehicle, dropping the
+ * position they held; the machine resumes on its next step. The move into
+ * the vehicle is entering's own.
+ *
+ * @returns true when the actor held a position
+ */
+export function boardFromExpanse(actor: IFEntity): boolean {
+  const floating = actor.get(FloatingTrait);
+  if (!floating?.position) return false;
+  floating.position = null;
+  return true;
+}
+
+/**
+ * The vehicle an actor is aboard (D7): the vehicle they are inside at any
+ * depth, or the vehicle whose room they stand in. Undefined on foot.
+ *
+ * @param world - The world model
+ * @param actorId - The actor
+ */
+export function getVehicleAboard(world: WorldModel, actorId: string): IFEntity | undefined {
+  const seen = new Set<string>();
+  let current: string | undefined = world.getLocation(actorId);
+  while (current !== undefined && !seen.has(current)) {
+    seen.add(current);
+    const entity = world.getEntity(current);
+    if (!entity) return undefined;
+    if (isVehicle(entity)) return entity;
+    const aboard = entity.get(AboardTrait);
+    if (aboard) return world.getEntity(aboard.vehicleId);
+    current = world.getLocation(current);
+  }
+  return undefined;
+}
+
+/**
+ * Whether a vehicle lists a command set (ADR-366 D5i): the words are always
+ * grammar, so a set the vehicle does not take is the action's refusal,
+ * `vehicle-no-such-command`.
+ *
+ * @param vehicle - A vehicle
+ * @param set - `compass`, `destinations`, or an extension's set
+ */
+export function takesCommandSet(vehicle: IFEntity, set: string): boolean {
+  return vehicle.get(VehicleTrait)?.commands?.includes(set) ?? false;
 }

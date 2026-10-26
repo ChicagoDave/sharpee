@@ -63,7 +63,7 @@ function summarizeTraits(entity: IFEntity): TraitSummary {
 /**
  * Build the IDE project manifest by projecting a constructed world.
  *
- * Excludes the player (not an authored entity) and door/exit entities (they
+ * Excludes the player (not an authored entity) and door entities (they
  * surface under a room's `exits`, not as a top-level category). Emits no
  * `source` — file:line is joined IDE-side from the tree-sitter name index.
  *
@@ -81,7 +81,7 @@ export function buildManifest(
   const entities: EntityNode[] = world
     .getAllEntities()
     .filter((entity) => entity.id !== playerId)
-    .filter((entity) => !entity.hasTrait(TraitType.DOOR) && !entity.hasTrait(TraitType.EXIT))
+    .filter((entity) => !entity.hasTrait(TraitType.DOOR))
     .map((entity) => ({
       id: entity.id,
       displayName: entity.name,

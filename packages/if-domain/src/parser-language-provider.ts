@@ -7,10 +7,11 @@
  */
 
 import { LanguageProvider } from './language-provider.js';
-import { 
-  VerbVocabulary, 
-  DirectionVocabulary, 
-  SpecialVocabulary 
+import {
+  VerbVocabulary,
+  DirectionVocabulary,
+  SpecialVocabulary,
+  DeterminerVocabulary
 } from './vocabulary-contracts/vocabulary-types.js';
 
 /**
@@ -57,10 +58,38 @@ export interface ParserLanguageProvider extends LanguageProvider {
   getPrepositions(): string[];
 
   /**
-   * Get determiners for the language
-   * @returns Array of determiner strings
+   * Get determiners for the language, each with whose it is when it is a
+   * possessive (ADR-387 D6)
+   * @returns Array of determiner entries
    */
-  getDeterminers(): string[];
+  getDeterminers(): DeterminerVocabulary[];
+
+  /**
+   * The words that separate list items in typed input (ADR-386 D6, ADR-387 D6):
+   * English "and" and the comma.
+   * @returns Array of separator words
+   */
+  getListSeparators(): string[];
+
+  /**
+   * The manner adverbs a MANNER slot accepts (ADR-387 D6).
+   * @returns Array of adverbs
+   */
+  getMannerAdverbs(): string[];
+
+  /**
+   * Read a cardinal number from typed words (ADR-386 D8): digits, one number
+   * word, or a compound the language writes as two words or hyphenated.
+   * @param words The typed words, in order
+   * @returns The number, or null when the words are not one number
+   */
+  parseCardinal(words: readonly string[]): number | null;
+
+  /**
+   * The ordinal words of the language, each with its value.
+   * @returns word → ordinal value
+   */
+  getOrdinalNumbers(): Readonly<Record<string, number>>;
 
   /**
    * Get conjunctions for the language
@@ -86,13 +115,6 @@ export interface ParserLanguageProvider extends LanguageProvider {
    * @returns The base form of the word
    */
   lemmatize(word: string): string;
-
-  /**
-   * Expand an abbreviation
-   * @param abbreviation The abbreviation to expand
-   * @returns The expanded form or null if not recognized
-   */
-  expandAbbreviation(abbreviation: string): string | null;
 
   /**
    * Format a list of items with proper conjunction
@@ -155,34 +177,4 @@ export interface ParserLanguageProvider extends LanguageProvider {
    * @returns The pattern string or undefined
    */
   getVerbPattern?(actionId: string): string | undefined;
-
-  /**
-   * Get direction mappings (alternative to getDirections)
-   * @returns Record mapping directions to word arrays
-   */
-  getDirectionMappings?(): Record<string, string[]>;
-
-  /**
-   * Get pronouns (alternative to getSpecialVocabulary)
-   * @returns Array of pronoun strings
-   */
-  getPronouns?(): string[];
-
-  /**
-   * Get all words (alternative to getSpecialVocabulary)
-   * @returns Array of words meaning "all"
-   */
-  getAllWords?(): string[];
-
-  /**
-   * Get except words (alternative to getSpecialVocabulary)
-   * @returns Array of words meaning "except"
-   */
-  getExceptWords?(): string[];
-
-  /**
-   * Get articles (alternative to getSpecialVocabulary)
-   * @returns Array of article strings
-   */
-  getArticles?(): string[];
 }

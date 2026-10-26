@@ -28,8 +28,8 @@
 
 import type { ISemanticEvent } from '@sharpee/core';
 import type { WorldModel, IFEntity } from '@sharpee/world-model';
-import type { Parser, StandardActionRegistry } from '@sharpee/stdlib';
-import type { LanguageProvider } from '@sharpee/if-domain';
+import type { StandardActionRegistry } from '@sharpee/stdlib';
+import type { LanguageProvider, Parser } from '@sharpee/if-domain';
 import type { Story, StoryConfig } from './story.js';
 import type { NarrativeSettings } from '../types.js';
 

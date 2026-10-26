@@ -612,3 +612,63 @@ describe('runRowVisitTarget — the run-column click (ADR-357 D8 step 2, AC-4)',
     expect(runRowVisitTarget(row)).toEqual({ lineId: MAIN, cardId: 'c-open' });
   });
 });
+
+// ── the claims tier on the same stream (ADR-365 D6, ADR-367 D6; GH #555) ───
+
+const claim = (name: string, extra: Record<string, unknown> = {}): string =>
+  line({
+    type: 'claim-result', name, never: false, kind: 'room', verdict: 'held', settledBy: 'line',
+    set: 'the declared set', thingsInSet: 3, inertInSet: 0,
+    line: { id: 'mainline', label: 'opening-hall', turn: 2 }, floored: true, ...extra,
+  });
+const claimsSummary = (extra: Record<string, unknown> = {}): string =>
+  line({ type: 'claims-summary', source: 'x.claims.chord', declared: 2, held: 1, violated: 0, unproven: 1, walks: 1, totalWalkMs: 12, seed: 7, floored: true, ...extra });
+
+describe('foldRunLine — claim rows and the summary', () => {
+  it('keeps one row per claim-result in arrival order with its locks, keeps the latest summary, and never touches the tally', () => {
+    const state = createRunState();
+    beginRun(state);
+    for (const raw of [
+      start(A), command(A), end(A),
+      claim('the Landing is reached', { locks: [{ lineId: 'mainline', label: 'opening-hall', turn: 2, cardId: 'card0003', outcome: 'held' }] }),
+      claim('the note is in the Landing', {
+        verdict: 'unproven', settledBy: 'exhaustion', line: undefined,
+        locks: [{ lineId: 'branch01', label: 'hall · north', turn: 2, cardId: 'card0010', outcome: 'not-held', message: 'the note is in the Hall' }],
+      }),
+      claimsSummary(),
+      runEnd(),
+    ]) foldRunLine(state, raw);
+
+    expect(state.claims.map(row => [row.name, row.verdict, row.settledBy])).toEqual([
+      ['the Landing is reached', 'held', 'line'],
+      ['the note is in the Landing', 'unproven', 'exhaustion'],
+    ]);
+    expect(state.claims[0]?.locks?.[0]?.cardId).toBe('card0003');
+    expect(state.claims[1]?.locks?.[0]).toEqual({ lineId: 'branch01', label: 'hall · north', turn: 2, cardId: 'card0010', outcome: 'not-held', message: 'the note is in the Hall' });
+    expect(state.claims[1]?.line).toBeUndefined();
+    expect(state.claimsSummary).toEqual({ source: 'x.claims.chord', declared: 2, held: 1, violated: 0, unproven: 1, walks: 1, totalWalkMs: 12, seed: 7, floored: true });
+    // Claims never gate (ADR-365 D9): the tally is the tree's alone.
+    expect(state.tally).toEqual({ cardsPassed: 1, cardsFailed: 0, assertionsPassed: 0, assertionsFailed: 0, errors: 0, unreached: 0 });
+  });
+
+  it('a claim-result with a verdict the wire does not define is rejected by the guard, not folded', () => {
+    const state = createRunState();
+    beginRun(state);
+    foldRunLine(state, claim('x', { verdict: 'failed' }));
+    expect(state.claims).toHaveLength(0);
+  });
+
+  it('beginRun and resetRun both clear the claims and their summary', () => {
+    const state = createRunState();
+    beginRun(state);
+    for (const raw of [claim('a'), claimsSummary()]) foldRunLine(state, raw);
+    expect(state.claims).toHaveLength(1);
+    beginRun(state);
+    expect(state.claims).toHaveLength(0);
+    expect(state.claimsSummary).toBeUndefined();
+    for (const raw of [claim('a'), claimsSummary()]) foldRunLine(state, raw);
+    resetRun(state);
+    expect(state.claims).toHaveLength(0);
+    expect(state.claimsSummary).toBeUndefined();
+  });
+});

@@ -57,10 +57,9 @@ function steal(world: WorldModel, player: IFEntity, thief: IFEntity, item?: IFEn
       tokens: [],
       structure: { verb: { tokens: [0], text: 'steal', head: 'steal' } },
       pattern: 'PROGRAMMATIC',
-      confidence: 1.0,
     },
     actionId: STEAL_ACTION_ID,
-    ...(item ? { directObject: { entity: item, parsed: { text: item.name, candidates: [item.name] } } } : {}),
+    ...(item ? { directObject: { entity: item, parsed: { text: item.name } } } : {}),
   };
   const context = createActionContext(world, player, stealingAction, command, createFixtureRandomService(1), undefined, thief);
   const validation = stealingAction.validate(context);

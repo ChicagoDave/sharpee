@@ -448,7 +448,7 @@ export function setupWorld(world: WorldModel): void {
   cart.add(new SceneryTrait());
   cart.add(new EnterableTrait({ preposition: 'in' }));
   cart.add(new ContainerTrait({ capacity: { maxItems: 3 } }));
-  cart.add(new VehicleTrait({ vehicleType: 'generic' }));
+  cart.add(new VehicleTrait());
   world.moveEntity(cart.id, rooftop.id);
 
   // ---- UTILITY ROOM (behind a door from Rooftop) ----

@@ -8,7 +8,9 @@
  * four-phase partition (§5.4) at bind time. Nodes carry source spans for
  * error reporting and IDE tooling.
  *
- * Public interface: StoryIR and every IR* type; IR_FORMAT.
+ * Public interface: StoryIR and every IR* type; IR_FORMAT; the wire's two
+ * reserved spellings, PASSAGE_KEY_PREFIX (with passageKeyOfForm) and
+ * ADMITS_PUSHING.
  * Owner context: @sharpee/chord owns this schema (ADR-210 Interface
  * Contract 1, owner-confirmed 2026-07-10); @sharpee/ide-protocol re-exports
  * it. Invariant: pure data — JSON.parse(JSON.stringify(ir)) is identity.
@@ -25,6 +27,26 @@ import type { Span } from './span.js';
  * instead of failing inside its kind switch.
  */
 export const IR_FORMAT = 'story language 5';
+
+/**
+ * The key prefix a passage exit carries in `IRExit.direction` (ADR-378 D1):
+ * `passage:<first form, hyphenated>`. World-model reads the same key with its
+ * own `PASSAGE_KEY_PREFIX`; Chord depends on no platform package, so a
+ * story-loader test pins the two equal.
+ */
+export const PASSAGE_KEY_PREFIX = 'passage:';
+
+/**
+ * The passage key one written form names: lowercased, words hyphenated.
+ * @param form the words as written
+ * @returns the key, `passage:<words-hyphenated>`
+ */
+export function passageKeyOfForm(form: string): string {
+  return `${PASSAGE_KEY_PREFIX}${form.toLowerCase().split(' ').join('-')}`;
+}
+
+/** The class word an IR `admits` list carries beside entity ids for a pushed thing (ADR-378 D6). */
+export const ADMITS_PUSHING = 'pushing';
 
 /** Root of a compiled story. */
 export interface StoryIR {
@@ -131,7 +153,7 @@ export interface StoryIR {
   /** Named-turn timers (ADR-325 D3), every owner — keyed by `qualified`. */
   timers: IRTimerDef[];
   sequences: IRSequenceDef[];
-  /** `define machine` blocks (ADR-215 `use state-machines` depth). */
+  /** `define machine` blocks (the ADR-119 depth; core under ADR-377). */
   machines: IRMachineDef[];
   /** `define channel` data projections (ADR-216) — pure IR; renderers are platform/extension territory. */
   channels: IRChannelDef[];
@@ -241,6 +263,118 @@ export interface IRMeta {
 // entities
 // --------------------------------------------------------------------------
 
+/**
+ * The movement types a vehicle names, in the order the language lists them:
+ * the base types (ADR-366 D5) and `open` under `use expanses` (ADR-376 D3).
+ * The parser's closed word list, the AST and IR types and the analyzer's
+ * movement table all read this one list.
+ */
+export const MOVEMENT_TYPES = ['none', 'line', 'streets', 'compass', 'flight', 'open'] as const;
+export type IRVehicleMovement = (typeof MOVEMENT_TYPES)[number];
+
+/** One `when <condition>: <stop>` row of a `position` block (ADR-366 D5a), resolved. */
+export interface IRPositionRow {
+  condition: IRCondition;
+  /** Entity id of the stop. */
+  stop: string;
+}
+
+/**
+ * A vehicle's declaration (ADR-366 D2, D5, D5a–D5d, D5i, D7), resolved to
+ * entity ids. Only the fields the movement type takes are present; the
+ * analyzer has already refused every line outside the type's row, so the
+ * loader reads this as true.
+ */
+export interface IRVehicle {
+  movement: IRVehicleMovement;
+  /** `carries: in | on` — the player's preposition (`EnterableTrait.preposition`). Absent with rooms aboard. */
+  carries?: 'in' | 'on';
+  /** `drive:` — absent on `none`. */
+  drive?: 'state' | 'control' | 'player';
+  /** `commands:` — the player's command sets, `drive: player` only. */
+  commands?: string[];
+  /** A line's stops, in order (entity ids). */
+  stops?: string[];
+  direction?: 'both' | 'one-way';
+  /** Turns per step (`line` under `control`, `compass`, `open`); a flight's step is the whole trip (ADR-380 D3). */
+  pace?: number;
+  /** A flight vehicle's destinations (entity ids). */
+  destinations?: string[];
+  /** The rooms inside the vehicle (entity ids), D7. */
+  aboard?: string[];
+  /** The boarding room (entity id), D7. */
+  boardedThrough?: string;
+  /** A `drive: state` line's `position` block: rows top to bottom, then the fallback stop. */
+  position?: { rows: IRPositionRow[]; otherwise: string };
+  /** An open vehicle's `stride: <n> unit[s]` (ADR-376 D3): units per step. */
+  stride?: number;
+  /** An open vehicle's `sight: <n>` (ADR-376 D6): how far one sees from it, in expanse units. */
+  sight?: number;
+  /** An open vehicle's `seen from afar:` line (ADR-376 D6): what it shows from a distance. */
+  seenFromAfar?: string;
+  /**
+   * The `sailing` block (ADR-375 D5, D7), under `use sailing`: pace by the
+   * angle off the wind, each band's cells by setting (`null` for the one
+   * cell of a vehicle without sails), and the calm row. Present in place
+   * of `pace`.
+   */
+  sailing?: IRSailing;
+  /** `sails:` and `sails start:` (ADR-375 D7): the settings, least to most canvas, and the starting one. */
+  sails?: { settings: string[]; start: string };
+}
+
+/** A wind (ADR-375 D4): the bearing it comes from, or a calm. A compass word is lowered to its bearing. */
+export type IRWind = { bearing: number } | 'calm';
+
+/** One pace cell (ADR-375 D5): turns per step, or `stopped`. */
+export type IRSailingPace = number | 'stopped';
+
+/** One band of a `sailing` block (ADR-375 D5, D7): `from` to `to` degrees off the wind, inclusive. */
+export interface IRSailingBand {
+  from: number;
+  to: number;
+  /** The pace per setting; the key `null` is the one cell of a vehicle without sails. */
+  paces: Array<{ setting: string | null; pace: IRSailingPace }>;
+}
+
+export interface IRSailing {
+  bands: IRSailingBand[];
+  calm: IRSailingPace;
+}
+
+/** One `<Room>: <x>, <y>` row of an expanse's `landmarks` block (ADR-376 D2). */
+export interface IRLandmark {
+  /** The landmark room's entity id. */
+  room: string;
+  x: number;
+  y: number;
+}
+
+/**
+ * An expanse's declaration (ADR-376 D2, D6, D8, D10): its size, its landmarks,
+ * and the optional lines that cap sight and move floating things. Present
+ * exactly on `expanse`-kind entities; the edges are the entity's
+ * `blockedExits` (unconditional, one of the four sides).
+ */
+export interface IRExpanse {
+  /** `size: <w> by <h>` — coordinates run 0..w-1 east and 0..h-1 north. */
+  width: number;
+  height: number;
+  landmarks: IRLandmark[];
+  /** `visibility: <n>` — a cap on every looker's sight in the expanse; absent means no cap. */
+  visibility?: number;
+  /** `drift: 1 unit every <n> turns` — turns between drift steps; absent means floating things hold still. */
+  drift?: number;
+  /** `wind: from … | calm` (ADR-375 D4), under `use sailing`; absent means the expanse carries no wind. */
+  wind?: IRWind;
+}
+
+/** `in <expanse> at <x>, <y>` — a position in an expanse (ADR-376 D3, D10). */
+export interface IRCoordinates {
+  x: number;
+  y: number;
+}
+
 export interface IREntity {
   /** Canonical slug (lowercased name words joined with `-`). Unique. */
   id: string;
@@ -316,6 +450,44 @@ export interface IREntity {
   statesReversible: boolean;
   /** Per-entity numeric counters (ADR-264 D1) — one value per instance. */
   counters: IRCounterDecl[];
+  /**
+   * `holds <n>` (ADR-369 D2): how many things a container or supporter can
+   * hold, lowered to its trait's `capacity.maxItems`. Additive and optional;
+   * absent means unbounded.
+   */
+  holds?: number;
+  /**
+   * The vehicle's declaration (ADR-366): its movement type and the lines
+   * that type takes. Present exactly on `vehicle`-kind entities; the loader
+   * builds `VehicleTrait.model` from it and nothing else (D8).
+   */
+  vehicle?: IRVehicle;
+  /**
+   * The thing's `pushing` block (ADR-378 D6b) as directed room pairs, by
+   * entity id — a `between` row contributes both. The loader stamps the
+   * thing's id onto the exit from `from` to `to`. Present only when written.
+   */
+  pushing?: IRPushingWay[];
+  /**
+   * `admits: <vehicle>, …` (ADR-366 D6): the steered vehicles that may enter
+   * this room, as entity ids, and (ADR-378 D6) the class word `pushing` when
+   * a pushed thing may arrive by any of its ways. Rooms only (a region's line
+   * is copied to each member room; a group's to each room it creates). Absent
+   * means the room admits no vehicle and no pushed thing.
+   */
+  admits?: string[];
+  /**
+   * The expanse's declaration (ADR-376 D2): present exactly on `expanse`-kind
+   * entities, under `use expanses`.
+   */
+  expanse?: IRExpanse;
+  /**
+   * `sight: <n>` off a vehicle (ADR-376 D6): on a landmark room, its outlook
+   * over the expanse; on a thing, an instrument's reach. Absent otherwise.
+   */
+  sight?: number;
+  /** `seen from afar:` on a landmark room (ADR-376 D6): what it shows from a distance. */
+  seenFromAfar?: string;
   /** `when <timer> expires` clauses on this owner (ADR-325 D3e). */
   timerClauses?: IRTimerClause[];
   /** `when <entity> moves` clauses on this owner (ADR-325 D3h). */
@@ -863,13 +1035,54 @@ export interface IRPlacement {
   relation: 'in' | 'on' | 'starts-in';
   /** Entity ID of the containing place. */
   place: string;
+  /**
+   * ADR-374 D1–D2: a backdrop's rooms, `place` first — every room a listed
+   * or region placement names. Absent on a one-place placement.
+   */
+  places?: string[];
+  /**
+   * ADR-376 D3, D10: the coordinates of an `in <expanse> at <x>, <y>`
+   * placement, on an `open` vehicle or a `floats` thing. Absent otherwise.
+   */
+  at?: IRCoordinates;
+  span: Span;
+}
+
+/** One way a thing may be pushed along (ADR-378 D6b): from one room to the next, by id. */
+export interface IRPushingWay {
+  from: string;
+  to: string;
   span: Span;
 }
 
 export interface IRExit {
+  /**
+   * The exit's key: a compass word, or a passage key
+   * `passage:<first form, hyphenated>` (ADR-378 D1) — the loader wires a
+   * passage under that key and infers no reverse.
+   */
   direction: string;
-  /** Entity ID of the destination room. */
-  to: string;
+  /**
+   * A passage's forms as written, the first canonical (ADR-378 D1, D2): the
+   * loader registers each, with and without its articles, as a gated
+   * `going` rule for the room. Present only on a passage.
+   */
+  passage?: string[];
+  /**
+   * `while <condition>` on the exit line (ADR-378 D3): the exit exists only
+   * while this holds — the loader binds it as the `exit.hidden.<room>.<key>`
+   * evaluator, and the inferred reverse of a two-way exit carries it too.
+   * Present only when written.
+   */
+  condition?: IRCondition;
+  /**
+   * `admits <name>, …` on the exit line (ADR-378 D6): steered vehicles by
+   * entity id, and the class word `pushing` for a pushed thing. The room's
+   * own `admits:` list is `IREntity.admits`. Present only when written.
+   */
+  admits?: string[];
+  /** Where the exit leads: a room, or outside the vehicle the room is aboard. */
+  to: IRExitDestination;
   /**
    * Entity ID of the door this exit passes through (`through the <door>`,
    * ADR-234 D1) — null on plain exits. The loader stamps it as `via` on
@@ -886,7 +1099,54 @@ export interface IRExit {
   span: Span;
 }
 
+/**
+ * An exit's destination. `room` names it by entity id. `outside`
+ * (`<direction> to outside`, ADR-366 D7) is the room the containing vehicle
+ * is in, resolved by the loader on each use — one of the vehicle's
+ * candidate rooms (`vehicleCandidateRoomIds`). `unresolved` is the
+ * analyzer's error result: the name was reported and the IR never loads.
+ */
+export type IRExitDestination =
+  | { kind: 'room'; id: string }
+  | { kind: 'outside' }
+  | { kind: 'unresolved' };
+
+/** The room id an exit leads to, or undefined for an outside or unresolved exit. */
+export function exitRoomId(exit: IRExit): string | undefined {
+  return exit.to.kind === 'room' ? exit.to.id : undefined;
+}
+
+/**
+ * Every room a vehicle can be in (ADR-366 D7's candidate set), by IR id: a
+ * line's stops, a flight's destinations, otherwise each room that admits the
+ * vehicle and each member of a region that does. The one rule for where an
+ * `outside` exit can lead — the loader and world-index both read it.
+ *
+ * @param entities the story's entities
+ * @param host the vehicle entity
+ * @returns the candidate room ids, each once, in declaration order
+ */
+export function vehicleCandidateRoomIds(entities: readonly IREntity[], host: IREntity): string[] {
+  const v = host.vehicle;
+  if (!v) return [];
+  if (v.movement === 'line') return [...(v.stops ?? [])];
+  if (v.movement === 'flight') return [...(v.destinations ?? [])];
+  const admitting = new Set<string>();
+  for (const e of entities) {
+    if (!e.admits?.includes(host.id)) continue;
+    if (e.kinds.some((k) => k.name === 'room')) admitting.add(e.id);
+    for (const member of e.containing ?? []) admitting.add(member.id);
+  }
+  return [...admitting];
+}
+
+/** The vehicle a room is aboard, or undefined when the room is aboard none. */
+export function vehicleAboard(entities: readonly IREntity[], roomId: string): IREntity | undefined {
+  return entities.find((e) => e.vehicle?.aboard?.includes(roomId));
+}
+
 export interface IRBlockedExit {
+  /** A compass word, or a passage key the room declares (ADR-378 D1). */
   direction: string;
   phraseKey: string;
   /** `is blocked while <cond>` — null = always blocked (grammar log 2026-07-10). */
@@ -896,6 +1156,7 @@ export interface IRBlockedExit {
 
 /** `<direction> is deadly: <phrase>` (ADR-227) — a lethal exit. */
 export interface IRDeadlyExit {
+  /** A compass word, or a passage key the room declares (ADR-378 D1). */
   direction: string;
   /** Phrase key carrying the death text (also the derived cause). */
   phraseKey: string;
@@ -919,6 +1180,13 @@ export interface IROnClause {
   /** Action word as written (gerund), e.g. `reading`; `every-turn` for `on every turn`. */
   action: string;
   /**
+   * The gerund's own span (ADR-368 D3): where a load error about this
+   * clause's action points. A head that lists gerunds expands to one clause
+   * per gerund sharing `span`, so `span` alone would name the whole head.
+   * Additive and optional; absent in IR compiled before it existed.
+   */
+  actionSpan?: Span;
+  /**
    * Who acts (ADR-327 D1): `{kind:'player'}` for the player ROLE — the loader
    * resolves it against `world.getPlayer()` at fire time, never a compile-time
    * entity — or `{kind:'entity'}` for a named character. Null for `self`
@@ -935,6 +1203,22 @@ export interface IROnClause {
   binding: 'object' | 'role' | 'every-turn' | 'self';
   /** Role name for role-bound clauses (validated against the action's roles). */
   role: string | null;
+  /**
+   * The `to <value>` head tail (ADR-371 D4) — the hook fires only when the
+   * consultation's seeded `value` is this word. Additive and optional.
+   */
+  valueTail?: string;
+  /**
+   * The counterpart tail (ADR-372 D1) — the IR id of the other noun; the
+   * hook fires only when the consultation's seeded `counterpartId` is it.
+   * Additive and optional.
+   */
+  counterpart?: string;
+  /**
+   * The sound a listener's `after hearing the <sound>` reacts to (ADR-374
+   * D6) — the declared `define sound` name, which is the world sound's kind.
+   */
+  sound?: string;
   /** `while` qualifier (every-turn clauses). */
   condition: IRCondition | null;
   /** Explicit `before`/`after` ordering between traits on the same action. */
@@ -1104,6 +1388,13 @@ export interface IRTraitField {
 /** `define action` — grammar, scope constraints, requirements, refusal ladder, body. */
 export interface IRActionDef {
   name: string;
+  /**
+   * `define action <name> while <condition>` (ADR-378 D5): the loader
+   * attaches it as the `.when()` gate on every rule the action registers;
+   * where it is false the input parses as
+   * though the action did not exist. Present only when written.
+   */
+  condition?: IRCondition;
   patterns: IRActionPattern[];
   /** Scope constraints (`the <slot> must be <requirement>`) — requirement words are catalog-validated (ADR-271 D1). */
   constraints: Array<{ slot: string; requirement: ScopeRequirementWord }>;
@@ -1133,6 +1424,12 @@ export interface IRActionDef {
   refusals: IRActionRefusal[];
   /** Dispatch-miss phrase key (`otherwise refuse …`), or null. */
   otherwise: string | null;
+  /**
+   * `about …:` rows answering the action's topic slot (ADR-383 D9), matched
+   * as a topic table's rows are; a command whose topic no row matches
+   * refuses with `otherwise`. Present only when written.
+   */
+  topics?: IRTopicRow[];
   /** Action-owned scores (D12); names owner-qualified (`action.<name>.<score>`). */
   scores: IRScoreDef[];
   body: IRStatement[];
@@ -1259,12 +1556,6 @@ export interface IRCounterDef {
   span: Span;
 }
 
-/**
- * A named-turn timer (ADR-325 D3a). `qualified` is the runtime key:
- * `<owner-ir-id>.<name>` for an entity's or the player's (`player.<name>`),
- * bare `<name>` for the story's. A state's prose, when authored, lives in
- * the phrase table under `<qualified>.<state>`.
- */
 /** The moment a chapter begins (ADR-330 D2), resolved: ids are IR entity ids, timers their `qualified` key. */
 export type IRChapterTrigger =
   | { kind: 'game-starts' }
@@ -1287,10 +1578,18 @@ export interface IRChapterDef {
   span: Span;
 }
 
+/**
+ * A named-turn timer (ADR-325 D3a). `qualified` is the runtime key,
+ * `qualifiedTimerKey(name, owner)`. A state's prose, when authored, lives in the
+ * phrase table under `<qualified>.<state>`. `define timer … for the player`
+ * lowers to one def per playable character, each owned by that character;
+ * with no playable character it is owned by `player`, a story that never
+ * loads (the role has no holder).
+ */
 export interface IRTimerDef {
   name: string;
   qualified: string;
-  /** The owning entity's IR id (`player` for the player), or null for the story. */
+  /** The owning entity's IR id, or null for the story. */
   owner: string | null;
   /** Named turns in order; `expired` follows the last and is never listed. */
   states: string[];
@@ -1299,6 +1598,35 @@ export interface IRTimerDef {
   /** `interrupted one chance in n` — per-turn chance of expiring early. */
   interrupted: number | null;
   span: Span;
+}
+
+/**
+ * The runtime key of a timer: `<owner-ir-id>.<name>` for an entity's,
+ * bare `<name>` for the story's. The one spelling — the analyzer mints
+ * `IRTimerDef.qualified` with it and the loader keys a timer read, condition
+ * or verb by it once the owner is resolved.
+ */
+export function qualifiedTimerKey(name: string, ownerIrId: string | null): string {
+  return ownerIrId === null ? name : `${ownerIrId}.${name}`;
+}
+
+/**
+ * The declared timers an owner's named timer may be: the story's or an
+ * entity's own, or — for the player role (`player`) — each playable
+ * character's, since the role may move to any of them.
+ *
+ * @param ir the compiled story
+ * @param name the timer's name
+ * @param ownerIrId an entity id, `player` for the role, or null for the story
+ * @returns the qualified keys of the declared timers it may be
+ */
+export function timerKeysFor(ir: Pick<StoryIR, 'entities' | 'timers'>, name: string, ownerIrId: string | null): string[] {
+  if (ownerIrId !== 'player') {
+    const key = qualifiedTimerKey(name, ownerIrId);
+    return (ir.timers ?? []).some((t) => t.qualified === key) ? [key] : [];
+  }
+  const playable = new Set(ir.entities.filter((e) => e.isPlayable).map((e) => e.id));
+  return (ir.timers ?? []).filter((t) => t.name === name && t.owner !== null && (playable.has(t.owner) || t.owner === 'player')).map((t) => t.qualified);
 }
 
 /** `when <timer> expires [, while <cond>]` (ADR-325 D3e) — on the clause owner. */
@@ -1357,8 +1685,8 @@ export interface IRSequenceStep {
 }
 
 /**
- * `define machine` (ADR-215 `use state-machines` depth; spelling A,
- * 2026-07-18). The loader lowers onto the ADR-119 plugin: platform machine
+ * `define machine` (the ADR-119 depth; spelling A, 2026-07-18; core
+ * under ADR-377). The loader lowers onto the ADR-119 plugin: platform machine
  * id `chord.machine.<slug>`, role bindings as `$<role>` refs, Chord
  * conditions as custom guards, Chord bodies as custom effects.
  */
@@ -1484,6 +1812,14 @@ export type IRStatement =
   | { kind: 'phrase'; phraseKey: string; params: IRParam[]; stmtWhen?: IRCondition | null; span: Span }
   /** Payload present only when authored (`with …`, ADR-216) — additive field. */
   | { kind: 'emit'; event: string; payload?: IREmitField[]; stmtWhen?: IRCondition | null; span: Span }
+  /**
+   * `play sound <name>` (ADR-374 D6): one sound, two sides — the cue `src`
+   * when the sound has a file (the ADR-216 media event), and always a sound
+   * in the world, made from the clause owner's room, which listeners hear
+   * through ADR-172's propagation. `sound` is the declared name, the world
+   * sound's kind.
+   */
+  | { kind: 'play-sound'; sound: string; src?: string; stmtWhen?: IRCondition | null; span: Span }
   | { kind: 'set'; target: IRValue; value: IRValue; stmtWhen?: IRCondition | null; span: Span }
   | { kind: 'change'; entity: IRValue; state: string; stmtWhen?: IRCondition | null; span: Span }
   /**
@@ -1525,8 +1861,42 @@ export type IRStatement =
   | { kind: 'raise' | 'lower'; counter: string; owner: IRValue | null; amount: number; stmtWhen?: IRCondition | null; span: Span }
   /** `set <tally> to <n>` (ADR-325 D4) — absolute assignment, clamped to the counter's bounds. */
   | { kind: 'set-counter'; counter: string; owner: IRValue | null; value: number; stmtWhen?: IRCondition | null; span: Span }
-  /** ADR-325 D3c: a timer verb. `timer` is the timer's `qualified` key. */
-  | { kind: 'timer'; verb: 'start' | 'stop' | 'restart' | 'reset' | 'interrupt'; timer: string; stmtWhen?: IRCondition | null; span: Span }
+  /** ADR-325 D3c: a timer verb on the named timer of `owner` (null: the story's), keyed `qualifiedTimerKey(name, owner)` at run time. */
+  | { kind: 'timer'; verb: 'start' | 'stop' | 'restart' | 'reset' | 'interrupt'; name: string; owner: IRValue | null; stmtWhen?: IRCondition | null; span: Span }
+  /**
+   * `start <vehicle> [heading <direction>]` (ADR-366 D5a, D5c, D5f): put the
+   * vehicle's machine under way; `heading` is present only on a compass
+   * vehicle under `drive: control`.
+   */
+  | {
+      kind: 'vehicle-start';
+      vehicle: IRValue;
+      heading?: string;
+      /** `heading <n> degrees` (ADR-375 D2): a bearing, 0..359, on a sailing vehicle. */
+      bearing?: number;
+      stmtWhen?: IRCondition | null;
+      span: Span;
+    }
+  /** `stop <vehicle>` (ADR-366 D5f): halt the vehicle's machine where it is. */
+  | { kind: 'vehicle-stop'; vehicle: IRValue; stmtWhen?: IRCondition | null; span: Span }
+  /** `send <vehicle> to <destination>` (ADR-366 D5d): a flight vehicle's voyage; `destination` is one of its destinations. */
+  | {
+      kind: 'vehicle-send';
+      vehicle: IRValue;
+      /**
+       * Where it goes: a room (`send … to <room>`), or a cell of an open
+       * vehicle's expanse (`send … to <x>, <y>`, ADR-376 D3).
+       */
+      to: { kind: 'room'; room: IRValue } | ({ kind: 'cell' } & IRCoordinates);
+      stmtWhen?: IRCondition | null;
+      span: Span;
+    }
+  /** `set the <expanse>'s visibility to <n>` (ADR-376 D6): caps every looker's sight in the expanse. */
+  | { kind: 'expanse-visibility'; expanse: IRValue; value: number; stmtWhen?: IRCondition | null; span: Span }
+  /** `set the <expanse>'s wind to <direction | n degrees | calm>` (ADR-375 D4). */
+  | { kind: 'expanse-wind'; expanse: IRValue; wind: IRWind; stmtWhen?: IRCondition | null; span: Span }
+  /** `set the <vehicle>'s sails to <setting>` (ADR-375 D7). */
+  | { kind: 'vehicle-sails'; vehicle: IRValue; setting: string; stmtWhen?: IRCondition | null; span: Span }
   | { kind: 'win'; phraseKey: string | null; stmtWhen?: IRCondition | null; span: Span }
   | { kind: 'lose'; phraseKey: string | null; stmtWhen?: IRCondition | null; span: Span }
   | { kind: 'kill'; phraseKey: string | null; stmtWhen?: IRCondition | null; span: Span }
@@ -1627,14 +1997,17 @@ export type IRValue =
   /** A numeric counter read (ADR-264 D3) — `owner` is the entity IRValue for a
    *  per-entity counter, or null for a story-global one. */
   | { kind: 'counter'; name: string; owner: IRValue | null }
-  /** A timer's current named state (ADR-325 D3d) — `timer` is the `qualified` key. Reads
+  /** A timer's current named state (ADR-325 D3d), of `owner` (null: the story's), as a
+   *  counter names its owner: `the player's` is the role's holder at run time. Reads
    *  as the state word while running/stopped, `expired` after, nothing before start. */
-  | { kind: 'timer'; timer: string }
+  | { kind: 'timer'; name: string; owner: IRValue | null }
   /** A grammar-slot / role context value inside an action or role clause (`the animal`, `the taker`). */
   | { kind: 'slot'; name: string }
   /** The `each`-block binder `the match` (ratchet E3) — parallel to `it`. */
   | { kind: 'match' }
-  | { kind: 'symbol'; name: string };
+  | { kind: 'symbol'; name: string }
+  /** The analyzer's error result: a name that did not resolve, already reported. An IR carrying it never loads. */
+  | { kind: 'unresolved' };
 
 export type IRCondition =
   | { kind: 'and'; operands: IRCondition[] }
@@ -1644,7 +2017,7 @@ export type IRCondition =
   | { kind: 'not'; operand: IRCondition }
   | { kind: 'chance'; n: number }
   /** `<timer> has started` / `has expired` (ADR-325 D3d). */
-  | { kind: 'timer-has'; timer: string; what: 'started' | 'expired' }
+  | { kind: 'timer-has'; name: string; owner: IRValue | null; what: 'started' | 'expired' }
   | { kind: 'condition'; name: string }
   /** The story is in the named phase (`while after-hours`, ratchet D2). */
   | { kind: 'story-state'; state: string }
@@ -1722,4 +2095,20 @@ export type IRCondition =
    * thread's conclusion beat has fired between the evaluation context's
    * owner and the conversation partner. Negation wraps in `not`.
    */
-  | { kind: 'concluded'; thread: string };
+  | { kind: 'concluded'; thread: string }
+  /** `<vehicle> is under way` (ADR-366 D5e): the vehicle's machine is moving it. Negation wraps in `not`. */
+  | { kind: 'vehicle-under-way'; vehicle: IRValue }
+  /** `<vehicle> is at <place>` (ADR-366 D5): the vehicle's location is the named stop, room or destination. */
+  | { kind: 'vehicle-at'; vehicle: IRValue; place: IRValue }
+  /** `<vehicle> is heading <direction>` (ADR-366 D5c): a compass or open vehicle's heading; `bearing` under `use sailing` (ADR-375 D2). */
+  | { kind: 'vehicle-heading'; vehicle: IRValue; direction?: string; bearing?: number }
+  /** `<vehicle> is in irons` (ADR-375 D5): a sailing vehicle lying still in a `stopped` band. */
+  | { kind: 'in-irons'; vehicle: IRValue }
+  /** `<vehicle>'s sails are <setting>` (ADR-375 D7). */
+  | { kind: 'vehicle-sails'; vehicle: IRValue; setting: string }
+  /** `<thing> is in sight` (ADR-376 D7): within the looker's sight in its expanse. Negation wraps in `not`. */
+  | { kind: 'in-sight'; thing: IRValue }
+  /** `<thing> is close by | in the distance | on the horizon` (ADR-376 D6, D7): the band it is seen in. */
+  | { kind: 'sight-band'; thing: IRValue; band: 'close-by' | 'in-the-distance' | 'on-the-horizon' }
+  /** `<vehicle> is within <n> of <landmark | x, y>` (ADR-376 D7): an open vehicle's distance from a point. */
+  | { kind: 'vehicle-within'; vehicle: IRValue; distance: number; of: IRValue | IRCoordinates };

@@ -22,14 +22,21 @@ export * from './ast.js';
 export * from './ir.js';
 export { CHORD_LANGUAGE_VERSION } from './version.js';
 export { analyze, normalizeTopic } from './analyzer.js';
+// The compass words' bearings: Chord's side of a table world-model also
+// keeps (Chord depends on nothing), pinned equal by a story-loader test.
+export { COMPASS_BEARINGS } from './analyzer/sailing.js';
 export { KIND_NOUNS, TRAIT_ADJECTIVES, STATE_ADJECTIVES, PLATFORM_STATE_PAIRS, STARTS_STATE_PAIRINGS, EVENT_VERBS, CLIENT_CAPABILITY_FLAGS, capabilityKeyOf, PRONOUN_WORDS, PRONOUN_CASES, MESSAGE_OVERRIDE_ALIASES, SCOPE_REQUIREMENT_PREDICATES } from './catalog.js';
 export type { ScopeRequirementWord } from './catalog.js';
 export { STDLIB_MANIFEST } from './stdlib-manifest.js';
-export type { StdlibManifest, StdlibLocaleFacts } from './stdlib-manifest.js';
+export type { StdlibManifest, StdlibLocaleFacts, ActSlotType } from './stdlib-manifest.js';
+export { actionRoles, seatActBindings } from './act-seats.js';
+export type { ActionRoles, RoleSource, ActSeating, ActSeatResult } from './act-seats.js';
 export { conditionRequiresSelfBreaking } from './condition-discharge.js';
+export { lowerParts, lowerActionRules, seatTable, renderPattern, expandReadings, expandCommands, commandParts, samePatternShape } from './patterns.js';
+export type { LoweredRule, LowerableAction, SeatTable, SeatProblem } from './patterns.js';
 export { CHARACTER_MANIFEST } from './character-manifest.js';
 export type { CharacterManifest } from './character-manifest.js';
-export { EXTENSION_MANIFESTS, CHAPTERS_MANIFEST, COMBAT_MANIFEST, NPC_MANIFEST, manifestForAdjective } from './manifests/index.js';
+export { EXTENSION_MANIFESTS, CHAPTERS_MANIFEST, COMBAT_MANIFEST, EXPANSES_MANIFEST, NPC_MANIFEST, manifestForAdjective, manifestForKindNoun, manifestForMovementType } from './manifests/index.js';
 export type { ExtensionManifest, ManifestAdjective, ManifestField } from './manifests/index.js';
 export { PHRASEBOOK_REGISTRY } from './phrasebooks.js';
 export type { PhrasebookManifest } from './phrasebooks.js';
@@ -115,8 +122,8 @@ function rejectClaims(ast: StoryFile, bag: DiagnosticBag): void {
   ast.declarations = ast.declarations.filter((d) => d.kind !== 'claims');
 }
 
-export { compileClaims } from './claims.js';
-export type { ClaimsCompileResult, CompileClaimsOptions, IRClaim, IRClaimNeeds, IRClaimSet } from './claims.js';
+export { compileClaims, renderClaimBlock, spliceClaimIntoFragment, claimsFragmentWith } from './claims.js';
+export type { ClaimBlockSource, ClaimsCompileResult, CompileClaimsOptions, IRClaim, IRClaimNeeds, IRClaimSet } from './claims.js';
 export { claimCone } from './claims-cone.js';
 export type { ClaimConeKept, ClaimConeResult, ClaimConeSet } from './claims-cone.js';
 

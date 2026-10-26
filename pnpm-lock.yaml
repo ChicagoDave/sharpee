@@ -111,6 +111,9 @@ importers:
       '@sharpee/engine':
         specifier: workspace:*
         version: link:../engine
+      '@sharpee/ide-protocol':
+        specifier: workspace:*
+        version: link:../ide-protocol
       '@sharpee/lang-en-us':
         specifier: workspace:*
         version: link:../lang-en-us
@@ -139,9 +142,6 @@ importers:
         specifier: ^10.3.10
         version: 10.5.0
     devDependencies:
-      '@sharpee/ide-protocol':
-        specifier: workspace:*
-        version: link:../ide-protocol
       '@types/node':
         specifier: ^20.11.19
         version: 20.19.27
@@ -285,6 +285,10 @@ importers:
         version: 3.2.4(@types/debug@4.1.12)(@types/node@20.19.27)(@vitest/ui@3.2.4)(happy-dom@15.11.7)(lightningcss@1.30.2)(terser@5.44.1)
 
   packages/chord:
+    dependencies:
+      '@sharpee/if-domain':
+        specifier: workspace:*
+        version: link:../if-domain
     devDependencies:
       '@types/node':
         specifier: ^20.11.19

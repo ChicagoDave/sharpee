@@ -2,10 +2,12 @@
  * Shared tool-requirement resolution for tool-gated actions (ADR-230 D3).
  *
  * Mirrors validateKeyRequirements (lock-shared.ts) for the author-configured
- * tool pattern: a trait declares which tool works (toolId/toolIds), the
- * action's validate() calls this helper, and an entity with no tool
- * requirement ignores an offered tool exactly as a keyless lockable ignores
- * keyless LOCK. Used by opening (D3b), cutting (D3c) and digging.
+ * tool pattern: a tool-gated trait holds a `ToolRequirement` (world-model's
+ * one shape), the action's validate() hands it to this helper, and an entity
+ * with no requirement ignores an offered tool exactly as a keyless lockable
+ * ignores keyless LOCK. Used by opening (D3b), cutting (D3c), digging,
+ * burning and lighting; a new tool-gated verb passes its trait's
+ * requirement and adds nothing here.
  *
  * GH #241 (publish-readiness P-28): a tool the player did not name is
  * implied when exactly one declared tool is in the player's hands, so
@@ -17,9 +19,8 @@
  * Owner context: stdlib standard actions.
  */
 
-import { type EntityId } from '@sharpee/core';
 import { ActionContext, ValidationResult } from '../enhanced-types.js';
-import { IFEntity } from '@sharpee/world-model';
+import { IFEntity, accepts, type ToolRequirement } from '@sharpee/world-model';
 import { nounPhraseFor } from '../../utils/index.js';
 
 /**
@@ -50,25 +51,20 @@ export interface ToolResolution {
  * @param context action context (for actor/world lookups)
  * @param target the tool-gated entity
  * @param tool the command's explicit tool entity, if any
- * @param requiresTool whether the target declares a tool requirement
- *   (e.g. OpenableBehavior.requiresTool(target))
- * @param canUseWith trait-specific predicate for "this tool works"
- *   (e.g. (id) => OpenableBehavior.canOpenWith(target, id))
- * @param requiredTools the target's declared tool ids
- *   (e.g. OpenableBehavior.requiredTools(target))
+ * @param requirement the target trait's tool requirement
+ *   (e.g. target.get(OpenableTrait)?.toolRequirement); absent, no tool is needed
  * @returns the resolution — `failure` set when validation fails
  */
 export function resolveToolRequirements(
   context: ActionContext,
   target: IFEntity,
   tool: IFEntity | undefined,
-  requiresTool: boolean,
-  canUseWith: (toolId: EntityId) => boolean,
-  requiredTools: EntityId[]
+  requirement: ToolRequirement | undefined
 ): ToolResolution {
-  if (!requiresTool) {
+  if (!requirement) {
     return { tool }; // No tool required — an offered tool is ignored, not an error
   }
+  const requiredTools = requirement.tools;
 
   const actor = context.actor;
   const held = (candidate: IFEntity): boolean => context.world.getLocation(candidate.id) === actor.id;
@@ -77,7 +73,7 @@ export function resolveToolRequirements(
   if (!tool) {
     const inHand = requiredTools
       .map(id => context.world.getEntity(id))
-      .filter((e): e is IFEntity => !!e && held(e) && canUseWith(e.id));
+      .filter((e): e is IFEntity => !!e && held(e));
     if (inHand.length === 1) {
       return { tool: inHand[0], implicit: true };
     }
@@ -112,7 +108,7 @@ export function resolveToolRequirements(
   }
 
   // Check if it's the right tool
-  if (!canUseWith(tool.id)) {
+  if (!accepts(requirement, tool.id)) {
     return {
       failure: {
         valid: false,

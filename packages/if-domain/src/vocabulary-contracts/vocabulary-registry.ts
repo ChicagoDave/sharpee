@@ -1,11 +1,15 @@
 /**
- * Vocabulary Registry - Central management of all vocabulary in the system
- * 
- * The registry aggregates vocabulary from multiple sources:
+ * Vocabulary Registry - the words one parser's typed input may carry
+ *
+ * One registry per parser instance (ADR-387 D4): the parser constructs its
+ * own and registers the language's words and the story's verbs into it. There
+ * is no shared instance. Entity names are not vocabulary: the noun matcher
+ * resolves them over the world (ADR-385).
+ *
+ * Sources:
  * - Base vocabulary from language packages
  * - Extension vocabulary
  * - Story-specific vocabulary
- * - Dynamic entity vocabulary
  */
 
 import {
@@ -13,10 +17,10 @@ import {
   VocabularySet,
   VocabularyProvider,
   PartOfSpeech,
-  EntityVocabulary,
   VerbVocabulary,
   DirectionVocabulary,
-  SpecialVocabulary
+  SpecialVocabulary,
+  DeterminerVocabulary
 } from './vocabulary-types.js';
 
 /**
@@ -24,7 +28,6 @@ import {
  */
 export class VocabularyRegistry {
   private providers: Map<string, VocabularyProvider> = new Map();
-  private entityVocabulary: Map<string, EntityVocabulary> = new Map();
   private cachedVocabulary: VocabularySet | null = null;
   private dirtyCache = true;
 
@@ -42,33 +45,6 @@ export class VocabularyRegistry {
   unregisterProvider(providerId: string): void {
     this.providers.delete(providerId);
     this.dirtyCache = true;
-  }
-
-  /**
-   * Register vocabulary for an entity
-   */
-  registerEntity(vocab: EntityVocabulary): void {
-    this.entityVocabulary.set(vocab.entityId, vocab);
-    this.dirtyCache = true;
-  }
-
-  /**
-   * Unregister vocabulary for an entity
-   */
-  unregisterEntity(entityId: string): void {
-    this.entityVocabulary.delete(entityId);
-    this.dirtyCache = true;
-  }
-
-  /**
-   * Update entity scope status
-   */
-  updateEntityScope(entityId: string, inScope: boolean): void {
-    const vocab = this.entityVocabulary.get(entityId);
-    if (vocab) {
-      vocab.inScope = inScope;
-      // Don't need to rebuild cache for scope changes
-    }
   }
 
   /**
@@ -90,33 +66,6 @@ export class VocabularyRegistry {
     for (const provider of sortedProviders) {
       const providerEntries = provider.getVocabulary();
       entries.push(...providerEntries);
-    }
-
-    // Add entity vocabulary
-    for (const [entityId, vocab] of this.entityVocabulary) {
-      // Add nouns
-      for (const noun of vocab.nouns) {
-        entries.push({
-          word: noun.toLowerCase(),
-          partOfSpeech: PartOfSpeech.NOUN,
-          mapsTo: entityId,
-          source: 'entity',
-          priority: vocab.priority,
-          metadata: { inScope: vocab.inScope }
-        });
-      }
-
-      // Add adjectives
-      for (const adj of vocab.adjectives) {
-        entries.push({
-          word: adj.toLowerCase(),
-          partOfSpeech: PartOfSpeech.ADJECTIVE,
-          mapsTo: entityId,
-          source: 'entity',
-          priority: vocab.priority,
-          metadata: { inScope: vocab.inScope }
-        });
-      }
     }
 
     // Build lookup maps
@@ -182,19 +131,10 @@ export class VocabularyRegistry {
   }
 
   /**
-   * Get vocabulary for entities in scope
-   */
-  getInScopeEntities(): EntityVocabulary[] {
-    return Array.from(this.entityVocabulary.values())
-      .filter(v => v.inScope);
-  }
-
-  /**
    * Clear all vocabulary
    */
   clear(): void {
     this.providers.clear();
-    this.entityVocabulary.clear();
     this.cachedVocabulary = null;
     this.dirtyCache = true;
   }
@@ -320,14 +260,14 @@ export class VocabularyRegistry {
   /**
    * Register determiners (beyond articles)
    */
-  registerDeterminers(determiners: string[]): void {
+  registerDeterminers(determiners: readonly DeterminerVocabulary[]): void {
     const entries: VocabularyEntry[] = [];
 
     for (const det of determiners) {
       entries.push({
-        word: det.toLowerCase(),
+        word: det.word.toLowerCase(),
         partOfSpeech: PartOfSpeech.DETERMINER,
-        mapsTo: det.toUpperCase(),
+        mapsTo: det.word.toUpperCase(),
         source: 'base'
       });
     }
@@ -436,6 +376,3 @@ export class VocabularyRegistry {
     });
   }
 }
-
-// Global vocabulary registry instance
-export const vocabularyRegistry = new VocabularyRegistry();

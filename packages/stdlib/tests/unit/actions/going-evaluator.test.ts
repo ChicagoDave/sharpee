@@ -54,6 +54,20 @@ describe('ADR-240: going consults the evaluator registry first', () => {
     expect(goNorth(world).validation.valid).toBe(true);
   });
 
+  test('a block with no phrase of its own refuses with lang\'s stock line, not an English fallback', () => {
+    const { world, room, player } = setupBasicWorld();
+    const room2 = world.createEntity('North Field', 'object');
+    room2.add({ type: TraitType.ROOM });
+    room.getTrait(RoomTrait)!.exits = { [Direction.NORTH]: { destination: room2.id } };
+    world.registerEvaluator(exitBlockedKey(room.id, Direction.NORTH), () => true);
+
+    const result = goNorth(world);
+    expect(result.validation.valid).toBe(false);
+    expect(result.validation.error).toBe('cant_go');
+    expect(result.validation.params).toEqual({ direction: Direction.NORTH });
+    expect(world.getLocation(player.id)).toBe(room.id);
+  });
+
   test('unregistered rooms fall through to the trait map unchanged', () => {
     const { world, room } = setupBasicWorld();
     const room2 = world.createEntity('North Field', 'object');

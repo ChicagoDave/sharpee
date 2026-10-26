@@ -216,8 +216,8 @@ create the crowbar
     const crowbarWorldId = story.entityId('crowbar')!;
     const openable = crate.get(TraitType.OPENABLE) as OpenableTrait;
     expect(openable).toBeDefined();
-    expect(openable.toolId).toBe(crowbarWorldId);
-    expect(openable.toolId).not.toBe('crowbar');
+    expect(openable.toolRequirement?.tools).toEqual([crowbarWorldId]);
+    expect(openable.toolRequirement?.tools).not.toContain('crowbar');
   });
 
   it('rejects a tool name that matches no entity', () => {
