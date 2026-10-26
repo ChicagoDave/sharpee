@@ -10,11 +10,10 @@
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import { WorldModel, IFEntity, RoomTrait, ActorTrait, ContainerTrait, IdentityTrait } from '@sharpee/world-model';
-import { vocabularyRegistry, type GrammarContext } from '@sharpee/if-domain';
+import { type GrammarContext } from '@sharpee/if-domain';
 import { EnglishLanguageProvider } from '@sharpee/lang-en-us';
 import { EnglishParser } from '../src/english-parser';
 import { GrammarScopeResolver } from '../src/grammar-scope-resolver';
-import { getPronounContextManager } from '../src/pronoun-context';
 
 /** English, handed to hand-built worlds as the language's words (ADR-387 D2). */
 const ENGLISH_WORDS = { selfWords: ['me', 'myself', 'self', 'yourself'], nameStopwords: ['the', 'a', 'an', 'of'] };
@@ -38,7 +37,6 @@ describe('the gate asks the matcher (ADR-385 D3, D4, D6)', () => {
   };
 
   beforeEach(() => {
-    vocabularyRegistry.clear();
     world = new WorldModel();
     world.setLanguageWords(ENGLISH_WORDS);
     room = world.createEntity('Workshop', 'room');
@@ -68,7 +66,7 @@ describe('the gate asks the matcher (ADR-385 D3, D4, D6)', () => {
     parser.getStoryGrammar().define('wind :target').where('target', (s) => s.carried()).mapsTo('story.winding').build();
   });
 
-  const remember = (entity: IFEntity) => getPronounContextManager()!.registerEntity(entity.id, entity.name, world, 1);
+  const remember = (entity: IFEntity) => parser.getPronounContextManager().registerEntity(entity.id, entity.name, world, 1);
 
   it('rejects a substring: `wind ice` with the dice held does not match the held-only rule', () => {
     expect(parser.parse('wind ice').success).toBe(false);

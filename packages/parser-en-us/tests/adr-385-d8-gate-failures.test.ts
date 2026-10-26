@@ -10,10 +10,8 @@
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import { WorldModel, IFEntity, RoomTrait, ActorTrait, ContainerTrait, OpenableTrait, IdentityTrait } from '@sharpee/world-model';
-import { vocabularyRegistry } from '@sharpee/if-domain';
 import { EnglishLanguageProvider } from '@sharpee/lang-en-us';
 import { EnglishParser } from '../src/english-parser';
-import { getPronounContextManager } from '../src/pronoun-context';
 
 /** English, handed to hand-built worlds as the language's words (ADR-387 D2). */
 const ENGLISH_WORDS = { selfWords: ['me', 'myself', 'self', 'yourself'], nameStopwords: ['the', 'a', 'an', 'of'] };
@@ -33,7 +31,6 @@ describe('a gate failure names the phrase and the reason (ADR-385 D8)', () => {
   };
 
   beforeEach(() => {
-    vocabularyRegistry.clear();
     world = new WorldModel();
     world.setLanguageWords(ENGLISH_WORDS);
     room = world.createEntity('Workshop', 'room');
@@ -100,7 +97,7 @@ describe('a gate failure names the phrase and the reason (ADR-385 D8)', () => {
   });
 
   it('`wind it` with `it` the unheld lantern: a scope violation naming the lantern', () => {
-    getPronounContextManager()!.registerEntity(lantern.id, 'brass lantern', world);
+    parser.getPronounContextManager().registerEntity(lantern.id, 'brass lantern', world);
     const error = failure('wind it');
     expect(error.code).toBe('SCOPE_VIOLATION');
     expect(error.entityId).toBe(lantern.id);

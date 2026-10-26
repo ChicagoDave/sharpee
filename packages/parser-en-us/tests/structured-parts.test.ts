@@ -14,7 +14,7 @@ import { EnglishPatternCompiler } from '../src/english-pattern-compiler';
 import { EnglishGrammarEngine } from '../src/english-grammar-engine';
 import { analyzeBestFailure } from '../src/parse-failure';
 import { EnglishLanguageProvider } from '@sharpee/lang-en-us';
-import { vocabularyRegistry, PatternSyntaxError, SlotType, type Token, type GrammarContext } from '@sharpee/if-domain';
+import { PatternSyntaxError, SlotType, type Token, type GrammarContext } from '@sharpee/if-domain';
 import { WorldModel } from '@sharpee/world-model';
 
 /** English, handed to hand-built worlds as the language's words (ADR-387 D2). */
@@ -248,7 +248,6 @@ describe('an optional slot is seated and constrained (B1)', () => {
   let parser: EnglishParser;
 
   beforeEach(() => {
-    vocabularyRegistry.clear();
     parser = new EnglishParser(new EnglishLanguageProvider());
     parser.setWorldContext(new Room(), 'player', 'room');
     parser.getStoryGrammar().rule({

@@ -13,11 +13,11 @@
  */
 import { describe, it, expect, beforeEach } from 'vitest';
 import { WorldModel, IFEntity, RoomTrait, ActorTrait, ContainerTrait, IdentityTrait } from '@sharpee/world-model';
-import { PartOfSpeech, vocabularyRegistry, type GrammarContext, type Token } from '@sharpee/if-domain';
+import { PartOfSpeech, type GrammarContext, type Token } from '@sharpee/if-domain';
 import { EnglishLanguageProvider } from '@sharpee/lang-en-us';
 import { EnglishGrammarEngine } from '../src/english-grammar-engine';
 import { EnglishParser } from '../src/english-parser';
-import { PronounContextManager, setPronounContextManager } from '../src/pronoun-context';
+import { PronounContextManager } from '../src/pronoun-context';
 import { failureOutranking, type PartialMatchFailure } from '../src/parse-failure';
 
 /** English, handed to hand-built worlds as the language's words (ADR-387 D2). */
@@ -53,7 +53,6 @@ describe('ADR-386 D4: readings are ranked by their nouns', () => {
     }));
 
   beforeEach(() => {
-    vocabularyRegistry.clear();
     world = new WorldModel();
     world.setLanguageWords(ENGLISH_WORDS);
     room = world.createEntity('Workshop', 'room');
@@ -99,8 +98,9 @@ describe('ADR-386 D4: readings are ranked by their nouns', () => {
 
   it('a pronoun with a referent and an all phrase are each one exact name', () => {
     const lamp = thing('lamp');
+    // The engine's own pronoun context (ADR-387 D4): built with it, no module global
     const manager = new PronounContextManager();
-    setPronounContextManager(manager);
+    engine = new EnglishGrammarEngine(new EnglishLanguageProvider(), undefined, manager);
     manager.registerEntity(lamp.id, 'lamp', world);
     engine.createBuilder().define('take :item').mapsTo('if.action.taking').build();
     expect(spans('take it')[0].rank).toEqual({ unnamed: 0, named: 1, exact: 1 });
@@ -193,8 +193,7 @@ describe('ADR-386 D5: a failure outranks a reading only when it names more', () 
     let parser: EnglishParser;
 
     beforeEach(() => {
-      vocabularyRegistry.clear();
-      world = new WorldModel();
+        world = new WorldModel();
       world.setLanguageWords(ENGLISH_WORDS);
       const room = world.createEntity('Workshop', 'room');
       room.add(new RoomTrait());

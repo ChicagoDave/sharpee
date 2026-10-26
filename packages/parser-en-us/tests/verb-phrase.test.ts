@@ -9,13 +9,11 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { EnglishParser } from '../src/english-parser';
 import { EnglishLanguageProvider } from '@sharpee/lang-en-us';
-import { vocabularyRegistry } from '@sharpee/if-domain';
 
 describe('the verb phrase and preposition are the rule`s matched literals', () => {
   let parser: EnglishParser;
 
   beforeEach(() => {
-    vocabularyRegistry.clear();
     parser = new EnglishParser(new EnglishLanguageProvider());
   });
 
@@ -26,13 +24,13 @@ describe('the verb phrase and preposition are the rule`s matched literals', () =
   }
 
   it('`examine light` has the verb `examine`, though `light` is also a verb', () => {
-    expect(vocabularyRegistry.hasWord('light', 'verb' as never)).toBe(true);
+    expect(parser.getVocabularyRegistry().hasWord('light', 'verb' as never)).toBe(true);
     expect(structureOf('examine light').verb).toEqual({ tokens: [0], text: 'examine', head: 'examine' });
   });
 
   it('a story verb the vocabulary does not tag keeps its own word', () => {
     parser.getStoryGrammar().define('frob :target').mapsTo('story.frobbing').build();
-    expect(vocabularyRegistry.hasWord('frob', 'verb' as never)).toBe(false);
+    expect(parser.getVocabularyRegistry().hasWord('frob', 'verb' as never)).toBe(false);
     expect(structureOf('frob lamp').verb).toEqual({ tokens: [0], text: 'frob', head: 'frob' });
   });
 
@@ -67,7 +65,6 @@ describe('a failure asks for the object its missing seats name', () => {
   let parser: EnglishParser;
 
   beforeEach(() => {
-    vocabularyRegistry.clear();
     parser = new EnglishParser(new EnglishLanguageProvider());
   });
 

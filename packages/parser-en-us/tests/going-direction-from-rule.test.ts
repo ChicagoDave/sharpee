@@ -13,7 +13,6 @@ import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { EnglishParser } from '../src/english-parser';
 import { EnglishPatternCompiler } from '../src/english-pattern-compiler';
 import { EnglishLanguageProvider } from '@sharpee/lang-en-us';
-import { vocabularyRegistry } from '@sharpee/if-domain';
 import { Direction } from '@sharpee/world-model';
 
 /** A room with nothing in it: going commands name no entity. */
@@ -56,7 +55,6 @@ describe('a going command carries the matched rule\'s direction', () => {
   let parser: EnglishParser;
 
   beforeEach(() => {
-    vocabularyRegistry.clear();
     parser = new EnglishParser(new EnglishLanguageProvider());
     parser.setWorldContext(new EmptyWorld(), 'player', 'room');
   });
@@ -106,7 +104,6 @@ describe('a match that fails to convert prints nothing', () => {
   });
 
   it('parsing `throw` input writes nothing to the console', () => {
-    vocabularyRegistry.clear();
     const parser = new EnglishParser(new EnglishLanguageProvider());
     parser.setWorldContext(new EmptyWorld(), 'player', 'room');
     parser.parse('throw');

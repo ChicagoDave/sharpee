@@ -28,7 +28,6 @@ export { ReadingNamer } from './reading-names.js';
 export type { EntityReference, PronounContext, RecognizedPronoun } from './pronoun-context.js';
 export {
   PronounContextManager,
-  getPronounContextManager,
   isRecognizedPronoun,
   RECOGNIZED_PRONOUNS,
   INANIMATE_IT,

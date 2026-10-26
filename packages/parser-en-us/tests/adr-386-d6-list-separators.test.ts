@@ -10,7 +10,6 @@
  */
 import { describe, it, expect, beforeEach } from 'vitest';
 import { WorldModel, IFEntity, RoomTrait, ActorTrait, ContainerTrait, IdentityTrait } from '@sharpee/world-model';
-import { vocabularyRegistry } from '@sharpee/if-domain';
 import { EnglishLanguageProvider } from '@sharpee/lang-en-us';
 import { EnglishParser } from '../src/english-parser';
 
@@ -30,7 +29,6 @@ describe('ADR-386 D6: list separators', () => {
   };
 
   beforeEach(() => {
-    vocabularyRegistry.clear();
     world = new WorldModel();
     world.setLanguageWords(ENGLISH_WORDS);
     room = world.createEntity('Workshop', 'room');

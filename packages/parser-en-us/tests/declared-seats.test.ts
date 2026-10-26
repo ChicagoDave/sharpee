@@ -15,7 +15,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { EnglishParser } from '../src/english-parser';
 import { EnglishGrammarEngine } from '../src/english-grammar-engine';
 import { EnglishLanguageProvider } from '@sharpee/lang-en-us';
-import { vocabularyRegistry, SlotType, type GrammarRule } from '@sharpee/if-domain';
+import { SlotType, type GrammarRule } from '@sharpee/if-domain';
 
 /** Each slot's seat on a registered rule, by name; `-` for a slot with none. */
 function seats(rule: GrammarRule): Record<string, string> {
@@ -247,7 +247,6 @@ describe('the standard grammar, seated through the real parser', () => {
   let rules: GrammarRule[];
 
   beforeEach(() => {
-    vocabularyRegistry.clear();
     const parser = new EnglishParser(new EnglishLanguageProvider());
     rules = parser.getStoryGrammar().getRules();
   });
@@ -285,7 +284,6 @@ describe('the parser seats each noun by its slot`s seat (ADR-383 D5)', () => {
   let parser: EnglishParser;
 
   beforeEach(() => {
-    vocabularyRegistry.clear();
     parser = new EnglishParser(new EnglishLanguageProvider());
   });
 

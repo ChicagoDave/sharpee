@@ -9,14 +9,12 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { EnglishParser } from '../src/english-parser';
 import { EnglishLanguageProvider } from '@sharpee/lang-en-us';
-import { vocabularyRegistry } from '@sharpee/if-domain';
 
 describe('ADR-231 D3: noun-phrase article population', () => {
   let parser: EnglishParser;
   let language: EnglishLanguageProvider;
 
   beforeEach(() => {
-    vocabularyRegistry.clear();
     language = new EnglishLanguageProvider();
     parser = new EnglishParser(language);
   });

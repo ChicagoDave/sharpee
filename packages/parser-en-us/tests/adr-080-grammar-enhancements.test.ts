@@ -8,7 +8,7 @@ import { EnglishPatternCompiler } from '../src/english-pattern-compiler';
 import { EnglishGrammarEngine } from '../src/english-grammar-engine';
 import { EnglishParser } from '../src/english-parser';
 import { EnglishLanguageProvider } from '@sharpee/lang-en-us';
-import { SlotType, GrammarContext, vocabularyRegistry } from '@sharpee/if-domain';
+import { SlotType, GrammarContext } from '@sharpee/if-domain';
 import { PartOfSpeech } from '@sharpee/if-domain';
 
 describe('ADR-080: Grammar Enhancements', () => {
@@ -510,7 +510,6 @@ describe('ADR-080: Grammar Enhancements', () => {
     let parser: EnglishParser;
 
     beforeEach(() => {
-      vocabularyRegistry.clear();
       const provider = new EnglishLanguageProvider();
       parser = new EnglishParser(provider);
     });

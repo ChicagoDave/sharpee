@@ -10595,10 +10595,10 @@ export declare class ScopeRegistry {
  * @description Evaluates scope rules to determine which entities are "in scope"
  * for a given actor at a given location.
  *
- * Pipeline role: PRE-PARSE — called via WorldModel.evaluateScope() →
- * VocabularyManager.updateScopeVocabulary() to populate the parser's entity
- * vocabulary before each turn. Stories can add/remove rules via
- * world.addScopeRule() / world.removeScopeRule().
+ * Pipeline role: answers WorldModel.evaluateScope() — which entities an actor
+ * may refer to. Entity names are not parser vocabulary (ADR-385, ADR-387 D4):
+ * the noun matcher resolves them over the world. Stories can add/remove rules
+ * via world.addScopeRule() / world.removeScopeRule().
  *
  * NOT the same as the parser's GrammarScopeResolver (grammar constraint
  * evaluation) or the stdlib's StandardScopeResolver (validation-phase entity

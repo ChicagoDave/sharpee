@@ -34,9 +34,6 @@ function updateContext(engine: TurnEngine, result: TurnResult): void {
   // Update last played
   context.metadata.lastPlayed = new Date();
 
-  // Update vocabulary for new scope
-  engine.updateScopeVocabulary();
-
   engine.emit('state:changed', context);
 }
 

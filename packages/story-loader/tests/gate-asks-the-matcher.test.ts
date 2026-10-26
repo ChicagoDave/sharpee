@@ -8,7 +8,7 @@
  * takes both. Assertions are on where things end up and on the rendered text.
  */
 import { describe, expect, it } from 'vitest';
-import { getPronounContextManager } from '@sharpee/parser-en-us';
+import type { EnglishParser } from '@sharpee/parser-en-us';
 import { bootTurns } from './helpers/boot-turns';
 
 const STORY = `story
@@ -102,7 +102,7 @@ describe('the gate asks the matcher and its answer travels (ADR-385 D3, D4, D6)'
     const game = await bootTurns(STORY);
     const spool = game.id('spool');
     expect(game.world.getLocation(spool)).toBeUndefined();
-    getPronounContextManager()!.registerEntity(spool, 'spool', game.world);
+    (game.engine.getParser() as EnglishParser).getPronounContextManager().registerEntity(spool, 'spool', game.world);
     const { text } = await game.turnText('wind it');
     expect(text).not.toContain('You wind');
   });

@@ -39,7 +39,6 @@ export { CommandExecutor, createCommandExecutor } from './command/command-execut
 export { EngineRandomService } from './session/engine-random-service.js';
 export { SaveRestoreService, SAVE_FORMAT_VERSION } from './session/save-restore-service.js';
 export type { ISaveRestoreStateProvider } from './session/save-restore-service.js';
-export { VocabularyManager } from './ports/vocabulary-manager.js';
 
 // Plugins
 export { ActorTurnPlugin, ACTOR_TURN_PLUGIN_ID } from './plugins/actor-turn-plugin.js';

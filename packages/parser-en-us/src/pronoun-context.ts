@@ -98,28 +98,9 @@ export const INANIMATE_THEM: PronounSet = {
 };
 
 /**
- * Module-level pronoun context manager instance
- * Set by the parser, used by slot consumers
- */
-let _pronounContextManager: PronounContextManager | null = null;
-
-/**
- * Set the global pronoun context manager (called by parser)
- */
-export function setPronounContextManager(manager: PronounContextManager | null): void {
-  _pronounContextManager = manager;
-}
-
-/**
- * Get the global pronoun context manager (used by slot consumers)
- */
-export function getPronounContextManager(): PronounContextManager | null {
-  return _pronounContextManager;
-}
-
-/**
- * Manager for pronoun context
- * Handles updating and resolving pronoun references
+ * Manager for pronoun context: one per parser instance (ADR-387 D4), owned by
+ * `EnglishParser` and handed to the slot consumers through their context.
+ * Handles updating and resolving pronoun references.
  */
 export class PronounContextManager {
   private context: PronounContext;

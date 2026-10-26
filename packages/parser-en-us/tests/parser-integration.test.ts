@@ -6,7 +6,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { EnglishParser } from '../src/english-parser';
 import { EnglishLanguageProvider } from '@sharpee/lang-en-us';
-import { vocabularyRegistry } from '@sharpee/if-domain';
 import { Direction } from '@sharpee/world-model';
 
 describe('Parser Grammar Engine Integration', () => {
@@ -16,7 +15,6 @@ describe('Parser Grammar Engine Integration', () => {
   
   beforeEach(() => {
     // Clear vocabulary between tests
-    vocabularyRegistry.clear();
     
     language = new EnglishLanguageProvider();
     parser = new EnglishParser(language);
@@ -458,7 +456,6 @@ describe('Talking core patterns (ADR-229 R3)', () => {
   let parser: EnglishParser;
 
   beforeEach(() => {
-    vocabularyRegistry.clear();
     parser = new EnglishParser(new EnglishLanguageProvider());
   });
 

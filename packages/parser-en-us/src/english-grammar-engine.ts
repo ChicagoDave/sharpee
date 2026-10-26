@@ -33,6 +33,7 @@ import { EnglishPatternCompiler } from './english-pattern-compiler.js';
 import { SlotConsumerRegistry, SlotConsumerContext, createDefaultRegistry, directionTableOf, isSlotRefusal, phraseWordsOf, type PhraseWords, type SlotConsumeResult } from './slot-consumers/index.js';
 import type { PartialMatchFailure } from './parse-failure.js';
 import { ReadingNamer } from './reading-names.js';
+import { PronounContextManager } from './pronoun-context.js';
 
 /**
  * The most readings one rule may have of one input. Past it the readings
@@ -136,13 +137,18 @@ export class EnglishGrammarEngine extends GrammarEngine {
    */
   private readonly articles: ReadonlySet<string>;
 
+  /** The parser's pronoun context, handed to the consumers through their context (ADR-387 D4). */
+  private readonly pronouns: PronounContextManager;
+
   /**
    * @param language the provider whose words this engine reads
    * @param slotConsumerRegistry the consumers, or the default set
+   * @param pronouns the parser's pronoun context; an engine built alone owns a fresh one
    */
-  constructor(language: ParserLanguageProvider, slotConsumerRegistry?: SlotConsumerRegistry) {
+  constructor(language: ParserLanguageProvider, slotConsumerRegistry?: SlotConsumerRegistry, pronouns?: PronounContextManager) {
     super(new EnglishPatternCompiler(language));
     this.language = language;
+    this.pronouns = pronouns ?? new PronounContextManager();
     this.words = phraseWordsOf(language);
     this.articles = new Set(language.getSpecialVocabulary().articles.map((a) => a.toLowerCase()));
     // Use provided registry or create default with all consumers
@@ -484,6 +490,7 @@ export class EnglishGrammarEngine extends GrammarEngine {
         context,
         language: this.language,
         words: this.words,
+        pronouns: this.pronouns,
         slotType,
         slotConstraints,
         patternToken: patternSlotToken,

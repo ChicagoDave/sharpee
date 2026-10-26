@@ -12,7 +12,7 @@ import { EnglishGrammarEngine } from '../src/english-grammar-engine';
 import { EnglishParser } from '../src/english-parser';
 import { analyzeBestFailure, type PartialMatchFailure } from '../src/parse-failure';
 import { EnglishLanguageProvider } from '@sharpee/lang-en-us';
-import { vocabularyRegistry, Token } from '@sharpee/if-domain';
+import { Token } from '@sharpee/if-domain';
 
 const context = { world: null, actorId: 'player', currentLocation: 'room', slots: new Map() };
 
@@ -96,7 +96,6 @@ describe('ADR-384 D4 — failures tiebreak by the comparator', () => {
 
 describe('`give coin` against the standard grammar (AC5 pin)', () => {
   it('asks what to give, as before the change', () => {
-    vocabularyRegistry.clear();
     const parser = new EnglishParser(new EnglishLanguageProvider());
     parser.setWorldContext({ getEntity: () => undefined, getVisible: () => [], getReachable: () => [], getCarriedAndWorn: () => ({ carried: [], worn: [] }) } as any, 'player', 'room');
 

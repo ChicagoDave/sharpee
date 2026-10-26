@@ -20,7 +20,7 @@ import { requiresOrderViolations } from '../../src/turn/runner';
 import type { GameEngine } from '../../src/game-engine';
 import type { NarrativeSettings } from '../../src/install/narrative';
 import type { StoryConfig, CustomVocabulary } from '../../src/install/story';
-import { vocabularyRegistry } from '@sharpee/stdlib';
+import type { EnglishParser } from '@sharpee/parser-en-us';
 import type { ISemanticEvent } from '@sharpee/core';
 import { MinimalTestStory } from '../stories';
 import { setupTestEngine, setupTestEngineWithStory } from '../test-helpers/setup-test-engine';
@@ -169,11 +169,13 @@ describe('what the steps leave behind', () => {
         return { verbs: [{ actionId: 'test.action.grokking', verbs: ['grokify'] }] };
       }
     }
-    expect(vocabularyRegistry.hasWord('grokify', 'verb')).toBe(false);
+    // The parser's own registry (ADR-387 D4): a fresh parser knows no story verb
     const { engine } = setupTestEngine();
+    const vocabulary = (engine.getParser() as EnglishParser).getVocabularyRegistry();
+    expect(vocabulary.hasWord('grokify', 'verb')).toBe(false);
     engine.installStory(new VocabularyStory());
-    expect(vocabularyRegistry.hasWord('grokify', 'verb')).toBe(true);
-    expect(vocabularyRegistry.lookup('grokify', 'verb').map((e) => e.mapsTo)).toContain('test.action.grokking');
+    expect(vocabulary.hasWord('grokify', 'verb')).toBe(true);
+    expect(vocabulary.lookup('grokify', 'verb').map((e) => e.mapsTo)).toContain('test.action.grokking');
   });
 
   it('narrative-settings and implicit-actions are adopted from a non-default config', () => {

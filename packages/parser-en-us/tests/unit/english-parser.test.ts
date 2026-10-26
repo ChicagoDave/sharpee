@@ -3,7 +3,7 @@
  */
 
 import { EnglishParser } from '../../src/english-parser';
-import { ParserLanguageProvider, vocabularyRegistry, ParserFactory, PartOfSpeech } from '@sharpee/if-domain';
+import { ParserLanguageProvider, ParserFactory, PartOfSpeech } from '@sharpee/if-domain';
 import { ParsedCommand, CommandResult, ParseError, Direction } from '@sharpee/world-model';
 import { ISystemEvent } from '@sharpee/core';
 
@@ -225,7 +225,7 @@ describe('EnglishParser', () => {
     // Register test vocabulary for nouns
     // The parser doesn't automatically register common nouns from language provider
     // In a real system, these would come from entity vocabulary or story vocabulary
-    vocabularyRegistry.registerProvider({
+    parser.getVocabularyRegistry().registerProvider({
       id: 'test-nouns',
       getVocabulary: () => [
         { word: 'ball', partOfSpeech: PartOfSpeech.NOUN, mapsTo: 'ball', source: 'story' },
@@ -247,7 +247,6 @@ describe('EnglishParser', () => {
 
   afterEach(() => {
     // Clean up vocabulary registry
-    vocabularyRegistry.clear();
     // Clean up parser registry
     ParserFactory.clearRegistry();
   });

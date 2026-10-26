@@ -1228,31 +1228,6 @@ export interface SpecialVocabulary {
     articles: string[];
 }
 /**
- * Dynamic vocabulary entry from an entity
- */
-export interface EntityVocabulary {
-    /**
-     * Entity ID this vocabulary belongs to
-     */
-    entityId: string;
-    /**
-     * Nouns that refer to this entity
-     */
-    nouns: string[];
-    /**
-     * Adjectives that can describe this entity
-     */
-    adjectives: string[];
-    /**
-     * Whether this entity is in scope
-     */
-    inScope?: boolean;
-    /**
-     * Priority for disambiguation
-     */
-    priority?: number;
-}
-/**
  * Grammar pattern for verb syntax
  */
 export interface GrammarPattern {
@@ -1318,21 +1293,24 @@ export type GrammarPatternName = keyof typeof GrammarPatterns;
 
 ```typescript
 /**
- * Vocabulary Registry - Central management of all vocabulary in the system
+ * Vocabulary Registry - the words one parser's typed input may carry
  *
- * The registry aggregates vocabulary from multiple sources:
+ * One registry per parser instance (ADR-387 D4): the parser constructs its
+ * own and registers the language's words and the story's verbs into it. There
+ * is no shared instance. Entity names are not vocabulary: the noun matcher
+ * resolves them over the world (ADR-385).
+ *
+ * Sources:
  * - Base vocabulary from language packages
  * - Extension vocabulary
  * - Story-specific vocabulary
- * - Dynamic entity vocabulary
  */
-import { VocabularyEntry, VocabularySet, VocabularyProvider, PartOfSpeech, EntityVocabulary, VerbVocabulary, DirectionVocabulary, SpecialVocabulary, DeterminerVocabulary } from './vocabulary-types.js';
+import { VocabularyEntry, VocabularySet, VocabularyProvider, PartOfSpeech, VerbVocabulary, DirectionVocabulary, SpecialVocabulary, DeterminerVocabulary } from './vocabulary-types.js';
 /**
  * Central vocabulary registry
  */
 export declare class VocabularyRegistry {
     private providers;
-    private entityVocabulary;
     private cachedVocabulary;
     private dirtyCache;
     /**
@@ -1343,18 +1321,6 @@ export declare class VocabularyRegistry {
      * Unregister a vocabulary provider
      */
     unregisterProvider(providerId: string): void;
-    /**
-     * Register vocabulary for an entity
-     */
-    registerEntity(vocab: EntityVocabulary): void;
-    /**
-     * Unregister vocabulary for an entity
-     */
-    unregisterEntity(entityId: string): void;
-    /**
-     * Update entity scope status
-     */
-    updateEntityScope(entityId: string, inScope: boolean): void;
     /**
      * Get all vocabulary
      */
@@ -1371,10 +1337,6 @@ export declare class VocabularyRegistry {
      * Check if a word exists in vocabulary
      */
     hasWord(word: string, partOfSpeech?: PartOfSpeech): boolean;
-    /**
-     * Get vocabulary for entities in scope
-     */
-    getInScopeEntities(): EntityVocabulary[];
     /**
      * Clear all vocabulary
      */
@@ -1413,7 +1375,6 @@ export declare class VocabularyRegistry {
      */
     registerSpecial(special: SpecialVocabulary): void;
 }
-export declare const vocabularyRegistry: VocabularyRegistry;
 ```
 
 ### vocabulary-contracts/vocabulary-adapters

@@ -13,7 +13,7 @@ English parser, grammar patterns, story grammar extension API.
  * This parser handles English-specific grammar patterns and preserves all information
  * in rich structured commands.
  */
-import { type Parser, type ParserOptions, type Token as InternalToken, type InternalParseResult, type ParserLanguageProvider, type VerbVocabulary, type VocabularyEntry } from '@sharpee/if-domain';
+import { type Parser, type ParserOptions, type Token as InternalToken, type InternalParseResult, VocabularyRegistry, type ParserLanguageProvider, type VerbVocabulary, type VocabularyEntry } from '@sharpee/if-domain';
 import type { IParsedCommand, IValidatedCommand, IParseError as CoreParseError } from '@sharpee/world-model';
 import type { ISystemEvent, Result } from '@sharpee/core';
 import { type GrammarBuilder } from '@sharpee/if-domain';
@@ -29,13 +29,17 @@ export declare class EnglishParser implements Parser {
     private platformEventEmitter?;
     private grammarEngine;
     private worldContext;
-    /** Pronoun context manager for "it", "them", "him", "her" resolution (ADR-089) */
-    private pronounContext;
+    /** This parser's pronoun context for "it", "them", "him", "her" (ADR-089; one per parser, ADR-387 D4) */
+    private readonly pronounContext;
+    /** This parser's vocabulary: the language's words and the story's verbs (one per parser, ADR-387 D4) */
+    private readonly vocabulary;
     /** The language's direction table as a lookup: word or abbreviation → `Direction` constant (ADR-387 D5) */
     private readonly directions;
     constructor(language: ParserLanguageProvider, options?: ParserOptions);
     /**
-     * Initialize vocabulary from language provider
+     * Register the language's words into this parser's own vocabulary. A fresh
+     * parser is a fresh registry: nothing is cleared, and no other parser is
+     * touched (ADR-387 D4).
      */
     private initializeVocabulary;
     /**
@@ -223,6 +227,11 @@ export declare class EnglishParser implements Parser {
      * Get the pronoun context manager (for testing/debugging)
      */
     getPronounContextManager(): PronounContextManager;
+    /**
+     * This parser's vocabulary registry (for testing/debugging): the language's
+     * words and the story's verbs, no other parser's.
+     */
+    getVocabularyRegistry(): VocabularyRegistry;
 }
 export {};
 ```
@@ -534,16 +543,9 @@ export declare function isRecognizedPronoun(word: string): word is RecognizedPro
 export declare const INANIMATE_IT: PronounSet;
 export declare const INANIMATE_THEM: PronounSet;
 /**
- * Set the global pronoun context manager (called by parser)
- */
-export declare function setPronounContextManager(manager: PronounContextManager | null): void;
-/**
- * Get the global pronoun context manager (used by slot consumers)
- */
-export declare function getPronounContextManager(): PronounContextManager | null;
-/**
- * Manager for pronoun context
- * Handles updating and resolving pronoun references
+ * Manager for pronoun context: one per parser instance (ADR-387 D4), owned by
+ * `EnglishParser` and handed to the slot consumers through their context.
+ * Handles updating and resolving pronoun references.
  */
 export declare class PronounContextManager {
     private context;
@@ -612,7 +614,7 @@ export type { PartialMatchFailure, SlotFailure, MatchFailureReason } from './par
 export { analyzeBestFailure, bestFailure, failureOutranking } from './parse-failure.js';
 export { ReadingNamer } from './reading-names.js';
 export type { EntityReference, PronounContext, RecognizedPronoun } from './pronoun-context.js';
-export { PronounContextManager, getPronounContextManager, isRecognizedPronoun, RECOGNIZED_PRONOUNS, INANIMATE_IT, INANIMATE_THEM } from './pronoun-context.js';
+export { PronounContextManager, isRecognizedPronoun, RECOGNIZED_PRONOUNS, INANIMATE_IT, INANIMATE_THEM } from './pronoun-context.js';
 /**
  * Package metadata
  */

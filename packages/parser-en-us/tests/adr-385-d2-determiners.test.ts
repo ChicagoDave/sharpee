@@ -13,8 +13,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { EnglishParser } from '../src/english-parser';
 import { EnglishLanguageProvider } from '@sharpee/lang-en-us';
-import { vocabularyRegistry } from '@sharpee/if-domain';
-import { getPronounContextManager } from '../src/pronoun-context';
 
 /** A world of named things for the pronoun manager: actors carry a pronoun set, things take `it`. */
 const fakeWorld = {
@@ -26,13 +24,11 @@ const fakeWorld = {
     return { id, get: (type: string) => (type === 'identity' ? { grammaticalNumber: 'singular' } : undefined) };
   }
 };
-const remember = (entityId: string, text: string) => getPronounContextManager()!.registerEntity(entityId, text, fakeWorld, 1);
-
 describe('ADR-385 D2: the English parser splits articles and determiners once', () => {
   let parser: EnglishParser;
+  const remember = (entityId: string, text: string) => parser.getPronounContextManager().registerEntity(entityId, text, fakeWorld, 1);
 
   beforeEach(() => {
-    vocabularyRegistry.clear();
     parser = new EnglishParser(new EnglishLanguageProvider());
   });
 

@@ -11,7 +11,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { EnglishParser } from '../src/english-parser';
 import { EnglishGrammarEngine } from '../src/english-grammar-engine';
 import { EnglishLanguageProvider } from '@sharpee/lang-en-us';
-import { vocabularyRegistry, Token } from '@sharpee/if-domain';
+import { Token } from '@sharpee/if-domain';
 
 /** Minimal entity shape used by the mock world model in these tests */
 interface MockEntity {
@@ -83,7 +83,6 @@ describe('ADR-231 D2b — literal-before-slot specificity (full grammar)', () =>
   let parser: EnglishParser;
 
   beforeEach(() => {
-    vocabularyRegistry.clear();
     parser = new EnglishParser(new EnglishLanguageProvider());
     parser.setWorldContext(new MockWorldModel(), 'player', 'room');
   });

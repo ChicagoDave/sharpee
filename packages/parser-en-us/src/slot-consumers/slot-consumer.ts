@@ -28,6 +28,7 @@ import {
 } from '@sharpee/if-domain';
 import { type Token, type ParserLanguageProvider } from '@sharpee/if-domain';
 import type { SlotFailure } from '../parse-failure.js';
+import type { PronounContextManager } from '../pronoun-context.js';
 
 /**
  * A consumer's refusal with its reason (ADR-385 D8): what the slot found and
@@ -149,6 +150,8 @@ export interface SlotConsumerContext {
   language: ParserLanguageProvider;
   /** The language's list separators, actor's possessives and manner adverbs, derived for this parse (ADR-387 D6) */
   words: PhraseWords;
+  /** The parser's pronoun context: what `it`, `them`, `her` refer to now (ADR-387 D4) */
+  pronouns: PronounContextManager;
   /** The slot type being consumed */
   slotType: SlotType;
   /** Constraints for this slot */

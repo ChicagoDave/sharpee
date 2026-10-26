@@ -16,7 +16,7 @@ import {
   ParseErrorType,
   PartOfSpeech as VocabPartOfSpeech,
   GrammarPatterns,
-  vocabularyRegistry,
+  VocabularyRegistry,
   type ParserLanguageProvider,
   adaptVerbVocabulary,
   adaptDirectionVocabulary,
@@ -50,7 +50,7 @@ import { definePlatformGrammar } from './platform-grammar.js';
 import { scope, type GrammarBuilder, type NounRank } from '@sharpee/if-domain';
 import { directionTableOf, type DirectionTable } from './slot-consumers/index.js';
 import { analyzeBestFailure, failureOutranking } from './parse-failure.js';
-import { PronounContextManager, setPronounContextManager } from './pronoun-context.js';
+import { PronounContextManager } from './pronoun-context.js';
 
 // Type alias for clarity
 type CommandResult<T, E> = Result<T, E>;
@@ -132,8 +132,10 @@ export class EnglishParser implements Parser {
     actorId: string;
     currentLocation: string;
   } | null = null;
-  /** Pronoun context manager for "it", "them", "him", "her" resolution (ADR-089) */
-  private pronounContext: PronounContextManager;
+  /** This parser's pronoun context for "it", "them", "him", "her" (ADR-089; one per parser, ADR-387 D4) */
+  private readonly pronounContext: PronounContextManager;
+  /** This parser's vocabulary: the language's words and the story's verbs (one per parser, ADR-387 D4) */
+  private readonly vocabulary: VocabularyRegistry;
   /** The language's direction table as a lookup: word or abbreviation → `Direction` constant (ADR-387 D5) */
   private readonly directions: DirectionTable;
 
@@ -141,56 +143,53 @@ export class EnglishParser implements Parser {
     this.language = language;
     this.options = { ...DEFAULT_OPTIONS, ...options };
     this.directions = directionTableOf(language);
+    this.pronounContext = new PronounContextManager();
+    this.vocabulary = new VocabularyRegistry();
 
     // Initialize grammar engine. The standard grammar is generated from the
     // Chord source (grammar/standard-en-us.story, ADR-269 D7); the ruled
     // platform-side exception rules (`?`, `trace …`) register after it.
-    this.grammarEngine = new EnglishGrammarEngine(language);
+    this.grammarEngine = new EnglishGrammarEngine(language, undefined, this.pronounContext);
     const grammar = this.grammarEngine.createBuilder();
     defineGrammar(grammar);
     definePlatformGrammar(grammar);
-
-    // Initialize pronoun context (ADR-089)
-    this.pronounContext = new PronounContextManager();
-    setPronounContextManager(this.pronounContext);
 
     this.initializeVocabulary();
   }
 
   /**
-   * Initialize vocabulary from language provider
+   * Register the language's words into this parser's own vocabulary. A fresh
+   * parser is a fresh registry: nothing is cleared, and no other parser is
+   * touched (ADR-387 D4).
    */
   private initializeVocabulary(): void {
-    // Clear any existing vocabulary
-    vocabularyRegistry.clear();
-    
     // Register verbs (adapting from language provider format)
     const verbs = adaptVerbVocabulary(this.language);
-    vocabularyRegistry.registerVerbs(verbs);
+    this.vocabulary.registerVerbs(verbs);
     
     // Register directions (adapting from language provider format)
     const directions = adaptDirectionVocabulary(this.language);
-    vocabularyRegistry.registerDirections(directions);
+    this.vocabulary.registerDirections(directions);
     
     // Register special vocabulary (adapting from language provider format)
     const special = adaptSpecialVocabulary(this.language);
-    vocabularyRegistry.registerSpecial(special);
+    this.vocabulary.registerSpecial(special);
     
     // Register prepositions
     const prepositions = this.language.getPrepositions();
-    vocabularyRegistry.registerPrepositions(prepositions);
+    this.vocabulary.registerPrepositions(prepositions);
     
     // Register determiners
     const determiners = this.language.getDeterminers();
-    vocabularyRegistry.registerDeterminers(determiners);
+    this.vocabulary.registerDeterminers(determiners);
     
     // Register conjunctions
     const conjunctions = this.language.getConjunctions();
-    vocabularyRegistry.registerConjunctions(conjunctions);
+    this.vocabulary.registerConjunctions(conjunctions);
     
     // Register numbers
     const numbers = this.language.getNumbers();
-    vocabularyRegistry.registerNumbers(numbers);
+    this.vocabulary.registerNumbers(numbers);
   }
 
   /**
@@ -241,7 +240,7 @@ export class EnglishParser implements Parser {
    */
   registerVerbs(verbs: VerbVocabulary[]): void {
     // Register with vocabulary registry
-    vocabularyRegistry.registerDynamicVerbs(verbs, 'story');
+    this.vocabulary.registerDynamicVerbs(verbs, 'story');
   }
 
   /**
@@ -561,7 +560,7 @@ export class EnglishParser implements Parser {
     const firstWord = firstWordMatch[1].toLowerCase();
 
     // Check if it's a known verb
-    const isVerb = vocabularyRegistry.hasWord(firstWord, VocabPartOfSpeech.VERB);
+    const isVerb = this.vocabulary.hasWord(firstWord, VocabPartOfSpeech.VERB);
 
     if (isVerb) {
       // It's a verb - split into separate commands
@@ -1062,7 +1061,7 @@ export class EnglishParser implements Parser {
    * Get candidate interpretations for a token
    */
   private getTokenCandidates(word: string): InternalTokenCandidate[] {
-    const entries = vocabularyRegistry.lookup(word);
+    const entries = this.vocabulary.lookup(word);
     return entries.map((entry: any) => ({
       partOfSpeech: entry.partOfSpeech,
       mapsTo: entry.mapsTo,
@@ -1195,7 +1194,7 @@ export class EnglishParser implements Parser {
       prepositions
     };
     
-    vocabularyRegistry.registerDynamicVerbs([verbDef], 'story');
+    this.vocabulary.registerDynamicVerbs([verbDef], 'story');
     
     // Also register grammar patterns for the verb (story tier, ADR-268 D2)
     const grammarBuilder = this.grammarEngine.createBuilder('story');
@@ -1296,7 +1295,7 @@ export class EnglishParser implements Parser {
    * @param word The preposition to add
    */
   addPreposition(word: string): void {
-    vocabularyRegistry.registerPrepositions([word]);
+    this.vocabulary.registerPrepositions([word]);
 
     // Also register common grammar patterns that use this preposition
     // This allows actions like "put X <preposition> Y" to work
@@ -1403,5 +1402,13 @@ export class EnglishParser implements Parser {
    */
   getPronounContextManager(): PronounContextManager {
     return this.pronounContext;
+  }
+
+  /**
+   * This parser's vocabulary registry (for testing/debugging): the language's
+   * words and the story's verbs, no other parser's.
+   */
+  getVocabularyRegistry(): VocabularyRegistry {
+    return this.vocabulary;
   }
 }

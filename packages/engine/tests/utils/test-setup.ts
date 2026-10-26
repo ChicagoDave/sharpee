@@ -7,7 +7,7 @@
 import { GameEngine, createStandardEngine } from '../../src/game-engine';
 import { Story } from '../../src/install/story';
 import { createMockParser } from '../fixtures/mock-parser';
-import { ParserFactory } from '@sharpee/stdlib';
+import { ParserFactory } from '@sharpee/if-domain';
 
 /**
  * Mock the dynamic imports for tests

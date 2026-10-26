@@ -9,7 +9,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { EnglishParser } from '../src/english-parser';
 import { EnglishLanguageProvider } from '@sharpee/lang-en-us';
-import { vocabularyRegistry } from '@sharpee/if-domain';
 
 const book = { id: 'book', name: 'book', attributes: { name: 'book' }, visible: true, portable: true };
 
@@ -45,7 +44,6 @@ describe('a literal written in capitals matches typed input', () => {
   let parser: EnglishParser;
 
   beforeEach(() => {
-    vocabularyRegistry.clear();
     parser = new EnglishParser(new EnglishLanguageProvider());
     parser.setWorldContext(new Room(), 'player', 'room');
     const grammar = parser.getStoryGrammar();

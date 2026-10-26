@@ -204,36 +204,6 @@ export interface SpecialVocabulary {
 }
 
 /**
- * Dynamic vocabulary entry from an entity
- */
-export interface EntityVocabulary {
-  /**
-   * Entity ID this vocabulary belongs to
-   */
-  entityId: string;
-  
-  /**
-   * Nouns that refer to this entity
-   */
-  nouns: string[];
-  
-  /**
-   * Adjectives that can describe this entity
-   */
-  adjectives: string[];
-  
-  /**
-   * Whether this entity is in scope
-   */
-  inScope?: boolean;
-  
-  /**
-   * Priority for disambiguation
-   */
-  priority?: number;
-}
-
-/**
  * Grammar pattern for verb syntax
  */
 export interface GrammarPattern {

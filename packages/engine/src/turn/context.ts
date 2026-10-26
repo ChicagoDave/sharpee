@@ -29,8 +29,8 @@
 
 import type { ISemanticEvent, ISemanticEventSource, IPlatformEvent } from '@sharpee/core';
 import type { WorldModel, IParsedCommand } from '@sharpee/world-model';
-import type { Parser, StandardActionRegistry, IPerceptionService } from '@sharpee/stdlib';
-import type { ISound } from '@sharpee/if-domain';
+import type { StandardActionRegistry, IPerceptionService } from '@sharpee/stdlib';
+import type { ISound, Parser } from '@sharpee/if-domain';
 import type { ITextBlock } from '@sharpee/text-blocks';
 import type { PluginRegistry } from '@sharpee/plugins';
 import type { EngineConfig, GameContext, GameEngineEvents, HeldCommand, InputModeHandler, TurnResult } from '../types.js';
@@ -146,8 +146,6 @@ export interface TurnEngine {
   emit<K extends keyof GameEngineEvents>(event: K, ...args: Parameters<GameEngineEvents[K]>): void;
   /** Emit a game event and store it in the current turn's events (nothing stored before turn one). */
   emitGameEvent(event: ISemanticEvent): void;
-  /** Refresh the parser's scope vocabulary for the player's current surroundings. */
-  updateScopeVocabulary(): void;
   /** Make another playable actor the player (ADR-327); throws for a missing or unplayable entity. */
   switchPlayer(entityId: string): void;
   /** Run an input as a turn of its own (command chaining, AGAIN). */

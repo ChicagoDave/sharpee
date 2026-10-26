@@ -21,8 +21,6 @@ import {
   type ActionRegistry,
   StandardActionRegistry,
   standardActions,
-  type Parser,
-  ParserFactory,
   CommandHistoryCapabilitySchema,
   IFActions,
   type IPerceptionService,
@@ -35,7 +33,7 @@ import {
   type ActResult,
   ENGINE_VERSION,
 } from '@sharpee/stdlib';
-import { type LanguageProvider, type IEventProcessorWiring, type ClientCapabilities, type ISound } from '@sharpee/if-domain';
+import { type LanguageProvider, type IEventProcessorWiring, type ClientCapabilities, type ISound, type Parser, ParserFactory } from '@sharpee/if-domain';
 import { IProsePipeline, ProsePipeline, type SlotContributor, type SlotEntry } from './prose-pipeline/index.js';
 import type { ITextBlock } from '@sharpee/text-blocks';
 import { ChannelService } from '@sharpee/channel-service';
@@ -70,7 +68,6 @@ import { resolveRoute } from './turn/parse.js';
 import type { TurnEngine, TurnStageContext } from './turn/context.js';
 import { adaptParser, type EngineParser } from './ports/parser-interface.js';
 import { hasNarrativeSettings } from './ports/language-provider-interface.js';
-import { VocabularyManager, createVocabularyManager } from './ports/vocabulary-manager.js';
 import { SaveRestoreService, createSaveRestoreService, ISaveRestoreStateProvider } from './session/save-restore-service.js';
 import type { PlatformOperationHost } from './turn/platform-dispatcher.js';
 import { projectStoryInfo, findStoryInfoTrait } from './install/story-info-projection.js';
@@ -391,7 +388,6 @@ export class GameEngine implements StoryEngine {
   // Alternate input mode handlers (ADR-137)
   private inputModeHandlers = new Map<string, InputModeHandler>();
 
-  private vocabularyManager: VocabularyManager;
   private saveRestoreService: SaveRestoreService;
 
   /** `game.initialized` is emitted once per engine, on the first `start()`. */
@@ -492,7 +488,6 @@ export class GameEngine implements StoryEngine {
     this.randomService = new EngineRandomService(this.masterSeed);
     this.narrativeSettings = buildNarrativeSettings(); // Default: 2nd person
 
-    this.vocabularyManager = createVocabularyManager();
     this.saveRestoreService = createSaveRestoreService({
       maxSnapshots: this.config.maxUndoSnapshots ?? 10
     });
@@ -1042,7 +1037,6 @@ export class GameEngine implements StoryEngine {
       get inputModeHandlers() { return engine.inputModeHandlers; },
       emit: (event, ...args) => this.emit(event, ...args),
       emitGameEvent: (event) => this.emitGameEvent(event),
-      updateScopeVocabulary: () => this.updateScopeVocabulary(),
       switchPlayer: (entityId) => this.switchPlayer(entityId),
       executeTurn: (input) => this.executeTurn(input),
       holdCommand: (held) => { this.heldCommand = held; },
@@ -1189,7 +1183,6 @@ export class GameEngine implements StoryEngine {
     this.engineParser.setWorldContext(this.world, newPlayerId, playerLocation);
     this.engineParser.resetPronounContext();
 
-    this.updateScopeVocabulary();
     configureLanguageProviderNarrative(this.languageProvider, this.narrativeSettings, newPlayer);
   }
 
@@ -1628,20 +1621,6 @@ export class GameEngine implements StoryEngine {
 
     // Return most recent
     return allEvents.slice(-count);
-  }
-
-  /**
-   * Update vocabulary for an entity
-   */
-  updateEntityVocabulary(entity: IFEntity, inScope: boolean): void {
-    this.vocabularyManager.updateEntityVocabulary(entity, inScope);
-  }
-
-  /**
-   * Update vocabulary for all entities in scope
-   */
-  updateScopeVocabulary(): void {
-    this.vocabularyManager.updateScopeVocabulary(this.world, this.context.player.id);
   }
 
   /**

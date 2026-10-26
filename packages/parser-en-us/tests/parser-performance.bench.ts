@@ -6,13 +6,12 @@
 import { describe, bench } from 'vitest';
 import { EnglishParser } from '../src/english-parser';
 import { EnglishLanguageProvider } from '@sharpee/lang-en-us';
-import { vocabularyRegistry } from '@sharpee/if-domain';
 
 describe('Parser Performance', () => {
-  // Setup parser once for all benchmarks
-  vocabularyRegistry.clear();
+  // Setup parser once for all benchmarks; its vocabulary is its own (ADR-387 D4)
   const language = new EnglishLanguageProvider();
   const parser = new EnglishParser(language);
+  const vocabularyRegistry = parser.getVocabularyRegistry();
   
   // Add some custom grammar rules to make it more realistic
   const storyGrammar = parser.getStoryGrammar();

@@ -10,7 +10,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { EnglishParser } from '../src/english-parser';
 import { EnglishLanguageProvider } from '@sharpee/lang-en-us';
-import { vocabularyRegistry } from '@sharpee/if-domain';
 
 const things = ['coat', 'peg', 'bob', 'coin', 'branch', 'knife'].map((name) => ({
   id: name,
@@ -52,7 +51,6 @@ describe('a seated noun phrase names its slot', () => {
   let parser: EnglishParser;
 
   beforeEach(() => {
-    vocabularyRegistry.clear();
     parser = new EnglishParser(new EnglishLanguageProvider());
     parser.setWorldContext(new Room(), 'player', 'room');
     const grammar = parser.getStoryGrammar();

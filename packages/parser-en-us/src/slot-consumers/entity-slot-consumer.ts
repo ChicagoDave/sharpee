@@ -27,7 +27,7 @@ import {
 } from '@sharpee/if-domain';
 import { SlotConsumer, SlotConsumerContext, isSlotRefusal, type PhraseWords, type SlotConsumeResult, type SlotRefusal } from './slot-consumer.js';
 import { GrammarScopeResolver } from '../grammar-scope-resolver.js';
-import { isRecognizedPronoun, getPronounContextManager } from '../pronoun-context.js';
+import { isRecognizedPronoun } from '../pronoun-context.js';
 import type { RequiredScope } from '../parse-failure.js';
 import { isAllWord, isExceptWord, isListSeparator, spanText, splitAtSeparators, splitLeadingWords, startsNounPhrase } from './noun-phrase-split.js';
 
@@ -140,7 +140,7 @@ export class EntitySlotConsumer implements SlotConsumer {
 
       const ways = itemSpans.length > 1 ? [itemSpans, [span]] : [itemSpans];
       for (const way of ways) {
-        const read = this.readItems(way, tokens, gate, words);
+        const read = this.readItems(way, ctx, gate);
         if (read === null) continue;
         if (isSlotRefusal(read)) {
           refusal ??= read;
@@ -159,10 +159,10 @@ export class EntitySlotConsumer implements SlotConsumer {
    * @returns The items, the first gate refusal met, or null when a span is
    *   not an item at all
    */
-  private readItems(itemSpans: readonly number[][], tokens: Token[], gate: Gate | undefined, words: PhraseWords): SlotMatch[] | SlotRefusal | null {
+  private readItems(itemSpans: readonly number[][], ctx: SlotConsumerContext, gate: Gate | undefined): SlotMatch[] | SlotRefusal | null {
     const items: SlotMatch[] = [];
     for (const itemSpan of itemSpans) {
-      const consumed = this.consumeItem(itemSpan, tokens, gate, words);
+      const consumed = this.consumeItem(itemSpan, ctx, gate);
       if (consumed === null) return null;
       if (isSlotRefusal(consumed)) return consumed;
       items.push(...consumed);
@@ -192,7 +192,8 @@ export class EntitySlotConsumer implements SlotConsumer {
    * an item at all (a pronoun with a referent followed by the words of a new
    * noun phrase, which the one-token span already reads).
    */
-  private consumeItem(span: number[], tokens: Token[], gate: Gate | undefined, words: PhraseWords): SlotMatch[] | SlotRefusal | null {
+  private consumeItem(span: number[], ctx: SlotConsumerContext, gate: Gate | undefined): SlotMatch[] | SlotRefusal | null {
+    const { tokens, words, pronouns } = ctx;
     const first = tokens[span[0]];
 
     // A recognised pronoun is a pronoun only as the whole item (ADR-385
@@ -200,7 +201,7 @@ export class EntitySlotConsumer implements SlotConsumer {
     // (`give her the key`). Followed by a noun word it is a determiner
     // (`her key`) and the name path below splits it.
     if (isRecognizedPronoun(first.normalized)) {
-      const referents = getPronounContextManager()?.resolve(first.normalized);
+      const referents = pronouns.resolve(first.normalized);
       if (referents && referents.length > 0) {
         if (span.length > 1) {
           if (startsNounPhrase(tokens[span[1]])) return null;

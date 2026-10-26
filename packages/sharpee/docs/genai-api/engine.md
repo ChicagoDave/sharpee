@@ -12,10 +12,10 @@ GameEngine, Story interface, turn cycle, command executor, save/restore, vocabul
  *
  * Manages game state, turn execution, and coordinates all subsystems
  */
-import { WorldModel, IFEntity } from '@sharpee/world-model';
+import { WorldModel } from '@sharpee/world-model';
 import { EventProcessor } from '@sharpee/event-processor';
-import { type Parser, type IPerceptionService, type INpcService, type ActSlots, type ActResult } from '@sharpee/stdlib';
-import { type LanguageProvider, type ClientCapabilities } from '@sharpee/if-domain';
+import { type IPerceptionService, type INpcService, type ActSlots, type ActResult } from '@sharpee/stdlib';
+import { type LanguageProvider, type ClientCapabilities, type Parser } from '@sharpee/if-domain';
 import { IProsePipeline, type SlotContributor, type SlotEntry } from './prose-pipeline/index.js';
 import { type ISemanticEvent, type ISaveRestoreHooks, type ISemanticEventSource } from '@sharpee/core';
 import { EngineRandomService } from './session/engine-random-service.js';
@@ -215,7 +215,6 @@ export declare class GameEngine implements StoryEngine {
     private randomService;
     private narrativeSettings;
     private inputModeHandlers;
-    private vocabularyManager;
     private saveRestoreService;
     /** `game.initialized` is emitted once per engine, on the first `start()`. */
     private hasEmittedInitialized;
@@ -654,14 +653,6 @@ export declare class GameEngine implements StoryEngine {
      */
     getRecentEvents(count?: number): ISemanticEvent[];
     /**
-     * Update vocabulary for an entity
-     */
-    updateEntityVocabulary(entity: IFEntity, inScope: boolean): void;
-    /**
-     * Update vocabulary for all entities in scope
-     */
-    updateScopeVocabulary(): void;
-    /**
      * Emit a platform event with turn metadata
      */
     emitPlatformEvent(event: Omit<ISemanticEvent, 'id' | 'timestamp'>): void;
@@ -1045,8 +1036,8 @@ export interface GameEngineEvents {
  * Story configuration and interfaces
  */
 import { WorldModel, IFEntity, type IGameEvent, type SimpleEventHandler } from '@sharpee/world-model';
-import { type LanguageProvider, type IChannelRegistry, type ClientCapabilities } from '@sharpee/if-domain';
-import { type Parser, type INpcService, type ActSlots, type ActResult } from '@sharpee/stdlib';
+import { type LanguageProvider, type IChannelRegistry, type ClientCapabilities, type Parser } from '@sharpee/if-domain';
+import { type INpcService, type ActSlots, type ActResult } from '@sharpee/stdlib';
 import { EventProcessor } from '@sharpee/event-processor';
 import { PluginRegistry } from '@sharpee/plugins';
 import { type ISemanticEvent, type RandomService } from '@sharpee/core';
@@ -1863,8 +1854,6 @@ export interface TurnEngine {
     emit<K extends keyof GameEngineEvents>(event: K, ...args: Parameters<GameEngineEvents[K]>): void;
     /** Emit a game event and store it in the current turn's events (nothing stored before turn one). */
     emitGameEvent(event: ISemanticEvent): void;
-    /** Refresh the parser's scope vocabulary for the player's current surroundings. */
-    updateScopeVocabulary(): void;
     /** Make another playable actor the player (ADR-327); throws for a missing or unplayable entity. */
     switchPlayer(entityId: string): void;
     /** Run an input as a turn of its own (command chaining, AGAIN). */
@@ -2278,45 +2267,6 @@ export declare class SaveRestoreService {
  * Create a save/restore service instance
  */
 export declare function createSaveRestoreService(config?: UndoConfig): SaveRestoreService;
-```
-
-### ports/vocabulary-manager
-
-```typescript
-/**
- * Vocabulary Manager - Manages entity vocabulary for parser scope resolution
- *
- * Extracted from GameEngine as part of Phase 4 remediation.
- * Handles registering entity nouns/adjectives with the vocabulary registry
- * to enable parser noun resolution within the current scope.
- */
-import { IFEntity, WorldModel } from '@sharpee/world-model';
-/**
- * Manages vocabulary registration for entities in scope
- */
-export declare class VocabularyManager {
-    /**
-     * Update vocabulary for a single entity
-     *
-     * @param entity - The entity to register
-     * @param inScope - Whether the entity is currently in scope
-     */
-    updateEntityVocabulary(entity: IFEntity, inScope: boolean): void;
-    /**
-     * Update vocabulary for all entities based on current scope
-     *
-     * Marks all entities as out of scope first, then marks
-     * entities visible to the player as in scope.
-     *
-     * @param world - The world model
-     * @param playerId - The player entity ID
-     */
-    updateScopeVocabulary(world: WorldModel, playerId: string): void;
-}
-/**
- * Create a vocabulary manager instance
- */
-export declare function createVocabularyManager(): VocabularyManager;
 ```
 
 ### plugins/actor-turn-plugin

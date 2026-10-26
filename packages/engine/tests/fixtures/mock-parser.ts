@@ -7,8 +7,8 @@
 
 // `ParseResult` no longer exists anywhere in the platform — left as a hard error
 // rather than dressed as a type import, so it is fixed rather than hidden.
-import { type Parser, ParseResult, type IParsedCommand as ParsedCommand } from '@sharpee/stdlib';
-import { type LanguageProvider } from '@sharpee/stdlib';
+import { type Parser, ParseResult, type IParsedCommand as ParsedCommand } from '@sharpee/if-domain';
+import { type LanguageProvider } from '@sharpee/if-domain';
 
 export class MockParser implements Parser {
   constructor(private languageProvider: LanguageProvider) {}

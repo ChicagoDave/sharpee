@@ -3,8 +3,8 @@
  */
 
 import { WorldModel, IFEntity, type IGameEvent, type SimpleEventHandler } from '@sharpee/world-model';
-import { type LanguageProvider, type IChannelRegistry, type ClientCapabilities } from '@sharpee/if-domain';
-import { type Parser, type INpcService, type ActSlots, type ActResult } from '@sharpee/stdlib';
+import { type LanguageProvider, type IChannelRegistry, type ClientCapabilities, type Parser } from '@sharpee/if-domain';
+import { type INpcService, type ActSlots, type ActResult } from '@sharpee/stdlib';
 import { EventProcessor } from '@sharpee/event-processor';
 import { PluginRegistry } from '@sharpee/plugins';
 import { EventEmitter } from '../events/event-emitter.js';

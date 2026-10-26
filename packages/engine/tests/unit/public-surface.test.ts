@@ -47,7 +47,6 @@ const CONTRACT = [
   'SaveRestoreService',
   'ISaveRestoreStateProvider',
   'SAVE_FORMAT_VERSION',
-  'VocabularyManager',
   // Plugins
   'ActorTurnPlugin',
   'ACTOR_TURN_PLUGIN_ID',
