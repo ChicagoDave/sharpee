@@ -74,6 +74,7 @@ describe('ADR-384 D4 — failures tiebreak by the comparator', () => {
     tier: 'standard',
     literalSpecificity: 1,
     definitionIndex,
+    nounRank: { unnamed: 0, named: 0, exact: 0 },
     slotFailure: { slotName: 'thing', attemptedText, reason: 'NO_MATCH' }
   });
 

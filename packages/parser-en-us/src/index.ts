@@ -21,7 +21,8 @@ export type {
   SlotFailure,
   MatchFailureReason
 } from './parse-failure.js';
-export { analyzeBestFailure } from './parse-failure.js';
+export { analyzeBestFailure, bestFailure, failureOutranking } from './parse-failure.js';
+export { ReadingNamer } from './reading-names.js';
 
 // Export pronoun context types (ADR-089)
 export type { EntityReference, PronounContext, RecognizedPronoun } from './pronoun-context.js';

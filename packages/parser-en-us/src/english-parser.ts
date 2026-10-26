@@ -46,9 +46,9 @@ import type { ISystemEvent, Result } from '@sharpee/core';
 import { EnglishGrammarEngine, MAX_READINGS_PER_RULE } from './english-grammar-engine.js';
 import { defineGrammar } from './grammar.js';
 import { definePlatformGrammar } from './platform-grammar.js';
-import { scope, type GrammarBuilder } from '@sharpee/if-domain';
+import { scope, type GrammarBuilder, type NounRank } from '@sharpee/if-domain';
 import { parseDirection } from './direction-mappings.js';
-import { analyzeBestFailure } from './parse-failure.js';
+import { analyzeBestFailure, failureOutranking } from './parse-failure.js';
 import { PronounContextManager, setPronounContextManager } from './pronoun-context.js';
 
 // Type alias for clarity
@@ -114,6 +114,9 @@ interface RichCandidate {
   // Extras for grammar matches; a direction arrives here, from the matched
   // rule's semantics or its direction slot
   extras?: Record<string, unknown>;
+  // How the reading's items resolve (ADR-386 D4), compared with the best
+  // failure's by the failure-versus-reading rule (D5)
+  nounRank: NounRank;
 }
 
 /**
@@ -349,11 +352,18 @@ export class EnglishParser implements Parser {
       });
     }
     
-    if (candidates.length === 0) {
+    // ADR-386 D5: the one place a failure is compared with a reading. The
+    // best verb-matched failure wins over the best reading only when it
+    // names strictly more entities (`unlock door with`, where the full line
+    // consumed the door and the short line read `door with`); a reading with
+    // as many names stands and reaches the validator (`take widget`).
+    const failures = this.grammarEngine.getLastFailures();
+    const outranking = candidates.length > 0 ? failureOutranking(failures, candidates[0].nounRank) : undefined;
+
+    if (candidates.length === 0 || outranking) {
       // Analyze failures to determine the best error message
-      const failures = this.grammarEngine.getLastFailures();
       const hadVerb = tokens.some(t => t.partOfSpeech.includes(PartOfSpeech.VERB));
-      const errorAnalysis = analyzeBestFailure(failures, input, hadVerb);
+      const errorAnalysis = analyzeBestFailure(outranking ? [outranking] : failures, input, hadVerb);
 
       // Emit parse error platform event
       this.emitPlatformEvent('parse_failed', {
@@ -943,7 +953,9 @@ export class EnglishParser implements Parser {
       topic,
       // ADR-082 additions
       vocabularySlots,
-      manner
+      manner,
+      // ADR-386 D4
+      nounRank: match.nounRank
     };
 
     // Merge grammar default semantics into extras (ADR-148)

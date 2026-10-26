@@ -47,8 +47,9 @@ export abstract class GrammarEngine {
    * Add a grammar rule.
    *
    * ADR-268: insertion is deliberately unsorted — registration order IS
-   * definition order, the final key of the resolution order
-   * (literal specificity → tier → definition order, `compareGrammarRank`). Do not
+   * definition order, the last of the rule keys of the resolution order
+   * (items naming nothing → literal specificity → tier → definition order →
+   * names → exact names, `compareGrammarRank`, ADR-386 D5). Do not
    * reintroduce a sort here; it would erase the semantics of file order.
    */
   addRule(rule: GrammarRule): void {

@@ -281,11 +281,18 @@ export declare class EnglishPatternCompiler implements PatternCompiler {
 ```typescript
 /**
  * @file Parse Failure Tracking
- * @description Types and utilities for tracking partial match failures
- *              to provide better error messages (Phase 1.2 of parser recommendations)
+ * @description Types and utilities for tracking partial match failures to
+ * provide better error messages: the failure record the engine fills, the
+ * one ranking of failures (verb matched, progress, then the grammar rank
+ * with the consumed items' nouns), the failure-versus-reading rule (ADR-386
+ * D5) and the error each kind of failure becomes.
+ *
+ * Public interface: PartialMatchFailure, SlotFailure, MatchFailureReason,
+ * RequiredScope, bestFailure, failureOutranking, analyzeBestFailure.
+ * Owner context: parser-en-us error reporting (the English parser is the caller).
  */
 import type { ParseErrorCode } from '@sharpee/world-model';
-import { type GrammarTier, type PatternElement, type Seat, type SlotMatch } from '@sharpee/if-domain';
+import { type GrammarTier, type NounRank, type PatternElement, type Seat, type SlotMatch } from '@sharpee/if-domain';
 /**
  * Reason why a pattern match failed
  */
@@ -329,8 +336,10 @@ export interface PartialMatchFailure {
     literalSpecificity: number;
     /** The rule's tier (its rank's second key) */
     tier: GrammarTier;
-    /** The rule's position in registration order (its rank's last key) */
+    /** The rule's position in registration order (its rank's last rule key) */
     definitionIndex: number;
+    /** How the items the furthest path had consumed resolve (ADR-386 D4, D5): the rank's noun keys */
+    nounRank: NounRank;
     /** Why the match failed */
     reason: MatchFailureReason;
     /**
@@ -356,6 +365,34 @@ export interface PartialMatchFailure {
     followingSlot?: string;
 }
 /**
+ * The failure worth reporting, from a set. A failure that recognized the
+ * verb carries the real information; among those, most progress wins.
+ * Without this, a pattern that consumed NOTHING and stopped on "leftover"
+ * tokens (progress 0.9 by construction) outranks `drop :item`'s
+ * not-enough-tokens (0.5) for a bare `drop`, and the player gets "I don't
+ * understand" instead of "What do you want to drop?" (GH #318). Failures
+ * equal on both are ranked as readings are (ADR-384 D4), the consumed items'
+ * noun rank included (ADR-386 D5).
+ * @param failures The failures of one parse
+ * @returns The best failure, or undefined when there is none
+ */
+export declare function bestFailure(failures: readonly PartialMatchFailure[]): PartialMatchFailure | undefined;
+/**
+ * The failure-versus-reading rule (ADR-386 D5): the best verb-matched
+ * failure wins over the best complete reading only when the reading has an
+ * item naming nothing and the failure names strictly more distinct entities
+ * than the reading does. `unlock door with` then asks for the key (the
+ * reading took `door with`, naming nothing; the failure consumed the door),
+ * `take widget` still reaches the validator (no failure names more), and a
+ * reading with nothing unresolved — a literal line such as `cut myself`,
+ * whose words a slotted rule's failure also consumed as a name — is never
+ * outranked.
+ * @param failures The failures of the parse
+ * @param reading The noun rank of the best reading
+ * @returns The failure that outranks the reading, or undefined when the reading stands
+ */
+export declare function failureOutranking(failures: readonly PartialMatchFailure[], reading: NounRank): PartialMatchFailure | undefined;
+/**
  * Analyze partial match failures to determine the best error to report
  */
 export declare function analyzeBestFailure(failures: PartialMatchFailure[], input: string, hasVerb: boolean): {
@@ -363,6 +400,54 @@ export declare function analyzeBestFailure(failures: PartialMatchFailure[], inpu
     messageId: string;
     context: Record<string, any>;
 };
+```
+
+### reading-names
+
+```typescript
+/**
+ * @file Reading names — how a reading's entity items resolve, for ranking
+ * @description Computes a reading's noun rank (ADR-386 D4): each entity item
+ * of the reading — a single noun, each list item, each exclusion, an all
+ * phrase, a pronoun — is named through the one noun matcher over everything
+ * in the world, and the rank counts the items naming nothing, the distinct
+ * entities named and the items named exactly. The parser ranks by it; the
+ * validator resolves, so no entity id leaves this module.
+ *
+ * Public interface: ReadingNamer (rankOf).
+ * Owner context: parser-en-us grammar matching (the English grammar engine
+ * is the caller, once per `findMatches`).
+ */
+import { type GrammarContext, type NounRank, type SlotMatch } from '@sharpee/if-domain';
+/**
+ * Names the items of readings against one world, remembering each item's
+ * answer for the readings that share it.
+ */
+export declare class ReadingNamer {
+    private readonly world;
+    private readonly actorId;
+    private readonly cache;
+    constructor(context: GrammarContext);
+    /**
+     * The noun rank of a reading, or of the slots a failure had filled.
+     * @param slots The slot matches of the reading
+     * @returns Items naming nothing, distinct entities named, items named exactly
+     */
+    rankOf(slots: ReadonlyMap<string, SlotMatch>): NounRank;
+    private tallySlot;
+    private tallyItem;
+    /**
+     * The entities one item names: a pronoun's referent, exact; a gated item's
+     * admitted ids (ADR-385 D4), exact when any admitted entity is named
+     * exactly; otherwise everything in the world the matcher names, at the
+     * best tier any entity reaches.
+     */
+    private namesOf;
+    /** A gated item names what its gate admitted. */
+    private namesAmong;
+    /** An ungated item names every entity in the world the matcher names, at the best tier reached. */
+    private namesInWorld;
+}
 ```
 
 ### pronoun-context
@@ -508,7 +593,8 @@ export { EnglishParser as Parser } from './english-parser.js';
 export { EnglishPatternCompiler } from './english-pattern-compiler.js';
 export type { Parser as ParserInterface } from '@sharpee/if-domain';
 export type { PartialMatchFailure, SlotFailure, MatchFailureReason } from './parse-failure.js';
-export { analyzeBestFailure } from './parse-failure.js';
+export { analyzeBestFailure, bestFailure, failureOutranking } from './parse-failure.js';
+export { ReadingNamer } from './reading-names.js';
 export type { EntityReference, PronounContext, RecognizedPronoun } from './pronoun-context.js';
 export { PronounContextManager, getPronounContextManager, isRecognizedPronoun, RECOGNIZED_PRONOUNS, INANIMATE_IT, INANIMATE_THEM } from './pronoun-context.js';
 /**

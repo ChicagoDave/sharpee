@@ -4,8 +4,10 @@
  * search over its pattern (ADR-386 D2): each optional element and each
  * pattern article is taken before it is skipped, each slot is tried at every
  * extent its consumer admits, and every way the pattern consumes the whole
- * input is a reading. The readings of every rule are ranked by one comparator
- * and returned together; a rule with no reading records its furthest failure.
+ * input is a reading. Each reading's items are named through the one noun
+ * matcher (ADR-386 D4), the readings of every rule are ranked by one
+ * comparator and returned together, and a rule with no reading records its
+ * furthest failure with the rank of the items it consumed.
  *
  * Public interface: EnglishGrammarEngine (findMatches, getLastFailures,
  * getLastCapped, the typed-slot value extractors), MAX_READINGS_PER_RULE.
@@ -31,6 +33,7 @@ import { EnglishPatternCompiler } from './english-pattern-compiler.js';
 import { cardinalNumbers, ordinalNumbers, directionMap, englishWords } from '@sharpee/lang-en-us';
 import { SlotConsumerRegistry, SlotConsumerContext, createDefaultRegistry, isSlotRefusal, type SlotConsumeResult } from './slot-consumers/index.js';
 import type { PartialMatchFailure } from './parse-failure.js';
+import { ReadingNamer } from './reading-names.js';
 
 /**
  * English articles. A pattern's literal article after its verb is optional
@@ -78,8 +81,8 @@ function expectationAt(pattern: CompiledPattern, index: number): { expected?: Pa
   };
 }
 
-/** A failure as the search records it, before the rule's tier and index are added. */
-type RuleFailure = Omit<PartialMatchFailure, 'tier' | 'definitionIndex'>;
+/** A failure as the search records it, before the rule's tier and index and the consumed items' rank are added. */
+type RuleFailure = Omit<PartialMatchFailure, 'tier' | 'definitionIndex' | 'nounRank'>;
 
 /** The readings of one rule, or its furthest failure when it has none. */
 interface RuleReadings {
@@ -145,8 +148,9 @@ export class EnglishGrammarEngine extends GrammarEngine {
 
   /**
    * Find every reading of the input: each rule's complete readings, ranked
-   * by `compareGrammarRank` and then by the rule's search order (ADR-386 D2,
-   * ADR-384 D2). Rules a gate closes are skipped (ADR-378 D5).
+   * by `compareGrammarRank` — the noun rank of each reading's items (ADR-386
+   * D4, D5) around ADR-384 D2's rule keys — and then by the rule's search
+   * order (ADR-386 D2). Rules a gate closes are skipped (ADR-378 D5).
    */
   findMatches(
     tokens: Token[],
@@ -156,6 +160,8 @@ export class EnglishGrammarEngine extends GrammarEngine {
     const ranked: Array<{ match: PatternMatch; definitionIndex: number; order: number }> = [];
     const failures: PartialMatchFailure[] = [];
     const capped: string[] = [];
+    // One namer per input: the items the readings share are named once
+    const namer = new ReadingNamer(context);
 
     // Every rule is tried, in registration (definition) order, and every
     // reading of every rule is ranked: no cap on rules, so the most specific
@@ -166,10 +172,13 @@ export class EnglishGrammarEngine extends GrammarEngine {
       // failure, so the input falls through to the rules that remain.
       if (rule.when && !rule.when(context)) return;
 
-      const result = this.readingsOfRule(rule, tokens, context);
+      const result = this.readingsOfRule(rule, tokens, context, namer);
       result.matches.forEach((match, order) => ranked.push({ match, definitionIndex, order }));
       if (result.matches.length === 0 && result.failure) {
-        failures.push({ ...result.failure, tier: rule.tier, definitionIndex });
+        // The failure carries the rank of the items it had consumed, for the
+        // parser's failure-versus-reading rule (ADR-386 D5)
+        const nounRank = namer.rankOf(result.failure.slots ?? new Map());
+        failures.push({ ...result.failure, nounRank, tier: rule.tier, definitionIndex });
       }
       if (result.capped) capped.push(rule.pattern);
     });
@@ -177,12 +186,13 @@ export class EnglishGrammarEngine extends GrammarEngine {
     this.lastFailures = failures;
     this.lastCapped = capped;
 
-    // Literal specificity, then tier, then definition order: the one
-    // ordering of grammar rules; a rule's own readings keep search order.
+    // Items naming nothing, then literal specificity, tier and definition
+    // order, then names and exact names: the one ordering of grammar
+    // readings; a rule's readings that tie on it keep search order.
     ranked.sort((a, b) =>
       compareGrammarRank(
-        { literalSpecificity: a.match.literalSpecificity ?? 0, tier: a.match.rule.tier, definitionIndex: a.definitionIndex },
-        { literalSpecificity: b.match.literalSpecificity ?? 0, tier: b.match.rule.tier, definitionIndex: b.definitionIndex }
+        { nounRank: a.match.nounRank, literalSpecificity: a.match.literalSpecificity ?? 0, tier: a.match.rule.tier, definitionIndex: a.definitionIndex },
+        { nounRank: b.match.nounRank, literalSpecificity: b.match.literalSpecificity ?? 0, tier: b.match.rule.tier, definitionIndex: b.definitionIndex }
       ) || a.order - b.order
     );
 
@@ -190,13 +200,15 @@ export class EnglishGrammarEngine extends GrammarEngine {
   }
 
   /**
-   * Every complete reading of one rule, in search order, or its furthest
-   * failure when it has none (ADR-386 D2).
+   * Every complete reading of one rule, in search order, each with the rank
+   * of its items, or the rule's furthest failure when it has none (ADR-386
+   * D2, D4).
    */
   private readingsOfRule(
     rule: any, // GrammarRule
     tokens: Token[],
-    context: GrammarContext
+    context: GrammarContext,
+    namer: ReadingNamer
   ): RuleReadings {
     const pattern: CompiledPattern = rule.compiledPattern!;
     const elements = pattern.tokens;
@@ -273,11 +285,13 @@ export class EnglishGrammarEngine extends GrammarEngine {
           const key = [...path.slots.entries()].map(([name, slot]) => `${name}:${slot.tokens.join(',')}`).join('|');
           if (!seen.has(key)) {
             seen.add(key);
+            const slots = new Map(path.slots);
             matches.push({
               rule,
-              slots: new Map(path.slots),
+              slots,
               consumed: path.tokenIndex,
               literalSpecificity: path.literalSpecificity,
+              nounRank: namer.rankOf(slots),
               semantics,
               literals: [...path.literals]
             });

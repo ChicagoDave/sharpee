@@ -4,6 +4,7 @@
  */
 
 import { type IEntity } from '@sharpee/core';
+import type { NounRank } from './rule-order.js';
 
 /**
  * Slot types for grammar patterns
@@ -324,7 +325,8 @@ export interface GrammarBuilder {
  * Grammar tier: which layer defined the rule. At equal literal specificity a
  * story-tier rule outranks a standard-tier one; a more specific standard rule
  * still wins, and a story replaces one by removing it (ADR-384 D2,
- * `compareGrammarRank`). Set at the registration entry
+ * `compareGrammarRank`; a reading with an item naming nothing ranks below
+ * both, ADR-386 D5). Set at the registration entry
  * point: the standard grammar's builder registers 'standard'; the story
  * grammar surface (getStoryGrammar()) and the Chord loader register 'story'.
  */
@@ -536,10 +538,19 @@ export interface PatternMatch {
    * Literal specificity (ADR-231 D2b): count of input words consumed by the
    * pattern's literal/alternate tokens (as opposed to slots). A rule whose
    * literals consume words outranks a rule whose unconstrained slot swallows
-   * the same words. Resolution order (ADR-384 D2, `compareGrammarRank`):
-   * literalSpecificity desc → tier (story over standard) → definition order.
+   * the same words. Resolution order (ADR-386 D5, ADR-384 D2,
+   * `compareGrammarRank`): items naming nothing asc → literalSpecificity
+   * desc → tier (story over standard) → definition order → names desc →
+   * exact names desc.
    */
   literalSpecificity?: number;
+  /**
+   * How the reading's entity items resolve through the one noun matcher
+   * (ADR-386 D4): items naming nothing, distinct entities named, items named
+   * exactly. The engine computes it for every complete reading and ranks by
+   * it; the parser compares it with the best failure's (D5).
+   */
+  nounRank: NounRank;
   semantics?: SemanticProperties; // Derived semantic properties
   /**
    * Every literal (word or alternation) element, in pattern order, with the

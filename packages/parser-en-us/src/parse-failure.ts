@@ -1,11 +1,18 @@
 /**
  * @file Parse Failure Tracking
- * @description Types and utilities for tracking partial match failures
- *              to provide better error messages (Phase 1.2 of parser recommendations)
+ * @description Types and utilities for tracking partial match failures to
+ * provide better error messages: the failure record the engine fills, the
+ * one ranking of failures (verb matched, progress, then the grammar rank
+ * with the consumed items' nouns), the failure-versus-reading rule (ADR-386
+ * D5) and the error each kind of failure becomes.
+ *
+ * Public interface: PartialMatchFailure, SlotFailure, MatchFailureReason,
+ * RequiredScope, bestFailure, failureOutranking, analyzeBestFailure.
+ * Owner context: parser-en-us error reporting (the English parser is the caller).
  */
 
 import type { ParseErrorCode } from '@sharpee/world-model';
-import { compareGrammarRank, type GrammarTier, type PatternElement, type Seat, type SlotMatch } from '@sharpee/if-domain';
+import { compareGrammarRank, type GrammarTier, type NounRank, type PatternElement, type Seat, type SlotMatch } from '@sharpee/if-domain';
 
 /**
  * Reason why a pattern match failed
@@ -70,8 +77,11 @@ export interface PartialMatchFailure {
   /** The rule's tier (its rank's second key) */
   tier: GrammarTier;
 
-  /** The rule's position in registration order (its rank's last key) */
+  /** The rule's position in registration order (its rank's last rule key) */
   definitionIndex: number;
+
+  /** How the items the furthest path had consumed resolve (ADR-386 D4, D5): the rank's noun keys */
+  nounRank: NounRank;
 
   /** Why the match failed */
   reason: MatchFailureReason;
@@ -106,6 +116,48 @@ export interface PartialMatchFailure {
 }
 
 /**
+ * The failure worth reporting, from a set. A failure that recognized the
+ * verb carries the real information; among those, most progress wins.
+ * Without this, a pattern that consumed NOTHING and stopped on "leftover"
+ * tokens (progress 0.9 by construction) outranks `drop :item`'s
+ * not-enough-tokens (0.5) for a bare `drop`, and the player gets "I don't
+ * understand" instead of "What do you want to drop?" (GH #318). Failures
+ * equal on both are ranked as readings are (ADR-384 D4), the consumed items'
+ * noun rank included (ADR-386 D5).
+ * @param failures The failures of one parse
+ * @returns The best failure, or undefined when there is none
+ */
+export function bestFailure(failures: readonly PartialMatchFailure[]): PartialMatchFailure | undefined {
+  if (failures.length === 0) return undefined;
+  return [...failures].sort(
+    (a, b) =>
+      (Number(Boolean(b.matchedVerb)) - Number(Boolean(a.matchedVerb))) ||
+      (b.progress - a.progress) ||
+      compareGrammarRank(a, b),
+  )[0];
+}
+
+/**
+ * The failure-versus-reading rule (ADR-386 D5): the best verb-matched
+ * failure wins over the best complete reading only when the reading has an
+ * item naming nothing and the failure names strictly more distinct entities
+ * than the reading does. `unlock door with` then asks for the key (the
+ * reading took `door with`, naming nothing; the failure consumed the door),
+ * `take widget` still reaches the validator (no failure names more), and a
+ * reading with nothing unresolved — a literal line such as `cut myself`,
+ * whose words a slotted rule's failure also consumed as a name — is never
+ * outranked.
+ * @param failures The failures of the parse
+ * @param reading The noun rank of the best reading
+ * @returns The failure that outranks the reading, or undefined when the reading stands
+ */
+export function failureOutranking(failures: readonly PartialMatchFailure[], reading: NounRank): PartialMatchFailure | undefined {
+  if (reading.unnamed === 0) return undefined;
+  const best = bestFailure(failures.filter((failure) => Boolean(failure.matchedVerb)));
+  return best && best.nounRank.named > reading.named ? best : undefined;
+}
+
+/**
  * Analyze partial match failures to determine the best error to report
  */
 export function analyzeBestFailure(
@@ -113,7 +165,8 @@ export function analyzeBestFailure(
   input: string,
   hasVerb: boolean
 ): { code: ParseErrorCode; messageId: string; context: Record<string, any> } {
-  if (failures.length === 0) {
+  const best = bestFailure(failures);
+  if (!best) {
     // No patterns even tried
     if (!input.trim()) {
       return {
@@ -128,20 +181,6 @@ export function analyzeBestFailure(
       context: { verb: input.split(/\s+/)[0] }
     };
   }
-
-  // A failure that recognized the verb carries the real information; among
-  // those, most progress wins. Without this, a pattern that consumed NOTHING
-  // and stopped on "leftover" tokens (progress 0.9 by construction) outranks
-  // `drop :item`'s not-enough-tokens (0.5) for a bare `drop`, and the player
-  // gets "I don't understand" instead of "What do you want to drop?" (GH #318).
-  // Failures equal on both are ranked as matches are (ADR-384 D4).
-  const sorted = [...failures].sort(
-    (a, b) =>
-      (Number(Boolean(b.matchedVerb)) - Number(Boolean(a.matchedVerb))) ||
-      (b.progress - a.progress) ||
-      compareGrammarRank(a, b),
-  );
-  const best = sorted[0];
 
   // If best failure has verb matched and slot failure, we have good info
   if (best.matchedVerb && best.slotFailure) {

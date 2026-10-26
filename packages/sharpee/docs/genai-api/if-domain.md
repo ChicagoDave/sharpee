@@ -1431,6 +1431,7 @@ export declare function adaptSpecialVocabulary(languageProvider: ParserLanguageP
  * @description Language-agnostic interfaces for defining grammar rules
  */
 import { type IEntity } from '@sharpee/core';
+import type { NounRank } from './rule-order.js';
 /**
  * Slot types for grammar patterns
  * Controls how the parser handles slot matching
@@ -1728,7 +1729,8 @@ export interface GrammarBuilder {
  * Grammar tier: which layer defined the rule. At equal literal specificity a
  * story-tier rule outranks a standard-tier one; a more specific standard rule
  * still wins, and a story replaces one by removing it (ADR-384 D2,
- * `compareGrammarRank`). Set at the registration entry
+ * `compareGrammarRank`; a reading with an item naming nothing ranks below
+ * both, ADR-386 D5). Set at the registration entry
  * point: the standard grammar's builder registers 'standard'; the story
  * grammar surface (getStoryGrammar()) and the Chord loader register 'story'.
  */
@@ -1921,10 +1923,19 @@ export interface PatternMatch {
      * Literal specificity (ADR-231 D2b): count of input words consumed by the
      * pattern's literal/alternate tokens (as opposed to slots). A rule whose
      * literals consume words outranks a rule whose unconstrained slot swallows
-     * the same words. Resolution order (ADR-384 D2, `compareGrammarRank`):
-     * literalSpecificity desc → tier (story over standard) → definition order.
+     * the same words. Resolution order (ADR-386 D5, ADR-384 D2,
+     * `compareGrammarRank`): items naming nothing asc → literalSpecificity
+     * desc → tier (story over standard) → definition order → names desc →
+     * exact names desc.
      */
     literalSpecificity?: number;
+    /**
+     * How the reading's entity items resolve through the one noun matcher
+     * (ADR-386 D4): items naming nothing, distinct entities named, items named
+     * exactly. The engine computes it for every complete reading and ranks by
+     * it; the parser compares it with the best failure's (D5).
+     */
+    nounRank: NounRank;
     semantics?: SemanticProperties;
     /**
      * Every literal (word or alternation) element, in pattern order, with the
@@ -2018,8 +2029,9 @@ export declare abstract class GrammarEngine {
      * Add a grammar rule.
      *
      * ADR-268: insertion is deliberately unsorted — registration order IS
-     * definition order, the final key of the resolution order
-     * (literal specificity → tier → definition order, `compareGrammarRank`). Do not
+     * definition order, the last of the rule keys of the resolution order
+     * (items naming nothing → literal specificity → tier → definition order →
+     * names → exact names, `compareGrammarRank`, ADR-386 D5). Do not
      * reintroduce a sort here; it would erase the semantics of file order.
      */
     addRule(rule: GrammarRule): void;
@@ -2080,24 +2092,40 @@ export declare abstract class GrammarEngine {
 
 ```typescript
 /**
- * @file Grammar rank comparator — the one ordering of grammar matches
- * @description Orders grammar matches, and the failures the parser classifies,
- * by literal specificity (more first), then tier (story before standard),
- * then definition order (earlier first). Every reader that ranks rules calls
- * this; no other ordering of grammar rules exists.
+ * @file Grammar rank comparator — the one ordering of grammar readings
+ * @description Orders the readings of grammar rules, and the failures the
+ * parser classifies, by their nouns and their rule: items naming nothing
+ * (fewer first), then literal specificity (more first), then tier (story
+ * before standard), then definition order (earlier first), then names (more
+ * first) and exact names (more first). Every reader that ranks readings
+ * calls this; no other ordering of grammar rules exists.
  *
- * Public interface: GrammarRank, compareGrammarRank.
+ * Public interface: NounRank, GrammarRank, compareGrammarRank.
  * Owner context: if-domain grammar contract (the English grammar engine and
  * the parser's failure classifier are the callers).
  *
- * References: ADR-384 D2 (supersedes ADR-268 D2), ADR-231 D2b (literal
- * specificity).
+ * References: ADR-386 D4, D5 (the noun rank), ADR-384 D2 (supersedes
+ * ADR-268 D2; the rule keys), ADR-231 D2b (literal specificity).
  */
 import type { GrammarTier } from './grammar-builder.js';
 /**
- * What a rule is ranked by.
+ * How a reading's entity items resolve, counted: the parser ranks by it and
+ * the validator resolves, so no entity id leaves the rank.
+ */
+export interface NounRank {
+    /** Items naming nothing in the world */
+    unnamed: number;
+    /** Distinct entities the items name */
+    named: number;
+    /** Items named at the exact tier */
+    exact: number;
+}
+/**
+ * What a reading is ranked by.
  */
 export interface GrammarRank {
+    /** How the reading's items resolve */
+    nounRank: NounRank;
     /** Input words consumed by the rule's literal and alternate elements */
     literalSpecificity: number;
     /** The registration layer: story outranks standard at equal specificity */
@@ -2106,11 +2134,13 @@ export interface GrammarRank {
     definitionIndex: number;
 }
 /**
- * Compare two ranks for sorting, best first.
+ * Compare two ranks for sorting, best first. Only `unnamed` stands above the
+ * rule's own keys, so a literal line still beats a slot reading of the same
+ * words; `named` and `exact` decide between the readings of one rule.
  * @param a The first rank
  * @param b The second rank
  * @returns Negative when `a` ranks first, positive when `b` does, zero only
- *   for the same specificity, tier and definition index
+ *   for the same noun rank, specificity, tier and definition index
  */
 export declare function compareGrammarRank(a: GrammarRank, b: GrammarRank): number;
 ```
