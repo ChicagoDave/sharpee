@@ -255,7 +255,7 @@ export class EnglishLanguageProvider implements ParserLanguageProvider {
     // written capitalised (`{Verb}`) takes the param capitalised, as `{You}`
     // does beside `{you}`: a sentence-initial value is the template's to shape.
     if (params) {
-      message = message.replace(/\{([a-zA-Z_][a-zA-Z0-9_]*)\}/g, (match, key: string) => {
+      message = message.replace(/\{([a-zA-Z_]\w*)\}/g, (match, key: string) => {
         if (key in params) return String(params[key]);
         const lower = key.charAt(0).toLowerCase() + key.slice(1);
         if (lower !== key && lower in params) {

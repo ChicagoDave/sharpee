@@ -855,12 +855,14 @@ function commandPlan(
       const counterpart = branch.clause.kind === 'on' ? branch.clause.counterpart : undefined;
       if (counterpart !== undefined) {
         const counterpartToken = isPerson(ir, counterpart) ? '[someone]' : '[something]';
-        const wanted = [subjectToken, counterpartToken].sort().join(' ');
+        // Code-unit order on both sides, so the comparison is order-free
+        const byCodeUnit = (a: string, b: string): number => (a < b ? -1 : a > b ? 1 : 0);
+        const wanted = [subjectToken, counterpartToken].sort(byCodeUnit).join(' ');
         // The language names some thing slots by role (`throw [something]
         // at [target]`); each is a `[something]` to the typed command.
         const paired = patterns
           .map((candidate) => candidate.replace(THING_ROLE_SLOT, '[something]'))
-          .find((candidate) => [...slotsOf(candidate)].sort().join(' ') === wanted);
+          .find((candidate) => [...slotsOf(candidate)].sort(byCodeUnit).join(' ') === wanted);
         if (!paired) {
           return { kind: 'skip', shape: 'command-shape', detail: `no pattern of ${actionId} has slots for its subject and ${counterpart}` };
         }

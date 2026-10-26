@@ -1999,7 +1999,7 @@ export class Analyzer {
     const span = this.patternSpans.get(owner)?.[problem.pattern] ?? owner.span;
     const [first, second] = problem.slots;
     if (problem.kind === 'unknown') {
-      const names = Object.keys(inherited ?? {}).sort();
+      const names = Object.keys(inherited ?? {}).sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
       this.diagnostics.error(
         'analysis.unknown-slot',
         `${line(problem.pattern)} names neither of its slots from \`${name}\`, so which one is the thing acted on would be a guess. Name at least one of: ${names.join(', ') || '(none)'}.`,

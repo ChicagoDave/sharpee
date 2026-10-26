@@ -148,7 +148,7 @@ function factsOf(snapshot: WorldSnapshot, irById: ReadonlyMap<string, string>): 
     for (const trait of row.entity?.traits ?? []) {
       if (typeof trait.type === 'string' && CHANGE_TRAITS.has(trait.type)) keep.push(JSON.stringify(trait));
     }
-    if (keep.length) flags.set(row.id, keep.sort().join(','));
+    if (keep.length) flags.set(row.id, keep.sort((a, b) => (a < b ? -1 : a > b ? 1 : 0)).join(','));
   }
   return { place, states, flags, counters, storyState };
 }

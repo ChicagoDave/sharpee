@@ -50,6 +50,9 @@ import { findRepoRoot } from '../repo';
 import { Command } from './command';
 import { compileStandardGrammarRules, readStdlibActionIds } from './grammar';
 
+/** Code-unit order for ids and slot names: the order a bare `sort()` gives, made explicit so the generated module never moves. */
+const byCodeUnit = (a: string, b: string): number => (a < b ? -1 : a > b ? 1 : 0);
+
 const MODULE_PATH = 'packages/chord/src/stdlib-manifest.ts';
 const CHARACTER_MODULE_PATH = 'packages/chord/src/character-manifest.ts';
 
@@ -119,7 +122,7 @@ export function generateManifestModule(root: string): { source: string; actionId
   const { counterpartActionIds } = require(join(root, 'packages/stdlib/dist/index.js')) as {
     counterpartActionIds: ReadonlySet<string>;
   };
-  const counterpartActions = [...counterpartActionIds].sort();
+  const counterpartActions = [...counterpartActionIds].sort(byCodeUnit);
   // Language-words slice (ADR-387 D1, D2): the locale's articles, self words
   // and name stopwords, from the language provider's BUILT dist — the one
   // word table — so the IDE's world-index derives names and explains
@@ -239,7 +242,7 @@ export function generateManifestModule(root: string): { source: string; actionId
   lines.push('      grammarSeats: {');
   for (const [action, seats] of [...grammarSeats.entries()].sort(([a], [b]) => a.localeCompare(b))) {
     const entries = Object.keys(seats)
-      .sort()
+      .sort(byCodeUnit)
       .map((slot) => `${JSON.stringify(slot)}: ${JSON.stringify(seats[slot])}`);
     lines.push(`        ${JSON.stringify(action)}: { ${entries.join(', ')} },`);
   }
@@ -247,7 +250,7 @@ export function generateManifestModule(root: string): { source: string; actionId
   lines.push('      grammarSlotTypes: {');
   for (const [action, typed] of [...grammarSlotTypes.entries()].sort(([a], [b]) => a.localeCompare(b))) {
     const entries = Object.keys(typed)
-      .sort()
+      .sort(byCodeUnit)
       .map((slot) => `${JSON.stringify(slot)}: ${JSON.stringify(typed[slot])}`);
     lines.push(`        ${JSON.stringify(action)}: { ${entries.join(', ')} },`);
   }

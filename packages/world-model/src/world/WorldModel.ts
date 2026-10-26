@@ -20,7 +20,6 @@ import { WearableBehavior } from '../traits/wearable/wearableBehavior.js';
 import type { WearableTrait } from '../traits/wearable/wearableTrait.js';
 import { DirectionType, ExitKey, getOppositeDirection, isDirection } from '../constants/directions.js';
 import { type ISemanticEvent, type ISemanticEventSource } from '@sharpee/core';
-import type { LanguageWords } from '@sharpee/if-domain';
 import { SpatialIndex } from './SpatialIndex.js';
 import { VisibilityBehavior } from './VisibilityBehavior.js';
 import { ReachabilityBehavior } from './ReachabilityBehavior.js';
@@ -61,7 +60,8 @@ import {
   type GamePrompt,
   DefaultPrompt,
   PROMPT_STATE_KEY,
-  type IStoryEnding
+  type IStoryEnding,
+  type LanguageWords
 } from '@sharpee/if-domain';
 import { ScopeRegistry } from '../scope/scope-registry.js';
 import { RuleScopeEvaluator } from '../scope/scope-evaluator.js';

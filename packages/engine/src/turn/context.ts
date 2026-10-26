@@ -30,7 +30,7 @@
 import type { ISemanticEvent, ISemanticEventSource, IPlatformEvent } from '@sharpee/core';
 import type { WorldModel, IParsedCommand } from '@sharpee/world-model';
 import type { StandardActionRegistry, IPerceptionService } from '@sharpee/stdlib';
-import type { ISound, Parser } from '@sharpee/if-domain';
+import type { ISound } from '@sharpee/if-domain';
 import type { ITextBlock } from '@sharpee/text-blocks';
 import type { PluginRegistry } from '@sharpee/plugins';
 import type { EngineConfig, GameContext, GameEngineEvents, HeldCommand, InputModeHandler, TurnResult } from '../types.js';

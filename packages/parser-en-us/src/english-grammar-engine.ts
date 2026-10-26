@@ -26,9 +26,10 @@ import {
   SlotType,
   type SlotMatch,
   type Seat,
-  compareGrammarRank
+  compareGrammarRank,
+  type Token,
+  type ParserLanguageProvider
 } from '@sharpee/if-domain';
-import { type Token, type ParserLanguageProvider } from '@sharpee/if-domain';
 import { EnglishPatternCompiler } from './english-pattern-compiler.js';
 import { SlotConsumerRegistry, SlotConsumerContext, createDefaultRegistry, directionTableOf, isSlotRefusal, phraseWordsOf, type PhraseWords, type SlotConsumeResult } from './slot-consumers/index.js';
 import type { PartialMatchFailure } from './parse-failure.js';

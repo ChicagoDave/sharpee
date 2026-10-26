@@ -33,7 +33,7 @@ import {
   type ActResult,
   ENGINE_VERSION,
 } from '@sharpee/stdlib';
-import { type LanguageProvider, type IEventProcessorWiring, type ClientCapabilities, type ISound, type Parser, ParserFactory } from '@sharpee/if-domain';
+import { type LanguageProvider, type IEventProcessorWiring, type ClientCapabilities, type ISound, type Parser } from '@sharpee/if-domain';
 import { IProsePipeline, ProsePipeline, type SlotContributor, type SlotEntry } from './prose-pipeline/index.js';
 import type { ITextBlock } from '@sharpee/text-blocks';
 import { ChannelService } from '@sharpee/channel-service';

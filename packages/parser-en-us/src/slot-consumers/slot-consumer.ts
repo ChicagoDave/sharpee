@@ -24,9 +24,10 @@ import {
   type CompiledPattern,
   type GrammarContext,
   type SlotConstraint,
-  type PatternToken
+  type PatternToken,
+  type Token,
+  type ParserLanguageProvider
 } from '@sharpee/if-domain';
-import { type Token, type ParserLanguageProvider } from '@sharpee/if-domain';
 import type { SlotFailure } from '../parse-failure.js';
 import type { PronounContextManager } from '../pronoun-context.js';
 
