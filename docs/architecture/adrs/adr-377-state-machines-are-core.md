@@ -59,4 +59,4 @@ What was `use state-machines` at the top of the file is gone, and writing it is 
 
 ## Session
 
-Session 95606b, 2026-10-17, on `chord-4-0`, during the Phase 11 proposal. David's two rulings came while reviewing `docs/work/chord-4-0/phase-11-vehicle-front-end-proposal.md`, whose Finding 1 this record resolves.
+Session 95606b, 2026-10-17, on `chord-4-0`, during the Phase 11 proposal. David's two rulings came while reviewing `docs/work/archive/chord-4-0/phase-11-vehicle-front-end-proposal.md`, whose Finding 1 this record resolves.

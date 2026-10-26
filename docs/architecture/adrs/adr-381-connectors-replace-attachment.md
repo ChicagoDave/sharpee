@@ -12,7 +12,7 @@
 
 - **ADR-373** (physical state): D1 and D6 are what this record replaces. Its Context already measured the old trait as "data no action reads"; D1 enforced one field of it, and D6 added tying on top.
 - **ADR-372** (counterpart tails): `after the player connecting to the belt` uses it.
-- **The ledger**: `docs/work/chord-4-0/alignment-ledger.md` P8-1–P8-4; the write-up of the model this replaces, `docs/work/chord-4-0/attached-and-tied.md`.
+- **The ledger**: `docs/work/archive/chord-4-0/alignment-ledger.md` P8-1–P8-4; the write-up of the model this replaces, `docs/work/archive/chord-4-0/attached-and-tied.md`.
 
 ## Context — measured, not assumed
 

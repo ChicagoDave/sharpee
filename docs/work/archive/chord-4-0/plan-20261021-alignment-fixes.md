@@ -2,7 +2,7 @@
 
 **Created**: 2026-10-21
 **Plan Status**: DONE
-**Archive**: not until `chord-4-0` merges (David, 2026-10-22, session 289aa0). `docs/work/chord-4-0/` holds the ledger, sweep and inventory the merge gate is shown from, and ADR-380 and ADR-381 cite them by path.
+**Archive**: not until `chord-4-0` merges (David, 2026-10-22, session 289aa0). `docs/work/archive/chord-4-0/` holds the ledger, sweep and inventory the merge gate is shown from, and ADR-380 and ADR-381 cite them by path.
 **Overall scope**: Fix or decide every open finding on `chord-4-0` so the merge gate (David 2026-10-15: every change shown elegant and aligned for Sharpee and Chord; shortcuts fixed, not listed) can close. 48 findings: 3 older ledger items, F1–F23, D1–D22.
 **Bounded contexts touched**: world-model (traversal, visibility and sight systems, vehicle/expanse/room traits), stdlib (going, pushing, climbing, steering, setting-course, entering, examining, searching, dropping, lighting, emptying, validator), plugin-state-machine (vehicle machine), story-loader and its IR seam, Chord (parser, analyzer, IR), parser-en-us, lang-en-us, engine, event-processor, world-index, branch-tester, ide-protocol, Testing tab.
 **Key domain language**: way (traversal), mover, admittance, landmark / outlook (sight), expanse, vehicle machine, passage, claim lock.
@@ -10,8 +10,8 @@
 
 ## References consulted
 - `CLAUDE.md` (repo) — every fix here is in `packages/`, so each phase's entry state names David's go; the Logic Location table decides each finding's home; no auto-retry of failed builds or tests; no regex edits; do not delete files without confirmation.
-- `docs/work/chord-4-0/alignment-ledger.md` — the Open list and F1–F23, each marked a shortcut to fix at its home unless marked design question; FIXED entries move to the Fixed section with file:line.
-- `docs/work/chord-4-0/ddd-sweep-20261021.md` — D1–D22 and the seven questions; D1, D8, D12, D19, D20 are design questions.
+- `docs/work/archive/chord-4-0/alignment-ledger.md` — the Open list and F1–F23, each marked a shortcut to fix at its home unless marked design question; FIXED entries move to the Fixed section with file:line.
+- `docs/work/archive/chord-4-0/ddd-sweep-20261021.md` — D1–D22 and the seven questions; D1, D8, D12, D19, D20 are design questions.
 - Product ADRs not consulted (no Scope intersection): not checked — the ADRs the findings cite (366, 374, 375, 378, 379) were not re-read this session; `plan-review` has not been run.
 
 ## Standing rules for every phase
