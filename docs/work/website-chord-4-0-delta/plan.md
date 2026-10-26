@@ -1,7 +1,7 @@
 # Session Plan: Bring sharpee.net to Chord 4.0.0 / Sharpee 5.5.0
 
 **Created**: 2026-10-26
-**Plan Status**: ACTIVE
+**Plan Status**: DONE
 **Overall scope**: The chord-4-0 branch merged to main today (PR #633, merge 9e70e57e4): 22 ADRs (366-387), 35 new rows in the Chord grammar log, and a reworked English parser (parser review, ADR-382-387). The site still says Sharpee 5.4.1 / Chord 3.6.0. Measure the delta first, then correct the site, then ship a build-clean website. Docs/website work only; no platform change, no npm publish (hand-dispatched GitHub workflow, David's).
 **Bounded contexts touched**: N/A - documentation/website (`website/`, `docs/releases/`)
 **Key domain language**: kind leads every create block (ADR-359); hatches removed (ADR-361); passage block (ADR-380); seat (ADR-383); grammar-blocks (generated)
@@ -86,5 +86,13 @@
 - **Files**: `website/src/`, `website/public/`
 - **Exit state**: build exits 0; zero broken internal links; the deploy script untouched and not run (deploy and publish are David's)
 - **Demonstration**: build output ends with the route table and exit 0; link-check count recorded as 0 broken
-- **Demonstrated**: 
-- **Status**: PENDING
+- **Demonstrated**: 2026-10-26, session 63b2a2. `npm --prefix website run build` (sync-versions, sync-chord-ebnf, sync-roadmap, sync-releases, build-search-index, then `next build`) on the tree holding every Phase 2–5 edit: "✓ Compiled successfully", the route table lists /chord/guide/world/vehicles, /expanses, /sailing and /chord/guide/flow/state-machines among the static routes, ends "○ (Static) prerendered as static content / ƒ (Dynamic) server-rendered on demand", exit 0 (log: scratchpad probe4/site-build.log, 217 lines). The sync step changed only `website/public/search-index.json` (committed with Phase 4); `versions.json` was already 5.5.0 / 4.0.0; `releases-data.json` unchanged (5.4.1 latest published); `public/chord.ebnf` unchanged. `./repokit grammar --check`: "committed module matches the Chord source", "committed docs blocks match the Chord source", so `grammar-blocks.ts` did not change and the IDE docs-tab bundle input is untouched. Link check (census.py over 332 files, 165 routes + public/): 270 internal links, 0 broken. No deploy script touched or run.
+- **Status**: DONE
+
+## Close-out
+
+All six phases DONE 2026-10-26 (session 63b2a2), each committed locally on main at its completion: 5f06860b5 (Phase 1), 58e9f2bd6 (2), c6425300e (3), 67d41ee38 (4), 64a7108ba (5), Phase 6 with this close-out. Nothing pushed by the plan; publishing is David's.
+
+**One step remains, and it is not a phase.** The day the npm publish of Sharpee 5.5.0 lands: move `docs/work/website-chord-4-0-delta/release-5.5.0.draft.md` to `docs/releases/release-5.5.0.md`, set `**Status**: PUBLISHED` and `**Published**` to the registry's date, delete the DRAFT blockquote, run `npm --prefix website run build` (its sync-releases step regenerates `releases-data.json`), and deploy. Until then the site's latest published release stays 5.4.1, which is true.
+
+**Finding for David (not website work).** ADR-381 (connectors replace attachment) is ACCEPTED but its cutover has not landed on main: the chord catalog still admits `attached to` / `detachable`, stdlib ships tying/untying, world-model has the attached trait. The site documents what the code does. When the cutover lands, the kinds-traits-and-settings page, the stdlib manipulation traits page and the stdlib reference's tie/untie entries change with it, and the 5.5.0 note's "Not in this release" bullet moves to the release that carries it.
