@@ -11,6 +11,9 @@ import { EnglishParser } from '../src/english-parser';
 import { ParserLanguageProvider, GrammarBuilder, ScopeBuilder } from '@sharpee/if-domain';
 import { WorldModel, type IFEntity } from '@sharpee/world-model';
 
+/** English, handed to hand-built worlds as the language's words (ADR-387 D2). */
+const ENGLISH_WORDS = { selfWords: ['me', 'myself', 'self', 'yourself'], nameStopwords: ['the', 'a', 'an', 'of'] };
+
 /**
  * A real entity (the gate reads its naming surface through the one noun
  * matcher, ADR-385 D3) carrying the flags the mock world's property filters
@@ -18,6 +21,7 @@ import { WorldModel, type IFEntity } from '@sharpee/world-model';
  */
 type MockEntity = IFEntity & { visible: boolean; magical?: boolean; creature?: boolean };
 const scratch = new WorldModel();
+scratch.setLanguageWords(ENGLISH_WORDS);
 const thing = (name: string, flags: { visible: boolean; magical?: boolean; creature?: boolean }): MockEntity =>
   Object.assign(scratch.createEntity(name, 'item'), flags) as MockEntity;
 
@@ -26,7 +30,14 @@ const languageProvider: ParserLanguageProvider = {
   getNouns: () => [],
   getAdjectives: () => [],
   getPrepositions: () => ['at', 'with', 'from', 'to'],
-  getDeterminers: () => ['the', 'a', 'an'],
+  getDeterminers: () => [{ word: 'the' }, { word: 'a' }, { word: 'an' }],
+  getSpecialVocabulary: () => ({ articles: ['a', 'an', 'the'], pronouns: ['it', 'them', 'him', 'her'], allWords: ['all', 'everything'], exceptWords: ['except', 'but'] }),
+  getLanguageWords: () => ({ selfWords: ['me', 'myself', 'self', 'yourself'], nameStopwords: ['the', 'a', 'an', 'of'] }),
+  getListSeparators: () => ['and', ','],
+  getMannerAdverbs: () => [],
+  parseCardinal: (words: readonly string[]) => (words.length === 1 && /^\d+$/.test(words[0]) ? Number(words[0]) : null),
+  getOrdinalNumbers: () => ({}),
+  getNarrativePerson: () => 'second' as const,
   getConjunctions: () => ['and', 'or'],
   getNumbers: () => [],
   getSpecialWords: () => [],
@@ -35,6 +46,9 @@ const languageProvider: ParserLanguageProvider = {
 
 /** A crystal and an orb (magical), a sword (not), a dragon (a creature), all visible */
 class MockWorldModel {
+  getLanguageWords() {
+    return { selfWords: ['me', 'myself', 'self', 'yourself'], nameStopwords: ['the', 'a', 'an', 'of'] };
+  }
   private entities = new Map<string, MockEntity>(
     [
       thing('crystal', { visible: true, magical: true }),

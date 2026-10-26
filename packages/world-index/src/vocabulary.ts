@@ -37,7 +37,7 @@
  *   vocabulary and adjective disambiguation).
  */
 
-import type { IREntity, StoryIR } from '@sharpee/chord';
+import { STDLIB_MANIFEST, type IREntity, type StoryIR } from '@sharpee/chord';
 import {
   deriveNameVocabulary,
   matchNoun,
@@ -48,6 +48,8 @@ import {
 
 /** Every naming surface in a story, indexed for resolution. */
 export interface VocabularyIndex {
+  /** The story locale's language words, from the manifest (ADR-387 D2). */
+  words: NamingSurface['words'];
   /** Entity id to the surface `matchNoun` reads. */
   surfaces: ReadonlyMap<string, NamingSurface>;
   /** Entity id to the content words it answers to. */
@@ -65,25 +67,45 @@ export interface VocabularyIndex {
  * parser's business. No type: see the file header.
  *
  * @param entity the IR entity
+ * @param words the story locale's language words (`localeWordsOf`)
  * @returns its name and aliases as a naming surface
  */
-export function irNamingSurface(entity: IREntity): NamingSurface {
+export function irNamingSurface(entity: IREntity, words: NamingSurface['words']): NamingSurface {
   return {
     name: entity.name,
     aliases: (entity.aka ?? []).filter((alias) => typeof alias === 'string' && alias.length > 0),
     adjectives: [],
     isObserver: false,
+    words,
   };
+}
+
+/**
+ * The language words of a story's locale, from the stdlib manifest: the one
+ * word table, carried to the IDE as data (ADR-387 D2).
+ *
+ * @param ir the story
+ * @returns the locale's self words and name stopwords
+ * @throws Error when the manifest holds no facts for the story's locale
+ */
+export function localeWordsOf(ir: StoryIR): NamingSurface['words'] {
+  const locale = ir.phrases.defaultLocale;
+  const facts = STDLIB_MANIFEST.locales[locale];
+  if (facts === undefined) {
+    throw new Error(`No stdlib manifest facts for locale ${locale}: the language words are unknown`);
+  }
+  return { selfWords: facts.selfWords, nameStopwords: facts.nameStopwords };
 }
 
 /**
  * The content words an entity answers to.
  *
  * @param entity the IR entity
+ * @param words the story locale's language words (`localeWordsOf`)
  * @returns its name and alias content words, lowercased and deduplicated
  */
-export function entityVocabulary(entity: IREntity): Set<string> {
-  return vocabularyOf(irNamingSurface(entity));
+export function entityVocabulary(entity: IREntity, words: NamingSurface['words']): Set<string> {
+  return vocabularyOf(irNamingSurface(entity, words));
 }
 
 /**
@@ -96,6 +118,7 @@ export function entityVocabulary(entity: IREntity): Set<string> {
  * @returns the vocabulary index every phrase is resolved against
  */
 export function buildVocabularyIndex(ir: StoryIR): VocabularyIndex {
+  const languageWords = localeWordsOf(ir);
   const surfaces = new Map<string, NamingSurface>();
   const wordsOf = new Map<string, ReadonlySet<string>>();
   const exactForms = new Map<string, Set<string>>();
@@ -104,7 +127,7 @@ export function buildVocabularyIndex(ir: StoryIR): VocabularyIndex {
   for (const entity of ir.entities) {
     if (entity.isPlayable) continue;
 
-    const surface = irNamingSurface(entity);
+    const surface = irNamingSurface(entity, languageWords);
     surfaces.set(entity.id, surface);
     const words = vocabularyOf(surface);
     wordsOf.set(entity.id, words);
@@ -122,7 +145,7 @@ export function buildVocabularyIndex(ir: StoryIR): VocabularyIndex {
       else holders.add(entity.id);
     }
   }
-  return { surfaces, wordsOf, exactForms, byWord };
+  return { words: languageWords, surfaces, wordsOf, exactForms, byWord };
 }
 
 /** The tier that outranks: exact over words. */
@@ -142,7 +165,7 @@ const TIER_RANK: Record<NounMatchTier, number> = { exact: 2, words: 1 };
  * @returns the matching entity ids; empty when the phrase names nothing
  */
 export function resolvePhrase(index: VocabularyIndex, phrase: string): string[] {
-  const words = deriveNameVocabulary(phrase);
+  const words = deriveNameVocabulary(phrase, index.words.nameStopwords);
   const candidates = new Set<string>(index.exactForms.get(phrase) ?? []);
   if (words.length > 0) {
     for (const id of index.byWord.get(words[0]) ?? []) candidates.add(id);

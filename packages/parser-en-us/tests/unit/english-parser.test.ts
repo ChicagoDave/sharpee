@@ -162,8 +162,32 @@ class MockLanguageProvider implements ParserLanguageProvider {
   }
 
   // Missing methods for vocabulary registration
-  getDeterminers(): string[] {
-    return ['the', 'a', 'an', 'all', 'every', 'some'];
+  getDeterminers() {
+    return ['the', 'a', 'an', 'all', 'every', 'some'].map((word) => ({ word }));
+  }
+
+  getLanguageWords() {
+    return { selfWords: ['me', 'myself', 'self', 'yourself'], nameStopwords: ['the', 'a', 'an', 'of'] };
+  }
+
+  getListSeparators(): string[] {
+    return ['and', ','];
+  }
+
+  getMannerAdverbs(): string[] {
+    return [];
+  }
+
+  parseCardinal(words: readonly string[]): number | null {
+    return words.length === 1 && /^\d+$/.test(words[0]) ? Number(words[0]) : null;
+  }
+
+  getOrdinalNumbers(): Readonly<Record<string, number>> {
+    return {};
+  }
+
+  getNarrativePerson(): 'first' | 'second' | 'third' {
+    return 'second';
   }
 
   getConjunctions(): string[] {

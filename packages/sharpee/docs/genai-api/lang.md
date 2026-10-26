@@ -22,7 +22,7 @@ English language provider, message resolution, formatters.
  *   ADR-174 — the prose pipeline became the sole consumer of getMessage.
  *   ADR-158 — the formatter chain the assembler applies to a resolved message.
  */
-import { type ParserLanguageProvider, type ActionHelp, type VerbVocabulary, type DirectionVocabulary, type SpecialVocabulary, type LanguageGrammarPattern, type LocaleSettings, type RenderContext } from '@sharpee/if-domain';
+import { type ParserLanguageProvider, type ActionHelp, type VerbVocabulary, type DirectionVocabulary, type SpecialVocabulary, type LanguageWords, type DeterminerVocabulary, type LanguageGrammarPattern, type LocaleSettings, type RenderContext } from '@sharpee/if-domain';
 import type { ITextBlock } from '@sharpee/text-blocks';
 import type { PronounSetForms } from './assembler/index.js';
 import { NarrativeContext } from './perspective/index.js';
@@ -211,15 +211,25 @@ export declare class EnglishLanguageProvider implements ParserLanguageProvider {
     getVerbs(): VerbVocabulary[];
     getDirections(): DirectionVocabulary[];
     getSpecialVocabulary(): SpecialVocabulary;
+    /**
+     * The words the world needs from English (ADR-387 D2): the self words and
+     * the name stopwords, from the one word table.
+     *
+     * @returns the language words the engine assigns to the world at install
+     */
+    getLanguageWords(): LanguageWords;
+    getListSeparators(): string[];
+    getMannerAdverbs(): string[];
+    parseCardinal(words: readonly string[]): number | null;
+    getOrdinalNumbers(): Readonly<Record<string, number>>;
     getCommonAdjectives(): string[];
     getCommonNouns(): string[];
     getPrepositions(): string[];
-    getDeterminers(): string[];
+    getDeterminers(): DeterminerVocabulary[];
     getConjunctions(): string[];
     getNumbers(): string[];
     getGrammarPatterns(): LanguageGrammarPattern[];
     lemmatize(word: string): string;
-    expandAbbreviation(abbreviation: string): string | null;
     formatList(items: string[], conjunction?: 'and' | 'or'): string;
     getIndefiniteArticle(noun: string): string;
     pluralize(noun: string): string;
@@ -2813,9 +2823,40 @@ export declare const englishWords: {
      */
     conjunctions: string[];
     /**
-     * Common determiners
+     * Common determiners, each possessive with the person it refers to
+     * (ADR-387 D6): `my` and `our` are the first person's, `your` the
+     * second's, `his`, `her`, `its` and `their` the third's.
      */
-    determiners: string[];
+    determiners: ReadonlyArray<{
+        word: string;
+        possessive?: "first" | "second" | "third";
+    }>;
+    /**
+     * The words that mean "everything" and the words that mean "except", in
+     * a typed noun phrase (`take all but the lantern`).
+     */
+    allWords: string[];
+    exceptWords: string[];
+    /**
+     * The words that name the observer, whatever the observer is called
+     * (ADR-327, ADR-387 D2). The engine hands them to the world at install.
+     */
+    selfWords: string[];
+    /**
+     * Words dropped when a name's content words are derived (ADR-231 D3,
+     * PIN 2): "the bag of holding" answers to "bag" and "holding".
+     */
+    nameStopwords: string[];
+    /**
+     * The words that separate list items in typed input (ADR-386 D6): "and"
+     * and the comma, which the tokenizer gives its own token.
+     */
+    listSeparators: string[];
+    /**
+     * The manner adverbs a MANNER slot accepts. Stories extend the list
+     * through their vocabulary, never by editing it.
+     */
+    mannerAdverbs: string[];
     /**
      * Directions
      */

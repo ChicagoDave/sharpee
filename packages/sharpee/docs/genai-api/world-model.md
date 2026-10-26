@@ -2668,14 +2668,13 @@ export declare class IdentityBehavior extends Behavior {
  * match time, so Chord-loaded and TS-authored entities behave identically
  * by construction, and runtime renames can never leave stale vocabulary.
  *
- * Public interface: `deriveNameVocabulary(name)`, `NAME_VOCABULARY_STOPWORDS`.
+ * The stopwords are the language's (ADR-387 D2): the caller hands them in,
+ * from the world's language words or the compiler's locale facts, and this
+ * module holds no English.
+ *
+ * Public interface: `deriveNameVocabulary(name, stopwords)`.
  * Owner context: world-model identity area (naming/identity utilities).
  */
-/**
- * Stopwords dropped from name vocabulary (PIN 2's content-word definition).
- * "bag of holding" → {bag, holding}; "the crystal skull" → {crystal, skull}.
- */
-export declare const NAME_VOCABULARY_STOPWORDS: ReadonlySet<string>;
 /**
  * Derive the content-word vocabulary of an entity name.
  *
@@ -2683,12 +2682,13 @@ export declare const NAME_VOCABULARY_STOPWORDS: ReadonlySet<string>;
  * (invariant: vocabulary is always a derivation of the CURRENT name).
  *
  * @param name The entity's display name (any casing/whitespace).
+ * @param stopwords The language's name stopwords (English: the, a, an, of).
  * @returns Lowercased content words in order of appearance, deduplicated:
- *   whitespace-tokenized, stopwords ({the, a, an, of}) removed. Hyphenated
- *   tokens stay single words ("jack-in-the-box" → ["jack-in-the-box"]).
- *   Empty or stopword-only names yield [].
+ *   whitespace-tokenized, stopwords removed. Hyphenated tokens stay single
+ *   words ("jack-in-the-box" → ["jack-in-the-box"]). Empty or stopword-only
+ *   names yield [].
  */
-export declare function deriveNameVocabulary(name: string): string[];
+export declare function deriveNameVocabulary(name: string, stopwords: readonly string[]): string[];
 ```
 
 ### traits/identity/noun-match
@@ -2719,11 +2719,16 @@ export declare function deriveNameVocabulary(name: string): string[];
  * `NounQuery`, `NounMatch`, `NounMatchTier`.
  * Owner context: world-model identity area (naming).
  *
+ * The self words and the name stopwords are the language's: the surface
+ * carries the world's language words, assigned at install, and this module
+ * holds no English.
+ *
  * References: ADR-385 D1 (one matcher), ADR-231 D3 and PIN 2 (the tiers),
  * ADR-173 (per-side wall adjectives), ADR-327 (the self words name the
- * player role).
+ * player role), ADR-387 D2 (the words come from the world).
  */
 import type { EntityId } from '@sharpee/core';
+import type { LanguageWords } from '@sharpee/if-domain';
 import type { IFEntity } from '../../entities/if-entity.js';
 import type { WorldModel } from '../../world/WorldModel.js';
 /** What a noun phrase is matched against: an entity's naming, as data. */
@@ -2736,8 +2741,10 @@ export interface NamingSurface {
     readonly adjectives: readonly string[];
     /** The entity type, matched only as a whole phrase. */
     readonly type?: string;
-    /** True when the self words ("me", "myself") name this entity. */
+    /** True when the self words name this entity. */
     readonly isObserver: boolean;
+    /** The language's self words and name stopwords, from the world this surface was built from. */
+    readonly words: LanguageWords;
 }
 /**
  * A noun phrase as the matcher reads it. An `INounPhrase` is one. The
@@ -2786,6 +2793,8 @@ export declare function vocabularyOf(surface: NamingSurface): Set<string>;
  * @param entity the entity to name
  * @param observerId the entity doing the naming (the player, or an actor)
  * @returns the surface `matchNoun` reads, derived from the current state
+ * @throws Error when the world was never given its language words
+ *   (`WorldModel.getLanguageWords`)
  */
 export declare function namingSurfaceOf(world: WorldModel, entity: IFEntity, observerId: EntityId): NamingSurface;
 ```
@@ -4538,31 +4547,25 @@ export declare class ActorBehavior extends Behavior {
 /**
  * playerRole.ts — the player role's own vocabulary (ADR-327 D9/D10).
  *
- * Public interface: `PLAYER_ROLE_ALIASES`, `addPlayerRoleVocabulary`,
- * `movePlayerRoleVocabulary`.
+ * Public interface: `addPlayerRoleVocabulary`, `movePlayerRoleVocabulary`.
  *
- * Owner context: world-model. `me`, `myself` and `self` name whoever is
- * currently playing, not a particular character — so they belong to the ROLE
- * and travel with it when the role moves. Both the story loader (stamping the
- * opening protagonist) and the engine (`switchPlayer`) need the same set and
- * the same move, which is why it lives here rather than in either of them.
+ * Owner context: world-model. The self words name whoever is currently
+ * playing, not a particular character — so they belong to the ROLE and travel
+ * with it when the role moves. The words themselves are the language's
+ * (ADR-387 D2): the engine hands them in from the world's language words at
+ * install and on `switchPlayer`, and this module holds no English.
  */
 import type { IFEntity } from '../../entities/if-entity.js';
-/**
- * The words that name the current player character rather than any particular
- * character. Deliberately small: a character's own names and `aka` aliases are
- * theirs and never move.
- */
-export declare const PLAYER_ROLE_ALIASES: readonly string[];
 /**
  * Give an entity the role's vocabulary.
  *
  * @param entity the entity taking the player role
+ * @param selfWords the language's self words (the world's language words)
  * @returns nothing; the entity's IdentityTrait gains any missing role alias.
  *   An entity with no IdentityTrait is left alone — it has no alias list to
  *   add to, and inventing one would fabricate a name for it.
  */
-export declare function addPlayerRoleVocabulary(entity: IFEntity): void;
+export declare function addPlayerRoleVocabulary(entity: IFEntity, selfWords: readonly string[]): void;
 /**
  * Move the role's vocabulary from the outgoing player character to the incoming
  * one (ADR-327 Q2, ruled 2026-08-26).
@@ -4573,8 +4576,9 @@ export declare function addPlayerRoleVocabulary(entity: IFEntity): void;
  *
  * @param from the outgoing PC, or null on the first assignment
  * @param to the incoming PC
+ * @param selfWords the language's self words (the world's language words)
  */
-export declare function movePlayerRoleVocabulary(from: IFEntity | null | undefined, to: IFEntity): void;
+export declare function movePlayerRoleVocabulary(from: IFEntity | null | undefined, to: IFEntity, selfWords: readonly string[]): void;
 ```
 
 ### traits/attached/attachedTrait
@@ -8558,6 +8562,7 @@ import { WallEntity, IWallSpec, IWallsSpec } from '../entities/wall-entity.js';
 import { TraitType } from '../traits/trait-types.js';
 import { DirectionType, ExitKey } from '../constants/directions.js';
 import { type ISemanticEvent, type ISemanticEventSource } from '@sharpee/core';
+import type { LanguageWords } from '@sharpee/if-domain';
 import { IDataStore } from './AuthorModel.js';
 import { ICapabilityData, ICapabilityRegistration } from './capabilities.js';
 import { ITrait } from '../traits/trait.js';
@@ -8981,6 +8986,8 @@ export declare class WorldModel implements IWorldModel {
     private removalObservers;
     private state;
     private playerId;
+    /** The language's words the matcher reads (ADR-387 D2); assigned at install, never defaulted. */
+    private languageWords;
     /** The ending this story reached, or undefined while play continues (ADR-347 D2a). */
     private storyEnding;
     private spatialIndex;
@@ -9024,6 +9031,23 @@ export declare class WorldModel implements IWorldModel {
     private scopeEvaluator;
     private grammarVocabularyProvider;
     constructor(config?: WorldConfig, platformEvents?: ISemanticEventSource);
+    /**
+     * Assign the language's words to this world (ADR-387 D2). The engine calls
+     * this at install from its language provider; a hand-built world calls it
+     * before anything derives a name.
+     *
+     * @param words the self words and name stopwords of the story's language
+     */
+    setLanguageWords(words: LanguageWords): void;
+    /**
+     * The language's words this world was given.
+     *
+     * @returns the self words and name stopwords
+     * @throws Error when no words were assigned: a world matches no name with
+     *   empty lists; `installStory` assigns them, and a hand-built world calls
+     *   `setLanguageWords` first
+     */
+    getLanguageWords(): LanguageWords;
     private emitPlatformEvent;
     registerCapability(name: string, registration?: Partial<ICapabilityRegistration>): ICapabilityData;
     updateCapability(name: string, updates: Partial<ICapabilityData>): void;

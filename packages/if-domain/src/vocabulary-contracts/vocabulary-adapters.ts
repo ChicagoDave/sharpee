@@ -38,49 +38,19 @@ export function adaptVerbVocabulary(languageProvider: ParserLanguageProvider): V
 }
 
 /**
- * Adapt direction vocabulary from language provider format
+ * Adapt direction vocabulary from the language provider. The provider's
+ * table is the one direction table (ADR-387 D5); nothing is built from
+ * a fallback.
  */
 export function adaptDirectionVocabulary(languageProvider: ParserLanguageProvider): DirectionVocabulary[] {
-  // If provider has direct getDirections method, use it
-  if (languageProvider.getDirections) {
-    return languageProvider.getDirections();
-  }
-  
-  // Otherwise try to build from mappings
-  const directions: DirectionVocabulary[] = [];
-  const directionMappings = languageProvider.getDirectionMappings?.() || {};
-  
-  for (const [direction, words] of Object.entries(directionMappings)) {
-    if (Array.isArray(words)) {
-      // Separate full words from abbreviations (1-2 character words)
-      const fullWords = words.filter(w => w.length > 2);
-      const abbreviations = words.filter(w => w.length <= 2);
-      
-      directions.push({
-        direction,
-        words: fullWords.length > 0 ? fullWords : words,
-        abbreviations: abbreviations.length > 0 ? abbreviations : undefined
-      });
-    }
-  }
-  
-  return directions;
+  return languageProvider.getDirections();
 }
 
 /**
- * Adapt special vocabulary from language provider format
+ * Adapt special vocabulary from the language provider. The provider's table
+ * is the one home of the articles, pronouns, all and except words (ADR-387
+ * D1); no English fallback stands in for a provider that lacks them.
  */
 export function adaptSpecialVocabulary(languageProvider: ParserLanguageProvider): SpecialVocabulary {
-  // If provider has direct getSpecialVocabulary method, use it
-  if (languageProvider.getSpecialVocabulary) {
-    return languageProvider.getSpecialVocabulary();
-  }
-  
-  // Otherwise build from individual methods
-  return {
-    pronouns: languageProvider.getPronouns?.() || ['it', 'them'],
-    allWords: languageProvider.getAllWords?.() || ['all', 'everything'],
-    exceptWords: languageProvider.getExceptWords?.() || ['except', 'but'],
-    articles: languageProvider.getArticles?.() || ['a', 'an', 'the']
-  };
+  return languageProvider.getSpecialVocabulary();
 }

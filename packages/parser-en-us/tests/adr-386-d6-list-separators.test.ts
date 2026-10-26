@@ -14,6 +14,9 @@ import { vocabularyRegistry } from '@sharpee/if-domain';
 import { EnglishLanguageProvider } from '@sharpee/lang-en-us';
 import { EnglishParser } from '../src/english-parser';
 
+/** English, handed to hand-built worlds as the language's words (ADR-387 D2). */
+const ENGLISH_WORDS = { selfWords: ['me', 'myself', 'self', 'yourself'], nameStopwords: ['the', 'a', 'an', 'of'] };
+
 describe('ADR-386 D6: list separators', () => {
   let world: WorldModel;
   let parser: EnglishParser;
@@ -29,6 +32,7 @@ describe('ADR-386 D6: list separators', () => {
   beforeEach(() => {
     vocabularyRegistry.clear();
     world = new WorldModel();
+    world.setLanguageWords(ENGLISH_WORDS);
     room = world.createEntity('Workshop', 'room');
     room.add(new RoomTrait());
     room.add(new ContainerTrait());

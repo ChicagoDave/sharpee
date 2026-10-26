@@ -25,12 +25,17 @@
  * `NounQuery`, `NounMatch`, `NounMatchTier`.
  * Owner context: world-model identity area (naming).
  *
+ * The self words and the name stopwords are the language's: the surface
+ * carries the world's language words, assigned at install, and this module
+ * holds no English.
+ *
  * References: ADR-385 D1 (one matcher), ADR-231 D3 and PIN 2 (the tiers),
  * ADR-173 (per-side wall adjectives), ADR-327 (the self words name the
- * player role).
+ * player role), ADR-387 D2 (the words come from the world).
  */
 
 import type { EntityId } from '@sharpee/core';
+import type { LanguageWords } from '@sharpee/if-domain';
 import type { IFEntity } from '../../entities/if-entity.js';
 import { WallEntity } from '../../entities/wall-entity.js';
 import type { WorldModel } from '../../world/WorldModel.js';
@@ -47,8 +52,10 @@ export interface NamingSurface {
   readonly adjectives: readonly string[];
   /** The entity type, matched only as a whole phrase. */
   readonly type?: string;
-  /** True when the self words ("me", "myself") name this entity. */
+  /** True when the self words name this entity. */
   readonly isObserver: boolean;
+  /** The language's self words and name stopwords, from the world this surface was built from. */
+  readonly words: LanguageWords;
 }
 
 /**
@@ -73,12 +80,6 @@ export interface NounMatch {
 }
 
 /**
- * The words that name the observer, whatever the observer is called.
- * English, held here until the language owns its word lists (parser review step 7).
- */
-const SELF_WORDS: ReadonlySet<string> = new Set(['me', 'myself', 'self', 'yourself']);
-
-/**
  * Match a noun phrase against a naming surface.
  *
  * @param surface the entity's naming, from `namingSurfaceOf`
@@ -99,7 +100,7 @@ export function matchNoun(surface: NamingSurface, query: NounQuery): NounMatch |
   }
   queries.push(rawText);
 
-  if (surface.isObserver && SELF_WORDS.has(rawText)) {
+  if (surface.isObserver && surface.words.selfWords.includes(rawText)) {
     return { tier: 'exact', wordsMatched: 1 };
   }
 
@@ -107,11 +108,11 @@ export function matchNoun(surface: NamingSurface, query: NounQuery): NounMatch |
   const wholeNames = [...surface.aliases, ...(surface.type ? [surface.type] : [])].map((s) => s.toLowerCase());
   for (const q of queries) {
     if (name === q || wholeNames.includes(q)) {
-      return { tier: 'exact', wordsMatched: Math.max(1, deriveNameVocabulary(q).length) };
+      return { tier: 'exact', wordsMatched: Math.max(1, deriveNameVocabulary(q, surface.words.nameStopwords).length) };
     }
   }
 
-  const queryWords = deriveNameVocabulary(rawText);
+  const queryWords = deriveNameVocabulary(rawText, surface.words.nameStopwords);
   if (queryWords.length === 0) {
     return null;
   }
@@ -131,9 +132,10 @@ export function matchNoun(surface: NamingSurface, query: NounQuery): NounMatch |
  * @returns the vocabulary set
  */
 export function vocabularyOf(surface: NamingSurface): Set<string> {
-  const vocabulary = new Set<string>(deriveNameVocabulary(surface.name));
+  const stopwords = surface.words.nameStopwords;
+  const vocabulary = new Set<string>(deriveNameVocabulary(surface.name, stopwords));
   for (const alias of surface.aliases) {
-    for (const word of deriveNameVocabulary(alias)) {
+    for (const word of deriveNameVocabulary(alias, stopwords)) {
       vocabulary.add(word);
     }
   }
@@ -154,8 +156,11 @@ export function vocabularyOf(surface: NamingSurface): Set<string> {
  * @param entity the entity to name
  * @param observerId the entity doing the naming (the player, or an actor)
  * @returns the surface `matchNoun` reads, derived from the current state
+ * @throws Error when the world was never given its language words
+ *   (`WorldModel.getLanguageWords`)
  */
 export function namingSurfaceOf(world: WorldModel, entity: IFEntity, observerId: EntityId): NamingSurface {
+  const words = world.getLanguageWords();
   const identity = entity.getTrait(IdentityTrait);
   const name = typeof entity.name === 'string' ? entity.name : entity.type || entity.id;
   return {
@@ -163,7 +168,8 @@ export function namingSurfaceOf(world: WorldModel, entity: IFEntity, observerId:
     aliases: identity?.aliases ? [...identity.aliases] : [],
     adjectives: adjectivesOf(world, entity, observerId, identity),
     type: entity.type || undefined,
-    isObserver: entity.id === observerId
+    isObserver: entity.id === observerId,
+    words
   };
 }
 

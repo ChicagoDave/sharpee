@@ -18,6 +18,9 @@ import {
 import type { GrammarContext, ScopeConstraint } from '@sharpee/if-domain';
 import { GrammarScopeResolver } from '../src/grammar-scope-resolver';
 
+/** English, handed to hand-built worlds as the language's words (ADR-387 D2). */
+const ENGLISH_WORDS = { selfWords: ['me', 'myself', 'self', 'yourself'], nameStopwords: ['the', 'a', 'an', 'of'] };
+
 function constraint(base: ScopeConstraint['base']): ScopeConstraint {
   return { base, filters: [], traitFilters: [], explicitEntities: [] };
 }
@@ -35,6 +38,7 @@ describe('GrammarScopeResolver scope bases against a real WorldModel (ADR-273)',
 
   beforeEach(() => {
     world = new WorldModel();
+    world.setLanguageWords(ENGLISH_WORDS);
 
     room = world.createEntity('Room', 'room');
     room.add(new RoomTrait());
@@ -155,6 +159,7 @@ describe('GH #312: the parse-time bases include the actor', () => {
 
   beforeEach(() => {
     world = new WorldModel();
+    world.setLanguageWords(ENGLISH_WORDS);
     const room = world.createEntity('Room', 'room');
     room.add(new RoomTrait());
     room.add(new ContainerTrait());

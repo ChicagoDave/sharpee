@@ -10,12 +10,16 @@ import { ISemanticEvent } from '@sharpee/core';
 import { createOpenedRevealedChain, OPENED_REVEALED_CHAIN_KEY } from '../../../src/chains/opened-revealed';
 import { RevealedEventData } from '../../../src/actions/standard/opening/opening-events';
 
+/** English, handed to hand-built worlds as the language's words (ADR-387 D2). */
+const ENGLISH_WORDS = { selfWords: ['me', 'myself', 'self', 'yourself'], nameStopwords: ['the', 'a', 'an', 'of'] };
+
 describe('Opened→Revealed Chain (ADR-094)', () => {
   let world: WorldModel;
   let chainHandler: ReturnType<typeof createOpenedRevealedChain>;
 
   beforeEach(() => {
     world = new WorldModel();
+    world.setLanguageWords(ENGLISH_WORDS);
     chainHandler = createOpenedRevealedChain();
   });
 

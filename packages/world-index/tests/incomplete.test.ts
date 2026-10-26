@@ -19,7 +19,7 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import type { StoryIR } from '@sharpee/chord';
 import { deriveIncomplete, extractNounPhrases, publishFilters, readsAsThing } from '../src/incomplete.js';
 import { matchNoun, type NounMatchTier } from '@sharpee/world-model';
-import { buildVocabularyIndex, entityVocabulary, irNamingSurface, resolvePhrase } from '../src/vocabulary.js';
+import { buildVocabularyIndex, entityVocabulary, irNamingSurface, localeWordsOf, resolvePhrase } from '../src/vocabulary.js';
 import { collectProse } from '../src/prose.js';
 import { CORPUS, compileSource, compileStory, entity } from './corpus.js';
 
@@ -67,9 +67,10 @@ function resolveByMatcher(ir: StoryIR, phrase: string): string[] {
   const rank: Record<NounMatchTier, number> = { exact: 2, words: 1 };
   let best = 0;
   let named: string[] = [];
+  const words = localeWordsOf(ir);
   for (const declared of ir.entities) {
     if (declared.isPlayable) continue;
-    const match = matchNoun(irNamingSurface(declared), { text: phrase });
+    const match = matchNoun(irNamingSurface(declared, words), { text: phrase });
     if (match === null) continue;
     if (rank[match.tier] > best) {
       best = rank[match.tier];
@@ -145,7 +146,7 @@ create the potted plant
         expect(Object.keys(declared)).not.toContain('adjectives');
       }
     }
-    expect([...entityVocabulary(entity(balls, 'red-ball'))].sort()).toEqual(['ball', 'red']);
+    expect([...entityVocabulary(entity(balls, 'red-ball'), localeWordsOf(balls))].sort()).toEqual(['ball', 'red']);
   });
 
   it('says nothing about prose that names a ball by its colour', () => {

@@ -28,22 +28,12 @@ import {
   type Seat,
   compareGrammarRank
 } from '@sharpee/if-domain';
-import { type Token } from '@sharpee/if-domain';
+import { type Token, type ParserLanguageProvider } from '@sharpee/if-domain';
 import { EnglishPatternCompiler } from './english-pattern-compiler.js';
-import { parseCardinal, ordinalNumbers, directionMap, englishWords } from '@sharpee/lang-en-us';
+import { directionMap } from '@sharpee/lang-en-us';
 import { SlotConsumerRegistry, SlotConsumerContext, createDefaultRegistry, isSlotRefusal, type SlotConsumeResult } from './slot-consumers/index.js';
 import type { PartialMatchFailure } from './parse-failure.js';
 import { ReadingNamer } from './reading-names.js';
-
-/**
- * English articles. A pattern's literal article after its verb is optional
- * for the player and its absence costs nothing: `follow cables` matches
- * `follow the cables` exactly as well as the full form does (ADR-380 D2); and
- * a typed article before a literal the pattern does not spell is skipped the
- * same way: `climb the rope` reaches `climb rope` (ADR-386 D3). Articles are
- * the English parser's to know; no language-neutral layer lists them.
- */
-const ARTICLE_WORDS: ReadonlySet<string> = new Set(englishWords.articles.map((a) => a.toLowerCase()));
 
 /**
  * The most readings one rule may have of one input. Past it the readings
@@ -131,8 +121,27 @@ export class EnglishGrammarEngine extends GrammarEngine {
   /** The patterns whose readings hit MAX_READINGS_PER_RULE in the last match */
   private lastCapped: string[] = [];
 
-  constructor(slotConsumerRegistry?: SlotConsumerRegistry) {
-    super(new EnglishPatternCompiler());
+  /** The language the parser was constructed with: its articles, numbers and ordinals (ADR-387 D1). */
+  private readonly language: ParserLanguageProvider;
+
+  /**
+   * The language's articles. A pattern's literal article after its verb is
+   * optional for the player and its absence costs nothing: `follow cables`
+   * matches `follow the cables` exactly as well as the full form does
+   * (ADR-380 D2); and a typed article before a literal the pattern does not
+   * spell is skipped the same way: `climb the rope` reaches `climb rope`
+   * (ADR-386 D3). Which words are articles is the language's to say.
+   */
+  private readonly articles: ReadonlySet<string>;
+
+  /**
+   * @param language the provider whose words this engine reads
+   * @param slotConsumerRegistry the consumers, or the default set
+   */
+  constructor(language: ParserLanguageProvider, slotConsumerRegistry?: SlotConsumerRegistry) {
+    super(new EnglishPatternCompiler(language));
+    this.language = language;
+    this.articles = new Set(language.getSpecialVocabulary().articles.map((a) => a.toLowerCase()));
     // Use provided registry or create default with all consumers
     this.slotConsumerRegistry = slotConsumerRegistry || createDefaultRegistry();
   }
@@ -318,14 +327,14 @@ export class EnglishGrammarEngine extends GrammarEngine {
         // An article stands before a noun, never as a command's verb: a
         // pattern's first word is its verb, even spelled `an` (Dungeo's GDT
         // code `an :arg...`), so only a later article is optional.
-        const isArticle = elementIndex > 0 && element.type === 'literal' && ARTICLE_WORDS.has(element.value);
+        const isArticle = elementIndex > 0 && element.type === 'literal' && this.articles.has(element.value);
         const skippable = element.optional === true || isArticle;
 
         // ADR-386 D3: a typed article the pattern does not spell, standing
         // before the word the element reads, is skipped and costs nothing.
         let at = path.tokenIndex;
         const typedArticle =
-          elementIndex > 0 && !isArticle && at < tokens.length && ARTICLE_WORDS.has(tokens[at].normalized) && literalReads(element, tokens[at + 1]);
+          elementIndex > 0 && !isArticle && at < tokens.length && this.articles.has(tokens[at].normalized) && literalReads(element, tokens[at + 1]);
         if (typedArticle) at++;
 
         if (literalReads(element, tokens[at])) {
@@ -467,6 +476,7 @@ export class EnglishGrammarEngine extends GrammarEngine {
         slotTokenIndex,
         rule,
         context,
+        language: this.language,
         slotType,
         slotConstraints,
         patternToken: patternSlotToken,
@@ -487,23 +497,27 @@ export class EnglishGrammarEngine extends GrammarEngine {
   /**
    * Extract typed value from a NUMBER slot match: the language reads the
    * words as one number (ADR-386 D8).
+   * @param match the slot match
+   * @param language the language that reads the number
    */
-  static extractNumberValue(match: SlotMatch): number | null {
+  static extractNumberValue(match: SlotMatch, language: ParserLanguageProvider): number | null {
     if (match.slotType !== SlotType.NUMBER) return null;
-    return parseCardinal(match.text.split(' '));
+    return language.parseCardinal(match.text.split(' '));
   }
 
   /**
    * Extract typed value from an ORDINAL slot match
+   * @param match the slot match
+   * @param language the language whose ordinal words are read
    */
-  static extractOrdinalValue(match: SlotMatch): number | null {
+  static extractOrdinalValue(match: SlotMatch, language: ParserLanguageProvider): number | null {
     if (match.slotType !== SlotType.ORDINAL) return null;
 
     const normalized = match.text.toLowerCase();
 
-    // Word form (using imported vocabulary from lang-en-us)
-    if (normalized in ordinalNumbers) {
-      return ordinalNumbers[normalized];
+    const ordinals = language.getOrdinalNumbers();
+    if (normalized in ordinals) {
+      return ordinals[normalized];
     }
 
     // Suffixed number form

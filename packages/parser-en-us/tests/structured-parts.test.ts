@@ -17,14 +17,21 @@ import { EnglishLanguageProvider } from '@sharpee/lang-en-us';
 import { vocabularyRegistry, PatternSyntaxError, SlotType, type Token, type GrammarContext } from '@sharpee/if-domain';
 import { WorldModel } from '@sharpee/world-model';
 
+/** English, handed to hand-built worlds as the language's words (ADR-387 D2). */
+const ENGLISH_WORDS = { selfWords: ['me', 'myself', 'self', 'yourself'], nameStopwords: ['the', 'a', 'an', 'of'] };
+
 // Real entities: the gate reads their naming surface through the one noun matcher (ADR-385 D3)
 const scratch = new WorldModel();
+scratch.setLanguageWords(ENGLISH_WORDS);
 const things = ['coin', 'lamp', 'pear', 'box'].map((name) =>
   Object.assign(scratch.createEntity(name, 'item'), { visible: true, portable: true }),
 );
 
 /** A room holding every thing; the player carries only the coin. */
 class Room {
+  getLanguageWords() {
+    return { selfWords: ['me', 'myself', 'self', 'yourself'], nameStopwords: ['the', 'a', 'an', 'of'] };
+  }
   getEntity(id: string) {
     return things.find((t) => t.id === id);
   }
@@ -58,7 +65,7 @@ function tokens(words: string[]): Token[] {
 const context: GrammarContext = { world: {}, actorId: 'a1', currentLocation: 'r1', slots: new Map() };
 
 describe('parse: the define(text) front end (ADR-382 D3)', () => {
-  const compiler = new EnglishPatternCompiler();
+  const compiler = new EnglishPatternCompiler(new EnglishLanguageProvider());
 
   it('turns words, alternations, slots, greedy slots and optional elements into parts', () => {
     expect(compiler.parse('put :item [carefully] in|into :container')).toEqual([
@@ -97,14 +104,14 @@ describe('parse: the define(text) front end (ADR-382 D3)', () => {
   });
 
   it('a malformed pattern throws at define(), before anything is registered', () => {
-    const engine = new EnglishGrammarEngine();
+    const engine = new EnglishGrammarEngine(new EnglishLanguageProvider());
     expect(() => engine.createBuilder().define('[look at] :x')).toThrow(PatternSyntaxError);
     expect(engine.getRules()).toHaveLength(0);
   });
 });
 
 describe('compile: one record per slot (ADR-382 D4)', () => {
-  const compiler = new EnglishPatternCompiler();
+  const compiler = new EnglishPatternCompiler(new EnglishLanguageProvider());
 
   it('records every slot in order with its token index, optionality, greediness and type', () => {
     const compiled = compiler.compile(compiler.parse('say :message... to [:target]'));
@@ -143,7 +150,7 @@ describe('slot configuration attaches by compiled slot (ADR-382 D4)', () => {
   let engine: EnglishGrammarEngine;
 
   beforeEach(() => {
-    engine = new EnglishGrammarEngine();
+    engine = new EnglishGrammarEngine(new EnglishLanguageProvider());
   });
 
   it('a type set on a slot lands on its compiled record', () => {
@@ -170,7 +177,7 @@ describe('slot configuration attaches by compiled slot (ADR-382 D4)', () => {
 
 describe('rule(spec): registration from parts (ADR-382 D2)', () => {
   it('registers at the builder tier with the spec`s parts, display text, slot types and defaults', () => {
-    const engine = new EnglishGrammarEngine();
+    const engine = new EnglishGrammarEngine(new EnglishLanguageProvider());
     engine.createBuilder('story').rule({
       action: 'story.cut',
       pattern: 'cut :branch with :blade',
@@ -194,7 +201,7 @@ describe('rule(spec): registration from parts (ADR-382 D2)', () => {
   });
 
   it('carries the spec`s gate, and registers specs in the order they arrive', () => {
-    const engine = new EnglishGrammarEngine();
+    const engine = new EnglishGrammarEngine(new EnglishLanguageProvider());
     const builder = engine.createBuilder('story');
     const gate = () => false;
     builder.rule({ action: 'story.a', pattern: 'alpha', parts: [{ kind: 'word', word: 'alpha' }], when: gate });
@@ -207,7 +214,7 @@ describe('rule(spec): registration from parts (ADR-382 D2)', () => {
   });
 
   it('refuses a spec with no action, or a greedy slot typed as anything but TEXT_GREEDY', () => {
-    const engine = new EnglishGrammarEngine();
+    const engine = new EnglishGrammarEngine(new EnglishLanguageProvider());
     const builder = engine.createBuilder('story');
     expect(() => builder.rule({ action: '', pattern: 'alpha', parts: [{ kind: 'word', word: 'alpha' }] })).toThrow(
       /must have an action/,
@@ -224,7 +231,7 @@ describe('rule(spec): registration from parts (ADR-382 D2)', () => {
   });
 
   it('refuses a spec whose slot configuration names a missing slot', () => {
-    const engine = new EnglishGrammarEngine();
+    const engine = new EnglishGrammarEngine(new EnglishLanguageProvider());
     expect(() =>
       engine.createBuilder('story').rule({
         action: 'story.cut',
@@ -279,7 +286,7 @@ describe('an optional slot is seated and constrained (B1)', () => {
 
 describe('a failure names what it stopped short of, from the compiled pattern', () => {
   it('`put pear` against `put :item in :container` asks for the container', () => {
-    const engine = new EnglishGrammarEngine();
+    const engine = new EnglishGrammarEngine(new EnglishLanguageProvider());
     engine.createBuilder().define('put :item in :container').mapsTo('if.action.inserting').build();
     engine.findMatches(tokens(['put', 'pear']), context);
     const failures = engine.getLastFailures();
@@ -291,7 +298,7 @@ describe('a failure names what it stopped short of, from the compiled pattern', 
   });
 
   it('a bare verb against `drop :item` expects the slot itself', () => {
-    const engine = new EnglishGrammarEngine();
+    const engine = new EnglishGrammarEngine(new EnglishLanguageProvider());
     engine.createBuilder().define('drop :item').mapsTo('if.action.dropping').build();
     engine.findMatches(tokens(['drop']), context);
     expect(engine.getLastFailures()[0].expected).toEqual({ kind: 'slot', name: 'item' });

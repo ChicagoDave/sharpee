@@ -4,6 +4,7 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
+import { EnglishLanguageProvider } from '@sharpee/lang-en-us';
 import { EnglishGrammarEngine } from '../src/english-grammar-engine';
 import { Token, SlotType } from '@sharpee/if-domain';
 
@@ -12,7 +13,7 @@ describe('ADR-082: Typed Slots', () => {
   let grammar: any;
 
   beforeEach(() => {
-    engine = new EnglishGrammarEngine();
+    engine = new EnglishGrammarEngine(new EnglishLanguageProvider());
     grammar = engine.createBuilder();
   });
 
@@ -91,7 +92,7 @@ describe('ADR-082: Typed Slots', () => {
       const matches = engine.findMatches(tokens, context);
 
       const nSlot = matches[0].slots.get('n');
-      const value = EnglishGrammarEngine.extractNumberValue(nSlot!);
+      const value = EnglishGrammarEngine.extractNumberValue(nSlot!, new EnglishLanguageProvider());
       expect(value).toBe(414);
     });
 
@@ -107,7 +108,7 @@ describe('ADR-082: Typed Slots', () => {
       const matches = engine.findMatches(tokens, context);
 
       const nSlot = matches[0].slots.get('n');
-      const value = EnglishGrammarEngine.extractNumberValue(nSlot!);
+      const value = EnglishGrammarEngine.extractNumberValue(nSlot!, new EnglishLanguageProvider());
       expect(value).toBe(20);
     });
   });
@@ -147,7 +148,7 @@ describe('ADR-082: Typed Slots', () => {
         expect(matches).toHaveLength(1);
 
         const ordSlot = matches[0].slots.get('ord');
-        const value = EnglishGrammarEngine.extractOrdinalValue(ordSlot!);
+        const value = EnglishGrammarEngine.extractOrdinalValue(ordSlot!, new EnglishLanguageProvider());
         expect(value).toBe(expected);
       }
     });
@@ -164,7 +165,7 @@ describe('ADR-082: Typed Slots', () => {
       const matches = engine.findMatches(tokens, context);
 
       const ordSlot = matches[0].slots.get('ord');
-      const value = EnglishGrammarEngine.extractOrdinalValue(ordSlot!);
+      const value = EnglishGrammarEngine.extractOrdinalValue(ordSlot!, new EnglishLanguageProvider());
       expect(value).toBe(5);
     });
   });
@@ -389,7 +390,7 @@ describe('ADR-082: Typed Slots', () => {
       expect(matches).toHaveLength(1);
 
       const nSlot = matches[0].slots.get('n');
-      expect(EnglishGrammarEngine.extractNumberValue(nSlot!)).toBe(5);
+      expect(EnglishGrammarEngine.extractNumberValue(nSlot!, new EnglishLanguageProvider())).toBe(5);
 
       const dirSlot = matches[0].slots.get('dir');
       expect(EnglishGrammarEngine.extractDirectionValue(dirSlot!)).toBe('north');
@@ -409,7 +410,7 @@ describe('ADR-082: Typed Slots', () => {
       expect(matches).toHaveLength(1);
 
       const ordSlot = matches[0].slots.get('ord');
-      expect(EnglishGrammarEngine.extractOrdinalValue(ordSlot!)).toBe(2);
+      expect(EnglishGrammarEngine.extractOrdinalValue(ordSlot!, new EnglishLanguageProvider())).toBe(2);
 
       const itemSlot = matches[0].slots.get('item');
       expect(itemSlot?.text).toBe('key');

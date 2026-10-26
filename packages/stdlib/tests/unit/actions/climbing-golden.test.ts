@@ -23,6 +23,9 @@ import {
 } from '../../test-utils';
 import type { ActionContext } from '../../../src/actions/enhanced-types';
 
+/** English, handed to hand-built worlds as the language's words (ADR-387 D2). */
+const ENGLISH_WORDS = { selfWords: ['me', 'myself', 'self', 'yourself'], nameStopwords: ['the', 'a', 'an', 'of'] };
+
 describe('climbingAction (Golden Pattern)', () => {
   describe('Action Metadata', () => {
     test('should have correct ID', () => {
@@ -119,6 +122,7 @@ describe('climbingAction (Golden Pattern)', () => {
 
     test('should fail when no exit in climb direction', () => {
       const world = new WorldModel();
+      world.setLanguageWords(ENGLISH_WORDS);
 
       const room = world.createEntity('Ground Floor', EntityType.ROOM);
       room.add({
@@ -148,6 +152,7 @@ describe('climbingAction (Golden Pattern)', () => {
 
     test('should fail when not in a room for directional climbing', () => {
       const world = new WorldModel();
+      world.setLanguageWords(ENGLISH_WORDS);
 
       const container = world.createEntity('box', EntityType.CONTAINER);
       container.add({ type: TraitType.CONTAINER });
@@ -174,6 +179,7 @@ describe('climbingAction (Golden Pattern)', () => {
   describe('Successful Climbing', () => {
     test('should climb up when exit exists', () => {
       const world = new WorldModel();
+      world.setLanguageWords(ENGLISH_WORDS);
       
       const groundFloor = world.createEntity('Ground Floor', EntityType.ROOM);
       groundFloor.add({
@@ -225,6 +231,7 @@ describe('climbingAction (Golden Pattern)', () => {
 
     test('should climb down when exit exists', () => {
       const world = new WorldModel();
+      world.setLanguageWords(ENGLISH_WORDS);
 
       const groundFloor = world.createEntity('Ground Floor', EntityType.ROOM);
       groundFloor.add({ type: TraitType.ROOM });
@@ -383,6 +390,7 @@ describe('climbingAction (Golden Pattern)', () => {
 
     test('should handle direction normalization', () => {
       const world = new WorldModel();
+      world.setLanguageWords(ENGLISH_WORDS);
       
       const room1 = world.createEntity('Room', EntityType.ROOM);
       room1.add({
@@ -455,6 +463,7 @@ describe('climbingAction (Golden Pattern)', () => {
   describe('World State Mutations', () => {
     test('should move player to destination room when climbing up', () => {
       const world = new WorldModel();
+      world.setLanguageWords(ENGLISH_WORDS);
 
       const groundFloor = world.createEntity('Ground Floor', EntityType.ROOM);
       groundFloor.add({ type: TraitType.ROOM });
@@ -487,6 +496,7 @@ describe('climbingAction (Golden Pattern)', () => {
 
     test('should move player to destination room when climbing down', () => {
       const world = new WorldModel();
+      world.setLanguageWords(ENGLISH_WORDS);
 
       const groundFloor = world.createEntity('Ground Floor', EntityType.ROOM);
       groundFloor.add({ type: TraitType.ROOM });

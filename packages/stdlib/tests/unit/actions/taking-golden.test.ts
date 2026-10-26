@@ -24,6 +24,9 @@ import type { ActionContext } from '../../../src/actions/enhanced-types';
 import type { ISemanticEvent } from '@sharpee/core';
 import { runValidatePhase, runExecutePhase, runReportPhase } from '../../../src/actions/lifecycle/phase-runner';
 
+/** English, handed to hand-built worlds as the language's words (ADR-387 D2). */
+const ENGLISH_WORDS = { selfWords: ['me', 'myself', 'self', 'yourself'], nameStopwords: ['the', 'a', 'an', 'of'] };
+
 describe('takingAction (Golden Pattern)', () => {
   describe('Three-Phase Pattern Compliance', () => {
     test('should have required methods for three-phase pattern', () => {
@@ -191,6 +194,7 @@ describe('takingAction (Golden Pattern)', () => {
   describe('Container Capacity Checks', () => {
     test('should fail when container is full', () => {
       const world = new WorldModel();
+      world.setLanguageWords(ENGLISH_WORDS);
       const room = world.createEntity('Test Room', 'room');
       room.add({ type: TraitType.ROOM });
       
@@ -229,6 +233,7 @@ describe('takingAction (Golden Pattern)', () => {
 
     test('should not count worn items toward capacity', () => {
       const world = new WorldModel();
+      world.setLanguageWords(ENGLISH_WORDS);
       const room = world.createEntity('Test Room', 'room');
       room.add({ type: TraitType.ROOM });
       
@@ -270,6 +275,7 @@ describe('takingAction (Golden Pattern)', () => {
 
     test('should fail when too heavy', () => {
       const world = new WorldModel();
+      world.setLanguageWords(ENGLISH_WORDS);
       const room = world.createEntity('Test Room', 'room');
       room.add({ type: TraitType.ROOM });
       
@@ -591,6 +597,7 @@ describe('Taking Action Edge Cases', () => {
 
   test('should handle empty player without container trait', () => {
     const world = new WorldModel();
+    world.setLanguageWords(ENGLISH_WORDS);
     const room = world.createEntity('Test Room', 'room');
     room.add({ type: TraitType.ROOM });
     

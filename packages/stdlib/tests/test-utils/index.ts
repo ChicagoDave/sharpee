@@ -23,6 +23,9 @@ import { createActionContext } from '../../src/actions/enhanced-context';
 import { Action, ActionContext } from '../../src/actions/enhanced-types';
 import { runValidatePhase, runExecutePhase, runReportPhase, runBlockedPhase } from '../../src/actions/lifecycle/phase-runner';
 
+/** English, handed to hand-built worlds as the language's words (ADR-387 D2). */
+const ENGLISH_WORDS = { selfWords: ['me', 'myself', 'self', 'yourself'], nameStopwords: ['the', 'a', 'an', 'of'] };
+
 /**
  * Creates a basic test world with player and room
  * @param options Configuration options
@@ -32,6 +35,7 @@ export function setupBasicWorld(options: {
   capabilities?: string[];
 } = {}) {
   const world = new WorldModel();
+  world.setLanguageWords(ENGLISH_WORDS);
   
   // Register capabilities (default to all if not specified)
   registerStandardCapabilities(world, options.capabilities);

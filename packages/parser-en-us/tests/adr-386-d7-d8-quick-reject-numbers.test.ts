@@ -19,7 +19,7 @@ const tokens = (text: string): Token[] =>
 const context = { world: null, actorId: 'player', currentLocation: 'room', slots: new Map() };
 
 describe('ADR-386 D7: the quick reject counts what the match requires', () => {
-  const compiler = new EnglishPatternCompiler();
+  const compiler = new EnglishPatternCompiler(new EnglishLanguageProvider());
   const minTokens = (pattern: string) => compiler.compile(compiler.parse(pattern)).minTokens;
 
   it('minTokens discounts a pattern article after the first element', () => {
@@ -37,7 +37,7 @@ describe('ADR-386 D7: the quick reject counts what the match requires', () => {
   });
 
   it('a bare alternate verb reaches the matcher and asks what to press (A9)', () => {
-    const engine = new EnglishGrammarEngine();
+    const engine = new EnglishGrammarEngine(new EnglishLanguageProvider());
     engine.createBuilder().define('push|press :target').mapsTo('if.action.pushing').build();
     expect(engine.findMatches(tokens('press button'), context)).toHaveLength(1);
     expect(engine.findMatches(tokens('press'), context)).toHaveLength(0);
@@ -59,7 +59,7 @@ describe('ADR-386 D7: the quick reject counts what the match requires', () => {
 
 describe('ADR-386 D8: a number slot reads a compound number (A11)', () => {
   const setDial = () => {
-    const engine = new EnglishGrammarEngine();
+    const engine = new EnglishGrammarEngine(new EnglishLanguageProvider());
     engine.createBuilder().define('set :target to :n').number('n').mapsTo('story.setting').build();
     return engine;
   };
@@ -70,10 +70,10 @@ describe('ADR-386 D8: a number slot reads a compound number (A11)', () => {
       const matches = engine.findMatches(tokens(input), context);
       expect(matches, input).toHaveLength(1);
       const n = matches[0].slots.get('n')!;
-      expect(EnglishGrammarEngine.extractNumberValue(n), input).toBe(25);
+      expect(EnglishGrammarEngine.extractNumberValue(n, new EnglishLanguageProvider()), input).toBe(25);
     }
     const twenty = engine.findMatches(tokens('set dial to twenty'), context);
-    expect(EnglishGrammarEngine.extractNumberValue(twenty[0].slots.get('n')!)).toBe(20);
+    expect(EnglishGrammarEngine.extractNumberValue(twenty[0].slots.get('n')!, new EnglishLanguageProvider())).toBe(20);
   });
 
   it('the number slot admits every span it reads as one number, longest first, and nothing else', () => {

@@ -7,6 +7,7 @@
 import { describe, it, expect } from 'vitest';
 import { SlotType, type SlotMatch } from '@sharpee/if-domain';
 import { TypedSlotConsumer, SlotConsumerContext, isSlotReadings } from '../../src/slot-consumers';
+import { EnglishLanguageProvider } from '@sharpee/lang-en-us';
 
 describe('TypedSlotConsumer', () => {
   const consumer = new TypedSlotConsumer();
@@ -20,6 +21,7 @@ describe('TypedSlotConsumer', () => {
       slotTokenIndex: 0,
       rule: { slots: new Map() },
       context: { world: undefined as unknown },
+      language: new EnglishLanguageProvider(),
       slotType
     } as unknown as SlotConsumerContext;
   }

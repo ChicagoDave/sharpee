@@ -25,6 +25,9 @@ import {
   forceRandom
 } from '../../test-utils';
 
+/** English, handed to hand-built worlds as the language's words (ADR-387 D2). */
+const ENGLISH_WORDS = { selfWords: ['me', 'myself', 'self', 'yourself'], nameStopwords: ['the', 'a', 'an', 'of'] };
+
 describe('throwingAction (Golden Pattern)', () => {
   describe('Action Metadata', () => {
     test('should have correct ID', () => {
@@ -588,6 +591,7 @@ describe('throwingAction (Golden Pattern)', () => {
       
       fragileItems.forEach(item => {
         const world = new WorldModel();
+        world.setLanguageWords(ENGLISH_WORDS);
         const entity = world.createEntity(item.name || 'test item', 'object');
         entity.add({
           type: TraitType.IDENTITY,

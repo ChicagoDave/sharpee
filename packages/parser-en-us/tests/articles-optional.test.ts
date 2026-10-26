@@ -26,7 +26,7 @@ describe('a literal article in a pattern (engine)', () => {
   let grammar: ReturnType<EnglishGrammarEngine['createBuilder']>;
 
   beforeEach(() => {
-    engine = new EnglishGrammarEngine();
+    engine = new EnglishGrammarEngine(new EnglishLanguageProvider());
     grammar = engine.createBuilder();
   });
 

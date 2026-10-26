@@ -11,6 +11,9 @@ import { EnglishParser } from '../src/english-parser';
 import { ParserLanguageProvider, GrammarBuilder, ScopeBuilder } from '@sharpee/if-domain';
 import { WorldModel, type IFEntity } from '@sharpee/world-model';
 
+/** English, handed to hand-built worlds as the language's words (ADR-387 D2). */
+const ENGLISH_WORDS = { selfWords: ['me', 'myself', 'self', 'yourself'], nameStopwords: ['the', 'a', 'an', 'of'] };
+
 /**
  * A real entity (the gate reads its naming surface through the one noun
  * matcher, ADR-385 D3) carrying the flags the mock world's property filters read.
@@ -18,6 +21,7 @@ import { WorldModel, type IFEntity } from '@sharpee/world-model';
 type Flags = { visible: boolean; magical?: boolean; portable?: boolean; weapon?: boolean; creature?: boolean };
 type MockEntity = IFEntity & Flags;
 const scratch = new WorldModel();
+scratch.setLanguageWords(ENGLISH_WORDS);
 const thing = (name: string, flags: Flags): MockEntity => Object.assign(scratch.createEntity(name, 'item'), flags) as MockEntity;
 
 // Mock language provider
@@ -39,7 +43,14 @@ const mockLanguageProvider: ParserLanguageProvider = {
   getNouns: () => [],
   getAdjectives: () => [],
   getPrepositions: () => ['at', 'with', 'from', 'to'],
-  getDeterminers: () => ['the', 'a', 'an'],
+  getDeterminers: () => [{ word: 'the' }, { word: 'a' }, { word: 'an' }],
+  getSpecialVocabulary: () => ({ articles: ['a', 'an', 'the'], pronouns: ['it', 'them', 'him', 'her'], allWords: ['all', 'everything'], exceptWords: ['except', 'but'] }),
+  getLanguageWords: () => ({ selfWords: ['me', 'myself', 'self', 'yourself'], nameStopwords: ['the', 'a', 'an', 'of'] }),
+  getListSeparators: () => ['and', ','],
+  getMannerAdverbs: () => [],
+  parseCardinal: (words: readonly string[]) => (words.length === 1 && /^\d+$/.test(words[0]) ? Number(words[0]) : null),
+  getOrdinalNumbers: () => ({}),
+  getNarrativePerson: () => 'second' as const,
   getConjunctions: () => ['and', 'or'],
   getNumbers: () => [],
   getSpecialWords: () => [],
@@ -48,6 +59,9 @@ const mockLanguageProvider: ParserLanguageProvider = {
 
 // Mock world model
 class MockWorldModel {
+  getLanguageWords() {
+    return { selfWords: ['me', 'myself', 'self', 'yourself'], nameStopwords: ['the', 'a', 'an', 'of'] };
+  }
   private entities: Map<string, MockEntity> = new Map();
 
   constructor() {

@@ -9,6 +9,9 @@ import { StandardScopeResolver } from '../../../src/scope/scope-resolver';
 import { ScopeLevel } from '../../../src/scope/types';
 import { TEST_MARKER_TRAIT } from '../../test-utils';
 
+/** English, handed to hand-built worlds as the language's words (ADR-387 D2). */
+const ENGLISH_WORDS = { selfWords: ['me', 'myself', 'self', 'yourself'], nameStopwords: ['the', 'a', 'an', 'of'] };
+
 describe('Sensory Extensions', () => {
   let world: WorldModel;
   let author: AuthorModel;
@@ -19,6 +22,7 @@ describe('Sensory Extensions', () => {
 
   beforeEach(() => {
     world = new WorldModel();
+    world.setLanguageWords(ENGLISH_WORDS);
     author = new AuthorModel(world.getDataStore(), world);
     resolver = new StandardScopeResolver(world);
 

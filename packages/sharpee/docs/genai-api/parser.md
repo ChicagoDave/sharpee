@@ -236,12 +236,22 @@ export {};
  * one place pattern text is read (ADR-382 D3); `compile` turns structured
  * parts into the matcher's tokens and one record per slot (D4).
  */
-import { type PatternCompiler, type CompiledPattern, type PatternElement } from '@sharpee/if-domain';
+import { type PatternCompiler, type CompiledPattern, type PatternElement, type ParserLanguageProvider } from '@sharpee/if-domain';
 /**
  * English-specific pattern compiler
  * Handles patterns like: "put :item in|into :container"
+ *
+ * The articles come from the language provider the parser was constructed
+ * with (ADR-387 D1): a pattern's article after its first element is never
+ * required of the player (ADR-380 D2), and which words are articles is the
+ * language's to say.
  */
 export declare class EnglishPatternCompiler implements PatternCompiler {
+    private readonly articles;
+    /**
+     * @param language the provider whose articles the compiler discounts
+     */
+    constructor(language: ParserLanguageProvider);
     /**
      * Parse pattern text into parts. Elements are whitespace-separated: a
      * word, an alternation `a|b`, or a slot `:name` (greedy `:name...`); any

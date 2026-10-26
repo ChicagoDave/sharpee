@@ -31,6 +31,9 @@ import {
   parseCommand
 } from '../../test-utils';
 
+/** English, handed to hand-built worlds as the language's words (ADR-387 D2). */
+const ENGLISH_WORDS = { selfWords: ['me', 'myself', 'self', 'yourself'], nameStopwords: ['the', 'a', 'an', 'of'] };
+
 describe('CommandValidator topic resolution (ADR-231 D4)', () => {
   let world: WorldModel;
   let author: AuthorModel;
@@ -41,6 +44,7 @@ describe('CommandValidator topic resolution (ADR-231 D4)', () => {
 
   beforeEach(() => {
     world = new WorldModel();
+    world.setLanguageWords(ENGLISH_WORDS);
     author = new AuthorModel(world.getDataStore(), world);
 
     player = author.createEntity('yourself', EntityType.ACTOR);
@@ -167,6 +171,7 @@ describe('CommandValidator topic resolution (ADR-231 D4)', () => {
 describe('asking/telling report the first-class topic (ADR-231 D4)', () => {
   const setupPersonWorld = () => {
     const world = new WorldModel();
+    world.setLanguageWords(ENGLISH_WORDS);
     const author = new AuthorModel(world.getDataStore(), world);
     const player = author.createEntity('yourself', EntityType.ACTOR);
     const room = author.createEntity('Hermitage', EntityType.ROOM);

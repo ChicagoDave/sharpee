@@ -24,7 +24,7 @@ describe('ADR-384 D2 — specificity before tier', () => {
   let engine: EnglishGrammarEngine;
 
   beforeEach(() => {
-    engine = new EnglishGrammarEngine();
+    engine = new EnglishGrammarEngine(new EnglishLanguageProvider());
   });
 
   it('a more specific standard rule beats a broader story rule', () => {
@@ -48,7 +48,7 @@ describe('ADR-384 D2 — specificity before tier', () => {
 
 describe('ADR-384 D3 — every match is ranked', () => {
   it('the most specific of twelve matching standard rules wins though it is registered last', () => {
-    const engine = new EnglishGrammarEngine();
+    const engine = new EnglishGrammarEngine(new EnglishLanguageProvider());
     const grammar = engine.createBuilder();
     for (let i = 0; i < 11; i++) {
       grammar.define('frob :thing').mapsTo(`test.action.broad${i}`).build();

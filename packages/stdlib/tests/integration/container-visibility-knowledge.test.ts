@@ -13,6 +13,9 @@ import { takingAction } from '../../src/actions/standard/taking';
 import { examiningAction } from '../../src/actions/standard/examining';
 import { openingAction } from '../../src/actions/standard/opening';
 
+/** English, handed to hand-built worlds as the language's words (ADR-387 D2). */
+const ENGLISH_WORDS = { selfWords: ['me', 'myself', 'self', 'yourself'], nameStopwords: ['the', 'a', 'an', 'of'] };
+
 describe('Container visibility and knowledge', () => {
   let world: WorldModel;
   let author: AuthorModel;
@@ -27,6 +30,7 @@ describe('Container visibility and knowledge', () => {
   beforeEach(() => {
     // 1. Create world
     world = new WorldModel();
+    world.setLanguageWords(ENGLISH_WORDS);
     author = new AuthorModel(world.getDataStore(), world);
 
     // 2. Create and connect rooms

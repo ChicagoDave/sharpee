@@ -61,15 +61,56 @@ export const englishWords = {
   ],
   
   /**
-   * Common determiners
+   * Common determiners, each possessive with the person it refers to
+   * (ADR-387 D6): `my` and `our` are the first person's, `your` the
+   * second's, `his`, `her`, `its` and `their` the third's.
    */
   determiners: [
-    'my', 'your', 'his', 'her', 'its', 'our', 'their',
-    'this', 'that', 'these', 'those',
-    'each', 'every', 'either', 'neither',
-    'some', 'any', 'no', 'all', 'both', 'half',
-    'several', 'many', 'much', 'few', 'little',
-    'other', 'another', 'such', 'what', 'which'
+    { word: 'my', possessive: 'first' }, { word: 'our', possessive: 'first' },
+    { word: 'your', possessive: 'second' },
+    { word: 'his', possessive: 'third' }, { word: 'her', possessive: 'third' },
+    { word: 'its', possessive: 'third' }, { word: 'their', possessive: 'third' },
+    { word: 'this' }, { word: 'that' }, { word: 'these' }, { word: 'those' },
+    { word: 'each' }, { word: 'every' }, { word: 'either' }, { word: 'neither' },
+    { word: 'some' }, { word: 'any' }, { word: 'no' }, { word: 'all' }, { word: 'both' }, { word: 'half' },
+    { word: 'several' }, { word: 'many' }, { word: 'much' }, { word: 'few' }, { word: 'little' },
+    { word: 'other' }, { word: 'another' }, { word: 'such' }, { word: 'what' }, { word: 'which' }
+  ] as ReadonlyArray<{ word: string; possessive?: 'first' | 'second' | 'third' }>,
+
+  /**
+   * The words that mean "everything" and the words that mean "except", in
+   * a typed noun phrase (`take all but the lantern`).
+   */
+  allWords: ['all', 'everything', 'every'],
+  exceptWords: ['except', 'but'],
+
+  /**
+   * The words that name the observer, whatever the observer is called
+   * (ADR-327, ADR-387 D2). The engine hands them to the world at install.
+   */
+  selfWords: ['me', 'myself', 'self', 'yourself'],
+
+  /**
+   * Words dropped when a name's content words are derived (ADR-231 D3,
+   * PIN 2): "the bag of holding" answers to "bag" and "holding".
+   */
+  nameStopwords: ['the', 'a', 'an', 'of'],
+
+  /**
+   * The words that separate list items in typed input (ADR-386 D6): "and"
+   * and the comma, which the tokenizer gives its own token.
+   */
+  listSeparators: ['and', ','],
+
+  /**
+   * The manner adverbs a MANNER slot accepts. Stories extend the list
+   * through their vocabulary, never by editing it.
+   */
+  mannerAdverbs: [
+    'carefully', 'quietly', 'quickly', 'slowly',
+    'forcefully', 'gently', 'loudly', 'softly',
+    'cautiously', 'boldly', 'stealthily', 'silently',
+    'hastily', 'deliberately', 'violently', 'tenderly'
   ],
   
   /**

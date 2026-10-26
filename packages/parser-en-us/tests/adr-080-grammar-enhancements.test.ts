@@ -16,8 +16,8 @@ describe('ADR-080: Grammar Enhancements', () => {
   let engine: EnglishGrammarEngine;
 
   beforeEach(() => {
-    compiler = new EnglishPatternCompiler();
-    engine = new EnglishGrammarEngine();
+    compiler = new EnglishPatternCompiler(new EnglishLanguageProvider());
+    engine = new EnglishGrammarEngine(new EnglishLanguageProvider());
   });
 
   describe('Pattern Compiler - Greedy Slots (:slot...)', () => {
@@ -740,7 +740,7 @@ describe('ADR-080: Grammar Enhancements', () => {
 
       for (const adverb of adverbs) {
         // Create fresh engine for each adverb
-        const testEngine = new EnglishGrammarEngine();
+        const testEngine = new EnglishGrammarEngine(new EnglishLanguageProvider());
         const builder = testEngine.createBuilder();
         builder.define(':manner open :target')
           .manner('manner')

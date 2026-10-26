@@ -6,6 +6,8 @@
  * own grammar modules with different parts of speech.
  */
 
+import { englishWords } from './data/words.js';
+
 /**
  * English parts of speech
  * 
@@ -135,8 +137,7 @@ export const EnglishGrammarUtils = {
    * Check if a word is likely an article
    */
   isArticle(word: string): boolean {
-    const articles = ['a', 'an', 'the'];
-    return articles.includes(word.toLowerCase());
+    return englishWords.articles.includes(word.toLowerCase());
   },
 
   /**

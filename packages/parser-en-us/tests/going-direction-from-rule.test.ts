@@ -47,7 +47,7 @@ class EmptyWorld {
 /** Register a passage's commands the way the story loader does. */
 function passage(parser: EnglishParser, key: string, forms: string[]): void {
   for (const form of forms) {
-    const parts = new EnglishPatternCompiler().parse(form);
+    const parts = new EnglishPatternCompiler(new EnglishLanguageProvider()).parse(form);
     parser.getStoryGrammar().rule({ action: 'if.action.going', parts, pattern: form, defaults: { direction: key } });
   }
 }

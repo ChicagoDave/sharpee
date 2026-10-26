@@ -25,8 +25,12 @@ import { talkingAction } from '../../../src/actions/standard/talking';
 import { IFActions } from '../../../src/actions/constants';
 import { createRealTestContext, createCommand } from '../../test-utils';
 
+/** English, handed to hand-built worlds as the language's words (ADR-387 D2). */
+const ENGLISH_WORDS = { selfWords: ['me', 'myself', 'self', 'yourself'], nameStopwords: ['the', 'a', 'an', 'of'] };
+
 function setupPersonWorld(withCharacterModel: boolean) {
   const world = new WorldModel();
+  world.setLanguageWords(ENGLISH_WORDS);
   const author = new AuthorModel(world.getDataStore(), world);
   const player = author.createEntity('yourself', EntityType.ACTOR);
   const room = author.createEntity('Hermitage', EntityType.ROOM);
@@ -163,6 +167,7 @@ describe('conversation actions × the dialogue-selector socket (ADR-310 D15)', (
 
   test('registration is idempotent last-wins on the world instance (ADR-208 idiom)', () => {
     const world = new WorldModel();
+    world.setLanguageWords(ENGLISH_WORDS);
     const first: DialogueSelector = () => ({ handled: true, messageId: 'first' });
     const second: DialogueSelector = () => ({ handled: true, messageId: 'second' });
     world.registerDialogueSelector({ select: first });

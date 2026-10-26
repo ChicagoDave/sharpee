@@ -23,6 +23,9 @@ import {
 } from '../../test-utils';
 import { WorldModel } from '@sharpee/world-model';
 
+/** English, handed to hand-built worlds as the language's words (ADR-387 D2). */
+const ENGLISH_WORDS = { selfWords: ['me', 'myself', 'self', 'yourself'], nameStopwords: ['the', 'a', 'an', 'of'] };
+
 describe('lookingAction (Golden Pattern)', () => {
   describe('Action Metadata', () => {
     test('should have correct ID', () => {
@@ -185,6 +188,7 @@ describe('lookingAction (Golden Pattern)', () => {
   describe('Darkness Handling', () => {
     test('should handle dark room without light', () => {
       const world = new WorldModel();
+      world.setLanguageWords(ENGLISH_WORDS);
       const player = world.createEntity('yourself', 'actor');
       player.add({ type: TraitType.ACTOR });
       world.setPlayer(player.id);
@@ -215,6 +219,7 @@ describe('lookingAction (Golden Pattern)', () => {
 
     test('should see in dark room with light source', () => {
       const world = new WorldModel();
+      world.setLanguageWords(ENGLISH_WORDS);
       const player = world.createEntity('yourself', 'actor');
       player.add({ type: TraitType.ACTOR });
       world.setPlayer(player.id);
@@ -253,6 +258,7 @@ describe('lookingAction (Golden Pattern)', () => {
 
     test('should see with room light source', () => {
       const world = new WorldModel();
+      world.setLanguageWords(ENGLISH_WORDS);
       const player = world.createEntity('yourself', 'actor');
       player.add({ type: TraitType.ACTOR });
       world.setPlayer(player.id);
@@ -287,6 +293,7 @@ describe('lookingAction (Golden Pattern)', () => {
   describe('Special Locations', () => {
     test('should describe being in a container', () => {
       const world = new WorldModel();
+      world.setLanguageWords(ENGLISH_WORDS);
       const player = world.createEntity('yourself', 'actor');
       player.add({ type: TraitType.ACTOR });
       world.setPlayer(player.id);
@@ -321,6 +328,7 @@ describe('lookingAction (Golden Pattern)', () => {
 
     test('should describe being on a supporter', () => {
       const world = new WorldModel();
+      world.setLanguageWords(ENGLISH_WORDS);
       const player = world.createEntity('yourself', 'actor');
       player.add({ type: TraitType.ACTOR });
       world.setPlayer(player.id);

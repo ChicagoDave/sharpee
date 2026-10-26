@@ -16,6 +16,9 @@ import { CommandValidator } from '../../../src/validation/command-validator';
 import { StandardActionRegistry } from '../../../src/actions/registry';
 import { examiningAction } from '../../../src/actions/standard/examining';
 
+/** English, handed to hand-built worlds as the language's words (ADR-387 D2). */
+const ENGLISH_WORDS = { selfWords: ['me', 'myself', 'self', 'yourself'], nameStopwords: ['the', 'a', 'an', 'of'] };
+
 const mockLanguageProvider = {
   languageCode: 'en-US',
   getMessage: (id: string) => id,
@@ -54,6 +57,7 @@ describe('the self words name the current player (ADR-327)', () => {
 
   beforeEach(() => {
     world = new WorldModel();
+    world.setLanguageWords(ENGLISH_WORDS);
     author = new AuthorModel(world.getDataStore(), world);
     const room = author.createEntity('Foyer', EntityType.ROOM);
     room.add({ type: TraitType.ROOM });

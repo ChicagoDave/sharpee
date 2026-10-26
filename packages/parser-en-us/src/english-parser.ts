@@ -143,7 +143,7 @@ export class EnglishParser implements Parser {
     // Initialize grammar engine. The standard grammar is generated from the
     // Chord source (grammar/standard-en-us.story, ADR-269 D7); the ruled
     // platform-side exception rules (`?`, `trace …`) register after it.
-    this.grammarEngine = new EnglishGrammarEngine();
+    this.grammarEngine = new EnglishGrammarEngine(language);
     const grammar = this.grammarEngine.createBuilder();
     defineGrammar(grammar);
     definePlatformGrammar(grammar);

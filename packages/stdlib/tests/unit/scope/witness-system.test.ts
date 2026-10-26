@@ -19,6 +19,9 @@ vi.mock('@sharpee/core', async () => {
 
 import { createEvent } from '@sharpee/core';
 
+/** English, handed to hand-built worlds as the language's words (ADR-387 D2). */
+const ENGLISH_WORDS = { selfWords: ['me', 'myself', 'self', 'yourself'], nameStopwords: ['the', 'a', 'an', 'of'] };
+
 describe('StandardWitnessSystem', () => {
   let world: WorldModel;
   let scopeResolver: StandardScopeResolver;
@@ -30,6 +33,7 @@ describe('StandardWitnessSystem', () => {
     vi.clearAllMocks();
     
     world = new WorldModel();
+    world.setLanguageWords(ENGLISH_WORDS);
     scopeResolver = new StandardScopeResolver(world);
     witnessSystem = new StandardWitnessSystem(world, scopeResolver);
 

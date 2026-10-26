@@ -6,11 +6,12 @@
  */
 
 import { describe, it, expect } from 'vitest';
+import { EnglishLanguageProvider } from '@sharpee/lang-en-us';
 import { EnglishPatternCompiler } from '../src/english-pattern-compiler';
 import { PatternSyntaxError } from '@sharpee/if-domain';
 
 describe('EnglishPatternCompiler', () => {
-  const compiler = new EnglishPatternCompiler();
+  const compiler = new EnglishPatternCompiler(new EnglishLanguageProvider());
   const compileText = (text: string) => compiler.compile(compiler.parse(text), text);
 
   describe('Pattern Compilation', () => {

@@ -403,7 +403,6 @@ describe('EnglishLanguageProvider', () => {
       expect(provider.lemmatize('')).toBe('');
       expect(provider.pluralize('')).toBe('s');
       expect(provider.getIndefiniteArticle('')).toBe('a');
-      expect(provider.expandAbbreviation('')).toBeNull();
       expect(provider.formatList([])).toBe('');
       expect(provider.isIgnoreWord('')).toBe(false);
     });

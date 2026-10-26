@@ -1126,7 +1126,7 @@ export class GameEngine implements StoryEngine {
     // being played, not a character, so they move with the role. They live on
     // the entity's IdentityTrait, which `syncPlayerState` does not touch —
     // without this, `x me` keeps naming the old PC after every switch.
-    movePlayerRoleVocabulary(oldPlayer, newPlayer);
+    movePlayerRoleVocabulary(oldPlayer, newPlayer, this.world.getLanguageWords().selfWords);
 
     // Update WorldModel canonical reference
     this.world.setPlayer(entityId);

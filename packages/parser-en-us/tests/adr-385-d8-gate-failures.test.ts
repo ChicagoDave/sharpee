@@ -15,6 +15,9 @@ import { EnglishLanguageProvider } from '@sharpee/lang-en-us';
 import { EnglishParser } from '../src/english-parser';
 import { getPronounContextManager } from '../src/pronoun-context';
 
+/** English, handed to hand-built worlds as the language's words (ADR-387 D2). */
+const ENGLISH_WORDS = { selfWords: ['me', 'myself', 'self', 'yourself'], nameStopwords: ['the', 'a', 'an', 'of'] };
+
 describe('a gate failure names the phrase and the reason (ADR-385 D8)', () => {
   let world: WorldModel;
   let parser: EnglishParser;
@@ -32,6 +35,7 @@ describe('a gate failure names the phrase and the reason (ADR-385 D8)', () => {
   beforeEach(() => {
     vocabularyRegistry.clear();
     world = new WorldModel();
+    world.setLanguageWords(ENGLISH_WORDS);
     room = world.createEntity('Workshop', 'room');
     room.add(new RoomTrait());
     room.add(new ContainerTrait());

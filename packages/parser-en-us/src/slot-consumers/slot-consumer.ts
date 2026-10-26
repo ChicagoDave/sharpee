@@ -20,7 +20,7 @@ import {
   type SlotConstraint,
   type PatternToken
 } from '@sharpee/if-domain';
-import { type Token } from '@sharpee/if-domain';
+import { type Token, type ParserLanguageProvider } from '@sharpee/if-domain';
 import type { SlotFailure } from '../parse-failure.js';
 
 /**
@@ -78,6 +78,8 @@ export interface SlotConsumerContext {
   };
   /** Grammar context with world, actor, location */
   context: GrammarContext;
+  /** The language the parser was constructed with: its numbers, ordinals and words (ADR-387 D1) */
+  language: ParserLanguageProvider;
   /** The slot type being consumed */
   slotType: SlotType;
   /** Constraints for this slot */

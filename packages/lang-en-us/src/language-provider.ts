@@ -14,13 +14,13 @@
  *   ADR-158 — the formatter chain the assembler applies to a resolved message.
  */
 
-import { type LanguageProvider, type ParserLanguageProvider, type ActionHelp, type VerbVocabulary, type DirectionVocabulary, type SpecialVocabulary, type LanguageGrammarPattern, type LocaleSettings, type RenderContext } from '@sharpee/if-domain';
+import { type LanguageProvider, type ParserLanguageProvider, type ActionHelp, type VerbVocabulary, type DirectionVocabulary, type SpecialVocabulary, type LanguageWords, type DeterminerVocabulary, type LanguageGrammarPattern, type LocaleSettings, type RenderContext } from '@sharpee/if-domain';
 import type { ITextBlock } from '@sharpee/text-blocks';
 import { EnglishAssembler, registerPronounSet as registerAssemblerPronounSet } from './assembler/index.js';
 import type { PronounSetForms } from './assembler/index.js';
 import { parsePhraseTemplate } from './parser/index.js';
 import { englishVerbs } from './data/verbs.js';
-import { englishWords, irregularPlurals, abbreviations } from './data/words.js';
+import { englishWords, irregularPlurals, parseCardinal, ordinalNumbers } from './data/words.js';
 import { pluralize as pluralizeNoun } from './pluralize.js';
 import { standardActionLanguage } from './actions/index.js';
 import { npcLanguage, conversationLanguage, propagationLanguage, influenceLanguage } from './npc/index.js';
@@ -550,9 +550,35 @@ export class EnglishLanguageProvider implements ParserLanguageProvider {
     return {
       articles: englishWords.articles,
       pronouns: englishWords.pronouns,
-      allWords: ['all', 'everything', 'every'],
-      exceptWords: ['except', 'but']
+      allWords: englishWords.allWords,
+      exceptWords: englishWords.exceptWords
     };
+  }
+
+  /**
+   * The words the world needs from English (ADR-387 D2): the self words and
+   * the name stopwords, from the one word table.
+   *
+   * @returns the language words the engine assigns to the world at install
+   */
+  getLanguageWords(): LanguageWords {
+    return { selfWords: englishWords.selfWords, nameStopwords: englishWords.nameStopwords };
+  }
+
+  getListSeparators(): string[] {
+    return [...englishWords.listSeparators];
+  }
+
+  getMannerAdverbs(): string[] {
+    return [...englishWords.mannerAdverbs];
+  }
+
+  parseCardinal(words: readonly string[]): number | null {
+    return parseCardinal(words);
+  }
+
+  getOrdinalNumbers(): Readonly<Record<string, number>> {
+    return ordinalNumbers;
   }
 
   getCommonAdjectives(): string[] {
@@ -567,8 +593,8 @@ export class EnglishLanguageProvider implements ParserLanguageProvider {
     return englishWords.prepositions;
   }
 
-  getDeterminers(): string[] {
-    return englishWords.determiners || [];
+  getDeterminers(): DeterminerVocabulary[] {
+    return [...englishWords.determiners];
   }
 
   getConjunctions(): string[] {
@@ -650,10 +676,6 @@ export class EnglishLanguageProvider implements ParserLanguageProvider {
     }
     
     return lower;
-  }
-
-  expandAbbreviation(abbreviation: string): string | null {
-    return abbreviations.get(abbreviation.toLowerCase()) || null;
   }
 
   formatList(items: string[], conjunction: 'and' | 'or' = 'and'): string {

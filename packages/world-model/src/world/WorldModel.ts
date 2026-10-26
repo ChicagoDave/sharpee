@@ -20,6 +20,7 @@ import { WearableBehavior } from '../traits/wearable/wearableBehavior.js';
 import type { WearableTrait } from '../traits/wearable/wearableTrait.js';
 import { DirectionType, ExitKey, getOppositeDirection, isDirection } from '../constants/directions.js';
 import { type ISemanticEvent, type ISemanticEventSource } from '@sharpee/core';
+import type { LanguageWords } from '@sharpee/if-domain';
 import { SpatialIndex } from './SpatialIndex.js';
 import { VisibilityBehavior } from './VisibilityBehavior.js';
 import { ReachabilityBehavior } from './ReachabilityBehavior.js';
@@ -586,6 +587,8 @@ export class WorldModel implements IWorldModel {
   private removalObservers: EntityRemovalObserver[] = [];
   private state: WorldState = {};
   private playerId: string | undefined;
+  /** The language's words the matcher reads (ADR-387 D2); assigned at install, never defaulted. */
+  private languageWords: LanguageWords | undefined;
   /** The ending this story reached, or undefined while play continues (ADR-347 D2a). */
   private storyEnding: IStoryEnding | undefined;
   private spatialIndex: SpatialIndex;
@@ -679,6 +682,34 @@ export class WorldModel implements IWorldModel {
 
     // Register default scope rules
     this.registerDefaultScopeRules();
+  }
+
+  /**
+   * Assign the language's words to this world (ADR-387 D2). The engine calls
+   * this at install from its language provider; a hand-built world calls it
+   * before anything derives a name.
+   *
+   * @param words the self words and name stopwords of the story's language
+   */
+  setLanguageWords(words: LanguageWords): void {
+    this.languageWords = words;
+  }
+
+  /**
+   * The language's words this world was given.
+   *
+   * @returns the self words and name stopwords
+   * @throws Error when no words were assigned: a world matches no name with
+   *   empty lists; `installStory` assigns them, and a hand-built world calls
+   *   `setLanguageWords` first
+   */
+  getLanguageWords(): LanguageWords {
+    if (!this.languageWords) {
+      throw new Error(
+        'WorldModel has no language words: installStory assigns them from the language provider; a hand-built world calls setLanguageWords first'
+      );
+    }
+    return this.languageWords;
   }
 
   // Platform event emission helper

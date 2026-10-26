@@ -19,8 +19,14 @@ import type { PatternElement, Seat } from '@sharpee/if-domain';
 /** The type a typed grammar slot carries: a seat table leaves these slots out. */
 export type ActSlotType = 'instrument' | 'topic' | 'text';
 
-/** Locale-owned stdlib facts (direction words join in a later ADR-276 phase). */
+/** Locale-owned stdlib facts: the grammar shapes, seats and typed slots, and the language words the IDE reads without a runtime (ADR-387 D2). */
 export interface StdlibLocaleFacts {
+  /** The locale's articles, as the language provider declares them (ADR-387 D1). */
+  articles: readonly string[];
+  /** The words that name the observer (ADR-387 D2). */
+  selfWords: readonly string[];
+  /** Words dropped when a name's content words are derived (ADR-387 D2). */
+  nameStopwords: readonly string[];
   /**
    * Standard grammar pattern shapes per action id, as parts — the loader's
    * removable surface (ADR-270 D3), compared to a removal by shape and
@@ -166,6 +172,9 @@ export const STDLIB_MANIFEST: StdlibManifest = {
   counterpartActions: new Set(["if.action.asking_for", "if.action.giving", "if.action.inserting", "if.action.putting", "if.action.showing", "if.action.throwing", "if.action.tying"]),
   locales: {
     'en-US': {
+      articles: ["a", "an", "the"],
+      selfWords: ["me", "myself", "self", "yourself"],
+      nameStopwords: ["the", "a", "an", "of"],
       grammarShapes: {
         "if.action.about": [
           [{"kind":"word","word":"about"}],

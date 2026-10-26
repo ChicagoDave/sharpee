@@ -104,13 +104,14 @@ describe('cloak.story loads into a playable world', () => {
     expect(world.evaluate(darkKey(entity('foyer-bar').id))).toBe(true);
   });
 
-  it('returns the named protagonist, carrying the role vocabulary, placed in the foyer', () => {
+  it('returns the named protagonist, placed in the foyer, with no role vocabulary of its own', () => {
     // ADR-327 D10: the player is a character the story names, not a synthetic
-    // `yourself` actor. What the ROLE contributes is the self-vocabulary and
-    // the carrying capacity; the name and description are the character's own.
+    // `yourself` actor. The ROLE's self-vocabulary is the language's (ADR-387
+    // D2): the engine stamps it at install from the world's language words,
+    // so the loader, which knows no language, leaves the aliases alone.
     const identity = player.get(TraitType.IDENTITY) as IdentityTrait;
     expect(identity.name).toBe('Alex');
-    expect(identity.aliases).toEqual(expect.arrayContaining(['self', 'me', 'myself']));
+    expect(identity.aliases ?? []).not.toEqual(expect.arrayContaining(['me']));
     // ADR-333 D1a: the description rides as a key (ADR-107 id mode); the
     // text is what the story registers under it.
     const registered = new Map<string, string>();

@@ -23,6 +23,9 @@ import { examiningAction } from '../../../src/actions/standard/examining';
 import { puttingAction } from '../../../src/actions/standard/putting';
 import { pushingAction } from '../../../src/actions/standard/pushing';
 
+/** English, handed to hand-built worlds as the language's words (ADR-387 D2). */
+const ENGLISH_WORDS = { selfWords: ['me', 'myself', 'self', 'yourself'], nameStopwords: ['the', 'a', 'an', 'of'] };
+
 // Mock event source for testing debug events
 class TestEventSource implements GenericEventSource<SystemEvent> {
   events: SystemEvent[] = [];
@@ -57,6 +60,7 @@ describe('CommandValidator (Golden Pattern)', () => {
   beforeEach(() => {
     // Create world model and author model for test setup
     world = new WorldModel();
+    world.setLanguageWords(ENGLISH_WORDS);
     author = new AuthorModel(world.getDataStore(), world);
     
     // Create player and room using AuthorModel to bypass sanity checks

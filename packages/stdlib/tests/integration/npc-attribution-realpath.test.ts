@@ -35,6 +35,9 @@ import { createCommand } from '../test-utils';
 import { createFixtureRandomService } from '../test-utils/fixture-random-service';
 import { nounPhraseFor } from '../../src/utils';
 
+/** English, handed to hand-built worlds as the language's words (ADR-387 D2). */
+const ENGLISH_WORDS = { selfWords: ['me', 'myself', 'self', 'yourself'], nameStopwords: ['the', 'a', 'an', 'of'] };
+
 /** A render context mirroring the engine's `makeRenderContext(params)`. */
 function makeCtx(params: Record<string, unknown>, narrative: NarrativeAgreement = { person: 'third' }): RenderContext {
   return {
@@ -59,6 +62,7 @@ const render = (messageId: string, params: Record<string, unknown>): string =>
 /** A standalone entity carrying just an IdentityTrait, for the `nounPhraseFor` seam. */
 function npcEntity(name: string, identity: Record<string, unknown> = {}): IFEntity {
   const world = new WorldModel();
+  world.setLanguageWords(ENGLISH_WORDS);
   const e = world.createEntity(name, EntityType.ACTOR);
   e.add(new IdentityTrait({ name, ...identity } as ConstructorParameters<typeof IdentityTrait>[0]));
   return e;
@@ -80,6 +84,7 @@ describe('ADR-203 NPC attribution — real path', () => {
 
   function twoRooms(): { world: WorldModel; player: IFEntity; roomA: IFEntity } {
     const world = new WorldModel();
+    world.setLanguageWords(ENGLISH_WORDS);
     const player = world.createEntity('yourself', EntityType.ACTOR);
     player.add({ type: TraitType.ACTOR, isPlayer: true } as never);
     world.setPlayer(player.id);
@@ -147,6 +152,7 @@ describe('ADR-203 NPC attribution — real path', () => {
 
   test('AC-6: an NPC with no IdentityTrait degrades gracefully (name + singular, no throw)', () => {
     const world = new WorldModel();
+    world.setLanguageWords(ENGLISH_WORDS);
     const bare = world.createEntity('gizmo', EntityType.ACTOR); // no IdentityTrait
 
     expect(() => nounPhraseFor(bare)).not.toThrow();

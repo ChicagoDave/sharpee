@@ -15,20 +15,31 @@ import {
   type PatternElement,
   type PatternToken,
   PatternSyntaxError,
-  SlotType
+  SlotType,
+  type ParserLanguageProvider
 } from '@sharpee/if-domain';
-import { englishWords } from '@sharpee/lang-en-us';
 
 const SLOT_NAME = /^[a-zA-Z_]\w*$/;
-
-/** English articles: a pattern's article after its first element is never required of the player (ADR-380 D2). */
-const ARTICLE_WORDS: ReadonlySet<string> = new Set(englishWords.articles.map((a) => a.toLowerCase()));
 
 /**
  * English-specific pattern compiler
  * Handles patterns like: "put :item in|into :container"
+ *
+ * The articles come from the language provider the parser was constructed
+ * with (ADR-387 D1): a pattern's article after its first element is never
+ * required of the player (ADR-380 D2), and which words are articles is the
+ * language's to say.
  */
 export class EnglishPatternCompiler implements PatternCompiler {
+  private readonly articles: ReadonlySet<string>;
+
+  /**
+   * @param language the provider whose articles the compiler discounts
+   */
+  constructor(language: ParserLanguageProvider) {
+    this.articles = new Set(language.getSpecialVocabulary().articles.map((a) => a.toLowerCase()));
+  }
+
   /**
    * Parse pattern text into parts. Elements are whitespace-separated: a
    * word, an alternation `a|b`, or a slot `:name` (greedy `:name...`); any
@@ -147,7 +158,7 @@ export class EnglishPatternCompiler implements PatternCompiler {
     // What the match requires (ADR-386 D7): every required element less the
     // articles after the first, which the matcher never demands; a
     // pattern's first word is its verb, even when spelled like an article.
-    const minTokens = tokens.filter((t, index) => !t.optional && !(index > 0 && t.type === 'literal' && ARTICLE_WORDS.has(t.value))).length;
+    const minTokens = tokens.filter((t, index) => !t.optional && !(index > 0 && t.type === 'literal' && this.articles.has(t.value))).length;
     return { tokens, slots, slotsByName, minTokens };
   }
 

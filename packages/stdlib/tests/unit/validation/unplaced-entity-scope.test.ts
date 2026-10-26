@@ -19,6 +19,9 @@ import { wearingAction } from '../../../src/actions/standard/wearing';
 import { StandardScopeResolver } from '../../../src/scope/scope-resolver';
 import { ScopeLevel } from '../../../src/scope/types';
 
+/** English, handed to hand-built worlds as the language's words (ADR-387 D2). */
+const ENGLISH_WORDS = { selfWords: ['me', 'myself', 'self', 'yourself'], nameStopwords: ['the', 'a', 'an', 'of'] };
+
 const mockLanguageProvider = {
   languageCode: 'en-US',
   getMessage: (id: string) => id,
@@ -60,6 +63,7 @@ describe('GH #374: an unplaced entity never wins scope over a carried one', () =
 
   beforeEach(() => {
     world = new WorldModel();
+    world.setLanguageWords(ENGLISH_WORDS);
     author = new AuthorModel(world.getDataStore(), world);
     player = author.createEntity('yourself', EntityType.ACTOR);
     room = author.createEntity('Bathroom', EntityType.ROOM);

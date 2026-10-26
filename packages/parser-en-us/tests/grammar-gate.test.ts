@@ -6,6 +6,7 @@
  * Each test asserts on what the engine matched and on the failure list.
  */
 import { describe, it, expect, beforeEach } from 'vitest';
+import { EnglishLanguageProvider } from '@sharpee/lang-en-us';
 import { EnglishGrammarEngine } from '../src/english-grammar-engine';
 import { EnglishPatternCompiler } from '../src/english-pattern-compiler';
 import { Token, GrammarContext } from '@sharpee/if-domain';
@@ -22,7 +23,7 @@ describe('the grammar rule gate (ADR-378 D5)', () => {
   let engine: EnglishGrammarEngine;
 
   beforeEach(() => {
-    engine = new EnglishGrammarEngine();
+    engine = new EnglishGrammarEngine(new EnglishLanguageProvider());
   });
 
   it('a gated rule matches where its predicate holds and is skipped where it does not', () => {
@@ -67,7 +68,7 @@ describe('the grammar rule gate (ADR-378 D5)', () => {
     const story = engine.createBuilder('story');
     const onTheWire = (ctx: GrammarContext) => ctx.currentLocation === 'r_wire';
     for (const pattern of ['let go', 'release :thing', 'let go of :thing']) {
-      story.rule({ action: 'story.releasing', parts: new EnglishPatternCompiler().parse(pattern), pattern, when: onTheWire });
+      story.rule({ action: 'story.releasing', parts: new EnglishPatternCompiler(new EnglishLanguageProvider()).parse(pattern), pattern, when: onTheWire });
     }
 
     const rules = engine.getRules().filter((r) => r.action === 'story.releasing');

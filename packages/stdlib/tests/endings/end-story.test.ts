@@ -13,9 +13,13 @@ import { StoryEndingEvents } from '@sharpee/if-domain';
 import { WorldModel } from '@sharpee/world-model';
 import { endStory } from '../../src/endings';
 
+/** English, handed to hand-built worlds as the language's words (ADR-387 D2). */
+const ENGLISH_WORDS = { selfWords: ['me', 'myself', 'self', 'yourself'], nameStopwords: ['the', 'a', 'an', 'of'] };
+
 describe('endStory (ADR-347 D2c)', () => {
   it('records the Ending on the world and returns the blessed victory event', () => {
     const world = new WorldModel();
+    world.setLanguageWords(ENGLISH_WORDS);
     // PRECONDITION: the story has not ended.
     expect(world.getEnding()).toBeUndefined();
 
@@ -34,6 +38,7 @@ describe('endStory (ADR-347 D2c)', () => {
 
   it('records a defeat with its cause and returns the defeat event', () => {
     const world = new WorldModel();
+    world.setLanguageWords(ENGLISH_WORDS);
 
     const event = endStory(world, 'defeat', { turn: 5, cause: 'grue' });
 
@@ -47,6 +52,7 @@ describe('endStory (ADR-347 D2c)', () => {
     // turn provider and `turnNow()` answers 0, which is a real answer, not
     // a missing one. Nothing may record an ending without saying when.
     const world = new WorldModel();
+    world.setLanguageWords(ENGLISH_WORDS);
 
     endStory(world, 'victory', { turn: 0 });
 
@@ -55,6 +61,7 @@ describe('endStory (ADR-347 D2c)', () => {
 
   it('AC-4: the first ending wins — a second call writes nothing, emits nothing, returns undefined', () => {
     const world = new WorldModel();
+    world.setLanguageWords(ENGLISH_WORDS);
     const first = endStory(world, 'victory', { turn: 12, messageId: 'won.phrase' });
     expect(first).toBeDefined();
 

@@ -25,6 +25,9 @@ import { CommandValidator } from '../../../src/validation/command-validator';
 import { StandardActionRegistry } from '../../../src/actions/registry';
 import { droppingAction } from '../../../src/actions/standard/dropping';
 
+/** English, handed to hand-built worlds as the language's words (ADR-387 D2). */
+const ENGLISH_WORDS = { selfWords: ['me', 'myself', 'self', 'yourself'], nameStopwords: ['the', 'a', 'an', 'of'] };
+
 const mockLanguageProvider = {
   languageCode: 'en-US',
   getMessage: (id: string) => id,
@@ -67,6 +70,7 @@ describe('CommandValidator — preferredScope disambiguation (Phase 6/10)', () =
 
   beforeEach(() => {
     world = new WorldModel();
+    world.setLanguageWords(ENGLISH_WORDS);
     author = new AuthorModel(world.getDataStore(), world);
 
     player = author.createEntity('yourself', EntityType.ACTOR);

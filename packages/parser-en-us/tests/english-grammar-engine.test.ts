@@ -4,6 +4,7 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
+import { EnglishLanguageProvider } from '@sharpee/lang-en-us';
 import { EnglishGrammarEngine } from '../src/english-grammar-engine';
 import { Token, PartOfSpeech as VocabPartOfSpeech } from '@sharpee/if-domain';
 
@@ -12,7 +13,7 @@ describe('EnglishGrammarEngine', () => {
   let grammar: any;
   
   beforeEach(() => {
-    engine = new EnglishGrammarEngine();
+    engine = new EnglishGrammarEngine(new EnglishLanguageProvider());
     grammar = engine.createBuilder();
   });
   

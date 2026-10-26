@@ -16,7 +16,8 @@ import {
   EntityVocabulary,
   VerbVocabulary,
   DirectionVocabulary,
-  SpecialVocabulary
+  SpecialVocabulary,
+  DeterminerVocabulary
 } from './vocabulary-types.js';
 
 /**
@@ -320,14 +321,14 @@ export class VocabularyRegistry {
   /**
    * Register determiners (beyond articles)
    */
-  registerDeterminers(determiners: string[]): void {
+  registerDeterminers(determiners: readonly DeterminerVocabulary[]): void {
     const entries: VocabularyEntry[] = [];
 
     for (const det of determiners) {
       entries.push({
-        word: det.toLowerCase(),
+        word: det.word.toLowerCase(),
         partOfSpeech: PartOfSpeech.DETERMINER,
-        mapsTo: det.toUpperCase(),
+        mapsTo: det.word.toUpperCase(),
         source: 'base'
       });
     }

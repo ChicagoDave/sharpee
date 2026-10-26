@@ -20,6 +20,9 @@ import { EnglishParser } from '../src/english-parser';
 import { PronounContextManager, setPronounContextManager } from '../src/pronoun-context';
 import { failureOutranking, type PartialMatchFailure } from '../src/parse-failure';
 
+/** English, handed to hand-built worlds as the language's words (ADR-387 D2). */
+const ENGLISH_WORDS = { selfWords: ['me', 'myself', 'self', 'yourself'], nameStopwords: ['the', 'a', 'an', 'of'] };
+
 const tokens = (text: string): Token[] =>
   text.split(' ').map((word, index) => ({
     word,
@@ -52,6 +55,7 @@ describe('ADR-386 D4: readings are ranked by their nouns', () => {
   beforeEach(() => {
     vocabularyRegistry.clear();
     world = new WorldModel();
+    world.setLanguageWords(ENGLISH_WORDS);
     room = world.createEntity('Workshop', 'room');
     room.add(new RoomTrait());
     room.add(new ContainerTrait());
@@ -61,7 +65,7 @@ describe('ADR-386 D4: readings are ranked by their nouns', () => {
     world.moveEntity(player.id, room.id);
     world.setPlayer(player.id);
     context = { world, actorId: player.id, currentLocation: room.id, slots: new Map() };
-    engine = new EnglishGrammarEngine();
+    engine = new EnglishGrammarEngine(new EnglishLanguageProvider());
   });
 
   it('two names beat one: give old man coin reads as old man + coin (A1)', () => {
@@ -138,7 +142,7 @@ describe('ADR-386 D4: readings are ranked by their nouns', () => {
   });
 
   it('without a world the rank is neutral, so ADR-384 keys and search order decide as before', () => {
-    const bare = new EnglishGrammarEngine();
+    const bare = new EnglishGrammarEngine(new EnglishLanguageProvider());
     bare.createBuilder().define('give :recipient :item').mapsTo('if.action.giving').build();
     const matches = bare.findMatches(tokens('give old man coin'), { world: null, actorId: 'player', currentLocation: 'room', slots: new Map() });
     expect(matches.map((m) => m.nounRank)).toEqual([
@@ -191,6 +195,7 @@ describe('ADR-386 D5: a failure outranks a reading only when it names more', () 
     beforeEach(() => {
       vocabularyRegistry.clear();
       world = new WorldModel();
+      world.setLanguageWords(ENGLISH_WORDS);
       const room = world.createEntity('Workshop', 'room');
       room.add(new RoomTrait());
       room.add(new ContainerTrait());

@@ -17,12 +17,16 @@ import { IdentityTrait } from '../../../src/traits/identity/identityTrait';
 import { TraitType } from '../../../src/traits/trait-types';
 import { EntityType } from '../../../src/entities/entity-types';
 
+/** English, handed in as the language's words (ADR-387 D2); world-model holds none. */
+const WORDS = { selfWords: ['me', 'myself', 'self', 'yourself'], nameStopwords: ['the', 'a', 'an', 'of'] };
+
 const surface = (over: Partial<NamingSurface> = {}): NamingSurface => ({
   name: 'brass key',
   aliases: [],
   adjectives: [],
   type: 'item',
   isObserver: false,
+  words: WORDS,
   ...over
 });
 
@@ -79,6 +83,7 @@ describe('matchNoun (ADR-385 D1, ADR-231 D3 tiers)', () => {
 describe('namingSurfaceOf (ADR-385 D1)', () => {
   const build = () => {
     const world = new WorldModel();
+    world.setLanguageWords(WORDS);
     const author = new AuthorModel(world.getDataStore(), world);
     const room = (name: string) => {
       const r = author.createEntity(name, EntityType.ROOM);
@@ -103,7 +108,8 @@ describe('namingSurfaceOf (ADR-385 D1)', () => {
       aliases: ['latchkey'],
       adjectives: ['shiny'],
       type: 'item',
-      isObserver: false
+      isObserver: false,
+      words: WORDS
     });
   });
 

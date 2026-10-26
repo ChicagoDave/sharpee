@@ -16,8 +16,12 @@ import { expandMultiObject } from '../../../src/helpers/multi-object-handler';
 import { createCommand } from '../../test-utils';
 import { createFixtureRandomService } from '../../test-utils/fixture-random-service';
 
+/** English, handed to hand-built worlds as the language's words (ADR-387 D2). */
+const ENGLISH_WORDS = { selfWords: ['me', 'myself', 'self', 'yourself'], nameStopwords: ['the', 'a', 'an', 'of'] };
+
 function buildWorld() {
   const world = new WorldModel();
+  world.setLanguageWords(ENGLISH_WORDS);
   const hall = world.createEntity('Hall', EntityType.ROOM);
   hall.add(new RoomTrait());
   const player = world.createEntity('You', EntityType.ACTOR);

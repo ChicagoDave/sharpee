@@ -24,6 +24,9 @@ import {
 } from '../../test-utils';
 import { runValidatePhase, runExecutePhase, runReportPhase } from '../../../src/actions/lifecycle/phase-runner';
 
+/** English, handed to hand-built worlds as the language's words (ADR-387 D2). */
+const ENGLISH_WORDS = { selfWords: ['me', 'myself', 'self', 'yourself'], nameStopwords: ['the', 'a', 'an', 'of'] };
+
 describe('goingAction (Golden Pattern)', () => {
   describe('Four-Phase Pattern Compliance', () => {
     test('should have required methods for four-phase pattern', () => {
@@ -122,6 +125,7 @@ describe('goingAction (Golden Pattern)', () => {
 
     test('should fail when room has no exits', () => {
       const world = new WorldModel();
+      world.setLanguageWords(ENGLISH_WORDS);
       const player = world.createEntity('yourself', 'object');
       player.add({ type: TraitType.ACTOR, isPlayer: true });
       world.setPlayer(player.id);
@@ -147,6 +151,7 @@ describe('goingAction (Golden Pattern)', () => {
 
     test('should fail when no exit in specified direction', () => {
       const world = new WorldModel();
+      world.setLanguageWords(ENGLISH_WORDS);
       const player = world.createEntity('yourself', 'object');
       player.add({ type: TraitType.ACTOR, isPlayer: true });
       world.setPlayer(player.id);
@@ -178,6 +183,7 @@ describe('goingAction (Golden Pattern)', () => {
 
     test('should fail when door is closed', () => {
       const world = new WorldModel();
+      world.setLanguageWords(ENGLISH_WORDS);
       const player = world.createEntity('yourself', 'object');
       player.add({ type: TraitType.ACTOR, isPlayer: true });
       world.setPlayer(player.id);
@@ -252,6 +258,7 @@ describe('goingAction (Golden Pattern)', () => {
 
     test('should fail when door is locked', () => {
       const world = new WorldModel();
+      world.setLanguageWords(ENGLISH_WORDS);
       const player = world.createEntity('yourself', 'object');
       player.add({ type: TraitType.ACTOR, isPlayer: true });
       world.setPlayer(player.id);
@@ -301,6 +308,7 @@ describe('goingAction (Golden Pattern)', () => {
 
     test('should fail when destination not found', () => {
       const world = new WorldModel();
+      world.setLanguageWords(ENGLISH_WORDS);
       const player = world.createEntity('yourself', 'object');
       player.add({ type: TraitType.ACTOR, isPlayer: true });
       world.setPlayer(player.id);
@@ -331,6 +339,7 @@ describe('goingAction (Golden Pattern)', () => {
       // Note: Per ADR-068, darkness affects visibility (looking), not movement.
       // This matches traditional IF behavior (e.g., Cloak of Darkness).
       const world = new WorldModel();
+      world.setLanguageWords(ENGLISH_WORDS);
       const player = world.createEntity('yourself', 'object');
       player.add({ type: TraitType.ACTOR, isPlayer: true });
       world.setPlayer(player.id);
@@ -371,6 +380,7 @@ describe('goingAction (Golden Pattern)', () => {
   describe('Successful Movement', () => {
     test('should move in cardinal direction', () => {
       const world = new WorldModel();
+      world.setLanguageWords(ENGLISH_WORDS);
       const player = world.createEntity('yourself', 'object');
       player.add({ type: TraitType.ACTOR, isPlayer: true });
       world.setPlayer(player.id);
@@ -433,6 +443,7 @@ describe('goingAction (Golden Pattern)', () => {
 
     test('should exclude scenery from the destination contents list', () => {
       const world = new WorldModel();
+      world.setLanguageWords(ENGLISH_WORDS);
       const player = world.createEntity('yourself', 'object');
       player.add({ type: TraitType.ACTOR, isPlayer: true });
       world.setPlayer(player.id);
@@ -474,6 +485,7 @@ describe('goingAction (Golden Pattern)', () => {
 
     test('should handle direction abbreviations', () => {
       const world = new WorldModel();
+      world.setLanguageWords(ENGLISH_WORDS);
       const player = world.createEntity('yourself', 'object');
       player.add({ type: TraitType.ACTOR, isPlayer: true });
       world.setPlayer(player.id);
@@ -508,6 +520,7 @@ describe('goingAction (Golden Pattern)', () => {
 
     test('should track first visit to a room', () => {
       const world = new WorldModel();
+      world.setLanguageWords(ENGLISH_WORDS);
       const player = world.createEntity('yourself', 'object');
       player.add({ type: TraitType.ACTOR, isPlayer: true });
       world.setPlayer(player.id);
@@ -552,6 +565,7 @@ describe('goingAction (Golden Pattern)', () => {
 
     test('should move through open door', () => {
       const world = new WorldModel();
+      world.setLanguageWords(ENGLISH_WORDS);
       const player = world.createEntity('yourself', 'object');
       player.add({ type: TraitType.ACTOR, isPlayer: true });
       world.setPlayer(player.id);
@@ -592,6 +606,7 @@ describe('goingAction (Golden Pattern)', () => {
 
     test('should move to dark room with light', () => {
       const world = new WorldModel();
+      world.setLanguageWords(ENGLISH_WORDS);
       const player = world.createEntity('yourself', 'object');
       player.add({ type: TraitType.ACTOR, isPlayer: true });
       world.setPlayer(player.id);
@@ -637,6 +652,7 @@ describe('goingAction (Golden Pattern)', () => {
 
     test('should accept direction from directObject', () => {
       const world = new WorldModel();
+      world.setLanguageWords(ENGLISH_WORDS);
       const player = world.createEntity('yourself', 'object');
       player.add({ type: TraitType.ACTOR, isPlayer: true });
       world.setPlayer(player.id);
@@ -676,6 +692,7 @@ describe('goingAction (Golden Pattern)', () => {
   describe('Event Structure Validation', () => {
     test('should include proper entities in all events', () => {
       const world = new WorldModel();
+      world.setLanguageWords(ENGLISH_WORDS);
       const player = world.createEntity('yourself', 'object');
       player.add({ type: TraitType.ACTOR, isPlayer: true });
       world.setPlayer(player.id);
@@ -729,6 +746,7 @@ describe('goingAction (Golden Pattern)', () => {
       
       Object.entries(opposites).forEach(([dir, opposite]) => {
         const world = new WorldModel();
+        world.setLanguageWords(ENGLISH_WORDS);
         const player = world.createEntity('yourself', 'object');
         player.add({ type: TraitType.ACTOR, isPlayer: true });
         world.setPlayer(player.id);
@@ -776,6 +794,7 @@ describe('goingAction (Golden Pattern)', () => {
 describe('World State Mutations', () => {
   test('should actually move player to destination room', () => {
     const world = new WorldModel();
+    world.setLanguageWords(ENGLISH_WORDS);
     const player = world.createEntity('yourself', 'object');
     player.add({ type: TraitType.ACTOR, isPlayer: true });
     world.setPlayer(player.id);
@@ -812,6 +831,7 @@ describe('World State Mutations', () => {
 
   test('should NOT move player when door is closed', () => {
     const world = new WorldModel();
+    world.setLanguageWords(ENGLISH_WORDS);
     const player = world.createEntity('yourself', 'object');
     player.add({ type: TraitType.ACTOR, isPlayer: true });
     world.setPlayer(player.id);
@@ -854,6 +874,7 @@ describe('World State Mutations', () => {
 
   test('should NOT move player when no exit in direction', () => {
     const world = new WorldModel();
+    world.setLanguageWords(ENGLISH_WORDS);
     const player = world.createEntity('yourself', 'object');
     player.add({ type: TraitType.ACTOR, isPlayer: true });
     world.setPlayer(player.id);
@@ -890,6 +911,7 @@ describe('World State Mutations', () => {
 
   test('should mark room as visited after first visit', () => {
     const world = new WorldModel();
+    world.setLanguageWords(ENGLISH_WORDS);
     const player = world.createEntity('yourself', 'object');
     player.add({ type: TraitType.ACTOR, isPlayer: true });
     world.setPlayer(player.id);

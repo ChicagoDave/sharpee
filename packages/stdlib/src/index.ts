@@ -19,7 +19,6 @@ export * from './actions/index.js';
 export * from './events/index.js';
 export * from './parser/index.js';
 export * from './validation/index.js';
-export * from './vocabulary/index.js';
 export * from './capabilities/index.js';
 export * from './query-handlers/index.js';
 export * from './scope/index.js';

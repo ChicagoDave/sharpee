@@ -31,7 +31,9 @@ const INSTALL_ORDER = [
   'narrative-settings',
   'concealed-visibility',
   'initialize-world',
+  'language-words',
   'create-player',
+  'stamp-player-self-words',
   'validate-role-holder',
   'listener-trait',
   'validate-room-snippets',
@@ -64,7 +66,8 @@ describe('the story installation list (ADR-334 A1)', () => {
     const player = swapped.findIndex((s) => s.name === 'create-player');
     [swapped[world], swapped[player]] = [swapped[player], swapped[world]];
     expect(requiresOrderViolations(swapped)).toEqual([
-      { name: 'create-player', requires: 'initialize-world' }
+      { name: 'create-player', requires: 'initialize-world' },
+      { name: 'language-words', requires: 'initialize-world' }
     ]);
   });
 

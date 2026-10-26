@@ -183,7 +183,7 @@ describe('ADR-231 D2b — ordering contract (synthetic rules)', () => {
   }
 
   beforeEach(() => {
-    engine = new EnglishGrammarEngine();
+    engine = new EnglishGrammarEngine(new EnglishLanguageProvider());
     grammar = engine.createBuilder();
   });
 

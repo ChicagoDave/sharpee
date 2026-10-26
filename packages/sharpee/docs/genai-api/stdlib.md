@@ -2562,37 +2562,6 @@ export interface ValidatedCommand extends CoreValidatedCommand {
 export type ValidationErrorCode = 'ENTITY_NOT_FOUND' | 'ENTITY_NOT_VISIBLE' | 'ENTITY_NOT_REACHABLE' | 'ENTITY_NOT_AUDIBLE' | 'ENTITY_NOT_DETECTABLE' | 'NOT_CARRIED' | 'ACTION_NOT_AVAILABLE' | 'PRECONDITION_FAILED' | 'NO_PLAYER' | 'AMBIGUOUS_ENTITY';
 ```
 
-### vocabulary/standard-english
-
-```typescript
-/**
- * Standard English vocabulary for Sharpee
- *
- * This provides the base vocabulary for standard IF commands
- */
-import { VerbVocabulary, DirectionVocabulary, SpecialVocabulary } from '../parser/index.js';
-/**
- * Standard verb vocabulary
- */
-export declare const standardVerbs: VerbVocabulary[];
-/**
- * Standard direction vocabulary
- */
-export declare const standardDirections: DirectionVocabulary[];
-/**
- * Special vocabulary
- */
-export declare const specialVocabulary: SpecialVocabulary;
-/**
- * Common prepositions
- */
-export declare const commonPrepositions: string[];
-/**
- * Register all standard vocabulary
- */
-export declare function registerStandardVocabulary(): void;
-```
-
 ### capabilities
 
 ```typescript
@@ -4947,7 +4916,6 @@ export * from './actions/index.js';
 export * from './events/index.js';
 export * from './parser/index.js';
 export * from './validation/index.js';
-export * from './vocabulary/index.js';
 export * from './capabilities/index.js';
 export * from './query-handlers/index.js';
 export * from './scope/index.js';

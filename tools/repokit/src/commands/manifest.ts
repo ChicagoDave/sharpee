@@ -120,6 +120,19 @@ export function generateManifestModule(root: string): { source: string; actionId
     counterpartActionIds: ReadonlySet<string>;
   };
   const counterpartActions = [...counterpartActionIds].sort();
+  // Language-words slice (ADR-387 D1, D2): the locale's articles, self words
+  // and name stopwords, from the language provider's BUILT dist — the one
+  // word table — so the IDE's world-index derives names and explains
+  // refusals with the same words the runtime uses, without a runtime.
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const { EnglishLanguageProvider } = require(join(root, 'packages/lang-en-us/dist/index.js')) as {
+    EnglishLanguageProvider: new () => {
+      getSpecialVocabulary(): { articles: readonly string[] };
+      getLanguageWords(): { selfWords: readonly string[]; nameStopwords: readonly string[] };
+    };
+  };
+  const englishProvider = new EnglishLanguageProvider();
+  const words = { articles: englishProvider.getSpecialVocabulary().articles, ...englishProvider.getLanguageWords() };
   const settingSchema: Array<[string, Array<[string, string]>]> = [];
   for (const [trait, entries] of SETTING_SCHEMA) {
     settingSchema.push([trait, [...entries].map(([key, spec]) => [key, spec.value])]);
@@ -147,8 +160,14 @@ export function generateManifestModule(root: string): { source: string; actionId
   lines.push('/** The type a typed grammar slot carries: a seat table leaves these slots out. */');
   lines.push("export type ActSlotType = 'instrument' | 'topic' | 'text';");
   lines.push('');
-  lines.push('/** Locale-owned stdlib facts (direction words join in a later ADR-276 phase). */');
+  lines.push('/** Locale-owned stdlib facts: the grammar shapes, seats and typed slots, and the language words the IDE reads without a runtime (ADR-387 D2). */');
   lines.push('export interface StdlibLocaleFacts {');
+  lines.push('  /** The locale\'s articles, as the language provider declares them (ADR-387 D1). */');
+  lines.push('  articles: readonly string[];');
+  lines.push('  /** The words that name the observer (ADR-387 D2). */');
+  lines.push('  selfWords: readonly string[];');
+  lines.push('  /** Words dropped when a name\'s content words are derived (ADR-387 D2). */');
+  lines.push('  nameStopwords: readonly string[];');
   lines.push('  /**');
   lines.push("   * Standard grammar pattern shapes per action id, as parts — the loader's");
   lines.push('   * removable surface (ADR-270 D3), compared to a removal by shape and');
@@ -207,6 +226,9 @@ export function generateManifestModule(root: string): { source: string; actionId
   lines.push(`  counterpartActions: new Set([${counterpartActions.map((id) => JSON.stringify(id)).join(', ')}]),`);
   lines.push('  locales: {');
   lines.push("    'en-US': {");
+  lines.push(`      articles: [${words.articles.map((w) => JSON.stringify(w)).join(', ')}],`);
+  lines.push(`      selfWords: [${words.selfWords.map((w) => JSON.stringify(w)).join(', ')}],`);
+  lines.push(`      nameStopwords: [${words.nameStopwords.map((w) => JSON.stringify(w)).join(', ')}],`);
   lines.push('      grammarShapes: {');
   for (const [action, shapes] of [...grammarShapes.entries()].sort(([a], [b]) => a.localeCompare(b))) {
     lines.push(`        ${JSON.stringify(action)}: [`);
@@ -367,6 +389,8 @@ export const DIST_MODULES: ReadonlyArray<[path: string, exports: readonly string
   ['packages/chord/dist/index.js', []],
   ['packages/story-loader/dist/setting-schema.js', ['SETTING_SCHEMA', 'HIDING_POSITIONS']],
   ['packages/stdlib/dist/index.js', ['counterpartActionIds']],
+  // The language-words slice (ADR-387 D1, D2) reads the English provider's table.
+  ['packages/lang-en-us/dist/index.js', ['EnglishLanguageProvider']],
   [
     'packages/world-model/dist/traits/character-model/character-vocabulary.js',
     [

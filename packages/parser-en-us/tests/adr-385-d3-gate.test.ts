@@ -16,6 +16,9 @@ import { EnglishParser } from '../src/english-parser';
 import { GrammarScopeResolver } from '../src/grammar-scope-resolver';
 import { getPronounContextManager } from '../src/pronoun-context';
 
+/** English, handed to hand-built worlds as the language's words (ADR-387 D2). */
+const ENGLISH_WORDS = { selfWords: ['me', 'myself', 'self', 'yourself'], nameStopwords: ['the', 'a', 'an', 'of'] };
+
 describe('the gate asks the matcher (ADR-385 D3, D4, D6)', () => {
   let world: WorldModel;
   let parser: EnglishParser;
@@ -37,6 +40,7 @@ describe('the gate asks the matcher (ADR-385 D3, D4, D6)', () => {
   beforeEach(() => {
     vocabularyRegistry.clear();
     world = new WorldModel();
+    world.setLanguageWords(ENGLISH_WORDS);
     room = world.createEntity('Workshop', 'room');
     room.add(new RoomTrait());
     room.add(new ContainerTrait());

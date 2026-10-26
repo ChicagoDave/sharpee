@@ -26,7 +26,7 @@ describe('the positional default (ADR-383 D2)', () => {
   let engine: EnglishGrammarEngine;
 
   beforeEach(() => {
-    engine = new EnglishGrammarEngine();
+    engine = new EnglishGrammarEngine(new EnglishLanguageProvider());
   });
 
   it('seats the first entity slot direct and the second indirect', () => {
@@ -81,7 +81,7 @@ describe('a declared seat (ADR-383 D1, D2)', () => {
   let engine: EnglishGrammarEngine;
 
   beforeEach(() => {
-    engine = new EnglishGrammarEngine();
+    engine = new EnglishGrammarEngine(new EnglishLanguageProvider());
   });
 
   it('`.seat` seats an indirect-first line, and the other slot takes the seat left free', () => {
@@ -113,7 +113,7 @@ describe('seat build errors register nothing (ADR-383 D1)', () => {
   let engine: EnglishGrammarEngine;
 
   beforeEach(() => {
-    engine = new EnglishGrammarEngine();
+    engine = new EnglishGrammarEngine(new EnglishLanguageProvider());
   });
 
   it('a seat on a topic slot throws', () => {
@@ -210,7 +210,7 @@ describe('seat build errors register nothing (ADR-383 D1)', () => {
 
 describe('a pre-compiled pattern is seated afresh on each add (ADR-383 D2)', () => {
   it('a second rule sharing the pattern takes its own declaration, and a refused add leaves the seats as they were', () => {
-    const engine = new EnglishGrammarEngine();
+    const engine = new EnglishGrammarEngine(new EnglishLanguageProvider());
     engine.createBuilder().define('hand :recipient :item').mapsTo('if.action.giving').build();
     const first = engine.getRules()[0];
     const compiled = first.compiledPattern!;

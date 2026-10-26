@@ -11,7 +11,7 @@
  */
 
 import { SlotType, type SlotMatch } from '@sharpee/if-domain';
-import { parseCardinal, ordinalNumbers, directionMap } from '@sharpee/lang-en-us';
+import { directionMap } from '@sharpee/lang-en-us';
 import { SlotConsumer, SlotConsumerContext, type SlotConsumeResult } from './slot-consumer.js';
 import { spanText } from './noun-phrase-split.js';
 
@@ -61,7 +61,7 @@ export class TypedSlotConsumer implements SlotConsumer {
     for (let end = Math.min(tokens.length, startIndex + 2); end > startIndex; end--) {
       const span: number[] = [];
       for (let i = startIndex; i < end; i++) span.push(i);
-      if (parseCardinal(span.map((i) => tokens[i].normalized)) === null) continue;
+      if (ctx.language.parseCardinal(span.map((i) => tokens[i].normalized)) === null) continue;
       readings.push({ tokens: span, text: spanText(span, tokens), slotType: SlotType.NUMBER });
     }
     return readings.length > 0 ? { readings } : null;
@@ -81,8 +81,8 @@ export class TypedSlotConsumer implements SlotConsumer {
     const token = tokens[startIndex];
     const normalized = token.normalized;
 
-    // Check word form (using imported vocabulary from lang-en-us)
-    if (normalized in ordinalNumbers) {
+    // The language's ordinal words (ADR-387 D1)
+    if (normalized in ctx.language.getOrdinalNumbers()) {
       return {
         tokens: [startIndex],
         text: token.word,

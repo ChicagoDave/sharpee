@@ -109,7 +109,6 @@ import {
 import {
   AboardTrait,
   ActorTrait,
-  addPlayerRoleVocabulary,
   AttachedBehavior,
   BackdropTrait,
   BreakableTrait,
@@ -983,7 +982,8 @@ export class ChordStory implements Story {
     const player = world.getEntity(this.playerId)!;
     const actor = player.get(TraitType.ACTOR) as ActorTrait | undefined;
     if (actor) actor.isPlayer = true;
-    addPlayerRoleVocabulary(player);
+    // The player's self aliases are stamped by the engine at install from the
+    // world's language words (ADR-387 D2); the loader knows no language.
     return player;
   }
 

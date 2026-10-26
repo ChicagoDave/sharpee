@@ -7,9 +7,13 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
+import { EnglishLanguageProvider } from '@sharpee/lang-en-us';
 import { EnglishGrammarEngine } from '../src/english-grammar-engine';
 import { Token } from '@sharpee/if-domain';
 import { WorldModel, IdentityTrait } from '@sharpee/world-model';
+
+/** English, handed to hand-built worlds as the language's words (ADR-387 D2). */
+const ENGLISH_WORDS = { selfWords: ['me', 'myself', 'self', 'yourself'], nameStopwords: ['the', 'a', 'an', 'of'] };
 
 describe('Walk Through Pattern Matching', () => {
   let engine: EnglishGrammarEngine;
@@ -26,7 +30,7 @@ describe('Walk Through Pattern Matching', () => {
   }
 
   beforeEach(() => {
-    engine = new EnglishGrammarEngine();
+    engine = new EnglishGrammarEngine(new EnglishLanguageProvider());
     grammar = engine.createBuilder();
   });
 
@@ -101,6 +105,7 @@ describe('Walk Through Pattern Matching', () => {
       // Mock context with NO south wall entity
       const contextNoEntity = {
         world: {
+          getLanguageWords: () => ENGLISH_WORDS,
           // ADR-273: the real WorldModel surface GrammarScopeResolver consumes
           getReachable: () => [],
           getVisible: () => [],
@@ -133,6 +138,7 @@ describe('Walk Through Pattern Matching', () => {
 
       const contextWithEntity = {
         world: {
+          getLanguageWords: () => ENGLISH_WORDS,
           // ADR-273: the real WorldModel surface GrammarScopeResolver consumes
           getReachable: () => [southWallEntity],
           getVisible: () => [southWallEntity],
@@ -166,6 +172,7 @@ describe('Walk Through Pattern Matching', () => {
 
       const contextWithEntity = {
         world: {
+          getLanguageWords: () => ENGLISH_WORDS,
           // ADR-273: the real WorldModel surface GrammarScopeResolver consumes
           getReachable: () => [southWallEntity],
           getVisible: () => [southWallEntity],

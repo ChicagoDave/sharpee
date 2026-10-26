@@ -7,6 +7,7 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
+import { EnglishLanguageProvider } from '@sharpee/lang-en-us';
 import { EnglishGrammarEngine } from '../src/english-grammar-engine';
 import { Token } from '@sharpee/if-domain';
 
@@ -25,7 +26,7 @@ describe('ADR-384 D1 — ranking without confidence', () => {
   }
 
   beforeEach(() => {
-    engine = new EnglishGrammarEngine();
+    engine = new EnglishGrammarEngine(new EnglishLanguageProvider());
   });
 
   it('a story rule that skips its optional outranks a standard rule of equal specificity', () => {

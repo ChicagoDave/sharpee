@@ -439,6 +439,7 @@ export type WorldChangeType = 'move' | 'create' | 'delete' | 'modify' | 'relate'
  */
 import type { ITextBlock } from '@sharpee/text-blocks';
 import type { LocaleSettings, RenderContext } from './phrase.js';
+import type { LanguageWords } from './vocabulary-contracts/vocabulary-types.js';
 /**
  * Structured help information for an action
  */
@@ -511,7 +512,15 @@ export interface LanguageProvider {
      *
      * @returns 'first' | 'second' | 'third'
      */
-    getNarrativePerson?(): 'first' | 'second' | 'third';
+    getNarrativePerson(): 'first' | 'second' | 'third';
+    /**
+     * The words a world needs from this language (ADR-387 D2): the self words
+     * and the name stopwords. The engine assigns them to the world at install;
+     * world-model never imports a language package.
+     *
+     * @returns the language's words for the world
+     */
+    getLanguageWords(): LanguageWords;
     /**
      * Render a message to text blocks through the phrase pipeline (ADR-192 §6).
      *
@@ -608,7 +617,7 @@ export interface LanguageProviderRegistry {
  * and parser vocabulary/grammar rules.
  */
 import { LanguageProvider } from './language-provider.js';
-import { VerbVocabulary, DirectionVocabulary, SpecialVocabulary } from './vocabulary-contracts/vocabulary-types.js';
+import { VerbVocabulary, DirectionVocabulary, SpecialVocabulary, DeterminerVocabulary } from './vocabulary-contracts/vocabulary-types.js';
 /**
  * Language-specific grammar pattern definition
  * Different from the vocabulary-types GrammarPattern
@@ -648,10 +657,34 @@ export interface ParserLanguageProvider extends LanguageProvider {
      */
     getPrepositions(): string[];
     /**
-     * Get determiners for the language
-     * @returns Array of determiner strings
+     * Get determiners for the language, each with whose it is when it is a
+     * possessive (ADR-387 D6)
+     * @returns Array of determiner entries
      */
-    getDeterminers(): string[];
+    getDeterminers(): DeterminerVocabulary[];
+    /**
+     * The words that separate list items in typed input (ADR-386 D6, ADR-387 D6):
+     * English "and" and the comma.
+     * @returns Array of separator words
+     */
+    getListSeparators(): string[];
+    /**
+     * The manner adverbs a MANNER slot accepts (ADR-387 D6).
+     * @returns Array of adverbs
+     */
+    getMannerAdverbs(): string[];
+    /**
+     * Read a cardinal number from typed words (ADR-386 D8): digits, one number
+     * word, or a compound the language writes as two words or hyphenated.
+     * @param words The typed words, in order
+     * @returns The number, or null when the words are not one number
+     */
+    parseCardinal(words: readonly string[]): number | null;
+    /**
+     * The ordinal words of the language, each with its value.
+     * @returns word → ordinal value
+     */
+    getOrdinalNumbers(): Readonly<Record<string, number>>;
     /**
      * Get conjunctions for the language
      * @returns Array of conjunction strings
@@ -673,12 +706,6 @@ export interface ParserLanguageProvider extends LanguageProvider {
      * @returns The base form of the word
      */
     lemmatize(word: string): string;
-    /**
-     * Expand an abbreviation
-     * @param abbreviation The abbreviation to expand
-     * @returns The expanded form or null if not recognized
-     */
-    expandAbbreviation(abbreviation: string): string | null;
     /**
      * Format a list of items with proper conjunction
      * @param items Array of strings to format
@@ -731,31 +758,6 @@ export interface ParserLanguageProvider extends LanguageProvider {
      * @returns The pattern string or undefined
      */
     getVerbPattern?(actionId: string): string | undefined;
-    /**
-     * Get direction mappings (alternative to getDirections)
-     * @returns Record mapping directions to word arrays
-     */
-    getDirectionMappings?(): Record<string, string[]>;
-    /**
-     * Get pronouns (alternative to getSpecialVocabulary)
-     * @returns Array of pronoun strings
-     */
-    getPronouns?(): string[];
-    /**
-     * Get all words (alternative to getSpecialVocabulary)
-     * @returns Array of words meaning "all"
-     */
-    getAllWords?(): string[];
-    /**
-     * Get except words (alternative to getSpecialVocabulary)
-     * @returns Array of words meaning "except"
-     */
-    getExceptWords?(): string[];
-    /**
-     * Get articles (alternative to getSpecialVocabulary)
-     * @returns Array of article strings
-     */
-    getArticles?(): string[];
 }
 ```
 
@@ -1191,6 +1193,28 @@ export interface DirectionVocabulary {
     abbreviations?: string[];
 }
 /**
+ * The words a world needs from its language, with no words in them (ADR-387
+ * D2). The language fills the shape; the engine assigns it to the world when
+ * it loads the language, and the matcher reads it from there.
+ */
+export interface LanguageWords {
+    /** The words that name the observer, whatever the observer is called ("me", "myself"). */
+    readonly selfWords: readonly string[];
+    /** Words dropped when a name's content words are derived ("the", "of"). */
+    readonly nameStopwords: readonly string[];
+}
+/** The grammatical person a possessive determiner refers to. */
+export type PossessivePerson = 'first' | 'second' | 'third';
+/**
+ * One determiner of the language, and whose it is when it is a possessive
+ * (ADR-387 D6): `my` is first person, `your` second, `her` third; `this`
+ * and `some` are no one's.
+ */
+export interface DeterminerVocabulary {
+    readonly word: string;
+    readonly possessive?: PossessivePerson;
+}
+/**
  * Special vocabulary for pronouns and references
  */
 export interface SpecialVocabulary {
@@ -1310,7 +1334,7 @@ export type GrammarPatternName = keyof typeof GrammarPatterns;
  * - Story-specific vocabulary
  * - Dynamic entity vocabulary
  */
-import { VocabularyEntry, VocabularySet, VocabularyProvider, PartOfSpeech, EntityVocabulary, VerbVocabulary, DirectionVocabulary, SpecialVocabulary } from './vocabulary-types.js';
+import { VocabularyEntry, VocabularySet, VocabularyProvider, PartOfSpeech, EntityVocabulary, VerbVocabulary, DirectionVocabulary, SpecialVocabulary, DeterminerVocabulary } from './vocabulary-types.js';
 /**
  * Central vocabulary registry
  */
@@ -1383,7 +1407,7 @@ export declare class VocabularyRegistry {
     /**
      * Register determiners (beyond articles)
      */
-    registerDeterminers(determiners: string[]): void;
+    registerDeterminers(determiners: readonly DeterminerVocabulary[]): void;
     /**
      * Register conjunctions
      */
@@ -1414,11 +1438,15 @@ import { ParserLanguageProvider } from '../parser-language-provider.js';
  */
 export declare function adaptVerbVocabulary(languageProvider: ParserLanguageProvider): VerbVocabulary[];
 /**
- * Adapt direction vocabulary from language provider format
+ * Adapt direction vocabulary from the language provider. The provider's
+ * table is the one direction table (ADR-387 D5); nothing is built from
+ * a fallback.
  */
 export declare function adaptDirectionVocabulary(languageProvider: ParserLanguageProvider): DirectionVocabulary[];
 /**
- * Adapt special vocabulary from language provider format
+ * Adapt special vocabulary from the language provider. The provider's table
+ * is the one home of the articles, pronouns, all and except words (ADR-387
+ * D1); no English fallback stands in for a provider that lacks them.
  */
 export declare function adaptSpecialVocabulary(languageProvider: ParserLanguageProvider): SpecialVocabulary;
 ```

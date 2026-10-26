@@ -8,6 +8,7 @@
  * reading records its furthest failure with the slots it had consumed.
  */
 import { describe, expect, it } from 'vitest';
+import { EnglishLanguageProvider } from '@sharpee/lang-en-us';
 import { EnglishGrammarEngine } from '../src/english-grammar-engine';
 import { createDefaultRegistry } from '../src/slot-consumers';
 import type { Token } from '@sharpee/if-domain';
@@ -22,7 +23,7 @@ const spans = (engine: EnglishGrammarEngine, input: string) =>
 
 describe('ADR-386 D1/D2: every extent is a reading', () => {
   it('a two-slot line yields one reading per split, shorter first slot first', () => {
-    const engine = new EnglishGrammarEngine();
+    const engine = new EnglishGrammarEngine(new EnglishLanguageProvider());
     engine.createBuilder().define('give :recipient :item').mapsTo('if.action.giving').build();
     expect(spans(engine, 'give old man coin')).toEqual([
       { recipient: [1], item: [2, 3] },
@@ -31,7 +32,7 @@ describe('ADR-386 D1/D2: every extent is a reading', () => {
   });
 
   it('a slot before a literal reads past the first occurrence of that literal', () => {
-    const engine = new EnglishGrammarEngine();
+    const engine = new EnglishGrammarEngine(new EnglishLanguageProvider());
     engine.createBuilder().define('put :item in :container').mapsTo('if.action.putting').build();
     expect(spans(engine, 'put jack in the box in chest')).toEqual([
       { item: [1], container: [3, 4, 5, 6] },
@@ -40,7 +41,7 @@ describe('ADR-386 D1/D2: every extent is a reading', () => {
   });
 
   it('an optional element taken is retried skipped (A3, A4)', () => {
-    const engine = new EnglishGrammarEngine();
+    const engine = new EnglishGrammarEngine(new EnglishLanguageProvider());
     const grammar = engine.createBuilder();
     grammar.define('stow :item [carefully] in :container').mapsTo('story.stowing').build();
     grammar.define('scan [up] :word').topic('word').mapsTo('story.scanning').build();
@@ -57,7 +58,7 @@ describe('ADR-386 D1/D2: every extent is a reading', () => {
   });
 
   it('a final slot tries the longest extent first', () => {
-    const engine = new EnglishGrammarEngine();
+    const engine = new EnglishGrammarEngine(new EnglishLanguageProvider());
     engine.createBuilder().define('take :item').mapsTo('if.action.taking').build();
     expect(spans(engine, 'take brass lantern')).toEqual([{ item: [1, 2] }]);
   });
@@ -65,7 +66,7 @@ describe('ADR-386 D1/D2: every extent is a reading', () => {
 
 describe('ADR-386 D3: articles are optional both ways', () => {
   it('a typed article before a literal the pattern does not spell is skipped (A10)', () => {
-    const engine = new EnglishGrammarEngine();
+    const engine = new EnglishGrammarEngine(new EnglishLanguageProvider());
     engine.createBuilder().define('climb rope').mapsTo('if.action.going').build();
     const matches = engine.findMatches(tokens('climb the rope'), context);
     expect(matches).toHaveLength(1);
@@ -74,7 +75,7 @@ describe('ADR-386 D3: articles are optional both ways', () => {
   });
 
   it('a pattern article the player left out is still free, and a slot still takes its own article', () => {
-    const engine = new EnglishGrammarEngine();
+    const engine = new EnglishGrammarEngine(new EnglishLanguageProvider());
     engine.createBuilder().define('take the :item off').mapsTo('if.action.taking_off').build();
     expect(spans(engine, 'take lamp off')).toEqual([{ item: [1] }]);
     // The pattern article taken comes first; skipped, `the lamp` is a second reading.
@@ -84,7 +85,7 @@ describe('ADR-386 D3: articles are optional both ways', () => {
 
 describe('ADR-386 D2: the cap and the failure record', () => {
   it('a rule with more readings than the cap keeps the first 256 and is recorded', () => {
-    const engine = new EnglishGrammarEngine();
+    const engine = new EnglishGrammarEngine(new EnglishLanguageProvider());
     engine.createBuilder().define('put :a :b :c').topic('c').mapsTo('story.three').build();
     const words = 'put ' + Array.from({ length: 25 }, (_, i) => `w${i}`).join(' ');
     const matches = engine.findMatches(tokens(words), context);
@@ -93,7 +94,7 @@ describe('ADR-386 D2: the cap and the failure record', () => {
   });
 
   it('a rule with no complete reading records its furthest failure with the slots it consumed', () => {
-    const engine = new EnglishGrammarEngine();
+    const engine = new EnglishGrammarEngine(new EnglishLanguageProvider());
     engine.createBuilder().define('unlock :target with :key').mapsTo('if.action.unlocking').build();
     expect(engine.findMatches(tokens('unlock door with'), context)).toHaveLength(0);
     const failure = engine.getLastFailures()[0];
@@ -106,7 +107,7 @@ describe('ADR-386 D2: the cap and the failure record', () => {
 describe('ADR-386 D1: the consumer contract', () => {
   it('the entity consumer returns every extent, longest first, through the registry', () => {
     const registry = createDefaultRegistry();
-    const engine = new EnglishGrammarEngine(registry);
+    const engine = new EnglishGrammarEngine(new EnglishLanguageProvider(), registry);
     const rule = engine.createBuilder().define('take :item').mapsTo('if.action.taking').build();
     const pattern = (engine as unknown as { rules: Array<{ compiledPattern: unknown }> }).rules[0].compiledPattern as never;
     const result = registry.consume({

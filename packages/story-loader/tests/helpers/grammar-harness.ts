@@ -8,6 +8,7 @@
  * (EnglishGrammarEngine + parse) is exercised by the transcript suites.
  */
 import type { GrammarBuilder, GrammarContext, GrammarRule, PatternMatch, Token } from '@sharpee/if-domain';
+import { EnglishLanguageProvider } from '@sharpee/lang-en-us';
 import { GrammarEngine } from '@sharpee/if-domain';
 import { EnglishPatternCompiler } from '@sharpee/parser-en-us';
 import type { ChordStory } from '../../src';
@@ -15,7 +16,7 @@ import type { ChordStory } from '../../src';
 /** Concrete engine for tests — matching is unused; registration is real. */
 class TestGrammarEngine extends GrammarEngine {
   constructor() {
-    super(new EnglishPatternCompiler());
+    super(new EnglishPatternCompiler(new EnglishLanguageProvider()));
   }
 
   findMatches(_tokens: Token[], _context: GrammarContext, _options?: unknown): PatternMatch[] {
