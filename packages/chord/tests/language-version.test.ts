@@ -85,7 +85,12 @@ const PINNED = {
   // at the owner's request; 3.5.0 / 5.2.0 were never published. The EBNF
   // hash is unchanged by the bump — the surface pinned under 3.5.0 since
   // 2026-08-29 (the re-pins below) is the 3.6.0 surface.
-  languageVersion: '3.6.0',
+  // 4.0.0 — 2026-10-26 (session 63b2a2): MAJOR, cut alongside Sharpee 5.5.0
+  // after the chord-4-0 branch merged (PR #633). ADR-359, ADR-361 and
+  // ADR-380 are breaking; the rest of the 4.0 set is additive. The hash is
+  // unchanged by the bump — the surface re-pinned 2026-10-24 (below) is the
+  // 4.0.0 surface.
+  languageVersion: '4.0.0',
   // Re-pinned 2026-08-29 (ADR-330 Phase 1): `define chapters` under `use
   // chapters` — the first additive grammar of the chapters extension,
   // folded into the unpublished 3.5.0 set per ADR-257 D2 as amended.

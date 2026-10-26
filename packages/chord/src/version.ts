@@ -309,5 +309,13 @@
  * ADR-376 (`use expanses`), ADR-375 (`use sailing`), ADR-378 (passages,
  * exit tails, `define action … while`, the `pushing` block). ADR-367's
  * lock and ADR-370's verbs changed no grammar.
+ *
+ * 4.0.0 — 2026-10-26 (session 63b2a2, David: "bump chord to 4.0.0 and
+ * sharpee to 5.5.0"), cut alongside Sharpee 5.5.0 after the `chord-4-0`
+ * branch merged (PR #633). A MAJOR by ADR-257 D2's ordinary rule: ADR-359,
+ * ADR-361 and ADR-380 are breaking. The set above is the public delta since
+ * 3.6.0; the EBNF hash is unchanged by the bump (the surface pinned on
+ * 2026-10-24 is the 4.0.0 surface). The parser review's seven steps
+ * (ADR-382 to ADR-387) changed the English parser, not the language.
  */
-export const CHORD_LANGUAGE_VERSION = '3.6.0';
+export const CHORD_LANGUAGE_VERSION = '4.0.0';

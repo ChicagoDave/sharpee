@@ -8573,7 +8573,6 @@ import { WallEntity, IWallSpec, IWallsSpec } from '../entities/wall-entity.js';
 import { TraitType } from '../traits/trait-types.js';
 import { DirectionType, ExitKey } from '../constants/directions.js';
 import { type ISemanticEvent, type ISemanticEventSource } from '@sharpee/core';
-import type { LanguageWords } from '@sharpee/if-domain';
 import { IDataStore } from './AuthorModel.js';
 import { ICapabilityData, ICapabilityRegistration } from './capabilities.js';
 import { ITrait } from '../traits/trait.js';
@@ -8584,7 +8583,7 @@ import type { TraitInterceptorBinding, InterceptorRegistrationOptions, Intercept
 import type { ExitResolver } from '../capabilities/exit-resolver-binding.js';
 import type { DialogueSelectorRegistration } from '../capabilities/dialogue-selector-binding.js';
 import type { SceneRuntimeBinding } from '../capabilities/scene-runtime-binding.js';
-import { type WorldState, type WorldConfig, type ContentsOptions, type WorldChange, type IGrammarVocabularyProvider, type IEventProcessorWiring, type GamePrompt, type IStoryEnding } from '@sharpee/if-domain';
+import { type WorldState, type WorldConfig, type ContentsOptions, type WorldChange, type IGrammarVocabularyProvider, type IEventProcessorWiring, type GamePrompt, type IStoryEnding, type LanguageWords } from '@sharpee/if-domain';
 import { ScopeRegistry } from '../scope/scope-registry.js';
 import { IScopeRule } from '../scope/scope-rule.js';
 import { EventHandler, EventValidator, EventPreviewer, EventChainHandler, ChainEventOptions } from './WorldEventSystem.js';
