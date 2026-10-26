@@ -15,7 +15,7 @@ export enum SlotType {
   ENTITY = 'entity',
   /** Capture raw text without entity resolution (single token) */
   TEXT = 'text',
-  /** Capture raw text until next pattern element or end (greedy) */
+  /** Capture raw text; the consumer admits every extent to the end of the input and the engine's search chooses (greedy, ADR-386 D1) */
   TEXT_GREEDY = 'text_greedy',
   /** Resolve entity but mark as instrument for the action */
   INSTRUMENT = 'instrument',
@@ -415,7 +415,7 @@ export interface PatternToken {
   alternates?: string[]; // For alternates like "in|into|inside"
   optional?: boolean;   // For optional elements like "[carefully]"
   slotType?: SlotType;  // For slot tokens: how to handle matching
-  greedy?: boolean;     // For :slot... syntax: consume until delimiter
+  greedy?: boolean;     // For :slot... syntax: every extent to the end of the input is a reading (ADR-386 D1)
   vocabularyCategory?: string; // For VOCABULARY slots: category name
 }
 
@@ -423,8 +423,9 @@ export interface PatternToken {
  * One element of a grammar pattern, as a rule is registered (ADR-382 D1).
  * A rule crosses into the engine as these parts, never as text to re-split:
  * a word, an alternation of words, or a named slot, each optionally
- * optional. A greedy slot takes the rest of the input up to the next
- * element.
+ * optional. No element fixes where a slot ends: each slot admits every
+ * extent it can read and the engine searches them (ADR-386 D1, D2); a
+ * greedy slot is a text slot whose extents run to the end of the input.
  */
 export type PatternElement =
   | { kind: 'word'; word: string; optional?: boolean }

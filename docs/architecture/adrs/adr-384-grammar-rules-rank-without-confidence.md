@@ -84,6 +84,14 @@ remove from action taking_off
 
 *Rejected: tier first with an analyzer warning* (`analysis.hides-standard-line`, fired when a story line matches every input a more specific standard line of another action matches). It would fire on every broad story verb that shares a word with the standard grammar, and the fix it asks for is the same `remove from action` this decision relies on. ADR-268 cited "the I7 precedent (story rules over Standard Rules)" for tier-first, but Inform ranks a story's new grammar lines with the verb's existing ones by specificity and replaces a verb only when told to.
 
+> **Amendment note (2026-10-25, ADR-386):** D2 is amended, not superseded. The noun rank
+> sits above these keys: `compareGrammarRank` compares a reading's `unnamed` count (items
+> whose words name nothing; fewer first) before literal specificity, then tier, then
+> definition order as this record says, then `named` and `exact` (more first) break the
+> ties that remain within a rule (ADR-386 D4, D5). The comparator is still the one place,
+> in `rule-order.ts`, and failures still rank by verb and progress before it (D4 here).
+> Landed with parser-review step 5 (`docs/work/parser-review/plan-20261025-step5-search.md`).
+
 ### D3 — Every match is ranked
 
 The `maxMatches` early stop is deleted: every rule that matches is ranked. The tier-first iteration in `findMatches` (`:107-110`) existed only to protect story rules from that stop. It goes too, and rules are tried in registration order. Gated-off rules are still skipped before matching (ADR-378 D5).

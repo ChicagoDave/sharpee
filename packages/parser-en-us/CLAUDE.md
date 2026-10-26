@@ -122,6 +122,49 @@ the parser.
   direct object, else the indirect object, else the instrument; a list sets
   `them` to every entity it resolved.
 
+### Slot extents and readings (ADR-386)
+
+- **A slot consumer returns every extent it admits**, not one. `SlotConsumeResult`
+  is `{ readings: SlotMatch[] } | SlotRefusal | null` (`slot-consumers/slot-consumer.ts`).
+  No consumer looks at the next pattern token; nothing stops a slot at "the
+  next literal", and there is no shortest-span rule. A constrained slot admits
+  an extent only when the gate names something for each of its items; when no
+  extent is admitted the refusal is for the longest span.
+- **The engine searches** (`english-grammar-engine.ts`, `readingsOfRule`): it
+  walks the pattern with backtracking, takes each optional element and pattern
+  article before it skips it, tries a slot at every extent (shorter first when
+  another element follows, longest first when it ends the pattern), and keeps
+  every path that consumes the whole input as a reading. A typed article before
+  a literal the pattern does not spell is skipped at no cost (articles are
+  optional in both directions, with ADR-380 D2). `MAX_READINGS_PER_RULE` (256)
+  caps one rule's search; the parser emits a `readings_capped` debug event
+  naming the rule.
+- **Every reading is ranked by its nouns** (`reading-names.ts`, `ReadingNamer`):
+  each entity item is named through world-model's `matchNoun` over the world
+  (a gated item by its admitted ids, a pronoun by its referent, an all phrase
+  as one exact name; text and topic slots name nothing). The noun rank
+  `{ unnamed, named, exact }` enters `compareGrammarRank` as described under
+  Story Grammar Extension below. Without a real `WorldModel` the rank is
+  neutral, so a bare-engine test ranks by specificity and search order.
+- **A failure can outrank a reading** (`parse-failure.ts`, `failureOutranking`),
+  in one case only: the best reading has an item naming nothing and the best
+  verb-matched failure names strictly more distinct entities. That is how
+  `unlock door with` (key held) asks for the key instead of trying to unlock
+  "door with". `take widget` still reaches the validator's refusal.
+- **`and` and a comma are readings, never hard splits**. The tokenizer gives a
+  comma its own token; inside an entity slot a span holding `and`, `,` or
+  `, and` is read both as the list split there and as one item across it, and
+  the noun rank decides (`take salt and pepper shaker` is one item when only
+  the shaker is present, two when a salt is too). A separator with nothing after
+  it closes no item. `parseChain`'s comma-then-verb command split is unchanged.
+- **The quick reject counts what the match requires**: `minTokens` discounts
+  pattern articles after the first element, and the short-input verb test reads
+  an alternation (`push|press :target`) as well as a literal, so bare `press`
+  asks what to press.
+- **A number slot reads a compound number**: `parseCardinal` in lang-en-us
+  reads digits, one number word, or a tens-and-units pair (`twenty five`,
+  `twenty-five`); the number consumer admits every span it reads, longest first.
+
 ## Story Grammar Extension
 
 Stories extend grammar in `extendParser()`:
@@ -149,7 +192,8 @@ extendParser(parser: Parser): void {
 - Use `.define()` for literal patterns or phrasal verbs.
 - Story grammar wins ties with the standard grammar: `getStoryGrammar()`
   registers rules at the story tier. There is no numeric priority; resolution
-  is literal specificity → tier → definition order (ADR-384 D2,
+  is fewest unnamed items → literal specificity → tier → definition order →
+  most named → most exact (ADR-384 D2 as amended by ADR-386 D4/D5,
   `compareGrammarRank` in if-domain), and a skipped optional word costs a rule
   nothing. A more specific standard line beats a broader story line: to take
   its words, remove it (`removeRules`, or `remove from action` in Chord).
