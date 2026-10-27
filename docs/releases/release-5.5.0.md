@@ -1,14 +1,9 @@
 # 5.5.0 — Chord 4.0: the kind leads, vehicles, locks, and a parser that searches
 
-**Status**: PENDING PUBLISH
-**Published**: PENDING PUBLISH
+**Status**: PUBLISHED
+**Published**: 2026-10-27
 **Chord language**: 4.0.0
 **Traces to**: ADR-355 · ADR-356 · ADR-357 · ADR-359 · ADR-360 · ADR-361 · ADR-362 · ADR-365 · ADR-366 · ADR-367 · ADR-368 · ADR-369 · ADR-370 · ADR-371 · ADR-372 · ADR-373 · ADR-374 · ADR-375 · ADR-376 · ADR-377 · ADR-378 · ADR-379 · ADR-380 · ADR-382 · ADR-383 · ADR-384 · ADR-385 · ADR-386 · ADR-387 · [#633](https://github.com/ChicagoDave/sharpee/pull/633) · [#549](https://github.com/ChicagoDave/sharpee/issues/549) · [#507](https://github.com/ChicagoDave/sharpee/issues/507) · [#560](https://github.com/ChicagoDave/sharpee/issues/560) · [#570](https://github.com/ChicagoDave/sharpee/issues/570)
-
-> DRAFT (2026-10-26, session 63b2a2). This file moves to `docs/releases/release-5.5.0.md` the day the
-> npm publish of 5.5.0 lands, with `**Status**: PUBLISHED` and the registry's date; until then
-> `docs/releases/README.md` admits no file for it. Derived from `git log f6c27d1ba..a9e3c226c`
-> (the 5.4.1 cut to the 5.5.0 cut): 170 commits on main and the 130 of the `chord-4-0` branch.
 
 ## What shipped
 

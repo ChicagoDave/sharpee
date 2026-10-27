@@ -105,7 +105,12 @@ function parseRelease(filename, text) {
   // heading was `## Notes` until 2026-09-11; it was renamed because the site
   // already had a 'Notes' nav section and a 'Release notes' page, so the word
   // named three different things and predicted none of them.
-  const notesSection = text.split(/^##\s*Details\s*$/m)[1];
+  // The section ends at the next "## " heading: prose below Details (an
+  // "## Upgrading" section, say) stays in the repository and is not published,
+  // as docs/releases/README.md promises. Until 2026-10-27 the split read to
+  // end of file, so 5.4.1's and 5.5.0's upgrading bullets rode onto the site
+  // with the heading folded into the last Details bullet.
+  const notesSection = text.split(/^##\s*Details\s*$/m)[1]?.split(/^##\s/m)[0];
   release.notes = notesSection
     ? notesSection
         .split(/\n(?=- )/)
