@@ -1,0 +1,67 @@
+<h3>Breaking, the reason it is a major</h3>
+<ul>
+  <li>Every <code>create</code> block names its kind, and the kind leads the block: <code>a thing</code>, <code>a room</code>, <code>a container, openable</code>. A block without a kind, or with a trait before it, stops compiling. The inline form <code>create the Potting Shed, a room</code> is admitted.</li>
+  <li>Hatches are gone. <code>define text … from</code>, <code>define action … from</code> and <code>define chain … from</code> are parse errors with fix-its. Every Chord story is pure IR with no TypeScript reach-through.</li>
+  <li>A region declares its rooms instead of nesting them: a <code>rooms</code> group on the region, <code>in &lt;region&gt;</code> on a room. <code>containing</code> and nested regions stop compiling. Regions get an exit table.</li>
+  <li>A vehicle's <code>passage:</code> line becomes a <code>passage … end passage</code> block, and a flight's trip time is <code>pace:</code>.</li>
+  <li><code>with max items N</code> and <code>with max weight N</code> are gone. <code>holds &lt;n&gt;</code> is the one spelling of capacity.</li>
+  <li><code>use state-machines</code> is an error. <code>define machine</code> is core and needs no <code>use</code> line.</li>
+</ul>
+
+<h3>Density</h3>
+<ul>
+  <li>Blocks fold: <code>create &lt;name&gt;, &lt;composition&gt;</code> and <code>exits:</code> / <code>exits, one-way:</code> lines.</li>
+  <li>A clause head lists its gerunds: <code>on the player taking, touching</code>.</li>
+</ul>
+
+<h3>Vehicles and movement</h3>
+<ul>
+  <li>The vehicle is a kind with a movement model: line, streets, flight, compass, open and none. <code>admits</code>, <code>to outside</code>, boarding, the driving statements and predicates.</li>
+  <li><code>use sailing</code>: bearings in degrees, the naval commands, wind and sails.</li>
+  <li><code>use expanses</code>: open movement on coordinates, landmarks, drift, edges, <code>start &lt;vehicle&gt; heading &lt;direction&gt;</code>.</li>
+  <li>Passages and hidden exits: a passage is a block with its own grammar and <code>while</code>, <code>blocked</code> and <code>deadly</code> lines. An exit exists while a condition holds. A thing's own <code>pushing</code> block moves it between rooms. <code>[the]</code> is optional in a pattern.</li>
+  <li>One rule, one home: traversal and visibility answer the walking player, a vehicle, a pushed thing and an NPC alike.</li>
+</ul>
+
+<h3>Things, containers, physical state</h3>
+<ul>
+  <li>Containers say what they show and hold: <code>transparent</code>, <code>holds &lt;n&gt;</code>. <code>in</code> and <code>out</code> are exit directions.</li>
+  <li><code>attached to</code> / <code>detachable</code>; <code>breakable</code>, <code>fragile</code>, <code>starts broken</code>, <code>broken</code> as a state, <code>after the player breaking</code>. Tying is a stock action.</li>
+  <li>Object-side adjectives: lowering and raising take the clause body as their implementation. <code>flammable [with the &lt;tool&gt;]</code> gates burning. <code>settable</code> makes a thing's reversible states a dial, with a <code>setting</code> head that takes <code>to &lt;value&gt;</code>.</li>
+  <li>Lamps: <code>light</code>, <code>put out</code>, <code>light-source with</code>, <code>starts lit</code>, <code>powered by</code>. <code>dark</code> is reserved as a state name off rooms.</li>
+</ul>
+
+<h3>Scope and senses</h3>
+<ul>
+  <li>A backdrop is one scenery thing in many rooms. <code>night-vision</code>. <code>can see</code> and <code>can reach</code> read the platform.</li>
+  <li><code>listener</code>, <code>after hearing the &lt;sound&gt;</code>, <code>define sound</code> without a file. <code>play sound</code> is never gated on the client.</li>
+</ul>
+
+<h3>Verbs and conversation</h3>
+<ul>
+  <li>Stock verbs with no object side: kissing, waving, jumping, saying yes / no / sorry, looking under, emptying.</li>
+  <li>Two-noun clauses: a head names its counterpart, as in <code>on the player throwing at the sorting machine</code>.</li>
+  <li><code>ask &lt;person&gt; for &lt;thing&gt;</code> is a request. A readable thing carries <code>define topics</code> and answers <code>consult</code>. <code>costs &lt;n&gt; &lt;currency&gt;</code> prices a thing and gates buying.</li>
+  <li>A <code>define action</code> answers its topic slot with <code>about</code> rows, the same row form <code>define topics</code> uses.</li>
+</ul>
+
+<h3>Testing</h3>
+<ul>
+  <li>A reached state can be locked as a claim: <code>sharpee claim &lt;line&gt; "&lt;fact&gt;"</code> proposes the necessary set from the played line, writes the claim and pins the card. A broken lock is a failed card named in the claim's words.</li>
+  <li>Claims under a necessary set prune the explorer to the winning path; an inert <code>needs</code> is a diagnostic.</li>
+  <li>The test tree is segmented on disk as <code>&lt;story&gt;.tests/</code> with a manifest and stable card ids.</li>
+  <li>Derived rule tests: <code>arrange()</code>, END STATE cards prove endings, <code>sharpee test</code> reports branches, endings and rooms.</li>
+  <li>The IDE's Testing tab keeps stale results, names each failed card's cause, and walks failures one stop at a time.</li>
+</ul>
+
+<h3>What the player notices from the parser review</h3>
+<ul>
+  <li><code>give the old man the sword</code>, <code>put jack in the box in chest</code> and <code>take salt and pepper shaker</code> read right. <code>and</code> and a comma are list readings. <code>unlock door with</code> asks for the key.</li>
+  <li>A missing object is asked for by its seat, and a gate failure names the phrase and the reason.</li>
+  <li><code>your lantern</code> is the player's own in the second-person voice. Parse-failure sentences belong to the language package.</li>
+</ul>
+
+<h3>Not in 4.0.0</h3>
+<ul>
+  <li>Connectors replacing attachment is accepted but not landed. <code>attached to</code> and tying still ship as above.</li>
+</ul>
