@@ -1,3 +1,6 @@
+<div class="chord-changes">
+<style>.chord-changes { max-width: 640px; } .chord-changes code { white-space: nowrap; } .chord-changes pre { max-width: 640px; overflow-x: auto; } .chord-changes pre code { white-space: pre; }</style>
+
 <h3>Breaking, the reason it is a major</h3>
 <ul>
   <li>Every <code>create</code> block names its kind, and the kind leads the block: <code>a thing</code>, <code>a room</code>, <code>a container, openable</code>. A block without a kind, or with a trait before it, stops compiling. The inline form <code>create the Potting Shed, a room</code> is admitted.</li>
@@ -8,11 +11,86 @@
   <li><code>use state-machines</code> is an error. <code>define machine</code> is core and needs no <code>use</code> line.</li>
 </ul>
 
+<p>The kind leads, in the long form and the inline form:</p>
+<pre><code>create the watering can
+  a thing
+  aka can, tin can, sprinkler
+  in the Potting Shed
+
+  A dented tin watering can with a long spout.
+
+create the Potting Shed, a room
+
+  Clay pots in stacks, and a smell of damp earth.
+</code></pre>
+
+<p>A region declares its rooms:</p>
+<pre><code>create the Grounds
+  a region
+  landing the Drive
+
+  after the player entering
+    phrase cold-returns
+  end after
+
+create the Drive
+  a room
+  in the Grounds
+
+  A gravel drive.
+
+create the Maze
+  a region
+
+  rooms Maze 1 to 12
+    room name:
+      Maze
+
+    You are in a maze of twisty little passages, all alike.
+</code></pre>
+
+<p>A passage is a block with its own grammar:</p>
+<pre><code>create the Cable Trench
+  a room, dark
+  up to the Loading Dock
+
+  passage to the Sorting Room
+    grammar
+      follow the cables
+      crawl along the cables
+    blocked while the grating is shut: grating-shut
+  end passage
+
+  A trench under the dock floor.
+</code></pre>
+
 <h3>Density</h3>
 <ul>
   <li>Blocks fold: <code>create &lt;name&gt;, &lt;composition&gt;</code> and <code>exits:</code> / <code>exits, one-way:</code> lines.</li>
   <li>A clause head lists its gerunds: <code>on the player taking, touching</code>.</li>
 </ul>
+
+<pre><code>create the Mine Entrance, a room
+  exits, one-way: northeast to the Upper Tunnel, southeast to the Lower Tunnel, up to the Mine
+  down is blocked: too-dark
+
+  You are at the entrance to an abandoned mine. A dark corridor is below.
+
+create the Upper Tunnel, a room
+  exits: south to the Lower Tunnel
+
+  A tunnel, sloping down.
+
+create the view
+  a thing, scenery
+  in the Top of the Post
+
+  The view is spectacular, but you don't have time to waste gawking.
+
+  on the player taking, touching, pushing, pulling, climbing, searching
+    refuse view-too-far
+  end on
+</code></pre>
 
 <h3>Vehicles and movement</h3>
 <ul>
@@ -23,6 +101,102 @@
   <li>One rule, one home: traversal and visibility answer the walking player, a vehicle, a pushed thing and an NPC alike.</li>
 </ul>
 
+<p>A vehicle on a line, driven by state:</p>
+<pre><code>create the bucket
+  a vehicle
+  in the Well Bottom
+  movement: line
+  carries: in
+  drive: state
+  stops: the Well Bottom, the Top of the Well
+  direction: both
+  holds 3
+
+  A wooden bucket on a rope, big enough to stand in.
+
+  position
+    when the bucket holds the water: the Top of the Well
+    otherwise: the Well Bottom
+  end position
+</code></pre>
+
+<p>An expanse and a skiff on it:</p>
+<pre><code>create the Belt
+  an expanse
+  size: 20 by 8
+  drift: 1 unit every 50 turns
+  north is blocked: ice-fields
+  aka belt, void
+
+  Black, and the slow tumble of rock against it.
+
+  landmarks
+    the Mining Platform: 3, 3
+    the Derelict: 14, 6
+  end landmarks
+
+create the skiff
+  a vehicle
+  in the Belt at 3, 3
+  movement: open
+  carries: in
+  drive: player
+  commands: compass, coordinates
+  pace: 1 turn
+  stride: 1 unit
+  sight: 6
+  seen from afar: a glint of hull against the dark
+  aka craft
+
+  A skiff: one seat, one console, a hull you can see through.
+
+define sequence landfall
+  when the Derelict comes into sight
+    phrase land-ho
+end sequence
+</code></pre>
+
+<p>A barque under sail:</p>
+<pre><code>create the Marigold
+  a vehicle
+  in the Sargasso at 20, 20
+  movement: open
+  carries: in
+  drive: player
+  commands: naval, compass
+  stride: 1 unit
+  sight: 8
+  seen from afar: three masts leaning to the wind
+  sails: furled, reefed, full
+  sails start: furled
+  aka ship, barque
+
+  A barque, three masts, a wheel aft.
+
+  sailing
+    0 to 44 degrees: furled stopped, reefed stopped, full stopped
+    45 to 74 degrees: furled stopped, reefed 6 turns, full 4 turns
+    75 to 119 degrees: furled stopped, reefed 3 turns, full 2 turns
+    120 to 180 degrees: furled 6 turns, reefed 2 turns, full 1 turn
+    calm: stopped
+  end sailing
+</code></pre>
+
+<p>An exit that exists while a condition holds:</p>
+<pre><code>create the Crawl
+  a room
+  north to the Passage while the boulder is rolled aside
+
+create the Cable Trench
+  a room, dark
+
+  passage to the Sorting Room
+    grammar
+      follow the cables
+    while the Cable Trench is not dark
+  end passage
+</code></pre>
+
 <h3>Things, containers, physical state</h3>
 <ul>
   <li>Containers say what they show and hold: <code>transparent</code>, <code>holds &lt;n&gt;</code>. <code>in</code> and <code>out</code> are exit directions.</li>
@@ -31,11 +205,89 @@
   <li>Lamps: <code>light</code>, <code>put out</code>, <code>light-source with</code>, <code>starts lit</code>, <code>powered by</code>. <code>dark</code> is reserved as a state name off rooms.</li>
 </ul>
 
+<pre><code>create the specimen jar
+  a container, openable, transparent
+  holds 2
+  in the Hold
+
+  A squat glass jar with a screw lid.
+
+create the route placard
+  a thing, attached to the sorting machine, detachable
+  in the Sorting Room
+
+create the sample jar
+  a container, transparent, breakable, fragile
+  in the Sorting Room
+  states, reversible: sealed, spilled
+
+  after the player breaking
+    change the sample jar to spilled
+    phrase jar-spills
+  end after
+
+create the dead letter
+  a thing, flammable with the disposal torch
+  in the returns bin
+  aka letter, envelope
+
+create the guidance selector
+  a thing, scenery, settable
+  in the Cockpit
+  aka selector, dial
+  states, reversible: ceres, titan, kepler
+
+  A three-position selector under the viewport.
+
+  on the player setting to kepler
+    refuse selector-kepler-last
+  end on
+
+create the ration bar
+  a thing, costs 3 credits
+  in the canteen kiosk
+
+  after the player buying
+    phrase kiosk-vends
+  end after
+
+create the blackout lantern
+  a thing, light-source with the flint striker, starts unlit
+
+create the work lamp
+  a container, light-source, switchable, powered by the power cell
+</code></pre>
+
 <h3>Scope and senses</h3>
 <ul>
   <li>A backdrop is one scenery thing in many rooms. <code>night-vision</code>. <code>can see</code> and <code>can reach</code> read the platform.</li>
   <li><code>listener</code>, <code>after hearing the &lt;sound&gt;</code>, <code>define sound</code> without a file. <code>play sound</code> is never gated on the client.</li>
 </ul>
+
+<pre><code>create the view of Ceres
+  a thing, scenery
+  in the Landing Pad, the Tram Platform and the Hold
+
+  Ceres.
+
+create the klaxon button
+  a thing, scenery, pushable
+  in the Loading Dock
+
+  after the player pushing
+    play sound depot-klaxon
+  end after
+
+create the loader robot
+  a person, listener, night-vision
+  in the Loading Dock
+  aka robot, loader, unit
+
+  after hearing the depot-klaxon
+    move the mail sack to the Loading Dock
+    phrase robot-fetches-sack
+  end after
+</code></pre>
 
 <h3>Verbs and conversation</h3>
 <ul>
@@ -45,6 +297,87 @@
   <li>A <code>define action</code> answers its topic slot with <code>about</code> rows, the same row form <code>define topics</code> uses.</li>
 </ul>
 
+<pre><code>create the Landing Pad
+  a room
+  aka pad, pad 14
+
+  Pad 14 is a circle of old cement under a black sky.
+
+  on the player jumping
+    phrase pad-jump
+  end on
+
+create the pad master
+  a person
+  in the Landing Pad
+  states: unconvinced, waved-through
+
+  on the player saying_yes while the pad master is unconvinced
+    phrase quint-takes-yes-as-the-card
+  end on
+
+  on the player asking_for the tram token
+    refuse when the pad master is unconvinced: quint-no-token
+    move the tram token to the player
+    phrase quint-hands-token
+  end on
+
+create the dead letter
+  a thing
+  in the returns bin
+
+  on the player throwing at the sorting machine
+    phrase machine-spits-letter
+  end on
+</code></pre>
+
+<p>A readable thing with a topic table, and an action that answers its topic slot the same way:</p>
+<pre><code>create the flight manual
+  a thing, readable with text "UPPS COURIER FLIGHT MANUAL, REV. 9"
+  in the Cockpit
+  aka manual
+
+define topics for the flight manual
+  about "the fold", "the fold drive", "folding": phrase manual-fold
+  about "the airlock", "the outer hatch": phrase manual-airlock
+end topics
+
+define action praying
+  grammar
+    pray for the subject
+  the subject is a topic
+  about "rain", "the crops":
+    award faith, once
+    phrase prayed
+  otherwise refuse unheard
+end action
+</code></pre>
+
+<h3>State machines</h3>
+<ul>
+  <li><code>define machine</code> is core: states, <code>on enter</code>, <code>when</code> transitions, a terminal state, and roles bound to things in the story.</li>
+</ul>
+
+<pre><code>define machine ferry
+  role capstan is the capstan
+  starts moored
+
+  state moored
+    when turning the capstan: casting-off
+
+  state casting-off
+    on enter
+      phrase rope-pays-out
+    end on
+    when signaled: underway
+
+  state underway, terminal
+    on enter
+      phrase ferry-underway
+    end on
+end machine
+</code></pre>
+
 <h3>Testing</h3>
 <ul>
   <li>A reached state can be locked as a claim: <code>sharpee claim &lt;line&gt; "&lt;fact&gt;"</code> proposes the necessary set from the played line, writes the claim and pins the card. A broken lock is a failed card named in the claim's words.</li>
@@ -53,6 +386,34 @@
   <li>Derived rule tests: <code>arrange()</code>, END STATE cards prove endings, <code>sharpee test</code> reports branches, endings and rooms.</li>
   <li>The IDE's Testing tab keeps stale results, names each failed card's cause, and walks failures one stop at a time.</li>
 </ul>
+
+<pre><code>claims
+  needs rooms: the Iron Gates, the Gravel Drive, the Fountain Court, the Boiler Shed, the Entrance Hall, the Kitchen, the Greenhouse, the Folly Hill, the Folly
+  needs things: Tobias, the stopcock, the primer plunger, the boiler, the garden shears, the sherry bottle, Mrs Kettle, the vine, the silver locket, the folly door, the fuse, the deed box, the deed
+  needs verbs: ask, turn, push, turn on, take, give, prune, open, cut
+
+  claim the story can be won
+    the story ends in victory
+
+  claim Tobias has been asked about the folly
+    Tobias was asked about "the folly"
+    needs rooms: the Iron Gates, the Gravel Drive
+    needs things: Tobias
+    needs verbs: ask
+
+  never the deed box leaves the Folly
+    the deed box is not in the Folly
+    needs rooms: the Iron Gates, the Gravel Drive, the Fountain Court, the Boiler Shed, the Greenhouse, the Folly Hill, the Folly
+    needs things: Tobias, the stopcock, the primer plunger, the boiler, the folly door, the deed box
+    needs verbs: ask, turn, push, turn on, open, take
+end claims
+</code></pre>
+
+<p>The same gesture from the command line. The first argument is a line of the test tree, named by its segment id (<code>weefpbmr</code> here, from Fernhill's tree) or by the first command typed on it; <code>--at</code> is the turn as you count them. Without a fact, the command lists what is true at the line's last turn. With one, <code>--propose</code> prints the claim block it would write, and without <code>--propose</code> it writes the claim and pins the card.</p>
+<pre><code>sharpee claim weefpbmr
+sharpee claim weefpbmr "the deed box is open" --at 22 --propose
+sharpee claim weefpbmr "the deed box is open" --at 22
+</code></pre>
 
 <h3>What the player notices from the parser review</h3>
 <ul>
@@ -65,3 +426,4 @@
 <ul>
   <li>Connectors replacing attachment is accepted but not landed. <code>attached to</code> and tying still ship as above.</li>
 </ul>
+</div>
