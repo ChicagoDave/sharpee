@@ -1,0 +1,42 @@
+look
+x welcome sign
+x sign
+x ticket booth
+x booth
+x iron fence
+x fence
+x iron fence
+take iron fence
+south
+x direction signs
+x signs
+x flower beds
+x flowers
+x direction signs
+east
+x hay bale
+x hay
+west
+west
+x toucan
+x toco toucan
+x waterfall
+x water
+x rope perches
+x perches
+east
+north
+take welcome sign
+take ticket booth
+take iron fence
+south
+take direction signs
+take flower beds
+east
+take hay bale
+west
+west
+take toucan
+take waterfall
+take rope perches
+score

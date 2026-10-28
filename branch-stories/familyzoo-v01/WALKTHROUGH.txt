@@ -1,0 +1,11 @@
+look
+x welcome sign
+x sign
+x ticket booth
+x booth
+look
+x welcome sign
+x ticket booth
+take welcome sign
+take ticket booth
+score

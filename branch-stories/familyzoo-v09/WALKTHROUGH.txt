@@ -1,0 +1,125 @@
+look
+x staff keycard
+x keycard
+x welcome sign
+x sign
+x ticket booth
+x booth
+x iron fence
+x fence
+x zoo brochure
+read zoo brochure
+x brochure
+x zoo map
+x map
+x backpack
+look in backpack
+x rucksack
+read zoo brochure
+south
+x staff gate
+x gate
+x direction signs
+x signs
+x flower beds
+x flowers
+x souvenir penny
+x penny
+x park bench
+look on park bench
+x bench
+x lunchbox
+look in lunchbox
+x lunch box
+x juice box
+x juice
+east
+x hay bale
+x hay
+read info plaque
+west
+west
+x toucan
+x toco toucan
+x waterfall
+x water
+x rope perches
+x perches
+x aviary plaque
+read aviary plaque
+x information board
+east
+open staff gate
+south
+x metal shelves
+x shelves
+x cork board
+x board
+x warning sign
+read warning sign
+x warning
+x flashlight
+x torch
+south
+north
+north
+north
+take staff keycard
+drop staff keycard
+take welcome sign
+take ticket booth
+take iron fence
+take zoo brochure
+drop zoo brochure
+take zoo map
+drop zoo map
+open backpack
+take backpack
+drop backpack
+south
+open staff gate
+close staff gate
+open staff gate
+unlock staff gate
+open staff gate
+take staff gate
+take direction signs
+take flower beds
+take souvenir penny
+drop souvenir penny
+take park bench
+open lunchbox
+close lunchbox
+open lunchbox
+open lunchbox
+take lunchbox
+drop lunchbox
+take juice box
+drop juice box
+east
+take hay bale
+west
+west
+take toucan
+take waterfall
+take rope perches
+take aviary plaque
+east
+open staff gate
+south
+take metal shelves
+take cork board
+take warning sign
+take flashlight
+turn on flashlight
+south
+x sugar gliders
+take sugar gliders
+x gliders
+x bush babies
+take bush babies
+x galagos
+x barn owl
+take barn owl
+x owl
+score

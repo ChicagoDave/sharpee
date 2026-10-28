@@ -1,0 +1,187 @@
+look
+x staff keycard
+x keycard
+x welcome sign
+x sign
+x ticket booth
+x booth
+x iron fence
+x fence
+x zoo brochure
+read zoo brochure
+x brochure
+x zoo map
+x map
+x backpack
+look in backpack
+x rucksack
+south
+x staff gate
+x gate
+x direction signs
+x signs
+x flower beds
+x flowers
+x souvenir penny
+x penny
+x park bench
+look on park bench
+x bench
+x lunchbox
+look in lunchbox
+x lunch box
+x zookeeper
+talk to zookeeper
+x keeper
+x juice box
+x juice
+east
+x hay bale
+x hay
+x info plaque
+read info plaque
+x plaque
+x bag of animal feed
+x feed
+x feed dispenser
+look in feed dispenser
+x dispenser
+x pygmy goats
+x goats
+x rabbits
+x rabbit
+pet the goats
+x pygmy goats
+west
+west
+x toucan
+x toco toucan
+x waterfall
+x water
+x rope perches
+x perches
+x aviary plaque
+read aviary plaque
+x information board
+west
+x stuffed animals
+x plush
+x postcards
+x cards
+x enamel pins
+x pins
+x souvenir press
+look in souvenir press
+x press
+x disposable camera
+x camera
+east
+east
+open staff gate
+south
+x metal shelves
+x shelves
+x cork board
+x board
+x warning sign
+read warning sign
+x warning
+x flashlight
+x torch
+x radio
+x portable radio
+south
+north
+north
+north
+take staff keycard
+drop staff keycard
+take welcome sign
+take ticket booth
+take iron fence
+take zoo brochure
+drop zoo brochure
+take zoo map
+drop zoo map
+open backpack
+take backpack
+drop backpack
+south
+open staff gate
+close staff gate
+open staff gate
+unlock staff gate
+open staff gate
+take staff gate
+take direction signs
+take flower beds
+take souvenir penny
+drop souvenir penny
+take park bench
+open lunchbox
+close lunchbox
+open lunchbox
+open lunchbox
+take lunchbox
+drop lunchbox
+take juice box
+drop juice box
+east
+take hay bale
+take info plaque
+take bag of animal feed
+drop bag of animal feed
+open feed dispenser
+close feed dispenser
+open feed dispenser
+open feed dispenser
+take feed dispenser
+take pygmy goats
+feed pygmy goats
+pet pygmy goats
+take rabbits
+feed rabbits
+pet rabbits
+west
+west
+take toucan
+take waterfall
+take rope perches
+take aviary plaque
+east
+open staff gate
+south
+take metal shelves
+take cork board
+take warning sign
+take flashlight
+turn on flashlight
+turn on radio
+turn off radio
+turn on radio
+take radio
+south
+x sugar gliders
+take sugar gliders
+x gliders
+x bush babies
+take bush babies
+x galagos
+x barn owl
+take barn owl
+x owl
+x snake
+take snake
+x python
+north
+north
+west
+west
+take stuffed animals
+take postcards
+take enamel pins
+open souvenir press
+take souvenir press
+take disposable camera
+drop disposable camera
+score

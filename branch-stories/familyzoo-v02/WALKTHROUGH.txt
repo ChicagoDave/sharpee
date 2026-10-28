@@ -1,0 +1,18 @@
+look
+x welcome sign
+x sign
+x ticket booth
+x booth
+south
+x direction signs
+x signs
+east
+west
+west
+east
+north
+take welcome sign
+take ticket booth
+south
+take direction signs
+score
