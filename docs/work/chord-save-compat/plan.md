@@ -66,7 +66,7 @@
 - **Exit state**: Compiling a story twice yields an identical manifest and stamp; editing the story changes the stamp; a save records the stamp.
 - **Demonstration**: a unit test compiles two edits of one story and compares manifest and stamp; a save file inspected shows the stamp.
 - **Demonstrated**: 
-- **Status**: PENDING
+- **Status**: CURRENT (since 2026-10-29)
 
 ### Phase 5: Restore-time reconciler and version check
 - **Tier**: Large
