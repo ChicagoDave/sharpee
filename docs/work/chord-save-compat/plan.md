@@ -54,7 +54,7 @@
 - **Exit state**: Inserting a chapter or timer turn before the saved position no longer misdirects a restored save. Real-path test: save mid-chapter and mid-timer, insert a chapter and a named turn earlier, restore, and both resume at the same named position.
 - **Demonstration**: the new save-edit-restore tests pass; Dungeo chain and fernhill tree tests still green after `./repokit build`.
 - **Demonstrated**: 
-- **Status**: PENDING
+- **Status**: CURRENT (since 2026-10-29)
 
 ### Phase 4: Identity manifest and story-version stamp
 - **Tier**: Medium
