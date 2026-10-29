@@ -47,8 +47,8 @@ export function entityIdByIrOf(world: ClaimsWorld): Map<string, string> {
 /**
  * The firing-counter keys behind each `<thing> has been <participle>` text
  * (`<thing-id>.<action>`), built once from the IR: the counters of the
- * thing's own `on` clauses for that action, by clause position, composed by
- * the loader's own key function.
+ * thing's own `on` clauses for that action, by the clause's compiler id
+ * (ADR-388 D2), composed by the loader's own key function.
  *
  * @param ir the compiled story
  * @returns the compiler's `fired` text to the loader's counter keys
@@ -56,12 +56,12 @@ export function entityIdByIrOf(world: ClaimsWorld): Map<string, string> {
 export function clauseKeysByFiredOf(ir: StoryIR): Map<string, string[]> {
   const map = new Map<string, string[]>();
   for (const entity of ir.entities) {
-    entity.onClauses.forEach((clause, index) => {
+    for (const clause of entity.onClauses) {
       const fired = `${entity.id}.${clause.action}`;
       const keys = map.get(fired) ?? [];
-      keys.push(clauseOccurrenceKey(entity.id, index + 1));
+      keys.push(clauseOccurrenceKey(clause.id));
       map.set(fired, keys);
-    });
+    }
   }
   return map;
 }

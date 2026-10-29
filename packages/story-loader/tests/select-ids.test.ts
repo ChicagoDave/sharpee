@@ -1,9 +1,12 @@
 /**
- * select-ids.test.ts — ADR-289 D2: compiler-assigned select identity.
+ * select-ids.test.ts — compiler-assigned select identity (ADR-289 D2, re-shaped
+ * by ADR-388 D2) and the loader's identity backstops.
  *
- * Purpose: pin the id shape, the bare-digits reservation the sweep depends on,
- * per-composing-entity keying for trait clauses, the rogue-IR backstop, and
- * the load-time sweep of the retired line-number key space.
+ * Purpose: pin the select id shape under a clause (the clause's id plus the
+ * select's index among its body's selects), the never-bare-digits property,
+ * per-composing-entity keying for trait clauses, the rogue-IR backstops for
+ * id-less clauses and selects (ADR-388 AC-8), and that a restore leaves live
+ * counters untouched now that no sweep runs (ADR-388 D6).
  *
  * Public interface: none — a test module. Owner context:
  * `@sharpee/story-loader`.
@@ -12,11 +15,11 @@ import { describe, expect, it } from 'vitest';
 import { compile, IR_FORMAT, type IRStatement, type StoryIR } from '@sharpee/chord';
 import { WorldModel } from '@sharpee/world-model';
 import {
+  assertClauseIds,
   assertSelectIds,
   createStory,
   LoadError,
   selectOccurrenceKey,
-  sweepRetiredSelectKeys,
   CHORD_SELECT_PREFIX,
 } from '../src';
 
@@ -130,17 +133,17 @@ function selectIds(ir: StoryIR): string[] {
   return ids;
 }
 
-describe('ADR-289 D2 — compiler-assigned select ids', () => {
+describe('ADR-289 D2 / ADR-388 D2 — compiler-assigned select ids', () => {
   it('IR_FORMAT is `story language 5`', () => {
     expect(IR_FORMAT).toBe('story language 5');
     expect(compiled().format).toBe('story language 5');
   });
 
-  it('names owner, clause and statement path', () => {
+  it('names the clause by its head and the select by its index among the body\'s selects', () => {
     const ids = selectIds(compiled());
-    // <owner>.<clauseKind>-<action>-<clauseIndex>.<statement-path>
-    expect(ids).toContain('tablet.on-reading-0.0');
-    expect(ids).toContain('trait.chimed.on-pushing-0.0');
+    // <clause-id>.select#<k>
+    expect(ids).toContain('tablet.on-reading-by-player.select#1');
+    expect(ids).toContain('trait.chimed.on-pushing-by-player.select#1');
   });
 
   it('every id is unique', () => {
@@ -149,31 +152,27 @@ describe('ADR-289 D2 — compiler-assigned select ids', () => {
     expect(new Set(ids).size).toBe(ids.length);
   });
 
-  // The bare-digits reservation is the discriminator the sweep depends on
-  // FOREVER. The argument that owner-plus-clause-key can never be all digits
-  // is sound — the clause key always contains letters — but an argument is not
-  // an invariant, and this is two lines.
-  it('no id is ever bare digits (the sweep’s discriminator)', () => {
+  it('no id is ever bare digits', () => {
     for (const id of selectIds(compiled())) {
-      expect(id, `id ${id} would collide with the retired line-number space`).not.toMatch(/^\d+$/);
+      expect(id).not.toMatch(/^\d+$/);
     }
   });
 
   it('a trait select counts per composing entity', () => {
-    const id = 'trait.chimed.on-pushing-0.0';
+    const id = 'trait.chimed.on-pushing-by-player.select#1';
     expect(selectOccurrenceKey(id, 'bell')).toBe(`${CHORD_SELECT_PREFIX}${id}.bell`);
     expect(selectOccurrenceKey(id, 'gong')).toBe(`${CHORD_SELECT_PREFIX}${id}.gong`);
     expect(selectOccurrenceKey(id, 'bell')).not.toBe(selectOccurrenceKey(id, 'gong'));
   });
 
   it('the compiler id is a strict prefix of every per-owner key', () => {
-    // So tooling and sweeps can address "all counters for this statement".
-    const id = 'trait.chimed.on-pushing-0.0';
+    // So tooling can address "all counters for this statement".
+    const id = 'trait.chimed.on-pushing-by-player.select#1';
     expect(selectOccurrenceKey(id, 'bell').startsWith(selectOccurrenceKey(id))).toBe(true);
   });
 });
 
-describe('ADR-289 D2 — rogue-IR backstop (ADR-276 two-layer)', () => {
+describe('ADR-388 AC-8 — rogue-IR backstops (ADR-276 two-layer)', () => {
   it('an id-less select raises a LoadError naming the compiler gate', () => {
     const ir = compiled();
     const clause = ir.entities.find((e) => e.id === 'tablet')!.onClauses[0];
@@ -191,15 +190,43 @@ describe('ADR-289 D2 — rogue-IR backstop (ADR-276 two-layer)', () => {
     expect(String(err)).toMatch(/ADR-289 D2/);
   });
 
-  it('createStory refuses the same IR — the gate is on the real load path', () => {
+  it('an id-less clause raises a LoadError naming the compiler gate', () => {
+    const ir = compiled();
+    const clause = ir.traits.find((t) => t.name === 'chimed')!.onClauses[0];
+    delete (clause as { id?: string }).id;
+
+    let err: unknown;
+    try {
+      assertClauseIds(ir);
+    } catch (e) {
+      err = e;
+    }
+    expect(err).toBeInstanceOf(LoadError);
+    expect(String(err)).toMatch(/on pushing.*trait chimed.*no compiler-assigned id/);
+    expect(String(err)).toMatch(/ADR-388 D2/);
+  });
+
+  it('createStory refuses an id-less select on the real load path', () => {
     const ir = compiled();
     const clause = ir.entities.find((e) => e.id === 'tablet')!.onClauses[0];
     delete (clause.body.find((s) => s.kind === 'select-strategy') as { id?: string }).id;
     expect(() => createStory(ir)).toThrow(LoadError);
   });
 
-  it('does NOT fall back to a line number', () => {
-    // A fallback would silently restore the colliding key space D2 replaced.
+  it('createStory refuses an id-less entity clause on the real load path', () => {
+    const ir = compiled();
+    delete (ir.entities.find((e) => e.id === 'tablet')!.onClauses[0] as { id?: string }).id;
+    expect(() => createStory(ir)).toThrow(/tablet.*no compiler-assigned id/);
+  });
+
+  it('createStory refuses an id-less trait clause on the real load path', () => {
+    const ir = compiled();
+    delete (ir.traits.find((t) => t.name === 'chimed')!.onClauses[0] as { id?: string }).id;
+    expect(() => createStory(ir)).toThrow(/trait chimed.*no compiler-assigned id/);
+  });
+
+  it('does NOT fall back to a position or a line number', () => {
+    // A fallback would silently restore the drifting key space these decisions replaced.
     const ir = compiled();
     const select = ir.entities.find((e) => e.id === 'tablet')!.onClauses[0].body.find(
       (s) => s.kind === 'select-strategy',
@@ -209,7 +236,7 @@ describe('ADR-289 D2 — rogue-IR backstop (ADR-276 two-layer)', () => {
   });
 });
 
-describe('ADR-289 D2 — the retired key sweep', () => {
+describe('ADR-388 D6 — a restore leaves live counters untouched; no sweep runs', () => {
   function loadedWorld() {
     const story = createStory(compiled());
     const world = new WorldModel();
@@ -218,86 +245,26 @@ describe('ADR-289 D2 — the retired key sweep', () => {
     return { story, world };
   }
 
-  it('removes bare-digit keys on load', () => {
-    const story = createStory(compiled());
-    const world = new WorldModel();
-    world.setStateValue('chord.occurrence.select.40', 3);
-    world.setStateValue('chord.occurrence.select.117', 1);
-    story.initializeWorld(world);
-
-    expect(world.getStateValue('chord.occurrence.select.40')).toBeUndefined();
-    expect(world.getStateValue('chord.occurrence.select.117')).toBeUndefined();
-  });
-
-  it('leaves the NEW key space alone — the glob-sweep trap', () => {
-    // A `chord.occurrence.select.*` glob would delete these. That is the
-    // BLOCKER the first adr-review caught, pinned here so it cannot return.
-    const { world } = loadedWorld();
-    const live = selectOccurrenceKey('tablet.on-reading-0.0');
-    const traitLive = selectOccurrenceKey('trait.chimed.on-pushing-0.0', 'bell');
-    world.setStateValue(live, 5);
-    world.setStateValue(traitLive, 2);
-
-    expect(sweepRetiredSelectKeys(world)).toBe(0);
-    expect(world.getStateValue(live)).toBe(5);
-    expect(world.getStateValue(traitLive)).toBe(2);
-  });
-
-  it('leaves other chord.occurrence keys alone', () => {
-    const { world } = loadedWorld();
-    world.setStateValue('chord.occurrence.on.tablet.reading', 4);
-    world.setStateValue('chord.occurrence.topic.kettle.0', 1);
-
-    expect(sweepRetiredSelectKeys(world)).toBe(0);
-    expect(world.getStateValue('chord.occurrence.on.tablet.reading')).toBe(4);
-    expect(world.getStateValue('chord.occurrence.topic.kettle.0')).toBe(1);
-  });
-
-  it('is idempotent and reports what it removed', () => {
-    const { world } = loadedWorld();
-    world.setStateValue('chord.occurrence.select.40', 3);
-    expect(sweepRetiredSelectKeys(world)).toBe(1);
-    expect(sweepRetiredSelectKeys(world)).toBe(0);
-  });
-
-  // AC4 / AC5. The sweep must also run on RESTORE: restored state arrives
-  // wholesale from the save snapshot, so a load-only sweep would never see
-  // the keys it exists to remove. `ChordStory.onWorldRestored` is what the
-  // engine calls (ADR-289 D2); the engine-side ordering contract is pinned
-  // in @sharpee/engine's on-world-restored.test.ts.
-  it('AC4: a pre-D2 save restores with no bare-digit key surviving', () => {
+  it('a save round-trips its select counters intact through onWorldRestored', () => {
     const { story, world } = loadedWorld();
-    // Simulate the restored snapshot: pre-D2 counters, mid-sequence.
-    world.setStateValue('chord.occurrence.select.40', 3);
-    world.setStateValue('chord.occurrence.select.117', 7);
-
-    story.onWorldRestored(world);
-
-    expect(world.getStateValue('chord.occurrence.select.40')).toBeUndefined();
-    expect(world.getStateValue('chord.occurrence.select.117')).toBeUndefined();
-  });
-
-  it('AC4: the select resumes from its first alternative after that restore', () => {
-    const { story, world } = loadedWorld();
-    world.setStateValue('chord.occurrence.select.40', 3);
-    story.onWorldRestored(world);
-
-    // Nothing under the NEW key, so the next firing starts the cycle over.
-    expect(world.getStateValue(selectOccurrenceKey('tablet.on-reading-0.0'))).toBeUndefined();
-  });
-
-  it('AC5: a post-D2 save round-trips its counters intact', () => {
-    const { story, world } = loadedWorld();
-    const live = selectOccurrenceKey('tablet.on-reading-0.0');
-    const traitLive = selectOccurrenceKey('trait.chimed.on-pushing-0.0', 'bell');
+    const live = selectOccurrenceKey('tablet.on-reading-by-player.select#1');
+    const traitLive = selectOccurrenceKey('trait.chimed.on-pushing-by-player.select#1', 'bell');
     // A cycling select mid-sequence, as a real save would carry it.
     world.setStateValue(live, 3);
     world.setStateValue(traitLive, 1);
 
-    story.onWorldRestored(world);
+    story.onWorldRestored(world, 7);
 
-    // Untouched — proving the sweep did not match the new key space.
     expect(world.getStateValue(live)).toBe(3);
     expect(world.getStateValue(traitLive)).toBe(1);
+  });
+
+  it('a key of a shape the loader no longer writes is left for the reconciler, not swept here', () => {
+    // ADR-388 D6: the retired-key sweep is gone with its key space; D5's
+    // reconciler is the one mechanism that drops orphans, and it is not this hook.
+    const { story, world } = loadedWorld();
+    world.setStateValue('chord.occurrence.select.40', 3);
+    story.onWorldRestored(world, 7);
+    expect(world.getStateValue('chord.occurrence.select.40')).toBe(3);
   });
 });

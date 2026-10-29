@@ -30,6 +30,12 @@ define timer bell for the player
   dusk
 end timer
 
+define trait prunable
+  on the player pushing
+    change it to fruiting
+  end on
+end trait
+
 create the Greenhouse
   a room
 
@@ -41,7 +47,7 @@ create the Shed
   A shed.
 
 create the vine
-  a thing, scenery
+  a thing, scenery, prunable
   states, reversible: flowering, fruiting
   in the Greenhouse
 
@@ -241,23 +247,31 @@ describe('arrange — a timer phase writes the timer record as the runtime verbs
 
 describe('arrange — a clause occurrence sets the firing counter (ADR-356 D2 as amended 2026-10-11)', () => {
   it('writes an entity clause\'s counter by IR id and by display name, so the next firing is the (k+1)-th', () => {
-    expect(world.getStateValue(clauseOccurrenceKey('vine', 1))).toBeUndefined();
-    expect(arrange(world, 'vine clause 1 occurrence = 2')).toEqual({ arranged: true });
-    expect(world.getStateValue(clauseOccurrenceKey('vine', 1))).toBe(2);
-    expect(arrange(world, 'the garden shears clause 2 occurrence = 1')).toEqual({ arranged: true });
-    expect(world.getStateValue(clauseOccurrenceKey('garden-shears', 2))).toBe(1);
+    expect(world.getStateValue(clauseOccurrenceKey('vine.on-pruning-by-player'))).toBeUndefined();
+    expect(arrange(world, 'vine on pruning by player occurrence = 2')).toEqual({ arranged: true });
+    expect(world.getStateValue(clauseOccurrenceKey('vine.on-pruning-by-player'))).toBe(2);
+    // An identical head's `#n`, and a counterpart tail, ride into the id as the compiler spells them.
+    expect(arrange(world, 'the garden shears after cutting by player with vine #2 occurrence = 1')).toEqual({ arranged: true });
+    expect(world.getStateValue(clauseOccurrenceKey('garden-shears.after-cutting-by-player-with-vine#2'))).toBe(1);
+  });
+
+  it('writes a trait clause\'s counter per carrier, under the trait-prefixed id the loader fires it by', () => {
+    const key = clauseOccurrenceKey('trait.prunable.on-pushing-by-player', 'vine');
+    expect(world.getStateValue(key)).toBeUndefined();
+    expect(arrange(world, 'vine trait prunable on pushing by player occurrence = 2')).toEqual({ arranged: true });
+    expect(world.getStateValue(key)).toBe(2);
   });
 
   it('writes the story\'s own clause counter', () => {
-    expect(arrange(world, 'story clause 1 occurrence = 3')).toEqual({ arranged: true });
-    expect(world.getStateValue(clauseOccurrenceKey('story', 1))).toBe(3);
+    expect(arrange(world, 'story on every-turn occurrence = 3')).toEqual({ arranged: true });
+    expect(world.getStateValue(clauseOccurrenceKey('story.on-every-turn'))).toBe(3);
   });
 
-  it('refuses, by name and writing nothing, an unknown owner, a trait the owner does not carry, and a clause number below 1', () => {
+  it('refuses, by name and writing nothing, an unknown owner, a trait the owner does not carry, and an ordinal below 1', () => {
     const before = JSON.stringify(world.getState());
-    expect(arrange(world, 'gazebo clause 1 occurrence = 1')).toEqual({ arranged: false, shape: 'unrecognized', detail: 'entity "gazebo" not found' });
-    expect(arrange(world, 'vine trait prunable clause 1 occurrence = 1')).toEqual({ arranged: false, shape: 'unrecognized', detail: '"vine" does not carry the trait prunable' });
-    expect(arrange(world, 'vine clause 0 occurrence = 1')).toEqual({ arranged: false, shape: 'unrecognized', detail: '"0" is not a clause number (the first clause is 1)' });
+    expect(arrange(world, 'gazebo on examining by player occurrence = 1')).toEqual({ arranged: false, shape: 'unrecognized', detail: 'entity "gazebo" not found' });
+    expect(arrange(world, 'vine trait sticky on pruning by player occurrence = 1')).toEqual({ arranged: false, shape: 'unrecognized', detail: '"vine" does not carry the trait sticky' });
+    expect(arrange(world, 'vine on pruning by player #0 occurrence = 1')).toEqual({ arranged: false, shape: 'unrecognized', detail: '"#0" is not a clause ordinal (the first identical head is #1)' });
     expect(JSON.stringify(world.getState())).toBe(before);
   });
 });

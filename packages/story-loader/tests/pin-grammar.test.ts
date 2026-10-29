@@ -68,13 +68,20 @@ describe('parsePin — the five floor forms', () => {
 });
 
 describe('parsePin — the clause counter (a floor form since 2026-10-11) and the shapes named and not written', () => {
-  it('occurrence — owner, optional trait, clause number, count', () => {
-    expect(parsePin('vine clause 1 occurrence = 2')).toEqual({ kind: 'occurrence', owner: 'vine', clause: 1, count: 2 });
-    expect(parsePin('the group of mercenaries clause 3 occurrence = 4')).toEqual({ kind: 'occurrence', owner: 'group of mercenaries', clause: 3, count: 4 });
-    expect(parsePin('vine trait prunable clause 1 occurrence = 2')).toEqual({ kind: 'occurrence', owner: 'vine', trait: 'prunable', clause: 1, count: 2 });
-    expect(parsePin('story clause 2 occurrence = 0')).toEqual({ kind: 'occurrence', owner: 'story', clause: 2, count: 0 });
-    // The retired key form is no form at all.
+  it('occurrence — owner, optional trait, the head as words, optional #n, count (ADR-388 D7)', () => {
+    expect(parsePin('vine on pruning by player occurrence = 2')).toEqual({ kind: 'occurrence', owner: 'vine', head: { clauseKind: 'on', action: 'pruning', actor: 'player' }, count: 2 });
+    expect(parsePin('the group of mercenaries after entering by player #3 occurrence = 4')).toEqual({ kind: 'occurrence', owner: 'group of mercenaries', head: { clauseKind: 'after', action: 'entering', actor: 'player' }, ordinal: 3, count: 4 });
+    expect(parsePin('vine trait prunable on pruning by player occurrence = 2')).toEqual({ kind: 'occurrence', owner: 'vine', trait: 'prunable', head: { clauseKind: 'on', action: 'pruning', actor: 'player' }, count: 2 });
+    expect(parsePin('story on every-turn #2 occurrence = 0')).toEqual({ kind: 'occurrence', owner: 'story', head: { clauseKind: 'on', action: 'every-turn' }, ordinal: 2, count: 0 });
+    // Every tail the id carries, in the id's order: a sound, an actor, a role, a value, a counterpart.
+    expect(parsePin('the guard after hearing bell by player occurrence = 1')).toEqual({ kind: 'occurrence', owner: 'guard', head: { clauseKind: 'after', action: 'hearing', actor: 'player', sound: 'bell' }, count: 1 });
+    expect(parsePin('the dial on setting by player to titan occurrence = 1')).toEqual({ kind: 'occurrence', owner: 'dial', head: { clauseKind: 'on', action: 'setting', actor: 'player', valueTail: 'titan' }, count: 1 });
+    expect(parsePin('the gong on throwing by player as target with rock occurrence = 1')).toEqual({ kind: 'occurrence', owner: 'gong', head: { clauseKind: 'on', action: 'throwing', actor: 'player', role: 'target', counterpart: 'rock' }, count: 1 });
+    // A bare head (`self` binding, or every-turn) carries no actor.
+    expect(parsePin('the troll on going occurrence = 1')).toEqual({ kind: 'occurrence', owner: 'troll', head: { clauseKind: 'on', action: 'going' }, count: 1 });
+    // The retired forms are no form at all.
     expect(parsePin('vine.pruning occurrence = 2')).toEqual({ kind: 'unrecognized' });
+    expect(parsePin('vine clause 1 occurrence = 2')).toEqual({ kind: 'unrecognized' });
   });
 
   it('topic-history', () => {

@@ -357,10 +357,10 @@ describe('ordinals and alternatives', () => {
   it('a `select cycling` yields one leaf per alternative, keyed by the select\'s compiler id', () => {
     const kicking = onClause('kicking', 'tom');
     expect(kicking.map((b) => b.leaf)).toEqual([
-      { kind: 'alternative', id: 'tom.on-kicking-2.0', index: 0 },
-      { kind: 'alternative', id: 'tom.on-kicking-2.0', index: 1 },
+      { kind: 'alternative', id: 'tom.on-kicking-by-player.select#1', index: 0 },
+      { kind: 'alternative', id: 'tom.on-kicking-by-player.select#1', index: 1 },
     ]);
-    expect(kicking[1].precondition).toEqual([{ kind: 'alternative', id: 'tom.on-kicking-2.0', index: 1 }]);
+    expect(kicking[1].precondition).toEqual([{ kind: 'alternative', id: 'tom.on-kicking-by-player.select#1', index: 1 }]);
     expect(kicking[1].effects[0]).toMatchObject({ kind: 'change', state: 'calm' });
   });
 });
@@ -460,32 +460,33 @@ describe('clause kinds beyond `on`', () => {
   });
 });
 
-describe('clause identity — root and position (ADR-356 D2, occurrence ordinals)', () => {
-  it('an entity clause carries its entity and its 1-based position among the entity\'s clauses, in source order', () => {
+describe('clause identity — root and compiler id (ADR-356 D2, occurrence ordinals; ADR-388 D2)', () => {
+  it('an entity clause carries its entity and its head-derived id', () => {
     const pushing = onClause('pushing', 'tom');
     const prodding = onClause('prodding', 'tom');
     const kicking = onClause('kicking', 'tom');
-    expect(pushing[0].clause).toMatchObject({ kind: 'on', root: { kind: 'entity', id: 'tom' }, clause: 1 });
-    expect(prodding[0].clause).toMatchObject({ kind: 'on', root: { kind: 'entity', id: 'tom' }, clause: 2 });
-    expect(kicking[0].clause).toMatchObject({ kind: 'on', root: { kind: 'entity', id: 'tom' }, clause: 3 });
+    expect(pushing[0].clause).toMatchObject({ kind: 'on', root: { kind: 'entity', id: 'tom' }, id: 'tom.on-pushing-by-player' });
+    expect(prodding[0].clause).toMatchObject({ kind: 'on', root: { kind: 'entity', id: 'tom' }, id: 'tom.after-prodding-by-player' });
+    expect(kicking[0].clause).toMatchObject({ kind: 'on', root: { kind: 'entity', id: 'tom' }, id: 'tom.on-kicking-by-player' });
     // Every leaf of one clause shares the identity.
-    expect(new Set(prodding.map((b) => (b.clause as { clause?: number }).clause))).toEqual(new Set([2]));
+    expect(new Set(prodding.map((b) => (b.clause as { id?: string }).id))).toEqual(new Set(['tom.after-prodding-by-player']));
   });
 
   it('a trait clause carries the trait and the composing entity, once per carrier', () => {
     const roots = collectClauseBranches(ir)
       .filter((b) => b.clause.kind === 'on' && b.clause.action === 'pruning')
-      .map((b) => (b.clause as { root: unknown; clause?: number }));
+      .map((b) => (b.clause as { root: unknown; id?: string }));
     expect(roots.map((c) => c.root)).toEqual(expect.arrayContaining([
       { kind: 'trait', name: 'prunable', entity: 'vine' },
       { kind: 'trait', name: 'prunable', entity: 'rose' },
     ]));
-    expect(new Set(roots.map((c) => c.clause))).toEqual(new Set([1]));
+    // One trait clause, one id; the carrier is the root's, not the id's.
+    expect(new Set(roots.map((c) => c.id))).toEqual(new Set(['trait.prunable.on-pruning-by-player']));
   });
 
-  it('a story every-turn clause is the story\'s clause 1', () => {
+  it('a story every-turn clause carries the story\'s id for it', () => {
     const story = collectClauseBranches(ir).filter((b) => b.clause.kind === 'on' && b.clause.binding === 'every-turn' && b.owner.kind === 'story');
     expect(story.length).toBeGreaterThan(0);
-    expect(story[0].clause).toMatchObject({ root: { kind: 'story' }, clause: 1 });
+    expect(story[0].clause).toMatchObject({ root: { kind: 'story' }, id: 'story.on-every-turn' });
   });
 });

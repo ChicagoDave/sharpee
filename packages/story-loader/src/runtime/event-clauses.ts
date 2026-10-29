@@ -123,7 +123,7 @@ export class EventClausesSection {
     const ctx: ExecContext = { world, it: entity.id };
     if (clause.condition && !this.core.evaluator.evalCondition(clause.condition, ctx)) return null;
 
-    const occKey = clauseOccurrenceKey(entity.id, entity.onClauses.indexOf(clause) + 1);
+    const occKey = clauseOccurrenceKey(clause.id);
     const occurrence = ((world.getStateValue(occKey) as number | undefined) ?? 0) + 1;
     if (clause.once && occurrence > 1) return null; // `, once` — one lifetime firing (D5)
     world.setStateValue(occKey, occurrence);

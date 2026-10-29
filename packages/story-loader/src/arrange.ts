@@ -26,10 +26,11 @@
  *   <entity>.inventory|contents contains <x>  → a placement into the entity
  *   <entity>.isOpen|isLocked|isOn = true|false → the trait flag
  *   <timer> has started|expired               → the timer's record
- *   [the] <owner> [trait <t>] clause <n> occurrence = <k>
+ *   [the] <owner> [trait <t>] <head> [#n] occurrence = <k>
  *                                             → the clause's firing counter, so its
  *                                               next firing is the (k+1)-th (ordinal
- *                                               bodies; 2026-10-11)
+ *                                               bodies; 2026-10-11; the head spelling
+ *                                               since ADR-388 D7)
  *
  * A timer write mirrors the runtime's own verbs (`runtime/timers.ts`).
  * `has started` on an idle timer writes a running record stamped with the
@@ -92,6 +93,7 @@ import {
   type IFEntity,
   type WorldModel,
 } from '@sharpee/world-model';
+import { clauseHeadId } from '@sharpee/chord';
 import { parsePin, type ParsedPin } from './pin-grammar.js';
 import {
   CHORD_GONE_PREFIX,
@@ -302,16 +304,16 @@ function arrangeTimerPhase(world: WorldModel, pin: Extract<ParsedPin, { kind: 't
 }
 
 /**
- * `[the] <owner> [trait <trait>] clause <n> occurrence = <k>`: the clause's
+ * `[the] <owner> [trait <trait>] <head> [#n] occurrence = <k>`: the clause's
  * firing counter set to k, so its next firing is the (k+1)-th. The owner
  * is `story` or an entity the loader built; a trait clause's owner must
- * carry the trait. The clause number is honoured as named — a world holds
- * no clause list to check it against, and a caller's expressions come from
- * the IR, which numbers every clause they name.
+ * carry the trait. The head is honoured as named — a world holds no clause
+ * list to check it against, and a caller's expressions come from the IR,
+ * which gives every clause they name its head (ADR-388 D2, D7).
  */
 function arrangeOccurrence(world: WorldModel, pin: Extract<ParsedPin, { kind: 'occurrence' }>): ArrangeResult {
-  if (!Number.isInteger(pin.clause) || pin.clause < 1) {
-    return unrecognized(`"${pin.clause}" is not a clause number (the first clause is 1)`);
+  if (pin.ordinal !== undefined && (!Number.isInteger(pin.ordinal) || pin.ordinal < 1)) {
+    return unrecognized(`"#${pin.ordinal}" is not a clause ordinal (the first identical head is #1)`);
   }
   let owner: string;
   if (pin.owner === 'story') {
@@ -326,7 +328,9 @@ function arrangeOccurrence(world: WorldModel, pin: Extract<ParsedPin, { kind: 'o
     }
     owner = irId;
   }
-  world.setStateValue(clauseOccurrenceKey(owner, pin.clause, pin.trait), pin.count);
+  const head = clauseHeadId(pin.head, pin.ordinal);
+  const key = pin.trait === undefined ? clauseOccurrenceKey(`${owner}.${head}`) : clauseOccurrenceKey(`trait.${pin.trait}.${head}`, owner);
+  world.setStateValue(key, pin.count);
   return { arranged: true };
 }
 

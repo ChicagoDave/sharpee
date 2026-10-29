@@ -1173,6 +1173,18 @@ export interface IRDeadlyRoom {
 }
 
 export interface IROnClause {
+  /**
+   * The clause's compiler-assigned identity (ADR-388 D2): its owner key and
+   * its head — `<owner>.<kind>-<action>[-<sound>][-by-<actor>][-as-<role>][-to-<value>][-with-<counterpart>][#<n>]`,
+   * e.g. `troll.on-attacking-by-player`, `trait.glowing.on-rubbing`,
+   * `story.on-every-turn#2`. `#<n>` appears only when the root has several
+   * clauses with the same head, numbering them in source order; a `while`
+   * guard and `, once` are not part of the head. The loader keys the
+   * clause's firing counter by it, so inserting or reordering clauses
+   * re-keys nothing but a numbered twin. Assigned by `assignClauseIds`
+   * (`clause-ids.ts`); the loader refuses a clause without one.
+   */
+  id: string;
   /** `on` = intercept (may refuse; primary text), `after` = react (appends; ratchet D3). */
   clauseKind: 'on' | 'after';
   /** `, once` clause modifier — one lifetime firing (ratchet D5). */
@@ -1908,13 +1920,16 @@ export type IRStatement =
   | {
       kind: 'select-strategy';
       /**
-       * ADR-289 D2: compiler-assigned stable id keying this select's persisted
-       * occurrence counter — `<owner>.<clause-key>.<statement-path>`, e.g.
-       * `troll.on-attacking-0.2.0`. NEVER bare digits: that shape is reserved
-       * for the retired line-number key space the load/restore sweep removes.
-       * Positional by construction, so editing or reordering clauses and
-       * statements re-keys the select and resets its counter (ADR-289 D2
-       * consequence). `select-on` carries no id — it has no persisted state.
+       * Compiler-assigned stable id keying this select's persisted occurrence
+       * counter (ADR-289 D2, re-shaped by ADR-388 D2). Under an `on`/`after`
+       * clause it is the clause's id plus the select's index among the
+       * selects of that clause's body in document order — `troll.on-attacking-by-player.select#2`
+       * — so inserting a statement that is not a select re-keys nothing.
+       * Under every other root (a sequence step, a machine state, a topic
+       * row, an action body, the start block, a timer's `meanwhile`) it is
+       * the root's path plus the statement path, as ADR-289 D2 assigned it.
+       * Never bare digits. `select-on` carries no id — it has no persisted
+       * state.
        */
       id: string;
       strategy: string;

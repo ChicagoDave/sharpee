@@ -127,7 +127,8 @@ function consult(b: Booted, target: IFEntity, actionId: string, actorId: string)
 }
 
 /** An entity's n-th clause's firing counter, by the clause's position in the entity's block. */
-const occurrence = (b: Booted, entity: string, clause: number) => b.world.getStateValue(clauseOccurrenceKey(entity, clause));
+/** An entity's clause's firing counter, by the head part of its id (ADR-388 D2). */
+const occurrence = (b: Booted, entity: string, head: string) => b.world.getStateValue(clauseOccurrenceKey(`${entity}.${head}`));
 const messageIdsOf = (events: ISemanticEvent[]) =>
   events.map((e) => (e.data as { messageId?: string } | undefined)?.messageId).filter(Boolean);
 
@@ -154,11 +155,11 @@ describe('explicit heads on the interceptor path — the head names who acts', (
   it('only the matching clause counts a firing — the other keeps its occurrence unset (state, not return)', () => {
     const b = boot(SOURCE('  after the player taking\n    phrase you-arrive\n  end after\n\n  after the guards taking\n    phrase they-arrive\n  end after\n'));
     consult(b, b.entity('sword'), 'if.action.taking', b.playerId);
-    expect(occurrence(b, 'sword', 1)).toBe(1);
-    expect(occurrence(b, 'sword', 2)).toBeUndefined();
+    expect(occurrence(b, 'sword', 'after-taking-by-player')).toBe(1);
+    expect(occurrence(b, 'sword', 'after-taking-by-guards')).toBeUndefined();
     consult(b, b.entity('sword'), 'if.action.taking', b.id('guards'));
-    expect(occurrence(b, 'sword', 1)).toBe(1);
-    expect(occurrence(b, 'sword', 2)).toBe(1);
+    expect(occurrence(b, 'sword', 'after-taking-by-player')).toBe(1);
+    expect(occurrence(b, 'sword', 'after-taking-by-guards')).toBe(1);
   });
 
   it('a clause for another actor sits out its `after` phrases too', () => {
@@ -216,7 +217,7 @@ describe('bare heads ride the actor consultation (D1 own-block exception, Q1 any
     const jack = b.entity('jack');
     consult(b, jack, actorConsultationId('if.action.taking'), b.playerId);
     expect(b.world.getStateValue('chord.state.jack')).toBe('idle');
-    expect(occurrence(b, 'jack', 1)).toBeUndefined();
+    expect(occurrence(b, 'jack', 'on-taking')).toBeUndefined();
   });
 
   it("the player's own bare head is marked at createPlayer (the player is created after bind in this order)", () => {
@@ -247,7 +248,7 @@ describe('the event path — `after <actor> entering` filters on the mover', () 
     const b = boot(SOURCE('', '', GATE));
     const events = b.story.runtime.fireEventClauses(b.world, arrival(b, b.playerId));
     expect(messageIdsOf(events)).toEqual(['you-arrive']);
-    expect(occurrence(b, 'gate', 2)).toBeUndefined(); // after the guards entering
+    expect(occurrence(b, 'gate', 'after-entering-by-guards')).toBeUndefined();
   });
 
   it('the guards arriving fires the guards clause only — live for any mover today (D5 stamps the actor)', () => {
@@ -271,7 +272,7 @@ describe('the event path — `after <actor> entering` filters on the mover', () 
       d.run(ctx);
     }
     expect(b.world.getLocation(b.id('guards'))).toBe(b.id('gate'));
-    expect(occurrence(b, 'gate', 2)).toBe(1); // after the guards entering
-    expect(occurrence(b, 'gate', 1)).toBeUndefined(); // after the player entering
+    expect(occurrence(b, 'gate', 'after-entering-by-guards')).toBe(1);
+    expect(occurrence(b, 'gate', 'after-entering-by-player')).toBeUndefined();
   });
 });

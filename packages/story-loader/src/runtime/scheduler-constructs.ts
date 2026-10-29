@@ -115,7 +115,7 @@ export class SchedulerConstructsSection {
         daemons.push({
           id: `chord.entity-turn.${irEntity.id}.${clauseIndex}`,
           name: `on every turn (${irEntity.id})`,
-          run: (ctx) => this.runEntityTurnClause(irEntity, clause, clauseIndex, ctx.world),
+          run: (ctx) => this.runEntityTurnClause(irEntity, clause, ctx.world),
         });
       });
     });
@@ -127,7 +127,7 @@ export class SchedulerConstructsSection {
     // (the analyzer's story-clause-it gate refused it at compile).
     (this.core.ir.story.onClauses ?? []).forEach((clause, clauseIndex) => {
       if (clause.binding !== 'every-turn') return;
-      const key = clauseOccurrenceKey('story', clauseIndex + 1);
+      const key = clauseOccurrenceKey(clause.id);
       daemons.push({
         id: `chord.story-turn.${clauseIndex}`,
         name: 'on every turn (story)',
@@ -172,7 +172,7 @@ export class SchedulerConstructsSection {
               const evalCtx: ExecContext = { world: ctx.world, it: irEntity.id };
               if (comp.condition && !this.core.evaluator.evalCondition(comp.condition, evalCtx)) continue;
               if (clause.condition && !this.core.evaluator.evalCondition(clause.condition, evalCtx)) continue;
-              const key = clauseOccurrenceKey(irEntity.id, clauseIndex + 1, trait.name);
+              const key = clauseOccurrenceKey(clause.id, irEntity.id);
               const fired = ((ctx.world.getStateValue(key) as number | undefined) ?? 0) + 1;
               if (clause.once && fired > 1) continue; // `, once` (D5)
               ctx.world.setStateValue(key, fired);
@@ -249,12 +249,11 @@ export class SchedulerConstructsSection {
    *
    * @param irEntity the owning entity
    * @param clause the every-turn clause
-   * @param clauseIndex its index among the owner's clauses (the occurrence key)
    * @param world the live world
    * @returns the clause's events, or none when a gate holds it
    */
-  private runEntityTurnClause(irEntity: IREntity, clause: IROnClause, clauseIndex: number, world: WorldModel): ISemanticEvent[] {
-    const key = clauseOccurrenceKey(irEntity.id, clauseIndex + 1);
+  private runEntityTurnClause(irEntity: IREntity, clause: IROnClause, world: WorldModel): ISemanticEvent[] {
+    const key = clauseOccurrenceKey(clause.id);
     if (this.storyOver(world)) return [];
     if (this.core.timers.holdsPlayerRole(world, irEntity.id)) return [];
     if (!this.playerPresentInRegionOwner(world, irEntity)) return [];
@@ -308,10 +307,10 @@ export class SchedulerConstructsSection {
     const irEntity = irId ? this.core.ir.entities.find((e) => e.id === irId) : undefined;
     if (!irEntity) return [];
     const out: ISemanticEvent[] = [];
-    irEntity.onClauses.forEach((clause, clauseIndex) => {
+    irEntity.onClauses.forEach((clause) => {
       if (clause.binding !== 'every-turn') return;
       if (!knownTopicsIn(clause.condition).has(topic)) return;
-      out.push(...this.runEntityTurnClause(irEntity, clause, clauseIndex, world));
+      out.push(...this.runEntityTurnClause(irEntity, clause, world));
     });
     return out;
   }

@@ -210,7 +210,7 @@ export interface EntityBuildContext {
   descriptionKeysOf(id: string, decl: CreateDecl): { description: string; initialDescription: string };
   buildCounterDecl(decl: CounterDecl): IRCounterDecl;
   checkDuplicateClauses(clauses: OnClause[], ownerDesc: string): OnClause[];
-  buildOnClause(clause: OnClause, scope: Scope, ownerKey: string, clauseIndex: number): IROnClause;
+  buildOnClause(clause: OnClause, scope: Scope, ownerKey: string): IROnClause;
   buildTimerClause(clause: TimerClause, scope: Scope, ownerKey: string, index: number): IRTimerClause;
   buildMoveClause(clause: MoveClause, scope: Scope, ownerKey: string, index: number): IRMoveClause;
 }

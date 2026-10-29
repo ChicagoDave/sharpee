@@ -183,34 +183,34 @@ describe('a multi-word head in the dotted forms (GH #375)', () => {
   });
 });
 
-describe('a clause occurrence reads the firing counter under the clause identity (ADR-356 D2 as amended 2026-10-11)', () => {
+describe('a clause occurrence reads the firing counter under the clause identity (ADR-356 D2 as amended 2026-10-11; the head spelling per ADR-388 D7)', () => {
   const COUNTED: StoryStateKeys = { ...KEYS, clauseOccurrencePrefix: 'test.occurrence.clause.' };
 
-  it('composes the key from the prefix, the owner\'s IR id, the trait and the clause number; an absent counter is 0', () => {
+  it('composes the key from the prefix, the owner\'s IR id, the trait and the head as the compiler ids it; an absent counter is 0', () => {
     const { w } = hall();
-    expect(evaluateStateExpression('brass lamp clause 1 occurrence = 0', w, COUNTED)).toEqual({ matches: true });
-    w.setStateValue('test.occurrence.clause.brass-lamp.2', 3);
-    expect(evaluateStateExpression('the brass lamp clause 2 occurrence = 3', w, COUNTED)).toEqual({ matches: true });
-    expect(evaluateStateExpression('brass lamp clause 2 occurrence = 1', w, COUNTED)).toEqual({
+    expect(evaluateStateExpression('brass lamp on rubbing by player occurrence = 0', w, COUNTED)).toEqual({ matches: true });
+    w.setStateValue('test.occurrence.clause.brass-lamp.after-rubbing-by-player#2', 3);
+    expect(evaluateStateExpression('the brass lamp after rubbing by player #2 occurrence = 3', w, COUNTED)).toEqual({ matches: true });
+    expect(evaluateStateExpression('brass lamp after rubbing by player #2 occurrence = 1', w, COUNTED)).toEqual({
       matches: false,
-      details: 'brass lamp clause 2 has fired 3 times, expected 1',
+      details: 'brass lamp after rubbing by player #2 has fired 3 times, expected 1',
     });
-    w.setStateValue('test.occurrence.clause.brass-lamp.shiny.1', 1);
-    expect(evaluateStateExpression('brass lamp trait shiny clause 1 occurrence = 1', w, COUNTED)).toEqual({ matches: true });
-    w.setStateValue('test.occurrence.clause.story.1', 2);
-    expect(evaluateStateExpression('story clause 1 occurrence = 2', w, COUNTED)).toEqual({ matches: true });
+    w.setStateValue('test.occurrence.clause.brass-lamp.trait.shiny.on-rubbing-by-player', 1);
+    expect(evaluateStateExpression('brass lamp trait shiny on rubbing by player occurrence = 1', w, COUNTED)).toEqual({ matches: true });
+    w.setStateValue('test.occurrence.clause.story.on-every-turn', 2);
+    expect(evaluateStateExpression('story on every-turn occurrence = 2', w, COUNTED)).toEqual({ matches: true });
   });
 
   it('names a missing owner and a non-Chord entity, and is no claim without the prefix', () => {
     const { w } = hall();
-    expect(evaluateStateExpression('gazebo clause 1 occurrence = 0', w, COUNTED)).toEqual({ matches: false, details: 'Entity "gazebo" not found' });
-    expect(evaluateStateExpression('coin clause 1 occurrence = 0', w, COUNTED)).toEqual({
+    expect(evaluateStateExpression('gazebo on rubbing by player occurrence = 0', w, COUNTED)).toEqual({ matches: false, details: 'Entity "gazebo" not found' });
+    expect(evaluateStateExpression('coin on rubbing by player occurrence = 0', w, COUNTED)).toEqual({
       matches: false,
-      details: 'coin clause 1: not a Chord entity (no IR id), so it has no clauses',
+      details: 'coin on rubbing by player: not a Chord entity (no IR id), so it has no clauses',
     });
-    expect(evaluateStateExpression('brass lamp clause 1 occurrence = 0', w, KEYS)).toEqual({
+    expect(evaluateStateExpression('brass lamp on rubbing by player occurrence = 0', w, KEYS)).toEqual({
       matches: false,
-      details: 'Could not parse expression: brass lamp clause 1 occurrence = 0',
+      details: 'Could not parse expression: brass lamp on rubbing by player occurrence = 0',
     });
   });
 });

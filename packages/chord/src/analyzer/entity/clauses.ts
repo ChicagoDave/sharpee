@@ -13,6 +13,7 @@
  * References:
  * - ADR-325 D3e/D3h — `when <timer> expires` and `when <entity> moves`.
  */
+import { assignClauseIds } from '../../clause-ids.js';
 import type { EntityLineBuilder } from './context.js';
 
 export const clausesBuilder: EntityLineBuilder = {
@@ -20,9 +21,12 @@ export const clausesBuilder: EntityLineBuilder = {
   requires: [],
   build(decl, entity, context) {
     const { id, scope } = entity;
-    entity.onClauses = context
-      .checkDuplicateClauses(decl.onClauses, decl.name.words.join(' ').toLowerCase())
-      .map((c, i) => context.buildOnClause(c, scope, id, i));
+    // ADR-388 D2: ids are assigned over the whole list, so identical heads
+    // can be numbered among themselves.
+    entity.onClauses = assignClauseIds(
+      context.checkDuplicateClauses(decl.onClauses, decl.name.words.join(' ').toLowerCase()).map((c) => context.buildOnClause(c, scope, id)),
+      id,
+    );
     if (decl.timerClauses.length > 0) {
       entity.timerClauses = decl.timerClauses.map((c, i) => context.buildTimerClause(c, scope, id, i));
     }

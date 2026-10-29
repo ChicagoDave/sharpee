@@ -156,8 +156,8 @@ const NARRATING = `  after the player taking
   end after
 `;
 
-/** The sword's n-th clause's firing counter: with NARRATING, 1 is `after the player taking`, 2 is `after the guards taking`. */
-const occurrence = (b: Booted, clause: number) => b.world.getStateValue(clauseOccurrenceKey('sword', clause));
+/** The sword's clause's firing counter, by the head part of its id (ADR-388 D2). */
+const occurrence = (b: Booted, head: string) => b.world.getStateValue(clauseOccurrenceKey(`sword.${head}`));
 const messageIdsOf = (events: ISemanticEvent[]) =>
   events.map((e) => (e.data as { messageId?: string } | undefined)?.messageId).filter(Boolean);
 const blockedReason = (events: ISemanticEvent[]) =>
@@ -198,8 +198,8 @@ describe('ADR-327 AC-2 through the execution entry — the head names who acts',
     const ids = messageIdsOf(result.events);
     expect(ids).toContain('they-take');
     expect(ids).not.toContain('you-take');
-    expect(occurrence(b, 2)).toBe(1);
-    expect(occurrence(b, 1)).toBeUndefined();
+    expect(occurrence(b, 'after-taking-by-guards')).toBe(1);
+    expect(occurrence(b, 'after-taking-by-player')).toBeUndefined();
     const taken = result.events.find((e) => e.type === 'if.event.taken')!;
     expect(taken.entities.actor).toBe(b.id('guards'));
   });
@@ -215,7 +215,7 @@ describe('ADR-327 AC-2 through the execution entry — the head names who acts',
     const ids = messageIdsOf(result.events);
     expect(ids).toContain('you-take');
     expect(ids).not.toContain('they-take');
-    expect(occurrence(b, 1)).toBe(1);
-    expect(occurrence(b, 2)).toBeUndefined();
+    expect(occurrence(b, 'after-taking-by-player')).toBe(1);
+    expect(occurrence(b, 'after-taking-by-guards')).toBeUndefined();
   });
 });

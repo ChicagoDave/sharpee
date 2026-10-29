@@ -279,6 +279,19 @@ select restarting at its first alternative.
 
 ### D2 — Select blocks carry a compiler-assigned stable id
 
+> **Note (2026-10-29, session a927f6, ADR-388 Phase 2)**: the id's *shape*
+> below is superseded by [ADR-388](adr-388-persisted-identity-for-chord-saves.md)
+> D2 — a select under an `on`/`after` clause is now keyed
+> `<clause-id>.select#<k>`, where the clause id is head-derived and `k`
+> counts the selects of the clause body in document order, so a clause or
+> statement inserted ahead re-keys nothing. Every other ruling here stands:
+> the compiler assigns the id, the loader refuses IR without one and never
+> falls back to a line, the id is never bare digits and is a strict prefix
+> of every per-owner key, and no save-format version moves. The retired
+> line-number sweep (`sweepRetiredSelectKeys`, `RETIRED_SELECT_KEY`) is
+> removed with its key space under ADR-388 D6; the restore reconciler
+> (ADR-388 D5) is what drops orphaned keys.
+
 The compiler assigns each select block an id in the IR, derived from owner
 plus clause plus statement path — not from a span line. The occurrence key
 becomes `chord.occurrence.select.<id>`, and a select inside a trait clause

@@ -44,6 +44,7 @@ import { checkChannelAssertion } from './channel-assert.js';
 // The subpath is pure and dependency-free, so the browser bundle stays
 // runtime-free (the barrel would drag the whole loader in).
 import { parsePin } from '@sharpee/story-loader/pin-grammar';
+import { clauseHeadId, spokenClauseHead } from '@sharpee/chord';
 
 export type * from './types.js';
 
@@ -599,12 +600,14 @@ export function evaluateStateExpression(
     return { matches: holds, details: holds ? undefined : `${pin.timer} has not ${pin.what} (${phase})` };
   }
 
-  // "[the] <owner> [trait <t>] clause <n> occurrence = <k>" (ADR-356 D2 as
-  // amended 2026-10-11): the clause's firing counter, composed from the
-  // loader's prefix and the clause's identity — the owner's runtime id (or
-  // `story`), the trait, the clause number — never through a loader import.
+  // "[the] <owner> [trait <t>] <head> [#n] occurrence = <k>" (ADR-356 D2 as
+  // amended 2026-10-11; the head spelling per ADR-388 D7): the clause's
+  // firing counter, composed from the loader's prefix and the clause's
+  // identity — the owner's runtime id (or `story`), the trait, the head as
+  // the compiler ids it — never through a loader import.
   if (pin.kind === 'occurrence' && storyStateKeys?.clauseOccurrencePrefix) {
-    const label = `${pin.owner}${pin.trait === undefined ? '' : ` trait ${pin.trait}`} clause ${pin.clause}`;
+    const head = clauseHeadId(pin.head, pin.ordinal);
+    const label = `${pin.owner}${pin.trait === undefined ? '' : ` trait ${pin.trait}`} ${spokenClauseHead(pin.head, pin.ordinal)}`;
     let owner: string;
     if (pin.owner === 'story') {
       owner = 'story';
@@ -619,7 +622,9 @@ export function evaluateStateExpression(
       }
       owner = irId;
     }
-    const key = `${storyStateKeys.clauseOccurrencePrefix}${owner}${pin.trait === undefined ? '' : `.${pin.trait}`}.${pin.clause}`;
+    const key = pin.trait === undefined
+      ? `${storyStateKeys.clauseOccurrencePrefix}${owner}.${head}`
+      : `${storyStateKeys.clauseOccurrencePrefix}${owner}.trait.${pin.trait}.${head}`;
     const actual = (world.getStateValue?.(key) as number | undefined) ?? 0;
     const isEqual = actual === pin.count;
     return { matches: isEqual, details: isEqual ? undefined : `${label} has fired ${actual} times, expected ${pin.count}` };

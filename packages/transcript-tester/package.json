@@ -23,6 +23,7 @@
     "@sharpee/lang-en-us": "workspace:*",
     "@sharpee/parser-en-us": "workspace:*",
     "@sharpee/channel-service": "workspace:*",
+    "@sharpee/chord": "workspace:*",
     "chalk": "^4.1.2",
     "glob": "^10.3.10",
     "@sharpee/story-loader": "workspace:*"

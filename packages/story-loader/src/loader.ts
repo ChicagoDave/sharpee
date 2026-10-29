@@ -172,7 +172,7 @@ import {
 } from '@sharpee/world-model';
 import { LoadError } from './errors.js';
 import { exitKeyOfWord } from './direction-words.js';
-import { assertSelectIds, sweepRetiredSelectKeys } from './select-ids.js';
+import { assertClauseIds, assertSelectIds } from './select-ids.js';
 import { translateEventId } from './event-id-map.js';
 import { COMBAT_FIELD_ROUTES, EXTENSION_REGISTRY, NPC_BEHAVIOR_ADJECTIVES, NPC_FIELD_ROUTES, type ExtensionInstallContext } from './extension-registry.js';
 import { installStateMachines } from './state-machines.js';
@@ -600,6 +600,7 @@ export class ChordStory implements Story {
     if (ir.format !== IR_FORMAT) {
       throw new LoadError(`Unsupported IR format \`${String(ir.format)}\` — this loader reads \`${IR_FORMAT}\`.`);
     }
+    assertClauseIds(ir);
     assertSelectIds(ir);
     this.config = {
       id: ir.meta.fields.id ?? ir.meta.title.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
@@ -644,11 +645,6 @@ export class ChordStory implements Story {
 
   initializeWorld(world: WorldModel): void {
     this.world = world;
-
-    // ADR-289 D2: drop the retired line-number select keys. Orphans that
-    // still look like live state are what mislead a debugging session two
-    // years out. Also runs on restore — see sweepRetiredSelectKeys.
-    sweepRetiredSelectKeys(world);
 
     // ADR-215: `use`-declared trusted extensions register FIRST — their
     // world-side registrations (interceptors, resolvers) must exist before
@@ -1275,21 +1271,14 @@ export class ChordStory implements Story {
   }
 
   /**
-   * ADR-289 D2: sweep the retired `chord.occurrence.select.<line>` keys out
-   * of a restored world.
-   *
-   * A restore replaces world state wholesale from the save snapshot, so the
-   * load-time sweep in `initializeWorld` never sees those keys — a save
-   * written before D2 would otherwise carry its orphans back in. Idempotent,
-   * so a save written after D2 sweeps to zero and its live counters (which
-   * are never bare digits) are untouched.
-   *
-   * The engine fires this only when a restore has fully completed; see
-   * `Story.onWorldRestored`. The runtime's two cross-turn counters reset
-   * to what the restored turn calls for (`ChordRuntime.resetAfterRestore`).
+   * The post-restore hook (ADR-289 D2's seam): the engine fires this only
+   * when a restore has fully completed; see `Story.onWorldRestored`. The
+   * runtime's two cross-turn counters reset to what the restored turn calls
+   * for (`ChordRuntime.resetAfterRestore`). The retired-key sweep that once
+   * ran here is gone with its key space (ADR-388 D6); the restore
+   * reconciler (ADR-388 D5) is the mechanism that drops orphaned keys.
    */
-  onWorldRestored(world: WorldModel, restoredTurn: number): void {
-    sweepRetiredSelectKeys(world);
+  onWorldRestored(_world: WorldModel, restoredTurn: number): void {
     this.runtime.resetAfterRestore(restoredTurn);
   }
 

@@ -304,7 +304,7 @@ describe('D8: while-false gates out the leading refusal (trait interceptor route
 describe('D8: trait-clause `, once` behaves identically to the entity path', () => {
   it('trait route: fires once, then sits out with the counter frozen at 1', () => {
     const loaded = load(GATES_STORY);
-    const counterKey = clauseOccurrenceKey('weasel', 1, 'shy'); // per clause, per carrier
+    const counterKey = clauseOccurrenceKey('trait.shy.on-taking-by-player', 'weasel'); // per clause, per carrier
 
     const first = fireInterceptor(loaded, 'weasel');
     expect(first.report!.override?.messageId).toBe('taken-wild');
@@ -318,7 +318,7 @@ describe('D8: trait-clause `, once` behaves identically to the entity path', () 
 
   it('entity route (the pre-existing behavior the trait path now mirrors)', () => {
     const loaded = load(GATES_STORY);
-    const counterKey = clauseOccurrenceKey('vole', 1); // per clause
+    const counterKey = clauseOccurrenceKey('vole.on-taking-by-player'); // per clause
 
     const first = fireInterceptor(loaded, 'vole');
     expect(first.report!.override?.messageId).toBe('taken-wild');
@@ -339,7 +339,7 @@ describe('D8/R5: while/once on the capability route (dispatch verb, trait clause
     expect(messageIdsOf(result.events)).toContain('cant-prod');
     expect(stateOf(loaded, 'ferret')).toBe('tame');
     // The gated-out probe left no trace: its occurrence counter was never written.
-    expect(loaded.world.getStateValue(clauseOccurrenceKey('ferret', 1, 'poddable'))).toBeUndefined();
+    expect(loaded.world.getStateValue(clauseOccurrenceKey('trait.poddable.on-prodding-by-player', 'ferret'))).toBeUndefined();
   });
 
   it('refuses normally when the gate is true, and runs the body once un-refused', () => {
@@ -359,7 +359,7 @@ describe('D8/R5: while/once on the capability route (dispatch verb, trait clause
   it('R5: a `, once`-consumed clause falls through to the miss on its second firing, counter frozen at 1', () => {
     const loaded = load(GATES_STORY);
     // The capability route counts under the carrier's IR id — 'marten'.
-    const counterKey = clauseOccurrenceKey('marten', 1, 'prickly');
+    const counterKey = clauseOccurrenceKey('trait.prickly.on-prodding-by-player', 'marten');
 
     const first = dispatch(loaded, 'prodding', 'marten');
     expect(first.validation.valid).toBe(true);
@@ -381,7 +381,7 @@ describe('D8/R5: while/once on the capability route (dispatch verb, trait clause
     expect(result.validation.valid).toBe(true);
     expect(messageIdsOf(result.events)).toContain('waved');
     expect(messageIdsOf(result.events)).not.toContain('taken-wild');
-    expect(loaded.world.getStateValue(clauseOccurrenceKey('flag', 1, 'wavable'))).toBeUndefined();
+    expect(loaded.world.getStateValue(clauseOccurrenceKey('trait.wavable.on-waving-by-player', 'flag'))).toBeUndefined();
   });
 
   it("R5: a gated-out clause falls through to another trait's live behavior", () => {
@@ -393,7 +393,7 @@ describe('D8/R5: while/once on the capability route (dispatch verb, trait clause
     expect(stateOf(loaded, 'shrew')).toBe('tame');
     expect(messageIdsOf(result.events)).toContain('perked-up');
     // The skipped poddable probe wrote nothing; the claiming perky one did.
-    expect(loaded.world.getStateValue(clauseOccurrenceKey('shrew', 1, 'poddable'))).toBeUndefined();
-    expect(loaded.world.getStateValue(clauseOccurrenceKey('shrew', 1, 'perky'))).toBe(1);
+    expect(loaded.world.getStateValue(clauseOccurrenceKey('trait.poddable.on-prodding-by-player', 'shrew'))).toBeUndefined();
+    expect(loaded.world.getStateValue(clauseOccurrenceKey('trait.perky.on-prodding-by-player', 'shrew'))).toBe(1);
   });
 });

@@ -288,13 +288,13 @@ export class TimersSection {
     const irEntity = this.core.ir.entities.find((e) => e.id === targetIrId);
     if (!irEntity) return out;
 
-    irEntity.onClauses.forEach((clause, clauseIndex) => {
+    irEntity.onClauses.forEach((clause) => {
       if (clause.clauseKind !== 'after' || clause.action !== actionName) return;
       // ADR-327 D1: the head names who acts.
       if (!this.core.moveClauses.actorMatches(clause.actor, actorId, world)) return;
       const ctx: ExecContext = { world, it: targetIrId };
       if (clause.condition && !this.core.evaluator.evalCondition(clause.condition, ctx)) return;
-      const key = clauseOccurrenceKey(irEntity.id, clauseIndex + 1);
+      const key = clauseOccurrenceKey(clause.id);
       const occurrence = ((world.getStateValue(key) as number | undefined) ?? 0) + 1;
       if (clause.once && occurrence > 1) return; // `, once` (D5)
       world.setStateValue(key, occurrence);

@@ -88,7 +88,7 @@ end before
 `;
 
 /** Kemp's one every-turn clause is his clause 1. */
-const ONCE_KEY = clauseOccurrenceKey('kemp', 1);
+const ONCE_KEY = clauseOccurrenceKey('kemp.on-every-turn');
 
 interface Booted {
   engine: GameEngine;

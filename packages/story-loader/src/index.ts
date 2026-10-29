@@ -42,18 +42,14 @@ export {
   CHORD_STORY_STATE_KEY,
   CHORD_TIMER_PREFIX,
   CHORD_TRAIT_PREFIX,
-  RETIRED_SELECT_KEY,
   clauseOccurrenceKey,
   counterKey,
   selectOccurrenceKey,
   timerKey,
 } from './state-keys.js';
 export type { TimerRecord } from './state-keys.js';
-/**
- * ADR-289 D2. `sweepRetiredSelectKeys` is exported because it must also run on
- * RESTORE, which happens outside this package — see its doc comment.
- */
-export { assertSelectIds, sweepRetiredSelectKeys } from './select-ids.js';
+/** ADR-388 D2 / ADR-289 D2: the loader's identity backstops. */
+export { assertClauseIds, assertSelectIds } from './select-ids.js';
 /**
  * ADR-255 alias map (Interface Contract 3) — exported for `sharpee messages`
  * (ADR-333 D4a), which joins it with the language pack for the IDE.

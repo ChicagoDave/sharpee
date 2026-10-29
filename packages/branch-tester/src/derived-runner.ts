@@ -77,7 +77,7 @@
  * not re-walk the IR); ADR-293 D12 (real path only).
  */
 
-import { timerKeysFor, type IRCondition, type IRStatement, type IRValue, type Span, type StoryIR } from '@sharpee/chord';
+import { clauseHeadWordsOf, clauseOrdinalOf, spokenClauseHead, timerKeysFor, type IRCondition, type IRStatement, type IRValue, type Span, type StoryIR } from '@sharpee/chord';
 import { collectClauseBranches, type BranchClause, type BranchPrecondition, type ClauseBranch } from '@sharpee/world-index';
 import { arrange, CHORD_GONE_PREFIX, CHORD_IR_ID_ATTRIBUTE, CHORD_STATE_PREFIX, counterKey, parsePin } from '@sharpee/story-loader';
 import { evaluateStateExpression, runCommand, type AssertionResult, type TestEventInfo, type TranscriptCommand } from '@sharpee/transcript-tester';
@@ -575,12 +575,15 @@ function preconditionTerms(
       // (ADR-356 D2: arrange, never play to it).
       if (precondition.ordinal <= 1) return { terms: [] };
       const clause = scope.clause;
-      if (clause === undefined || clause.kind !== 'on' || clause.clause === undefined) {
-        return { shape: 'occurrence', detail: `the ${ordinalWord(precondition.ordinal)} firing of a clause with no position` };
+      if (clause === undefined || clause.kind !== 'on' || clause.id === undefined) {
+        return { shape: 'occurrence', detail: `the ${ordinalWord(precondition.ordinal)} firing of a clause with no id` };
       }
       const root = clause.root;
       const owner = root.kind === 'story' ? 'story' : root.kind === 'entity' ? root.id : `${root.entity} trait ${root.name}`;
-      return { terms: [{ kind: 'pin', expression: `${owner} clause ${clause.clause} occurrence = ${precondition.ordinal - 1}`, mustHold: true }] };
+      // The head as the pin grammar speaks it (ADR-388 D7), with the `#n`
+      // the compiler gave an identical head.
+      const head = spokenClauseHead(clauseHeadWordsOf(clause), clauseOrdinalOf(clause.id));
+      return { terms: [{ kind: 'pin', expression: `${owner} ${head} occurrence = ${precondition.ordinal - 1}`, mustHold: true }] };
     }
     case 'unfired':
       return { terms: [] };

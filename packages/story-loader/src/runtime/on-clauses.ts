@@ -293,7 +293,7 @@ export class OnClausesSection {
       // ADR-372 D1: a counterpart tail fires only when the command's other
       // noun — seeded by the slot as `counterpartId` — is the named thing.
       (clause.counterpart === undefined || data?.counterpartId === runtime.core.host.entityId(clause.counterpart));
-    const occurrenceKey = clauseOccurrenceKey(entity.id, entity.onClauses.indexOf(clause) + 1);
+    const occurrenceKey = clauseOccurrenceKey(clause.id);
 
     return {
       preValidate(target: IFEntity, world: WorldModel, actorId: string, data: InterceptorSharedData): InterceptorResult | null {

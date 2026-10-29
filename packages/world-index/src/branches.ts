@@ -110,12 +110,12 @@ export type BranchClause =
       /** What owns the clause's list. */
       root: ClauseRoot;
       /**
-       * The clause's 1-based position in its root's `onClauses`, in source
-       * order — with `root`, the identity a later firing is arranged by
-       * (ADR-356 D2, occurrence ordinals). Absent only when the clause was
-       * not reached through an `onClauses` list, which the walk never does.
+       * The clause's compiler-assigned id (ADR-388 D2) — its owner and its
+       * head, with `#n` among identical heads — with `root`, the identity a
+       * later firing is arranged by (ADR-356 D2, occurrence ordinals).
+       * Absent only on IR compiled before ids existed.
        */
-      clause?: number;
+      id?: string;
     }
   | { kind: 'timer-clause'; timer: string }
   | { kind: 'move-clause'; mover: IRValue }
@@ -672,7 +672,6 @@ function emitTimerDef(node: IRNode, storyOwner: WriterOwner, into: ClauseBranch[
  * @param subject the entity `it` refers to here, if any
  * @param into the accumulator to append to
  * @param root what owns the `onClauses` list clauses here belong to
- * @param clause the 1-based position of `node` in that list, when `node` was reached through it
  */
 function classify(
   node: unknown,
@@ -681,7 +680,6 @@ function classify(
   subject: string | null,
   into: ClauseBranch[],
   root: ClauseRoot,
-  clause?: number,
 ): void {
   if (!isWalkable(node)) return;
   if (Array.isArray(node)) {
@@ -706,7 +704,7 @@ function classify(
           ...(typeof n.counterpart === 'string' ? { counterpart: n.counterpart } : {}),
           ...(typeof n.sound === 'string' ? { sound: n.sound } : {}),
           root,
-          ...(clause === undefined ? {} : { clause }),
+          ...(typeof n.id === 'string' && n.id.length > 0 ? { id: n.id } : {}),
         },
         owner,
         subject,
@@ -769,9 +767,9 @@ function classify(
         into,
       );
     } else if (key === 'onClauses' && Array.isArray(value)) {
-      // The one list whose position is an identity: a clause is the n-th
-      // of its root's `on` clauses, in source order.
-      value.forEach((child, index) => classify(child, `${path}.${key}[${index}]`, owner, subject, into, root, index + 1));
+      // A clause's identity is its compiler-assigned id, read off the node
+      // (ADR-388 D2); its position in this list is not identity.
+      value.forEach((child, index) => classify(child, `${path}.${key}[${index}]`, owner, subject, into, root));
     } else {
       classify(value, `${path}.${key}`, owner, subject, into, root);
     }

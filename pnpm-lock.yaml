@@ -1243,6 +1243,9 @@ importers:
       '@sharpee/channel-service':
         specifier: workspace:*
         version: link:../channel-service
+      '@sharpee/chord':
+        specifier: workspace:*
+        version: link:../chord
       '@sharpee/core':
         specifier: workspace:*
         version: link:../core

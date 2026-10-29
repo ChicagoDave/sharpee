@@ -145,7 +145,7 @@ export class DispatchVerbsSection {
           data.chordSkip = true;
           return { valid: true };
         }
-        const key = clauseOccurrenceKey(runtime.core.host.irIdOf(entity.id) ?? entity.id, clauseNumber, trait.name);
+        const key = clauseOccurrenceKey(clause.id, runtime.core.host.irIdOf(entity.id) ?? entity.id);
         const occurrence = ((world.getStateValue(key) as number | undefined) ?? 0) + 1;
         if (clause.once && occurrence > 1) {
           data.chordSkip = true; // `, once` — one lifetime firing (D5)
@@ -184,9 +184,8 @@ export class DispatchVerbsSection {
   private buildTraitInterceptor(trait: IRTraitDef, clause: IROnClause, ns: string): ActionInterceptor {
     const runtime = this;
     const itOf = (target: IFEntity) => runtime.core.host.irIdOf(target.id) ?? target.id;
-    // The counter is per carrier: the clause's position on the trait, keyed under the target.
-    const clauseNumber = trait.onClauses.indexOf(clause) + 1;
-    const occurrenceKeyOf = (target: IFEntity) => clauseOccurrenceKey(itOf(target), clauseNumber, trait.name);
+    // The counter is per carrier: the trait clause's id, keyed under the target.
+    const occurrenceKeyOf = (target: IFEntity) => clauseOccurrenceKey(clause.id, itOf(target));
 
     return {
       preValidate(target: IFEntity, world: WorldModel, actorId: string, data: InterceptorSharedData): InterceptorResult | null {

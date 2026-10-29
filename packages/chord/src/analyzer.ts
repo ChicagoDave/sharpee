@@ -99,6 +99,7 @@ import { expandReadings, lowerParts, renderPattern, samePatternShape, seatTable,
 import type { PatternElement } from '@sharpee/if-domain';
 import { CHARACTER_MANIFEST } from './character-manifest.js';
 import { levenshtein } from './edit-distance.js';
+import { assignClauseIds } from './clause-ids.js';
 import { normalizeTopic } from './analyzer/topic.js';
 import { requiresOrderViolations, type OrderViolation } from './analyzer/requires.js';
 import { windToIR } from './analyzer/sailing.js';
@@ -1276,10 +1277,13 @@ export class Analyzer {
         // Story-owned every-turn clauses (ADR-236 D7): built in STORY_SCOPE
         // so `it` reports the unbound-referent gate; narration broadcasts
         // (the story is everywhere — D11 satisfied trivially).
-        onClauses: (this.ast.header?.onClauses ?? []).map((c, i) => ({
-          ...this.buildOnClause(c, STORY_SCOPE, 'story', i),
-          narration: 'broadcast' as const,
-        })),
+        onClauses: assignClauseIds(
+          (this.ast.header?.onClauses ?? []).map((c) => ({
+            ...this.buildOnClause(c, STORY_SCOPE, 'story'),
+            narration: 'broadcast' as const,
+          })),
+          'story',
+        ),
         ...((this.ast.header?.timerClauses ?? []).length > 0
           ? { timerClauses: (this.ast.header?.timerClauses ?? []).map((c, i) => this.buildTimerClause(c, STORY_SCOPE, 'story', i)) }
           : {}),
@@ -3529,7 +3533,10 @@ export class Analyzer {
       states: decl.states.map((s) => s.name),
       statesReversible: decl.statesReversible,
       scores: decl.scores.map((s) => ({ name: `trait.${decl.name}.${s.name}`, worth: s.worth, span: s.span })),
-      onClauses: this.checkDuplicateClauses(decl.onClauses, `trait \`${decl.name}\``).map((c, i) => this.buildOnClause(c, scope, `trait.${decl.name}`, i)),
+      onClauses: assignClauseIds(
+        this.checkDuplicateClauses(decl.onClauses, `trait \`${decl.name}\``).map((c) => this.buildOnClause(c, scope, `trait.${decl.name}`)),
+        `trait.${decl.name}`,
+      ),
       span: decl.span,
     };
   }
@@ -5926,7 +5933,7 @@ export class Analyzer {
         descriptionKeysOf: (id, decl) => this.descriptionKeysOf({ id, decl }),
         buildCounterDecl: (counter) => this.buildCounterDecl(counter),
         checkDuplicateClauses: (clauses, ownerDesc) => this.checkDuplicateClauses(clauses, ownerDesc),
-        buildOnClause: (clause, scope, ownerKey, clauseIndex) => this.buildOnClause(clause, scope, ownerKey, clauseIndex),
+        buildOnClause: (clause, scope, ownerKey) => this.buildOnClause(clause, scope, ownerKey),
         buildTimerClause: (clause, scope, ownerKey, index) => this.buildTimerClause(clause, scope, ownerKey, index),
         buildMoveClause: (clause, scope, ownerKey, index) => this.buildMoveClause(clause, scope, ownerKey, index),
       };
@@ -6122,13 +6129,14 @@ export class Analyzer {
   }
 
   /**
-   * @param ownerKey ADR-289 D2 id prefix naming the compile-time owner —
-   *   an entity IR id, `trait.<name>`, or `story`.
-   * @param clauseIndex position among this owner's clauses. Required for
-   *   uniqueness: the duplicate-clause gate skips `every-turn` clauses and
-   *   separates event verbs only by condition, so kind+action can repeat.
+   * Resolve one `on`/`after` clause. Its `id`, and the ids of the selects
+   * in its body, are placeholders here: `assignClauseIds` (ADR-388 D2)
+   * assigns both once the root's whole clause list is built, because a
+   * head's ordinal among identical heads needs the list.
+   *
+   * @param ownerKey the compile-time owner — an entity IR id, `trait.<name>`, or `story`
    */
-  private buildOnClause(clause: OnClause, scope: Scope, ownerKey: string, clauseIndex: number): IROnClause {
+  private buildOnClause(clause: OnClause, scope: Scope, ownerKey: string): IROnClause {
     // §5.4 compiler rule, both halves: clauses on dispatch verbs (`define
     // action` names) compile to CapabilityBehaviors; clauses on standard-
     // semantics actions compile to ActionInterceptors (the Phase A path).
@@ -6199,10 +6207,13 @@ export class Analyzer {
     }
     const actor = bareNameAfterGerund ? null : this.resolveHeadActor(clause, scope);
     const condition = clause.condition ? this.resolveCondition(clause.condition, clauseScope) : null;
-    const clausePath = `${ownerKey}.${clause.clauseKind}-${clause.action}-${clauseIndex}`;
+    // A placeholder path for the body's statement ids; `assignClauseIds`
+    // overwrites every select id under the clause's final id.
+    const clausePath = `${ownerKey}.${clause.clauseKind}-${clause.action}`;
     const body = clause.body.map((s, i) => this.resolveStatement(s, clauseScope, `${clausePath}.${i}`));
     this.checkPhaseOrder(clause.body, { ended: null });
     return {
+      id: '',
       clauseKind: clause.clauseKind,
       once: clause.once,
       action: clause.action,

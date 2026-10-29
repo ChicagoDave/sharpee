@@ -116,7 +116,8 @@ async function bootIr(ir: ReturnType<typeof compileSource>, seed = 11): Promise<
 }
 
 /** The sword's n-th clause's firing count, by the clause's position in the sword's block. */
-const occurrence = (b: Booted, clause: number) => b.world.getStateValue(clauseOccurrenceKey('sword', clause));
+/** The sword's clause's firing counter, by the head part of its id (ADR-388 D2). */
+const occurrence = (b: Booted, head: string) => b.world.getStateValue(clauseOccurrenceKey(`sword.${head}`));
 const takenBy = (b: Booted, actorIrId: string) =>
   b.stream.filter((e) => e.type === 'if.event.taken' && e.entities.actor === b.id(actorIrId));
 /** The reason an executor-caught error reports — on the stream (a nested act) or on the turn's own result (the outer action). */
@@ -136,8 +137,8 @@ describe('the guards take the sword — ADR-329 Acceptance item 2, through a rea
     // World state: the guards hold the sword.
     expect(b.at('sword')).toBe(b.id('guards'));
     // Heads: the guards' `after` fired once; the player's never did.
-    expect(occurrence(b, 1)).toBe(1); // after the guards taking
-    expect(occurrence(b, 2)).toBeUndefined(); // after the player taking
+    expect(occurrence(b, 'after-taking-by-guards')).toBe(1);
+    expect(occurrence(b, 'after-taking-by-player')).toBeUndefined();
 
     // Stream: the take carries the guards as actor, is witnessed (Alex is in
     // the Yard), and comes AFTER the player's own movement report.
@@ -154,7 +155,7 @@ describe('the guards take the sword — ADR-329 Acceptance item 2, through a rea
     const result = await b.engine.executeTurn('east');
     expect(result.success).toBe(true);
     expect(b.at('sword')).toBe(b.id('yard'));
-    expect(occurrence(b, 2)).toBeUndefined(); // after the guards taking, the sword's second clause
+    expect(occurrence(b, 'after-taking-by-guards')).toBeUndefined();
     expect(takenBy(b, 'guards')).toHaveLength(0);
     const blocked = b.stream.find((e) => e.type === 'if.event.take_blocked' && e.entities.actor === b.id('guards'));
     expect(blocked, 'the refused act narrates as any witnessed refusal would').toBeDefined();

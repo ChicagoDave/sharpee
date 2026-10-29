@@ -17,7 +17,9 @@
  * The forms, tried in this order (a timer is its one-token qualified key,
  * `player.bell`; a topic is a name):
  *   story.state = <phase> / story.state != <phase>         → story-state
- *   [the] <owner> [trait <trait>] clause <n> occurrence = <k> → occurrence
+ *   [the] <owner> [trait <trait>] <on|after> <action> [<sound>] [by <actor>]
+ *       [as <role>] [to <value>] [with <counterpart>] [#<n>] occurrence = <k>
+ *                                                          → occurrence
  *   <topic> asked once|again|many times                    → topic-history
  *   <topic> was discussed                                  → topic-history
  *   <timer> has started / <timer> has expired              → timer-phase
@@ -40,13 +42,18 @@
  * `occurrence` on 2026-10-11 (ADR-356 D2 as amended): the assertion core
  * reads each and `arrange` writes each. An occurrence names a clause by its
  * owner (an entity, or `story`), the trait it is declared on when it is a
- * trait clause, and its 1-based position in that root's clause list; the
- * count is the number of firings so far. `emitted` and `gone` are
+ * trait clause, and its head as the author would say it — kind, action,
+ * the sound heard, `by` the actor, `as` the role, `to` the value, `with`
+ * the counterpart, and `#n` when the root has several clauses with that
+ * head (ADR-388 D7); the count is the number of firings so far. The head
+ * is returned as words; composing the clause id from them is
+ * `@sharpee/chord`'s `clauseHeadId`, which this grammar does not import —
+ * it stays dependency-free. `emitted` and `gone` are
  * the two claim kinds ADR-356 D3 adds: read by the assertion core (`gone`
  * off the world, `emitted` off the turn's events), written by nothing —
  * `arrange` names them as it names the non-floor shapes.
  *
- * Public interface: parsePin(), ParsedPin, PinOperator, PinShape.
+ * Public interface: parsePin(), ParsedPin, PinClauseHead, PinOperator, PinShape.
  * Owner context: @sharpee/story-loader — the loader owns the state this
  * grammar addresses, so it owns the grammar.
  *
@@ -78,8 +85,14 @@ export type ParsedPin =
   | { kind: 'emitted'; messageId: string }
   /** `[the] <name> is [not] gone` — a Chord `remove` has taken the entity out of play (ADR-356 D3). Read, not written. */
   | { kind: 'gone'; name: string; negated: boolean }
-  /** `[the] <owner> [trait <trait>] clause <n> occurrence = <k>` — a clause's firing counter (ordinals). A floor form since 2026-10-11. */
-  | { kind: 'occurrence'; owner: string; trait?: string; clause: number; count: number }
+  /**
+   * `[the] <owner> [trait <trait>] <head> [#<n>] occurrence = <k>` — a clause's
+   * firing counter (ordinals). A floor form since 2026-10-11; the head
+   * spelling since ADR-388 D7. `head` has the shape of `@sharpee/chord`'s
+   * `ClauseHeadWords`, declared structurally here so this module imports
+   * nothing.
+   */
+  | { kind: 'occurrence'; owner: string; trait?: string; head: PinClauseHead; ordinal?: number; count: number }
   /** `<topic> asked once|again|many times` / `<topic> was discussed`. Named, not written. */
   | { kind: 'topic-history'; topic: string; history: 'once' | 'again' | 'many-times' | 'discussed' }
   /** `<timer> has started|expired` — the timer's phase. A floor form since 2026-09-27. */
@@ -89,8 +102,23 @@ export type ParsedPin =
   /** No form matched. */
   | { kind: 'unrecognized' };
 
+/** A clause head as words — the same shape as `@sharpee/chord`'s `ClauseHeadWords`. */
+export interface PinClauseHead {
+  clauseKind: 'on' | 'after';
+  action: string;
+  actor?: string;
+  role?: string;
+  sound?: string;
+  valueTail?: string;
+  counterpart?: string;
+}
+
 const STORY_STATE = /^story\.state\s*(=|!=)\s*(\S+)$/;
-const OCCURRENCE = /^(?:the\s+)?(.+?)(?:\s+trait\s+([\w-]+))?\s+clause\s+(\d+)\s+occurrence\s*=\s*(\d+)$/;
+// Owner (non-greedy, may hold spaces), optional trait, then the head: kind,
+// action, an optional bare sound word (anything that is not a marker), then
+// the marked tails in the id's order, then an optional `#n`.
+const OCCURRENCE =
+  /^(?:the\s+)?(.+?)(?:\s+trait\s+([\w-]+))?\s+(on|after)\s+([\w-]+)(?:\s+(?!by\s|as\s|to\s|with\s|#|occurrence\s)([\w-]+))?(?:\s+by\s+([\w-]+))?(?:\s+as\s+([\w-]+))?(?:\s+to\s+([\w-]+))?(?:\s+with\s+([\w-]+))?(?:\s+#(\d+))?\s+occurrence\s*=\s*(\d+)$/;
 const ASKED = /^(.+?)\s+asked\s+(once|again|many times)$/;
 const DISCUSSED = /^(.+?)\s+was\s+discussed$/;
 const TIMER_PHASE = /^([\w.-]+)\s+has\s+(started|expired)$/;
@@ -119,12 +147,23 @@ export function parsePin(expression: string): ParsedPin {
 
   const occurrence = expression.match(OCCURRENCE);
   if (occurrence) {
+    const [, owner, trait, clauseKind, action, sound, actor, role, valueTail, counterpart, ordinal, count] = occurrence;
+    const head: PinClauseHead = {
+      clauseKind: clauseKind as 'on' | 'after',
+      action,
+      ...(actor === undefined ? {} : { actor }),
+      ...(role === undefined ? {} : { role }),
+      ...(sound === undefined ? {} : { sound }),
+      ...(valueTail === undefined ? {} : { valueTail }),
+      ...(counterpart === undefined ? {} : { counterpart }),
+    };
     return {
       kind: 'occurrence',
-      owner: occurrence[1].trim(),
-      ...(occurrence[2] === undefined ? {} : { trait: occurrence[2] }),
-      clause: Number(occurrence[3]),
-      count: Number(occurrence[4]),
+      owner: owner.trim(),
+      ...(trait === undefined ? {} : { trait }),
+      head,
+      ...(ordinal === undefined ? {} : { ordinal: Number(ordinal) }),
+      count: Number(count),
     };
   }
   const asked = expression.match(ASKED);

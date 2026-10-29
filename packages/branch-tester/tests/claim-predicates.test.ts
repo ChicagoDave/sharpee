@@ -12,8 +12,9 @@
  * Owner context: branch-tester test suite (tooling).
  */
 import { describe, expect, it } from 'vitest';
+import { compile } from '@sharpee/chord';
 import { clauseOccurrenceKey } from '@sharpee/story-loader';
-import { claimHolds, type ClaimContext } from '../src/claims/claim-predicates.js';
+import { claimHolds, clauseKeysByFiredOf, type ClaimContext } from '../src/claims/claim-predicates.js';
 import { normalizeClaimSet, type Claim } from '../src/claims/claim-set.js';
 import type { ClaimsEntity, ClaimsWorld } from '../src/claims/claims-game.js';
 
@@ -65,8 +66,8 @@ function context(shape: Shape): ClaimContext {
     snapshot: { state: shape.state ?? {} },
     events: shape.events ?? [],
     entityIdByIr: new Map(Object.values(ENTITIES).map((e) => [e.name, e.id])),
-    // The stopcock's `on turning` is its first clause, and a second `after turning` its third.
-    clauseKeysByFired: new Map([['stopcock.turning', [clauseOccurrenceKey('stopcock', 1), clauseOccurrenceKey('stopcock', 3)]]]),
+    // The stopcock's `on the player turning` and its `after the player turning`, by their compiler ids (ADR-388 D2).
+    clauseKeysByFired: new Map([['stopcock.turning', [clauseOccurrenceKey('stopcock.on-turning-by-player'), clauseOccurrenceKey('stopcock.after-turning-by-player')]]]),
   };
 }
 
@@ -118,13 +119,13 @@ describe('claimHolds — the seven predicates', () => {
   });
 
   it('fired: one of the thing\'s own clauses for the action has a counter above zero, read by clause identity and never by substring', () => {
-    expect(claimHolds(claim({ fired: 'stopcock.turning' }), context({ state: { [clauseOccurrenceKey('stopcock', 1)]: 1 } }))).toBe(true);
-    expect(claimHolds(claim({ fired: 'stopcock.turning' }), context({ state: { [clauseOccurrenceKey('stopcock', 3)]: 2 } }))).toBe(true);
-    expect(claimHolds(claim({ fired: 'stopcock.turning' }), context({ state: { [clauseOccurrenceKey('stopcock', 1)]: 0 } }))).toBe(false);
+    expect(claimHolds(claim({ fired: 'stopcock.turning' }), context({ state: { [clauseOccurrenceKey('stopcock.on-turning-by-player')]: 1 } }))).toBe(true);
+    expect(claimHolds(claim({ fired: 'stopcock.turning' }), context({ state: { [clauseOccurrenceKey('stopcock.after-turning-by-player')]: 2 } }))).toBe(true);
+    expect(claimHolds(claim({ fired: 'stopcock.turning' }), context({ state: { [clauseOccurrenceKey('stopcock.on-turning-by-player')]: 0 } }))).toBe(false);
     // Another clause of the same thing, and a key that merely contains the text, are not this claim.
-    expect(claimHolds(claim({ fired: 'stopcock.turning' }), context({ state: { [clauseOccurrenceKey('stopcock', 2)]: 1 } }))).toBe(false);
+    expect(claimHolds(claim({ fired: 'stopcock.turning' }), context({ state: { [clauseOccurrenceKey('stopcock.on-pushing-by-player')]: 1 } }))).toBe(false);
     expect(claimHolds(claim({ fired: 'stopcock.turning' }), context({ state: { 'chord.state.stopcock.turning': 3 } }))).toBe(false);
-    expect(claimHolds(claim({ fired: 'primer.pushing' }), context({ state: { [clauseOccurrenceKey('primer', 1)]: 1 } }))).toBe(false);
+    expect(claimHolds(claim({ fired: 'primer.pushing' }), context({ state: { [clauseOccurrenceKey('primer.on-pushing-by-player')]: 1 } }))).toBe(false);
   });
 
   it('event: the turn emitted the type, with the target entity and a topic substring when given', () => {
@@ -135,5 +136,72 @@ describe('claimHolds — the seven predicates', () => {
     expect(claimHolds(claim({ event: { type: 'if.event.asked', topic: 'boiler' } }), asked)).toBe(false);
     expect(claimHolds(claim({ event: { type: 'if.event.told' } }), asked)).toBe(false);
     expect(claimHolds(claim({ event: { type: 'if.event.asked', target: 'ghost' } }), asked)).toBe(false);
+  });
+});
+
+describe('clauseKeysByFiredOf — keys by the compiler id the loader writes at fire time (ADR-388 D2)', () => {
+  it('two clauses on one action yield two distinct keys, and an identical head carries its #n', () => {
+    const { ir, diagnostics } = compile(`story
+  title: Keys
+  authors:
+    T
+  id: keys
+  story-version: 0.0.1
+
+define phrases en-US
+  a:
+    A.
+
+create the Hall
+  a room
+
+  A hall.
+
+create the stopcock
+  a thing
+  in the Hall
+
+  A stopcock.
+
+  on the player turning
+    phrase a
+  end on
+
+  after the player turning, once
+    phrase a
+  end after
+
+  on every turn while the stopcock is here
+    phrase a
+  end on
+
+  on every turn, once
+    phrase a
+  end on
+
+create Alex
+  a person
+  playable
+  starts in the Hall
+
+  You.
+
+before the game starts
+  change the player to Alex
+end before
+`);
+    expect(diagnostics.filter((d) => d.severity === 'error')).toEqual([]);
+    const byFired = clauseKeysByFiredOf(ir);
+    expect(byFired.get('stopcock.turning')).toEqual([
+      clauseOccurrenceKey('stopcock.on-turning-by-player'),
+      clauseOccurrenceKey('stopcock.after-turning-by-player'),
+    ]);
+    // Identical heads (legal only for every-turn and event verbs) carry their #n.
+    expect(byFired.get('stopcock.every-turn')).toEqual([
+      clauseOccurrenceKey('stopcock.on-every-turn#1'),
+      clauseOccurrenceKey('stopcock.on-every-turn#2'),
+    ]);
+    // The same function the loader's firing sites call, over the same ids the IR carries.
+    expect([...byFired.values()].flat()).toEqual(ir.entities.find((e) => e.id === 'stopcock')!.onClauses.map((c) => clauseOccurrenceKey(c.id)));
   });
 });

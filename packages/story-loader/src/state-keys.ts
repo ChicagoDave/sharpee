@@ -6,8 +6,18 @@
  * cover it with no author-written persistence (AC-6). Keys are
  * loader-internal and invisible to authors (design.md §5.5).
  *
+ * Invariant: a key, and every positional field inside a record, is derived
+ * from a name the author wrote or from content — an entity id, a state
+ * word, a clause's head, a timer's turn name — never from a position in a
+ * list the author edits. A save written before a story edit must still
+ * mean what it meant.
+ *
  * Public interface: the key constants and prefix builders.
  * Owner context: @sharpee/story-loader.
+ *
+ * References:
+ * - ADR-388 D1 — the invariant above; D2 — clause and select identity.
+ * - ADR-289 D2 — the select id is compiler-assigned and never bare digits.
  */
 
 /** `states:` — current state per entity: `chord.state.<ir-entity-id>`. */
@@ -24,15 +34,17 @@ export const CHORD_IR_ID_ATTRIBUTE = 'chordIrId';
 export const CHORD_OCCURRENCE_PREFIX = 'chord.occurrence.';
 
 /**
- * An `on`/`after` clause's firing counter: `chord.occurrence.clause.<root>.<n>`,
- * where `<root>` is the owning entity's IR id, `<entity-id>.<trait>` for a
- * trait clause as composed by that entity (a trait clause counts per
- * carrier), or `story`, and `<n>` is the clause's 1-based position in its
- * root's `onClauses`, in source order. One key for every firing site —
- * the every-turn daemons, the verb interceptors, the dispatch-verb
- * capabilities, the event clauses and the timer-side `after` clauses —
- * so that the derived rule test's arrange step and the assertion core can
- * name the same counter from the clause's identity alone (ADR-356 D2,
+ * An `on`/`after` clause's firing counter: `chord.occurrence.clause.<clause-id>`
+ * for a clause an entity or the story owns, and
+ * `chord.occurrence.clause.<carrier-ir-id>.<clause-id>` for a trait's clause
+ * as composed by one carrier (a trait clause counts per carrier). The
+ * clause id is the compiler's (ADR-388 D2): the owner and the head, with
+ * `#n` only among identical heads — `troll.on-attacking-by-player`,
+ * `trait.glowing.on-rubbing`, `story.on-every-turn#2`. One key for every
+ * firing site — the every-turn daemons, the verb interceptors, the
+ * dispatch-verb capabilities, the event clauses and the timer-side `after`
+ * clauses — so that the derived rule test's arrange step and the assertion
+ * core can name the same counter from the clause's head alone (ADR-356 D2,
  * occurrence ordinals). The assertion core composes it from this prefix
  * and never imports the function.
  */
@@ -41,13 +53,12 @@ export const CHORD_CLAUSE_OCCURRENCE_PREFIX = `${CHORD_OCCURRENCE_PREFIX}clause.
 /**
  * The firing-counter key of one `on`/`after` clause.
  *
- * @param owner the owning entity's IR id, or `story`
- * @param clause the clause's 1-based position in its root's `onClauses`
- * @param trait the trait the clause is declared on, when it is a trait clause
+ * @param clauseId the clause's compiler-assigned id (`IROnClause.id`)
+ * @param carrierIrId the composing entity's IR id, for a trait's clause only
  * @returns the world-state key
  */
-export function clauseOccurrenceKey(owner: string, clause: number, trait?: string): string {
-  return `${CHORD_CLAUSE_OCCURRENCE_PREFIX}${owner}${trait === undefined ? '' : `.${trait}`}.${clause}`;
+export function clauseOccurrenceKey(clauseId: string, carrierIrId?: string): string {
+  return `${CHORD_CLAUSE_OCCURRENCE_PREFIX}${carrierIrId === undefined ? '' : `${carrierIrId}.`}${clauseId}`;
 }
 
 /** The seeded-RNG cursor (persists the chance stream across save/restore). */
@@ -114,17 +125,6 @@ export const CHORD_SELECT_PREFIX = `${CHORD_OCCURRENCE_PREFIX}select.`;
 export function selectOccurrenceKey(id: string, ownerIrId?: string): string {
   return ownerIrId ? `${CHORD_SELECT_PREFIX}${id}.${ownerIrId}` : `${CHORD_SELECT_PREFIX}${id}`;
 }
-
-/**
- * The retired line-number key space (`chord.occurrence.select.<line>`), swept
- * on load and restore (ADR-289 D2).
- *
- * Matches bare digits ONLY. It must never be widened to a
- * `chord.occurrence.select.*` glob: that prefix is also the *new* key space,
- * and a glob would delete the live counters the sweep exists to protect. The
- * reserved bare-digits id shape is what keeps the two distinguishable forever.
- */
-export const RETIRED_SELECT_KEY = /^chord\.occurrence\.select\.\d+$/;
 
 /**
  * Named-turn timers (ADR-325 D3g): `chord.timer.<qualified>` holds the

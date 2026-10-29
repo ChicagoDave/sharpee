@@ -108,7 +108,8 @@ describe('AC-1 — a listed head is one clause per gerund, in order, otherwise i
   it('`on the player taking, touching, pushing` compiles to three clauses', () => {
     const list = clausesOf(ok({ sword: `  on the player taking, touching, pushing\n${REFUSE}` }), 'sword');
     expect(list.map((c) => c.action)).toEqual(['taking', 'touching', 'pushing']);
-    const [first, ...rest] = list.map((c) => withoutSpans({ ...c, action: '' }));
+    // The id carries the gerund (ADR-388 D2), so it is blanked with the action.
+    const [first, ...rest] = list.map((c) => withoutSpans({ ...c, action: '', id: '' }));
     for (const c of rest) expect(c).toEqual(first);
     expect(list[0]).toMatchObject({ clauseKind: 'on', binding: 'object', actor: { kind: 'player' }, routing: 'interceptor' });
   });
