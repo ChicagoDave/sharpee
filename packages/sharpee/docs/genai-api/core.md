@@ -261,6 +261,14 @@ export interface ISaveMetadata {
     storyId: string;
     /** Story version for compatibility */
     storyVersion: string;
+    /**
+     * The story's identity stamp at save time (ADR-388 D4): the content hash
+     * its compiler emitted over every persistable identity. Present exactly
+     * when the story declared one; a restore compares it with the current
+     * story's stamp and reconciles on a mismatch (D5). `storyVersion` is the
+     * author's declared line and is never compared.
+     */
+    identityStamp?: string;
     /** Number of turns played */
     turnCount: number;
     /** Optional: Total play time in milliseconds */

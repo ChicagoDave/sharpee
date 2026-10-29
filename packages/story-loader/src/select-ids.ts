@@ -2,13 +2,16 @@
  * select-ids.ts — the loader-side half of compiler-assigned identity.
  *
  * Purpose: the rogue-IR backstops asserting that every `on`/`after` clause
- * and every `select-strategy` carries its compiler-assigned id. The
- * compiler assigns both (ADR-388 D2 over ADR-289 D2); this refuses IR that
+ * and every `select-strategy` carries its compiler-assigned id, and that
+ * the story carries its identity manifest and stamp. The compiler emits all
+ * three (ADR-388 D2 over ADR-289 D2; ADR-388 D4); this refuses IR that
  * arrives without them rather than inventing a fallback. A fallback to a
  * position or a line number would be a silent return to the drifting key
- * space those decisions end.
+ * space those decisions end; a manifest derived at load would stamp a
+ * save with something other than the compile that wrote it.
  *
- * Public interface: {@link assertClauseIds}, {@link assertSelectIds}.
+ * Public interface: {@link assertClauseIds}, {@link assertSelectIds},
+ * {@link assertIdentity}.
  * Owner context: `@sharpee/story-loader`.
  *
  * References:
@@ -142,4 +145,23 @@ export function assertSelectIds(ir: StoryIR): void {
       );
     }
   }
+}
+
+/**
+ * Backstop: refuse IR that carries no identity manifest or an empty stamp.
+ *
+ * The compiler's last pass emits both (ADR-388 D4), so reaching here means
+ * rogue or stale IR. Deliberately does NOT derive a manifest at load — the
+ * manifest is emitted, never derived, so a save's stamp always names the
+ * compile that wrote it.
+ *
+ * @throws LoadError naming the compiler pass that should have emitted it
+ */
+export function assertIdentity(ir: StoryIR): void {
+  const identity: unknown = ir.identity;
+  const present = typeof identity === 'object' && identity !== null && typeof (identity as { stamp?: unknown }).stamp === 'string';
+  if (present && (identity as { stamp: string }).stamp.length > 0) return;
+  throw new LoadError(
+    'This story carries no identity manifest — the analyzer emits one with its content stamp on every compile (ADR-388 D4). This IR is stale or hand-built; recompile the story.',
+  );
 }

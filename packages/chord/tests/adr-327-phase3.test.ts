@@ -170,7 +170,7 @@ describe('D9 — `change the player to <character>`', () => {
 describe('D10 — the wire shape', () => {
   it('stamps the current IR format and drops isPlayer', () => {
     const ir = ok(whole());
-    expect(ir.format).toBe('story language 5');
+    expect(ir.format).toBe('story language 6');
     expect(ir.format).toBe(IR_FORMAT);
     expect(ir.entities.every((e) => !('isPlayer' in e))).toBe(true);
   });

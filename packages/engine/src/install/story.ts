@@ -271,7 +271,16 @@ export interface Story {
    * Story configuration
    */
   config: StoryConfig;
-  
+
+  /**
+   * The story's identity stamp (ADR-388 D4): a content hash the story's
+   * compiler computed over every identity it can persist a key under. The
+   * engine records it in each save's metadata, so a restore can tell a save
+   * written by this exact story from one written before an edit. Optional:
+   * a story written in TypeScript declares none, and its saves carry none.
+   */
+  readonly identityStamp?: string;
+
   /**
    * Initialize the world for this story
    */

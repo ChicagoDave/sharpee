@@ -49,7 +49,7 @@ export {
 } from './state-keys.js';
 export type { TimerRecord } from './state-keys.js';
 /** ADR-388 D2 / ADR-289 D2: the loader's identity backstops. */
-export { assertClauseIds, assertSelectIds } from './select-ids.js';
+export { assertClauseIds, assertIdentity, assertSelectIds } from './select-ids.js';
 /**
  * ADR-255 alias map (Interface Contract 3) — exported for `sharpee messages`
  * (ADR-333 D4a), which joins it with the language pack for the IDE.

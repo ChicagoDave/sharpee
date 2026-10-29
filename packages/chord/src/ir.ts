@@ -1,5 +1,5 @@
 /**
- * ir.ts — the Story IR wire types (`story language 5`).
+ * ir.ts — the Story IR wire types (`story language 6`).
  *
  * Purpose: the versioned, JSON-serializable product of Chord compilation
  * (ADR-210: the IR is the product). Everything is resolved — entity
@@ -25,8 +25,12 @@ import type { Span } from './span.js';
  * `story language 5` (ADR-359 D1, 2026-10-05): a plain object records the
  * kind `thing` in `kinds`; a loader that predates it refuses the format
  * instead of failing inside its kind switch.
+ * `story language 6` (ADR-388 D2, D4, 2026-10-29): every `on`/`after`
+ * clause and every `select-strategy` carries a head-derived id, and the
+ * story carries its identity manifest and stamp in `identity`; a loader
+ * refuses IR without them rather than keying a save by position.
  */
-export const IR_FORMAT = 'story language 5';
+export const IR_FORMAT = 'story language 6';
 
 /**
  * The key prefix a passage exit carries in `IRExit.direction` (ADR-378 D1):
@@ -48,6 +52,35 @@ export function passageKeyOfForm(form: string): string {
 /** The class word an IR `admits` list carries beside entity ids for a pushed thing (ADR-378 D6). */
 export const ADMITS_PUSHING = 'pushing';
 
+/**
+ * The identity manifest (ADR-388 D4): what a save can hold a key for, and
+ * the structural facts a restore reconciler needs to add what a later edit
+ * declared. Every family whose order carries no meaning is sorted by its
+ * identity; `chapters`, each timer's `turns` and each landing's `rooms`
+ * keep declaration order, which is their meaning. Names and structure only
+ * — no spans, no prose — so a prose edit leaves `stamp` unchanged.
+ */
+export interface IRIdentity {
+  /** SHA-256, hex, over the JSON of every other field in this order. */
+  stamp: string;
+  /** Every entity: its id, first kind, declared states, and start place (null = offstage). */
+  entities: { id: string; kind: string; states: string[]; startsIn: string | null }[];
+  /** Every resolved exit; `destination` is a room id or `outside` (ADR-366 D7). */
+  exits: { room: string; direction: string; destination: string }[];
+  /** Every `on`/`after` clause id (D2), with its `, once`; a trait's clause once, under its `trait.` prefix. */
+  clauses: { id: string; once: boolean }[];
+  /** Every `select-strategy` id (D2), under every root. */
+  selects: string[];
+  /** Chapter names in declaration order (ADR-330). */
+  chapters: string[];
+  /** Each timer's `qualified` key with its named turns in order (ADR-325 D3a). */
+  timers: { qualified: string; turns: string[] }[];
+  /** Each region with a landing, with its IR room list in order (ADR-325 D5). */
+  landings: { region: string; rooms: string[] }[];
+  /** Each declared counter: story-global with `owner` null, per-entity with the entity's id (ADR-264). */
+  counters: { name: string; owner: string | null }[];
+}
+
 /** Root of a compiled story. */
 export interface StoryIR {
   format: typeof IR_FORMAT;
@@ -59,6 +92,14 @@ export interface StoryIR {
    * never warns or refuses on it.
    */
   languageVersion: string;
+  /**
+   * The story's identity manifest and content stamp (ADR-388 D4): every
+   * identity the runtime can persist a key under, and one hash over them.
+   * A save records the stamp; a restore whose stamp differs reconciles the
+   * save against this manifest (D5). Emitted by the analyzer's last pass,
+   * never derived at load — the loader refuses IR without it.
+   */
+  identity: IRIdentity;
   meta: IRMeta;
   /**
    * Present exactly when the source carried a `grammar` header (ADR-269 D8):

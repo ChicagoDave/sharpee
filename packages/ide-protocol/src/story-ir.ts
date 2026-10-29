@@ -13,6 +13,7 @@
 
 export type {
   StoryIR,
+  IRIdentity,
   IRMeta,
   IREntity,
   IRComposition,

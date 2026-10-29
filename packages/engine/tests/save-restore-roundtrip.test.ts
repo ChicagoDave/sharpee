@@ -311,4 +311,24 @@ describe('SaveRestoreService round-trip', () => {
       target.engine.stop();
     });
   });
+
+  describe('DOES — records the story identity stamp exactly when the story declares one (ADR-388 D4)', () => {
+    it('a story with no stamp writes no `identityStamp` field', () => {
+      const source = bootFresh();
+      const saved = (source.engine as unknown as EnginePrivate).createSaveData();
+      source.engine.stop();
+      expect('identityStamp' in saved.metadata).toBe(false);
+    });
+
+    it('a story with a stamp has it copied into the save metadata', () => {
+      class StampedStory extends MinimalTestStory {
+        readonly identityStamp = 'f00d'.repeat(16);
+      }
+      const setup = setupTestEngine();
+      setup.engine.installStory(new StampedStory());
+      const saved = (setup.engine as unknown as EnginePrivate).createSaveData();
+      setup.engine.stop();
+      expect(saved.metadata.identityStamp).toBe('f00d'.repeat(16));
+    });
+  });
 });

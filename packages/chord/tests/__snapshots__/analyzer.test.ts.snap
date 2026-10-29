@@ -746,7 +746,7 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
       "wears": [],
     },
   ],
-  "format": "story language 5",
+  "format": "story language 6",
   "grammarExtensions": [
     {
       "action": "putting",
@@ -782,6 +782,84 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
       },
     },
   ],
+  "identity": {
+    "chapters": [],
+    "clauses": [
+      {
+        "id": "foyer-bar.after-entering-by-player",
+        "once": false,
+      },
+      {
+        "id": "message-in-the-sawdust.on-reading-by-player",
+        "once": false,
+      },
+    ],
+    "counters": [],
+    "entities": [
+      {
+        "id": "alex",
+        "kind": "person",
+        "startsIn": "foyer-of-the-opera-house",
+        "states": [],
+      },
+      {
+        "id": "brass-hook",
+        "kind": "supporter",
+        "startsIn": "cloakroom",
+        "states": [],
+      },
+      {
+        "id": "cloakroom",
+        "kind": "room",
+        "startsIn": null,
+        "states": [],
+      },
+      {
+        "id": "foyer-bar",
+        "kind": "room",
+        "startsIn": null,
+        "states": [],
+      },
+      {
+        "id": "foyer-of-the-opera-house",
+        "kind": "room",
+        "startsIn": null,
+        "states": [],
+      },
+      {
+        "id": "message-in-the-sawdust",
+        "kind": "thing",
+        "startsIn": "foyer-bar",
+        "states": [
+          "intact",
+          "trampled",
+          "obliterated",
+        ],
+      },
+      {
+        "id": "velvet-cloak",
+        "kind": "thing",
+        "startsIn": null,
+        "states": [],
+      },
+    ],
+    "exits": [
+      {
+        "destination": "foyer-bar",
+        "direction": "south",
+        "room": "foyer-of-the-opera-house",
+      },
+      {
+        "destination": "cloakroom",
+        "direction": "west",
+        "room": "foyer-of-the-opera-house",
+      },
+    ],
+    "landings": [],
+    "selects": [],
+    "stamp": "31ad1767292d8f4ca8f24325fbb0add1505d8b82ad6f087da66b4e5323f502f8",
+    "timers": [],
+  },
   "languageVersion": "4.0.0",
   "machines": [],
   "messageOverrides": {

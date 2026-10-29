@@ -172,7 +172,7 @@ import {
 } from '@sharpee/world-model';
 import { LoadError } from './errors.js';
 import { exitKeyOfWord } from './direction-words.js';
-import { assertClauseIds, assertSelectIds } from './select-ids.js';
+import { assertClauseIds, assertIdentity, assertSelectIds } from './select-ids.js';
 import { translateEventId } from './event-id-map.js';
 import { COMBAT_FIELD_ROUTES, EXTENSION_REGISTRY, NPC_BEHAVIOR_ADJECTIVES, NPC_FIELD_ROUTES, type ExtensionInstallContext } from './extension-registry.js';
 import { installStateMachines } from './state-machines.js';
@@ -250,6 +250,12 @@ export function createStory(ir: StoryIR, options: StoryLoaderOptions = {}): Chor
 /** The generic Story implementation interpreted from IR. */
 export class ChordStory implements Story {
   readonly config: StoryConfig;
+  /**
+   * The compile's content stamp, `ir.identity.stamp` (ADR-388 D4): the
+   * engine records it in every save's metadata, and a restore whose stamp
+   * differs is the reconciler's case (D5). The manifest itself is `ir.identity`.
+   */
+  readonly identityStamp: string;
   /** The turn-by-turn runtime (rules, on-clauses, derived properties). */
   readonly runtime: ChordRuntime;
   /** The condition evaluator — shared with the runtime; Z2 gate thunks close over it. */
@@ -602,6 +608,8 @@ export class ChordStory implements Story {
     }
     assertClauseIds(ir);
     assertSelectIds(ir);
+    assertIdentity(ir);
+    this.identityStamp = ir.identity.stamp;
     this.config = {
       id: ir.meta.fields.id ?? ir.meta.title.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
       title: ir.meta.title,

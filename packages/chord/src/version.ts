@@ -317,5 +317,11 @@
  * 3.6.0; the EBNF hash is unchanged by the bump (the surface pinned on
  * 2026-10-24 is the 4.0.0 surface). The parser review's seven steps
  * (ADR-382 to ADR-387) changed the English parser, not the language.
+ *
+ * **Pending publish — ADR-388, 2026-10-29: persisted identity.** `IR_FORMAT`
+ * → `story language 6`: clause and select ids are head-derived (D2) and the
+ * IR carries its identity manifest and stamp (D4). No grammar changes and no
+ * story stops compiling; David ruled the cutover a PATCH (Q-3 interview),
+ * applied when the next version is cut, not here.
  */
 export const CHORD_LANGUAGE_VERSION = '4.0.0';

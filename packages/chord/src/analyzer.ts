@@ -116,6 +116,7 @@ import { collectExpanses, type ExpanseDecl } from './analyzer/expanses.js';
 import { entityIdOf, factIdOf, hasAdjectiveDecl, isKindDecl } from './analyzer/declared.js';
 import { PHRASEBOOK_REGISTRY } from './phrasebooks.js';
 import { DiagnosticBag } from './diagnostics.js';
+import { buildIdentity, emptyIdentity } from './identity.js';
 import { CHORD_LANGUAGE_VERSION } from './version.js';
 import {
   exitRoomId,
@@ -1151,6 +1152,16 @@ export class Analyzer {
     { name: 'checkHeaderFields', requires: ['collect'], run: (a) => a.checkHeaderFields() },
     // Return-field cross-check once every `emit` is collected.
     { name: 'checkChannelReturns', requires: ['buildDeclarations'], run: (a) => a.checkChannelReturns(a.builtIR().channels) },
+    // ADR-388 D4: the identity manifest and stamp, over the resolved IR —
+    // last, after every pass that writes an entity, exit, clause, select,
+    // topic row or start block it enumerates.
+    {
+      name: 'emitIdentity',
+      requires: ['buildDeclarations', 'buildStartBlock', 'applyTopics', 'applyConversations', 'collectRegionMembers', 'applyExitTables'],
+      run: (a) => {
+        a.builtIR().identity = buildIdentity(a.builtIR());
+      },
+    },
   ];
 
   /**
@@ -1260,6 +1271,9 @@ export class Analyzer {
     this.storyIR = {
       format: IR_FORMAT,
       languageVersion: CHORD_LANGUAGE_VERSION, // ADR-257 D3 — the language version that compiled this story
+      // ADR-388 D4: filled by `emitIdentity`, the last pass, once every
+      // identity it enumerates has been built; empty until then.
+      identity: emptyIdentity(),
 
       meta: {
         title: this.ast.header?.title ?? '',

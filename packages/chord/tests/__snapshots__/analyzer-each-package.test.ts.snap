@@ -558,7 +558,58 @@ exports[`each-compile.story — E1/E2/E3 + must-be-any IR (each package P3) > ma
       "wears": [],
     },
   ],
-  "format": "story language 5",
+  "format": "story language 6",
+  "identity": {
+    "chapters": [],
+    "clauses": [
+      {
+        "id": "pygmy-goat.after-feeding-by-player",
+        "once": false,
+      },
+      {
+        "id": "trait.skittish.on-prodding-by-player",
+        "once": false,
+      },
+    ],
+    "counters": [],
+    "entities": [
+      {
+        "id": "alex",
+        "kind": "person",
+        "startsIn": "trophy-barn",
+        "states": [],
+      },
+      {
+        "id": "no-smoking-sign",
+        "kind": "thing",
+        "startsIn": "trophy-barn",
+        "states": [
+          "calm",
+          "spooked",
+        ],
+      },
+      {
+        "id": "pygmy-goat",
+        "kind": "thing",
+        "startsIn": "trophy-barn",
+        "states": [
+          "hungry",
+          "content",
+        ],
+      },
+      {
+        "id": "trophy-barn",
+        "kind": "room",
+        "startsIn": null,
+        "states": [],
+      },
+    ],
+    "exits": [],
+    "landings": [],
+    "selects": [],
+    "stamp": "9f9ca8ca2499670238a58aa457a54a67d37415a59a036bf3b18ff1888d4ee935",
+    "timers": [],
+  },
   "languageVersion": "4.0.0",
   "machines": [],
   "messageOverrides": {

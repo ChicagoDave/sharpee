@@ -255,6 +255,8 @@ export class SaveRestoreService {
     const metadata: ISaveMetadata = {
       storyId: story?.config.id || 'unknown',
       storyVersion: story?.config.version || '0.0.0',
+      // ADR-388 D4: the stamp rides the save exactly when the story has one.
+      ...(story?.identityStamp !== undefined ? { identityStamp: story.identityStamp } : {}),
       turnCount: context.currentTurn - 1,
       playTime: Date.now() - context.metadata.started.getTime(),
       description: `Turn ${context.currentTurn - 1}`

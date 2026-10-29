@@ -491,7 +491,65 @@ exports[`zoo-actions IR (§3.4 + ownership package) > matches the golden IR snap
       "wears": [],
     },
   ],
-  "format": "story language 5",
+  "format": "story language 6",
+  "identity": {
+    "chapters": [],
+    "clauses": [
+      {
+        "id": "pygmy-goats.after-feeding-by-player",
+        "once": false,
+      },
+      {
+        "id": "trait.feedable.on-feeding-by-player",
+        "once": false,
+      },
+      {
+        "id": "trait.pettable.on-petting-by-player",
+        "once": false,
+      },
+    ],
+    "counters": [],
+    "entities": [
+      {
+        "id": "alex",
+        "kind": "person",
+        "startsIn": "petting-zoo",
+        "states": [],
+      },
+      {
+        "id": "garden-snake",
+        "kind": "thing",
+        "startsIn": "petting-zoo",
+        "states": [],
+      },
+      {
+        "id": "handful-of-feed",
+        "kind": "thing",
+        "startsIn": "petting-zoo",
+        "states": [],
+      },
+      {
+        "id": "petting-zoo",
+        "kind": "room",
+        "startsIn": null,
+        "states": [],
+      },
+      {
+        "id": "pygmy-goats",
+        "kind": "thing",
+        "startsIn": "petting-zoo",
+        "states": [
+          "hungry",
+          "content",
+        ],
+      },
+    ],
+    "exits": [],
+    "landings": [],
+    "selects": [],
+    "stamp": "87f0726831a95ea8905b25d48c455d3741799b8de177030ef46928e4c9ae415a",
+    "timers": [],
+  },
   "languageVersion": "4.0.0",
   "machines": [],
   "messageOverrides": {
