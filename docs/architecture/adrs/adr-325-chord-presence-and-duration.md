@@ -592,6 +592,12 @@ shows the merged shape. Tree-pinned: the attack card asserts the stdlib line is 
   as not-started. The save-format version is bumped per the standing rule
   (`feedback_save_format_versioning`), with a test that a pre-bump save restores without
   error.
+  > **Amended 2026-10-29 (ADR-388 D3, D6; session b9d2c0).** The save-format bump and the
+  > pre-bump restore test above are withdrawn: save-format versioning has been dormant since
+  > the 2026-09-11 ruling (no story has shipped a save), and ADR-388 re-keys the timer record
+  > with no bump and no old-record reader. The record's position is now the named turn
+  > (`turn: string | null`), never an index into the definition's turn list, so a turn
+  > inserted ahead of a saved one moves nothing.
 - **A trait's `after entering it` still binds to the stdlib container-entering
   interceptor**, not room arrival (`packages/story-loader/src/runtime.ts:298-332` routes
   trait clauses to `registerActionInterceptor` under `if.action.<gerund>`; only a room's

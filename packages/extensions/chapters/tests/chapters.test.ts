@@ -40,12 +40,12 @@ const ctx = (world: ReturnType<typeof fakeWorld>, turn: number, playerLocation: 
   ({ world, turn, playerId: 'p', playerLocation, random: undefined as never }) as unknown as TurnPluginContext;
 
 describe('createChaptersPlugin', () => {
-  it('the opening row begins on the first turn and writes the current ordinal and its fired flag', () => {
+  it('the opening row begins on the first turn and writes the current chapter name and its fired flag', () => {
     const world = fakeWorld();
     const events = createChaptersPlugin(rows).onAfterAction(ctx(world, 1, 'r_market'));
     expect(events.map((e) => e.type)).toEqual([CHAPTER_BEGAN_EVENT]);
     expect(events[0].data).toEqual({ name: 'market', title: 'Chapter I', description: 'An apple.', ordinal: 0 });
-    expect(world.state.get(CHAPTER_CURRENT_KEY)).toBe(0);
+    expect(world.state.get(CHAPTER_CURRENT_KEY)).toBe('market');
     expect(world.state.get(CHAPTER_FIRED_PREFIX + 'market')).toBe(true);
   });
 
@@ -62,7 +62,7 @@ describe('createChaptersPlugin', () => {
     expect(first.map((e) => e.type)).toEqual([CHAPTER_BEGAN_EVENT]);
     expect((first[0].data as { name: string }).name).toBe('street');
     expect(again).toEqual([]);
-    expect(world.state.get(CHAPTER_CURRENT_KEY)).toBe(1);
+    expect(world.state.get(CHAPTER_CURRENT_KEY)).toBe('street');
   });
 
   it('a state anchor and a timer expiry each begin their chapter when the world state says so', () => {
@@ -71,9 +71,9 @@ describe('createChaptersPlugin', () => {
     plugin.onAfterAction(ctx(world, 1, 'r_market'));
     world.setStateValue('chord.story.state', 'chase');
     expect(plugin.onAfterAction(ctx(world, 2, 'r_market')).map((e) => (e.data as { name: string }).name)).toEqual(['chase']);
-    world.setStateValue('chord.timer.player.bell', { phase: 'expired', index: 0, startedTurn: 2 });
+    world.setStateValue('chord.timer.player.bell', { phase: 'expired', turn: null, startedTurn: 2 });
     expect(plugin.onAfterAction(ctx(world, 3, 'r_market')).map((e) => (e.data as { name: string }).name)).toEqual(['ball']);
-    expect(world.state.get(CHAPTER_CURRENT_KEY)).toBe(3);
+    expect(world.state.get(CHAPTER_CURRENT_KEY)).toBe('ball');
   });
 
   it('a stale trigger — an earlier row firing after a later chapter began — changes nothing and raises runtime.chapter-stale once', () => {
@@ -85,16 +85,16 @@ describe('createChaptersPlugin', () => {
     world.setStateValue('chord.visited.r_street', true);
     const late = plugin.onAfterAction(ctx(world, 3, 'r_street'));
     expect(late.map((e) => e.type)).toEqual([CHAPTER_STALE_EVENT]);
-    expect((late[0].data as { chapter: string; current: number }).chapter).toBe('street');
-    expect((late[0].data as { current: number }).current).toBe(2);
-    expect(world.state.get(CHAPTER_CURRENT_KEY)).toBe(2);
+    expect((late[0].data as { chapter: string; current: string }).chapter).toBe('street');
+    expect((late[0].data as { current: string }).current).toBe('chase');
+    expect(world.state.get(CHAPTER_CURRENT_KEY)).toBe('chase');
     expect(plugin.onAfterAction(ctx(world, 4, 'r_street'))).toEqual([]);
   });
 
-  it('restored world state is honoured: a fired row and a current ordinal never re-fire', () => {
+  it('restored world state is honoured: a fired row and a current chapter name never re-fire', () => {
     const world = fakeWorld();
-    world.setStateValue(CHAPTER_CURRENT_KEY, 1);
-    world.setStateValue(CHAPTER_ANNOUNCED_KEY, 1);
+    world.setStateValue(CHAPTER_CURRENT_KEY, 'street');
+    world.setStateValue(CHAPTER_ANNOUNCED_KEY, 'street');
     world.setStateValue(CHAPTER_FIRED_PREFIX + 'market', true);
     world.setStateValue(CHAPTER_FIRED_PREFIX + 'street', true);
     world.setStateValue('chord.visited.r_street', true);
@@ -103,12 +103,12 @@ describe('createChaptersPlugin', () => {
 
   it('a seeded-but-unannounced opener (the loader\'s start moment) is announced once on the first turn', () => {
     const world = fakeWorld();
-    world.setStateValue(CHAPTER_CURRENT_KEY, 0);
+    world.setStateValue(CHAPTER_CURRENT_KEY, 'market');
     world.setStateValue(CHAPTER_FIRED_PREFIX + 'market', true);
     const plugin = createChaptersPlugin(rows);
     const first = plugin.onAfterAction(ctx(world, 1, 'r_market'));
     expect(first.map((e) => e.type)).toEqual([CHAPTER_BEGAN_EVENT]);
-    expect(world.state.get(CHAPTER_ANNOUNCED_KEY)).toBe(0);
+    expect(world.state.get(CHAPTER_ANNOUNCED_KEY)).toBe('market');
     expect(plugin.onAfterAction(ctx(world, 2, 'r_market'))).toEqual([]);
   });
 });

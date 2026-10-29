@@ -209,24 +209,24 @@ describe('arrange — a timer phase writes the timer record as the runtime verbs
   it('has started on an idle timer writes a running record stamped with the current turn', () => {
     expect(world.getStateValue(key)).toBeUndefined();
     expect(arrange(world, 'player.bell has started', { turn: 4 })).toEqual({ arranged: true });
-    expect(world.getStateValue(key)).toEqual({ phase: 'running', index: 0, startedTurn: 4 });
+    expect(world.getStateValue(key)).toEqual({ phase: 'running', turn: null, startedTurn: 4 });
   });
 
   it('has started on a timer already started writes nothing, as `start` writes nothing', () => {
-    world.setStateValue(key, { phase: 'stopped', index: 2, startedTurn: 1 });
+    world.setStateValue(key, { phase: 'stopped', turn: 'second', startedTurn: 1 });
     expect(arrange(world, 'player.bell has started', { turn: 9 })).toEqual({ arranged: true });
-    expect(world.getStateValue(key)).toEqual({ phase: 'stopped', index: 2, startedTurn: 1 });
+    expect(world.getStateValue(key)).toEqual({ phase: 'stopped', turn: 'second', startedTurn: 1 });
   });
 
   it('has expired keeps the record and flips its phase, as expiry does', () => {
-    world.setStateValue(key, { phase: 'running', index: 1, startedTurn: 3 });
+    world.setStateValue(key, { phase: 'running', turn: 'first', startedTurn: 3 });
     expect(arrange(world, 'player.bell has expired')).toEqual({ arranged: true });
-    expect(world.getStateValue(key)).toEqual({ phase: 'expired', index: 1, startedTurn: 3 });
+    expect(world.getStateValue(key)).toEqual({ phase: 'expired', turn: 'first', startedTurn: 3 });
   });
 
   it('has expired on an idle timer writes the expired record from the idle default', () => {
     expect(arrange(world, 'player.bell has expired')).toEqual({ arranged: true });
-    expect(world.getStateValue(key)).toEqual({ phase: 'expired', index: 0, startedTurn: -1 });
+    expect(world.getStateValue(key)).toEqual({ phase: 'expired', turn: null, startedTurn: -1 });
   });
 
   it('a start that must write and has no turn is refused by name, and writes nothing', () => {
@@ -241,7 +241,7 @@ describe('arrange — a timer phase writes the timer record as the runtime verbs
   it('the record is ordinary world state: it survives a state round trip and the story reads it as started', () => {
     expect(arrange(world, 'player.bell has started', { turn: 2 })).toEqual({ arranged: true });
     world.setState(JSON.parse(JSON.stringify(world.getState())));
-    expect(world.getStateValue(key)).toEqual({ phase: 'running', index: 0, startedTurn: 2 });
+    expect(world.getStateValue(key)).toEqual({ phase: 'running', turn: null, startedTurn: 2 });
   });
 });
 

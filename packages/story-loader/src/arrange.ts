@@ -293,7 +293,7 @@ function arrangeTimerPhase(world: WorldModel, pin: Extract<ParsedPin, { kind: 't
     if (context.turn === undefined) {
       return unrecognized(`starting ${pin.timer} needs the current turn, and the caller supplied none`);
     }
-    const started: TimerRecord = { phase: 'running', index: 0, startedTurn: context.turn };
+    const started: TimerRecord = { phase: 'running', turn: null, startedTurn: context.turn };
     world.setStateValue(key, started);
     return { arranged: true };
   }

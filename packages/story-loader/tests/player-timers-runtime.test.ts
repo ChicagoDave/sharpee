@@ -174,7 +174,7 @@ describe('two playable characters: the wound stays with Alex when the role moves
     const b = await bootTurns(story(2));
     await b.turn('cut myself');
     await b.turn('become brook');
-    expect(b.world.getStateValue(timerKey('alex.wound'))).toMatchObject({ phase: 'running', index: 1 });
+    expect(b.world.getStateValue(timerKey('alex.wound'))).toMatchObject({ phase: 'running', turn: 'numb' });
     expect(b.world.getStateValue(timerKey('brook.wound'))).toBeUndefined();
     expect((await b.turnText('check wound')).text).toContain('Whole.');
     await wait(b, 2); // bleeding, then expiry

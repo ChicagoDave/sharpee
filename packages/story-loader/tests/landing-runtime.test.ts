@@ -154,7 +154,7 @@ describe('landing strategies draw deterministically (D5, ADR-293)', () => {
     // The stream is the region's own, persisted in world state.
     const record = boot(SOURCE(LIST('randomly'), 'move the monkey to the Market'), 11);
     enterAlley(record);
-    expect(record.world.getStateValue(landingKey('market'))).toMatchObject({ rooms: expect.any(Array), seed: expect.any(Number) });
+    expect(record.world.getStateValue(landingKey('market'))).toMatchObject({ rooms: expect.any(Array), seed: expect.any(Number), authored: false });
   });
 });
 
@@ -166,7 +166,7 @@ describe('set … landing to <room> (D5)', () => {
     ));
     enterAlley(b);
     expect(monkeyRoom(b)).toBe(roomOf(b, 'grocery-stall'));
-    expect(b.world.getStateValue(landingKey('market'))).toMatchObject({ rooms: [roomOf(b, 'grocery-stall')], cursor: 0 });
+    expect(b.world.getStateValue(landingKey('market'))).toMatchObject({ rooms: [roomOf(b, 'grocery-stall')], cursor: 0, authored: true });
     enterAlley(b);
     expect(monkeyRoom(b)).toBe(roomOf(b, 'grocery-stall'));
   });

@@ -148,7 +148,7 @@ describe("the player's own going (D3h)", () => {
     expect(b.world.getStateValue(timerKey('alex.waiting'))).toBeUndefined();
     const { veto } = goFrom(b, 'yard');
     expect(veto).toBeNull();
-    expect(b.world.getStateValue(timerKey('alex.waiting'))).toMatchObject({ phase: 'running', index: 0, startedTurn: 3 });
+    expect(b.world.getStateValue(timerKey('alex.waiting'))).toMatchObject({ phase: 'running', turn: null, startedTurn: 3 });
   });
 
   it("`it` inside the clause is the player, not the room", () => {

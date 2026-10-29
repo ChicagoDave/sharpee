@@ -185,7 +185,7 @@ describe('ADR-330 chapters on the real path', () => {
       ordinal: 0,
     };
     expect(events.find((e) => e.type === CHAPTER_BEGAN_EVENT)!.data).toMatchObject(expected);
-    expect(current(b)).toBe(0);
+    expect(current(b)).toBe('market');
     // The channel projects the same turn's stream into the packet — and the
     // packet comes after the turn's own events, never before them.
     const packet = chapterChannel.produce({ world: b.world, events, blocks: [], turn: 1, prevValue: undefined });
@@ -198,10 +198,10 @@ describe('ADR-330 chapters on the real path', () => {
     await b.turn('look');
     const east = await b.turn('east');
     expect(began(east)).toEqual(['street']);
-    expect(current(b)).toBe(1);
+    expect(current(b)).toBe('street');
     expect(began(await b.turn('west'))).toEqual([]);
     expect(began(await b.turn('east'))).toEqual([]);
-    expect(current(b)).toBe(1);
+    expect(current(b)).toBe('street');
     expect(chapterChannel.produce({ world: b.world, events: east, blocks: [], turn: 2, prevValue: undefined })).toMatchObject({ name: 'street', ordinal: 1 });
   });
 
@@ -218,10 +218,10 @@ describe('ADR-330 chapters on the real path', () => {
     await b.turn('look');
     await b.turn('east');
     expect(began(await b.turn('run away'))).toEqual(['chase']);
-    expect(current(b)).toBe(2);
+    expect(current(b)).toBe('chase');
     expect(began(await b.turn('ring out'))).toEqual([]); // started this turn; a timer with no named turns expires next turn
     expect(began(await b.turn('wait'))).toEqual(['ball']);
-    expect(current(b)).toBe(3);
+    expect(current(b)).toBe('ball');
     expect(began(await b.turn('wait'))).toEqual([]);
   });
 
@@ -232,7 +232,7 @@ describe('ADR-330 chapters on the real path', () => {
     const east = await b.turn('east');
     expect(began(east)).toEqual([]);
     expect(stale(east).map((e) => (e.data as { chapter: string }).chapter)).toEqual(['street']);
-    expect(current(b)).toBe(2);
+    expect(current(b)).toBe('chase');
     expect(stale(await b.turn('west'))).toEqual([]);
     expect(stale(await b.turn('east'))).toEqual([]);
   });
@@ -241,7 +241,7 @@ describe('ADR-330 chapters on the real path', () => {
     const b1 = await boot();
     await b1.turn('look');
     await b1.turn('east');
-    expect(current(b1)).toBe(1);
+    expect(current(b1)).toBe('street');
 
     const provider = (b: Booted): ISaveRestoreStateProvider => ({
       getWorld: () => b.world,
@@ -256,7 +256,7 @@ describe('ADR-330 chapters on the real path', () => {
 
     const b2 = await boot();
     service.loadSaveData(saveData, provider(b2));
-    expect(current(b2)).toBe(1);
+    expect(current(b2)).toBe('street');
     const after = await b2.turn('look');
     expect(began(after)).toEqual([]);
     expect(began(await b2.turn('west'))).toEqual([]);

@@ -34,7 +34,7 @@ interface Booted {
   tickEvents(): ISemanticEvent[];
   /** Fire the Yard's `after the player entering` clause (the verbs live there). */
   enterYard(): string[];
-  record(): { phase: string; index: number } | undefined;
+  record(): { phase: string; turn: string | null } | undefined;
   read(stateKey: string): unknown;
 }
 
@@ -79,7 +79,7 @@ function boot(source: string, seed = 5): Booted {
       );
     },
     record() {
-      return world.getStateValue(timerKey('guards.search')) as { phase: string; index: number } | undefined;
+      return world.getStateValue(timerKey('guards.search')) as { phase: string; turn: string | null } | undefined;
     },
     read(key) {
       return world.getStateValue(key);
@@ -149,11 +149,11 @@ describe('stepping (D3f)', () => {
     const b = boot(SOURCE('start the guards\' search'));
     expect(b.record()).toBeUndefined();
     b.enterYard(); // turn 1: start
-    expect(b.record()).toMatchObject({ phase: 'running', index: 0 });
+    expect(b.record()).toMatchObject({ phase: 'running', turn: null });
     expect(b.tick()).toEqual([]); // tick of turn 1: started this turn — no step
-    expect(b.record()).toMatchObject({ phase: 'running', index: 0 });
+    expect(b.record()).toMatchObject({ phase: 'running', turn: null });
     expect(b.tick()).toEqual([]); // turn 2: arriving (no prose)
-    expect(b.record()).toMatchObject({ phase: 'running', index: 1 });
+    expect(b.record()).toMatchObject({ phase: 'running', turn: 'arriving' });
     expect(b.tick()).toEqual(['guards.search.lingering']); // turn 3: lingering speaks
     expect(b.tick()).toEqual(['guards.expired-line']); // turn 4: expired — clause fires, it = guards
     expect(b.record()).toMatchObject({ phase: 'expired' });
@@ -181,7 +181,7 @@ describe('stepping (D3f)', () => {
     expect(events[0].entities.location).toBe(b.story.entityId('yard'));
     expect(events[0].entities.actor).toBe(b.story.entityId('guards'));
     expect(events[0].presence).toBeUndefined();
-    expect(b.record()).toMatchObject({ index: 2 });
+    expect(b.record()).toMatchObject({ turn: 'lingering' });
   });
 
   it("a turn's prose is spoken with the owner off-stage — from the player, never dropped (GH #372)", () => {
@@ -198,7 +198,7 @@ describe('stepping (D3f)', () => {
     expect(events[0].presence).toBeUndefined();
     expect(events[0].entities.location).toBeUndefined();
     expect(events[0].entities.actor).toBeUndefined();
-    expect(b.record()).toMatchObject({ index: 2 });
+    expect(b.record()).toMatchObject({ turn: 'lingering' });
   });
 
   it('the timer daemon is first in the roster', () => {
@@ -216,9 +216,9 @@ describe('verbs (D3c)', () => {
     b.tick(); // arriving
     b.world.setStateValue('chord.state.guards', 'alert');
     b.enterYard(); // stop
-    expect(b.record()).toMatchObject({ phase: 'stopped', index: 1 });
+    expect(b.record()).toMatchObject({ phase: 'stopped', turn: 'arriving' });
     for (let i = 0; i < 5; i++) expect(b.tick()).toEqual([]);
-    expect(b.record()).toMatchObject({ phase: 'stopped', index: 1 });
+    expect(b.record()).toMatchObject({ phase: 'stopped', turn: 'arriving' });
   });
 
   it('`start` on a started timer is a no-op; `restart` goes back to the top', () => {
@@ -227,13 +227,13 @@ describe('verbs (D3c)', () => {
     b.tick();
     b.tick(); // arriving
     b.enterYard(); // start again — no-op
-    expect(b.record()).toMatchObject({ phase: 'running', index: 1 });
+    expect(b.record()).toMatchObject({ phase: 'running', turn: 'arriving' });
     const r = boot(SOURCE('restart the guards\' search'));
     r.enterYard();
     r.tick();
     r.tick(); // arriving
     r.enterYard(); // restart
-    expect(r.record()).toMatchObject({ phase: 'running', index: 0 });
+    expect(r.record()).toMatchObject({ phase: 'running', turn: null });
     expect(r.tick()).toEqual([]); // restarted this turn
     expect(r.tick()).toEqual([]); // arriving again
     expect(r.tick()).toEqual(['guards.search.lingering']);
@@ -246,7 +246,7 @@ describe('verbs (D3c)', () => {
     b.tick();
     b.world.setStateValue('chord.state.guards', 'alert');
     b.enterYard();
-    expect(b.record()).toMatchObject({ phase: 'idle', index: 0 });
+    expect(b.record()).toMatchObject({ phase: 'idle', turn: null });
     expect(b.tick()).toEqual([]);
   });
 

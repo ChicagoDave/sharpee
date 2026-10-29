@@ -150,9 +150,9 @@ describe('story-owned every-turn daemon (ADR-236 D7, REAL-PATH)', () => {
 
   it('lowers the header clauses to story-turn daemons', () => {
     expect(daemons.map((d) => d.id).sort()).toEqual([
-      'chord.story-turn.0',
-      'chord.story-turn.1',
-      'chord.story-turn.2',
+      'chord.story-turn.story.on-every-turn#1',
+      'chord.story-turn.story.on-every-turn#2',
+      'chord.story-turn.story.on-every-turn#3',
     ]);
   });
 

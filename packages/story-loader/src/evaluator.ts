@@ -108,6 +108,8 @@ export class Evaluator {
   private readonly storySeed: number;
   /** ADR-325 D3: timer definitions by `qualified` key, for state-word reads. */
   private readonly timerDefs = new Map<string, IRTimerDef>();
+  /** Chapter name → ordinal, from this compile's `define chapters` rows (ADR-388 D3). */
+  private readonly chapterOrdinals = new Map<string, number>();
 
   /**
    * Live client-capability source for `client has` (ADR-216) — set by the
@@ -153,6 +155,7 @@ export class Evaluator {
     this.irEntities = ir.entities;
     for (const e of ir.entities) this.irEntityById.set(e.id, e);
     for (const t of ir.timers ?? []) this.timerDefs.set(t.qualified, t);
+    for (const c of ir.chapters ?? []) this.chapterOrdinals.set(c.name, c.ordinal);
     for (const trait of ir.traits) {
       this.entityFields.set(
         trait.name,
@@ -193,8 +196,12 @@ export class Evaluator {
       case 'chance':
         return this.drawChance(cond.n, ctx.world);
       case 'chapter': {
-        // ADR-330 D5: the current chapter's ordinal (absent = none begun yet, -1).
-        const current = (ctx.world.getStateValue(CHAPTER_CURRENT_KEY) as number | undefined) ?? -1;
+        // ADR-330 D5 over ADR-388 D3: the key holds the current chapter's
+        // NAME; its ordinal comes from this compile's rows, so a renumbered
+        // list still reads right. Absent, or a name this compile does not
+        // declare (the reconciler's unmappable case, D5), reads as none
+        // begun yet (-1).
+        const current = this.chapterOrdinalOf(ctx.world.getStateValue(CHAPTER_CURRENT_KEY));
         return cond.relation === 'during' ? current === cond.ordinal : cond.relation === 'before' ? current < cond.ordinal : current > cond.ordinal;
       }
       case 'condition': {
@@ -655,8 +662,7 @@ export class Evaluator {
         const record = this.timerRecord(qualified, ctx);
         if (record.phase === 'idle') return null;
         if (record.phase === 'expired') return 'expired';
-        const def = this.timerDefs.get(qualified);
-        return record.index >= 1 && def ? def.states[record.index - 1] ?? null : null;
+        return record.turn;
       }
       case 'counter': {
         // ADR-264 D3: read a counter's current value from world state. The
@@ -828,10 +834,14 @@ export class Evaluator {
       throw new LoadError(`\`${world.getEntity(regionWorldId)?.name ?? regionWorldId}\` is not a region with a landing — only a landing can be set.`);
     }
     const record = this.landingRecord(irId, region.landing.rooms, world);
-    world.setStateValue(landingKey(irId), { ...record, rooms: [roomWorldId], cursor: 0 });
+    world.setStateValue(landingKey(irId), { ...record, rooms: [roomWorldId], cursor: 0, authored: true });
   }
 
-  /** The persisted landing record, seeded from the IR on first touch. */
+  /**
+   * The persisted landing record, seeded from the IR on first touch. A
+   * seeded list is the IR's own (`authored: false`) until a `set` replaces
+   * it, so the reconciler can tell a cache from a choice (ADR-388 D3).
+   */
   private landingRecord(irId: string, irRooms: readonly string[], world: WorldModel): LandingRecord {
     const stored = world.getStateValue(landingKey(irId)) as LandingRecord | undefined;
     if (stored) return stored;
@@ -840,7 +850,19 @@ export class Evaluator {
     // regions never share a sequence and a fixed seed pins each one.
     let seed = this.storySeed;
     for (const ch of irId) seed = (seed * 31 + ch.charCodeAt(0)) >>> 0;
-    return { rooms, cursor: 0, seed };
+    return { rooms, cursor: 0, seed, authored: false };
+  }
+
+  /**
+   * The ordinal of the chapter a stored current-chapter value names, from
+   * this compile's rows; -1 when nothing is stored or the name is not a
+   * chapter this compile declares (ADR-388 D3).
+   *
+   * @param stored the value under `CHAPTER_CURRENT_KEY`
+   * @returns the chapter's ordinal in `ir.chapters`, or -1
+   */
+  private chapterOrdinalOf(stored: unknown): number {
+    return typeof stored === 'string' ? (this.chapterOrdinals.get(stored) ?? -1) : -1;
   }
 
   /**

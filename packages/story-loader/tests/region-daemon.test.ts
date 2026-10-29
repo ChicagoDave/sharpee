@@ -178,10 +178,10 @@ describe('region-owned every-turn daemons (ADR-236 D4, REAL-PATH)', () => {
   it('lowers one daemon per region clause through the shared entity path', () => {
     const ids = daemons.map((d) => d.id).sort();
     expect(ids).toEqual([
-      'chord.entity-turn.mines.0',
-      'chord.entity-turn.mines.1',
-      'chord.entity-turn.mines.2',
-      'chord.entity-turn.underground.0',
+      'chord.entity-turn.mines.on-every-turn#1',
+      'chord.entity-turn.mines.on-every-turn#2',
+      'chord.entity-turn.mines.on-every-turn#3',
+      'chord.entity-turn.underground.on-every-turn',
     ]);
   });
 

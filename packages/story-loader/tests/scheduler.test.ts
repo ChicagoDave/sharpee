@@ -67,12 +67,12 @@ describe('zoo-timeline scheduler constructs', () => {
     // arrival description rides that queue).
     expect(daemons.map((d) => d.id).sort()).toEqual([
       'chord.act-drain',
-      'chord.entity-turn.sam-the-zookeeper.0',
+      'chord.entity-turn.sam-the-zookeeper.on-every-turn',
       'chord.sequence.closing-time',
       'chord.sequence.goat-bleats',
       'chord.sequence.lockup',
-      'chord.trait-turn.candid.0',
-      'chord.trait-turn.chatty.0',
+      'chord.trait-turn.trait.candid.on-every-turn',
+      'chord.trait-turn.trait.chatty.on-every-turn',
     ]);
   });
 

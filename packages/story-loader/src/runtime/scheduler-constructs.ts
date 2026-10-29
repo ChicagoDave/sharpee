@@ -109,11 +109,14 @@ export class SchedulerConstructsSection {
     // create block): one daemon per clause, `it` = the owning entity
     // (stickiness — the ownership package's replacement for floating
     // `once <cond>` rules).
+    // Every daemon below is keyed by the clause's compiler id (ADR-388 D3):
+    // the scheduler persists a per-daemon record by this id, so a clause
+    // inserted ahead must not move another clause's record onto it.
     this.core.ir.entities.forEach((irEntity) => {
-      irEntity.onClauses.forEach((clause, clauseIndex) => {
+      irEntity.onClauses.forEach((clause) => {
         if (clause.binding !== 'every-turn') return;
         daemons.push({
-          id: `chord.entity-turn.${irEntity.id}.${clauseIndex}`,
+          id: `chord.entity-turn.${clause.id}`,
           name: `on every turn (${irEntity.id})`,
           run: (ctx) => this.runEntityTurnClause(irEntity, clause, ctx.world),
         });
@@ -125,11 +128,11 @@ export class SchedulerConstructsSection {
     // presence gate — the story is everywhere ("a background clock for the
     // whole game"); narration broadcasts. `it` never appears in the body
     // (the analyzer's story-clause-it gate refused it at compile).
-    (this.core.ir.story.onClauses ?? []).forEach((clause, clauseIndex) => {
+    (this.core.ir.story.onClauses ?? []).forEach((clause) => {
       if (clause.binding !== 'every-turn') return;
       const key = clauseOccurrenceKey(clause.id);
       daemons.push({
-        id: `chord.story-turn.${clauseIndex}`,
+        id: `chord.story-turn.${clause.id}`,
         name: 'on every turn (story)',
         run: (ctx) => {
           if (this.storyOver(ctx.world)) return [];
@@ -149,11 +152,11 @@ export class SchedulerConstructsSection {
     // composition condition (`chatty while not after-hours`) gates per
     // entity per turn (Prerequisite 2's NPC-behavior shape).
     this.core.ir.traits.forEach((trait) => {
-      trait.onClauses.forEach((clause, clauseIndex) => {
+      trait.onClauses.forEach((clause) => {
         if (clause.binding !== 'every-turn') return;
         const traitType = CHORD_TRAIT_PREFIX + trait.name;
         daemons.push({
-          id: `chord.trait-turn.${trait.name}.${clauseIndex}`,
+          id: `chord.trait-turn.${clause.id}`,
           name: `on every turn (${trait.name})`,
           run: (ctx) => {
             const out: ISemanticEvent[] = [];

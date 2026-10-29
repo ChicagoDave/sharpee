@@ -7,16 +7,21 @@
  * room the row waits for, has the row's timer expired, has the row's owner
  * reached the row's state, or is this the game's first turn. A row whose
  * moment holds fires exactly once (a `chord.chapter.fired.<name>` flag). If
- * the row is later than the current chapter it BEGINS: the current ordinal
+ * the row is later than the current chapter it BEGINS: the current chapter
  * moves to it and a `story.chapter_began` event carries name, title,
  * description, and ordinal for the `story.chapter` channel. If it is not — an
  * earlier chapter's moment arriving late — nothing changes and the non-fatal
  * `runtime.chapter-stale` event names the row (D3).
  *
  * No plugin-private state: the current chapter, the fired flags, and the
- * announced ordinal are world state, so save/restore and undo carry them and
- * a restore never re-fires. The opening row is seeded current by the loader
- * before the first turn; the plugin's job on turn 1 is only to announce it.
+ * announced chapter are world state, so save/restore and undo carry them and
+ * a restore never re-fires. Each holds the chapter's NAME, never its ordinal
+ * (ADR-388 D3): "later than the current chapter" resolves the stored name to
+ * this run's rows at read time, so a chapter inserted ahead of the saved one
+ * renumbers nothing a save depends on. A stored name no row carries reads as
+ * no chapter begun; the restore reconciler reports it (ADR-388 D5). The
+ * opening row is seeded current by the loader before the first turn; the
+ * plugin's job on turn 1 is only to announce it.
  *
  * Public interface: createChaptersPlugin, ChapterRow, ChapterRuntimeTrigger,
  * CHAPTERS_PLUGIN_ID, CHAPTER_BEGAN_EVENT, CHAPTER_STALE_EVENT,
@@ -35,15 +40,15 @@ export const CHAPTER_BEGAN_EVENT = 'story.chapter_began';
 /** The non-fatal diagnostic for a trigger arriving after a later chapter began (ADR-330 D3). */
 export const CHAPTER_STALE_EVENT = 'runtime.chapter-stale';
 
-/** World-state key holding the current chapter's ordinal (absent until the opening row fires). */
+/** World-state key holding the current chapter's NAME (absent until the opening row fires; ADR-388 D3). */
 export const CHAPTER_CURRENT_KEY = 'chord.chapter.current';
 
 /** World-state key prefix for a row's fired flag: `chord.chapter.fired.<name>`. */
 export const CHAPTER_FIRED_PREFIX = 'chord.chapter.fired.';
 
 /**
- * World-state key holding the ordinal the `story.chapter_began` packet was
- * last emitted for. The loader seeds the opening row as current BEFORE the
+ * World-state key holding the NAME of the chapter the `story.chapter_began`
+ * packet was last emitted for. The loader seeds the opening row as current BEFORE the
  * first turn (ADR-327 D10's start moment, so `during <opener>` holds while
  * turn 1 renders); the plugin announces whatever `current` is on the first
  * turn it differs from this key — once, and never again after a restore.
@@ -108,6 +113,8 @@ function holds(trigger: ChapterRuntimeTrigger, ctx: TurnPluginContext): boolean 
  */
 export function createChaptersPlugin(rows: readonly ChapterRow[]): TurnPlugin {
   const ordered = [...rows].sort((a, b) => a.ordinal - b.ordinal);
+  /** The ordinal a stored chapter name has in THIS run's rows; -1 for none stored or a name no row carries. */
+  const ordinalOf = (stored: unknown): number => (typeof stored === 'string' ? (ordered.find((r) => r.name === stored)?.ordinal ?? -1) : -1);
   return {
     id: CHAPTERS_PLUGIN_ID,
     // Watchers band (ADR-332): a chapter observes the turn's timers and
@@ -115,14 +122,14 @@ export function createChaptersPlugin(rows: readonly ChapterRow[]): TurnPlugin {
     priority: TURN_BANDS.watchers.floor + 10,
     onAfterAction(ctx: TurnPluginContext): ISemanticEvent[] {
       const world = ctx.world;
-      let current = (world.getStateValue(CHAPTER_CURRENT_KEY) as number | undefined) ?? -1;
+      let current = world.getStateValue(CHAPTER_CURRENT_KEY) as string | undefined;
       const out: ISemanticEvent[] = [];
       for (const row of ordered) {
         if (world.getStateValue(CHAPTER_FIRED_PREFIX + row.name)) continue;
         if (!holds(row.trigger, ctx)) continue;
         world.setStateValue(CHAPTER_FIRED_PREFIX + row.name, true);
-        if (row.ordinal > current) {
-          current = row.ordinal;
+        if (row.ordinal > ordinalOf(current)) {
+          current = row.name;
           world.setStateValue(CHAPTER_CURRENT_KEY, current);
         } else {
           out.push(
@@ -139,9 +146,9 @@ export function createChaptersPlugin(rows: readonly ChapterRow[]): TurnPlugin {
       // Announce the current chapter once — the turn it began, or the first
       // turn after the loader seeded the opener (D4: the packet rides the
       // turn's channel output, after that turn's own prose).
-      const announced = (world.getStateValue(CHAPTER_ANNOUNCED_KEY) as number | undefined) ?? -1;
-      if (current >= 0 && announced !== current) {
-        const row = ordered.find((r) => r.ordinal === current);
+      const announced = world.getStateValue(CHAPTER_ANNOUNCED_KEY) as string | undefined;
+      if (current !== undefined && announced !== current) {
+        const row = ordered.find((r) => r.name === current);
         if (row) {
           world.setStateValue(CHAPTER_ANNOUNCED_KEY, current);
           const data: ChapterBeganData = { name: row.name, title: row.title, description: row.description, ordinal: row.ordinal };

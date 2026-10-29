@@ -17,6 +17,7 @@
  *
  * References:
  * - ADR-330 D2 — the opener is current before the first turn.
+ * - ADR-388 D3 — the current chapter is persisted by name.
  * - ADR-215 — the channel slot is the contract's third contribution part.
  * - ADR-335 D3 — IR-shaped construction lives in the registry entry.
  */
@@ -41,7 +42,8 @@ export const CHAPTERS_EXTENSION: ExtensionRegistration = {
     const opener = (ir.chapters ?? []).find((c) => c.trigger.kind === 'game-starts');
     if (opener && world.getStateValue(CHAPTER_CURRENT_KEY) === undefined) {
       world.setStateValue(CHAPTER_FIRED_PREFIX + opener.name, true);
-      world.setStateValue(CHAPTER_CURRENT_KEY, opener.ordinal);
+      // ADR-388 D3: the current chapter is stored by NAME, never by ordinal.
+      world.setStateValue(CHAPTER_CURRENT_KEY, opener.name);
     }
   },
   installFromIR: (ir: StoryIR, engine, context) => {

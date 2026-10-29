@@ -176,6 +176,14 @@ ADR-326's `a random adjacent room`); chapters draw no distinction the runtime do
 already draw. This is a premise of Acceptance 3, whose authorial-move case is the check that
 establishes it on the real path.
 
+> **Amended 2026-10-29 (ADR-388 D3; session b9d2c0).** The current chapter — and the
+> chapter last announced — are persisted by NAME (`chord.chapter.current = 'street'`), not
+> by the opener's ordinal as the plugin first stored them. Ordering still comes from the
+> rows: "later than the current chapter" and `during` / `before` / `after` resolve the stored
+> name to this compile's ordinal at read time, so a chapter inserted ahead of a saved one
+> renumbers nothing a save depends on. A stored name no row carries reads as no chapter
+> begun; the restore reconciler reports it (ADR-388 D5).
+
 ### D3. A chapter ends when the next begins; there is no `end chapter`
 
 The last declared chapter runs to the end of the game. A chapter's trigger firing while that

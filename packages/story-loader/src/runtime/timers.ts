@@ -166,13 +166,13 @@ export class TimersSection {
     const record = this.timerRecord(qualified, world);
     switch (verb) {
       case 'start':
-        if (record.phase === 'idle') this.writeTimer(qualified, world, { phase: 'running', index: 0, startedTurn: this.turnNow() });
+        if (record.phase === 'idle') this.writeTimer(qualified, world, { phase: 'running', turn: null, startedTurn: this.turnNow() });
         return [];
       case 'restart':
-        this.writeTimer(qualified, world, { phase: 'running', index: 0, startedTurn: this.turnNow() });
+        this.writeTimer(qualified, world, { phase: 'running', turn: null, startedTurn: this.turnNow() });
         return [];
       case 'reset':
-        this.writeTimer(qualified, world, { phase: 'idle', index: 0, startedTurn: -1 });
+        this.writeTimer(qualified, world, { phase: 'idle', turn: null, startedTurn: -1 });
         return [];
       case 'stop':
         if (record.phase === 'running') this.writeTimer(qualified, world, { ...record, phase: 'stopped' });
@@ -219,6 +219,12 @@ export class TimersSection {
    * A timer started this turn waits for the next. Each step: the
    * `interrupted` roll, then the next named turn (its prose spoken, owner
    * present) or expiry; `meanwhile` only while still running afterward.
+   *
+   * The next turn is found by the NAME the record holds (ADR-388 D3): the
+   * turn after it in the definition, or expiry after the last. A record
+   * naming a turn the definition no longer lists is left where it is and
+   * never stepped — that is the reconciler's unmappable case (ADR-388 D5),
+   * reported there and never guessed at here.
    */
   stepTimers(tick: SchedulerTick): ISemanticEvent[] {
     this.core.assertBetweenTurns('stepTimers');
@@ -235,13 +241,14 @@ export class TimersSection {
         out.push(...this.expireTimer(def.qualified, world));
         continue;
       }
-      const index = record.index + 1;
-      if (index > def.states.length) {
+      const next = nextNamedTurn(def, record.turn);
+      if (next === undefined) continue; // unmappable: a turn the definition no longer names
+      if (next === null) {
         out.push(...this.expireTimer(def.qualified, world));
         continue;
       }
-      this.writeTimer(def.qualified, world, { ...record, index });
-      const state = def.states[index - 1];
+      this.writeTimer(def.qualified, world, { ...record, turn: next });
+      const state = next;
       const table = this.core.ir.phrases.locales[this.core.ir.phrases.defaultLocale] ?? {};
       if (table[`${def.qualified}.${state}`]) {
         // ADR-328 D3: a named turn's prose fires wherever the player is;
@@ -305,6 +312,23 @@ export class TimersSection {
     });
     return out;
   }
+}
+
+/**
+ * The named turn after `current` in the definition (ADR-388 D3): the first
+ * turn when `current` is null (just started), the next one otherwise, null
+ * once the last is passed (expiry), and undefined when `current` names a
+ * turn the definition does not list.
+ *
+ * @param def the timer's definition
+ * @param current the turn the record is on, or null before the first step
+ * @returns the next turn's name, null for expiry, undefined when unmappable
+ */
+export function nextNamedTurn(def: Pick<IRTimerDef, 'states'>, current: string | null): string | null | undefined {
+  if (current === null) return def.states[0] ?? null;
+  const at = def.states.indexOf(current);
+  if (at === -1) return undefined;
+  return def.states[at + 1] ?? null;
 }
 
 /**

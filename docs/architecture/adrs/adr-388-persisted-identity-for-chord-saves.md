@@ -90,6 +90,12 @@ The occurrence key becomes `chord.occurrence.clause.<clause-id>`, and `clauseOcc
 - **Timer position** replaces `index: number` with `turn: string | null` in `TimerRecord`: the named turn the timer is on, `null` when started and not yet stepped. Stepping finds the current turn in `def.states`, moves to the next name, and expires after the last; a stored name the definition no longer lists is unmappable (D5). `startedTurn` and `phase` are unchanged. The arrange floor's `has started` / `has expired` writes (ADR-356 D2 amendment 2026-09-27) write the new field.
 - **Landing record** keeps `rooms` as world ids, because `set <region>'s landing to <room>` legitimately replaces the list and the stored list is then authored state, not a cache. What changes is that the record also keeps `authored: boolean` — `false` while the list is the IR's own, `true` once a `set` replaced it — so the reconciler (D5) can re-seed an un-set list from the current IR and leave a set one alone. `cursor` is clamped to the new length on re-seed; `seed` is kept.
 
+*(As landed in Phase 3, 2026-10-29, session b9d2c0.)* Three things the bullets did not spell out:
+
+- **The announced chapter is a name too.** `chord.chapter.announced` (the plugin's once-only announcement guard) held the ordinal beside `current`; it holds the name now, under D1's rule for every family.
+- **An unmappable timer turn holds, it does not throw.** `stepTimers` finds the next turn by the stored name (`nextNamedTurn` in `runtime/timers.ts`); a name the definition no longer lists leaves the record untouched and the timer unstepped, so play continues and the reconciler reports it (D5). An unknown chapter name reads as no chapter begun (-1), in the evaluator and the plugin alike.
+- **Daemon ids inherit the `#n` of identical heads.** A second `on every turn` on one root inserted ahead of a counted one turns `guards.on-every-turn` into `#1` and `#2` (D2, Q-3), and the scheduler then resets both records rather than moving the old one onto either — the one position left in the scheme, biting exactly where D2 says it does. A clause with a different head inserted ahead moves nothing (pinned in `adr-388-keys-by-name.test.ts`).
+
 ### D4 — The compiler emits an identity manifest and a content stamp in the IR; the save records the stamp
 
 The IR gains `identity: IRIdentity`, emitted by the analyzer from the resolved IR, listing every persistable identity the story can write and the structural facts a reconciler needs. The wire shape, in `ir.ts` beside the other IR types:

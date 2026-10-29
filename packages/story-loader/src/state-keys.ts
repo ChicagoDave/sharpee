@@ -16,7 +16,8 @@
  * Owner context: @sharpee/story-loader.
  *
  * References:
- * - ADR-388 D1 — the invariant above; D2 — clause and select identity.
+ * - ADR-388 D1 — the invariant above; D2 — clause and select identity;
+ *   D3 — chapter, timer and landing records.
  * - ADR-289 D2 — the select id is compiler-assigned and never bare digits.
  */
 
@@ -140,19 +141,20 @@ export function timerKey(qualified: string): string {
 
 /**
  * A timer's position. `idle` = not started (or reset); `running` steps one
- * named turn per turn; `stopped` holds; `expired` is over. `index` counts
- * steps taken since start (0 = started, no named turn yet; n = the n-th
- * named turn). `startedTurn` keeps a timer started on turn T from stepping
- * before T+1.
+ * named turn per turn; `stopped` holds; `expired` is over. `turn` is the
+ * named turn the timer is on, by the name the author wrote — `null` while
+ * started and not yet stepped — so a turn inserted ahead of it in the
+ * definition moves nothing (ADR-388 D3). `startedTurn` keeps a timer
+ * started on turn T from stepping before T+1.
  */
 export interface TimerRecord {
   phase: 'idle' | 'running' | 'stopped' | 'expired';
-  index: number;
+  turn: string | null;
   startedTurn: number;
 }
 
 /** A timer never started, or reset: what an absent record reads as. */
-export const IDLE_TIMER_RECORD: Readonly<TimerRecord> = { phase: 'idle', index: 0, startedTurn: -1 };
+export const IDLE_TIMER_RECORD: Readonly<TimerRecord> = { phase: 'idle', turn: null, startedTurn: -1 };
 
 /**
  * A region's landing (ADR-325 D5): `chord.landing.<region-ir-id>`. Absent
@@ -169,12 +171,16 @@ export function landingKey(regionIrId: string): string {
  * A landing's live state. `rooms` are WORLD ids (a `set` replaces the whole
  * list with one); `cursor` is the cycling/stopping position; `seed` is the
  * region's own random stream (ADR-293: derived from the story seed, so a
- * fixed seed yields a byte-identical sequence per region).
+ * fixed seed yields a byte-identical sequence per region). `authored` is
+ * false while `rooms` is still the IR's own list and true once a `set`
+ * replaced it — the restore reconciler re-seeds an un-authored list from
+ * the current IR and leaves an authored one alone (ADR-388 D3, D5).
  */
 export interface LandingRecord {
   rooms: string[];
   cursor: number;
   seed: number;
+  authored: boolean;
 }
 
 export const CHORD_ADJACENT_PREFIX = 'chord.adjacent.';
