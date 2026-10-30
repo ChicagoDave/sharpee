@@ -25,5 +25,11 @@ export const platformLanguage = {
     // Undo outcomes
     'platform.undo_completed': 'Previous turn undone.',
     'platform.undo_failed': 'Nothing to undo.',
+
+    // ADR-388 D5: the one line a player sees when a restore reconciled a
+    // save against an updated story and some progress could not be carried
+    // over. Never names a key; the author's report rides the diagnostics
+    // channel.
+    'core.save_reconciled': 'This story has been updated since that game was saved, and some of your progress could not be carried over.',
   }
 };

@@ -37,7 +37,7 @@ import { type LanguageProvider, type IEventProcessorWiring, type ClientCapabilit
 import { IProsePipeline, ProsePipeline, type SlotContributor, type SlotEntry } from './prose-pipeline/index.js';
 import type { ITextBlock } from '@sharpee/text-blocks';
 import { ChannelService } from '@sharpee/channel-service';
-import { type ISemanticEvent, type ISystemEvent, type IGenericEventSource, createSemanticEventSource, createGenericEventSource, type ISaveData, type ISaveRestoreHooks, type ISaveResult, type IRestoreResult, type ISerializedEvent, type ISerializedTurn, type IEngineState, type ISaveMetadata, type ISerializedParserState, type IPlatformEvent, type ISemanticEventSource, GameEventType, createGameInitializingEvent, createGameInitializedEvent, createGameStartingEvent, createGameStartedEvent, createGameEndingEvent, createGameEndedEvent, createGameWonEvent, createGameLostEvent, createGameQuitEvent, createGameAbortedEvent, createGameResumedEvent, createPcSwitchedEvent, getUntypedEventData, deriveStreamSeed, createSystemEvent, Subsystems } from '@sharpee/core';
+import { type ISemanticEvent, type ISystemEvent, type IGenericEventSource, createSemanticEventSource, createGenericEventSource, type ISaveData, type ISaveRestoreHooks, type ISaveResult, type IRestoreResult, type ISerializedEvent, type ISerializedTurn, type IEngineState, type ISaveMetadata, type IRestoreReconciliation, type ISerializedParserState, type IPlatformEvent, type ISemanticEventSource, GameEventType, createGameInitializingEvent, createGameInitializedEvent, createGameStartingEvent, createGameStartedEvent, createGameEndingEvent, createGameEndedEvent, createGameWonEvent, createGameLostEvent, createGameQuitEvent, createGameAbortedEvent, createGameResumedEvent, createPcSwitchedEvent, getUntypedEventData, deriveStreamSeed, createSystemEvent, Subsystems } from '@sharpee/core';
 import { EngineRandomService } from './session/engine-random-service.js';
 
 import { PluginRegistry } from '@sharpee/plugins';
@@ -336,6 +336,12 @@ export class GameEngine implements StoryEngine {
    */
   private reportingListenerError = false;
   private pendingPlatformOps: IPlatformEvent[] = [];
+  /**
+   * The reconciliation report of the last restore whose save the story
+   * reconciled (ADR-388 D5), held until the platform dispatcher takes it
+   * to deliver after the restore's completion event.
+   */
+  private pendingReconciliation: IRestoreReconciliation | undefined;
   /**
    * Sequence for platform event ids — `platform_<clock>_<n>`, the same
    * shape `@sharpee/core` gives system events. A counter, not a random
@@ -1513,6 +1519,11 @@ export class GameEngine implements StoryEngine {
       },
       createSaveData: () => this.createSaveData(),
       loadSaveData: (saveData) => this.loadSaveData(saveData),
+      takeReconciliation: () => {
+        const report = this.pendingReconciliation;
+        this.pendingReconciliation = undefined;
+        return report;
+      },
       stop: (reason) => this.stop(reason),
       createRestartAckEvent: () => this.createRestartAckEvent(),
       undo: () => this.undo(),
@@ -1575,6 +1586,10 @@ export class GameEngine implements StoryEngine {
    */
   private loadSaveData(saveData: ISaveData): void {
     const result = this.saveRestoreService.loadSaveData(saveData, this.saveProvider());
+
+    // ADR-388 D5: held for the platform dispatcher, which delivers it after
+    // the restore's completion event on the same turn.
+    this.pendingReconciliation = result.reconciliation;
 
     // Update event source
     this.eventSource = result.eventSource;

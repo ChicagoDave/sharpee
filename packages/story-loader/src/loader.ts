@@ -29,6 +29,7 @@ import {
   type IRConfigSetting,
   type IRCondition,
   type IREntity,
+  type IRExit,
   type IRPhrase,
   type IRTraitDef,
   commandParts,
@@ -85,7 +86,7 @@ import {
   type ActSlots,
   type ActResult,
 } from '@sharpee/stdlib';
-import { type ISemanticEvent, type RandomService } from '@sharpee/core';
+import { type IRestoreIdentity, type IRestoreReconciliation, type ISemanticEvent, type RandomService } from '@sharpee/core';
 import type { LanguageProvider, StoryEndingKind } from '@sharpee/if-domain';
 import { SlotType } from '@sharpee/if-domain';
 import type { Story, StoryConfig, StoryEngine } from '@sharpee/engine';
@@ -180,7 +181,8 @@ import { HIDING_POSITIONS } from './setting-schema.js';
 import { Evaluator } from './evaluator.js';
 import { classifiesAs } from './kind-classification.js';
 import { ChordBehaviorTrait, ChordRuntime, knownTopicsIn, STRATEGY_SELECTOR } from './runtime.js';
-import { CHORD_IR_ID_ATTRIBUTE, CHORD_STATE_PREFIX, CHORD_STORY_STATE_KEY, CHORD_TRAIT_PREFIX, counterKey } from './state-keys.js';
+import { CHORD_IR_ID_ATTRIBUTE, CHORD_STATE_PREFIX, CHORD_STORY_STATE_KEY, CHORD_TRAIT_PREFIX, counterKey, landingKey, type LandingRecord } from './state-keys.js';
+import { orphanedKeys, reseedLandingRecord, unmappableValues } from './reconcile.js';
 import { withLineBreaks } from './text.js';
 
 /**
@@ -686,179 +688,7 @@ export class ChordStory implements Story {
     // world.moveEntity refusal was a silent drop; David-approved fix,
     // 2026-07-18, matching the TS story path's established pattern).
     const author = new AuthorModel(world.getDataStore(), world);
-    for (const { ir: irEntity, entity } of built) {
-      // ADR-289 D4: place what the author wrote, whichever of the three
-      // relations they spelled. `starts in` is the emphatic spelling for a
-      // thing expected to move, not a second placement concept — and every
-      // entity's location is mutable, so there is no principled line to
-      // draw. Testing the relation here silently dropped every NPC declared
-      // `starts in <room>`.
-      if (irEntity.placement) {
-        author.moveEntity(entity.id, this.requireWorldId(irEntity.placement.place, irEntity));
-        // ADR-374 D1: a backdrop lives in its first room and is present at
-        // every room of its list.
-        if (irEntity.placement.places) {
-          entity.add(new BackdropTrait({ roomIds: irEntity.placement.places.map((id) => this.requireWorldId(id, irEntity)) }));
-        }
-        // ADR-376 D10: a `floats` thing placed `in <expanse> at <x>, <y>`
-        // holds that cell; an open vehicle's cell is on its model (wireVehicle).
-        const floating = entity.get(FloatingTrait);
-        if (floating && irEntity.placement.at) floating.position = { x: irEntity.placement.at.x, y: irEntity.placement.at.y };
-      }
-      // `carries the X` / `wears the X` are facts about the holder, whoever it
-      // is — a character's inventory is world construction exactly as its
-      // room is (ADR-230 Phase 6 wrote them for the player; the role-holder
-      // is one character among the `a person` entities, ADR-327 D10). Found
-      // 2026-08-29 under ADR-329: an NPC's `carries` compiled and was never
-      // placed — the monkey's necklace, the mercenaries' sword, Teisha's cord.
-      for (const carriedIrId of irEntity.carries ?? []) {
-        author.moveEntity(this.requireWorldId(carriedIrId, irEntity), entity.id);
-      }
-      for (const wornIrId of irEntity.wears ?? []) {
-        const wornId = this.requireWorldId(wornIrId, irEntity);
-        author.moveEntity(wornId, entity.id);
-        const wearable = world.getEntity(wornId)?.get(TraitType.WEARABLE) as WearableTrait | undefined;
-        if (!wearable) {
-          // ADR-276 census 12: the compiler's gate refuses this
-          // (analysis.worn-not-wearable) — the loader's backstop against rogue IR.
-          throw new LoadError(`\`${wornIrId}\` is worn by ${irEntity.name} but is not wearable.`, irEntity.span);
-        }
-        wearable.worn = true;
-        wearable.wornBy = entity.id;
-      }
-      // ADR-236 D2: region membership through the platform seam —
-      // `assignRoom` sets RoomTrait.regionId (never touched directly here).
-      // A region holds rooms only (ADR-360 D5): the compiler builds the member
-      // list from groups and `in` lines, so a member that is not a room is
-      // rogue IR.
-      for (const member of irEntity.containing ?? []) {
-        const memberIr = this.ir.entities.find((e) => e.id === member.id);
-        if (!memberIr || !memberIr.kinds.some((k) => k.name === 'room')) {
-          throw new LoadError(
-            `\`${member.id}\` is listed as a member of ${irEntity.name} but is not a room.`,
-            irEntity.span,
-          );
-        }
-        world.assignRoom(this.requireWorldId(member.id, irEntity), entity.id);
-      }
-      // ADR-289 D6 backstop (ADR-276 two-layer): exits are gated to rooms at
-      // compile (`analysis.exit-non-room`), so a non-room carrying any of the
-      // three exit forms is rogue IR. Checked once for all three — exits wire
-      // into RoomTrait.exits, which a non-room does not have, and the blocked
-      // and deadly tables would key a room id that never resolves.
-      if (
-        (irEntity.exits.length > 0 || irEntity.blockedExits.length > 0 || irEntity.deadlyExits.length > 0) &&
-        !entity.has(TraitType.ROOM)
-      ) {
-        throw new LoadError(
-          `\`${irEntity.name}\` declares an exit but is not a room — rogue IR (the compiler's \`analysis.exit-non-room\` gate refuses this).`,
-          irEntity.exits[0]?.span ?? irEntity.blockedExits[0]?.span ?? irEntity.deadlyExits[0]?.span ?? irEntity.span,
-        );
-      }
-      for (const exit of irEntity.exits) {
-        // ADR-366 D7: `to outside` names no room — it is wired as the aboard
-        // room's computed exit below, resolved on each use to the vehicle's room.
-        if (exit.to.kind === 'outside') continue;
-        if (exit.to.kind === 'unresolved') throw new LoadError(`\`${irEntity.name}\`: the \`${exit.direction}\` exit names no room.`, exit.span);
-        const toId = this.requireWorldId(exit.to.id, irEntity);
-        const direction = toDirection(exit.direction, irEntity);
-        // `, one-way` (ADR-234 D4, GH #327): the written direction only —
-        // no reverse exit is inferred, so a room reached by an authorial
-        // move and left by walking has no back door. A passage is one-way
-        // by construction (ADR-378 D1): there is no opposite of its words.
-        const oneWay = exit.oneWay === true || isPassageKey(direction);
-        if (exit.via === null) {
-          // Defensive (Phase 8 #6, belt-and-suspenders with the analyzer's
-          // door-plain-mirror gate): connectRooms stamps BOTH directions, so
-          // a plain exit whose reverse side is already door-wired would
-          // silently unwire that door. The compiler refuses this; reaching
-          // here means rogue IR. A one-way exit stamps nothing on the far
-          // room, so it cannot unwire anything.
-          const targetRoomTrait = world.getEntity(toId)?.get(TraitType.ROOM) as RoomTrait | undefined;
-          const reverseExit = oneWay ? undefined : targetRoomTrait?.exits?.[getOppositeDirection(direction as DirectionType)];
-          if (!oneWay && reverseExit?.via && reverseExit.destination === entity.id) {
-            throw new LoadError(
-              `\`${irEntity.name}\`: plain \`${exit.direction}\` exit mirrors a door-wired exit on \`${exit.to.id}\` — rogue IR (the compiler's door-plain-mirror gate refuses this).`,
-              exit.span,
-            );
-          }
-          world.connectRooms(entity.id, toId, direction, undefined, { oneWay });
-          continue;
-        }
-        // ADR-234 D1/D2 via ADR-237 D4: the door exit wires through the
-        // one platform primitive — DoorTrait attached here (room1 = the
-        // declaring room, per the createDoor placement convention), then
-        // connectRooms stamps `via` both directions and places the door.
-        // A door wires exactly once: the analyzer's checkDoors gates
-        // guarantee any second reference is the exact mirror, whose exits
-        // the first wiring already stamped — verified, then skipped.
-        const doorId = this.requireWorldId(exit.via, irEntity);
-        const door = world.getEntity(doorId);
-        const doorTrait = door?.get(TraitType.DOOR) as DoorTrait | undefined;
-        if (doorTrait) {
-          const isMirror = doorTrait.room1 === toId && doorTrait.room2 === entity.id;
-          if (!isMirror) {
-            throw new LoadError(
-              `\`${irEntity.name}\`: door \`${exit.via}\` is already wired to a different room pair — rogue IR (the compiler's door gates refuse this).`,
-              exit.span,
-            );
-          }
-          continue;
-        }
-        door?.add(new DoorTrait({ room1: entity.id, room2: toId }));
-        world.connectRooms(entity.id, toId, direction, doorId, { oneWay });
-      }
-      // ADR-366: the vehicle's model, the rooms that admit it, and the rooms
-      // aboard it — every id resolvable now that every entity is built.
-      if (irEntity.vehicle) this.wireVehicle(world, irEntity, entity);
-      if (irEntity.expanse) this.wireExpanse(irEntity, entity);
-      if (irEntity.admits) this.wireAdmits(world, irEntity, entity);
-      this.wireOutsideExits(world, irEntity, entity);
-      // Blocked exits — ADR-240 D2 (Option A): ALL of them, conditional and
-      // unconditional alike, are registered as live evaluators by the
-      // runtime's bind(); nothing is stamped onto RoomTrait.blockedExits
-      // here anymore (the trait map remains the hand-written TS stories'
-      // surface, consulted by going as the fall-through).
-      // ADR-227: `deadly: <phrase>` — the no-escape room marker lowers to
-      // DeadlyRoomTrait (safeVerbs default look/examine); the ENGINE
-      // auto-registers the deadly-room transformer, so no runtime code here.
-      // Cause and messageId both derive from the phrase key.
-      if (irEntity.deadly) {
-        entity.add(new DeadlyRoomTrait({
-          cause: irEntity.deadly.phraseKey,
-          messageId: irEntity.deadly.phraseKey,
-        }));
-      }
-      // ADR-227: `<direction> is deadly: <phrase>` — collected here, lowered
-      // to one command transformer in onEngineReady.
-      for (const deadly of irEntity.deadlyExits) {
-        if (deadly.condition !== null) {
-          // The compiler's gate refuses this
-          // (analysis.deadly-while-unsupported) — defensive backstop.
-          throw new LoadError(
-            '`is deadly while <condition>` is not wired yet — the conditional deadly exit is post-scope (mirror: role-bound trait clauses). Use an unconditional `is deadly:` or an `on going` clause with `kill the player when <condition>`.',
-            deadly.span,
-          );
-        }
-        const direction = toDirection(deadly.direction, irEntity);
-        const byRoom = this.deadlyExits.get(entity.id) ?? new Map<string, { cause: string; messageId: string }>();
-        byRoom.set(direction, { cause: deadly.phraseKey, messageId: deadly.phraseKey });
-        this.deadlyExits.set(entity.id, byRoom);
-      }
-      if (irEntity.states.length > 0) {
-        world.setStateValue(CHORD_STATE_PREFIX + irEntity.id, irEntity.states[0]);
-      }
-      // ADR-264 D1/D5: seed each per-entity counter's initial value; the state
-      // bag serializes per key, so each instance round-trips independently.
-      for (const counter of irEntity.counters) {
-        world.setStateValue(counterKey(counter.name, irEntity.id), counter.starts);
-      }
-      // Z2 (ADR-211): compile `{key}` description markers onto ADR-209
-      // snippet storage — atomically per entity, before the engine's
-      // load-time `validateRoomSnippets` gate ever sees the texts. Rooms
-      // and every other described entity alike (GH #364).
-      this.compileDescriptionSnippets(world, irEntity, entity);
-    }
+    for (const { ir: irEntity, entity } of built) this.wireEntity(world, author, irEntity, entity);
 
     // ADR-378 D6: every exit is wired, so a stamp cannot be rewritten now.
     this.stampExitAdmits(world);
@@ -1280,14 +1110,109 @@ export class ChordStory implements Story {
 
   /**
    * The post-restore hook (ADR-289 D2's seam): the engine fires this only
-   * when a restore has fully completed; see `Story.onWorldRestored`. The
-   * runtime's two cross-turn counters reset to what the restored turn calls
-   * for (`ChordRuntime.resetAfterRestore`). The retired-key sweep that once
-   * ran here is gone with its key space (ADR-388 D6); the restore
-   * reconciler (ADR-388 D5) is the mechanism that drops orphaned keys.
+   * when a restore has fully completed; see `Story.onWorldRestored`. When
+   * the save's identity stamp differs from this compile's, the reconciler
+   * runs first (ADR-388 D5); then the runtime's two cross-turn counters
+   * reset to what the restored turn calls for
+   * (`ChordRuntime.resetAfterRestore`). The retired-key sweep that once ran
+   * here is gone with its key space (ADR-388 D6); the reconciler's orphan
+   * drop is its general form.
+   *
+   * @param world the fully restored world
+   * @param restoredTurn the save's turn count
+   * @param identity the engine's stamp comparison; absent (a direct call
+   *   from a test) reads as matching, so nothing is reconciled
+   * @returns the reconciliation report when the save was reconciled
    */
-  onWorldRestored(_world: WorldModel, restoredTurn: number): void {
+  onWorldRestored(world: WorldModel, restoredTurn: number, identity?: IRestoreIdentity): IRestoreReconciliation | undefined {
+    const report = identity !== undefined && !identity.matches ? this.reconcileRestoredWorld(world, identity) : undefined;
     this.runtime.resetAfterRestore(restoredTurn);
+    return report;
+  }
+
+  /**
+   * Reconcile a restored world against this compile's identity manifest
+   * (ADR-388 D5): build and wire every entity the save lacks, wire every
+   * exit a held room lacks, drop the keys the manifest declares no identity
+   * for, re-seed un-authored landing lists, and report the stored values
+   * the manifest does not declare — leaving them exactly as they were.
+   * Mutates only through the loader's own build and wire methods and the
+   * world's state bag; idempotent, so a second pass over the same world
+   * adds, drops and re-seeds nothing.
+   *
+   * @param world the fully restored world
+   * @param identity the engine's stamp comparison
+   * @returns the report, for the dispatcher to deliver
+   */
+  private reconcileRestoredWorld(world: WorldModel, identity: IRestoreIdentity): IRestoreReconciliation {
+    const manifest = this.ir.identity;
+
+    // 1. Add what is new: every entity the manifest declares and the restored
+    //    world lacks, built and wired exactly as at load. Build all first, so
+    //    a new entity placed in another new entity's room finds it.
+    const author = new AuthorModel(world.getDataStore(), world);
+    const added: Array<{ ir: IREntity; entity: IFEntity }> = [];
+    for (const irEntity of this.ir.entities) {
+      const worldId = this.worldIds.get(irEntity.id);
+      if (worldId !== undefined && world.hasEntity(worldId)) continue;
+      added.push({ ir: irEntity, entity: this.buildEntity(world, irEntity) });
+    }
+    this.resolvePendingEntityRefs();
+    for (const { ir: irEntity, entity } of added) this.wireEntity(world, author, irEntity, entity);
+    const addedIds = new Set(added.map((a) => a.ir.id));
+
+    // 2. Exits new on rooms the save already holds: wired through the same
+    //    method load uses, only for a direction the room has nothing under.
+    const addedExits: string[] = [];
+    for (const irEntity of this.ir.entities) {
+      if (addedIds.has(irEntity.id) || irEntity.exits.length === 0) continue;
+      const entity = world.getEntity(this.requireWorldId(irEntity.id, irEntity));
+      const room = entity?.get(TraitType.ROOM) as RoomTrait | undefined;
+      if (!entity || !room) continue;
+      for (const exit of irEntity.exits) {
+        if (exit.to.kind !== 'room') continue;
+        const direction = toDirection(exit.direction, irEntity);
+        if ((room.exits as Record<string, unknown>)[direction] !== undefined) continue;
+        if (exit.via !== null && world.getEntity(this.requireWorldId(exit.via, irEntity))?.has(TraitType.DOOR)) continue;
+        this.wireExit(world, irEntity, entity, exit);
+        addedExits.push(`${irEntity.id} ${exit.direction} -> ${exit.to.id}`);
+      }
+    }
+
+    // 3. Drop what is orphaned: a key under a family the manifest knows,
+    //    whose identity the manifest does not declare.
+    const state = world.getState();
+    const droppedKeys = orphanedKeys(manifest, Object.keys(state));
+    if (droppedKeys.length > 0) {
+      for (const key of droppedKeys) delete state[key];
+      world.setState(state);
+    }
+
+    // 4. Re-seed landings the author never `set`, from the current list.
+    const reseededLandings: string[] = [];
+    for (const landing of manifest.landings) {
+      const key = landingKey(landing.region);
+      const record = world.getStateValue(key) as LandingRecord | undefined;
+      if (!record || record.authored) continue;
+      const rooms = landing.rooms.map((id) => this.worldIds.get(id)).filter((id): id is string => id !== undefined);
+      const next = reseedLandingRecord(record, rooms);
+      if (next === undefined) continue;
+      world.setStateValue(key, next);
+      reseededLandings.push(landing.region);
+    }
+
+    // 5. Report what cannot be mapped, and leave it.
+    const unmappable = unmappableValues(manifest, this.ir.story.states, (key) => world.getStateValue(key));
+
+    return {
+      savedStamp: identity.savedStamp,
+      currentStamp: manifest.stamp,
+      addedEntities: added.map((a) => a.ir.id),
+      addedExits,
+      droppedKeys,
+      reseededLandings,
+      unmappable,
+    };
   }
 
   /**
@@ -1784,6 +1709,206 @@ export class ChordStory implements Story {
 
   // ------------------------------------------------------- entity build
 
+  /**
+   * Pass 2 for one built entity: placement, what it carries and wears,
+   * region membership, exits, vehicle and expanse wiring, deadly marks,
+   * initial state and counters, and description snippets. Runs once per
+   * entity at build, and again for an entity the restore reconciler adds
+   * (ADR-388 D5), which is why it is a method and not the loop body.
+   *
+   * @param world the world under construction
+   * @param author the author model the placement goes through
+   * @param irEntity the entity's IR
+   * @param entity the built world entity
+   */
+  private wireEntity(world: WorldModel, author: AuthorModel, irEntity: IREntity, entity: IFEntity): void {
+    // ADR-289 D4: place what the author wrote, whichever of the three
+    // relations they spelled. `starts in` is the emphatic spelling for a
+    // thing expected to move, not a second placement concept — and every
+    // entity's location is mutable, so there is no principled line to
+    // draw. Testing the relation here silently dropped every NPC declared
+    // `starts in <room>`.
+    if (irEntity.placement) {
+      author.moveEntity(entity.id, this.requireWorldId(irEntity.placement.place, irEntity));
+      // ADR-374 D1: a backdrop lives in its first room and is present at
+      // every room of its list.
+      if (irEntity.placement.places) {
+        entity.add(new BackdropTrait({ roomIds: irEntity.placement.places.map((id) => this.requireWorldId(id, irEntity)) }));
+      }
+      // ADR-376 D10: a `floats` thing placed `in <expanse> at <x>, <y>`
+      // holds that cell; an open vehicle's cell is on its model (wireVehicle).
+      const floating = entity.get(FloatingTrait);
+      if (floating && irEntity.placement.at) floating.position = { x: irEntity.placement.at.x, y: irEntity.placement.at.y };
+    }
+    // `carries the X` / `wears the X` are facts about the holder, whoever it
+    // is — a character's inventory is world construction exactly as its
+    // room is (ADR-230 Phase 6 wrote them for the player; the role-holder
+    // is one character among the `a person` entities, ADR-327 D10). Found
+    // 2026-08-29 under ADR-329: an NPC's `carries` compiled and was never
+    // placed — the monkey's necklace, the mercenaries' sword, Teisha's cord.
+    for (const carriedIrId of irEntity.carries ?? []) {
+      author.moveEntity(this.requireWorldId(carriedIrId, irEntity), entity.id);
+    }
+    for (const wornIrId of irEntity.wears ?? []) {
+      const wornId = this.requireWorldId(wornIrId, irEntity);
+      author.moveEntity(wornId, entity.id);
+      const wearable = world.getEntity(wornId)?.get(TraitType.WEARABLE) as WearableTrait | undefined;
+      if (!wearable) {
+        // ADR-276 census 12: the compiler's gate refuses this
+        // (analysis.worn-not-wearable) — the loader's backstop against rogue IR.
+        throw new LoadError(`\`${wornIrId}\` is worn by ${irEntity.name} but is not wearable.`, irEntity.span);
+      }
+      wearable.worn = true;
+      wearable.wornBy = entity.id;
+    }
+    // ADR-236 D2: region membership through the platform seam —
+    // `assignRoom` sets RoomTrait.regionId (never touched directly here).
+    // A region holds rooms only (ADR-360 D5): the compiler builds the member
+    // list from groups and `in` lines, so a member that is not a room is
+    // rogue IR.
+    for (const member of irEntity.containing ?? []) {
+      const memberIr = this.ir.entities.find((e) => e.id === member.id);
+      if (!memberIr || !memberIr.kinds.some((k) => k.name === 'room')) {
+        throw new LoadError(
+          `\`${member.id}\` is listed as a member of ${irEntity.name} but is not a room.`,
+          irEntity.span,
+        );
+      }
+      world.assignRoom(this.requireWorldId(member.id, irEntity), entity.id);
+    }
+    // ADR-289 D6 backstop (ADR-276 two-layer): exits are gated to rooms at
+    // compile (`analysis.exit-non-room`), so a non-room carrying any of the
+    // three exit forms is rogue IR. Checked once for all three — exits wire
+    // into RoomTrait.exits, which a non-room does not have, and the blocked
+    // and deadly tables would key a room id that never resolves.
+    if (
+      (irEntity.exits.length > 0 || irEntity.blockedExits.length > 0 || irEntity.deadlyExits.length > 0) &&
+      !entity.has(TraitType.ROOM)
+    ) {
+      throw new LoadError(
+        `\`${irEntity.name}\` declares an exit but is not a room — rogue IR (the compiler's \`analysis.exit-non-room\` gate refuses this).`,
+        irEntity.exits[0]?.span ?? irEntity.blockedExits[0]?.span ?? irEntity.deadlyExits[0]?.span ?? irEntity.span,
+      );
+    }
+    for (const exit of irEntity.exits) this.wireExit(world, irEntity, entity, exit);
+    // ADR-366: the vehicle's model, the rooms that admit it, and the rooms
+    // aboard it — every id resolvable now that every entity is built.
+    if (irEntity.vehicle) this.wireVehicle(world, irEntity, entity);
+    if (irEntity.expanse) this.wireExpanse(irEntity, entity);
+    if (irEntity.admits) this.wireAdmits(world, irEntity, entity);
+    this.wireOutsideExits(world, irEntity, entity);
+    // Blocked exits — ADR-240 D2 (Option A): ALL of them, conditional and
+    // unconditional alike, are registered as live evaluators by the
+    // runtime's bind(); nothing is stamped onto RoomTrait.blockedExits
+    // here anymore (the trait map remains the hand-written TS stories'
+    // surface, consulted by going as the fall-through).
+    // ADR-227: `deadly: <phrase>` — the no-escape room marker lowers to
+    // DeadlyRoomTrait (safeVerbs default look/examine); the ENGINE
+    // auto-registers the deadly-room transformer, so no runtime code here.
+    // Cause and messageId both derive from the phrase key.
+    if (irEntity.deadly) {
+      entity.add(new DeadlyRoomTrait({
+        cause: irEntity.deadly.phraseKey,
+        messageId: irEntity.deadly.phraseKey,
+      }));
+    }
+    // ADR-227: `<direction> is deadly: <phrase>` — collected here, lowered
+    // to one command transformer in onEngineReady.
+    for (const deadly of irEntity.deadlyExits) {
+      if (deadly.condition !== null) {
+        // The compiler's gate refuses this
+        // (analysis.deadly-while-unsupported) — defensive backstop.
+        throw new LoadError(
+          '`is deadly while <condition>` is not wired yet — the conditional deadly exit is post-scope (mirror: role-bound trait clauses). Use an unconditional `is deadly:` or an `on going` clause with `kill the player when <condition>`.',
+          deadly.span,
+        );
+      }
+      const direction = toDirection(deadly.direction, irEntity);
+      const byRoom = this.deadlyExits.get(entity.id) ?? new Map<string, { cause: string; messageId: string }>();
+      byRoom.set(direction, { cause: deadly.phraseKey, messageId: deadly.phraseKey });
+      this.deadlyExits.set(entity.id, byRoom);
+    }
+    if (irEntity.states.length > 0) {
+      world.setStateValue(CHORD_STATE_PREFIX + irEntity.id, irEntity.states[0]);
+    }
+    // ADR-264 D1/D5: seed each per-entity counter's initial value; the state
+    // bag serializes per key, so each instance round-trips independently.
+    for (const counter of irEntity.counters) {
+      world.setStateValue(counterKey(counter.name, irEntity.id), counter.starts);
+    }
+    // Z2 (ADR-211): compile `{key}` description markers onto ADR-209
+    // snippet storage — atomically per entity, before the engine's
+    // load-time `validateRoomSnippets` gate ever sees the texts. Rooms
+    // and every other described entity alike (GH #364).
+    this.compileDescriptionSnippets(world, irEntity, entity);
+  }
+
+  /**
+   * Wire one exit line of a room: a plain two-way (or one-way) connection,
+   * or a door exit through the one platform primitive. An `outside` exit is
+   * wired as a computed exit elsewhere, and a door its mirror already wired
+   * is verified and skipped. The reconciler calls this for an exit a story
+   * edit added to a room the save already holds (ADR-388 D5).
+   *
+   * @param world the world
+   * @param irEntity the room's IR
+   * @param entity the room's world entity
+   * @param exit the exit line
+   */
+  private wireExit(world: WorldModel, irEntity: IREntity, entity: IFEntity, exit: IRExit): void {
+    // ADR-366 D7: `to outside` names no room — it is wired as the aboard
+    // room's computed exit below, resolved on each use to the vehicle's room.
+    if (exit.to.kind === 'outside') return;
+    if (exit.to.kind === 'unresolved') throw new LoadError(`\`${irEntity.name}\`: the \`${exit.direction}\` exit names no room.`, exit.span);
+    const toId = this.requireWorldId(exit.to.id, irEntity);
+    const direction = toDirection(exit.direction, irEntity);
+    // `, one-way` (ADR-234 D4, GH #327): the written direction only —
+    // no reverse exit is inferred, so a room reached by an authorial
+    // move and left by walking has no back door. A passage is one-way
+    // by construction (ADR-378 D1): there is no opposite of its words.
+    const oneWay = exit.oneWay === true || isPassageKey(direction);
+    if (exit.via === null) {
+      // Defensive (Phase 8 #6, belt-and-suspenders with the analyzer's
+      // door-plain-mirror gate): connectRooms stamps BOTH directions, so
+      // a plain exit whose reverse side is already door-wired would
+      // silently unwire that door. The compiler refuses this; reaching
+      // here means rogue IR. A one-way exit stamps nothing on the far
+      // room, so it cannot unwire anything.
+      const targetRoomTrait = world.getEntity(toId)?.get(TraitType.ROOM) as RoomTrait | undefined;
+      const reverseExit = oneWay ? undefined : targetRoomTrait?.exits?.[getOppositeDirection(direction as DirectionType)];
+      if (!oneWay && reverseExit?.via && reverseExit.destination === entity.id) {
+        throw new LoadError(
+          `\`${irEntity.name}\`: plain \`${exit.direction}\` exit mirrors a door-wired exit on \`${exit.to.id}\` — rogue IR (the compiler's door-plain-mirror gate refuses this).`,
+          exit.span,
+        );
+      }
+      world.connectRooms(entity.id, toId, direction, undefined, { oneWay });
+      return;
+    }
+    // ADR-234 D1/D2 via ADR-237 D4: the door exit wires through the
+    // one platform primitive — DoorTrait attached here (room1 = the
+    // declaring room, per the createDoor placement convention), then
+    // connectRooms stamps `via` both directions and places the door.
+    // A door wires exactly once: the analyzer's checkDoors gates
+    // guarantee any second reference is the exact mirror, whose exits
+    // the first wiring already stamped — verified, then skipped.
+    const doorId = this.requireWorldId(exit.via, irEntity);
+    const door = world.getEntity(doorId);
+    const doorTrait = door?.get(TraitType.DOOR) as DoorTrait | undefined;
+    if (doorTrait) {
+      const isMirror = doorTrait.room1 === toId && doorTrait.room2 === entity.id;
+      if (!isMirror) {
+        throw new LoadError(
+          `\`${irEntity.name}\`: door \`${exit.via}\` is already wired to a different room pair — rogue IR (the compiler's door gates refuse this).`,
+          exit.span,
+        );
+      }
+      return;
+    }
+    door?.add(new DoorTrait({ room1: entity.id, room2: toId }));
+    world.connectRooms(entity.id, toId, direction, doorId, { oneWay });
+  }
+
   private buildEntity(world: WorldModel, irEntity: IREntity): IFEntity {
     if (irEntity.kinds.length > 1) {
       // ADR-276 census 18: the compiler's gate refuses this
@@ -1811,7 +1936,7 @@ export class ChordStory implements Story {
         // Z1: `first time` prose → RoomTrait.initialDescriptionId (first look
         // shows it, later looks show the standard description — stdlib's
         // looking-data and going read the id field).
-        entity = world.createEntity(irEntity.name, 'room');
+        entity = world.createEntity(irEntity.name, 'room', { id: irEntity.id });
         entity.add(new RoomTrait({
           requiresLight: irEntity.traits.some((t) => t.name === 'dark' && t.condition === null),
           initialDescriptionId: irEntity.initialDescriptionKey ?? undefined,
@@ -1827,14 +1952,14 @@ export class ChordStory implements Story {
         // splitting container-kind entities from adjective-only ones; ADR-231
         // D5b removed it so OpenableTrait's default (closed) is authoritative
         // everywhere — `starts open` is the author's escape hatch.
-        entity = world.createEntity(irEntity.name, 'object');
+        entity = world.createEntity(irEntity.name, 'object', { id: irEntity.id });
         entity.add(new IdentityTrait({ name: irEntity.name, descriptionId, aliases }));
         // ADR-369 D2: `holds <n>` is the item capacity; absent means unbounded.
         entity.add(new ContainerTrait(irEntity.holds !== undefined ? { capacity: { maxItems: irEntity.holds } } : {}));
         break;
       }
       case 'person': {
-        entity = world.createEntity(irEntity.name, 'actor');
+        entity = world.createEntity(irEntity.name, 'actor', { id: irEntity.id });
         // ADR-344 D7 (completing ADR-327 D9): `playable` reaches the runtime here.
         // The trait's default is non-playable, so absence of the flag means what
         // Chord means by absence and the install seam's role-holder guard can
@@ -1866,7 +1991,7 @@ export class ChordStory implements Story {
         break;
       }
       case 'supporter': {
-        entity = world.createEntity(irEntity.name, 'object');
+        entity = world.createEntity(irEntity.name, 'object', { id: irEntity.id });
         entity.add(new IdentityTrait({ name: irEntity.name, descriptionId, aliases }));
         // ADR-369 D2: `holds <n>` is the item capacity; absent means unbounded.
         entity.add(new SupporterTrait(irEntity.holds !== undefined ? { capacity: { maxItems: irEntity.holds } } : {}));
@@ -1881,7 +2006,7 @@ export class ChordStory implements Story {
         // aboard (D7) is never entered itself and composes neither. The
         // movement model needs every stop and destination built, so it is
         // wired in pass 2 (`wireVehicle`).
-        entity = world.createEntity(irEntity.name, 'object');
+        entity = world.createEntity(irEntity.name, 'object', { id: irEntity.id });
         entity.add(new IdentityTrait({ name: irEntity.name, descriptionId, aliases }));
         const carries = irEntity.vehicle?.carries;
         if (carries !== undefined) {
@@ -1915,7 +2040,7 @@ export class ChordStory implements Story {
         // override via applyStartsStates). DoorTrait is attached at exit
         // wiring — its room pair comes from the `through` exit line, and
         // the trait's constructor requires both rooms.
-        entity = world.createEntity(irEntity.name, 'door');
+        entity = world.createEntity(irEntity.name, 'door', { id: irEntity.id });
         entity.add(new IdentityTrait({ name: irEntity.name, descriptionId, aliases }));
         entity.add(new SceneryTrait());
         entity.add(new OpenableTrait({ isOpen: false }));
@@ -1923,7 +2048,7 @@ export class ChordStory implements Story {
       }
       // ADR-359 D1: `a thing` is the plain object.
       case 'thing': {
-        entity = world.createEntity(irEntity.name, 'object');
+        entity = world.createEntity(irEntity.name, 'object', { id: irEntity.id });
         entity.add(new IdentityTrait({ name: irEntity.name, descriptionId, aliases }));
         break;
       }
@@ -1931,7 +2056,7 @@ export class ChordStory implements Story {
         // ADR-376 D2: an expanse is a room — its heading, looking and scope
         // read it as one — carrying ExpanseTrait, wired in pass 2 once its
         // landmark rooms are built (`wireExpanse`).
-        entity = world.createEntity(irEntity.name, 'room');
+        entity = world.createEntity(irEntity.name, 'room', { id: irEntity.id });
         entity.add(new RoomTrait({}));
         entity.add(new IdentityTrait({ name: irEntity.name, descriptionId, aliases }));
         break;

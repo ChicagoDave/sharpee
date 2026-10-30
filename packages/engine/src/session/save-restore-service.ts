@@ -46,6 +46,8 @@ import { WorldModel } from '@sharpee/world-model';
 import {
   type ISaveData,
   type ISaveMetadata,
+  type IRestoreIdentity,
+  type IRestoreReconciliation,
   type IEngineState,
   type ISerializedEvent,
   type ISerializedTurn,
@@ -303,6 +305,8 @@ export class SaveRestoreService {
   ): {
     eventSource: ISemanticEventSource;
     currentTurn: number;
+    /** The story's reconciliation report, when the save's stamp differed and it reconciled (ADR-388 D5). */
+    reconciliation: IRestoreReconciliation | undefined;
   } {
     const story = provider.getStory();
 
@@ -380,11 +384,24 @@ export class SaveRestoreService {
     // engine, which is the same defect class this ADR closes (an observer
     // seeing state mid-mutation). Optional, so stories that do not persist
     // their own keys are unaffected.
-    story?.onWorldRestored?.(world, saveData.metadata.turnCount);
+    //
+    // ADR-388 D5: the engine compares the save's identity stamp with the
+    // installed story's and hands the story the verdict. A story with no
+    // stamp has nothing to reconcile against, so it always matches; a save
+    // with no stamp restored into a stamped story does not match.
+    const savedStamp = saveData.metadata.identityStamp;
+    const currentStamp = story?.identityStamp;
+    const identity: IRestoreIdentity = {
+      savedStamp,
+      currentStamp,
+      matches: currentStamp === undefined || savedStamp === currentStamp
+    };
+    const reconciliation = story?.onWorldRestored?.(world, saveData.metadata.turnCount, identity) ?? undefined;
 
     return {
       eventSource,
-      currentTurn: saveData.metadata.turnCount + 1
+      currentTurn: saveData.metadata.turnCount + 1,
+      reconciliation
     };
   }
 

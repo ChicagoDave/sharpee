@@ -4,7 +4,7 @@
  */
 
 import { ISemanticEvent } from './types.js';
-import { IQuitContext, IRestartContext } from '../types/save-data.js';
+import { IQuitContext, IRestartContext, type IRestoreReconciliation } from '../types/save-data.js';
 
 /**
  * Platform event types for save, restore, quit, and restart operations
@@ -24,6 +24,8 @@ export const PlatformEventType = {
   QUIT_CONFIRMED: 'platform.quit_confirmed',
   RESTART_COMPLETED: 'platform.restart_completed',
   UNDO_COMPLETED: 'platform.undo_completed',
+  /** A restore reconciled the save against an edited story (ADR-388 D5); payload is the report. */
+  SAVE_RECONCILED: 'platform.save_reconciled',
 
   // Error events
   SAVE_FAILED: 'platform.save_failed',
@@ -223,6 +225,16 @@ export function createRestoreCompletedEvent(success: boolean, error?: string): I
     undefined,
     { success, error }
   );
+}
+
+/**
+ * The reconciliation report of a restore whose save was written by an
+ * earlier edit of the story (ADR-388 D5). Delivered after the completion
+ * event; the diagnostics channel carries the payload to the author.
+ * @param report what the reconciler added, dropped, re-seeded and could not map
+ */
+export function createSaveReconciledEvent(report: IRestoreReconciliation): IPlatformEvent {
+  return createPlatformEvent(PlatformEventType.SAVE_RECONCILED, undefined, { ...report });
 }
 
 export function createQuitConfirmedEvent(): IPlatformEvent {

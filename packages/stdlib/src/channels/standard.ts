@@ -33,6 +33,7 @@ import { PROSE_CHANNEL_BY_BLOCK_KEY, BANNER_KEYS } from './keys.js';
 import { playerLocationHeading, readCapability } from './world-helpers.js';
 import { characterAuthorChannel } from './character-author.js';
 import { sceneChannel, exchangeAffordancesChannel, threadAffordancesChannel } from './scene.js';
+import { diagnosticsChannel } from './diagnostics.js';
 import { ENGINE_VERSION } from '../actions/standard/version/engine-version.js';
 
 /**
@@ -734,6 +735,7 @@ export const STANDARD_CHANNELS: ReadonlyArray<IOChannel> = [
   sceneChannel,
   exchangeAffordancesChannel,
   threadAffordancesChannel,
+  diagnosticsChannel,
 ];
 
 /**
@@ -766,6 +768,7 @@ export const STANDARD_CHANNEL_IDS = {
   SCENE: 'scene',
   EXCHANGE_AFFORDANCES: 'exchange-affordances',
   THREAD_AFFORDANCES: 'thread-affordances',
+  DIAGNOSTICS: 'diagnostics',
 } as const;
 
 export type StandardChannelId =

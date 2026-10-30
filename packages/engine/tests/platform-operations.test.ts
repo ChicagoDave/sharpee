@@ -16,6 +16,9 @@ import { processMetaPlatformOperation } from '../src/turn/meta-command';
 import {
   SaveRestoreHooks,
   SaveData,
+  type IRestoreIdentity,
+  type IRestoreReconciliation,
+  type ISemanticEvent,
   PlatformEventType,
   createSaveRequestedEvent,
   createRestoreRequestedEvent,
@@ -495,8 +498,83 @@ describe('GameEngine Platform Operations', () => {
       
       engine['pendingPlatformOps'].push(saveEvent);
       await processPlatformOperations(engine['turnEngine']());
-      
+
       expect(emittedEvents.some(e => e.type === 'platform.save_completed')).toBe(true);
+    });
+  });
+
+  /**
+   * ADR-388 D5 — the engine compares stamps and delivers the story's
+   * reconciliation report after the completion event: the report always,
+   * the player's one line only when something was unmappable.
+   */
+  describe('Restore reconciliation (ADR-388 D5)', () => {
+    class StampedStory extends MinimalTestStory {
+      identityHandedOver: IRestoreIdentity | undefined;
+      constructor(readonly identityStamp: string, private readonly unmappable: IRestoreReconciliation['unmappable']) {
+        super();
+      }
+      onWorldRestored(_world: WorldModel, _turn: number, identity: IRestoreIdentity): IRestoreReconciliation | undefined {
+        this.identityHandedOver = identity;
+        if (identity.matches) return undefined;
+        return {
+          savedStamp: identity.savedStamp,
+          currentStamp: this.identityStamp,
+          addedEntities: ['attic'],
+          addedExits: [],
+          droppedKeys: [],
+          reseededLandings: [],
+          unmappable: this.unmappable,
+        };
+      }
+    }
+
+    /** A save written under one stamp, restored through the dispatcher into a story under another. */
+    async function restoreInto(story: StampedStory, savedStamp: string) {
+      const source = setupTestEngine();
+      source.engine.installStory(new StampedStory(savedStamp, []));
+      const save = (source.engine as unknown as { createSaveData(): SaveData }).createSaveData();
+      source.engine.stop();
+
+      const target = setupTestEngine();
+      target.engine.installStory(story);
+      target.engine.registerSaveRestoreHooks({ onRestoreRequested: vi.fn().mockResolvedValue(save) });
+      target.engine.start();
+      const emitted: ISemanticEvent[] = [];
+      target.engine.on('event', (event) => emitted.push(event as ISemanticEvent));
+      target.engine['pendingPlatformOps'].push(createRestoreRequestedEvent({ saveName: 'test' }));
+      await processPlatformOperations(target.engine['turnEngine']());
+      target.engine.stop();
+      return { save, emitted };
+    }
+
+    it('delivers the report after the completion event, and the player line when something was unmappable', async () => {
+      const story = new StampedStory('edited', [{ key: 'chord.chapter.current', saved: 'yard', declared: ['market', 'lane'] }]);
+      const { save, emitted } = await restoreInto(story, 'original');
+      expect(save.metadata.identityStamp).toBe('original');
+      expect(story.identityHandedOver).toEqual({ savedStamp: 'original', currentStamp: 'edited', matches: false });
+
+      const types = emitted.map(e => e.type);
+      expect(types.indexOf('platform.save_reconciled')).toBeGreaterThan(types.indexOf('platform.restore_completed'));
+      const report = emitted.find(e => e.type === 'platform.save_reconciled') as (ISemanticEvent & { payload: Record<string, unknown> });
+      expect(report.payload.addedEntities).toEqual(['attic']);
+      expect(report.payload.unmappable).toHaveLength(1);
+      const line = emitted.filter(e => e.type === 'game.message' && (e.data as { messageId?: string }).messageId === 'core.save_reconciled');
+      expect(line).toHaveLength(1);
+    });
+
+    it('says nothing to the player when the reconcile mapped everything', async () => {
+      const { emitted } = await restoreInto(new StampedStory('edited', []), 'original');
+      expect(emitted.some(e => e.type === 'platform.save_reconciled')).toBe(true);
+      expect(emitted.some(e => e.type === 'game.message')).toBe(false);
+    });
+
+    it('hands the story a matching verdict and delivers no report when the stamps are equal', async () => {
+      const story = new StampedStory('same', []);
+      const { emitted } = await restoreInto(story, 'same');
+      expect(story.identityHandedOver).toEqual({ savedStamp: 'same', currentStamp: 'same', matches: true });
+      expect(emitted.some(e => e.type === 'platform.save_reconciled')).toBe(false);
+      expect(emitted.some(e => e.type === 'platform.restore_completed')).toBe(true);
     });
   });
 });

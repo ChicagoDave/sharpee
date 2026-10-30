@@ -170,6 +170,12 @@ export declare class GameEngine implements StoryEngine {
     private reportingListenerError;
     private pendingPlatformOps;
     /**
+     * The reconciliation report of the last restore whose save the story
+     * reconciled (ADR-388 D5), held until the platform dispatcher takes it
+     * to deliver after the restore's completion event.
+     */
+    private pendingReconciliation;
+    /**
      * Sequence for platform event ids — `platform_<clock>_<n>`, the same
      * shape `@sharpee/core` gives system events. A counter, not a random
      * draw: ids are never rendered, and a draw would move every stream
@@ -1040,7 +1046,7 @@ import { type LanguageProvider, type IChannelRegistry, type ClientCapabilities, 
 import { type INpcService, type ActSlots, type ActResult } from '@sharpee/stdlib';
 import { EventProcessor } from '@sharpee/event-processor';
 import { PluginRegistry } from '@sharpee/plugins';
-import { type ISemanticEvent, type RandomService } from '@sharpee/core';
+import { type IRestoreIdentity, type IRestoreReconciliation, type ISemanticEvent, type RandomService } from '@sharpee/core';
 import type { GameContext, InputModeHandler } from '../types.js';
 import type { ParsedCommandTransformer } from '../command/command-executor.js';
 import type { SlotContributor, SlotEntry } from '../prose-pipeline/types.js';
@@ -1368,8 +1374,13 @@ export interface Story {
      * @param world - The fully restored world model
      * @param restoredTurn - The save's turn count: the number of turns it had
      *   played, which is the turn its last turn-end phase ran on
+     * @param identity - The engine's comparison of the save's identity stamp
+     *   with the story's (ADR-388 D5). A story whose keys are name-derived
+     *   reconciles the save against its manifest when `matches` is false.
+     * @returns the reconciliation report when the story reconciled, which the
+     *   engine delivers after the restore's completion event; nothing otherwise
      */
-    onWorldRestored?(world: WorldModel, restoredTurn: number): void;
+    onWorldRestored?(world: WorldModel, restoredTurn: number, identity: IRestoreIdentity): IRestoreReconciliation | undefined | void;
 }
 /**
  * Extended story class with event handling capabilities
@@ -2149,7 +2160,7 @@ export declare class EngineRandomService implements RandomService {
  *     see the same data reorganized.
  */
 import { WorldModel } from '@sharpee/world-model';
-import { type ISaveData, type ISerializedTurn, type ISemanticEventSource } from '@sharpee/core';
+import { type ISaveData, type IRestoreReconciliation, type ISerializedTurn, type ISemanticEventSource } from '@sharpee/core';
 import { PluginRegistry } from '@sharpee/plugins';
 import { TurnResult, GameContext } from '../types.js';
 import { Story } from '../install/story.js';
@@ -2241,6 +2252,8 @@ export declare class SaveRestoreService {
     loadSaveData(saveData: ISaveData, provider: ISaveRestoreStateProvider): {
         eventSource: ISemanticEventSource;
         currentTurn: number;
+        /** The story's reconciliation report, when the save's stamp differed and it reconciled (ADR-388 D5). */
+        reconciliation: IRestoreReconciliation | undefined;
     };
     /**
      * Serialize event source

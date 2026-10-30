@@ -169,6 +169,12 @@ refusals. Nothing else. A new author-reachable load error class may not be intro
 without either a compile gate or an amendment here — the loader comment convention
 ("the compiler's gate refuses this") marks every backstop.
 
+**Amendment (ADR-388 D8, landed 2026-10-29, session b173a9).** The residue gains one
+entry: **restore reconciliation reports** (ADR-388 D5) — a save key the current story
+cannot map, reported to the author on the `diagnostics` channel and to the player in
+one line, and left in place. It has no compile gate by nature, because it is about a
+save the compiler never sees; it is not a `LoadError` and never refuses the restore.
+
 ## Acceptance
 
 - A test story with a typo'd `remove from action` target, an unmatched removal shape,

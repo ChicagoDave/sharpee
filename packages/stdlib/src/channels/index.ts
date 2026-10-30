@@ -80,6 +80,9 @@ export {
   type CharacterAuthorRow,
 } from './character-author.js';
 
+// The author-facing diagnostics channel (ADR-388 D5 — the restore reconciliation report)
+export { diagnosticsChannel, type DiagnosticsRow } from './diagnostics.js';
+
 // The scene wire channels (ADR-320 D12 — scene events, exchange
 // response affordances, and D14 thread continuability, author-gated
 // per AC11)

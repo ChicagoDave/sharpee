@@ -8868,8 +8868,16 @@ export interface IWorldModel {
      * @returns The world's resolver map as a read-only view
      */
     getAllExitResolvers(): ReadonlyMap<string, ExitResolver>;
+    /**
+     * Create an entity. `opts.id` names the entity's id explicitly — a story
+     * whose entities have stable authored names (Chord's IR ids, ADR-388 D1)
+     * passes them so a save's entity ids never depend on declaration order;
+     * omitted, the id is generated from a per-type counter.
+     * @throws Error when `opts.id` is empty or already in use
+     */
     createEntity(displayName: string, type?: string, opts?: {
         defaultTraits?: boolean;
+        id?: string;
     }): IFEntity;
     getEntity(id: string): IFEntity | undefined;
     hasEntity(id: string): boolean;
@@ -9110,6 +9118,7 @@ export declare class WorldModel implements IWorldModel {
     private generateId;
     createEntity(displayName: string, type?: string, opts?: {
         defaultTraits?: boolean;
+        id?: string;
     }): IFEntity;
     getEntity(id: string): IFEntity | undefined;
     hasEntity(id: string): boolean;

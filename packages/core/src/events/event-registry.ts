@@ -21,6 +21,7 @@
  */
 
 import { EntityId } from '../types/entity.js';
+import type { IRestoreReconciliation } from '../types/save-data.js';
 
 /**
  * Registry mapping event type strings to their data shapes.
@@ -74,6 +75,7 @@ export interface EventDataRegistry {
   'platform.restore_requested': RestoreRequestedData;
   'platform.restore_completed': RestoreCompletedData;
   'platform.restore_failed': RestoreFailedData;
+  'platform.save_reconciled': SaveReconciledData;
   'platform.quit_requested': EmptyData;
   'platform.quit_confirmed': QuitConfirmedData;
   'platform.quit_cancelled': EmptyData;
@@ -208,6 +210,9 @@ export interface RestoreCompletedData {
   slotName?: string;
   timestamp?: number;
 }
+
+/** The reconciliation report a restore produced (ADR-388 D5); the platform event carries it as its payload. */
+export type SaveReconciledData = IRestoreReconciliation;
 
 export interface RestoreFailedData {
   slotName?: string;

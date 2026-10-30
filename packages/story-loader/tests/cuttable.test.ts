@@ -92,9 +92,12 @@ describe('cuttable trait adjective (ADR-230 D3c)', () => {
 
     const cuttable = rope.get(TraitType.CUTTABLE) as CuttableTrait;
     expect(cuttable).toBeDefined();
-    // The lockable-bug class: config must NOT be the display-name string.
+    // The lockable-bug class: config must be the id the world resolves,
+    // never the display-name string (`the knife`). A Chord entity's world id
+    // is its IR id (ADR-388 D1), so the resolved id reads as the name too.
     expect(cuttable.toolRequirement?.tools).toEqual([knifeWorldId]);
-    expect(cuttable.toolRequirement?.tools).not.toContain('knife');
+    expect(world.getEntity(cuttable.toolRequirement!.tools[0])).toBeDefined();
+    expect(cuttable.toolRequirement?.tools).not.toContain('the knife');
   });
 
   it('backstop: rejects rogue IR whose cuttable has no cutting implementation (ADR-276 census 13 — the compiler gates this as analysis.gerund-implementation)', () => {

@@ -29,6 +29,7 @@
 
 import {
   type IPlatformEvent,
+  type IRestoreReconciliation,
   type ISemanticEvent,
   type ISaveRestoreHooks,
   type ISaveData,
@@ -39,6 +40,7 @@ import {
   PlatformEventType,
   createSaveCompletedEvent,
   createRestoreCompletedEvent,
+  createSaveReconciledEvent,
   createQuitConfirmedEvent,
   createQuitCancelledEvent,
   createRestartCompletedEvent,
@@ -58,6 +60,11 @@ export interface PlatformOperationHost {
   createSaveData(): ISaveData;
   /** Load a save into the engine, replacing the world and turn. */
   loadSaveData(saveData: ISaveData): void;
+  /**
+   * The reconciliation report the last `loadSaveData` produced, if the
+   * story reconciled the save (ADR-388 D5); taking it clears it.
+   */
+  takeReconciliation(): IRestoreReconciliation | undefined;
   /** Stop the engine with the given reason. */
   stop(reason: 'quit' | 'restart'): void;
   /** The restart acknowledgment rendered in the final packet. */
@@ -72,6 +79,25 @@ export interface PlatformOperationHost {
 
 /** Receives each completion or failure event as the operation produces it. */
 export type PlatformEventDelivery = (event: ISemanticEvent) => void;
+
+/** The message id of the player's one line after a partial reconcile (ADR-388 D5); its text lives in lang-en-us. */
+export const SAVE_RECONCILED_MESSAGE_ID = 'core.save_reconciled';
+
+/**
+ * The player-facing line of a reconcile that could not carry everything
+ * over: a `game.message` the prose pipeline renders under
+ * `SAVE_RECONCILED_MESSAGE_ID`. Never names a key.
+ */
+export function createSaveReconciledMessage(): ISemanticEvent {
+  const now = Date.now();
+  return {
+    id: `platform-${now}-reconciled`,
+    type: 'game.message',
+    timestamp: now,
+    entities: {},
+    data: { messageId: SAVE_RECONCILED_MESSAGE_ID }
+  };
+}
 
 /**
  * Run each request in order, delivering its completion events as they
@@ -169,6 +195,17 @@ async function runPlatformOperation(
       }
       host.loadSaveData(saveData);
       deliver(createRestoreCompletedEvent(true));
+      // ADR-388 D5: a save reconciled against an edited story reports to
+      // the author on every reconcile (the diagnostics channel reads the
+      // platform event) and to the player, in one line, only when some
+      // progress could not be carried over.
+      const reconciliation = host.takeReconciliation();
+      if (reconciliation) {
+        deliver(createSaveReconciledEvent(reconciliation));
+        if (reconciliation.unmappable.length > 0) {
+          deliver(createSaveReconciledMessage());
+        }
+      }
       return;
     }
 

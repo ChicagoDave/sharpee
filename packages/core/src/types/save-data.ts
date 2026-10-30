@@ -52,6 +52,43 @@ export interface ISaveMetadata {
 }
 
 /**
+ * What the engine tells a story about the save it has just restored
+ * (ADR-388 D5): the stamp the save carried, the stamp the installed story
+ * carries, and whether they match. A story with no stamp always matches —
+ * it has nothing to reconcile against.
+ */
+export interface IRestoreIdentity {
+  /** The save's `identityStamp`, absent on a save from a story that had none. */
+  savedStamp: string | undefined;
+  /** The installed story's stamp, absent for a story that declares none. */
+  currentStamp: string | undefined;
+  /** True when the save was written by this exact story, or the story has no stamp. */
+  matches: boolean;
+}
+
+/**
+ * What a restore reconciled when the save's stamp differed from the
+ * story's (ADR-388 D5): what it added from the current story, what it
+ * dropped as orphaned, what it re-seeded, and what it could not map and
+ * left in place. The full report goes to the author on the diagnostics
+ * channel; the player sees one line only when `unmappable` is non-empty.
+ */
+export interface IRestoreReconciliation {
+  savedStamp: string | undefined;
+  currentStamp: string;
+  /** Story entity ids created because the save lacked them. */
+  addedEntities: string[];
+  /** Exits wired on rooms the save already held: `<room> <direction> -> <destination>`. */
+  addedExits: string[];
+  /** World-state keys removed because the current story declares no identity for them. */
+  droppedKeys: string[];
+  /** Regions whose landing list was re-seeded from the current story. */
+  reseededLandings: string[];
+  /** Stored values the current story does not declare, left as they were. */
+  unmappable: Array<{ key: string; saved: string; declared: string[] }>;
+}
+
+/**
  * Complete engine state for serialization
  */
 export interface IEngineState {

@@ -407,7 +407,14 @@ export interface IWorldModel {
   getAllExitResolvers(): ReadonlyMap<string, ExitResolver>;
 
   // Entity Management
-  createEntity(displayName: string, type?: string, opts?: { defaultTraits?: boolean }): IFEntity;
+  /**
+   * Create an entity. `opts.id` names the entity's id explicitly — a story
+   * whose entities have stable authored names (Chord's IR ids, ADR-388 D1)
+   * passes them so a save's entity ids never depend on declaration order;
+   * omitted, the id is generated from a per-type counter.
+   * @throws Error when `opts.id` is empty or already in use
+   */
+  createEntity(displayName: string, type?: string, opts?: { defaultTraits?: boolean; id?: string }): IFEntity;
   getEntity(id: string): IFEntity | undefined;
   hasEntity(id: string): boolean;
   removeEntity(id: string): boolean;
@@ -1019,18 +1026,28 @@ export class WorldModel implements IWorldModel {
 
     // Convert to base36 and pad to 2 characters
     const base36 = nextCounter.toString(36).padStart(2, '0');
-    return `${prefix}${base36}`;
+    const id = `${prefix}${base36}`;
+    // An explicitly named entity may already hold this spelling; the
+    // counter advances past it rather than handing out a duplicate.
+    return this.entities.has(id) ? this.generateId(type) : id;
   }
 
   // Entity Management
-  createEntity(displayName: string, type: string = 'object', opts?: { defaultTraits?: boolean }): IFEntity {
+  createEntity(displayName: string, type: string = 'object', opts?: { defaultTraits?: boolean; id?: string }): IFEntity {
     // Validate entity type
     if (!isEntityType(type)) {
       throw new Error(`Unknown entity type: '${type}'. Valid types are: ${Object.values(EntityType).join(', ')}`);
     }
 
-    // Generate ID based on type
-    const id = this.generateId(type);
+    // The caller's id when it names one (ADR-388 D1: a name-derived id
+    // survives a story edit; a counter does not), else one from the counter.
+    if (opts?.id !== undefined && opts.id.length === 0) {
+      throw new Error('createEntity: an explicit entity id must not be empty.');
+    }
+    if (opts?.id !== undefined && this.entities.has(opts.id)) {
+      throw new Error(`createEntity: an entity with id '${opts.id}' already exists.`);
+    }
+    const id = opts?.id ?? this.generateId(type);
 
     const entity = new IFEntity(id, type, {
       attributes: {

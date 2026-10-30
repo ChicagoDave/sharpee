@@ -277,6 +277,45 @@ export interface ISaveMetadata {
     description?: string;
 }
 /**
+ * What the engine tells a story about the save it has just restored
+ * (ADR-388 D5): the stamp the save carried, the stamp the installed story
+ * carries, and whether they match. A story with no stamp always matches —
+ * it has nothing to reconcile against.
+ */
+export interface IRestoreIdentity {
+    /** The save's `identityStamp`, absent on a save from a story that had none. */
+    savedStamp: string | undefined;
+    /** The installed story's stamp, absent for a story that declares none. */
+    currentStamp: string | undefined;
+    /** True when the save was written by this exact story, or the story has no stamp. */
+    matches: boolean;
+}
+/**
+ * What a restore reconciled when the save's stamp differed from the
+ * story's (ADR-388 D5): what it added from the current story, what it
+ * dropped as orphaned, what it re-seeded, and what it could not map and
+ * left in place. The full report goes to the author on the diagnostics
+ * channel; the player sees one line only when `unmappable` is non-empty.
+ */
+export interface IRestoreReconciliation {
+    savedStamp: string | undefined;
+    currentStamp: string;
+    /** Story entity ids created because the save lacked them. */
+    addedEntities: string[];
+    /** Exits wired on rooms the save already held: `<room> <direction> -> <destination>`. */
+    addedExits: string[];
+    /** World-state keys removed because the current story declares no identity for them. */
+    droppedKeys: string[];
+    /** Regions whose landing list was re-seeded from the current story. */
+    reseededLandings: string[];
+    /** Stored values the current story does not declare, left as they were. */
+    unmappable: Array<{
+        key: string;
+        saved: string;
+        declared: string[];
+    }>;
+}
+/**
  * Complete engine state for serialization
  */
 export interface IEngineState {
@@ -855,7 +894,7 @@ export declare function isSystemEvent(obj: unknown): obj is ISystemEvent;
  * These events are processed after turn completion but before text service
  */
 import { ISemanticEvent } from './types.js';
-import { IQuitContext, IRestartContext } from '../types/save-data.js';
+import { IQuitContext, IRestartContext, type IRestoreReconciliation } from '../types/save-data.js';
 /**
  * Platform event types for save, restore, quit, and restart operations
  */
@@ -871,6 +910,8 @@ export declare const PlatformEventType: {
     readonly QUIT_CONFIRMED: "platform.quit_confirmed";
     readonly RESTART_COMPLETED: "platform.restart_completed";
     readonly UNDO_COMPLETED: "platform.undo_completed";
+    /** A restore reconciled the save against an edited story (ADR-388 D5); payload is the report. */
+    readonly SAVE_RECONCILED: "platform.save_reconciled";
     readonly SAVE_FAILED: "platform.save_failed";
     readonly RESTORE_FAILED: "platform.restore_failed";
     readonly QUIT_CANCELLED: "platform.quit_cancelled";
@@ -981,6 +1022,13 @@ export declare function createRestartRequestedEvent(context: IRestartContext): I
  */
 export declare function createSaveCompletedEvent(success: boolean, error?: string): IPlatformEvent;
 export declare function createRestoreCompletedEvent(success: boolean, error?: string): IPlatformEvent;
+/**
+ * The reconciliation report of a restore whose save was written by an
+ * earlier edit of the story (ADR-388 D5). Delivered after the completion
+ * event; the diagnostics channel carries the payload to the author.
+ * @param report what the reconciler added, dropped, re-seeded and could not map
+ */
+export declare function createSaveReconciledEvent(report: IRestoreReconciliation): IPlatformEvent;
 export declare function createQuitConfirmedEvent(): IPlatformEvent;
 export declare function createQuitCancelledEvent(): IPlatformEvent;
 export declare function createRestartCompletedEvent(success: boolean): IPlatformEvent;
@@ -1331,6 +1379,7 @@ export declare function isGameAbortedEvent(event: ISemanticEvent): event is ISem
  * ```
  */
 import { EntityId } from '../types/entity.js';
+import type { IRestoreReconciliation } from '../types/save-data.js';
 /**
  * Registry mapping event type strings to their data shapes.
  *
@@ -1364,6 +1413,7 @@ export interface EventDataRegistry {
     'platform.restore_requested': RestoreRequestedData;
     'platform.restore_completed': RestoreCompletedData;
     'platform.restore_failed': RestoreFailedData;
+    'platform.save_reconciled': SaveReconciledData;
     'platform.quit_requested': EmptyData;
     'platform.quit_confirmed': QuitConfirmedData;
     'platform.quit_cancelled': EmptyData;
@@ -1457,6 +1507,8 @@ export interface RestoreCompletedData {
     slotName?: string;
     timestamp?: number;
 }
+/** The reconciliation report a restore produced (ADR-388 D5); the platform event carries it as its payload. */
+export type SaveReconciledData = IRestoreReconciliation;
 export interface RestoreFailedData {
     slotName?: string;
     error?: string;

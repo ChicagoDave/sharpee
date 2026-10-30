@@ -640,8 +640,8 @@ describe('occurrence ordinals — a later firing is arranged as the clause count
 
     // The same shape on a verb interceptor: the second clause of the same owner.
     const looked = outcome(run, 'on examining · the second time');
-    // The counter write, then reach's placement of the player with the subject (the runner's existing world-id form, written last as a `here` term).
-    expect(looked.arranged).toEqual(['voices on examining by player occurrence = 1', 'player.location = r01']);
+    // The counter write, then reach's placement of the player with the subject (the runner's existing world-id form, written last as a `here` term; a Chord entity's world id is its IR id, ADR-388 D1).
+    expect(looked.arranged).toEqual(['voices on examining by player occurrence = 1', 'player.location = roof']);
     expect(looked.claims).toEqual([{ claim: 'emitted looked-twice', passed: true }]);
 
     // A room's `entering` fires on movement, not a typed verb: the ordinal is arranged, the branch still stops on that shape by name.

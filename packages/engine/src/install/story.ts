@@ -8,7 +8,7 @@ import { type INpcService, type ActSlots, type ActResult } from '@sharpee/stdlib
 import { EventProcessor } from '@sharpee/event-processor';
 import { PluginRegistry } from '@sharpee/plugins';
 import { EventEmitter } from '../events/event-emitter.js';
-import { type ISemanticEvent, type RandomService } from '@sharpee/core';
+import { type IRestoreIdentity, type IRestoreReconciliation, type ISemanticEvent, type RandomService } from '@sharpee/core';
 import type { GameContext, InputModeHandler } from '../types.js';
 import type { ParsedCommandTransformer } from '../command/command-executor.js';
 import type { SlotContributor, SlotEntry } from '../prose-pipeline/types.js';
@@ -385,8 +385,13 @@ export interface Story {
    * @param world - The fully restored world model
    * @param restoredTurn - The save's turn count: the number of turns it had
    *   played, which is the turn its last turn-end phase ran on
+   * @param identity - The engine's comparison of the save's identity stamp
+   *   with the story's (ADR-388 D5). A story whose keys are name-derived
+   *   reconciles the save against its manifest when `matches` is false.
+   * @returns the reconciliation report when the story reconciled, which the
+   *   engine delivers after the restore's completion event; nothing otherwise
    */
-  onWorldRestored?(world: WorldModel, restoredTurn: number): void;
+  onWorldRestored?(world: WorldModel, restoredTurn: number, identity: IRestoreIdentity): IRestoreReconciliation | undefined | void;
 }
 
 /**
