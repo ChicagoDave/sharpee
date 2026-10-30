@@ -1,7 +1,7 @@
 # Session Plan: Make Chord saves robust to story updates between save and restore
 
 **Created**: 2026-10-29
-**Plan Status**: ACTIVE
+**Plan Status**: DONE
 **Overall scope**: Every persisted Chord key is derived from a name or content, not a position, and restore reconciles a save against the current story's identity manifest instead of trusting it. One-shot cutover of the key scheme; no old-save reader, no migration shim (no story has shipped; save-format versioning is dormant, ADR-293 awaits supersession).
 **Bounded contexts touched**: Chord compiler (`packages/chord`), story-loader runtime state (`packages/story-loader`), engine save/restore (`packages/engine`), branch-tester assertion core (`packages/branch-tester`). Platform change: discussed and directed by David (his 2026-10-29 assessment); phase 1 records it as an ADR.
 **Key domain language**: persisted key, identity manifest, reconciler, occurrence ordinal, landing list, story-version stamp

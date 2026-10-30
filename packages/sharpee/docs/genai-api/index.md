@@ -2,7 +2,7 @@
 
 Auto-generated from `.d.ts` declarations. AI coding assistants should read these files instead of exploring the codebase when writing code against the Sharpee platform.
 
-Generated for Sharpee 5.5.0
+Generated for Sharpee 5.5.1
 
 ## Quick Start
 
@@ -30,7 +30,7 @@ Generated for Sharpee 5.5.0
 | [if-domain.md](if-domain.md) | @sharpee/if-domain | Domain events, contracts, grammar system, language/parser provider interfaces. (24 files, ~3719 lines) |
 | [world-model.md](world-model.md) | @sharpee/world-model | Entity system (IFEntity), WorldModel, all traits, capability dispatch, scope, annotations. (137 files, ~12387 lines) |
 | [engine.md](engine.md) | @sharpee/engine | GameEngine, Story interface, turn cycle, command executor, save/restore, vocabulary. (13 files, ~2545 lines) |
-| [stdlib.md](stdlib.md) | @sharpee/stdlib | All 43 standard actions, validation, scope builders, NPC support, combat, action chains. (50 files, ~4964 lines) |
+| [stdlib.md](stdlib.md) | @sharpee/stdlib | All 43 standard actions, validation, scope builders, NPC support, combat, action chains. (50 files, ~4965 lines) |
 | [parser.md](parser.md) | @sharpee/parser-en-us | English parser, grammar patterns, story grammar extension API. (6 files, ~629 lines) |
 | [lang.md](lang.md) | @sharpee/lang-en-us | English language provider, message resolution, formatters. (17 files, ~2993 lines) |
 | [plugins.md](plugins.md) | Plugins | Plugin system, scheduler (daemons/fuses), state machine. (14 files, ~1096 lines) |

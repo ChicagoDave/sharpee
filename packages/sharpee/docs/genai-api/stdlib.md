@@ -4509,6 +4509,7 @@ export declare const STANDARD_CHANNEL_IDS: {
     readonly SCENE: "scene";
     readonly EXCHANGE_AFFORDANCES: "exchange-affordances";
     readonly THREAD_AFFORDANCES: "thread-affordances";
+    readonly DIAGNOSTICS: "diagnostics";
 };
 export type StandardChannelId = (typeof STANDARD_CHANNEL_IDS)[keyof typeof STANDARD_CHANNEL_IDS];
 ```
