@@ -26,7 +26,7 @@
  */
 import type { IRStatement, StoryIR } from '@sharpee/chord';
 import type { ISemanticEvent } from '@sharpee/core';
-import type { ActResult, ActSlots } from '@sharpee/stdlib';
+import type { Action, ActResult, ActSlots } from '@sharpee/stdlib';
 import { registerLookThroughBehavior } from '@sharpee/stdlib';
 import { type DialogueSelectorRegistration, type InitiativeSeizure, type SceneOccasion, type SceneStrength, WorldModel } from '@sharpee/world-model';
 import { Evaluator } from './evaluator.js';
@@ -177,7 +177,7 @@ export class ChordRuntime extends RuntimeCore {
   }
 
   /** Facade: see `DispatchVerbsSection.buildDispatchActions`. */
-  buildDispatchActions(): unknown[] {
+  buildDispatchActions(): Action[] {
     return this.dispatchVerbs.buildDispatchActions();
   }
 

@@ -2,11 +2,15 @@
  * Tests for Parser Factory
  */
 
-import { ParserFactory, Parser, LanguageProvider } from '@sharpee/if-domain';
+import { ParserFactory, Parser, LanguageProvider, GrammarBuilder } from '@sharpee/if-domain';
 
 // Mock parser implementation
 class MockParser implements Parser {
   constructor(public languageProvider: LanguageProvider) {}
+
+  getStoryGrammar(): GrammarBuilder {
+    throw new Error('MockParser has no story grammar');
+  }
   
   parse(input: string) {
     return {

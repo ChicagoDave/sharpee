@@ -7,6 +7,7 @@
 
 import { PartOfSpeech, VerbVocabulary, VocabularyEntry } from '../vocabulary-contracts/vocabulary-types.js';
 import type { ISystemEvent } from '@sharpee/core';
+import type { GrammarBuilder } from '../grammar/grammar-builder.js';
 
 /**
  * Base parser interface that can be extended
@@ -131,4 +132,12 @@ export interface Parser extends BaseParser {
    * Enable or disable a specific verb by action ID
    */
   setVerbEnabled?(actionId: string, enabled: boolean): void;
+
+  /**
+   * The story-tier grammar surface: a builder whose rules register at the
+   * 'story' tier and outrank the standard grammar. Every locale parser offers
+   * one — a story's `extendParser` and the Chord loader's grammar lowering
+   * register their rules through it.
+   */
+  getStoryGrammar(): GrammarBuilder;
 }

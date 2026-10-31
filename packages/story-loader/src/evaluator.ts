@@ -19,6 +19,7 @@
  */
 import { qualifiedTimerKey, type IRCondition, type IREntity, type IRTimerDef, type IRValue, type StoryIR } from '@sharpee/chord';
 import { createSeededRandom, type RandomService, type SeededRandom } from '@sharpee/core';
+import type { ClientCapabilities } from '@sharpee/if-domain';
 import { exitBlockedKey } from '@sharpee/stdlib';
 import { classifiesAs } from './kind-classification.js';
 import {
@@ -117,10 +118,10 @@ export class Evaluator {
    * Null (load time, headless tests) means the text-only default: every
    * gateable flag reads false.
    */
-  private capabilitiesProvider: (() => Record<string, unknown> | undefined) | null = null;
+  private capabilitiesProvider: (() => ClientCapabilities | undefined) | null = null;
 
   /** Wire the live capability source (loader-only; ADR-216). */
-  setCapabilitiesProvider(provider: () => Record<string, unknown> | undefined): void {
+  setCapabilitiesProvider(provider: () => ClientCapabilities | undefined): void {
     this.capabilitiesProvider = provider;
   }
 
@@ -223,9 +224,11 @@ export class Evaluator {
         // provider (load time, headless tests) the engine's text-only
         // default applies: only `text` is true, and `text` cannot be
         // written in a `client has` (the compiler's closed flag set).
+        // The compiler lowers the flag to the platform's camelCase key, so
+        // the condition names one of the capability fields by name.
         const capabilities = this.capabilitiesProvider?.();
         if (!capabilities) return false;
-        return (capabilities as Record<string, unknown>)[cond.capability] === true;
+        return Object.entries(capabilities).some(([flag, held]) => flag === cond.capability && held === true);
       }
       case 'vehicle-under-way': {
         // ADR-366 D5e: the vehicle's machine is moving it — read off the trait.

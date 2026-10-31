@@ -28,6 +28,7 @@ import {
   type IRComposition,
   type IRConfigSetting,
   type IRCondition,
+  type Span,
   type IREntity,
   type IRExit,
   type IRPhrase,
@@ -103,6 +104,7 @@ import {
 } from '@sharpee/character';
 import { SchedulerPlugin } from '@sharpee/plugin-scheduler';
 import {
+  type Action,
   createFollowerBehavior,
   createPatrolBehavior,
   createWandererBehavior,
@@ -276,7 +278,7 @@ export class ChordStory implements Story {
   private readonly pendingEntityRefs: Array<{
     irRefId: string;
     ownerName: string;
-    span: unknown;
+    span: Span;
     apply: (worldId: string) => void;
   }> = [];
 
@@ -286,9 +288,9 @@ export class ChordStory implements Story {
     name: string,
     configKey: string,
     owner: IREntity,
-    span: unknown,
+    span: Span,
     apply: (worldId: string) => void,
-  ): { irRefId: string; ownerName: string; span: unknown; apply: (worldId: string) => void } {
+  ): { irRefId: string; ownerName: string; span: Span; apply: (worldId: string) => void } {
     const lower = name.toLowerCase();
     const target = this.ir.entities.find(
       (e) => e.name.toLowerCase() === lower || e.aka.includes(lower),
@@ -296,7 +298,7 @@ export class ChordStory implements Story {
     if (!target) {
       // ADR-276 census 6: the compiler's gate refuses this
       // (analysis.setting-names-no-entity) — defensive backstop.
-      throw new LoadError(`\`${name}\` (config \`${configKey}\`) names no entity.`, span as never);
+      throw new LoadError(`\`${name}\` (config \`${configKey}\`) names no entity.`, span);
     }
     return { irRefId: target.id, ownerName: owner.name, span, apply };
   }
@@ -1104,7 +1106,7 @@ export class ChordStory implements Story {
    * Custom actions for engine registration: the `define action` dispatch
    * actions (Phase B, §5.4).
    */
-  getCustomActions(): unknown[] {
+  getCustomActions(): Action[] {
     return [...this.runtime.buildDispatchActions()];
   }
 
@@ -1228,7 +1230,7 @@ export class ChordStory implements Story {
     // ADR-216 `client has`: wire the LIVE capability source (the engine
     // negotiates capabilities at start(); reads happen per evaluation).
     // Engines without the accessor leave the text-only default in place.
-    this.evaluator.setCapabilitiesProvider(() => engine.getClientCapabilities() as unknown as Record<string, unknown>);
+    this.evaluator.setCapabilitiesProvider(() => engine.getClientCapabilities());
     // ADR-326 D6: an adjacent-room draw that meets a computed exit consults
     // the resolver, which draws on the engine's session random service.
     this.evaluator.setRandomService(engine.getRandomService());
@@ -1505,7 +1507,7 @@ export class ChordStory implements Story {
    * retired.
    */
   extendParser(parser: Parameters<NonNullable<Story['extendParser']>>[0]): void {
-    const grammar = (parser as unknown as { getStoryGrammar(): GrammarBuilder }).getStoryGrammar();
+    const grammar = parser.getStoryGrammar();
     for (const action of this.ir.actions) {
       this.registerActionGrammar(grammar, `chord.action.${action.name}`, action, {});
     }
@@ -2134,7 +2136,7 @@ export class ChordStory implements Story {
       if (!worldId) {
         throw new LoadError(
           `\`${pending.ownerName}\`: a trait-config entity reference was never built.`,
-          pending.span as never,
+          pending.span,
         );
       }
       pending.apply(worldId);
@@ -2528,7 +2530,7 @@ export class ChordStory implements Story {
    * then, so patrol routes resolve). guard/passive use the plugin's
    * pre-registered behaviors; the factory-built three get per-entity ids.
    */
-  private readonly npcBehaviors: Array<{ irId: string; adjective: string; config: IRConfigSetting[]; span: unknown }> = [];
+  private readonly npcBehaviors: Array<{ irId: string; adjective: string; config: IRConfigSetting[]; span: Span }> = [];
 
   /**
    * ADR-215 Q4 core NPC routing: compose NpcTrait from a behavior
@@ -2584,7 +2586,7 @@ export class ChordStory implements Story {
    * (engine-ready time — world ids exist). Chord percentages convert to
    * the platform's fractions here (`move-chance 50` → 0.5).
    */
-  private buildNpcBehavior(pending: { irId: string; adjective: string; config: IRConfigSetting[]; span: unknown }): { id: string } {
+  private buildNpcBehavior(pending: { irId: string; adjective: string; config: IRConfigSetting[]; span: Span }): { id: string } {
     const numberOf = (key: string): number | undefined => {
       const setting = pending.config.find((s) => s.key === key);
       return setting ? Number(setting.value) : undefined;
@@ -2608,11 +2610,11 @@ export class ChordStory implements Story {
         if (!routeSetting || (routeSetting.values ?? []).length === 0) {
           // ADR-276 census 9: the compiler's gate refuses this
           // (analysis.patrol-needs-route) — defensive backstop.
-          throw new LoadError(`A \`patrol\` NPC needs \`with route [ … ]\` naming its rooms.`, pending.span as never);
+          throw new LoadError(`A \`patrol\` NPC needs \`with route [ … ]\` naming its rooms.`, pending.span);
         }
         const route = (routeSetting.values ?? []).map((irId) => {
           const worldId = this.worldIds.get(irId);
-          if (!worldId) throw new LoadError(`A patrol route entry was never built.`, pending.span as never);
+          if (!worldId) throw new LoadError(`A patrol route entry was never built.`, pending.span);
           return worldId;
         });
         behavior = createPatrolBehavior({
@@ -2627,7 +2629,7 @@ export class ChordStory implements Story {
         // switch routes here (guard/passive/wanderer/follower/patrol), and
         // the analyzer's extension manifests gate the vocabulary. Defensive
         // backstop for rogue IR.
-        throw new LoadError(`Unknown NPC behavior adjective \`${pending.adjective}\`.`, pending.span as never);
+        throw new LoadError(`Unknown NPC behavior adjective \`${pending.adjective}\`.`, pending.span);
     }
     behavior.id = `chord.npc.${pending.irId}`;
     return behavior;

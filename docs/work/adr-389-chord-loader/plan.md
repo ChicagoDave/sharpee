@@ -48,10 +48,10 @@
 - **Entry state**: Phase 0 baseline recorded; David's go for packages/ edits.
 - **Deliverable**: `Story.getCustomActions?(): Action[]` (stdlib `Action`) in `packages/engine/src/install/story.ts`; `Parser.getStoryGrammar(): GrammarBuilder` declared on if-domain's `Parser`; ChordStory.getCustomActions, ChordRuntime.buildDispatchActions, DispatchVerbsSection.buildDispatchActions return `Action[]`; the `as unknown as` cast in `extendParser` removed; `span: unknown` becomes chord's `Span` at the five loader sites.
 - **Files**: `packages/engine/src/install/story.ts`, `packages/if-domain/src/`, `packages/story-loader/src/loader.ts`, `packages/story-loader/src/runtime.ts`, `packages/story-loader/src/runtime/dispatch-verbs.ts`
-- **Exit state**: AC-5 grep returns nothing; `parser-en-us` compiles without edit; exit gate passes.
+- **Exit state**: AC-5 grep returns only the four route-table casts deferred to Phase 6 (David, 2026-10-31); the three D5 seams and the capabilities seam (`loader.ts:1233`, evaluator typed to `ClientCapabilities`) carry no cast; `parser-en-us` compiles without edit; exit gate passes.
 - **Demonstration**: Run the AC-5 grep on the four files and it prints nothing; `./repokit build` succeeds; three tree runs diff clean against baseline; suites at or above baseline.
-- **Demonstrated**: 
-- **Status**: PENDING
+- **Demonstrated**: 2026-10-31 — `npx tsc --noEmit` clean; `./repokit build` exit 0 (14:09); story-loader 1525 passing / 1 skipped; chord 1747; engine 877 / 7 skipped; stdlib parser-factory 13. AC-5 grep prints only the four route-table casts deferred to Phase 6 (loader.ts 2124, 2496, 2569; dispatch-verbs.ts 91); `getStoryGrammar(): GrammarBuilder` is on if-domain's `Parser` (parser-types.ts:142) and `parser-en-us` compiled without edit; two test mock parsers (engine fixtures, stdlib parser-factory) gained the method. Tree runs vs Phase 0 captures: secret-letter byte-identical (exit 1, same 11 failing cards), ides-of-march byte-identical, fernhill identical except two wall-clock timing fields (`1.1s`→`1.0s`, `0.1s`→`0.2s`), the one variance ADR-293 allows. [reported by session, unverified: event log has no test row for these counts in the phase window; the "Build passed" rows at 09:25Z and 19:07Z are python edit heredocs, not builds]
+- **Status**: DONE
 
 ### Phase 2: One identity (D1)
 - **Tier**: Large
@@ -106,7 +106,7 @@
 - **Budget**: ~250 tool calls
 - **Domain focus**: Core trait adjective lowering; names-vs-mappings conformance. Satisfies AC-3.
 - **Entry state**: Phase 5 committed; David's go.
-- **Deliverable**: `CORE_TRAIT_ROUTES` replaces the 41-arm switch in `applyTraitAdjectives` (conditional-composition prelude stays the one guard); unmatched word is a LoadError naming the word; two bidirectional assertions added to `packages/story-loader/tests/manifest-conformance.test.ts` against chord's `TRAIT_ADJECTIVES` (NPC and combat words excluded).
+- **Deliverable**: `CORE_TRAIT_ROUTES` replaces the 41-arm switch in `applyTraitAdjectives` (conditional-composition prelude stays the one guard); unmatched word is a LoadError naming the word; two bidirectional assertions added to `packages/story-loader/tests/manifest-conformance.test.ts` against chord's `TRAIT_ADJECTIVES` (NPC and combat words excluded). Deferred here from Phase 1 (David, 2026-10-31): the four route-table field writes that cast a trait through `unknown` (`loader.ts` ~2124, ~2496, ~2569; `runtime/dispatch-verbs.ts` ~91) become typed writes when a route is a function; AC-5's grep is re-run at this phase's close and must then print nothing.
 - **Files**: `packages/story-loader/src/loader.ts`, `packages/story-loader/src/extension-registry.ts`, `packages/story-loader/tests/manifest-conformance.test.ts`
 - **Exit state**: AC-3 holds; exit gate passes.
 - **Demonstration**: conformance test green both directions; a deliberately missing row fails by word name (shown then reverted); tree runs byte-identical.

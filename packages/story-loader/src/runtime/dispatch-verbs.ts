@@ -15,6 +15,7 @@
  */
 import { type IRActionDef, type IROnClause, type IRTopicRow, type IRTraitDef, type Span } from '@sharpee/chord';
 import type { ISemanticEvent } from '@sharpee/core';
+import type { Action } from '@sharpee/stdlib';
 import type { Choice } from '@sharpee/if-domain';
 import { type ActionInterceptor, type CapabilityBehavior, type CapabilityEffect, type CapabilitySharedData, type CapabilityValidationResult, Direction, IFEntity, type InterceptorReportResult, type InterceptorResult, type InterceptorSharedData, WorldModel } from '@sharpee/world-model';
 import { LoadError } from '../errors.js';
@@ -274,7 +275,7 @@ export class DispatchVerbsSection {
    * `otherwise refuse` is the dispatch-miss, and `when <player> <verbs>`
    * rules fire in report.
    */
-  buildDispatchActions(): unknown[] {
+  buildDispatchActions(): Action[] {
     return this.core.ir.actions.map((def) => this.buildDispatchAction(def));
   }
 
