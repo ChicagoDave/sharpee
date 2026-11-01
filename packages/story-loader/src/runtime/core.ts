@@ -418,8 +418,7 @@ export class RuntimeCore {
     const ownerId = worldIdOf(world, ownerIrId);
     if (ownerId === undefined) return undefined;
     const owner = world.getEntity(ownerId);
-    if (!owner) return undefined;
-    if (owner.has(TraitType.ROOM) || owner.has(TraitType.REGION)) return ownerId;
+    if (owner?.has(TraitType.ROOM) || owner?.has(TraitType.REGION)) return ownerId;
     return world.getContainingRoom(ownerId)?.id ?? world.getLocation(ownerId) ?? null;
   }
 

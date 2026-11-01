@@ -831,7 +831,8 @@ export class Evaluator {
   private landingRecord(irId: string, irRooms: readonly string[], world: WorldModel): LandingRecord {
     const stored = world.getStateValue(landingKey(irId)) as LandingRecord | undefined;
     if (stored) return stored;
-    const rooms = [...irRooms];
+    // Only rooms still in the world, the same rule reconcile's reseed applies.
+    const rooms = irRooms.filter((id) => world.hasEntity(id));
     // Per-region stream: the story seed folded with the region id, so two
     // regions never share a sequence and a fixed seed pins each one.
     let seed = this.storySeed;

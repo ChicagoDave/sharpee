@@ -31,6 +31,11 @@
 - Fixture diagnostics identical except one lexer-golden fixture where `trait-not-declared` moved one position later (validateIR runs last); code set identical. [reported by session]
 - AC-4 greps: loader `backstop` word count 15; moved codes once each in chord src except two codes with two emit sites in `validate-ir.ts`. [reported by session]
 
+### Code review follow-ups (David's /code-review, 2026-11-01)
+- Eight findings. Fixed four: `placeOf` returns `null` again for a removed owner (not `undefined`); the engine-ready world guard moved to the top of `onEngineReady`, before any engine registration; the story oracle binds `it` only for a story entity; the evaluator's landing seed filters rooms by `world.hasEntity`, the rule reconcile's reseed already applied. story-loader `tsc` clean; suite 1526 passing / 1 skipped after.
+- Declined with reasons: value positions not throwing for a removed entity (the old map never dropped an entry either; rogue ids are the analyzer's unknown-entity gate); `validateIR` running twice on compile-then-load (D4's design; linear in the IR).
+- Recorded, not fixed: a door referenced only by `to outside through` now loads where the loader used to refuse it — the compile always accepted it and the hatch's DoorTrait stamping is ADR-366 D7's unfinished work; the five linear `ir.entities` scans on hot paths want one shared `irEntityById` on the runtime core (build-steps phases).
+
 ## Key Decisions
 - Region world id = IR id (ADR-389 D1 applied; ADR-388 `rg-` parenthetical retired). Flagged to David.
 - `entityId`/`irIdOf` removed from public `ChordStory` (David, 2026-10-31; ADR-389 AC-7 amended).

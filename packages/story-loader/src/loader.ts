@@ -1007,7 +1007,10 @@ export class ChordStory implements Story {
    */
   private storyOracle(): CompiledStoryOracle {
     return {
-      evalCondition: (cond, { self, world }) => this.evaluator.evalCondition(cond, { world, it: self }),
+      // `it` is bound only for a story entity; a platform-made actor has no
+      // clauses of its own, and an `it`-scoped predicate on it stays an error.
+      evalCondition: (cond, { self, world }) =>
+        this.evaluator.evalCondition(cond, { world, ...(this.ir.entities.some((e) => e.id === self) ? { it: self } : {}) }),
       isKindMember: (entityId, kind) => {
         const irEntity = this.ir.entities.find((e) => e.id === entityId);
         return irEntity !== undefined && classifiesAs(irEntity, kind);
@@ -1181,6 +1184,13 @@ export class ChordStory implements Story {
   onEngineReady(engine: StoryEngine): void {
     // ADR-325 D3f: timers stamp the turn they start on from the engine's
     // live counter, so a `start` in the player's action waits one turn.
+    // The precondition first, before any registration touches the engine:
+    // a host that calls this before initializeWorld gets the refusal and
+    // nothing half-wired to retry against.
+    if (!this.world) {
+      throw new LoadError('The story has no world yet: initializeWorld runs before onEngineReady.');
+    }
+    const world = this.world;
     const getContext = engine.getContext.bind(engine);
     this.runtime.setTurnProvider(() => getContext().currentTurn);
     // ADR-216 `client has`: wire the LIVE capability source (the engine
@@ -1211,10 +1221,6 @@ export class ChordStory implements Story {
         onAfterAction: () => this.runtime.drainActEvents(),
       } satisfies TurnPlugin);
     }
-    if (!this.world) {
-      throw new LoadError('The story has no world yet: initializeWorld runs before onEngineReady.');
-    }
-    const world = this.world;
     const npcService = engine.getNpcService();
     for (const pending of this.npcBehaviors) {
       npcService.registerBehavior(this.buildNpcBehavior(world, pending) as never);
