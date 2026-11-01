@@ -76,7 +76,7 @@
 - **Exit state**: AC-1 grep returns nothing; the assertion test (world whose `createEntity` ignores the requested id) passes; exit gate passes.
 - **Demonstration**: AC-1 grep on `packages/story-loader/src` prints nothing; new assertion test green; tree runs byte-identical; suites at or above baseline.
 - **Demonstrated**: 
-- **Status**: PENDING
+- **Status**: CURRENT (since 2026-10-31)
 
 ### Phase 4: validateIR, entity and composition gates (D4a)
 - **Tier**: Large
