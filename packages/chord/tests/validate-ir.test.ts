@@ -286,6 +286,172 @@ create the oak door
   });
 });
 
+const SCORING_SOURCE = BASE
+  .replace('  story-version: 0.0.1\n', '  story-version: 0.0.1\n  use scoring\n    rank "Curious Visitor" at 0\n  score lamp worth 20\n')
+  .replace('create the Vault\n  a room\n', 'create the Vault\n  a room\n\n  after the player entering\n    award lamp\n  end after\n');
+
+const CHAPTERS_SOURCE = BASE
+  .replace('  story-version: 0.0.1\n', '  story-version: 0.0.1\n  use chapters\n')
+  .replace('create the crate\n  a container\n  in the Vault\n', 'create the crate\n  a container\n  in the Vault\n\n  on the player taking during one\n    refuse no-time\n  end on\n') +
+  `define chapters
+  one - Chapter I
+    begins when the game starts
+end chapters
+
+define phrase no-time
+  No time.
+end phrase
+`;
+
+const EXPANSES_SOURCE = BASE
+  .replace('  story-version: 0.0.1\n', '  story-version: 0.0.1\n  use expanses\n  use sailing\n')
+  .replace('create the Vault\n  a room\n', 'create the Vault\n  a room\n  seen from afar: a smudge of light\n  sight: 5\n') +
+  `create the Belt
+  an expanse
+  size: 20 by 20
+  wind: from northeast
+  north is blocked: no-north
+
+  Black, and the slow tumble of rock against it.
+
+  landmarks
+    the Vault: 3, 3
+  end landmarks
+
+create the skiff
+  a vehicle, openable
+  in the Belt at 3, 4
+  movement: open
+  carries: in
+  drive: player
+  commands: compass, coordinates
+  pace: 1 turn
+  stride: 1 unit
+  sight: 6
+  seen from afar: a glint of hull against the dark
+
+  A skiff.
+
+define phrase no-north
+  Nothing that way.
+end phrase
+`;
+
+const COMBAT_SOURCE = BASE
+  .replace('  story-version: 0.0.1\n', '  story-version: 0.0.1\n  use combat\n')
+  .replace('create Alex\n', 'create the orc\n  a person, combatant with hostile true\n  in the Vault\n\n  An orc.\n\ncreate Alex\n');
+
+const without = (ir: StoryIR, extension: string): StoryIR => ({ ...ir, uses: ir.uses.filter((u) => u !== extension) });
+
+describe('validateIR holds every `use` gate (D4c: the gated constructs and words)', () => {
+  it('scores, a rank rung and an award without `use scoring` each report once, as analysis.scoring-needs-use', () => {
+    const rogue = without(compileClean(SCORING_SOURCE), 'scoring');
+    expect(codes(rogue)).toEqual(['analysis.scoring-needs-use', 'analysis.scoring-needs-use', 'analysis.scoring-needs-use']);
+    const [score, rank, award] = messages(rogue);
+    expect(score).toContain('A `score … worth N` line needs `use scoring`');
+    expect(rank).toContain('A `rank` rung needs `use scoring`');
+    expect(award).toContain('An `award` statement needs `use scoring`');
+    expect(validateIR(rogue)[0].span).toEqual(rogue.scores[0].span);
+  });
+
+  it('a bare `score` line compiles to exactly the diagnostic validateIR gives its IR', () => {
+    const result = compile(BASE.replace('  story-version: 0.0.1\n', '  story-version: 0.0.1\n  score lamp worth 20\n'));
+    const fromCompile = result.diagnostics.filter((d) => d.code === 'analysis.scoring-needs-use');
+    expect(fromCompile).toHaveLength(1);
+    expect(validateIR(result.ir).filter((d) => d.code === 'analysis.scoring-needs-use')).toEqual(fromCompile);
+  });
+
+  it('a chapters block and a chapter condition without `use chapters` are analysis.chapters-needs-use, block first', () => {
+    const rogue = without(compileClean(CHAPTERS_SOURCE), 'chapters');
+    expect(codes(rogue)).toEqual(['analysis.chapters-needs-use', 'analysis.chapters-needs-use']);
+    const [block, condition] = messages(rogue);
+    expect(block).toContain('A `define chapters` block needs `use chapters`');
+    expect(condition).toContain('`during <chapter>` reads a chapter');
+    expect(validateIR(rogue)[0].span).toEqual(rogue.chapters![0].span);
+    // The analyzer builds the rows either way, so the compile reports the same two.
+    const result = compile(CHAPTERS_SOURCE.replace('  use chapters\n', ''));
+    expect(result.diagnostics.map((d) => d.code)).toEqual(codes(result.ir));
+  });
+
+  it('a sound expanses and sailing IR has no diagnostics — an expanse’s edges are not exits', () => {
+    expect(validateIR(compileClean(EXPANSES_SOURCE))).toEqual([]);
+  });
+
+  it('without `use expanses`, the kind, the movement type and a room’s lines each report once per entity', () => {
+    const rogue = without(compileClean(EXPANSES_SOURCE), 'expanses');
+    const found = validateIR(rogue).filter((d) => d.code === 'analysis.expanses-needs-use');
+    expect(found.map((d) => d.message)).toEqual([
+      expect.stringContaining('`Vault` writes `use expanses` vocabulary'),
+      expect.stringContaining('`a expanse` is `use expanses` vocabulary'),
+      expect.stringContaining('`movement: open` is `use expanses` vocabulary'),
+    ]);
+    expect(validateIR(rogue).filter((d) => d.code === 'analysis.sailing-needs-use')).toEqual([]);
+  });
+
+  it('without `use sailing`, the wind is analysis.sailing-needs-use on the expanse, and a wind write in a clause is the word', () => {
+    const rogue = without(compileClean(EXPANSES_SOURCE), 'sailing');
+    expect(codes(rogue)).toEqual(['analysis.sailing-needs-use']);
+    expect(messages(rogue)[0]).toContain('`Belt` writes `use sailing` vocabulary');
+
+    const written = without(
+      compileClean(EXPANSES_SOURCE.replace('create the crate\n  a container\n  in the Vault\n', "create the crate\n  a container\n  in the Vault\n\n  on the player taking\n    set the Belt's wind to calm\n  end on\n")),
+      'sailing',
+    );
+    const words = validateIR(written).filter((d) => d.message.startsWith('`set … wind`'));
+    expect(words.map((d) => d.code)).toEqual(['analysis.sailing-needs-use']);
+  });
+
+  it('an extension adjective without its `use` is analysis.extension-not-used, before any setting check', () => {
+    const rogue = without(compileClean(COMBAT_SOURCE), 'combat');
+    expect(codes(rogue)).toEqual(['analysis.extension-not-used']);
+    expect(messages(rogue)[0]).toContain('`combatant` is `combat` extension vocabulary — add `use combat`');
+    // Phase 4's G2: a mistyped boolean on an un-`use`d adjective is the use gate, not the domain gate.
+    const compiled = compile(COMBAT_SOURCE.replace('  use combat\n', '').replace('hostile true', 'hostile maybe'));
+    expect(compiled.diagnostics.map((d) => d.code)).toEqual(['analysis.extension-not-used']);
+  });
+
+  it('an unknown field or a mistyped value on an admitted extension adjective is refused by name', () => {
+    const unknownKey = compileClean(COMBAT_SOURCE);
+    entity(unknownKey, 'orc').traits[0].config.push({ key: 'bogus', value: '1', valueKind: 'number' });
+    expect(codes(unknownKey)).toEqual(['analysis.extension-config-key']);
+    expect(messages(unknownKey)[0]).toContain('`bogus` is not a `combatant` field — known fields:');
+
+    const wrongKind = compileClean(COMBAT_SOURCE);
+    entity(wrongKind, 'orc').traits[0].config[0].valueKind = 'list';
+    expect(codes(wrongKind)).toEqual(['analysis.extension-config-value']);
+    expect(messages(wrongKind)[0]).toContain('`hostile` takes a');
+  });
+
+  it('a `[ … ]` list value on an adjective no extension contributes is analysis.config-list-host', () => {
+    const rogue = compileClean(BASE);
+    entity(rogue, 'crate').traits.push({ name: 'scenery', config: [{ key: 'route', value: '', valueKind: 'list', values: [] }], condition: null, span });
+    expect(codes(rogue)).toEqual(['analysis.config-list-host']);
+  });
+
+  it('an entity with no kind noun is analysis.missing-kind-noun; a bare kind word is named as such instead', () => {
+    const none = compileClean(BASE);
+    entity(none, 'crate').kinds = [];
+    expect(codes(none)).toEqual(['analysis.missing-kind-noun']);
+    expect(messages(none)[0]).toContain('`crate` names no kind');
+
+    const bare = compileClean(BASE);
+    entity(bare, 'crate').kinds = [];
+    entity(bare, 'crate').traits.push({ name: 'container', config: [], condition: null, span });
+    expect(codes(bare)).toEqual(['analysis.kind-noun-needs-article']);
+  });
+
+  it('an exit on a non-room is analysis.exit-non-room, at the exit', () => {
+    const source = BASE.replace('create the Vault\n  a room\n', 'create the Vault\n  a room\n  north to the Hall\n') + 'create the Hall\n  a room\n\n  A hall.\n';
+    const rogue = compileClean(source);
+    const vault = entity(rogue, 'vault');
+    const crate = entity(rogue, 'crate');
+    crate.exits = vault.exits;
+    vault.exits = [];
+    expect(codes(rogue)).toEqual(['analysis.exit-non-room']);
+    expect(validateIR(rogue)[0].span).toEqual(crate.exits[0].span);
+  });
+});
+
 describe('the compile reports validateIR as its last pass', () => {
   it('a rogue story compiles to exactly the diagnostics validateIR gives its IR', () => {
     const result = compile(BASE.replace('create the crate\n  a container\n', 'create the crate\n  a container, dark\n'));

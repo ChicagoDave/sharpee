@@ -9,8 +9,7 @@
  * per boot, before any restore). `installFromIR` lowers each chapter's
  * trigger to what the plugin can read directly — a room's world id, a timer
  * record's key, a state value's key — and registers the chapters plugin
- * over the rows. `gatedConstruct` names `define chapters` as the construct
- * this `use` unlocks, so rogue IR carrying one without the `use` is refused.
+ * over the rows.
  *
  * Public interface: CHAPTERS_EXTENSION.
  * Owner context: @sharpee/story-loader (language-neutral IR consumer).
@@ -36,8 +35,6 @@ import { CHORD_STATE_PREFIX, CHORD_STORY_STATE_KEY, CHORD_VISITED_PREFIX, timerK
 
 export const CHAPTERS_EXTENSION: ExtensionRegistration = {
   registerChannels: (registry) => registerChaptersChannels(registry as IChannelRegistry),
-  gatedConstruct: (ir) =>
-    (ir.chapters ?? []).length > 0 ? { construct: 'define chapters', span: ir.chapters![0].span } : null,
   seedWorldFromIR: (ir, world) => {
     const opener = (ir.chapters ?? []).find((c) => c.trigger.kind === 'game-starts');
     if (opener && world.getStateValue(CHAPTER_CURRENT_KEY) === undefined) {

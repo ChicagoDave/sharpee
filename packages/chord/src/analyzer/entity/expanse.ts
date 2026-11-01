@@ -6,8 +6,9 @@
  * an expanse, on an open vehicle or a floating thing; and the edges, which
  * are the expanse's unconditional blocked-exit lines.
  *
- * Every line is gated on `use expanses`, then on its owner, before anything
- * is written. An open vehicle's own `sight:` and `seen from afar:` are the
+ * Every line is gated on its owner before anything is written; the `use
+ * expanses` gate is validateIR's, over the lowered IR. An open
+ * vehicle's own `sight:` and `seen from afar:` are the
  * vehicle builder's; this builder reads them only to know a vehicle wrote
  * them.
  *
@@ -15,7 +16,7 @@
  * Owner context: @sharpee/chord analyzer (language frontend; browser-safe).
  *
  * References:
- * - ADR-376 D1 — every word here needs `use expanses`.
+ * - ADR-376 D1 — every word here needs `use expanses`; ADR-389 D4 — validateIR holds that gate.
  * - ADR-376 D2 — the expanse: `size:`, the `landmarks` block.
  * - ADR-376 D3, D10 — `in <expanse> at <x>, <y>` on an open vehicle or a floating thing.
  * - ADR-376 D6 — `sight:` and `seen from afar:` on landmark rooms; an instrument's `sight:`; `visibility:`.
@@ -53,24 +54,8 @@ export const expanseBuilder: EntityLineBuilder = {
     const sightLine = vehicleLineOf(decl, 'sight');
     const afarLine = vehicleLineOf(decl, 'seen-from-afar');
 
-    // D1: the gate. `an expanse` itself is reported by the kind-noun check;
-    // `movement: open` by the vehicle builder; everything else here.
-    if (!context.usedExtensions.has('expanses')) {
-      const offending =
-        expanseLines[0]?.span ??
-        decl.landmarksBlock?.span ??
-        (!isVehicle ? sightLine?.span ?? afarLine?.span : undefined) ??
-        decl.placement?.at?.span;
-      if (offending) {
-        context.diagnostics.error(
-          'analysis.expanses-needs-use',
-          `\`${name}\` writes \`use expanses\` vocabulary — add \`use expanses\` to the story header.`,
-          offending,
-        );
-      }
-      return;
-    }
-
+    // D1: the `use expanses` gate is validateIR's, over the lowered entity
+    // (ADR-389 D4) — every line lowers either way, so the rule has one home.
     if (isExpanse) {
       entity.expanse = buildExpanse(decl, entity, context, name);
     } else {

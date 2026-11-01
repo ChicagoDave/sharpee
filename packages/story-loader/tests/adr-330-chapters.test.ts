@@ -293,18 +293,11 @@ describe('ADR-330 chapters on the real path', () => {
     expect(() => b.story.registerChannels(new StdlibChannelRegistry())).toThrow(/'story\.chapter'.*'room-name'/);
   });
 
-  it('rogue IR with chapters but no `use chapters` → LoadError at engine-ready (the loader backstop behind the compiler\'s gate)', () => {
+  it('rogue IR with chapters but no `use chapters` → LoadError at createStory (chord\'s validateIR, the one rule — ADR-389 D4)', () => {
     const ir = compileSource(SOURCE);
     ir.uses = [];
-    const rogue = createStory(ir, { seed: 7 });
-    const w = new WorldModel();
-    rogue.initializeWorld(w);
-    const p = rogue.createPlayer(w);
-    p.add(new ActorTrait({ isPlayable: true }));
-    w.setPlayer(p.id);
-    expect(() =>
-      rogue.onEngineReady(stubStoryEngine()),
-    ).toThrow(LoadError);
+    expect(() => createStory(ir, { seed: 7 })).toThrow(LoadError);
+    expect(() => createStory(ir, { seed: 7 })).toThrow('A `define chapters` block needs `use chapters` in the story header');
   });
 
   it('Acceptance 7: `during`/`before`/`after` read the current chapter — an intercept, an arrival phrase at the boundary, and a blocked exit', async () => {

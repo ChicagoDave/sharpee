@@ -1079,7 +1079,6 @@ export class Analyzer {
     // Pass 1: entities, aliases, states, phrases, named conditions.
     { name: 'collect', requires: [], run: (a) => a.collect() },
     { name: 'validateUses', requires: [], run: (a) => a.validateUses() },
-    { name: 'checkScoringUse', requires: ['collect', 'validateUses'], run: (a) => a.checkScoringUse() },
     // Built before the IR because it emits diagnostics; createIR spreads the
     // result in only when present.
     { name: 'buildHunger', requires: [], run: (a) => { a.hungerDef = a.buildHunger(); } },
@@ -1255,18 +1254,6 @@ export class Analyzer {
           );
         }
       }
-    }
-  }
-
-  /**
-   * Scoring's constructs sit behind `use scoring`; a `score` declaration
-   * without it is reported once, at the first offending site, so scoring is
-   * on precisely when the header says so.
-   * Reference: ADR-261 D4 (D3: absent `use scoring` means no score).
-   */
-  private checkScoringUse(): void {
-    if (!this.usedExtensions.has('scoring') && this.scoreDecls.length > 0) {
-      this.reportScoringGate('score', this.scoreDecls[0].span);
     }
   }
 
@@ -3055,9 +3042,7 @@ export class Analyzer {
     if (step.state === 'in sight') {
       // ADR-376 D7: `when <thing> comes into sight` — the first step that
       // brings it within the looker's sight; any named entity may anchor it.
-      if (!this.usedExtensions.has('expanses')) {
-        this.diagnostics.error('analysis.expanses-needs-use', '`comes into sight` is `use expanses` vocabulary — add `use expanses` to the story header.', step.span);
-      }
+      // Its `use expanses` gate is validateIR's, over the lowered anchor.
       return { owner: id, state: 'in sight' };
     }
     if (step.state === 'under way') {
@@ -4325,34 +4310,6 @@ export class Analyzer {
       }
       this.entityCounterNames.set(id, names);
     }
-  }
-
-  /** Construct kinds already reported by the scoring gate (one each). */
-  private scoringGateReported = new Set<string>();
-
-  /**
-   * Report the `use scoring` gate for one construct kind (ADR-261 D4).
-   *
-   * A gated construct must never be silently dead, so this is an error rather
-   * than a warning, backstopped by a `LoadError` in the story-loader for rogue
-   * IR — the two-layer shape ADR-215 uses for `define machine`.
-   *
-   * The third gated construct, a `rank` rung, cannot reach this check: the
-   * ladder is structurally inside the `use scoring` body, so a stray rung is
-   * `parse.rank-outside-scoring` at parse time — an earlier and more precise
-   * diagnostic. The loader's backstop covers the rogue-IR form.
-   */
-  private reportScoringGate(kind: 'score' | 'award', span: Span): void {
-    if (this.scoringGateReported.has(kind)) return;
-    this.scoringGateReported.add(kind);
-    const what = kind === 'score'
-      ? 'A `score … worth N` line needs'
-      : 'An `award` statement needs';
-    this.diagnostics.error(
-      'analysis.scoring-needs-use',
-      `${what} \`use scoring\` in the story header — without it the game has no score at all, and SCORE says so.`,
-      span,
-    );
   }
 
   /**
@@ -6151,7 +6108,7 @@ export class Analyzer {
         // ADR-375 D4: `set the <expanse>'s wind to …` — the parser read the wind.
         if (stmt.wind && stmt.target.kind === 'possessive' && stmt.target.base.kind === 'ref') {
           const expanseId = this.findEntitySilent(stmt.target.base.ref)?.id ?? null;
-          this.requireSailing('`set … wind`', stmt.span, null);
+          // Its `use sailing` gate is validateIR's, over the lowered statement.
           if (expanseId === null || !this.expanses.has(expanseId)) {
             this.diagnostics.error('analysis.wind-set-target', `\`set … wind\` names an expanse — \`${stmt.target.base.ref.words.join(' ')}\` is not one.`, stmt.span);
           }
@@ -6178,9 +6135,7 @@ export class Analyzer {
         if (stmt.target.kind === 'possessive' && stmt.target.field.length === 1 && stmt.target.field[0] === 'visibility' && stmt.target.base.kind === 'ref') {
           const expanseId = this.findEntitySilent(stmt.target.base.ref)?.id ?? null;
           if (expanseId !== null && this.expanses.has(expanseId)) {
-            if (!this.usedExtensions.has('expanses')) {
-              this.diagnostics.error('analysis.expanses-needs-use', '`set … visibility` is `use expanses` vocabulary — add `use expanses` to the story header.', stmt.span);
-            }
+            // Its `use expanses` gate is validateIR's, over the lowered statement.
             const v = stmt.value;
             const literal = v.kind === 'literal' && v.literalKind === 'number' ? Number(v.value) : null;
             if (literal === null || !Number.isInteger(literal) || literal < 0) {
@@ -6422,10 +6377,8 @@ export class Analyzer {
       case 'act':
         return this.resolveActStatement(stmt, scope);
       case 'award': {
-        // ADR-261 D4: `award` is gated with `score` and `ranks`.
-        if (!this.usedExtensions.has('scoring')) {
-          this.reportScoringGate('award', stmt.span);
-        }
+        // ADR-261 D4: `award` is gated with `score` and `ranks` behind `use
+        // scoring` — validateIR refuses the lowered statement (ADR-389 D4).
         // `award <score-name>` resolves owner-first (ratchet D12): the
         // enclosing owner's qualified id, then the story-level bare name.
         let expression = stmt.expression;
@@ -7678,14 +7631,8 @@ export class Analyzer {
   private buildChapters(): void {
     const decl = this.chapterDecls[0];
     if (!decl) return;
-    if (!this.usedExtensions.has('chapters')) {
-      this.diagnostics.error(
-        'analysis.chapters-needs-use',
-        'A `define chapters` block needs `use chapters` in the story header — chapters are an extension, on precisely when the header says so.',
-        decl.span,
-      );
-      return;
-    }
+    // The `use chapters` gate is validateIR's, over the lowered rows
+    // (ADR-389 D4) — the block builds either way, so the rule has one home.
     const seen = new Set<string>();
     const openers: number[] = [];
     decl.rows.forEach((row, ordinal) => {
@@ -8068,12 +8015,14 @@ export class Analyzer {
         // ADR-330 D5: the row's name → its ordinal, under the `use` gate.
         // Read off the AST, not the built tables: a `phrase detail` gate
         // resolves in pass 1, before `use` lines and chapter rows are built.
-        const uses = (this.ast.header?.uses ?? []).some((u) => u.name === 'chapters');
-        if (!uses) {
-          this.diagnostics.error('analysis.chapters-needs-use', `\`${cond.relation} ${cond.name}\` reads a chapter — add \`use chapters\` and a \`define chapters\` block to the story.`, cond.span);
+        const block = this.ast.declarations.find((d): d is DefineChapters => d.kind === 'define-chapters');
+        if (!block && !(this.ast.header?.uses ?? []).some((u) => u.name === 'chapters')) {
+          // No block and no use line: the name resolves nowhere, and the fix
+          // is the use line — validateIR names it over the lowered condition
+          // (ADR-389 D4). With the use line, the empty row set below is the
+          // unknown-chapter report.
           return { kind: 'chapter', relation: cond.relation, ordinal: -1 };
         }
-        const block = this.ast.declarations.find((d): d is DefineChapters => d.kind === 'define-chapters');
         const rows = block?.rows ?? [];
         const ordinal = rows.findIndex((r) => r.name === cond.name);
         if (ordinal < 0) {
@@ -8336,16 +8285,15 @@ export class Analyzer {
   }
 
   /**
-   * ADR-375 D1: a sailing word needs `use sailing`, and sits on an open
-   * vehicle. Reports each once at the word; a missing use line is
-   * `sailing-needs-use`, a vehicle of another type `sailing-not-open`.
+   * ADR-375 D1: a sailing word sits on an open vehicle — a vehicle of
+   * another type is `sailing-not-open`, reported at the word. The word's
+   * `use sailing` gate (`sailing-needs-use`) is validateIR's.
    * @param form the word as the author reads it, for the message
    * @param vehicle the vehicle the word names, when it names one
    */
   private requireSailing(form: string, span: Span, vehicle: VehicleDecl | null): void {
-    if (!this.usedExtensions.has('sailing')) {
-      this.diagnostics.error('analysis.sailing-needs-use', `${form} is \`use sailing\` vocabulary — add \`use sailing\` to the story header.`, span);
-    }
+    // The words' `use sailing` gate is validateIR's, over the lowered
+    // statements and conditions (ADR-389 D4); the vehicle's type is read here.
     if (vehicle && vehicle.movement !== 'open') {
       this.diagnostics.error(
         'analysis.sailing-not-open',
@@ -8395,13 +8343,7 @@ export class Analyzer {
     predicate: Extract<Predicate, { kind: 'in-sight' | 'sight-band' }>,
     subject: IRValue,
   ): IRCondition {
-    if (!this.usedExtensions.has('expanses')) {
-      this.diagnostics.error(
-        'analysis.expanses-needs-use',
-        `\`is ${predicate.kind === 'in-sight' ? 'in sight' : predicate.band.replace(/-/g, ' ')}\` is \`use expanses\` vocabulary — add \`use expanses\` to the story header.`,
-        predicate.span,
-      );
-    }
+    // The words' `use expanses` gate is validateIR's, over the lowered condition.
     if (subject.kind !== 'entity') {
       this.diagnostics.error(
         'analysis.sight-subject',

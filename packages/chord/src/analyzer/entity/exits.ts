@@ -82,14 +82,20 @@ function destinationOf(id: string | null): IRExitDestination {
 
 export const exitsBuilder: EntityLineBuilder = {
   name: 'exits',
-  requires: [],
+  requires: ['compositions'],
   build(decl, entity, context) {
     const { scope } = entity;
     const tails: ExitTailResolvers = {
       resolveCondition: (condition) => context.resolveCondition(condition, scope),
       resolveAdmits: (ref) => resolveAdmitsWord(ref, context),
     };
-    entity.exits = decl.exits.map((e) => lowerExit(e, (ref) => context.resolveEntityId(ref), tails));
+    // ADR-362 D2: an `exits:` line on a non-room is named as a line by the
+    // host gates and lowers to nothing; every other exit form lowers, and
+    // validateIR refuses it on a non-room (analysis.exit-non-room).
+    const isRoom = entity.kinds.some((k) => k.name === 'room');
+    entity.exits = decl.exits
+      .filter((e) => isRoom || !e.exitsLine)
+      .map((e) => lowerExit(e, (ref) => context.resolveEntityId(ref), tails));
     for (const e of decl.exits) {
       if (e.passage && e.oneWay) {
         context.diagnostics.error(

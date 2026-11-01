@@ -8,15 +8,14 @@
  * moment an extension takes part in: its world-side registration at load,
  * its world-state seeding from the story's rows, its config-free plugin
  * slot and its IR-shaped construction at engine-ready, its channel
- * registration, and the construct its `use` unlocks (so rogue IR carrying
- * the construct without the `use` is refused). The loader drives every
+ * registration. The loader drives every
  * moment generically over this map and names no extension; adding one is
  * a module under `extensions/` and a row here, never a loader edit. The
  * entries are iterated in this map's order — never the header's `use`
  * order — so two extensions' equal-priority plugins keep one fixed
  * tie-break whatever an author wrote first. An unknown `use` name is a
- * LoadError (the compiler's manifest gate catches it first; this is the
- * rogue-IR backstop). The chord-side manifest registry must carry exactly
+ * LoadError — a drift guard, since the compiler admits only the names its
+ * manifests carry. The chord-side manifest registry must carry exactly
  * these names — the manifest-conformance test pins the two together.
  *
  * The adjective→trait field routes also live here: derived views of the
@@ -38,7 +37,7 @@
  * - ADR-226 — `health`/`max-health` route to the required HealthTrait.
  * - ADR-335 D3 — IR-shaped construction moved into the entries.
  */
-import type { IRCondition, IRStatement, Span, StoryIR } from '@sharpee/chord';
+import type { IRCondition, IRStatement, StoryIR } from '@sharpee/chord';
 import type { ISemanticEvent } from '@sharpee/core';
 import type { WorldModel } from '@sharpee/world-model';
 import { CHAPTERS_EXTENSION } from './extensions/chapters.js';
@@ -147,13 +146,6 @@ export interface ExtensionRegistration {
   registerPlugin?: (registry: { register(plugin: unknown): void }) => void;
   /** Channel + renderer registration (the contract's third contribution part). */
   registerChannels?: (registry: unknown) => void;
-  /**
-   * The IR construct this extension's `use` unlocks: the construct's
-   * spelling and the span of its first occurrence when the IR carries one,
-   * else null. IR carrying the construct without the `use` is refused at
-   * engine-ready — never silently dead.
-   */
-  gatedConstruct?: (ir: StoryIR) => { construct: string; span: Span | undefined } | null;
   /**
    * World-side, IR-shaped seeding at the end of world build: state the
    * extension's plugin reads from turn 1. Runs once per boot, before any

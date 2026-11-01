@@ -642,9 +642,10 @@ export class ChordStory implements Story {
 
     // ADR-215: `use`-declared trusted extensions register FIRST — their
     // world-side registrations (interceptors, resolvers) must exist before
-    // any entity composes their vocabulary. Unknown names are LoadErrors
-    // (the compiler's manifest gate catches them first; this backstops
-    // rogue IR).
+    // any entity composes their vocabulary. A name with no entry here is a
+    // load-time fact, not a backstop: the compiler admits only the names
+    // its manifests carry, so this fires only when the two registries have
+    // drifted apart (the manifest-conformance test pins them together).
     for (const name of this.ir.uses ?? []) {
       const registration = EXTENSION_REGISTRY.get(name);
       if (!registration) {
@@ -692,18 +693,6 @@ export class ChordStory implements Story {
     // exact — ADR-129).
     if (this.ir.scores.length > 0) {
       world.setMaxScore(this.ir.scores.reduce((sum, s) => sum + s.worth, 0));
-    }
-
-    // ADR-261 D4's rogue-IR backstop — the same two-layer shape
-    // `define machine` uses. The compiler's `analysis.scoring-needs-use`
-    // catches this first; hand-built IR reaches here, and a gated construct
-    // must never be silently dead.
-    if ((this.ir.scores.length > 0 || this.ir.ranks.length > 0)
-      && !(this.ir.uses ?? []).includes('scoring')) {
-      throw new LoadError(
-        '`score`/`award`/`ranks` need `use scoring` in the story header.',
-        (this.ir.ranks[0] ?? this.ir.scores[0]).span,
-      );
     }
 
     // The rank ladder lowers onto ADR-260 D2's seam, beside the ceiling it
@@ -1236,21 +1225,13 @@ export class ChordStory implements Story {
 
     // The trusted extensions, in the registry's order — never the header's
     // `use` order, so two extensions' equal-priority plugins keep one fixed
-    // tie-break whatever an author wrote first. First the rogue-IR
-    // backstop: a construct an extension's `use` unlocks, present without
-    // the `use`, is a LoadError, never silently dead (the compiler's gate
-    // catches it first; hand-built IR reaches here). Then, per `use`d
-    // extension, its config-free plugin slot and its IR-shaped construction
-    // — the only moment a plugin registry exists. Generic and naming no
-    // extension: enabling one is a registry entry, never a loader edit.
+    // tie-break whatever an author wrote first. Per `use`d extension, its
+    // config-free plugin slot and its IR-shaped construction — the only
+    // moment a plugin registry exists. Generic and naming no extension:
+    // enabling one is a registry entry, never a loader edit. A construct
+    // present without its `use` never reaches here: validateIR refused the
+    // IR at createStory (ADR-389 D4).
     const uses = this.ir.uses ?? [];
-    for (const [name, registration] of EXTENSION_REGISTRY) {
-      if (uses.includes(name)) continue;
-      const gated = registration.gatedConstruct?.(this.ir);
-      if (gated) {
-        throw new LoadError(`\`${gated.construct}\` needs \`use ${name}\` in the story header.`, gated.span);
-      }
-    }
     const installContext: ExtensionInstallContext = {
       world,
       evalCondition: (condition, world) => this.evaluator.evalCondition(condition, { world }),
@@ -1513,9 +1494,10 @@ export class ChordStory implements Story {
         const parts = lowerParts(pattern.parts);
         const removed = grammar.removeRules(derived, (rule) => samePatternShape(rule.parts, parts));
         if (removed === 0) {
-          // ADR-276 census 3: the compiler's gate refuses this
-          // (analysis.unmatched-removal-pattern, from the manifest's
-          // grammar-shape slice) — defensive backstop.
+          // A load-time fact, not a backstop: validateIR matched the
+          // pattern against the manifest's shapes; the LIVE grammar is what
+          // the removal acts on, and a shape the manifest carries but the
+          // running parser does not is knowable only here.
           const actual = grammar
             .getRules()
             .filter((rule) => rule.action === derived && rule.tier === 'standard')
@@ -1728,20 +1710,9 @@ export class ChordStory implements Story {
       }
       world.assignRoom(requireEntity(world, member.id, irEntity).id, entity.id);
     }
-    // ADR-289 D6 backstop (ADR-276 two-layer): exits are gated to rooms at
-    // compile (`analysis.exit-non-room`), so a non-room carrying any of the
-    // three exit forms is rogue IR. Checked once for all three — exits wire
-    // into RoomTrait.exits, which a non-room does not have, and the blocked
-    // and deadly tables would key a room id that never resolves.
-    if (
-      (irEntity.exits.length > 0 || irEntity.blockedExits.length > 0 || irEntity.deadlyExits.length > 0) &&
-      !entity.has(TraitType.ROOM)
-    ) {
-      throw new LoadError(
-        `\`${irEntity.name}\` declares an exit but is not a room — rogue IR (the compiler's \`analysis.exit-non-room\` gate refuses this).`,
-        irEntity.exits[0]?.span ?? irEntity.blockedExits[0]?.span ?? irEntity.deadlyExits[0]?.span ?? irEntity.span,
-      );
-    }
+    // ADR-289 D6: exits wire into RoomTrait.exits, so they are a room's —
+    // validateIR refused every exit form on a non-room upstream
+    // (analysis.exit-non-room, ADR-389 D4).
     for (const exit of irEntity.exits) this.wireExit(world, irEntity, entity, exit);
     // ADR-366: the vehicle's model, the rooms that admit it, and the rooms
     // aboard it — every id resolvable now that every entity is built.
@@ -1857,8 +1828,8 @@ export class ChordStory implements Story {
 
   private buildEntity(world: WorldModel, irEntity: IREntity): IFEntity {
     if (irEntity.kinds.length === 0) {
-      // ADR-359 D1: the compiler's gate refuses this
-      // (analysis.missing-kind-noun) — defensive backstop.
+      // validateIR refused this upstream (analysis.missing-kind-noun); the
+      // branch stays because the kind below must be a value.
       throw new LoadError(`\`${irEntity.name}\` names no kind.`, irEntity.span);
     }
     const kind = irEntity.kinds[0].name;
@@ -2421,15 +2392,8 @@ export class ChordStory implements Story {
         case 'combatant':
         case 'weapon': {
           // ADR-215 combat vocabulary — `use combat` extension adjectives.
-          // The analyzer gated use-declaration and field names/types
-          // (ADR-276 census 7: pre-gated, analysis.extension-not-used);
-          // this check is the rogue-IR backstop.
-          if (!(this.ir.uses ?? []).includes('combat')) {
-            throw new LoadError(
-              `\`${trait.name}\` is \`combat\` extension vocabulary — add \`use combat\` to the story header.`,
-              trait.span,
-            );
-          }
+          // The use line and the field names and types are validateIR's
+          // (analysis.extension-not-used, -config-key, -config-value).
           this.applyCombatAdjective(entity, irEntity, trait);
           break;
         }
@@ -2554,10 +2518,10 @@ export class ChordStory implements Story {
         break;
       }
       default:
-        // ADR-276 census 8: pre-gated — only the closed applyTraitAdjectives
-        // switch routes here (guard/passive/wanderer/follower/patrol), and
-        // the analyzer's extension manifests gate the vocabulary. Defensive
-        // backstop for rogue IR.
+        // Only the closed applyTraitAdjectives switch routes here
+        // (guard/passive/wanderer/follower/patrol), and validateIR refuses
+        // any other word upstream; the branch stays because the switch must
+        // yield a behavior.
         throw new LoadError(`Unknown NPC behavior adjective \`${pending.adjective}\`.`, pending.span);
     }
     behavior.id = `chord.npc.${pending.irId}`;
@@ -2587,9 +2551,8 @@ export class ChordStory implements Story {
       if (route.convert === 'number') {
         const parsed = Number(setting.value);
         if (Number.isNaN(parsed)) {
-          // ADR-276 census 5: the compiler's valueKind gate refuses this
-          // (analysis.extension-config-value — pre-gated, discovered in
-          // Phase 5) — defensive backstop.
+          // validateIR refused this upstream (analysis.extension-config-value);
+          // the branch stays because the field must be a number.
           throw new LoadError(`\`${irEntity.name}\`: \`${setting.key}\` needs a number, got \`${setting.value}\`.`, trait.span);
         }
         values[route.trait][route.field] = parsed;
@@ -3013,11 +2976,11 @@ const STARTS_STATE_TRAIT_FIELDS: ReadonlyMap<
 /** Chord exit word → world-model exit key, or a load error for a word that names none. */
 function toDirection(word: string, at?: IREntity): ExitKey {
   const dir = exitKeyOfWord(word);
-  // ADR-276 census 16: pre-gated by the PARSER — chord's closed exit
-  // DIRECTIONS set (parser.ts) is a strict subset of the Direction enum, so
-  // gate-clean IR cannot carry an unknown word here. Defensive backstop
-  // (also guards parser/enum drift — pinned by the story-loader
-  // direction-conformance test).
+  // A load-time fact, not a backstop: chord's closed exit DIRECTIONS set
+  // (parser.ts) is a strict subset of the Direction enum, so gate-clean IR
+  // cannot carry an unknown word here, and this fires only when the two
+  // have drifted apart (pinned by the story-loader direction-conformance
+  // test).
   if (!dir) throw new LoadError(`Unknown direction \`${word}\`.`, at?.span);
   return dir;
 }

@@ -1,9 +1,11 @@
 /**
  * validate-ir.ts — the Story IR's own invariants, checked once over the
- * finished IR: the targets and shapes of grammar alterations, kind nouns,
- * composition and trait adjectives with their settings, worn items,
- * tool-gated gerunds, listeners, conditional deadly exits, and every door's
- * connection. Each is a fact of the IR alone — no AST, no analyzer state —
+ * finished IR: the targets and shapes of grammar alterations, the `use`
+ * line every extension's construct and word needs, kind nouns and the
+ * block that names none, composition and trait adjectives with their
+ * settings, exits on a non-room, worn items, tool-gated gerunds, listeners,
+ * conditional deadly exits, and every door's connection. Each is a fact of
+ * the IR alone — no AST, no analyzer state —
  * so the compile reports it as its last analysis pass and the loader asks
  * the same function once before it builds a world. One rule, two callers.
  *
@@ -20,8 +22,9 @@ import { KIND_NOUNS, TRAIT_ADJECTIVES } from './catalog.js';
 import { type Diagnostic, DiagnosticBag } from './diagnostics.js';
 import { nearest } from './edit-distance.js';
 import type { IROnClause, StoryIR } from './ir.js';
-import { manifestForAdjective, manifestForKindNoun } from './manifests/index.js';
+import { manifestForAdjective, manifestForKindNoun, manifestForMovementType } from './manifests/index.js';
 import { lowerParts, renderPattern, samePatternShape } from './patterns.js';
+import type { Span } from './span.js';
 import { STDLIB_MANIFEST } from './stdlib-manifest.js';
 
 /**
@@ -79,6 +82,109 @@ export function validateIR(ir: StoryIR): Diagnostic[] {
           `\`remove from action ${removal.action}\` — no standard rule matches \`${renderPattern(parts)}\`. The action's standard patterns are: ${shapes.map((s) => `\`${renderPattern(s)}\``).join(', ') || '(none)'}.`,
           removal.span,
         );
+      }
+    }
+  }
+
+  // ADR-261 D4, ADR-330 D1, ADR-376 D1, ADR-375 D1: a `use`-gated construct
+  // is admitted only under its `use` line, and is never silently dead. The
+  // declarations are read where they lie; the words inside clause bodies —
+  // an `award`, a chapter condition, a sight read, a visibility write, a
+  // `comes into sight` step — are found by one walk of the lowered tree,
+  // each reported at the nearest enclosing span. One report per construct
+  // kind for scoring, as the analyzer always gave.
+  if (!usedExtensions.has('scoring')) {
+    if (ir.scores.length > 0) {
+      diagnostics.error(
+        'analysis.scoring-needs-use',
+        'A `score … worth N` line needs `use scoring` in the story header — without it the game has no score at all, and SCORE says so.',
+        ir.scores[0].span,
+      );
+    }
+    if (ir.ranks.length > 0) {
+      diagnostics.error(
+        'analysis.scoring-needs-use',
+        'A `rank` rung needs `use scoring` in the story header — without it the game has no score at all, and SCORE says so.',
+        ir.ranks[0].span,
+      );
+    }
+  }
+  if ((ir.chapters ?? []).length > 0 && !usedExtensions.has('chapters')) {
+    diagnostics.error(
+      'analysis.chapters-needs-use',
+      'A `define chapters` block needs `use chapters` in the story header — chapters are an extension, on precisely when the header says so.',
+      ir.chapters![0].span,
+    );
+  }
+  let awardReported = false;
+  for (const site of irNodes(ir, undefined)) {
+    const kind = stringField(site.node, 'kind');
+    const at = site.span ?? HEADER_SPAN;
+    if (kind === 'award') {
+      if (!usedExtensions.has('scoring') && !awardReported) {
+        awardReported = true;
+        diagnostics.error(
+          'analysis.scoring-needs-use',
+          'An `award` statement needs `use scoring` in the story header — without it the game has no score at all, and SCORE says so.',
+          at,
+        );
+      }
+    } else if (kind === 'chapter' && stringField(site.node, 'relation') !== undefined) {
+      if (!usedExtensions.has('chapters')) {
+        diagnostics.error(
+          'analysis.chapters-needs-use',
+          `\`${stringField(site.node, 'relation')} <chapter>\` reads a chapter — add \`use chapters\` and a \`define chapters\` block to the story.`,
+          at,
+        );
+      }
+    } else {
+      if (!usedExtensions.has('expanses')) {
+        // ADR-376 D6, D7: the sight reads, the visibility write and the
+        // `comes into sight` step anchor (an `{ owner, state }` pair).
+        const word =
+          kind === 'in-sight'
+            ? 'is in sight'
+            : kind === 'sight-band'
+              ? `is ${(stringField(site.node, 'band') ?? '').replace(/-/g, ' ')}`
+              : kind === 'expanse-visibility'
+                ? 'set … visibility'
+                : kind === undefined && stringField(site.node, 'state') === 'in sight' && stringField(site.node, 'owner') !== undefined
+                  ? 'comes into sight'
+                  : null;
+        if (word !== null) {
+          diagnostics.error(
+            'analysis.expanses-needs-use',
+            `\`${word}\` is \`use expanses\` vocabulary — add \`use expanses\` to the story header.`,
+            at,
+          );
+        }
+      }
+      if (!usedExtensions.has('sailing')) {
+        // ADR-375 D2, D4, D5, D7: the wind and sails writes, a bearing on a
+        // start or a heading read, `in irons` and the sails read. The sails
+        // kind names a statement (it carries `stmtWhen`) or a condition.
+        const hasBearing = numberField(site.node, 'bearing') !== undefined;
+        const word =
+          kind === 'expanse-wind'
+            ? 'set … wind'
+            : kind === 'vehicle-sails'
+              ? hasOwnField(site.node, 'stmtWhen')
+                ? 'set … sails'
+                : 'sails are <setting>'
+              : kind === 'vehicle-start' && hasBearing
+                ? 'heading <n> degrees'
+                : kind === 'vehicle-heading' && hasBearing
+                  ? 'is heading <n> degrees'
+                  : kind === 'in-irons'
+                    ? 'is in irons'
+                    : null;
+        if (word !== null) {
+          diagnostics.error(
+            'analysis.sailing-needs-use',
+            `\`${word}\` is \`use sailing\` vocabulary — add \`use sailing\` to the story header.`,
+            at,
+          );
+        }
       }
     }
   }
@@ -144,7 +250,115 @@ export function validateIR(ir: StoryIR): Diagnostic[] {
       );
     }
 
+    // ADR-359 D1: every block names its kind. A kind noun written bare is
+    // named as such below, so it does not also report as missing.
+    if (entity.kinds.length === 0 && !entity.traits.some((t) => KIND_NOUNS.has(t.name))) {
+      diagnostics.error(
+        'analysis.missing-kind-noun',
+        `\`${entity.name}\` names no kind. Begin its block with one: \`a room\`, \`a door\`, \`a person\`, \`a container\`, \`a supporter\`, \`a region\`, or \`a thing\` for anything that is not a room, door, person, container, supporter or region.`,
+        entity.span,
+      );
+    }
+
+    // ADR-366 D12, ADR-376 D1, ADR-375 D1: an extension's words on an
+    // entity are admitted only under its `use` line — the movement type,
+    // the expanse's lines and placement, the sailing lines. One report per
+    // entity and extension; `an expanse` itself reported with the kinds.
+    const movementManifest = entity.vehicle ? manifestForMovementType(entity.vehicle.movement) : null;
+    if (entity.vehicle && movementManifest && !movementManifest.core && !usedExtensions.has(movementManifest.name)) {
+      diagnostics.error(
+        `analysis.${movementManifest.name}-needs-use`,
+        `\`movement: ${entity.vehicle.movement}\` is \`use ${movementManifest.name}\` vocabulary — add \`use ${movementManifest.name}\` to the story header.`,
+        entity.span,
+      );
+    }
+    const isExpanse = entity.kinds.some((k) => k.name === 'expanse');
+    const expansesNamed = isExpanse || movementManifest?.name === 'expanses';
+    const writesExpanses =
+      entity.expanse !== undefined ||
+      entity.sight !== undefined ||
+      entity.seenFromAfar !== undefined ||
+      entity.placement?.at !== undefined;
+    if (!usedExtensions.has('expanses') && writesExpanses && !expansesNamed) {
+      diagnostics.error(
+        'analysis.expanses-needs-use',
+        `\`${entity.name}\` writes \`use expanses\` vocabulary — add \`use expanses\` to the story header.`,
+        entity.span,
+      );
+    }
+    const writesSailing =
+      entity.expanse?.wind !== undefined ||
+      entity.vehicle?.sailing !== undefined ||
+      entity.vehicle?.sails !== undefined ||
+      (entity.vehicle?.commands ?? []).includes('naval');
+    if (!usedExtensions.has('sailing') && writesSailing) {
+      diagnostics.error(
+        'analysis.sailing-needs-use',
+        `\`${entity.name}\` writes \`use sailing\` vocabulary — add \`use sailing\` to the story header.`,
+        entity.span,
+      );
+    }
+
+    // ADR-289 D6: exits leave a room. An expanse's blocked-exit lines are
+    // its edges (ADR-376 D8), read as such by the expanse builder.
     const isRoom = entity.kinds.some((k) => k.name === 'room');
+    if (!isRoom) {
+      const stray = entity.exits[0] ?? (isExpanse ? undefined : entity.blockedExits[0]) ?? entity.deadlyExits[0];
+      if (stray) {
+        diagnostics.error(
+          'analysis.exit-non-room',
+          `Exits belong to rooms — \`${entity.name}\` is not a room. Remove the line, or make this block \`a room\`.`,
+          stray.span,
+        );
+      }
+    }
+
+    // ADR-215: extension vocabulary is admitted only under its `use` line
+    // (core manifests — npc — always), and its `with`-fields are the
+    // manifest's closed, typed set — an unknown key or a mistyped value is
+    // refused here, never dropped at the loader. `[ … ]` list values exist
+    // only as manifest list fields.
+    for (const comp of entity.traits) {
+      const contributed = manifestForAdjective(comp.name);
+      if (!contributed) {
+        for (const cfg of comp.config) {
+          if (cfg.valueKind === 'list') {
+            diagnostics.error(
+              'analysis.config-list-host',
+              `\`[ … ]\` list values belong to extension fields that declare them (e.g. \`patrol route [ … ]\`) — \`${comp.name}\` has none.`,
+              comp.span,
+            );
+          }
+        }
+        continue;
+      }
+      if (!contributed.manifest.core && !usedExtensions.has(contributed.manifest.name)) {
+        diagnostics.error(
+          'analysis.extension-not-used',
+          `\`${comp.name}\` is \`${contributed.manifest.name}\` extension vocabulary — add \`use ${contributed.manifest.name}\` to the story header.`,
+          comp.span,
+        );
+        continue;
+      }
+      for (const cfg of comp.config) {
+        const field = contributed.adjective.fields.find((f) => f.key === cfg.key);
+        if (!field) {
+          const known = contributed.adjective.fields.map((f) => f.key).join(', ');
+          diagnostics.error(
+            'analysis.extension-config-key',
+            `\`${cfg.key}\` is not a \`${comp.name}\` field — known fields: ${known}.`,
+            comp.span,
+          );
+        } else if (field.valueKind !== cfg.valueKind) {
+          diagnostics.error(
+            'analysis.extension-config-value',
+            `\`${cfg.key}\` takes a ${field.valueKind} value, not ${cfg.valueKind === 'name' ? 'an entity name' : `a ${cfg.valueKind}`}.`,
+            comp.span,
+          );
+        }
+      }
+    }
+
     for (const comp of entity.traits) {
       // ADR-359 D1: a kind noun written bare (`scenery, container`) reads
       // as a trait; name the fix instead of an undeclared-trait error.
@@ -341,7 +555,7 @@ export function validateIR(ir: StoryIR): Diagnostic[] {
 
       // Census 4/6 (ADR-276 Phase 5): setting value domains from the
       // manifest's schema slice. Extension traits run only when admitted —
-      // buildEntity's extension gates own the `use`-missing case. The
+      // the extension gate above owns the `use`-missing case. The
       // number domain needs no check here: valueKind mismatch is already
       // `analysis.extension-config-value` (census 5 was pre-gated).
       const schema = STDLIB_MANIFEST.settingSchema[comp.name];
@@ -481,6 +695,50 @@ export function validateIR(ir: StoryIR): Diagnostic[] {
  * does — display-name or `aka` alias, lowercased, first match — so the
  * census-6 compile gate is exactly as strict as the load check it fronts.
  */
+/** The span the header occupies: the site of a diagnostic on a node with no enclosing span. */
+const HEADER_SPAN: Span = { line: 1, column: 1, endLine: 1, endColumn: 1 };
+
+/** A node of the lowered tree, with the span of the nearest enclosing node that carries one. */
+interface IRNodeSite {
+  readonly node: object;
+  readonly span: Span | undefined;
+}
+
+/**
+ * Walk every object in the lowered IR, depth first, carrying the nearest
+ * enclosing span down to the nodes — conditions carry none of their own.
+ * @param root the node to start from (the IR, or any node inside it)
+ * @param enclosing the span of the nearest ancestor that carries one
+ */
+function* irNodes(root: object, enclosing: Span | undefined): Generator<IRNodeSite> {
+  const own =
+    'span' in root && typeof root.span === 'object' && root.span !== null && 'line' in root.span && typeof root.span.line === 'number'
+      ? (root.span as Span)
+      : enclosing;
+  yield { node: root, span: own };
+  const children: ReadonlyArray<object | string | number | boolean | null | undefined> = Object.values(root);
+  for (const child of children) {
+    if (typeof child === 'object' && child !== null) yield* irNodes(child, own);
+  }
+}
+
+/** A string-valued field of a node, or undefined when absent or not a string. */
+function stringField(node: object, key: string): string | undefined {
+  const value: object | string | number | boolean | null | undefined = Object.getOwnPropertyDescriptor(node, key)?.value;
+  return typeof value === 'string' ? value : undefined;
+}
+
+/** A number-valued field of a node, or undefined when absent or not a number. */
+function numberField(node: object, key: string): number | undefined {
+  const value: object | string | number | boolean | null | undefined = Object.getOwnPropertyDescriptor(node, key)?.value;
+  return typeof value === 'number' ? value : undefined;
+}
+
+/** True when the node carries the field at all, whatever its value (a statement's `stmtWhen` may be null). */
+function hasOwnField(node: object, key: string): boolean {
+  return Object.getOwnPropertyDescriptor(node, key) !== undefined;
+}
+
 function resolveConfigEntity(ir: StoryIR, name: string): boolean {
   const lower = name.toLowerCase();
   return ir.entities.some((e) => e.name.toLowerCase() === lower || e.aka.includes(lower));

@@ -114,10 +114,12 @@ end chapters
 describe('the gates (ADR-330 D1–D3, Acceptance 4)', () => {
   const codes = (errors: { code: string }[]) => errors.map((e) => e.code);
 
-  it('the block without `use chapters` is analysis.chapters-needs-use, on the block', () => {
+  it('the block without `use chapters` is analysis.chapters-needs-use, on its first row', () => {
+    // The gate is validateIR's, over the lowered rows (ADR-389 D4): the
+    // block builds either way, and the first row is the construct's span.
     const { errors } = compileStory('', BLOCK);
     expect(codes(errors)).toEqual(['analysis.chapters-needs-use']);
-    expect(errors[0].span.line).toBe(story('', BLOCK).split('\n').findIndex((l) => l.startsWith('define chapters')) + 1);
+    expect(errors[0].span.line).toBe(story('', BLOCK).split('\n').findIndex((l) => l.startsWith('  market - ')) + 1);
   });
 
   it('no row on `the game starts` is analysis.chapter-no-opening', () => {

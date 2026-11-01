@@ -97,3 +97,31 @@ create the keeper
     expect(world.getEntity('vault')).toBeDefined();
   });
 });
+
+describe('the grammar seam (ADR-276 census 1 and 2) — createStory refuses through validateIR before any grammar is registered', () => {
+  // The rules themselves are pinned in packages/chord/tests/validate-ir.test.ts;
+  // the loader carries no copy (ADR-389 D4).
+  const span = { line: 1, column: 1, endLine: 1, endColumn: 1 };
+
+  it('an extend-action target naming no action is refused at createStory, with the did-you-mean', () => {
+    const rogue = structuredClone(compileClean(`${BASE}extend action taking\n  grammar\n    snag the item\n`));
+    rogue.grammarExtensions![0].action = 'takng';
+    expect(() => createStory(rogue)).toThrowError(LoadError);
+    expect(() => createStory(rogue)).toThrowError(/`extend action takng` — no story action or standard action has that name — did you mean `taking`\?/);
+  });
+
+  it('a removal target naming no standard action is refused at createStory, at the removal’s span', () => {
+    const rogue = structuredClone(compileClean(`${BASE}remove from action taking\n  get the item\n`));
+    rogue.grammarRemovals![0].action = 'snarf';
+    rogue.grammarRemovals![0].span = span;
+    let thrown: LoadError | undefined;
+    try {
+      createStory(rogue);
+    } catch (error) {
+      thrown = error as LoadError;
+    }
+    expect(thrown).toBeInstanceOf(LoadError);
+    expect(thrown!.message).toMatch(/`remove from action snarf` — no standard action has that name/);
+    expect(thrown!.span).toEqual(span);
+  });
+});

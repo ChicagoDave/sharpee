@@ -161,11 +161,12 @@ before the game starts
 end before
 `;
 
-describe('gatedConstruct — the rogue-IR backstop at engine-ready', () => {
-  it('`define chapters` without `use chapters` throws the named LoadError', () => {
-    const { story, engine } = bootHeadless(CHAPTERS_STORY, []);
-    expect(() => story.onEngineReady(engine)).toThrow(LoadError);
-    expect(() => story.onEngineReady(engine)).toThrow('`define chapters` needs `use chapters` in the story header.');
+describe('a gated construct without its `use` — refused at createStory by validateIR (ADR-389 D4)', () => {
+  it('`define chapters` without `use chapters` is a LoadError before any world is built', () => {
+    const ir = compileSource(CHAPTERS_STORY);
+    ir.uses = [];
+    expect(() => createStory(ir, { seed: 7 })).toThrow(LoadError);
+    expect(() => createStory(ir, { seed: 7 })).toThrow('A `define chapters` block needs `use chapters` in the story header');
   });
 });
 

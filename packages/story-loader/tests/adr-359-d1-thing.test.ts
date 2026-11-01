@@ -91,13 +91,12 @@ describe('ADR-359 D1 — `a thing` in the IR and the world', () => {
   });
 });
 
-describe('ADR-359 D1 — the loader refuses an entity with no kind', () => {
+describe('ADR-359 D1 — an entity with no kind is refused at createStory (validateIR, ADR-389 D4)', () => {
   it('throws a load error naming the entity when an IR entity has empty kinds', () => {
     const result = compile(SOURCE);
     const ir = structuredClone(result.ir);
     ir.entities.find((e) => e.id === 'scarf')!.kinds = [];
-    const story = createStory(ir, { seed: 1 });
-    expect(() => story.initializeWorld(new WorldModel())).toThrow('`scarf` names no kind.');
+    expect(() => createStory(ir, { seed: 1 })).toThrow('`scarf` names no kind.');
   });
 });
 
