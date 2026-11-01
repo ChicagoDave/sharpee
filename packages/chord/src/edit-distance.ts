@@ -4,7 +4,7 @@
  * Purpose: one Levenshtein implementation shared by the parser and the
  * analyzer, so a near-spelling suggestion means the same thing in both.
  *
- * Public interface: levenshtein().
+ * Public interface: levenshtein(), nearest().
  * Owner context: @sharpee/chord (language frontend; browser-safe).
  */
 
@@ -30,4 +30,25 @@ export function levenshtein(a: string, b: string): number {
     prev = row;
   }
   return prev[n];
+}
+
+/**
+ * Nearest candidate within an edit-distance budget, or null. The budget
+ * scales with the input (at least 2, else a third of its length), and the
+ * comparison ignores case.
+ * @param input the unknown name
+ * @param candidates the names it could have meant
+ * @returns the closest candidate inside the budget, or null when none is close
+ */
+export function nearest(input: string, candidates: string[]): string | null {
+  let best: string | null = null;
+  let bestDist = Math.max(2, Math.floor(input.length / 3)) + 1;
+  for (const c of candidates) {
+    const d = levenshtein(input.toLowerCase(), c.toLowerCase());
+    if (d < bestDist) {
+      bestDist = d;
+      best = c;
+    }
+  }
+  return best;
 }

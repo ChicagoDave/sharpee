@@ -1,7 +1,8 @@
 /**
  * validate-ir.ts — the Story IR's own invariants, checked once over the
- * finished IR: kind nouns, composition and trait adjectives with their
- * settings, worn items, tool-gated gerunds, listeners, and every door's
+ * finished IR: the targets and shapes of grammar alterations, kind nouns,
+ * composition and trait adjectives with their settings, worn items,
+ * tool-gated gerunds, listeners, conditional deadly exits, and every door's
  * connection. Each is a fact of the IR alone — no AST, no analyzer state —
  * so the compile reports it as its last analysis pass and the loader asks
  * the same function once before it builds a world. One rule, two callers.
@@ -13,11 +14,14 @@
  * - ADR-389 D4 — the IR's invariants live here; the loader's backstop is one call.
  * - ADR-276 D1 (as amended by ADR-389) — compile is authoritative; the rule has one home.
  * - ADR-336 D3 — `ANALYSIS_PASSES` is the named list this joins as the last entry.
+ * - ADR-270 D2/D3, ADR-382 D6 — alteration targets resolve story-first; removals match by shape.
  */
 import { KIND_NOUNS, TRAIT_ADJECTIVES } from './catalog.js';
 import { type Diagnostic, DiagnosticBag } from './diagnostics.js';
+import { nearest } from './edit-distance.js';
 import type { IROnClause, StoryIR } from './ir.js';
 import { manifestForAdjective, manifestForKindNoun } from './manifests/index.js';
+import { lowerParts, renderPattern, samePatternShape } from './patterns.js';
 import { STDLIB_MANIFEST } from './stdlib-manifest.js';
 
 /**
@@ -31,7 +35,67 @@ export function validateIR(ir: StoryIR): Diagnostic[] {
   const usedExtensions = new Set(ir.uses ?? []);
   const traitDefs = new Map(ir.traits.map((t) => [t.name, t]));
 
+  // Grammar alterations name their targets against the story's own actions
+  // and the generated stdlib manifest (ADR-276 census 1–3).
+  const storyActionNames = new Set(ir.actions.map((a) => a.name));
+  const stdlibBareNames = [...STDLIB_MANIFEST.actionIds].map((id) => id.slice('if.action.'.length));
+
+  for (const ext of ir.grammarExtensions ?? []) {
+    // Story-first (the shadowing semantic): a story-defined action of the
+    // same name wins and needs no stdlib id.
+    if (storyActionNames.has(ext.action)) continue;
+    if (!STDLIB_MANIFEST.actionIds.has(`if.action.${ext.action}`)) {
+      diagnostics.error(
+        'analysis.extend-target',
+        `\`extend action ${ext.action}\` — no story action or standard action has that name${suggestText(ext.action, [...storyActionNames, ...stdlibBareNames])}.`,
+        ext.span,
+      );
+    }
+  }
+  for (const removal of ir.grammarRemovals ?? []) {
+    // Removals name STANDARD actions only (ADR-270 D3) — a story action
+    // has no standard-tier rules to remove.
+    if (!STDLIB_MANIFEST.actionIds.has(`if.action.${removal.action}`)) {
+      diagnostics.error(
+        'analysis.removal-target',
+        `\`remove from action ${removal.action}\` — no standard action has that name${suggestText(removal.action, stdlibBareNames)}.`,
+        removal.span,
+      );
+      continue;
+    }
+    // Census 3: each removal pattern must match a standard-grammar shape,
+    // by shape (ADR-382 D6): slot names ignored, words lowercased,
+    // alternations as sets — the same samePatternShape the loader removes
+    // by. The manifest's shapes are lowered by the same module that
+    // lowers the registered rules, so agreement is structural. The loader
+    // still checks the LIVE grammar when it removes: a shape the manifest
+    // carries but the running parser does not is its own load-time fact.
+    const shapes = STDLIB_MANIFEST.locales['en-US'].grammarShapes[`if.action.${removal.action}`] ?? [];
+    for (const pattern of removal.patterns) {
+      const parts = lowerParts(pattern.parts);
+      if (!shapes.some((shape) => samePatternShape(shape, parts))) {
+        diagnostics.error(
+          'analysis.unmatched-removal-pattern',
+          `\`remove from action ${removal.action}\` — no standard rule matches \`${renderPattern(parts)}\`. The action's standard patterns are: ${shapes.map((s) => `\`${renderPattern(s)}\``).join(', ') || '(none)'}.`,
+          removal.span,
+        );
+      }
+    }
+  }
+
   for (const entity of ir.entities) {
+    // ADR-227: `<direction> is deadly while <condition>: <phrase>` is
+    // parsed and lowered, but the conditional deadly exit is post-scope —
+    // the loader has no wiring for the condition, so the IR refuses it.
+    for (const deadly of entity.deadlyExits) {
+      if (deadly.condition !== null) {
+        diagnostics.error(
+          'analysis.deadly-while-unsupported',
+          '`is deadly while <condition>` is not wired yet — the conditional deadly exit is post-scope. Use an unconditional `is deadly:` or an `on going` clause with `kill the player when <condition>`.',
+          deadly.span,
+        );
+      }
+    }
     // Census 17 (discovered in Phase 1 — the phrasebook fixtures compiled
     // `a thing` clean): kind nouns are the closed catalog set the loader's
     // entity builder switches on.
@@ -420,6 +484,12 @@ export function validateIR(ir: StoryIR): Diagnostic[] {
 function resolveConfigEntity(ir: StoryIR, name: string): boolean {
   const lower = name.toLowerCase();
   return ir.entities.some((e) => e.name.toLowerCase() === lower || e.aka.includes(lower));
+}
+
+/** `— did you mean \`x\`?` when a near match exists, else empty. */
+function suggestText(input: string, candidates: string[]): string {
+  const best = nearest(input, candidates);
+  return best ? ` — did you mean \`${best}\`?` : '';
 }
 
 /**

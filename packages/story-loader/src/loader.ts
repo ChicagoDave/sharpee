@@ -76,7 +76,6 @@ function arrivalNarratedTopicsOf(onClauses: readonly IROnClause[]): ReadonlySet<
 import type { Choice, GrammarBuilder, GrammarRuleSlotSpec, ScopeConstraintBuilder, IChannelRegistry, IOChannel, Literal, Phrase, ScopeBuilder, SemanticProperties, SnippetEntry, SnippetMap } from '@sharpee/if-domain';
 import {
   registerSnippetGate,
-  IFActions,
   DEADLY_ROOM_DEATH_ACTION_ID,
   DEADLY_ROOM_CAUSE_KEY,
   DEADLY_ROOM_MESSAGE_KEY,
@@ -1479,9 +1478,9 @@ export class ChordStory implements Story {
 
     // ADR-270 D2: `extend action` — grammar lines onto an EXISTING action.
     // Story-first resolution (a story-defined action of the name wins, the
-    // shadowing semantic); else the name derives `if.action.<name>`,
-    // validated against stdlib's FULL exported id set (IFActions — not the
-    // interceptor-consulted subset); else a LoadError with a suggestion.
+    // shadowing semantic); else the name derives `if.action.<name>`. That
+    // the name is a standard action is validateIR's gate, against the
+    // generated stdlib manifest (ADR-389 D4).
     const storyActionNames = new Set(this.ir.actions.map((a) => a.name));
     for (const ext of this.ir.grammarExtensions ?? []) {
       let actionId: string;
@@ -1492,16 +1491,10 @@ export class ChordStory implements Story {
         actionId = `chord.action.${ext.action}`;
         inheritedSeats = seatTable(this.ir.actions.find((a) => a.name === ext.action)!).table;
       } else {
-        const derived = `if.action.${ext.action}`;
-        if (!STDLIB_ACTION_IDS.has(derived)) {
-          // ADR-276 census 1: the compiler's gate refuses this
-          // (analysis.extend-target) — defensive backstop.
-          throw new LoadError(
-            `\`extend action ${ext.action}\` — no story action or standard action has that name${suggestGerund(ext.action, storyActionNames)}.`,
-          );
-        }
-        actionId = derived;
-        inheritedSeats = STDLIB_MANIFEST.locales['en-US'].grammarSeats[derived] ?? {};
+        // A name that is neither a story action nor a standard action was
+        // refused upstream by validateIR (analysis.extend-target).
+        actionId = `if.action.${ext.action}`;
+        inheritedSeats = STDLIB_MANIFEST.locales['en-US'].grammarSeats[actionId] ?? {};
       }
       // No dispatch conveniences (ADR-270 D2, mirroring ADR-269 D3): the
       // extension registers exactly the stated lines at story tier.
@@ -1509,18 +1502,11 @@ export class ChordStory implements Story {
     }
 
     // ADR-270 D3: `remove from action` — standard-tier rules removed by
-    // shape through the engine primitive. The loader owns the diagnostics:
-    // an unknown action name and an unmatched shape are each a LoadError,
-    // never a silent no-op (D1).
+    // shape through the engine primitive. An unknown action name was refused
+    // upstream by validateIR (analysis.removal-target); a shape no LIVE rule
+    // matches is a LoadError here, never a silent no-op (D1).
     for (const removal of this.ir.grammarRemovals ?? []) {
       const derived = `if.action.${removal.action}`;
-      if (!STDLIB_ACTION_IDS.has(derived)) {
-        // ADR-276 census 2: the compiler's gate refuses this
-        // (analysis.removal-target) — defensive backstop.
-        throw new LoadError(
-          `\`remove from action ${removal.action}\` — no standard action has that name${suggestGerund(removal.action, new Set())}.`,
-        );
-      }
       for (const pattern of removal.patterns) {
         // ADR-382 D6: removal by shape — slot names ignored, words
         // lowercased, alternations as sets — the analyzer's census-3 test.
@@ -1780,15 +1766,9 @@ export class ChordStory implements Story {
     }
     // ADR-227: `<direction> is deadly: <phrase>` — collected here, lowered
     // to one command transformer in onEngineReady.
+    // The conditional form (`is deadly while`) is post-scope; validateIR
+    // refused it upstream (analysis.deadly-while-unsupported).
     for (const deadly of irEntity.deadlyExits) {
-      if (deadly.condition !== null) {
-        // The compiler's gate refuses this
-        // (analysis.deadly-while-unsupported) — defensive backstop.
-        throw new LoadError(
-          '`is deadly while <condition>` is not wired yet — the conditional deadly exit is post-scope (mirror: role-bound trait clauses). Use an unconditional `is deadly:` or an `on going` clause with `kill the player when <condition>`.',
-          deadly.span,
-        );
-      }
       const direction = toDirection(deadly.direction, irEntity);
       const byRoom = this.deadlyExits.get(entity.id) ?? new Map<string, { cause: string; messageId: string }>();
       byRoom.set(direction, { cause: deadly.phraseKey, messageId: deadly.phraseKey });
@@ -3125,54 +3105,4 @@ function applyScopePredicate(
     }
   }
 }
-
-/**
- * ADR-270 D2/D3: stdlib's FULL exported action-id set — the validation set
- * for alteration targets. Deliberately not the interceptor-consulted
- * subset (`interceptorConsultingActionIds`): a non-consulted action is
- * still extendable.
- */
-const STDLIB_ACTION_IDS: ReadonlySet<string> = new Set(Object.values(IFActions));
-
-/**
- * Nearest-name suggestion for an unknown alteration target: candidates are
- * the stdlib gerunds plus the story's own action names. Returns a
- * ` — did you mean …?` tail, or '' when nothing is close (distance ≤ 2).
- */
-function suggestGerund(name: string, storyNames: ReadonlySet<string>): string {
-  const candidates = [
-    ...[...STDLIB_ACTION_IDS].map((id) => id.replace(/^if\.action\./, '')),
-    ...storyNames,
-  ];
-  let best: string | null = null;
-  let bound = 3;
-  for (const candidate of candidates) {
-    const d = editDistance(name, candidate, bound);
-    if (d < bound) {
-      bound = d;
-      best = candidate;
-    }
-  }
-  return best ? ` — did you mean \`${best}\`?` : '';
-}
-
-/** Bounded Levenshtein distance; returns max+1 as soon as `max` is exceeded. */
-function editDistance(a: string, b: string, max: number): number {
-  if (Math.abs(a.length - b.length) > max) return max + 1;
-  let prev = Array.from({ length: b.length + 1 }, (_, i) => i);
-  for (let i = 1; i <= a.length; i++) {
-    const cur = [i];
-    let rowMin = i;
-    for (let j = 1; j <= b.length; j++) {
-      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
-      const v = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + cost);
-      cur.push(v);
-      if (v < rowMin) rowMin = v;
-    }
-    if (rowMin > max) return max + 1;
-    prev = cur;
-  }
-  return prev[b.length];
-}
-
 

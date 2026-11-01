@@ -123,15 +123,8 @@ export const exitsBuilder: EntityLineBuilder = {
     });
     entity.deadlyExits = decl.deadlyExits.map((d) => {
       context.requirePhrase(d.phraseKey, d.span);
-      // The conditional form is post-scope; the loader keeps a defensive
-      // throw as the backstop, but the author reads it here as a diagnostic.
-      if (d.condition !== null) {
-        context.diagnostics.error(
-          'analysis.deadly-while-unsupported',
-          '`is deadly while <condition>` is not wired yet — the conditional deadly exit is post-scope. Use an unconditional `is deadly:` or an `on going` clause with `kill the player when <condition>`.',
-          d.span,
-        );
-      }
+      // The conditional form is post-scope; validateIR refuses it over the
+      // lowered IR (analysis.deadly-while-unsupported), for compile and load alike.
       return {
         direction: d.direction,
         phraseKey: d.phraseKey,

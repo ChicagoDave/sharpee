@@ -98,7 +98,7 @@ import { STDLIB_MANIFEST } from './stdlib-manifest.js';
 import { expandReadings, lowerParts, renderPattern, samePatternShape, seatTable, type LowerableAction, type SeatProblem, type SeatTable } from './patterns.js';
 import type { PatternElement } from '@sharpee/if-domain';
 import { CHARACTER_MANIFEST } from './character-manifest.js';
-import { levenshtein } from './edit-distance.js';
+import { nearest } from './edit-distance.js';
 import { assignClauseIds } from './clause-ids.js';
 import { normalizeTopic } from './analyzer/topic.js';
 import { requiresOrderViolations, type OrderViolation } from './analyzer/requires.js';
@@ -1142,7 +1142,6 @@ export class Analyzer {
     { name: 'checkInfluenceReferences', requires: ['buildDeclarations'], run: (a) => a.checkInfluenceReferences(a.builtIR()) },
     // Inline and override bindings synthesize temperament defs during entity build.
     { name: 'emitTemperaments', requires: ['buildDeclarations'], run: (a) => a.emitTemperaments() },
-    { name: 'checkAlterationTargets', requires: ['buildDeclarations'], run: (a) => a.checkAlterationTargets(a.builtIR()) },
     // An extension seats from its target's table, and a story action may be declared after its extension.
     { name: 'checkSeats', requires: ['buildDeclarations'], run: (a) => a.checkSeats(a.builtIR()) },
     // Bare `{…}` markers must name a declared phrase key.
@@ -1619,9 +1618,9 @@ export class Analyzer {
     }
     const standardSeats = STDLIB_MANIFEST.locales['en-US'].grammarSeats;
     for (const ext of ir.grammarExtensions ?? []) {
-      // Story-first, as the target resolves (checkAlterationTargets): a
-      // story action's own table, else the standard action's. An unknown
-      // target is that pass's error, not a seat problem.
+      // Story-first, as the target resolves (validateIR's alteration-target
+      // gate): a story action's own table, else the standard action's. An
+      // unknown target is that gate's error, not a seat problem.
       const inherited =
         storyTables.get(ext.action) ??
         (STDLIB_MANIFEST.actionIds.has(`if.action.${ext.action}`) ? (standardSeats[`if.action.${ext.action}`] ?? {}) : undefined);
@@ -1656,52 +1655,6 @@ export class Analyzer {
         ? `${line(problem.pattern)} has no seat left for \`${second}\` — direct and indirect are both taken on this line (\`${first}\` holds indirect). A line seats at most two nouns.`
         : `${line(problem.pattern)} puts \`${first}\` and \`${second}\` in one seat (${problem.seat}): \`${first}\` was seated ${problem.seat} by ${by(problem.seatedBy[0])}, \`${second}\` by ${by(problem.seatedBy[1])}. Within one action a slot name keeps one seat; rename one of them.`;
     this.diagnostics.error('analysis.seat-conflict', message, span);
-  }
-
-  private checkAlterationTargets(ir: StoryIR): void {
-    const storyActionNames = new Set(ir.actions.map((a) => a.name));
-    const stdlibBareNames = [...STDLIB_MANIFEST.actionIds].map((id) => id.slice('if.action.'.length));
-
-    for (const ext of ir.grammarExtensions ?? []) {
-      // Story-first (the shadowing semantic): a story-defined action of the
-      // same name wins and needs no stdlib id.
-      if (storyActionNames.has(ext.action)) continue;
-      if (!STDLIB_MANIFEST.actionIds.has(`if.action.${ext.action}`)) {
-        this.diagnostics.error(
-          'analysis.extend-target',
-          `\`extend action ${ext.action}\` — no story action or standard action has that name${this.suggestText(ext.action, [...storyActionNames, ...stdlibBareNames])}.`,
-          ext.span,
-        );
-      }
-    }
-    for (const removal of ir.grammarRemovals ?? []) {
-      // Removals name STANDARD actions only (ADR-270 D3) — a story action
-      // has no standard-tier rules to remove.
-      if (!STDLIB_MANIFEST.actionIds.has(`if.action.${removal.action}`)) {
-        this.diagnostics.error(
-          'analysis.removal-target',
-          `\`remove from action ${removal.action}\` — no standard action has that name${this.suggestText(removal.action, stdlibBareNames)}.`,
-          removal.span,
-        );
-        continue;
-      }
-      // Census 3: each removal pattern must match a standard-grammar shape,
-      // by shape (ADR-382 D6): slot names ignored, words lowercased,
-      // alternations as sets — the same samePatternShape the loader removes
-      // by. The manifest's shapes are lowered by the same module that
-      // lowers the registered rules, so agreement is structural.
-      const shapes = STDLIB_MANIFEST.locales['en-US'].grammarShapes[`if.action.${removal.action}`] ?? [];
-      for (const pattern of removal.patterns) {
-        const parts = lowerParts(pattern.parts);
-        if (!shapes.some((shape) => samePatternShape(shape, parts))) {
-          this.diagnostics.error(
-            'analysis.unmatched-removal-pattern',
-            `\`remove from action ${removal.action}\` — no standard rule matches \`${renderPattern(parts)}\`. The action's standard patterns are: ${shapes.map((s) => `\`${renderPattern(s)}\``).join(', ') || '(none)'}.`,
-            removal.span,
-          );
-        }
-      }
-    }
   }
 
   /**
@@ -3327,11 +3280,11 @@ export class Analyzer {
    * `extend action <name>` → IR (ADR-270 D2): the grammar-surface subset,
    * with behavior sections rejected by name — the grammar-file-mode
    * treatment (`analysis.alteration-behavior`, one per offending category).
-   * Target-name resolution happens in checkAlterationTargets (a whole-IR
-   * post-pass — story actions may be declared after the alteration), gated
-   * against the generated stdlib manifest (ADR-276 D1: chord is
-   * platform-free but no longer stdlib-ignorant); the loader keeps the same
-   * story-first resolution as its rogue-IR backstop.
+   * Target-name resolution happens in validateIR (over the whole IR —
+   * story actions may be declared after the alteration), gated against the
+   * generated stdlib manifest (ADR-276 D1: chord is platform-free but no
+   * longer stdlib-ignorant); the loader asks that one rule before it builds
+   * (ADR-389 D4) and keeps the same story-first resolution when it registers.
    */
   private buildExtension(decl: ExtendAction): IRGrammarExtension {
     // The extension's own pattern lines are the slot universe for its
@@ -8940,20 +8893,6 @@ function isInOrderSubset(needle: string[], haystack: string[]): boolean {
     if (i === needle.length) return true;
   }
   return false;
-}
-
-/** Nearest candidate within an edit distance budget, or null. */
-function nearest(input: string, candidates: string[]): string | null {
-  let best: string | null = null;
-  let bestDist = Math.max(2, Math.floor(input.length / 3)) + 1;
-  for (const c of candidates) {
-    const d = levenshtein(input.toLowerCase(), c.toLowerCase());
-    if (d < bestDist) {
-      bestDist = d;
-      best = c;
-    }
-  }
-  return best;
 }
 
 

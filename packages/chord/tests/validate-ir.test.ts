@@ -242,6 +242,48 @@ create the oak door
     expect(codes(rogue)).toEqual(['analysis.door-unconnected']);
     expect(messages(rogue)[0]).toContain('Door `oak door` is never referenced');
   });
+
+  it('an extend-action target naming no story or standard action, with a did-you-mean (analysis.extend-target)', () => {
+    const rogue = structuredClone(compileClean(`${BASE}extend action taking\n  grammar\n    snag the item\n`));
+    rogue.grammarExtensions![0].action = 'takng';
+    expect(codes(rogue)).toEqual(['analysis.extend-target']);
+    expect(messages(rogue)[0]).toContain('`extend action takng` — no story action or standard action has that name — did you mean `taking`?');
+  });
+
+  it('an extend-action target that is a story action needs no standard id (analysis.extend-target not reported)', () => {
+    const rogue = structuredClone(compileClean(`${BASE}define action petting\n  grammar\n    pet the animal\n\nextend action petting\n  grammar\n    stroke the animal\n`));
+    rogue.grammarExtensions![0].action = 'petting';
+    expect(codes(rogue)).toEqual([]);
+  });
+
+  it('a removal target naming no standard action, with a did-you-mean (analysis.removal-target)', () => {
+    const rogue = structuredClone(compileClean(`${BASE}remove from action taking\n  get the item\n`));
+    rogue.grammarRemovals![0].action = 'taking_offf';
+    expect(codes(rogue)).toEqual(['analysis.removal-target']);
+    expect(messages(rogue)[0]).toContain('`remove from action taking_offf` — no standard action has that name — did you mean `taking_off`?');
+  });
+
+  it('a removal shape no standard rule in the manifest matches (analysis.unmatched-removal-pattern)', () => {
+    const rogue = structuredClone(compileClean(`${BASE}remove from action taking\n  get the item\n`));
+    const word = rogue.grammarRemovals![0].patterns[0].parts.find((p) => p.kind === 'word') as { word: string };
+    word.word = 'yoink';
+    expect(codes(rogue)).toEqual(['analysis.unmatched-removal-pattern']);
+    expect(messages(rogue)[0]).toMatch(/no standard rule matches `yoink :item`\. The action's standard patterns are: .*`take :item`/);
+  });
+
+  it('a conditional deadly exit, which the loader has no wiring for (analysis.deadly-while-unsupported)', () => {
+    const source =
+      BASE.replace('  story-version: 0.0.1\n', '  story-version: 0.0.1\n  states: calm, stormy\n').replace(
+        '  a room\n\n  A vault.\n',
+        '  a room\n  north is deadly while stormy: fall-death\n\n  A vault.\n',
+      ) + 'define phrase fall-death\n  You fall.\nend phrase\n';
+    const result = compile(source);
+    expect(result.ok).toBe(false);
+    expect(codes(result.ir)).toEqual(['analysis.deadly-while-unsupported']);
+    expect(result.diagnostics.filter((d) => d.code === 'analysis.deadly-while-unsupported')).toEqual(validateIR(result.ir));
+    const sound = compileClean(source.replace('north is deadly while stormy: fall-death', 'north is deadly: fall-death'));
+    expect(codes(sound)).toEqual([]);
+  });
 });
 
 describe('the compile reports validateIR as its last pass', () => {
