@@ -1,59 +1,69 @@
 # Session Summary: 2026-10-31 - feat/adr-389-chord-loader
 
 ## Goals
-- ADR-389 Phase 3 "One identity (D1)": delete the id-translation layer in `packages/story-loader`; the IR id is the world id.
+- ADR-389 Phase 3 "One identity (D1)": delete the id-translation layer in `packages/story-loader`; the IR id is the world id. (DONE, committed 323a53737)
+- ADR-389 Phase 4 "validateIR, entity and composition gates (D4a)": move the first gate group into `@sharpee/chord`. (DONE 2026-11-01, this write)
 
 ## Phase Context
 - **Plan**: ADR-389 Chord loader — one identity, validateIR in chord, named build steps (`docs/work/adr-389-chord-loader/plan.md`)
-- **Phase executed**: Phase 3 — "One identity (D1)" (Large); flipped DONE via `plan-phase.sh flip` (exit 0)
-- **Tool calls used**: ~281 / 400 (event-log budget field at the last edit row)
-- **Phase outcome**: Completed under budget
-- **Out-of-scope changes**: the flip printed ~270 `out of scope: <path>` lines (packages/engine, stdlib, world-model, branch-tester, parser-en-us, dungeo and others). `git status` shows none of them dirty and the session state `files[]` holds 108 entries, none of them engine/stdlib paths; they are Phase 2's files already committed in 19a7c6a61, not this session's edits. Full list is in the flip's stdout; not repeated here. [reported by session]
-- **Next-phase stamp**: `advances once this commit lands — plan-phase.sh: [DevArch REFUSED: Phase 3 "One identity (D1)" was flipped DONE but the flip is uncommitted in docs/work/adr-389-chord-loader/plan.md — commit it (the phase commit, your own "commit", or finalize) or revert it before the next phase can start]`
+- **Phase executed**: Phase 4 — "validateIR, entity and composition gates (D4a)" (Large); flipped DONE via `plan-phase.sh flip` (exit 0). The `**Demonstrated**` line is marked `[reported by session, unverified]`: the event log holds one test row and its counts do not match this phase's.
+- **Tool calls used**: ~414 / 400 (event-log budget field at the last row; the counter ran across Phases 3 and 4 of one session)
+- **Phase outcome**: Ran over budget (session-wide counter)
+- **Out-of-scope changes**: the flip printed 257 `out of scope: <path>` lines (first: `docs/architecture/adrs/adr-327-explicit-references.md`, `adr-342-engine-package-contract.md`, `adr-344-player-role-holder-at-the-install-seam.md`; the rest packages/engine, stdlib, world-model and others). These are paths in the session state `files[]` carried from Phase 2/3 work already committed (19a7c6a61, 323a53737), not Phase 4 edits. [reported by session]
+- **Next-phase stamp**: `advances once this commit lands — plan-phase.sh: [DevArch REFUSED: Phase 4 "validateIR, entity and composition gates (D4a)" was flipped DONE but the flip is uncommitted in docs/work/adr-389-chord-loader/plan.md — commit it (the phase commit, your own "commit", or finalize) or revert it before the next phase can start]`
 
 ## Completed
-- New `packages/story-loader/src/identity.ts`: `worldIdOf(world, irId)` (sentinel-aware) and `requireEntity(world, irId, at?)`.
-- Deleted: `worldIds`/`irIds` maps, `ChordStory.entityId`/`irIdOf`/`worldIdOf`, loader and evaluator `requireWorldId`, `EntityIdResolver` (interface and export), `RuntimeHost.entityId`/`irIdOf`, `ExtensionInstallContext.worldId`/`requireWorldId`. `Evaluator(ir, seed?)`.
-- `buildEntity` asserts `entity.id === irEntity.id` (LoadError naming both ids). Finding: regions were built as `rg-<id>` (ADR-388 amendment's parenthetical); now `createRegion(irEntity.id, ...)`. Recorded in ADR-389 D1 as-landed and a one-line retirement in ADR-388.
-- `ExtensionInstallContext.world` added; state-machines resolve roles and trigger targets through it. Topic and thread matchers (`matchTopicFilters`, `matchExchangeRow`, `askedTopicKey`, `exchangeResponses`, `matchesThreadFilter`, `rowIndexFor`) take the world so a row `about the player` resolves against the role holder.
-- Tests: 313 `story.entityId(x)` sites across 77 files became the id; 7 `irIdOf` sites, 3 helpers and 7 `new Evaluator` calls by hand; new `tests/adr-389-one-identity.test.ts` (4 tests).
-- Rule 15 mutation-verification: 0 hard failures, 6 gaps. Closed: patrol route entries refused via `requireEntity`; reconcile landing rooms filtered by `world.hasEntity`; `holdsPlayerRole` guarded by `hasPlayerCharacter`. Accepted: two non-IR entity table misses (gone-state, witnessMove). Open: no test drives a topic row `about the player` through the matcher's world argument (needs a story-level fixture).
 
-## Evidence (2026-10-31)
-- story-loader 1532 passing / 1 skipped, 191 files (baseline 1525); chord 1747 passing, 110 files; AC-1 grep on `packages/story-loader/src` empty; story-loader `tsc --noEmit -p tsconfig.json` clean; `./repokit build` exit 0 twice (second after the rule-15 fixes, not a retry). [reported by session, unverified: the event log has no test row with these counts in the phase window (its only test row is 613 passing at 00:41Z, the audit), and its last "Build passed" row (01:09:27Z, a tsc) precedes the final test-file edits at 01:10:36Z]
-- Trees vs `docs/work/adr-389-chord-loader/baseline/`: secret-letter and ides-of-march byte-identical; fernhill differs only in the wall-clock line. [reported by session, unverified]
-- `tsconfig.test.json`: 72 pre-existing errors in files this phase did not touch. [reported by session]
+### Phase 3 — One identity (D1), committed 323a53737
+- New `packages/story-loader/src/identity.ts`: `worldIdOf(world, irId)` and `requireEntity(world, irId, at?)`. Deleted the `worldIds`/`irIds` maps, `ChordStory.entityId`/`irIdOf`/`worldIdOf`, `EntityIdResolver`, `RuntimeHost.entityId`/`irIdOf`, `ExtensionInstallContext.worldId`/`requireWorldId`. `buildEntity` asserts `entity.id === irEntity.id`. Regions now built as `createRegion(irEntity.id, ...)` (ADR-388 `rg-` parenthetical retired). Evidence at the time: story-loader 1532 passing, chord 1747. [reported by session, unverified]
+
+### Phase 4 — validateIR, entity and composition gates (D4a), 2026-11-01
+- New `packages/chord/src/validate-ir.ts`: the analyzer's `checkCompositionLegality` moved verbatim plus the door-unconnected gate; last `ANALYSIS_PASSES` entry (after `emitIdentity`) through new `DiagnosticBag.add`; exported from chord's index.
+- `createStory` calls `validateIR` after `assertIdentity` and throws `LoadError(message, span)` on the first error. Six pure loader backstop throws deleted; seven kept as value-yielding branches, re-commented.
+- `worn-not-wearable` widened to every wearer and names the wearer. Not moved: rows 5 (David's ruling pending), 11, 14, 25 (AST-level gates).
+- Tests: `packages/chord/tests/validate-ir.test.ts` (16, new); `packages/story-loader/tests/adr-389-validate-ir-seam.test.ts` (3, new); `adr-276-backstops.test.ts` trimmed to census 1–2; pins updated in `identity.test.ts`, `adr-276-acceptance.test.ts`, `door-loading.test.ts`, `composition-legality.test.ts`.
+- Docs: ADR-276 D1 amendment note; ADR-389 D4 as-landed note.
+- Rule 15 mutation-verification: guard removals safe, no partial story by construction, 6 gaps. G1/G3/G5/G6 closed with tests; G2 (a `combatant` boolean with no `use combat` passes the admitted check) deferred to D4c; G4 unprovable (createStory never receives a world).
+
+## Evidence (2026-11-01, Phase 4 final)
+- chord 1763 passing, 111 files (baseline 1747); story-loader 1526 passing / 1 skipped, 192 files (baseline 1525); chord and loader `tsc` clean; `./repokit build` exit 0. [reported by session, unverified: the event log has one test row only (613 passing, 00:41Z) and no row with these counts; its Build rows are tsc runs at 11:58Z–12:01Z]
+- Trees vs Phase 0 captures in `docs/work/adr-389-chord-loader/baseline/`: secret-letter and ides-of-march byte-identical; fernhill differs only in a wall-clock field. [reported by session, unverified]
+- Fixture diagnostics identical except one lexer-golden fixture where `trait-not-declared` moved one position later (validateIR runs last); code set identical. [reported by session]
+- AC-4 greps: loader `backstop` word count 15; moved codes once each in chord src except two codes with two emit sites in `validate-ir.ts`. [reported by session]
 
 ## Key Decisions
-- Region world id = IR id (ADR-389 D1 applied; ADR-388's `rg-` parenthetical retired). Flagged to David.
-- Evaluator value positions resolve through one private `worldId(ctx, irId)` without an existence check, preserving "Expected an entity".
-- `entityId`/`irIdOf` removed from public `ChordStory` (David, 2026-10-31, "Go" on option a; ADR-389 AC-7 amended).
+- Region world id = IR id (ADR-389 D1 applied; ADR-388 `rg-` parenthetical retired). Flagged to David.
+- `entityId`/`irIdOf` removed from public `ChordStory` (David, 2026-10-31; ADR-389 AC-7 amended).
+- Moved the composition-legality block verbatim rather than rewriting it, so there is one rule, not a `validateIR` copy beside an analyzer copy.
+- An empty-route tweak to the patrol gate was tried and reverted: it double-reported beside `unknown-entity`.
 
 ## Next Phase
-- **Phase 4**: "validateIR, entity and composition gates (D4a)" — `packages/chord/src/validate-ir.ts`, first gate group per the Phase 0 inventory; opens AC-4.
-- **Tier**: Large (~400 tool-call budget)
-- **Entry state**: Phase 3 committed (pending the commit-local that follows); Phase 0 row-5 ruling needed (loader.ts conversation-owner check, no analyzer twin); David's go.
-- Plan currently has no CURRENT phase until the Phase 3 flip is committed; `advance` stamps Phase 4 afterward.
+- **Phase 5**: "validateIR, grammar gates (D4b)" — extend-target, removal-target, deadly-while-unsupported and kin moved into `validateIR`; grammar removal matched-no-live-rule stays a load-time fact.
+- **Tier**: Medium (~250 tool-call budget)
+- **Entry state**: Phase 4 committed (pending the commit-local that follows; `advance` stamps Phase 5 CURRENT after it); David's go.
 
 ## Open Items
 
 ### Short Term
 - 638: ADR-389: Chord loader — one identity, validateIR in chord, named build steps, adjective table, typed Story/Parser seam (tracking; carried forward)
 - 639: ADR-390: the player is a role the session holds (tracking; carried forward)
-- Topic-row `about the player` matcher test gap (rule 15) and the Phase 0 row-5 ruling are carried in this summary and the plan; no separate issue filed.
+- Row 5 ruling (loader.ts conversation-owner check, no analyzer twin) and the disposition of rows 11, 14, 25 (AST-level gates) are for David; carried in the plan and this summary, no separate issue filed.
+- Topic row `about the player` matcher test gap (Phase 3 rule 15) and G2 (`combatant` without `use combat`, for D4c) carried in this summary.
 
 ### Long Term
 - None this write.
 
 ## Files Modified
 
-**story-loader src** (~19 files): `packages/story-loader/src/{identity.ts (new), loader.ts, evaluator.ts, index.ts, extension-registry.ts, state-machines.ts, extensions/chapters.ts, runtime/{core,timers,settable,derived,dialogue,statements,event-clauses,on-clauses,phrases,purchasable,move-clauses,scheduler-constructs,dispatch-verbs,conversation-threads}.ts}`
+**chord src**: `packages/chord/src/{validate-ir.ts (new), analyzer.ts, diagnostics.ts, index.ts}`
 
-**Tests**: `packages/story-loader/tests/` (80 modified, plus new `adr-389-one-identity.test.ts`); `packages/character/tests/tick-phases/goal-world-mutations.test.ts` (comment)
+**chord tests**: `packages/chord/tests/{validate-ir.test.ts (new), identity.test.ts, adr-276-acceptance.test.ts, composition-legality.test.ts}`
 
-**Docs**: `docs/architecture/adrs/adr-389-chord-loader-one-identity-and-a-build-list.md`, `adr-388-persisted-identity-for-chord-saves.md`, `docs/work/adr-389-chord-loader/plan.md`, this file
+**story-loader**: `packages/story-loader/src/loader.ts`; `packages/story-loader/tests/{adr-389-validate-ir-seam.test.ts (new), adr-276-backstops.test.ts, door-loading.test.ts}`
 
-Not this session's (excluded): `docs/context/session-20261029-1923-main.md`, `docs/work/save-restore-551/`.
+**Docs**: `docs/architecture/adrs/adr-276-chord-source-authoritative-errors.md`, `adr-389-chord-loader-one-identity-and-a-build-list.md`, `docs/work/adr-389-chord-loader/plan.md`, this file
+
+Phase 3 files are in 323a53737. Not this session's (excluded): `docs/context/session-20261029-1923-main.md`, `docs/work/save-restore-551/`.
 
 ## Notes
 - Session started 2026-10-31 19:42 (session ec2515).
@@ -69,23 +79,23 @@ Not this session's (excluded): `docs/context/session-20261029-1923-main.md`, `do
 - **Blocker Category**: N/A
 - **Estimated Remaining**: N/A
 - **Rollback Safety**: safe to revert
-- **Commits**: none before this write — this write is staged by the next commit (rule 18); its hash is in `git log -- docs/context/session-20261031-1942-feat-adr-389-chord-loader.md`
+- **Commits**: 323a53737 (Phase 3) — this write is staged by the next commit (rule 18); its hash is in `git log -- docs/context/session-20261031-1942-feat-adr-389-chord-loader.md`
 
 ## Dependency/Prerequisite Check
 
-- **Prerequisites met**: Phase 2 (ADR-390) committed as 19a7c6a61; David's go ("go on Phase 3").
-- **Prerequisites discovered**: Phase 0 row-5 ruling needed before Phase 4.
+- **Prerequisites met**: Phase 3 committed as 323a53737; David's go on Phases 3 and 4.
+- **Prerequisites discovered**: row 5 ruling and rows 11/14/25 disposition needed from David (not blocking Phase 5 start).
 
 ## Architectural Decisions
 
-- ADR-389 D1 (one identity) implemented; as-landed note added. ADR-388 `rg-` region spelling retired.
-- Pattern applied: IR id is the world id; a single `requireEntity` refusal point with the referrer's span.
+- ADR-389 D1 (one identity) and D4a (validateIR, first group) implemented; as-landed notes added. ADR-276 D1 amended.
+- Pattern applied: gates that depend only on the IR live in `@sharpee/chord` as the last analysis pass; the loader calls `validateIR` once and keeps only value-yielding branches.
 
 ## Mutation Audit
 
-- Files with state-changing logic modified: `loader.ts`, `state-machines.ts`, `runtime/*` (reconcile, patrol routes, role holder).
-- Tests verify actual state mutations (not just events): YES [reported by session, unverified] — `tests/adr-389-one-identity.test.ts` asserts entity ids in the world after build; no fresh test row in the event log.
-- Gap left open: topic row `about the player` through the matcher's world argument.
+- Files with state-changing logic modified: `loader.ts` (createStory), `validate-ir.ts`, `diagnostics.ts` (`DiagnosticBag.add`).
+- Tests verify actual state mutations (not just events): YES [reported by session, unverified] — `validate-ir.test.ts` asserts diagnostics produced and `createStory` throwing a LoadError with span; no fresh test row in the event log.
+- Gaps: G2 deferred to D4c, G4 unprovable.
 
 ## Recurrence Check
 
@@ -93,10 +103,11 @@ Not this session's (excluded): `docs/context/session-20261029-1923-main.md`, `do
 
 ## Test Coverage Delta
 
-- Tests added: 4 (`tests/adr-389-one-identity.test.ts`)
-- Tests passing before: 1525 → after: 1532 in story-loader [reported by session, unverified]; chord 1747 unchanged [reported by session, unverified]
-- Known untested areas: topic row `about the player` via the matcher's world argument.
+- Tests added: 16 chord (`validate-ir.test.ts`) + 3 loader (`adr-389-validate-ir-seam.test.ts`); backstop file trimmed.
+- Tests passing before: chord 1747 → after 1763; story-loader 1525 → 1526 (+1 skipped) [reported by session, unverified]
+- Known untested areas: topic row `about the player` via the matcher's world argument; G2.
 
 ---
 
 **Progressive update**: checkpoint 2026-10-31 20:15 — Phase 3 DONE via plan-phase.sh flip; Demonstrated line marked reported/unverified; advance refused pending the phase commit.
+**Progressive update**: checkpoint 2026-11-01 06:10 — Phase 4 DONE via plan-phase.sh flip (exit 0); Demonstrated line marked reported/unverified; 257 out-of-scope lines recorded; advance refused pending the phase commit.

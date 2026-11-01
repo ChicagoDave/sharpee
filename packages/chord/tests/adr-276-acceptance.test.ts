@@ -65,12 +65,16 @@ export const COMPOSITE_ACCEPTANCE_SOURCE = [
   '',
 ].join('\n');
 
-/** The four codes the composite must surface, in source order. */
+/**
+ * The four codes the composite must surface, in report order: the grammar
+ * gates first, then the IR's own invariants, which `validateIR` reports as
+ * the compile's last analysis pass (ADR-389 D4).
+ */
 export const COMPOSITE_ACCEPTANCE_CODES = [
-  'analysis.trait-not-declared',
-  'analysis.setting-not-boolean',
   'analysis.removal-target',
   'analysis.unmatched-removal-pattern',
+  'analysis.trait-not-declared',
+  'analysis.setting-not-boolean',
 ] as const;
 
 describe('ADR-276 Acceptance item 1 — the composite four-violation story', () => {

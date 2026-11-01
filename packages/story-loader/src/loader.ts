@@ -49,6 +49,7 @@ import {
 } from '@sharpee/chord';
 import type { IRProseValue, ScopeRequirementWord } from '@sharpee/chord';
 import type { IROnClause } from '@sharpee/chord';
+import { validateIR } from '@sharpee/chord';
 
 /**
  * Topics an entity's own TURN-TRIGGERED clauses are gated on knowing.
@@ -295,8 +296,9 @@ export class ChordStory implements Story {
       (e) => e.name.toLowerCase() === lower || e.aka.includes(lower),
     );
     if (!target) {
-      // ADR-276 census 6: the compiler's gate refuses this
-      // (analysis.setting-names-no-entity) — defensive backstop.
+      // `validateIR` refused this IR before the world was built
+      // (analysis.setting-names-no-entity); the branch stays because a
+      // reference needs a target.
       throw new LoadError(`\`${name}\` (config \`${configKey}\`) names no entity.`, span);
     }
     return { irRefId: target.id, ownerName: owner.name, span, apply };
@@ -608,6 +610,13 @@ export class ChordStory implements Story {
     assertClauseIds(ir);
     assertSelectIds(ir);
     assertIdentity(ir);
+    // ADR-389 D4: the IR's invariants have one home, `validateIR` in chord.
+    // A compile reports every one of them; IR that reaches the loader
+    // without a compile (the published browser build's embedded IR, a
+    // hand-built fixture) is asked the same question once, here, and the
+    // first error refuses the load. Warnings are the compile's to report.
+    const invalid = validateIR(ir).find((d) => d.severity === 'error');
+    if (invalid) throw new LoadError(invalid.message, invalid.span);
     this.identityStamp = ir.identity.stamp;
     this.config = {
       id: ir.meta.fields.id ?? ir.meta.title.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
@@ -668,18 +677,6 @@ export class ChordStory implements Story {
     // ADR-378 D6: every exit is wired, so a stamp cannot be rewritten now.
     this.stampExitAdmits(world);
     this.stampPushingWays(world);
-
-    // ADR-234 D3 backstop (rogue IR — the compiler's `door-unconnected`
-    // gate refuses this): a door no `through` exit wired has no room pair
-    // and could never resolve in play.
-    for (const { ir: irEntity, entity } of built) {
-      if (irEntity.kinds.some((k) => k.name === 'door') && !entity.has(TraitType.DOOR)) {
-        throw new LoadError(
-          `Door \`${irEntity.name}\` was never wired by a \`through\` exit line — rogue IR (the compiler's door gates refuse this).`,
-          irEntity.span,
-        );
-      }
-    }
 
     // The story object starts in its first declared phase (ratchet D2).
     if (this.ir.story.states.length > 0) {
@@ -1716,8 +1713,9 @@ export class ChordStory implements Story {
       author.moveEntity(worn.id, entity.id);
       const wearable = worn.get(TraitType.WEARABLE) as WearableTrait | undefined;
       if (!wearable) {
-        // ADR-276 census 12: the compiler's gate refuses this
-        // (analysis.worn-not-wearable) — the loader's backstop against rogue IR.
+        // `validateIR` refused this IR before the world was built
+        // (analysis.worn-not-wearable); the branch stays because the
+        // trait is written next.
         throw new LoadError(`\`${wornIrId}\` is worn by ${irEntity.name} but is not wearable.`, irEntity.span);
       }
       wearable.worn = true;
@@ -1872,11 +1870,6 @@ export class ChordStory implements Story {
   }
 
   private buildEntity(world: WorldModel, irEntity: IREntity): IFEntity {
-    if (irEntity.kinds.length > 1) {
-      // ADR-276 census 18: the compiler's gate refuses this
-      // (analysis.multiple-kind-nouns) — defensive backstop.
-      throw new LoadError(`\`${irEntity.name}\` declares more than one kind noun.`, irEntity.span);
-    }
     if (irEntity.kinds.length === 0) {
       // ADR-359 D1: the compiler's gate refuses this
       // (analysis.missing-kind-noun) — defensive backstop.
@@ -2026,8 +2019,9 @@ export class ChordStory implements Story {
         break;
       }
       default:
-        // ADR-276 census 17: the compiler's gate refuses this
-        // (analysis.unknown-kind-noun) — defensive backstop.
+        // `validateIR` refused this IR before the world was built
+        // (analysis.unknown-kind-noun); the branch stays because the
+        // switch must yield an entity.
         throw new LoadError(`\`${irEntity.name}\`: unknown kind noun \`${kind}\`.`, irEntity.span);
     }
 
@@ -2189,8 +2183,9 @@ export class ChordStory implements Story {
           entity.add(new ChordDataTrait(CHORD_TRAIT_PREFIX + def.name, this.traitFieldValues(def, trait)));
           continue;
         }
-        // ADR-276 census 14: the compiler's gate refuses this
-        // (analysis.conditional-composition-unsupported) — defensive backstop.
+        // `validateIR` refused this IR before the world was built
+        // (analysis.conditional-composition-unsupported); the branch stays
+        // so a conditional trait never composes unconditionally below.
         throw new LoadError(
           `Conditional composition isn't supported for \`${trait.name}\` — move the condition inside the trait (\`on <action> it\` clauses can test it) or split the behavior.`,
           trait.span,
@@ -2390,14 +2385,6 @@ export class ChordStory implements Story {
           // domain is setting-schema's HIDING_POSITIONS (one source with
           // the manifest generator, ADR-276 census 10).
           const position = configValue(trait, 'position');
-          if (position !== undefined && !(HIDING_POSITIONS as readonly string[]).includes(position)) {
-            // ADR-276 census 10: the compiler's gate refuses this
-            // (analysis.unknown-hiding-position) — defensive backstop.
-            throw new LoadError(
-              `\`${position}\` is not a hiding position — use behind, under, on, or inside.`,
-              trait.span,
-            );
-          }
           entity.add(
             new ConcealmentTrait({
               positions: position
@@ -2465,14 +2452,8 @@ export class ChordStory implements Story {
           if (identity) (identity as unknown as Record<string, unknown>).grammaticalNumber = 'plural';
           break;
         }
-        case 'dark': {
-          if (kind !== 'room') {
-            // ADR-276 census 11: the compiler's gate refuses this
-            // (analysis.dark-rooms-only) — defensive backstop.
-            throw new LoadError(`\`dark\` applies to rooms only.`, trait.span);
-          }
-          break; // unconditional dark handled by the room builder
-        }
+        case 'dark':
+          break; // unconditional dark handled by the room builder; a non-room `dark` is validateIR's refusal
         default: {
           // `define trait` instances (Phase B): a data trait typed
           // `chord.trait.<name>` whose fields are own properties (mutable
@@ -2482,8 +2463,9 @@ export class ChordStory implements Story {
             entity.add(new ChordDataTrait(CHORD_TRAIT_PREFIX + def.name, this.traitFieldValues(def, trait)));
             break;
           }
-          // ADR-276 census 15: the compiler's gate refuses this
-          // (analysis.trait-not-declared) — defensive backstop.
+          // `validateIR` refused this IR before the world was built
+          // (analysis.trait-not-declared); the branch stays because the
+          // switch must compose something.
           throw new LoadError(
             `Trait \`${trait.name}\` is not declared (\`define trait ${trait.name}\`) and is not a v1 adjective.`,
             trait.span,
@@ -2520,11 +2502,6 @@ export class ChordStory implements Story {
       const route = NPC_FIELD_ROUTES.get(setting.key);
       if (!route) continue; // behavior-factory params — consumed at engine-ready
       if (route.convert === 'boolean') {
-        if (setting.value !== 'true' && setting.value !== 'false') {
-          // ADR-276 census 4: the compiler's gate refuses this
-          // (analysis.setting-not-boolean) — defensive backstop.
-          throw new LoadError(`\`${irEntity.name}\`: \`${setting.key}\` takes \`true\` or \`false\`, got \`${setting.value}\`.`, trait.span);
-        }
         data[route.field] = setting.value === 'true';
       }
     }
@@ -2577,8 +2554,9 @@ export class ChordStory implements Story {
       case 'patrol': {
         const routeSetting = pending.config.find((s) => s.key === 'route');
         if (!routeSetting || (routeSetting.values ?? []).length === 0) {
-          // ADR-276 census 9: the compiler's gate refuses this
-          // (analysis.patrol-needs-route) — defensive backstop.
+          // `validateIR` refused this IR before the world was built
+          // (analysis.patrol-needs-route); the branch stays because the
+          // behavior needs a route.
           throw new LoadError(`A \`patrol\` NPC needs \`with route [ … ]\` naming its rooms.`, pending.span);
         }
         const route = (routeSetting.values ?? []).map((irId) => requireEntity(world, irId, pending).id);
@@ -2630,11 +2608,6 @@ export class ChordStory implements Story {
         }
         values[route.trait][route.field] = parsed;
       } else {
-        if (setting.value !== 'true' && setting.value !== 'false') {
-          // ADR-276 census 4: the compiler's gate refuses this
-          // (analysis.setting-not-boolean) — defensive backstop.
-          throw new LoadError(`\`${irEntity.name}\`: \`${setting.key}\` takes \`true\` or \`false\`, got \`${setting.value}\`.`, trait.span);
-        }
         values[route.trait][route.field] = setting.value === 'true';
       }
     }
@@ -2674,8 +2647,9 @@ export class ChordStory implements Story {
           (e) => e.name.toLowerCase() === lower || e.aka.includes(lower),
         );
         if (!target) {
-          // ADR-276 census 6: the compiler's gate refuses this
-          // (analysis.setting-names-no-entity) — defensive backstop.
+          // `validateIR` refused this IR before the world was built
+          // (analysis.setting-names-no-entity); the branch stays because
+          // the field needs an id.
           throw new LoadError(`\`${setting.value}\` (config \`${setting.key}\`) names no entity.`, comp.span);
         }
         values[setting.key] = target.id;

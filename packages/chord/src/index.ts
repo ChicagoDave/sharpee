@@ -25,6 +25,7 @@ export { analyze, normalizeTopic } from './analyzer.js';
 export { clauseHeadWordsOf, clauseHeadId, spokenClauseHead, clauseIdOf, clauseOrdinalOf, assignClauseIds, assignSelectIds } from './clause-ids.js';
 export type { ClauseHeadWords, ClauseHeadFields } from './clause-ids.js';
 export { buildIdentity } from './identity.js';
+export { validateIR } from './validate-ir.js';
 export { sha256Hex } from './sha256.js';
 // The compass words' bearings: Chord's side of a table world-model also
 // keeps (Chord depends on nothing), pinned equal by a story-loader test.

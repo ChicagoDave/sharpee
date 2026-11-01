@@ -228,7 +228,8 @@ describe('ADR-388 D4 — the manifest enumerates every persistable identity', ()
   });
 
   it('`emitIdentity` is the last analysis pass, and `buildIdentity` over the finished IR reproduces the emitted manifest', () => {
-    expect(ANALYSIS_PASSES[ANALYSIS_PASSES.length - 1].name).toBe('emitIdentity');
+    // `validateIR` follows it (ADR-389 D4) and writes nothing: the identity is emitted over the finished IR.
+    expect(ANALYSIS_PASSES.map((p) => p.name).slice(-2)).toEqual(['emitIdentity', 'validateIR']);
     const ir = compile(SOURCE()).ir;
     expect(buildIdentity(ir)).toEqual(ir.identity);
   });

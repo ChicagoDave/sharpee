@@ -99,14 +99,13 @@ describe('door loading through the `through` exit line (ADR-234 AC-1)', () => {
   });
 });
 
-describe('rogue-IR backstops (compiler door gates bypassed)', () => {
-  it('an unwired door throws LoadError', () => {
+describe('rogue IR (compiler door gates bypassed)', () => {
+  it('an unwired door is refused by validateIR when the story is created (ADR-389 D4)', () => {
     const ir = compileFixture('door-basic.story');
     const kitchen = ir.entities.find((e) => e.id === 'kitchen')!;
     kitchen.exits[0].via = null; // strip the through-reference
-    const story = createStory(ir);
-    expect(() => story.initializeWorld(new WorldModel()))
-      .toThrow(LoadError);
+    expect(() => createStory(ir)).toThrow(LoadError);
+    expect(() => createStory(ir)).toThrow(/never referenced by a `through` exit line/);
     expect(() => createStory(compileFixture('door-basic.story')).initializeWorld(new WorldModel()))
       .not.toThrow();
   });

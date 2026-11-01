@@ -101,6 +101,12 @@ slice, no accepted-but-unscheduled remainder. D3 still orders the no-new-data ch
 first *within* the arc, but the arc is done when the census is empty, and ADR-258's
 implementation waits on the whole of it.
 
+*Amended by ADR-389 D4 (2026-11-01, Phase 4)*: "the corresponding `LoadError` sites
+remain as defensive backstops" is withdrawn — the IR's invariants have one
+implementation, `validateIR` in `@sharpee/chord`, run as the compile's last analysis
+pass and called once by the loader before it builds a world; the loader's backstop is
+that one call, never a second copy of a rule.
+
 ### D2 — The data ships as a generated, freshness-gated stdlib manifest in `@sharpee/chord`
 
 A `repokit` build step generates a manifest module into `@sharpee/chord` (committed,
