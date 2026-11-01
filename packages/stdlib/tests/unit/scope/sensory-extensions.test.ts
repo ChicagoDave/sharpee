@@ -4,7 +4,7 @@
  */
 
 import { describe, test, expect, beforeEach } from 'vitest';
-import { WorldModel, AuthorModel, TraitType, IFEntity, EntityType, IdentityTrait, RoomTrait, LightSourceTrait } from '@sharpee/world-model';
+import { WorldModel, AuthorModel, TraitType, IFEntity, EntityType, IdentityTrait, RoomTrait, LightSourceTrait, ActorTrait } from '@sharpee/world-model';
 import { StandardScopeResolver } from '../../../src/scope/scope-resolver';
 import { ScopeLevel } from '../../../src/scope/types';
 import { TEST_MARKER_TRAIT } from '../../test-utils';
@@ -41,11 +41,12 @@ describe('Sensory Extensions', () => {
     hallway.add({ type: TEST_MARKER_TRAIT });
 
     player = author.createEntity('Player', EntityType.ACTOR);
-    player.add({ type: TraitType.ACTOR, isPlayer: true });
+    player.add(new ActorTrait({ isPlayer: true }));
     player.add({ type: TraitType.CONTAINER });
     player.add({ type: TraitType.IDENTITY, name: 'Player' });
     
     author.moveEntity(player.id, room.id);
+    player.add(new ActorTrait({ isPlayable: true }));
     world.setPlayer(player.id);
   });
 

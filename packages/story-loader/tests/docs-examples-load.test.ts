@@ -17,7 +17,7 @@ import { readdirSync, readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { compile } from '@sharpee/chord';
-import { WorldModel } from '@sharpee/world-model';
+import { WorldModel, ActorTrait } from '@sharpee/world-model';
 import { createStory } from '../src';
 import { captureGrammarEngine } from './helpers/grammar-harness';
 import { defineGrammar } from '../../parser-en-us/src/grammar';
@@ -88,6 +88,7 @@ function loadFence(fence: string): void {
   const world = new WorldModel();
   story.initializeWorld(world);
   const player = story.createPlayer(world);
+  player.add(new ActorTrait({ isPlayable: true }));
   world.setPlayer(player.id);
   // Grammar (define action + alterations) reaches a real builder over the
   // real seeded standard grammar (ADR-272 D6).

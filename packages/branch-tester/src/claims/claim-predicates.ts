@@ -112,7 +112,7 @@ export function claimHolds(claim: Claim, ctx: ClaimContext): boolean {
         && (!want.cause || ending.cause === want.cause);
     }
     case 'room': {
-      const player = world.getPlayer();
+      const player = world.playerCharacter;
       const room = player && world.getContainingRoom(player.id);
       return room !== undefined && irIdOf(room) === predicate.room;
     }
@@ -125,7 +125,7 @@ export function claimHolds(claim: Claim, ctx: ClaimContext): boolean {
         return room !== undefined && irIdOf(room) !== want.notIn;
       }
       const location = world.getLocation(thing.id);
-      if (want.in === 'player') return location !== undefined && location === world.getPlayer()?.id;
+      if (want.in === 'player') return location !== undefined && location === world.playerCharacter.id;
       const target = want.in === undefined ? undefined : entityByIr(ctx, want.in);
       if (!target) return false;
       if (location === target.id) return true;
@@ -208,7 +208,7 @@ export function describeClaimMiss(claim: Claim, ctx: ClaimContext, names: ClaimN
       return ending ? `the story ended in ${ending.kind}${ending.messageId ? ` (${ending.messageId})` : ''}` : 'the story has not ended';
     }
     case 'room': {
-      const player = world.getPlayer();
+      const player = world.playerCharacter;
       const room = player && world.getContainingRoom(player.id);
       const here = named(room);
       return here !== undefined ? `the player is in ${here}` : 'the player is in no room';

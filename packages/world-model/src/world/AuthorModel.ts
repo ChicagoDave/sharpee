@@ -41,7 +41,6 @@ export interface IDataStore {
   entities: Map<string, IFEntity>;
   spatialIndex: SpatialIndex;
   state: Record<string, any>;
-  playerId?: string;
   relationships: Map<string, Map<string, Set<string>>>;
   idCounters: Map<string, number>;
   capabilities: ICapabilityStore;

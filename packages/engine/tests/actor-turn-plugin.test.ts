@@ -161,8 +161,8 @@ describe('the actor turn phase (ADR-328 D5)', () => {
     const service = new SaveRestoreService();
     engine.getNpcService().tick({
       world: engine.getWorld(), turn: 1, random: engine.getRandomService(),
-      playerLocation: engine.getWorld().getLocation(engine.getWorld().getPlayer()!.id)!,
-      playerId: engine.getWorld().getPlayer()!.id,
+      playerLocation: engine.getWorld().getLocation(engine.getWorld().playerCharacter.id)!,
+      playerId: engine.getWorld().playerCharacter.id,
       act: () => ({ success: true, events: [] }),
     });
 

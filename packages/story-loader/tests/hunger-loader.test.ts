@@ -54,7 +54,7 @@ function load(text: string) {
 const context = (world: WorldModel, turn = 1): TurnPluginContext => ({
   world,
   turn,
-  playerId: world.getPlayer()!.id,
+  playerId: world.playerCharacter.id,
   playerLocation: 'camp',
   random: createSeededRandom(1),
 });
@@ -121,7 +121,7 @@ describe('use hunger loader lowering (ADR-263)', () => {
     const events = daemonOf(plugins).onAfterAction(context(world));
     expect(events.length).toBeGreaterThan(0); // a death event was emitted
     // The state the event reports: the player's health trait is dead.
-    const health = world.getPlayer()!.get(TraitType.HEALTH) as HealthTrait;
+    const health = world.playerCharacter.get(TraitType.HEALTH) as HealthTrait;
     expect(health.dead).toBe(true);
   });
 

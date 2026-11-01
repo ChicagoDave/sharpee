@@ -12,7 +12,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { WorldModel } from '@sharpee/world-model';
+import { WorldModel, ActorTrait } from '@sharpee/world-model';
 import type { TurnPlugin } from '@sharpee/plugins';
 import { createStory, LoadError } from '../src';
 import { EXTENSION_REGISTRY } from '../src/extension-registry';
@@ -74,6 +74,7 @@ function bootHeadless(source: string, uses?: string[]) {
   const world = new WorldModel();
   story.initializeWorld(world);
   const player = story.createPlayer(world);
+  player.add(new ActorTrait({ isPlayable: true }));
   world.setPlayer(player.id);
   const plugins: TurnPlugin[] = [];
   const engine = stubStoryEngine({ getPluginRegistry: () => recordingPluginRegistry(plugins) });

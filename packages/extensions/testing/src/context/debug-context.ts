@@ -20,10 +20,10 @@ export function createDebugContext(world: WorldModel): DebugContext {
   const flags = new Map<string, boolean>();
 
   // Find player entity
-  const player = world.getPlayer();
-  if (!player) {
+  if (!world.hasPlayerCharacter) {
     throw new Error('Cannot create debug context: no player entity found');
   }
+  const player = world.playerCharacter;
 
   const context: DebugContext = {
     world,

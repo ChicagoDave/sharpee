@@ -15,7 +15,8 @@ import {
   IdentityTrait,
   IdentityBehavior,
   EntityType,
-  InterceptorSharedData
+  InterceptorSharedData,
+  ActorTrait,
 } from '@sharpee/world-model';
 import { PLAYER_DIED_EVENT } from '@sharpee/stdlib';
 import { CakeTrait, CakeType } from '../traits/cake-trait';
@@ -73,7 +74,7 @@ describe('Cake interceptors (ADR-118 / ADR-227 Phase 2)', () => {
     world.setStateValue('dungeo.pool_room.spices_id', spices.id);
 
     player = world.createEntity('player', EntityType.ACTOR);
-    player.add({ type: 'actor' });
+    player.add(new ActorTrait({ isPlayable: true }));
     world.moveEntity(player.id, teaRoom.id);
     world.setPlayer(player.id);
   });

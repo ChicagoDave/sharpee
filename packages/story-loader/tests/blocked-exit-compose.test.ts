@@ -11,7 +11,7 @@
 import { describe, expect, it } from 'vitest';
 import { compile } from '@sharpee/chord';
 import { exitBlockedKey, exitMessageKey } from '@sharpee/stdlib';
-import { Direction, WorldModel } from '@sharpee/world-model';
+import { Direction, WorldModel, ActorTrait } from '@sharpee/world-model';
 import { createStory } from '../src';
 
 const SOURCE = `story
@@ -101,6 +101,7 @@ function load() {
   const world = new WorldModel();
   story.initializeWorld(world);
   const player = story.createPlayer(world);
+  player.add(new ActorTrait({ isPlayable: true }));
   world.setPlayer(player.id);
   return { story, world, player };
 }

@@ -19,7 +19,7 @@ import { EnglishLanguageProvider } from '@sharpee/lang-en-us';
 import { EnglishParser } from '@sharpee/parser-en-us';
 import { PREFERRED_LAYOUT_CHANNEL, PROSE_CHANNEL_IDS } from '@sharpee/if-domain';
 import { PerceptionService, STANDARD_CHANNELS, StdlibChannelRegistry } from '@sharpee/stdlib';
-import { WorldModel, type IFEntity } from '@sharpee/world-model';
+import { WorldModel, type IFEntity, ActorTrait } from '@sharpee/world-model';
 import { ChordStory, LoadError, createStory } from '../src';
 import { compileSource } from './helpers/boot-engine';
 import { stubStoryEngine } from './helpers/stub-story-engine';
@@ -165,7 +165,7 @@ async function boot(seed = 7): Promise<Booted> {
     await engine.executeTurn(input);
     return stream.slice(from);
   };
-  return { engine, story, world, player: world.getPlayer()!, stream, manifestIds, turn };
+  return { engine, story, world, player: world.playerCharacter, stream, manifestIds, turn };
 }
 
 const began = (events: ISemanticEvent[]) => events.filter((e) => e.type === CHAPTER_BEGAN_EVENT).map((e) => (e.data as { name: string }).name);
@@ -300,6 +300,7 @@ describe('ADR-330 chapters on the real path', () => {
     const w = new WorldModel();
     rogue.initializeWorld(w);
     const p = rogue.createPlayer(w);
+    p.add(new ActorTrait({ isPlayable: true }));
     w.setPlayer(p.id);
     expect(() =>
       rogue.onEngineReady(stubStoryEngine()),

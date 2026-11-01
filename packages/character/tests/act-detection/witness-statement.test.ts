@@ -139,6 +139,7 @@ describe('the observe sub-step statement site (if.event.told)', () => {
     room.add(new ContainerTrait());
 
     const player = makeActor(world, 'Player', false);
+    player.add(new ActorTrait({ isPlayable: true }));
     world.setPlayer(player.id);
     world.moveEntity(player.id, room.id);
     const target = makeActor(world, 'Burbage', true);

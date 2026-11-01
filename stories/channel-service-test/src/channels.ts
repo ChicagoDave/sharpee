@@ -42,13 +42,13 @@ export interface DebugStatsPayload {
 function readInventoryCount(ctx: ChannelProduceContext): number {
   const world = ctx.world as
     | {
-        getPlayer?: () => { id: string } | undefined;
+        hasPlayerCharacter?: boolean;
+        playerCharacter?: { id: string };
         getContents?: (id: string) => readonly unknown[];
       }
     | undefined;
-  if (!world?.getPlayer || !world?.getContents) return 0;
-  const player = world.getPlayer();
-  if (!player) return 0;
+  if (!world?.hasPlayerCharacter || !world.playerCharacter || !world?.getContents) return 0;
+  const player = world.playerCharacter;
   const contents = world.getContents(player.id);
   return Array.isArray(contents) ? contents.length : 0;
 }

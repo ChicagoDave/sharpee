@@ -17,7 +17,7 @@ import { describe, expect, it, beforeEach } from 'vitest';
 import { compile, StoryIR } from '@sharpee/chord';
 import type { ISemanticEvent } from '@sharpee/core';
 import { goingAction } from '@sharpee/stdlib';
-import { Direction, DirectionType, WorldModel } from '@sharpee/world-model';
+import { Direction, DirectionType, WorldModel, ActorTrait } from '@sharpee/world-model';
 import { ChordStory, createStory, SchedulerDaemon } from '../src';
 import { runValidatePhase, runExecutePhase, runReportPhase } from '@sharpee/stdlib';
 
@@ -130,7 +130,7 @@ describe('region-owned every-turn daemons (ADR-236 D4, REAL-PATH)', () => {
 
   /** Drive stdlib's REAL goingAction over the loaded world (no stubs). */
   const go = (direction: DirectionType): void => {
-    const player = world.getPlayer()!;
+    const player = world.playerCharacter;
     const currentLocation =
       world.getContainingRoom(player.id) ?? world.getEntity(world.getLocation(player.id)!)!;
     const context: any = {
@@ -170,6 +170,7 @@ describe('region-owned every-turn daemons (ADR-236 D4, REAL-PATH)', () => {
     world = new WorldModel();
     story.initializeWorld(world);
     const player = story.createPlayer(world);
+    player.add(new ActorTrait({ isPlayable: true }));
     world.setPlayer(player.id);
     daemons = story.runtime.buildSchedulerDaemons();
     turn = 0;

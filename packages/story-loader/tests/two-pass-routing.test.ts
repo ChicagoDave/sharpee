@@ -30,7 +30,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import { compile } from '@sharpee/chord';
-import { WorldModel } from '@sharpee/world-model';
+import { WorldModel, ActorTrait } from '@sharpee/world-model';
 import { createStory } from '../src';
 import { counterKey } from '../src/state-keys';
 
@@ -184,6 +184,7 @@ function load() {
   const world = new WorldModel();
   story.initializeWorld(world);
   const player = story.createPlayer(world);
+  player.add(new ActorTrait({ isPlayable: true }));
   world.setPlayer(player.id);
   return { story, world, player };
 }

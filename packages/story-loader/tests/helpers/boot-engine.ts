@@ -58,7 +58,7 @@ export function bootEngine(source: string, seed: number): Booted {
   const engine = new GameEngine({ world, parser, language, config: { seed } });
   engine.installStory(story);
 
-  const player = world.getPlayer()!;
+  const player = world.playerCharacter;
   const phase = engine.getPluginRegistry().getById(ACTOR_TURN_PLUGIN_ID) as ActorTurnPlugin;
   expect(phase, 'the engine registered its actor turn phase').toBeDefined();
   return { engine, story, world, player, phase };

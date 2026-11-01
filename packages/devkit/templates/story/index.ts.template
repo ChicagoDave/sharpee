@@ -38,7 +38,7 @@ export function createStory(): Story {
     },
 
     initializeWorld(world: WorldModel): void {
-      const player = world.getPlayer()!;
+      const player = world.playerCharacter;
 
       // === ROOMS ===
       // A room is an entity carrying an IdentityTrait (its name + description) and a

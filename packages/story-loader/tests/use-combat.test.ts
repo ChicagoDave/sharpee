@@ -16,7 +16,7 @@ import { compile, StoryIR } from '@sharpee/chord';
 import type { ISemanticEvent } from '@sharpee/core';
 import { EngineRandomService } from '@sharpee/engine';
 import { attackingAction } from '@sharpee/stdlib';
-import { CombatantTrait, HealthTrait, IFEntity, TraitType, WeaponTrait, WorldModel } from '@sharpee/world-model';
+import { CombatantTrait, HealthTrait, IFEntity, TraitType, WeaponTrait, WorldModel, ActorTrait } from '@sharpee/world-model';
 import { createStory, LoadError } from '../src';
 import { runValidatePhase, runExecutePhase, runReportPhase } from '@sharpee/stdlib';
 
@@ -40,6 +40,7 @@ const load = (mutate?: (ir: StoryIR) => void) => {
   const world = new WorldModel();
   story.initializeWorld(world);
   const player = story.createPlayer(world);
+  player.add(new ActorTrait({ isPlayable: true }));
   world.setPlayer(player.id);
   const entity = (slug: string): IFEntity => world.getEntity(story.entityId(slug)!)!;
   return { story, world, player, entity };

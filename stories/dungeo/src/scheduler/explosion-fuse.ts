@@ -97,8 +97,7 @@ function makeEvent(id: string, type: string, turn: number, messageId: string, en
  * pattern the explosion fuses used before the killPlayer migration.
  */
 function pushPlayerDeath(events: ISemanticEvent[], world: WorldModel, cause: string, messageId: string): void {
-  const player = world.getPlayer();
-  if (!player) return;
+  const player = world.playerCharacter;
   const deathEvent = killPlayer(world, player, { cause, messageId, terminal: true });
   if (deathEvent) events.push(deathEvent);
 }

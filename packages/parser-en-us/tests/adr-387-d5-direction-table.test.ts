@@ -11,7 +11,7 @@ import { describe, it, expect } from 'vitest';
 import { EnglishParser } from '../src/english-parser';
 import { EnglishGrammarEngine } from '../src/english-grammar-engine';
 import { EnglishLanguageProvider } from '@sharpee/lang-en-us';
-import { Direction, WorldModel, EntityType } from '@sharpee/world-model';
+import { Direction, WorldModel, EntityType, ActorTrait } from '@sharpee/world-model';
 import { PartOfSpeech, SlotType, type DirectionVocabulary, type GrammarContext } from '@sharpee/if-domain';
 
 /** English whose compass is Spanish. */
@@ -33,6 +33,7 @@ function parserOver(provider: EnglishLanguageProvider) {
   const room = world.createEntity('Room', EntityType.ROOM);
   const player = world.createEntity('you', EntityType.ACTOR);
   world.moveEntity(player.id, room.id);
+  player.add(new ActorTrait({ isPlayable: true }));
   world.setPlayer(player.id);
   parser.setWorldContext(world, player.id, room.id);
   return parser;

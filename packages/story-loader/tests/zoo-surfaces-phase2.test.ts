@@ -15,7 +15,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { compile, StoryIR } from '@sharpee/chord';
 import type { Choice, SnippetEntry } from '@sharpee/if-domain';
 import { clearSnippetGates, lookupSnippetGate } from '@sharpee/stdlib';
-import { IdentityTrait, RoomTrait, TraitType, WorldModel } from '@sharpee/world-model';
+import { IdentityTrait, RoomTrait, TraitType, WorldModel, ActorTrait } from '@sharpee/world-model';
 import { ChordStory, createStory, LoadError } from '../src';
 
 function compileSource(source: string): StoryIR {
@@ -37,6 +37,7 @@ function boot(ir: StoryIR): Booted {
   const world = new WorldModel();
   story.initializeWorld(world);
   const player = story.createPlayer(world);
+  player.add(new ActorTrait({ isPlayable: true }));
   world.setPlayer(player.id);
   return { story, world, playerId: player.id };
 }

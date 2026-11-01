@@ -9,7 +9,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { compile } from '@sharpee/chord';
-import { WorldModel } from '@sharpee/world-model';
+import { WorldModel, ActorTrait } from '@sharpee/world-model';
 import { createStory } from '../src';
 
 const ZOO_STORY = join(__dirname, '..', '..', '..', 'stories', 'friendly-zoo', 'zoo.story');
@@ -29,6 +29,7 @@ describe('AC-4 sweep: the shipped zoo.story', () => {
     const world = new WorldModel();
     story.initializeWorld(world);
     const player = story.createPlayer(world);
+    player.add(new ActorTrait({ isPlayable: true }));
     world.setPlayer(player.id);
 
     expect(world.getAllEntities().length).toBeGreaterThan(20);

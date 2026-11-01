@@ -144,8 +144,7 @@ export function startFlooding(
       }
 
       const events: ISemanticEvent[] = [];
-      const player = ctx.world.getPlayer();
-      if (!player) return [];
+      const player = ctx.world.playerCharacter;
       const playerId = player.id;
       const playerLocation = ctx.world.getLocation(playerId);
       const inMaintenanceRoom = playerLocation === maintenanceRoomId;

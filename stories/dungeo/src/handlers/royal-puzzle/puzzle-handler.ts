@@ -82,8 +82,7 @@ function isInPuzzle(world: WorldModel): boolean {
   const roomInPuzzleId = world.getStateValue(PUZZLE_ROOM_KEY);
   if (!roomInPuzzleId) return false;
 
-  const player = world.getPlayer();
-  if (!player) return false;
+  const player = world.playerCharacter;
 
   const playerLocation = world.getLocation(player.id);
 
@@ -150,7 +149,7 @@ export function handlePuzzleMovement(
 
       // Move player to puzzle room (entrance)
       const puzzleRoomId = world.getStateValue(PUZZLE_ENTRANCE_KEY);
-      const player = world.getPlayer();
+      const player = world.playerCharacter;
       if (puzzleRoomId && player) {
         world.moveEntity(player.id, puzzleRoomId);
       }
@@ -275,7 +274,7 @@ export function handleTakeCard(world: WorldModel): ISemanticEvent[] | null {
 
     // Add card to player inventory and award take points
     const cardId = world.getStateValue(GOLD_CARD_KEY);
-    const player = world.getPlayer();
+    const player = world.playerCharacter;
     if (cardId && player) {
       world.moveEntity(cardId, player.id);
 

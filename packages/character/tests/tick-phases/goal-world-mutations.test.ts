@@ -65,6 +65,7 @@ describe('D6 — goal steps mutate the world', () => {
     connect(parlor, hall, 'north', 'south');
     connect(hall, study, 'east', 'west');
     player = actorIn(world, 'Player', parlor, { player: true });
+    player.add(new ActorTrait({ isPlayable: true }));
     world.setPlayer(player.id);
     npc = actorIn(world, 'Butler', parlor, { model: true });
     registry = new CharacterPhaseRegistry();

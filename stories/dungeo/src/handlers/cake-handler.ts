@@ -81,7 +81,7 @@ function lethalEffects(
   narrationMessageId: string,
   narrationData: Record<string, unknown>
 ): CapabilityEffect[] {
-  const player = world.getPlayer();
+  const player = world.playerCharacter;
   if (player) {
     killPlayer(world, player, { cause, terminal: true });
   }

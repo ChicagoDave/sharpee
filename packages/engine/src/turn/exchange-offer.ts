@@ -22,8 +22,8 @@ import type { TurnStage, TurnEngine } from './context.js';
  */
 function offerToOpenExchange(engine: TurnEngine, input: string): string {
   const world = engine.world;
-  const player = world.getPlayer();
-  if (!player) return input;
+  if (!world.hasPlayerCharacter) return input;
+  const player = world.playerCharacter;
   const scene = sceneWith(world, player.id);
   const exchange = scene?.openExchange;
   const registration = world.getDialogueSelector();

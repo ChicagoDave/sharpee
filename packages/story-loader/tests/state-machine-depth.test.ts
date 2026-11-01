@@ -15,7 +15,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { compile, StoryIR } from '@sharpee/chord';
 import type { ISemanticEvent } from '@sharpee/core';
 import { StateMachinePlugin } from '@sharpee/plugin-state-machine';
-import { IFEntity, WorldModel } from '@sharpee/world-model';
+import { IFEntity, WorldModel, ActorTrait } from '@sharpee/world-model';
 import type { TurnPlugin } from '@sharpee/plugins';
 import { ChordStory, createStory, LoadError } from '../src';
 import { stubStoryEngine, recordingPluginRegistry } from './helpers/stub-story-engine';
@@ -67,6 +67,7 @@ describe('define machine through the real loader (ADR-119 depth, core under ADR-
     world = new WorldModel();
     story.initializeWorld(world);
     player = story.createPlayer(world);
+    player.add(new ActorTrait({ isPlayable: true }));
     world.setPlayer(player.id);
     const plugins: TurnPlugin[] = [];
     story.onEngineReady(stubStoryEngine({ getPluginRegistry: () => recordingPluginRegistry(plugins) }));
@@ -188,6 +189,7 @@ describe('define machine through the real loader (ADR-119 depth, core under ADR-
     const w = new WorldModel();
     bare.initializeWorld(w);
     const p = bare.createPlayer(w);
+    p.add(new ActorTrait({ isPlayable: true }));
     w.setPlayer(p.id);
     bare.onEngineReady(stubStoryEngine({ getPluginRegistry: () => recordingPluginRegistry(plugins) }));
     const plugin = plugins.find((x): x is StateMachinePlugin => x instanceof StateMachinePlugin)!;

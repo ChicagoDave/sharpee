@@ -12,7 +12,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import { compile } from '@sharpee/chord';
-import { IFEntity, WorldModel } from '@sharpee/world-model';
+import { IFEntity, WorldModel, ActorTrait } from '@sharpee/world-model';
 import { ChordStory, CHORD_STATE_PREFIX, createStory, Evaluator } from '../src';
 
 const SOURCE = `story
@@ -80,6 +80,7 @@ function load(): Loaded {
   const world = new WorldModel();
   story.initializeWorld(world);
   const player = story.createPlayer(world);
+  player.add(new ActorTrait({ isPlayable: true }));
   world.setPlayer(player.id);
   return { story, world, player, ev: new Evaluator(result.ir, story, 42) };
 }

@@ -80,7 +80,7 @@ export class SchedulerConstructsSection {
             if (step.anchor.state === 'in sight') {
               const worldId = this.core.host.entityId(step.anchor.owner);
               const thing = worldId !== undefined ? world.getEntity(worldId) : undefined;
-              const player = world.getPlayer();
+              const player = world.playerCharacter;
               return thing !== undefined && player !== undefined && inSight(world, player, thing);
             }
             return world.getStateValue(CHORD_STATE_PREFIX + step.anchor.owner) === step.anchor.state;
@@ -230,7 +230,7 @@ export class SchedulerConstructsSection {
    */
   private storyOver(world: WorldModel): boolean {
     if (world.getEnding() !== undefined) return true;
-    const player = world.getPlayer();
+    const player = world.playerCharacter;
     const health = player?.get(HealthTrait) as { dead?: boolean } | undefined;
     return health?.dead === true;
   }
@@ -286,7 +286,7 @@ export class SchedulerConstructsSection {
   private playerPresentInRegionOwner(world: WorldModel, irEntity: IREntity): boolean {
     if (!irEntity.kinds.some((k) => k.name === 'region')) return true;
     const regionId = this.core.host.entityId(irEntity.id);
-    const player = world.getPlayer();
+    const player = world.playerCharacter;
     if (!regionId || !player) return false;
     return world.isInRegion(player.id, regionId);
   }

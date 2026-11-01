@@ -10,7 +10,7 @@
  * does; assertions are on the resolution result.
  */
 import { describe, test, expect, beforeEach } from 'vitest';
-import { AuthorModel, EntityType, IFEntity, IParsedCommand, TraitType, WorldModel } from '@sharpee/world-model';
+import { AuthorModel, EntityType, IFEntity, IParsedCommand, TraitType, WorldModel, ActorTrait } from '@sharpee/world-model';
 import { LanguageProvider } from '@sharpee/if-domain';
 import { CommandValidator } from '../../../src/validation/command-validator';
 import { StandardActionRegistry } from '../../../src/actions/registry';
@@ -67,6 +67,7 @@ describe('GH #206: an exact match out of scope is not displaced by a word match 
     elsewhere = author.createEntity('Cellar', EntityType.ROOM);
     elsewhere.add({ type: TraitType.ROOM });
     author.moveEntity(player.id, room.id);
+    player.add(new ActorTrait({ isPlayable: true }));
     world.setPlayer(player.id);
     const stiletto = author.createEntity('nasty stiletto', EntityType.OBJECT);
     stiletto.add({ type: TraitType.IDENTITY, name: 'nasty stiletto', aliases: ['stiletto', 'thief knife'] });

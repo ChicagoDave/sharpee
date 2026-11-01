@@ -12,7 +12,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import { compile, StoryIR } from '@sharpee/chord';
-import { WorldModel } from '@sharpee/world-model';
+import { WorldModel, ActorTrait } from '@sharpee/world-model';
 import { createStory } from '../src';
 import { CHORD_IR_ID_ATTRIBUTE, CHORD_STATE_PREFIX } from '../src/state-keys';
 
@@ -85,6 +85,7 @@ function build(): WorldModel {
   const world = new WorldModel();
   story.initializeWorld(world);
   const player = story.createPlayer(world);
+  player.add(new ActorTrait({ isPlayable: true }));
   world.setPlayer(player.id);
   return world;
 }
@@ -114,7 +115,7 @@ describe('GH #355 — the loader stamps the IR id on every entity it creates', (
 
   it('the playable person is stamped too — the player is a created entity like any other', () => {
     const world = build();
-    const player = world.getPlayer()!;
+    const player = world.playerCharacter;
     expect(player.attributes[CHORD_IR_ID_ATTRIBUTE]).toBe('alex');
   });
 

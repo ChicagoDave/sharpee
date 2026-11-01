@@ -69,8 +69,7 @@ export function createDeadlyRoomTransformer(
   random?: RandomService,
 ): (parsed: IParsedCommand, world: WorldModel) => IParsedCommand {
   return (parsed: IParsedCommand, world: WorldModel): IParsedCommand => {
-    const player = world.getPlayer();
-    if (!player) return parsed;
+    const player = world.playerCharacter;
 
     const room = resolvePlayerRoom(world, player);
     const trait = room?.get(TraitType.DEADLY_ROOM) as DeadlyRoomTrait | undefined;

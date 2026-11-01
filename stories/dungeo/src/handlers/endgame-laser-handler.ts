@@ -74,8 +74,7 @@ export function registerLaserPuzzleHandler(
   // Handler for DROP action in Small Room (sword breaks beam)
   // Note: Use `world` from closure for type compatibility with WorldModel
   world.registerEventHandler('if.event.dropped', (event: ISemanticEvent) => {
-    const player = world.getPlayer();
-    if (!player) return;
+    const player = world.playerCharacter;
 
     // Get location from event data
     const data = event.data as Record<string, any> | undefined;
@@ -100,8 +99,7 @@ export function registerLaserPuzzleHandler(
 
   // Handler for PUSH action on stone button
   world.registerEventHandler('if.event.pushed', (event: ISemanticEvent) => {
-    const player = world.getPlayer();
-    if (!player) return;
+    const player = world.playerCharacter;
 
     // Get location from player position
     const playerLocation = world.getLocation(player.id);

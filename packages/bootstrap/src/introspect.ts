@@ -76,7 +76,7 @@ export function buildManifest(
   story: string,
   generatedFrom: 'cli' | 'bridge'
 ): ProjectManifest {
-  const playerId = world.getPlayer()?.id;
+  const playerId = world.playerCharacter.id;
 
   const entities: EntityNode[] = world
     .getAllEntities()

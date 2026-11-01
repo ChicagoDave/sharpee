@@ -8443,7 +8443,7 @@ export class Analyzer {
     const lower = ref.words.join(' ').toLowerCase();
     // ADR-327 D10: `the player` names the ROLE, not an entity — there is no
     // player block any more. `player` is the sentinel id the loader resolves
-    // against `world.getPlayer()` at run time, exactly as `define timer … for
+    // against the world's player character at run time, exactly as `define timer … for
     // the player` already did.
     if (PLAYER_WORDS.has(lower)) return 'player';
 

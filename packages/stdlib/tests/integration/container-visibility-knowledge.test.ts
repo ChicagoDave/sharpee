@@ -3,7 +3,7 @@
  */
 
 import { describe, test, expect, beforeEach } from 'vitest';
-import { WorldModel, AuthorModel, IFEntity, TraitType, OpenableTrait } from '@sharpee/world-model';
+import { WorldModel, AuthorModel, IFEntity, TraitType, OpenableTrait, ActorTrait } from '@sharpee/world-model';
 import { LanguageProvider } from '@sharpee/if-domain';
 import { StandardScopeResolver } from '../../src/scope/scope-resolver';
 import { CommandValidator } from '../../src/validation/command-validator';
@@ -70,7 +70,7 @@ describe('Container visibility and knowledge', () => {
 
     // 5. Create actor in room2
     actor = author.createEntity('Bob', 'actor');
-    actor.add({ type: TraitType.ACTOR });
+    actor.add(new ActorTrait({ isPlayable: true }));
     author.moveEntity(actor.id, room2.id);
     world.setPlayer(actor.id);
 

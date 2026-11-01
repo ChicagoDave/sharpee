@@ -169,7 +169,7 @@ describe('SaveRestoreService round-trip', () => {
         const lamp = world.findByType('object').find((e) => e.name === 'lamp');
         const box = world.findByType('object').find((e) => e.name === 'box');
         const northRoom = world.findByType('room').find((r) => r.name === 'North Room');
-        const player = world.getPlayer();
+        const player = world.playerCharacter;
         if (!lamp || !box || !northRoom || !player) {
           throw new Error('test fixture incomplete');
         }
@@ -188,7 +188,7 @@ describe('SaveRestoreService round-trip', () => {
       const northRoom = restored
         .findByType('room')
         .find((r) => r.name === 'North Room');
-      const player = restored.getPlayer();
+      const player = restored.playerCharacter;
       expect(lamp && box && northRoom && player).toBeTruthy();
 
       // Trait state preserved.

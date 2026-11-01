@@ -336,6 +336,8 @@ character block carries the trait, and the tick skips whoever holds the role.
 
 ### D10. `before the game starts` — and `create the player` leaves the language
 
+> **Amended 2026-10-31 (ADR-390 D3):** the `player` sentinel no longer resolves through a loader map entry. The start block's first `change the player to` calls `world.setPlayer` at the moment it runs, a later line calls `world.changePlayer`, and every load-time `player` reference reads `world.playerCharacter` at use time through the loader's one `worldIdOf`. `createPlayer` is the lookup this record made it, over the world fact.
+
 (David, 2026-08-25, on the D9 example: *"there is no 'create the player' syntax anymore …
 this exposes the need for a 'before game starts' block"*; spelling confirmed the same
 day.) If the player is a role, no entity is *the player* by construction — so the block

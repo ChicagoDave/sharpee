@@ -44,7 +44,7 @@ function buildHungerDaemon(grows: number, fatal: number | undefined): TurnPlugin
         setHungerSeverity(ctx.world, getHungerSeverity(ctx.world) + grows);
       }
       if (fatal !== undefined && getHungerSeverity(ctx.world) >= fatal) {
-        const player = ctx.world.getPlayer();
+        const player = ctx.world.playerCharacter;
         if (player) {
           // The death line is lang-en-us prose (overridable `hunger-starved`),
           // routed through the death event's messageId — not a hardcoded string.

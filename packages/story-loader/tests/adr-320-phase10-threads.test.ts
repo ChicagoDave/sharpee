@@ -289,7 +289,7 @@ describe('AC14 — passive park and resume through dispatch', () => {
     // through the one shared deliverer — the prose event with the id the
     // pipeline renders by, and the wire's thread-parting data beside it.
     const kempId = entity(l, 'kemp').id;
-    const playerId = l.world.getPlayer()!.id;
+    const playerId = l.world.playerCharacter.id;
     expect(parked.events.find((e) => e.type === 'character.thread.parting')?.data).toMatchObject({
       ownerId: kempId,
       partnerId: playerId,

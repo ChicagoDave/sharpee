@@ -73,6 +73,7 @@ describe('influence sub-step through the tick', () => {
     chapel = room(world, 'Chapel');
     vestry = room(world, 'Vestry');
     player = actorIn(world, 'Player', vestry, { player: true });
+    player.add(new ActorTrait({ isPlayable: true }));
     world.setPlayer(player.id);
     priest = actorIn(world, 'Priest', chapel, { model: true });
     widow = actorIn(world, 'Widow', chapel, { model: true });

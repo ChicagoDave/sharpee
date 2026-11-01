@@ -16,7 +16,7 @@ import { describe, expect, it } from 'vitest';
 import { compile, StoryIR } from '@sharpee/chord';
 import type { ISemanticEvent } from '@sharpee/core';
 import { unlockingAction } from '@sharpee/stdlib';
-import { IFEntity, LockableTrait, OpenableTrait, SwitchableTrait, TraitType, WorldModel } from '@sharpee/world-model';
+import { IFEntity, LockableTrait, OpenableTrait, SwitchableTrait, TraitType, WorldModel, ActorTrait } from '@sharpee/world-model';
 import { createStory } from '../src';
 import { runValidatePhase, runExecutePhase, runReportPhase } from '@sharpee/stdlib';
 
@@ -99,6 +99,7 @@ const load = () => {
   const world = new WorldModel();
   story.initializeWorld(world);
   const player = story.createPlayer(world);
+  player.add(new ActorTrait({ isPlayable: true }));
   world.setPlayer(player.id);
   const entity = (slug: string): IFEntity => world.getEntity(story.entityId(slug)!)!;
   return { story, world, player, entity };

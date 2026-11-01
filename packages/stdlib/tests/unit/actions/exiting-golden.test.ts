@@ -11,7 +11,7 @@
 import { describe, test, expect } from 'vitest';
 import { exitingAction } from '../../../src/actions/standard/exiting';
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType, WorldModel, EntityType, OpenableTrait } from '@sharpee/world-model';
+import { TraitType, WorldModel, EntityType, OpenableTrait, ActorTrait } from '@sharpee/world-model';
 import {
   createRealTestContext,
   setupBasicWorld,
@@ -128,7 +128,7 @@ describe('exitingAction (Golden Pattern)', () => {
       const world = new WorldModel();
       world.setLanguageWords(ENGLISH_WORDS);
       const player = world.createEntity('yourself', EntityType.ACTOR);
-      player.add({ type: TraitType.ACTOR, isPlayer: true });
+      player.add(new ActorTrait({ isPlayer: true }));
       world.setPlayer(player.id);
 
       const floatingBox = world.createEntity('floating box', EntityType.CONTAINER);
@@ -341,7 +341,7 @@ describe('World State Mutations', () => {
     const world = new WorldModel();
     world.setLanguageWords(ENGLISH_WORDS);
     const player = world.createEntity('yourself', EntityType.ACTOR);
-    player.add({ type: TraitType.ACTOR, isPlayer: true });
+    player.add(new ActorTrait({ isPlayer: true }));
     world.setPlayer(player.id);
 
     const floatingBox = world.createEntity('floating box', EntityType.CONTAINER);

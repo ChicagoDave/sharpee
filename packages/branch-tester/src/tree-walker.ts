@@ -910,13 +910,14 @@ function labelOf(line: TreeLine, game: TreeWalkerGame): string {
 function playerRoomIrIdOf(game: TreeWalkerGame): string | undefined {
   const world = game.world as
     | {
-        getPlayer?(): { id: string } | undefined;
+        readonly hasPlayerCharacter?: boolean;
+        readonly playerCharacter?: { id: string };
         getContainingRoom?(entityId: string): { id: string } | undefined;
         getLocation?(entityId: string): string | undefined;
         getEntity?(id: string): { attributes?: Record<string, unknown> } | undefined;
       }
     | undefined;
-  const player = world?.getPlayer?.();
+  const player = world?.hasPlayerCharacter ? world.playerCharacter : undefined;
   if (!player) return undefined;
   const roomId = world?.getContainingRoom?.(player.id)?.id ?? world?.getLocation?.(player.id);
   const irId = roomId ? world?.getEntity?.(roomId)?.attributes?.[CHORD_IR_ID_ATTRIBUTE] : undefined;

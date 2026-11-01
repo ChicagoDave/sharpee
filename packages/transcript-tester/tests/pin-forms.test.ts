@@ -8,7 +8,7 @@
  * Owner context: transcript-tester test suite (tooling).
  */
 import { describe, expect, it } from 'vitest';
-import { IdentityTrait, OpenableTrait, RoomTrait, WorldModel } from '@sharpee/world-model';
+import { IdentityTrait, OpenableTrait, RoomTrait, WorldModel, ActorTrait } from '@sharpee/world-model';
 import { evaluateStateExpression } from '../src/index.js';
 import type { StoryStateKeys } from '../src/index.js';
 
@@ -25,6 +25,7 @@ function hall() {
   const room = w.createEntity('hall', 'room');
   const player = w.createEntity('player', 'actor');
   w.moveEntity(player.id, room.id);
+  player.add(new ActorTrait({ isPlayable: true }));
   w.setPlayer(player.id);
   const coin = w.createEntity('coin', 'item');
   w.moveEntity(coin.id, player.id);
@@ -76,7 +77,7 @@ describe('entity.property and entity.location', () => {
     const details = evaluateStateExpression('coin.location = hall', w).details;
     expect(details).toBe('coin.location is "player", expected "hall"');
     expect(details).not.toContain(room.id);
-    expect(details).not.toContain(w.getPlayer()!.id);
+    expect(details).not.toContain(w.playerCharacter.id);
   });
 
   it('names the entity a negated location pin should not be in', () => {
@@ -234,6 +235,7 @@ describe('a state adjective reads the trait flag beside a declared state (GH #54
     const w = new WorldModel();
     const room = w.createEntity('cellar', 'room');
     const player = w.createEntity('player', 'actor');
+    player.add(new ActorTrait({ isPlayable: true }));
     w.moveEntity(player.id, room.id);
     w.setPlayer(player.id);
     const stove = w.createEntity('stove', 'container');
@@ -263,6 +265,7 @@ describe('a declared state named `gone` reads as the gone claim (GH #549 Phase 3
     const w = new WorldModel();
     const room = w.createEntity('cell', 'room');
     const player = w.createEntity('player', 'actor');
+    player.add(new ActorTrait({ isPlayable: true }));
     w.moveEntity(player.id, room.id);
     w.setPlayer(player.id);
     const jacobs = w.createEntity('Jacobs', 'actor');
@@ -289,6 +292,7 @@ describe('a location pin over a region reads membership, not containment (GH #54
     w.assignRoom(east.id, grounds.id);
     w.assignRoom(west.id, grounds.id);
     const player = w.createEntity('player', 'actor');
+    player.add(new ActorTrait({ isPlayable: true }));
     w.moveEntity(player.id, hall.id);
     w.setPlayer(player.id);
     const coin = w.createEntity('coin', 'item');

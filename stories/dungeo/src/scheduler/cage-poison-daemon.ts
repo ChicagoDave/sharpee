@@ -94,7 +94,7 @@ export function registerCagePoisonDaemon(
 
         // Canonical terminal death (ADR-224). Narration is the game.message
         // above, so the death event needs no messageId (avoids a duplicate render).
-        const player = context.world.getPlayer();
+        const player = context.world.playerCharacter;
         if (player) {
           const deathEvent = killPlayer(context.world, player, {
             cause: 'cage_poison',

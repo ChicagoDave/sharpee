@@ -22,7 +22,8 @@ function fixtureWorld(): WorldModelLike {
     getEntity: () => undefined,
     getContents: () => [],
     getContainingRoom: () => undefined,
-    getPlayer: () => ({ id: 'player' } as IEntity),
+    hasPlayerCharacter: true,
+    playerCharacter: { id: 'player' } as IEntity,
     getCapability: (name) => capabilities[name],
     updateCapability: (name, updates) => {
       capabilities[name] = { ...(capabilities[name] ?? {}), ...updates };

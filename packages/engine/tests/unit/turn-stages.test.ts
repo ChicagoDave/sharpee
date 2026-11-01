@@ -76,7 +76,7 @@ describe('undo-snapshot', () => {
     expect(engine.canUndo()).toBe(false);
 
     await engine.executeTurn('take lamp');
-    expect(world.getLocation(lamp.id)).toBe(world.getPlayer()!.id);
+    expect(world.getLocation(lamp.id)).toBe(world.playerCharacter.id);
     expect(engine.canUndo()).toBe(true);
 
     await engine.executeTurn('undo');
@@ -122,15 +122,15 @@ describe('player-switch', () => {
     const { engine, world } = started();
     const ada = world.createEntity('Ada', EntityType.ACTOR);
     ada.add(new ActorTrait({ isPlayable: true }));
-    world.moveEntity(ada.id, world.getLocation(world.getPlayer()!.id)!);
-    const original = world.getPlayer()!.id;
+    world.moveEntity(ada.id, world.getLocation(world.playerCharacter.id)!);
+    const original = world.playerCharacter.id;
     reactToTake(engine, {
       id: 'switch', type: 'if.event.player.switch_requested', timestamp: 1, entities: {}, data: { entityId: ada.id }
     });
 
     await engine.executeTurn('take lamp');
 
-    expect(world.getPlayer()!.id).toBe(ada.id);
+    expect(world.playerCharacter.id).toBe(ada.id);
     expect(engine.getContext().player.id).toBe(ada.id);
     expect(world.getLocation(named(world, 'lamp').id)).toBe(original);
   });
@@ -191,7 +191,7 @@ describe('ending', () => {
   it('a death story policy did not revive becomes a defeat Ending on the world', async () => {
     const { engine, world } = started();
     const emitted = collectEvents(engine);
-    const player = world.getPlayer()!;
+    const player = world.playerCharacter;
     reactToTake(engine, killPlayer(world, player, { cause: 'grue' })!);
 
     await engine.executeTurn('take lamp');

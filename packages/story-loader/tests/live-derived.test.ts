@@ -10,7 +10,7 @@
 import { describe, expect, it } from 'vitest';
 import { compile } from '@sharpee/chord';
 import { exitBlockedKey, exitMessageKey } from '@sharpee/stdlib';
-import { Direction, TraitType, VisibilityBehavior, WorldModel, darkKey } from '@sharpee/world-model';
+import { Direction, TraitType, VisibilityBehavior, WorldModel, darkKey, ActorTrait } from '@sharpee/world-model';
 import { createStory } from '../src';
 
 const SOURCE = `story
@@ -68,6 +68,7 @@ function load() {
   const world = new WorldModel();
   story.initializeWorld(world);
   const player = story.createPlayer(world);
+  player.add(new ActorTrait({ isPlayable: true }));
   world.setPlayer(player.id);
   return { story, world, player };
 }

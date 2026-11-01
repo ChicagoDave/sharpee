@@ -14,7 +14,7 @@ import { compile } from '@sharpee/chord';
 import type { ISemanticEvent } from '@sharpee/core';
 import { EngineRandomService } from '@sharpee/engine';
 import { attackingAction } from '@sharpee/stdlib';
-import { CharacterModelTrait, IFEntity, MOOD_AXES, TraitType, WorldModel } from '@sharpee/world-model';
+import { CharacterModelTrait, IFEntity, MOOD_AXES, TraitType, WorldModel, ActorTrait } from '@sharpee/world-model';
 import { createStory, LoadError } from '../src';
 import { runValidatePhase, runExecutePhase, runReportPhase } from '@sharpee/stdlib';
 
@@ -44,6 +44,7 @@ function load(source: string) {
   // ADR-327 D10: world first, role second.
   story.initializeWorld(world);
   const player = story.createPlayer(world);
+  player.add(new ActorTrait({ isPlayable: true }));
   world.setPlayer(player.id);
   const guard = world.getAllEntities().find((e: IFEntity) => e.name?.toLowerCase().includes('guard'))!;
   return { world, player, guard };

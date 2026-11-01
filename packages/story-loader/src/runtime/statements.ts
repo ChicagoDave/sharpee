@@ -37,14 +37,6 @@ export class StatementsSection {
    * phrase/emit/win/lose only; 'all' (rules) does both in source order.
    */
   /**
-   * The world entity the start block assigned the player role to (ADR-327
-   * D10). Set by the `change-player` effect while the world has no player;
-   * read once by the loader's `createPlayer`. Undefined means the block ran
-   * and never assigned — a load error, not a default.
-   */
-  assignedPlayerId?: string;
-
-  /**
    * Run the story's `before the game starts` body against the fully built
    * world (ADR-327 D10).
    *
@@ -148,7 +140,7 @@ export class StatementsSection {
           // carries the death text; the cause derives from the phrase key.
           if (phase !== 'mutations' && holds) {
             if (stmt.phraseKey) events.push(this.core.phrases.phraseEvent(stmt.phraseKey, ctx));
-            const player = ctx.world.getPlayer();
+            const player = ctx.world.playerCharacter;
             if (player) {
               const died = killPlayer(ctx.world, player, {
                 cause: stmt.phraseKey ?? 'killed',
@@ -191,14 +183,20 @@ export class StatementsSection {
         }
         case 'change-player': {
           // ADR-327 D9/D10 — one statement, two moments. Inside the start
-          // block it IS the assignment: the loader reads `assignedPlayerId`
-          // and returns that entity from `createPlayer`. Anywhere else it is a
-          // request the engine drains at turn end, because the loader holds no
-          // engine handle (the `triggerEnding` seam).
+          // block it IS the assignment, made through the world's one writer
+          // (ADR-390 D1/D3) so the role is a world fact from this line on and
+          // `createPlayer` is a lookup. Anywhere else it is a request the
+          // engine drains at turn end, because the loader holds no engine
+          // handle (the `triggerEnding` seam).
           if (holds) {
             if (this.core.inStartBlock) {
               // A state change: it belongs to the mutations pass.
-              if (phase !== 'reports') this.assignedPlayerId = this.core.evaluator.entityValue(stmt.entity, ctx);
+              if (phase !== 'reports') {
+                const holderId = this.core.evaluator.entityValue(stmt.entity, ctx);
+                // The first line is the set; a later conditional line is a change.
+                if (ctx.world.hasPlayerCharacter) ctx.world.changePlayer(holderId);
+                else ctx.world.setPlayer(holderId);
+              }
             } else if (phase !== 'mutations') {
               // A signal for the engine to act on at the turn boundary, so it
               // rides the REPORTS pass — the mutations pass's events are
@@ -611,7 +609,7 @@ export class StatementsSection {
 
     if (fromRoom === toRoom) return; // not a room transition — no arrival, no departure
 
-    const isPlayer = thingWorldId === world.getPlayer()?.id;
+    const isPlayer = thingWorldId === world.playerCharacter.id;
     if (toRoom !== undefined) {
       // ADR-327 D5: an arrival is an arrival, walked or moved — a room
       // transition fires the destination's entering clauses and every
@@ -672,7 +670,7 @@ export class StatementsSection {
    * room reads the stock line under going.
    */
   private reportVehicleAtEnd(vehicle: IFEntity, world: WorldModel): void {
-    const player = world.getPlayer();
+    const player = world.playerCharacter;
     const location = world.getLocation(vehicle.id);
     if (!player || location === undefined) return;
     if (!isAboardVehicle(world, player.id, vehicle.id) && world.getContainingRoom(player.id)?.id !== location) return;
@@ -754,7 +752,7 @@ export class StatementsSection {
     toRoom: string | undefined,
     world: WorldModel,
   ): void {
-    if (thingWorldId === world.getPlayer()?.id) return; // the player's own move narrates as travel
+    if (thingWorldId === world.playerCharacter.id) return; // the player's own move narrates as travel
     const irId = this.core.host.irIdOf(thingWorldId);
     if (!irId) return;
     if (fromRoom === toRoom) return; // not a room transition — nothing to witness

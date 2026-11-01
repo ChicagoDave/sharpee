@@ -29,15 +29,13 @@ function createCureDaemon(): Daemon {
     priority: 5, // Low priority — runs after combat daemons
 
     condition: (ctx: SchedulerContext): boolean => {
-      const player = ctx.world.getPlayer();
-      if (!player) return false;
+      const player = ctx.world.playerCharacter;
       const woundAdjust = (player.attributes[MELEE_STATE.WOUND_ADJUST] as number) ?? 0;
       return woundAdjust < 0;
     },
 
     run: (ctx: SchedulerContext): ISemanticEvent[] => {
-      const player = ctx.world.getPlayer();
-      if (!player) return [];
+      const player = ctx.world.playerCharacter;
 
       // Increment tick counter
       const ticks = (ctx.world.getStateValue(CURE_STATE.TICKS) as number) || 0;

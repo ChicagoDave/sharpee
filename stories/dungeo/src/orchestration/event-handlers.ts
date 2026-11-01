@@ -128,7 +128,7 @@ function registerLightShaftAchievement(
     if (!data?.toRoom || data.toRoom !== bottomOfShaftId) return [];
 
     // Check if player (not NPC) — actor_moved uses actor.id, not actorId
-    const player = world.getPlayer();
+    const player = world.playerCharacter;
     if (!player || data.actor?.id !== player.id) return [];
 
     // Check if the room is lit (not dark)
@@ -160,7 +160,7 @@ function registerRoomVisitScoring(
     if (!data?.toRoom) return [];
 
     // Only score player visits, not NPC movement
-    const player = world.getPlayer();
+    const player = world.playerCharacter;
     if (!player || data.actor?.id !== player.id) return [];
 
     const points = roomPointsMap.get(data.toRoom);

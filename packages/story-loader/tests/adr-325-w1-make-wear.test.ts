@@ -79,7 +79,7 @@ async function boot() {
   const b = await bootTurns(STORY);
   const cap = b.world.getAllEntities().find((e) => e.name === 'woolen cap')!;
   const teisha = b.world.getAllEntities().find((e) => e.name === 'Teisha')!;
-  const player = b.world.getPlayer()!;
+  const player = b.world.playerCharacter;
   const wearable = () => cap.get(TraitType.WEARABLE) as WearableTrait;
   return { b, cap, teisha, player, wearable };
 }

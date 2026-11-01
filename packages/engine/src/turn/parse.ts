@@ -52,8 +52,8 @@ export function resolveRoute(
   world: WorldModel,
   input: string
 ): RouteResolution {
-  const player = world.getPlayer();
-  if (player) {
+  if (world.hasPlayerCharacter) {
+    const player = world.playerCharacter;
     parser.setWorldContext(world, player.id, world.getLocation(player.id) || '');
   }
 

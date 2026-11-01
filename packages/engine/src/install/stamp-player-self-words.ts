@@ -16,7 +16,7 @@ import type { InstallStep } from './context.js';
 
 export const stampPlayerSelfWordsStep: InstallStep = {
   name: 'stamp-player-self-words',
-  requires: ['language-words', 'create-player'],
+  requires: ['language-words', 'assign-player-role'],
   run(context) {
     const player = context.draft.player;
     if (!player || !context.languageProvider) return;

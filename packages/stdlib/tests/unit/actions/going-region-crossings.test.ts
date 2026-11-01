@@ -11,7 +11,7 @@
 import { describe, test, expect } from 'vitest';
 import { goingAction } from '../../../src/actions/standard/going';
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType, WorldModel, Direction, RoomTrait, EntityType } from '@sharpee/world-model';
+import { TraitType, WorldModel, Direction, RoomTrait, EntityType, ActorTrait } from '@sharpee/world-model';
 import { createRealTestContext, executeWithValidation, createCommand } from '../../test-utils';
 
 /** English, handed to hand-built worlds as the language's words (ADR-387 D2). */
@@ -25,7 +25,7 @@ function twoRooms(fromRegion?: string, toRegion?: string) {
   world.createRegion('reg-underground', { name: 'Underground' });
 
   const player = world.createEntity('yourself', 'object');
-  player.add({ type: TraitType.ACTOR, isPlayer: true });
+  player.add(new ActorTrait({ isPlayer: true }));
   world.setPlayer(player.id);
 
   const from = world.createEntity('Clearing', EntityType.ROOM);

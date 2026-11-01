@@ -13,7 +13,7 @@ function setupWorld() {
   room.add(new ContainerTrait());
 
   const player = world.createEntity('Player', 'actor');
-  player.add(new ActorTrait());
+  player.add(new ActorTrait({ isPlayable: true }));
   player.add(new ContainerTrait());
   world.moveEntity(player.id, room.id);
   world.setPlayer(player.id);

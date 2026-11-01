@@ -131,8 +131,7 @@ export function candidateCommands(
   nameByIrId: ReadonlyMap<string, string>,
   breadth: CandidateBreadth,
 ): string[] {
-  const player = world.getPlayer();
-  if (!player) return [];
+  const player = world.playerCharacter;
   const room = world.getContainingRoom(player.id);
   const out: string[] = [];
   /** Which entities each command names — the set's filter reads this. */

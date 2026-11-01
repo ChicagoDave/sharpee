@@ -29,6 +29,7 @@ import { narrativeSettingsStep } from './narrative-settings.js';
 import { concealedVisibilityStep } from './concealed-visibility.js';
 import { initializeWorldStep } from './initialize-world.js';
 import { createPlayerStep } from './create-player.js';
+import { assignPlayerRoleStep } from './assign-player-role.js';
 import { languageWordsStep } from './language-words.js';
 import { stampPlayerSelfWordsStep } from './stamp-player-self-words.js';
 import { validateRoleHolderStep } from './validate-role-holder.js';
@@ -54,8 +55,9 @@ export const STORY_INSTALL_STEPS: readonly InstallStep[] = Object.freeze([
   initializeWorldStep,
   languageWordsStep,
   createPlayerStep,
-  stampPlayerSelfWordsStep,
   validateRoleHolderStep,
+  assignPlayerRoleStep,
+  stampPlayerSelfWordsStep,
   listenerTraitStep,
   validateRoomSnippetsStep,
   validateCombatantHealthStep,

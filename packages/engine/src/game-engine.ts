@@ -8,14 +8,13 @@ import {
   WorldModel,
   IFEntity,
   IdentityTrait,
-  ActorTrait,
-  movePlayerRoleVocabulary,
   ContainerTrait,
   StandardCapabilities,
   TraitType,
   StoryInfoTrait,
 } from '@sharpee/world-model';
 import { EventProcessor, type Effect } from '@sharpee/event-processor';
+import { createPlayer, type Player } from './player.js';
 import { withWorldReactions } from './events/world-reactions.js';
 import {
   type ActionRegistry,
@@ -158,6 +157,8 @@ type EnginePhase =
  */
 export class GameEngine implements StoryEngine {
   private world: WorldModel;
+  /** The session's player role (ADR-390 D2): who holds it, what they may do, where they look. */
+  readonly player: Player;
   private sessionStartTime?: number;
   private sessionTurns: number = 0;
   private sessionMoves: number = 0;
@@ -420,6 +421,7 @@ export class GameEngine implements StoryEngine {
     config?: EngineConfig;
   }) {
     this.world = options.world;
+    this.player = createPlayer(this.world);
     this.perceptionService = options.perceptionService;
 
     // Register essential engine capabilities (stories can register additional ones)
@@ -596,12 +598,14 @@ export class GameEngine implements StoryEngine {
     // and context enter the phase together — they were always one fact, and
     // storing them in two fields is what let `start()` reach for the context
     // to report a *story* problem (ADR-345 D1).
+    const session = this;
     this.phase = {
       name: 'ready',
       story: installed.story,
       context: {
         currentTurn: 1,  // Start at 1 per test expectations
-        player: installed.player,
+        // ADR-390 D2: computed from the role, never assigned — no second copy.
+        get player() { return session.player.character; },
         history: [],
         metadata: {
           title: installed.metadata.title,
@@ -1006,6 +1010,7 @@ export class GameEngine implements StoryEngine {
     return {
       get world() { return engine.world; },
       get context() { return engine.context; },
+      get player() { return engine.player; },
       get story() { return engine.storyForTurn; },
       get config() { return engine.config; },
       get parser() { return engine.engineParser; },
@@ -1094,48 +1099,20 @@ export class GameEngine implements StoryEngine {
    * calling switchPlayer, since parser context uses the entity's current location.
    */
   switchPlayer(entityId: string): void {
-    const newPlayer = this.world.getEntity(entityId);
-    if (!newPlayer) {
-      throw new Error(`Cannot switch player: entity '${entityId}' not found`);
-    }
-
-    const newActorTrait = newPlayer.get<ActorTrait>(TraitType.ACTOR);
-    if (!newActorTrait) {
-      throw new Error(`Cannot switch player: entity '${entityId}' does not have ActorTrait`);
-    }
-
-    if (!newActorTrait.isPlayable) {
-      throw new Error(`Cannot switch player: entity '${entityId}' is not playable`);
-    }
-
-    const oldPlayer = this.context.player;
-    if (oldPlayer.id === entityId) {
+    const previousId = this.world.playerCharacter.id;
+    if (previousId === entityId) {
       return;
     }
-
-    // Clear old PC's flag
-    const oldActorTrait = oldPlayer.get<ActorTrait>(TraitType.ACTOR);
-    if (oldActorTrait) {
-      oldActorTrait.isPlayer = false;
-    }
-
-    // Set new PC's flag
-    newActorTrait.isPlayer = true;
-
-    // ADR-327 Q2 (ruled 2026-08-26): `me`/`myself`/`self` name whoever is
-    // being played, not a character, so they move with the role. They live on
-    // the entity's IdentityTrait, which `syncPlayerState` does not touch —
-    // without this, `x me` keeps naming the old PC after every switch.
-    movePlayerRoleVocabulary(oldPlayer, newPlayer, this.world.getLanguageWords().selfWords);
-
-    // Update WorldModel canonical reference
-    this.world.setPlayer(entityId);
+    // ADR-390 D1/D3: the world's one writer flags the new holder, clears the
+    // old one's flag and moves the role vocabulary (`me`/`myself`/`self`,
+    // ADR-327 Q2); it refuses a missing, non-actor or non-playable entity.
+    this.world.changePlayer(entityId);
 
     // Sync all derived state
     this.syncPlayerState(entityId);
 
     // Emit events
-    this.emitGameEvent(createPcSwitchedEvent(oldPlayer.id, entityId));
+    this.emitGameEvent(createPcSwitchedEvent(previousId, entityId));
     this.emit('state:changed', this.context);
   }
 
@@ -1173,17 +1150,15 @@ export class GameEngine implements StoryEngine {
   /**
    * Synchronize all derived player state after a player identity change (ADR-132).
    *
-   * Updates GameContext.player, parser world context, pronoun context,
-   * scope vocabulary, and narrative settings. WorldModel.playerId and
-   * ActorTrait.isPlayer must already be set before calling this.
+   * Updates the parser world context, pronoun context, scope vocabulary,
+   * and narrative settings. The role must already be assigned in the world
+   * (`setPlayer`/`changePlayer`); `GameContext.player` is computed from it (ADR-390 D2).
    */
   private syncPlayerState(newPlayerId: string): void {
     const newPlayer = this.world.getEntity(newPlayerId);
     if (!newPlayer) {
       throw new Error(`Cannot sync player state: entity '${newPlayerId}' not found`);
     }
-
-    this.context.player = newPlayer;
 
     const playerLocation = this.world.getLocation(newPlayerId) || '';
     this.engineParser.setWorldContext(this.world, newPlayerId, playerLocation);
@@ -1222,6 +1197,23 @@ export class GameEngine implements StoryEngine {
    * @returns Whether the action ran (false when refused) and every event it emitted
    */
   executeAsActor(actorId: string, actionId: string, slots?: ActSlots): ActResult {
+    // ADR-390 D4: a meta action (save, restore, quit, undo…) is the role's
+    // alone; an NPC behavior or an acting statement asking for one is refused
+    // here, before any phase runs, with an event that names both and narrates
+    // nothing.
+    if (!this.player.permits(actorId, actionId)) {
+      return {
+        success: false,
+        events: [{
+          id: `meta_refused_${this.context.currentTurn}_${Date.now()}`,
+          type: 'action.refused_meta',
+          timestamp: Date.now(),
+          narrate: false,
+          data: { actionId, actorId, reason: 'meta actions are the player role\'s alone' },
+          entities: { actor: actorId },
+        } as ISemanticEvent],
+      };
+    }
     const result = this.commandExecutor.executeAsActor(
       { actionId, actorId, ...slots },
       this.world,
@@ -1481,9 +1473,8 @@ export class GameEngine implements StoryEngine {
     this.context.currentTurn = result.turn;
 
     // Re-sync player state from restored world model (ADR-132)
-    const restoredPlayer = this.world.getPlayer();
-    if (restoredPlayer) {
-      this.syncPlayerState(restoredPlayer.id);
+    if (this.world.hasPlayerCharacter) {
+      this.syncPlayerState(this.world.playerCharacter.id);
     }
 
     this.derivePhaseFromEnding();
@@ -1605,9 +1596,8 @@ export class GameEngine implements StoryEngine {
     );
 
     // Re-sync player state from restored world model (ADR-132)
-    const restoredPlayer = this.world.getPlayer();
-    if (restoredPlayer) {
-      this.syncPlayerState(restoredPlayer.id);
+    if (this.world.hasPlayerCharacter) {
+      this.syncPlayerState(this.world.playerCharacter.id);
     }
 
     this.derivePhaseFromEnding();

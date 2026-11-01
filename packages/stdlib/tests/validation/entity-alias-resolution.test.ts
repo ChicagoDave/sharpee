@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { WorldModel, IFEntity, IdentityTrait, SupporterTrait, RoomTrait, TraitType, EntityType } from '@sharpee/world-model';
+import { WorldModel, IFEntity, IdentityTrait, SupporterTrait, RoomTrait, TraitType, EntityType, ActorTrait } from '@sharpee/world-model';
 import { CommandValidator } from '../../src/validation/command-validator';
 import { StandardActionRegistry } from '../../src/actions/registry';
 import { standardActions } from '../../src/actions/standard/index';
@@ -45,6 +45,7 @@ describe('Entity alias resolution', () => {
       name: 'Test Player',
       properName: true
     }));
+    player.add(new ActorTrait({ isPlayable: true }));
     world.setPlayer(player.id);
     world.moveEntity(player.id, room.id);
     

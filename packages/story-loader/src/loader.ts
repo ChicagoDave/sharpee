@@ -184,6 +184,7 @@ import { Evaluator } from './evaluator.js';
 import { classifiesAs } from './kind-classification.js';
 import { ChordBehaviorTrait, ChordRuntime, knownTopicsIn, STRATEGY_SELECTOR } from './runtime.js';
 import { CHORD_IR_ID_ATTRIBUTE, CHORD_STATE_PREFIX, CHORD_STORY_STATE_KEY, CHORD_TRAIT_PREFIX, counterKey, landingKey, type LandingRecord } from './state-keys.js';
+import { PLAYER_SENTINEL } from './state-keys.js';
 import { orphanedKeys, reseedLandingRecord, unmappableValues } from './reconcile.js';
 import { withLineBreaks } from './text.js';
 
@@ -634,6 +635,19 @@ export class ChordStory implements Story {
 
   /** The world entity ID for an IR entity ID (after initializeWorld). */
   entityId(irId: string): string | undefined {
+    return this.worldIdOf(irId);
+  }
+
+  /**
+   * The world id an IR entity reference names (ADR-390 D3): the `player`
+   * sentinel is the role, read from the world at the moment of use — defined
+   * once the start block has assigned it, undefined before — and every other
+   * reference is an entity the build recorded.
+   */
+  private worldIdOf(irId: string): string | undefined {
+    if (irId === PLAYER_SENTINEL) {
+      return this.world?.hasPlayerCharacter ? this.world.playerCharacter.id : undefined;
+    }
     return this.worldIds.get(irId);
   }
 
@@ -642,16 +656,6 @@ export class ChordStory implements Story {
     return this.irIds.get(worldId);
   }
 
-  /**
-   * The player's world id: the role holder once createPlayer has run, and
-   * inside the start block the character it has assigned so far — so a line
-   * after `change the player to Alex` that names the player's own state
-   * (`start the player's bell`) means Alex's.
-   */
-  playerWorldId(): string | undefined {
-    return this.playerId ?? this.runtime.assignedPlayerId;
-  }
-  private playerId: string | undefined;
 
   // ------------------------------------------------------------ lifecycle
 
@@ -809,18 +813,17 @@ export class ChordStory implements Story {
         'The world must be built before the player role is claimed — call `initializeWorld` first (ADR-327 D10).',
       );
     }
-    if (!this.playerId) {
+    if (!world.hasPlayerCharacter) {
       throw new LoadError(
         'No character holds the player role: the `before the game starts` block ran without assigning it. Add an unconditional `change the player to <character>`, or make sure one of its conditional arms always fires.',
         this.ir.startBlock?.span,
       );
     }
-    const player = world.getEntity(this.playerId)!;
-    const actor = player.get(TraitType.ACTOR) as ActorTrait | undefined;
-    if (actor) actor.isPlayer = true;
-    // The player's self aliases are stamped by the engine at install from the
-    // world's language words (ADR-387 D2); the loader knows no language.
-    return player;
+    // ADR-390 D3: the start block assigned the role through the world's one
+    // writer; this is the lookup ADR-327 D10 made it. The player's self
+    // aliases are stamped by the engine at install from the world's language
+    // words (ADR-387 D2); the loader knows no language.
+    return world.playerCharacter;
   }
 
   /**
@@ -830,24 +833,19 @@ export class ChordStory implements Story {
    * Placement, state seeding, trait composition and character blocks are no
    * longer this method's business — the role-holder is an ordinary entity, so
    * passes 0-2 already did all of that. What remains is what only the ROLE
-   * needs: the `player` sentinel every load-time reference resolves through,
-   * and the equipment the role's own `carries`/`wears` lines declare.
+   * needs: the character blocks whose refs name the role, and the extension
+   * state the story's rows seed before the first turn.
    *
-   * Runs exactly once. A story whose start block assigned nothing leaves
-   * `playerId` unset and is reported by `createPlayer`, not here — the world
-   * is still perfectly well-formed; it just has no protagonist.
+   * Runs exactly once. A story whose start block assigned nothing has no
+   * role holder and is reported by `createPlayer`, not here — the world is
+   * still perfectly well-formed; it just has no protagonist.
    */
   private finalizeRoleHolder(world: WorldModel): void {
     if (this.playerFinalized) return;
     this.playerFinalized = true;
-    const assigned = this.runtime.assignedPlayerId;
-    if (!assigned) return;
-    this.playerId = assigned;
-
-    // The `player` sentinel the compiler emits for `the player` in load-time
-    // positions (`feels wary of the player`, `define timer … for the player`)
-    // resolves to whoever opens the story in the role.
-    this.worldIds.set('player', assigned);
+    // ADR-390 D3: the start block assigned the role through the world's one
+    // writer; a block that assigned nothing is reported by `createPlayer`.
+    if (!world.hasPlayerCharacter) return;
 
     // The role-holder is placed by pass 2, from the placement line the author
     // wrote, exactly like every other entity. There is no role-specific
@@ -860,7 +858,8 @@ export class ChordStory implements Story {
 
     // ADR-310/318 Phase 5: apply compiled character blocks. Runs here, after
     // the role is settled, because a block's refs (`feels … toward the
-    // player`) resolve through the `player` sentinel mapped just above.
+    // player`) resolve through the `player` sentinel, which `worldIdOf` reads
+    // from the world now that the role is assigned (ADR-390 D3).
     this.applyCharacterBlocks(world);
 
     // Extension state the story's rows seed before the first turn (the
@@ -1155,7 +1154,7 @@ export class ChordStory implements Story {
     const author = new AuthorModel(world.getDataStore(), world);
     const added: Array<{ ir: IREntity; entity: IFEntity }> = [];
     for (const irEntity of this.ir.entities) {
-      const worldId = this.worldIds.get(irEntity.id);
+      const worldId = this.worldIdOf(irEntity.id);
       if (worldId !== undefined && world.hasEntity(worldId)) continue;
       added.push({ ir: irEntity, entity: this.buildEntity(world, irEntity) });
     }
@@ -1196,7 +1195,7 @@ export class ChordStory implements Story {
       const key = landingKey(landing.region);
       const record = world.getStateValue(key) as LandingRecord | undefined;
       if (!record || record.authored) continue;
-      const rooms = landing.rooms.map((id) => this.worldIds.get(id)).filter((id): id is string => id !== undefined);
+      const rooms = landing.rooms.map((id) => this.worldIdOf(id)).filter((id): id is string => id !== undefined);
       const next = reseedLandingRecord(record, rooms);
       if (next === undefined) continue;
       world.setStateValue(key, next);
@@ -1287,7 +1286,7 @@ export class ChordStory implements Story {
       }
     }
     const installContext: ExtensionInstallContext = {
-      worldId: (irId) => this.worldIds.get(irId),
+      worldId: (irId) => this.worldIdOf(irId),
       requireWorldId: (irId) => this.requireWorldId(irId),
       evalCondition: (condition, world) => this.evaluator.evalCondition(condition, { world }),
       execMachineBody: (statements, world) => this.runtime.execMachineBody(statements, world),
@@ -1401,8 +1400,7 @@ export class ChordStory implements Story {
       const actionId = parsed.action?.toLowerCase() ?? '';
       if (actionId !== 'if.action.going' && actionId !== 'going') return parsed;
 
-      const player = world.getPlayer();
-      if (!player) return parsed;
+      const player = world.playerCharacter;
       const roomId = world.getLocation(player.id);
       if (!roomId) return parsed;
       const byRoom = deadlyExits.get(roomId);
@@ -1446,7 +1444,7 @@ export class ChordStory implements Story {
     for (const irEntity of this.ir.entities) {
       const phrase = table[`${irEntity.id}.present`];
       if (!phrase) continue;
-      const ownerWorldId = this.worldIds.get(irEntity.id);
+      const ownerWorldId = this.worldIdOf(irEntity.id);
       if (!ownerWorldId) continue;
       const texts = phrase.variants.map((v) => (v.text === 'nothing' ? '' : withLineBreaks(v.text)));
       const content: Phrase =
@@ -1473,7 +1471,7 @@ export class ChordStory implements Story {
               gate: {
                 kind: 'predicate' as const,
                 holds: (world: WorldModel): boolean => {
-                  const playerId = world.getPlayer()?.id;
+                  const playerId = world.playerCharacter.id;
                   const playerRoom = playerId ? world.getContainingRoom(playerId)?.id : undefined;
                   // ADR-289 D8 L8: `getContainingRoom` walks UPWARD, so it is
                   // undefined when the owner IS the room — and a room's own
@@ -2132,7 +2130,7 @@ export class ChordStory implements Story {
    */
   private resolvePendingEntityRefs(): void {
     for (const pending of this.pendingEntityRefs) {
-      const worldId = this.worldIds.get(pending.irRefId);
+      const worldId = this.worldIdOf(pending.irRefId);
       if (!worldId) {
         throw new LoadError(
           `\`${pending.ownerName}\`: a trait-config entity reference was never built.`,
@@ -2163,7 +2161,7 @@ export class ChordStory implements Story {
     for (const { adjective, gerund, actionId } of toolGatedGerunds) {
       for (const irEntity of this.ir.entities) {
         if (!irEntity.traits.some((t) => t.name === adjective)) continue;
-        const worldId = this.worldIds.get(irEntity.id);
+        const worldId = this.worldIdOf(irEntity.id);
         const entity = worldId ? world.getEntity(worldId) : undefined;
         if (!entity) continue;
 
@@ -2613,7 +2611,7 @@ export class ChordStory implements Story {
           throw new LoadError(`A \`patrol\` NPC needs \`with route [ … ]\` naming its rooms.`, pending.span);
         }
         const route = (routeSetting.values ?? []).map((irId) => {
-          const worldId = this.worldIds.get(irId);
+          const worldId = this.worldIdOf(irId);
           if (!worldId) throw new LoadError(`A patrol route entry was never built.`, pending.span);
           return worldId;
         });
@@ -2724,7 +2722,7 @@ export class ChordStory implements Story {
   // -------------------------------------------------------------- helpers
 
   private requireWorldId(irId: string, at?: IREntity): string {
-    const id = this.worldIds.get(irId);
+    const id = this.worldIdOf(irId);
     if (!id) {
       throw new LoadError(`Entity \`${irId}\` is referenced before it exists in the world.`, at?.span);
     }
@@ -2856,7 +2854,7 @@ export class ChordStory implements Story {
     const table = this.ir.phrases.locales[this.ir.phrases.defaultLocale] ?? {};
     if (!this.ir.entities.some((e) => table[`${e.id}.disappeared`])) return;
     world.onEntityRemoved((entity, lastRoomId) => {
-      const playerId = world.getPlayer()?.id;
+      const playerId = world.hasPlayerCharacter ? world.playerCharacter.id : undefined;
       if (!playerId || entity.id === playerId) return;
       const irId = this.irIds.get(entity.id);
       if (!irId || !table[`${irId}.disappeared`]) return;
@@ -2906,7 +2904,7 @@ export class ChordStory implements Story {
     const table = this.ir.phrases.locales[this.ir.phrases.defaultLocale] ?? {};
 
     for (const irEntity of this.ir.entities) {
-      const worldId = this.worldIds.get(irEntity.id);
+      const worldId = this.worldIdOf(irEntity.id);
       if (!worldId) continue;
 
       const arms: LocationNameArm[] = [];
@@ -2932,7 +2930,7 @@ export class ChordStory implements Story {
     const providerSpecs = new Map<string, Array<{ irId: string; condition: IRCondition; text: string }>>();
 
     for (const irEntity of this.ir.entities) {
-      const worldId = this.worldIds.get(irEntity.id);
+      const worldId = this.worldIdOf(irEntity.id);
       if (!worldId) continue;
       const entity = world.getEntity(worldId);
       if (!entity) continue;

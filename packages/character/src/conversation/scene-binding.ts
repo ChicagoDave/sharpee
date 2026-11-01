@@ -202,7 +202,7 @@ export function createSceneRuntimeBinding(
       const scene = sceneOf(world, sceneId);
       if (!scene) return { winnerId: null, bids: [] };
 
-      const playerId = world.getPlayer()?.id;
+      const playerId = world.playerCharacter.id;
       const bids: FloorBid[] = [];
       for (const participantId of scene.participantIds) {
         // The player speaks by typed command, never by floor selection;

@@ -35,7 +35,7 @@ export const diagnoseAction: Action = {
 
   execute(context: ActionContext): void {
     const { world } = context;
-    const player = world.getPlayer();
+    const player = world.playerCharacter;
     const sharedData = getDiagnoseSharedData(context);
 
     if (!player) {

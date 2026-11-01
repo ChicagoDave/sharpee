@@ -54,7 +54,7 @@ describe('the fork the walk is built on — the engine\'s own save/restore', () 
   it('a restore puts the world back where the save was taken, and the player is read through the world again', async () => {
     const game = await loadGame();
     await game.executeCommand('look');
-    const roomOf = () => irIdOf(game.world.getContainingRoom(game.world.getPlayer()!.id));
+    const roomOf = () => irIdOf(game.world.getContainingRoom(game.world.playerCharacter.id));
     expect(roomOf()).toBe('hall');
     const save = await captureSave(game.engine);
     expect(save).not.toBeNull();

@@ -64,7 +64,7 @@ export function createConcealmentBreakListener(): (data: HookData, world: WorldM
     // acting entity here would invent NPC concealment, which Chord has no
     // sentence for — its `concealed` marker is an item property. If a story
     // ever wants a hidden NPC, the acting-surface ADR designs the word first.
-    const player = world.getPlayer();
+    const player = world.playerCharacter;
     if (!player || !isConcealed(player)) return;
 
     if (!SILENT_ACTIONS.has(data.actionId)) {

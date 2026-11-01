@@ -59,7 +59,7 @@ describe('ADR-386 D4: readings are ranked by their nouns', () => {
     room.add(new RoomTrait());
     room.add(new ContainerTrait());
     player = world.createEntity('Alex', 'actor');
-    player.add(new ActorTrait());
+    player.add(new ActorTrait({ isPlayable: true }));
     player.add(new ContainerTrait());
     world.moveEntity(player.id, room.id);
     world.setPlayer(player.id);
@@ -199,7 +199,7 @@ describe('ADR-386 D5: a failure outranks a reading only when it names more', () 
       room.add(new RoomTrait());
       room.add(new ContainerTrait());
       const player = world.createEntity('Alex', 'actor');
-      player.add(new ActorTrait());
+      player.add(new ActorTrait({ isPlayable: true }));
       player.add(new ContainerTrait());
       world.moveEntity(player.id, room.id);
       world.setPlayer(player.id);

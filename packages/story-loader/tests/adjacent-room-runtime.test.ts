@@ -13,7 +13,7 @@ import { describe, expect, it } from 'vitest';
 import { compile, StoryIR } from '@sharpee/chord';
 import type { ISemanticEvent } from '@sharpee/core';
 import { EngineRandomService } from '@sharpee/engine';
-import { Direction, LockableBehavior, WorldModel, type ExitResolver, type ITrait } from '@sharpee/world-model';
+import { Direction, LockableBehavior, WorldModel, type ExitResolver, type ITrait, ActorTrait } from '@sharpee/world-model';
 import { ChordStory, createStory } from '../src';
 import { CHORD_STORY_STATE_KEY, adjacentKey } from '../src/state-keys';
 
@@ -36,6 +36,7 @@ function boot(source: string, seed = 5): Booted {
   const world = new WorldModel();
   story.initializeWorld(world);
   const player = story.createPlayer(world);
+  player.add(new ActorTrait({ isPlayable: true }));
   world.setPlayer(player.id);
   return { story, world, playerId: player.id };
 }

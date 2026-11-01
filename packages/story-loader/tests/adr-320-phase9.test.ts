@@ -25,7 +25,7 @@ import {
   type SceneChannelRow,
 } from '@sharpee/stdlib';
 import type { ChannelProduceContext } from '@sharpee/if-domain';
-import { IFEntity, WorldModel, sceneWith, type ExchangeAffordances } from '@sharpee/world-model';
+import { IFEntity, WorldModel, sceneWith, type ExchangeAffordances, ActorTrait } from '@sharpee/world-model';
 import {
   SaveRestoreService,
   type GameContext,
@@ -93,6 +93,7 @@ function load(): Loaded {
   const world = new WorldModel();
   story.initializeWorld(world);
   const player = story.createPlayer(world);
+  player.add(new ActorTrait({ isPlayable: true }));
   world.setPlayer(player.id);
   return { story, world, player };
 }

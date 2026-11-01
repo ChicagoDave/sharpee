@@ -63,7 +63,7 @@ function load(text: string) {
 const context = (world: WorldModel, turn = 1): TurnPluginContext => ({
   world,
   turn,
-  playerId: world.getPlayer()!.id,
+  playerId: world.playerCharacter.id,
   playerLocation: 'lawn',
   random: createSeededRandom(1),
 });

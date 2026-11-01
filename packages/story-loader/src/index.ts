@@ -42,6 +42,7 @@ export {
   CHORD_STORY_STATE_KEY,
   CHORD_TIMER_PREFIX,
   CHORD_TRAIT_PREFIX,
+  PLAYER_SENTINEL,
   clauseOccurrenceKey,
   counterKey,
   selectOccurrenceKey,

@@ -23,7 +23,8 @@ import {
   IFEntity,
   OpenableTrait,
   TraitType,
-  WorldModel
+  WorldModel,
+  ActorTrait,
 } from '@sharpee/world-model';
 import { ChordStory, createStory, LoadError } from '../src';
 import { runValidatePhase, runExecutePhase, runReportPhase } from '@sharpee/stdlib';
@@ -41,6 +42,7 @@ function loadStory(source: string): { story: ChordStory; world: WorldModel; play
   const world = new WorldModel();
   story.initializeWorld(world);
   const player = story.createPlayer(world);
+  player.add(new ActorTrait({ isPlayable: true }));
   world.setPlayer(player.id);
   return { story, world, player };
 }

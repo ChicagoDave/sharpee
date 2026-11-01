@@ -320,9 +320,9 @@ export class IFEntity implements IEntity {
    * Requires a world model reference to resolve trait state on self/player/location.
    *
    * @param kind - Annotation kind to query
-   * @param world - World model for condition evaluation (must have getEntity, getPlayer, getLocation)
+   * @param world - World model for condition evaluation (must have getEntity, hasPlayerCharacter, playerCharacter, getLocation)
    */
-  getActiveAnnotations(kind: string, world: { getEntity(id: string): IFEntity | undefined; getPlayer(): IFEntity | undefined; getLocation(entityId: string): string | undefined }): Annotation[] {
+  getActiveAnnotations(kind: string, world: { getEntity(id: string): IFEntity | undefined; readonly hasPlayerCharacter: boolean; readonly playerCharacter: IFEntity; getLocation(entityId: string): string | undefined }): Annotation[] {
     const all = this.annotations.get(kind);
     if (!all) return [];
 
@@ -363,7 +363,7 @@ export class IFEntity implements IEntity {
    */
   private evaluateCondition(
     condition: AnnotationCondition,
-    world: { getEntity(id: string): IFEntity | undefined; getPlayer(): IFEntity | undefined; getLocation(entityId: string): string | undefined }
+    world: { getEntity(id: string): IFEntity | undefined; readonly hasPlayerCharacter: boolean; readonly playerCharacter: IFEntity; getLocation(entityId: string): string | undefined }
   ): boolean {
     const scope = condition.scope ?? 'self';
     let target: IFEntity | undefined;
@@ -373,7 +373,7 @@ export class IFEntity implements IEntity {
         target = this as IFEntity;
         break;
       case 'player':
-        target = world.getPlayer();
+        target = world.hasPlayerCharacter ? world.playerCharacter : undefined;
         break;
       case 'location': {
         const locId = world.getLocation(this.id);

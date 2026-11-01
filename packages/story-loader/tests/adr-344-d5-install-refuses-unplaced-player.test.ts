@@ -83,7 +83,7 @@ describe('ADR-344 D5 — an unplaced protagonist fails installation', () => {
 
   it('installs the same story once the protagonist is placed, in the room the author wrote', () => {
     const world = install(storyWithPlacement('in the Kitchen'));
-    const player = world.getPlayer()!;
+    const player = world.playerCharacter;
     const room = world.getEntity(world.getLocation(player.id)!)!;
     expect(room.name).toBe('Kitchen');
   });
@@ -93,7 +93,7 @@ describe('ADR-344 D5 — an unplaced protagonist fails installation', () => {
     // removed fallback would have made the unplaced case above succeed here.
     expect(() => install(storyWithPlacement(''))).toThrow(/nowhere to play/);
     const world = install(storyWithPlacement('starts in the Kitchen'));
-    const player = world.getPlayer()!;
+    const player = world.playerCharacter;
     expect(world.getEntity(world.getLocation(player.id)!)!.name).toBe('Kitchen');
   });
 });

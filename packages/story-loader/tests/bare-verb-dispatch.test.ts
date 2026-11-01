@@ -14,7 +14,7 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { compile, StoryIR } from '@sharpee/chord';
 import type { ISemanticEvent } from '@sharpee/core';
-import { IFEntity, WorldModel } from '@sharpee/world-model';
+import { IFEntity, WorldModel, ActorTrait } from '@sharpee/world-model';
 import { ChordStory, createStory } from '../src';
 import { captureGrammarRules } from './helpers/grammar-harness';
 
@@ -108,6 +108,7 @@ end phrase
     const world = new WorldModel();
     story.initializeWorld(world);
     const player: IFEntity = story.createPlayer(world);
+    player.add(new ActorTrait({ isPlayable: true }));
     world.setPlayer(player.id);
 
     const waving = (story.getCustomActions() as DispatchAction[])

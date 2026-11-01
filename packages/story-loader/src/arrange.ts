@@ -106,6 +106,7 @@ import {
   timerKey,
   type TimerRecord,
 } from './state-keys.js';
+import { PLAYER_SENTINEL } from './state-keys.js';
 
 /** The named reasons an expression is not arranged. */
 export type ArrangeShape =
@@ -356,10 +357,7 @@ function arrangeFlag(world: WorldModel, pin: Extract<ParsedPin, { kind: 'propert
  * a display name, an alias — in that order.
  */
 function resolveEntity(world: WorldModel, name: string): IFEntity | undefined {
-  if (name === 'player') {
-    const player = world.getPlayer();
-    if (player) return player;
-  }
+  if (name === PLAYER_SENTINEL && world.hasPlayerCharacter) return world.playerCharacter;
   const byWorldId = world.getEntity(name);
   if (byWorldId) return byWorldId;
   let byName: IFEntity | undefined;

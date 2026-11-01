@@ -79,6 +79,7 @@ describe('Phase 8 — the scenes sub-step (D10: propagation made visible)', () =
     hall = room(world, 'Hall');
     connect(parlor, hall, 'north', 'south');
     player = actorIn(world, 'Player', parlor, { player: true });
+    player.add(new ActorTrait({ isPlayable: true }));
     world.setPlayer(player.id);
     alice = actorIn(world, 'Alice', parlor, { model: true });
     bert = actorIn(world, 'Bert', parlor, { model: true });

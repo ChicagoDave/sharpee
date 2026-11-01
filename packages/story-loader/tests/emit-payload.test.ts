@@ -14,7 +14,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { compile, StoryIR } from '@sharpee/chord';
 import type { ISemanticEvent } from '@sharpee/core';
 import { soundChannel } from '@sharpee/stdlib';
-import { IFEntity, WorldModel } from '@sharpee/world-model';
+import { IFEntity, WorldModel, ActorTrait } from '@sharpee/world-model';
 import { ChordStory, createStory, SchedulerDaemon } from '../src';
 
 const FIXTURE = readFileSync(
@@ -41,6 +41,7 @@ describe('payloaded emit through the real loader (ADR-216 AC-1)', () => {
     world = new WorldModel();
     story.initializeWorld(world);
     player = story.createPlayer(world);
+    player.add(new ActorTrait({ isPlayable: true }));
     world.setPlayer(player.id);
     const daemons: SchedulerDaemon[] = story.runtime.buildSchedulerDaemons();
     events = daemons.flatMap((d) => d.run({ world, turn: 1 }));

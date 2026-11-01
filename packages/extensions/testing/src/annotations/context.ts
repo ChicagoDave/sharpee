@@ -15,7 +15,7 @@ export function captureContext(
   lastCommand: string,
   lastResponse: string
 ): AnnotationContext {
-  const player = world.getPlayer();
+  const player = world.hasPlayerCharacter ? world.playerCharacter : undefined;
   const locationId = player ? world.getLocation(player.id) : undefined;
   const location = locationId ? world.getEntity(locationId) : undefined;
   const inventory = player ? world.getContents(player.id) : [];

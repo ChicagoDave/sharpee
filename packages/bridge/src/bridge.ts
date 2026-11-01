@@ -477,8 +477,7 @@ export class NativeEngineBridge {
   private sendStatus(): void {
     if (!this.world || !this.engine) return;
 
-    const player = this.world.getPlayer();
-    if (!player) return;
+    const player = this.world.playerCharacter;
 
     const locationId = this.world.getLocation(player.id);
     let locationName = 'Unknown';

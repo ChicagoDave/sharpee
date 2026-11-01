@@ -425,8 +425,7 @@ export function getDoorDescription(door: IFEntity): string {
  * Check if player is in the Tiny Room
  */
 function isInTinyRoom(world: WorldModel): boolean {
-  const player = world.getPlayer();
-  if (!player) return false;
+  const player = world.playerCharacter;
 
   const playerLocation = world.getLocation(player.id);
   if (!playerLocation) return false;
@@ -467,8 +466,7 @@ function isGoingNorth(parsed: IParsedCommand): boolean {
  * Check if the door is still locked
  */
 function isDoorLocked(world: WorldModel): boolean {
-  const player = world.getPlayer();
-  if (!player) return false;
+  const player = world.playerCharacter;
 
   const playerLocation = world.getLocation(player.id);
   if (!playerLocation) return false;
@@ -520,8 +518,7 @@ function isTakingMat(parsed: IParsedCommand): boolean {
  * Check if mat is currently under the door
  */
 function isMatUnderDoor(world: WorldModel): boolean {
-  const player = world.getPlayer();
-  if (!player) return false;
+  const player = world.playerCharacter;
 
   const playerLocation = world.getLocation(player.id);
   if (!playerLocation) return false;

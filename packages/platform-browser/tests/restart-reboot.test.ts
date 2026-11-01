@@ -13,7 +13,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { WorldModel } from '@sharpee/world-model';
+import { WorldModel, ActorTrait } from '@sharpee/world-model';
 import { BrowserClient } from '../src/BrowserClient';
 import { SaveManager } from '../src/managers/SaveManager';
 
@@ -216,6 +216,7 @@ describe('ADR-248 restart reboot (BrowserClient)', () => {
     const makeWorld = (roomName: string) => {
       const world = new WorldModel();
       const player = world.createEntity('you', 'actor' as any);
+      player.add(new ActorTrait({ isPlayable: true }));
       world.setPlayer(player.id);
       const room = world.createEntity(roomName, 'room' as any);
       world.moveEntity(player.id, room.id);
@@ -304,6 +305,7 @@ describe('ADR-248 restart reboot (BrowserClient)', () => {
     const makeWorld = () => {
       const world = new WorldModel();
       const player = world.createEntity('you', 'actor' as any);
+      player.add(new ActorTrait({ isPlayable: true }));
       world.setPlayer(player.id);
       const room = world.createEntity('Room', 'room' as any);
       world.moveEntity(player.id, room.id);

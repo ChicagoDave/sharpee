@@ -200,11 +200,12 @@ export declare class IFEntity implements IEntity {
      * Requires a world model reference to resolve trait state on self/player/location.
      *
      * @param kind - Annotation kind to query
-     * @param world - World model for condition evaluation (must have getEntity, getPlayer, getLocation)
+     * @param world - World model for condition evaluation (must have getEntity, hasPlayerCharacter, playerCharacter, getLocation)
      */
     getActiveAnnotations(kind: string, world: {
         getEntity(id: string): IFEntity | undefined;
-        getPlayer(): IFEntity | undefined;
+        readonly hasPlayerCharacter: boolean;
+        readonly playerCharacter: IFEntity;
         getLocation(entityId: string): string | undefined;
     }): Annotation[];
     /**
@@ -4412,10 +4413,6 @@ export declare class ActorTrait implements ITrait, IActorTrait {
         maxWeight?: number;
         maxVolume?: number;
     }>): void;
-    /**
-     * Mark as player character
-     */
-    makePlayer(): void;
     /**
      * Set custom property
      */
@@ -8925,8 +8922,14 @@ export interface IWorldModel {
     getTotalWeight(entityId: string): number;
     wouldCreateLoop(entityId: string, targetId: string): boolean;
     findPath(fromRoomId: string, toRoomId: string): string[] | null;
-    getPlayer(): IFEntity | undefined;
-    setPlayer(entityId: string): void;
+    /** The actor holding the player role (ADR-390 D1); throws when none or more than one does. */
+    readonly playerCharacter: IFEntity;
+    /** Whether any actor holds the player role yet. */
+    readonly hasPlayerCharacter: boolean;
+    /** The first assignment of the role (ADR-390 D1): refuses when an actor already holds it. */
+    setPlayer(entityId: string): IFEntity;
+    /** A move of the role (ADR-390 D1): refuses when no actor holds it yet. */
+    changePlayer(entityId: string): IFEntity;
     getEnding(): IStoryEnding | undefined;
     setEnding(ending: IStoryEnding): void;
     connectRooms(room1Id: string, room2Id: string, direction: ExitKey, doorId?: string, options?: ConnectRoomsOptions): void;
@@ -9003,7 +9006,6 @@ export declare class WorldModel implements IWorldModel {
     /** Pre-removal observers (ADR-213 §1) — registration order, never serialized. */
     private removalObservers;
     private state;
-    private playerId;
     /** The language's words the matcher reads (ADR-387 D2); assigned at install, never defaulted. */
     private languageWords;
     /** The ending this story reached, or undefined while play continues (ADR-347 D2a). */
@@ -9163,8 +9165,54 @@ export declare class WorldModel implements IWorldModel {
     getTotalWeight(entityId: string): number;
     wouldCreateLoop(entityId: string, targetId: string): boolean;
     findPath(fromRoomId: string, toRoomId: string): string[] | null;
-    getPlayer(): IFEntity | undefined;
-    setPlayer(entityId: string): void;
+    /**
+     * The actor holding the player role (ADR-390 D1).
+     *
+     * Derived from the role flag on the actors every time it is read — the
+     * world stores no player id, so there is no second copy to disagree with
+     * the flag a save carries. Exactly one actor may hold the role; none holds
+     * it between world build and the start block's assignment, and a read in
+     * that window is a bug, not a missing value.
+     *
+     * @returns the role holder
+     * @throws when no actor holds the role, or when more than one does — the
+     *   invariant `setPlayer`/`changePlayer` keep, named with the offending ids
+     */
+    get playerCharacter(): IFEntity;
+    /** Whether any actor holds the player role yet (the load-time probe; runtime code reads `playerCharacter`). */
+    get hasPlayerCharacter(): boolean;
+    /**
+     * The first assignment of the player role (ADR-390 D1) — the start-game
+     * moment: the install step for a TypeScript story, the start block's first
+     * `change the player to` for a Chord one. The world knows no turns, but it
+     * knows whether the role is held, and that is the same boundary.
+     *
+     * @param entityId the actor taking the role
+     * @returns the new holder
+     * @throws when a different actor already holds the role (that is a change,
+     *   not a set — setting the holder to itself is a no-op), or when the entity
+     *   does not exist, has no ActorTrait, or is not playable
+     */
+    setPlayer(entityId: string): IFEntity;
+    /**
+     * Move the player role to `entityId` (ADR-390 D1, ADR-132) — a change
+     * during play: the previous holder's flag is cleared and the role's own
+     * vocabulary (the language's self words) travels with the role.
+     *
+     * @param entityId the actor taking the role
+     * @returns the new holder
+     * @throws when no actor holds the role yet (that is a set, not a change),
+     *   or when the entity does not exist, has no ActorTrait, or is not playable
+     */
+    changePlayer(entityId: string): IFEntity;
+    /**
+     * The one writer of the role fact behind `setPlayer` and `changePlayer`:
+     * flags `entityId`, clears every other holder, moves the role vocabulary,
+     * so "exactly one actor holds the role" is kept here and nowhere else.
+     */
+    private writePlayerRole;
+    /** Every actor whose role flag is set — one in a well-formed world. */
+    private playerRoleHolders;
     /**
      * The ending this story reached (ADR-347 D2a), or `undefined` while play
      * continues — absent is the answer "this story has not ended", not a
@@ -9176,7 +9224,7 @@ export declare class WorldModel implements IWorldModel {
     /**
      * Record the ending this story reached.
      *
-     * This is the plain setter, on the `setPlayer` precedent: it writes and
+     * This is the plain setter: it writes and
      * nothing else. It does NOT emit the ending event and it does NOT enforce
      * first-ending-wins — both belong to stdlib's `endStory`, the declaring
      * verb (ADR-347 D2c), exactly as `HealthBehavior.kill` is the plain
@@ -10261,7 +10309,6 @@ export interface IDataStore {
     entities: Map<string, IFEntity>;
     spatialIndex: SpatialIndex;
     state: Record<string, any>;
-    playerId?: string;
     relationships: Map<string, Map<string, Set<string>>>;
     idCounters: Map<string, number>;
     capabilities: ICapabilityStore;
@@ -11539,7 +11586,7 @@ export interface ActionInterceptor {
      * // Emit: refusal has side effects (poison death on blocked take)
      * onBlocked(entity, world, actorId, error, sharedData) {
      *   if (!sharedData.poisonDeath) return null;
-     *   killPlayer(world, world.getPlayer()!, { cause: 'poison', terminal: true });
+     *   killPlayer(world, world.playerCharacter, { cause: 'poison', terminal: true });
      *   return { emit: [createEffect(PLAYER_DIED_EVENT, { cause: 'poison', terminal: true })] };
      * }
      */

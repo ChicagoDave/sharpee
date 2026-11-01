@@ -144,7 +144,7 @@ export class ComplexWorldTestStory implements Story {
     return Array.from(this._objects.values());
   }
 
-  getPlayer(): IFEntity | null {
+  playerEntity(): IFEntity | null {
     return this._player;
   }
 

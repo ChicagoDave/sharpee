@@ -33,8 +33,9 @@ const INSTALL_ORDER = [
   'initialize-world',
   'language-words',
   'create-player',
-  'stamp-player-self-words',
   'validate-role-holder',
+  'assign-player-role',
+  'stamp-player-self-words',
   'listener-trait',
   'validate-room-snippets',
   'validate-combatant-health',
@@ -141,7 +142,7 @@ describe('onEngineReady sees the adopted engine', () => {
     engine.installStory(story);
     expect(story.seen?.story).toBe(story);
     expect(story.seen?.narrative).toEqual(engine.getNarrativeSettings());
-    expect(story.seen?.playerId).toBe(world.getPlayer()?.id);
+    expect(story.seen?.playerId).toBe(world.playerCharacter.id);
     expect(story.seen).toMatchObject({ title: 'Minimal Test Story', author: 'Test Suite' });
   });
 });

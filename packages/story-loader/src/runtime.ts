@@ -84,11 +84,6 @@ export class ChordRuntime extends RuntimeCore {
     return this.phrases.channelEvent(ownerIrId, channel, world);
   }
 
-  /** Facade: see `StatementsSection.assignedPlayerId`. */
-  get assignedPlayerId(): string | undefined {
-    return this.statements.assignedPlayerId;
-  }
-
   /** Facade: see `StatementsSection.runStartBlock`. */
   runStartBlock(world: WorldModel): ISemanticEvent[] {
     return this.statements.runStartBlock(world);

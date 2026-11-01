@@ -476,8 +476,9 @@ The central game state manager.
 **State:**
 - `getState()`: Get world state dictionary
 - `setState(state)`: Set world state
-- `getPlayer()`: Get player entity
-- `setPlayer(entityId)`: Set player entity
+- `playerCharacter`: The actor holding the player role (ADR-390) — derived from the actor's role flag, throws when none holds it
+- `hasPlayerCharacter`: Whether any actor holds the role yet
+- `setPlayer(entityId)`: The first assignment of the role (start-game); `changePlayer(entityId)`: a move during play
 
 **Location:** `/packages/world-model/src/world/WorldModel.ts`
 

@@ -29,6 +29,7 @@ import {
   RoomTrait,
   TraitType,
   WorldModel,
+  ActorTrait,
 } from '@sharpee/world-model';
 import { ChordStory, createStory } from '../src';
 import { runValidatePhase, runExecutePhase, runReportPhase } from '@sharpee/stdlib';
@@ -106,6 +107,7 @@ function load(source: string): Loaded {
   const world = new WorldModel();
   story.initializeWorld(world);
   const player = story.createPlayer(world);
+  player.add(new ActorTrait({ isPlayable: true }));
   world.setPlayer(player.id);
   return { story, world, player };
 }

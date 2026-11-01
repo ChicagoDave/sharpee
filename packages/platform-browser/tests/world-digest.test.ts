@@ -31,7 +31,8 @@ function makeWorld(entities: FakeEntity[], opts: { playerId?: string; score?: un
     };
   }
   return {
-    getPlayer: () => (opts.playerId ? byId.get(opts.playerId) : undefined),
+    hasPlayerCharacter: opts.playerId !== undefined,
+    get playerCharacter() { return byId.get(opts.playerId!)!; },
     getAllEntities: () => [...byId.values()],
     getLocation: (id: string) => opts.locations?.[id],
     getEntity: (id: string) => byId.get(id),

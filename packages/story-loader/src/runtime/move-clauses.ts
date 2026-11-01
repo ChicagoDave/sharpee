@@ -54,7 +54,7 @@ export class MoveClausesSection {
 
   /**
    * ADR-327 D1: does this actor satisfy a clause head? `the player` is the
-   * ROLE — compared against `world.getPlayer()` at fire time, never cached,
+   * ROLE — compared against `world.playerCharacter` at fire time, never cached,
    * so a head follows a PC switch (ADR-132/D9); a named actor is its world
    * entity. A null head (bare / every-turn) is gated by its own path.
    * @param actor the IR head actor, or null
@@ -64,7 +64,7 @@ export class MoveClausesSection {
   actorMatches(actor: IRValue | null, actorId: string | undefined, world: WorldModel): boolean {
     if (actor === null) return true;
     if (actorId === undefined) return false;
-    if (actor.kind === 'player') return actorId === world.getPlayer()?.id;
+    if (actor.kind === 'player') return actorId === world.playerCharacter.id;
     if (actor.kind === 'entity') return actorId === this.core.host.entityId(actor.id);
     return false;
   }
@@ -82,7 +82,7 @@ export class MoveClausesSection {
     world: WorldModel,
   ): ISemanticEvent[] | null {
     const moverId = clause.mover.kind === 'player'
-      ? world.getPlayer()?.id
+      ? world.playerCharacter.id
       : clause.mover.kind === 'entity' ? this.core.host.entityId(clause.mover.id) : undefined;
     if (!moverId || movedActorId(event) !== moverId) return null;
 

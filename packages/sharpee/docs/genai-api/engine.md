@@ -14,6 +14,7 @@ GameEngine, Story interface, turn cycle, command executor, save/restore, vocabul
  */
 import { WorldModel } from '@sharpee/world-model';
 import { EventProcessor } from '@sharpee/event-processor';
+import { type Player } from './player.js';
 import { type IPerceptionService, type INpcService, type ActSlots, type ActResult } from '@sharpee/stdlib';
 import { type LanguageProvider, type ClientCapabilities, type Parser } from '@sharpee/if-domain';
 import { IProsePipeline, type SlotContributor, type SlotEntry } from './prose-pipeline/index.js';
@@ -42,6 +43,8 @@ export declare const DEFAULT_TEXT_CAPABILITIES: ClientCapabilities;
  */
 export declare class GameEngine implements StoryEngine {
     private world;
+    /** The session's player role (ADR-390 D2): who holds it, what they may do, where they look. */
+    readonly player: Player;
     private sessionStartTime?;
     private sessionTurns;
     private sessionMoves;
@@ -422,9 +425,9 @@ export declare class GameEngine implements StoryEngine {
     /**
      * Synchronize all derived player state after a player identity change (ADR-132).
      *
-     * Updates GameContext.player, parser world context, pronoun context,
-     * scope vocabulary, and narrative settings. WorldModel.playerId and
-     * ActorTrait.isPlayer must already be set before calling this.
+     * Updates the parser world context, pronoun context, scope vocabulary,
+     * and narrative settings. The role must already be assigned in the world
+     * (`setPlayer`/`changePlayer`); `GameContext.player` is computed from it (ADR-390 D2).
      */
     private syncPlayerState;
     /**
@@ -1033,6 +1036,43 @@ export interface GameEngineEvents {
      */
     'channel:packet': (packet: TurnPacket, turn: number) => void;
 }
+```
+
+### player
+
+```typescript
+/**
+ * player.ts — the session's player role (ADR-390 D2).
+ *
+ * Purpose: one object that answers what only the role answers — who holds it
+ * now, whether a given actor is it, what a given actor may do, and from where
+ * the session looks. The world knows which actor holds the role (the role
+ * flag on the actor, read through `WorldModel.playerCharacter`); this object
+ * is the engine's, one per session, and holds no state of its own: every
+ * answer is computed from the world at the moment it is asked.
+ *
+ * Public interface: `Player`, `createPlayer`.
+ * Owner context: `@sharpee/engine` — session.
+ */
+import type { IFEntity, WorldModel } from '@sharpee/world-model';
+/** The player role as the session holds it. */
+export interface Player {
+    /** The actor holding the role now; throws when none does (a read before the start block assigns it is a bug). */
+    readonly character: IFEntity;
+    /** The id perception, presence tagging and sound witnessing take as the viewpoint. */
+    readonly viewpointId: string;
+    /** Whether `actorId` holds the role now; false when no one does. */
+    is(actorId: string): boolean;
+    /** Whether `actorId` may perform `actionId`: everything for the player, everything but a meta action for anyone else. */
+    permits(actorId: string, actionId: string): boolean;
+}
+/**
+ * The session's Player over a world.
+ *
+ * @param world the live world the role is read from
+ * @returns a Player whose every member reads the world when asked
+ */
+export declare function createPlayer(world: WorldModel): Player;
 ```
 
 ### install/story
@@ -1773,6 +1813,7 @@ import type { EngineRandomService } from '../session/engine-random-service.js';
 import type { IProsePipeline } from '../prose-pipeline/index.js';
 import type { SoundDispatcher } from '../sound/index.js';
 import type { Story } from '../install/story.js';
+import type { Player } from '../player.js';
 import type { PlatformOperationHost } from './platform-dispatcher.js';
 import type { EngineParser } from '../ports/parser-interface.js';
 import type { SaveRestoreService } from '../session/save-restore-service.js';
@@ -1829,6 +1870,8 @@ export interface TurnStageContext {
 export interface TurnEngine {
     readonly world: WorldModel;
     readonly context: GameContext;
+    /** The session's player role (ADR-390 D2). */
+    readonly player: Player;
     /** The installed story. Turn stages run only while playing, which always carries one (ADR-345 D7). */
     readonly story: Story;
     readonly config: EngineConfig;

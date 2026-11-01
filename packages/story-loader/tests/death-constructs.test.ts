@@ -21,6 +21,7 @@ import {
   IParsedCommand,
   TraitType,
   WorldModel,
+  ActorTrait,
 } from '@sharpee/world-model';
 import {
   DEADLY_ROOM_DEATH_ACTION_ID,
@@ -58,6 +59,7 @@ function loadDeathStory(): DeathWorld {
   const world = new WorldModel();
   story.initializeWorld(world);
   const player = story.createPlayer(world);
+  player.add(new ActorTrait({ isPlayable: true }));
   world.setPlayer(player.id);
   return { story, world, playerId: player.id };
 }

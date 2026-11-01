@@ -12,7 +12,7 @@
 import { describe, test, expect, beforeEach } from 'vitest';
 import { goingAction } from '../../../src/actions/standard/going'; // Now from folder
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType, WorldModel, Direction, DirectionType, RoomTrait, IFEntity } from '@sharpee/world-model';
+import { TraitType, WorldModel, Direction, DirectionType, RoomTrait, IFEntity, ActorTrait } from '@sharpee/world-model';
 import {
   createRealTestContext,
   setupBasicWorld,
@@ -127,7 +127,7 @@ describe('goingAction (Golden Pattern)', () => {
       const world = new WorldModel();
       world.setLanguageWords(ENGLISH_WORDS);
       const player = world.createEntity('yourself', 'object');
-      player.add({ type: TraitType.ACTOR, isPlayer: true });
+      player.add(new ActorTrait({ isPlayer: true }));
       world.setPlayer(player.id);
 
       const room = world.createEntity('Empty Room', 'object');
@@ -153,7 +153,7 @@ describe('goingAction (Golden Pattern)', () => {
       const world = new WorldModel();
       world.setLanguageWords(ENGLISH_WORDS);
       const player = world.createEntity('yourself', 'object');
-      player.add({ type: TraitType.ACTOR, isPlayer: true });
+      player.add(new ActorTrait({ isPlayer: true }));
       world.setPlayer(player.id);
 
       const room = world.createEntity('Room with South Exit', 'object');
@@ -185,7 +185,7 @@ describe('goingAction (Golden Pattern)', () => {
       const world = new WorldModel();
       world.setLanguageWords(ENGLISH_WORDS);
       const player = world.createEntity('yourself', 'object');
-      player.add({ type: TraitType.ACTOR, isPlayer: true });
+      player.add(new ActorTrait({ isPlayer: true }));
       world.setPlayer(player.id);
 
       const door = world.createEntity('wooden door', 'object');
@@ -260,7 +260,7 @@ describe('goingAction (Golden Pattern)', () => {
       const world = new WorldModel();
       world.setLanguageWords(ENGLISH_WORDS);
       const player = world.createEntity('yourself', 'object');
-      player.add({ type: TraitType.ACTOR, isPlayer: true });
+      player.add(new ActorTrait({ isPlayer: true }));
       world.setPlayer(player.id);
 
       const door = world.createEntity('iron door', 'object');
@@ -310,7 +310,7 @@ describe('goingAction (Golden Pattern)', () => {
       const world = new WorldModel();
       world.setLanguageWords(ENGLISH_WORDS);
       const player = world.createEntity('yourself', 'object');
-      player.add({ type: TraitType.ACTOR, isPlayer: true });
+      player.add(new ActorTrait({ isPlayer: true }));
       world.setPlayer(player.id);
 
       const room = world.createEntity('Room with Bad Exit', 'object');
@@ -341,7 +341,7 @@ describe('goingAction (Golden Pattern)', () => {
       const world = new WorldModel();
       world.setLanguageWords(ENGLISH_WORDS);
       const player = world.createEntity('yourself', 'object');
-      player.add({ type: TraitType.ACTOR, isPlayer: true });
+      player.add(new ActorTrait({ isPlayer: true }));
       world.setPlayer(player.id);
 
       const room1 = world.createEntity('Lit Room', 'object');
@@ -382,7 +382,7 @@ describe('goingAction (Golden Pattern)', () => {
       const world = new WorldModel();
       world.setLanguageWords(ENGLISH_WORDS);
       const player = world.createEntity('yourself', 'object');
-      player.add({ type: TraitType.ACTOR, isPlayer: true });
+      player.add(new ActorTrait({ isPlayer: true }));
       world.setPlayer(player.id);
       
       const room1 = world.createEntity('Garden', 'object');
@@ -445,7 +445,7 @@ describe('goingAction (Golden Pattern)', () => {
       const world = new WorldModel();
       world.setLanguageWords(ENGLISH_WORDS);
       const player = world.createEntity('yourself', 'object');
-      player.add({ type: TraitType.ACTOR, isPlayer: true });
+      player.add(new ActorTrait({ isPlayer: true }));
       world.setPlayer(player.id);
 
       const room1 = world.createEntity('Garden', 'object');
@@ -487,7 +487,7 @@ describe('goingAction (Golden Pattern)', () => {
       const world = new WorldModel();
       world.setLanguageWords(ENGLISH_WORDS);
       const player = world.createEntity('yourself', 'object');
-      player.add({ type: TraitType.ACTOR, isPlayer: true });
+      player.add(new ActorTrait({ isPlayer: true }));
       world.setPlayer(player.id);
       
       const room1 = world.createEntity('Start', 'object');
@@ -522,7 +522,7 @@ describe('goingAction (Golden Pattern)', () => {
       const world = new WorldModel();
       world.setLanguageWords(ENGLISH_WORDS);
       const player = world.createEntity('yourself', 'object');
-      player.add({ type: TraitType.ACTOR, isPlayer: true });
+      player.add(new ActorTrait({ isPlayer: true }));
       world.setPlayer(player.id);
       
       const room1 = world.createEntity('Entrance', 'object');
@@ -567,7 +567,7 @@ describe('goingAction (Golden Pattern)', () => {
       const world = new WorldModel();
       world.setLanguageWords(ENGLISH_WORDS);
       const player = world.createEntity('yourself', 'object');
-      player.add({ type: TraitType.ACTOR, isPlayer: true });
+      player.add(new ActorTrait({ isPlayer: true }));
       world.setPlayer(player.id);
       
       const door = world.createEntity('oak door', 'object');
@@ -608,7 +608,7 @@ describe('goingAction (Golden Pattern)', () => {
       const world = new WorldModel();
       world.setLanguageWords(ENGLISH_WORDS);
       const player = world.createEntity('yourself', 'object');
-      player.add({ type: TraitType.ACTOR, isPlayer: true });
+      player.add(new ActorTrait({ isPlayer: true }));
       world.setPlayer(player.id);
       
       const torch = world.createEntity('burning torch', 'object');
@@ -654,7 +654,7 @@ describe('goingAction (Golden Pattern)', () => {
       const world = new WorldModel();
       world.setLanguageWords(ENGLISH_WORDS);
       const player = world.createEntity('yourself', 'object');
-      player.add({ type: TraitType.ACTOR, isPlayer: true });
+      player.add(new ActorTrait({ isPlayer: true }));
       world.setPlayer(player.id);
       
       const room1 = world.createEntity('Start', 'object');
@@ -694,7 +694,7 @@ describe('goingAction (Golden Pattern)', () => {
       const world = new WorldModel();
       world.setLanguageWords(ENGLISH_WORDS);
       const player = world.createEntity('yourself', 'object');
-      player.add({ type: TraitType.ACTOR, isPlayer: true });
+      player.add(new ActorTrait({ isPlayer: true }));
       world.setPlayer(player.id);
       
       const room1 = world.createEntity('Room 1', 'object');
@@ -748,7 +748,7 @@ describe('goingAction (Golden Pattern)', () => {
         const world = new WorldModel();
         world.setLanguageWords(ENGLISH_WORDS);
         const player = world.createEntity('yourself', 'object');
-        player.add({ type: TraitType.ACTOR, isPlayer: true });
+        player.add(new ActorTrait({ isPlayer: true }));
         world.setPlayer(player.id);
         
         const room1 = world.createEntity('Room 1', 'object');
@@ -796,7 +796,7 @@ describe('World State Mutations', () => {
     const world = new WorldModel();
     world.setLanguageWords(ENGLISH_WORDS);
     const player = world.createEntity('yourself', 'object');
-    player.add({ type: TraitType.ACTOR, isPlayer: true });
+    player.add(new ActorTrait({ isPlayer: true }));
     world.setPlayer(player.id);
 
     const room1 = world.createEntity('Garden', 'object');
@@ -833,7 +833,7 @@ describe('World State Mutations', () => {
     const world = new WorldModel();
     world.setLanguageWords(ENGLISH_WORDS);
     const player = world.createEntity('yourself', 'object');
-    player.add({ type: TraitType.ACTOR, isPlayer: true });
+    player.add(new ActorTrait({ isPlayer: true }));
     world.setPlayer(player.id);
 
     const door = world.createEntity('wooden door', 'object');
@@ -876,7 +876,7 @@ describe('World State Mutations', () => {
     const world = new WorldModel();
     world.setLanguageWords(ENGLISH_WORDS);
     const player = world.createEntity('yourself', 'object');
-    player.add({ type: TraitType.ACTOR, isPlayer: true });
+    player.add(new ActorTrait({ isPlayer: true }));
     world.setPlayer(player.id);
 
     const room1 = world.createEntity('Room', 'object');
@@ -913,7 +913,7 @@ describe('World State Mutations', () => {
     const world = new WorldModel();
     world.setLanguageWords(ENGLISH_WORDS);
     const player = world.createEntity('yourself', 'object');
-    player.add({ type: TraitType.ACTOR, isPlayer: true });
+    player.add(new ActorTrait({ isPlayer: true }));
     world.setPlayer(player.id);
 
     const room1 = world.createEntity('Start', 'object');

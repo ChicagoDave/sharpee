@@ -9,7 +9,7 @@ import { describe, test, expect, beforeEach } from 'vitest';
 import { StandardActionRegistry } from '../../src/actions';
 import { waitingAction } from '../../src/actions/standard/waiting';
 import { CommandValidator } from '../../src/validation/command-validator';
-import { WorldModel, IFEntity, TraitType } from '@sharpee/world-model';
+import { WorldModel, IFEntity, TraitType, ActorTrait } from '@sharpee/world-model';
 import { createRealTestContext } from '../test-utils';
 import type { 
   LanguageProvider, 
@@ -102,7 +102,7 @@ describe('Action Integration Test Pattern', () => {
     world = new WorldModel();
     world.setLanguageWords(ENGLISH_WORDS);
     player = world.createEntity('Player', 'actor');
-    player.add({ type: TraitType.ACTOR, isPlayer: true });
+    player.add(new ActorTrait({ isPlayer: true }));
     world.setPlayer(player.id); // Set player in world model
     const room = world.createEntity('Test Room', 'room');
     room.add({ type: TraitType.ROOM });
@@ -206,7 +206,7 @@ describe('Testing Complex Actions with Dependencies', () => {
     const world = new WorldModel();
     world.setLanguageWords(ENGLISH_WORDS);
     const player = world.createEntity('Player', 'actor');
-    player.add({ type: TraitType.ACTOR, isPlayer: true });
+    player.add(new ActorTrait({ isPlayer: true }));
     world.setPlayer(player.id); // Set player in world model
     const room = world.createEntity('Test Room', 'room');
     room.add({ type: TraitType.ROOM });

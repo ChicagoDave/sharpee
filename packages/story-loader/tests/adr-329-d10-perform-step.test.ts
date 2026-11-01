@@ -134,7 +134,7 @@ async function boot(source: string, seed = 11): Promise<Booted> {
   const id = (irId: string) => story.entityId(irId)!;
   const errand = () => (world.getEntity(id('wizard'))?.get(TraitType.CHARACTER_MODEL) as CharacterModelTrait | undefined)?.goalState['errand'];
   return {
-    engine, story, world, player: world.getPlayer()!, stream, id,
+    engine, story, world, player: world.playerCharacter, stream, id,
     step: () => errand()?.currentStep,
     active: () => errand()?.active,
     at: (irId) => world.getLocation(id(irId)),

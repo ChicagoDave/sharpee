@@ -38,7 +38,7 @@ describe('GameEngine — player Listener-trait wiring (ADR-172 Phase 4)', () => 
     const story = new MinimalTestStory();
     engine.installStory(story);
 
-    const player = story.getPlayer();
+    const player = story.playerEntity();
     expect(player).not.toBeNull();
     expect(player!.has(TraitType.LISTENER)).toBe(true);
 
@@ -94,7 +94,7 @@ describe('GameEngine — player Listener-trait wiring (ADR-172 Phase 4)', () => 
 
       initialize(): void {}
 
-      getPlayer(): IFEntity | null {
+      playerEntity(): IFEntity | null {
         return this._player;
       }
 
@@ -106,7 +106,7 @@ describe('GameEngine — player Listener-trait wiring (ADR-172 Phase 4)', () => 
     const story = new StoryWithListener();
     engine.installStory(story);
 
-    const player = story.getPlayer();
+    const player = story.playerEntity();
     const customTrait = story.getCustomTrait();
     const actualTrait = player!.get<ListenerTrait>(TraitType.LISTENER);
 

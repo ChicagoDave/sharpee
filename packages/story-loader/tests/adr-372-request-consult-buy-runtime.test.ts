@@ -266,7 +266,7 @@ describe('buying with the buyer\'s counter (ADR-372 D5)', () => {
     const b = await boot();
     await b.engine.executeTurn('wave');
     const clerk = b.byName('Clerk');
-    expect(b.world.getPlayer()!.id).toBe(clerk.id);
+    expect(b.world.playerCharacter.id).toBe(clerk.id);
     await b.engine.executeTurn('buy map');
     expect(b.credits('clerk')).toBe(1);
     expect(b.credits()).toBe(10);
@@ -276,7 +276,7 @@ describe('buying with the buyer\'s counter (ADR-372 D5)', () => {
   it('refuses a buyer who carries no such counter', async () => {
     const b = await boot();
     await b.engine.executeTurn('jump');
-    expect(b.world.getPlayer()!.id).toBe(b.byName('Drifter').id);
+    expect(b.world.playerCharacter.id).toBe(b.byName('Drifter').id);
     const result = await b.engine.executeTurn('buy map');
     expect(ids(result)).toContain('if.action.buying.cant_afford');
     expect(b.at('map')).toBe(b.byName('Market Row').id);

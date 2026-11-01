@@ -7,7 +7,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import { compile, StoryIR } from '@sharpee/chord';
-import { IdentityTrait, TraitType, WorldModel } from '@sharpee/world-model';
+import { IdentityTrait, TraitType, WorldModel, ActorTrait } from '@sharpee/world-model';
 import { createStory } from '../src';
 
 function compileSource(source: string): StoryIR {
@@ -61,6 +61,7 @@ describe('`proper` on things (GH #342, REAL-PATH)', () => {
     const world = new WorldModel();
     story.initializeWorld(world);
     const player = story.createPlayer(world);
+    player.add(new ActorTrait({ isPlayable: true }));
     world.setPlayer(player.id);
     // Look up by display name — a possessive name's IR slug is the
     // compiler's business, not this test's.

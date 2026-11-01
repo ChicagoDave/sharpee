@@ -16,6 +16,7 @@ import {
   LocationHeadingBehavior,
   clearLocationNames,
   lookupLocationName,
+  ActorTrait,
 } from '@sharpee/world-model';
 import { createStory } from '../src';
 
@@ -41,6 +42,7 @@ function load(body: string) {
   const world = new WorldModel();
   story.initializeWorld(world);
   const player = story.createPlayer(world);
+  player.add(new ActorTrait({ isPlayable: true }));
   world.setPlayer(player.id);
   return { world, player };
 }

@@ -75,7 +75,7 @@ export async function bootTurns(source: string, seed = 7): Promise<BootedTurns> 
     if (!worldId) throw new Error(`no world entity for IR id \`${irId}\``);
     return worldId;
   };
-  return { engine, story, world, player: world.getPlayer()!, stream, turn, turnText, id };
+  return { engine, story, world, player: world.playerCharacter, stream, turn, turnText, id };
 }
 
 /**

@@ -51,8 +51,7 @@ function retarget(parsed: IParsedCommand, action: string, extras?: Record<string
  */
 export function createVehicleCommandTransformer(): (parsed: IParsedCommand, world: WorldModel) => IParsedCommand {
   return (parsed: IParsedCommand, world: WorldModel): IParsedCommand => {
-    const player = world.getPlayer();
-    if (!player) return parsed;
+    const player = world.playerCharacter;
 
     if (parsed.action === IFActions.GOING || parsed.action === IFActions.STEERING) {
       if (!parsed.extras?.direction) return parsed;

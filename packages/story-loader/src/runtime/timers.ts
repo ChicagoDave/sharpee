@@ -97,7 +97,7 @@ export class TimersSection {
     const actorName = world.getEntity(actorId)?.name ?? actorId;
     // The runtime half of D1's exclusion: the compiler refuses the spelled
     // role; a named character who currently holds it is refused here.
-    if (world.getPlayer()?.id === actorId) {
+    if (world.playerCharacter.id === actorId) {
       throw new LoadError(`runtime.act-player-actor: ${actorName} holds the player role this turn and cannot be made to act.`, stmt.span);
     }
     const storyDef = this.core.ir.actions.find((a) => a.name === stmt.action);
@@ -279,7 +279,7 @@ export class TimersSection {
    */
   holdsPlayerRole(world: WorldModel, irEntityId: string): boolean {
     const worldId = this.core.host.entityId(irEntityId);
-    return worldId !== undefined && worldId === world.getPlayer()?.id;
+    return worldId !== undefined && worldId === world.playerCharacter.id;
   }
 
   /**

@@ -15,7 +15,8 @@ function decisionContext(service: EngineRandomService): NpcContext {
     npc: { attributes: {} } as unknown as IFEntity,
     world: {
       getScore: () => 0,
-      getPlayer: () => ({ attributes: {} }),
+      hasPlayerCharacter: true,
+      playerCharacter: { attributes: {} },
     } as unknown as WorldModel,
     random: service,
   } as unknown as NpcContext;

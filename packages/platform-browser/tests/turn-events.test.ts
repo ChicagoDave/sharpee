@@ -188,7 +188,7 @@ function makeWorld() {
     findByTrait: () => [],
     findByType: () => [],
     getEntity: () => undefined,
-    getPlayer: () => undefined,
+    hasPlayerCharacter: false,
     getContainingRoom: () => undefined,
     getLocation: () => undefined,
     // The client reads the world's Ending on every `connectEngine`

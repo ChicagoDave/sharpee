@@ -112,7 +112,7 @@ export function setupTestEngineWithStory(options: TestEngineOptions = {}): {
 } {
   const setup = setupTestEngine(options);
   setup.engine.installStory(createMinimalStory({ includeObjects: options.includeObjects }));
-  return { ...setup, player: setup.world.getPlayer()! };
+  return { ...setup, player: setup.world.playerCharacter };
 }
 
 /**

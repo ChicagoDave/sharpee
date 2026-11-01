@@ -12,7 +12,7 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { compile, StoryIR } from '@sharpee/chord';
 import type { ISemanticEvent } from '@sharpee/core';
-import {RoomTrait, TraitType, WearableTrait, WorldModel , darkKey } from '@sharpee/world-model';
+import {RoomTrait, TraitType, WearableTrait, WorldModel , darkKey, ActorTrait } from '@sharpee/world-model';
 import { endStory } from '@sharpee/stdlib';
 import { CHORD_STATE_PREFIX, ChordStory, createStory } from '../src';
 
@@ -41,6 +41,7 @@ function loadCloak(): CloakWorld {
   const world = new WorldModel();
   story.initializeWorld(world);
   const player = story.createPlayer(world);
+  player.add(new ActorTrait({ isPlayable: true }));
   world.setPlayer(player.id);
   return { story, world, playerId: player.id };
 }

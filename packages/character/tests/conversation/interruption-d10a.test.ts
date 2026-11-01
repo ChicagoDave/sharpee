@@ -66,6 +66,7 @@ describe('closeScene renders on parting on every park (D10a ruling 3)', () => {
     world.setStateValue(CHARACTER_TURN_KEY, 4);
     alice = person(world, 'Alice');
     player = person(world, 'Player', true);
+    player.add(new ActorTrait({ isPlayable: true }));
     world.setPlayer(player.id);
     lines.length = 0;
   });

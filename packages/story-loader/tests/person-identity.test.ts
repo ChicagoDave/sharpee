@@ -11,7 +11,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import { compile, StoryIR } from '@sharpee/chord';
-import { IdentityTrait, TraitType, WorldModel } from '@sharpee/world-model';
+import { IdentityTrait, TraitType, WorldModel, ActorTrait } from '@sharpee/world-model';
 import { nounPhraseFor } from '@sharpee/stdlib';
 import { EnglishLanguageProvider } from '@sharpee/lang-en-us';
 import type { LocaleSettings, Mentioned, NarrativeAgreement, RenderContext } from '@sharpee/if-domain';
@@ -78,6 +78,7 @@ function load() {
   const world = new WorldModel();
   story.initializeWorld(world);
   const player = story.createPlayer(world);
+  player.add(new ActorTrait({ isPlayable: true }));
   world.setPlayer(player.id);
   return { story, world };
 }

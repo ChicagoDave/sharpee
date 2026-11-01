@@ -291,7 +291,7 @@ describe('createCharacterDialogueSelector — the world socket (ADR-310 D15)', (
 
     const selector = world.getDialogueSelector()!.select;
     const selection = selector(npc, { type: 'ask', text: 'the crime' }, {
-      world, speakerId: world.getPlayer()!.id,
+      world, speakerId: world.playerCharacter.id,
     });
 
     expect(selection).toMatchObject({
@@ -303,7 +303,7 @@ describe('createCharacterDialogueSelector — the world socket (ADR-310 D15)', (
       'character.author.pressure_deposit',
     ]);
     // The speaker became the ledger audience — the mint landed on the trait
-    expect(trait.ledger[0]?.audience).toBe(world.getPlayer()!.id);
+    expect(trait.ledger[0]?.audience).toBe(world.playerCharacter.id);
   });
 
   it('a handled delivery stamps the conversation marker on the trait (D16)', () => {
@@ -319,12 +319,12 @@ describe('createCharacterDialogueSelector — the world socket (ADR-310 D15)', (
 
     expect(trait.activeConversation).toBeUndefined();
     world.getDialogueSelector()!.select(npc, { type: 'ask', text: 'the crime' }, {
-      world, speakerId: world.getPlayer()!.id,
+      world, speakerId: world.playerCharacter.id,
     });
 
     // The tick mirror is unset in this harness, so the dialogue turn is 1.
     expect(trait.activeConversation).toEqual({
-      partnerId: world.getPlayer()!.id,
+      partnerId: world.playerCharacter.id,
       lastTurn: 1,
     });
   });
@@ -347,7 +347,7 @@ describe('createCharacterDialogueSelector — the world socket (ADR-310 D15)', (
     registerCharacterDialogue(world, dialogue);
 
     const selection = world.getDialogueSelector()!.select(npc, { type: 'talk-to' }, {
-      world, speakerId: world.getPlayer()!.id,
+      world, speakerId: world.playerCharacter.id,
     });
 
     expect(selection?.handled).toBe(true);

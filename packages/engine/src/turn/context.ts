@@ -39,6 +39,7 @@ import type { EngineRandomService } from '../session/engine-random-service.js';
 import type { IProsePipeline } from '../prose-pipeline/index.js';
 import type { SoundDispatcher } from '../sound/index.js';
 import type { Story } from '../install/story.js';
+import type { Player } from '../player.js';
 import type { PlatformOperationHost } from './platform-dispatcher.js';
 import type { EngineParser } from '../ports/parser-interface.js';
 import type { SaveRestoreService } from '../session/save-restore-service.js';
@@ -100,6 +101,8 @@ export interface TurnStageContext {
 export interface TurnEngine {
   readonly world: WorldModel;
   readonly context: GameContext;
+  /** The session's player role (ADR-390 D2). */
+  readonly player: Player;
   /** The installed story. Turn stages run only while playing, which always carries one (ADR-345 D7). */
   readonly story: Story;
   readonly config: EngineConfig;

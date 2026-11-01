@@ -19,6 +19,7 @@ import {
   SwitchableTrait,
   TraitType,
   WorldModel,
+  ActorTrait,
 } from '@sharpee/world-model';
 import { ChordDetailTrait, ChordStory, createStory } from '../src';
 import { stubStoryEngine } from './helpers/stub-story-engine';
@@ -44,6 +45,7 @@ function boot(source: string): Booted {
   const world = new WorldModel();
   story.initializeWorld(world);
   const player = story.createPlayer(world);
+  player.add(new ActorTrait({ isPlayable: true }));
   world.setPlayer(player.id);
   return { story, world, playerId: player.id };
 }

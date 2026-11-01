@@ -311,7 +311,7 @@ export class CommandExecutor {
       // player-only by construction — typed input is the player's — so this
       // read stays player-bound (ADR-328 D2 threads the actor only from the
       // validated command onward).
-      const player = world.getPlayer();
+      const player = world.hasPlayerCharacter ? world.playerCharacter : undefined;
       if (player) {
         const playerLocation = world.getLocation(player.id) || '';
         this.parser.setWorldContext(world, player.id, playerLocation);

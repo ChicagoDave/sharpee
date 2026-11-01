@@ -41,6 +41,7 @@ function stage() {
   const cellar = room(world, 'Cellar');
   const attic = room(world, 'Attic');
   const player = actor(world, 'yourself', cellar, true);
+  player.add(new ActorTrait({ isPlayable: true }));
   world.setPlayer(player.id);
   const thief = actor(world, 'thief', cellar);
   const coins = world.createEntity('bag of coins', EntityType.OBJECT);

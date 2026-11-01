@@ -12,7 +12,7 @@
 import { describe, test, expect, vi } from 'vitest';
 import { lookingAction } from '../../../src/actions/standard/looking';
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType, RoomTrait, RoomBehavior } from '@sharpee/world-model';
+import { TraitType, RoomTrait, RoomBehavior, ActorTrait } from '@sharpee/world-model';
 import {
   createRealTestContext,
   setupBasicWorld,
@@ -190,7 +190,7 @@ describe('lookingAction (Golden Pattern)', () => {
       const world = new WorldModel();
       world.setLanguageWords(ENGLISH_WORDS);
       const player = world.createEntity('yourself', 'actor');
-      player.add({ type: TraitType.ACTOR });
+      player.add(new ActorTrait({ isPlayable: true }));
       world.setPlayer(player.id);
       
       const darkRoom = world.createEntity('Dark Cave', 'room');
@@ -221,7 +221,7 @@ describe('lookingAction (Golden Pattern)', () => {
       const world = new WorldModel();
       world.setLanguageWords(ENGLISH_WORDS);
       const player = world.createEntity('yourself', 'actor');
-      player.add({ type: TraitType.ACTOR });
+      player.add(new ActorTrait({ isPlayable: true }));
       world.setPlayer(player.id);
       
       const darkRoom = world.createEntity('Dark Cave', 'room');
@@ -260,7 +260,7 @@ describe('lookingAction (Golden Pattern)', () => {
       const world = new WorldModel();
       world.setLanguageWords(ENGLISH_WORDS);
       const player = world.createEntity('yourself', 'actor');
-      player.add({ type: TraitType.ACTOR });
+      player.add(new ActorTrait({ isPlayable: true }));
       world.setPlayer(player.id);
       
       const darkRoom = world.createEntity('Lit Cave', 'room');
@@ -295,7 +295,7 @@ describe('lookingAction (Golden Pattern)', () => {
       const world = new WorldModel();
       world.setLanguageWords(ENGLISH_WORDS);
       const player = world.createEntity('yourself', 'actor');
-      player.add({ type: TraitType.ACTOR });
+      player.add(new ActorTrait({ isPlayable: true }));
       world.setPlayer(player.id);
       
       const room = world.createEntity('Test Room', 'room');
@@ -330,7 +330,7 @@ describe('lookingAction (Golden Pattern)', () => {
       const world = new WorldModel();
       world.setLanguageWords(ENGLISH_WORDS);
       const player = world.createEntity('yourself', 'actor');
-      player.add({ type: TraitType.ACTOR });
+      player.add(new ActorTrait({ isPlayable: true }));
       world.setPlayer(player.id);
       
       const room = world.createEntity('Test Room', 'room');

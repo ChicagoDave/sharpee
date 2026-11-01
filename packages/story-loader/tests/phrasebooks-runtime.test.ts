@@ -9,7 +9,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { compile, PHRASEBOOK_REGISTRY } from '@sharpee/chord';
 import { phrasebookTemplateKey, type PhrasebookResolution } from '@sharpee/engine';
-import { WorldModel } from '@sharpee/world-model';
+import { WorldModel, ActorTrait } from '@sharpee/world-model';
 import { createStory, PHRASEBOOK_DATA } from '../src';
 
 const SOURCE = `story
@@ -76,6 +76,7 @@ function load(source = SOURCE) {
   const world = new WorldModel();
   story.initializeWorld(world);
   const player = story.createPlayer(world);
+  player.add(new ActorTrait({ isPlayable: true }));
   world.setPlayer(player.id);
   return { story, world, player };
 }

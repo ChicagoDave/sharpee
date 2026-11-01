@@ -168,32 +168,18 @@ describe('ActorTrait', () => {
     });
   });
 
-  describe('player management', () => {
-    it('should make actor a player using makePlayer method', () => {
-      const trait = new ActorTrait({
-        isPlayer: false,
-        isPlayable: false
-      });
-      
-      expect(trait.isPlayer).toBe(false);
-      expect(trait.isPlayable).toBe(false);
-      
-      trait.makePlayer();
-      
+  describe('player role (ADR-390 D1)', () => {
+    it('an actor flagged as the player is playable by construction', () => {
+      const trait = new ActorTrait({ isPlayer: true });
+
       expect(trait.isPlayer).toBe(true);
       expect(trait.isPlayable).toBe(true);
     });
 
-    it('should ensure player is always playable', () => {
-      const trait = new ActorTrait();
-      
-      trait.makePlayer();
-      
-      // Try to make non-playable after making player
-      trait.isPlayable = false;
-      
-      // This shows the limitation - might want to add validation
-      expect(trait.isPlayer).toBe(true);
+    it('an explicit isPlayable wins over the implication', () => {
+      const trait = new ActorTrait({ isPlayer: false, isPlayable: false });
+
+      expect(trait.isPlayer).toBe(false);
       expect(trait.isPlayable).toBe(false);
     });
   });
@@ -508,17 +494,8 @@ describe('ActorTrait', () => {
       expect(ActorBehavior.isPlayable(protagonist)).toBe(true);
     });
 
-    it('isPlayer alone does not confer playability — the two fields are independent', () => {
+    it('isPlayer implies isPlayable — a holder of the role is playable by definition (ADR-390 D1)', () => {
       const trait = new ActorTrait({ isPlayer: true });
-
-      expect(trait.isPlayer).toBe(true);
-      expect(trait.isPlayable).toBe(false);
-    });
-
-    it('makePlayer() grants both, so a promoted actor is coherent', () => {
-      const trait = new ActorTrait();
-
-      trait.makePlayer();
 
       expect(trait.isPlayer).toBe(true);
       expect(trait.isPlayable).toBe(true);

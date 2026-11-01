@@ -87,9 +87,10 @@ describe('modeled PC in the character-model phase', () => {
   it('an unmodeled PC is untouched (no model, no change)', () => {
     const bare = world.createEntity('Bare Player', 'actor');
     bare.add(new IdentityTrait({ name: 'Bare Player' }));
-    bare.add(new ActorTrait({ isPlayer: true }));
+    bare.add(new ActorTrait({ isPlayable: true }));
     bare.add(new ContainerTrait());
-    world.setPlayer(bare.id);
+    // The role moves off the modeled player: a change, not a second set (ADR-390 D1).
+    world.changePlayer(bare.id);
     world.moveEntity(bare.id, room.id);
 
     const events = createCharacterModelPhase(registry)([], {

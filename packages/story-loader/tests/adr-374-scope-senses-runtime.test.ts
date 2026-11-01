@@ -180,7 +180,7 @@ describe('night vision (ADR-374 D3–D5)', () => {
     expect(ids(dark).join(' ')).toContain('too_dark');
     await b.engine.executeTurn('up');
     await b.engine.executeTurn('wave');
-    expect(b.world.getPlayer()?.id).toBe(b.byName('loader robot').id);
+    expect(b.world.playerCharacter.id).toBe(b.byName('loader robot').id);
     const seen = await b.engine.executeTurn('down');
     expect(ids(seen).join(' ')).not.toContain('too_dark');
     expect(b.examined(await b.engine.executeTurn('examine crate'))).toBe(true);

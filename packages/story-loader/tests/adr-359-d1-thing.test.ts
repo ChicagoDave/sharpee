@@ -8,7 +8,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import { compile, type StoryIR } from '@sharpee/chord';
-import { WorldModel } from '@sharpee/world-model';
+import { WorldModel, ActorTrait } from '@sharpee/world-model';
 import { createStory, Evaluator, type ChordStory } from '../src';
 
 const SOURCE = `story
@@ -64,6 +64,7 @@ function load(): { ir: StoryIR; story: ChordStory; world: WorldModel } {
   const world = new WorldModel();
   story.initializeWorld(world);
   const player = story.createPlayer(world);
+  player.add(new ActorTrait({ isPlayable: true }));
   world.setPlayer(player.id);
   return { ir: result.ir, story, world };
 }

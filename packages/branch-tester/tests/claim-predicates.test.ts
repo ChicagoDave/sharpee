@@ -51,7 +51,8 @@ const byId = new Map(Object.values(ENTITIES).map((e) => [e.id, e]));
 
 function context(shape: Shape): ClaimContext {
   const world: ClaimsWorld = {
-    getPlayer: () => ENTITIES.player,
+    hasPlayerCharacter: true,
+    playerCharacter: ENTITIES.player,
     getEntity: (id) => byId.get(id),
     getAllEntities: () => [...byId.values()],
     getLocation: (id) => shape.locations?.[id] ?? shape.rooms?.[id],

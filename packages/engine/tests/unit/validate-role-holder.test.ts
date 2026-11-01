@@ -69,7 +69,9 @@ describe('the install seam refuses a non-compliant role holder', () => {
     // No fallback placement: the loader's habit of dropping an unplaced
     // holder into the first declared room is exactly what this step refuses
     // to do. The holder is still nowhere.
-    const holder = world.getEntity(world.getPlayer()!.id)!;
+    // The role was never assigned — the validator refused before `assign-player-role` ran (ADR-390).
+    expect(world.hasPlayerCharacter).toBe(false);
+    const holder = world.getAllEntities().find((e) => e.name === 'You')!;
     expect(world.getLocation(holder.id)).toBeUndefined();
     // Nothing adopted, so the engine kept no story.
     expect(engine.getStory()).toBeUndefined();
@@ -103,7 +105,7 @@ describe('the install seam accepts a compliant role holder', () => {
 
     expect(() => engine.installStory(storyWithHolder('compliant'))).not.toThrow();
 
-    const player = world.getPlayer()!;
+    const player = world.playerCharacter;
     expect(player).toBeDefined();
     expect(world.getLocation(player.id)).toBeDefined();
     const actor = player.get<ActorTrait>(TraitType.ACTOR);

@@ -7,7 +7,7 @@ import { CommandExecutor, createCommandExecutor } from '../src/command/command-e
 import { EngineRandomService } from '../src/session/engine-random-service';
 import { ActionTestStory } from './stories';
 import { createMockAction } from './fixtures/index';
-import { WorldModel } from '@sharpee/world-model';
+import { WorldModel, ActorTrait } from '@sharpee/world-model';
 import { EventProcessor } from '@sharpee/event-processor';
 import { StandardActionRegistry, ActionResult, ActionContext } from '@sharpee/stdlib';
 import { GameContext, EngineConfig } from '../src/types';
@@ -38,7 +38,8 @@ describe('CommandExecutor', () => {
     // Initialize world through story
     story.initializeWorld(world);
     const player = story.createPlayer(world);
-    world.setPlayer(player.id);
+    // The helper installed a story whose actor holds the role; this test's own player is a move (ADR-390 D1).
+    world.changePlayer(player.id);
     
     actionRegistry = new StandardActionRegistry();
     eventProcessor = new EventProcessor(world);

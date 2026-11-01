@@ -112,7 +112,7 @@ async function bootIr(ir: ReturnType<typeof compileSource>, seed = 11): Promise<
   engine.installStory(story);
   await engine.start();
   const id = (irId: string) => story.entityId(irId)!;
-  return { engine, story, world, player: world.getPlayer()!, stream, id, at: (irId) => world.getLocation(id(irId)) };
+  return { engine, story, world, player: world.playerCharacter, stream, id, at: (irId) => world.getLocation(id(irId)) };
 }
 
 /** The sword's n-th clause's firing count, by the clause's position in the sword's block. */

@@ -15,7 +15,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { compile } from '@sharpee/chord';
 import type { ISemanticEvent } from '@sharpee/core';
-import { IFEntity, WorldModel } from '@sharpee/world-model';
+import { IFEntity, WorldModel, ActorTrait } from '@sharpee/world-model';
 import { ChordStory, createStory } from '../src';
 import { runValidatePhase } from '@sharpee/stdlib';
 
@@ -69,6 +69,7 @@ function load(source: string): { story: ChordStory; world: WorldModel; player: I
   const world = new WorldModel();
   story.initializeWorld(world);
   const player = story.createPlayer(world);
+  player.add(new ActorTrait({ isPlayable: true }));
   world.setPlayer(player.id);
   const actions = new Map<string, DispatchAction>();
   for (const a of story.getCustomActions() as DispatchAction[]) actions.set(a.id, a);

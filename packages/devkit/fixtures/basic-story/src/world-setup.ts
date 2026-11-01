@@ -71,7 +71,7 @@ export function getRoomIds(): Readonly<typeof roomIds> {
 export function setupWorld(world: WorldModel): void {
   world.setMaxScore(50);
 
-  const player = world.getPlayer()!;
+  const player = world.playerCharacter;
 
   // ---- ROOMS ----
 

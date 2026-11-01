@@ -65,7 +65,7 @@ export function handleAudibilityHeard(
   // into ListenerTrait, only the player's own deliveries render as prose —
   // the filter this header's note always scheduled. Events without a
   // target (older emitters, unit fixtures) keep rendering.
-  const playerId = context.world?.getPlayer()?.id;
+  const playerId = context.world?.hasPlayerCharacter ? context.world.playerCharacter.id : undefined;
   if (playerId && event.entities?.target && event.entities.target !== playerId) {
     return [];
   }

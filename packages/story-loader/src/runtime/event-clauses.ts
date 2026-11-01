@@ -39,7 +39,7 @@ export class EventClausesSection {
       EVENT_TRIGGERS.entering,
       (event, w) => {
         const toRoom = enteringDestination(event.data);
-        if (toRoom !== undefined && movedActorId(event) === (w as WorldModel).getPlayer()?.id) {
+        if (toRoom !== undefined && movedActorId(event) === (w as WorldModel).playerCharacter.id) {
           (w as WorldModel).setStateValue(CHORD_VISITED_PREFIX + toRoom, true);
         }
         return null;

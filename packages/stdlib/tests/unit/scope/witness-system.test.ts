@@ -3,7 +3,7 @@
  */
 
 import { describe, test, expect, beforeEach, vi, afterEach, Mock } from 'vitest';
-import { WorldModel, TraitType, EntityType } from '@sharpee/world-model';
+import { WorldModel, TraitType, EntityType, ActorTrait } from '@sharpee/world-model';
 import { StandardScopeResolver } from '../../../src/scope/scope-resolver';
 import { StandardWitnessSystem } from '../../../src/scope/witness-system';
 import { StateChange, WitnessLevel, SenseType } from '../../../src/scope/types';
@@ -42,7 +42,7 @@ describe('StandardWitnessSystem', () => {
     room.add({ type: TraitType.ROOM });
 
     player = world.createEntity('Player', EntityType.ACTOR);
-    player.add({ type: TraitType.ACTOR, isPlayer: true });
+    player.add(new ActorTrait({ isPlayer: true }));
     player.add({ type: TraitType.CONTAINER });
     
     npc = world.createEntity('Bob', EntityType.ACTOR);
@@ -51,6 +51,7 @@ describe('StandardWitnessSystem', () => {
     
     world.moveEntity(player.id, room.id);
     world.moveEntity(npc.id, room.id);
+    player.add(new ActorTrait({ isPlayable: true }));
     world.setPlayer(player.id);
   });
 

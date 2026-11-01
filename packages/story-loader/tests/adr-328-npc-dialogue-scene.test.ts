@@ -15,7 +15,7 @@ import { EventProcessor } from '@sharpee/event-processor';
 import { EnglishLanguageProvider } from '@sharpee/lang-en-us';
 import { EnglishParser } from '@sharpee/parser-en-us';
 import { IFActions, StandardActionRegistry, standardActions } from '@sharpee/stdlib';
-import { WorldModel, sceneWith } from '@sharpee/world-model';
+import { WorldModel, sceneWith, ActorTrait } from '@sharpee/world-model';
 import type { IFEntity } from '@sharpee/world-model';
 import { ChordStory, createStory } from '../src';
 import { stubStoryEngine } from './helpers/stub-story-engine';
@@ -70,6 +70,7 @@ function load(): Loaded {
   const world = new WorldModel();
   story.initializeWorld(world);
   const player = story.createPlayer(world);
+  player.add(new ActorTrait({ isPlayable: true }));
   world.setPlayer(player.id);
   // The story's engine-ready hook binds the character layer the way the
   // engine would; the scene runtime this test drives is the real one.

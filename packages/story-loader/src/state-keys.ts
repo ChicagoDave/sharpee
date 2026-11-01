@@ -199,3 +199,10 @@ export function adjacentKey(moverIrId: string): string {
 export interface AdjacentRecord {
   seed: number;
 }
+
+/**
+ * The id the compiler emits for "the player" in an entity-reference position
+ * (ADR-390 D3): not an entity but the role, resolved to whoever holds it at
+ * the moment of use through `WorldModel.playerCharacter`.
+ */
+export const PLAYER_SENTINEL = 'player';

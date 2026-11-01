@@ -4,6 +4,8 @@ import { WorldModel, WorldConfig } from '../../../src/world/WorldModel';
 import { IFEntity } from '../../../src/entities/if-entity';
 import { TraitType } from '../../../src/traits/trait-types';
 import { ContainerTrait } from '../../../src/traits/container/containerTrait';
+import { ActorTrait } from '../../../src/traits/actor/actorTrait';
+import { IdentityTrait } from '../../../src/traits/identity/identityTrait';
 import { RoomTrait } from '../../../src/traits/room/roomTrait';
 import { DoorTrait } from '../../../src/traits/door/doorTrait';
 import { SceneryTrait } from '../../../src/traits/scenery/sceneryTrait';
@@ -21,7 +23,7 @@ describe('WorldModel', () => {
     it('should create empty world model', () => {
       expect(world.getAllEntities()).toHaveLength(0);
       expect(world.getState()).toEqual({});
-      expect(world.getPlayer()).toBeUndefined();
+      expect(world.hasPlayerCharacter).toBe(false);
     });
 
     it('should accept configuration', () => {
@@ -587,18 +589,96 @@ describe('WorldModel', () => {
       expect(path2).toEqual([]); // Same room returns empty path
     });
 
-    it('should get and set player', () => {
+    it('assigns the player role and derives the holder from the actor flag (ADR-390 D1)', () => {
       const player = world.createEntity('Player', 'actor');
+      player.add(new ActorTrait({ isPlayable: true }));
 
       world.setPlayer(player.id);
 
-      expect(world.getPlayer()).toBe(player);
+      expect(world.playerCharacter).toBe(player);
+      expect((player.get(TraitType.ACTOR) as ActorTrait).isPlayer).toBe(true);
     });
 
-    it('should throw when setting non-existent player', () => {
+    it('moving the role clears the previous holder, so exactly one actor holds it', () => {
+      const first = world.createEntity('First', 'actor');
+      first.add(new ActorTrait({ isPlayable: true }));
+      const second = world.createEntity('Second', 'actor');
+      second.add(new ActorTrait({ isPlayable: true }));
+      world.setPlayer(first.id);
+
+      world.changePlayer(second.id);
+
+      expect(world.playerCharacter).toBe(second);
+      expect((first.get(TraitType.ACTOR) as ActorTrait).isPlayer).toBe(false);
+    });
+
+    it('reading the holder before any assignment throws, naming the role', () => {
+      expect(() => world.playerCharacter).toThrow(/No actor holds the player role/);
+      expect(world.hasPlayerCharacter).toBe(false);
+    });
+
+    it('two flagged actors are an invariant violation the read names', () => {
+      const a = world.createEntity('A', 'actor');
+      a.add(new ActorTrait({ isPlayer: true }));
+      const b = world.createEntity('B', 'actor');
+      b.add(new ActorTrait({ isPlayer: true }));
+
+      expect(() => world.playerCharacter).toThrow(/2 holders/);
+    });
+
+    it('changePlayer moves the role vocabulary — the self words leave the old holder and land on the new one', () => {
+      world.setLanguageWords({ selfWords: ['me', 'myself'], nameStopwords: [] });
+      const first = world.createEntity('First', 'actor');
+      first.add(new IdentityTrait({ name: 'First' }));
+      first.add(new ActorTrait({ isPlayable: true }));
+      const second = world.createEntity('Second', 'actor');
+      second.add(new IdentityTrait({ name: 'Second' }));
+      second.add(new ActorTrait({ isPlayable: true }));
+
+      world.setPlayer(first.id);
+      expect((first.get(TraitType.IDENTITY) as IdentityTrait).aliases).toEqual(expect.arrayContaining(['me', 'myself']));
+
+      world.changePlayer(second.id);
+      expect((second.get(TraitType.IDENTITY) as IdentityTrait).aliases).toEqual(expect.arrayContaining(['me', 'myself']));
+      expect((first.get(TraitType.IDENTITY) as IdentityTrait).aliases ?? []).not.toContain('me');
+      expect((first.get(TraitType.IDENTITY) as IdentityTrait).aliases ?? []).not.toContain('myself');
+    });
+
+    it('a refused changePlayer leaves the current holder flagged and the candidate unflagged', () => {
+      const holder = world.createEntity('Holder', 'actor');
+      holder.add(new ActorTrait({ isPlayable: true }));
+      world.setPlayer(holder.id);
+      const bystander = world.createEntity('Bystander', 'actor');
+      bystander.add(new ActorTrait({ isPlayable: false }));
+
+      expect(() => world.changePlayer(bystander.id)).toThrow(/is not playable/);
+
+      expect(world.playerCharacter).toBe(holder);
+      expect((bystander.get(TraitType.ACTOR) as ActorTrait).isPlayer).toBe(false);
+    });
+
+    it('should throw when assigning the role to a non-existent entity', () => {
       expect(() => {
         world.setPlayer('missing');
-      }).toThrow('Cannot set player to non-existent entity: missing');
+      }).toThrow("Cannot assign the player role: entity 'missing' not found");
+    });
+
+    it('setPlayer is the start-game assignment and changePlayer the move: each refuses the other moment', () => {
+      const first = world.createEntity('First', 'actor');
+      first.add(new ActorTrait({ isPlayable: true }));
+      expect(() => world.changePlayer(first.id)).toThrow(/no actor holds the role yet/);
+      world.setPlayer(first.id);
+      const second = world.createEntity('Second', 'actor');
+      second.add(new ActorTrait({ isPlayable: true }));
+      expect(() => world.setPlayer(second.id)).toThrow(/already holds the role/);
+    });
+
+    it('refuses an entity with no ActorTrait and an actor that is not playable', () => {
+      const thing = world.createEntity('Thing', 'object');
+      expect(() => world.setPlayer(thing.id)).toThrow(/does not have ActorTrait/);
+      const bystander = world.createEntity('Bystander', 'actor');
+      bystander.add(new ActorTrait({ isPlayable: false }));
+      expect(() => world.setPlayer(bystander.id)).toThrow(/is not playable/);
     });
   });
 
@@ -606,6 +686,7 @@ describe('WorldModel', () => {
     it('should serialize to JSON', () => {
       const room = world.createEntity('Test Room', 'room');
       const player = world.createEntity('Player', 'actor');
+      player.add(new ActorTrait({ isPlayable: true }));
 
       world.setPlayer(player.id);
       world.setState({ score: 100 });
@@ -616,7 +697,8 @@ describe('WorldModel', () => {
 
       expect(data.entities).toHaveLength(2);
       expect(data.state.score).toBe(100);
-      expect(data.playerId).toBe(player.id);
+      // ADR-390 D1: the snapshot carries no player id — the role flag rides the actor's trait.
+      expect(data.playerId).toBeUndefined();
       expect(data.idCounters).toBeDefined();
     });
 
@@ -626,6 +708,7 @@ describe('WorldModel', () => {
       room.add(new RoomTrait());
       room.add(new ContainerTrait());
       const player = world.createEntity('Player', 'actor');
+      player.add(new ActorTrait({ isPlayable: true }));
       player.add(new ContainerTrait());
 
       world.setPlayer(player.id);
@@ -644,7 +727,7 @@ describe('WorldModel', () => {
       expect(newWorld.getAllEntities()).toHaveLength(2);
       expect(newWorld.getEntity(room.id)?.id).toBe(room.id);
       expect(newWorld.getEntity(player.id)?.id).toBe(player.id);
-      expect(newWorld.getPlayer()?.id).toBe(player.id);
+      expect(newWorld.playerCharacter.id).toBe(player.id);
       expect(newWorld.getState().score).toBe(100);
       expect(newWorld.getLocation(player.id)).toBe(room.id);
       expect(newWorld.areRelated(player.id, room.id, 'visited')).toBe(true);
@@ -703,7 +786,8 @@ describe('WorldModel', () => {
     });
 
     it('should clear world', () => {
-      const entity = world.createEntity('Test', 'object');
+      const entity = world.createEntity('Test', 'actor');
+      entity.add(new ActorTrait({ isPlayable: true }));
       world.setState({ test: true });
       world.setPlayer(entity.id);
 
@@ -711,7 +795,7 @@ describe('WorldModel', () => {
 
       expect(world.getAllEntities()).toHaveLength(0);
       expect(world.getState()).toEqual({});
-      expect(world.getPlayer()).toBeUndefined();
+      expect(world.hasPlayerCharacter).toBe(false);
       expect(world.getEntity(entity.id)).toBeUndefined();
     });
   });

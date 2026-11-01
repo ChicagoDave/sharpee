@@ -37,8 +37,7 @@ export const FallsDeathMessages = {
  * Get the player's containing room, handling being inside a vehicle
  */
 function getPlayerRoom(world: WorldModel): string | null {
-  const player = world.getPlayer();
-  if (!player) return null;
+  const player = world.playerCharacter;
 
   const playerLocation = world.getLocation(player.id);
   if (!playerLocation) return null;

@@ -52,11 +52,11 @@ export function enrichWithEngineContext(
 ): ISemanticEvent[] {
   return enrichTurnEvents(events, source, {
     turn,
-    playerId: engine.context.player.id,
+    playerId: engine.player.viewpointId,
     locationId: locationId ?? undefined,
     presenceOf: presenceResolver(engine),
     perception: engine.perceptionService
-      ? { service: engine.perceptionService, player: engine.context.player, world: engine.world }
+      ? { service: engine.perceptionService, player: engine.player.character, world: engine.world }
       : undefined
   });
 }
@@ -72,7 +72,7 @@ export const enrichEventsStage: TurnStage = {
       engine,
       result.events,
       turn,
-      engine.world.getLocation(engine.context.player.id),
+      engine.world.getLocation(engine.player.viewpointId),
       { kind: 'action' }
     );
 

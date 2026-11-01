@@ -35,7 +35,7 @@ export function isGDTActive(world: WorldModel): boolean {
  * Create a GDT context for command handlers
  */
 export function createGDTContext(world: WorldModel): GDTContext {
-  const player = world.getPlayer();
+  const player = world.playerCharacter;
   if (!player) {
     throw new Error('No player entity found');
   }

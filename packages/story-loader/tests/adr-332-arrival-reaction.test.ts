@@ -120,7 +120,7 @@ async function boot(seed = 7): Promise<Booted> {
     await engine.executeTurn(input);
     return stream.slice(from);
   };
-  return { engine, story, world, player: world.getPlayer()!, turn };
+  return { engine, story, world, player: world.playerCharacter, turn };
 }
 
 const worldId = (b: Booted, irId: string): string => b.story.entityId(irId)!;

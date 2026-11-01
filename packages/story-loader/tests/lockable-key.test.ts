@@ -11,7 +11,7 @@ import { describe, expect, it } from 'vitest';
 import { compile, StoryIR } from '@sharpee/chord';
 import type { ISemanticEvent } from '@sharpee/core';
 import { unlockingAction } from '@sharpee/stdlib';
-import { IFEntity, TraitType, WorldModel, LockableTrait } from '@sharpee/world-model';
+import { IFEntity, TraitType, WorldModel, LockableTrait, ActorTrait } from '@sharpee/world-model';
 import { createStory } from '../src';
 import { runValidatePhase, runExecutePhase, runReportPhase } from '@sharpee/stdlib';
 
@@ -66,6 +66,7 @@ describe('lockable with key on container kinds (ADR-230 Phase 9a)', () => {
     const world = new WorldModel();
     story.initializeWorld(world);
     const player = story.createPlayer(world);
+    player.add(new ActorTrait({ isPlayable: true }));
     world.setPlayer(player.id);
     return { story, world, player };
   };

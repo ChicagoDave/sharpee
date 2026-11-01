@@ -13,7 +13,7 @@ import { describe, expect, it } from 'vitest';
 import { compile, StoryIR } from '@sharpee/chord';
 import type { ISemanticEvent } from '@sharpee/core';
 import { StdlibChannelRegistry } from '@sharpee/stdlib';
-import { WorldModel } from '@sharpee/world-model';
+import { WorldModel, ActorTrait } from '@sharpee/world-model';
 import { createStory, SchedulerDaemon } from '../src';
 import { stubStoryEngine } from './helpers/stub-story-engine';
 
@@ -66,6 +66,7 @@ const load = () => {
   const world = new WorldModel();
   story.initializeWorld(world);
   const player = story.createPlayer(world);
+  player.add(new ActorTrait({ isPlayable: true }));
   world.setPlayer(player.id);
   story.onEngineReady(stubStoryEngine());
   const registry = new StdlibChannelRegistry();

@@ -16,8 +16,7 @@ import {
   IFEntity,
   TraitType,
   type IValidatedCommand as ValidatedCommand,
-  IdentityTrait
-} from '@sharpee/world-model';
+  IdentityTrait, ActorTrait } from '@sharpee/world-model';
 import { registerStandardCapabilities } from '../../src/capabilities';
 import { createActionContext } from '../../src/actions/enhanced-context';
 import { Action, ActionContext } from '../../src/actions/enhanced-types';
@@ -46,7 +45,7 @@ export function setupBasicWorld(options: {
   
   // Create player
   const player = world.createEntity('yourself', 'actor');
-  player.add({ type: TraitType.ACTOR });
+  player.add(new ActorTrait({ isPlayable: true }));
   player.add({ type: TraitType.CONTAINER });
   
   // Move player to room
@@ -66,7 +65,7 @@ export function createRealTestContext(
   world: WorldModel,
   command: ValidatedCommand
 ): ActionContext {
-  const player = world.getPlayer();
+  const player = world.playerCharacter;
   if (!player) {
     throw new Error('No player set in world model');
   }

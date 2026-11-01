@@ -11,7 +11,7 @@ import { describe, expect, it } from 'vitest';
 import { compile, StoryIR } from '@sharpee/chord';
 import type { ISemanticEvent } from '@sharpee/core';
 import { actorConsultationId } from '@sharpee/stdlib';
-import { WorldModel } from '@sharpee/world-model';
+import { WorldModel, ActorTrait, TraitType } from '@sharpee/world-model';
 import type { IFEntity, InterceptorSharedData } from '@sharpee/world-model';
 import { ChordStory, createStory } from '../src';
 import { clauseOccurrenceKey } from '../src/state-keys';
@@ -38,6 +38,7 @@ function boot(source: string): Booted {
   const world = new WorldModel();
   story.initializeWorld(world);
   const player = story.createPlayer(world);
+  player.add(new ActorTrait({ isPlayable: true }));
   world.setPlayer(player.id);
   story.runtime.setTurnProvider(() => 3);
   const id = (irId: string) => story.entityId(irId)!;
@@ -178,10 +179,12 @@ describe('explicit heads on the interceptor path — the head names who acts', (
 });
 
 describe('`the player` is the role, read at fire time (D1 / ADR-132)', () => {
-  it('after `setPlayer` the same clause fires for the new PC and not the old one', () => {
+  it('after `changePlayer` the same clause fires for the new PC and not the old one', () => {
     const b = boot(SOURCE(SWORD));
     const jack = b.id('jack');
-    b.world.setPlayer(jack);
+    // The role moves to Jack, so this test makes Jack playable first (ADR-390 D1 refuses a move onto a non-playable actor).
+    (b.entity('jack').get(TraitType.ACTOR) as ActorTrait).isPlayable = true;
+    b.world.changePlayer(jack);
     expect(consult(b, b.entity('sword'), 'if.action.taking', jack).veto).toMatchObject({ error: 'not-yours' });
     expect(consult(b, b.entity('sword'), 'if.action.taking', b.playerId).veto).toBeNull();
   });

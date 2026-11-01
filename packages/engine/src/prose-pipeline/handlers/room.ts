@@ -89,8 +89,8 @@ function resolveHeadingParts(
 ): ReturnType<typeof LocationHeadingBehavior.resolve> {
   const world = context.world;
   if (!world) return [];
-  const player = world.getPlayer();
-  if (!player) return [];
+  if (!world.hasPlayerCharacter) return [];
+  const player = world.playerCharacter;
   return LocationHeadingBehavior.resolve(player as IFEntity, world as unknown as WorldModel);
 }
 

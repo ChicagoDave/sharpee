@@ -27,6 +27,7 @@ import {
   liveScenes,
   sceneWith,
   type ConversationSceneState,
+  ActorTrait,
 } from '@sharpee/world-model';
 import { ChordStory, createStory, LoadError } from '../src';
 import { runValidatePhase, runExecutePhase, runReportPhase } from '@sharpee/stdlib';
@@ -155,6 +156,7 @@ function load(source: string = SOURCE): Loaded {
   const world = new WorldModel();
   story.initializeWorld(world);
   const player = story.createPlayer(world);
+  player.add(new ActorTrait({ isPlayable: true }));
   world.setPlayer(player.id);
   return { story, world, player };
 }

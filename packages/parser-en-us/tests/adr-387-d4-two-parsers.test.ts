@@ -9,7 +9,7 @@
 import { describe, it, expect } from 'vitest';
 import { EnglishParser } from '../src/english-parser';
 import { EnglishLanguageProvider } from '@sharpee/lang-en-us';
-import { WorldModel, EntityType, IdentityTrait, type IFEntity } from '@sharpee/world-model';
+import { WorldModel, EntityType, IdentityTrait, type IFEntity, ActorTrait } from '@sharpee/world-model';
 
 /** A world with one named thing; `spares` extra entities first, so two worlds' ids differ. */
 function worldWith(itemName: string, spares = 0) {
@@ -22,6 +22,7 @@ function worldWith(itemName: string, spares = 0) {
   item.add(new IdentityTrait({ name: itemName, aliases: [itemName] }));
   world.moveEntity(player.id, room.id);
   world.moveEntity(item.id, room.id);
+  player.add(new ActorTrait({ isPlayable: true }));
   world.setPlayer(player.id);
   return { world, room, player, item };
 }

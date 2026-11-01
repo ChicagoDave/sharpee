@@ -47,8 +47,7 @@ const TURNS_REQUIRED = 4; // 4 because the turn where the lamp is turned off als
  * Check if the room is dark (no active light sources)
  */
 function isRoomDark(world: WorldModel, roomId: EntityId): boolean {
-  const player = world.getPlayer();
-  if (!player) return true;
+  const player = world.playerCharacter;
 
   // Check room's isDark property
   const room = world.getEntity(roomId);
@@ -118,8 +117,7 @@ function triggerEndgame(
   topOfStairsId: EntityId
 ): ISemanticEvent[] {
   const events: ISemanticEvent[] = [];
-  const player = world.getPlayer();
-  if (!player) return events;
+  const player = world.playerCharacter;
 
   // Set endgame state flags
   world.setStateValue(ENDGAME_STARTED_KEY, true);

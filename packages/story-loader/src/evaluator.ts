@@ -86,8 +86,6 @@ export interface EvalContext {
 export interface EntityIdResolver {
   entityId(irId: string): string | undefined;
   irIdOf(worldId: string): string | undefined;
-  /** The player's world id once created (before the engine calls setPlayer). */
-  playerWorldId(): string | undefined;
 }
 
 export class Evaluator {
@@ -266,12 +264,12 @@ export class Evaluator {
         // ADR-376 D6, D7: within the player's sight from where they look —
         // their open vehicle, their own cell out of it, or a landmark room
         // with `sight:`. False when either is positioned in no expanse.
-        const player = ctx.world.getPlayer();
+        const player = ctx.world.playerCharacter;
         const thing = ctx.world.getEntity(this.entityValue(cond.thing, ctx));
         return player !== undefined && thing !== undefined && inSight(ctx.world, player, thing);
       }
       case 'sight-band': {
-        const player = ctx.world.getPlayer();
+        const player = ctx.world.playerCharacter;
         const thing = ctx.world.getEntity(this.entityValue(cond.thing, ctx));
         const lookout = player ? lookoutOf(ctx.world, player) : undefined;
         const sighting = lookout && thing ? sightingOf(ctx.world, lookout, thing) : undefined;
@@ -468,8 +466,7 @@ export class Evaluator {
         // it; anything else shares the player's containing room; a
         // no-location subject is never here (false, not an error).
         const subjectId = this.entityValue(cond.subject, ctx);
-        const playerId = ctx.world.getPlayer()?.id;
-        if (!playerId) return raw(false);
+        const playerId = ctx.world.playerCharacter.id;
         if (subjectId === playerId) return raw(true);
         const playerRoom = ctx.world.getContainingRoom(playerId)?.id ?? ctx.world.getLocation(playerId);
         if (ctx.world.getEntity(subjectId)?.has(TraitType.ROOM)) return raw(playerRoom === subjectId);
@@ -982,9 +979,9 @@ export class Evaluator {
   // --------------------------------------------------------------- helpers
 
   private playerId(world: WorldModel): string {
-    const id = world.getPlayer()?.id ?? this.ids.playerWorldId();
-    if (!id) throw new LoadError('No player entity exists yet.');
-    return id;
+    // ADR-390 D3: the role is a world fact from the start block's assignment on.
+    if (!world.hasPlayerCharacter) throw new LoadError('No player entity exists yet.');
+    return world.playerCharacter.id;
   }
 
   private requireWorldId(irId: string): string {

@@ -424,7 +424,7 @@ export function applyCombatResult(
   // it here too would pre-empt the sink and silence that event.
   if (health) {
     health.health = result.targetNewHealth;
-    if (result.targetKilled && target.id !== world.getPlayer()?.id) {
+    if (result.targetKilled && target.id !== world.playerCharacter.id) {
       HealthBehavior.kill(health, 'combat');
     }
   }

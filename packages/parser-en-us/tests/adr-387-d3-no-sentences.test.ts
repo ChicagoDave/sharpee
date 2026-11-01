@@ -36,7 +36,7 @@ function parserOverDoor() {
   world.setLanguageWords(provider.getLanguageWords());
   const room = world.createEntity('Hall', EntityType.ROOM);
   const player = world.createEntity('you', EntityType.ACTOR);
-  player.add(new ActorTrait());
+  player.add(new ActorTrait({ isPlayable: true }));
   player.add(new ContainerTrait());
   world.moveEntity(player.id, room.id);
   world.setPlayer(player.id);

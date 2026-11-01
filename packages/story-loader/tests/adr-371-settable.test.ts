@@ -12,7 +12,7 @@
 
 import { describe, expect, it } from 'vitest';
 import { compile, StoryIR } from '@sharpee/chord';
-import { WorldModel, findTraitWithCapability } from '@sharpee/world-model';
+import { WorldModel, findTraitWithCapability, ActorTrait } from '@sharpee/world-model';
 import { createStory } from '../src';
 import { CHORD_STATE_PREFIX } from '../src/state-keys';
 
@@ -118,6 +118,7 @@ describe('the `to <value>` tail at fire time (ADR-371 D4)', () => {
     const interceptor = world.getInterceptorForAction(selector, 'if.action.setting')!.interceptor;
     expect(interceptor).toBeDefined();
     const player = world.getAllEntities().find((e) => e.name === 'Pilot')!;
+    player.add(new ActorTrait({ isPlayable: true }));
     world.setPlayer(player.id);
 
     const forKepler = interceptor.preValidate?.(selector, world, player.id, { value: 'kepler-station' });

@@ -34,8 +34,7 @@ export function registerCombatDisengagementHandler(
     if (!data?.fromRoom) return [];
 
     // Only handle player movement, not NPC movement
-    const player = world.getPlayer();
-    if (!player) return [];
+    const player = world.playerCharacter;
 
     // Check the player actually moved (they should be in toRoom now)
     const playerLocation = world.getLocation(player.id);

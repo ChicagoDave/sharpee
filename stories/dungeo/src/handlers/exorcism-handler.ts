@@ -201,7 +201,7 @@ export function registerExorcismHandler(
 
     if (targetId && exorcismItems.book && targetId === exorcismItems.book) {
       // Check if player is at Entry to Hades
-      const player = w.getPlayer();
+      const player = w.playerCharacter;
       if (player) {
         const playerLocation = w.getLocation(player.id);
         if (playerLocation === entryToHadesId) {
@@ -218,7 +218,7 @@ export function registerExorcismHandler(
 
     if (targetId && exorcismItems.candles && targetId === exorcismItems.candles) {
       // Check if player is at Entry to Hades
-      const player = w.getPlayer();
+      const player = w.playerCharacter;
       if (player) {
         const playerLocation = w.getLocation(player.id);
         if (playerLocation === entryToHadesId) {

@@ -71,7 +71,7 @@ const carouselExitResolver: ExitResolver = (room, trait, _direction, staticExit,
   // all. Now that an NPC's step is the real going action (ADR-328 D5), a
   // non-player mover crosses the static topology and draws nothing — the
   // named points' streams stay the player's alone.
-  if (ctx.actorId !== ctx.world.getPlayer()?.id) {
+  if (ctx.actorId !== ctx.world.playerCharacter.id) {
     return undefined;
   }
   const data = trait as CarouselExitTrait;
@@ -158,7 +158,7 @@ export function registerCarouselExits(world: WorldModel, ids: CarouselExitRoomId
     const data = event.data as { toRoom?: string; actor?: { id?: string } } | undefined;
     if (data?.toRoom !== ids.lowRoom) return null;
     if (w.getStateValue(CAROUSEL_ACTIVE_KEY) !== true) return null;
-    const playerId = w.getPlayer()?.id;
+    const playerId = w.playerCharacter.id;
     if (!playerId || data?.actor?.id !== playerId) return null;
     return messageEvent(CarouselMessages.COMPASS_SPINNING);
   }, { key: 'dungeo.carousel.entry-message' });

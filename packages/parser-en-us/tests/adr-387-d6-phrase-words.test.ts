@@ -11,7 +11,7 @@ import { describe, it, expect } from 'vitest';
 import { EnglishParser } from '../src/english-parser';
 import { EnglishGrammarEngine } from '../src/english-grammar-engine';
 import { EnglishLanguageProvider } from '@sharpee/lang-en-us';
-import { WorldModel, EntityType, IdentityTrait } from '@sharpee/world-model';
+import { WorldModel, EntityType, IdentityTrait, ActorTrait } from '@sharpee/world-model';
 import type { GrammarContext } from '@sharpee/if-domain';
 
 /** English, addressing the actor in the first person. */
@@ -41,6 +41,7 @@ function worldWithThings(provider: EnglishLanguageProvider, names: string[]) {
   const room = world.createEntity('Room', EntityType.ROOM);
   const player = world.createEntity('you', EntityType.ACTOR);
   world.moveEntity(player.id, room.id);
+  player.add(new ActorTrait({ isPlayable: true }));
   world.setPlayer(player.id);
   for (const name of names) {
     const thing = world.createEntity(name, EntityType.ITEM);

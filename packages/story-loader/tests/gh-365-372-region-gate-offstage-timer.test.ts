@@ -19,7 +19,7 @@ import { describe, expect, it } from 'vitest';
 import { compile, StoryIR } from '@sharpee/chord';
 import type { ISemanticEvent } from '@sharpee/core';
 import { goingAction } from '@sharpee/stdlib';
-import { Direction, DirectionType, WorldModel } from '@sharpee/world-model';
+import { Direction, DirectionType, WorldModel, ActorTrait } from '@sharpee/world-model';
 import { ChordStory, createStory, SchedulerDaemon } from '../src';
 
 const CHORD_STORY_STATE_KEY = 'chord.story.state';
@@ -53,6 +53,7 @@ function boot(source: string, seed = 5): Booted {
   const world = new WorldModel();
   story.initializeWorld(world);
   const player = story.createPlayer(world);
+  player.add(new ActorTrait({ isPlayable: true }));
   world.setPlayer(player.id);
   const daemons = story.runtime.buildSchedulerDaemons();
   story.runtime.setTurnProvider(() => booted.turn);
@@ -178,7 +179,7 @@ describe('GH #365 — a region daemon does not mutate the world while the player
     b.tick(); // in the Street: nothing
 
     b.go(Direction.NORTH);
-    expect(b.world.getContainingRoom(b.world.getPlayer()!.id)?.id).toBe(plaza);
+    expect(b.world.getContainingRoom(b.world.playerCharacter.id)?.id).toBe(plaza);
     b.tick();
 
     expect(b.world.getStateValue(CHORD_STORY_STATE_KEY)).toBe('night');

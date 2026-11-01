@@ -45,7 +45,7 @@ describe('GrammarScopeResolver scope bases against a real WorldModel (ADR-273)',
     room.add(new ContainerTrait());
 
     player = world.createEntity('Player', 'actor');
-    player.add(new ActorTrait());
+    player.add(new ActorTrait({ isPlayable: true }));
     player.add(new ContainerTrait());
 
     rock = world.createEntity('Rock', 'item');
@@ -164,7 +164,7 @@ describe('GH #312: the parse-time bases include the actor', () => {
     room.add(new RoomTrait());
     room.add(new ContainerTrait());
     player = world.createEntity('Player', 'actor');
-    player.add(new ActorTrait());
+    player.add(new ActorTrait({ isPlayable: true }));
     player.add(new ContainerTrait());
     world.moveEntity(player.id, room.id);
     world.setPlayer(player.id);

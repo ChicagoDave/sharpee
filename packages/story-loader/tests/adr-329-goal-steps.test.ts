@@ -126,7 +126,7 @@ async function boot(source: string, seed = 11): Promise<Booted> {
   const step = () => errand()?.currentStep;
   const active = () => errand()?.active;
   return {
-    engine, story, world, player: world.getPlayer()!, stream, id, step, active,
+    engine, story, world, player: world.playerCharacter, stream, id, step, active,
     at: (irId) => world.getLocation(id(irId)),
     turn: async () => { expect((await engine.executeTurn('wait')).success).toBe(true); },
   };

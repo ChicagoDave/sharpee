@@ -19,7 +19,8 @@ function mockContext(world: ReturnType<typeof mockWorld>) {
 function mockWorld(entities: Map<string, IFEntity> = new Map(), playerId?: string) {
   return {
     getEntity: (id: string) => entities.get(id),
-    getPlayer: () => playerId ? entities.get(playerId) : undefined,
+    hasPlayerCharacter: playerId !== undefined,
+    get playerCharacter() { return entities.get(playerId!)!; },
     getLocation: (entityId: string) => undefined,
   };
 }

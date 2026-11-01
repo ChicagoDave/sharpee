@@ -494,7 +494,7 @@ export interface ActionInterceptor {
    * // Emit: refusal has side effects (poison death on blocked take)
    * onBlocked(entity, world, actorId, error, sharedData) {
    *   if (!sharedData.poisonDeath) return null;
-   *   killPlayer(world, world.getPlayer()!, { cause: 'poison', terminal: true });
+   *   killPlayer(world, world.playerCharacter, { cause: 'poison', terminal: true });
    *   return { emit: [createEffect(PLAYER_DIED_EVENT, { cause: 'poison', terminal: true })] };
    * }
    */

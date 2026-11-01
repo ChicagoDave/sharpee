@@ -98,7 +98,7 @@ function makeCommand(actionId: string, entity: IFEntity, topicText?: string): Va
 }
 
 function runAction(action: Action, world: WorldModel, command: ValidatedCommand) {
-  const context = createActionContext(world, world.getPlayer()!, action, command, fixtureRandom());
+  const context = createActionContext(world, world.playerCharacter, action, command, fixtureRandom());
   const validation = runValidatePhase(action, context);
   expect(validation.valid).toBe(true);
   runExecutePhase(action, context);
@@ -129,6 +129,7 @@ describe('conversation dispatch × the real scene runtime (ADR-320 Phase 6)', ()
     room.add(new ContainerTrait());
 
     player = makeActor('Player', false);
+    player.add(new ActorTrait({ isPlayable: true }));
     world.setPlayer(player.id);
     world.moveEntity(player.id, room.id);
 

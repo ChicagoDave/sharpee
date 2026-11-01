@@ -14,7 +14,7 @@ import { describe, expect, it } from 'vitest';
 import type { ISemanticEvent } from '@sharpee/core';
 import { EnglishLanguageProvider } from '@sharpee/lang-en-us';
 import { nounPhraseFor } from '@sharpee/stdlib';
-import { IdentityTrait, StandardCapabilities, WorldModel, type IFEntity } from '@sharpee/world-model';
+import { IdentityTrait, StandardCapabilities, WorldModel, type IFEntity, ActorTrait } from '@sharpee/world-model';
 import type { ITextBlock, TextContent } from '@sharpee/text-blocks';
 import { ProsePipeline } from '../../src/prose-pipeline/pipeline';
 
@@ -43,6 +43,7 @@ function fixture(): Fixture {
   world.registerCapability(StandardCapabilities.TEXT_STATE, { initialData: {} });
 
   const player = world.createEntity('you', 'actor');
+  player.add(new ActorTrait({ isPlayable: true }));
   world.setPlayer(player.id);
   const thief = world.createEntity('thief', 'actor');
   thief.add(new IdentityTrait({ name: 'thief', nounType: 'unique' }));

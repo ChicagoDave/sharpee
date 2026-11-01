@@ -6,6 +6,7 @@
 // adjectives, the observer flag).
 
 import { describe, it, expect } from 'vitest';
+import { ActorTrait } from '../../../src/traits/actor/actorTrait';
 import {
   matchNoun,
   namingSurfaceOf,
@@ -95,6 +96,7 @@ describe('namingSurfaceOf (ADR-385 D1)', () => {
     const kitchen = room('Kitchen');
     const player = author.createEntity('yourself', EntityType.ACTOR);
     author.moveEntity(player.id, parlor.id);
+    player.add(new ActorTrait({ isPlayable: true }));
     world.setPlayer(player.id);
     return { world, author, parlor, library, kitchen, player };
   };

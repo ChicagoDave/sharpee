@@ -402,7 +402,7 @@ function handleFightingState(context: NpcContext, props: ThiefCustomProperties):
     }
 
     if (shouldAttack) {
-      const player = context.world.getPlayer();
+      const player = context.world.playerCharacter;
       if (player) {
         context.narrate(ThiefMessages.ATTACKS, { npcName: context.npc.name });
         // The real attacking action — the melee interceptor resolves the blow

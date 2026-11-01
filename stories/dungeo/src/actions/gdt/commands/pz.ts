@@ -123,7 +123,7 @@ export const pzHandler: GDTCommandHandler = {
         state.playerPos = ENTRY_POSITION;
         // Move player entity to Room in a Puzzle
         const roomInPuzzleId = context.world.getStateValue(PUZZLE_ROOM_KEY);
-        const player = context.world.getPlayer();
+        const player = context.world.playerCharacter;
         if (roomInPuzzleId && player) {
           context.world.moveEntity(player.id, roomInPuzzleId);
         }
@@ -149,7 +149,7 @@ export const pzHandler: GDTCommandHandler = {
         }
         // Ensure player is in Room in a Puzzle
         const roomId = context.world.getStateValue(PUZZLE_ROOM_KEY);
-        const p = context.world.getPlayer();
+        const p = context.world.playerCharacter;
         if (roomId && p) {
           context.world.moveEntity(p.id, roomId);
         }

@@ -2,6 +2,7 @@
 import { WorldModel } from '../../src/world/WorldModel';
 import { IFEntity } from '../../src/entities/if-entity';
 import { RoomTrait } from '../../src/traits/room/roomTrait';
+import { ActorTrait } from '../../src/traits/actor/actorTrait';
 
 /**
  * Gets an entity by name for test assertions
@@ -96,6 +97,7 @@ export function createTestScenario(): TestScenario {
   
   // Create a player (will always be 'a01' as first actor)
   const player = world.createEntity('Player', 'actor');
+  player.add(new ActorTrait({ isPlayable: true }));
   world.setPlayer(player.id);
   
   return {

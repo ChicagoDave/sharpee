@@ -30,6 +30,7 @@ beforeAll(() => {
 
   // Player — excluded by id.
   const player = world.createEntity('yourself', EntityType.ACTOR);
+  player.add(new ActorTrait({ isPlayable: true }));
   world.setPlayer(player.id);
 
   // A room with two exits and a description.

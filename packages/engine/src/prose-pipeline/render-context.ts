@@ -55,8 +55,10 @@ export interface WorldModelLike {
   getEntity(id: EntityId): IEntity | undefined;
   getContents(containerId: EntityId): IEntity[];
   getContainingRoom(entityId: EntityId): IEntity | undefined;
-  /** The player entity, for narrative verb-person agreement (ADR-199 §4 B). */
-  getPlayer(): IEntity | undefined;
+  /** Whether any actor holds the player role (ADR-390 D1). */
+  readonly hasPlayerCharacter: boolean;
+  /** The player entity, for narrative verb-person agreement (ADR-199 §4 B); throws when no actor holds the role. */
+  readonly playerCharacter: IEntity;
   /** Read a capability's data map (ADR-196 text-state read). */
   getCapability?(name: string): Record<string, unknown> | undefined;
   /** Merge into a capability's data map (ADR-196 text-state write — the one sanctioned mutation). */

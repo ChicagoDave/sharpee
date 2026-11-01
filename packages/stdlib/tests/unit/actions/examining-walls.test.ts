@@ -27,6 +27,7 @@ import {
   IFEntity,
   TraitType,
   WorldModel,
+  ActorTrait,
 } from '@sharpee/world-model';
 
 import { examiningAction } from '../../../src/actions/standard/examining';
@@ -69,6 +70,7 @@ function setupWallScenario(opts: {
 
   const player = author.createEntity('yourself', EntityType.ACTOR);
   author.moveEntity(player.id, parlor.id);
+  player.add(new ActorTrait({ isPlayable: true }));
   world.setPlayer(player.id);
 
   let obstructor: IFEntity | undefined;

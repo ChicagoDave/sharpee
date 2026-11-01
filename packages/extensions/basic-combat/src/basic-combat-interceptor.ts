@@ -76,7 +76,7 @@ export const BasicCombatInterceptor: ActionInterceptor = {
       : findWieldedWeapon(attacker, world);
 
     const combatService = new CombatService();
-    const blowPoint = attacker.id === world.getPlayer()?.id ? HERO_BLOW_POINT : VILLAIN_BLOW_POINT;
+    const blowPoint = attacker.id === world.playerCharacter.id ? HERO_BLOW_POINT : VILLAIN_BLOW_POINT;
     // The skill roll draws on the blow point's own stream; the world
     // mutation (applyCombatResult) stays outside the resolve (D8).
     const { value: combatResult } = random.resolve(

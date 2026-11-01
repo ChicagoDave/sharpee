@@ -18,7 +18,7 @@ import type { ISemanticEvent } from '@sharpee/core';
 import { EngineRandomService } from '@sharpee/engine';
 import { bootEngine } from './helpers/boot-engine';
 import { askingAction } from '@sharpee/stdlib';
-import { CharacterModelTrait, IFEntity, TraitType, WorldModel } from '@sharpee/world-model';
+import { CharacterModelTrait, IFEntity, TraitType, WorldModel, ActorTrait } from '@sharpee/world-model';
 import { ChordStory, createStory } from '../src';
 import { runValidatePhase, runExecutePhase, runReportPhase } from '@sharpee/stdlib';
 
@@ -71,6 +71,7 @@ function load(): Loaded {
   const world = new WorldModel();
   story.initializeWorld(world);
   const player = story.createPlayer(world);
+  player.add(new ActorTrait({ isPlayable: true }));
   world.setPlayer(player.id);
   return { story, world, player };
 }

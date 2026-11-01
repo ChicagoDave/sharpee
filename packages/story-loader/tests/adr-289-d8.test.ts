@@ -12,7 +12,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import { compile, StoryIR } from '@sharpee/chord';
-import { AuthorModel, IFEntity, TraitType, WorldModel } from '@sharpee/world-model';
+import { AuthorModel, IFEntity, TraitType, WorldModel, ActorTrait } from '@sharpee/world-model';
 import type { ReadableTrait } from '@sharpee/world-model';
 import { ChordStory, createStory, Evaluator } from '../src';
 import { stubStoryEngine } from './helpers/stub-story-engine';
@@ -55,6 +55,7 @@ function load(source: string): Loaded {
   const world = new WorldModel();
   story.initializeWorld(world);
   const player = story.createPlayer(world);
+  player.add(new ActorTrait({ isPlayable: true }));
   world.setPlayer(player.id);
   return { story, world, player };
 }

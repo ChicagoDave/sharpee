@@ -182,7 +182,7 @@ export const SphereTakingInterceptor: ActionInterceptor = {
           messageId: CageMessages.POISON_DEATH
         })
       );
-      const player = world.getPlayer();
+      const player = world.playerCharacter;
       if (player) {
         killPlayer(world, player, { cause: 'cage_poison', terminal: true });
       }

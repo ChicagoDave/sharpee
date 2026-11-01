@@ -124,12 +124,13 @@ describe('AuthorModel', () => {
   });
 
   describe('State Management', () => {
-    it('should set player without validation', () => {
+    it('assigns the player role through the one writer, which requires a playable actor (ADR-390 D1)', () => {
       const ghost = author.createEntity('Ghost', 'spirit');
-      // Not a typical player entity, but AuthorModel allows it
-      
+      expect(() => author.setPlayer(ghost.id)).toThrow(/does not have ActorTrait/);
+      ghost.add(new ActorTrait({ isPlayable: true }));
+
       author.setPlayer(ghost.id);
-      expect(world.getPlayer()).toBe(ghost);
+      expect(world.playerCharacter).toBe(ghost);
     });
 
     it('should clear all world data', () => {
@@ -138,14 +139,16 @@ describe('AuthorModel', () => {
       const item = author.createEntity('Item', 'item');
       author.moveEntity(item.id, room.id);
       author.setStateValue('test', 'value');
-      author.setPlayer(item.id);
+      const actor = author.createEntity('Actor', 'actor');
+      actor.add(new ActorTrait({ isPlayable: true }));
+      author.setPlayer(actor.id);
       
       // Clear everything
       author.clear();
       
       expect(world.getAllEntities()).toHaveLength(0);
       expect(world.getStateValue('test')).toBeUndefined();
-      expect(world.getPlayer()).toBeUndefined();
+      expect(world.hasPlayerCharacter).toBe(false);
     });
   });
 
@@ -176,14 +179,14 @@ describe('AuthorModel', () => {
 
       // Create and place player
       const player = author.createEntity('Player', 'actor');
-      player.add(new ActorTrait());
+      player.add(new ActorTrait({ isPlayable: true }));
       author.moveEntity(player.id, kitchen.id);
       author.setPlayer(player.id);
 
       // Verify the setup
       expect(world.getContents(cabinet.id)).toHaveLength(2);
       expect(world.getLocation(treasure.id)).toBe(chest.id);
-      expect(world.getPlayer()).toBe(player);
+      expect(world.playerCharacter).toBe(player);
     });
   });
 

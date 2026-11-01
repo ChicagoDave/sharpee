@@ -24,10 +24,10 @@ export interface WorldQuery {
    */
   hasEntity(id: string): boolean;
 
-  /**
-   * Get the player entity
-   */
-  getPlayer(): IFEntity | undefined;
+  /** Whether any actor holds the player role yet (ADR-390 D1). */
+  readonly hasPlayerCharacter: boolean;
+  /** The actor holding the player role; throws when none does (ADR-390 D1). */
+  readonly playerCharacter: IFEntity;
 
   /**
    * Get the room the player is in
@@ -84,11 +84,9 @@ export function createWorldQuery(world: IWorldModel): WorldQuery {
   return {
     getEntity: (id: string) => world.getEntity(id),
     hasEntity: (id: string) => world.hasEntity(id),
-    getPlayer: () => world.getPlayer(),
-    getCurrentRoom: () => {
-      const player = world.getPlayer();
-      return player ? world.getContainingRoom(player.id) : undefined;
-    },
+    get hasPlayerCharacter() { return world.hasPlayerCharacter; },
+    get playerCharacter() { return world.playerCharacter; },
+    getCurrentRoom: () => (world.hasPlayerCharacter ? world.getContainingRoom(world.playerCharacter.id) : undefined),
     getContainingRoom: (entityId: string) => world.getContainingRoom(entityId),
     getLocation: (entityId: string) => world.getLocation(entityId),
     getContents: (containerId: string) => world.getContents(containerId),

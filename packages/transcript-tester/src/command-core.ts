@@ -756,7 +756,7 @@ export function worldEntityRef(entity: any): WorldEntityRef {
  */
 export function captureWorldSnapshot(engine: { world?: WorldModel }): WorldSnapshot | undefined {
   const world = engine.world;
-  const player = world?.getPlayer?.();
+  const player = world?.hasPlayerCharacter ? world.playerCharacter : undefined;
   if (!world || !player) return undefined;
   const locationId = world.getLocation?.(player.id);
   const location = locationId
