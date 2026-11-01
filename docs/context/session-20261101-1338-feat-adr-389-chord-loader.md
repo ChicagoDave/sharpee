@@ -36,7 +36,7 @@ The `use`-gated constructs the analyzer used to refuse by reading the AST are lo
 ## Next Phase
 - **Phase 7**: "Core adjective table (D3)" — `CORE_TRAIT_ROUTES` replaces the 41-arm switch in `applyTraitAdjectives`; unmatched word is a LoadError naming the word; two bidirectional assertions in `manifest-conformance.test.ts` against chord's `TRAIT_ADJECTIVES`; the four route-table `unknown` casts become typed writes and AC-5's grep must then print nothing.
 - **Tier**: Medium (~250 tool-call budget)
-- **Entry state**: Phase 6 committed; David's go. Platform change: discussion with David first per the plan's D7 line.
+- **Entry state**: Phase 6 committed (`4a84a9344`); Phase 7 still PENDING; David's go. Platform change: discussion with David first per the plan's D7 line.
 - `plan-phase.sh advance` was deliberately not run in this write, per the invoker (Phase 7 waits for David's go); `commit-local` may run it after the phase commit, which is not the same as David's go.
 
 ## Open Items
@@ -46,6 +46,10 @@ The `use`-gated constructs the analyzer used to refuse by reading the AST are lo
 
 ### Long Term
 - None new this session.
+
+### Not in the issue store
+- Duplicate progressive file `docs/context/session-20261101-0702-feat-adr-389-chord-loader.md` awaits David's deletion confirmation; untouched.
+- Out-of-scope dirty paths left untouched: `docs/context/archive/session-20261029-1923-main.md` (modified), `docs/work/save-restore-551/` (untracked).
 
 ## Files Modified
 
@@ -74,12 +78,12 @@ The `use`-gated constructs the analyzer used to refuse by reading the AST are lo
 ## Notes
 
 - Closed this session by the invoker: I-640 (ruling). Not closed again here; no issue closed by this write.
-- Phase 5's code is committed `dad0f5f5d`; its phase close is `e377e74ab`. Phase 6's work is uncommitted at write time and ships in the next commit.
+- Phase 5's code is committed `dad0f5f5d`; its phase close is `e377e74ab`. Phase 6 landed as `4a84a9344` (trailer verified "Co-Authored-By: Claude Fable 5.1"). Plan state: Phases 0-6 DONE; Phase 7 PENDING and not advanced (waits for David's go). No proposal items (P-n) were cited by the completed phases.
 - Out of scope, untouched: `docs/context/archive/session-20261029-1923-main.md` (modified by a prior session) and `docs/work/save-restore-551/` (untracked). `docs/context/session-20261101-0702-feat-adr-389-chord-loader.md` is a duplicate progressive file awaiting David's deletion confirmation; not touched.
 - Reported by the invoker, not corroborated by the event log `[reported by session, unverified]`: chord 1779 passing in 111 files (was 1768); story-loader 1524 passing / 1 skipped in 191 files (floor 1524); `./repokit build` exit 0; AC-4 greps (gatedConstruct empty, backstop 5, each moved code one emit site in `validate-ir.ts`); fixture census identical; tree runs vs `docs/work/adr-389-chord-loader/baseline/`: secret-letter byte-identical (exit 1, same failing cards), ides-of-march byte-identical, fernhill identical except one wall-clock field (1.1s to 1.0s). Verified from the event log: chord `tsc -p` Build passed 2026-11-01T20:24:16Z (fresh after the last chord edit). The story-loader `tsc --noEmit` pass at 20:20:47Z predates later story-loader test edits (20:22:19Z), so it is also reported, not verified, for the final tree.
 - Rule 15 `mutation-verification` not fired (no edited function matches the name signal; `validateIR` is pure and the loader edits delete guards). No rule 12 Behavior Statement (no side-effect function changed).
 
-**Session duration**: ~1 hour at this checkpoint
+**Session duration**: ~1.5 hours (13:38 to 15:00)
 
 **Approach**: Record the floor ruling, flip Phase 5; then per David's option-a ruling move each remaining AST-level gate to a fact in the IR plus one `validateIR` emit, delete the loader's duplicate throws and the registry slot, and re-pin tests to the compile-seam entry point.
 
@@ -88,12 +92,12 @@ The `use`-gated constructs the analyzer used to refuse by reading the AST are lo
 ## Session Metadata
 
 - **Session**: 73b023
-- **Status**: IN-FLIGHT
+- **Status**: COMPLETE (unverified: chord 1779 / story-loader 1524 suite counts, `./repokit build` exit 0, AC-4 greps, fixture census and tree-run comparisons; only the chord `tsc -p` pass is corroborated by the event log)
 - **Blocker** (if any): N/A
 - **Blocker Category**: N/A
 - **Estimated Remaining** (if incomplete): N/A
 - **Rollback Safety**: safe to revert
-- **Commits**: `e377e74ab` (Phase 5 close, landed this session) — this write is staged by the next commit (rule 18); its hash is in `git log -- docs/context/session-20261101-1338-feat-adr-389-chord-loader.md`
+- **Commits**: `e377e74ab` (Phase 5 close) and `4a84a9344` (Phase 6, 25 files, 644 insertions, 443 deletions) landed this session — this write is staged by the next commit (rule 18, finalize's commit-remote, which pushes); its hash is in `git log -- docs/context/session-20261101-1338-feat-adr-389-chord-loader.md`
 
 ## Dependency/Prerequisite Check
 
@@ -124,3 +128,4 @@ The `use`-gated constructs the analyzer used to refuse by reading the AST are lo
 
 **Progressive update**: checkpoint 2026-11-01 13:54 — Phase 5 flipped DONE through plan-phase.sh after David's I-640 ruling (floor 1524); ADR-389 and plan amended; Phase 6 next.
 **Progressive update**: checkpoint 2026-11-01 14:38 — Phase 6 (D4c) flipped DONE through plan-phase.sh (exit 0; advance not run per invoker); gates moved into validateIR, gatedConstruct slot and adr-276-backstops test deleted; Phase 7 next.
+**Progressive update**: session completed 2026-11-01 15:00 — terminal write; Phase 6 landed as 4a84a9344, Phase 5 as e377e74ab; Status promoted from IN-FLIGHT; Phase 7 left PENDING for David's go.
