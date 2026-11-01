@@ -38,7 +38,7 @@ const load = (source: string = FIXTURE) => {
   const player = story.createPlayer(world);
   player.add(new ActorTrait({ isPlayable: true }));
   world.setPlayer(player.id);
-  const worldId = (slug: string): string => story.entityId(slug)!;
+  const worldId = (slug: string): string => slug;
   return { story, world, player, worldId };
 };
 

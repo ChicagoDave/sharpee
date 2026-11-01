@@ -51,6 +51,7 @@ import { directionOfWord } from './direction-words.js';
 import { askedWordFor, dialogueTurn, recencyWordFor } from '@sharpee/character';
 import { CHAPTER_CURRENT_KEY } from '@sharpee/ext-chapters';
 import { LoadError } from './errors.js';
+import { worldIdOf } from './identity.js';
 import { CHORD_RNG_KEY, CHORD_STATE_PREFIX, CHORD_STORY_STATE_KEY, CHORD_TRAIT_PREFIX, IDLE_TIMER_RECORD, adjacentKey, counterKey, landingKey, timerKey, type AdjacentRecord, type LandingRecord, type TimerRecord } from './state-keys.js';
 
 export interface EvalContext {
@@ -80,12 +81,6 @@ export interface EvalContext {
    * text rows: the normalized primary), for `asked`'s per-topic count.
    */
   conversationTopic?: string;
-}
-
-/** Resolves IR ids to world ids (implemented by ChordStory). */
-export interface EntityIdResolver {
-  entityId(irId: string): string | undefined;
-  irIdOf(worldId: string): string | undefined;
 }
 
 export class Evaluator {
@@ -145,11 +140,7 @@ export class Evaluator {
    */
   private readonly moodWordAxes: Record<string, { valence: number; arousal: number }>;
 
-  constructor(
-    ir: StoryIR,
-    private readonly ids: EntityIdResolver,
-    seed?: number,
-  ) {
+  constructor(ir: StoryIR, seed?: number) {
     for (const c of ir.conditions) this.conditions.set(c.name, c.condition);
     this.irEntities = ir.entities;
     for (const e of ir.entities) this.irEntityById.set(e.id, e);
@@ -301,9 +292,8 @@ export class Evaluator {
         // story identity) is not one of the matches: false, not a throw.
         const named = this.namedCondition(cond.condition);
         const subjectId = this.entityValue(cond.subject, ctx);
-        const irId = this.ids.irIdOf(subjectId);
-        if (irId === undefined) return false;
-        return this.evalCondition(named, { ...ctx, it: irId });
+        if (!this.irEntityById.has(subjectId)) return false;
+        return this.evalCondition(named, { ...ctx, it: subjectId });
       }
       case 'predicate':
         return this.evalPredicate(cond, ctx);
@@ -379,7 +369,7 @@ export class Evaluator {
         // ADR-320 D9: the scene between owner and partner noticed a live
         // thread abandoned THIS turn (the scene runtime's noteTopicMove
         // stamp). No live scene between the pair: false, not an error.
-        const ownerWorldId = this.ids.entityId(this.requireIt(cond.kind, ctx));
+        const ownerWorldId = worldIdOf(ctx.world, this.requireIt(cond.kind, ctx));
         if (ownerWorldId === undefined) return false;
         const partnerId = this.conversationPartnerId(cond.kind, ctx);
         const scene = sceneWith(ctx.world, ownerWorldId);
@@ -391,7 +381,7 @@ export class Evaluator {
 
   /** The conversation owner's WORLD id — `it` resolved (ADR-320 predicates). */
   private conversationOwnerId(kind: string, ctx: EvalContext): string {
-    const worldId = this.ids.entityId(this.requireIt(kind, ctx));
+    const worldId = worldIdOf(ctx.world, this.requireIt(kind, ctx));
     if (worldId === undefined) {
       throw new LoadError(`\`${kind}\`: the owner \`${ctx.it}\` was never built into the world.`);
     }
@@ -438,8 +428,7 @@ export class Evaluator {
         // IR kind-noun compositions (`a marble`, `a room`). An entity
         // outside the story's IR classifies as nothing.
         const subjectId = this.entityValue(cond.subject, ctx);
-        const irId = this.ids.irIdOf(subjectId);
-        const irEntity = irId !== undefined ? this.irEntityById.get(irId) : undefined;
+        const irEntity = this.irEntityById.get(subjectId);
         if (!irEntity) return raw(false);
         const classifier =
           cond.object.kind === 'symbol' ? cond.object.name : String(this.evalValue(cond.object, ctx));
@@ -520,11 +509,8 @@ export class Evaluator {
           // for a carried lit light source — never the raw `requiresLight` field.
           return VisibilityBehavior.isDark(entity, ctx.world);
         }
-        const irId = this.ids.irIdOf(subject);
-        if (irId !== undefined) {
-          const state = ctx.world.getStateValue(CHORD_STATE_PREFIX + irId);
-          if (state !== undefined && state === symbol) return true;
-        }
+        const state = ctx.world.getStateValue(CHORD_STATE_PREFIX + subject);
+        if (state !== undefined && state === symbol) return true;
         const adjective = this.stateAdjectiveHolds(entity, symbol, ctx.world);
         if (adjective !== null) return adjective;
         // ADR-310 D16 / ADR-318: interior classification — mood, threat,
@@ -641,13 +627,13 @@ export class Evaluator {
         return this.playerId(ctx.world);
       case 'it': {
         if (!ctx.it) throw new LoadError('`it` used outside an entity-scoped clause.');
-        return this.requireWorldId(ctx.it);
+        return this.worldId(ctx, ctx.it);
       }
       case 'story':
         // The story object is not an entity — only `change` targets it.
         throw new LoadError('The story object has no entity value — use `change the story to <state>`.');
       case 'entity':
-        return this.requireWorldId(value.id);
+        return this.worldId(ctx, value.id);
       case 'field': {
         const base = this.evalValue(value.base, ctx);
         if (typeof base !== 'string') {
@@ -681,7 +667,7 @@ export class Evaluator {
         // The `each`-block binder (ratchet E3) — the analyzer's
         // match-outside-each gate makes an unbound read a loader bug.
         if (!ctx.match) throw new LoadError('`the match` used outside an `each` block.');
-        return this.requireWorldId(ctx.match);
+        return this.worldId(ctx, ctx.match);
       }
       case 'unresolved':
         // The analyzer's error result: a story that compiled with errors never loads.
@@ -702,7 +688,7 @@ export class Evaluator {
   private someMatch(name: string, ctx: EvalContext): boolean {
     const named = this.namedCondition(name);
     return this.irEntities.some(
-      (e) => this.ids.entityId(e.id) !== undefined && this.evalCondition(named, { ...ctx, it: e.id }),
+      (e) => ctx.world.getEntity(e.id) !== undefined && this.evalCondition(named, { ...ctx, it: e.id }),
     );
   }
 
@@ -715,9 +701,9 @@ export class Evaluator {
    * @returns the landing room's world id, or undefined
    */
   drawLanding(worldId: string, world: WorldModel): string | undefined {
-    const irId = this.ids.irIdOf(worldId);
-    const region = irId !== undefined ? this.irEntityById.get(irId) : undefined;
-    if (!region?.landing || irId === undefined) return undefined;
+    const irId = worldId;
+    const region = this.irEntityById.get(irId);
+    if (!region?.landing) return undefined;
     const key = landingKey(irId);
     const record = this.landingRecord(irId, region.landing.rooms, world);
     const n = record.rooms.length;
@@ -802,7 +788,7 @@ export class Evaluator {
     if (!roomId) return undefined;
     const candidates = this.adjacentRooms(roomId, moverWorldId, world);
     if (candidates.length === 0) return undefined;
-    const irId = this.ids.irIdOf(moverWorldId) ?? moverWorldId;
+    const irId = moverWorldId;
     const key = adjacentKey(irId);
     const record = this.adjacentRecord(irId, world);
     if (candidates.length === 1) return candidates[0];
@@ -828,9 +814,9 @@ export class Evaluator {
    * @throws LoadError when `regionWorldId` is not a region with a landing
    */
   setLanding(regionWorldId: string, roomWorldId: string, world: WorldModel): void {
-    const irId = this.ids.irIdOf(regionWorldId);
-    const region = irId !== undefined ? this.irEntityById.get(irId) : undefined;
-    if (!region?.landing || irId === undefined) {
+    const irId = regionWorldId;
+    const region = this.irEntityById.get(irId);
+    if (!region?.landing) {
       throw new LoadError(`\`${world.getEntity(regionWorldId)?.name ?? regionWorldId}\` is not a region with a landing — only a landing can be set.`);
     }
     const record = this.landingRecord(irId, region.landing.rooms, world);
@@ -845,7 +831,7 @@ export class Evaluator {
   private landingRecord(irId: string, irRooms: readonly string[], world: WorldModel): LandingRecord {
     const stored = world.getStateValue(landingKey(irId)) as LandingRecord | undefined;
     if (stored) return stored;
-    const rooms = irRooms.map((id) => this.ids.entityId(id)).filter((id): id is string => id !== undefined);
+    const rooms = [...irRooms];
     // Per-region stream: the story seed folded with the region id, so two
     // regions never share a sequence and a fixed seed pins each one.
     let seed = this.storySeed;
@@ -873,7 +859,7 @@ export class Evaluator {
   matchesOf(name: string, ctx: EvalContext): string[] {
     const named = this.namedCondition(name);
     return this.irEntities
-      .filter((e) => this.ids.entityId(e.id) !== undefined && this.evalCondition(named, { ...ctx, it: e.id }))
+      .filter((e) => ctx.world.getEntity(e.id) !== undefined && this.evalCondition(named, { ...ctx, it: e.id }))
       .map((e) => e.id);
   }
 
@@ -907,8 +893,8 @@ export class Evaluator {
       if (!ctx.it) throw new LoadError('`it` used outside an entity-scoped clause.');
       return ctx.it;
     }
-    const irId = this.ids.irIdOf(this.entityValue(value, ctx));
-    if (!irId) throw new LoadError('Only a story entity owns state.');
+    const irId = this.entityValue(value, ctx);
+    if (!this.irEntityById.has(irId)) throw new LoadError('Only a story entity owns state.');
     return irId;
   }
 
@@ -934,9 +920,8 @@ export class Evaluator {
         return ctx.world.getContainingRoom(worldId)?.id ?? ctx.world.getLocation(worldId);
       }
       case 'state': {
-        const irId = this.ids.irIdOf(worldId);
-        if (irId === undefined) throw new LoadError('Cannot read `state` of a non-story entity.');
-        return ctx.world.getStateValue(CHORD_STATE_PREFIX + irId);
+        if (!this.irEntityById.has(worldId)) throw new LoadError('Cannot read `state` of a non-story entity.');
+        return ctx.world.getStateValue(CHORD_STATE_PREFIX + worldId);
       }
       default: {
         // Chord trait data fields (Phase B): stored as own properties on
@@ -947,7 +932,7 @@ export class Evaluator {
         const value = this.readChordTraitField(worldId, field, ctx);
         if (value !== undefined) {
           if (value.isEntityField && typeof value.value === 'string') {
-            const asEntity = this.ids.entityId(value.value);
+            const asEntity = worldIdOf(ctx.world, value.value);
             if (asEntity) return asEntity;
           }
           return value.value;
@@ -984,10 +969,14 @@ export class Evaluator {
     return world.playerCharacter.id;
   }
 
-  private requireWorldId(irId: string): string {
-    const id = this.ids.entityId(irId);
-    if (!id) throw new LoadError(`Entity \`${irId}\` has no world instance.`);
-    return id;
+  /**
+   * The world id an IR entity reference names, as a value: the id itself,
+   * whether or not the entity is still in the world (`entityValue` is the
+   * existence check). The unassigned `player` sentinel is the one reference
+   * that names nothing, and it fails as a player read does.
+   */
+  private worldId(ctx: EvalContext, irId: string): string {
+    return worldIdOf(ctx.world, irId) ?? this.playerId(ctx.world);
   }
 
   /** True when `thing` is located inside `container` at any depth. */

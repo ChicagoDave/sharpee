@@ -72,7 +72,7 @@ create the plaque
 
   A brass plaque.
 `);
-    const plaque = l.world.getEntity(l.story.entityId('plaque')!)!;
+    const plaque = l.world.getEntity('plaque')!;
     const readable = plaque.get(TraitType.READABLE) as ReadableTrait;
     expect(readable.text).toBe('Est. 1897.');
   });
@@ -85,7 +85,7 @@ create the cloak
 
   A cloak.
 `);
-    const cloak = l.world.getEntity(l.story.entityId('cloak')!)!;
+    const cloak = l.world.getEntity('cloak')!;
     expect(cloak.has(TraitType.WEARABLE)).toBe(true);
   });
 });
@@ -127,7 +127,7 @@ end before
         entries.push(entry as unknown as { owner: string; gate?: { kind: string; holds(w: WorldModel): boolean } }),
     }));
 
-    const hallId = l.story.entityId('hall')!;
+    const hallId = 'hall';
     const hallEntry = entries.find((e) => e.owner === hallId);
     expect(hallEntry, 'the room’s `present` entry is registered').toBeTruthy();
     expect(hallEntry!.gate, 'it carries a condition gate').toBeTruthy();
@@ -181,10 +181,10 @@ end before
     // check — the same door world construction goes through, and the only way
     // this rogue state can arise. crate → box → crate.
     const author = new AuthorModel(world.getDataStore(), world);
-    author.moveEntity(story.entityId('crate')!, story.entityId('box')!);
-    author.moveEntity(story.entityId('box')!, story.entityId('crate')!);
+    author.moveEntity('crate', 'box');
+    author.moveEntity('box', 'crate');
 
-    const ev = new Evaluator(ir, story, 42);
+    const ev = new Evaluator(ir, 42);
     // Without the visited-set guard this walk never terminates: isWithin
     // follows crate → box → crate → box … and the test times out.
     expect(() => ev.matchesOf('in-the-hall', { world })).not.toThrow();

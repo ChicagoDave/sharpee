@@ -175,7 +175,7 @@ const current = (b: Booted) => b.world.getStateValue(CHAPTER_CURRENT_KEY);
 describe('ADR-330 chapters on the real path', () => {
   it('Acceptance 2: the opening row begins on the first command, with title and description verbatim, after the role is assigned', async () => {
     const b = await boot();
-    expect(b.player.id).toBe(b.story.entityId('alex'));
+    expect(b.player.id).toBe('alex');
     const events = await b.turn('look');
     expect(began(events)).toEqual(['market']);
     const expected = {
@@ -209,7 +209,7 @@ describe('ADR-330 chapters on the real path', () => {
     const b = await boot();
     await b.turn('look');
     const blink = await b.turn('blink out');
-    expect(b.world.getLocation(b.player.id)).toBe(b.story.entityId('street'));
+    expect(b.world.getLocation(b.player.id)).toBe('street');
     expect(began(blink)).toEqual(['street']);
   });
 
@@ -327,7 +327,7 @@ describe('ADR-330 chapters on the real path', () => {
     await b.turn('run away');
     const back = await b.turn('west');
     expect(keys(back)).toContain('"blocked":true');
-    expect(b.world.getLocation(b.player.id)).toBe(b.story.entityId('street'));
+    expect(b.world.getLocation(b.player.id)).toBe('street');
   });
 
   it('Acceptance 6 (this fixture\'s half): without `use chapters` and the block, no chapter event ever appears', async () => {

@@ -43,7 +43,7 @@ const messageIdsOf = (events: ISemanticEvent[]) =>
 
 /** Fire the `after the player entering` clauses of one room, the runtime.test.ts way. */
 function enterRoom(story: ChordStory, world: WorldModel, playerId: string, roomIrId: string): ISemanticEvent[] {
-  const roomId = story.entityId(roomIrId)!;
+  const roomId = roomIrId;
   world.moveEntity(playerId, roomId);
   return story.runtime.fireEventClauses(world, {
     id: `move-${roomIrId}`,
@@ -323,7 +323,7 @@ describe('decision-10 presence gate (performances need an audience)', () => {
   it('off-stage clauses fire, located at their owner, drawing the RNG and consuming `, once` (ADR-328 D3)', () => {
     const { story, world, playerId } = load(PRESENCE_STORY);
     const daemons = story.runtime.buildSchedulerDaemons();
-    const barn = story.entityId('barn')!;
+    const barn = 'barn';
     const locationOf = (events: ISemanticEvent[], messageId: string) =>
       events.find((e) => (e.data as { messageId?: string }).messageId === messageId)?.entities?.location;
 
@@ -355,7 +355,7 @@ describe('decision-10 presence gate (performances need an audience)', () => {
   it('`, once` fires exactly once on-stage', () => {
     const { story, world, playerId } = load(PRESENCE_STORY);
     const daemons = story.runtime.buildSchedulerDaemons();
-    world.moveEntity(playerId, story.entityId('barn')!);
+    world.moveEntity(playerId, 'barn');
     const first = messageIdsOf(tick(daemons, world, 1));
     expect(first).toContain('hoot');
     for (let turn = 2; turn <= 4; turn++) {
@@ -477,7 +477,7 @@ describe('body-level `must` and statement `when` suffix (Finding 8)', () => {
 
   it('`must` holds: the mutation lands and the report fires', () => {
     const { story, world, actions, run } = loadMusts();
-    const badger = world.getEntity(story.entityId('badger')!)!;
+    const badger = world.getEntity('badger')!;
     const result = run(actions.get('chord.action.poking')!, badger);
     expect(result.validation.valid).toBe(true);
     expect(world.getStateValue(CHORD_STATE_PREFIX + 'badger')).toBe('angry');
@@ -486,7 +486,7 @@ describe('body-level `must` and statement `when` suffix (Finding 8)', () => {
 
   it('`must` fails: the action blocks with the key and nothing mutates', () => {
     const { story, world, actions, run } = loadMusts();
-    const badger = world.getEntity(story.entityId('badger')!)!;
+    const badger = world.getEntity('badger')!;
     run(actions.get('chord.action.poking')!, badger); // calm → angry
     const second = run(actions.get('chord.action.poking')!, badger);
     expect(second.validation.valid).toBe(false);
@@ -505,14 +505,14 @@ describe('body-level `must` and statement `when` suffix (Finding 8)', () => {
 
   it('trait-declared state survives a world-state transplant (AC-6 shape)', () => {
     const first = loadMusts();
-    const badger = first.world.getEntity(first.story.entityId('badger')!)!;
+    const badger = first.world.getEntity('badger')!;
     first.run(first.actions.get('chord.action.poking')!, badger); // calm → angry
 
     // A save carries the namespaced state; a fresh world replays it.
     const saved = first.world.getStateValue(CHORD_STATE_PREFIX + 'badger');
     const second = loadMusts();
     second.world.setStateValue(CHORD_STATE_PREFIX + 'badger', saved);
-    const badger2 = second.world.getEntity(second.story.entityId('badger')!)!;
+    const badger2 = second.world.getEntity('badger')!;
     const result = second.run(second.actions.get('chord.action.poking')!, badger2);
     // The restored `angry` still refuses — behavior resumed, not just data.
     expect(result.validation.valid).toBe(false);
@@ -566,7 +566,7 @@ describe('state adjectives read live from world trait state (D1)', () => {
     const daemons = story.runtime.buildSchedulerDaemons();
     const tick = (turn: number): ISemanticEvent[] => daemons.flatMap((d) => d.run({ world, turn }));
 
-    const gate = world.getEntity(story.entityId('iron-gate')!)!;
+    const gate = world.getEntity('iron-gate')!;
     const openable = gate.get(TraitType.OPENABLE) as OpenableTrait;
     openable.isOpen = false;
     expect(messageIdsOf(tick(1))).not.toContain('gate-open');

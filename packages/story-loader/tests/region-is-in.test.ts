@@ -48,7 +48,7 @@ const messageIdsOf = (events: ISemanticEvent[]) =>
 
 /** Move the player to `slug` and fire that room's entering clauses. */
 function enter(booted: Booted, slug: string): ISemanticEvent[] {
-  const roomId = booted.story.entityId(slug)!;
+  const roomId = slug;
   booted.world.moveEntity(booted.playerId, roomId);
   return booted.story.runtime.fireEventClauses(booted.world, {
     id: `m-${slug}`,

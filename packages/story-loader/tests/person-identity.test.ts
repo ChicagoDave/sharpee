@@ -84,7 +84,7 @@ function load() {
 }
 
 function identityOf(story: ChordStory, world: WorldModel, irId: string): IdentityTrait {
-  const entity = world.getEntity(story.entityId(irId)!)!;
+  const entity = world.getEntity(irId)!;
   return entity.get(TraitType.IDENTITY) as IdentityTrait;
 }
 
@@ -132,7 +132,7 @@ describe('proper persons (ADR-242 D2/D3 — AC-1, AC-3)', () => {
     expect(identity.article).toBe('');
 
     const provider = providerFor(story);
-    const tobias = world.getEntity(story.entityId('tobias')!)!;
+    const tobias = world.getEntity('tobias')!;
     expect(render(provider, 'test.listing', { item: nounPhraseFor(tobias) })).toBe('You can see Tobias here.');
   });
 
@@ -152,7 +152,7 @@ describe('proper persons (ADR-242 D2/D3 — AC-1, AC-3)', () => {
   it('a plain person renders with contextual articles ("a zookeeper" in listings)', () => {
     const { story, world } = load();
     const provider = providerFor(story);
-    const keeper = world.getEntity(story.entityId('zookeeper')!)!;
+    const keeper = world.getEntity('zookeeper')!;
     expect(render(provider, 'test.listing', { item: nounPhraseFor(keeper) })).toBe('You can see a zookeeper here.');
   });
 });
@@ -163,7 +163,7 @@ describe('pronouns (ADR-242 D6/D7 — AC-4, AC-5, ruled Q-2)', () => {
     expect(identityOf(story, world, 'mrs-kettle').pronounSet).toBe('she');
 
     const provider = providerFor(story);
-    const kettle = world.getEntity(story.entityId('mrs-kettle')!)!;
+    const kettle = world.getEntity('mrs-kettle')!;
     expect(render(provider, 'test.cases', { item: nounPhraseFor(kettle) })).toBe(
       'Mrs Kettle: she / her / her / hers / herself',
     );
@@ -175,7 +175,7 @@ describe('pronouns (ADR-242 D6/D7 — AC-4, AC-5, ruled Q-2)', () => {
     expect(identityOf(story, world, 'zookeeper').pronounSet).toBeUndefined();
 
     const provider = providerFor(story);
-    const tobias = world.getEntity(story.entityId('tobias')!)!;
+    const tobias = world.getEntity('tobias')!;
     expect(render(provider, 'test.cases', { item: nounPhraseFor(tobias) })).toBe(
       'Tobias: it / it / its / its / itself',
     );
@@ -186,7 +186,7 @@ describe('pronouns (ADR-242 D6/D7 — AC-4, AC-5, ruled Q-2)', () => {
     expect(identityOf(story, world, 'kit').pronounSet).toBe('ze');
 
     const provider = providerFor(story);
-    const kit = world.getEntity(story.entityId('kit')!)!;
+    const kit = world.getEntity('kit')!;
     expect(render(provider, 'test.cases', { item: nounPhraseFor(kit) })).toBe(
       'Kit: ze / zir / zir / zirs / zirself',
     );

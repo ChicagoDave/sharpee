@@ -45,7 +45,7 @@ describe('the gatehouse — full S3 stack in one story (elegance parity)', () =>
     story.registerChannels(registry);
 
     // Combat: real traits composed, real interceptor registered.
-    const ogre = world.getEntity(story.entityId('ogre')!)!;
+    const ogre = world.getEntity('ogre')!;
     expect((ogre.get(TraitType.COMBATANT) as CombatantTrait).skill).toBe(45);
     expect((ogre.get(TraitType.HEALTH) as HealthTrait).health).toBe(24);
 
@@ -55,7 +55,7 @@ describe('the gatehouse — full S3 stack in one story (elegance parity)', () =>
     expect(smPlugin.getRegistry().getMachineState('chord.machine.drawbridge')).toBe('raised');
 
     // The patrol keeper actually walks (the engine's actor phase, the real going action).
-    const keeperStart = world.getLocation(story.entityId('keeper')!);
+    const keeperStart = world.getLocation('keeper');
     phase.onAfterAction({
       world,
       turn: 1,
@@ -64,7 +64,7 @@ describe('the gatehouse — full S3 stack in one story (elegance parity)', () =>
       playerId: player.id,
       actionEvents: [],
     } as never);
-    expect(world.getLocation(story.entityId('keeper')!)).not.toBe(keeperStart);
+    expect(world.getLocation('keeper')).not.toBe(keeperStart);
 
     // The machine transitions on the role-bound action and runs its body
     // (phrase + capability-gated sound sugar → real events).
@@ -73,7 +73,7 @@ describe('the gatehouse — full S3 stack in one story (elegance parity)', () =>
       turn: 2,
       playerId: player.id,
       playerLocation: world.getLocation(player.id)!,
-      actionResult: { actionId: 'if.action.turning', success: true, targetId: story.entityId('rusty-winch')! },
+      actionResult: { actionId: 'if.action.turning', success: true, targetId: 'rusty-winch' },
       actionEvents: [],
     } as never);
     expect(smPlugin.getRegistry().getMachineState('chord.machine.drawbridge')).toBe('lowering');

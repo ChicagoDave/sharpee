@@ -115,7 +115,7 @@ export class DispatchVerbsSection {
       phase?: 'mutations' | 'reports',
     ): ExecContext => ({
       world,
-      it: runtime.core.host.irIdOf(entity.id),
+      it: entity.id,
       slots: { ...(data.chordSlots as Record<string, string> | undefined), actor: actorId },
       occurrence: data.chordOccurrence as number | undefined,
       ledger: runtime.core.onClauses.ledgerFor(data as Record<string, unknown>, 'chordDecisions', phase),
@@ -124,7 +124,7 @@ export class DispatchVerbsSection {
       // cannot name composing entities — the runtime is the layer that knows
       // — and the compiler's id stays a strict prefix of the key it builds,
       // keeping "every counter for this statement" addressable by prefix.
-      owner: runtime.core.host.irIdOf(entity.id),
+      owner: entity.id,
     });
 
     return {
@@ -146,7 +146,7 @@ export class DispatchVerbsSection {
           data.chordSkip = true;
           return { valid: true };
         }
-        const key = clauseOccurrenceKey(clause.id, runtime.core.host.irIdOf(entity.id) ?? entity.id);
+        const key = clauseOccurrenceKey(clause.id, entity.id);
         const occurrence = ((world.getStateValue(key) as number | undefined) ?? 0) + 1;
         if (clause.once && occurrence > 1) {
           data.chordSkip = true; // `, once` — one lifetime firing (D5)
@@ -184,7 +184,7 @@ export class DispatchVerbsSection {
    */
   private buildTraitInterceptor(trait: IRTraitDef, clause: IROnClause, ns: string): ActionInterceptor {
     const runtime = this;
-    const itOf = (target: IFEntity) => runtime.core.host.irIdOf(target.id) ?? target.id;
+    const itOf = (target: IFEntity) => target.id;
     // The counter is per carrier: the trait clause's id, keyed under the target.
     const occurrenceKeyOf = (target: IFEntity) => clauseOccurrenceKey(clause.id, itOf(target));
 
@@ -490,6 +490,7 @@ export class DispatchVerbsSection {
           const index = runtime.core.dialogue.matchTopicFilters(
             topicRows.map((row) => row.filter),
             { text: topic?.text, topicEntityId: topic?.entity },
+            context.world,
           );
           if (index < 0) return { valid: false, error: def.otherwise ?? 'cant' };
           topicRow = topicRows[index];

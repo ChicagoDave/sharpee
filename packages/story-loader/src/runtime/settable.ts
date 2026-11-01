@@ -66,8 +66,7 @@ export class SettableSection {
     const settable = this.core.ir.entities.filter((e) => e.traits.some((t) => t.name === 'settable'));
     if (settable.length === 0) return;
     for (const irEntity of settable) {
-      const worldId = this.core.host.entityId(irEntity.id);
-      const entity = worldId ? world.getEntity(worldId) : undefined;
+      const entity = world.getEntity(irEntity.id);
       if (entity && !entity.has(ChordSettableTrait.type)) entity.add(new ChordSettableTrait());
     }
     world.registerCapabilityBehavior(ChordSettableTrait.type, SETTING_ACTION_ID, this.buildBehavior());
@@ -75,8 +74,7 @@ export class SettableSection {
 
   /** The thing's own states (the IR merges trait states after them; `settable` reads the own line). */
   private statesOf(entity: IFEntity): string[] {
-    const irId = this.core.host.irIdOf(entity.id);
-    const irEntity = irId ? this.core.ir.entities.find((e) => e.id === irId) : undefined;
+    const irEntity = this.core.ir.entities.find((e) => e.id === entity.id);
     return irEntity?.states ?? [];
   }
 
@@ -103,11 +101,10 @@ export class SettableSection {
       },
 
       execute(entity: IFEntity, world: WorldModel, _actorId: string, shared: CapabilitySharedData): void {
-        const irId = section.core.host.irIdOf(entity.id);
-        if (irId && typeof shared.resolvedValue === 'string') {
+        if (typeof shared.resolvedValue === 'string') {
           // The same entry `change <thing> to <state>` writes; `settable`
           // requires a reversible set, so no forward-march check applies.
-          world.setStateValue(CHORD_STATE_PREFIX + irId, shared.resolvedValue);
+          world.setStateValue(CHORD_STATE_PREFIX + entity.id, shared.resolvedValue);
         }
       },
 

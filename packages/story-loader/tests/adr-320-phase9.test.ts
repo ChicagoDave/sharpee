@@ -98,7 +98,7 @@ function load(): Loaded {
   return { story, world, player };
 }
 
-const entity = (l: Loaded, irId: string): IFEntity => l.world.getEntity(l.story.entityId(irId)!)!;
+const entity = (l: Loaded, irId: string): IFEntity => l.world.getEntity(irId)!;
 
 /** Four-phase context over the LIVE world (the Phase 7/8 harness model). */
 function makeContext(l: Loaded, action: typeof askingAction, command: Record<string, unknown>): any {

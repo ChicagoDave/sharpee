@@ -219,7 +219,7 @@ type Loaded = ReturnType<typeof load>;
 
 /** Drive one full interceptor firing the way a stdlib action does. */
 function fireInterceptor(loaded: Loaded, irId: string, actionId = 'if.action.taking') {
-  const entity = loaded.world.getEntity(loaded.story.entityId(irId)!)!;
+  const entity = loaded.world.getEntity(irId)!;
   const lookup = loaded.world.getInterceptorForAction(entity, actionId);
   expect(lookup, `interceptor bound for ${actionId} on ${irId}`).toBeDefined();
   const data: Record<string, unknown> = {};
@@ -243,7 +243,7 @@ function dispatch(loaded: Loaded, verb: string, irId: string) {
   const action = (loaded.story.getCustomActions() as DispatchAction[]).find(
     (a) => a.id === `chord.action.${verb}`,
   )!;
-  const target = loaded.world.getEntity(loaded.story.entityId(irId)!)!;
+  const target = loaded.world.getEntity(irId)!;
   const ctx = {
     world: loaded.world,
     player: loaded.world.getEntity(loaded.playerId)!,

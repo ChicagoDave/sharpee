@@ -71,9 +71,8 @@ export async function bootTurns(source: string, seed = 7): Promise<BootedTurns> 
   };
   const turn = async (input: string) => (await turnText(input)).events;
   const id = (irId: string) => {
-    const worldId = story.entityId(irId);
-    if (!worldId) throw new Error(`no world entity for IR id \`${irId}\``);
-    return worldId;
+    if (!world.hasEntity(irId)) throw new Error(`no world entity for IR id \`${irId}\``);
+    return irId;
   };
   return { engine, story, world, player: world.playerCharacter, stream, turn, turnText, id };
 }

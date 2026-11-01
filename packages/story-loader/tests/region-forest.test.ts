@@ -100,7 +100,7 @@ describe('region-forest elegance-parity fixture (ADR-236 AC-7, REAL-PATH)', () =
     // with the player outside, the region's daemon does not fire at all —
     // no roll, no song. Membership decides what FIRES; no hardcoded room
     // set, no name heuristic, on either side.
-    const forest = story.entityId('forest')!;
+    const forest = 'forest';
     const fieldEvents: ISemanticEvent[] = [];
     for (let i = 0; i < 24; i++) fieldEvents.push(...tickEvents());
     const fieldSongs = fieldEvents.filter((e) => (e.data as { messageId?: string }).messageId === 'forest-birdsong');

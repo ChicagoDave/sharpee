@@ -53,7 +53,7 @@ function boot(source: string): Booted {
   registry.setLanguageProvider(language);
   const executor = new CommandExecutor(world, registry, new EventProcessor(world), new EnglishParser(language, { world }), undefined, new EngineRandomService(7));
   const gameContext: GameContext = { currentTurn: 3, player, history: [], metadata: { started: new Date(), lastPlayed: new Date() } };
-  const id = (irId: string) => story.entityId(irId)!;
+  const id = (irId: string) => irId;
   return {
     story,
     world,

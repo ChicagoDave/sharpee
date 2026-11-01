@@ -67,7 +67,7 @@ describe('custom channels + client has (ADR-216 AC-3/AC-4, REAL-PATH)', () => {
     const packet = compass.produce({ events } as never);
     // ADR-253 D1: `return "(heading) toward (target)"` — the (slot) names project
     // event fields into finished text; `windspeed` was emitted but unreferenced.
-    expect(packet).toBe(`north toward ${story.entityId('well')!}`);
+    expect(packet).toBe(`north toward ${'well'}`);
   });
 
   it('produces nothing when no matching event occurred this turn', () => {

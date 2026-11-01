@@ -82,7 +82,7 @@ function load(): Loaded {
   const player = story.createPlayer(world);
   player.add(new ActorTrait({ isPlayable: true }));
   world.setPlayer(player.id);
-  return { story, world, player, ev: new Evaluator(result.ir, story, 42) };
+  return { story, world, player, ev: new Evaluator(result.ir, 42) };
 }
 
 describe('D10 — an open condition over a union state selects per candidate', () => {

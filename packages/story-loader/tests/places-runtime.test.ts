@@ -42,7 +42,7 @@ const messageIdsOf = (events: ISemanticEvent[]) =>
 
 /** Fire the Stall's `after the player entering` clause with the player already there. */
 function enterStall(booted: Booted): ISemanticEvent[] {
-  const roomId = booted.story.entityId('stall')!;
+  const roomId = 'stall';
   booted.world.moveEntity(booted.playerId, roomId);
   return booted.story.runtime.fireEventClauses(booted.world, {
     id: 'm1',
@@ -111,34 +111,34 @@ end before
 describe("move … to <owner>'s location (D1)", () => {
   it("moves to the owner's containing room, not its immediate holder", () => {
     const b = boot(SOURCE("move the monkey to Teisha's location"));
-    const monkey = b.story.entityId('monkey')!;
-    expect(b.world.getLocation(monkey)).toBe(b.story.entityId('stall'));
+    const monkey = 'monkey';
+    expect(b.world.getLocation(monkey)).toBe('stall');
     enterStall(b);
     // Teisha is in the crate in the Alley; her location is the Alley.
-    expect(b.world.getLocation(monkey)).toBe(b.story.entityId('alley'));
+    expect(b.world.getLocation(monkey)).toBe('alley');
   });
 
   it("`move … here` lands in the player's room", () => {
     const b = boot(SOURCE('move Teisha here'));
-    const teisha = b.story.entityId('teisha')!;
+    const teisha = 'teisha';
     enterStall(b);
-    expect(b.world.getLocation(teisha)).toBe(b.story.entityId('stall'));
+    expect(b.world.getLocation(teisha)).toBe('stall');
   });
 
   it('refuses with a diagnostic naming the owner when the owner is offstage', () => {
     const b = boot(SOURCE("move the monkey to Teisha's location"));
-    b.world.moveEntity(b.story.entityId('teisha')!, null);
+    b.world.moveEntity('teisha', null);
     expect(() => enterStall(b)).toThrow(/Cannot move to Teisha's location — Teisha is offstage/);
     // Nothing moved.
-    expect(b.world.getLocation(b.story.entityId('monkey')!)).toBe(b.story.entityId('stall'));
+    expect(b.world.getLocation('monkey')).toBe('stall');
   });
 });
 
 describe('move … offstage (D2)', () => {
   it('detaches the entity, keeps it in the world, and narrates the disappearance located at the room it left (ADR-328 D3)', () => {
     const b = boot(SOURCE('move the monkey offstage'));
-    const monkey = b.story.entityId('monkey')!;
-    const stall = b.story.entityId('stall')!;
+    const monkey = 'monkey';
+    const stall = 'stall';
     const events = enterStall(b);
     expect(b.world.hasEntity(monkey)).toBe(true);
     expect(b.world.getLocation(monkey)).toBeUndefined();
@@ -153,7 +153,7 @@ describe('move … offstage (D2)', () => {
 
   it('an entity with no `disappeared` block has no row to narrate, wherever it goes offstage from', () => {
     const b = boot(SOURCE('move Teisha offstage'));
-    const teisha = b.story.entityId('teisha')!;
+    const teisha = 'teisha';
     const events = enterStall(b);
     expect(b.world.getLocation(teisha)).toBeUndefined();
     expect(messageIdsOf(events)).not.toContain('teisha.disappeared');
@@ -161,10 +161,10 @@ describe('move … offstage (D2)', () => {
 
   it('a later move reattaches it', () => {
     const b = boot(SOURCE('move the monkey offstage'));
-    const monkey = b.story.entityId('monkey')!;
+    const monkey = 'monkey';
     enterStall(b);
-    b.world.moveEntity(monkey, b.story.entityId('alley')!);
-    expect(b.world.getLocation(monkey)).toBe(b.story.entityId('alley'));
+    b.world.moveEntity(monkey, 'alley');
+    expect(b.world.getLocation(monkey)).toBe('alley');
   });
 });
 
@@ -175,13 +175,13 @@ describe("is in <owner>'s location (D1)", () => {
     // The player is in the Stall with the monkey.
     const b = boot(COND("the monkey is in the player's location"));
     enterStall(b);
-    expect(b.world.getLocation(b.story.entityId('monkey')!)).toBe(b.story.entityId('alley'));
+    expect(b.world.getLocation('monkey')).toBe('alley');
   });
 
   it('is false, not an error, when the owner is offstage', () => {
     const b = boot(COND("the monkey is in Teisha's location"));
-    b.world.moveEntity(b.story.entityId('teisha')!, null);
+    b.world.moveEntity('teisha', null);
     expect(() => enterStall(b)).not.toThrow();
-    expect(b.world.getLocation(b.story.entityId('monkey')!)).toBe(b.story.entityId('stall'));
+    expect(b.world.getLocation('monkey')).toBe('stall');
   });
 });

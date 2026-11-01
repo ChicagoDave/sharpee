@@ -19,6 +19,7 @@ import type { ISemanticEvent } from '@sharpee/core';
 import { hasTraversableExit } from '@sharpee/stdlib';
 import { type ActionInterceptor, type CapabilityEffect, CharacterModelTrait, type ConversationIntent, type ConversationSceneState, type DialogueSelectionContext, type DialogueSelectionResult, IFEntity, type InitiativeSeizure, type InterceptorReportResult, type InterceptorResult, type InterceptorSharedData, type SceneStrength, type SceneWireEvent, sceneWith, TraitType, WorldModel } from '@sharpee/world-model';
 import { LoadError } from '../errors.js';
+import { worldIdOf } from '../identity.js';
 import { CHORD_OCCURRENCE_PREFIX, CHORD_STATE_PREFIX } from '../state-keys.js';
 import { ExecContext, toEffect, type RuntimeCore } from './core.js';
 
@@ -37,8 +38,8 @@ export class ConversationThreadsSection {
   }
 
   /** Whether the intent's topic matches the thread's `about` filter. */
-  private matchesThreadFilter(thread: IRConversation, intent: ConversationIntent): boolean {
-    return thread.filter !== undefined && this.core.dialogue.matchTopicFilters([thread.filter], intent) === 0;
+  private matchesThreadFilter(thread: IRConversation, intent: ConversationIntent, world: WorldModel): boolean {
+    return thread.filter !== undefined && this.core.dialogue.matchTopicFilters([thread.filter], intent, world) === 0;
   }
 
   /** Whether the thread's next beat's hold-gate is met (the conclusion is always ready). */
@@ -68,9 +69,9 @@ export class ConversationThreadsSection {
     actorId: string,
     activeKey: string,
   ): boolean {
-    if (this.core.dialogue.matchTopicFilters((owner.topics ?? []).map((r) => r.filter), intent) >= 0) return true;
+    if (this.core.dialogue.matchTopicFilters((owner.topics ?? []).map((r) => r.filter), intent, world) >= 0) return true;
     for (const thread of threads) {
-      if (thread.name === activeKey || !this.matchesThreadFilter(thread, intent)) continue;
+      if (thread.name === activeKey || !this.matchesThreadFilter(thread, intent, world)) continue;
       const state = threadStateFor(world, npcWorldId, actorId, thread.name);
       if (state === undefined || state.status === 'parked') return true;
     }
@@ -221,7 +222,7 @@ export class ConversationThreadsSection {
     if (active) {
       const thread = threads.find((t) => t.name === active.threadKey);
       if (!thread) return undefined;
-      const onThread = intent.type === 'talk-to' || this.matchesThreadFilter(thread, intent);
+      const onThread = intent.type === 'talk-to' || this.matchesThreadFilter(thread, intent, world);
       if (onThread) {
         return this.serveThreadAdvance({
           world, owner, npc, actorId, memory, threads, thread,
@@ -266,7 +267,7 @@ export class ConversationThreadsSection {
 
     if (intent.type === 'talk-to') return undefined;
     for (const thread of threads) {
-      if (!this.matchesThreadFilter(thread, intent)) continue;
+      if (!this.matchesThreadFilter(thread, intent, world)) continue;
       const state = threadStateFor(world, npc.id, actorId, thread.name);
       if (state?.status === 'parked') {
         const ensured = this.ensureThreadScene(world, npc.id, actorId);
@@ -338,7 +339,7 @@ export class ConversationThreadsSection {
       if (intent.type === 'talk-to') {
         return this.threadBeatReady(thread, active.state.beatCursor, evalFor);
       }
-      if (this.matchesThreadFilter(thread, intent)) {
+      if (this.matchesThreadFilter(thread, intent, world)) {
         // An advance, or a held re-serve of the current beat.
         return this.threadBeatReady(thread, active.state.beatCursor, evalFor) || active.state.beatCursor > 0;
       }
@@ -353,7 +354,7 @@ export class ConversationThreadsSection {
 
     if (intent.type === 'talk-to') return false;
     for (const thread of threads) {
-      if (!this.matchesThreadFilter(thread, intent)) continue;
+      if (!this.matchesThreadFilter(thread, intent, world)) continue;
       const state = threadStateFor(world, npc.id, actorId, thread.name);
       if (state?.status === 'parked') return this.canShareThreadScene(world, npc.id, actorId);
       if (state === undefined && this.threadBeatReady(thread, 0, evalFor)) {
@@ -627,9 +628,9 @@ export class ConversationThreadsSection {
     world: WorldModel,
     actorId: string,
   ): ISemanticEvent[] {
-    const npcWorldId = this.core.host.entityId(entity.id);
-    const runtime = npcWorldId ? world.getSceneRuntime() : undefined;
-    if (!npcWorldId || !runtime) return [];
+    const npcWorldId = entity.id;
+    const runtime = world.getSceneRuntime();
+    if (!runtime) return [];
     const scene = sceneWith(world, npcWorldId);
     if (!scene || !scene.participantIds.includes(actorId)) return [];
 
@@ -658,7 +659,7 @@ export class ConversationThreadsSection {
                 speakerId: npcWorldId,
                 ...(target.strength ? { strength: target.strength } : {}),
                 openedTurn: this.core.dialogueTurn(world),
-                responses: this.core.dialogue.exchangeResponses(exchangeId, target),
+                responses: this.core.dialogue.exchangeResponses(exchangeId, target, world),
               },
             },
           ]),
@@ -762,13 +763,13 @@ export class ConversationThreadsSection {
     });
 
     /** Match once per firing; memoized on the consultation's sharedData. */
-    const rowIndexFor = (data: InterceptorSharedData): number => {
+    const rowIndexFor = (world: WorldModel, data: InterceptorSharedData): number => {
       if (typeof data.chordTopicRow === 'number') return data.chordTopicRow;
       const askedEntity = typeof data.topicEntityId === 'string' ? data.topicEntityId : null;
       const askedText = typeof data.topic === 'string' ? normalizeTopic(data.topic) : null;
       let index = -1;
       if (askedEntity !== null) {
-        index = rows.findIndex((r) => r.filter.kind === 'entity' && runtime.core.host.entityId(r.filter.id) === askedEntity);
+        index = rows.findIndex((r) => r.filter.kind === 'entity' && worldIdOf(world, r.filter.id) === askedEntity);
       }
       if (index === -1 && askedText !== null && askedText !== '') {
         index = rows.findIndex(
@@ -787,8 +788,7 @@ export class ConversationThreadsSection {
 
     /** The owner's character-model trait, when it carries one (ADR-310 D7: none → no consultation). */
     const speakerOf = (world: WorldModel): { worldId: string; trait: CharacterModelTrait } | null => {
-      const worldId = runtime.core.host.entityId(entity.id);
-      if (!worldId) return null;
+      const worldId = entity.id;
       const trait = world.getEntity(worldId)?.get(TraitType.CHARACTER_MODEL) as CharacterModelTrait | undefined;
       return trait ? { worldId, trait } : null;
     };
@@ -818,7 +818,7 @@ export class ConversationThreadsSection {
     const characterGate = (world: WorldModel, actorId: string, data: InterceptorSharedData): CharacterGate | null => {
       if ('chordCharacterGate' in data) return data.chordCharacterGate as CharacterGate | null;
       const compute = (): CharacterGate | null => {
-        const row = rows[rowIndexFor(data)];
+        const row = rows[rowIndexFor(world, data)];
         if (!row) return null;
         const speaker = speakerOf(world);
         if (!speaker) return null;
@@ -850,7 +850,7 @@ export class ConversationThreadsSection {
 
     return {
       preValidate(target: IFEntity, world: WorldModel, actorId: string, data: InterceptorSharedData): InterceptorResult | null {
-        const index = rowIndexFor(data);
+        const index = rowIndexFor(world, data);
         const row = rows[index];
         if (!row) return catchAll?.preValidate?.(target, world, actorId, data) ?? null;
         const ctx: ExecContext = { world, it: entity.id, ...frameOf(row, actorId) };
@@ -859,7 +859,7 @@ export class ConversationThreadsSection {
       },
 
       postValidate(target: IFEntity, world: WorldModel, actorId: string, data: InterceptorSharedData): InterceptorResult | null {
-        const index = rowIndexFor(data);
+        const index = rowIndexFor(world, data);
         const row = rows[index];
         if (!row) return catchAll?.postValidate?.(target, world, actorId, data) ?? null;
         // A refuse/evade reveal verdict suppresses the row entirely — no
@@ -877,14 +877,12 @@ export class ConversationThreadsSection {
         // row conditions, so `the subject changes` and `asked once` hold
         // on the very firing they describe (ADR-320 Phase 7 design §5-§6).
         {
-          const npcWorldId = runtime.core.host.entityId(entity.id);
-          if (npcWorldId) {
-            runtime.core.dialogue.stampSceneThread(world, npcWorldId, actorId, topicCandidatesOf(row)[0]);
-            if (gerund === 'asking') {
-              const memory = createTraitMemoryAccess(world);
-              recordAsked(memory, npcWorldId, actorId, topicCandidatesOf(row)[0]);
-              recordAsked(memory, actorId, npcWorldId, topicCandidatesOf(row)[0]);
-            }
+          const npcWorldId = entity.id;
+          runtime.core.dialogue.stampSceneThread(world, npcWorldId, actorId, topicCandidatesOf(row)[0]);
+          if (gerund === 'asking') {
+            const memory = createTraitMemoryAccess(world);
+            recordAsked(memory, npcWorldId, actorId, topicCandidatesOf(row)[0]);
+            recordAsked(memory, actorId, npcWorldId, topicCandidatesOf(row)[0]);
           }
           // ADR-320 D14 transition (Phase 10.4): a table row serving while
           // the pair's thread is ACTIVE parks it — the passive path
@@ -920,7 +918,7 @@ export class ConversationThreadsSection {
       },
 
       postExecute(target: IFEntity, world: WorldModel, actorId: string, data: InterceptorSharedData): void {
-        const index = rowIndexFor(data);
+        const index = rowIndexFor(world, data);
         const row = rows[index];
         if (!row) {
           catchAll?.postExecute?.(target, world, actorId, data);
@@ -938,7 +936,7 @@ export class ConversationThreadsSection {
         const modeledSpeaker = speakerOf(world);
         if (modeledSpeaker) markConversationTurn(modeledSpeaker.trait, actorId, runtime.core.dialogueTurn(world));
 
-        const rowIndex = rowIndexFor(data);
+        const rowIndex = rowIndexFor(world, data);
         const row = rows[rowIndex];
         if (!row) return catchAll?.postReport?.(target, world, actorId, data) ?? {};
         const gate = characterGate(world, actorId, data);
@@ -1036,7 +1034,7 @@ export class ConversationThreadsSection {
           // crack line IS the confession — the curve drains to `clear`
           // (curve only; the claims path above already released this
           // audience's pin when the line told the truth, seam 3).
-          if (dischargeKeys[rowIndexFor(data)]?.has(result.override.messageId)) {
+          if (dischargeKeys[rowIndexFor(world, data)]?.has(result.override.messageId)) {
             const transition = drainPressure(speaker.trait);
             emit.push({
               type: 'character.author.pressure_drain',
@@ -1062,10 +1060,7 @@ export class ConversationThreadsSection {
         // (ADR-320 Phase 7 design §5 — the table path's half of the
         // shared bookkeeping; the thread stamp ran in postValidate).
         if (result.override) {
-          const npcWorldId = runtime.core.host.entityId(entity.id);
-          if (npcWorldId) {
-            runtime.core.dialogue.recordDiscussedPair(createTraitMemoryAccess(world), npcWorldId, actorId, topicCandidatesOf(row));
-          }
+          runtime.core.dialogue.recordDiscussedPair(createTraitMemoryAccess(world), entity.id, actorId, topicCandidatesOf(row));
         }
 
         emit.push(...authorEmit);

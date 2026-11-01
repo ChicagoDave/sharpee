@@ -75,8 +75,8 @@
 - **Files**: `packages/story-loader/src/`, `packages/story-loader/tests/` (77 files), `docs/architecture/adrs/adr-389-chord-loader-one-identity-and-a-build-list.md` (AC-7 note)
 - **Exit state**: AC-1 grep returns nothing; the assertion test (world whose `createEntity` ignores the requested id) passes; exit gate passes.
 - **Demonstration**: AC-1 grep on `packages/story-loader/src` prints nothing; new assertion test green; tree runs byte-identical; suites at or above baseline.
-- **Demonstrated**: 
-- **Status**: CURRENT (since 2026-10-31)
+- **Demonstrated**: 2026-10-31 — `grep -rn "worldIds\|irIds\|requireWorldId\|irIdOf\|EntityIdResolver" packages/story-loader/src` prints nothing; story-loader `tsc --noEmit -p tsconfig.json` clean; `./repokit build` exit 0 (twice: once before and once after the rule-15 gap fixes; neither a retry). Suites: story-loader 1532 passing / 1 skipped in 191 files (baseline 1525; +4 in `tests/adr-389-one-identity.test.ts`: the RenamingWorld assertion naming both ids, every kind including a region built under its IR id, the sentinel before and after the start block, `requireEntity`'s refusal with the referrer's span); chord 1747 passing (110 files, unchanged). Trees vs `baseline/`: secret-letter byte-identical (exit 1, the same 11 failing cards), ides-of-march byte-identical, fernhill identical except the wall-clock line (`1.1s` → `1.0s`). The first full run failed 118 tests on the new assertion itself: regions were built as `rg-<id>` (ADR-388's amendment had kept that spelling), so the Context's "two maps from a string to itself" was wrong for one kind; regions now take their IR id, recorded in ADR-389 D1 as-landed and a one-line retirement in ADR-388; no reader outside the loader used the prefix and no tree capture holds a region id. Rule 15 `mutation-verification`: 0 hard failures, 6 gaps; three closed (patrol route entries again refused when not in the world, reconcile's landing rooms filtered to those in the world, `holdsPlayerRole` false rather than throwing before the role is assigned), two accepted as table misses on ids no Chord world contains (gone-state and witness narration for a non-IR entity), one test gap left open: no test drives a topic row `about the player` through the matcher's new `world` argument (the runtime core is private; needs a story-level fixture). `tsconfig.test.json` carries 72 pre-existing errors in files this phase did not touch, none naming this phase's symbols. 313 `story.entityId(x)` test sites became `x` by exact-string replacement with a single-match assertion per literal; 7 `irIdOf` sites, 3 helpers and 7 `new Evaluator` calls by hand. `packages/sharpee/docs/genai-api` never listed the deleted members, so AC-7's reference check is unchanged. [reported by session, unverified: the event log holds no test row for these counts in the phase window (its only test row is 613 passing at 00:41Z, the audit), and its last "Build passed" row (01:09:27Z, a tsc) precedes the final test-file edits at 01:10:36Z]
+- **Status**: DONE
 
 ### Phase 4: validateIR, entity and composition gates (D4a)
 - **Tier**: Large
@@ -88,7 +88,7 @@
 - **Exit state**: Each moved analysis code appears exactly once in chord src; chord fixture diagnostics byte-identical to before; exit gate passes.
 - **Demonstration**: chord suite green with new per-gate tests; compile diagnostics for chord fixtures diff clean; tree runs byte-identical; ADR-276 D1 note present.
 - **Demonstrated**: 
-- **Status**: PENDING
+- **Status**: CURRENT (since 2026-10-31)
 
 ### Phase 5: validateIR, grammar gates (D4b)
 - **Tier**: Medium

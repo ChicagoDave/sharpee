@@ -79,7 +79,7 @@ function load() {
 }
 
 function readTarget(story: ChordStory, world: WorldModel, playerId: string, irId: string) {
-  const target = world.getEntity(story.entityId(irId)!)!;
+  const target = world.getEntity(irId)!;
   const lookup = world.getInterceptorForAction(target, 'if.action.reading');
   expect(lookup, `interceptor bound for ${irId}`).toBeDefined();
   const data = {};
@@ -111,7 +111,7 @@ describe('{br} and paragraph mapping', () => {
     // ADR-333 D1a: the trait carries the description KEY (ADR-107 id mode);
     // the text lives only in the language provider's registration.
     const { story, world } = load();
-    const hall = world.getEntity(story.entityId('hall')!)!;
+    const hall = world.getEntity('hall')!;
     const identity = hall.get(TraitType.IDENTITY) as IdentityTrait;
     const registered = new Map<string, string>();
     story.extendLanguage({ addMessage: (id: string, t: string) => registered.set(id, t) } as never);

@@ -15,6 +15,7 @@
 import type { IREntity, IROnClause, IRStatement } from '@sharpee/chord';
 import type { ISemanticEvent } from '@sharpee/core';
 import { HealthTrait, type IFEntity, inSight, isUnderWay, TraitType, WorldModel } from '@sharpee/world-model';
+import { worldIdOf } from '../identity.js';
 import { CHORD_OCCURRENCE_PREFIX, CHORD_STATE_PREFIX, CHORD_STORY_STATE_KEY, CHORD_TRAIT_PREFIX, clauseOccurrenceKey } from '../state-keys.js';
 import { ExecContext, SchedulerDaemon, knownTopicsIn, type RuntimeCore } from './core.js';
 
@@ -23,7 +24,7 @@ export class SchedulerConstructsSection {
 
   /** The built vehicle an IR entity id names, or undefined when it is no vehicle. */
   private vehicleOf(irId: string, world: WorldModel): IFEntity | undefined {
-    const worldId = this.core.host.entityId(irId);
+    const worldId = worldIdOf(world, irId);
     const entity = worldId !== undefined ? world.getEntity(worldId) : undefined;
     return entity?.has(TraitType.VEHICLE) ? entity : undefined;
   }
@@ -78,7 +79,7 @@ export class SchedulerConstructsSection {
             // arms the step, which covers a step that crossed the boundary
             // mid-path and ended inside it.
             if (step.anchor.state === 'in sight') {
-              const worldId = this.core.host.entityId(step.anchor.owner);
+              const worldId = worldIdOf(world, step.anchor.owner);
               const thing = worldId !== undefined ? world.getEntity(worldId) : undefined;
               const player = world.playerCharacter;
               return thing !== undefined && player !== undefined && inSight(world, player, thing);
@@ -164,8 +165,7 @@ export class SchedulerConstructsSection {
             for (const irEntity of this.core.ir.entities) {
               const comp = irEntity.traits.find((t) => t.name === trait.name);
               if (!comp) continue;
-              const worldId = this.core.host.entityId(irEntity.id);
-              const entity = worldId ? ctx.world.getEntity(worldId) : undefined;
+              const entity = ctx.world.getEntity(irEntity.id);
               if (!entity?.has(traitType)) continue;
               // Role gate (ADR-327 D9) before any condition, so the RNG
               // stream and `, once` are untouched while the owner is the PC.
@@ -285,10 +285,9 @@ export class SchedulerConstructsSection {
    */
   private playerPresentInRegionOwner(world: WorldModel, irEntity: IREntity): boolean {
     if (!irEntity.kinds.some((k) => k.name === 'region')) return true;
-    const regionId = this.core.host.entityId(irEntity.id);
     const player = world.playerCharacter;
-    if (!regionId || !player) return false;
-    return world.isInRegion(player.id, regionId);
+    if (!player) return false;
+    return world.isInRegion(player.id, irEntity.id);
   }
 
   /**
@@ -306,8 +305,7 @@ export class SchedulerConstructsSection {
    * @returns the clauses' events, in clause order; none for an unmodeled listener
    */
   fireArrivalReaction(listenerWorldId: string, topic: string, world: WorldModel): ISemanticEvent[] {
-    const irId = this.core.host.irIdOf(listenerWorldId);
-    const irEntity = irId ? this.core.ir.entities.find((e) => e.id === irId) : undefined;
+    const irEntity = this.core.ir.entities.find((e) => e.id === listenerWorldId);
     if (!irEntity) return [];
     const out: ISemanticEvent[] = [];
     irEntity.onClauses.forEach((clause) => {

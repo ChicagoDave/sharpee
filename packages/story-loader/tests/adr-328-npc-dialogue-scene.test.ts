@@ -97,7 +97,7 @@ function load(): Loaded {
     metadata: { started: new Date(), lastPlayed: new Date() },
   };
 
-  const entity = (irId: string) => world.getEntity(story.entityId(irId)!)!;
+  const entity = (irId: string) => world.getEntity(irId)!;
   return {
     story,
     world,
@@ -113,7 +113,7 @@ describe('an NPC addressing an NPC opens the scene as itself (ADR-328 Phase 4)',
     const l = load();
     const bram = l.entity('bram');
     const aemilia = l.entity('aemilia');
-    l.world.moveEntity(bram.id, l.story.entityId('hall')!);
+    l.world.moveEntity(bram.id, 'hall');
     expect(sceneWith(l.world, bram.id)).toBeUndefined();
 
     const result = l.talk(bram.id, aemilia);
@@ -134,7 +134,7 @@ describe('an NPC addressing an NPC opens the scene as itself (ADR-328 Phase 4)',
     const l = load();
     const bram = l.entity('bram');
     const aemilia = l.entity('aemilia');
-    l.world.moveEntity(bram.id, l.story.entityId('hall')!);
+    l.world.moveEntity(bram.id, 'hall');
 
     l.talk(bram.id, aemilia);
     const opened = sceneWith(l.world, bram.id)!;

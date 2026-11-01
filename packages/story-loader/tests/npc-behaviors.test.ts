@@ -39,7 +39,7 @@ describe('core NPC behaviors through the real loader and engine (ADR-215 AC-4; A
     });
   };
 
-  const at = (slug: string) => b.world.getLocation(b.story.entityId(slug)!);
+  const at = (slug: string) => b.world.getLocation(slug);
 
   beforeEach(() => {
     b = bootEngine(FIXTURE, 11);
@@ -74,18 +74,18 @@ describe('core NPC behaviors through the real loader and engine (ADR-215 AC-4; A
       tick();
       visited.add(at('keeper')!);
     }
-    const routeRooms = ['gate', 'yard', 'shed'].map((slug) => b.story.entityId(slug)!);
+    const routeRooms = ['gate', 'yard', 'shed'].map((slug) => slug);
     // Every stop is on the route, and the round actually progressed.
     for (const stop of visited) expect(routeRooms).toContain(stop);
     expect(visited.size).toBeGreaterThanOrEqual(2);
-    expect(visited.has(b.story.entityId('shed')!)).toBe(true);
+    expect(visited.has('shed')).toBe(true);
   });
 
   it('room-list trait fields wire through pending refs (forbidden-rooms, can-move)', () => {
-    const rat = b.world.getEntity(b.story.entityId('rat')!)!;
+    const rat = b.world.getEntity('rat')!;
     const npc = rat.get(TraitType.NPC) as NpcTrait;
     expect(npc.canMove).toBe(true);
-    expect(npc.forbiddenRooms).toEqual([b.story.entityId('shed')!]);
+    expect(npc.forbiddenRooms).toEqual(['shed']);
     expect(npc.behaviorId).toBe('passive');
   });
 

@@ -85,7 +85,7 @@ or
   Two.
 end phrase
 `);
-    const hall = story.entityId('hall')!;
+    const hall = 'hall';
     const events = story.runtime.fireEventClauses(world, {
       id: 'm0',
       type: 'if.event.actor_moved',
@@ -136,7 +136,7 @@ before the game starts
 end before
 
 `);
-    const hall = story.entityId('hall')!;
+    const hall = 'hall';
     const fire = () =>
       story.runtime
         .fireEventClauses(world, {
@@ -221,9 +221,9 @@ create the bell
       }
       return out;
     };
-    const widget = story.entityId('widget')!;
-    const annex = story.entityId('annex')!;
-    const lab = story.entityId('lab')!;
+    const widget = 'widget';
+    const annex = 'annex';
+    const lab = 'lab';
 
     // Widget and player share the Lab: the gate holds.
     expect(messageIdsOf(tick(1))).toContain('bell.ding');
@@ -270,7 +270,7 @@ before the game starts
 end before
 
 `);
-    const room = world.getEntity(story.entityId('zoo-entrance')!)!;
+    const room = world.getEntity('zoo-entrance')!;
     const roomTrait = room.get(TraitType.ROOM) as RoomTrait;
     const identity = room.get(TraitType.IDENTITY) as IdentityTrait;
 
@@ -313,7 +313,7 @@ before the game starts
 end before
 
 `);
-    const room = world.getEntity(story.entityId('hall')!)!;
+    const room = world.getEntity('hall')!;
     expect((room.get(TraitType.ROOM) as RoomTrait).initialDescription).toBeUndefined();
   });
 });

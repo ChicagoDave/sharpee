@@ -112,7 +112,7 @@ function load(source: string): Loaded {
   return { story, world, player };
 }
 
-const entity = (l: Loaded, irId: string): IFEntity => l.world.getEntity(l.story.entityId(irId)!)!;
+const entity = (l: Loaded, irId: string): IFEntity => l.world.getEntity(irId)!;
 const lockable = (e: IFEntity) => e.get(TraitType.LOCKABLE) as LockableTrait;
 const openable = (e: IFEntity) => e.get(TraitType.OPENABLE) as OpenableTrait;
 
@@ -170,7 +170,7 @@ describe('D4 kind-scoped lockable default', () => {
 
   it('the key config still resolves to a world id on the door', () => {
     const l = load(STORY);
-    expect(lockable(entity(l, 'oak-door')).keyId).toBe(l.story.entityId('brass-key'));
+    expect(lockable(entity(l, 'oak-door')).keyId).toBe('brass-key');
   });
 });
 
@@ -180,7 +180,7 @@ describe('AC-2: real goingAction through the door in three states', () => {
     const result = go(l, Direction.NORTH);
     expect(result.valid).toBe(false);
     expect(result.error).toBe('door_locked');
-    expect(l.world.getContainingRoom(l.player.id)?.id).toBe(l.story.entityId('kitchen'));
+    expect(l.world.getContainingRoom(l.player.id)?.id).toBe('kitchen');
   });
 
   it('unlocked but closed refuses with door_closed', () => {
@@ -210,20 +210,20 @@ describe('AC-2: real goingAction through the door in three states', () => {
     expect(openable(entity(l, 'oak-door')).isOpen).toBe(true);
 
     expect(go(l, Direction.NORTH).valid).toBe(true);
-    expect(l.world.getContainingRoom(l.player.id)?.id).toBe(l.story.entityId('hall'));
+    expect(l.world.getContainingRoom(l.player.id)?.id).toBe('hall');
     expect(go(l, Direction.SOUTH).valid).toBe(true);
-    expect(l.world.getContainingRoom(l.player.id)?.id).toBe(l.story.entityId('kitchen'));
+    expect(l.world.getContainingRoom(l.player.id)?.id).toBe('kitchen');
   });
 });
 
 describe('AC-3: the door is live from BOTH connected rooms', () => {
   it('platform scope surfaces the door in room1 AND room2 (placement is room1 only)', () => {
     const l = load(STORY);
-    const doorId = l.story.entityId('oak-door')!;
-    expect(l.world.getLocation(doorId)).toBe(l.story.entityId('kitchen')); // spatial home
+    const doorId = 'oak-door';
+    expect(l.world.getLocation(doorId)).toBe('kitchen'); // spatial home
     expect(l.world.getInScope(l.player.id).map((e) => e.id)).toContain(doorId);
 
-    l.world.moveEntity(l.player.id, l.story.entityId('hall')!);
+    l.world.moveEntity(l.player.id, 'hall');
     expect(l.world.getInScope(l.player.id).map((e) => e.id)).toContain(doorId);
   });
 
@@ -237,7 +237,7 @@ describe('AC-3: the door is live from BOTH connected rooms', () => {
       preposition: 'with',
     });
     drive(l, openingAction, { directObject: { entity: door } });
-    l.world.moveEntity(l.player.id, l.story.entityId('hall')!);
+    l.world.moveEntity(l.player.id, 'hall');
 
     expect(drive(l, examiningAction, { directObject: { entity: door } }).valid).toBe(true);
 
@@ -268,18 +268,18 @@ describe('AC-4: door state survives save/restore', () => {
     const restored = new WorldModel();
     restored.loadJSON(l.world.toJSON());
 
-    const doorId = l.story.entityId('oak-door')!;
+    const doorId = 'oak-door';
     const door = restored.getEntity(doorId)!;
     expect((door.get(TraitType.OPENABLE) as OpenableTrait).isOpen).toBe(true);
     expect((door.get(TraitType.LOCKABLE) as LockableTrait).isLocked).toBe(false);
     const doorTrait = door.get(TraitType.DOOR) as DoorTrait;
-    expect(doorTrait.room1).toBe(l.story.entityId('kitchen'));
-    expect(doorTrait.room2).toBe(l.story.entityId('hall'));
+    expect(doorTrait.room1).toBe('kitchen');
+    expect(doorTrait.room2).toBe('hall');
 
-    const kitchen = restored.getEntity(l.story.entityId('kitchen')!)!;
-    const hall = restored.getEntity(l.story.entityId('hall')!)!;
+    const kitchen = restored.getEntity('kitchen')!;
+    const hall = restored.getEntity('hall')!;
     expect((kitchen.get(TraitType.ROOM) as RoomTrait).exits?.[Direction.NORTH]?.via).toBe(doorId);
     expect((hall.get(TraitType.ROOM) as RoomTrait).exits?.[Direction.SOUTH]?.via).toBe(doorId);
-    expect(restored.getLocation(doorId)).toBe(l.story.entityId('kitchen'));
+    expect(restored.getLocation(doorId)).toBe('kitchen');
   });
 });

@@ -41,6 +41,7 @@ import type { ActResult, ActSlots } from '@sharpee/stdlib';
 import { type CapabilityEffect, type CapabilityValidationResult, type InterceptorResult, type ITrait, type TemperamentDef, TraitType, WorldModel } from '@sharpee/world-model';
 import { DecisionLedger } from '../decisions.js';
 import { EvalContext, Evaluator } from '../evaluator.js';
+import { worldIdOf } from '../identity.js';
 import type { ConversationThreadsSection } from './conversation-threads.js';
 import type { DispatchVerbsSection } from './dispatch-verbs.js';
 import type { SettableSection } from './settable.js';
@@ -147,8 +148,6 @@ export function knownTopicsIn(condition: IRCondition | null): Set<string> {
 
 /** Hooks the runtime needs from the story (implemented by ChordStory). */
 export interface RuntimeHost {
-  entityId(irId: string): string | undefined;
-  irIdOf(worldId: string): string | undefined;
   /**
    * Declare the story's ending; `undefined` when it had already ended
    * (first ending wins — ADR-347 D2d).
@@ -416,10 +415,11 @@ export class RuntimeCore {
    * @param world the live world
    */
   placeOf(ownerIrId: string, world: WorldModel): string | null | undefined {
-    const ownerId = this.host.entityId(ownerIrId);
-    if (!ownerId) return undefined;
+    const ownerId = worldIdOf(world, ownerIrId);
+    if (ownerId === undefined) return undefined;
     const owner = world.getEntity(ownerId);
-    if (owner?.has(TraitType.ROOM) || owner?.has(TraitType.REGION)) return ownerId;
+    if (!owner) return undefined;
+    if (owner.has(TraitType.ROOM) || owner.has(TraitType.REGION)) return ownerId;
     return world.getContainingRoom(ownerId)?.id ?? world.getLocation(ownerId) ?? null;
   }
 
@@ -452,8 +452,8 @@ export class RuntimeCore {
    *   omitted → the owner's place now
    */
   sourced(events: ISemanticEvent[], ownerIrId: string, world: WorldModel, at?: string | null): ISemanticEvent[] {
-    const ownerId = this.host.entityId(ownerIrId);
-    if (!ownerId) return events;
+    const ownerId = worldIdOf(world, ownerIrId);
+    if (ownerId === undefined || !world.hasEntity(ownerId)) return events;
     const location = (at === undefined ? this.placeOf(ownerIrId, world) : at) ?? undefined;
     return events.map((e) => ({
       ...e,

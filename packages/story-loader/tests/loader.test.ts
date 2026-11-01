@@ -41,9 +41,9 @@ describe('cloak.story loads into a playable world', () => {
   let player: IFEntity;
 
   const entity = (irId: string): IFEntity => {
-    const id = story.entityId(irId);
-    expect(id, `world id for ${irId}`).toBeDefined();
-    return world.getEntity(id!)!;
+    const built = world.getEntity(irId);
+    expect(built, `world entity for ${irId}`).toBeDefined();
+    return built!;
   };
 
   beforeAll(() => {
@@ -65,8 +65,8 @@ describe('cloak.story loads into a playable world', () => {
   it('creates the rooms with bidirectional exits', () => {
     const foyer = entity('foyer-of-the-opera-house');
     const foyerRoom = foyer.get(TraitType.ROOM) as RoomTrait;
-    expect(foyerRoom.exits?.[Direction.WEST]?.destination).toBe(story.entityId('cloakroom'));
-    expect(foyerRoom.exits?.[Direction.SOUTH]?.destination).toBe(story.entityId('foyer-bar'));
+    expect(foyerRoom.exits?.[Direction.WEST]?.destination).toBe('cloakroom');
+    expect(foyerRoom.exits?.[Direction.SOUTH]?.destination).toBe('foyer-bar');
 
     const cloakroomRoom = entity('cloakroom').get(TraitType.ROOM) as RoomTrait;
     expect(cloakroomRoom.exits?.[Direction.EAST]?.destination).toBe(foyer.id);
@@ -88,7 +88,7 @@ describe('cloak.story loads into a playable world', () => {
     expect(hook.has(TraitType.SCENERY)).toBe(true);
     const supporter = hook.get(TraitType.SUPPORTER) as SupporterTrait;
     expect(supporter.capacity).toMatchObject({ maxItems: 1 });
-    expect(world.getLocation(hook.id)).toBe(story.entityId('cloakroom'));
+    expect(world.getLocation(hook.id)).toBe('cloakroom');
     const identity = hook.get(TraitType.IDENTITY) as IdentityTrait;
     expect(identity.aliases).toEqual(expect.arrayContaining(['hook', 'peg']));
   });
@@ -96,7 +96,7 @@ describe('cloak.story loads into a playable world', () => {
   it('seeds the message state machine at its first declared state', () => {
     const message = entity('message-in-the-sawdust');
     expect(message.has(TraitType.SCENERY)).toBe(true);
-    expect(world.getLocation(message.id)).toBe(story.entityId('foyer-bar'));
+    expect(world.getLocation(message.id)).toBe('foyer-bar');
     expect(world.getStateValue(CHORD_STATE_PREFIX + 'message-in-the-sawdust')).toBe('intact');
   });
 
@@ -120,7 +120,7 @@ describe('cloak.story loads into a playable world', () => {
     expect(registered.get(identity.descriptionId!)).toBe('As good-looking as ever.');
     const container = player.get(TraitType.CONTAINER) as ContainerTrait;
     expect(container.capacity).toMatchObject({ maxItems: 10 });
-    expect(world.getLocation(player.id)).toBe(story.entityId('foyer-of-the-opera-house'));
+    expect(world.getLocation(player.id)).toBe('foyer-of-the-opera-house');
   });
 
   it('marks the cloak worn by the player and carried in inventory', () => {
@@ -181,13 +181,13 @@ describe('engine lifecycle order: initializeWorld BEFORE createPlayer (GameEngin
     story.initializeWorld(world);
     const player = story.createPlayer(world);
 
-    expect(world.getLocation(player.id)).toBe(story.entityId('foyer-of-the-opera-house'));
-    const cloak = world.getEntity(story.entityId('velvet-cloak')!)!;
+    expect(world.getLocation(player.id)).toBe('foyer-of-the-opera-house');
+    const cloak = world.getEntity('velvet-cloak')!;
     expect(world.getLocation(cloak.id)).toBe(player.id);
     const wearable = cloak.get(TraitType.WEARABLE) as WearableTrait;
     expect(wearable.worn).toBe(true);
     expect(wearable.wornBy).toBe(player.id);
-    expect(world.evaluate(darkKey(story.entityId('foyer-bar')!))).toBe(true);
+    expect(world.evaluate(darkKey('foyer-bar'))).toBe(true);
   });
 });
 
@@ -197,8 +197,8 @@ describe('ac5-random.story loads (no hatches)', () => {
     const world = new WorldModel();
     story.initializeWorld(world);
     story.createPlayer(world);
-    expect(story.entityId('east-room')).toBeDefined();
-    expect(story.entityId('west-room')).toBeDefined();
+    expect(world.getEntity('east-room')).toBeDefined();
+    expect(world.getEntity('west-room')).toBeDefined();
 
     const registered = new Map<string, string>();
     story.extendLanguage({ addMessage: (id: string, t: string) => registered.set(id, t) } as never);
@@ -257,11 +257,11 @@ end before
     story.initializeWorld(world);
     story.createPlayer(world);
 
-    const box = world.getEntity(story.entityId('bread-box')!)!;
+    const box = world.getEntity('bread-box')!;
     const container = box.get(TraitType.CONTAINER) as ContainerTrait;
     expect(container.capacity).toEqual({ maxItems: 5 });
 
-    const signs = world.getEntity(story.entityId('direction-signs')!)!;
+    const signs = world.getEntity('direction-signs')!;
     const identity = signs.get(TraitType.IDENTITY) as IdentityTrait;
     expect((identity as unknown as Record<string, unknown>).grammaticalNumber).toBe('plural');
     expect(signs.has(TraitType.SCENERY)).toBe(true);
@@ -313,9 +313,9 @@ end before
     const story = createStory(ir);
     const world = new WorldModel();
     story.initializeWorld(world);
-    const teisha = story.entityId('teisha')!;
-    expect(world.getLocation(story.entityId('sword')!)).toBe(teisha);
-    const hatId = story.entityId('hat')!;
+    const teisha = 'teisha';
+    expect(world.getLocation('sword')).toBe(teisha);
+    const hatId = 'hat';
     expect(world.getLocation(hatId)).toBe(teisha);
     const wearable = world.getEntity(hatId)!.get(TraitType.WEARABLE) as WearableTrait;
     expect(wearable.worn).toBe(true);

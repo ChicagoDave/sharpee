@@ -570,16 +570,14 @@ export class StatementsSection {
    * @param ctx the executing clause's context
    */
   private markGone(worldId: string, ctx: ExecContext): void {
-    const irId = this.core.host.irIdOf(worldId);
-    if (irId !== undefined && ctx.world.getStateValue(CHORD_GONE_PREFIX + irId) === true) return;
+    if (ctx.world.getStateValue(CHORD_GONE_PREFIX + worldId) === true) return;
     this.moveWithLifecycle(worldId, null, ctx);
-    if (irId !== undefined) ctx.world.setStateValue(CHORD_GONE_PREFIX + irId, true);
+    ctx.world.setStateValue(CHORD_GONE_PREFIX + worldId, true);
   }
 
   /** True while a Chord `remove` has taken the entity out of play. */
   isGone(worldId: string, world: WorldModel): boolean {
-    const irId = this.core.host.irIdOf(worldId);
-    return irId !== undefined && world.getStateValue(CHORD_GONE_PREFIX + irId) === true;
+    return world.getStateValue(CHORD_GONE_PREFIX + worldId) === true;
   }
 
   private moveWithLifecycle(thingWorldId: string, placeWorldId: string | null, ctx: ExecContext): void {
@@ -598,11 +596,8 @@ export class StatementsSection {
     const toRoom = roomOf(thingWorldId);
     // A move back into the world revives a gone entity (ADR-325 Z6 as
     // amended): the flag is the story's "over", and a later `move` unsays it.
-    if (placeWorldId !== null) {
-      const irId = this.core.host.irIdOf(thingWorldId);
-      if (irId !== undefined && world.getStateValue(CHORD_GONE_PREFIX + irId) === true) {
-        world.setStateValue(CHORD_GONE_PREFIX + irId, false);
-      }
+    if (placeWorldId !== null && world.getStateValue(CHORD_GONE_PREFIX + thingWorldId) === true) {
+      world.setStateValue(CHORD_GONE_PREFIX + thingWorldId, false);
     }
 
     this.witnessMove(thingWorldId, placeWorldId, fromRoom, toRoom, world);
@@ -647,8 +642,7 @@ export class StatementsSection {
    * in the expanse room so whoever is there reads it.
    */
   private reportLostOverboard(thingWorldId: string, expanseWorldId: string, world: WorldModel): void {
-    const irId = this.core.host.irIdOf(thingWorldId);
-    const own = irId !== undefined ? this.core.phrases.channelEvent(irId, 'lost-overboard', world) : null;
+    const own = this.core.phrases.channelEvent(thingWorldId, 'lost-overboard', world);
     const thing = world.getEntity(thingWorldId);
     const event: ISemanticEvent = own ?? {
       id: `lost-overboard-${thingWorldId}-${Date.now()}`,
@@ -753,8 +747,7 @@ export class StatementsSection {
     world: WorldModel,
   ): void {
     if (thingWorldId === world.playerCharacter.id) return; // the player's own move narrates as travel
-    const irId = this.core.host.irIdOf(thingWorldId);
-    if (!irId) return;
+    const irId = thingWorldId;
     if (fromRoom === toRoom) return; // not a room transition — nothing to witness
     const placed = (event: ISemanticEvent | null, room: string): void => {
       if (!event) return;

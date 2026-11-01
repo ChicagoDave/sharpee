@@ -73,8 +73,8 @@ describe('lockable with key on container kinds (ADR-230 Phase 9a)', () => {
 
   it('stamps the key as a resolved WORLD id on the container (not dropped, not a raw name)', () => {
     const { story, world } = load();
-    const strongbox = world.getEntity(story.entityId('strongbox')!)!;
-    const keyWorldId = story.entityId('brass-key')!;
+    const strongbox = world.getEntity('strongbox')!;
+    const keyWorldId = 'brass-key';
 
     const lockable = strongbox.get(TraitType.LOCKABLE) as LockableTrait;
     expect(lockable).toBeDefined();
@@ -84,8 +84,8 @@ describe('lockable with key on container kinds (ADR-230 Phase 9a)', () => {
 
   it('REAL-PATH: the loaded key unlocks the loaded container through stdlib unlockingAction', () => {
     const { story, world, player } = load();
-    const strongbox = world.getEntity(story.entityId('strongbox')!)!;
-    const key = world.getEntity(story.entityId('brass-key')!)!;
+    const strongbox = world.getEntity('strongbox')!;
+    const key = world.getEntity('brass-key')!;
     // `carries the brass key` (Phase 6) put the key in hand.
     expect(world.getLocation(key.id)).toBe(player.id);
 

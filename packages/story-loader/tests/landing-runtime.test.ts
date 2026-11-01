@@ -38,7 +38,7 @@ function boot(source: string, seed = 5): Booted {
 
 /** Fire the Alley's `after the player entering` clause with the player there. */
 function enterAlley(b: Booted) {
-  const roomId = b.story.entityId('alley')!;
+  const roomId = 'alley';
   b.world.moveEntity(b.playerId, roomId);
   return b.story.runtime.fireEventClauses(b.world, {
     id: 'm1',
@@ -106,8 +106,8 @@ end before
 
 `;
 
-const roomOf = (b: Booted, irId: string) => b.story.entityId(irId)!;
-const monkeyRoom = (b: Booted) => b.world.getLocation(b.story.entityId('monkey')!);
+const roomOf = (b: Booted, irId: string) => irId;
+const monkeyRoom = (b: Booted) => b.world.getLocation('monkey');
 
 describe('a region with a landing is a place (D5)', () => {
   it('`move … to <region>` lands in the single landing room', () => {
@@ -129,7 +129,7 @@ describe('landing strategies draw deterministically (D5, ADR-293)', () => {
     const out: string[] = [];
     for (let i = 0; i < n; i++) {
       enterAlley(b);
-      out.push(b.story.irIdOf(monkeyRoom(b)!)!);
+      out.push(monkeyRoom(b)!);
     }
     return out;
   };

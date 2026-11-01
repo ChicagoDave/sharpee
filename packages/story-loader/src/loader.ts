@@ -181,10 +181,10 @@ import { COMBAT_FIELD_ROUTES, EXTENSION_REGISTRY, NPC_BEHAVIOR_ADJECTIVES, NPC_F
 import { installStateMachines } from './state-machines.js';
 import { HIDING_POSITIONS } from './setting-schema.js';
 import { Evaluator } from './evaluator.js';
+import { requireEntity, worldIdOf } from './identity.js';
 import { classifiesAs } from './kind-classification.js';
 import { ChordBehaviorTrait, ChordRuntime, knownTopicsIn, STRATEGY_SELECTOR } from './runtime.js';
 import { CHORD_IR_ID_ATTRIBUTE, CHORD_STATE_PREFIX, CHORD_STORY_STATE_KEY, CHORD_TRAIT_PREFIX, counterKey, landingKey, type LandingRecord } from './state-keys.js';
-import { PLAYER_SENTINEL } from './state-keys.js';
 import { orphanedKeys, reseedLandingRecord, unmappableValues } from './reconcile.js';
 import { withLineBreaks } from './text.js';
 
@@ -266,8 +266,6 @@ export class ChordStory implements Story {
   /** The condition evaluator — shared with the runtime; Z2 gate thunks close over it. */
   /** The expression evaluator — public beside `runtime` so hosts and tests reach its wiring seams (ADR-326 D6). */
   readonly evaluator: Evaluator;
-  /** IR entity ID → world entity ID (populated by initializeWorld/createPlayer). */
-  private readonly worldIds = new Map<string, string>();
 
   /**
    * Trait-config entity references awaiting world-id resolution (ADR-230
@@ -351,7 +349,7 @@ export class ChordStory implements Story {
    */
   private wireVehicle(world: WorldModel, irEntity: IREntity, entity: IFEntity): void {
     const v = irEntity.vehicle!;
-    const ids = (list: string[] | undefined) => (list ?? []).map((id) => this.requireWorldId(id, irEntity));
+    const ids = (list: string[] | undefined) => (list ?? []).map((id) => requireEntity(world, id, irEntity).id);
     let movement: VehicleMovementConfig;
     switch (v.movement) {
       case 'none':
@@ -401,15 +399,15 @@ export class ChordStory implements Story {
       movement,
       ...(v.commands !== undefined ? { commands: v.commands } : {}),
       // D7: `boarded through:` is where `enter` and `board` put the player.
-      ...(v.boardedThrough !== undefined ? { boardedThrough: this.requireWorldId(v.boardedThrough, irEntity) } : {}),
+      ...(v.boardedThrough !== undefined ? { boardedThrough: requireEntity(world, v.boardedThrough, irEntity).id } : {}),
     }));
     if (v.position) {
       this.vehiclePositions.set(entity.id, {
         rows: v.position.rows.map((row) => ({
           guard: (w: WorldModel) => this.evaluator.evalCondition(row.condition, { world: w, it: irEntity.id }),
-          stopId: this.requireWorldId(row.stop, irEntity),
+          stopId: requireEntity(world, row.stop, irEntity).id,
         })),
-        otherwise: this.requireWorldId(v.position.otherwise, irEntity),
+        otherwise: requireEntity(world, v.position.otherwise, irEntity).id,
       });
     }
   }
@@ -432,7 +430,7 @@ export class ChordStory implements Story {
     const expanse = this.ir.entities.find((e) => e.id === irEntity.placement!.place)?.expanse;
     const landmark = expanse?.landmarks.find((row) => row.x === at.x && row.y === at.y);
     if (landmark) {
-      world.moveEntity(entity.id, this.requireWorldId(landmark.room, irEntity));
+      world.moveEntity(entity.id, requireEntity(world, landmark.room, irEntity).id);
       return null;
     }
     return { x: at.x, y: at.y };
@@ -444,10 +442,10 @@ export class ChordStory implements Story {
    * (D8) are its blocked-exit lines, registered as every room's are, and
    * read through the exit message key.
    */
-  private wireExpanse(irEntity: IREntity, entity: IFEntity): void {
+  private wireExpanse(world: WorldModel, irEntity: IREntity, entity: IFEntity): void {
     const x = irEntity.expanse!;
     const landmarks: Record<string, { x: number; y: number }> = {};
-    for (const row of x.landmarks) landmarks[this.requireWorldId(row.room, irEntity)] = { x: row.x, y: row.y };
+    for (const row of x.landmarks) landmarks[requireEntity(world, row.room, irEntity).id] = { x: row.x, y: row.y };
     entity.add(new ExpanseTrait({
       width: x.width,
       height: x.height,
@@ -473,19 +471,18 @@ export class ChordStory implements Story {
       for (const exit of irEntity.exits) {
         if (!exit.admits || exit.to.kind !== 'room') continue;
         const farId = exit.to.id;
-        const entity = world.getEntity(this.requireWorldId(irEntity.id, irEntity));
-        if (!entity) continue;
+        const entity = requireEntity(world, irEntity.id, irEntity);
         const direction = toDirection(exit.direction, irEntity);
         // The line decides both fields for this way: its vehicles, and
         // every pushable when it names `pushing`, else none.
-        const admits = this.admittanceOf(exit.admits, irEntity);
+        const admits = this.admittanceOf(world, exit.admits, irEntity);
         const forward = RoomBehavior.getExit(entity, direction);
         if (forward) forward.admits = copyAdmittance(admits);
         if (exit.oneWay || isPassageKey(direction)) continue;
         const reverseDirection = getOppositeDirection(direction as DirectionType);
         const far = this.ir.entities.find((e) => e.id === farId);
         if (far?.exits.some((e) => toDirection(e.direction, far) === reverseDirection)) continue;
-        const reverse = RoomBehavior.getExit(world.getEntity(this.requireWorldId(farId, irEntity))!, reverseDirection);
+        const reverse = RoomBehavior.getExit(requireEntity(world, farId, irEntity), reverseDirection);
         if (reverse && reverse.destination === entity.id) reverse.admits = copyAdmittance(admits);
       }
     }
@@ -495,9 +492,9 @@ export class ChordStory implements Story {
    * An IR `admits` list as an admittance (ADR-378 D6): entity ids are the
    * steered vehicles, and the class word `pushing` admits every pushable.
    */
-  private admittanceOf(list: readonly string[], irEntity: IREntity): Admittance {
+  private admittanceOf(world: WorldModel, list: readonly string[], irEntity: IREntity): Admittance {
     return {
-      vehicles: list.filter((id) => id !== ADMITS_PUSHING).map((id) => this.requireWorldId(id, irEntity)),
+      vehicles: list.filter((id) => id !== ADMITS_PUSHING).map((id) => requireEntity(world, id, irEntity).id),
       pushed: list.includes(ADMITS_PUSHING) ? 'any' : [],
     };
   }
@@ -514,11 +511,10 @@ export class ChordStory implements Story {
   private stampPushingWays(world: WorldModel): void {
     for (const irEntity of this.ir.entities) {
       if (!irEntity.pushing?.length) continue;
-      const thingId = this.requireWorldId(irEntity.id, irEntity);
+      const thingId = requireEntity(world, irEntity.id, irEntity).id;
       for (const way of irEntity.pushing) {
-        const from = world.getEntity(this.requireWorldId(way.from, irEntity));
-        const toId = this.requireWorldId(way.to, irEntity);
-        if (!from) continue;
+        const from = requireEntity(world, way.from, irEntity);
+        const toId = requireEntity(world, way.to, irEntity).id;
         for (const [key, exit] of RoomBehavior.getAllExits(from)) {
           if (isPassageKey(key) || exit.destination !== toId) continue;
           const pushed = exit.admits?.pushed ?? world.getEntity(toId)?.get(RoomTrait)?.admits.pushed ?? [];
@@ -541,10 +537,10 @@ export class ChordStory implements Story {
    */
   private wireAdmits(world: WorldModel, irEntity: IREntity, entity: IFEntity): void {
     // ADR-378 D6: the class word `pushing` admits every pushable.
-    const admits = this.admittanceOf(irEntity.admits ?? [], irEntity);
+    const admits = this.admittanceOf(world, irEntity.admits ?? [], irEntity);
     const rooms = entity.has(TraitType.ROOM)
       ? [entity]
-      : (irEntity.containing ?? []).map((member) => world.getEntity(this.requireWorldId(member.id, irEntity))!);
+      : (irEntity.containing ?? []).map((member) => requireEntity(world, member.id, irEntity));
     for (const room of rooms) {
       const trait = room.get(RoomTrait);
       if (!trait) continue;
@@ -569,15 +565,15 @@ export class ChordStory implements Story {
     const host = vehicleAboard(this.ir.entities, irEntity.id);
     if (!host) return;
     const outside: Record<string, { candidates: string[]; via?: string }> = {};
-    const candidates = vehicleCandidateRoomIds(this.ir.entities, host).map((id) => this.requireWorldId(id, host));
+    const candidates = vehicleCandidateRoomIds(this.ir.entities, host).map((id) => requireEntity(world, id, host).id);
     for (const exit of irEntity.exits) {
       if (exit.to.kind !== 'outside') continue;
       const direction = toDirection(exit.direction, irEntity);
-      const via = exit.via ? this.requireWorldId(exit.via, irEntity) : undefined;
+      const via = exit.via ? requireEntity(world, exit.via, irEntity).id : undefined;
       if (via !== undefined) new AuthorModel(world.getDataStore(), world).moveEntity(via, entity.id);
       outside[direction] = { candidates, ...(via !== undefined ? { via } : {}) };
     }
-    entity.add(new AboardTrait({ vehicleId: this.requireWorldId(host.id, irEntity), outside }));
+    entity.add(new AboardTrait({ vehicleId: requireEntity(world, host.id, irEntity).id, outside }));
     registerVehicleExitResolver(world);
   }
 
@@ -589,8 +585,6 @@ export class ChordStory implements Story {
    * no destination-resolved interceptor could ever fire.
    */
   private readonly deadlyExits = new Map<string, Map<string, { cause: string; messageId: string }>>();
-  /** World entity ID → IR entity ID (state lookups in the evaluator). */
-  private readonly irIds = new Map<string, string>();
   /**
    * A `drive: state` line's `position` block (ADR-366 D5a), by world vehicle
    * id: the rows in order, each a live guard over the world and the stop it
@@ -629,33 +623,9 @@ export class ChordStory implements Story {
       // stays absent ("let me decide" is the runner's default).
       ...(ir.meta.fields.autoAssertion !== undefined ? { autoAssertion: ir.meta.fields.autoAssertion } : {}),
     };
-    this.evaluator = new Evaluator(ir, this, options.seed);
+    this.evaluator = new Evaluator(ir, options.seed);
     this.runtime = new ChordRuntime(ir, this, this.evaluator);
   }
-
-  /** The world entity ID for an IR entity ID (after initializeWorld). */
-  entityId(irId: string): string | undefined {
-    return this.worldIdOf(irId);
-  }
-
-  /**
-   * The world id an IR entity reference names (ADR-390 D3): the `player`
-   * sentinel is the role, read from the world at the moment of use — defined
-   * once the start block has assigned it, undefined before — and every other
-   * reference is an entity the build recorded.
-   */
-  private worldIdOf(irId: string): string | undefined {
-    if (irId === PLAYER_SENTINEL) {
-      return this.world?.hasPlayerCharacter ? this.world.playerCharacter.id : undefined;
-    }
-    return this.worldIds.get(irId);
-  }
-
-  /** The IR entity ID for a world entity ID. */
-  irIdOf(worldId: string): string | undefined {
-    return this.irIds.get(worldId);
-  }
-
 
   // ------------------------------------------------------------ lifecycle
 
@@ -683,7 +653,6 @@ export class ChordStory implements Story {
     // one of these. There is no player block to skip any more — who holds the
     // role is decided by the start block, after the world exists.
     for (const irEntity of this.ir.entities) {
-      if (this.worldIds.has(irEntity.id)) continue;
       built.push({ ir: irEntity, entity: this.buildEntity(world, irEntity) });
     }
 
@@ -770,7 +739,7 @@ export class ChordStory implements Story {
 
     // ADR-230 D3c / Phase 9a: stamp trait-config entity references (tools,
     // keys) now that every entity exists (forward references resolve here).
-    this.resolvePendingEntityRefs();
+    this.resolvePendingEntityRefs(world);
 
 
     // Bind the turn-by-turn runtime: rules, on-clause interceptors,
@@ -923,11 +892,8 @@ export class ChordStory implements Story {
   private applyCharacterBlocks(world: WorldModel): void {
     for (const irEntity of this.ir.entities) {
       if (irEntity.character === undefined) continue;
-      const worldId = this.requireWorldId(irEntity.id, irEntity);
-      const entity = world.getEntity(worldId);
-      if (!entity) {
-        throw new LoadError(`\`${irEntity.name}\`: the entity carrying a character block was never built.`, irEntity.span);
-      }
+      const entity = requireEntity(world, irEntity.id, irEntity);
+      const worldId = entity.id;
       // ADR-327 D9: every character with a character block carries the trait.
       // The PC used to be kept out of the NPC service by construction; the
       // service now skips whoever holds the role at fire time, which is what
@@ -938,7 +904,7 @@ export class ChordStory implements Story {
       const applied = applyCompiledCharacter(entity, irEntity.character, {
         ...(this.ir.customMoods?.length ? { customMoods: this.ir.customMoods } : {}),
         ...(this.ir.customPersonalities?.length ? { customPersonalities: this.ir.customPersonalities } : {}),
-        resolveEntityId: (irId) => this.requireWorldId(irId, irEntity),
+        resolveEntityId: (irId) => requireEntity(world, irId, irEntity).id,
         // ADR-329 D10: the one rule `performAct` (runtime.ts) applies to the
         // acting statement — a story action is `chord.action.<name>`, a
         // standard one `if.action.<name>` — stated here for the goal step.
@@ -974,7 +940,7 @@ export class ChordStory implements Story {
         // D12a aliases with actors pre-resolved to world ids — the tick
         // phase matches detected acts by world actor.
         registry.setWitnessedAliases(this.ir.witnessedTopics.map((w) => ({
-          actor: this.requireWorldId(w.actor),
+          actor: requireEntity(world, w.actor).id,
           act: w.act,
           alias: w.alias,
         })));
@@ -1044,13 +1010,9 @@ export class ChordStory implements Story {
    */
   private storyOracle(): CompiledStoryOracle {
     return {
-      evalCondition: (cond, { self, world }) => {
-        const irId = this.irIdOf(self);
-        return this.evaluator.evalCondition(cond, { world, ...(irId !== undefined ? { it: irId } : {}) });
-      },
+      evalCondition: (cond, { self, world }) => this.evaluator.evalCondition(cond, { world, it: self }),
       isKindMember: (entityId, kind) => {
-        const irId = this.irIdOf(entityId);
-        const irEntity = irId !== undefined ? this.ir.entities.find((e) => e.id === irId) : undefined;
+        const irEntity = this.ir.entities.find((e) => e.id === entityId);
         return irEntity !== undefined && classifiesAs(irEntity, kind);
       },
     };
@@ -1154,11 +1116,10 @@ export class ChordStory implements Story {
     const author = new AuthorModel(world.getDataStore(), world);
     const added: Array<{ ir: IREntity; entity: IFEntity }> = [];
     for (const irEntity of this.ir.entities) {
-      const worldId = this.worldIdOf(irEntity.id);
-      if (worldId !== undefined && world.hasEntity(worldId)) continue;
+      if (world.hasEntity(irEntity.id)) continue;
       added.push({ ir: irEntity, entity: this.buildEntity(world, irEntity) });
     }
-    this.resolvePendingEntityRefs();
+    this.resolvePendingEntityRefs(world);
     for (const { ir: irEntity, entity } of added) this.wireEntity(world, author, irEntity, entity);
     const addedIds = new Set(added.map((a) => a.ir.id));
 
@@ -1167,14 +1128,14 @@ export class ChordStory implements Story {
     const addedExits: string[] = [];
     for (const irEntity of this.ir.entities) {
       if (addedIds.has(irEntity.id) || irEntity.exits.length === 0) continue;
-      const entity = world.getEntity(this.requireWorldId(irEntity.id, irEntity));
-      const room = entity?.get(TraitType.ROOM) as RoomTrait | undefined;
-      if (!entity || !room) continue;
+      const entity = requireEntity(world, irEntity.id, irEntity);
+      const room = entity.get(TraitType.ROOM) as RoomTrait | undefined;
+      if (!room) continue;
       for (const exit of irEntity.exits) {
         if (exit.to.kind !== 'room') continue;
         const direction = toDirection(exit.direction, irEntity);
         if ((room.exits as Record<string, unknown>)[direction] !== undefined) continue;
-        if (exit.via !== null && world.getEntity(this.requireWorldId(exit.via, irEntity))?.has(TraitType.DOOR)) continue;
+        if (exit.via !== null && requireEntity(world, exit.via, irEntity).has(TraitType.DOOR)) continue;
         this.wireExit(world, irEntity, entity, exit);
         addedExits.push(`${irEntity.id} ${exit.direction} -> ${exit.to.id}`);
       }
@@ -1195,8 +1156,7 @@ export class ChordStory implements Story {
       const key = landingKey(landing.region);
       const record = world.getStateValue(key) as LandingRecord | undefined;
       if (!record || record.authored) continue;
-      const rooms = landing.rooms.map((id) => this.worldIdOf(id)).filter((id): id is string => id !== undefined);
-      const next = reseedLandingRecord(record, rooms);
+      const next = reseedLandingRecord(record, landing.rooms.filter((id) => world.hasEntity(id)));
       if (next === undefined) continue;
       world.setStateValue(key, next);
       reseededLandings.push(landing.region);
@@ -1254,9 +1214,13 @@ export class ChordStory implements Story {
         onAfterAction: () => this.runtime.drainActEvents(),
       } satisfies TurnPlugin);
     }
+    if (!this.world) {
+      throw new LoadError('The story has no world yet: initializeWorld runs before onEngineReady.');
+    }
+    const world = this.world;
     const npcService = engine.getNpcService();
     for (const pending of this.npcBehaviors) {
-      npcService.registerBehavior(this.buildNpcBehavior(pending) as never);
+      npcService.registerBehavior(this.buildNpcBehavior(world, pending) as never);
     }
 
     // ADR-310/318 Phase 5: the character-model tick phase. The registry
@@ -1286,8 +1250,7 @@ export class ChordStory implements Story {
       }
     }
     const installContext: ExtensionInstallContext = {
-      worldId: (irId) => this.worldIdOf(irId),
-      requireWorldId: (irId) => this.requireWorldId(irId),
+      world,
       evalCondition: (condition, world) => this.evaluator.evalCondition(condition, { world }),
       execMachineBody: (statements, world) => this.runtime.execMachineBody(statements, world),
     };
@@ -1444,8 +1407,7 @@ export class ChordStory implements Story {
     for (const irEntity of this.ir.entities) {
       const phrase = table[`${irEntity.id}.present`];
       if (!phrase) continue;
-      const ownerWorldId = this.worldIdOf(irEntity.id);
-      if (!ownerWorldId) continue;
+      const ownerWorldId = irEntity.id;
       const texts = phrase.variants.map((v) => (v.text === 'nothing' ? '' : withLineBreaks(v.text)));
       const content: Phrase =
         texts.length === 1 && !phrase.strategy
@@ -1729,11 +1691,11 @@ export class ChordStory implements Story {
     // draw. Testing the relation here silently dropped every NPC declared
     // `starts in <room>`.
     if (irEntity.placement) {
-      author.moveEntity(entity.id, this.requireWorldId(irEntity.placement.place, irEntity));
+      author.moveEntity(entity.id, requireEntity(world, irEntity.placement.place, irEntity).id);
       // ADR-374 D1: a backdrop lives in its first room and is present at
       // every room of its list.
       if (irEntity.placement.places) {
-        entity.add(new BackdropTrait({ roomIds: irEntity.placement.places.map((id) => this.requireWorldId(id, irEntity)) }));
+        entity.add(new BackdropTrait({ roomIds: irEntity.placement.places.map((id) => requireEntity(world, id, irEntity).id) }));
       }
       // ADR-376 D10: a `floats` thing placed `in <expanse> at <x>, <y>`
       // holds that cell; an open vehicle's cell is on its model (wireVehicle).
@@ -1747,12 +1709,12 @@ export class ChordStory implements Story {
     // 2026-08-29 under ADR-329: an NPC's `carries` compiled and was never
     // placed — the monkey's necklace, the mercenaries' sword, Teisha's cord.
     for (const carriedIrId of irEntity.carries ?? []) {
-      author.moveEntity(this.requireWorldId(carriedIrId, irEntity), entity.id);
+      author.moveEntity(requireEntity(world, carriedIrId, irEntity).id, entity.id);
     }
     for (const wornIrId of irEntity.wears ?? []) {
-      const wornId = this.requireWorldId(wornIrId, irEntity);
-      author.moveEntity(wornId, entity.id);
-      const wearable = world.getEntity(wornId)?.get(TraitType.WEARABLE) as WearableTrait | undefined;
+      const worn = requireEntity(world, wornIrId, irEntity);
+      author.moveEntity(worn.id, entity.id);
+      const wearable = worn.get(TraitType.WEARABLE) as WearableTrait | undefined;
       if (!wearable) {
         // ADR-276 census 12: the compiler's gate refuses this
         // (analysis.worn-not-wearable) — the loader's backstop against rogue IR.
@@ -1774,7 +1736,7 @@ export class ChordStory implements Story {
           irEntity.span,
         );
       }
-      world.assignRoom(this.requireWorldId(member.id, irEntity), entity.id);
+      world.assignRoom(requireEntity(world, member.id, irEntity).id, entity.id);
     }
     // ADR-289 D6 backstop (ADR-276 two-layer): exits are gated to rooms at
     // compile (`analysis.exit-non-room`), so a non-room carrying any of the
@@ -1794,7 +1756,7 @@ export class ChordStory implements Story {
     // ADR-366: the vehicle's model, the rooms that admit it, and the rooms
     // aboard it — every id resolvable now that every entity is built.
     if (irEntity.vehicle) this.wireVehicle(world, irEntity, entity);
-    if (irEntity.expanse) this.wireExpanse(irEntity, entity);
+    if (irEntity.expanse) this.wireExpanse(world, irEntity, entity);
     if (irEntity.admits) this.wireAdmits(world, irEntity, entity);
     this.wireOutsideExits(world, irEntity, entity);
     // Blocked exits — ADR-240 D2 (Option A): ALL of them, conditional and
@@ -1860,7 +1822,7 @@ export class ChordStory implements Story {
     // room's computed exit below, resolved on each use to the vehicle's room.
     if (exit.to.kind === 'outside') return;
     if (exit.to.kind === 'unresolved') throw new LoadError(`\`${irEntity.name}\`: the \`${exit.direction}\` exit names no room.`, exit.span);
-    const toId = this.requireWorldId(exit.to.id, irEntity);
+    const toId = requireEntity(world, exit.to.id, irEntity).id;
     const direction = toDirection(exit.direction, irEntity);
     // `, one-way` (ADR-234 D4, GH #327): the written direction only —
     // no reverse exit is inferred, so a room reached by an authorial
@@ -1892,9 +1854,9 @@ export class ChordStory implements Story {
     // A door wires exactly once: the analyzer's checkDoors gates
     // guarantee any second reference is the exact mirror, whose exits
     // the first wiring already stamped — verified, then skipped.
-    const doorId = this.requireWorldId(exit.via, irEntity);
-    const door = world.getEntity(doorId);
-    const doorTrait = door?.get(TraitType.DOOR) as DoorTrait | undefined;
+    const door = requireEntity(world, exit.via, irEntity);
+    const doorId = door.id;
+    const doorTrait = door.get(TraitType.DOOR) as DoorTrait | undefined;
     if (doorTrait) {
       const isMirror = doorTrait.room1 === toId && doorTrait.room2 === entity.id;
       if (!isMirror) {
@@ -2019,8 +1981,10 @@ export class ChordStory implements Story {
       case 'region': {
         // ADR-236 D1: built on the shipped platform seam — createRegion +
         // assignRoom ARE the shared mechanics (RoomTrait.regionId is never
-        // set directly).
-        entity = world.createRegion(`rg-${irEntity.id}`, { name: irEntity.name });
+        // set directly). The region takes its IR id as its world id like
+        // every other entity (ADR-389 D1); the `rg-` prefix it once carried
+        // was the one place the two ids differed.
+        entity = world.createRegion(irEntity.id, { name: irEntity.name });
         // A region block composes like any entity block (aka, description):
         // both live on IdentityTrait; whether any action surfaces them is
         // the platform's business (ADR-236 D1).
@@ -2067,6 +2031,16 @@ export class ChordStory implements Story {
         throw new LoadError(`\`${irEntity.name}\`: unknown kind noun \`${kind}\`.`, irEntity.span);
     }
 
+    // One identity (ADR-389 D1): the IR id is the world id. Every reader
+    // relies on it, so it is asserted where the entity is made, never
+    // promised by a map beside it.
+    if (entity.id !== irEntity.id) {
+      throw new LoadError(
+        `\`${irEntity.name}\` was built as \`${entity.id}\`, not as its id \`${irEntity.id}\`.`,
+        irEntity.span,
+      );
+    }
+
     // ADR-376 D6: `sight:` off a vehicle is a landmark room's outlook or an
     // instrument's reach. A room an expanse names in its `landmarks` block
     // carries the extension's own trait with its outlook and its `seen from
@@ -2084,8 +2058,6 @@ export class ChordStory implements Story {
 
     this.applyTraitAdjectives(entity, irEntity, kind);
     this.applyStartsStates(entity, irEntity);
-    this.worldIds.set(irEntity.id, entity.id);
-    this.irIds.set(entity.id, irEntity.id);
     // GH #355: the same mapping, readable from the world alone — the
     // tree-document runner resolves `chord.state.<ir-id>` through it.
     entity.attributes[CHORD_IR_ID_ATTRIBUTE] = irEntity.id;
@@ -2128,10 +2100,10 @@ export class ChordStory implements Story {
    * to world entity ids (ADR-230 D3c / Phase 9a) — runs once, after every
    * entity is built.
    */
-  private resolvePendingEntityRefs(): void {
+  private resolvePendingEntityRefs(world: WorldModel): void {
     for (const pending of this.pendingEntityRefs) {
-      const worldId = this.worldIdOf(pending.irRefId);
-      if (!worldId) {
+      const worldId = worldIdOf(world, pending.irRefId);
+      if (worldId === undefined || !world.hasEntity(worldId)) {
         throw new LoadError(
           `\`${pending.ownerName}\`: a trait-config entity reference was never built.`,
           pending.span,
@@ -2161,8 +2133,7 @@ export class ChordStory implements Story {
     for (const { adjective, gerund, actionId } of toolGatedGerunds) {
       for (const irEntity of this.ir.entities) {
         if (!irEntity.traits.some((t) => t.name === adjective)) continue;
-        const worldId = this.worldIdOf(irEntity.id);
-        const entity = worldId ? world.getEntity(worldId) : undefined;
+        const entity = world.getEntity(irEntity.id);
         if (!entity) continue;
 
         let surfaces = 0;
@@ -2584,7 +2555,7 @@ export class ChordStory implements Story {
    * (engine-ready time — world ids exist). Chord percentages convert to
    * the platform's fractions here (`move-chance 50` → 0.5).
    */
-  private buildNpcBehavior(pending: { irId: string; adjective: string; config: IRConfigSetting[]; span: Span }): { id: string } {
+  private buildNpcBehavior(world: WorldModel, pending: { irId: string; adjective: string; config: IRConfigSetting[]; span: Span }): { id: string } {
     const numberOf = (key: string): number | undefined => {
       const setting = pending.config.find((s) => s.key === key);
       return setting ? Number(setting.value) : undefined;
@@ -2610,11 +2581,7 @@ export class ChordStory implements Story {
           // (analysis.patrol-needs-route) — defensive backstop.
           throw new LoadError(`A \`patrol\` NPC needs \`with route [ … ]\` naming its rooms.`, pending.span);
         }
-        const route = (routeSetting.values ?? []).map((irId) => {
-          const worldId = this.worldIdOf(irId);
-          if (!worldId) throw new LoadError(`A patrol route entry was never built.`, pending.span);
-          return worldId;
-        });
+        const route = (routeSetting.values ?? []).map((irId) => requireEntity(world, irId, pending).id);
         behavior = createPatrolBehavior({
           route,
           ...(boolOf('loop') === undefined ? {} : { loop: boolOf('loop') }),
@@ -2721,14 +2688,6 @@ export class ChordStory implements Story {
 
   // -------------------------------------------------------------- helpers
 
-  private requireWorldId(irId: string, at?: IREntity): string {
-    const id = this.worldIdOf(irId);
-    if (!id) {
-      throw new LoadError(`Entity \`${irId}\` is referenced before it exists in the world.`, at?.span);
-    }
-    return id;
-  }
-
   /** Resolved default-locale text for a phrase key (single-variant read). */
   /**
    * Z2 (ADR-211): compile `{key}` strategy-phrase markers in this entity's
@@ -2792,7 +2751,7 @@ export class ChordStory implements Story {
         if (phrase.condition) {
           const subject = roomTrait ? presenceSubject(phrase.condition, irEntity.id) : null;
           if (subject) {
-            mentions = this.requireWorldId(subject, irEntity);
+            mentions = requireEntity(world, subject, irEntity).id;
           } else {
             const condition = phrase.condition;
             gates.push(() =>
@@ -2856,8 +2815,8 @@ export class ChordStory implements Story {
     world.onEntityRemoved((entity, lastRoomId) => {
       const playerId = world.hasPlayerCharacter ? world.playerCharacter.id : undefined;
       if (!playerId || entity.id === playerId) return;
-      const irId = this.irIds.get(entity.id);
-      if (!irId || !table[`${irId}.disappeared`]) return;
+      const irId = entity.id;
+      if (!table[`${irId}.disappeared`]) return;
       if (lastRoomId === null) return; // nowhere = nothing witnessable
       const playerRoom = world.getContainingRoom(playerId)?.id ?? world.getLocation(playerId);
       if (playerRoom !== lastRoomId) return; // unwitnessed: nothing enqueued, nothing consumed
@@ -2904,8 +2863,7 @@ export class ChordStory implements Story {
     const table = this.ir.phrases.locales[this.ir.phrases.defaultLocale] ?? {};
 
     for (const irEntity of this.ir.entities) {
-      const worldId = this.worldIdOf(irEntity.id);
-      if (!worldId) continue;
+      const worldId = irEntity.id;
 
       const arms: LocationNameArm[] = [];
       for (let i = 1; ; i++) {
@@ -2930,8 +2888,7 @@ export class ChordStory implements Story {
     const providerSpecs = new Map<string, Array<{ irId: string; condition: IRCondition; text: string }>>();
 
     for (const irEntity of this.ir.entities) {
-      const worldId = this.worldIdOf(irEntity.id);
-      if (!worldId) continue;
+      const worldId = irEntity.id;
       const entity = world.getEntity(worldId);
       if (!entity) continue;
       for (let i = 1; ; i++) {

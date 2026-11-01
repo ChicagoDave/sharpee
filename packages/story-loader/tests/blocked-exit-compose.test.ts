@@ -108,7 +108,7 @@ function load() {
 
 /** Drive the named scenery's real registered pushing interceptor (mutation phase). */
 function push(cw: ReturnType<typeof load>, name: string): void {
-  const entity = cw.world.getEntity(cw.story.entityId(name)!)!;
+  const entity = cw.world.getEntity(name)!;
   const lookup = cw.world.getInterceptorForAction(entity, 'if.action.pushing')!;
   const data = {};
   lookup.interceptor.postValidate!(entity, cw.world, cw.player.id, data);
@@ -116,7 +116,7 @@ function push(cw: ReturnType<typeof load>, name: string): void {
 }
 
 function northKeys(cw: ReturnType<typeof load>) {
-  const junctionId = cw.story.entityId('junction')!;
+  const junctionId = 'junction';
   return {
     blocked: () => cw.world.evaluate(exitBlockedKey(junctionId, Direction.NORTH)),
     message: () => cw.world.evaluate(exitMessageKey(junctionId, Direction.NORTH)),
@@ -147,7 +147,7 @@ describe('GH #315 — per-direction blocked lines compose, declaration order, fi
 
   it('a condition-less line is the always-true fallback arm', () => {
     const cw = load();
-    const junctionId = cw.story.entityId('junction')!;
+    const junctionId = 'junction';
     const blocked = () => cw.world.evaluate(exitBlockedKey(junctionId, Direction.EAST));
     const message = () => cw.world.evaluate(exitMessageKey(junctionId, Direction.EAST));
 

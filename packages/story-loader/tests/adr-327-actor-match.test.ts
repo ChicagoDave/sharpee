@@ -41,7 +41,7 @@ function boot(source: string): Booted {
   player.add(new ActorTrait({ isPlayable: true }));
   world.setPlayer(player.id);
   story.runtime.setTurnProvider(() => 3);
-  const id = (irId: string) => story.entityId(irId)!;
+  const id = (irId: string) => irId;
   return { story, world, playerId: player.id, id, entity: (irId) => world.getEntity(id(irId))! };
 }
 

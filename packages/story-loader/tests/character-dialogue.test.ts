@@ -76,7 +76,7 @@ function load(): Loaded {
   return { story, world, player };
 }
 
-const entity = (l: Loaded, irId: string): IFEntity => l.world.getEntity(l.story.entityId(irId)!)!;
+const entity = (l: Loaded, irId: string): IFEntity => l.world.getEntity(irId)!;
 const traitOf = (l: Loaded, irId: string): CharacterModelTrait =>
   entity(l, irId).get(TraitType.CHARACTER_MODEL) as CharacterModelTrait;
 

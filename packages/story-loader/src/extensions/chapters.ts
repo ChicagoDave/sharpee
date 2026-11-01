@@ -56,7 +56,7 @@ export const CHAPTERS_EXTENSION: ExtensionRegistration = {
           // GH #368: the visit is the ARRIVAL, stamped as a visited fact on both
           // paths (walked and authored), so a row holds even when the room's own
           // entering clause moves the player on in the same turn.
-          return { kind: 'first-visit', stateKey: CHORD_VISITED_PREFIX + context.requireWorldId(t.room) };
+          return { kind: 'first-visit', stateKey: CHORD_VISITED_PREFIX + t.room };
         case 'timer-expires':
           return { kind: 'timer-expires', stateKey: timerKey(t.timer) };
         case 'becomes':

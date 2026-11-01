@@ -15,6 +15,7 @@ import type { IREntity, IRMoveClause, IRValue } from '@sharpee/chord';
 import type { ISemanticEvent } from '@sharpee/core';
 import { WorldModel } from '@sharpee/world-model';
 import { MOVE_TRIGGERS, movedActorId } from '../event-contract.js';
+import { worldIdOf } from '../identity.js';
 import { CHORD_OCCURRENCE_PREFIX } from '../state-keys.js';
 import { ExecContext, type RuntimeCore } from './core.js';
 
@@ -65,7 +66,7 @@ export class MoveClausesSection {
     if (actor === null) return true;
     if (actorId === undefined) return false;
     if (actor.kind === 'player') return actorId === world.playerCharacter.id;
-    if (actor.kind === 'entity') return actorId === this.core.host.entityId(actor.id);
+    if (actor.kind === 'entity') return actorId === worldIdOf(world, actor.id);
     return false;
   }
 
@@ -83,7 +84,7 @@ export class MoveClausesSection {
   ): ISemanticEvent[] | null {
     const moverId = clause.mover.kind === 'player'
       ? world.playerCharacter.id
-      : clause.mover.kind === 'entity' ? this.core.host.entityId(clause.mover.id) : undefined;
+      : clause.mover.kind === 'entity' ? worldIdOf(world, clause.mover.id) : undefined;
     if (!moverId || movedActorId(event) !== moverId) return null;
 
     const ctx: ExecContext = { world, it: entity.id };

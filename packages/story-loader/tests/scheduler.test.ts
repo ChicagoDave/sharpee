@@ -119,8 +119,8 @@ describe('zoo-timeline scheduler constructs', () => {
 
   it('Sam\'s `on every turn while after-hours, once` fires exactly once, moving Sam offstage', () => {
     runTurns(1, 19); // still open: the clause condition never held
-    const samId = story.entityId('sam-the-zookeeper')!;
-    const gateId = story.entityId('staff-gate')!;
+    const samId = 'sam-the-zookeeper';
+    const gateId = 'staff-gate';
     expect(world.getLocation(samId)).not.toBe(gateId);
 
     // Turn 20: the phase flips earlier in the tick; Sam's clause fires.

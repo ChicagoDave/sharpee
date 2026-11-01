@@ -121,16 +121,14 @@ export interface ExtensionEngineHost {
 }
 
 /**
- * The loader-side services IR-shaped construction may need: the IR-id to
- * world-id map, the story's evaluator, and the runtime's statement
+ * The loader-side services IR-shaped construction may need: the world the
+ * story was built into, the story's evaluator, and the runtime's statement
  * executor. Handed to `installFromIR` so an entry never reaches into the
- * loader.
+ * loader. An IR entity id is the world id, so no id service is offered.
  */
 export interface ExtensionInstallContext {
-  /** The world id an IR entity id was built as, or undefined if never built. */
-  worldId(irId: string): string | undefined;
-  /** The world id an IR entity id was built as; throws the loader's LoadError when never built. */
-  requireWorldId(irId: string): string;
+  /** The world the story was built into, for references resolved at install. */
+  world: WorldModel;
   /** Evaluate a compiled condition against a live world through the story's evaluator. */
   evalCondition(condition: IRCondition, world: WorldModel): boolean;
   /** Run a compiled statement body against a live world through the runtime's statement executor. */

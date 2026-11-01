@@ -35,7 +35,7 @@ describe('gamekeeper interrogation vignette (ADR-239 elegance parity)', () => {
     player.add(new ActorTrait({ isPlayable: true }));
     world.setPlayer(player.id);
 
-    const byId = (irId: string): IFEntity => world.getEntity(story.entityId(irId)!)!;
+    const byId = (irId: string): IFEntity => world.getEntity(irId)!;
     const keeper = byId('gamekeeper');
 
     const ask = (topic: { text: string; entity?: string }) => {

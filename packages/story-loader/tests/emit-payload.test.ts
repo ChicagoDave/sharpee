@@ -61,14 +61,14 @@ describe('payloaded emit through the real loader (ADR-216 AC-1)', () => {
     const image = events.find((e) => e.type === 'media.image.show')!;
     expect(image.data).toMatchObject({ src: 'map.png', layer: 'background' });
     const hotspots = (image.data as { hotspots: Array<Record<string, unknown>> }).hotspots;
-    expect(hotspots).toEqual([{ id: 'well', target: story.entityId('well')! }]);
+    expect(hotspots).toEqual([{ id: 'well', target: 'well' }]);
   });
 
   it('value expressions evaluate against LIVE world state at emit time', () => {
     const debug = events.find((e) => e.type === 'chord-debug-whereabouts')!;
     expect(debug.data).toEqual({
       holder: player.id,
-      room: story.entityId('courtyard')!,
+      room: 'courtyard',
     });
     // Move the player; the next emission reads the NEW location.
     const elsewhere = world.createEntity('void-room', 'room');

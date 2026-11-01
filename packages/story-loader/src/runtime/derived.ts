@@ -36,8 +36,7 @@ export class DerivedSection {
    */
   registerDerivedEvaluators(world: WorldModel): void {
     for (const { entity, condition } of this.derivedDarkRooms()) {
-      const worldId = this.core.host.entityId(entity.id);
-      if (!worldId) continue;
+      const worldId = entity.id;
       world.registerEvaluator(darkKey(worldId), (w) =>
         this.core.evaluator.evalCondition(condition, { world: w as WorldModel }),
       );
@@ -47,8 +46,7 @@ export class DerivedSection {
     // key answers "hidden now?", so it is the condition's negation; a
     // two-way exit's inferred reverse carries the same condition.
     for (const irEntity of this.core.ir.entities) {
-      const worldId = this.core.host.entityId(irEntity.id);
-      if (!worldId) continue;
+      const worldId = irEntity.id;
       for (const exit of irEntity.exits) {
         const condition = exit.condition;
         if (!condition) continue;
@@ -65,16 +63,13 @@ export class DerivedSection {
         if (farId === undefined) continue;
         const far = this.core.ir.entities.find((e) => e.id === farId);
         if (far?.exits.some((e) => exitKeyOf(e.direction) === reverse)) continue;
-        const toId = this.core.host.entityId(farId);
-        if (!toId) continue;
-        world.registerEvaluator(exitHiddenKey(toId, reverse), (w) => hidden(w as WorldModel));
+        world.registerEvaluator(exitHiddenKey(farId, reverse), (w) => hidden(w as WorldModel));
       }
     }
 
     for (const irEntity of this.core.ir.entities) {
       if (irEntity.blockedExits.length === 0) continue;
-      const worldId = this.core.host.entityId(irEntity.id);
-      if (!worldId) continue;
+      const worldId = irEntity.id;
       // GH #315: the evaluator registry is one-value-per-key (idempotent
       // last-wins, ADR-240 D6), so a direction's N blocked lines must compose
       // into ONE registration per key — registering per line silently kept

@@ -195,14 +195,14 @@ describe('region-owned every-turn daemons (ADR-236 D4, REAL-PATH)', () => {
     const atRoundRoom = tickEvents();
     expect(messageIdsOf(atRoundRoom)).toContain('underground-hum');
     expect(messageIdsOf(atRoundRoom)).not.toContain('mine-drip');
-    expect(locationOf(atRoundRoom, 'underground-hum')).toBe(story.entityId('underground'));
+    expect(locationOf(atRoundRoom, 'underground-hum')).toBe('underground');
 
     // Shaft Top — a room of the Mines, and of no other region (ADR-360 D5).
     go(Direction.NORTH);
     const atShaftTop = tickEvents();
     expect(messageIdsOf(atShaftTop)).toContain('mine-drip');
     expect(messageIdsOf(atShaftTop)).not.toContain('underground-hum');
-    expect(locationOf(atShaftTop, 'mine-drip')).toBe(story.entityId('mines'));
+    expect(locationOf(atShaftTop, 'mine-drip')).toBe('mines');
 
     // Coal Seam — deeper in the Mines: the Mines only.
     go(Direction.DOWN);
@@ -227,7 +227,7 @@ describe('region-owned every-turn daemons (ADR-236 D4, REAL-PATH)', () => {
     go(Direction.NORTH); // Shaft Top
     const first = tickEvents();
     expect(messageIdsOf(first)).toContain('first-drip');
-    expect(locationOf(first, 'first-drip')).toBe(story.entityId('mines'));
+    expect(locationOf(first, 'first-drip')).toBe('mines');
     expect(tick()).not.toContain('first-drip');
 
     // Leaving and returning does not rewind it.

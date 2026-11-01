@@ -75,7 +75,7 @@ function load() {
 
 /** Run the sundial's real registered interceptor (mutation phase). */
 function pushSundial({ story, world, player }: ReturnType<typeof load>): void {
-  const sundial = world.getEntity(story.entityId('sundial')!)!;
+  const sundial = world.getEntity('sundial')!;
   const lookup = world.getInterceptorForAction(sundial, 'if.action.pushing')!;
   const data = {};
   lookup.interceptor.postValidate!(sundial, world, player.id, data);
@@ -85,7 +85,7 @@ function pushSundial({ story, world, player }: ReturnType<typeof load>): void {
 describe('AC-2: a chord `change` flips derived state at the NEXT READ — no event, no recompute', () => {
   it('dark-while-story-state and blocked-while-story-state both answer live', () => {
     const cw = load();
-    const terrace = cw.world.getEntity(cw.story.entityId('terrace')!)!;
+    const terrace = cw.world.getEntity('terrace')!;
     const terraceId = terrace.id;
 
     // Day: lit, gate open.
@@ -117,8 +117,8 @@ describe('AC-5: registration is per-world; re-loading re-registers cleanly', () 
     const a = load();
     const b = load();
     pushSundial(a);
-    expect(a.world.evaluate(darkKey(a.world.getEntity(a.story.entityId('terrace')!)!.id))).toBe(true);
+    expect(a.world.evaluate(darkKey(a.world.getEntity('terrace')!.id))).toBe(true);
     // World B is untouched — its own evaluators, its own state.
-    expect(b.world.evaluate(darkKey(b.world.getEntity(b.story.entityId('terrace')!)!.id))).toBe(false);
+    expect(b.world.evaluate(darkKey(b.world.getEntity('terrace')!.id))).toBe(false);
   });
 });

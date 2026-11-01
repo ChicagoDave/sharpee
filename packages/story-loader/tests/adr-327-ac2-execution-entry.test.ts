@@ -73,7 +73,7 @@ function boot(source: string): Booted {
     metadata: { started: new Date(), lastPlayed: new Date() },
   };
 
-  const id = (irId: string) => story.entityId(irId)!;
+  const id = (irId: string) => irId;
   return {
     story,
     world,

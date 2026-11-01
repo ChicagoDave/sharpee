@@ -59,7 +59,7 @@ function load(source: string): Loaded {
   return { story, world, player };
 }
 
-const entity = (l: Loaded, irId: string): IFEntity => l.world.getEntity(l.story.entityId(irId)!)!;
+const entity = (l: Loaded, irId: string): IFEntity => l.world.getEntity(irId)!;
 
 /** Four-phase context over the LIVE world (door-actions harness model). */
 function makeContext(l: Loaded, action: { id: string }, command: Record<string, unknown>): any {

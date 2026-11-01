@@ -101,7 +101,7 @@ const load = () => {
   const player = story.createPlayer(world);
   player.add(new ActorTrait({ isPlayable: true }));
   world.setPlayer(player.id);
-  const entity = (slug: string): IFEntity => world.getEntity(story.entityId(slug)!)!;
+  const entity = (slug: string): IFEntity => world.getEntity(slug)!;
   return { story, world, player, entity };
 };
 
@@ -113,7 +113,7 @@ describe('starts <state> through the real loader (ADR-231 D5a)', () => {
     expect(lockable.isLocked).toBe(true);
     // The initializer rides the same composition line as `with key` — the
     // resolved key id must survive it.
-    expect(lockable.keyId).toBe(story.entityId('brass-key')!);
+    expect(lockable.keyId).toBe('brass-key');
   });
 
   it('REAL-PATH: the declared lock is live — stdlib unlockingAction unlocks it with the loaded key', () => {

@@ -67,7 +67,7 @@ function boot(source: string, seed = 5): Booted {
       return events;
     },
     enterYard() {
-      const roomId = story.entityId('yard')!;
+      const roomId = 'yard';
       world.moveEntity(player.id, roomId);
       return messageIdsOf(
         story.runtime.fireEventClauses(world, {
@@ -179,8 +179,8 @@ describe('stepping (D3f)', () => {
     // the owner's place so the engine tags presence from it.
     const events = b.tickEvents();
     expect(messageIdsOf(events)).toEqual(['guards.search.lingering']);
-    expect(events[0].entities.location).toBe(b.story.entityId('yard'));
-    expect(events[0].entities.actor).toBe(b.story.entityId('guards'));
+    expect(events[0].entities.location).toBe('yard');
+    expect(events[0].entities.actor).toBe('guards');
     expect(events[0].presence).toBeUndefined();
     expect(b.record()).toMatchObject({ turn: 'lingering' });
   });
@@ -190,7 +190,7 @@ describe('stepping (D3f)', () => {
     b.enterYard();
     b.tick();
     b.tick();
-    b.world.moveEntity(b.story.entityId('guards')!, null);
+    b.world.moveEntity('guards', null);
     // Lingering reached: the line fires. Its owner has no place at all, so
     // there is nowhere to source it from — it goes out unsourced and the
     // funnel defaults it to the player (ADR-328 D3, amended 2026-09-06).

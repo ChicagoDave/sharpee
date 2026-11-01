@@ -123,7 +123,7 @@ async function boot(seed = 7): Promise<Booted> {
   return { engine, story, world, player: world.playerCharacter, turn };
 }
 
-const worldId = (b: Booted, irId: string): string => b.story.entityId(irId)!;
+const worldId = (b: Booted, irId: string): string => irId;
 const kempTrait = (b: Booted): CharacterModelTrait =>
   b.world.getEntity(worldId(b, 'kemp'))!.get(TraitType.CHARACTER_MODEL) as CharacterModelTrait;
 

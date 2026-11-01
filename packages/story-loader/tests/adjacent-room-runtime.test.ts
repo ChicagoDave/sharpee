@@ -46,7 +46,7 @@ const messageIdsOf = (events: ISemanticEvent[]) =>
 
 /** Put the player in `roomIr` and fire that room's `after the player entering` clause. */
 function enter(b: Booted, roomIr: string): ISemanticEvent[] {
-  const roomId = b.story.entityId(roomIr)!;
+  const roomId = roomIr;
   b.world.moveEntity(b.playerId, roomId);
   return b.story.runtime.fireEventClauses(b.world, {
     id: 'm1',
@@ -57,7 +57,7 @@ function enter(b: Booted, roomIr: string): ISemanticEvent[] {
   });
 }
 
-const room = (b: Booted, ir: string) => b.story.entityId(ir)!;
+const room = (b: Booted, ir: string) => ir;
 const roomOf = (b: Booted, entityId: string) => b.world.getContainingRoom(entityId)?.id;
 
 /** Draw `n` times from the Hub; returns the sequence of landing room ids. */
@@ -165,7 +165,7 @@ describe('`move … to a random adjacent room` lands one traversable exit away (
 
   it('persists only the mover\'s stream seed, and advances it per draw', () => {
     const b = boot(HUB('move the player to a random adjacent room'));
-    const key = adjacentKey(b.story.irIdOf(b.playerId)!);
+    const key = adjacentKey(b.playerId);
     expect(b.world.getStateValue(key)).toBeUndefined();
     enter(b, 'hub');
     const first = b.world.getStateValue(key) as { seed: number };
@@ -177,7 +177,7 @@ describe('`move … to a random adjacent room` lands one traversable exit away (
 
   it('any entity can be the mover', () => {
     const b = boot(HUB('move the monkey to a random adjacent room'));
-    const monkey = b.story.entityId('monkey')!;
+    const monkey = 'monkey';
     enter(b, 'hub');
     expect(roomOf(b, b.playerId)).toBe(room(b, 'hub'));
     expect([room(b, 'north-room'), room(b, 'south-room'), room(b, 'west-room')]).toContain(roomOf(b, monkey));
@@ -205,7 +205,7 @@ describe('traversability is what going means (D1)', () => {
 
   it('a locked door excludes its direction; unlocking admits it', () => {
     const b = boot(HUB('move the player to a random adjacent room'));
-    const door = b.world.getEntity(b.story.entityId('east-door')!)!;
+    const door = b.world.getEntity('east-door')!;
     expect(drawsFromHub(b, 12)).not.toContain(room(b, 'east-room'));
     LockableBehavior.unlock(door);
     expect(drawsFromHub(b, 24)).toContain(room(b, 'east-room'));

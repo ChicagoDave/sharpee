@@ -42,7 +42,7 @@ const load = (mutate?: (ir: StoryIR) => void) => {
   const player = story.createPlayer(world);
   player.add(new ActorTrait({ isPlayable: true }));
   world.setPlayer(player.id);
-  const entity = (slug: string): IFEntity => world.getEntity(story.entityId(slug)!)!;
+  const entity = (slug: string): IFEntity => world.getEntity(slug)!;
   return { story, world, player, entity };
 };
 

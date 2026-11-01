@@ -71,7 +71,7 @@ function load(): { ir: StoryIR; story: ChordStory; world: WorldModel } {
 
 describe('ADR-359 D1 — `a thing` in the IR and the world', () => {
   const { ir, story, world } = load();
-  const entityOf = (irId: string) => world.getEntity(story.entityId(irId)!)!;
+  const entityOf = (irId: string) => world.getEntity(irId)!;
 
   it('records `thing` as the kind of a plain object', () => {
     expect(ir.entities.find((e) => e.id === 'cap')!.kinds.map((k) => k.name)).toEqual(['thing']);
@@ -87,7 +87,7 @@ describe('ADR-359 D1 — `a thing` in the IR and the world', () => {
     expect(cap.has('wearable')).toBe(true);
     expect(cap.has('container')).toBe(false);
     expect(crate.has('container')).toBe(true);
-    expect(world.getLocation(cap.id)).toBe(story.entityId('hall'));
+    expect(world.getLocation(cap.id)).toBe('hall');
   });
 });
 
@@ -103,14 +103,14 @@ describe('ADR-359 D1 — the loader refuses an entity with no kind', () => {
 
 describe('ADR-359 D1 — `thing` is the parent of every kind but room and region', () => {
   const { ir, story, world } = load();
-  const ev = new Evaluator(ir, story, 1);
+  const ev = new Evaluator(ir, 1);
   const isA = (id: string, name: string, negated = false) =>
     ev.evalCondition(
       { kind: 'predicate', pred: 'is-a', negated, subject: { kind: 'entity', id }, object: { kind: 'symbol', name } },
       { world },
     );
   const oracle = story['storyOracle']();
-  const member = (irId: string, kind: string) => oracle.isKindMember(story.entityId(irId)!, kind);
+  const member = (irId: string, kind: string) => oracle.isKindMember(irId, kind);
 
   it('`is a thing` holds for things, containers and persons', () => {
     expect(isA('cap', 'thing')).toBe(true);

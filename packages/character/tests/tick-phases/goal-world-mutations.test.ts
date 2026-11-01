@@ -306,7 +306,7 @@ describe('D6 — goal steps mutate the world', () => {
   });
 
   // Scaffold-only by design: on the real path this branch is unreachable —
-  // the compiler refuses an unknown name and the loader's `requireWorldId`
+  // the compiler refuses an unknown name and the loader's `requireEntity`
   // throws on an unresolvable id — so it is a defensive guard, not part of
   // Acceptance item 7, and no real-path case backs it.
   it('a perform whose slot names nothing in the world performs nothing and does not advance', () => {

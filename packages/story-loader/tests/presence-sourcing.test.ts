@@ -127,8 +127,8 @@ describe('every-turn narration is sourced to its owner (ADR-328 D3)', () => {
     const events = tick(story.runtime.buildSchedulerDaemons(), world, 1);
     const hoot = byMessage(events, 'hoot');
     expect(hoot).toBeDefined();
-    expect(hoot!.entities.actor).toBe(story.entityId('owl'));
-    expect(hoot!.entities.location).toBe(story.entityId('barn'));
+    expect(hoot!.entities.actor).toBe('owl');
+    expect(hoot!.entities.location).toBe('barn');
   });
 
   it('a trait-owned clause is sourced per carrying entity', () => {
@@ -136,8 +136,8 @@ describe('every-turn narration is sourced to its owner (ADR-328 D3)', () => {
     const events = tick(story.runtime.buildSchedulerDaemons(), world, 1);
     const fidget = byMessage(events, 'fidget');
     expect(fidget).toBeDefined();
-    expect(fidget!.entities.actor).toBe(story.entityId('bull'));
-    expect(fidget!.entities.location).toBe(story.entityId('barn'));
+    expect(fidget!.entities.actor).toBe('bull');
+    expect(fidget!.entities.location).toBe('barn');
   });
 
   it('a room-owned clause is located at the room itself', () => {
@@ -145,8 +145,8 @@ describe('every-turn narration is sourced to its owner (ADR-328 D3)', () => {
     const events = tick(story.runtime.buildSchedulerDaemons(), world, 1);
     const creak = byMessage(events, 'creak');
     expect(creak).toBeDefined();
-    expect(creak!.entities.actor).toBe(story.entityId('barn'));
-    expect(creak!.entities.location).toBe(story.entityId('barn'));
+    expect(creak!.entities.actor).toBe('barn');
+    expect(creak!.entities.location).toBe('barn');
   });
 
   it('a story-owned clause is not sourced — no actor, no location', () => {

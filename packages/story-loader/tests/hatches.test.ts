@@ -32,7 +32,7 @@ describe('a story loads as plain data', () => {
     player.add(new ActorTrait({ isPlayable: true }));
     world.setPlayer(player.id);
 
-    const builtIds = world.getAllEntities().map((e) => story.irIdOf(e.id)).filter((id): id is string => id !== undefined);
+    const builtIds = world.getAllEntities().map((e) => e.id);
     expect(builtIds.sort()).toEqual(ir.entities.map((e) => e.id).sort());
     const actionIds = (story.getCustomActions() as Array<{ id: string }>).map((a) => a.id);
     expect(actionIds.length).toBe(ir.actions.length);

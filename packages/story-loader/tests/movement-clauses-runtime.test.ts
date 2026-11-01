@@ -98,7 +98,7 @@ end before
  * ADR-327 D1). First veto wins; the post hooks run for both.
  */
 function goFrom(b: Booted, roomIrId: string) {
-  const room = b.world.getEntity(b.story.entityId(roomIrId)!)!;
+  const room = b.world.getEntity(roomIrId)!;
   const player = b.world.getEntity(b.playerId)!;
   const consultations = [
     { target: room, lookup: b.world.getInterceptorForAction(room, 'if.action.going') },
@@ -127,7 +127,7 @@ describe("the player's own going (D3h)", () => {
 
   it('binds on the player under the actor-consultation key — an unmarked room carries no going interceptor (ADR-327 D1)', () => {
     const b = boot(SOURCE('', PLAYER));
-    const yard = b.world.getEntity(b.story.entityId('yard')!)!;
+    const yard = b.world.getEntity('yard')!;
     expect(yard.has(TraitType.ROOM)).toBe(true);
     expect(b.world.getInterceptorForAction(yard, 'if.action.going')).toBeUndefined();
     const player = b.world.getEntity(b.playerId)!;
@@ -155,7 +155,7 @@ describe("the player's own going (D3h)", () => {
   it("`it` inside the clause is the player, not the room", () => {
     const b = boot(SOURCE('', '  after going\n    move the player to the Gate\n  end after\n'));
     goFrom(b, 'yard');
-    expect(b.world.getLocation(b.playerId)).toBe(b.story.entityId('gate'));
+    expect(b.world.getLocation(b.playerId)).toBe('gate');
   });
 
   it("a room's own `on the player going` still fires only for that room", () => {
@@ -197,7 +197,7 @@ end before
 `;
     const b = boot(src);
     expect(goFrom(b, 'yard').veto).toMatchObject({ error: 'merc-held' });
-    const gate = b.world.getEntity(b.story.entityId('gate')!)!;
+    const gate = b.world.getEntity('gate')!;
     expect(b.world.getInterceptorForAction(gate, 'if.action.going')).toBeUndefined();
   });
 });
@@ -215,7 +215,7 @@ describe('when <entity> moves (D3h)', () => {
       type: 'if.event.actor_moved',
       timestamp: 0,
       entities: { actor: actorId },
-      data: { fromRoom: b.story.entityId('yard'), toRoom: b.story.entityId('gate') },
+      data: { fromRoom: 'yard', toRoom: 'gate' },
     });
 
   it('fires on the completed move by the named mover, with `it` as the owner', () => {
@@ -228,7 +228,7 @@ describe('when <entity> moves (D3h)', () => {
 
   it('ignores moves by anyone else', () => {
     const b = boot(SOURCE(GUARDS, ''));
-    moved(b, b.story.entityId('guards')!);
+    moved(b, 'guards');
     expect(b.world.getStateValue('chord.state.guards')).toBe('calm');
   });
 
@@ -242,7 +242,7 @@ describe('when <entity> moves (D3h)', () => {
     const b = boot(SOURCE('', '  when the guards moves\n    restart waiting\n  end when\n'));
     moved(b, b.playerId);
     expect(b.world.getStateValue(timerKey('alex.waiting'))).toBeUndefined();
-    moved(b, b.story.entityId('guards')!);
+    moved(b, 'guards');
     expect(b.world.getStateValue(timerKey('alex.waiting'))).toMatchObject({ phase: 'running' });
   });
 

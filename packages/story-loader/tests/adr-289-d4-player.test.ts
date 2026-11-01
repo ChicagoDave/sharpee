@@ -194,7 +194,7 @@ before the game starts
 end before
 
 `);
-    const cookId = l.story.entityId('cook')!;
+    const cookId = 'cook';
     expect(locationName(l, cookId)).toBe('Kitchen');
   });
 
@@ -218,6 +218,6 @@ before the game starts
 end before
 
 `);
-    expect(locationName(l, l.story.entityId('cook')!)).toBe('Kitchen');
+    expect(locationName(l, 'cook')).toBe('Kitchen');
   });
 });

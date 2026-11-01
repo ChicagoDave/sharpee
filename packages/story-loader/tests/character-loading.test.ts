@@ -59,8 +59,8 @@ describe('Phase 5 — character blocks through the real loader', () => {
   let turn: number;
   const random = new EngineRandomService(7);
 
-  const maid = () => world.getEntity(story.entityId('maid')!)!;
-  const duke = () => world.getEntity(story.entityId('duke')!)!;
+  const maid = () => world.getEntity('maid')!;
+  const duke = () => world.getEntity('duke')!;
   const maidTrait = () => maid().get(TraitType.CHARACTER_MODEL) as CharacterModelTrait;
 
   const tick = (actionEvents: ISemanticEvent[] = []) => {
@@ -121,7 +121,7 @@ describe('Phase 5 — character blocks through the real loader', () => {
     // loader's evaluator); `wait for the Duke is in the Cellar` did not.
     expect(maidTrait().goalState['confess']).toMatchObject({ active: true, currentStep: 0 });
 
-    world.moveEntity(duke().id, story.entityId('cellar')!);
+    world.moveEntity(duke().id, 'cellar');
     tick();
     expect(maidTrait().goalState['confess']).toMatchObject({ active: true, currentStep: 1 });
   });
@@ -144,7 +144,7 @@ describe('Phase 5 — character blocks through the real loader', () => {
     it('a belief/mood/goal-step change and a pinned lie survive save and restore on the trait', () => {
       // Reach a mid-story state: goal active (turn 1), then step advanced (turn 2).
       tick();
-      world.moveEntity(duke().id, story.entityId('cellar')!);
+      world.moveEntity(duke().id, 'cellar');
       tick();
       const trait = maidTrait();
       // Belief change, mood change, and a minted-and-pinned claim (the lie
