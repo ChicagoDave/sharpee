@@ -6,10 +6,14 @@
  * `WORLD_BUILD_STEPS` with one `BuildContext` — `build/`, ADR-389 D2),
  * player creation (`createPlayer`), phrase registration (`extendLanguage`),
  * story grammar and alterations (`extendParser`, whose body is
- * `build/grammar.ts` — ADR-270), and endings (`triggerEnding`, which
- * lowers to stdlib's `endStory` — ADR-347 D2c).
+ * `build/grammar.ts` — ADR-270), engine wiring (`onEngineReady`, a loop
+ * over `ENGINE_READY_STEPS` — `build/engine-ready/`), restore
+ * reconciliation (`onWorldRestored`, whose body is `restore.ts` —
+ * ADR-388 D5), channels (`registerChannels`), and endings
+ * (`triggerEnding`, which lowers to stdlib's `endStory` — ADR-347 D2c).
  * When-rules, on-clause interceptors, derived properties, and the
- * evaluator bind through the runtime (`runtime.ts`).
+ * evaluator bind through the runtime (`runtime.ts`). This file holds the
+ * facade, its context, and no step body.
  *
  * Public interface: createStory(), ChordStory, StoryLoaderOptions.
  * Owner context: @sharpee/story-loader (language-neutral IR consumer; the
@@ -26,68 +30,33 @@
 import {
   IR_FORMAT,
   type IRChannelReturn,
-  type IRConfigSetting,
-  type Span,
-  type IREntity,
   type IRPhrase,
   type StoryIR,
 } from '@sharpee/chord';
 import type { IRProseValue } from '@sharpee/chord';
 import { validateIR } from '@sharpee/chord';
-import type { Choice, IChannelRegistry, IOChannel, Literal, Phrase, SemanticProperties } from '@sharpee/if-domain';
-import {
-  DEADLY_ROOM_DEATH_ACTION_ID,
-  DEADLY_ROOM_CAUSE_KEY,
-  DEADLY_ROOM_MESSAGE_KEY,
-  createAmbientChannel,
-  createImageChannel,
-  killPlayer,
-  endStory,
-  type INpcService,
-  type ActSlots,
-  type ActResult,
-} from '@sharpee/stdlib';
-import { type IRestoreIdentity, type IRestoreReconciliation, type ISemanticEvent, type RandomService } from '@sharpee/core';
+import type { IChannelRegistry, IOChannel } from '@sharpee/if-domain';
+import { createAmbientChannel, createImageChannel, endStory, type Action } from '@sharpee/stdlib';
+import type { IRestoreIdentity, IRestoreReconciliation, ISemanticEvent } from '@sharpee/core';
 import type { LanguageProvider, StoryEndingKind } from '@sharpee/if-domain';
 import type { Story, StoryConfig, StoryEngine } from '@sharpee/engine';
-import { TURN_BANDS, type TurnPlugin } from '@sharpee/plugins';
-import { registerCharacterModelPhase } from '@sharpee/character';
-import { SchedulerPlugin } from '@sharpee/plugin-scheduler';
-import {
-  type Action,
-  createFollowerBehavior,
-  createPatrolBehavior,
-  createWandererBehavior,
-} from '@sharpee/stdlib';
-import {
-  AuthorModel,
-  IFEntity,
-  type IParsedCommand,
-  RoomTrait,
-  type TemperamentDef,
-  TraitType,
-  WorldModel,
-} from '@sharpee/world-model';
+import { IFEntity, type TemperamentDef, WorldModel } from '@sharpee/world-model';
 import { LoadError } from './errors.js';
 import { ChordDataTrait } from './chord-data-trait.js';
 import { BuildContext } from './build/context.js';
 import { WORLD_BUILD_STEPS } from './build/steps.js';
-import { buildEntity } from './build/entity.js';
-import { resolvePendingEntityRefs } from './build/adjectives.js';
-import { toDirection, wireEntity, wireExit } from './build/wiring.js';
+import { ENGINE_READY_STEPS } from './build/engine-ready/steps.js';
 import { phraseText, rewriteSnippetMarkers, snippetMarkerTest } from './build/snippets.js';
 import { storyOracle } from './build/characters.js';
 import { ChordDetailTrait } from './build/detail-channels.js';
 import { extendGrammar } from './build/grammar.js';
+import { vehiclePositionAnswer } from './build/vehicles.js';
 import { assertClauseIds, assertIdentity, assertSelectIds } from './select-ids.js';
 import { translateEventId } from './event-id-map.js';
-import { EXTENSION_REGISTRY, NPC_BEHAVIOR_ADJECTIVES, type ExtensionInstallContext } from './extension-registry.js';
-import { installStateMachines } from './state-machines.js';
+import { EXTENSION_REGISTRY } from './extension-registry.js';
 import { Evaluator } from './evaluator.js';
-import { requireEntity, worldIdOf } from './identity.js';
-import { ChordBehaviorTrait, ChordRuntime, STRATEGY_SELECTOR } from './runtime.js';
-import { landingKey, type LandingRecord } from './state-keys.js';
-import { orphanedKeys, reseedLandingRecord, unmappableValues } from './reconcile.js';
+import { ChordRuntime } from './runtime.js';
+import { reconcileRestoredWorld } from './restore.js';
 import { withLineBreaks } from './text.js';
 
 // The `detail` marker trait lives with the step that compiles the blocks
@@ -153,10 +122,10 @@ export class ChordStory implements Story {
   /** The expression evaluator — public beside `runtime` so hosts and tests reach its wiring seams (ADR-326 D6). */
   readonly evaluator: Evaluator;
   /**
-   * The state the world build steps read and write (ADR-389 D2): owned
-   * here, handed to each step of `WORLD_BUILD_STEPS` and to the grammar
-   * body, and read back by `createPlayer`, `characterStoryData` and the
-   * engine-ready wiring.
+   * The state the build steps read and write (ADR-389 D2): owned here,
+   * handed to each step of `WORLD_BUILD_STEPS` and `ENGINE_READY_STEPS`,
+   * to the grammar body and to the restore reconciler, and read back by
+   * `createPlayer`, `characterStoryData` and the vehicle accessors.
    */
   private readonly build: BuildContext;
 
@@ -180,9 +149,7 @@ export class ChordStory implements Story {
    * @returns the stop's world id, or undefined for a vehicle with no block
    */
   vehiclePositionAnswer(vehicleWorldId: string, world: WorldModel): string | undefined {
-    const block = this.build.vehiclePositions.get(vehicleWorldId);
-    if (!block) return undefined;
-    return block.rows.find((row) => row.guard(world))?.stopId ?? block.otherwise;
+    return vehiclePositionAnswer(this.build, vehicleWorldId, world);
   }
 
   private world: WorldModel | null = null;
@@ -362,208 +329,30 @@ export class ChordStory implements Story {
    * @returns the reconciliation report when the save was reconciled
    */
   onWorldRestored(world: WorldModel, restoredTurn: number, identity?: IRestoreIdentity): IRestoreReconciliation | undefined {
-    const report = identity !== undefined && !identity.matches ? this.reconcileRestoredWorld(world, identity) : undefined;
+    const report = identity !== undefined && !identity.matches ? reconcileRestoredWorld(this.build, world, identity) : undefined;
     this.runtime.resetAfterRestore(restoredTurn);
     return report;
   }
 
   /**
-   * Reconcile a restored world against this compile's identity manifest
-   * (ADR-388 D5): build and wire every entity the save lacks, wire every
-   * exit a held room lacks, drop the keys the manifest declares no identity
-   * for, re-seed un-authored landing lists, and report the stored values
-   * the manifest does not declare — leaving them exactly as they were.
-   * Mutates only through the loader's own build and wire methods and the
-   * world's state bag; idempotent, so a second pass over the same world
-   * adds, drops and re-seeds nothing.
-   *
-   * @param world the fully restored world
-   * @param identity the engine's stamp comparison
-   * @returns the report, for the dispatcher to deliver
-   */
-  private reconcileRestoredWorld(world: WorldModel, identity: IRestoreIdentity): IRestoreReconciliation {
-    const manifest = this.ir.identity;
-
-    // 1. Add what is new: every entity the manifest declares and the restored
-    //    world lacks, built and wired exactly as at load. Build all first, so
-    //    a new entity placed in another new entity's room finds it.
-    const author = new AuthorModel(world.getDataStore(), world);
-    const added: Array<{ ir: IREntity; entity: IFEntity }> = [];
-    for (const irEntity of this.ir.entities) {
-      if (world.hasEntity(irEntity.id)) continue;
-      added.push({ ir: irEntity, entity: buildEntity(this.build, world, irEntity) });
-    }
-    resolvePendingEntityRefs(this.build, world);
-    for (const { ir: irEntity, entity } of added) wireEntity(this.build, world, author, irEntity, entity);
-    const addedIds = new Set(added.map((a) => a.ir.id));
-
-    // 2. Exits new on rooms the save already holds: wired through the same
-    //    method load uses, only for a direction the room has nothing under.
-    const addedExits: string[] = [];
-    for (const irEntity of this.ir.entities) {
-      if (addedIds.has(irEntity.id) || irEntity.exits.length === 0) continue;
-      const entity = requireEntity(world, irEntity.id, irEntity);
-      const room = entity.get(TraitType.ROOM) as RoomTrait | undefined;
-      if (!room) continue;
-      for (const exit of irEntity.exits) {
-        if (exit.to.kind !== 'room') continue;
-        const direction = toDirection(exit.direction, irEntity);
-        if ((room.exits as Record<string, unknown>)[direction] !== undefined) continue;
-        if (exit.via !== null && requireEntity(world, exit.via, irEntity).has(TraitType.DOOR)) continue;
-        wireExit(world, irEntity, entity, exit);
-        addedExits.push(`${irEntity.id} ${exit.direction} -> ${exit.to.id}`);
-      }
-    }
-
-    // 3. Drop what is orphaned: a key under a family the manifest knows,
-    //    whose identity the manifest does not declare.
-    const state = world.getState();
-    const droppedKeys = orphanedKeys(manifest, Object.keys(state));
-    if (droppedKeys.length > 0) {
-      for (const key of droppedKeys) delete state[key];
-      world.setState(state);
-    }
-
-    // 4. Re-seed landings the author never `set`, from the current list.
-    const reseededLandings: string[] = [];
-    for (const landing of manifest.landings) {
-      const key = landingKey(landing.region);
-      const record = world.getStateValue(key) as LandingRecord | undefined;
-      if (!record || record.authored) continue;
-      const next = reseedLandingRecord(record, landing.rooms.filter((id) => world.hasEntity(id)));
-      if (next === undefined) continue;
-      world.setStateValue(key, next);
-      reseededLandings.push(landing.region);
-    }
-
-    // 5. Report what cannot be mapped, and leave it.
-    const unmappable = unmappableValues(manifest, this.ir.story.states, (key) => world.getStateValue(key));
-
-    return {
-      savedStamp: identity.savedStamp,
-      currentStamp: manifest.stamp,
-      addedEntities: added.map((a) => a.ir.id),
-      addedExits,
-      droppedKeys,
-      reseededLandings,
-      unmappable,
-    };
-  }
-
-  /**
-   * Register scheduler constructs (`once`/`every`/`define sequence`/
-   * every-turn trait clauses) as plugin-scheduler daemons. All progression
-   * state is world state — no runner-state plumbing (design.md §6).
+   * Wire the story to the engine: every stage is a step of
+   * `ENGINE_READY_STEPS` (ADR-389 D2), run here in list order over this
+   * story's `BuildContext`, the built world and the engine — the engine's
+   * seams into the runtime and the evaluator, the NPC behaviors and the
+   * character tick phase, the state-machine, extension and scheduler
+   * plugins in their tie-break order, the deadly-exit transformer and the
+   * `present` slot entries. The precondition comes first, before any
+   * registration touches the engine: a host that calls this before
+   * `initializeWorld` gets the refusal and nothing half-wired to retry
+   * against.
+   * @param engine the story-facing engine role (ADR-343)
+   * @throws LoadError when the world has not been built
    */
   onEngineReady(engine: StoryEngine): void {
-    // ADR-325 D3f: timers stamp the turn they start on from the engine's
-    // live counter, so a `start` in the player's action waits one turn.
-    // The precondition first, before any registration touches the engine:
-    // a host that calls this before initializeWorld gets the refusal and
-    // nothing half-wired to retry against.
     if (!this.world) {
       throw new LoadError('The story has no world yet: initializeWorld runs before onEngineReady.');
     }
-    const world = this.world;
-    const getContext = engine.getContext.bind(engine);
-    this.runtime.setTurnProvider(() => getContext().currentTurn);
-    // ADR-216 `client has`: wire the LIVE capability source (the engine
-    // negotiates capabilities at start(); reads happen per evaluation).
-    // Engines without the accessor leave the text-only default in place.
-    this.evaluator.setCapabilitiesProvider(() => engine.getClientCapabilities());
-    // ADR-326 D6: an adjacent-room draw that meets a computed exit consults
-    // the resolver, which draws on the engine's session random service.
-    this.evaluator.setRandomService(engine.getRandomService());
-    // ADR-215 Q4: NPCs are CORE — the engine owns the actor turn phase
-    // (ADR-328 D5), so there is nothing to register; each factory-configured
-    // behavior registers under its per-entity id on the engine's service.
-    // ADR-329 D4: an acting statement performs its action through the
-    // engine's execution entry. Its events never ride an action's or a
-    // handler's own return (they were applied inside the entry and would be
-    // applied again); they wait in the runtime's act buffer for the flush
-    // plugin below, which runs right after the player's action — before the
-    // actor phase (ADR-332: the story-reactions band leads) — so the act narrates immediately after the report
-    // that caused it. Acts fired inside scheduler daemons drain on the tick.
-    this.runtime.setExecutionEntry(engine.executeAsActor.bind(engine));
-    if (this.runtime.hasDeferredNarration()) {
-      engine.getPluginRegistry().register({
-        id: 'chord.acted-events',
-        // First of the story reactions (ADR-332): the flush still runs
-        // right after the player's action, ahead of the scheduler and
-        // every platform phase.
-        priority: TURN_BANDS.storyReactions.floor + 90,
-        onAfterAction: () => this.runtime.drainActEvents(),
-      } satisfies TurnPlugin);
-    }
-    const npcService = engine.getNpcService();
-    for (const pending of this.build.npcBehaviors) {
-      npcService.registerBehavior(this.buildNpcBehavior(world, pending) as never);
-    }
-
-    // ADR-310/318 Phase 5: the character-model tick phase. The registry
-    // was built at load (applyCharacterBlocks — authored configs only;
-    // every mutable runtime field rides CharacterModelTrait through the
-    // world snapshot, D17); engine-ready is where the NPC service exists
-    // to register it on.
-    if (this.build.characterRegistry) {
-      registerCharacterModelPhase(npcService, this.build.characterRegistry);
-    }
-
-    // The trusted extensions, in the registry's order — never the header's
-    // `use` order, so two extensions' equal-priority plugins keep one fixed
-    // tie-break whatever an author wrote first. Per `use`d extension, its
-    // config-free plugin slot and its IR-shaped construction — the only
-    // moment a plugin registry exists. Generic and naming no extension:
-    // enabling one is a registry entry, never a loader edit. A construct
-    // present without its `use` never reaches here: validateIR refused the
-    // IR at createStory (ADR-389 D4).
-    const uses = this.ir.uses ?? [];
-    const installContext: ExtensionInstallContext = {
-      world,
-      evalCondition: (condition, world) => this.evaluator.evalCondition(condition, { world }),
-      execMachineBody: (statements, world) => this.runtime.execMachineBody(statements, world),
-    };
-
-    // ADR-377 D2: state machines are core. Every story gets one
-    // state-machine plugin, with its `define machine` blocks lowered in,
-    // before the `use`d extensions — the same footing as the NPC service
-    // above. A story with no machines still carries the plugin: it is the
-    // host every vehicle's built-in machine ticks in (ADR-366 D5e), reading
-    // each `drive: state` line's `position` block through this loader's
-    // compiled guards (D5a).
-    installStateMachines(
-      this.ir,
-      engine,
-      installContext,
-      (vehicleWorldId, world) => this.vehiclePositionAnswer(vehicleWorldId, world),
-    );
-
-    for (const [name, registration] of EXTENSION_REGISTRY) {
-      if (!uses.includes(name)) continue;
-      registration.registerPlugin?.(engine.getPluginRegistry());
-      registration.installFromIR?.(this.ir, engine, installContext);
-    }
-
-    const daemons = this.runtime.buildSchedulerDaemons();
-    if (daemons.length > 0) {
-      const plugin = new SchedulerPlugin();
-      engine.getPluginRegistry().register(plugin);
-      const scheduler = plugin.getScheduler();
-      for (const daemon of daemons) scheduler.registerDaemon(daemon);
-    }
-
-    // ADR-227: `<direction> is deadly:` — one pre-validate transformer over
-    // the collected deadly-exit map, redirecting a matching going command to
-    // the platform's generic extras-driven deadly-death action (the same
-    // seam stdlib's own deadly-room transformer uses).
-    if (this.build.deadlyExits.size > 0) {
-      engine.registerParsedCommandTransformer(this.buildDeadlyExitTransformer());
-    }
-
-    // Z3 (ADR-212 §5): every `phrase present:` block compiles to ONE
-    // declarative slot entry — no synthesized closures; the platform's
-    // built-in contributor evaluates them.
-    this.registerPresentEntries(engine);
+    for (const step of ENGINE_READY_STEPS) step.run(this.build, this.world, engine);
   }
 
   /**
@@ -621,111 +410,6 @@ export class ChordStory implements Story {
   }
 
   /**
-   * The deadly-exit command transformer (ADR-227). Redirects `going
-   * <deadly-direction>` from a room with declared deadly exits to
-   * `DEADLY_ROOM_DEATH_ACTION_ID`, threading the phrase-derived
-   * cause/messageId through extras. Pass-through otherwise.
-   */
-  private buildDeadlyExitTransformer(): (parsed: IParsedCommand, world: WorldModel) => IParsedCommand {
-    const deadlyExits = this.build.deadlyExits;
-    return (parsed: IParsedCommand, world: WorldModel): IParsedCommand => {
-      const actionId = parsed.action?.toLowerCase() ?? '';
-      if (actionId !== 'if.action.going' && actionId !== 'going') return parsed;
-
-      const player = world.playerCharacter;
-      const roomId = world.getLocation(player.id);
-      if (!roomId) return parsed;
-      const byRoom = deadlyExits.get(roomId);
-      if (!byRoom) return parsed;
-
-      // The parser hands the way over as the platform's exit key (a
-      // Direction constant or a passage key), the value it is stored by.
-      const hit = byRoom.get(String(parsed.extras?.direction ?? ''));
-      if (!hit) return parsed;
-
-      return {
-        ...parsed,
-        action: DEADLY_ROOM_DEATH_ACTION_ID,
-        extras: {
-          ...parsed.extras,
-          [DEADLY_ROOM_CAUSE_KEY]: hit.cause,
-          [DEADLY_ROOM_MESSAGE_KEY]: hit.messageId,
-          originalAction: parsed.action,
-        },
-      };
-    };
-  }
-
-  /**
-   * Z3 `present` channel → ADR-212 slot entries. One `registerSlotEntry`
-   * call per authoring entity: `slotKey: 'here'`, owner = the entity,
-   * content = variants as a `Choice` per the Z5 table (single plain variant
-   * → `Literal`), order = declaration order, `counterKey: 'present'` (the
-   * §4 owner + channel-key convention — the Choice's own keys match it).
-   * An ungated block relies on the platform's `owner-present` default; a
-   * `while`-gated block uses the predicate seam, ANDed with the same
-   * presence check so the gate narrows the channel rather than replacing
-   * its semantics.
-   *
-   * @param engine the story-facing engine role (ADR-343)
-   */
-  private registerPresentEntries(engine: StoryEngine): void {
-    if (!this.world) return;
-    const table = this.ir.phrases.locales[this.ir.phrases.defaultLocale] ?? {};
-    let order = 0;
-    for (const irEntity of this.ir.entities) {
-      const phrase = table[`${irEntity.id}.present`];
-      if (!phrase) continue;
-      const ownerWorldId = irEntity.id;
-      const texts = phrase.variants.map((v) => (v.text === 'nothing' ? '' : withLineBreaks(v.text)));
-      const content: Phrase =
-        texts.length === 1 && !phrase.strategy
-          ? ({ kind: 'literal', text: texts[0] } satisfies Literal)
-          : ({
-              kind: 'choice',
-              alternatives: texts.map((text): Literal => ({ kind: 'literal', text })),
-              selector: STRATEGY_SELECTOR[phrase.strategy ?? 'cycling'],
-              // ADR-212 §4 caller contract: entityId = owner, messageKey =
-              // counterKey — the platform warns on a mismatch.
-              entityId: ownerWorldId,
-              messageKey: 'present',
-            } satisfies Choice);
-      const condition = phrase.condition;
-      engine.registerSlotEntry({
-        slotKey: 'here',
-        owner: ownerWorldId,
-        content,
-        order: order++,
-        counterKey: 'present',
-        ...(condition
-          ? {
-              gate: {
-                kind: 'predicate' as const,
-                holds: (world: WorldModel): boolean => {
-                  const playerId = world.playerCharacter.id;
-                  const playerRoom = playerId ? world.getContainingRoom(playerId)?.id : undefined;
-                  // ADR-289 D8 L8: `getContainingRoom` walks UPWARD, so it is
-                  // undefined when the owner IS the room — and a room's own
-                  // `present` entry could never pass its gate. The owner's
-                  // room is itself when it is one.
-                  const owner = world.getEntity(ownerWorldId);
-                  const ownerRoom = owner?.has(TraitType.ROOM)
-                    ? ownerWorldId
-                    : world.getContainingRoom(ownerWorldId)?.id;
-                  return (
-                    playerRoom !== undefined &&
-                    ownerRoom === playerRoom &&
-                    this.evaluator.evalCondition(condition, { world })
-                  );
-                },
-              },
-            }
-          : {}),
-      });
-    }
-  }
-
-  /**
    * Register the story's grammar — `define action` rules, passage words,
    * `extend action` lines and `remove from action` removals — on the
    * parser's story-tier builder. The body is `build/grammar.ts`
@@ -775,59 +459,6 @@ export class ChordStory implements Story {
     messageId?: string,
   ): ISemanticEvent | undefined {
     return endStory(world, ending, { turn, messageId });
-  }
-
-  // --------------------------------------------------------- engine-ready
-
-  /**
-   * Build one per-entity NPC behavior instance from its stashed config
-   * (engine-ready time — world ids exist). Chord percentages convert to
-   * the platform's fractions here (`move-chance 50` → 0.5).
-   */
-  private buildNpcBehavior(world: WorldModel, pending: { irId: string; adjective: string; config: IRConfigSetting[]; span: Span }): { id: string } {
-    const numberOf = (key: string): number | undefined => {
-      const setting = pending.config.find((s) => s.key === key);
-      return setting ? Number(setting.value) : undefined;
-    };
-    const boolOf = (key: string): boolean | undefined => {
-      const setting = pending.config.find((s) => s.key === key);
-      return setting ? setting.value === 'true' : undefined;
-    };
-    let behavior: { id: string };
-    switch (pending.adjective) {
-      case 'wanderer': {
-        const percent = numberOf('move-chance');
-        behavior = createWandererBehavior(percent === undefined ? {} : { moveChance: percent / 100 });
-        break;
-      }
-      case 'follower':
-        behavior = createFollowerBehavior(boolOf('immediate') === undefined ? {} : { immediate: boolOf('immediate') });
-        break;
-      case 'patrol': {
-        const routeSetting = pending.config.find((s) => s.key === 'route');
-        if (!routeSetting || (routeSetting.values ?? []).length === 0) {
-          // `validateIR` refused this IR before the world was built
-          // (analysis.patrol-needs-route); the branch stays because the
-          // behavior needs a route.
-          throw new LoadError(`A \`patrol\` NPC needs \`with route [ … ]\` naming its rooms.`, pending.span);
-        }
-        const route = (routeSetting.values ?? []).map((irId) => requireEntity(world, irId, pending).id);
-        behavior = createPatrolBehavior({
-          route,
-          ...(boolOf('loop') === undefined ? {} : { loop: boolOf('loop') }),
-          ...(numberOf('wait-turns') === undefined ? {} : { waitTurns: numberOf('wait-turns') }),
-        });
-        break;
-      }
-      default:
-        // Only the closed applyTraitAdjectives switch routes here
-        // (guard/passive/wanderer/follower/patrol), and validateIR refuses
-        // any other word upstream; the branch stays because the switch must
-        // yield a behavior.
-        throw new LoadError(`Unknown NPC behavior adjective \`${pending.adjective}\`.`, pending.span);
-    }
-    behavior.id = `chord.npc.${pending.irId}`;
-    return behavior;
   }
 
   // -------------------------------------------------------------- helpers

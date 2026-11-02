@@ -9,7 +9,7 @@
  * constructor keeps the invariants the analyzer reports first.
  *
  * Public interface: wireVehicle, openVehicleStart, wireExpanse,
- * wireOutsideExits.
+ * wireOutsideExits, vehiclePositionAnswer.
  * Owner context: @sharpee/story-loader (language-neutral IR consumer).
  *
  * References:
@@ -170,4 +170,20 @@ export function wireOutsideExits(story: BuildContext, world: WorldModel, irEntit
   }
   entity.add(new AboardTrait({ vehicleId: requireEntity(world, host.id, irEntity).id, outside }));
   registerVehicleExitResolver(world);
+}
+
+/**
+ * The stop a `drive: state` line's `position` block names this turn
+ * (ADR-366 D5a): the first row whose guard holds, else `otherwise`.
+ * The vehicle's machine moves the vehicle there when it differs from
+ * where it is.
+ * @param story the build context (its `vehiclePositions`)
+ * @param vehicleWorldId the vehicle's world entity id
+ * @param world the live world the guards read
+ * @returns the stop's world id, or undefined for a vehicle with no block
+ */
+export function vehiclePositionAnswer(story: BuildContext, vehicleWorldId: string, world: WorldModel): string | undefined {
+  const block = story.vehiclePositions.get(vehicleWorldId);
+  if (!block) return undefined;
+  return block.rows.find((row) => row.guard(world))?.stopId ?? block.otherwise;
 }
