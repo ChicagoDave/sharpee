@@ -112,26 +112,16 @@ import {
 import {
   AboardTrait,
   ActorTrait,
-  AttachedBehavior,
   BackdropTrait,
   BreakableTrait,
-  NightVisionTrait,
-  ListenerTrait,
-  ClimbableTrait,
   CombatantTrait,
-  ConcealmentTrait,
   ContainerTrait,
-  OpenInventoryTrait,
   HealthTrait,
   AuthorModel,
-  CuttableTrait,
-  DiggableTrait,
-  FlammableTrait,
   DeadlyRoomTrait,
   DoorTrait,
   type DirectionType,
   getOppositeDirection,
-  EdibleTrait,
   EnterableTrait,
   ExpanseTrait,
   FloatingTrait,
@@ -144,9 +134,6 @@ import {
   LockableTrait,
   NpcTrait,
   OpenableTrait,
-  PullableTrait,
-  PushableTrait,
-  ReadableTrait,
   registerClauseContributor,
   RoomBehavior,
   RoomTrait,
@@ -174,12 +161,13 @@ import {
   toolRequirement,
 } from '@sharpee/world-model';
 import { LoadError } from './errors.js';
+import { ChordDataTrait } from './chord-data-trait.js';
+import { CORE_TRAIT_ROUTES, entityConfigValue, type TraitRouteContext } from './trait-routes.js';
 import { exitKeyOfWord } from './direction-words.js';
 import { assertClauseIds, assertIdentity, assertSelectIds } from './select-ids.js';
 import { translateEventId } from './event-id-map.js';
 import { COMBAT_FIELD_ROUTES, EXTENSION_REGISTRY, NPC_BEHAVIOR_ADJECTIVES, NPC_FIELD_ROUTES, type ExtensionInstallContext } from './extension-registry.js';
 import { installStateMachines } from './state-machines.js';
-import { HIDING_POSITIONS } from './setting-schema.js';
 import { Evaluator } from './evaluator.js';
 import { requireEntity, worldIdOf } from './identity.js';
 import { classifiesAs } from './kind-classification.js';
@@ -199,19 +187,9 @@ export class ChordDetailTrait implements ITrait {
   readonly type = ChordDetailTrait.type;
 }
 
-/**
- * A `define trait` runtime instance: type `chord.trait.<name>`, data fields
- * as own enumerable properties (world serialization covers them — AC-6).
- */
-export class ChordDataTrait implements ITrait {
-  readonly type: string;
-  [field: string]: unknown;
-
-  constructor(type: string, values: Record<string, unknown>) {
-    this.type = type;
-    Object.assign(this, values);
-  }
-}
+// The `define trait` runtime instance lives in its own module so the
+// dispatch-verb runtime can narrow to it without importing the loader.
+export { ChordDataTrait };
 
 export interface StoryLoaderOptions {
   /**
@@ -2035,14 +2013,13 @@ export class ChordStory implements Story {
           irEntity.span,
         );
       }
-      const trait = entity.get(mapping.traitType);
-      if (!trait) {
+      if (!entity.has(mapping.traitType)) {
         throw new LoadError(
           `\`${irEntity.name}\`: \`starts ${state}\` needs the \`${mapping.traitName}\` trait composed — the analyzer pairing gate should have refused this story.`,
           irEntity.span,
         );
       }
-      (trait as unknown as Record<string, unknown>)[mapping.field] = mapping.value;
+      mapping.set(entity);
     }
   }
 
@@ -2127,6 +2104,7 @@ export class ChordStory implements Story {
   }
 
   private applyTraitAdjectives(entity: IFEntity, irEntity: IREntity, kind: string | null): void {
+    const routeContext = this.traitRouteContext(kind);
     for (const trait of irEntity.traits) {
       if (trait.condition !== null) {
         // Conditional composition legality (Prerequisite 2): room-`dark`
@@ -2148,281 +2126,42 @@ export class ChordStory implements Story {
           trait.span,
         );
       }
-      switch (trait.name) {
-        case 'proper': {
-          // ADR-242 D1 as extended by GH #342: `proper` composes on any
-          // block. The person branch already constructs its IdentityTrait
-          // with the proper shape; every other kind gets the same shape
-          // applied here (properName + empty article — re-applying to a
-          // person writes the identical values).
-          const identity = entity.get(TraitType.IDENTITY) as IdentityTrait | undefined;
-          if (identity) {
-            identity.properName = true;
-            identity.article = '';
-          }
-          break;
-        }
-        case 'scenery':
-          if (!entity.has(TraitType.SCENERY)) entity.add(new SceneryTrait());
-          break;
-        // ADR-289 D8 L5: first add wins, uniformly. `IFEntity.add` is a
-        // `Map.set`, so an unguarded second add REPLACES the first — and a
-        // duplicate bare adjective (nothing gates `readable, readable`)
-        // silently discarded the configured one's text.
-        case 'wearable':
-          if (!entity.has(TraitType.WEARABLE)) entity.add(new WearableTrait({}));
-          break;
-        case 'readable':
-          if (!entity.has(TraitType.READABLE)) {
-            entity.add(new ReadableTrait({ text: configValue(trait, 'text') ?? '' }));
-          }
-          break;
-        case 'openable': {
-          // Defect D3 fix (2026-07-17, ratchet G4): `openable with the
-          // crowbar` (keyless per R3) gates opening on holding the tool
-          // (ADR-230 D3b). Name → world id via the shared pending
-          // mechanism — never the raw display-name string (the
-          // lockable-bug class).
-          if (entity.has(TraitType.OPENABLE)) break;
-          const openable = new OpenableTrait();
-          this.queueToolRequirement(openable, trait, irEntity);
-          entity.add(openable);
-          break;
-        }
-        case 'lockable': {
-          // ADR-230 Phase 9a: the key entity (`lockable with the iron key`,
-          // keyless per R3) resolves name → world id through the shared
-          // pending mechanism (forward refs legal) — the raw display-name
-          // string never reaches LockableTrait.keyId.
-          if (entity.has(TraitType.LOCKABLE)) break;
-          // ADR-234 D4 kind-scoped default: a lockable DOOR starts locked
-          // (the IF convention; createDoor's `isLocked ?? true` parity) —
-          // everywhere else the trait-wide default (unlocked) stands.
-          // `starts unlocked` is the author's override: applyStartsStates
-          // runs after composition, so a declared initializer always wins.
-          const lockable = new LockableTrait(kind === 'door' ? { isLocked: true } : {});
-          const keyName = entityConfigValue(trait);
-          if (keyName !== undefined) {
-            this.pendingEntityRefs.push(
-              this.entityRefFor(keyName, 'key', irEntity, trait.span, (worldId) => {
-                lockable.keyId = worldId;
-              }),
-            );
-          }
-          entity.add(lockable);
-          break;
-        }
-        case 'cuttable':
-        case 'diggable':
-        case 'flammable': {
-          // ADR-230 D3c / Phase 6. Tool names resolve name → IR entity here
-          // and IR → world id after every entity is built (forward refs are
-          // legal) — do NOT copy the lockable raw-string config bug.
-          const traitType = trait.name === 'cuttable' ? TraitType.CUTTABLE : trait.name === 'diggable' ? TraitType.DIGGABLE : TraitType.FLAMMABLE;
-          if (entity.has(traitType)) break;
-          const toolGated = trait.name === 'cuttable' ? new CuttableTrait() : trait.name === 'diggable' ? new DiggableTrait() : new FlammableTrait();
-          this.queueToolRequirement(toolGated, trait, irEntity);
-          entity.add(toolGated);
-          break;
-        }
-        case 'switchable':
-          entity.add(new SwitchableTrait());
-          break;
-        case 'edible':
-          // Guarded so `edible, drinkable` composes order-independently —
-          // a bare re-add here would drop drinkable's liquid flag.
-          if (!entity.has(TraitType.EDIBLE)) entity.add(new EdibleTrait());
-          break;
-        case 'drinkable': {
-          // Ratchet G1 (2026-07-17): the liquid marker — EDIBLE.liquid is
-          // what routes the entity to drinking instead of eating.
-          const edible = entity.get(TraitType.EDIBLE) as EdibleTrait | undefined;
-          if (edible) edible.liquid = true;
-          else entity.add(new EdibleTrait({ liquid: true }));
-          break;
-        }
-        case 'pushable':
-          // Defect D1 fix (2026-07-17): the catalog accepted these two but
-          // the loader had no case — `--check` passed stories that load
-          // rejected. A marker (ADR-378 D6a): the way says whether a push
-          // moves the thing.
-          if (!entity.has(TraitType.PUSHABLE)) entity.add(new PushableTrait());
-          break;
-        case 'pullable':
-          if (!entity.has(TraitType.PULLABLE)) entity.add(new PullableTrait({}));
-          break;
-        case 'open-inventory': {
-          // GH #313 (2026-09-03): the ADR-273 D4 opt-in — what this holder
-          // carries is reachable by others, not merely visible. `carries`
-          // alone stays placement (the IF convention: you can see the
-          // thief's knife, not grab it).
-          entity.add(new OpenInventoryTrait());
-          break;
-        }
-        case 'settable':
-          // ADR-371 D3: marker adjective — the thing's own reversible states
-          // are its dial. Nothing lowers here; the runtime's settable section
-          // adds the capability trait and registers the setting behavior at
-          // bind, reading the states from the IR.
-          break;
-        case 'costs':
-          // ADR-372 D5: the price. Nothing lowers here; the runtime's
-          // purchasable section adds PurchasableTrait from the `price` and
-          // `currency` settings and registers the buying behavior at bind.
-          break;
-        case 'concealed': {
-          // Ratchet G2 (2026-07-17): marker adjective — hidden from normal
-          // view until searching reveals it (IdentityTrait.concealed).
-          const identity = entity.get(TraitType.IDENTITY) as IdentityTrait | undefined;
-          if (identity) identity.concealed = true;
-          break;
-        }
-        case 'unlisted': {
-          // 2026-09-06: marker adjective — the holder's contents are described
-          // by its own prose and never listed by the room; they stay in scope
-          // (IdentityTrait.contentsUnlisted). The Secret Letter stall displays.
-          const identity = entity.get(TraitType.IDENTITY) as IdentityTrait | undefined;
-          if (identity) identity.contentsUnlisted = true;
-          break;
-        }
-        case 'floats': {
-          // ADR-376 D10: marker adjective — the thing may hold a position in
-          // an expanse and drift there; its starting cell is written in
-          // pass 2 from the placement's `at` tail.
-          if (!entity.has(TraitType.FLOATING)) entity.add(new FloatingTrait());
-          break;
-        }
-        case 'transparent': {
-          // ADR-369 D1: marker adjective — a closed container still shows its
-          // contents (ContainerTrait.isTransparent, read by VisibilityBehavior
-          // and searching). The analyzer admits it on containers only.
-          const container = entity.get(TraitType.CONTAINER) as ContainerTrait | undefined;
-          if (container) container.isTransparent = true;
-          break;
-        }
-        case 'attached': {
-          // ADR-373 D1: the anchor resolves name → world id after every
-          // entity is built (forward refs legal), and the behavior that owns
-          // an attachment makes it. `detachable` is read from the sibling
-          // word here, so the two compose in either order.
-          const detachable = irEntity.traits.some((t) => t.name === 'detachable');
-          const anchorName = entityConfigValue(trait);
-          if (anchorName !== undefined) {
-            this.pendingEntityRefs.push(
-              this.entityRefFor(anchorName, 'anchor', irEntity, trait.span, (worldId) => {
-                AttachedBehavior.attach(entity, worldId, 'stuck', detachable);
-              }),
-            );
-          }
-          break;
-        }
-        case 'breakable':
-          // ADR-373 D2/D4: `fragile` is read from the sibling word, so the
-          // two compose in either order. `starts broken` runs after
-          // composition (applyStartsStates).
-          if (!entity.has(TraitType.BREAKABLE)) {
-            entity.add(new BreakableTrait({ fragile: irEntity.traits.some((t) => t.name === 'fragile') }));
-          }
-          break;
-        case 'listener':
-          // ADR-374 D6: ADR-172's listener — what it hears reaches it.
-          if (!entity.has(TraitType.LISTENER)) entity.add(new ListenerTrait());
-          break;
-        case 'night-vision':
-          // ADR-374 D3: the observer-side darkness marker (ADR-328 D5).
-          if (!entity.has(TraitType.NIGHT_VISION)) entity.add(new NightVisionTrait());
-          break;
-        case 'detachable':
-        case 'fragile':
-          // ADR-373: qualifiers, applied by `attached` and `breakable` above.
-          break;
-        case 'hiding-spot': {
-          // Ratchet G3 (2026-07-17): bare = the actor may hide at any
-          // position; `with position <word>` narrows to exactly one. The
-          // domain is setting-schema's HIDING_POSITIONS (one source with
-          // the manifest generator, ADR-276 census 10).
-          const position = configValue(trait, 'position');
-          entity.add(
-            new ConcealmentTrait({
-              positions: position
-                ? [position as (typeof HIDING_POSITIONS)[number]]
-                : [...HIDING_POSITIONS],
-              quality: 'good',
-            }),
-          );
-          break;
-        }
-        case 'enterable': // ADR-218 §1a (ratchet F1) — default config, preposition `in`
-          if (!entity.has(TraitType.ENTERABLE)) entity.add(new EnterableTrait());
-          break;
-        case 'climbable': // ADR-218 §1a (ratchet F2) — default config
-          if (!entity.has(TraitType.CLIMBABLE)) entity.add(new ClimbableTrait());
-          break;
-        case 'light-source': {
-          // ADR-374 D9: `light-source with the <tool>` — lighting needs that
-          // tool held; resolved after every entity is built.
-          if (entity.has(TraitType.LIGHT_SOURCE)) break;
-          const lightSource = new LightSourceTrait();
-          this.queueToolRequirement(lightSource, trait, irEntity);
-          entity.add(lightSource);
-          break;
-        }
-        case 'powered':
-          // ADR-374 D10: each power source resolves after every entity is
-          // built — by then `switchable` is composed whatever the order.
-          for (const source of trait.config.filter((c) => c.key === '' && c.valueKind === 'name')) {
-            this.pendingEntityRefs.push(
-              this.entityRefFor(source.value, 'source', irEntity, trait.span, (worldId) => {
-                const switchable = entity.get(TraitType.SWITCHABLE) as SwitchableTrait;
-                switchable.powerSourceIds = [...(switchable.powerSourceIds ?? []), worldId];
-                switchable.requiresPower = true;
-              }),
-            );
-          }
-          break;
-        case 'guard':
-        case 'passive':
-        case 'wanderer':
-        case 'follower':
-        case 'patrol': {
-          // ADR-215 Q4: CORE NPC behavior vocabulary — no `use` gate.
-          this.applyNpcAdjective(entity, irEntity, trait);
-          break;
-        }
-        case 'combatant':
-        case 'weapon': {
-          // ADR-215 combat vocabulary — `use combat` extension adjectives.
-          // The use line and the field names and types are validateIR's
-          // (analysis.extension-not-used, -config-key, -config-value).
-          this.applyCombatAdjective(entity, irEntity, trait);
-          break;
-        }
-        case 'plural': {
-          const identity = entity.get(TraitType.IDENTITY) as IdentityTrait | undefined;
-          if (identity) (identity as unknown as Record<string, unknown>).grammaticalNumber = 'plural';
-          break;
-        }
-        case 'dark':
-          break; // unconditional dark handled by the room builder; a non-room `dark` is validateIR's refusal
-        default: {
-          // `define trait` instances (Phase B): a data trait typed
-          // `chord.trait.<name>` whose fields are own properties (mutable
-          // via `set`, serialized with the world — AC-6-safe).
-          const def = this.ir.traits.find((t) => t.name === trait.name);
-          if (def) {
-            entity.add(new ChordDataTrait(CHORD_TRAIT_PREFIX + def.name, this.traitFieldValues(def, trait)));
-            break;
-          }
-          // `validateIR` refused this IR before the world was built
-          // (analysis.trait-not-declared); the branch stays because the
-          // switch must compose something.
-          throw new LoadError(
-            `Trait \`${trait.name}\` is not declared (\`define trait ${trait.name}\`) and is not a v1 adjective.`,
-            trait.span,
-          );
-        }
+      // One row per core word (ADR-389 D3): the table's keys are pinned to
+      // the compiler's catalog by the manifest-conformance test.
+      const route = CORE_TRAIT_ROUTES.get(trait.name);
+      if (route) {
+        route(entity, irEntity, trait, routeContext);
+        continue;
       }
+      // `define trait` instances (Phase B): a data trait typed
+      // `chord.trait.<name>` whose fields are own properties (mutable
+      // via `set`, serialized with the world — AC-6-safe).
+      const def = this.ir.traits.find((t) => t.name === trait.name);
+      if (def) {
+        entity.add(new ChordDataTrait(CHORD_TRAIT_PREFIX + def.name, this.traitFieldValues(def, trait)));
+        continue;
+      }
+      // `validateIR` refused this IR before the world was built
+      // (analysis.trait-not-declared); the branch stays because a word with
+      // no row and no definition composes nothing, and that is never silent.
+      throw new LoadError(
+        `Trait \`${trait.name}\` is not declared (\`define trait ${trait.name}\`) and is not a v1 adjective.`,
+        trait.span,
+      );
     }
+  }
+
+  /** The story-side services a core adjective row may call, for one entity's composition. */
+  private traitRouteContext(kind: string | null): TraitRouteContext {
+    return {
+      kind,
+      queueToolRequirement: (gated, composition, owner) => this.queueToolRequirement(gated, composition, owner),
+      resolveEntityRef: (name, configKey, owner, span, apply) => {
+        this.pendingEntityRefs.push(this.entityRefFor(name, configKey, owner, span, apply));
+      },
+      applyNpcAdjective: (target, owner, composition) => this.applyNpcAdjective(target, owner, composition),
+      applyCombatAdjective: (target, owner, composition) => this.applyCombatAdjective(target, owner, composition),
+    };
   }
 
   /**
@@ -2443,7 +2182,7 @@ export class ChordStory implements Story {
    */
   private applyNpcAdjective(entity: IFEntity, irEntity: IREntity, trait: IRComposition): void {
     const isFactory = trait.name === 'wanderer' || trait.name === 'follower' || trait.name === 'patrol';
-    const data: Record<string, unknown> = {
+    const data: NonNullable<ConstructorParameters<typeof NpcTrait>[0]> = {
       behaviorId: isFactory ? `chord.npc.${irEntity.id}` : trait.name,
       // Movement behaviors move by definition; `can-move false` overrides.
       canMove: isFactory,
@@ -2462,7 +2201,7 @@ export class ChordStory implements Story {
       const route = NPC_FIELD_ROUTES.get(setting.key);
       if (route?.convert !== 'rooms') continue;
       const target: string[] = [];
-      (npcTrait as unknown as Record<string, unknown>)[route.field] = target;
+      npcTrait[route.field] = target;
       for (const memberIrId of setting.values ?? []) {
         this.pendingEntityRefs.push({
           irRefId: memberIrId,
@@ -2960,17 +2699,17 @@ function presenceSubject(cond: IRCondition, roomIrId: string): string | null {
  */
 const STARTS_STATE_TRAIT_FIELDS: ReadonlyMap<
   string,
-  { traitType: TraitType; traitName: string; field: string; value: boolean }
+  { traitType: TraitType; traitName: string; set: (entity: IFEntity) => void }
 > = new Map([
-  ['locked', { traitType: TraitType.LOCKABLE, traitName: 'lockable', field: 'isLocked', value: true }],
-  ['unlocked', { traitType: TraitType.LOCKABLE, traitName: 'lockable', field: 'isLocked', value: false }],
-  ['closed', { traitType: TraitType.OPENABLE, traitName: 'openable', field: 'isOpen', value: false }],
-  ['open', { traitType: TraitType.OPENABLE, traitName: 'openable', field: 'isOpen', value: true }],
-  ['off', { traitType: TraitType.SWITCHABLE, traitName: 'switchable', field: 'isOn', value: false }],
-  ['on', { traitType: TraitType.SWITCHABLE, traitName: 'switchable', field: 'isOn', value: true }],
-  ['broken', { traitType: TraitType.BREAKABLE, traitName: 'breakable', field: 'broken', value: true }], // ADR-373 D7
-  ['lit', { traitType: TraitType.LIGHT_SOURCE, traitName: 'light-source', field: 'isLit', value: true }], // ADR-374 D9
-  ['unlit', { traitType: TraitType.LIGHT_SOURCE, traitName: 'light-source', field: 'isLit', value: false }],
+  ['locked', { traitType: TraitType.LOCKABLE, traitName: 'lockable', set: (entity) => { (entity.get(TraitType.LOCKABLE) as LockableTrait).isLocked = true; } }],
+  ['unlocked', { traitType: TraitType.LOCKABLE, traitName: 'lockable', set: (entity) => { (entity.get(TraitType.LOCKABLE) as LockableTrait).isLocked = false; } }],
+  ['closed', { traitType: TraitType.OPENABLE, traitName: 'openable', set: (entity) => { (entity.get(TraitType.OPENABLE) as OpenableTrait).isOpen = false; } }],
+  ['open', { traitType: TraitType.OPENABLE, traitName: 'openable', set: (entity) => { (entity.get(TraitType.OPENABLE) as OpenableTrait).isOpen = true; } }],
+  ['off', { traitType: TraitType.SWITCHABLE, traitName: 'switchable', set: (entity) => { (entity.get(TraitType.SWITCHABLE) as SwitchableTrait).isOn = false; } }],
+  ['on', { traitType: TraitType.SWITCHABLE, traitName: 'switchable', set: (entity) => { (entity.get(TraitType.SWITCHABLE) as SwitchableTrait).isOn = true; } }],
+  ['broken', { traitType: TraitType.BREAKABLE, traitName: 'breakable', set: (entity) => { (entity.get(TraitType.BREAKABLE) as BreakableTrait).broken = true; } }], // ADR-373 D7
+  ['lit', { traitType: TraitType.LIGHT_SOURCE, traitName: 'light-source', set: (entity) => { (entity.get(TraitType.LIGHT_SOURCE) as LightSourceTrait).isLit = true; } }], // ADR-374 D9
+  ['unlit', { traitType: TraitType.LIGHT_SOURCE, traitName: 'light-source', set: (entity) => { (entity.get(TraitType.LIGHT_SOURCE) as LightSourceTrait).isLit = false; } }],
 ]);
 
 /** Chord exit word → world-model exit key, or a load error for a word that names none. */
@@ -2988,19 +2727,6 @@ function toDirection(word: string, at?: IREntity): ExitKey {
 /** A copy of an admittance, so each way's lists are its own to grow. */
 function copyAdmittance(admits: Admittance): Admittance {
   return { vehicles: [...admits.vehicles], pushed: admits.pushed === 'any' ? 'any' : [...admits.pushed] };
-}
-
-function configValue(comp: IRComposition, key: string): string | undefined {
-  return comp.config.find((c) => c.key === key)?.value;
-}
-
-/**
- * Ratchet R3 (ADR-234 D6): the adjective's single-entity `with` value —
- * keyless (`lockable with the iron key`). The parser stores it under the
- * empty key with valueKind 'name'.
- */
-function entityConfigValue(comp: IRComposition): string | undefined {
-  return comp.config.find((c) => c.key === '' && c.valueKind === 'name')?.value;
 }
 
 /**

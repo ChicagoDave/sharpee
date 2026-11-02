@@ -7,7 +7,7 @@
  * silently dropping author data.
  */
 import { describe, expect, it } from 'vitest';
-import { COMBAT_MANIFEST, EXTENSION_MANIFESTS, NPC_MANIFEST } from '@sharpee/chord';
+import { COMBAT_MANIFEST, EXTENSION_MANIFESTS, manifestForAdjective, NPC_MANIFEST, TRAIT_ADJECTIVES } from '@sharpee/chord';
 import { CombatantTrait, HealthTrait, NpcTrait, WeaponTrait } from '@sharpee/world-model';
 import {
   COMBAT_FIELD_ROUTES,
@@ -15,6 +15,42 @@ import {
   NPC_BEHAVIOR_ADJECTIVES,
   NPC_FIELD_ROUTES,
 } from '../src/extension-registry';
+import { CORE_TRAIT_ROUTES } from '../src/trait-routes';
+
+describe('core adjective table ↔ catalog conformance (ADR-389 AC-3)', () => {
+  const combatWords = COMBAT_MANIFEST.traitAdjectives.map((a) => a.word);
+
+  it('every catalog adjective has a route', () => {
+    const unrouted = [...TRAIT_ADJECTIVES].filter((word) => !CORE_TRAIT_ROUTES.has(word));
+    expect(unrouted).toEqual([]);
+  });
+
+  it('every route is a catalog adjective, an NPC or combat word, or an extension manifest adjective', () => {
+    const stray = [...CORE_TRAIT_ROUTES.keys()].filter(
+      (word) =>
+        !TRAIT_ADJECTIVES.has(word) && !NPC_BEHAVIOR_ADJECTIVES.has(word) && !combatWords.includes(word) && manifestForAdjective(word) === null,
+    );
+    expect(stray).toEqual([]);
+  });
+
+  it('the catalog words, the NPC words, the combat words and the extension words partition the table', () => {
+    const catalog = [...CORE_TRAIT_ROUTES.keys()].filter((word) => TRAIT_ADJECTIVES.has(word)).sort();
+    expect(catalog).toEqual([...TRAIT_ADJECTIVES].sort());
+    const npc = [...CORE_TRAIT_ROUTES.keys()].filter((word) => NPC_BEHAVIOR_ADJECTIVES.has(word)).sort();
+    expect(npc).toEqual([...NPC_BEHAVIOR_ADJECTIVES].sort());
+    const combat = [...CORE_TRAIT_ROUTES.keys()].filter((word) => combatWords.includes(word)).sort();
+    expect(combat).toEqual([...combatWords].sort());
+    // The remainder is the extension words whose lowering is a core trait
+    // add; each is some manifest's, and none is a `use`-gated field table's.
+    const extension = [...CORE_TRAIT_ROUTES.keys()].filter(
+      (word) => !TRAIT_ADJECTIVES.has(word) && !NPC_BEHAVIOR_ADJECTIVES.has(word) && !combatWords.includes(word),
+    );
+    for (const word of extension) {
+      expect(manifestForAdjective(word)?.manifest.name, word).toBeDefined();
+    }
+    expect(catalog.length + npc.length + combat.length + extension.length).toBe(CORE_TRAIT_ROUTES.size);
+  });
+});
 
 describe('manifest ↔ registry conformance (ADR-215 AC-2)', () => {
   it('the loader trusted registry carries exactly the `use`-gated manifest names (core manifests auto-wire)', () => {

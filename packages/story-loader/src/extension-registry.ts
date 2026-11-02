@@ -46,7 +46,7 @@ import { EXPANSES_EXTENSION } from './extensions/expanses.js';
 import { SAILING_EXTENSION } from './extensions/sailing.js';
 import { HUNGER_EXTENSION } from './extensions/hunger.js';
 import { SCORING_EXTENSION } from './extensions/scoring.js';
-import { SETTING_SCHEMA } from './setting-schema';
+import { SETTING_SCHEMA, type SettingValueType } from './setting-schema';
 
 /**
  * Where one Chord `with`-field lands on the platform: the target trait and
@@ -91,16 +91,29 @@ export const COMBAT_FIELD_ROUTES: ReadonlyMap<string, FieldRoute> = (() => {
  * configure the per-entity behavior instance at engine-ready, and are
  * proven by the REAL-PATH tests, not this table.
  */
-export interface NpcFieldRoute {
-  field: string;
-  convert: 'boolean' | 'rooms';
+export type NpcFieldRoute =
+  | { readonly convert: 'boolean'; readonly field: 'canMove' | 'announcesMovement' }
+  | { readonly convert: 'rooms'; readonly field: 'allowedRooms' | 'forbiddenRooms' };
+
+/**
+ * Narrow a schema row's field name to the NpcTrait field it writes, so the
+ * write is typed. A schema row naming a field this union lacks is a drift
+ * between the schema and the trait, refused when the table is built.
+ */
+function npcFieldRoute(key: string, field: string, value: SettingValueType): NpcFieldRoute {
+  if (value === 'rooms') {
+    if (field === 'allowedRooms' || field === 'forbiddenRooms') return { convert: 'rooms', field };
+  } else if (field === 'canMove' || field === 'announcesMovement') {
+    return { convert: 'boolean', field };
+  }
+  throw new Error(`NPC setting \`${key}\` routes to \`${field}\`, which is not a routed NpcTrait field.`);
 }
 
 export const NPC_FIELD_ROUTES: ReadonlyMap<string, NpcFieldRoute> = (() => {
   const routes = new Map<string, NpcFieldRoute>();
   for (const [key, spec] of SETTING_SCHEMA.get('guard')!) {
     if (!spec.route || spec.route.trait !== 'npc') continue;
-    routes.set(key, { field: spec.route.field, convert: spec.value === 'rooms' ? 'rooms' : 'boolean' });
+    routes.set(key, npcFieldRoute(key, spec.route.field, spec.value));
   }
   return routes;
 })();

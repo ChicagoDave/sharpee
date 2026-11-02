@@ -19,6 +19,7 @@ import type { Action } from '@sharpee/stdlib';
 import type { Choice } from '@sharpee/if-domain';
 import { type ActionInterceptor, type CapabilityBehavior, type CapabilityEffect, type CapabilitySharedData, type CapabilityValidationResult, Direction, IFEntity, type InterceptorReportResult, type InterceptorResult, type InterceptorSharedData, WorldModel } from '@sharpee/world-model';
 import { LoadError } from '../errors.js';
+import { ChordDataTrait } from '../chord-data-trait.js';
 import { CHORD_TRAIT_PREFIX, clauseOccurrenceKey } from '../state-keys.js';
 import { ExecContext, toEffect, type RuntimeCore } from './core.js';
 
@@ -87,10 +88,9 @@ export class DispatchVerbsSection {
   writeChordTraitField(world: WorldModel, worldId: string, field: string, value: unknown, span?: Span): void {
     const entity = world.getEntity(worldId);
     for (const trait of entity?.traits.values() ?? []) {
-      if (!trait.type.startsWith(CHORD_TRAIT_PREFIX)) continue;
-      const record = trait as unknown as Record<string, unknown>;
-      if (field in record) {
-        record[field] = typeof value === 'boolean' ? String(value) : value;
+      if (!(trait instanceof ChordDataTrait)) continue;
+      if (field in trait) {
+        trait[field] = typeof value === 'boolean' ? String(value) : value;
         return;
       }
     }
