@@ -68,23 +68,6 @@ Each package owns its own conventions. Read the relevant file when working in th
 | `packages/parser-en-us`   | Grammar patterns (ADR-087), story grammar extension                      | `packages/parser-en-us/CLAUDE.md`    |
 | `packages/lang-en-us`     | User-facing text, message ID mappings, formatter chain (ADR-158)         | `packages/lang-en-us/CLAUDE.md`      |
 
-## Logic Location
-
-Be deliberate about where logic belongs:
-
-| Layer               | Responsibility                                | Examples                            |
-| ------------------- | --------------------------------------------- | ----------------------------------- |
-| **engine**          | Turn cycle, command execution, event dispatch | SchedulerService, NPC turn phase    |
-| **world-model**     | Traits, behaviors, entity state               | LightSourceBehavior, ContainerTrait |
-| **world-model/src/world** (systems) | One rule over the whole world with one home, consulted by every mover and action that asks its question (ADR-379); a rule is a system once more than one mover, action, or Chord condition asks it | TraversalBehavior.wayFor, VisibilityBehavior |
-| **stdlib**          | Standard actions, common patterns             | Opening action, guard behavior      |
-| **parser-{locale}** | Grammar patterns, command parsing             | `core-grammar.ts`, verb patterns    |
-| **lang-{locale}**   | All user-facing text                          | Error messages, descriptions        |
-| **story**           | Game-specific content and overrides           | Custom NPCs, puzzle logic           |
-| **client**          | UI rendering, input handling                  | React components, terminal I/O      |
-
-Ask: "Where does this belong?" before implementing new features.
-
 ## Always Trust the Architecture
 
 When implementing new features, **extend existing patterns rather than inventing workarounds**.
