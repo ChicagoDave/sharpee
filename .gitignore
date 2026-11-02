@@ -21,6 +21,10 @@ out/
 # from the blanket lib/ rule above.
 !website/src/lib/
 
+# story-loader's world build steps are source (ADR-389 D2), not a build output —
+# carve out from the blanket build/ rule above.
+!packages/story-loader/src/build/
+
 # The Sharpee Book — parked multi-page web build (scripts/build-book.sh <version> web)
 docs/book/*/web/
 

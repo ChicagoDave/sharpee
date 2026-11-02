@@ -72,7 +72,7 @@ import {
   TraitType,
   WearableTrait,
 } from '@sharpee/world-model';
-import { HIDING_POSITIONS } from './setting-schema.js';
+import { HIDING_POSITIONS } from '../setting-schema.js';
 
 /** The story-side services one row may call. */
 export interface TraitRouteContext {

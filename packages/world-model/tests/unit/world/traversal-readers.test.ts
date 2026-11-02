@@ -46,7 +46,9 @@ const ALLOWED_READERS: Record<string, { role: Role; reads: string; why: string }
   'world-model/src/traits/vehicle/vehicleBehavior.ts': { role: 'key-reader', reads: 'exitMessageKey(expanse, side) for an expanse edge\'s phrase (edgeRefusalOf)', why: 'ADR-376 D8: the edge borrows the message key for its text' },
   'stdlib/src/npc/npc-service.ts': { role: 'copy', reads: 'getExitsFromRoom: RoomTrait.exits plus allowed/forbidden rooms', why: 'COPY — walks through closed doors and blocked exits; GH #601 — onto wayFor' },
   'story-loader/src/runtime/derived.ts': { role: 'writer', reads: 'registers the exit.blocked.* and exit.message.* evaluators the home reads', why: 'ADR-240 D2: the registrar' },
-  'story-loader/src/loader.ts': { role: 'writer', reads: 'wires IR exits through connectRooms; reads RoomTrait.exits only to find a door\'s reverse while wiring', why: 'construction' },
+  'story-loader/src/loader.ts': { role: 'writer', reads: 'the reconciler reads RoomTrait.exits to find a direction a restored room has nothing under before wiring the added exit', why: 'construction (ADR-388 D5)' },
+  'story-loader/src/build/wiring.ts': { role: 'writer', reads: 'wires IR exits through connectRooms; reads RoomTrait.exits only to find a door\'s reverse while wiring', why: 'construction (ADR-389 D2a: the entity family moved here from loader.ts)' },
+  'story-loader/src/build/admittance.ts': { role: 'writer', reads: 'the IR exit lists and getExit/getAllExits, to stamp each way\'s admits after wiring', why: 'construction (ADR-378 D6, D6b)' },
   'story-loader/src/evaluator.ts': { role: 'copy', reads: 'adjacentRooms: blocked key, getExit, the door lock, a computed draw', why: 'COPY for `move … to a random adjacent room` (ADR-326); GH #601 — onto wayFor' },
   'character/src/goals/goal-sub-step.ts': { role: 'lister', reads: 'builds a room graph from RoomTrait.exits for seeking; exitDirectionTo', why: 'a graph for the character\'s plan; the move itself runs the real going action (ADR-328 D5), where the home gates it' },
   'branch-tester/src/claims/claim-candidates.ts': { role: 'lister', reads: 'exitsOf(room) to emit `go <direction>` candidates', why: 'a candidate list, decides no traversal' },
@@ -126,7 +128,8 @@ describe('traversal has one home (ADR-379 D2, AC-4)', () => {
     const ADMITTANCE: Record<string, string> = {
       [HOME]: 'home — admitsMover, the only reader',
       'world-model/src/traits/room/roomTrait.ts': 'data — declares Admittance',
-      'story-loader/src/loader.ts': 'writer — lowers the IR admits lists and pushing blocks',
+      'story-loader/src/build/wiring.ts': 'writer — hands a room\'s IR admits list to the admittance module while wiring',
+      'story-loader/src/build/admittance.ts': 'writer — lowers the IR admits lists and pushing blocks',
     };
     const offenders: string[] = [];
     for (const file of files) {

@@ -15,7 +15,7 @@ import {
   NPC_BEHAVIOR_ADJECTIVES,
   NPC_FIELD_ROUTES,
 } from '../src/extension-registry';
-import { CORE_TRAIT_ROUTES } from '../src/trait-routes';
+import { CORE_TRAIT_ROUTES } from '../src/build/trait-routes';
 
 describe('core adjective table ↔ catalog conformance (ADR-389 AC-3)', () => {
   const combatWords = COMBAT_MANIFEST.traitAdjectives.map((a) => a.word);
