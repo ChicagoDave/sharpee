@@ -10,6 +10,7 @@ import { describe, expect, it } from 'vitest';
 import { compile, type StoryIR } from '@sharpee/chord';
 import { WorldModel, ActorTrait } from '@sharpee/world-model';
 import { createStory, Evaluator, type ChordStory } from '../src';
+import { storyOracle } from '../src/build/characters';
 
 const SOURCE = `story
   title: Things
@@ -108,7 +109,7 @@ describe('ADR-359 D1 — `thing` is the parent of every kind but room and region
       { kind: 'predicate', pred: 'is-a', negated, subject: { kind: 'entity', id }, object: { kind: 'symbol', name } },
       { world },
     );
-  const oracle = story['storyOracle']();
+  const oracle = storyOracle(story['build']);
   const member = (irId: string, kind: string) => oracle.isKindMember(irId, kind);
 
   it('`is a thing` holds for things, containers and persons', () => {

@@ -1,29 +1,40 @@
 /**
  * world-build-steps.test.ts — the world build's step modules and its order.
  *
- * Pins (ADR-389 D2a): the entity family's modules exist under `src/build/`
- * and none imports the facade; the facade no longer holds an entity-family
- * body; `WORLD_BUILD_STEPS` has unique names in an order that satisfies
- * every `requires` (a reordered copy is reported by name); and a real load
- * runs every step exactly once, in list order, each leaving its fact on the
+ * Pins (ADR-389 D2a, D2b): every step's module exists under `src/build/`
+ * and none imports the facade; the facade holds none of the moved bodies
+ * and its `initializeWorld` is the loop over the list and nothing else;
+ * `WORLD_BUILD_STEPS` has unique names in an order that satisfies every
+ * `requires` (a reordered copy is reported by name); and a real load runs
+ * every step exactly once, in list order, each leaving its fact on the
  * world.
  */
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { Direction, RoomBehavior, WorldModel } from '@sharpee/world-model';
-import { createStory } from '../src';
+import { Direction, LockableTrait, lookupLocationName, RoomBehavior, TraitType, WorldModel } from '@sharpee/world-model';
+import { ChordDetailTrait, createStory } from '../src';
 import { WORLD_BUILD_STEPS, type WorldBuildStep } from '../src/build/steps';
+import { counterKey } from '../src/state-keys';
 import { compileSource } from './helpers/boot-engine';
 
 const SRC = join(__dirname, '..', 'src');
 const BUILD_DIR = join(SRC, 'build');
 
-/** The entity family's modules (ADR-389 D2a), one each. */
-const MODULES = ['context', 'steps', 'entity', 'adjectives', 'trait-routes', 'wiring', 'vehicles', 'admittance', 'snippets'];
+/** The build's modules (ADR-389 D2a, D2b): the context, the list, the step and helper modules, the grammar. */
+const MODULES = [
+  'context', 'steps',
+  'entity', 'adjectives', 'trait-routes', 'wiring', 'vehicles', 'admittance', 'snippets',
+  'extensions', 'story-state', 'removal-observer', 'detail-channels', 'location-names', 'runtime-bind', 'cuttable', 'start', 'characters',
+  'grammar',
+];
 
 /** The bodies that moved out of the facade. */
-const MOVED = ['buildEntity', 'wireEntity', 'wireExit', 'applyTraitAdjectives', 'applyNpcAdjective', 'applyCombatAdjective', 'compileDescriptionSnippets', 'stampExitAdmits', 'stampPushingWays', 'wireVehicle'];
+const MOVED = [
+  'buildEntity', 'wireEntity', 'wireExit', 'applyTraitAdjectives', 'applyNpcAdjective', 'applyCombatAdjective', 'compileDescriptionSnippets', 'stampExitAdmits', 'stampPushingWays', 'wireVehicle',
+  'finalizeRoleHolder', 'applyCharacterBlocks', 'storyOracle', 'registerRemovalObserver', 'compileDetailChannels', 'compileLocationNames', 'checkCuttableImplementations',
+  'registerActionGrammar', 'registerPassageGrammar',
+];
 
 /** Order faults in a `requires` list: each entry's requirement must exist and come earlier. */
 function orderViolations(steps: ReadonlyArray<Pick<WorldBuildStep, 'name' | 'requires'>>): Array<{ name: string; requires: string }> {
@@ -57,6 +68,18 @@ describe('the entity family is a module family under src/build/', () => {
       expect(facade, `loader.ts still defines ${name}`).not.toMatch(new RegExp(`^  (?:private )?${name}\\(`, 'm'));
     }
   });
+
+  it('the facade\'s initializeWorld is the loop over the list and nothing else', () => {
+    const facade = readFileSync(join(SRC, 'loader.ts'), 'utf8');
+    const start = facade.indexOf('  initializeWorld(world: WorldModel): void {\n');
+    expect(start, 'loader.ts defines initializeWorld').toBeGreaterThan(-1);
+    const end = facade.indexOf('\n  }\n', start);
+    const body = facade.slice(start, end).split('\n').slice(1);
+    expect(body).toEqual([
+      '    this.world = world;',
+      '    for (const step of WORLD_BUILD_STEPS) step.run(this.build, world);',
+    ]);
+  });
 });
 
 describe('WORLD_BUILD_STEPS — the build order as data', () => {
@@ -84,6 +107,17 @@ describe('WORLD_BUILD_STEPS — the build order as data', () => {
     const pushing = copy.findIndex((s) => s.name === 'pushing-ways');
     [copy[admits], copy[pushing]] = [copy[pushing], copy[admits]];
     expect(orderViolations(copy)).toEqual([{ name: 'pushing-ways', requires: 'exit-admittance' }]);
+    [copy[admits], copy[pushing]] = [copy[pushing], copy[admits]];
+    // Compose an extension's vocabulary before the extension registered.
+    const extensions = copy.findIndex((s) => s.name === 'extensions');
+    [copy[extensions], copy[entities]] = [copy[entities], copy[extensions]];
+    expect(orderViolations(copy)).toEqual([{ name: 'entities', requires: 'extensions' }]);
+    [copy[extensions], copy[entities]] = [copy[entities], copy[extensions]];
+    // Run the start block through a runtime not yet bound.
+    const bind = copy.findIndex((s) => s.name === 'runtime-bind');
+    const start = copy.findIndex((s) => s.name === 'start-block');
+    [copy[bind], copy[start]] = [copy[start], copy[bind]];
+    expect(orderViolations(copy)).toEqual([{ name: 'start-block', requires: 'runtime-bind' }]);
   });
 
   it('a load runs every step exactly once, in list order, each leaving its fact', () => {
@@ -117,6 +151,16 @@ describe('WORLD_BUILD_STEPS — the build order as data', () => {
     expect(RoomBehavior.getExit(lane, Direction.NORTH)?.admits).toEqual({ vehicles: [], pushed: 'any' });
     // pushing-ways: the crate's grant lands on the way into the barn, which admits no pushable of its own.
     expect(RoomBehavior.getExit(lane, Direction.EAST)?.admits).toEqual({ pushed: ['crate'] });
+    // story-state: the counter's starting value is world state.
+    expect(world.getStateValue(counterKey('crates-moved'))).toBe(3);
+    // detail-channels: a gated `detail` outside the two trait shapes marks its owner.
+    expect(world.getEntity('crate')!.has(ChordDetailTrait.type)).toBe(true);
+    // location-names: the lane's `room name` arm is registered under its id.
+    expect(lookupLocationName('lane')?.map((arm) => arm.text)).toEqual(['The Old Lane']);
+    // pending-refs: the strongbox's key is the brass key's world id, never its name.
+    expect((world.getEntity('strongbox')!.get(TraitType.LOCKABLE) as LockableTrait).keyId).toBe('brass-key');
+    // start-block: the block gave Alex the role.
+    expect(world.playerCharacter.id).toBe('alex');
   });
 });
 
@@ -127,10 +171,14 @@ const SOURCE = `story
   id: steps
   story-version: 0.0.1
 
+define counter crates-moved starts 3
+
 create the Lane
   a room
   north to the Shed admits pushing
   east to the Barn
+  room name:
+    The Old Lane
 
   A lane.
 
@@ -150,9 +198,25 @@ create the crate
 
   A crate.
 
+  phrase detail while the crate is here:
+    It is scuffed.
+
   pushing
     from the Lane to the Barn
   end pushing
+
+create the strongbox
+  a container
+  in the Shed
+  openable, lockable with the brass key
+
+  A strongbox.
+
+create the brass key
+  a thing
+  in the Lane
+
+  A small brass key.
 
 create Alex
   a person

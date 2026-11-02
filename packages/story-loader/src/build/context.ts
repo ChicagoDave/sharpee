@@ -3,21 +3,26 @@
  *
  * Each step of `WORLD_BUILD_STEPS` runs as `run(story, world)` over this
  * context: the compiled IR, the expression evaluator the wiring closes
- * over, and the four collections the entity family fills for a later
- * stage to drain — trait-config entity references resolved once every
- * entity exists, the deadly-exit map and the vehicle position blocks the
- * engine-ready wiring reads, and the NPC behavior configs registered on the
- * engine's NPC service. `ChordStory` constructs one per story and owns it;
- * the steps hold no story state of their own.
+ * over, the turn-by-turn runtime the later steps bind and run, and the
+ * state the steps hand one another or leave for the engine-ready wiring —
+ * trait-config entity references resolved once every entity exists, the
+ * deadly-exit map and the vehicle position blocks the engine-ready wiring
+ * reads, the NPC behavior configs registered on the engine's NPC service,
+ * the two lifecycle flags the start step sets, and the applied character
+ * blocks with their phase registry. `ChordStory` constructs one per story
+ * and owns it; the steps hold no story state of their own.
  *
  * Invariants:
  * - `pendingEntityRefs` is drained by `resolvePendingEntityRefs` and never
  *   read after it; a reference still queued when the world is handed over
  *   is a defect that pass reports.
- * - The other three collections are write-at-build, read-at-engine-ready.
+ * - `deadlyExits`, `vehiclePositions`, `npcBehaviors`, `appliedCharacters`
+ *   and `characterRegistry` are write-at-build, read-at-engine-ready.
+ * - `worldBuilt` flips once, in the start step, before the start block
+ *   runs; `playerFinalized` flips once, when the role is settled.
  *
  * Public interface: BuildContext, PendingEntityRef, DeadlyExitRecord,
- * VehiclePositionBlock, PendingNpcBehavior.
+ * VehiclePositionBlock, PendingNpcBehavior, AppliedCharacterRecord.
  * Owner context: @sharpee/story-loader (language-neutral IR consumer).
  *
  * References:
@@ -26,10 +31,14 @@
  * - ADR-227 — deadly exits lower to one command transformer at engine-ready.
  * - ADR-366 D5a — a `drive: state` line's `position` block as live guards.
  * - ADR-215 Q4 — NPC behavior configs register at engine-ready.
+ * - ADR-327 D10 — the start block runs against the built world.
+ * - ADR-310 D17 — the character-phase registry is built at load, never serialized.
  */
 import type { IRConfigSetting, Span, StoryIR } from '@sharpee/chord';
+import type { AppliedCharacter, CharacterPhaseRegistry } from '@sharpee/character';
 import type { WorldModel } from '@sharpee/world-model';
 import type { Evaluator } from '../evaluator.js';
+import type { ChordRuntime } from '../runtime.js';
 
 /**
  * A trait-config entity reference awaiting world-id resolution (ADR-230
@@ -80,6 +89,16 @@ export interface PendingNpcBehavior {
   span: Span;
 }
 
+/**
+ * One applied `character` block awaiting engine-ready registration
+ * (tick-phase configs, mood-decay baselines), by WORLD entity id.
+ */
+export interface AppliedCharacterRecord {
+  worldId: string;
+  applied: AppliedCharacter;
+  arrivalNarratedTopics: ReadonlySet<string>;
+}
+
 /** The context every world build step runs over; see the module header. */
 export class BuildContext {
   /** Trait-config entity references, resolved after every entity exists. */
@@ -96,15 +115,29 @@ export class BuildContext {
   readonly vehiclePositions = new Map<string, VehiclePositionBlock>();
   /** Per-entity NPC behavior configs, registered at engine-ready. */
   readonly npcBehaviors: PendingNpcBehavior[] = [];
+  /** True once the world content is built and the start block may run. */
+  worldBuilt = false;
+  /** True once the player role has been settled (exactly-once guard). */
+  playerFinalized = false;
+  /** Applied compiled-character results awaiting engine-ready registration. */
+  readonly appliedCharacters: AppliedCharacterRecord[] = [];
+  /**
+   * The character-phase registry, built at load (authored configs, the
+   * story oracle, temperament defs — never serialized, D17). Undefined
+   * when the story declares no character blocks. The topic dispatch
+   * reads it through `ChordStory.characterStoryData()`; engine-ready
+   * registers the tick phase with it.
+   */
+  characterRegistry?: CharacterPhaseRegistry;
 
   /**
    * @param ir the compiled story
    * @param evaluator the story's expression evaluator — guards and gates close over it
+   * @param runtime the turn-by-turn runtime the bind and start steps run
    */
   constructor(
     readonly ir: StoryIR,
     readonly evaluator: Evaluator,
+    readonly runtime: ChordRuntime,
   ) {}
 }
-
-
