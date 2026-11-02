@@ -9,7 +9,7 @@
 - **Phases executed**: Phase 9 — "World build steps, grammar and remaining stages (D2b)" (Large); Phase 10 — "Engine-ready steps, restore, and final acceptance sweep (D2c)" (Medium, last phase)
 - **Tool calls used**: ~196 at the event log's last row (Phase 9 ~106 of ~400; Phase 10 the remainder of ~250)
 - **Phase outcome**: Phase 10 completed under budget; Phase 9 completed under budget; Exit state holds and the `**Demonstrated**` line is written and provenance-marked in plan.md.
-- **Phase status**: the writer's first `plan-phase.sh flip ... 9` was refused (`Phase 9 ... is PENDING, not CURRENT`): Phase 8's `advance` had been held for David's go, which came at this session's start. The main session then ran `plan-phase.sh advance` (Phase 9 CURRENT since 2026-11-02) and `plan-phase.sh flip ... 9 --state docs/context/.session-state-ff7244.json` (exit 0): Phase 9 is DONE. Phase 10 started on David's go ("go on Phase 10"): `plan-phase.sh advance` stamped it CURRENT (since 2026-11-02) and `plan-phase.sh flip ... 10 --state docs/context/.session-state-ff7244.json` exited 0: Phase 10 is DONE (the last phase). The follow-on `advance` was refused by the floor because the flip is uncommitted (expected); `**Plan Status**` header set to DONE by hand per the invoker's instruction. Plan archive is left to the main session after this write.
+- **Phase status**: the writer's first `plan-phase.sh flip ... 9` was refused (`Phase 9 ... is PENDING, not CURRENT`): Phase 8's `advance` had been held for David's go, which came at this session's start. The main session then ran `plan-phase.sh advance` (Phase 9 CURRENT since 2026-11-02) and `plan-phase.sh flip ... 9 --state docs/context/.session-state-ff7244.json` (exit 0): Phase 9 is DONE. Phase 10 started on David's go ("go on Phase 10"): `plan-phase.sh advance` stamped it CURRENT (since 2026-11-02) and `plan-phase.sh flip ... 10 --state docs/context/.session-state-ff7244.json` exited 0: Phase 10 is DONE (the last phase). The follow-on `advance` was refused by the floor because the flip is uncommitted (expected); `**Plan Status**` header set to DONE by hand per the invoker's instruction. The plan was then archived by `plan-archive.sh` (`docs/work/adr-389-chord-loader` → `docs/work/archive/adr-389-chord-loader`) and `.current-plan` was released, so no plan pointer exists now — expected after a DONE plan, not a defect.
 - **Out-of-scope changes (Phase 10 flip)**: the flip's advisory listed ~300 `out of scope: <path>` lines, the whole branch's earlier-phase footprint (packages/engine, stdlib, world-model, chord, story-loader runtime, stories/dungeo, ADRs and so on) because the diff is taken against the branch base; this phase's own paths are the ones in Files Modified. Not copied line by line.
 - **Out-of-scope changes (Phase 9 flip)**: the flip printed its advisory `out of scope` lines for paths from earlier phases; this phase's own paths are the loader, `src/build/*`, the two tests, the ADR note, `plan.md` and this summary.
 
@@ -51,7 +51,7 @@
 - The four `backstop` comments in loader.ts moved with their bodies (extensions, characters, grammar, cuttable); loader.ts now has zero — AC-4's count is a property of where the facts live, recorded in the ADR note.
 
 ## Next Phase
-Plan complete — all phases done (`**Plan Status**: DONE`). The main session archives the plan with `plan-archive.sh adr-389-chord-loader` and commits Phase 10. #638 stays open for David to close.
+Plan complete — all phases done (`**Plan Status**: DONE`), archived at `docs/work/archive/adr-389-chord-loader/`; Phase 10 committed as d18f5b2b5. ADR-389 is fully implemented (Phases 0–8 earlier sessions, 9–10 this one). Next session: David's push and PR of `feat/adr-389-chord-loader` to main; nothing else is queued from this plan. #638 carries the close-out comment and stays open for David to close.
 
 ## Open Items
 
@@ -77,6 +77,8 @@ Plan complete — all phases done (`**Plan Status**: DONE`). The main session ar
 - Pre-existing dirty paths not this session's, left untouched and out of the commit: `docs/context/archive/session-20261029-1923-main.md`, `docs/work/save-restore-551/`.
 - Pre-existing unused imports in loader.ts (`SemanticProperties`, `RandomService`, `INpcService`, `ActSlots`, `ActResult`, `worldIdOf`, `ChordBehaviorTrait`) left as found; only imports orphaned by this move were pruned.
 - Rule 15 mutation-verification not run in either phase: moved bodies are verbatim with `this.X` retargeted; the new functions (`startBlock`, `bindRuntime`, the engine-ready step wrappers) compose existing calls.
+- Phase 10 commit first stopped at the gate (world-model `traversal-readers.test.ts` allowlist still named `story-loader/src/loader.ts`); after David's go the entry was repointed to `src/restore.ts` (line 49), 5 of 5 passing, and `turbo run test:ci` then passed 75 of 75 [reported by session, unverified: no hook row]; Fable trailer verified with `git log -1`.
+- Integration Reality: the Phase 10 name contains "engine", but the work is a verbatim-move refactor; `tests/engine-ready-steps.test.ts` boots the real story and asserts each step's effect, so no stub stands in for an owned dependency.
 - No GitHub issues filed or closed. Open items: store not consulted this write.
 
 ---
@@ -84,12 +86,12 @@ Plan complete — all phases done (`**Plan Status**: DONE`). The main session ar
 ## Session Metadata
 
 - **Session**: ff7244
-- **Status**: IN-FLIGHT
+- **Status**: COMPLETE (unverified: story-loader/chord suite counts, `./repokit build`, tree-run comparisons vs baseline, `turbo run test:ci` 75 of 75 — no hook rows, reported by session)
 - **Blocker**: N/A
 - **Blocker Category**: N/A
 - **Estimated Remaining**: N/A
 - **Rollback Safety**: safe to revert
-- **Commits**: f23e2d0bc (Phase 9) landed earlier this session; Phase 10 and this write are staged by the next commit (rule 18) — this write is staged by the next commit (rule 18); its hash is in `git log -- docs/context/session-20261102-1530-feat-adr-389-chord-loader.md`
+- **Commits**: f23e2d0bc (Phase 9) and d18f5b2b5 (Phase 10 + plan archive, 23 files) landed this session; this terminal write and the file rename are staged by the next commit (rule 18, the finalize push) — its hash is in `git log -- docs/context/session-20261102-1508-feat-adr-389-chord-loader.md`
 
 ## Dependency/Prerequisite Check
 
@@ -127,3 +129,4 @@ Plan complete — all phases done (`**Plan Status**: DONE`). The main session ar
 **Progressive update**: checkpoint 2026-11-02 16:12 — Phase 10 folded into the template; `plan-phase.sh flip ... 10` exit 0 (Phase 10 DONE); Plan Status set DONE; Demonstrated line provenance-marked (verified in part); archive and commit left to the main session.
 **Progressive update**: 16:28 — Phase 10 commit STOPPED at the gate: `turbo run test:ci` failed `@sharpee/world-model#test:ci`, 2 of 5 in `tests/unit/world/traversal-readers.test.ts`: `ALLOWED_READERS` names `story-loader/src/loader.ts` for the reconciler's raw `RoomTrait.exits` read, which Phase 10 moved to `src/restore.ts` (the same allowlist Phase 8 repointed). Proposed fix: rename that entry to `story-loader/src/restore.ts` with the same reason. Reported; waiting for David's go. Plan already archived (renames staged); nothing committed.
 **Progressive update**: 16:32 — David's go on the allowlist fix: `packages/world-model/tests/unit/world/traversal-readers.test.ts` line 49 repointed from `story-loader/src/loader.ts` to `story-loader/src/restore.ts` (same role, read and reason, with the ADR-389 D2c move noted); `vitest run tests/unit/world/traversal-readers.test.ts` 5 of 5 passing. Commit rerun next with that file added.
+**Progressive update**: session completed 2026-11-02 16:36 — terminal write: Phase 10 committed as d18f5b2b5 (23 files, `turbo run test:ci` 75 of 75), plan archived and pointer released, summary file renamed to the state-file prefix; Status promoted from IN-FLIGHT to COMPLETE (unverified); push and PR left to David.
