@@ -18,7 +18,7 @@
 - `applyTraitAdjectives` in loader.ts is now: conditional-composition prelude, one table lookup, define-trait fallback, refusal naming the word. loader.ts 3101 to 2797 lines.
 - `floats` (expanses manifest word) was in the old switch but not chord's `TRAIT_ADJECTIVES`, so the conformance pin is a partition (catalog / NPC / combat / extension-manifest words), three tests in `tests/manifest-conformance.test.ts`.
 - Four deferred `unknown` casts became typed writes: plural to `IdentityTrait.grammaticalNumber`; `STARTS_STATE_TRAIT_FIELDS` rows carry `set(entity)`; `NpcFieldRoute` is a discriminated union guarded at table build (extension-registry.ts); `writeChordTraitField` narrows by `instanceof ChordDataTrait`, which moved to new `src/chord-data-trait.ts` (loader re-exports it; facade unchanged). AC-5 grep prints nothing.
-- Evidence: story-loader `tsc --noEmit` exit 0; `pnpm --filter '@sharpee/story-loader' test` 191 files, 1527 passing, 1 skipped (floor 1524); chord 1779 passing (unchanged); `./repokit build` exit 0 (00:45). Tree runs vs baseline: secret-letter and ides-of-march byte-identical; fernhill one wall-clock byte (0.1s to 0.2s), no content diff. Demonstration: `scenery` row deleted, conformance test failed `expected [ 'scenery' ] to deeply equal []`, row restored.
+- Evidence (event log corroborates only the story-loader `tsc -p` build pass, 2026-11-02 06:40Z, and Phase 7 landed as a7abf4a41; the rest is session-reported [reported by session, unverified]): story-loader `tsc --noEmit` exit 0; `pnpm --filter '@sharpee/story-loader' test` 191 files, 1527 passing, 1 skipped (floor 1524); chord 1779 passing (unchanged); `./repokit build` exit 0 (00:45). Tree runs vs baseline: secret-letter and ides-of-march byte-identical; fernhill one wall-clock byte (0.1s to 0.2s), no content diff. Demonstration: `scenery` row deleted, conformance test failed `expected [ 'scenery' ] to deeply equal []`, row restored.
 
 ### /doctor (earlier this session, commit 33a8ab7fd)
 - CLAUDE.md trimmed 14,398 to 12,824 chars; transcript-testing detail moved to new `.claude/skills/transcript-testing/SKILL.md`; 9 unused user-scope skills and the `xcode` MCP server turned off (outside repo). Install healthy.
@@ -31,8 +31,8 @@ Avoids an import cycle; D2a moves it under `build/` later. Recorded as an as-lan
 ## Next Phase
 - **Phase 8**: "World build steps, entity family (D2a)" — `WORLD_BUILD_STEPS` scaffold under `packages/story-loader/src/build/`, entity step family moved verbatim, order-pin test.
 - **Tier**: Large (~400 tool-call budget)
-- **Entry state**: Phase 7 committed; David's go.
-- advances once this commit lands — plan-phase.sh: `[DevArch REFUSED: Phase 7 "Core adjective table (D3)" was flipped DONE but the flip is uncommitted in docs/work/adr-389-chord-loader/plan.md — commit it (the phase commit, your own "commit", or finalize) or revert it before the next phase can start]`
+- **Entry state**: Phase 7 committed (a7abf4a41); David's go.
+- Phase 7 DONE flip landed in a7abf4a41; Phase 8 left PENDING (not stamped CURRENT) pending David's go.
 
 ## Open Items
 
@@ -65,12 +65,12 @@ Avoids an import cycle; D2a moves it under `build/` later. Recorded as an as-lan
 ## Session Metadata
 
 - **Session**: f809a5
-- **Status**: IN-FLIGHT
+- **Status**: COMPLETE (unverified: story-loader test counts 1527/1 skipped, chord 1779, test:ci 75/75, tree-run comparisons; no test rows in the event log)
 - **Blocker**: N/A
 - **Blocker Category**: N/A
 - **Estimated Remaining**: N/A
 - **Rollback Safety**: safe to revert
-- **Commits**: 33a8ab7fd (the /doctor finalize) — this write is staged by the next commit (rule 18); its hash is in `git log -- docs/context/session-20261101-2331-feat-adr-389-chord-loader.md`
+- **Commits**: 33a8ab7fd (the /doctor finalize), a7abf4a41 (Phase 7, 9 files +598/-361; commit script test:ci 75/75 tasks passed [reported by session, unverified]) — this write is staged by the next commit (rule 18); its hash is in `git log -- docs/context/session-20261101-2331-feat-adr-389-chord-loader.md`
 
 ## Dependency/Prerequisite Check
 
@@ -102,3 +102,4 @@ Avoids an import cycle; D2a moves it under `build/` later. Recorded as an as-lan
 
 **Progressive update**: session completed 2026-11-02 00:00 — first and only write; terminal summary of the /doctor session.
 **Progressive update**: checkpoint 2026-11-02 00:46 — added ADR-389 Phase 7 (core adjective table), flipped DONE; status IN-FLIGHT.
+**Progressive update**: session completed 2026-11-02 01:18 — Phase 7 landed as a7abf4a41; Phase 8 PENDING for David's go; promoted to terminal status.
