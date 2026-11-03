@@ -3,7 +3,7 @@
  */
 
 import { describe, test, expect, beforeEach } from 'vitest';
-import { WorldModel, TraitType, EntityType, IFEntity, IdentityTrait } from '@sharpee/world-model';
+import { WorldModel, TraitType, EntityType, IFEntity, IdentityTrait, ActorTrait } from '@sharpee/world-model';
 import { StandardScopeResolver } from '../../../src/scope/scope-resolver';
 import { ScopeLevel } from '../../../src/scope/types';
 
@@ -26,10 +26,11 @@ describe('StandardScopeResolver', () => {
     room.add({ type: TraitType.ROOM });
 
     player = world.createEntity('Player', EntityType.ACTOR);
-    player.add({ type: TraitType.ACTOR, isPlayer: true });
+    player.add(new ActorTrait({ isPlayer: true }));
     player.add({ type: TraitType.CONTAINER }); // Can hold things
     
     world.moveEntity(player.id, room.id);
+    player.add(new ActorTrait({ isPlayable: true }));
     world.setPlayer(player.id);
   });
 
@@ -584,7 +585,7 @@ describe('StandardScopeResolver', () => {
       const resolver2 = new StandardScopeResolver(world2);
 
       // Get restored entities
-      const player2 = world2.getPlayer()!;
+      const player2 = world2.playerCharacter;
       const hook2 = world2.getEntity(hook.id)!;
       const balloon2 = world2.getEntity(balloon.id)!;
       const wire2 = world2.getEntity(wire.id)!;
@@ -650,7 +651,7 @@ describe('StandardScopeResolver', () => {
       world2.loadJSON(json);
       const resolver2 = new StandardScopeResolver(world2);
 
-      const player2 = world2.getPlayer()!;
+      const player2 = world2.playerCharacter;
 
       // === SIMULATE COMMAND VALIDATOR: getEntitiesByName + filterByScope ===
 

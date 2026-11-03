@@ -18,7 +18,7 @@ describe('GameEngine.resume', () => {
 
     await engine.executeTurn('look'); // sanity: runs while started
 
-    const roomId = world.getLocation(world.getPlayer()!.id);
+    const roomId = world.getLocation(world.playerCharacter.id);
     engine.stop('defeat', { reason: 'You have died.' });
 
     await expect(engine.executeTurn('look')).rejects.toThrow(/'stopped' phase/);
@@ -28,7 +28,7 @@ describe('GameEngine.resume', () => {
     const result = await engine.executeTurn('look');
     expect(result).toBeDefined();
     // World untouched by stop/resume: player still where they were.
-    expect(world.getLocation(world.getPlayer()!.id)).toBe(roomId);
+    expect(world.getLocation(world.playerCharacter.id)).toBe(roomId);
   });
 
   // ── ADR-345 AC-9: resume() stayed tolerant of 'playing' ────────────────

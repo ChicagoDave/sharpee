@@ -63,7 +63,7 @@ function load(text: string) {
 const context = (world: WorldModel, turn = 1): TurnPluginContext => ({
   world,
   turn,
-  playerId: world.getPlayer()!.id,
+  playerId: world.playerCharacter.id,
   playerLocation: 'lawn',
   random: createSeededRandom(1),
 });
@@ -125,25 +125,24 @@ describe('the ladder lowers onto setRanks (ADR-261 D5)', () => {
   });
 });
 
-describe('the rogue-IR backstop (ADR-261 D4)', () => {
+describe('the rogue-IR seam (ADR-261 D4, ADR-389 D4)', () => {
   // The compiler's analysis.scoring-needs-use catches this first; hand-built
-  // IR reaches the loader, and a gated construct must never be silently dead.
+  // IR reaches the loader, and createStory asks chord's validateIR once —
+  // the same rule — before any world is built.
   const stripScoring = (ir: StoryIR): StoryIR =>
     ({ ...ir, uses: ir.uses.filter((u) => u !== 'scoring') });
 
-  it('scores without `use scoring` in the IR throw a LoadError', () => {
+  it('scores without `use scoring` in the IR are refused at createStory', () => {
     const ir = stripScoring(compileSource(source(LADDER)));
 
-    expect(() => createStory(ir).initializeWorld(new WorldModel()))
-      .toThrow(/need `use scoring`/);
+    expect(() => createStory(ir)).toThrow(/A `score … worth N` line needs `use scoring`/);
   });
 
-  it('ranks without `use scoring` in the IR throw a LoadError', () => {
+  it('ranks without `use scoring` in the IR are refused at createStory', () => {
     const compiled = compileSource(source(LADDER));
     const ir = { ...stripScoring(compiled), scores: [] };
 
-    expect(() => createStory(ir).initializeWorld(new WorldModel()))
-      .toThrow(/need `use scoring`/);
+    expect(() => createStory(ir)).toThrow(/A `rank` rung needs `use scoring`/);
   });
 
   it('a story with neither loads fine', () => {

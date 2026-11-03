@@ -82,14 +82,20 @@ function destinationOf(id: string | null): IRExitDestination {
 
 export const exitsBuilder: EntityLineBuilder = {
   name: 'exits',
-  requires: [],
+  requires: ['compositions'],
   build(decl, entity, context) {
     const { scope } = entity;
     const tails: ExitTailResolvers = {
       resolveCondition: (condition) => context.resolveCondition(condition, scope),
       resolveAdmits: (ref) => resolveAdmitsWord(ref, context),
     };
-    entity.exits = decl.exits.map((e) => lowerExit(e, (ref) => context.resolveEntityId(ref), tails));
+    // ADR-362 D2: an `exits:` line on a non-room is named as a line by the
+    // host gates and lowers to nothing; every other exit form lowers, and
+    // validateIR refuses it on a non-room (analysis.exit-non-room).
+    const isRoom = entity.kinds.some((k) => k.name === 'room');
+    entity.exits = decl.exits
+      .filter((e) => isRoom || !e.exitsLine)
+      .map((e) => lowerExit(e, (ref) => context.resolveEntityId(ref), tails));
     for (const e of decl.exits) {
       if (e.passage && e.oneWay) {
         context.diagnostics.error(
@@ -123,15 +129,8 @@ export const exitsBuilder: EntityLineBuilder = {
     });
     entity.deadlyExits = decl.deadlyExits.map((d) => {
       context.requirePhrase(d.phraseKey, d.span);
-      // The conditional form is post-scope; the loader keeps a defensive
-      // throw as the backstop, but the author reads it here as a diagnostic.
-      if (d.condition !== null) {
-        context.diagnostics.error(
-          'analysis.deadly-while-unsupported',
-          '`is deadly while <condition>` is not wired yet — the conditional deadly exit is post-scope. Use an unconditional `is deadly:` or an `on going` clause with `kill the player when <condition>`.',
-          d.span,
-        );
-      }
+      // The conditional form is post-scope; validateIR refuses it over the
+      // lowered IR (analysis.deadly-while-unsupported), for compile and load alike.
       return {
         direction: d.direction,
         phraseKey: d.phraseKey,

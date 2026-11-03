@@ -91,7 +91,7 @@ function irIdOf(entity) {
  * @returns command strings, deduplicated, in a stable order
  */
 function candidates(world, breadth, vocab, nameByIrId) {
-  const player = world.getPlayer();
+  const player = world.playerCharacter;
   const room = world.getContainingRoom(player.id);
   const out = [];
   const emit = (cmd) => { out.push(cmd); };
@@ -504,7 +504,7 @@ async function explore(storyPath, opts) {
   const endingPaths = {};
   /** Records the player's room and any ending; returns the room if newly seen. */
   const noteFacts = (cmdPath) => {
-    const p = world.getPlayer();
+    const p = world.playerCharacter;
     if (!p) return null;
     const r = world.getContainingRoom(p.id);
     let firstSeen = null;

@@ -7,10 +7,15 @@
 
 // `ParseResult` no longer exists anywhere in the platform — left as a hard error
 // rather than dressed as a type import, so it is fixed rather than hidden.
-import { type Parser, ParseResult, type IParsedCommand as ParsedCommand, type LanguageProvider } from '@sharpee/if-domain';
+import { type Parser, ParseResult, type IParsedCommand as ParsedCommand, type LanguageProvider, type GrammarBuilder } from '@sharpee/if-domain';
 
 export class MockParser implements Parser {
   constructor(private languageProvider: LanguageProvider) {}
+
+  /** The mock carries no grammar engine; a test that extends grammar needs the real parser. */
+  getStoryGrammar(): GrammarBuilder {
+    throw new Error('MockParser has no story grammar');
+  }
 
   parse(input: string): ParseResult {
     // Simple mock parsing logic

@@ -73,8 +73,8 @@ export function playerLocationHeading(
 ): LocationHeadingValue | undefined {
   const world = asWorld(ctx);
   if (!world) return undefined;
-  const player = world.getPlayer?.();
-  if (!player) return undefined;
+  if (!world.hasPlayerCharacter) return undefined;
+  const player = world.playerCharacter;
 
   // The channel context types its world `unknown` to keep if-domain free of a
   // world-model dependency; in production it IS the live `WorldModel`, which is

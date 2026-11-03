@@ -48,7 +48,7 @@ interface DoorWorldState {
 }
 
 function doorWorldState({ story, world }: { story: ChordStory; world: WorldModel }): DoorWorldState {
-  const entity = (irId: string): IFEntity => world.getEntity(story.entityId(irId)!)!;
+  const entity = (irId: string): IFEntity => world.getEntity(irId)!;
   const kitchen = entity('kitchen');
   const hall = entity('hall');
   const door = entity('oak-door');
@@ -71,9 +71,9 @@ describe('door loading through the `through` exit line (ADR-234 AC-1)', () => {
 
   it('wires DoorTrait, both via stamps, and room1 placement from ONE line', () => {
     const state = doorWorldState(basic);
-    const kitchenId = basic.story.entityId('kitchen')!;
-    const hallId = basic.story.entityId('hall')!;
-    const doorId = basic.story.entityId('oak-door')!;
+    const kitchenId = 'kitchen';
+    const hallId = 'hall';
+    const doorId = 'oak-door';
 
     expect(state.doorTrait).toBeDefined();
     expect(state.doorTrait.room1).toBe(kitchenId);
@@ -89,7 +89,7 @@ describe('door loading through the `through` exit line (ADR-234 AC-1)', () => {
     const state = doorWorldState(basic);
     expect(state.scenery).toBe(true);
     expect(state.openable.isOpen).toBe(false);
-    const door = basic.world.getEntity(basic.story.entityId('oak-door')!)!;
+    const door = basic.world.getEntity('oak-door')!;
     expect(door.has(TraitType.LOCKABLE)).toBe(false);
   });
 
@@ -99,14 +99,13 @@ describe('door loading through the `through` exit line (ADR-234 AC-1)', () => {
   });
 });
 
-describe('rogue-IR backstops (compiler door gates bypassed)', () => {
-  it('an unwired door throws LoadError', () => {
+describe('rogue IR (compiler door gates bypassed)', () => {
+  it('an unwired door is refused by validateIR when the story is created (ADR-389 D4)', () => {
     const ir = compileFixture('door-basic.story');
     const kitchen = ir.entities.find((e) => e.id === 'kitchen')!;
     kitchen.exits[0].via = null; // strip the through-reference
-    const story = createStory(ir);
-    expect(() => story.initializeWorld(new WorldModel()))
-      .toThrow(LoadError);
+    expect(() => createStory(ir)).toThrow(LoadError);
+    expect(() => createStory(ir)).toThrow(/never referenced by a `through` exit line/);
     expect(() => createStory(compileFixture('door-basic.story')).initializeWorld(new WorldModel()))
       .not.toThrow();
   });

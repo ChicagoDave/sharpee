@@ -100,7 +100,7 @@ end before
   it('reports a worn item without the wearable trait', () => {
     const found = errors(wornStory('\n'));
     expect(found.map((d) => d.code)).toEqual(['analysis.worn-not-wearable']);
-    expect(found[0].message).toContain('worn by the player but is not wearable');
+    expect(found[0].message).toContain('`cloak` is worn by `Alex` but is not wearable');
   });
 
   it('accepts a worn wearable', () => {

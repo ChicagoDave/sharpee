@@ -6,7 +6,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import { compile, StoryIR } from '@sharpee/chord';
-import { IdentityTrait, TraitType, WorldModel } from '@sharpee/world-model';
+import { IdentityTrait, TraitType, WorldModel, ActorTrait } from '@sharpee/world-model';
 import { ChordStory, createStory } from '../src';
 
 function compileSource(source: string): StoryIR {
@@ -73,12 +73,13 @@ function load() {
   const world = new WorldModel();
   story.initializeWorld(world);
   const player = story.createPlayer(world);
+  player.add(new ActorTrait({ isPlayable: true }));
   world.setPlayer(player.id);
   return { story, world, playerId: player.id };
 }
 
 function readTarget(story: ChordStory, world: WorldModel, playerId: string, irId: string) {
-  const target = world.getEntity(story.entityId(irId)!)!;
+  const target = world.getEntity(irId)!;
   const lookup = world.getInterceptorForAction(target, 'if.action.reading');
   expect(lookup, `interceptor bound for ${irId}`).toBeDefined();
   const data = {};
@@ -110,7 +111,7 @@ describe('{br} and paragraph mapping', () => {
     // ADR-333 D1a: the trait carries the description KEY (ADR-107 id mode);
     // the text lives only in the language provider's registration.
     const { story, world } = load();
-    const hall = world.getEntity(story.entityId('hall')!)!;
+    const hall = world.getEntity('hall')!;
     const identity = hall.get(TraitType.IDENTITY) as IdentityTrait;
     const registered = new Map<string, string>();
     story.extendLanguage({ addMessage: (id: string, t: string) => registered.set(id, t) } as never);

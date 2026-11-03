@@ -47,7 +47,7 @@ function buildFixture() {
   const world = new WorldModel();
 
   const player = world.createEntity('yourself', 'actor');
-  player.add(new ActorTrait());
+  player.add(new ActorTrait({ isPlayable: true }));
   player.add(new ContainerTrait());
   player.add(new IdentityTrait({ name: 'yourself', article: '' }));
 

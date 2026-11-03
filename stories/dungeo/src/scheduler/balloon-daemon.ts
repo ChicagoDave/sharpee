@@ -81,8 +81,7 @@ function getCurrentPosition(world: WorldModel, balloonEntityId: string): Balloon
  * Check if player is in the balloon
  */
 function isPlayerInBalloon(world: WorldModel, balloonEntityId: string): boolean {
-  const player = world.getPlayer();
-  if (!player) return false;
+  const player = world.playerCharacter;
 
   const playerLocation = world.getLocation(player.id);
   return playerLocation === balloonEntityId;
@@ -139,7 +138,7 @@ function handleCrash(world: WorldModel, ctx: SchedulerContext, balloonEntityId: 
   // Player dies only if aboard — canonical terminal death (ADR-224). The crash
   // narration above already carries the message.
   if (playerInBalloon) {
-    const player = world.getPlayer();
+    const player = world.playerCharacter;
     if (player) {
       const deathEvent = killPlayer(world, player, {
         cause: 'balloon_crash',

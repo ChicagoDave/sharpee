@@ -49,7 +49,7 @@ function witnessedByListener(engine: TurnEngine, event: ISemanticEvent): ISemant
   const listener = event.entities.target;
   if (!resolve || listener === undefined) return event;
   let presence: Presence | undefined;
-  if (listener === engine.context.player.id) {
+  if (listener === engine.player.viewpointId) {
     presence = 'present';
   } else {
     const room = engine.world.getContainingRoom(listener);

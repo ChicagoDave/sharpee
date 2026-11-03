@@ -33,8 +33,7 @@ function generateEventId(): string {
  * Check if the player is in the Treasury
  */
 function isInTreasury(world: WorldModel, treasuryId: EntityId): boolean {
-  const player = world.getPlayer();
-  if (!player) return false;
+  const player = world.playerCharacter;
 
   const playerLocation = world.getLocation(player.id);
   return playerLocation === treasuryId;

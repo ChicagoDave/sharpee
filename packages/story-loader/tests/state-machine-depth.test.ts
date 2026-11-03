@@ -15,7 +15,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { compile, StoryIR } from '@sharpee/chord';
 import type { ISemanticEvent } from '@sharpee/core';
 import { StateMachinePlugin } from '@sharpee/plugin-state-machine';
-import { IFEntity, WorldModel } from '@sharpee/world-model';
+import { IFEntity, WorldModel, ActorTrait } from '@sharpee/world-model';
 import type { TurnPlugin } from '@sharpee/plugins';
 import { ChordStory, createStory, LoadError } from '../src';
 import { stubStoryEngine, recordingPluginRegistry } from './helpers/stub-story-engine';
@@ -67,6 +67,7 @@ describe('define machine through the real loader (ADR-119 depth, core under ADR-
     world = new WorldModel();
     story.initializeWorld(world);
     player = story.createPlayer(world);
+    player.add(new ActorTrait({ isPlayable: true }));
     world.setPlayer(player.id);
     const plugins: TurnPlugin[] = [];
     story.onEngineReady(stubStoryEngine({ getPluginRegistry: () => recordingPluginRegistry(plugins) }));
@@ -82,7 +83,7 @@ describe('define machine through the real loader (ADR-119 depth, core under ADR-
   });
 
   it('a role-bound action trigger transitions and runs the onEnter body (real events)', () => {
-    const winchId = story.entityId('rusty-winch')!;
+    const winchId = 'rusty-winch';
     const fired = tick({ actionId: 'if.action.turning', targetId: winchId });
     expect(fired).toContain('chains-groan');
     expect(smPlugin.getRegistry().getMachineState('chord.machine.drawbridge')).toBe('lowering');
@@ -91,7 +92,7 @@ describe('define machine through the real loader (ADR-119 depth, core under ADR-
   });
 
   it('a story-state condition trigger fires on the tick where it holds; terminal states stop', () => {
-    tick({ actionId: 'if.action.turning', targetId: story.entityId('rusty-winch')! });
+    tick({ actionId: 'if.action.turning', targetId: 'rusty-winch' });
     expect(tick()).toEqual([]); // calm — the stormy condition does not hold
     world.setStateValue(CHORD_STORY_STATE_KEY, 'stormy');
     const fired = tick();
@@ -103,13 +104,13 @@ describe('define machine through the real loader (ADR-119 depth, core under ADR-
   });
 
   it('an action on a non-role target does not transition', () => {
-    const doorId = story.entityId('gatehouse')!;
+    const doorId = 'gatehouse';
     expect(tick({ actionId: 'if.action.turning', targetId: doorId })).toEqual([]);
     expect(smPlugin.getRegistry().getMachineState('chord.machine.drawbridge')).toBe('raised');
   });
 
   it('a REFUSED action does not transition; the same action succeeding then does (Phase 7)', () => {
-    const winchId = story.entityId('rusty-winch')!;
+    const winchId = 'rusty-winch';
 
     // Refused attempt: right action, right target, but the action was blocked
     // (e.g. an interceptor veto) — the machine must NOT advance.
@@ -123,7 +124,7 @@ describe('define machine through the real loader (ADR-119 depth, core under ADR-
   });
 
   it('an absent success flag is not vouched-for success — no transition (Phase 7 strict gate)', () => {
-    const winchId = story.entityId('rusty-winch')!;
+    const winchId = 'rusty-winch';
     turn += 1;
     const events = smPlugin.onAfterAction({
       world,
@@ -188,6 +189,7 @@ describe('define machine through the real loader (ADR-119 depth, core under ADR-
     const w = new WorldModel();
     bare.initializeWorld(w);
     const p = bare.createPlayer(w);
+    p.add(new ActorTrait({ isPlayable: true }));
     w.setPlayer(p.id);
     bare.onEngineReady(stubStoryEngine({ getPluginRegistry: () => recordingPluginRegistry(plugins) }));
     const plugin = plugins.find((x): x is StateMachinePlugin => x instanceof StateMachinePlugin)!;

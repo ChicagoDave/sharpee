@@ -45,7 +45,7 @@ const boot = async (source = MAZE): Promise<BootedTurns> => {
 };
 
 const say = async (b: BootedTurns, input: string): Promise<string> => (await b.turnText(input)).text;
-const here = (b: BootedTurns): string | undefined => b.story.irIdOf(b.world.getLocation(b.player.id)!);
+const here = (b: BootedTurns): string | undefined => b.world.getLocation(b.player.id);
 
 describe('ADR-360 AC-1 — walking a maze of group rooms (REAL-PATH)', () => {
   it('walks in from the Sphere Room and between maze rooms, each showing its group text', async () => {

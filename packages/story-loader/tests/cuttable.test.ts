@@ -11,7 +11,7 @@ import { describe, expect, it } from 'vitest';
 import { compile, StoryIR } from '@sharpee/chord';
 import type { ISemanticEvent } from '@sharpee/core';
 import { cuttingAction } from '@sharpee/stdlib';
-import { IFEntity, TraitType, WorldModel, CuttableTrait, DiggableTrait, FlammableTrait, LightSourceTrait } from '@sharpee/world-model';
+import { IFEntity, TraitType, WorldModel, CuttableTrait, DiggableTrait, FlammableTrait, LightSourceTrait, ActorTrait } from '@sharpee/world-model';
 import { ChordStory, createStory, LoadError } from '../src';
 import { runValidatePhase, runExecutePhase, runReportPhase } from '@sharpee/stdlib';
 
@@ -28,6 +28,7 @@ function loadStory(source: string): { story: ChordStory; world: WorldModel; play
   const world = new WorldModel();
   story.initializeWorld(world);
   const player = story.createPlayer(world);
+  player.add(new ActorTrait({ isPlayable: true }));
   world.setPlayer(player.id);
   return { story, world, player };
 }
@@ -87,8 +88,8 @@ end phrase`;
 describe('cuttable trait adjective (ADR-230 D3c)', () => {
   it('loads clean and stamps the tool as a resolved WORLD id, not a raw name', () => {
     const { story, world } = loadStory(storyWith(CUTTABLE_ROPE));
-    const rope = world.getEntity(story.entityId('rope')!)!;
-    const knifeWorldId = story.entityId('knife')!;
+    const rope = world.getEntity('rope')!;
+    const knifeWorldId = 'knife';
 
     const cuttable = rope.get(TraitType.CUTTABLE) as CuttableTrait;
     expect(cuttable).toBeDefined();
@@ -180,8 +181,8 @@ define phrase sand-shifts
 end phrase
 `;
     const { story, world, player } = loadStory(source);
-    const sand = world.getEntity(story.entityId('sand')!)!;
-    const shovelWorldId = story.entityId('shovel')!;
+    const sand = world.getEntity('sand')!;
+    const shovelWorldId = 'shovel';
 
     // Diggable trait stamped with the resolved WORLD id.
     const diggable = sand.get('diggable' as never) as DiggableTrait;
@@ -231,8 +232,8 @@ end phrase`);
 
   it('REAL-PATH: the Chord on-cutting clause implements the cut through stdlib cuttingAction', () => {
     const { story, world, player } = loadStory(storyWith(CUTTABLE_ROPE));
-    const rope = world.getEntity(story.entityId('rope')!)!;
-    const knife = world.getEntity(story.entityId('knife')!)!;
+    const rope = world.getEntity('rope')!;
+    const knife = world.getEntity('knife')!;
 
     // Chord has no carries-at-start surface (IR carries only `wears`) —
     // hand the player the knife as world setup, not as a stub.
@@ -263,14 +264,14 @@ end phrase`);
     expect(validation.valid, JSON.stringify(validation)).toBe(true);
 
     // PRECONDITION: rope starts in the Shed.
-    expect(world.getLocation(rope.id)).toBe(story.entityId('shed')!);
+    expect(world.getLocation(rope.id)).toBe('shed');
 
     runExecutePhase(cuttingAction, context);
     const events = runReportPhase(cuttingAction, context);
 
     // THE state assertion: the story clause's mutation landed in the world —
     // the rope moved to the Bin.
-    expect(world.getLocation(rope.id)).toBe(story.entityId('bin')!);
+    expect(world.getLocation(rope.id)).toBe('bin');
     // The cut event fired (the clause's phrase rides the interceptor).
     expect(events.some((e) => e.type === 'if.event.cut')).toBe(true);
   });
@@ -305,9 +306,9 @@ create the lamp
 
   it('stamps flammable and light-source with the named tool as a resolved WORLD id', () => {
     const { story, world } = loadStory(storyWith(TOOL_GATED));
-    const knifeWorldId = story.entityId('knife')!;
-    const letter = world.getEntity(story.entityId('letter')!)!;
-    const lantern = world.getEntity(story.entityId('lantern')!)!;
+    const knifeWorldId = 'knife';
+    const letter = world.getEntity('letter')!;
+    const lantern = world.getEntity('lantern')!;
 
     expect(letter.get(FlammableTrait)?.toolRequirement?.tools).toEqual([knifeWorldId]);
     expect(lantern.get(LightSourceTrait)?.toolRequirement?.tools).toEqual([knifeWorldId]);
@@ -315,7 +316,7 @@ create the lamp
 
   it('leaves the requirement absent when no tool is named', () => {
     const { story, world } = loadStory(storyWith(TOOL_GATED));
-    const lamp = world.getEntity(story.entityId('lamp')!)!;
+    const lamp = world.getEntity('lamp')!;
 
     expect(lamp.get(LightSourceTrait)).toBeDefined();
     expect(lamp.get(LightSourceTrait)?.toolRequirement).toBeUndefined();

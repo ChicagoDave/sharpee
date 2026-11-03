@@ -16,7 +16,7 @@ import { describe, expect, it } from 'vitest';
 import { compile, StoryIR } from '@sharpee/chord';
 import type { ISemanticEvent } from '@sharpee/core';
 import { takingAction } from '@sharpee/stdlib';
-import { IFEntity, WorldModel } from '@sharpee/world-model';
+import { IFEntity, WorldModel, ActorTrait } from '@sharpee/world-model';
 import { ChordStory, createStory } from '../src';
 import { runValidatePhase, runBlockedPhase } from '@sharpee/stdlib';
 
@@ -33,6 +33,7 @@ function loadStory(source: string): { story: ChordStory; world: WorldModel; play
   const world = new WorldModel();
   story.initializeWorld(world);
   const player = story.createPlayer(world);
+  player.add(new ActorTrait({ isPlayable: true }));
   world.setPlayer(player.id);
   return { story, world, player };
 }
@@ -89,8 +90,8 @@ describe('entity-scoped refusal key resolution (ADR-231 D1)', () => {
 
   it('REAL-PATH: `refuse stuck-fast` reaches takingAction blocked() as `iron-ring.stuck-fast`', () => {
     const { story, world, player } = loadStory(RING_STORY);
-    const ring = world.getEntity(story.entityId('iron-ring')!)!;
-    const vaultId = story.entityId('vault')!;
+    const ring = world.getEntity('iron-ring')!;
+    const vaultId = 'vault';
 
     // Structural ActionContext (cuttable.test.ts precedent) over the REAL
     // loader-built world — the interceptor consulted is the one the loader
@@ -226,8 +227,8 @@ function expectHeldFastChoice(validation: { valid: boolean; error?: string; para
 describe('refusal on a strategy phrase carries the Choice (GH #304)', () => {
   it('entity `on` clause: the veto params hold the arms and reach blocked()', () => {
     const { story, world, player } = loadStory(GUARD_STORY);
-    const statue = world.getEntity(story.entityId('statue')!)!;
-    const yardId = story.entityId('yard')!;
+    const statue = world.getEntity('statue')!;
+    const yardId = 'yard';
 
     const context = takeContextFor(world, player, statue);
     const validation = runValidatePhase(takingAction, context);
@@ -247,8 +248,8 @@ describe('refusal on a strategy phrase carries the Choice (GH #304)', () => {
 
   it('trait clause: the composed-trait interceptor path carries the same Choice', () => {
     const { story, world, player } = loadStory(GUARD_STORY);
-    const bench = world.getEntity(story.entityId('bench')!)!;
-    const yardId = story.entityId('yard')!;
+    const bench = world.getEntity('bench')!;
+    const yardId = 'yard';
 
     const context = takeContextFor(world, player, bench);
     const validation = runValidatePhase(takingAction, context);

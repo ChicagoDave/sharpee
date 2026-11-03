@@ -102,7 +102,7 @@ class ShoutTestStory implements Story {
     return [shoutAction];
   }
 
-  getPlayer(): IFEntity | null {
+  playerEntity(): IFEntity | null {
     return this._player;
   }
   getRoom(): IFEntity | null {
@@ -154,7 +154,7 @@ describe('GameEngine sound buffer + dispatcher wiring (ADR-172 Phase 6 Step 6.3)
     expect(audEvents).toHaveLength(1);
 
     const ev = audEvents[0];
-    expect(ev.entities.target).toBe(story.getPlayer()!.id);
+    expect(ev.entities.target).toBe(story.playerEntity()!.id);
     // Same-room emission yields 'full' audibility.
     expect((ev.data as any).audibilityTier).toBe('full');
     expect((ev.data as any).kind).toBe('speech');

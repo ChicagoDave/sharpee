@@ -24,6 +24,7 @@ import {
   TraitType,
   Direction,
   IFEntity,
+  ActorTrait,
 } from '@sharpee/world-model';
 import type { NarrativeAgreement, RenderContext } from '@sharpee/if-domain';
 import { ACTOR_PARAM_KEY } from '@sharpee/if-domain';
@@ -87,6 +88,7 @@ describe('ADR-203 NPC attribution — real path', () => {
     world.setLanguageWords(ENGLISH_WORDS);
     const player = world.createEntity('yourself', EntityType.ACTOR);
     player.add({ type: TraitType.ACTOR, isPlayer: true } as never);
+    player.add(new ActorTrait({ isPlayable: true }));
     world.setPlayer(player.id);
 
     const roomA = world.createEntity('Room A', EntityType.ROOM);

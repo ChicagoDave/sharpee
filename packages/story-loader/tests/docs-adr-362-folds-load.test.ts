@@ -13,7 +13,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { compile } from '@sharpee/chord';
-import { WorldModel } from '@sharpee/world-model';
+import { WorldModel, ActorTrait } from '@sharpee/world-model';
 import { createStory } from '../src';
 
 const WORLD_DIR = join(__dirname, '..', '..', '..', 'website', 'src', 'app', 'chord', 'guide', 'world');
@@ -48,6 +48,7 @@ function loadFence(fence: string): void {
   const world = new WorldModel();
   story.initializeWorld(world);
   const player2 = story.createPlayer(world);
+  player2.add(new ActorTrait({ isPlayable: true }));
   world.setPlayer(player2.id);
 }
 

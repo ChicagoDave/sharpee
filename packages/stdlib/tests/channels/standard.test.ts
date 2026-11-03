@@ -111,7 +111,10 @@ function makeWorldStub(opts: {
           getMaxScore: () => opts.ledger!.maxScore ?? 0,
         }
       : {}),
-    getPlayer() {
+    get hasPlayerCharacter() {
+      return opts.player !== undefined;
+    },
+    get playerCharacter() {
       return opts.player;
     },
     getContainingRoom(_id: string) {

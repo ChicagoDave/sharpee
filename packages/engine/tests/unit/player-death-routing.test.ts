@@ -49,7 +49,7 @@ function gasHazardDaemon(world: WorldModel) {
     onAfterAction() {
       if (fired) return [];
       fired = true;
-      const player = world.getPlayer()!;
+      const player = world.playerCharacter;
       const ev = killPlayer(world, player, { cause: 'gas', terminal: true });
       return ev ? [ev] : [];
     },
@@ -75,7 +75,7 @@ describe('engine player-death routing (ADR-224)', () => {
 
     await engine.executeTurn('look');
 
-    const player = world.getPlayer()!;
+    const player = world.playerCharacter;
     const health = player.get(TraitType.HEALTH) as HealthTrait;
     expect(HealthBehavior.isAlive(health)).toBe(false);
     expect(health.causeOfDeath).toBe('gas');
@@ -107,7 +107,7 @@ describe('engine player-death routing (ADR-224)', () => {
       id: 'test.reincarnation',
       priority: 40,
       onAfterAction() {
-        const player = world.getPlayer()!;
+        const player = world.playerCharacter;
         const health = player.get(TraitType.HEALTH) as HealthTrait | undefined;
         if (health && !HealthBehavior.isAlive(health)) {
           health.dead = false;
@@ -121,7 +121,7 @@ describe('engine player-death routing (ADR-224)', () => {
 
     await engine.executeTurn('look');
 
-    const player = world.getPlayer()!;
+    const player = world.playerCharacter;
     const health = player.get(TraitType.HEALTH) as HealthTrait;
     // Reincarnated and relocated; the game did NOT end.
     expect(HealthBehavior.isAlive(health)).toBe(true);

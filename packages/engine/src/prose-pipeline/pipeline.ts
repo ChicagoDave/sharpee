@@ -194,7 +194,11 @@ export class ProsePipeline implements IProsePipeline {
           // The pipeline holds the minimal `WorldModelLike` surface; in
           // production it IS the live `WorldModel` the predicate contract
           // (ADR-212 §2) promises story code.
-          holds = gate.holds(this.world as WorldModel);
+          // The pipeline holds the minimal `WorldModelLike` surface; a live
+          // WorldModel satisfies it, so the narrowing cast is the real type
+          // in production (ADR-212 §2) and a test's partial world in a unit test.
+          const world = this.world;
+          holds = world !== undefined && gate.holds(world as WorldModel);
         } catch (e) {
           // eslint-disable-next-line no-console
           console.warn(
@@ -222,7 +226,7 @@ export class ProsePipeline implements IProsePipeline {
           this.languageProvider.getLocaleSettings?.() ?? {},
           {
             person: this.languageProvider.getNarrativePerson?.() ?? 'third',
-            playerId: this.world.getPlayer()?.id,
+            playerId: this.world.hasPlayerCharacter ? this.world.playerCharacter.id : undefined,
           },
           // ADR-196: persistent text-state store backed by the world's `textState`
           // capability — survives save/restore, unlike the turn-scoped seams.

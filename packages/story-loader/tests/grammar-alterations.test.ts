@@ -1,11 +1,12 @@
 /**
  * grammar-alterations.test.ts — ADR-270 Phase 3: the loader wiring for
- * `extend action` (D2 — story-first resolution, `if.action.*` derivation
- * validated against stdlib's FULL id set, emission with NO dispatch
- * conveniences) and `remove from action` (D3 — the engine removal
- * primitive, LoadError on unknown names and unmatched shapes, never a
- * silent no-op). Registered rule SHAPE is asserted against a real
- * if-domain engine (ADR-270 acceptance 2–4).
+ * `extend action` (D2 — story-first resolution, `if.action.*` derivation,
+ * emission with NO dispatch conveniences) and `remove from action` (D3 —
+ * the engine removal primitive; a shape no LIVE rule matches is a
+ * LoadError, never a silent no-op). Registered rule SHAPE is asserted
+ * against a real if-domain engine (ADR-270 acceptance 2–4). Target names
+ * are validateIR's gate in chord (ADR-389 D4), pinned there and at the
+ * createStory seam in `adr-276-backstops.test.ts`.
  */
 import { describe, expect, it } from 'vitest';
 import { compile, StoryIR } from '@sharpee/chord';
@@ -82,17 +83,6 @@ describe('extend action → loader emission (ADR-270 D2, acceptance 2–3)', () 
     expect(rules).toContainEqual({ pattern: 'stroke :animal', action: 'chord.action.petting' });
     expect(rules.some((r) => r.action === 'if.action.petting')).toBe(false);
   });
-
-  it('backstop: an unknown extension target in rogue IR is a LoadError with a did-you-mean (acceptance 3; the compiler gates this as analysis.extend-target, ADR-276)', () => {
-    // Gate-clean compile, then swap the target in the IR — the analyzer can
-    // no longer be reached this way, so the loader backstop must still throw.
-    const ir = compileSource('extend action taking\n  grammar\n    snag the item\n');
-    const rogue = structuredClone(ir);
-    rogue.grammarExtensions![0].action = 'takng';
-    const story = createStory(rogue);
-    expect(() => captureGrammarEngine(story)).toThrow(LoadError);
-    expect(() => captureGrammarEngine(story)).toThrow(/did you mean `taking`/);
-  });
 });
 
 describe('remove from action → the removal primitive (ADR-270 D3, acceptance 4)', () => {
@@ -127,25 +117,19 @@ describe('remove from action → the removal primitive (ADR-270 D3, acceptance 4
     expect(engine2.getRules().map((r) => r.pattern)).toEqual(['insert :item in|into :container']);
   });
 
-  it('backstop: an unmatched shape in rogue IR is a LoadError listing the action’s actual standard patterns (the compiler gates this as analysis.unmatched-removal-pattern, ADR-276)', () => {
-    // Gate-clean compile (`get :item` matches), then swap the word in the IR.
-    const ir = compileSource('remove from action taking\n  get the item\n');
-    const rogue = structuredClone(ir);
-    const word = rogue.grammarRemovals![0].patterns[0].parts.find((p) => p.kind === 'word') as { word: string };
-    word.word = 'yoink';
-    const story = createStory(rogue);
-    expect(() => captureGrammarEngine(story, seedTaking)).toThrow(LoadError);
-    expect(() => captureGrammarEngine(story, seedTaking)).toThrow(
-      /no standard rule matches `yoink :item`.*`take :item`.*`get :item`/,
+  it('a shape the manifest carries but no LIVE standard rule matches is a LoadError listing the action’s actual standard patterns (the live grammar is the fact, ADR-389 D4)', () => {
+    // `get :item` is a standard shape in the manifest, so the compile and
+    // validateIR both accept the removal; the parser this story is loaded
+    // into never registered it, and that is the loader's own fact to refuse.
+    const story = createStory(compileSource('remove from action taking\n  get the item\n'));
+    const withoutGet = (builder: GrammarBuilder) => {
+      builder.define('take :item').mapsTo('if.action.taking').build();
+      builder.define('pick up :item').mapsTo('if.action.taking').build();
+    };
+    expect(() => captureGrammarEngine(story, withoutGet)).toThrow(LoadError);
+    expect(() => captureGrammarEngine(story, withoutGet)).toThrow(
+      /no standard rule matches `get :item`\. The action's standard patterns are: `take :item`, `pick up :item`\./,
     );
-  });
-
-  it('backstop: an unknown removal target in rogue IR is a LoadError with a did-you-mean (the compiler gates this as analysis.removal-target, ADR-276)', () => {
-    const ir = compileSource('remove from action taking\n  get the item\n');
-    const rogue = structuredClone(ir);
-    rogue.grammarRemovals![0].action = 'taking_offf';
-    const story = createStory(rogue);
-    expect(() => captureGrammarEngine(story, seedTaking)).toThrow(/did you mean `taking_off`/);
   });
 
   it('never touches an identically-shaped story-tier rule', () => {

@@ -60,8 +60,8 @@ function spliceHeldCommand(engine: TurnEngine, input: string): string {
   const parser = engine.parser;
   if (held === undefined) return input;
   const world = engine.world;
-  const player = world.getPlayer();
-  if (player) {
+  if (world.hasPlayerCharacter) {
+    const player = world.playerCharacter;
     parser.setWorldContext(world, player.id, world.getLocation(player.id) || '');
   }
   if (parser.parse(input).success) return input;

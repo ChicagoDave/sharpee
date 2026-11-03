@@ -240,6 +240,7 @@ export function createTestWorld(): TestWorld {
   world.moveEntity(player.id, startRoom.id);
   
   // Set player as the world's player entity
+  player.add(new ActorTrait({ isPlayable: true }));
   world.setPlayer(player.id);
   
   return {

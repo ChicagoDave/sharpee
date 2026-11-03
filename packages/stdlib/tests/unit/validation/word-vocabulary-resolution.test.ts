@@ -25,7 +25,8 @@ import {
   IFEntity,
   IParsedCommand,
   TraitType,
-  WorldModel
+  WorldModel,
+  ActorTrait,
 } from '@sharpee/world-model';
 import { LanguageProvider } from '@sharpee/if-domain';
 import type { ISystemEvent, IGenericEventSource } from '@sharpee/core';
@@ -131,6 +132,7 @@ describe('CommandValidator — word-level vocabulary resolution (ADR-231 D3)', (
     room = author.createEntity('Test Room', EntityType.ROOM);
     room.add({ type: TraitType.ROOM });
     author.moveEntity(player.id, room.id);
+    player.add(new ActorTrait({ isPlayable: true }));
     world.setPlayer(player.id);
 
     const registry = new StandardActionRegistry();

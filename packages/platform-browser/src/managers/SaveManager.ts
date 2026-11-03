@@ -197,7 +197,7 @@ export class SaveManager {
   /** Get current player's containing-room name, or 'Unknown'. */
   getCurrentLocation(): string {
     try {
-      const player = this.world.getPlayer();
+      const player = this.world.playerCharacter;
       if (player) {
         const locationId = this.world.getLocation(player.id);
         if (locationId) {

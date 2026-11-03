@@ -8,15 +8,14 @@
  * moment an extension takes part in: its world-side registration at load,
  * its world-state seeding from the story's rows, its config-free plugin
  * slot and its IR-shaped construction at engine-ready, its channel
- * registration, and the construct its `use` unlocks (so rogue IR carrying
- * the construct without the `use` is refused). The loader drives every
+ * registration. The loader drives every
  * moment generically over this map and names no extension; adding one is
  * a module under `extensions/` and a row here, never a loader edit. The
  * entries are iterated in this map's order — never the header's `use`
  * order — so two extensions' equal-priority plugins keep one fixed
  * tie-break whatever an author wrote first. An unknown `use` name is a
- * LoadError (the compiler's manifest gate catches it first; this is the
- * rogue-IR backstop). The chord-side manifest registry must carry exactly
+ * LoadError — a drift guard, since the compiler admits only the names its
+ * manifests carry. The chord-side manifest registry must carry exactly
  * these names — the manifest-conformance test pins the two together.
  *
  * The adjective→trait field routes also live here: derived views of the
@@ -38,7 +37,7 @@
  * - ADR-226 — `health`/`max-health` route to the required HealthTrait.
  * - ADR-335 D3 — IR-shaped construction moved into the entries.
  */
-import type { IRCondition, IRStatement, Span, StoryIR } from '@sharpee/chord';
+import type { IRCondition, IRStatement, StoryIR } from '@sharpee/chord';
 import type { ISemanticEvent } from '@sharpee/core';
 import type { WorldModel } from '@sharpee/world-model';
 import { CHAPTERS_EXTENSION } from './extensions/chapters.js';
@@ -47,7 +46,7 @@ import { EXPANSES_EXTENSION } from './extensions/expanses.js';
 import { SAILING_EXTENSION } from './extensions/sailing.js';
 import { HUNGER_EXTENSION } from './extensions/hunger.js';
 import { SCORING_EXTENSION } from './extensions/scoring.js';
-import { SETTING_SCHEMA } from './setting-schema';
+import { SETTING_SCHEMA, type SettingValueType } from './setting-schema';
 
 /**
  * Where one Chord `with`-field lands on the platform: the target trait and
@@ -92,16 +91,29 @@ export const COMBAT_FIELD_ROUTES: ReadonlyMap<string, FieldRoute> = (() => {
  * configure the per-entity behavior instance at engine-ready, and are
  * proven by the REAL-PATH tests, not this table.
  */
-export interface NpcFieldRoute {
-  field: string;
-  convert: 'boolean' | 'rooms';
+export type NpcFieldRoute =
+  | { readonly convert: 'boolean'; readonly field: 'canMove' | 'announcesMovement' }
+  | { readonly convert: 'rooms'; readonly field: 'allowedRooms' | 'forbiddenRooms' };
+
+/**
+ * Narrow a schema row's field name to the NpcTrait field it writes, so the
+ * write is typed. A schema row naming a field this union lacks is a drift
+ * between the schema and the trait, refused when the table is built.
+ */
+function npcFieldRoute(key: string, field: string, value: SettingValueType): NpcFieldRoute {
+  if (value === 'rooms') {
+    if (field === 'allowedRooms' || field === 'forbiddenRooms') return { convert: 'rooms', field };
+  } else if (field === 'canMove' || field === 'announcesMovement') {
+    return { convert: 'boolean', field };
+  }
+  throw new Error(`NPC setting \`${key}\` routes to \`${field}\`, which is not a routed NpcTrait field.`);
 }
 
 export const NPC_FIELD_ROUTES: ReadonlyMap<string, NpcFieldRoute> = (() => {
   const routes = new Map<string, NpcFieldRoute>();
   for (const [key, spec] of SETTING_SCHEMA.get('guard')!) {
     if (!spec.route || spec.route.trait !== 'npc') continue;
-    routes.set(key, { field: spec.route.field, convert: spec.value === 'rooms' ? 'rooms' : 'boolean' });
+    routes.set(key, npcFieldRoute(key, spec.route.field, spec.value));
   }
   return routes;
 })();
@@ -121,16 +133,14 @@ export interface ExtensionEngineHost {
 }
 
 /**
- * The loader-side services IR-shaped construction may need: the IR-id to
- * world-id map, the story's evaluator, and the runtime's statement
+ * The loader-side services IR-shaped construction may need: the world the
+ * story was built into, the story's evaluator, and the runtime's statement
  * executor. Handed to `installFromIR` so an entry never reaches into the
- * loader.
+ * loader. An IR entity id is the world id, so no id service is offered.
  */
 export interface ExtensionInstallContext {
-  /** The world id an IR entity id was built as, or undefined if never built. */
-  worldId(irId: string): string | undefined;
-  /** The world id an IR entity id was built as; throws the loader's LoadError when never built. */
-  requireWorldId(irId: string): string;
+  /** The world the story was built into, for references resolved at install. */
+  world: WorldModel;
   /** Evaluate a compiled condition against a live world through the story's evaluator. */
   evalCondition(condition: IRCondition, world: WorldModel): boolean;
   /** Run a compiled statement body against a live world through the runtime's statement executor. */
@@ -149,13 +159,6 @@ export interface ExtensionRegistration {
   registerPlugin?: (registry: { register(plugin: unknown): void }) => void;
   /** Channel + renderer registration (the contract's third contribution part). */
   registerChannels?: (registry: unknown) => void;
-  /**
-   * The IR construct this extension's `use` unlocks: the construct's
-   * spelling and the span of its first occurrence when the IR carries one,
-   * else null. IR carrying the construct without the `use` is refused at
-   * engine-ready — never silently dead.
-   */
-  gatedConstruct?: (ir: StoryIR) => { construct: string; span: Span | undefined } | null;
   /**
    * World-side, IR-shaped seeding at the end of world build: state the
    * extension's plugin reads from turn 1. Runs once per boot, before any

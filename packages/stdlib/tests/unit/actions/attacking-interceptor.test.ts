@@ -33,7 +33,7 @@ describe('Attacking interceptor surface (ADR-228)', () => {
     const sword = world.createEntity('elvish sword', 'object');
     // Distinct inert marker — the weapon slot's registration key.
     sword.add({ type: SECOND_TEST_MARKER_TRAIT } as any);
-    world.moveEntity(sword.id, world.getPlayer()!.id);
+    world.moveEntity(sword.id, world.playerCharacter.id);
 
     const fired: string[] = [];
     world.registerActionInterceptor(TEST_MARKER_TRAIT, IFActions.ATTACKING, {

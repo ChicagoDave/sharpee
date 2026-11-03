@@ -440,7 +440,7 @@ export const MeleeInterceptor: ActionInterceptor = {
     if (!player) return null;
 
     // Villain → hero: a staggered villain spends the turn recovering.
-    if (actorId !== world.getPlayer()?.id) {
+    if (actorId !== world.playerCharacter.id) {
       if (player.attributes[MELEE_STATE.VILLAIN_STAGGERED]) {
         player.attributes[MELEE_STATE.VILLAIN_STAGGERED] = false;
         return { valid: false, error: MeleeMessages.VILLAIN_RECOVERS };
@@ -502,7 +502,7 @@ export const MeleeInterceptor: ActionInterceptor = {
       );
     }
     // Villain → hero: `villain` here is the TARGET (the hero); the actor is the villain.
-    if (actorId !== world.getPlayer()?.id) {
+    if (actorId !== world.playerCharacter.id) {
       villainBlow(player, villain, world, sharedData, random);
       return;
     }

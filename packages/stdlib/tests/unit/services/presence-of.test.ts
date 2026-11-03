@@ -16,6 +16,7 @@ import {
   RoomTrait,
   RegionTrait,
   ConcealedStateTrait,
+  ActorTrait,
 } from '@sharpee/world-model';
 import { PerceptionService } from '../../../src/services/PerceptionService';
 
@@ -35,6 +36,7 @@ describe('PerceptionService.presenceOf (ADR-328 D3)', () => {
     world.setLanguageWords(ENGLISH_WORDS);
     service = new PerceptionService();
     player = world.createEntity('player', EntityType.ACTOR);
+    player.add(new ActorTrait({ isPlayable: true }));
     world.setPlayer(player.id);
     hall = world.createEntity('Hall', EntityType.ROOM);
     hall.add(new RoomTrait({ requiresLight: false }));

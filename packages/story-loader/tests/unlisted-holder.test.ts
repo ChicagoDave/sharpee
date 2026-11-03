@@ -94,6 +94,6 @@ describe('`unlisted` — the holder\'s prose is the listing', () => {
 
     blocks.length = 0;
     await b.turn('take rope');
-    expect(b.world.getLocation(b.story.entityId('length-of-rope')!)).toBe(b.player.id);
+    expect(b.world.getLocation('length-of-rope')).toBe(b.player.id);
   });
 });

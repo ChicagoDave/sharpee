@@ -331,7 +331,7 @@ export class CommandValidator implements CommandValidator {
     const scopeInfo: ValidatedCommand['scopeInfo'] = {};
 
     if (directObject) {
-      const player = this.world.getPlayer()!;
+      const player = this.world.playerCharacter;
       const entityScope = this.scopeResolver.getScope(player, directObject.entity as IFEntity);
       const perceivedBy = this.getPerceivedSenses(player, directObject.entity as IFEntity);
 
@@ -342,7 +342,7 @@ export class CommandValidator implements CommandValidator {
     }
 
     if (indirectObject) {
-      const player = this.world.getPlayer()!;
+      const player = this.world.playerCharacter;
       const entityScope = this.scopeResolver.getScope(player, indirectObject.entity as IFEntity);
       const perceivedBy = this.getPerceivedSenses(player, indirectObject.entity as IFEntity);
 
@@ -353,7 +353,7 @@ export class CommandValidator implements CommandValidator {
     }
 
     if (instrument) {
-      const player = this.world.getPlayer()!;
+      const player = this.world.playerCharacter;
       const entityScope = this.scopeResolver.getScope(player, instrument.entity as IFEntity);
       const perceivedBy = this.getPerceivedSenses(player, instrument.entity as IFEntity);
 
@@ -436,7 +436,7 @@ export class CommandValidator implements CommandValidator {
     if (needsBroadSearch) {
       candidates = this.world.getAllEntities().filter(e =>
         e.type !== 'room' &&
-        e.id !== this.world.getPlayer()?.id &&
+        e.id !== this.world.playerCharacter.id &&
         this.nameMatch(e, ref) !== null
       );
     } else {
@@ -473,7 +473,7 @@ export class CommandValidator implements CommandValidator {
 
     // Get detailed scope information for all candidates
     const candidateScopes: any[] = [];
-    const player = this.world.getPlayer();
+    const player = this.world.playerCharacter;
     if (player) {
       for (const entity of candidates) {
         const entityScope = this.scopeResolver.getScope(player, entity);
@@ -709,7 +709,7 @@ export class CommandValidator implements CommandValidator {
 
     const named = metadata.topicCandidates;
     const inScope = named
-      ? named(this.world, this.world.getPlayer()?.id ?? '')
+      ? named(this.world, this.world.playerCharacter.id)
           .map((id) => this.world.getEntity(id))
           .filter((entity): entity is IFEntity => entity !== undefined && this.nameMatch(entity, ref) !== null)
       : this.filterByScope(this.findCandidates(ref), ScopeLevel.VISIBLE);
@@ -740,7 +740,7 @@ export class CommandValidator implements CommandValidator {
 
   /** A landmark room of an expanse the player is positioned in, seen from outside it (ADR-376 D6). */
   private isLandmarkInSight(room: IFEntity): boolean {
-    const player = this.world.getPlayer();
+    const player = this.world.playerCharacter;
     if (!player || !isLandmark(this.world, room)) return false;
     if (this.world.getContainingRoom(player.id)?.id === room.id) return false;
     return this.scopeResolver.canSee(player, room);
@@ -768,13 +768,12 @@ export class CommandValidator implements CommandValidator {
 
   /** The entity's naming surface as the player sees it (ADR-385 D1). */
   private surfaceOf(entity: IFEntity): NamingSurface {
-    return namingSurfaceOf(this.world, entity, this.world.getPlayer()?.id ?? '');
+    return namingSurfaceOf(this.world, entity, this.world.playerCharacter.id);
   }
 
   /** Whether the player carries or wears the entity (what `my` narrows to, ADR-385 D2). */
   private isOwnedByPlayer(entity: IFEntity): boolean {
-    const player = this.world.getPlayer();
-    if (!player) return false;
+    const player = this.world.playerCharacter;
     const { carried, worn } = this.world.getCarriedAndWorn(player.id);
     return carried.some((e) => e.id === entity.id) || worn.some((e) => e.id === entity.id);
   }
@@ -798,8 +797,7 @@ export class CommandValidator implements CommandValidator {
    * Filter entities by scope level
    */
   private filterByScope(entities: IFEntity[], scope: ScopeLevel): IFEntity[] {
-    const player = this.world.getPlayer();
-    if (!player) return [];
+    const player = this.world.playerCharacter;
 
     return entities.filter(entity => {
       const entityScope = this.scopeResolver.getScope(player, entity);
@@ -998,7 +996,7 @@ export class CommandValidator implements CommandValidator {
     // floor means the carried one, even though dropping resolves VISIBLE so
     // its own refusal can speak for un-held targets.
     if (this.currentPreferredScope !== undefined) {
-      const player = this.world.getPlayer();
+      const player = this.world.playerCharacter;
       if (player) {
         const preferred = matches.filter(m =>
           this.scopeResolver.getScope(player, m.entity) >= this.currentPreferredScope!
@@ -1057,8 +1055,7 @@ export class CommandValidator implements CommandValidator {
    * Check if entity is visible to player
    */
   private isEntityVisible(entity: IFEntity): boolean {
-    const player = this.world.getPlayer();
-    if (!player) return false;
+    const player = this.world.playerCharacter;
     return this.scopeResolver.canSee(player, entity);
   }
 
@@ -1066,8 +1063,7 @@ export class CommandValidator implements CommandValidator {
    * Check if entity is reachable by player
    */
   private isEntityReachable(entity: IFEntity): boolean {
-    const player = this.world.getPlayer();
-    if (!player) return false;
+    const player = this.world.playerCharacter;
     return this.scopeResolver.canReach(player, entity);
   }
 
@@ -1088,8 +1084,7 @@ export class CommandValidator implements CommandValidator {
    * Check if entity is in player's inventory
    */
   private isInPlayerInventory(entity: IFEntity): boolean {
-    const player = this.world.getPlayer();
-    if (!player) return false;
+    const player = this.world.playerCharacter;
 
     const inventory = this.world.getContents(player.id);
     return inventory.some(e => e.id === entity.id);
@@ -1103,7 +1098,7 @@ export class CommandValidator implements CommandValidator {
     requiredScope: ScopeLevel,
     entityName: string
   ): { success: boolean; code?: string } {
-    const player = this.world.getPlayer();
+    const player = this.world.playerCharacter;
     if (!player) {
       return {
         success: false,

@@ -11,7 +11,7 @@
  * suite does; assertions are on the resolution result and the scope level.
  */
 import { describe, test, expect, beforeEach } from 'vitest';
-import { AuthorModel, EntityType, IFEntity, IParsedCommand, TraitType, WorldModel } from '@sharpee/world-model';
+import { AuthorModel, EntityType, IFEntity, IParsedCommand, TraitType, WorldModel, ActorTrait } from '@sharpee/world-model';
 import { LanguageProvider } from '@sharpee/if-domain';
 import { CommandValidator } from '../../../src/validation/command-validator';
 import { StandardActionRegistry } from '../../../src/actions/registry';
@@ -69,6 +69,7 @@ describe('GH #374: an unplaced entity never wins scope over a carried one', () =
     room = author.createEntity('Bathroom', EntityType.ROOM);
     room.add({ type: TraitType.ROOM });
     author.moveEntity(player.id, room.id);
+    player.add(new ActorTrait({ isPlayable: true }));
     world.setPlayer(player.id);
 
     // Created and never placed: no location at all.

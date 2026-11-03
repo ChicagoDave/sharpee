@@ -15,7 +15,7 @@ import { join } from 'node:path';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { compile, StoryIR } from '@sharpee/chord';
 import type { ISemanticEvent } from '@sharpee/core';
-import { IFEntity, WorldModel } from '@sharpee/world-model';
+import { IFEntity, WorldModel, ActorTrait } from '@sharpee/world-model';
 import { CHORD_STATE_PREFIX, ChordStory, createStory } from '../src';
 import { runValidatePhase, runExecutePhase, runReportPhase, runBlockedPhase } from '@sharpee/stdlib';
 
@@ -52,7 +52,7 @@ describe('zoo-actions dispatch (petting/feeding)', () => {
   let player: IFEntity;
   let actions: Map<string, DispatchAction>;
 
-  const entity = (irId: string) => world.getEntity(story.entityId(irId)!)!;
+  const entity = (irId: string) => world.getEntity(irId)!;
   const context = (target?: IFEntity): FakeContext => ({
     world,
     player,
@@ -73,6 +73,7 @@ describe('zoo-actions dispatch (petting/feeding)', () => {
     world = new WorldModel();
     story.initializeWorld(world);
     player = story.createPlayer(world);
+    player.add(new ActorTrait({ isPlayable: true }));
     world.setPlayer(player.id);
     actions = new Map(
       (story.getCustomActions() as DispatchAction[]).map((a) => [a.id, a]),
@@ -157,7 +158,7 @@ describe('zoo-actions dispatch (petting/feeding)', () => {
     expect(world.getStateValue(CHORD_STATE_PREFIX + 'pygmy-goats')).toBe('hungry');
 
     // Pick up the feed: the feedable clause's `must` requirements hold.
-    world.moveEntity(story.entityId('handful-of-feed')!, player.id);
+    world.moveEntity('handful-of-feed', player.id);
     const second = run(feeding, goats);
     expect(second.validation.valid).toBe(true);
 

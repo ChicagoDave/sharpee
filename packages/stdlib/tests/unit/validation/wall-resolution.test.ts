@@ -29,6 +29,7 @@ import {
   TraitType,
   WallEntity,
   WorldModel,
+  ActorTrait,
 } from '@sharpee/world-model';
 import { LanguageProvider } from '@sharpee/if-domain';
 
@@ -108,6 +109,7 @@ describe('CommandValidator — wall resolution (ADR-173 Phase 3)', () => {
 
     player = author.createEntity('yourself', EntityType.ACTOR);
     author.moveEntity(player.id, parlor.id);
+    player.add(new ActorTrait({ isPlayable: true }));
     world.setPlayer(player.id);
 
     registry = new StandardActionRegistry();

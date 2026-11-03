@@ -192,7 +192,7 @@ export async function walkClaims(game: ClaimsGame, ir: StoryIR, group: ClaimGrou
 
   const roomsSeen = new Set<string>();
   const noteRoom = () => {
-    const player = world.getPlayer();
+    const player = world.playerCharacter;
     const room = player && world.getContainingRoom(player.id);
     if (room) roomsSeen.add(irIdOf(room) ?? room.id);
   };

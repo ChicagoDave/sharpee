@@ -65,7 +65,7 @@ function makeWorld() {
     findByTrait: () => [],
     findByType: () => [],
     getEntity: () => undefined,
-    getPlayer: () => undefined,
+    hasPlayerCharacter: false,
     getContainingRoom: () => undefined,
     getLocation: () => undefined,
     // The client reads the world's Ending on every `connectEngine`
@@ -228,7 +228,8 @@ describe('BrowserClient — channel renderer drives visible DOM (R5-C)', () => {
     // Without a player here the regression would be invisible.
     const world = {
       ...makeWorld(),
-      getPlayer: () => ({ id: 'p1' }),
+      hasPlayerCharacter: true,
+      playerCharacter: { id: 'p1' },
       getLocation: () => 'r1',
       getEntity: (id: string) => (id === 'r1' ? { id: 'r1', name: 'well-bottom' } : undefined),
     } as never;

@@ -121,12 +121,12 @@ async function boot(source: string, seed = 11): Promise<Booted> {
   const engine = new GameEngine({ world, parser, language, perceptionService: new PerceptionService(), config: { seed, onEvent: (e) => stream.push(e) } });
   engine.installStory(story);
   await engine.start();
-  const id = (irId: string) => story.entityId(irId)!;
+  const id = (irId: string) => irId;
   const errand = () => (world.getEntity(id('maid'))?.get(TraitType.CHARACTER_MODEL) as CharacterModelTrait | undefined)?.goalState['errand'];
   const step = () => errand()?.currentStep;
   const active = () => errand()?.active;
   return {
-    engine, story, world, player: world.getPlayer()!, stream, id, step, active,
+    engine, story, world, player: world.playerCharacter, stream, id, step, active,
     at: (irId) => world.getLocation(id(irId)),
     turn: async () => { expect((await engine.executeTurn('wait')).success).toBe(true); },
   };

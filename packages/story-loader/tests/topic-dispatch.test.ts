@@ -19,7 +19,7 @@ import { describe, expect, it } from 'vitest';
 import { compile, StoryIR } from '@sharpee/chord';
 import type { ISemanticEvent } from '@sharpee/core';
 import { askingAction, tellingAction } from '@sharpee/stdlib';
-import { IFEntity, WorldModel } from '@sharpee/world-model';
+import { IFEntity, WorldModel, ActorTrait } from '@sharpee/world-model';
 import { ChordStory, createStory } from '../src';
 import { runValidatePhase, runExecutePhase, runReportPhase } from '@sharpee/stdlib';
 
@@ -54,11 +54,12 @@ function load(source: string): Loaded {
   const world = new WorldModel();
   story.initializeWorld(world);
   const player = story.createPlayer(world);
+  player.add(new ActorTrait({ isPlayable: true }));
   world.setPlayer(player.id);
   return { story, world, player };
 }
 
-const entity = (l: Loaded, irId: string): IFEntity => l.world.getEntity(l.story.entityId(irId)!)!;
+const entity = (l: Loaded, irId: string): IFEntity => l.world.getEntity(irId)!;
 
 /** Four-phase context over the LIVE world (door-actions harness model). */
 function makeContext(l: Loaded, action: { id: string }, command: Record<string, unknown>): any {

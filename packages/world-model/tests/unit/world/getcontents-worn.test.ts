@@ -19,7 +19,7 @@ function worldWithDressedPlayer() {
   const room = world.createEntity('Room', 'room');
   room.add({ type: TraitType.ROOM });
   const player = world.createEntity('player', 'actor');
-  player.add(new ActorTrait());
+  player.add(new ActorTrait({ isPlayable: true }));
   player.add(new ContainerTrait());
   world.setPlayer(player.id);
   world.moveEntity(player.id, room.id);

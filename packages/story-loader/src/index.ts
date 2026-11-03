@@ -27,7 +27,7 @@ export { HIDING_POSITIONS, SETTING_SCHEMA } from './setting-schema.js';
 export type { SettingSpec, SettingValueType } from './setting-schema.js';
 export { EVENT_TRIGGERS, EVENT_PAYLOAD_FIELDS, REGION_EVENT_TRIGGERS, LISTENER_EVENT_TRIGGERS } from './event-contract.js';
 export { ChordDataTrait, ChordDetailTrait, ChordStory, createStory, StoryLoaderOptions } from './loader.js';
-export { Evaluator, EvalContext, EntityIdResolver } from './evaluator.js';
+export { Evaluator, EvalContext } from './evaluator.js';
 export { ChordRuntime, ChordBehaviorTrait } from './runtime.js';
 export { PHRASEBOOK_DATA } from './phrasebook-data.js';
 export type { PhrasebookData } from './phrasebook-data.js';
@@ -42,6 +42,7 @@ export {
   CHORD_STORY_STATE_KEY,
   CHORD_TIMER_PREFIX,
   CHORD_TRAIT_PREFIX,
+  PLAYER_SENTINEL,
   clauseOccurrenceKey,
   counterKey,
   selectOccurrenceKey,

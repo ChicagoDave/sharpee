@@ -30,7 +30,8 @@ function stubWorld(): WorldModelLike {
     getEntity: () => undefined,
     getContents: () => [],
     getContainingRoom: () => undefined,
-    getPlayer: () => undefined,
+    hasPlayerCharacter: false,
+    get playerCharacter(): IEntity { throw new Error('mock world has no player'); },
   };
 }
 

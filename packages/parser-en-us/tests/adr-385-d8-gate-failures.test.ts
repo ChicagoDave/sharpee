@@ -37,7 +37,7 @@ describe('a gate failure names the phrase and the reason (ADR-385 D8)', () => {
     room.add(new RoomTrait());
     room.add(new ContainerTrait());
     player = world.createEntity('Alex', 'actor');
-    player.add(new ActorTrait());
+    player.add(new ActorTrait({ isPlayable: true }));
     player.add(new ContainerTrait());
     world.moveEntity(player.id, room.id);
     world.setPlayer(player.id);

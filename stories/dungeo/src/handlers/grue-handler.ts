@@ -44,8 +44,7 @@ function isImmortal(world: WorldModel): boolean {
  * Get the player's containing room, handling being inside a vehicle
  */
 function getPlayerRoom(world: WorldModel): string | null {
-  const player = world.getPlayer();
-  if (!player) return null;
+  const player = world.playerCharacter;
 
   const containingRoom = world.getContainingRoom(player.id);
   return containingRoom?.id || null;
@@ -55,8 +54,7 @@ function getPlayerRoom(world: WorldModel): string | null {
  * Get the containing room entity
  */
 function getPlayerRoomEntity(world: WorldModel): any | null {
-  const player = world.getPlayer();
-  if (!player) return null;
+  const player = world.playerCharacter;
 
   return world.getContainingRoom(player.id);
 }
@@ -87,7 +85,7 @@ function getExitInfo(world: WorldModel, direction: string): {
   isBlocked: boolean;
   viaEntityId?: string;
 } {
-  const player = world.getPlayer();
+  const player = world.playerCharacter;
   if (!player) {
     return { destination: null, exitType: 'invalid', isBlocked: false };
   }

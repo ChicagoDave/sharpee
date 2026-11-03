@@ -88,7 +88,7 @@ export class ChannelServiceTestStory implements Story {
   }
 
   createPlayer(world: WorldModel): IFEntity {
-    const existing = world.getPlayer();
+    const existing = world.hasPlayerCharacter ? world.playerCharacter : undefined;
     if (existing) {
       ensurePlayerTraits(existing);
       return existing;

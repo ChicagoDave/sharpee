@@ -11,7 +11,7 @@
 import { describe, test, expect, beforeEach } from 'vitest';
 import { takingAction } from '../../../src/actions/standard/taking'; // Now from folder
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType, WorldModel, EntityType } from '@sharpee/world-model';
+import { TraitType, WorldModel, EntityType, ActorTrait } from '@sharpee/world-model';
 import {
   createRealTestContext,
   setupBasicWorld,
@@ -200,7 +200,7 @@ describe('takingAction (Golden Pattern)', () => {
       
       // Create player with limited container capacity
       const player = world.createEntity('yourself', 'actor');
-      player.add({ type: TraitType.ACTOR });
+      player.add(new ActorTrait({ isPlayable: true }));
       player.add({
         type: TraitType.CONTAINER,
         capacity: { maxItems: 2 }
@@ -238,7 +238,7 @@ describe('takingAction (Golden Pattern)', () => {
       room.add({ type: TraitType.ROOM });
       
       const player = world.createEntity('yourself', 'actor');
-      player.add({ type: TraitType.ACTOR });
+      player.add(new ActorTrait({ isPlayable: true }));
       player.add({
         type: TraitType.CONTAINER,
         capacity: { maxItems: 1 }
@@ -280,7 +280,7 @@ describe('takingAction (Golden Pattern)', () => {
       room.add({ type: TraitType.ROOM });
       
       const player = world.createEntity('yourself', 'actor');
-      player.add({ type: TraitType.ACTOR });
+      player.add(new ActorTrait({ isPlayable: true }));
       player.add({ type: TraitType.CONTAINER, capacity: { maxWeight: 10 } });
       world.setPlayer(player.id);
 
@@ -603,7 +603,7 @@ describe('Taking Action Edge Cases', () => {
     
     // Player without container trait
     const player = world.createEntity('yourself', 'actor');
-    player.add({ type: TraitType.ACTOR });
+    player.add(new ActorTrait({ isPlayable: true }));
     world.setPlayer(player.id);
     const ball = world.createEntity('ball', 'object');
     

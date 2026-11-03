@@ -58,8 +58,8 @@ describe('load-time contents of a closed container', () => {
     story.initializeWorld(world);
     story.createPlayer(world);
 
-    const boxId = story.entityId('strongbox')!;
-    const letterId = story.entityId('letter')!;
+    const boxId = 'strongbox';
+    const letterId = 'letter';
     // The mutation under test: the letter's location IS the closed box.
     expect(world.getLocation(letterId)).toBe(boxId);
     expect(world.getContents(boxId).map((e) => e.id)).toContain(letterId);

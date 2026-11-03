@@ -61,7 +61,7 @@ describe('ADR-333 D1 as amended — the facts beside the stamp, real path', () =
     expect(reply!.source).toMatchObject({
       messageId: 'if.action.asking.unknown_topic',
       facts: {
-        targetId: booted.story.entityId('gems-stallkeeper'),
+        targetId: 'gems-stallkeeper',
         targetName: 'gems stallkeeper',
         topic: 'gems',
       },

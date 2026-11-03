@@ -122,7 +122,7 @@ export class MinimalTestStory implements Story {
     return this._room;
   }
 
-  getPlayer(): IFEntity | null {
+  playerEntity(): IFEntity | null {
     return this._player;
   }
 }

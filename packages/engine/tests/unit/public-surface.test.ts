@@ -15,12 +15,13 @@ import ts from 'typescript';
 const PACKAGE_ROOT = join(__dirname, '..', '..');
 const ENTRY = join(PACKAGE_ROOT, 'src', 'index.ts');
 
-/** ADR-342 D1 (as amended by ADR-343 and Amendment A2): the contract, one name at a time. */
+/** ADR-342 D1 (as amended by ADR-343, Amendment A2, and ADR-390 D2): the contract, one name at a time. */
 const CONTRACT = [
   // The facade
   'GameEngine',
   'EngineConfig',
   'DEFAULT_TEXT_CAPABILITIES',
+  'Player', // ADR-390 D2: the session's player role
   // What a story author writes against
   'Story',
   'StoryConfig',

@@ -20,7 +20,7 @@
 import { describe, test, expect, beforeEach } from 'vitest';
 import { CommandValidator } from '../../../src/validation/command-validator';
 import { StandardActionRegistry } from '../../../src/actions/registry';
-import { AuthorModel, WorldModel, IFEntity, TraitType, EntityType } from '@sharpee/world-model';
+import { AuthorModel, WorldModel, IFEntity, TraitType, EntityType, ActorTrait } from '@sharpee/world-model';
 import { LanguageProvider } from '@sharpee/if-domain';
 import { askingAction } from '../../../src/actions/standard/asking';
 import { tellingAction } from '../../../src/actions/standard/telling';
@@ -51,6 +51,7 @@ describe('CommandValidator topic resolution (ADR-231 D4)', () => {
     room = author.createEntity('Hermitage', EntityType.ROOM);
     room.add({ type: TraitType.ROOM });
     author.moveEntity(player.id, room.id);
+    player.add(new ActorTrait({ isPlayable: true }));
     world.setPlayer(player.id);
 
     hermit = author.createEntity('hermit', EntityType.ACTOR);
@@ -177,6 +178,7 @@ describe('asking/telling report the first-class topic (ADR-231 D4)', () => {
     const room = author.createEntity('Hermitage', EntityType.ROOM);
     room.add({ type: TraitType.ROOM });
     author.moveEntity(player.id, room.id);
+    player.add(new ActorTrait({ isPlayable: true }));
     world.setPlayer(player.id);
     const hermit = author.createEntity('hermit', EntityType.ACTOR);
     hermit.add({ type: TraitType.ACTOR });

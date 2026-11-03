@@ -25,7 +25,7 @@ import {
   type SceneChannelRow,
 } from '@sharpee/stdlib';
 import type { ChannelProduceContext } from '@sharpee/if-domain';
-import { IFEntity, WorldModel, sceneWith, type ExchangeAffordances } from '@sharpee/world-model';
+import { IFEntity, WorldModel, sceneWith, type ExchangeAffordances, ActorTrait } from '@sharpee/world-model';
 import {
   SaveRestoreService,
   type GameContext,
@@ -93,11 +93,12 @@ function load(): Loaded {
   const world = new WorldModel();
   story.initializeWorld(world);
   const player = story.createPlayer(world);
+  player.add(new ActorTrait({ isPlayable: true }));
   world.setPlayer(player.id);
   return { story, world, player };
 }
 
-const entity = (l: Loaded, irId: string): IFEntity => l.world.getEntity(l.story.entityId(irId)!)!;
+const entity = (l: Loaded, irId: string): IFEntity => l.world.getEntity(irId)!;
 
 /** Four-phase context over the LIVE world (the Phase 7/8 harness model). */
 function makeContext(l: Loaded, action: typeof askingAction, command: Record<string, unknown>): any {

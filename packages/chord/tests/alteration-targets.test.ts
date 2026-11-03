@@ -2,8 +2,9 @@
  * alteration-targets.test.ts — ADR-276 Phase 3 (census entries 1–2):
  * alteration target names resolve at compile against the story's own actions
  * plus the generated stdlib manifest, mirroring the loader's story-first
- * order (ADR-270 D2). The loader keeps the same checks as rogue-IR backstops
- * (tested in @sharpee/story-loader).
+ * order (ADR-270 D2). The gate is validateIR's (ADR-389 D4), run as the
+ * compile's last pass and by the loader before it builds; the rogue-IR
+ * cases are in validate-ir.test.ts.
  * REAL-PATH: every case drives Chord source through the actual compile
  * pipeline; the manifest consulted is the committed generated module.
  */

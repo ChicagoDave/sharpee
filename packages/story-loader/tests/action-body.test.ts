@@ -12,7 +12,7 @@
 import { describe, expect, it } from 'vitest';
 import { compile, StoryIR } from '@sharpee/chord';
 import type { ISemanticEvent } from '@sharpee/core';
-import { IFEntity, WorldModel } from '@sharpee/world-model';
+import { IFEntity, WorldModel, ActorTrait } from '@sharpee/world-model';
 import { ChordStory, createStory } from '../src';
 import { runValidatePhase, runExecutePhase, runReportPhase, runBlockedPhase } from '@sharpee/stdlib';
 
@@ -123,6 +123,7 @@ function load(): Loaded {
   const world = new WorldModel();
   story.initializeWorld(world);
   const player = story.createPlayer(world);
+  player.add(new ActorTrait({ isPlayable: true }));
   world.setPlayer(player.id);
   const actions = new Map((story.getCustomActions() as DispatchAction[]).map((a) => [a.id, a]));
   return { story, world, player, actions };
@@ -132,7 +133,7 @@ function run(l: Loaded, actionId: string, targetIrId: string) {
   const ctx: FakeContext = {
     world: l.world,
     player: l.player,
-    command: { directObject: { entity: l.world.getEntity(l.story.entityId(targetIrId)!)! } },
+    command: { directObject: { entity: l.world.getEntity(targetIrId)! } },
     sharedData: {},
     event: (type, data) => ({ id: `t-${type}`, type, timestamp: 0, entities: {}, data }),
   };
@@ -156,7 +157,7 @@ describe('action-level musts (D6) gate the dispatch in validate', () => {
 
   it('passes once the requirement holds', () => {
     const l = load();
-    l.world.moveEntity(l.story.entityId('camera')!, l.player.id);
+    l.world.moveEntity('camera', l.player.id);
     const { validation } = run(l, 'chord.action.photographing', 'gnome');
     expect(validation.valid).toBe(true);
   });
@@ -165,7 +166,7 @@ describe('action-level musts (D6) gate the dispatch in validate', () => {
 describe('action bodies execute through the §5.4 phases (behavior host optional)', () => {
   it('award mutates the score in execute; phrase reports; award dedups on repeat', () => {
     const l = load();
-    l.world.moveEntity(l.story.entityId('camera')!, l.player.id);
+    l.world.moveEntity('camera', l.player.id);
 
     const first = run(l, 'chord.action.photographing', 'gnome');
     expect(first.validation.valid).toBe(true);
@@ -191,14 +192,14 @@ describe('action bodies execute through the §5.4 phases (behavior host optional
 
   it('an each block in an action body iterates with the pre-mutation snapshot', () => {
     const l = load();
-    const shed = l.story.entityId('shed')!;
+    const shed = 'shed';
     const { validation, events } = run(l, 'chord.action.sweeping', 'gnome');
     expect(validation.valid).toBe(true);
 
     // Mutations: every yard-thing (player, camera, gnome — creation order)
     // moved to the Shed.
-    expect(l.world.getLocation(l.story.entityId('gnome')!)).toBe(shed);
-    expect(l.world.getLocation(l.story.entityId('camera')!)).toBe(shed);
+    expect(l.world.getLocation('gnome')).toBe(shed);
+    expect(l.world.getLocation('camera')).toBe(shed);
     expect(l.world.getLocation(l.player.id)).toBe(shed);
 
     // Reports visit the SNAPSHOTTED set: three swept-notes even though a

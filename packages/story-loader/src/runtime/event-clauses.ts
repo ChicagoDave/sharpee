@@ -39,7 +39,7 @@ export class EventClausesSection {
       EVENT_TRIGGERS.entering,
       (event, w) => {
         const toRoom = enteringDestination(event.data);
-        if (toRoom !== undefined && movedActorId(event) === (w as WorldModel).getPlayer()?.id) {
+        if (toRoom !== undefined && movedActorId(event) === (w as WorldModel).playerCharacter.id) {
           (w as WorldModel).setStateValue(CHORD_VISITED_PREFIX + toRoom, true);
         }
         return null;
@@ -107,10 +107,10 @@ export class EventClausesSection {
     if (LISTENER_EVENT_TRIGGERS[clause.action]) {
       // ADR-374 D6: this listener heard this sound, read through the contract.
       const heard = heardSound(event);
-      if (!heard || heard.listenerId !== this.core.host.entityId(entity.id) || heard.kind !== clause.sound) return null;
+      if (!heard || heard.listenerId !== entity.id || heard.kind !== clause.sound) return null;
     } else if (entity.kinds.some((k) => k.name === 'region')) {
-      if (crossingRegionId(event.data) !== this.core.host.entityId(entity.id)) return null;
-    } else if (clause.action === 'entering' && enteringDestination(event.data) !== this.core.host.entityId(entity.id)) {
+      if (crossingRegionId(event.data) !== entity.id) return null;
+    } else if (clause.action === 'entering' && enteringDestination(event.data) !== entity.id) {
       // Room/enterable owners: `after the player entering` fires when the
       // movement's destination IS the owner — read through the AC-9 payload
       // guard, never a blind cast (the stdlib event is a foreign surface).

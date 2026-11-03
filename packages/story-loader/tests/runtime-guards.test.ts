@@ -13,7 +13,7 @@ import type { ISaveData, ISemanticEvent } from '@sharpee/core';
 import { GameEngine } from '@sharpee/engine';
 import { EnglishLanguageProvider } from '@sharpee/lang-en-us';
 import { EnglishParser } from '@sharpee/parser-en-us';
-import { WorldModel } from '@sharpee/world-model';
+import { WorldModel, ActorTrait } from '@sharpee/world-model';
 import { createStory } from '../src';
 import type { ChordRuntime } from '../src/runtime';
 import { compileSource } from './helpers/boot-engine';
@@ -68,6 +68,7 @@ function headless() {
   const world = new WorldModel();
   story.initializeWorld(world);
   const player = story.createPlayer(world);
+  player.add(new ActorTrait({ isPlayable: true }));
   world.setPlayer(player.id);
   const runtime = (story as unknown as { runtime: ChordRuntime }).runtime;
   return { runtime, guards: runtime as unknown as Guards, world };

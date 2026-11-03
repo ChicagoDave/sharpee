@@ -67,6 +67,7 @@ describe('step 4a — an opens-when thread interrupts the player\'s scene (D10a)
     world = new WorldModel();
     ballroom = room(world, 'Ballroom');
     player = actorIn(world, 'Jacqueline', ballroom, { player: true });
+    player.add(new ActorTrait({ isPlayable: true }));
     world.setPlayer(player.id);
     jacobs = actorIn(world, 'Jacobs', ballroom);
     princess = actorIn(world, 'Princess', ballroom);

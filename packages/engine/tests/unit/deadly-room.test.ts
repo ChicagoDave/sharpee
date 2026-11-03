@@ -52,7 +52,7 @@ describe('deadly-room end-to-end (ADR-224)', () => {
 
     await engine.executeTurn('wait');
 
-    const player = world.getPlayer()!;
+    const player = world.playerCharacter;
     const health = player.get(TraitType.HEALTH) as HealthTrait;
     expect(health).toBeDefined(); // killPlayer lazily attached it
     expect(HealthBehavior.isAlive(health)).toBe(false);
@@ -73,7 +73,7 @@ describe('deadly-room end-to-end (ADR-224)', () => {
 
     await engine.executeTurn('look');
 
-    const player = world.getPlayer()!;
+    const player = world.playerCharacter;
     const health = player.get(TraitType.HEALTH) as HealthTrait | undefined;
     // Never killed → no HealthTrait was attached, and the game did not end.
     expect(health).toBeUndefined();

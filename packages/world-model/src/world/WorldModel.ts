@@ -14,6 +14,8 @@ import { PresenceBehavior } from './PresenceBehavior.js';
 import { SceneryTrait } from '../traits/scenery/index.js';
 import { DEFAULT_TRAITS } from './default-trait-registry.js';
 import { IdentityTrait } from '../traits/identity/identityTrait.js';
+import type { ActorTrait } from '../traits/actor/actorTrait.js';
+import { addPlayerRoleVocabulary, movePlayerRoleVocabulary } from '../traits/actor/playerRole.js';
 import { OpenableTrait } from '../traits/openable/openableTrait.js';
 import { LockableTrait } from '../traits/lockable/lockableTrait.js';
 import { WearableBehavior } from '../traits/wearable/wearableBehavior.js';
@@ -470,8 +472,14 @@ export interface IWorldModel {
   getTotalWeight(entityId: string): number;
   wouldCreateLoop(entityId: string, targetId: string): boolean;
   findPath(fromRoomId: string, toRoomId: string): string[] | null;
-  getPlayer(): IFEntity | undefined;
-  setPlayer(entityId: string): void;
+  /** The actor holding the player role (ADR-390 D1); throws when none or more than one does. */
+  readonly playerCharacter: IFEntity;
+  /** Whether any actor holds the player role yet. */
+  readonly hasPlayerCharacter: boolean;
+  /** The first assignment of the role (ADR-390 D1): refuses when an actor already holds it. */
+  setPlayer(entityId: string): IFEntity;
+  /** A move of the role (ADR-390 D1): refuses when no actor holds it yet. */
+  changePlayer(entityId: string): IFEntity;
   getEnding(): IStoryEnding | undefined;
   setEnding(ending: IStoryEnding): void;
 
@@ -593,7 +601,6 @@ export class WorldModel implements IWorldModel {
   /** Pre-removal observers (ADR-213 §1) — registration order, never serialized. */
   private removalObservers: EntityRemovalObserver[] = [];
   private state: WorldState = {};
-  private playerId: string | undefined;
   /** The language's words the matcher reads (ADR-387 D2); assigned at install, never defaulted. */
   private languageWords: LanguageWords | undefined;
   /** The ending this story reached, or undefined while play continues (ADR-347 D2a). */
@@ -1514,15 +1521,108 @@ export class WorldModel implements IWorldModel {
     return null;
   }
 
-  getPlayer(): IFEntity | undefined {
-    return this.playerId ? this.getEntity(this.playerId) : undefined;
+  /**
+   * The actor holding the player role (ADR-390 D1).
+   *
+   * Derived from the role flag on the actors every time it is read — the
+   * world stores no player id, so there is no second copy to disagree with
+   * the flag a save carries. Exactly one actor may hold the role; none holds
+   * it between world build and the start block's assignment, and a read in
+   * that window is a bug, not a missing value.
+   *
+   * @returns the role holder
+   * @throws when no actor holds the role, or when more than one does — the
+   *   invariant `setPlayer`/`changePlayer` keep, named with the offending ids
+   */
+  get playerCharacter(): IFEntity {
+    const holders = this.playerRoleHolders();
+    if (holders.length === 1) return holders[0];
+    if (holders.length === 0) {
+      throw new Error('No actor holds the player role yet: the start block (or the install) assigns it with setPlayer before anything may read it.');
+    }
+    throw new Error(`The player role has ${holders.length} holders (${holders.map((h) => h.id).join(', ')}): setPlayer and changePlayer clear the others.`);
   }
 
-  setPlayer(entityId: string): void {
-    if (!this.hasEntity(entityId)) {
-      throw new Error(`Cannot set player to non-existent entity: ${entityId}`);
+  /** Whether any actor holds the player role yet (the load-time probe; runtime code reads `playerCharacter`). */
+  get hasPlayerCharacter(): boolean {
+    return this.playerRoleHolders().length > 0;
+  }
+
+  /**
+   * The first assignment of the player role (ADR-390 D1) — the start-game
+   * moment: the install step for a TypeScript story, the start block's first
+   * `change the player to` for a Chord one. The world knows no turns, but it
+   * knows whether the role is held, and that is the same boundary.
+   *
+   * @param entityId the actor taking the role
+   * @returns the new holder
+   * @throws when a different actor already holds the role (that is a change,
+   *   not a set — setting the holder to itself is a no-op), or when the entity
+   *   does not exist, has no ActorTrait, or is not playable
+   */
+  setPlayer(entityId: string): IFEntity {
+    const holders = this.playerRoleHolders();
+    if (holders.some((h) => h.id !== entityId)) {
+      throw new Error(`Cannot set the player: ${holders.map((h) => h.id).join(', ')} already holds the role — a move during play is changePlayer`);
     }
-    this.playerId = entityId;
+    return this.writePlayerRole(entityId, holders);
+  }
+
+  /**
+   * Move the player role to `entityId` (ADR-390 D1, ADR-132) — a change
+   * during play: the previous holder's flag is cleared and the role's own
+   * vocabulary (the language's self words) travels with the role.
+   *
+   * @param entityId the actor taking the role
+   * @returns the new holder
+   * @throws when no actor holds the role yet (that is a set, not a change),
+   *   or when the entity does not exist, has no ActorTrait, or is not playable
+   */
+  changePlayer(entityId: string): IFEntity {
+    const holders = this.playerRoleHolders();
+    if (holders.length === 0) {
+      throw new Error('Cannot change the player: no actor holds the role yet — the first assignment is setPlayer');
+    }
+    return this.writePlayerRole(entityId, holders);
+  }
+
+  /**
+   * The one writer of the role fact behind `setPlayer` and `changePlayer`:
+   * flags `entityId`, clears every other holder, moves the role vocabulary,
+   * so "exactly one actor holds the role" is kept here and nowhere else.
+   */
+  private writePlayerRole(entityId: string, holders: readonly IFEntity[]): IFEntity {
+    const entity = this.getEntity(entityId);
+    if (!entity) {
+      throw new Error(`Cannot assign the player role: entity '${entityId}' not found`);
+    }
+    const actor = entity.get(TraitType.ACTOR) as ActorTrait | undefined;
+    if (!actor) {
+      throw new Error(`Cannot assign the player role: entity '${entityId}' does not have ActorTrait`);
+    }
+    if (!actor.isPlayable) {
+      throw new Error(`Cannot assign the player role: entity '${entityId}' is not playable`);
+    }
+    const previous = holders.filter((h) => h.id !== entityId);
+    for (const holder of previous) {
+      (holder.get(TraitType.ACTOR) as ActorTrait).isPlayer = false;
+    }
+    actor.isPlayer = true;
+    const selfWords = this.languageWords?.selfWords ?? [];
+    if (selfWords.length > 0) {
+      if (previous.length === 0) addPlayerRoleVocabulary(entity, selfWords);
+      for (const holder of previous) movePlayerRoleVocabulary(holder, entity, selfWords);
+    }
+    return entity;
+  }
+
+  /** Every actor whose role flag is set — one in a well-formed world. */
+  private playerRoleHolders(): IFEntity[] {
+    const holders: IFEntity[] = [];
+    for (const entity of this.entities.values()) {
+      if (entity.has(TraitType.ACTOR) && (entity.get(TraitType.ACTOR) as ActorTrait).isPlayer) holders.push(entity);
+    }
+    return holders;
   }
 
   /**
@@ -1539,7 +1639,7 @@ export class WorldModel implements IWorldModel {
   /**
    * Record the ending this story reached.
    *
-   * This is the plain setter, on the `setPlayer` precedent: it writes and
+   * This is the plain setter: it writes and
    * nothing else. It does NOT emit the ending event and it does NOT enforce
    * first-ending-wins — both belong to stdlib's `endStory`, the declaring
    * verb (ADR-347 D2c), exactly as `HealthBehavior.kill` is the plain
@@ -1628,7 +1728,6 @@ export class WorldModel implements IWorldModel {
     this.serializer.deserialize(json, serializableState, this.scoreLedger);
 
     // Sync primitives back (objects are shared by reference)
-    this.playerId = serializableState.playerId;
     this.storyEnding = serializableState.ending;
   }
 
@@ -1637,7 +1736,6 @@ export class WorldModel implements IWorldModel {
       entities: this.entities,
       spatialIndex: this.spatialIndex,
       state: this.state,
-      playerId: this.playerId,
       ending: this.storyEnding,
       relationships: this.relationships,
       idCounters: this.idCounters,
@@ -1648,7 +1746,6 @@ export class WorldModel implements IWorldModel {
   clear(): void {
     this.entities.clear();
     this.state = {};
-    this.playerId = undefined;
     this.storyEnding = undefined;
     this.spatialIndex.clear();
     this.relationships.clear();
@@ -1720,7 +1817,6 @@ export class WorldModel implements IWorldModel {
       entities: this.entities,
       spatialIndex: this.spatialIndex,
       state: this.state,
-      playerId: this.playerId,
       relationships: this.relationships,
       idCounters: this.idCounters,
       capabilities: this.capabilities

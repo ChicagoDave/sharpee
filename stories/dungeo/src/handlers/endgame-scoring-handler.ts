@@ -52,7 +52,7 @@ export function registerEndgameScoringHandler(
     if (!data?.toRoom) return [];
 
     // Only score player visits, not NPC movement
-    const player = world.getPlayer();
+    const player = world.playerCharacter;
     if (!player || data.actor?.id !== player.id) return [];
 
     for (const milestone of milestones) {

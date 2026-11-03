@@ -26,7 +26,6 @@ import type { CreateDecl, NameRef, VehicleLine } from '../../ast.js';
 import { ADMITS_PUSHING, type IRPositionRow, type IRVehicle, MOVEMENT_TYPES } from '../../ir.js';
 import type { Scope } from '../../analyzer.js';
 import { MOVEMENT_TABLE, placeIdsOf, type RequiredLine, vehicleLineOf, type VehicleDecl, type VehicleLineOf } from '../vehicles.js';
-import { manifestForMovementType } from '../../manifests/index.js';
 import type { EntityBuildContext, EntityDraft, EntityLineBuilder } from './context.js';
 
 /**
@@ -146,16 +145,8 @@ export const vehicleBuilder: EntityLineBuilder = {
     }
     const movement = movementLine.value;
     // ADR-366 D12, ADR-376 D3: an extension's movement type is admitted only
-    // under its `use` line; the row's checks still run so the block is
-    // reported once for the line and once for each other fault.
-    const contributed = manifestForMovementType(movement);
-    if (contributed && !contributed.core && !context.usedExtensions.has(contributed.name)) {
-      context.diagnostics.error(
-        `analysis.${contributed.name}-needs-use`,
-        `\`movement: ${movement}\` is \`use ${contributed.name}\` vocabulary — add \`use ${contributed.name}\` to the story header.`,
-        movementLine.span,
-      );
-    }
+    // under its `use` line — validateIR refuses it over the lowered vehicle
+    // (ADR-389 D4); the row's checks still run here.
     const row = MOVEMENT_TABLE[movement];
     const vehicle: IRVehicle = { movement };
 

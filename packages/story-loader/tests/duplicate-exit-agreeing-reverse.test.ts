@@ -58,6 +58,6 @@ describe('an explicit reverse that agrees with the inferred one', () => {
   it('walks west from the Den into the Hall', async () => {
     const b = await bootTurns(SOURCE);
     await b.turnText('west');
-    expect(b.world.getLocation(b.world.getPlayer()!.id)).toBe(b.id('hall'));
+    expect(b.world.getLocation(b.world.playerCharacter.id)).toBe(b.id('hall'));
   });
 });

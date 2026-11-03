@@ -195,7 +195,7 @@ function classify(events, result, error) {
  * @returns Array<{ source: string, text: string }>
  */
 function visibleProse(world, room) {
-  const player = world.getPlayer();
+  const player = world.playerCharacter;
   const out = [];
   if (room.description) out.push({ source: 'room', text: String(room.description) });
   for (const e of world.getVisible(player.id) || []) {

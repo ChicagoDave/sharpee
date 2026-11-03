@@ -15,7 +15,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { compile, StoryIR } from '@sharpee/chord';
 import type { Choice, SnippetEntry } from '@sharpee/if-domain';
 import { clearSnippetGates, lookupSnippetGate } from '@sharpee/stdlib';
-import { IdentityTrait, RoomTrait, TraitType, WorldModel } from '@sharpee/world-model';
+import { IdentityTrait, RoomTrait, TraitType, WorldModel, ActorTrait } from '@sharpee/world-model';
 import { ChordStory, createStory, LoadError } from '../src';
 
 function compileSource(source: string): StoryIR {
@@ -37,6 +37,7 @@ function boot(ir: StoryIR): Booted {
   const world = new WorldModel();
   story.initializeWorld(world);
   const player = story.createPlayer(world);
+  player.add(new ActorTrait({ isPlayable: true }));
   world.setPlayer(player.id);
   return { story, world, playerId: player.id };
 }
@@ -97,7 +98,7 @@ function registered(story: ChordStory): Map<string, string> {
 }
 
 function roomBits(booted: Booted, irId = 'lab') {
-  const entity = booted.world.getEntity(booted.story.entityId(irId)!)!;
+  const entity = booted.world.getEntity(irId)!;
   return {
     entity,
     identity: entity.get(TraitType.IDENTITY) as IdentityTrait,
@@ -119,7 +120,7 @@ describe('Z2 loader: marker rewrite + snippet-map population', () => {
     expect(room.snippets?.note).toEqual({
       selector: 'cycling',
       texts: ['and a cat glares from the top shelf', ''],
-      mentions: booted.story.entityId('cat'),
+      mentions: 'cat',
     });
     expect(lookupSnippetGate(entity.id, 'note')).toBeUndefined();
   });
@@ -149,13 +150,13 @@ describe('Z2 loader: marker rewrite + snippet-map population', () => {
     expect(typeof gate).toBe('function');
     // The thunk evaluates the LIVE world: cat in the Lab → not in the Annex.
     expect(gate!()).toBe(false);
-    booted.world.moveEntity(booted.story.entityId('cat')!, booted.story.entityId('annex')!);
+    booted.world.moveEntity('cat', 'annex');
     expect(gate!()).toBe(true);
   });
 
   it('AC-8: the same phrase emitted via a `phrase` statement keeps its own (chord, key) counter identity', () => {
     const booted = boot(compileSource(labSource('')));
-    const lab = booted.story.entityId('lab')!;
+    const lab = 'lab';
     const events = booted.story.runtime.fireEventClauses(booted.world, {
       id: 'm0',
       type: 'if.event.actor_moved',
@@ -260,7 +261,7 @@ end phrase
     expect(() => story.initializeWorld(world)).toThrow(LoadError);
 
     // The Lab was mid-compile when the throw hit: nothing was applied.
-    const labId = story.entityId('lab');
+    const labId = 'lab';
     expect(labId).toBeTruthy();
     const lab = world.getEntity(labId!)!;
     const identity = lab.get(TraitType.IDENTITY) as IdentityTrait;

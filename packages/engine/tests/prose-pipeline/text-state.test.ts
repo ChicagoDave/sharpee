@@ -85,7 +85,8 @@ describe('ADR-196 Phase 2 — WorldTextStateStore (real WorldModel)', () => {
       getEntity: () => undefined,
       getContents: () => [],
       getContainingRoom: () => undefined,
-      getPlayer: () => undefined,
+      hasPlayerCharacter: false,
+      get playerCharacter(): IEntity { throw new Error('mock world has no player'); },
     };
     const degraded = new WorldTextStateStore(worldless);
     expect(() => degraded.set('x', 'k', 1)).not.toThrow();

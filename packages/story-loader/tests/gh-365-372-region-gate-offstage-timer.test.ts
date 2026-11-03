@@ -19,7 +19,7 @@ import { describe, expect, it } from 'vitest';
 import { compile, StoryIR } from '@sharpee/chord';
 import type { ISemanticEvent } from '@sharpee/core';
 import { goingAction } from '@sharpee/stdlib';
-import { Direction, DirectionType, WorldModel } from '@sharpee/world-model';
+import { Direction, DirectionType, WorldModel, ActorTrait } from '@sharpee/world-model';
 import { ChordStory, createStory, SchedulerDaemon } from '../src';
 
 const CHORD_STORY_STATE_KEY = 'chord.story.state';
@@ -53,6 +53,7 @@ function boot(source: string, seed = 5): Booted {
   const world = new WorldModel();
   story.initializeWorld(world);
   const player = story.createPlayer(world);
+  player.add(new ActorTrait({ isPlayable: true }));
   world.setPlayer(player.id);
   const daemons = story.runtime.buildSchedulerDaemons();
   story.runtime.setTurnProvider(() => booted.turn);
@@ -90,7 +91,7 @@ function boot(source: string, seed = 5): Booted {
       goingAction.report(context);
     },
     enter(roomIrId) {
-      const roomId = story.entityId(roomIrId)!;
+      const roomId = roomIrId;
       world.moveEntity(player.id, roomId);
       return messageIdsOf(
         story.runtime.fireEventClauses(world, {
@@ -158,8 +159,8 @@ end before
 describe('GH #365 — a region daemon does not mutate the world while the player is outside it', () => {
   it('leaves the story state and Bobby alone across ticks in a non-member room', () => {
     const b = boot(REGION_STORY);
-    const street = b.story.entityId('street')!;
-    const bobby = b.story.entityId('bobby')!;
+    const street = 'street';
+    const bobby = 'bobby';
     expect(b.world.getStateValue(CHORD_STORY_STATE_KEY)).toBe('day');
     expect(b.world.getLocation(bobby)).toBe(street);
 
@@ -173,12 +174,12 @@ describe('GH #365 — a region daemon does not mutate the world while the player
 
   it('runs the same clause the first tick after the player walks into a member room', () => {
     const b = boot(REGION_STORY);
-    const plaza = b.story.entityId('plaza')!;
-    const bobby = b.story.entityId('bobby')!;
+    const plaza = 'plaza';
+    const bobby = 'bobby';
     b.tick(); // in the Street: nothing
 
     b.go(Direction.NORTH);
-    expect(b.world.getContainingRoom(b.world.getPlayer()!.id)?.id).toBe(plaza);
+    expect(b.world.getContainingRoom(b.world.playerCharacter.id)?.id).toBe(plaza);
     b.tick();
 
     expect(b.world.getStateValue(CHORD_STORY_STATE_KEY)).toBe('night');
@@ -251,7 +252,7 @@ end before
 describe('GH #372 — a timer owned by a never-placed entity speaks from the player', () => {
   it('speaks all five named turns unsourced, one a turn, then expires on schedule', () => {
     const b = boot(TIMER_STORY);
-    const raid = b.story.entityId('raid')!;
+    const raid = 'raid';
     expect(b.world.getLocation(raid)).toBeUndefined();
 
     b.enter('closet'); // turn 1: start

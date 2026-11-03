@@ -188,7 +188,8 @@ export class ActorTrait implements ITrait, IActorTrait {
     if (data) {
       // Handle basic properties
       this.isPlayer = data.isPlayer ?? this.isPlayer;
-      this.isPlayable = data.isPlayable ?? this.isPlayable;
+      // An actor holding the role is playable by definition (ADR-390 D1).
+      this.isPlayable = data.isPlayable ?? (this.isPlayer || this.isPlayable);
       this.state = data.state;
       this.customProperties = data.customProperties;
 
@@ -226,14 +227,6 @@ export class ActorTrait implements ITrait, IActorTrait {
    */
   setInventoryLimit(limit: Partial<{ maxItems?: number; maxWeight?: number; maxVolume?: number }>): void {
     this.capacity = { ...this.capacity, ...limit };
-  }
-  
-  /**
-   * Mark as player character
-   */
-  makePlayer(): void {
-    this.isPlayer = true;
-    this.isPlayable = true;
   }
   
   /**

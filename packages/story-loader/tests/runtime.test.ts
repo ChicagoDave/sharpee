@@ -12,7 +12,7 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { compile, StoryIR } from '@sharpee/chord';
 import type { ISemanticEvent } from '@sharpee/core';
-import {RoomTrait, TraitType, WearableTrait, WorldModel , darkKey } from '@sharpee/world-model';
+import {RoomTrait, TraitType, WearableTrait, WorldModel , darkKey, ActorTrait } from '@sharpee/world-model';
 import { endStory } from '@sharpee/stdlib';
 import { CHORD_STATE_PREFIX, ChordStory, createStory } from '../src';
 
@@ -41,25 +41,26 @@ function loadCloak(): CloakWorld {
   const world = new WorldModel();
   story.initializeWorld(world);
   const player = story.createPlayer(world);
+  player.add(new ActorTrait({ isPlayable: true }));
   world.setPlayer(player.id);
   return { story, world, playerId: player.id };
 }
 
 function enterBar({ story, world, playerId }: CloakWorld): ISemanticEvent[] {
-  const barId = story.entityId('foyer-bar')!;
+  const barId = 'foyer-bar';
   world.moveEntity(playerId, barId);
   return story.runtime.fireEventClauses(world, {
     id: `move-${Math.random()}`,
     type: 'if.event.actor_moved',
     timestamp: 0,
     entities: { actor: playerId },
-    data: { toRoom: barId, fromRoom: story.entityId('foyer-of-the-opera-house'), direction: 'SOUTH' },
+    data: { toRoom: barId, fromRoom: 'foyer-of-the-opera-house', direction: 'SOUTH' },
   });
 }
 
 function hangCloak({ story, world }: CloakWorld): void {
-  const cloakId = story.entityId('velvet-cloak')!;
-  world.moveEntity(cloakId, story.entityId('brass-hook')!);
+  const cloakId = 'velvet-cloak';
+  world.moveEntity(cloakId, 'brass-hook');
   const wearable = world.getEntity(cloakId)!.get(TraitType.WEARABLE) as WearableTrait;
   wearable.worn = false;
   wearable.wornBy = undefined;
@@ -69,7 +70,7 @@ function hangCloak({ story, world }: CloakWorld): void {
 describe('derived darkness (dark while the player has the velvet cloak)', () => {
   it('starts dark, lightens when the cloak is shed, re-darkens on retrieval', () => {
     const cw = loadCloak();
-    const barId = cw.story.entityId('foyer-bar')!;
+    const barId = 'foyer-bar';
 
     // ADR-240: the registered dark.<roomId> evaluator answers LIVE.
     expect(cw.world.evaluate(darkKey(barId))).toBe(true); // player wears the cloak
@@ -77,7 +78,7 @@ describe('derived darkness (dark while the player has the velvet cloak)', () => 
     hangCloak(cw);
     expect(cw.world.evaluate(darkKey(barId))).toBe(false);
 
-    cw.world.moveEntity(cw.story.entityId('velvet-cloak')!, cw.playerId);
+    cw.world.moveEntity('velvet-cloak', cw.playerId);
     expect(cw.world.evaluate(darkKey(barId))).toBe(true); // no recompute, no event — instant
   });
 });
@@ -110,7 +111,7 @@ describe('the stumble clause (the Foyer Bar\'s `after the player entering while 
 
 describe('the on-reading interceptor (ActionInterceptor slice of §5.4)', () => {
   function readMessage(cw: CloakWorld) {
-    const message = cw.world.getEntity(cw.story.entityId('message-in-the-sawdust')!)!;
+    const message = cw.world.getEntity('message-in-the-sawdust')!;
     const lookup = cw.world.getInterceptorForAction(message, 'if.action.reading');
     expect(lookup, 'interceptor bound for reading').toBeDefined();
     const data = {};
@@ -122,7 +123,7 @@ describe('the on-reading interceptor (ActionInterceptor slice of §5.4)', () => 
 
   it('gives the message a ReadableTrait so the reading action validates', () => {
     const cw = loadCloak();
-    const message = cw.world.getEntity(cw.story.entityId('message-in-the-sawdust')!)!;
+    const message = cw.world.getEntity('message-in-the-sawdust')!;
     expect(message.has(TraitType.READABLE)).toBe(true);
   });
 
@@ -248,7 +249,7 @@ define phrases en-US
     story.initializeWorld(world);
     const player = story.createPlayer(world);
     world.setPlayer(player.id);
-    const box = world.getEntity(story.entityId('box')!)!;
+    const box = world.getEntity('box')!;
     const lookup = world.getInterceptorForAction(box, 'if.action.reading')!;
 
     const first = {};
@@ -273,8 +274,8 @@ describe('AC-5 groundwork: seeded determinism', () => {
     story.initializeWorld(world);
     const player = story.createPlayer(world);
     world.setPlayer(player.id);
-    const east = story.entityId('east-room')!;
-    const west = story.entityId('west-room')!;
+    const east = 'east-room';
+    const west = 'west-room';
 
     const emitted: string[] = [];
     for (let i = 0; i < 10; i++) {
@@ -311,7 +312,7 @@ describe('AC-5 groundwork: seeded determinism', () => {
     story.initializeWorld(world);
     const player = story.createPlayer(world);
     world.setPlayer(player.id);
-    const west = story.entityId('west-room')!;
+    const west = 'west-room';
     world.moveEntity(player.id, west);
     const [event] = story.runtime.fireEventClauses(world, {
       id: 'm0',
@@ -374,7 +375,7 @@ define phrases en-US
     story.initializeWorld(world);
     const player = story.createPlayer(world);
     world.setPlayer(player.id);
-    const hall = story.entityId('hall')!;
+    const hall = 'hall';
 
     const fire = () =>
       story.runtime

@@ -19,6 +19,7 @@ import {
   OpenableTrait,
   TraitType,
   WorldModel,
+  ActorTrait,
 } from '@sharpee/world-model';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -38,9 +39,10 @@ describe('locked-door-and-key vignette (ADR-234 elegance parity)', () => {
     const world = new WorldModel();
     story.initializeWorld(world);
     const player = story.createPlayer(world);
+    player.add(new ActorTrait({ isPlayable: true }));
     world.setPlayer(player.id);
 
-    const byId = (irId: string): IFEntity => world.getEntity(story.entityId(irId)!)!;
+    const byId = (irId: string): IFEntity => world.getEntity(irId)!;
     const door = byId('study-door');
     const key = byId('iron-key');
 
@@ -88,6 +90,6 @@ describe('locked-door-and-key vignette (ADR-234 elegance parity)', () => {
     expect((door.get(TraitType.OPENABLE) as OpenableTrait).isOpen).toBe(true);
 
     expect(drive(goingAction, { parsed: { extras: { direction: Direction.NORTH } } }).valid).toBe(true);
-    expect(world.getContainingRoom(player.id)?.id).toBe(story.entityId('study'));
+    expect(world.getContainingRoom(player.id)?.id).toBe('study');
   });
 });

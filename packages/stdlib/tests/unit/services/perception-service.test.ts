@@ -9,7 +9,7 @@
  */
 
 import { describe, test, expect, beforeEach } from 'vitest';
-import { WorldModel, IFEntity, EntityType, RoomTrait, IdentityTrait } from '@sharpee/world-model';
+import { WorldModel, IFEntity, EntityType, RoomTrait, IdentityTrait, ActorTrait } from '@sharpee/world-model';
 import { ISemanticEvent } from '@sharpee/core';
 import { PerceptionService } from '../../../src/services/PerceptionService';
 
@@ -30,6 +30,7 @@ describe('PerceptionService', () => {
 
     // Create player
     player = world.createEntity('player', EntityType.ACTOR);
+    player.add(new ActorTrait({ isPlayable: true }));
     world.setPlayer(player.id);
 
     // Create a lit room

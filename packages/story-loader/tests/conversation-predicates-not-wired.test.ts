@@ -10,7 +10,7 @@
 import { describe, expect, it } from 'vitest';
 import { compile } from '@sharpee/chord';
 import type { IRCondition } from '@sharpee/chord';
-import { WorldModel } from '@sharpee/world-model';
+import { WorldModel, ActorTrait } from '@sharpee/world-model';
 import { createStory, Evaluator, LoadError } from '../src';
 
 const SOURCE = `story
@@ -57,8 +57,9 @@ describe('conversation predicates refuse loudly outside dialogue dispatch', () =
   const world = new WorldModel();
   story.initializeWorld(world);
   const player = story.createPlayer(world);
+  player.add(new ActorTrait({ isPlayable: true }));
   world.setPlayer(player.id);
-  const ev = new Evaluator(result.ir, story, 42);
+  const ev = new Evaluator(result.ir, 42);
 
   it.each(OWNERLESS)('`%s` with no owner (`it`) in scope throws a LoadError', (_kind, cond) => {
     expect(() => ev.evalCondition(cond, { world })).toThrowError(LoadError);

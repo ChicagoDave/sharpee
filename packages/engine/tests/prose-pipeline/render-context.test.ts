@@ -26,13 +26,15 @@ function stubWorld(): WorldModelLike & {
   getEntity: ReturnType<typeof vi.fn>;
   getContents: ReturnType<typeof vi.fn>;
   getContainingRoom: ReturnType<typeof vi.fn>;
-  getPlayer: ReturnType<typeof vi.fn>;
+  hasPlayerCharacter: boolean;
+  playerCharacter: IEntity;
 } {
   return {
     getEntity: vi.fn((id: EntityId) => entity(String(id))),
     getContents: vi.fn(() => [entity('a'), entity('b')]),
     getContainingRoom: vi.fn(() => entity('room')),
-    getPlayer: vi.fn(() => entity('player')),
+    hasPlayerCharacter: true,
+    playerCharacter: entity('player'),
   };
 }
 

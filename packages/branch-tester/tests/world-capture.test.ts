@@ -56,7 +56,8 @@ function worldStub() {
   const carried = [letter];
   return {
     world: {
-      getPlayer: () => player,
+      hasPlayerCharacter: true,
+      playerCharacter: player,
       getLocation: (id: string) => (id === player.id ? hall.id : undefined),
       getContents: (id: string) => (id === player.id ? carried : []),
       getEntity: (id: string) => [hall, letter, key, player].find((e) => e.id === id),

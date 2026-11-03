@@ -11,7 +11,7 @@
 import { describe, expect, it } from 'vitest';
 import { compile } from '@sharpee/chord';
 import { phrasebookTemplateKey, type PhrasebookResolution } from '@sharpee/engine';
-import { WorldModel } from '@sharpee/world-model';
+import { WorldModel, ActorTrait } from '@sharpee/world-model';
 import { createStory } from '../src';
 
 function load(body: string) {
@@ -22,6 +22,7 @@ function load(body: string) {
   const world = new WorldModel();
   story.initializeWorld(world);
   const player = story.createPlayer(world);
+  player.add(new ActorTrait({ isPlayable: true }));
   world.setPlayer(player.id);
   return { story, world, player };
 }

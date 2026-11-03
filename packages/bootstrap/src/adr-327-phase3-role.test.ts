@@ -81,7 +81,7 @@ describe('D10 — the role is claimed at load, from the start block', () => {
   change the player to Viola
 end before
 `);
-    const player = game.world.getPlayer()!;
+    const player = game.world.playerCharacter;
     expect(player.name).toBe('Viola');
     // The ROLE's vocabulary, not Viola's own: `x me` has to reach her.
     const identity = player.get('identity') as { aliases?: string[] };
@@ -103,7 +103,7 @@ end before
 end before
 `);
     // The Hall is not dark, so the first arm does not fire and the second wins.
-    expect(game.world.getPlayer()!.name).toBe('Viola');
+    expect(game.world.playerCharacter.name).toBe('Viola');
   });
 
   it('a start block that assigns nothing is a load error naming the fix', () => {
@@ -134,10 +134,10 @@ end before
 
   it('a `change the player to` in a clause body moves the role, and emits game.pc_switched', async () => {
     const game = gameOf(SWITCHER);
-    expect(game.world.getPlayer()!.name).toBe('Viola');
+    expect(game.world.playerCharacter.name).toBe('Viola');
 
     await game.executeCommand('take lever');
-    expect(game.world.getPlayer()!.name).toBe('Alex');
+    expect(game.world.playerCharacter.name).toBe('Alex');
 
     // The engine's own view of the player moved with it, not just the world's.
     await game.executeCommand('x me');
@@ -146,7 +146,7 @@ end before
 
   it('the role vocabulary leaves the old PC behind', async () => {
     const game = gameOf(SWITCHER);
-    const viola = game.world.getPlayer()!;
+    const viola = game.world.playerCharacter;
     await game.executeCommand('take lever');
     const stale = viola.get('identity') as { aliases?: string[] };
     expect(stale.aliases ?? []).not.toContain('me');
@@ -174,7 +174,7 @@ end before
     // player at the end of this turn" has one answer, so the first request is
     // the one that lands.
     await game.executeCommand('take lever');
-    expect(game.world.getPlayer()!.name).toBe('Alex');
+    expect(game.world.playerCharacter.name).toBe('Alex');
   });
 });
 
@@ -227,7 +227,7 @@ end before
 
   it('does not drive the character holding the role, then drives them once it moves', async () => {
     const game = gameOf(WANDERER);
-    const viola = game.world.getPlayer()!;
+    const viola = game.world.playerCharacter;
     expect(viola.name).toBe('Viola');
     const home = game.world.getLocation(viola.id);
 
@@ -238,7 +238,7 @@ end before
 
     // The role moves to Alex; from the next tick the service owns Viola.
     await game.executeCommand('take lever');
-    expect(game.world.getPlayer()!.name).toBe('Alex');
+    expect(game.world.playerCharacter.name).toBe('Alex');
     await game.executeCommand('look');
     expect(game.world.getLocation(viola.id)).not.toBe(home);
   });

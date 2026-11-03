@@ -12,7 +12,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { WorldModel } from '@sharpee/world-model';
+import { WorldModel, ActorTrait } from '@sharpee/world-model';
 import type { TurnPlugin } from '@sharpee/plugins';
 import { createStory, LoadError } from '../src';
 import { EXTENSION_REGISTRY } from '../src/extension-registry';
@@ -74,6 +74,7 @@ function bootHeadless(source: string, uses?: string[]) {
   const world = new WorldModel();
   story.initializeWorld(world);
   const player = story.createPlayer(world);
+  player.add(new ActorTrait({ isPlayable: true }));
   world.setPlayer(player.id);
   const plugins: TurnPlugin[] = [];
   const engine = stubStoryEngine({ getPluginRegistry: () => recordingPluginRegistry(plugins) });
@@ -160,11 +161,12 @@ before the game starts
 end before
 `;
 
-describe('gatedConstruct — the rogue-IR backstop at engine-ready', () => {
-  it('`define chapters` without `use chapters` throws the named LoadError', () => {
-    const { story, engine } = bootHeadless(CHAPTERS_STORY, []);
-    expect(() => story.onEngineReady(engine)).toThrow(LoadError);
-    expect(() => story.onEngineReady(engine)).toThrow('`define chapters` needs `use chapters` in the story header.');
+describe('a gated construct without its `use` — refused at createStory by validateIR (ADR-389 D4)', () => {
+  it('`define chapters` without `use chapters` is a LoadError before any world is built', () => {
+    const ir = compileSource(CHAPTERS_STORY);
+    ir.uses = [];
+    expect(() => createStory(ir, { seed: 7 })).toThrow(LoadError);
+    expect(() => createStory(ir, { seed: 7 })).toThrow('A `define chapters` block needs `use chapters` in the story header');
   });
 });
 

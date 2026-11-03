@@ -21,6 +21,7 @@ import { type ActionInterceptor, type CapabilityEffect, IFEntity, type Intercept
 import { DecisionLedger, type DecisionRecord } from '../decisions.js';
 import { LoadError } from '../errors.js';
 import { EVENT_TRIGGERS, REGION_EVENT_TRIGGERS } from '../event-contract.js';
+import { worldIdOf } from '../identity.js';
 import { clauseOccurrenceKey } from '../state-keys.js';
 import { ExecContext, ChordBehaviorTrait, TOPIC_GERUNDS, topicGerundServes, toEffect, type RuntimeCore } from './core.js';
 
@@ -130,13 +131,11 @@ export class OnClausesSection {
 
   /** Mark the clause's target entity so interceptor resolution finds it. */
   private prepareOnClauseTarget(world: WorldModel, entity: IREntity, clause: IROnClause): void {
-    const worldId = this.core.host.entityId(entity.id);
     // ADR-327 D10: every character, the role-holder included, is built by the
     // world passes before `bind` runs — so there is no longer an entity with
     // clauses and no world instance. The player special case retired with the
     // player block.
-    if (!worldId) throw new LoadError(`Entity \`${entity.id}\` has no world instance.`, clause.span);
-    const target = world.getEntity(worldId);
+    const target = world.getEntity(entity.id);
     if (!target) throw new LoadError(`Entity \`${entity.id}\` vanished before binding.`, clause.span);
 
     if (!target.has(ChordBehaviorTrait.type)) {
@@ -151,9 +150,7 @@ export class OnClausesSection {
 
   /** Mark a topic-table owner so interceptor resolution finds it (no clause needed). */
   private prepareTopicTarget(world: WorldModel, entity: IREntity): void {
-    const worldId = this.core.host.entityId(entity.id);
-    if (!worldId) throw new LoadError(`Entity \`${entity.id}\` has no world instance.`, entity.span);
-    const target = world.getEntity(worldId);
+    const target = world.getEntity(entity.id);
     if (!target) throw new LoadError(`Entity \`${entity.id}\` vanished before binding.`, entity.span);
     if (!target.has(ChordBehaviorTrait.type)) {
       target.add(new ChordBehaviorTrait());
@@ -249,7 +246,7 @@ export class OnClausesSection {
     // through the lifecycle engine's actor consultation). Each clause then
     // gates on who acts.
     const armFor = (target: IFEntity): ActionInterceptor | undefined =>
-      arms.find((a) => runtime.core.host.entityId(a.entity.id) === target.id)?.interceptor;
+      arms.find((a) => a.entity.id === target.id)?.interceptor;
 
     return {
       // ADR-371 D1a: this interceptor rides the marker trait every clause
@@ -287,12 +284,12 @@ export class OnClausesSection {
     // ADR-371 D4: a `to <value>` tail fires the clause only for that value,
     // read from the consultation's seeded `value` (the setting action's slot).
     const isMine = (target: IFEntity, world: WorldModel, actorId: string, data?: InterceptorSharedData): boolean =>
-      target.id === runtime.core.host.entityId(entity.id) &&
+      target.id === entity.id &&
       (clause.binding === 'self' ? actorId === target.id : runtime.core.moveClauses.actorMatches(clause.actor, actorId, world)) &&
       (clause.valueTail === undefined || normalizeTailValue(data?.value) === clause.valueTail) &&
       // ADR-372 D1: a counterpart tail fires only when the command's other
       // noun — seeded by the slot as `counterpartId` — is the named thing.
-      (clause.counterpart === undefined || data?.counterpartId === runtime.core.host.entityId(clause.counterpart));
+      (clause.counterpart === undefined || data?.counterpartId === worldIdOf(world, clause.counterpart));
     const occurrenceKey = clauseOccurrenceKey(clause.id);
 
     return {

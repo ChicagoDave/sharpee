@@ -137,7 +137,7 @@ describe('GameEngine', () => {
       
       const world = engine.getWorld();
       const room = story.getRoom();
-      const player = story.getPlayer();
+      const player = story.playerEntity();
       
       expect(room).toBeDefined();
       expect(player).toBeDefined();

@@ -161,7 +161,7 @@ create the badger
     const { story, world } = loadStory(source);
     // The reaction fires via fireAfterClauses, so no interceptor target is
     // prepared: the badger must NOT carry the chord.behavior marker trait.
-    const badger = world.getEntity(story.entityId('badger')!)!;
+    const badger = world.getEntity('badger')!;
     expect(badger.has('chord.behavior')).toBe(false);
   });
 
@@ -191,7 +191,7 @@ create the note
     const { story, world } = loadStory(source);
     // Consulted gerunds bind as interceptors: the target is prepared with
     // the chord.behavior marker trait.
-    const note = world.getEntity(story.entityId('note')!)!;
+    const note = world.getEntity('note')!;
     expect(note.has('chord.behavior')).toBe(true);
   });
 });

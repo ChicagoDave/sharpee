@@ -5,7 +5,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { CommandValidator } from '../src/validation/command-validator';
 import { StandardActionRegistry } from '../src/actions/registry';
-import { WorldModel, AuthorModel, IFEntity, TraitType, EntityType } from '@sharpee/world-model';
+import { WorldModel, AuthorModel, IFEntity, TraitType, EntityType, ActorTrait } from '@sharpee/world-model';
 import { StandardScopeResolver } from '../src/scope/scope-resolver';
 import { ScopeLevel } from '../src/scope/types';
 import { takingAction } from '../src/actions/standard/taking/taking';
@@ -38,10 +38,11 @@ describe('Scope Integration Tests', () => {
     room.add({ type: TraitType.ROOM });
     
     player = author.createEntity('player', EntityType.ACTOR);
-    player.add({ type: TraitType.ACTOR, isPlayer: true });
+    player.add(new ActorTrait({ isPlayer: true }));
     player.add({ type: TraitType.CONTAINER, capacity: { maxItems: 10 } });
     
     // Set player as the active player
+    player.add(new ActorTrait({ isPlayable: true }));
     world.setPlayer(player.id);
     
     // Move player to room

@@ -32,6 +32,7 @@ import {
 import type { WorldModel } from '@sharpee/world-model';
 import { LoadError } from './errors.js';
 import { translateEventId } from './event-id-map.js';
+import { worldIdOf } from './identity.js';
 import type { ExtensionEngineHost, ExtensionInstallContext } from './extension-registry.js';
 
 type IRMachine = NonNullable<StoryIR['machines']>[number];
@@ -46,8 +47,8 @@ function buildMachineDefinition(
 } {
   const bindings: EntityBindings = {};
   for (const role of machine.roles) {
-    const worldId = context.worldId(role.entity);
-    if (!worldId) {
+    const worldId = worldIdOf(context.world, role.entity);
+    if (worldId === undefined || !context.world.hasEntity(worldId)) {
       throw new LoadError(`Machine \`${machine.name}\`: role \`${role.name}\`'s entity was never built.`, machine.span);
     }
     bindings[`$${role.name}`] = worldId;
@@ -74,11 +75,14 @@ function buildMachineDefinition(
         case 'action': {
           let targetEntity: string | undefined;
           if (t.trigger.target) {
-            targetEntity = t.trigger.target.startsWith('$')
-              ? t.trigger.target
-              : context.worldId(t.trigger.target);
-            if (targetEntity === undefined) {
-              throw new LoadError(`Machine \`${machine.name}\`: a trigger target was never built.`, t.span);
+            if (t.trigger.target.startsWith('$')) {
+              targetEntity = t.trigger.target;
+            } else {
+              const worldId = worldIdOf(context.world, t.trigger.target);
+              if (worldId === undefined || !context.world.hasEntity(worldId)) {
+                throw new LoadError(`Machine \`${machine.name}\`: a trigger target was never built.`, t.span);
+              }
+              targetEntity = worldId;
             }
           }
           trigger = {

@@ -234,10 +234,10 @@ export interface WorldQuery {
      * Check if an entity exists
      */
     hasEntity(id: string): boolean;
-    /**
-     * Get the player entity
-     */
-    getPlayer(): IFEntity | undefined;
+    /** Whether any actor holds the player role yet (ADR-390 D1). */
+    readonly hasPlayerCharacter: boolean;
+    /** The actor holding the player role; throws when none does (ADR-390 D1). */
+    readonly playerCharacter: IFEntity;
     /**
      * Get the room the player is in
      */

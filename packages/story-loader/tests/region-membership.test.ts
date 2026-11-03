@@ -14,7 +14,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { compile, StoryIR } from '@sharpee/chord';
-import { IdentityTrait, RegionTrait, RoomTrait, TraitType, WorldModel } from '@sharpee/world-model';
+import { IdentityTrait, RegionTrait, RoomTrait, TraitType, WorldModel, ActorTrait } from '@sharpee/world-model';
 import { createStory } from '../src';
 import { LoadError } from '../src/errors';
 
@@ -36,8 +36,9 @@ const load = (source: string = FIXTURE) => {
   const world = new WorldModel();
   story.initializeWorld(world);
   const player = story.createPlayer(world);
+  player.add(new ActorTrait({ isPlayable: true }));
   world.setPlayer(player.id);
-  const worldId = (slug: string): string => story.entityId(slug)!;
+  const worldId = (slug: string): string => slug;
   return { story, world, player, worldId };
 };
 

@@ -67,7 +67,7 @@ function digestEntityRef(entity: {
  * The digest is observation — play must never break on it.
  */
 export function buildWorldDigest(world: WorldModel, engine: PluginHost): WorldDigest {
-  const playerId = world.getPlayer?.()?.id;
+  const playerId = world.hasPlayerCharacter ? world.playerCharacter.id : undefined;
   const entities: WorldDigestEntity[] = [];
 
   for (const entity of world.getAllEntities?.() ?? []) {

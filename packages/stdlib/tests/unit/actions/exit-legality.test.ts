@@ -16,6 +16,7 @@ import {
   OpenableTrait,
   LockableTrait,
   type IFEntity,
+  ActorTrait,
 } from '@sharpee/world-model';
 import { hasTraversableExit, canActorLeave } from '../../../src/actions/helpers/exit-legality';
 import { exitBlockedKey } from '@sharpee/world-model';

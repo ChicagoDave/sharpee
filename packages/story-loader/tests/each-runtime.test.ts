@@ -15,7 +15,7 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { compile, StoryIR } from '@sharpee/chord';
 import type { ISemanticEvent } from '@sharpee/core';
-import { IFEntity, WorldModel } from '@sharpee/world-model';
+import { IFEntity, WorldModel, ActorTrait } from '@sharpee/world-model';
 import { CHORD_STATE_PREFIX, CHORD_TRAIT_PREFIX, ChordStory, createStory, Evaluator, LoadError } from '../src';
 import { runValidatePhase, runExecutePhase, runReportPhase, runBlockedPhase } from '@sharpee/stdlib';
 
@@ -60,14 +60,15 @@ function load(seed = 42): Loaded {
   const world = new WorldModel();
   story.initializeWorld(world);
   const player = story.createPlayer(world);
+  player.add(new ActorTrait({ isPlayable: true }));
   world.setPlayer(player.id);
   const actions = new Map((story.getCustomActions() as DispatchAction[]).map((a) => [a.id, a]));
   return { ir, story, world, player, actions };
 }
 
-const worldEntity = (l: Loaded, irId: string) => l.world.getEntity(l.story.entityId(irId)!)!;
+const worldEntity = (l: Loaded, irId: string) => l.world.getEntity(irId)!;
 const stateOf = (l: Loaded, irId: string) => l.world.getStateValue(CHORD_STATE_PREFIX + irId);
-const locationOf = (l: Loaded, irId: string) => l.world.getLocation(l.story.entityId(irId)!);
+const locationOf = (l: Loaded, irId: string) => l.world.getLocation(irId);
 const messageIds = (events: ISemanticEvent[]) =>
   events
     .filter((e) => e.type === 'chord.phrase')
@@ -90,7 +91,7 @@ function runAction(l: Loaded, actionId: string, targetIrId: string) {
 
 /** Fire a room's `after the player entering` clauses, the runtime.test.ts way. */
 function enter(l: Loaded, roomIrId: string): ISemanticEvent[] {
-  const roomId = l.story.entityId(roomIrId)!;
+  const roomId = roomIrId;
   l.world.moveEntity(l.player.id, roomId);
   return l.story.runtime.fireEventClauses(l.world, {
     id: `move-${roomIrId}`,
@@ -103,7 +104,7 @@ function enter(l: Loaded, roomIrId: string): ISemanticEvent[] {
 
 describe('quantifier evaluation (E1/E2 + satisfies + is-a)', () => {
   const l = load();
-  const ev = new Evaluator(l.ir, l.story, 42);
+  const ev = new Evaluator(l.ir, 42);
   const ctx = { world: l.world };
 
   it('enumerates matches in declaration (creation) order', () => {
@@ -124,10 +125,10 @@ describe('quantifier evaluation (E1/E2 + satisfies + is-a)', () => {
 
   it('flips when the world changes: everything tucked away → any false, no true', () => {
     const l2 = load();
-    const ev2 = new Evaluator(l2.ir, l2.story, 42);
-    const store = l2.story.entityId('store-room')!;
-    l2.world.moveEntity(l2.story.entityId('red-crate')!, store);
-    l2.world.moveEntity(l2.story.entityId('blue-crate')!, store);
+    const ev2 = new Evaluator(l2.ir, 42);
+    const store = 'store-room';
+    l2.world.moveEntity('red-crate', store);
+    l2.world.moveEntity('blue-crate', store);
     const ctx2 = { world: l2.world };
     expect(ev2.matchesOf('stray-crate', ctx2)).toEqual([]);
     expect(ev2.evalCondition({ kind: 'any-of', condition: 'stray-crate' }, ctx2)).toBe(false);
@@ -164,7 +165,7 @@ describe('quantifier evaluation (E1/E2 + satisfies + is-a)', () => {
 
   it('is-a over a subject with no story identity classifies as nothing', () => {
     const l3 = load();
-    const ev3 = new Evaluator(l3.ir, l3.story, 42);
+    const ev3 = new Evaluator(l3.ir, 42);
     const stray = l3.world.createEntity('stray cat', 'object');
     const ctx3 = { world: l3.world, slots: { thing: stray.id } };
     const isA = (negated: boolean) =>
@@ -198,9 +199,9 @@ describe('each execution via event clauses (single pass, nesting, it coexistence
     // Empty set is a no-op: no keeper note.
     expect(messageIds(events)).not.toContain('keeper-note');
     // The INNER each moved the dust bunny (its own binder), not the crates.
-    expect(locationOf(l, 'dust-bunny')).toBe(l.story.entityId('store-room'));
-    expect(locationOf(l, 'red-crate')).toBe(l.story.entityId('pen'));
-    expect(locationOf(l, 'blue-crate')).toBe(l.story.entityId('pen'));
+    expect(locationOf(l, 'dust-bunny')).toBe('store-room');
+    expect(locationOf(l, 'red-crate')).toBe('pen');
+    expect(locationOf(l, 'blue-crate')).toBe('pen');
   });
 });
 
@@ -211,8 +212,8 @@ describe('tidying: two-phase each with the pre-mutation match snapshot (§5.4)',
     expect(validation.valid).toBe(true);
 
     // Mutations landed: both stray crates moved to the store room.
-    expect(locationOf(l, 'red-crate')).toBe(l.story.entityId('store-room'));
-    expect(locationOf(l, 'blue-crate')).toBe(l.story.entityId('store-room'));
+    expect(locationOf(l, 'red-crate')).toBe('store-room');
+    expect(locationOf(l, 'blue-crate')).toBe('store-room');
 
     // The report pass visited the SNAPSHOTTED set — post-mutation there
     // are zero stray crates, so live re-enumeration would emit nothing.
@@ -279,8 +280,8 @@ describe('each through the standard-action interceptor paths (§5.4 two-phase)',
     const result = drivePhases(l, 'dust-bunny');
 
     // postExecute moved both stray crates (mutation pass through the each).
-    expect(locationOf(l, 'red-crate')).toBe(l.story.entityId('store-room'));
-    expect(locationOf(l, 'blue-crate')).toBe(l.story.entityId('store-room'));
+    expect(locationOf(l, 'red-crate')).toBe('store-room');
+    expect(locationOf(l, 'blue-crate')).toBe('store-room');
 
     // postReport visited the SNAPSHOTTED pre-mutation set: two `noted`
     // (first becomes the on-clause override) plus ledger-note. A live
@@ -308,7 +309,7 @@ describe('each inside a sequence step (scheduler daemon, live enumeration)', () 
     expect(daemon.condition!({ world: l.world, turn: 1 })).toBe(false);
     expect(daemon.condition!({ world: l.world, turn: 2 })).toBe(true);
     daemon.run({ world: l.world, turn: 2 });
-    expect(locationOf(l, 'dust-bunny')).toBe(l.story.entityId('store-room'));
+    expect(locationOf(l, 'dust-bunny')).toBe('store-room');
   });
 });
 

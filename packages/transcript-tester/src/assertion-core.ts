@@ -59,7 +59,10 @@ export interface WorldModel {
   getAllEntities?(): any[];
   getLocation?(entityId: string): string | undefined;
   getContents?(containerId: string): any[];
-  getPlayer?(): any;
+  /** Whether any actor holds the player role (ADR-390 D1). */
+  readonly hasPlayerCharacter?: boolean;
+  /** The actor holding the player role; the live world throws when none does. */
+  readonly playerCharacter?: any;
   /** Region membership (ADR-149): whether the entity's containing room is in the region. A `location` claim over a region reads this. */
   isInRegion?(entityId: string, regionId: string): boolean;
   /** World-state lookup — carries the Chord story phase (`story.state` claims). */
@@ -711,7 +714,7 @@ function stateAdjective(entity: { get?(traitType: string): unknown }, word: stri
  * Find an entity by name in the world model.
  *
  * `player` is a reserved word that always resolves to the player entity via
- * `world.getPlayer()`, regardless of what the story named it. With an
+ * the world's player character, regardless of what the story named it. With an
  * `idAttribute`, the token is next tried as the story runtime's own id for
  * an entity (the attribute the loader stamps). Otherwise entities match by
  * name, by id, by their IdentityTrait name, or by any of their IdentityTrait
@@ -724,9 +727,8 @@ function stateAdjective(entity: { get?(traitType: string): unknown }, word: stri
  */
 export function findEntity(name: string, world: WorldModel, idAttribute?: string): any {
   // Reserved word: the player, whatever the story named it.
-  if (name === 'player' && world.getPlayer) {
-    const player = world.getPlayer();
-    if (player) return player;
+  if (name === 'player' && world.hasPlayerCharacter) {
+    return world.playerCharacter;
   }
 
   if (idAttribute && world.getAllEntities) {

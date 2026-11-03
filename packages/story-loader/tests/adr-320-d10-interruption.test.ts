@@ -204,10 +204,10 @@ async function boot(seed = 7, text: string = SOURCE): Promise<Booted> {
     await engine.executeTurn(input);
     return stream.slice(from);
   };
-  return { engine, story, world, player: world.getPlayer()!, turn };
+  return { engine, story, world, player: world.playerCharacter, turn };
 }
 
-const worldId = (b: Booted, irId: string): string => b.story.entityId(irId)!;
+const worldId = (b: Booted, irId: string): string => irId;
 const traitOf = (b: Booted, irId: string): CharacterModelTrait =>
   b.world.getEntity(worldId(b, irId))!.get(TraitType.CHARACTER_MODEL) as CharacterModelTrait;
 const thread = (b: Booted, irId: string, key: string) => traitOf(b, irId).conversationThreads?.[b.player.id]?.[key];

@@ -11,7 +11,7 @@ import { describe, expect, it } from 'vitest';
 import { compile, StoryIR } from '@sharpee/chord';
 import type { ISemanticEvent } from '@sharpee/core';
 import { createImageChannel, musicChannel, soundChannel } from '@sharpee/stdlib';
-import { WorldModel } from '@sharpee/world-model';
+import { WorldModel, ActorTrait } from '@sharpee/world-model';
 import { createStory, SchedulerDaemon } from '../src';
 
 const FIXTURE = readFileSync(
@@ -33,6 +33,7 @@ describe('media sugar through the real loader and channels (ADR-216 AC-2)', () =
     const world = new WorldModel();
     story.initializeWorld(world);
     const player = story.createPlayer(world);
+    player.add(new ActorTrait({ isPlayable: true }));
     world.setPlayer(player.id);
     const daemons: SchedulerDaemon[] = story.runtime.buildSchedulerDaemons();
     return daemons.flatMap((d) => d.run({ world, turn: 1 }));

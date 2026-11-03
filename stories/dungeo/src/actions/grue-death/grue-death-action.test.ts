@@ -10,7 +10,7 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { WorldModel, TraitType, HealthTrait, EntityType } from '@sharpee/world-model';
+import { WorldModel, TraitType, HealthTrait, EntityType, ActorTrait } from '@sharpee/world-model';
 import { PLAYER_DIED_EVENT } from '@sharpee/stdlib';
 import type { ActionContext } from '@sharpee/stdlib';
 import { grueDeathAction } from './grue-death-action';
@@ -39,7 +39,7 @@ describe('grueDeathAction — execute applies the lethal transition', () => {
     room = world.createEntity('Dark Room', EntityType.ROOM);
     room.add({ type: 'room' });
     player = world.createEntity('player', EntityType.ACTOR);
-    player.add({ type: 'actor' });
+    player.add(new ActorTrait({ isPlayable: true }));
     world.moveEntity(player.id, room.id);
     world.setPlayer(player.id);
   });

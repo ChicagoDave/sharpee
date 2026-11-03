@@ -85,7 +85,7 @@ describe('Magic Sight Scope Rules', () => {
 
     // Create characters
     player = world.createEntity('player', 'actor');
-    player.add(new ActorTrait());
+    player.add(new ActorTrait({ isPlayable: true }));
     player.add(new ContainerTrait());
     world.setPlayer(player.id);
 

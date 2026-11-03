@@ -113,9 +113,9 @@ describe('RUNTIME_BIND_STEPS — the bind order as data', () => {
       // The on-clauses step's registration landed on this world: the lamp,
       // owner of an `after the player taking` clause, carries the behavior
       // trait the step composes so its interceptor is consulted.
-      const lamp = world.getEntity(story.entityId('lamp')!)!;
+      const lamp = world.getEntity('lamp')!;
       expect(lamp.has(ChordBehaviorTrait.type)).toBe(true);
-      expect(world.getEntity(story.entityId('hall')!)!.has(ChordBehaviorTrait.type)).toBe(false);
+      expect(world.getEntity('hall')!.has(ChordBehaviorTrait.type)).toBe(false);
     } finally {
       RUNTIME_BIND_STEPS.forEach((s, i) => { (s as { run: RuntimeBindStep['run'] }).run = originals[i]; });
     }

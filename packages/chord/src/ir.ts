@@ -1241,7 +1241,7 @@ export interface IROnClause {
   actionSpan?: Span;
   /**
    * Who acts (ADR-327 D1): `{kind:'player'}` for the player ROLE — the loader
-   * resolves it against `world.getPlayer()` at fire time, never a compile-time
+   * resolves it against the world's player character at fire time, never a compile-time
    * entity — or `{kind:'entity'}` for a named character. Null for `self`
    * (the owner acts) and `every-turn`.
    */
@@ -1877,7 +1877,7 @@ export type IRStatement =
   | { kind: 'change'; entity: IRValue; state: string; stmtWhen?: IRCondition | null; span: Span }
   /**
    * `change the player to <entity>` (ADR-327 D9/D10). Read two ways by the
-   * loader, discriminated on `world.getPlayer()`: undefined (inside the
+   * loader, discriminated on whether the world has a player character yet: none (inside the
    * start block, before the engine has set a player) assigns the role
    * directly; defined (any turn after load) emits a switch request for the
    * engine to drain at turn end.

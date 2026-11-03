@@ -18,6 +18,7 @@ import type { Choice, Literal } from '@sharpee/if-domain';
 import { CharacterModelTrait, type DispositionWord, TraitType, WorldModel } from '@sharpee/world-model';
 import { nounPhraseFor } from '@sharpee/stdlib';
 import { LoadError } from '../errors.js';
+import { worldIdOf } from '../identity.js';
 import { withLineBreaks } from '../text.js';
 import { ExecContext, STRATEGY_SELECTOR, type RuntimeCore } from './core.js';
 
@@ -48,8 +49,8 @@ export class PhrasesSection {
   channelEvent(ownerIrId: string, channel: string, world: WorldModel): ISemanticEvent | null {
     const table = this.core.ir.phrases.locales[this.core.ir.phrases.defaultLocale] ?? {};
     if (!table[`${ownerIrId}.${channel}`]) return null;
-    const ownerWorldId = this.core.host.entityId(ownerIrId);
-    if (!ownerWorldId) return null;
+    const ownerWorldId = worldIdOf(world, ownerIrId);
+    if (ownerWorldId === undefined) return null;
     return this.phraseEvent(`${ownerIrId}.${channel}`, { world, it: ownerIrId }, undefined, {
       entityId: ownerWorldId,
       messageKey: channel,
@@ -219,7 +220,7 @@ export class PhrasesSection {
     stmt: Extract<IRStatement, { kind: 'change-mood' } | { kind: 'change-feeling' }>,
     ctx: ExecContext,
   ): { type: string; actor: string; from: string; to: string; target?: string } {
-    const ownerWorldId = ctx.it !== undefined ? this.core.host.entityId(ctx.it) : undefined;
+    const ownerWorldId = ctx.it !== undefined ? worldIdOf(ctx.world, ctx.it) : undefined;
     const owner = ownerWorldId !== undefined ? ctx.world.getEntity(ownerWorldId) : undefined;
     const trait = owner?.get(TraitType.CHARACTER_MODEL) as CharacterModelTrait | undefined;
     if (ownerWorldId === undefined || !trait) {

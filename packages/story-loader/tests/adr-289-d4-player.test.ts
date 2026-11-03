@@ -16,7 +16,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import { compile, StoryIR } from '@sharpee/chord';
-import { IFEntity, WorldModel } from '@sharpee/world-model';
+import { IFEntity, WorldModel, ActorTrait } from '@sharpee/world-model';
 import { CHORD_STATE_PREFIX, ChordStory, createStory } from '../src';
 
 interface Loaded {
@@ -38,6 +38,7 @@ function load(source: string): Loaded {
   const world = new WorldModel();
   story.initializeWorld(world);
   const player = story.createPlayer(world);
+  player.add(new ActorTrait({ isPlayable: true }));
   world.setPlayer(player.id);
   return { story, world, player };
 }
@@ -193,7 +194,7 @@ before the game starts
 end before
 
 `);
-    const cookId = l.story.entityId('cook')!;
+    const cookId = 'cook';
     expect(locationName(l, cookId)).toBe('Kitchen');
   });
 
@@ -217,6 +218,6 @@ before the game starts
 end before
 
 `);
-    expect(locationName(l, l.story.entityId('cook')!)).toBe('Kitchen');
+    expect(locationName(l, 'cook')).toBe('Kitchen');
   });
 });

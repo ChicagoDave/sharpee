@@ -13,7 +13,7 @@ import { describe, expect, it } from 'vitest';
 import { compile, StoryIR } from '@sharpee/chord';
 import type { ISemanticEvent } from '@sharpee/core';
 import { askingAction } from '@sharpee/stdlib';
-import { IFEntity, WorldModel } from '@sharpee/world-model';
+import { IFEntity, WorldModel, ActorTrait } from '@sharpee/world-model';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { ChordStory, createStory } from '../src';
@@ -32,9 +32,10 @@ describe('gamekeeper interrogation vignette (ADR-239 elegance parity)', () => {
     const world = new WorldModel();
     story.initializeWorld(world);
     const player = story.createPlayer(world);
+    player.add(new ActorTrait({ isPlayable: true }));
     world.setPlayer(player.id);
 
-    const byId = (irId: string): IFEntity => world.getEntity(story.entityId(irId)!)!;
+    const byId = (irId: string): IFEntity => world.getEntity(irId)!;
     const keeper = byId('gamekeeper');
 
     const ask = (topic: { text: string; entity?: string }) => {

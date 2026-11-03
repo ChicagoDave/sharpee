@@ -50,7 +50,7 @@ export const guardBehavior: NpcBehavior = {
 
     // If hostile and player is visible, attack!
     if (combatant?.hostile && context.playerVisible) {
-      const player = context.world.getPlayer();
+      const player = context.world.playerCharacter;
       if (player) {
         context.act(IFActions.ATTACKING, { directObject: player });
       }

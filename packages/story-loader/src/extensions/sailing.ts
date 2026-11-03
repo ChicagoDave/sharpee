@@ -1,9 +1,10 @@
 /**
  * sailing.ts — the `use sailing` registry entry.
  *
- * One moment. `gatedConstruct` names a sailing vehicle or a wind written
- * without the `use` line, the backstop every entry carries behind the
- * analyzer's own gate. The runtime parts are not here: the loader lowers a
+ * No moment of its own yet: a sailing word written without the `use` line
+ * is refused by validateIR before any world is built, and the entry holds
+ * the extension's place in the registry's order. The runtime parts are not
+ * here: the loader lowers a
  * `sailing` block and `sails:` onto the vehicle's open model and `wind:`
  * onto the expanse, and the vehicle machine plays them.
  *
@@ -16,9 +17,4 @@
  */
 import type { ExtensionRegistration } from '../extension-registry.js';
 
-export const SAILING_EXTENSION: ExtensionRegistration = {
-  gatedConstruct: (ir) => {
-    const first = ir.entities.find((e) => e.expanse?.wind !== undefined || e.vehicle?.sailing !== undefined || e.vehicle?.sails !== undefined);
-    return first ? { construct: first.expanse ? 'wind:' : first.vehicle?.sailing ? 'a `sailing` block' : 'sails:', span: first.span } : null;
-  },
-};
+export const SAILING_EXTENSION: ExtensionRegistration = {};

@@ -18,6 +18,7 @@ import {
   type ConversationIntent,
   type DialogueSelectionContext,
   type IFEntity,
+  ActorTrait,
 } from '@sharpee/world-model';
 import { askingAction } from '../../../src/actions/standard/asking';
 import { tellingAction } from '../../../src/actions/standard/telling';
@@ -36,6 +37,7 @@ function setupPersonWorld(withCharacterModel: boolean) {
   const room = author.createEntity('Hermitage', EntityType.ROOM);
   room.add({ type: TraitType.ROOM });
   author.moveEntity(player.id, room.id);
+  player.add(new ActorTrait({ isPlayable: true }));
   world.setPlayer(player.id);
   const hermit = author.createEntity('hermit', EntityType.ACTOR);
   hermit.add({ type: TraitType.ACTOR });

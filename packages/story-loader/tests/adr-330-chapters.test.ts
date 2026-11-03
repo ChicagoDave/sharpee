@@ -19,7 +19,7 @@ import { EnglishLanguageProvider } from '@sharpee/lang-en-us';
 import { EnglishParser } from '@sharpee/parser-en-us';
 import { PREFERRED_LAYOUT_CHANNEL, PROSE_CHANNEL_IDS } from '@sharpee/if-domain';
 import { PerceptionService, STANDARD_CHANNELS, StdlibChannelRegistry } from '@sharpee/stdlib';
-import { WorldModel, type IFEntity } from '@sharpee/world-model';
+import { WorldModel, type IFEntity, ActorTrait } from '@sharpee/world-model';
 import { ChordStory, LoadError, createStory } from '../src';
 import { compileSource } from './helpers/boot-engine';
 import { stubStoryEngine } from './helpers/stub-story-engine';
@@ -165,7 +165,7 @@ async function boot(seed = 7): Promise<Booted> {
     await engine.executeTurn(input);
     return stream.slice(from);
   };
-  return { engine, story, world, player: world.getPlayer()!, stream, manifestIds, turn };
+  return { engine, story, world, player: world.playerCharacter, stream, manifestIds, turn };
 }
 
 const began = (events: ISemanticEvent[]) => events.filter((e) => e.type === CHAPTER_BEGAN_EVENT).map((e) => (e.data as { name: string }).name);
@@ -175,7 +175,7 @@ const current = (b: Booted) => b.world.getStateValue(CHAPTER_CURRENT_KEY);
 describe('ADR-330 chapters on the real path', () => {
   it('Acceptance 2: the opening row begins on the first command, with title and description verbatim, after the role is assigned', async () => {
     const b = await boot();
-    expect(b.player.id).toBe(b.story.entityId('alex'));
+    expect(b.player.id).toBe('alex');
     const events = await b.turn('look');
     expect(began(events)).toEqual(['market']);
     const expected = {
@@ -209,7 +209,7 @@ describe('ADR-330 chapters on the real path', () => {
     const b = await boot();
     await b.turn('look');
     const blink = await b.turn('blink out');
-    expect(b.world.getLocation(b.player.id)).toBe(b.story.entityId('street'));
+    expect(b.world.getLocation(b.player.id)).toBe('street');
     expect(began(blink)).toEqual(['street']);
   });
 
@@ -293,17 +293,11 @@ describe('ADR-330 chapters on the real path', () => {
     expect(() => b.story.registerChannels(new StdlibChannelRegistry())).toThrow(/'story\.chapter'.*'room-name'/);
   });
 
-  it('rogue IR with chapters but no `use chapters` → LoadError at engine-ready (the loader backstop behind the compiler\'s gate)', () => {
+  it('rogue IR with chapters but no `use chapters` → LoadError at createStory (chord\'s validateIR, the one rule — ADR-389 D4)', () => {
     const ir = compileSource(SOURCE);
     ir.uses = [];
-    const rogue = createStory(ir, { seed: 7 });
-    const w = new WorldModel();
-    rogue.initializeWorld(w);
-    const p = rogue.createPlayer(w);
-    w.setPlayer(p.id);
-    expect(() =>
-      rogue.onEngineReady(stubStoryEngine()),
-    ).toThrow(LoadError);
+    expect(() => createStory(ir, { seed: 7 })).toThrow(LoadError);
+    expect(() => createStory(ir, { seed: 7 })).toThrow('A `define chapters` block needs `use chapters` in the story header');
   });
 
   it('Acceptance 7: `during`/`before`/`after` read the current chapter — an intercept, an arrival phrase at the boundary, and a blocked exit', async () => {
@@ -326,7 +320,7 @@ describe('ADR-330 chapters on the real path', () => {
     await b.turn('run away');
     const back = await b.turn('west');
     expect(keys(back)).toContain('"blocked":true');
-    expect(b.world.getLocation(b.player.id)).toBe(b.story.entityId('street'));
+    expect(b.world.getLocation(b.player.id)).toBe('street');
   });
 
   it('Acceptance 6 (this fixture\'s half): without `use chapters` and the block, no chapter event ever appears', async () => {

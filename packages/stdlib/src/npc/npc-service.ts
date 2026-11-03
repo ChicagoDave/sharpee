@@ -264,7 +264,7 @@ export class NpcService implements INpcService {
     act: ExecutionEntry
   ): ISemanticEvent[] {
     const events: ISemanticEvent[] = [];
-    const playerId = world.getPlayer()?.id || '';
+    const playerId = world.playerCharacter.id;
     const playerLocation = world.getLocation(playerId) || '';
 
     // Get NPCs in the old room
@@ -310,7 +310,7 @@ export class NpcService implements INpcService {
     // what keeps the service off the protagonist is that they hold the role
     // THIS turn — asked here, never stored, so a character the role moves off
     // resumes being driven on the very next turn.
-    if (npc.id === world.getPlayer()?.id) return false;
+    if (npc.id === world.playerCharacter.id) return false;
     const health = npc.get(TraitType.HEALTH) as HealthTrait | undefined;
     return !health || HealthBehavior.canAct(health);
   }

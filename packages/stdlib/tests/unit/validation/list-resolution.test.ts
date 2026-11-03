@@ -9,7 +9,7 @@
  */
 
 import { describe, test, expect, beforeEach } from 'vitest';
-import { AuthorModel, EntityType, IFEntity, INounPhrase, IParsedCommand, TraitType, WorldModel } from '@sharpee/world-model';
+import { AuthorModel, EntityType, IFEntity, INounPhrase, IParsedCommand, TraitType, WorldModel, ActorTrait } from '@sharpee/world-model';
 import { LanguageProvider } from '@sharpee/if-domain';
 import { CommandValidator } from '../../../src/validation/command-validator';
 import { StandardActionRegistry } from '../../../src/actions/registry';
@@ -106,6 +106,7 @@ describe('CommandValidator resolves a list through the matcher (ADR-385 D5)', ()
     room = author.createEntity('Workshop', EntityType.ROOM);
     room.add({ type: TraitType.ROOM });
     author.moveEntity(player.id, room.id);
+    player.add(new ActorTrait({ isPlayable: true }));
     world.setPlayer(player.id);
     lantern = thing('brass lantern');
     sword = thing('sword');

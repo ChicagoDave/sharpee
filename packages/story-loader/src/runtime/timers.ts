@@ -19,6 +19,7 @@ import type { ActResult, ActSlots } from '@sharpee/stdlib';
 import { IFEntity, WorldModel } from '@sharpee/world-model';
 import { directionOfWord } from '../direction-words.js';
 import { LoadError } from '../errors.js';
+import { worldIdOf } from '../identity.js';
 import { clauseOccurrenceKey, timerKey, type TimerRecord } from '../state-keys.js';
 import { ExecContext, SchedulerTick, ACT_DEPTH_CAP, type RuntimeCore } from './core.js';
 
@@ -97,7 +98,7 @@ export class TimersSection {
     const actorName = world.getEntity(actorId)?.name ?? actorId;
     // The runtime half of D1's exclusion: the compiler refuses the spelled
     // role; a named character who currently holds it is refused here.
-    if (world.getPlayer()?.id === actorId) {
+    if (world.playerCharacter.id === actorId) {
       throw new LoadError(`runtime.act-player-actor: ${actorName} holds the player role this turn and cannot be made to act.`, stmt.span);
     }
     const storyDef = this.core.ir.actions.find((a) => a.name === stmt.action);
@@ -278,8 +279,7 @@ export class TimersSection {
    * @returns true when that character is the current PC
    */
   holdsPlayerRole(world: WorldModel, irEntityId: string): boolean {
-    const worldId = this.core.host.entityId(irEntityId);
-    return worldId !== undefined && worldId === world.getPlayer()?.id;
+    return world.hasPlayerCharacter && worldIdOf(world, irEntityId) === world.playerCharacter.id;
   }
 
   /**
@@ -290,8 +290,7 @@ export class TimersSection {
    */
   fireAfterClauses(actionName: string, target: IFEntity, world: WorldModel, actorId: string): ISemanticEvent[] {
     const out: ISemanticEvent[] = [];
-    const targetIrId = this.core.host.irIdOf(target.id);
-    if (targetIrId === undefined) return out;
+    const targetIrId = target.id;
     const irEntity = this.core.ir.entities.find((e) => e.id === targetIrId);
     if (!irEntity) return out;
 

@@ -128,11 +128,13 @@ describe('ADR-276 Phase 3 — alteration-target diagnostics reach the browser pi
     );
     const result = chord.compile(source);
     expect(result.ok).toBe(false);
+    // Report order: the grammar gates first, then the IR's own invariants,
+    // which `validateIR` reports as the compile's last pass (ADR-389 D4).
     expect(result.diagnostics.filter((d) => d.code !== 'analysis.missing-ifid').map((d) => d.code)).toEqual([
-      'analysis.trait-not-declared', // unknown direction word — census 16 is parser-gated (Phase 6)
-      'analysis.setting-not-boolean',
       'analysis.removal-target',
       'analysis.unmatched-removal-pattern',
+      'analysis.trait-not-declared', // unknown direction word — census 16 is parser-gated (Phase 6)
+      'analysis.setting-not-boolean',
     ]);
     for (const d of result.diagnostics) expect(d.span.line).toBeGreaterThan(0);
   });

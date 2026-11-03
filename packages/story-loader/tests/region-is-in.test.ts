@@ -16,7 +16,7 @@
 import { describe, expect, it } from 'vitest';
 import { compile, StoryIR } from '@sharpee/chord';
 import type { ISemanticEvent } from '@sharpee/core';
-import { WorldModel } from '@sharpee/world-model';
+import { WorldModel, ActorTrait } from '@sharpee/world-model';
 import { ChordStory, createStory } from '../src';
 
 function compileSource(source: string): StoryIR {
@@ -38,6 +38,7 @@ function boot(source: string): Booted {
   const world = new WorldModel();
   story.initializeWorld(world);
   const player = story.createPlayer(world);
+  player.add(new ActorTrait({ isPlayable: true }));
   world.setPlayer(player.id);
   return { story, world, playerId: player.id };
 }
@@ -47,7 +48,7 @@ const messageIdsOf = (events: ISemanticEvent[]) =>
 
 /** Move the player to `slug` and fire that room's entering clauses. */
 function enter(booted: Booted, slug: string): ISemanticEvent[] {
-  const roomId = booted.story.entityId(slug)!;
+  const roomId = slug;
   booted.world.moveEntity(booted.playerId, roomId);
   return booted.story.runtime.fireEventClauses(booted.world, {
     id: `m-${slug}`,

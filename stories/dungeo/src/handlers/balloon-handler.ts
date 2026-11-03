@@ -234,8 +234,7 @@ export function createBalloonExitTransformer() {
 
     // Check if player is in the balloon (world-derived: the location
     // entity carries BalloonStateTrait)
-    const player = world.getPlayer();
-    if (!player) return parsed;
+    const player = world.playerCharacter;
 
     const playerLocation = world.getLocation(player.id);
     const balloonLoc = balloonAt(world, playerLocation);

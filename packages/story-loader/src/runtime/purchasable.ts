@@ -47,8 +47,7 @@ export class PurchasableSection {
       if (!costs) continue;
       const price = Number(costs.config.find((c) => c.key === 'price')?.value);
       const currency = costs.config.find((c) => c.key === 'currency')?.value ?? '';
-      const worldId = this.core.host.entityId(irEntity.id);
-      const entity = worldId ? world.getEntity(worldId) : undefined;
+      const entity = world.getEntity(irEntity.id);
       if (!entity) continue;
       entity.add(new PurchasableTrait({ price, currency }));
       any = true;
@@ -58,8 +57,7 @@ export class PurchasableSection {
 
   /** The buyer's purse key — their own counter named by the currency — or undefined for a buyer the story never declared. */
   private purseKey(buyerId: string, currency: string): string | undefined {
-    const irId = this.core.host.irIdOf(buyerId);
-    return irId ? counterKey(currency, irId) : undefined;
+    return this.core.ir.entities.some((e) => e.id === buyerId) ? counterKey(currency, buyerId) : undefined;
   }
 
   private buildBehavior(): CapabilityBehavior {

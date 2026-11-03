@@ -47,7 +47,7 @@ function transportPlayerIfInBasket(
   destinationRoomId: string
 ): boolean {
   // Check if player is in the basket (location is basket.id)
-  const player = world.getPlayer();
+  const player = world.playerCharacter;
   if (player) {
     const playerLocation = world.getLocation(player.id);
     if (playerLocation === basket.id) {

@@ -17,7 +17,8 @@ import {
   IFEntity,
   IParsedCommand,
   TraitType,
-  WorldModel
+  WorldModel,
+  ActorTrait,
 } from '@sharpee/world-model';
 import { LanguageProvider } from '@sharpee/if-domain';
 
@@ -77,6 +78,7 @@ describe('CommandValidator — preferredScope disambiguation (Phase 6/10)', () =
     room = author.createEntity('Test Room', EntityType.ROOM);
     room.add({ type: TraitType.ROOM });
     author.moveEntity(player.id, room.id);
+    player.add(new ActorTrait({ isPlayable: true }));
     world.setPlayer(player.id);
 
     const registry = new StandardActionRegistry();

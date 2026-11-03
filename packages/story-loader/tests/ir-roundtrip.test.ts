@@ -25,12 +25,9 @@ function loadAndProject(ir: StoryIR) {
   const entities = world
     .getAllEntities()
     .map((e) => ({
-      irId: story.irIdOf(e.id) ?? `<unmapped:${e.type}>`,
+      irId: e.id,
       traits: [...e.getTraitTypes()].sort(),
-      locationIrId: (() => {
-        const loc = world.getLocation(e.id);
-        return loc ? (story.irIdOf(loc) ?? '<unmapped>') : null;
-      })(),
+      locationIrId: world.getLocation(e.id) ?? null,
     }))
     .sort((a, b) => a.irId.localeCompare(b.irId));
 
@@ -42,7 +39,7 @@ function loadAndProject(ir: StoryIR) {
   const phrases = new Map<string, string>();
   story.extendLanguage({ addMessage: (id: string, t: string) => phrases.set(id, t) } as never);
 
-  return { entities, chordState, phrases, playerIrId: story.irIdOf(player.id) };
+  return { entities, chordState, phrases, playerIrId: player.id };
 }
 
 describe('AC-10: IR JSON round-trip', () => {

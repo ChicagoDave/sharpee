@@ -135,7 +135,7 @@ function load(source: string = SOURCE): Loaded {
   return { story, world, player, phase, sounds: [] };
 }
 
-const entity = (l: Loaded, irId: string): IFEntity => l.world.getEntity(l.story.entityId(irId)!)!;
+const entity = (l: Loaded, irId: string): IFEntity => l.world.getEntity(irId)!;
 const traitOf = (l: Loaded, irId: string): CharacterModelTrait =>
   entity(l, irId).get(TraitType.CHARACTER_MODEL) as CharacterModelTrait;
 
@@ -211,13 +211,13 @@ describe('AC9 — a player claim travels onward through an NPC↔NPC scene', () 
     expect(traitOf(l, 'bram').knows(topic)).toBe(false);
 
     // 2) The player walks off; the player-scene decays on silence.
-    l.world.moveEntity(l.player.id, l.story.entityId('yard')!);
+    l.world.moveEntity(l.player.id, 'yard');
     for (const t of [2, 3, 4, 5, 6]) tick(l, t);
     expect(Object.values(readSceneStore(l.world).scenes)).toHaveLength(0);
 
     // 3) Bram arrives; the gossip moves in an NPC↔NPC scene the player
     // never sees — the effect lands anyway (AC8's silent face).
-    l.world.moveEntity(entity(l, 'bram').id, l.story.entityId('hall')!);
+    l.world.moveEntity(entity(l, 'bram').id, 'hall');
     const events = tick(l, 7);
 
     expect(traitOf(l, 'bram').knows(topic)).toBe(true);
@@ -240,7 +240,7 @@ describe('Phase 8 initiative runner — a forcing `on <act>` row seizes a witnes
   it('runs the row body through the loader, opens a scene with the actor, advances the occurrence key', () => {
     const l = load();
     // Bram must witness the act — seat him in the Hall.
-    l.world.moveEntity(entity(l, 'bram').id, l.story.entityId('hall')!);
+    l.world.moveEntity(entity(l, 'bram').id, 'hall');
 
     const attack: ISemanticEvent = {
       id: 'evt-attack',
@@ -291,7 +291,7 @@ describe('#273 — an initiative-row `then asks` opens its exchange in a player 
   it('the seizure serves and the exchange opens on real scene state — no throw, no wedge', () => {
     const l = load(SOURCE_273);
     // Bram must witness the act — seat him in the Hall.
-    l.world.moveEntity(entity(l, 'bram').id, l.story.entityId('hall')!);
+    l.world.moveEntity(entity(l, 'bram').id, 'hall');
 
     const attack: ISemanticEvent = {
       id: 'evt-attack',
@@ -388,7 +388,7 @@ describe('GH #349 — `leave` served on the speaker’s own turn (publish-readin
 
   it('the seizure speaks, the scene closes, nothing throws, the next turn ticks clean', () => {
     const l = load(SOURCE_LEAVE);
-    l.world.moveEntity(entity(l, 'bram').id, l.story.entityId('hall')!);
+    l.world.moveEntity(entity(l, 'bram').id, 'hall');
 
     const attack: ISemanticEvent = {
       id: 'evt-attack',

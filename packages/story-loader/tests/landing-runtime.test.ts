@@ -8,7 +8,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import { compile, StoryIR } from '@sharpee/chord';
-import { WorldModel } from '@sharpee/world-model';
+import { WorldModel, ActorTrait } from '@sharpee/world-model';
 import { ChordStory, createStory } from '../src';
 import { landingKey } from '../src/state-keys';
 
@@ -31,13 +31,14 @@ function boot(source: string, seed = 5): Booted {
   const world = new WorldModel();
   story.initializeWorld(world);
   const player = story.createPlayer(world);
+  player.add(new ActorTrait({ isPlayable: true }));
   world.setPlayer(player.id);
   return { story, world, playerId: player.id };
 }
 
 /** Fire the Alley's `after the player entering` clause with the player there. */
 function enterAlley(b: Booted) {
-  const roomId = b.story.entityId('alley')!;
+  const roomId = 'alley';
   b.world.moveEntity(b.playerId, roomId);
   return b.story.runtime.fireEventClauses(b.world, {
     id: 'm1',
@@ -105,8 +106,8 @@ end before
 
 `;
 
-const roomOf = (b: Booted, irId: string) => b.story.entityId(irId)!;
-const monkeyRoom = (b: Booted) => b.world.getLocation(b.story.entityId('monkey')!);
+const roomOf = (b: Booted, irId: string) => irId;
+const monkeyRoom = (b: Booted) => b.world.getLocation('monkey');
 
 describe('a region with a landing is a place (D5)', () => {
   it('`move … to <region>` lands in the single landing room', () => {
@@ -128,7 +129,7 @@ describe('landing strategies draw deterministically (D5, ADR-293)', () => {
     const out: string[] = [];
     for (let i = 0; i < n; i++) {
       enterAlley(b);
-      out.push(b.story.irIdOf(monkeyRoom(b)!)!);
+      out.push(monkeyRoom(b)!);
     }
     return out;
   };

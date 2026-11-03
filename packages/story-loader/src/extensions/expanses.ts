@@ -1,9 +1,10 @@
 /**
  * expanses.ts — the `use expanses` registry entry.
  *
- * One moment today. `gatedConstruct` names an expanse or an `open` vehicle
- * written without the `use` line, the backstop every entry carries behind
- * the analyzer's own gate. The runtime parts live where every vehicle's do:
+ * No moment of its own today: an expanse or an `open` vehicle written
+ * without the `use` line is refused by validateIR before any world is
+ * built, and the entry holds the extension's place in the registry's
+ * order. The runtime parts live where every vehicle's do:
  * the loader lowers the expanse, the open model, `floats` and `sight:`
  * (`wireExpanse`, `wireVehicle`, `applyTraitAdjectives`), the core
  * state-machine plugin steps and drifts, the evaluator reads sight.
@@ -18,9 +19,4 @@
  */
 import type { ExtensionRegistration } from '../extension-registry.js';
 
-export const EXPANSES_EXTENSION: ExtensionRegistration = {
-  gatedConstruct: (ir) => {
-    const first = ir.entities.find((e) => e.expanse !== undefined || e.vehicle?.movement === 'open');
-    return first ? { construct: first.expanse ? 'an expanse' : 'movement: open', span: first.span } : null;
-  },
-};
+export const EXPANSES_EXTENSION: ExtensionRegistration = {};

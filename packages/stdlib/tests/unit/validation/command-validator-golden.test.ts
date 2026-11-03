@@ -8,7 +8,7 @@
 import { describe, test, expect, beforeEach } from 'vitest';
 import { CommandValidator } from '../../../src/validation/command-validator';
 import { StandardActionRegistry } from '../../../src/actions/registry';
-import { AuthorModel, WorldModel, IFEntity, TraitType, EntityType, IParsedCommand } from '@sharpee/world-model';
+import { AuthorModel, WorldModel, IFEntity, TraitType, EntityType, IParsedCommand, ActorTrait } from '@sharpee/world-model';
 import { LanguageProvider } from '@sharpee/if-domain';
 import { createCommand, createParserWithWorld, parseCommand } from '../../test-utils';
 import { StandardScopeResolver } from '../../../src/scope/scope-resolver';
@@ -68,6 +68,7 @@ describe('CommandValidator (Golden Pattern)', () => {
     room = author.createEntity('Test Room', EntityType.ROOM);
     room.add({ type: TraitType.ROOM });
     author.moveEntity(player.id, room.id);
+    player.add(new ActorTrait({ isPlayable: true }));
     world.setPlayer(player.id);
     
     // Create parser with world

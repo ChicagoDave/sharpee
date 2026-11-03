@@ -19,7 +19,7 @@ import { EventProcessor } from '@sharpee/event-processor';
 import { EnglishLanguageProvider } from '@sharpee/lang-en-us';
 import { EnglishParser } from '@sharpee/parser-en-us';
 import { IFActions, StandardActionRegistry, standardActions } from '@sharpee/stdlib';
-import { WorldModel } from '@sharpee/world-model';
+import { WorldModel, ActorTrait } from '@sharpee/world-model';
 import type { IFEntity } from '@sharpee/world-model';
 import { ChordStory, createStory } from '../src';
 import { CHORD_STORY_STATE_KEY } from '../src/state-keys';
@@ -45,6 +45,7 @@ function boot(source: string): Booted {
   const world = new WorldModel();
   story.initializeWorld(world);
   const player = story.createPlayer(world);
+  player.add(new ActorTrait({ isPlayable: true }));
   world.setPlayer(player.id);
   story.runtime.setTurnProvider(() => 3);
 
@@ -66,7 +67,7 @@ function boot(source: string): Booted {
     history: [],
     metadata: { started: new Date(), lastPlayed: new Date() },
   };
-  const id = (irId: string) => story.entityId(irId)!;
+  const id = (irId: string) => irId;
   return {
     story,
     world,

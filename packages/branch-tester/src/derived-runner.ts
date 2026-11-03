@@ -251,7 +251,10 @@ export interface DerivedEntity {
 
 /** The world reads the runner makes itself — structural, so no engine class is imported. */
 export interface DerivedWorld {
-  getPlayer(): DerivedEntity | undefined;
+  /** Whether any actor holds the player role (ADR-390 D1). */
+  readonly hasPlayerCharacter: boolean;
+  /** The actor holding the player role; throws when none does. */
+  readonly playerCharacter: DerivedEntity;
   getEntity(id: string): DerivedEntity | undefined;
   getAllEntities(): DerivedEntity[];
   getLocation(entityId: string): string | undefined | null;
@@ -1122,7 +1125,7 @@ export async function runDerivedSuite(
 
 /** The IR id of the room the player stands in, or undefined when offstage or unstamped. */
 function playerRoomIrIdOf(world: DerivedWorld): string | undefined {
-  const player = world.getPlayer();
+  const player = world.playerCharacter;
   const room = player ? world.getContainingRoom(player.id) : undefined;
   const irId = room ? world.getEntity(room.id)?.attributes[CHORD_IR_ID_ATTRIBUTE] : undefined;
   return typeof irId === 'string' ? irId : undefined;
@@ -1273,7 +1276,7 @@ export async function runDerivedBranch(
   // what the floor cannot arrange (darkness, concealment) is a named gap,
   // not a parse failure to report against the story.
   if (reachTarget !== null) {
-    const player = world.getPlayer();
+    const player = world.playerCharacter;
     const subjectId = worldIdOf(world, reachTarget);
     if (player && subjectId && !world.canSee(player.id, subjectId)) {
       return { ...base, status: 'skipped', shape: 'subject-unreachable', detail: `${reachTarget} is not in the player's sight after arranging`, arranged };
@@ -1303,7 +1306,7 @@ export async function runDerivedBranch(
         }
         arranged.push(expression);
       }
-      const player = world.getPlayer();
+      const player = world.playerCharacter;
       const chosenId = worldIdOf(world, chosen.entity);
       if (player && chosenId && !world.canSee(player.id, chosenId)) {
         return { ...base, status: 'skipped', shape: 'object-unreachable', detail: `${chosen.entity} is not in the player's sight after arranging`, arranged };
@@ -1405,7 +1408,7 @@ export async function runDerivedBranch(
         (claim.cause === undefined || ending.cause === claim.cause);
       claims.push({ claim: text, passed, ...(passed ? {} : { message: ending ? `ending is ${ending.kind}${ending.messageId ? ` ${ending.messageId}` : ''}${ending.cause ? ` (${ending.cause})` : ''}` : 'the story did not end' }) });
     } else if (claim.kind === 'player') {
-      const player = world.getPlayer();
+      const player = world.playerCharacter;
       const irId = player?.attributes[CHORD_IR_ID_ATTRIBUTE];
       const passed = irId === claim.entity;
       claims.push({ claim: `the player is ${claim.entity}`, passed, ...(passed ? {} : { message: `the player is ${String(irId ?? 'nobody')}` }) });
@@ -1510,7 +1513,7 @@ function resolveTerm(
     case 'pin':
       return { expressions: [term.expression], mustHold: term.mustHold };
     case 'with-player': {
-      const player = world.getPlayer();
+      const player = world.playerCharacter;
       const room = player ? world.getContainingRoom(player.id) : undefined;
       if (!room) return { shape: 'player-offstage', detail: 'the player is in no room' };
       return { expressions: [`${term.entity}.location = ${room.id}`], mustHold: term.mustHold };
@@ -1550,7 +1553,7 @@ function resolveTerm(
       return { expressions: standardPreconditions(term.action, entity, term.keep), mustHold: true };
     }
     case 'reach-noun': {
-      const player = world.getPlayer();
+      const player = world.playerCharacter;
       const nounId = worldIdOf(world, term.entity);
       if (!player || !nounId) return { shape: 'unrecognized', detail: `entity "${term.entity}" not found` };
       if (term.want === 'held') {
@@ -1626,7 +1629,7 @@ function parserNames(entity: DerivedEntity): string[] {
  * gap — the parser would prompt, and a prompt is not the rule under test.
  */
 function typedPhrase(world: DerivedWorld, entityId: string): { phrase: string } | { shape: string; detail: string } {
-  const player = world.getPlayer();
+  const player = world.playerCharacter;
   const target = world.getEntity(entityId);
   if (!player || !target) return { phrase: entityId };
   const others = world.getAllEntities().filter((other) => other.id !== entityId && other.id !== player.id && world.canSee(player.id, other.id));
@@ -1669,8 +1672,7 @@ function chooseFiller(
   subject: string | null,
   intercepts: (irId: string) => boolean
 ): { entity: string; name: string; expressions: string[] } | { omit: true } | { shape: string; detail: string } {
-  const player = world.getPlayer();
-  if (!player) return { shape: 'player-offstage', detail: 'the player is in no room' };
+  const player = world.playerCharacter;
   const named = (irId: string): string => entityName(ir, irId) ?? irId;
   if (filler.entity !== null) return { entity: filler.entity, name: named(filler.entity), expressions: [] };
 
@@ -1796,7 +1798,7 @@ function standardPreconditions(action: string, entity: DerivedEntity, keep: stri
 
 /** The world id of an IR id, or of the player. */
 function worldIdOf(world: DerivedWorld, irId: string): string | undefined {
-  if (irId === 'player') return world.getPlayer()?.id;
+  if (irId === 'player') return world.playerCharacter.id;
   return world.getAllEntities().find((entity) => entity.attributes[CHORD_IR_ID_ATTRIBUTE] === irId)?.id;
 }
 
@@ -1822,7 +1824,7 @@ function readNegative(read: NegativeRead, world: DerivedWorld): unknown {
     case 'counter':
       return Number(world.getStateValue(read.key) ?? 0);
     case 'player':
-      return world.getPlayer()?.attributes[CHORD_IR_ID_ATTRIBUTE];
+      return world.playerCharacter.attributes[CHORD_IR_ID_ATTRIBUTE];
   }
 }
 

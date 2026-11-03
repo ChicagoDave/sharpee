@@ -2,7 +2,7 @@
  * The player step: the story names its player in the built world, and
  * the world is told which entity that is.
  *
- * `world.setPlayer` is a world mutation and stays here; the entity
+ * the role write moved to `assign-player-role` (ADR-390); the entity
  * itself goes into the draft for the engine's context to adopt.
  *
  * Public interface: `createPlayerStep`.
@@ -20,6 +20,8 @@ export const createPlayerStep: InstallStep = {
   run(context) {
     const player = context.story.createPlayer(context.world);
     context.draft.player = player;
-    context.world.setPlayer(player.id);
+    // ADR-390 D1: the role itself is written by `assign-player-role`, after
+    // `validate-role-holder` has had its say — the validator's typed refusal
+    // comes before the world's.
   }
 };

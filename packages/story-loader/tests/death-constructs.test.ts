@@ -21,6 +21,7 @@ import {
   IParsedCommand,
   TraitType,
   WorldModel,
+  ActorTrait,
 } from '@sharpee/world-model';
 import {
   DEADLY_ROOM_DEATH_ACTION_ID,
@@ -58,6 +59,7 @@ function loadDeathStory(): DeathWorld {
   const world = new WorldModel();
   story.initializeWorld(world);
   const player = story.createPlayer(world);
+  player.add(new ActorTrait({ isPlayable: true }));
   world.setPlayer(player.id);
   return { story, world, playerId: player.id };
 }
@@ -87,21 +89,21 @@ function captureTransformer(story: ChordStory): Transformer {
 }
 
 function enterRoom({ story, world, playerId }: DeathWorld, irId: string): ISemanticEvent[] {
-  const roomId = story.entityId(irId)!;
+  const roomId = irId;
   world.moveEntity(playerId, roomId);
   return story.runtime.fireEventClauses(world, {
     id: `move-${irId}`,
     type: 'if.event.actor_moved',
     timestamp: 0,
     entities: { actor: playerId },
-    data: { toRoom: roomId, fromRoom: story.entityId('meadow'), direction: 'EAST' },
+    data: { toRoom: roomId, fromRoom: 'meadow', direction: 'EAST' },
   });
 }
 
 describe('`deadly: <phrase>` (no-escape room marker)', () => {
   it('attaches DeadlyRoomTrait with phrase-derived cause/messageId and default safe verbs', () => {
     const { story, world } = loadDeathStory();
-    const vault = world.getEntity(story.entityId('vault')!)!;
+    const vault = world.getEntity('vault')!;
 
     const trait = vault.get(TraitType.DEADLY_ROOM) as DeadlyRoomTrait | undefined;
     expect(trait).toBeDefined();
@@ -113,7 +115,7 @@ describe('`deadly: <phrase>` (no-escape room marker)', () => {
 
   it('non-deadly rooms carry no DeadlyRoomTrait', () => {
     const { story, world } = loadDeathStory();
-    const meadow = world.getEntity(story.entityId('meadow')!)!;
+    const meadow = world.getEntity('meadow')!;
     expect(meadow.get(TraitType.DEADLY_ROOM)).toBeFalsy();
   });
 });
@@ -122,7 +124,7 @@ describe('`<direction> is deadly: <phrase>` (deadly exit)', () => {
   it('redirects going the deadly direction to the generic deadly-death action', () => {
     const env = loadDeathStory();
     const transformer = captureTransformer(env.story);
-    env.world.moveEntity(env.playerId, env.story.entityId('cliff-top')!);
+    env.world.moveEntity(env.playerId, 'cliff-top');
 
     const result = transformer(goCommand('SOUTH'), env.world);
 
@@ -135,7 +137,7 @@ describe('`<direction> is deadly: <phrase>` (deadly exit)', () => {
   it('a typed abbreviation reaches the deadly exit: the parser hands over the constant, no table here', () => {
     const env = loadDeathStory();
     const transformer = captureTransformer(env.story);
-    env.world.moveEntity(env.playerId, env.story.entityId('cliff-top')!);
+    env.world.moveEntity(env.playerId, 'cliff-top');
 
     const parser = new EnglishParser(new EnglishLanguageProvider(), { world: env.world });
     const parsed = parser.parse('s');
@@ -152,7 +154,7 @@ describe('`<direction> is deadly: <phrase>` (deadly exit)', () => {
     const transformer = captureTransformer(env.story);
 
     // Safe direction from the deadly-exit room (the retreat).
-    env.world.moveEntity(env.playerId, env.story.entityId('cliff-top')!);
+    env.world.moveEntity(env.playerId, 'cliff-top');
     expect(transformer(goCommand('NORTH'), env.world).action).toBe('if.action.going');
 
     // Non-going action in the deadly-exit room.
@@ -160,7 +162,7 @@ describe('`<direction> is deadly: <phrase>` (deadly exit)', () => {
     expect(transformer(wait, env.world).action).toBe('if.action.waiting');
 
     // Same direction from a room with no deadly exits.
-    env.world.moveEntity(env.playerId, env.story.entityId('meadow')!);
+    env.world.moveEntity(env.playerId, 'meadow');
     expect(transformer(goCommand('SOUTH'), env.world).action).toBe('if.action.going');
   });
 
@@ -239,7 +241,7 @@ end before
     story.initializeWorld(world);
     const player = story.createPlayer(world);
     world.setPlayer(player.id);
-    const cryptId = story.entityId('crypt')!;
+    const cryptId = 'crypt';
 
     // Without the amulet: entering is survivable.
     world.moveEntity(player.id, cryptId);
@@ -254,7 +256,7 @@ end before
     expect((player.get(TraitType.HEALTH) as HealthTrait | undefined)?.dead ?? false).toBe(false);
 
     // Holding the amulet: the condition holds and the kill fires.
-    world.moveEntity(story.entityId('amulet')!, player.id);
+    world.moveEntity('amulet', player.id);
     const fatalEvents = story.runtime.fireEventClauses(world, {
       id: 'enter-2',
       type: 'if.event.actor_moved',

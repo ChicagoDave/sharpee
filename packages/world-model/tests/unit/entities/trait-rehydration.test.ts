@@ -68,7 +68,7 @@ describe('trait rehydration (Phase 5)', () => {
     const room = world.createEntity('Test Room', 'room');
     room.add({ type: TraitType.ROOM });
     const player = world.createEntity('player', 'actor');
-    player.add(new ActorTrait());
+    player.add(new ActorTrait({ isPlayable: true }));
     player.add(new ContainerTrait());
     world.setPlayer(player.id);
     world.moveEntity(player.id, room.id);
@@ -89,7 +89,7 @@ describe('trait rehydration (Phase 5)', () => {
     restoredWorld.loadJSON(json);
 
     // Post-roundtrip: IDENTICAL — the restored trait still answers isWorn.
-    const restoredPlayer = restoredWorld.getPlayer()!;
+    const restoredPlayer = restoredWorld.playerCharacter;
     expect(restoredWorld.getContents(restoredPlayer.id).map(e => e.id)).toContain(vest.id);
     split = restoredWorld.getCarriedAndWorn(restoredPlayer.id);
     expect(split.worn.map(e => e.id)).toContain(vest.id);

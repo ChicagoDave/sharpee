@@ -11,7 +11,7 @@ import { join } from 'node:path';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { compile, StoryIR } from '@sharpee/chord';
 import type { ISemanticEvent } from '@sharpee/core';
-import { WorldModel } from '@sharpee/world-model';
+import { WorldModel, ActorTrait } from '@sharpee/world-model';
 import { ChordStory, createStory, SchedulerDaemon } from '../src';
 
 const CHORD_FIXTURES = join(__dirname, '..', '..', 'chord', 'tests', 'fixtures');
@@ -56,6 +56,7 @@ describe('zoo-timeline scheduler constructs', () => {
     world = new WorldModel();
     story.initializeWorld(world);
     const player = story.createPlayer(world);
+    player.add(new ActorTrait({ isPlayable: true }));
     world.setPlayer(player.id);
     daemons = story.runtime.buildSchedulerDaemons();
   });
@@ -118,8 +119,8 @@ describe('zoo-timeline scheduler constructs', () => {
 
   it('Sam\'s `on every turn while after-hours, once` fires exactly once, moving Sam offstage', () => {
     runTurns(1, 19); // still open: the clause condition never held
-    const samId = story.entityId('sam-the-zookeeper')!;
-    const gateId = story.entityId('staff-gate')!;
+    const samId = 'sam-the-zookeeper';
+    const gateId = 'staff-gate';
     expect(world.getLocation(samId)).not.toBe(gateId);
 
     // Turn 20: the phase flips earlier in the tick; Sam's clause fires.

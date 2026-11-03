@@ -133,7 +133,7 @@ describe('the engine holds a tied command and spends it on the next input (ADR-3
     expect(second.error).toBe('DISAMBIGUATION_NEEDED');
     const answer = await engine.executeTurn('brass');
     expect(answer.input).toBe('take brass clock');
-    expect(world.getLocation(brass.id)).toBe(world.getPlayer()!.id);
+    expect(world.getLocation(brass.id)).toBe(world.playerCharacter.id);
     expect(world.getLocation(wall.id)).toBe(room);
   });
 
@@ -142,7 +142,7 @@ describe('the engine holds a tied command and spends it on the next input (ADR-3
     const lamp = world.getAllEntities().find((e) => e.name === 'lamp')!;
     const room = world.getLocation(lamp.id);
     await engine.executeTurn('take lamp');
-    expect(world.getLocation(lamp.id)).toBe(world.getPlayer()!.id);
+    expect(world.getLocation(lamp.id)).toBe(world.playerCharacter.id);
 
     const prompt = await engine.executeTurn('drop');
     expect(prompt.error).toBe('CLARIFICATION_NEEDED');

@@ -16,8 +16,7 @@ const RAINBOW_ACTIVE_KEY = 'dungeo.rainbow.active';
  * Check if player is at Aragain Falls
  */
 function isAtAragainFalls(world: WorldModel): boolean {
-  const player = world.getPlayer();
-  if (!player) return false;
+  const player = world.playerCharacter;
 
   const playerLocation = world.getLocation(player.id);
   if (!playerLocation) return false;

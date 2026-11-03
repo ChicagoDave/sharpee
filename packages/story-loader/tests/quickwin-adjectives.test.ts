@@ -23,7 +23,8 @@ import {
   IFEntity,
   OpenableTrait,
   TraitType,
-  WorldModel
+  WorldModel,
+  ActorTrait,
 } from '@sharpee/world-model';
 import { ChordStory, createStory, LoadError } from '../src';
 import { runValidatePhase, runExecutePhase, runReportPhase } from '@sharpee/stdlib';
@@ -41,6 +42,7 @@ function loadStory(source: string): { story: ChordStory; world: WorldModel; play
   const world = new WorldModel();
   story.initializeWorld(world);
   const player = story.createPlayer(world);
+  player.add(new ActorTrait({ isPlayable: true }));
   world.setPlayer(player.id);
   return { story, world, player };
 }
@@ -84,7 +86,7 @@ describe('D1: pushable/pullable loader cases', () => {
   a thing, pushable
 
   A boulder.`));
-    const boulder = world.getEntity(story.entityId('boulder')!)!;
+    const boulder = world.getEntity('boulder')!;
     expect(boulder.has(TraitType.PUSHABLE)).toBe(true);
   });
 
@@ -94,7 +96,7 @@ describe('D1: pushable/pullable loader cases', () => {
   a thing, pullable
 
   A lever.`));
-    const lever = world.getEntity(story.entityId('lever')!)!;
+    const lever = world.getEntity('lever')!;
     expect(lever.has(TraitType.PULLABLE)).toBe(true);
   });
 });
@@ -106,7 +108,7 @@ describe('G1: drinkable liquid marker', () => {
   a thing, drinkable
 
   A potion.`));
-    const potion = world.getEntity(story.entityId('potion')!)!;
+    const potion = world.getEntity('potion')!;
     const edible = potion.get(TraitType.EDIBLE) as EdibleTrait;
     expect(edible).toBeDefined();
     expect(edible.liquid).toBe(true);
@@ -119,7 +121,7 @@ describe('G1: drinkable liquid marker', () => {
   a thing, ${composition}
 
   Broth.`));
-      const broth = world.getEntity(story.entityId('broth')!)!;
+      const broth = world.getEntity('broth')!;
       const edible = broth.get(TraitType.EDIBLE) as EdibleTrait;
       expect(edible.liquid, composition).toBe(true);
     }
@@ -133,7 +135,7 @@ describe('G2: concealed marker', () => {
   a thing, concealed
 
   A key.`));
-    const key = world.getEntity(story.entityId('key')!)!;
+    const key = world.getEntity('key')!;
     const identity = key.get(TraitType.IDENTITY) as IdentityTrait;
     expect(identity).toBeDefined();
     expect(identity.concealed).toBe(true);
@@ -147,7 +149,7 @@ describe('unlisted marker (2026-09-06)', () => {
   a supporter, scenery, plural, unlisted
 
   All rope.`));
-    const wares = world.getEntity(story.entityId('rope-wares')!)!;
+    const wares = world.getEntity('rope-wares')!;
     const identity = wares.get(TraitType.IDENTITY) as IdentityTrait;
     expect(identity.contentsUnlisted).toBe(true);
   });
@@ -160,7 +162,7 @@ describe('G3: hiding-spot adjective', () => {
   a thing, hiding-spot
 
   A curtain.`));
-    const curtain = world.getEntity(story.entityId('curtain')!)!;
+    const curtain = world.getEntity('curtain')!;
     const concealment = curtain.get(ConcealmentTrait.type) as ConcealmentTrait;
     expect(concealment).toBeDefined();
     expect(concealment.positions.sort()).toEqual(['behind', 'inside', 'on', 'under']);
@@ -172,7 +174,7 @@ describe('G3: hiding-spot adjective', () => {
   a thing, hiding-spot with position behind
 
   A curtain.`));
-    const curtain = world.getEntity(story.entityId('curtain')!)!;
+    const curtain = world.getEntity('curtain')!;
     const concealment = curtain.get(ConcealmentTrait.type) as ConcealmentTrait;
     expect(concealment.positions).toEqual(['behind']);
   });
@@ -212,8 +214,8 @@ create the crowbar
   in the Shed
 
   A crowbar.`));
-    const crate = world.getEntity(story.entityId('crate')!)!;
-    const crowbarWorldId = story.entityId('crowbar')!;
+    const crate = world.getEntity('crate')!;
+    const crowbarWorldId = 'crowbar';
     const openable = crate.get(TraitType.OPENABLE) as OpenableTrait;
     expect(openable).toBeDefined();
     expect(openable.toolRequirement?.tools).toEqual([crowbarWorldId]);
@@ -253,8 +255,8 @@ create the prize
 define phrase crank-groans
   The crank groans and something drops nearby.
 end phrase`));
-    const crank = world.getEntity(story.entityId('crank')!)!;
-    const prize = world.getEntity(story.entityId('prize')!)!;
+    const crank = world.getEntity('crank')!;
+    const prize = world.getEntity('prize')!;
 
     // Structural ActionContext (cuttable.test.ts precedent) over the REAL
     // loader-built world — the interceptor consulted is the one the loader
@@ -278,13 +280,13 @@ end phrase`));
     expect(validation.valid, JSON.stringify(validation)).toBe(true);
 
     // PRECONDITION: prize starts in the Bin.
-    expect(world.getLocation(prize.id)).toBe(story.entityId('bin')!);
+    expect(world.getLocation(prize.id)).toBe('bin');
 
     runExecutePhase(turningAction, context);
     const events = runReportPhase(turningAction, context);
 
     // THE state assertion: the clause's mutation landed — prize moved.
-    expect(world.getLocation(prize.id)).toBe(story.entityId('shed')!);
+    expect(world.getLocation(prize.id)).toBe('shed');
     expect(events.some((e) => e.type === 'if.event.turned')).toBe(true);
   });
 
@@ -294,7 +296,7 @@ end phrase`));
   in the Shed
 
   A statue.`));
-    const statue = world.getEntity(story.entityId('statue')!)!;
+    const statue = world.getEntity('statue')!;
 
     const context: any = {
       world,

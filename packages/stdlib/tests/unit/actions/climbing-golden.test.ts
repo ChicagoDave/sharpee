@@ -11,7 +11,7 @@
 import { describe, test, expect, beforeEach } from 'vitest';
 import { climbingAction } from '../../../src/actions/standard/climbing';
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType, WorldModel, EntityType, RoomTrait, Direction } from '@sharpee/world-model';
+import { TraitType, WorldModel, EntityType, RoomTrait, Direction, ActorTrait } from '@sharpee/world-model';
 import {
   createRealTestContext,
   expectEvent,
@@ -133,7 +133,7 @@ describe('climbingAction (Golden Pattern)', () => {
       });
 
       const player = world.createEntity('yourself', EntityType.ACTOR);
-      player.add({ type: TraitType.ACTOR, isPlayer: true });
+      player.add(new ActorTrait({ isPlayer: true }));
       world.setPlayer(player.id);
       world.moveEntity(player.id, room.id);
 
@@ -158,7 +158,7 @@ describe('climbingAction (Golden Pattern)', () => {
       container.add({ type: TraitType.CONTAINER });
 
       const player = world.createEntity('yourself', EntityType.ACTOR);
-      player.add({ type: TraitType.ACTOR, isPlayer: true });
+      player.add(new ActorTrait({ isPlayer: true }));
       world.setPlayer(player.id);
       world.moveEntity(player.id, container.id);
 
@@ -202,7 +202,7 @@ describe('climbingAction (Golden Pattern)', () => {
       roomTrait.exits[Direction.UP]!.destination = attic.id;
       
       const player = world.createEntity('yourself', EntityType.ACTOR);
-      player.add({ type: TraitType.ACTOR, isPlayer: true });
+      player.add(new ActorTrait({ isPlayer: true }));
       world.setPlayer(player.id);
       world.moveEntity(player.id, groundFloor.id);
       
@@ -245,7 +245,7 @@ describe('climbingAction (Golden Pattern)', () => {
       });
 
       const player = world.createEntity('yourself', EntityType.ACTOR);
-      player.add({ type: TraitType.ACTOR, isPlayer: true });
+      player.add(new ActorTrait({ isPlayer: true }));
       world.setPlayer(player.id);
       world.moveEntity(player.id, attic.id);
 
@@ -408,7 +408,7 @@ describe('climbingAction (Golden Pattern)', () => {
       roomTrait.exits[Direction.UP]!.destination = room2.id;
       
       const player = world.createEntity('yourself', EntityType.ACTOR);
-      player.add({ type: TraitType.ACTOR, isPlayer: true });
+      player.add(new ActorTrait({ isPlayer: true }));
       world.setPlayer(player.id);
       world.moveEntity(player.id, room1.id);
       
@@ -475,7 +475,7 @@ describe('climbingAction (Golden Pattern)', () => {
       roomTrait.exits = { [Direction.UP]: { destination: attic.id } };
 
       const player = world.createEntity('yourself', EntityType.ACTOR);
-      player.add({ type: TraitType.ACTOR, isPlayer: true });
+      player.add(new ActorTrait({ isPlayer: true }));
       world.setPlayer(player.id);
       world.moveEntity(player.id, groundFloor.id);
 
@@ -508,7 +508,7 @@ describe('climbingAction (Golden Pattern)', () => {
       atticRoom.exits = { [Direction.DOWN]: { destination: groundFloor.id } };
 
       const player = world.createEntity('yourself', EntityType.ACTOR);
-      player.add({ type: TraitType.ACTOR, isPlayer: true });
+      player.add(new ActorTrait({ isPlayer: true }));
       world.setPlayer(player.id);
       world.moveEntity(player.id, attic.id);
 

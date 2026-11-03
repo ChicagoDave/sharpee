@@ -66,7 +66,7 @@ function fixtureRandom(masterSeed = 12345): RandomService {
 function load() {
   const { story, world, player, phase } = bootEngine(SOURCE, 7);
   const sounds: ISound[] = [];
-  const entity = (irId: string): IFEntity => world.getEntity(story.entityId(irId)!)!;
+  const entity = (irId: string): IFEntity => world.getEntity(irId)!;
   /** One NPC turn through the engine's actor phase (the engine's own call shape). */
   const tick = (turn: number): ISemanticEvent[] =>
     phase.onAfterAction({

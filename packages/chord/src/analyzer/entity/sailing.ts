@@ -12,7 +12,7 @@
  * Owner context: @sharpee/chord analyzer, entity-block line builders.
  *
  * References:
- * - ADR-375 D1 — the gate: `sailing-needs-use`, `sailing-not-open`.
+ * - ADR-375 D1 — `sailing-not-open`; `sailing-needs-use` is validateIR's (ADR-389 D4).
  * - ADR-375 D4 — wind on the expanse; `sailing-without-wind`, `sailing-and-pace`.
  * - ADR-375 D5 — the block: `sailing-gap`, `sailing-overlap`, `sailing-no-calm`.
  * - ADR-375 D7 — sails: `sails-missing-start`, `sails-unknown-setting`,
@@ -42,15 +42,8 @@ export const sailingBuilder: EntityLineBuilder = {
     const offending = windLine?.span ?? block?.span ?? sailLines[0]?.span ?? naval?.span;
     if (!offending) return;
 
-    // D1: the gate — every word needs the use line; reported once per block.
-    if (!context.usedExtensions.has('sailing')) {
-      context.diagnostics.error(
-        'analysis.sailing-needs-use',
-        `\`${name}\` writes \`use sailing\` vocabulary — add \`use sailing\` to the story header.`,
-        offending,
-      );
-      return;
-    }
+    // D1: every word needs the use line — validateIR refuses the lowered
+    // wind, block and sails without it (ADR-389 D4).
 
     // D4: wind is the expanse's line.
     if (windLine) {

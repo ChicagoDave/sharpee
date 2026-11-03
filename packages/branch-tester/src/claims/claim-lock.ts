@@ -217,7 +217,7 @@ export async function proposeLock(request: LockRequest): Promise<LockProposal> {
     if (irId !== undefined) irById.set(entity.id, irId);
   }
   const roomOf = (): string | undefined => {
-    const player = world.getPlayer();
+    const player = world.playerCharacter;
     const room = player && world.getContainingRoom(player.id);
     return room ? irIdOf(room) : undefined;
   };
@@ -252,7 +252,7 @@ export async function proposeLock(request: LockRequest): Promise<LockProposal> {
   const hasBootCard = document.cards.some((card) => card.type === 'boot');
   const prefixIsTyped = (index: number) => !(hasBootCard && index === 0);
   const labelRoom = (): string | undefined => {
-    const player = world.getPlayer();
+    const player = world.playerCharacter;
     const room = player && world.getContainingRoom(player.id);
     return room?.name;
   };
@@ -291,7 +291,7 @@ export async function proposeLock(request: LockRequest): Promise<LockProposal> {
     if (irId === undefined || things.includes(irId)) return;
     const entity = entityById.get(irId);
     if (!entity || entity.kinds.some((kind) => kind.name === 'room')) return;
-    if (runtimeId === world.getPlayer()?.id) return;
+    if (runtimeId === world.playerCharacter.id) return;
     things.push(irId);
   };
   const verbs: string[] = [];
@@ -388,7 +388,7 @@ function offerOf(
     const room = nameOf(cardRoom);
     if (room) out.push({ sentence: `the player is in ${room}` });
   }
-  const player = world.getPlayer();
+  const player = world.playerCharacter;
   if (player) {
     for (const [id, parent] of card.place) {
       if (parent !== player.id || boot.place.get(id) === player.id) continue;

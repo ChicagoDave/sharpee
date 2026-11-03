@@ -18,7 +18,8 @@ import {
   IParsedCommand,
   RoomTrait,
   OpenableTrait,
-  EntityType
+  EntityType,
+  ActorTrait,
 } from '@sharpee/world-model';
 import { RandomService } from '@sharpee/core';
 import { createFixtureRandomService } from '../test-support/fixture-random-service';
@@ -85,7 +86,7 @@ describe('createGrueDeathTransformer', () => {
     }));
 
     player = world.createEntity('player', EntityType.ACTOR);
-    player.add({ type: 'actor' });
+    player.add(new ActorTrait({ isPlayable: true }));
     world.moveEntity(player.id, darkRoom.id);
     world.setPlayer(player.id);
   });

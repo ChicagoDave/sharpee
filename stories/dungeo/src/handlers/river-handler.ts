@@ -17,8 +17,7 @@ import { RiverNavigationTrait, InflatableTrait } from '../traits';
  * Check if player is in an inflated boat
  */
 function isPlayerInBoat(world: WorldModel): boolean {
-  const player = world.getPlayer();
-  if (!player) return false;
+  const player = world.playerCharacter;
 
   const playerLocation = world.getLocation(player.id);
   if (!playerLocation) return false;
@@ -34,8 +33,7 @@ function isPlayerInBoat(world: WorldModel): boolean {
  * Get destination room ID from going command
  */
 function getDestinationRoom(world: WorldModel, direction: string): string | null {
-  const player = world.getPlayer();
-  if (!player) return null;
+  const player = world.playerCharacter;
 
   // Get containing room (handles being in boat in room)
   const containingRoom = world.getContainingRoom(player.id);
@@ -71,8 +69,7 @@ function getDirection(parsed: IParsedCommand): string | null {
  * Check if player is on the rainbow (can walk to/from water rooms)
  */
 function isPlayerOnRainbow(world: WorldModel): boolean {
-  const player = world.getPlayer();
-  if (!player) return false;
+  const player = world.playerCharacter;
 
   const containingRoom = world.getContainingRoom(player.id);
   if (!containingRoom) return false;

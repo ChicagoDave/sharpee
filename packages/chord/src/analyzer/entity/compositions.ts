@@ -23,9 +23,7 @@
  * - ADR-215 — extension vocabulary, `use` gating, and the typed config set.
  */
 import type { CreateDecl } from '../../ast.js';
-import { KIND_NOUNS } from '../../catalog.js';
 import type { IRPersonalityEntry } from '../../ir.js';
-import { manifestForAdjective } from '../../manifests/index.js';
 import type { EntityBuildContext, EntityLineBuilder } from './context.js';
 
 export const compositionsBuilder: EntityLineBuilder = {
@@ -77,53 +75,9 @@ export const compositionsBuilder: EntityLineBuilder = {
       if (comp.article) kinds.push(built);
       else traits.push(built);
 
-      // ADR-215: extension vocabulary is admitted only when its `use` is
-      // declared (core manifests — npc — are always admitted), and its
-      // `with`-fields are the manifest's closed, typed set — unknown keys
-      // and mistyped values are compile errors, never a silent drop at the
-      // loader. `[ … ]` list values exist only as manifest list fields.
-      if (!comp.article) {
-        const contributed = manifestForAdjective(built.name);
-        if (!contributed) {
-          for (const cfg of comp.config) {
-            if (cfg.valueKind === 'list') {
-              context.diagnostics.error(
-                'analysis.config-list-host',
-                `\`[ … ]\` list values belong to extension fields that declare them (e.g. \`patrol route [ … ]\`) — \`${built.name}\` has none.`,
-                cfg.span,
-              );
-            }
-          }
-        }
-        if (contributed) {
-          if (!contributed.manifest.core && !context.usedExtensions.has(contributed.manifest.name)) {
-            context.diagnostics.error(
-              'analysis.extension-not-used',
-              `\`${built.name}\` is \`${contributed.manifest.name}\` extension vocabulary — add \`use ${contributed.manifest.name}\` to the story header.`,
-              comp.span,
-            );
-          } else {
-            for (const cfg of comp.config) {
-              const key = cfg.key.join(' ');
-              const field = contributed.adjective.fields.find((f) => f.key === key);
-              if (!field) {
-                const known = contributed.adjective.fields.map((f) => f.key).join(', ');
-                context.diagnostics.error(
-                  'analysis.extension-config-key',
-                  `\`${key}\` is not a \`${built.name}\` field — known fields: ${known}.`,
-                  cfg.span,
-                );
-              } else if (field.valueKind !== cfg.valueKind) {
-                context.diagnostics.error(
-                  'analysis.extension-config-value',
-                  `\`${key}\` takes a ${field.valueKind} value, not ${cfg.valueKind === 'name' ? 'an entity name' : `a ${cfg.valueKind}`}.`,
-                  cfg.span,
-                );
-              }
-            }
-          }
-        }
-      }
+      // ADR-215: extension vocabulary is admitted only under its `use`
+      // line, and its `with`-fields are the manifest's closed, typed set —
+      // validateIR refuses both over the lowered composition (ADR-389 D4).
     }
 
     checkKindLine(decl, context);
@@ -143,16 +97,9 @@ export const compositionsBuilder: EntityLineBuilder = {
 function checkKindLine(decl: CreateDecl, context: EntityBuildContext): void {
   const name = decl.name.words.join(' ');
   const kindIndex = decl.compositions.findIndex((c) => c.article !== null);
-  if (kindIndex === -1) {
-    const bareKind = decl.compositions.some((c) => KIND_NOUNS.has(c.words.join(' ').toLowerCase()));
-    if (bareKind) return;
-    context.diagnostics.error(
-      'analysis.missing-kind-noun',
-      `\`${name}\` names no kind. Begin its block with one: \`a room\`, \`a door\`, \`a person\`, \`a container\`, \`a supporter\`, \`a region\`, or \`a thing\` for anything that is not a room, door, person, container, supporter or region.`,
-      decl.name.span,
-    );
-    return;
-  }
+  // ADR-359 D1: a block that names no kind is refused by validateIR over the
+  // lowered entity (ADR-389 D4); with no kind there is nothing to lead.
+  if (kindIndex === -1) return;
   if (kindIndex > 0) {
     const kind = decl.compositions[kindIndex];
     context.diagnostics.error(

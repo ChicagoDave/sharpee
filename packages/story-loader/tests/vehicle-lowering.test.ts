@@ -21,6 +21,7 @@ import {
   VehicleTrait,
   WorldModel,
   type IFEntity,
+  ActorTrait,
 } from '@sharpee/world-model';
 import { EngineRandomService } from '@sharpee/engine';
 import { createStory, type ChordStory } from '../src';
@@ -164,6 +165,7 @@ function boot(): { story: ChordStory; world: WorldModel; byName: (name: string) 
   const world = new WorldModel();
   story.initializeWorld(world);
   const player = story.createPlayer(world);
+  player.add(new ActorTrait({ isPlayable: true }));
   world.setPlayer(player.id);
   const byName = (name: string) => {
     const found = world.getAllEntities().find((e) => e.name === name);
@@ -291,7 +293,7 @@ describe('rooms aboard and `to outside` (ADR-366 D7)', () => {
     const { world, byName } = boot();
     const airlock = byName('Airlock');
     const sparrow = byName('Sparrow');
-    const ctx = { world, actorId: world.getPlayer()!.id, random: new EngineRandomService(1) };
+    const ctx = { world, actorId: world.playerCharacter.id, random: new EngineRandomService(1) };
     expect(RoomBehavior.resolveExit(airlock, Direction.WEST, ctx)).toEqual({ kind: 'exit', destination: byName('Harbour').id });
     world.moveEntity(sparrow.id, byName('Reef').id);
     expect(RoomBehavior.resolveExit(airlock, Direction.WEST, ctx)).toEqual({ kind: 'exit', destination: byName('Reef').id });

@@ -12,7 +12,8 @@ import {
   WorldModel,
   IdentityTrait,
   CapabilitySharedData,
-  EntityType
+  EntityType,
+  ActorTrait,
 } from '@sharpee/world-model';
 import { TrollTrait } from '../../traits/troll-trait';
 import { TrollReceivingBehavior } from './troll-receiving-behavior';
@@ -31,7 +32,7 @@ describe('TrollReceivingBehavior', () => {
     room.add({ type: 'room' });
 
     player = world.createEntity('player', EntityType.ACTOR);
-    player.add({ type: 'actor' });
+    player.add(new ActorTrait({ isPlayable: true }));
     world.moveEntity(player.id, room.id);
     world.setPlayer(player.id);
 

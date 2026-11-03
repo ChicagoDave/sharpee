@@ -18,7 +18,8 @@ function createMockWorld(): WorldModel {
   return {
     getLocation: vi.fn().mockReturnValue('room-1'),
     getEntity: vi.fn().mockReturnValue(null),
-    getPlayer: vi.fn().mockReturnValue({ id: 'player' }),
+    hasPlayerCharacter: true,
+    playerCharacter: { id: 'player' },
     getAllEntities: vi.fn().mockReturnValue([]),
     getContents: vi.fn().mockReturnValue([]),
   } as unknown as WorldModel;

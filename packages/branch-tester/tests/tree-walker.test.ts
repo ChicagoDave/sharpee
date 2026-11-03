@@ -104,7 +104,8 @@ function stubHarness(options: StubOptions = {}) {
     let room = 'Iron Gates';
     let ending: { kind: string; messageId?: string; cause?: string } | undefined;
     const world = {
-      getPlayer: () => ({ id: 'player' }),
+      hasPlayerCharacter: true,
+      playerCharacter: { id: 'player' },
       getLocation: () => 'room-1',
       // The loader stamps every Chord entity with its IR id; the stub's room
       // carries its slug there so room tracking (ADR-356 D5) reads a real key.

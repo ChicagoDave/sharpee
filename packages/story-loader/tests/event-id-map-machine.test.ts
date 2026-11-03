@@ -11,7 +11,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { compile, StoryIR } from '@sharpee/chord';
 import { StateMachinePlugin } from '@sharpee/plugin-state-machine';
-import { IFEntity, WorldModel } from '@sharpee/world-model';
+import { IFEntity, WorldModel, ActorTrait } from '@sharpee/world-model';
 import type { TurnPlugin } from '@sharpee/plugins';
 import { ChordStory, createStory } from '../src';
 import { stubStoryEngine, recordingPluginRegistry } from './helpers/stub-story-engine';
@@ -82,6 +82,7 @@ describe('ADR-256 machine `when event` seam translates the Chord event id (REAL-
     world = new WorldModel();
     story.initializeWorld(world);
     player = story.createPlayer(world);
+    player.add(new ActorTrait({ isPlayable: true }));
     world.setPlayer(player.id);
     const plugins: TurnPlugin[] = [];
     story.onEngineReady(stubStoryEngine({ getPluginRegistry: () => recordingPluginRegistry(plugins) }));

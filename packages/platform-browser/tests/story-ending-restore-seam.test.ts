@@ -18,7 +18,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { WorldModel } from '@sharpee/world-model';
+import { WorldModel, ActorTrait } from '@sharpee/world-model';
 import type { IStoryEnding } from '@sharpee/if-domain';
 import { BrowserClient } from '../src/BrowserClient';
 
@@ -99,6 +99,7 @@ function makeClient(): { client: BrowserClient; input: HTMLInputElement } {
 function makeWorld(ending?: IStoryEnding): WorldModel {
   const world = new WorldModel();
   const player = world.createEntity('you', 'actor' as any);
+  player.add(new ActorTrait({ isPlayable: true }));
   world.setPlayer(player.id);
   const room = world.createEntity('Test Room', 'room' as any);
   world.moveEntity(player.id, room.id);

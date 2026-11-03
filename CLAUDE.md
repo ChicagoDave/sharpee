@@ -68,23 +68,6 @@ Each package owns its own conventions. Read the relevant file when working in th
 | `packages/parser-en-us`   | Grammar patterns (ADR-087), story grammar extension                      | `packages/parser-en-us/CLAUDE.md`    |
 | `packages/lang-en-us`     | User-facing text, message ID mappings, formatter chain (ADR-158)         | `packages/lang-en-us/CLAUDE.md`      |
 
-## Logic Location
-
-Be deliberate about where logic belongs:
-
-| Layer               | Responsibility                                | Examples                            |
-| ------------------- | --------------------------------------------- | ----------------------------------- |
-| **engine**          | Turn cycle, command execution, event dispatch | SchedulerService, NPC turn phase    |
-| **world-model**     | Traits, behaviors, entity state               | LightSourceBehavior, ContainerTrait |
-| **world-model/src/world** (systems) | One rule over the whole world with one home, consulted by every mover and action that asks its question (ADR-379); a rule is a system once more than one mover, action, or Chord condition asks it | TraversalBehavior.wayFor, VisibilityBehavior |
-| **stdlib**          | Standard actions, common patterns             | Opening action, guard behavior      |
-| **parser-{locale}** | Grammar patterns, command parsing             | `core-grammar.ts`, verb patterns    |
-| **lang-{locale}**   | All user-facing text                          | Error messages, descriptions        |
-| **story**           | Game-specific content and overrides           | Custom NPCs, puzzle logic           |
-| **client**          | UI rendering, input handling                  | React components, terminal I/O      |
-
-Ask: "Where does this belong?" before implementing new features.
-
 ## Always Trust the Architecture
 
 When implementing new features, **extend existing patterns rather than inventing workarounds**.
@@ -137,43 +120,12 @@ Always use `dist/cli/sharpee.js` for testing — much faster than loading indivi
 
 ### Transcript Testing — ALWAYS USE THE BUNDLE
 
-**CRITICAL**: Always use the bundle (`dist/cli/sharpee.js`) for transcript testing. It loads instantly (~170ms) vs the slow package version (~5+ seconds).
+**CRITICAL**: Always use the bundle (`dist/cli/sharpee.js`) for transcript testing, never
+`packages/transcript-tester/dist/cli.js` (5x slower). There is NO default story.
 
-```bash
-# CORRECT — Use bundle for ALL transcript testing
-node dist/cli/sharpee.js --test stories/dungeo/walkthroughs/wt-01-get-torch-early.transcript
-
-# Run walkthrough chain (state persists between transcripts)
-node dist/cli/sharpee.js --test --chain stories/dungeo/walkthroughs/wt-*.transcript
-
-# Interactive play mode (--story required — there is NO default story)
-node dist/cli/sharpee.js --play --story stories/dungeo
-
-# WRONG — Don't use this (5x slower, loads all packages)
-# node packages/transcript-tester/dist/cli.js stories/dungeo ...
-```
-
-**Story selection (no default)**: the old `stories/dungeo` default is removed
-(2026-07-19). For `--test`, the story is inferred from the transcript paths'
-`stories/<name>/` prefix (mixed prefixes = hard error; a lone `.story` file in
-that directory is preferred over a compiled dist). `--play`/`--exec` require an
-explicit `--story <dir | .story file>`; for Chord stories pass the `.story`
-FILE (e.g. `branch-stories/fernhill/fernhill.story`), not the directory.
-
-**Walkthrough Testing:**
-```bash
-# Stop on first failure
-node dist/cli/sharpee.js --test --chain stories/dungeo/walkthroughs/wt-*.transcript --stop-on-failure
-```
-
-**Unit Transcript Testing:**
-```bash
-# Run single unit test transcript
-node dist/cli/sharpee.js --test stories/dungeo/tests/transcripts/rug-trapdoor.transcript
-
-# Run all unit test transcripts
-node dist/cli/sharpee.js --test stories/dungeo/tests/transcripts/*.transcript
-```
+> The `--test`, `--chain`, `--play` and `--exec` invocations, story-selection rules,
+> walkthrough chains and unit transcripts: the `transcript-testing` skill
+> (`.claude/skills/transcript-testing/`).
 
 **Dungeo is a regression floor only up to its own requirements** (David, 2026-10-25).
 Where a decision takes the platform past what Dungeo ever required of it (the parser
@@ -190,11 +142,6 @@ step 6 of the parser review (ADR-385): records before it keep their per-line cla
 - Chain runs are deterministic at the pinned seed: results are identical run-to-run (only wall-clock timings vary). **A single run is sufficient** — never re-run the chain to "check for flakiness"; the run-twice habit is retired (ADR-293 Phase D, verified 3× byte-identical 2026-08-02).
 
 Transcripts live in `stories/{story}/tests/transcripts/*.transcript`.
-
-## Project Structure
-
-- Actions follow validate/execute/report pattern (ADR-051).
-- Event handlers for custom logic (ADR-052).
 
 ## Work Patterns
 
@@ -219,11 +166,6 @@ Transcripts live in `stories/{story}/tests/transcripts/*.transcript`.
 - After completing significant chunks of work.
 - After key decisions or discoveries.
 - After test runs or builds.
-
-**Hooks installed** (`.claude/settings.json`):
-
-- **PreCompact**: Reminds to finalize session summary before compacting.
-- **Stop**: Monitors transcript size and reminds when context is growing large.
 
 ### Context Management
 

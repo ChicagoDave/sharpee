@@ -26,7 +26,7 @@ export const putUnderAction: Action = {
 
   validate(context: ActionContext): ValidationResult {
     const { world } = context;
-    const player = world.getPlayer();
+    const player = world.playerCharacter;
     if (!player) {
       return { valid: false, error: 'error.no_player' };
     }
@@ -68,8 +68,7 @@ export const putUnderAction: Action = {
 
   execute(context: ActionContext): void {
     const { world } = context;
-    const player = world.getPlayer();
-    if (!player) return;
+    const player = world.playerCharacter;
 
     const playerLocation = world.getLocation(player.id);
     if (!playerLocation) return;

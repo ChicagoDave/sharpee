@@ -23,8 +23,7 @@ import { CHIMNEY_BLOCKED_ACTION_ID, ChimneyBlockReason } from '../actions/chimne
  * Check if player is in the Studio
  */
 function isInStudio(world: WorldModel): boolean {
-  const player = world.getPlayer();
-  if (!player) return false;
+  const player = world.playerCharacter;
 
   const playerLocation = world.getLocation(player.id);
   if (!playerLocation) return false;
@@ -89,8 +88,7 @@ function getLampId(world: WorldModel): string | null {
  * Get player's direct inventory (items carried)
  */
 function getPlayerInventory(world: WorldModel): string[] {
-  const player = world.getPlayer();
-  if (!player) return [];
+  const player = world.playerCharacter;
 
   const contents = world.getContents(player.id);
   return contents.map(entity => entity.id);

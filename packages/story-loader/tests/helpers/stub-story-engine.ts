@@ -74,7 +74,7 @@ export function stubStoryEngine(overrides: Partial<StoryEngine> = {}): StoryEngi
     getWorld: () => world,
     getContext: () => ({
       currentTurn: 0,
-      player: world.getPlayer() ?? (undefined as never),
+      player: world.playerCharacter ?? (undefined as never),
       history: [],
       metadata: { started: new Date(0), lastPlayed: new Date(0) },
     }),

@@ -62,7 +62,7 @@ describe('take-points belong to the protagonist (ADR-129; ADR-328)', () => {
     const { world, thief, jewel } = buildWorld();
     expect(world.getScore()).toBe(0);
 
-    take(world, world.getPlayer()!, jewel, thief);
+    take(world, world.playerCharacter, jewel, thief);
 
     expect(world.getLocation(jewel.id)).toBe(thief.id);
     expect(world.getScore()).toBe(0);

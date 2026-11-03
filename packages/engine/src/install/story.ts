@@ -4,7 +4,7 @@
 
 import { WorldModel, IFEntity, type IGameEvent, type SimpleEventHandler } from '@sharpee/world-model';
 import { type LanguageProvider, type IChannelRegistry, type ClientCapabilities, type Parser } from '@sharpee/if-domain';
-import { type INpcService, type ActSlots, type ActResult } from '@sharpee/stdlib';
+import { type INpcService, type ActSlots, type ActResult, type Action } from '@sharpee/stdlib';
 import { EventProcessor } from '@sharpee/event-processor';
 import { PluginRegistry } from '@sharpee/plugins';
 import { EventEmitter } from '../events/event-emitter.js';
@@ -311,9 +311,10 @@ export interface Story {
   createPlayer(world: WorldModel): IFEntity;
   
   /**
-   * Get custom actions for this story (optional)
+   * Get custom actions for this story (optional). Each is a four-phase
+   * stdlib `Action`; the install step registers them on the action registry.
    */
-  getCustomActions?(): any[];
+  getCustomActions?(): Action[];
   
   /**
    * Get custom vocabulary for this story (optional)

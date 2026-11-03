@@ -131,10 +131,10 @@ async function boot(source: string, seed = 11): Promise<Booted> {
   const engine = new GameEngine({ world, parser, language, perceptionService: new PerceptionService(), config: { seed, onEvent: (e) => stream.push(e) } });
   engine.installStory(story);
   await engine.start();
-  const id = (irId: string) => story.entityId(irId)!;
+  const id = (irId: string) => irId;
   const errand = () => (world.getEntity(id('wizard'))?.get(TraitType.CHARACTER_MODEL) as CharacterModelTrait | undefined)?.goalState['errand'];
   return {
-    engine, story, world, player: world.getPlayer()!, stream, id,
+    engine, story, world, player: world.playerCharacter, stream, id,
     step: () => errand()?.currentStep,
     active: () => errand()?.active,
     at: (irId) => world.getLocation(id(irId)),

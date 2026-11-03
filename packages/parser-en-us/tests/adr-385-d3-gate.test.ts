@@ -43,7 +43,7 @@ describe('the gate asks the matcher (ADR-385 D3, D4, D6)', () => {
     room.add(new RoomTrait());
     room.add(new ContainerTrait());
     player = world.createEntity('Alex', 'actor');
-    player.add(new ActorTrait());
+    player.add(new ActorTrait({ isPlayable: true }));
     player.add(new ContainerTrait());
     world.moveEntity(player.id, room.id);
     world.setPlayer(player.id);

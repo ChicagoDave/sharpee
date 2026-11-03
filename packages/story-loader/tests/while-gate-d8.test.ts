@@ -11,7 +11,7 @@
 import { describe, expect, it } from 'vitest';
 import { compile, StoryIR } from '@sharpee/chord';
 import type { ISemanticEvent } from '@sharpee/core';
-import { IFEntity, WorldModel } from '@sharpee/world-model';
+import { IFEntity, WorldModel, ActorTrait } from '@sharpee/world-model';
 import { CHORD_STATE_PREFIX, ChordStory, clauseOccurrenceKey, createStory } from '../src';
 import { runValidatePhase, runExecutePhase, runReportPhase, runBlockedPhase } from '@sharpee/stdlib';
 
@@ -31,6 +31,7 @@ function load(source: string): { story: ChordStory; world: WorldModel; playerId:
   const world = new WorldModel();
   story.initializeWorld(world);
   const player = story.createPlayer(world);
+  player.add(new ActorTrait({ isPlayable: true }));
   world.setPlayer(player.id);
   return { story, world, playerId: player.id };
 }
@@ -218,7 +219,7 @@ type Loaded = ReturnType<typeof load>;
 
 /** Drive one full interceptor firing the way a stdlib action does. */
 function fireInterceptor(loaded: Loaded, irId: string, actionId = 'if.action.taking') {
-  const entity = loaded.world.getEntity(loaded.story.entityId(irId)!)!;
+  const entity = loaded.world.getEntity(irId)!;
   const lookup = loaded.world.getInterceptorForAction(entity, actionId);
   expect(lookup, `interceptor bound for ${actionId} on ${irId}`).toBeDefined();
   const data: Record<string, unknown> = {};
@@ -242,7 +243,7 @@ function dispatch(loaded: Loaded, verb: string, irId: string) {
   const action = (loaded.story.getCustomActions() as DispatchAction[]).find(
     (a) => a.id === `chord.action.${verb}`,
   )!;
-  const target = loaded.world.getEntity(loaded.story.entityId(irId)!)!;
+  const target = loaded.world.getEntity(irId)!;
   const ctx = {
     world: loaded.world,
     player: loaded.world.getEntity(loaded.playerId)!,

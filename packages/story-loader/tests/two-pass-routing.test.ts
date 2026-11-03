@@ -30,7 +30,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import { compile } from '@sharpee/chord';
-import { WorldModel } from '@sharpee/world-model';
+import { WorldModel, ActorTrait } from '@sharpee/world-model';
 import { createStory } from '../src';
 import { counterKey } from '../src/state-keys';
 
@@ -184,6 +184,7 @@ function load() {
   const world = new WorldModel();
   story.initializeWorld(world);
   const player = story.createPlayer(world);
+  player.add(new ActorTrait({ isPlayable: true }));
   world.setPlayer(player.id);
   return { story, world, player };
 }
@@ -196,7 +197,7 @@ type Loaded = ReturnType<typeof load>;
  * re-implementation of it.
  */
 function fire(cw: Loaded, irId: string, actionId: string) {
-  const target = cw.world.getEntity(cw.story.entityId(irId)!)!;
+  const target = cw.world.getEntity(irId)!;
   const lookup = cw.world.getInterceptorForAction(target, actionId)!;
   const data = {};
   lookup.interceptor.preValidate?.(target, cw.world, cw.player.id, data);

@@ -93,12 +93,12 @@ import {
   CoordinatesExpr,
   TopicRow,
 } from './ast.js';
-import { capabilityKeyOf, CLIENT_CAPABILITY_FLAGS, EVENT_VERBS, TAILED_EVENT_VERBS, KIND_NOUNS, MESSAGE_OVERRIDE_ALIASES, PLATFORM_STATE_PAIRS, PRONOUN_CASES, PRONOUN_WORDS, SCOPE_REQUIREMENT_PREDICATES, STARTS_STATE_PAIRINGS, STATE_ADJECTIVES, TRAIT_ADJECTIVES } from './catalog.js';
+import { capabilityKeyOf, CLIENT_CAPABILITY_FLAGS, EVENT_VERBS, TAILED_EVENT_VERBS, MESSAGE_OVERRIDE_ALIASES, PLATFORM_STATE_PAIRS, PRONOUN_CASES, PRONOUN_WORDS, SCOPE_REQUIREMENT_PREDICATES, STARTS_STATE_PAIRINGS, STATE_ADJECTIVES, TRAIT_ADJECTIVES } from './catalog.js';
 import { STDLIB_MANIFEST } from './stdlib-manifest.js';
 import { expandReadings, lowerParts, renderPattern, samePatternShape, seatTable, type LowerableAction, type SeatProblem, type SeatTable } from './patterns.js';
 import type { PatternElement } from '@sharpee/if-domain';
 import { CHARACTER_MANIFEST } from './character-manifest.js';
-import { levenshtein } from './edit-distance.js';
+import { nearest } from './edit-distance.js';
 import { assignClauseIds } from './clause-ids.js';
 import { normalizeTopic } from './analyzer/topic.js';
 import { requiresOrderViolations, type OrderViolation } from './analyzer/requires.js';
@@ -111,12 +111,13 @@ import { collectVehicles, MOVEMENT_TABLE, placeIdsOf, type VehicleDecl, vehicleL
 export { normalizeTopic };
 import { buildSingleValuedAxes, provablyDisjoint, type SingleValuedAxes } from './condition-disjoint.js';
 import type { ScopeRequirementWord } from './catalog.js';
-import { EXTENSION_MANIFESTS, manifestForAdjective, manifestForKindNoun } from './manifests/index.js';
+import { EXTENSION_MANIFESTS, manifestForAdjective } from './manifests/index.js';
 import { collectExpanses, type ExpanseDecl } from './analyzer/expanses.js';
 import { entityIdOf, factIdOf, hasAdjectiveDecl, isKindDecl } from './analyzer/declared.js';
 import { PHRASEBOOK_REGISTRY } from './phrasebooks.js';
 import { DiagnosticBag } from './diagnostics.js';
 import { buildIdentity, emptyIdentity } from './identity.js';
+import { validateIR } from './validate-ir.js';
 import { CHORD_LANGUAGE_VERSION } from './version.js';
 import {
   exitRoomId,
@@ -1078,7 +1079,6 @@ export class Analyzer {
     // Pass 1: entities, aliases, states, phrases, named conditions.
     { name: 'collect', requires: [], run: (a) => a.collect() },
     { name: 'validateUses', requires: [], run: (a) => a.validateUses() },
-    { name: 'checkScoringUse', requires: ['collect', 'validateUses'], run: (a) => a.checkScoringUse() },
     // Built before the IR because it emits diagnostics; createIR spreads the
     // result in only when present.
     { name: 'buildHunger', requires: [], run: (a) => { a.hungerDef = a.buildHunger(); } },
@@ -1137,12 +1137,10 @@ export class Analyzer {
     { name: 'checkDuplicateExits', requires: ['applyExitTables'], run: (a) => a.checkDuplicateExits(a.builtIR().entities) },
     // A `pushing` row names a way the map already has (ADR-378 D6b), so it reads every room's exits.
     { name: 'checkPushingWays', requires: ['applyExitTables'], run: (a) => a.checkPushingWays(a.builtIR().entities) },
-    { name: 'checkCompositionLegality', requires: ['buildDeclarations'], run: (a) => a.checkCompositionLegality(a.builtIR()) },
     // The influencer may be declared after the resister.
     { name: 'checkInfluenceReferences', requires: ['buildDeclarations'], run: (a) => a.checkInfluenceReferences(a.builtIR()) },
     // Inline and override bindings synthesize temperament defs during entity build.
     { name: 'emitTemperaments', requires: ['buildDeclarations'], run: (a) => a.emitTemperaments() },
-    { name: 'checkAlterationTargets', requires: ['buildDeclarations'], run: (a) => a.checkAlterationTargets(a.builtIR()) },
     // An extension seats from its target's table, and a story action may be declared after its extension.
     { name: 'checkSeats', requires: ['buildDeclarations'], run: (a) => a.checkSeats(a.builtIR()) },
     // Bare `{…}` markers must name a declared phrase key.
@@ -1160,6 +1158,16 @@ export class Analyzer {
       requires: ['buildDeclarations', 'buildStartBlock', 'applyTopics', 'applyConversations', 'collectRegionMembers', 'applyExitTables'],
       run: (a) => {
         a.builtIR().identity = buildIdentity(a.builtIR());
+      },
+    },
+    // ADR-389 D4: the IR's own invariants, over the finished IR — the same
+    // function the loader calls once before it builds a world, so a rogue
+    // IR and a rogue story are refused by one rule.
+    {
+      name: 'validateIR',
+      requires: ['emitIdentity'],
+      run: (a) => {
+        for (const diagnostic of validateIR(a.builtIR())) a.diagnostics.add(diagnostic);
       },
     },
   ];
@@ -1246,18 +1254,6 @@ export class Analyzer {
           );
         }
       }
-    }
-  }
-
-  /**
-   * Scoring's constructs sit behind `use scoring`; a `score` declaration
-   * without it is reported once, at the first offending site, so scoring is
-   * on precisely when the header says so.
-   * Reference: ADR-261 D4 (D3: absent `use scoring` means no score).
-   */
-  private checkScoringUse(): void {
-    if (!this.usedExtensions.has('scoring') && this.scoreDecls.length > 0) {
-      this.reportScoringGate('score', this.scoreDecls[0].span);
     }
   }
 
@@ -1589,392 +1585,6 @@ export class Analyzer {
   }
 
   /**
-   * ADR-276 Phase 1 (census entries 9, 11–15): composition-legality rules
-   * migrated from story-loader — every rule here is derivable from the IR
-   * alone, so it reports as a collected compile diagnostic with a span; the
-   * loader keeps the same rules as first-throw defensive backstops for
-   * rogue IR. Mirrors loader.ts `applyTraitAdjectives` (conditional gate,
-   * `dark`, undeclared traits), `checkCuttableImplementations` (tool-gated
-   * gerunds), the player `wears` loop, and the patrol-route requirement.
-   */
-  private checkCompositionLegality(ir: StoryIR): void {
-    const traitDefs = new Map(ir.traits.map((t) => [t.name, t]));
-
-    for (const entity of ir.entities) {
-      // Census 17 (discovered in Phase 1 — the phrasebook fixtures compiled
-      // `a thing` clean): kind nouns are the closed catalog set the loader's
-      // entity builder switches on.
-      for (const k of entity.kinds) {
-        // ADR-366 D12, ADR-376 D2: an extension's kind noun is admitted only
-        // under its `use` line.
-        const contributedKind = manifestForKindNoun(k.name);
-        if (contributedKind && !contributedKind.core && !this.usedExtensions.has(contributedKind.name)) {
-          this.diagnostics.error(
-            `analysis.${contributedKind.name}-needs-use`,
-            `\`${entity.name}\`: \`a ${k.name}\` is \`use ${contributedKind.name}\` vocabulary — add \`use ${contributedKind.name}\` to the story header.`,
-            k.span,
-          );
-        } else if (!KIND_NOUNS.has(k.name) && !contributedKind) {
-          this.diagnostics.error(
-            'analysis.unknown-kind-noun',
-            `\`${entity.name}\`: unknown kind noun \`${k.name}\`.`,
-            k.span,
-          );
-        }
-        // ADR-359 D1: a kind cannot come and go, so it never takes `while`.
-        if (k.condition !== null) {
-          this.diagnostics.error(
-            'analysis.conditional-kind',
-            `\`${entity.name}\`: a kind cannot come and go — remove the \`while\` condition from \`a ${k.name}\`.`,
-            k.span,
-          );
-        }
-      }
-      // ADR-359 D1: `a thing` beside another kind names the fix — every
-      // kind but room and region is already a thing.
-      const hasThing = entity.kinds.some((k) => k.name === 'thing');
-      const kindWithThing = hasThing ? entity.kinds.find((k) => k.name !== 'thing') : undefined;
-      if (kindWithThing) {
-        this.diagnostics.error(
-          'analysis.thing-with-kind',
-          thingWithKindMessage(entity.name, kindWithThing.name),
-          kindWithThing.span,
-        );
-      } else if (entity.kinds.length > 1) {
-        // Census 18 (discovered in Phase 1): one kind noun per entity.
-        this.diagnostics.error(
-          'analysis.multiple-kind-nouns',
-          `\`${entity.name}\` declares more than one kind noun.`,
-          entity.kinds[1].span,
-        );
-      }
-
-      const isRoom = entity.kinds.some((k) => k.name === 'room');
-      for (const comp of entity.traits) {
-        // ADR-359 D1: a kind noun written bare (`scenery, container`) reads
-        // as a trait; name the fix instead of an undeclared-trait error.
-        if (KIND_NOUNS.has(comp.name)) {
-          if (hasThing && comp.name !== 'thing') {
-            this.diagnostics.error('analysis.thing-with-kind', thingWithKindMessage(entity.name, comp.name), comp.span);
-          } else {
-            this.diagnostics.error(
-              'analysis.kind-noun-needs-article',
-              `\`${entity.name}\`: \`${comp.name}\` is a kind and takes an article — write \`a ${comp.name}\`.`,
-              comp.span,
-            );
-          }
-          continue;
-        }
-        // ADR-369 D1: `transparent` is a container word, and unconditional —
-        // the flag is a property of the thing, not a state the story toggles.
-        // Checked ahead of the generic conditional gate so its message wins.
-        // ADR-371 D3: `settable` reads the thing's own `states, reversible:`
-        // line — a dial goes anywhere; a forward-only set is a phase, not a dial.
-        if (comp.name === 'settable') {
-          if (entity.states.length === 0) {
-            this.diagnostics.error(
-              'analysis.settable-states',
-              `\`settable\` needs the values to set \`${entity.name}\` to — add a \`states, reversible: <first>, <second>, …\` line to its block.`,
-              comp.span,
-            );
-            continue;
-          }
-          if (!entity.statesReversible) {
-            this.diagnostics.error(
-              'analysis.settable-irreversible',
-              `\`${entity.name}\` is settable but its states march forward only — a dial goes anywhere, so write \`states, reversible: …\`.`,
-              comp.span,
-            );
-            continue;
-          }
-        }
-        // ADR-374 D10: power is what is inside a device — so a switchable
-        // container, nothing else.
-        if (comp.name === 'powered') {
-          if (!entity.traits.some((t) => t.name === 'switchable')) {
-            this.diagnostics.error(
-              'analysis.powered-not-switchable',
-              `\`powered by\` says what \`${entity.name}\` needs inside it to run — a thing that runs is \`switchable\`. Add it beside \`powered by\`.`,
-              comp.span,
-            );
-            continue;
-          }
-          if ((entity.kinds[0]?.name ?? 'thing') !== 'container') {
-            this.diagnostics.error(
-              'analysis.powered-not-container',
-              `\`${entity.name}\` holds its power inside it, so it is \`a container\` — write \`a container, switchable, powered by …\`.`,
-              comp.span,
-            );
-            continue;
-          }
-        }
-        // ADR-374 D3: night vision is a property of whoever looks — a
-        // person, and unconditionally.
-        if (comp.name === 'night-vision') {
-          const kind = entity.kinds[0]?.name ?? 'thing';
-          if (kind !== 'person') {
-            this.diagnostics.error(
-              'analysis.night-vision-not-person',
-              `\`night-vision\` is how a person sees — \`${entity.name}\` is a ${kind}. Give it to the one who looks.`,
-              comp.span,
-            );
-            continue;
-          }
-          if (comp.condition !== null) {
-            this.diagnostics.error(
-              'analysis.conditional-composition-unsupported',
-              `\`night-vision\` is what \`${entity.name}\` is, not a state it changes — write it without \`while\`.`,
-              comp.span,
-            );
-            continue;
-          }
-        }
-        if (comp.name === 'transparent') {
-          const kind = entity.kinds[0]?.name ?? 'thing';
-          // ADR-366 D2, D3: a vehicle the player is in composes a container,
-          // and the enclosure rule reads `transparent` on it for seeing out.
-          if (kind !== 'container' && kind !== 'vehicle') {
-            this.diagnostics.error(
-              'analysis.transparent-not-container',
-              `\`transparent\` is a container word — \`${entity.name}\` is a ${kind}. A thing that shows what is inside it is \`a container, transparent\`.`,
-              comp.span,
-            );
-            continue;
-          }
-          if (comp.condition !== null) {
-            this.diagnostics.error(
-              'analysis.transparent-conditional',
-              `\`transparent\` is what \`${entity.name}\` is, not a state it changes — write it without \`while\`.`,
-              comp.span,
-            );
-            continue;
-          }
-        }
-        // ADR-373 D1/D4: `detachable` qualifies `attached to`, `fragile`
-        // qualifies `breakable` — neither means anything alone.
-        if (comp.name === 'detachable' && !entity.traits.some((t) => t.name === 'attached')) {
-          this.diagnostics.error(
-            'analysis.detachable-not-attached',
-            `\`detachable\` says how \`${entity.name}\` comes free of what holds it — add \`attached to <the thing>\` beside it.`,
-            comp.span,
-          );
-          continue;
-        }
-        if (comp.name === 'fragile' && !entity.traits.some((t) => t.name === 'breakable')) {
-          this.diagnostics.error(
-            'analysis.fragile-not-breakable',
-            `\`fragile\` says \`${entity.name}\` breaks when dropped or thrown — add \`breakable\` beside it.`,
-            comp.span,
-          );
-          continue;
-        }
-        // Census 14: conditional composition legality — room-`dark`, or a
-        // declared trait whose clauses are ALL NPC-behavior-shaped (`on
-        // every turn …`). `proper` has its own earlier gates (ADR-242 D1).
-        if (comp.condition !== null && comp.name !== 'proper') {
-          const def = traitDefs.get(comp.name);
-          const npcShaped =
-            def !== undefined && def.onClauses.length > 0 && def.onClauses.every((c) => c.binding === 'every-turn');
-          if (!(comp.name === 'dark' && isRoom) && !npcShaped) {
-            this.diagnostics.error(
-              'analysis.conditional-composition-unsupported',
-              `Conditional composition isn't supported for \`${comp.name}\` — move the condition inside the trait (\`on the player <action>\` clauses can test it) or split the behavior.`,
-              comp.span,
-            );
-            continue;
-          }
-        }
-        // Census 11: `dark` is room-only (the room builder consumes it).
-        if (comp.name === 'dark' && !isRoom) {
-          this.diagnostics.error('analysis.dark-rooms-only', '`dark` applies to rooms only.', comp.span);
-          continue;
-        }
-        // Census 10 (ADR-276 Phase 6): the hiding-position domain is the
-        // manifest's closed set (ratchet G3, one source with the loader).
-        if (comp.name === 'hiding-spot') {
-          const position = comp.config.find((c) => c.key === 'position')?.value;
-          if (position !== undefined && !STDLIB_MANIFEST.hidingPositions.includes(position)) {
-            const list = [...STDLIB_MANIFEST.hidingPositions];
-            const listed = `${list.slice(0, -1).join(', ')}, or ${list[list.length - 1]}`;
-            this.diagnostics.error(
-              'analysis.unknown-hiding-position',
-              `\`${position}\` is not a hiding position — use ${listed}.`,
-              comp.span,
-            );
-          }
-        }
-
-        // Census 9: a `patrol` NPC needs a route. A route whose entries all
-        // failed to resolve has already errored through the unknown-entity
-        // gate — only a MISSING route reports here (the loader's emptiness
-        // backstop stays for rogue IR).
-        if (comp.name === 'patrol' && !comp.config.some((c) => c.key === 'route')) {
-          this.diagnostics.error(
-            'analysis.patrol-needs-route',
-            'A `patrol` NPC needs `with route [ … ]` naming its rooms.',
-            comp.span,
-          );
-        }
-        // ADR-372 D5: a price is a whole number in a currency some playable
-        // character carries as a counter — the buyer's own purse.
-        if (comp.name === 'costs') {
-          const price = comp.config.find((c) => c.key === 'price');
-          const currency = comp.config.find((c) => c.key === 'currency');
-          if (price && !/^\d+$/.test(price.value)) {
-            this.diagnostics.error(
-              'analysis.costs-price',
-              `\`costs ${price.value}\` — a price is a whole number of a currency, e.g. \`costs 3 credits\`.`,
-              comp.span,
-            );
-          } else if (price && currency && !ir.entities.some((e) => e.isPlayable && e.counters.some((k) => k.name === currency.value))) {
-            this.diagnostics.error(
-              'analysis.costs-counter-unknown',
-              `\`costs ${price.value} ${currency.value}\` on \`${entity.name}\` — no playable character carries a \`${currency.value}\` counter, so nothing could pay. Give the player character \`counter ${currency.value} starts <n>\`.`,
-              comp.span,
-            );
-          }
-        }
-        // Census 15: neither a v1 adjective, nor extension vocabulary, nor
-        // a declared `define trait`.
-        if (!TRAIT_ADJECTIVES.has(comp.name) && !manifestForAdjective(comp.name) && !traitDefs.has(comp.name)) {
-          this.diagnostics.error(
-            'analysis.trait-not-declared',
-            `Trait \`${comp.name}\` is not declared (\`define trait ${comp.name}\`) and is not a v1 adjective.`,
-            comp.span,
-          );
-        }
-
-        // Census 4/6 (ADR-276 Phase 5): setting value domains from the
-        // manifest's schema slice. Extension traits run only when admitted —
-        // buildEntity's extension gates own the `use`-missing case. The
-        // number domain needs no check here: valueKind mismatch is already
-        // `analysis.extension-config-value` (census 5 was pre-gated).
-        const schema = STDLIB_MANIFEST.settingSchema[comp.name];
-        if (schema) {
-          const contributed = manifestForAdjective(comp.name);
-          const admitted =
-            !contributed || contributed.manifest.core || this.usedExtensions.has(contributed.manifest.name);
-          if (admitted) {
-            for (const cfg of comp.config) {
-              // Keyless v1 entity ref (`lockable with the iron key`): the
-              // parser stores it under the empty key; the schema's one
-              // entity-ref entry supplies the message label.
-              const label =
-                cfg.key !== '' ? cfg.key : Object.keys(schema).find((k) => schema[k] === 'entity-ref') ?? cfg.key;
-              const type = schema[label];
-              if (type === 'boolean' && cfg.value !== 'true' && cfg.value !== 'false') {
-                this.diagnostics.error(
-                  'analysis.setting-not-boolean',
-                  `\`${entity.name}\`: \`${label}\` takes \`true\` or \`false\`, got \`${cfg.value}\`.`,
-                  comp.span,
-                );
-              } else if (type === 'entity-ref' && cfg.valueKind === 'name' && !this.resolveConfigEntity(ir, cfg.value)) {
-                this.diagnostics.error(
-                  'analysis.setting-names-no-entity',
-                  `\`${cfg.value}\` (config \`${label}\`) names no entity.`,
-                  comp.span,
-                );
-              }
-            }
-          }
-        } else if (traitDefs.has(comp.name)) {
-          // Census 6 (declared traits, IR-internal): a `with <key> <name>`
-          // value resolves against the story's entities — mirroring the
-          // loader's duck-typing on valueKind exactly (the declared field
-          // type is not consulted; behavior parity over strictness).
-          for (const cfg of comp.config) {
-            if (cfg.valueKind === 'name' && !this.resolveConfigEntity(ir, cfg.value)) {
-              this.diagnostics.error(
-                'analysis.setting-names-no-entity',
-                `\`${cfg.value}\` (config \`${cfg.key}\`) names no entity.`,
-                comp.span,
-              );
-            }
-          }
-        }
-      }
-
-      // Census 12: items a role-eligible character wears must be wearable.
-      // Under ADR-327 D10 there is no compile-time player, so the scope is
-      // every `playable` character — the set that can actually hold the role.
-      if (entity.isPlayable) {
-        for (const wornId of entity.wears) {
-          const worn = ir.entities.find((e) => e.id === wornId);
-          if (worn && !worn.traits.some((t) => t.name === 'wearable')) {
-            this.diagnostics.error(
-              'analysis.worn-not-wearable',
-              `\`${wornId}\` is worn by the player but is not wearable.`,
-              worn.span,
-            );
-          }
-        }
-      }
-    }
-
-    // Census 13: tool-gated gerunds (ADR-230 D3c) — exactly one
-    // implementation. The Chord surfaces (entity clause, composed-trait
-    // clause) are the only surfaces a Chord story has: the ADR-090
-    // capability surface was reachable only through a TS hatch, and hatches
-    // are gone (ADR-361), so both halves are decided here.
-    // ADR-374 D6: only a listener hears — `after hearing` on anything else
-    // would never fire.
-    for (const entity of ir.entities) {
-      if (entity.traits.some((t) => t.name === 'listener')) continue;
-      for (const clause of entity.onClauses) {
-        if (clause.action !== 'hearing' || clause.binding === 'every-turn') continue;
-        this.diagnostics.error(
-          'analysis.hearing-not-listener',
-          `\`${entity.name}\` reacts to a sound but cannot hear one — add \`listener\` to it.`,
-          clause.span,
-        );
-      }
-    }
-
-    const TOOL_GATED_GERUNDS = [
-      { adjective: 'cuttable', gerund: 'cutting' },
-      { adjective: 'diggable', gerund: 'digging' },
-      { adjective: 'flammable', gerund: 'burning' }, // ADR-371 D2
-    ] as const;
-    const gerundSurface = (c: IROnClause, gerund: string): boolean =>
-      c.clauseKind === 'on' && c.action === gerund && c.binding !== 'every-turn';
-    for (const { adjective, gerund } of TOOL_GATED_GERUNDS) {
-      for (const entity of ir.entities) {
-        const site = entity.traits.find((t) => t.name === adjective);
-        if (!site) continue;
-        let surfaces = 0;
-        if (entity.onClauses.some((c) => gerundSurface(c, gerund))) surfaces++;
-        for (const comp of entity.traits) {
-          const def = traitDefs.get(comp.name);
-          if (def?.onClauses.some((c) => gerundSurface(c, gerund))) surfaces++;
-        }
-        if (surfaces > 1) {
-          this.diagnostics.error(
-            'analysis.gerund-implementation',
-            `\`${entity.name}\` has ${surfaces} ${gerund} implementations — a ${adjective} entity registers exactly one (one \`on ${gerund} it\` clause or one capability behavior).`,
-            site.span,
-          );
-        } else if (surfaces === 0) {
-          this.diagnostics.error(
-            'analysis.gerund-implementation',
-            `\`${entity.name}\` is ${adjective} but registers no ${gerund} implementation — add \`on ${gerund} it:\` (or compose a trait that has one).`,
-            site.span,
-          );
-        }
-      }
-    }
-  }
-
-  /**
-   * Resolve a trait-config entity NAME the way the loader's entityRefFor
-   * does — display-name or `aka` alias, lowercased, first match — so the
-   * census-6 compile gate is exactly as strict as the load check it fronts.
-   */
-  private resolveConfigEntity(ir: StoryIR, name: string): boolean {
-    const lower = name.toLowerCase();
-    return ir.entities.some((e) => e.name.toLowerCase() === lower || e.aka.includes(lower));
-  }
-
-  /**
    * ADR-276 Phase 3 (census entries 1–2): alteration target names resolve at
    * compile against the story's own actions plus the generated stdlib
    * manifest, mirroring the loader's story-first order (ADR-270 D2) exactly.
@@ -1995,9 +1605,9 @@ export class Analyzer {
     }
     const standardSeats = STDLIB_MANIFEST.locales['en-US'].grammarSeats;
     for (const ext of ir.grammarExtensions ?? []) {
-      // Story-first, as the target resolves (checkAlterationTargets): a
-      // story action's own table, else the standard action's. An unknown
-      // target is that pass's error, not a seat problem.
+      // Story-first, as the target resolves (validateIR's alteration-target
+      // gate): a story action's own table, else the standard action's. An
+      // unknown target is that gate's error, not a seat problem.
       const inherited =
         storyTables.get(ext.action) ??
         (STDLIB_MANIFEST.actionIds.has(`if.action.${ext.action}`) ? (standardSeats[`if.action.${ext.action}`] ?? {}) : undefined);
@@ -2032,52 +1642,6 @@ export class Analyzer {
         ? `${line(problem.pattern)} has no seat left for \`${second}\` — direct and indirect are both taken on this line (\`${first}\` holds indirect). A line seats at most two nouns.`
         : `${line(problem.pattern)} puts \`${first}\` and \`${second}\` in one seat (${problem.seat}): \`${first}\` was seated ${problem.seat} by ${by(problem.seatedBy[0])}, \`${second}\` by ${by(problem.seatedBy[1])}. Within one action a slot name keeps one seat; rename one of them.`;
     this.diagnostics.error('analysis.seat-conflict', message, span);
-  }
-
-  private checkAlterationTargets(ir: StoryIR): void {
-    const storyActionNames = new Set(ir.actions.map((a) => a.name));
-    const stdlibBareNames = [...STDLIB_MANIFEST.actionIds].map((id) => id.slice('if.action.'.length));
-
-    for (const ext of ir.grammarExtensions ?? []) {
-      // Story-first (the shadowing semantic): a story-defined action of the
-      // same name wins and needs no stdlib id.
-      if (storyActionNames.has(ext.action)) continue;
-      if (!STDLIB_MANIFEST.actionIds.has(`if.action.${ext.action}`)) {
-        this.diagnostics.error(
-          'analysis.extend-target',
-          `\`extend action ${ext.action}\` — no story action or standard action has that name${this.suggestText(ext.action, [...storyActionNames, ...stdlibBareNames])}.`,
-          ext.span,
-        );
-      }
-    }
-    for (const removal of ir.grammarRemovals ?? []) {
-      // Removals name STANDARD actions only (ADR-270 D3) — a story action
-      // has no standard-tier rules to remove.
-      if (!STDLIB_MANIFEST.actionIds.has(`if.action.${removal.action}`)) {
-        this.diagnostics.error(
-          'analysis.removal-target',
-          `\`remove from action ${removal.action}\` — no standard action has that name${this.suggestText(removal.action, stdlibBareNames)}.`,
-          removal.span,
-        );
-        continue;
-      }
-      // Census 3: each removal pattern must match a standard-grammar shape,
-      // by shape (ADR-382 D6): slot names ignored, words lowercased,
-      // alternations as sets — the same samePatternShape the loader removes
-      // by. The manifest's shapes are lowered by the same module that
-      // lowers the registered rules, so agreement is structural.
-      const shapes = STDLIB_MANIFEST.locales['en-US'].grammarShapes[`if.action.${removal.action}`] ?? [];
-      for (const pattern of removal.patterns) {
-        const parts = lowerParts(pattern.parts);
-        if (!shapes.some((shape) => samePatternShape(shape, parts))) {
-          this.diagnostics.error(
-            'analysis.unmatched-removal-pattern',
-            `\`remove from action ${removal.action}\` — no standard rule matches \`${renderPattern(parts)}\`. The action's standard patterns are: ${shapes.map((s) => `\`${renderPattern(s)}\``).join(', ') || '(none)'}.`,
-            removal.span,
-          );
-        }
-      }
-    }
   }
 
   /**
@@ -2392,17 +1956,8 @@ export class Analyzer {
       }
     }
 
-    // Unconnected door: declared-but-unanswerable, uniformly hard (D3 —
-    // same class as region-memberless; its room pair could never resolve).
-    for (const door of entities.filter(isDoorEntity)) {
-      if (!firstRef.has(door.id)) {
-        this.diagnostics.error(
-          'analysis.door-unconnected',
-          `Door \`${door.name}\` is never referenced by a \`through\` exit line — an unconnected door is unanswerable (its room pair could never resolve). Add \`<direction> to the <room> through the ${door.name}\` on a room.`,
-          door.span,
-        );
-      }
-    }
+    // The unconnected-door gate (`analysis.door-unconnected`) is an IR
+    // invariant and reports from `validateIR` (ADR-389 D4).
   }
 
   /**
@@ -3487,9 +3042,7 @@ export class Analyzer {
     if (step.state === 'in sight') {
       // ADR-376 D7: `when <thing> comes into sight` — the first step that
       // brings it within the looker's sight; any named entity may anchor it.
-      if (!this.usedExtensions.has('expanses')) {
-        this.diagnostics.error('analysis.expanses-needs-use', '`comes into sight` is `use expanses` vocabulary — add `use expanses` to the story header.', step.span);
-      }
+      // Its `use expanses` gate is validateIR's, over the lowered anchor.
       return { owner: id, state: 'in sight' };
     }
     if (step.state === 'under way') {
@@ -3712,11 +3265,11 @@ export class Analyzer {
    * `extend action <name>` → IR (ADR-270 D2): the grammar-surface subset,
    * with behavior sections rejected by name — the grammar-file-mode
    * treatment (`analysis.alteration-behavior`, one per offending category).
-   * Target-name resolution happens in checkAlterationTargets (a whole-IR
-   * post-pass — story actions may be declared after the alteration), gated
-   * against the generated stdlib manifest (ADR-276 D1: chord is
-   * platform-free but no longer stdlib-ignorant); the loader keeps the same
-   * story-first resolution as its rogue-IR backstop.
+   * Target-name resolution happens in validateIR (over the whole IR —
+   * story actions may be declared after the alteration), gated against the
+   * generated stdlib manifest (ADR-276 D1: chord is platform-free but no
+   * longer stdlib-ignorant); the loader asks that one rule before it builds
+   * (ADR-389 D4) and keeps the same story-first resolution when it registers.
    */
   private buildExtension(decl: ExtendAction): IRGrammarExtension {
     // The extension's own pattern lines are the slot universe for its
@@ -4757,34 +4310,6 @@ export class Analyzer {
       }
       this.entityCounterNames.set(id, names);
     }
-  }
-
-  /** Construct kinds already reported by the scoring gate (one each). */
-  private scoringGateReported = new Set<string>();
-
-  /**
-   * Report the `use scoring` gate for one construct kind (ADR-261 D4).
-   *
-   * A gated construct must never be silently dead, so this is an error rather
-   * than a warning, backstopped by a `LoadError` in the story-loader for rogue
-   * IR — the two-layer shape ADR-215 uses for `define machine`.
-   *
-   * The third gated construct, a `rank` rung, cannot reach this check: the
-   * ladder is structurally inside the `use scoring` body, so a stray rung is
-   * `parse.rank-outside-scoring` at parse time — an earlier and more precise
-   * diagnostic. The loader's backstop covers the rogue-IR form.
-   */
-  private reportScoringGate(kind: 'score' | 'award', span: Span): void {
-    if (this.scoringGateReported.has(kind)) return;
-    this.scoringGateReported.add(kind);
-    const what = kind === 'score'
-      ? 'A `score … worth N` line needs'
-      : 'An `award` statement needs';
-    this.diagnostics.error(
-      'analysis.scoring-needs-use',
-      `${what} \`use scoring\` in the story header — without it the game has no score at all, and SCORE says so.`,
-      span,
-    );
   }
 
   /**
@@ -6583,7 +6108,7 @@ export class Analyzer {
         // ADR-375 D4: `set the <expanse>'s wind to …` — the parser read the wind.
         if (stmt.wind && stmt.target.kind === 'possessive' && stmt.target.base.kind === 'ref') {
           const expanseId = this.findEntitySilent(stmt.target.base.ref)?.id ?? null;
-          this.requireSailing('`set … wind`', stmt.span, null);
+          // Its `use sailing` gate is validateIR's, over the lowered statement.
           if (expanseId === null || !this.expanses.has(expanseId)) {
             this.diagnostics.error('analysis.wind-set-target', `\`set … wind\` names an expanse — \`${stmt.target.base.ref.words.join(' ')}\` is not one.`, stmt.span);
           }
@@ -6610,9 +6135,7 @@ export class Analyzer {
         if (stmt.target.kind === 'possessive' && stmt.target.field.length === 1 && stmt.target.field[0] === 'visibility' && stmt.target.base.kind === 'ref') {
           const expanseId = this.findEntitySilent(stmt.target.base.ref)?.id ?? null;
           if (expanseId !== null && this.expanses.has(expanseId)) {
-            if (!this.usedExtensions.has('expanses')) {
-              this.diagnostics.error('analysis.expanses-needs-use', '`set … visibility` is `use expanses` vocabulary — add `use expanses` to the story header.', stmt.span);
-            }
+            // Its `use expanses` gate is validateIR's, over the lowered statement.
             const v = stmt.value;
             const literal = v.kind === 'literal' && v.literalKind === 'number' ? Number(v.value) : null;
             if (literal === null || !Number.isInteger(literal) || literal < 0) {
@@ -6854,10 +6377,8 @@ export class Analyzer {
       case 'act':
         return this.resolveActStatement(stmt, scope);
       case 'award': {
-        // ADR-261 D4: `award` is gated with `score` and `ranks`.
-        if (!this.usedExtensions.has('scoring')) {
-          this.reportScoringGate('award', stmt.span);
-        }
+        // ADR-261 D4: `award` is gated with `score` and `ranks` behind `use
+        // scoring` — validateIR refuses the lowered statement (ADR-389 D4).
         // `award <score-name>` resolves owner-first (ratchet D12): the
         // enclosing owner's qualified id, then the story-level bare name.
         let expression = stmt.expression;
@@ -8110,14 +7631,8 @@ export class Analyzer {
   private buildChapters(): void {
     const decl = this.chapterDecls[0];
     if (!decl) return;
-    if (!this.usedExtensions.has('chapters')) {
-      this.diagnostics.error(
-        'analysis.chapters-needs-use',
-        'A `define chapters` block needs `use chapters` in the story header — chapters are an extension, on precisely when the header says so.',
-        decl.span,
-      );
-      return;
-    }
+    // The `use chapters` gate is validateIR's, over the lowered rows
+    // (ADR-389 D4) — the block builds either way, so the rule has one home.
     const seen = new Set<string>();
     const openers: number[] = [];
     decl.rows.forEach((row, ordinal) => {
@@ -8443,7 +7958,7 @@ export class Analyzer {
     const lower = ref.words.join(' ').toLowerCase();
     // ADR-327 D10: `the player` names the ROLE, not an entity — there is no
     // player block any more. `player` is the sentinel id the loader resolves
-    // against `world.getPlayer()` at run time, exactly as `define timer … for
+    // against the world's player character at run time, exactly as `define timer … for
     // the player` already did.
     if (PLAYER_WORDS.has(lower)) return 'player';
 
@@ -8500,12 +8015,14 @@ export class Analyzer {
         // ADR-330 D5: the row's name → its ordinal, under the `use` gate.
         // Read off the AST, not the built tables: a `phrase detail` gate
         // resolves in pass 1, before `use` lines and chapter rows are built.
-        const uses = (this.ast.header?.uses ?? []).some((u) => u.name === 'chapters');
-        if (!uses) {
-          this.diagnostics.error('analysis.chapters-needs-use', `\`${cond.relation} ${cond.name}\` reads a chapter — add \`use chapters\` and a \`define chapters\` block to the story.`, cond.span);
+        const block = this.ast.declarations.find((d): d is DefineChapters => d.kind === 'define-chapters');
+        if (!block && !(this.ast.header?.uses ?? []).some((u) => u.name === 'chapters')) {
+          // No block and no use line: the name resolves nowhere, and the fix
+          // is the use line — validateIR names it over the lowered condition
+          // (ADR-389 D4). With the use line, the empty row set below is the
+          // unknown-chapter report.
           return { kind: 'chapter', relation: cond.relation, ordinal: -1 };
         }
-        const block = this.ast.declarations.find((d): d is DefineChapters => d.kind === 'define-chapters');
         const rows = block?.rows ?? [];
         const ordinal = rows.findIndex((r) => r.name === cond.name);
         if (ordinal < 0) {
@@ -8768,16 +8285,15 @@ export class Analyzer {
   }
 
   /**
-   * ADR-375 D1: a sailing word needs `use sailing`, and sits on an open
-   * vehicle. Reports each once at the word; a missing use line is
-   * `sailing-needs-use`, a vehicle of another type `sailing-not-open`.
+   * ADR-375 D1: a sailing word sits on an open vehicle — a vehicle of
+   * another type is `sailing-not-open`, reported at the word. The word's
+   * `use sailing` gate (`sailing-needs-use`) is validateIR's.
    * @param form the word as the author reads it, for the message
    * @param vehicle the vehicle the word names, when it names one
    */
   private requireSailing(form: string, span: Span, vehicle: VehicleDecl | null): void {
-    if (!this.usedExtensions.has('sailing')) {
-      this.diagnostics.error('analysis.sailing-needs-use', `${form} is \`use sailing\` vocabulary — add \`use sailing\` to the story header.`, span);
-    }
+    // The words' `use sailing` gate is validateIR's, over the lowered
+    // statements and conditions (ADR-389 D4); the vehicle's type is read here.
     if (vehicle && vehicle.movement !== 'open') {
       this.diagnostics.error(
         'analysis.sailing-not-open',
@@ -8827,13 +8343,7 @@ export class Analyzer {
     predicate: Extract<Predicate, { kind: 'in-sight' | 'sight-band' }>,
     subject: IRValue,
   ): IRCondition {
-    if (!this.usedExtensions.has('expanses')) {
-      this.diagnostics.error(
-        'analysis.expanses-needs-use',
-        `\`is ${predicate.kind === 'in-sight' ? 'in sight' : predicate.band.replace(/-/g, ' ')}\` is \`use expanses\` vocabulary — add \`use expanses\` to the story header.`,
-        predicate.span,
-      );
-    }
+    // The words' `use expanses` gate is validateIR's, over the lowered condition.
     if (subject.kind !== 'entity') {
       this.diagnostics.error(
         'analysis.sight-subject',
@@ -9316,22 +8826,6 @@ function descriptionMarkerSites(text: string): DescriptionMarkerSite[] {
   return sites;
 }
 
-/**
- * The fix for `a thing` written beside another kind (ADR-359 D1).
- *
- * @param entityName the entity the block creates
- * @param kind the other kind noun (`container`)
- * @returns "a container is already a kind of thing; write `a container`",
- *   or for a room or region, which are not things, the plain instruction to
- *   keep one kind
- */
-function thingWithKindMessage(entityName: string, kind: string): string {
-  if (kind === 'room' || kind === 'region') {
-    return `\`${entityName}\`: a ${kind} is not a thing — write \`a ${kind}\` alone.`;
-  }
-  return `\`${entityName}\`: a ${kind} is already a kind of thing; write \`a ${kind}\`.`;
-}
-
 /** True when `needle` appears in `haystack` in order (not necessarily adjacent). */
 function isInOrderSubset(needle: string[], haystack: string[]): boolean {
   if (needle.length === 0) return false;
@@ -9341,20 +8835,6 @@ function isInOrderSubset(needle: string[], haystack: string[]): boolean {
     if (i === needle.length) return true;
   }
   return false;
-}
-
-/** Nearest candidate within an edit distance budget, or null. */
-function nearest(input: string, candidates: string[]): string | null {
-  let best: string | null = null;
-  let bestDist = Math.max(2, Math.floor(input.length / 3)) + 1;
-  for (const c of candidates) {
-    const d = levenshtein(input.toLowerCase(), c.toLowerCase());
-    if (d < bestDist) {
-      bestDist = d;
-      best = c;
-    }
-  }
-  return best;
 }
 
 

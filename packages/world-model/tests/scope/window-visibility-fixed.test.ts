@@ -52,7 +52,7 @@ describe('Window Visibility Scope Rule - Fixed', () => {
 
     // Create player
     player = world.createEntity('player', 'actor');
-    player.add(new ActorTrait());
+    player.add(new ActorTrait({ isPlayable: true }));
     player.add(new ContainerTrait()); // Actors can carry things
     world.setPlayer(player.id);
     world.moveEntity(player.id, livingRoom.id);

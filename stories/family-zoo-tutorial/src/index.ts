@@ -452,7 +452,7 @@ export class FriendlyZooStory implements Story {
       w.removeEntity(pennyId);
       const pp = w.createEntity('pressed penny', EntityType.ITEM);
       pp.add(new IdentityTrait({ name: 'pressed penny', description: 'A flattened oval of copper with an embossed toucan.', aliases: ['pressed penny', 'pressed coin', 'souvenir'], properName: false, article: 'a' }));
-      const player = w.getPlayer();
+      const player = w.playerCharacter;
       if (player) w.moveEntity(pp.id, player.id);
       w.awardScore(ScoreIds.COLLECT_PRESSED_PENNY, ScorePoints[ScoreIds.COLLECT_PRESSED_PENNY], 'Pressed a souvenir penny');
       return { id: `zoo-press-${Date.now()}`, type: 'zoo.event.penny_pressed', timestamp: Date.now(), entities: {}, data: { text: 'CLUNK! CRUNCH! WHIRRR! The souvenir press produces a beautiful pressed penny with an embossed toucan.' } };

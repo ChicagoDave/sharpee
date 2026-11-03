@@ -84,7 +84,7 @@ export const GasRoomEntryInterceptor: ActionInterceptor = {
     // Canonical terminal death (ADR-224): apply the lethal transition via the
     // platform primitive, then emit the canonical event through the interceptor's
     // effect channel so the engine routes game-over.
-    const player = world.getPlayer();
+    const player = world.playerCharacter;
     if (player) {
       killPlayer(world, player, {
         cause: 'gas_explosion',

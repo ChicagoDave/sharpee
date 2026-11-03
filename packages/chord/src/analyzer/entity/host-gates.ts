@@ -18,7 +18,7 @@
  * - ADR-236 D1 — no region placement; ADR-360 D5 — so regions do not nest.
  * - ADR-325 D5 — `landing` is region-only.
  * - Z1 (ADR-211) — `first time` prose is room-only.
- * - ADR-289 D6 — exits are room-only; the loader keeps a defensive throw.
+ * - ADR-289 D6 — exits are room-only; validateIR refuses them over the lowered IR (ADR-389 D4).
  */
 import type { EntityLineBuilder } from './context.js';
 
@@ -73,17 +73,8 @@ export const hostGatesBuilder: EntityLineBuilder = {
           foldedExit.exitsLine!,
         );
       }
-      // ADR-376 D8: an expanse's blocked-exit lines are its edges, read by
-      // the expanse builder (which refuses every other exit form on it).
-      const isExpanse = kinds.some((k) => k.name === 'expanse');
-      const strayExit = decl.exits.find((e) => !e.exitsLine) ?? (isExpanse ? undefined : decl.blockedExits[0]) ?? decl.deadlyExits[0];
-      if (strayExit) {
-        context.diagnostics.error(
-          'analysis.exit-non-room',
-          `Exits belong to rooms — \`${blockName}\` is not a room. Remove the line, or make this block \`a room\`.`,
-          strayExit.span,
-        );
-      }
+      // ADR-289 D6: every other exit form on a non-room is refused by
+      // validateIR over the lowered entity (ADR-389 D4).
     }
   },
 };

@@ -33,6 +33,8 @@ Every file and line below was read this session at `8e6290215` (Phase 7 landed).
 ## Decision
 
 - **D1 — The contract is the consumer union plus the authoring surface, one name at a time.** `index.ts` contains no `export *`. It names exactly these 31 exports:
+
+> **Amended 2026-10-31 (ADR-390 D2):** `Player` (type) joins the facade group — the session's player role, exposed as `GameEngine.player`.
   - *The facade*: `GameEngine`, `EngineConfig`, `DEFAULT_TEXT_CAPABILITIES`.
   - *What a story author writes against*: `Story`, `StoryConfig`, `StoryWithEvents`, `validateStoryConfig`, `CustomVocabulary`, `NarrativeConfig`, `ParsedCommandTransformer`, `InputModeHandler`, `SharedDataKeys`.
   - *What a turn hands back*: `GameContext`, `TurnResult`.

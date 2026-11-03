@@ -28,7 +28,10 @@ export interface ClaimsEntity {
 
 /** The world as the walk reads it — `WorldModel`'s own surface, narrowed. */
 export interface ClaimsWorld {
-  getPlayer(): ClaimsEntity | undefined;
+  /** Whether any actor holds the player role (ADR-390 D1). */
+  readonly hasPlayerCharacter: boolean;
+  /** The actor holding the player role; throws when none does. */
+  readonly playerCharacter: ClaimsEntity;
   getEntity(id: string): ClaimsEntity | undefined;
   getAllEntities(): ClaimsEntity[];
   getLocation(entityId: string): string | undefined;
@@ -66,6 +69,7 @@ export type ClaimsGameLoader = () => Promise<ClaimsGame>;
 
 /** The parsed world snapshot — the fields the identity and the predicates read. */
 export interface WorldSnapshot {
+  /** The role holder's id, read from the live world at capture (ADR-390 D1: the snapshot itself carries no player id). */
   readonly playerId?: string;
   readonly entities?: ReadonlyArray<{
     readonly id: string;
@@ -86,7 +90,10 @@ export interface WorldSnapshot {
  * @returns the snapshot's fields the walk reads
  */
 export function readWorldSnapshot(world: ClaimsWorld): WorldSnapshot {
-  return JSON.parse(world.toJSON()) as WorldSnapshot;
+  const parsed = JSON.parse(world.toJSON()) as WorldSnapshot;
+  // ADR-390 D1: the world stores no player id — the role flag rides the
+  // actor — so the walk's identity takes the holder from the live world.
+  return { ...parsed, playerId: world.hasPlayerCharacter ? world.playerCharacter.id : undefined };
 }
 
 /**

@@ -105,7 +105,8 @@ function makeWorldStub(inventoryCount: number) {
   const playerId = 'player';
   const items = Array.from({ length: inventoryCount }, (_, i) => ({ id: `item-${i}` }));
   return {
-    getPlayer: () => ({ id: playerId }),
+    hasPlayerCharacter: true,
+    playerCharacter: { id: playerId },
     getContents: (id: string) => (id === playerId ? items : []),
     getCapability: () => undefined,
   };

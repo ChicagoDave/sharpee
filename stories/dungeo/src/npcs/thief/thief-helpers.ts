@@ -71,8 +71,7 @@ export function findTreasuresIn(world: WorldModel, containerId: string): IFEntit
  * Find treasures the player is carrying
  */
 export function findPlayerTreasures(context: NpcContext): IFEntity[] {
-  const player = context.world.getPlayer();
-  if (!player) return [];
+  const player = context.world.playerCharacter;
 
   return findTreasuresIn(context.world, player.id);
 }
@@ -199,7 +198,7 @@ function getThiefOstrength(npc: IFEntity): number {
  */
 function getHeroFightStrength(world: WorldModel): number {
   const score = getPlayerScore(world);
-  const player = world.getPlayer();
+  const player = world.playerCharacter;
   const woundAdjust = (player?.attributes?.[MELEE_STATE.WOUND_ADJUST] as number) ?? 0;
   return fightStrength(score, woundAdjust);
 }
@@ -256,5 +255,5 @@ export function shouldEscalateToCombat(context: NpcContext): boolean {
  * Get the player entity
  */
 export function getPlayer(world: WorldModel): IFEntity | undefined {
-  return world.getPlayer();
+  return world.playerCharacter;
 }

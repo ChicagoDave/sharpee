@@ -29,7 +29,7 @@ export function registerTreasureRoomHandler(
     if (!data?.toRoom || data.toRoom !== treasureRoomId) return [];
 
     // Only handle player movement (actor_moved uses actor.id, not actorId)
-    const player = world.getPlayer();
+    const player = world.playerCharacter;
     if (!player || data.actor?.id !== player.id) return [];
 
     // Find the thief entity (name is 'seedy-looking thief', alias 'thief')

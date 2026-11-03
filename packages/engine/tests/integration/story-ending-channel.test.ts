@@ -87,7 +87,7 @@ describe('the ending reaches the client as state (ADR-347 D3a)', () => {
 
     const { killPlayer } = await import('@sharpee/stdlib');
     engine.getEventProcessor().registerHandler('if.event.taken', () => {
-      const died = killPlayer(world, world.getPlayer()!, { cause: 'grue' });
+      const died = killPlayer(world, world.playerCharacter, { cause: 'grue' });
       return died ? [{ type: 'emit', event: died }] : [];
     });
 

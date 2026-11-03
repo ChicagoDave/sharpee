@@ -40,6 +40,11 @@ export class DiagnosticBag {
     this.items.push({ severity: 'warning', code, message, span });
   }
 
+  /** Append a diagnostic another collector reported, keeping its severity. */
+  add(diagnostic: Diagnostic): void {
+    this.items.push(diagnostic);
+  }
+
   /** All diagnostics in report order. */
   all(): readonly Diagnostic[] {
     return this.items;

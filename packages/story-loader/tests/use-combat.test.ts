@@ -16,7 +16,7 @@ import { compile, StoryIR } from '@sharpee/chord';
 import type { ISemanticEvent } from '@sharpee/core';
 import { EngineRandomService } from '@sharpee/engine';
 import { attackingAction } from '@sharpee/stdlib';
-import { CombatantTrait, HealthTrait, IFEntity, TraitType, WeaponTrait, WorldModel } from '@sharpee/world-model';
+import { CombatantTrait, HealthTrait, IFEntity, TraitType, WeaponTrait, WorldModel, ActorTrait } from '@sharpee/world-model';
 import { createStory, LoadError } from '../src';
 import { runValidatePhase, runExecutePhase, runReportPhase } from '@sharpee/stdlib';
 
@@ -40,8 +40,9 @@ const load = (mutate?: (ir: StoryIR) => void) => {
   const world = new WorldModel();
   story.initializeWorld(world);
   const player = story.createPlayer(world);
+  player.add(new ActorTrait({ isPlayable: true }));
   world.setPlayer(player.id);
-  const entity = (slug: string): IFEntity => world.getEntity(story.entityId(slug)!)!;
+  const entity = (slug: string): IFEntity => world.getEntity(slug)!;
   return { story, world, player, entity };
 };
 
@@ -124,7 +125,10 @@ describe('use combat through the real loader (ADR-215 AC-1/AC-3)', () => {
   });
 
   it('rogue IR with an unknown use → LoadError naming the trusted set (AC-3)', () => {
-    expect(() => load((ir) => void (ir.uses = ['foo']))).toThrow(LoadError);
-    expect(() => load((ir) => void (ir.uses = ['foo']))).toThrow(/no trusted extension/);
+    // A name chord's manifests do not carry never reaches the IR, so this is
+    // the loader's own drift guard between the two registries; `combat` stays
+    // admitted so validateIR has nothing to say about the vocabulary.
+    expect(() => load((ir) => void (ir.uses = ['combat', 'foo']))).toThrow(LoadError);
+    expect(() => load((ir) => void (ir.uses = ['combat', 'foo']))).toThrow(/no trusted extension/);
   });
 });

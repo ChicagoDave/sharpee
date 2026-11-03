@@ -35,7 +35,7 @@ describe('ADR-386 D6: list separators', () => {
     room.add(new RoomTrait());
     room.add(new ContainerTrait());
     const player = world.createEntity('Alex', 'actor');
-    player.add(new ActorTrait());
+    player.add(new ActorTrait({ isPlayable: true }));
     player.add(new ContainerTrait());
     world.moveEntity(player.id, room.id);
     world.setPlayer(player.id);

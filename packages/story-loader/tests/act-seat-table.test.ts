@@ -120,6 +120,6 @@ describe('an acting statement seats each slot by the action seat table', () => {
     } finally {
       logged.mockRestore();
     }
-    expect(world.getLocation(story.entityId('coin')!)).toBe(story.entityId('hall'));
+    expect(world.getLocation('coin')).toBe('hall');
   });
 });

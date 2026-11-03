@@ -16,7 +16,7 @@ import { describe, expect, it } from 'vitest';
 import { compile, StoryIR } from '@sharpee/chord';
 import type { ISemanticEvent } from '@sharpee/core';
 import { unlockingAction } from '@sharpee/stdlib';
-import { IFEntity, LockableTrait, OpenableTrait, SwitchableTrait, TraitType, WorldModel } from '@sharpee/world-model';
+import { IFEntity, LockableTrait, OpenableTrait, SwitchableTrait, TraitType, WorldModel, ActorTrait } from '@sharpee/world-model';
 import { createStory } from '../src';
 import { runValidatePhase, runExecutePhase, runReportPhase } from '@sharpee/stdlib';
 
@@ -99,8 +99,9 @@ const load = () => {
   const world = new WorldModel();
   story.initializeWorld(world);
   const player = story.createPlayer(world);
+  player.add(new ActorTrait({ isPlayable: true }));
   world.setPlayer(player.id);
-  const entity = (slug: string): IFEntity => world.getEntity(story.entityId(slug)!)!;
+  const entity = (slug: string): IFEntity => world.getEntity(slug)!;
   return { story, world, player, entity };
 };
 
@@ -112,7 +113,7 @@ describe('starts <state> through the real loader (ADR-231 D5a)', () => {
     expect(lockable.isLocked).toBe(true);
     // The initializer rides the same composition line as `with key` — the
     // resolved key id must survive it.
-    expect(lockable.keyId).toBe(story.entityId('brass-key')!);
+    expect(lockable.keyId).toBe('brass-key');
   });
 
   it('REAL-PATH: the declared lock is live — stdlib unlockingAction unlocks it with the loaded key', () => {

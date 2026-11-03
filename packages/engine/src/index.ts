@@ -18,6 +18,7 @@
 // The facade
 export { GameEngine, DEFAULT_TEXT_CAPABILITIES } from './game-engine.js';
 export type { EngineConfig } from './types.js';
+export type { Player } from './player.js';
 
 // What a story author writes against
 export { StoryWithEvents, validateStoryConfig } from './install/story.js';

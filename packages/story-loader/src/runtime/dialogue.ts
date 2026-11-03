@@ -19,6 +19,7 @@ import type { ISemanticEvent } from '@sharpee/core';
 import { hasTraversableExit } from '@sharpee/stdlib';
 import { CharacterModelTrait, type ConversationIntent, type ConversationSceneState, type DialogueSelectionResult, type DialogueSelectorRegistration, type ExchangeState, IFEntity, type InitiativeSeizure, type ResponseAffordance, type SceneDirective, type SceneOccasion, type SceneWireEvent, sceneWith, TraitType, WorldModel } from '@sharpee/world-model';
 import { LoadError } from '../errors.js';
+import { worldIdOf } from '../identity.js';
 import { CHORD_OCCURRENCE_PREFIX } from '../state-keys.js';
 import { ExecContext, type RuntimeCore } from './core.js';
 
@@ -33,8 +34,7 @@ export class DialogueSection {
     if (!this.irEntityIndex) {
       this.irEntityIndex = new Map(this.core.ir.entities.map((e) => [e.id, e]));
     }
-    const irId = this.core.host.irIdOf(worldId);
-    return irId === undefined ? undefined : this.irEntityIndex.get(irId);
+    return this.irEntityIndex.get(worldId);
   }
 
   /**
@@ -63,16 +63,20 @@ export class DialogueSection {
    * silence rows) never match typed input. A `define action`'s `about`
    * rows match through here too (ADR-383 D9), so only the topic is read.
    *
+   * @param filters the rows' filters, in row order
+   * @param intent the asked topic: the entity the validator resolved, and the typed text
+   * @param world the live world, which an entity filter naming the player role is read against
    * @returns The matched index, or -1
    */
   matchTopicFilters(
     filters: Array<{ kind: 'entity'; id: string } | { kind: 'text'; primary: string; aliases: string[] } | null>,
     intent: Pick<ConversationIntent, 'text' | 'topicEntityId'>,
+    world: WorldModel,
   ): number {
     const askedEntity = intent.topicEntityId ?? null;
     const askedText = intent.text !== undefined ? normalizeTopic(intent.text) : null;
     if (askedEntity !== null) {
-      const index = filters.findIndex((f) => f?.kind === 'entity' && this.core.host.entityId(f.id) === askedEntity);
+      const index = filters.findIndex((f) => f?.kind === 'entity' && worldIdOf(world, f.id) === askedEntity);
       if (index !== -1) return index;
     }
     if (askedText !== null && askedText !== '') {
@@ -86,10 +90,11 @@ export class DialogueSection {
   }
 
   /** The matched `answer`-row index of an open exchange for typed input. */
-  private matchExchangeRow(exchange: IRExchange, intent: ConversationIntent): number {
+  private matchExchangeRow(exchange: IRExchange, intent: ConversationIntent, world: WorldModel): number {
     return this.matchTopicFilters(
       exchange.rows.map((r) => (r.head.kind === 'answer' ? r.head.filter : null)),
       intent,
+      world,
     );
   }
 
@@ -101,7 +106,7 @@ export class DialogueSection {
    * with exactly one `silence` affordance — the authored silence row when
    * present, appended otherwise (D8, the inalienable move).
    */
-  exchangeResponses(exchangeId: string, exchange: IRExchange): ResponseAffordance[] {
+  exchangeResponses(exchangeId: string, exchange: IRExchange, world: WorldModel): ResponseAffordance[] {
     const responses: ResponseAffordance[] = [];
     let hasSilence = false;
     exchange.rows.forEach((row, index) => {
@@ -110,7 +115,7 @@ export class DialogueSection {
         const filter = row.head.filter;
         const topic =
           filter.kind === 'entity'
-            ? { kind: 'entity' as const, id: this.core.host.entityId(filter.id) ?? filter.id }
+            ? { kind: 'entity' as const, id: worldIdOf(world, filter.id) ?? filter.id }
             : { kind: 'text' as const, primary: filter.primary, aliases: [...filter.aliases] };
         responses.push({ kind: 'verbal', rowId, topic });
       } else if (row.head.kind === 'act') {
@@ -168,11 +173,11 @@ export class DialogueSection {
   }
 
   /** The per-pair key an unmatched or matched ask counts under (Phase 7 design §5). */
-  private askedTopicKey(owner: IREntity, intent: ConversationIntent): string | undefined {
+  private askedTopicKey(owner: IREntity, intent: ConversationIntent, world: WorldModel): string | undefined {
     const rows = owner.topics ?? [];
-    const index = this.matchTopicFilters(rows.map((r) => r.filter), intent);
+    const index = this.matchTopicFilters(rows.map((r) => r.filter), intent, world);
     if (index >= 0) return this.canonicalTopic(rows[index].filter);
-    if (intent.topicEntityId !== undefined) return this.core.host.irIdOf(intent.topicEntityId);
+    if (intent.topicEntityId !== undefined) return intent.topicEntityId;
     const text = intent.text !== undefined ? normalizeTopic(intent.text) : '';
     return text !== '' ? text : undefined;
   }
@@ -305,7 +310,7 @@ export class DialogueSection {
               speakerId: npc.id,
               ...(target.strength ? { strength: target.strength } : {}),
               openedTurn: this.core.dialogueTurn(world),
-              responses: this.exchangeResponses(exchangeId, target),
+              responses: this.exchangeResponses(exchangeId, target, world),
             },
           });
           // The `asks`/`invites` word rides the author channel (Phase 9's feed).
@@ -425,7 +430,7 @@ export class DialogueSection {
         if (!owner) return false;
         const open = runtime.openExchangeOf(owner, ctx.scene);
         if (!open) return false;
-        return runtime.matchExchangeRow(open.exchange, intent) >= 0;
+        return runtime.matchExchangeRow(open.exchange, intent, ctx.world) >= 0;
       },
 
       threadClaims: (npc, intent, ctx): boolean => runtime.core.threads.probeThreadClaims(npc, intent, ctx),
@@ -437,7 +442,7 @@ export class DialogueSection {
         if (!owner) return undefined;
         const memory = createTraitMemoryAccess(world);
         const open = runtime.openExchangeOf(owner, ctx.scene);
-        const grippedRow = open ? runtime.matchExchangeRow(open.exchange, intent) : -1;
+        const grippedRow = open ? runtime.matchExchangeRow(open.exchange, intent, world) : -1;
 
         // Every ask with a topic counts, matched or not (design §5) — on
         // both modeled sides; the access ignores unmodeled holders. The
@@ -447,9 +452,9 @@ export class DialogueSection {
         // interceptor phases are skipped) and unmatched asks.
         if (intent.type === 'ask') {
           const tableMatched =
-            runtime.matchTopicFilters((owner.topics ?? []).map((r) => r.filter), intent) >= 0;
+            runtime.matchTopicFilters((owner.topics ?? []).map((r) => r.filter), intent, world) >= 0;
           if (grippedRow >= 0 || !tableMatched) {
-            const topicKey = runtime.askedTopicKey(owner, intent);
+            const topicKey = runtime.askedTopicKey(owner, intent, world);
             if (topicKey !== undefined) {
               recordAsked(memory, npc.id, actorId, topicKey);
               recordAsked(memory, actorId, npc.id, topicKey);
@@ -495,9 +500,9 @@ export class DialogueSection {
             // for gripped firings; the unmatched case was recorded above).
             if (
               intent.type === 'ask' &&
-              runtime.matchTopicFilters((owner.topics ?? []).map((r) => r.filter), intent) >= 0
+              runtime.matchTopicFilters((owner.topics ?? []).map((r) => r.filter), intent, world) >= 0
             ) {
-              const topicKey = runtime.askedTopicKey(owner, intent);
+              const topicKey = runtime.askedTopicKey(owner, intent, world);
               if (topicKey !== undefined) {
                 recordAsked(memory, npc.id, actorId, topicKey);
                 recordAsked(memory, actorId, npc.id, topicKey);
@@ -512,7 +517,7 @@ export class DialogueSection {
         if (!ctx.scene && (owner.greetings ?? []).length > 0) {
           if (
             (intent.type === 'ask' || intent.type === 'tell') &&
-            runtime.matchTopicFilters((owner.topics ?? []).map((r) => r.filter), intent) >= 0
+            runtime.matchTopicFilters((owner.topics ?? []).map((r) => r.filter), intent, world) >= 0
           ) {
             return undefined;
           }
@@ -661,7 +666,7 @@ export class DialogueSection {
         speakerId: participantId,
         ...(target.strength ? { strength: target.strength } : {}),
         openedTurn: this.core.dialogueTurn(world),
-        responses: this.exchangeResponses(exchangeId, target),
+        responses: this.exchangeResponses(exchangeId, target, world),
       };
       openWord = stmt.word;
       break; // at most one open exchange (D4) — the first applying row's wins

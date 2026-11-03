@@ -681,7 +681,7 @@ export class DungeoStory implements Story {
    */
   createPlayer(world: WorldModel): IFEntity {
     // Check if a player already exists
-    const existingPlayer = world.getPlayer();
+    const existingPlayer = world.hasPlayerCharacter ? world.playerCharacter : undefined;
     if (existingPlayer) {
       // Update the existing player with our traits
       existingPlayer.add(new IdentityTrait({

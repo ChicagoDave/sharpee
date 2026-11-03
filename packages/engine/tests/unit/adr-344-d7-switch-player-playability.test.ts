@@ -31,11 +31,11 @@ function withSecondActor(opts: { playable: boolean }) {
 describe('switchPlayer honours isPlayable (ADR-344 D7)', () => {
   it('switches to an actor that opted in — the world player actually changes', () => {
     const { engine, world, player, other } = withSecondActor({ playable: true });
-    expect(world.getPlayer()!.id).toBe(player.id);
+    expect(world.playerCharacter.id).toBe(player.id);
 
     engine.switchPlayer(other.id);
 
-    expect(world.getPlayer()!.id).toBe(other.id);
+    expect(world.playerCharacter.id).toBe(other.id);
     expect(engine.getContext().player.id).toBe(other.id);
     expect(other.get<ActorTrait>(TraitType.ACTOR)!.isPlayer).toBe(true);
     expect(player.get<ActorTrait>(TraitType.ACTOR)!.isPlayer).toBe(false);
@@ -52,7 +52,7 @@ describe('switchPlayer honours isPlayable (ADR-344 D7)', () => {
 
     expect(() => engine.switchPlayer(other.id)).toThrow();
 
-    expect(world.getPlayer()!.id).toBe(player.id);
+    expect(world.playerCharacter.id).toBe(player.id);
     expect(engine.getContext().player.id).toBe(player.id);
     expect(other.get<ActorTrait>(TraitType.ACTOR)!.isPlayer).toBe(false);
   });
