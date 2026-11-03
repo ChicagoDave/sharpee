@@ -999,8 +999,6 @@ export declare function getUntypedEventData(event: ISemanticEvent): Record<strin
  * corresponding data shapes. It serves as the single source of truth
  * for event data types across the Sharpee platform.
  *
- * @see ADR-082 for the design rationale
- *
  * ## Extensibility
  *
  * Packages can extend this registry using TypeScript declaration merging:
@@ -1012,6 +1010,19 @@ export declare function getUntypedEventData(event: ISemanticEvent): Record<strin
  *   }
  * }
  * ```
+ *
+ * ## These entries are live, even though nothing imports them by name
+ *
+ * The `*Data` interfaces below are reached by event-type key through the
+ * registry, never by their own names: `media` (`src/audio/registry-merge.ts`)
+ * and `stdlib` (`src/events/event-registry.ts`) merge their own entries into
+ * `EventDataRegistry`, and consumers index the merged map by the event string.
+ * A scan that counts importers of each exported name will report every entry
+ * here as unreferenced. That is the mechanism, not dead code: do not delete an
+ * entry on that evidence. Only `EventDataRegistry` itself is listed in the
+ * package's root barrel.
+ *
+ * References: ADR-082 (design rationale), ADR-391 D4 (why this paragraph exists).
  */
 import { EntityId } from '../types/entity.js';
 import type { IRestoreReconciliation } from '../types/save-data.js';

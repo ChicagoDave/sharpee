@@ -496,7 +496,7 @@ Domain events (`if.event.*`) are **records of what happened** in the game world.
 - Consumed by the engine's **prose pipeline** at turn end for rendering
 - Carry both domain data (what happened) and rendering data (messageId + params)
 
-**Domain event structure (ADR-097 pattern):**
+**Domain event structure (ADR-064 pattern):**
 ```typescript
 context.event('if.event.taken', {
   // Rendering data (the prose pipeline uses these)

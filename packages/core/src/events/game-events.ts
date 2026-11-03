@@ -6,7 +6,7 @@
 import { ISemanticEvent } from './types.js';
 
 // =============================================================================
-// Typed Data Interfaces for Game Events (ADR-097 / IGameEvent Refactor)
+// Typed Data Interfaces for Game Events (ADR-064 world/action events; the IGameEvent refactor)
 // =============================================================================
 
 /** Story metadata included in game events */
