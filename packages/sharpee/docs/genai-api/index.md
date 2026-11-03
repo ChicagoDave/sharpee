@@ -26,7 +26,7 @@ Generated for Sharpee 5.5.1
 
 | File | Package(s) | Description |
 |------|-----------|-------------|
-| [core.md](core.md) | @sharpee/core | Base types, query system, platform events, entity interfaces, debug utilities. (30 files, ~2858 lines) |
+| [core.md](core.md) | @sharpee/core | Base types, query system, platform events, entity interfaces, debug utilities. (22 files, ~2308 lines) |
 | [if-domain.md](if-domain.md) | @sharpee/if-domain | Domain events, contracts, grammar system, language/parser provider interfaces. (24 files, ~3727 lines) |
 | [world-model.md](world-model.md) | @sharpee/world-model | Entity system (IFEntity), WorldModel, all traits, capability dispatch, scope, annotations. (137 files, ~12434 lines) |
 | [engine.md](engine.md) | @sharpee/engine | GameEngine, Story interface, turn cycle, command executor, save/restore, vocabulary. (14 files, ~2589 lines) |

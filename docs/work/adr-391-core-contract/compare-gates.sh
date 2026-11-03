@@ -11,7 +11,7 @@ set -u
 A="$1"; B="$2"
 rc=0
 ansi() { sed -E $'s/\x1b\\[[0-9;]*m//g' "$1"; }
-strip() { ansi "$1" | sed -E 's/ \([0-9]+ms\)//g; /^ *Duration/d; /Seed: .*\(clock\)/d; /^ *Start at/d; /[0-9]+\.[0-9]s,/d'; }
+strip() { ansi "$1" | sed -E 's/ \([0-9]+ms\)//g; /^ *Duration/d; /Seed: .*\(clock\)/d; /^ *Start at/d; /[0-9]+\.[0-9]s,/d; /[0-9]+\.[0-9]+s in all/d'; }
 for f in "$A"/*.txt; do
   name=$(basename "$f" .txt)
   g="$B/$name.txt"

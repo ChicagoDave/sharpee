@@ -55,98 +55,6 @@ export interface IEntityOperationOptions {
 }
 ```
 
-### types/relationship
-
-```typescript
-import { EntityId } from './entity.js';
-/**
- * A generic relationship between two entities
- */
-export interface IRelationship {
-    /**
-     * The source entity of the relationship
-     */
-    sourceId: EntityId;
-    /**
-     * The type of relationship (can be any string)
-     */
-    type: string;
-    /**
-     * The target entity of the relationship
-     */
-    targetId: EntityId;
-    /**
-     * Optional metadata for the relationship
-     */
-    metadata?: Record<string, unknown>;
-}
-/**
- * Configuration for creating a relationship
- */
-export interface IRelationshipConfig {
-    /**
-     * Whether this relationship creates an inverse relationship automatically
-     */
-    bidirectional?: boolean;
-    /**
-     * If bidirectional, the name of the inverse relationship
-     */
-    inverseType?: string;
-    /**
-     * Whether this relationship is exclusive (replaces previous relationships of same type)
-     */
-    exclusive?: boolean;
-}
-/**
- * Map of relationship type configurations
- */
-export type RelationshipConfigMap = Record<string, IRelationshipConfig>;
-```
-
-### types/attribute
-
-```typescript
-/**
- * Possible types for attribute values
- */
-export type AttributeValue = string | number | boolean | null | IAttributeObject | AttributeArray;
-/**
- * An object containing attribute values
- */
-export interface IAttributeObject {
-    [key: string]: AttributeValue;
-}
-/**
- * An array of attribute values
- */
-export type AttributeArray = AttributeValue[];
-/**
- * Configuration for an attribute
- */
-export interface IAttributeConfig {
-    /**
-     * Type validation for this attribute
-     */
-    type?: 'string' | 'number' | 'boolean' | 'object' | 'array';
-    /**
-     * Whether this attribute is required for the entity
-     */
-    required?: boolean;
-    /**
-     * Default value if none is provided
-     */
-    default?: AttributeValue;
-    /**
-     * Custom validation function
-     */
-    validate?: (value: AttributeValue) => boolean;
-}
-/**
- * A map of attribute configurations
- */
-export type AttributeConfigMap = Record<string, IAttributeConfig>;
-```
-
 ### types/result
 
 ```typescript
@@ -573,83 +481,6 @@ export declare function validateIfid(ifid: string): boolean;
 export declare function normalizeIfid(ifid: string): string | null;
 ```
 
-### metadata/story-metadata
-
-```typescript
-/**
- * Story metadata for Treaty of Babel compliance.
- * Contains bibliographic information embedded in compiled stories.
- */
-export interface StoryMetadata {
-    /** Unique IFID (Interactive Fiction Identifier) */
-    ifid: string;
-    /** Story title */
-    title: string;
-    /**
-     * Author name(s), joined into one string. Intentionally singular
-     * (diverges from `StoryConfig.authors: string[]`, ADR-298): this type
-     * mirrors the Treaty of Babel iFiction record, whose `<author>` is a
-     * single string by external spec — the join happens at record generation.
-     */
-    author: string;
-    /** Year of first publication (e.g., "2025") */
-    firstPublished?: string;
-    /** Brief tagline (e.g., "An Interactive Fiction") */
-    headline?: string;
-    /** Genre classification */
-    genre?: string;
-    /** Story blurb/description */
-    description?: string;
-    /** Primary language code (e.g., "en") */
-    language?: string;
-    /** Series name if part of a series */
-    series?: string;
-    /** Number in series */
-    seriesNumber?: number;
-    /** Zarfian forgiveness scale */
-    forgiveness?: 'Merciful' | 'Polite' | 'Tough' | 'Nasty' | 'Cruel';
-}
-/**
- * Sharpee config section in package.json
- */
-export interface SharpeeConfig {
-    /** Story IFID */
-    ifid: string;
-    /** Story title */
-    title: string;
-    /**
-     * Author name(s), joined into one string. Intentionally singular — an
-     * external-spec adapter like `StoryMetadata.author` (Treaty of Babel),
-     * not the in-repo plural `StoryConfig.authors` (ADR-298).
-     */
-    author: string;
-    /** Year of first publication */
-    firstPublished?: string;
-    /** Brief tagline */
-    headline?: string;
-    /** Genre classification */
-    genre?: string;
-    /** Story description */
-    description?: string;
-    /** Primary language code */
-    language?: string;
-    /** Series name */
-    series?: string;
-    /** Number in series */
-    seriesNumber?: number;
-    /** Zarfian forgiveness scale */
-    forgiveness?: 'Merciful' | 'Polite' | 'Tough' | 'Nasty' | 'Cruel';
-}
-/**
- * Validation result for story configuration
- */
-export interface StoryConfigValidationResult {
-    valid: boolean;
-    error?: string;
-    warnings?: string[];
-}
-```
-
 ### events/types
 
 ```typescript
@@ -788,34 +619,552 @@ export interface IEventSystemOptions {
 export type Event = ISemanticEvent;
 ```
 
-### events/standard-events
+### events/event-source
 
 ```typescript
 /**
- * Standard event types and tags
- * TODO: Move to proper location
+ * Generic event source infrastructure for the narrative engine.
+ * This provides a simple pub/sub mechanism for any type of event.
  */
-export declare const StandardEventTypes: {
-    readonly ACTION: "action";
-    readonly SYSTEM: "system";
-    readonly NARRATIVE: "narrative";
-    readonly ERROR: "error";
+/**
+ * Generic event source interface for pub/sub pattern
+ */
+export interface IGenericEventSource<T> {
+    /**
+     * Emit an event to all subscribers
+     */
+    emit(event: T): void;
+    /**
+     * Subscribe to events
+     * @returns Unsubscribe function
+     */
+    subscribe(handler: (event: T) => void): () => void;
+}
+/**
+ * Simple synchronous implementation of EventSource
+ */
+export declare class SimpleEventSource<T> implements IGenericEventSource<T> {
+    private handlers;
+    emit(event: T): void;
+    subscribe(handler: (event: T) => void): () => void;
+    /**
+     * Get the current number of subscribers
+     */
+    get subscriberCount(): number;
+    /**
+     * Remove all subscribers
+     */
+    clear(): void;
+}
+/**
+ * Create a new event source for a specific event type
+ */
+export declare function createEventSource<T>(): IGenericEventSource<T>;
+```
+
+### events/semantic-event-source
+
+```typescript
+/**
+ * Semantic event source - specialized event source for story events
+ * Builds on the generic event source infrastructure
+ */
+import { IGenericEventSource, SimpleEventSource } from './event-source.js';
+import { ISemanticEvent, IEventEmitter } from './types.js';
+import { EntityId } from '../types/entity.js';
+/**
+ * Specialized event source for semantic (story) events
+ * Provides additional filtering and query capabilities
+ */
+export interface ISemanticEventSource extends IGenericEventSource<ISemanticEvent> {
+    /**
+     * Add an event to the source
+     */
+    addEvent(event: ISemanticEvent): void;
+    /**
+     * Get all events in the source
+     */
+    getAllEvents(): ISemanticEvent[];
+    /**
+     * Get events of a specific type
+     */
+    getEventsByType(type: string): ISemanticEvent[];
+    /**
+     * Get events involving a specific entity
+     */
+    getEventsByEntity(entityId: EntityId): ISemanticEvent[];
+    /**
+     * Get events with a specific tag
+     */
+    getEventsByTag(tag: string): ISemanticEvent[];
+    /**
+     * Clear all events
+     */
+    clearEvents(): void;
+    /**
+     * Apply a filter to the events
+     */
+    filter(predicate: (event: ISemanticEvent) => boolean): ISemanticEvent[];
+    /**
+     * Get the event emitter associated with this source
+     */
+    getEmitter(): IEventEmitter;
+}
+/**
+ * Implementation of semantic event source
+ */
+export declare class SemanticEventSourceImpl extends SimpleEventSource<ISemanticEvent> implements ISemanticEventSource {
+    private events;
+    private eventEmitter;
+    private lastProcessedIndex;
+    constructor();
+    addEvent(event: ISemanticEvent): void;
+    getAllEvents(): ISemanticEvent[];
+    getEventsByType(type: string): ISemanticEvent[];
+    getEventsByEntity(entityId: EntityId): ISemanticEvent[];
+    getEventsByTag(tag: string): ISemanticEvent[];
+    filter(predicate: (event: ISemanticEvent) => boolean): ISemanticEvent[];
+    clearEvents(): void;
+    getEmitter(): IEventEmitter;
+    /**
+     * Get events since a specific event ID
+     */
+    getEventsSince(eventId?: string): ISemanticEvent[];
+    /**
+     * Get unprocessed events and mark them as processed
+     */
+    getUnprocessedEvents(): ISemanticEvent[];
+}
+/**
+ * Create a new semantic event source
+ */
+export declare function createSemanticEventSource(): ISemanticEventSource;
+/**
+ * Type alias for backwards compatibility
+ * @deprecated Use SemanticEventSource instead
+ */
+export type EventSource = ISemanticEventSource;
+/**
+ * Create event source for backwards compatibility
+ * @deprecated Use createSemanticEventSource instead
+ */
+export declare function createEventSource(): EventSource;
+```
+
+### events/event-system
+
+```typescript
+import { ISemanticEvent } from './types.js';
+import { EntityId } from '../types/entity.js';
+import { ISemanticEventSource } from './semantic-event-source.js';
+/**
+ * Create a new semantic event
+ */
+export declare function createEvent(type: string, data?: Record<string, unknown>, entities?: {
+    actor?: EntityId;
+    target?: EntityId;
+    instrument?: EntityId;
+    location?: EntityId;
+    others?: EntityId[];
+}, metadata?: {
+    tags?: string[];
+    priority?: number;
+    narrate?: boolean;
+    source?: string;
+    sessionId?: string;
+    [key: string]: unknown;
+}): ISemanticEvent;
+export { SemanticEventSourceImpl as EventSourceImpl } from './semantic-event-source.js';
+/**
+ * Create a new event source
+ * @deprecated Use createSemanticEventSource from './semantic-event-source.js'
+ */
+export declare function createEventSource(): ISemanticEventSource;
+```
+
+### events/event-factory
+
+```typescript
+/**
+ * Event Factory - Type-safe semantic event creation
+ *
+ * @see ADR-082 for design rationale
+ */
+import { EventDataRegistry, EventType } from './event-registry.js';
+import { TypedSemanticEvent } from './typed-event.js';
+import { ISemanticEvent } from './types.js';
+/**
+ * Options for creating an event.
+ */
+export interface CreateEventOptions {
+    /**
+     * Entities involved in the event.
+     */
+    entities?: ISemanticEvent['entities'];
+    /**
+     * Tags for categorizing the event.
+     */
+    tags?: string[];
+    /**
+     * Priority of the event (higher = more important).
+     */
+    priority?: number;
+    /**
+     * Whether this event should be narrated.
+     */
+    narrate?: boolean;
+    /**
+     * Custom event ID (auto-generated if not provided).
+     */
+    id?: string;
+}
+/**
+ * Create a type-safe semantic event.
+ *
+ * The data parameter is strictly typed based on the event type,
+ * providing compile-time verification of event data.
+ *
+ * @example
+ * ```typescript
+ * // TypeScript enforces correct data shape
+ * const event = createTypedEvent('query.invalid', {
+ *   message: 'Invalid input',
+ *   hint: 'Please try again'
+ * });
+ *
+ * // This would be a compile error:
+ * // createTypedEvent('query.invalid', { wrongField: true });
+ * ```
+ */
+export declare function createTypedEvent<T extends EventType>(type: T, data: EventDataRegistry[T], options?: CreateEventOptions): TypedSemanticEvent<T>;
+/**
+ * Message event variant types.
+ */
+export type MessageVariant = 'success' | 'failure' | 'info' | 'warning' | 'debug';
+/**
+ * Create a message event (convenience helper).
+ *
+ * @example
+ * ```typescript
+ * const event = createMessageEvent('success', 'item_taken', {
+ *   item: 'brass lantern'
+ * });
+ * ```
+ */
+export declare function createMessageEvent(variant: MessageVariant, messageId: string, params?: Record<string, unknown>, options?: CreateEventOptions): TypedSemanticEvent<`message.${MessageVariant}`>;
+/**
+ * Create an empty event (for events with no data).
+ *
+ * @example
+ * ```typescript
+ * const event = createEmptyEvent('platform.quit_cancelled');
+ * ```
+ */
+export declare function createEmptyEvent<T extends EventType>(type: T, options?: CreateEventOptions): TypedSemanticEvent<T>;
+/**
+ * Reset the event counter (useful for testing).
+ */
+export declare function resetEventCounter(): void;
+```
+
+### events/event-helpers
+
+```typescript
+/**
+ * Event Helpers - Type-safe event consumption utilities
+ *
+ * These functions help consumers safely extract typed data from events
+ * without resorting to `as any` casts.
+ *
+ * @see ADR-082 for design rationale
+ */
+import { EventDataRegistry, EventType } from './event-registry.js';
+import { ISemanticEvent } from './types.js';
+/**
+ * Check if an event is of a specific type and narrow its type.
+ *
+ * This is a type guard that allows TypeScript to narrow the event
+ * type in conditional branches.
+ *
+ * @example
+ * ```typescript
+ * function processEvent(event: ISemanticEvent) {
+ *   if (isEventType(event, 'query.invalid')) {
+ *     // TypeScript knows event.data is QueryInvalidData
+ *     console.log(event.data.message);
+ *     console.log(event.data.hint);
+ *   }
+ * }
+ * ```
+ */
+export declare function isEventType<T extends EventType>(event: ISemanticEvent, type: T): event is ISemanticEvent & {
+    type: T;
+    data: EventDataRegistry[T];
 };
-export declare const StandardEventTags: {
-    readonly SUCCESS: "success";
-    readonly FAILURE: "failure";
-    readonly INFO: "info";
-    readonly WARNING: "warning";
-    readonly ERROR: "error";
-};
-export declare const EventCategories: {
-    readonly ACTION: "action";
-    readonly SYSTEM: "system";
-    readonly NARRATIVE: "narrative";
-};
-export type StandardEventType = typeof StandardEventTypes[keyof typeof StandardEventTypes];
-export type StandardEventTag = typeof StandardEventTags[keyof typeof StandardEventTags];
-export type EventCategory = typeof EventCategories[keyof typeof EventCategories];
+/**
+ * Check if an event type starts with a prefix.
+ *
+ * Useful for handling categories of events (e.g., all message.* events).
+ *
+ * @example
+ * ```typescript
+ * if (hasEventPrefix(event, 'message.')) {
+ *   // Handle any message event
+ * }
+ * ```
+ */
+export declare function hasEventPrefix(event: ISemanticEvent, prefix: string): boolean;
+/**
+ * Get typed event data if the event matches the expected type.
+ *
+ * Returns undefined if the event type doesn't match. This is the safe
+ * way to extract data when you're not sure of the event type.
+ *
+ * @example
+ * ```typescript
+ * const data = getEventData(event, 'quit.confirmed');
+ * if (data) {
+ *   console.log(`Final score: ${data.finalScore}`);
+ * }
+ * ```
+ */
+export declare function getEventData<T extends EventType>(event: ISemanticEvent, expectedType: T): EventDataRegistry[T] | undefined;
+/**
+ * Get event data with a fallback for missing properties.
+ *
+ * This is useful when you need default values for optional fields.
+ *
+ * @example
+ * ```typescript
+ * const { message, hint } = getEventDataWithDefaults(
+ *   event,
+ *   'query.invalid',
+ *   { message: 'Invalid response.', hint: undefined }
+ * );
+ * ```
+ */
+export declare function getEventDataWithDefaults<T extends EventType>(event: ISemanticEvent, expectedType: T, defaults: EventDataRegistry[T]): EventDataRegistry[T];
+/**
+ * Assert and get typed event data.
+ *
+ * Throws if the event type doesn't match. Use this when you're certain
+ * of the event type and want a clear error if assumptions are wrong.
+ *
+ * @example
+ * ```typescript
+ * // In a handler that only receives 'quit.confirmed' events
+ * const data = requireEventData(event, 'quit.confirmed');
+ * console.log(`Score: ${data.finalScore}/${data.maxScore}`);
+ * ```
+ */
+export declare function requireEventData<T extends EventType>(event: ISemanticEvent, expectedType: T): EventDataRegistry[T];
+/**
+ * Safely access a property from event data with type inference.
+ *
+ * Returns undefined if the event type doesn't match or the property
+ * doesn't exist.
+ *
+ * @example
+ * ```typescript
+ * const message = getEventProperty(event, 'query.invalid', 'message');
+ * // message is string | undefined
+ * ```
+ */
+export declare function getEventProperty<T extends EventType, K extends keyof EventDataRegistry[T]>(event: ISemanticEvent, expectedType: T, property: K): EventDataRegistry[T][K] | undefined;
+/**
+ * Get event data as a generic record for untyped event access.
+ *
+ * Use this when working with events that aren't yet in the EventDataRegistry.
+ * Prefer using typed helpers (isEventType, getEventData) when the event
+ * type is known.
+ *
+ * @example
+ * ```typescript
+ * const data = getUntypedEventData(event);
+ * if (data.customField) {
+ *   console.log(data.customField);
+ * }
+ * ```
+ */
+export declare function getUntypedEventData(event: ISemanticEvent): Record<string, unknown>;
+```
+
+### events/event-registry
+
+```typescript
+/**
+ * Event Data Registry - Central type definitions for all semantic events
+ *
+ * This module defines the mapping between event type strings and their
+ * corresponding data shapes. It serves as the single source of truth
+ * for event data types across the Sharpee platform.
+ *
+ * @see ADR-082 for the design rationale
+ *
+ * ## Extensibility
+ *
+ * Packages can extend this registry using TypeScript declaration merging:
+ *
+ * ```typescript
+ * declare module '@sharpee/core' {
+ *   interface EventDataRegistry {
+ *     'my.custom.event': MyCustomData;
+ *   }
+ * }
+ * ```
+ */
+import { EntityId } from '../types/entity.js';
+import type { IRestoreReconciliation } from '../types/save-data.js';
+/**
+ * Registry mapping event type strings to their data shapes.
+ *
+ * This interface is designed to be extended via declaration merging
+ * by stdlib, stories, and other packages.
+ */
+export interface EventDataRegistry {
+    'query.pending': QueryPendingData;
+    'query.invalid': QueryInvalidData;
+    'query.response': QueryResponseData;
+    'message.success': MessageData;
+    'message.failure': MessageData;
+    'message.info': MessageData;
+    'message.warning': MessageData;
+    'message.debug': MessageData;
+    'game.initializing': EmptyData;
+    'game.initialized': GameInitializedData;
+    'game.starting': EmptyData;
+    'game.started': GameStartedData;
+    'game.ending': GameEndingData;
+    'game.ended': GameEndedData;
+    'game.won': GameEndedData;
+    'game.lost': GameEndedData;
+    'game.quit': EmptyData;
+    'game.aborted': EmptyData;
+    'game.resumed': GameResumedData;
+    'game.pc_switched': PcSwitchedData;
+    'platform.save_requested': SaveRequestedData;
+    'platform.save_completed': SaveCompletedData;
+    'platform.save_failed': SaveFailedData;
+    'platform.restore_requested': RestoreRequestedData;
+    'platform.restore_completed': RestoreCompletedData;
+    'platform.restore_failed': RestoreFailedData;
+    'platform.save_reconciled': SaveReconciledData;
+    'platform.quit_requested': EmptyData;
+    'platform.quit_confirmed': QuitConfirmedData;
+    'platform.quit_cancelled': EmptyData;
+    'platform.restart_requested': EmptyData;
+    'platform.restart_completed': EmptyData;
+    'platform.restart_cancelled': EmptyData;
+    'turn.started': TurnData;
+    'turn.ended': TurnData;
+    'quit.confirmed': QuitConfirmedData;
+    'quit.cancelled': EmptyData;
+}
+/**
+ * Empty data for events that carry no payload.
+ */
+export interface EmptyData {
+}
+/**
+ * Standard message event data.
+ */
+export interface MessageData {
+    messageId: string;
+    params?: Record<string, unknown>;
+}
+export interface QueryPendingData {
+    query: {
+        id: string;
+        messageId: string;
+        messageParams?: Record<string, unknown>;
+        options?: string[];
+        validationType?: string;
+    };
+}
+export interface QueryInvalidData {
+    message?: string;
+    hint?: string;
+    queryId?: string;
+}
+export interface QueryResponseData {
+    queryId: string;
+    response: string | number | boolean;
+}
+export interface GameInitializedData {
+    storyId?: string;
+    storyTitle?: string;
+    storyVersion?: string;
+}
+export interface GameStartedData {
+    storyId?: string;
+    storyTitle?: string;
+    initialLocation?: EntityId;
+}
+export interface GameEndingData {
+    reason?: string;
+}
+export interface GameEndedData {
+    finalScore?: number;
+    maxScore?: number;
+    moves?: number;
+    reason?: string;
+    rank?: string;
+}
+/**
+ * Data for `game.resumed` — the post-mortem revival transition (ADR-345 D12).
+ *
+ * Deliberately minimal. The payload must carry no `message`, `text` or
+ * `messageId`: each of those is a path by which the prose pipeline would
+ * render the event, and D14 requires it to render nothing.
+ */
+export interface GameResumedData {
+    gameState: 'running';
+}
+export interface PcSwitchedData {
+    previousPlayerId: string;
+    newPlayerId: string;
+}
+export interface SaveRequestedData {
+    slotName?: string;
+}
+export interface SaveCompletedData {
+    slotName?: string;
+    timestamp?: number;
+}
+export interface SaveFailedData {
+    slotName?: string;
+    error?: string;
+}
+export interface RestoreRequestedData {
+    slotName?: string;
+}
+export interface RestoreCompletedData {
+    slotName?: string;
+    timestamp?: number;
+}
+/** The reconciliation report a restore produced (ADR-388 D5); the platform event carries it as its payload. */
+export type SaveReconciledData = IRestoreReconciliation;
+export interface RestoreFailedData {
+    slotName?: string;
+    error?: string;
+}
+export interface QuitConfirmedData {
+    messageId?: string;
+    finalScore?: number;
+    maxScore?: number;
+    moves?: number;
+}
+export interface TurnData {
+    turn: number;
+}
+/**
+ * All known event type strings.
+ */
+export type EventType = keyof EventDataRegistry;
+/**
+ * Get the data type for a specific event type.
+ */
+export type EventDataFor<T extends EventType> = EventDataRegistry[T];
 ```
 
 ### events/system-event
@@ -1354,905 +1703,6 @@ export declare function isGameAbortedEvent(event: ISemanticEvent): event is ISem
 };
 ```
 
-### events/event-registry
-
-```typescript
-/**
- * Event Data Registry - Central type definitions for all semantic events
- *
- * This module defines the mapping between event type strings and their
- * corresponding data shapes. It serves as the single source of truth
- * for event data types across the Sharpee platform.
- *
- * @see ADR-082 for the design rationale
- *
- * ## Extensibility
- *
- * Packages can extend this registry using TypeScript declaration merging:
- *
- * ```typescript
- * declare module '@sharpee/core' {
- *   interface EventDataRegistry {
- *     'my.custom.event': MyCustomData;
- *   }
- * }
- * ```
- */
-import { EntityId } from '../types/entity.js';
-import type { IRestoreReconciliation } from '../types/save-data.js';
-/**
- * Registry mapping event type strings to their data shapes.
- *
- * This interface is designed to be extended via declaration merging
- * by stdlib, stories, and other packages.
- */
-export interface EventDataRegistry {
-    'query.pending': QueryPendingData;
-    'query.invalid': QueryInvalidData;
-    'query.response': QueryResponseData;
-    'message.success': MessageData;
-    'message.failure': MessageData;
-    'message.info': MessageData;
-    'message.warning': MessageData;
-    'message.debug': MessageData;
-    'game.initializing': EmptyData;
-    'game.initialized': GameInitializedData;
-    'game.starting': EmptyData;
-    'game.started': GameStartedData;
-    'game.ending': GameEndingData;
-    'game.ended': GameEndedData;
-    'game.won': GameEndedData;
-    'game.lost': GameEndedData;
-    'game.quit': EmptyData;
-    'game.aborted': EmptyData;
-    'game.resumed': GameResumedData;
-    'game.pc_switched': PcSwitchedData;
-    'platform.save_requested': SaveRequestedData;
-    'platform.save_completed': SaveCompletedData;
-    'platform.save_failed': SaveFailedData;
-    'platform.restore_requested': RestoreRequestedData;
-    'platform.restore_completed': RestoreCompletedData;
-    'platform.restore_failed': RestoreFailedData;
-    'platform.save_reconciled': SaveReconciledData;
-    'platform.quit_requested': EmptyData;
-    'platform.quit_confirmed': QuitConfirmedData;
-    'platform.quit_cancelled': EmptyData;
-    'platform.restart_requested': EmptyData;
-    'platform.restart_completed': EmptyData;
-    'platform.restart_cancelled': EmptyData;
-    'turn.started': TurnData;
-    'turn.ended': TurnData;
-    'quit.confirmed': QuitConfirmedData;
-    'quit.cancelled': EmptyData;
-}
-/**
- * Empty data for events that carry no payload.
- */
-export interface EmptyData {
-}
-/**
- * Standard message event data.
- */
-export interface MessageData {
-    messageId: string;
-    params?: Record<string, unknown>;
-}
-export interface QueryPendingData {
-    query: {
-        id: string;
-        messageId: string;
-        messageParams?: Record<string, unknown>;
-        options?: string[];
-        validationType?: string;
-    };
-}
-export interface QueryInvalidData {
-    message?: string;
-    hint?: string;
-    queryId?: string;
-}
-export interface QueryResponseData {
-    queryId: string;
-    response: string | number | boolean;
-}
-export interface GameInitializedData {
-    storyId?: string;
-    storyTitle?: string;
-    storyVersion?: string;
-}
-export interface GameStartedData {
-    storyId?: string;
-    storyTitle?: string;
-    initialLocation?: EntityId;
-}
-export interface GameEndingData {
-    reason?: string;
-}
-export interface GameEndedData {
-    finalScore?: number;
-    maxScore?: number;
-    moves?: number;
-    reason?: string;
-    rank?: string;
-}
-/**
- * Data for `game.resumed` — the post-mortem revival transition (ADR-345 D12).
- *
- * Deliberately minimal. The payload must carry no `message`, `text` or
- * `messageId`: each of those is a path by which the prose pipeline would
- * render the event, and D14 requires it to render nothing.
- */
-export interface GameResumedData {
-    gameState: 'running';
-}
-export interface PcSwitchedData {
-    previousPlayerId: string;
-    newPlayerId: string;
-}
-export interface SaveRequestedData {
-    slotName?: string;
-}
-export interface SaveCompletedData {
-    slotName?: string;
-    timestamp?: number;
-}
-export interface SaveFailedData {
-    slotName?: string;
-    error?: string;
-}
-export interface RestoreRequestedData {
-    slotName?: string;
-}
-export interface RestoreCompletedData {
-    slotName?: string;
-    timestamp?: number;
-}
-/** The reconciliation report a restore produced (ADR-388 D5); the platform event carries it as its payload. */
-export type SaveReconciledData = IRestoreReconciliation;
-export interface RestoreFailedData {
-    slotName?: string;
-    error?: string;
-}
-export interface QuitConfirmedData {
-    messageId?: string;
-    finalScore?: number;
-    maxScore?: number;
-    moves?: number;
-}
-export interface TurnData {
-    turn: number;
-}
-/**
- * All known event type strings.
- */
-export type EventType = keyof EventDataRegistry;
-/**
- * Get the data type for a specific event type.
- */
-export type EventDataFor<T extends EventType> = EventDataRegistry[T];
-```
-
-### events/typed-event
-
-```typescript
-/**
- * Typed Semantic Event - Generic event interface with compile-time type safety
- *
- * @see ADR-082 for design rationale
- */
-import { EventDataRegistry, EventType } from './event-registry.js';
-import { ISemanticEvent } from './types.js';
-/**
- * A semantic event with typed data based on the event type.
- *
- * Use this when you know the specific event type at compile time.
- * The `data` property is strictly typed based on the event type.
- *
- * @example
- * ```typescript
- * const event: TypedSemanticEvent<'query.invalid'> = {
- *   id: 'evt-1',
- *   type: 'query.invalid',
- *   timestamp: Date.now(),
- *   entities: {},
- *   data: { message: 'Invalid input', hint: 'Try again' }
- * };
- *
- * // TypeScript knows event.data.message is string | undefined
- * console.log(event.data.message);
- * ```
- */
-export interface TypedSemanticEvent<T extends EventType> extends Omit<ISemanticEvent, 'type' | 'data'> {
-    /**
-     * The event type - a literal string type for discrimination.
-     */
-    type: T;
-    /**
-     * Typed event data based on the event type.
-     */
-    data: EventDataRegistry[T];
-}
-/**
- * Union of all known typed semantic events.
- *
- * Use this for exhaustive event handling where you want TypeScript
- * to verify you've handled all event types.
- *
- * @example
- * ```typescript
- * function handleEvent(event: KnownSemanticEvent) {
- *   switch (event.type) {
- *     case 'query.invalid':
- *       // TypeScript knows event.data is QueryInvalidData
- *       return event.data.message;
- *     case 'query.pending':
- *       // TypeScript knows event.data is QueryPendingData
- *       return event.data.query.messageId;
- *     // ... handle all cases
- *   }
- * }
- * ```
- */
-export type KnownSemanticEvent = {
-    [K in EventType]: TypedSemanticEvent<K>;
-}[EventType];
-/**
- * Type guard to check if an ISemanticEvent is a known typed event.
- *
- * This is useful when you have an ISemanticEvent and want to narrow
- * it to a KnownSemanticEvent for exhaustive handling.
- */
-export declare function isKnownEvent(event: ISemanticEvent): event is KnownSemanticEvent;
-```
-
-### events/event-factory
-
-```typescript
-/**
- * Event Factory - Type-safe semantic event creation
- *
- * @see ADR-082 for design rationale
- */
-import { EventDataRegistry, EventType } from './event-registry.js';
-import { TypedSemanticEvent } from './typed-event.js';
-import { ISemanticEvent } from './types.js';
-/**
- * Options for creating an event.
- */
-export interface CreateEventOptions {
-    /**
-     * Entities involved in the event.
-     */
-    entities?: ISemanticEvent['entities'];
-    /**
-     * Tags for categorizing the event.
-     */
-    tags?: string[];
-    /**
-     * Priority of the event (higher = more important).
-     */
-    priority?: number;
-    /**
-     * Whether this event should be narrated.
-     */
-    narrate?: boolean;
-    /**
-     * Custom event ID (auto-generated if not provided).
-     */
-    id?: string;
-}
-/**
- * Create a type-safe semantic event.
- *
- * The data parameter is strictly typed based on the event type,
- * providing compile-time verification of event data.
- *
- * @example
- * ```typescript
- * // TypeScript enforces correct data shape
- * const event = createTypedEvent('query.invalid', {
- *   message: 'Invalid input',
- *   hint: 'Please try again'
- * });
- *
- * // This would be a compile error:
- * // createTypedEvent('query.invalid', { wrongField: true });
- * ```
- */
-export declare function createTypedEvent<T extends EventType>(type: T, data: EventDataRegistry[T], options?: CreateEventOptions): TypedSemanticEvent<T>;
-/**
- * Message event variant types.
- */
-export type MessageVariant = 'success' | 'failure' | 'info' | 'warning' | 'debug';
-/**
- * Create a message event (convenience helper).
- *
- * @example
- * ```typescript
- * const event = createMessageEvent('success', 'item_taken', {
- *   item: 'brass lantern'
- * });
- * ```
- */
-export declare function createMessageEvent(variant: MessageVariant, messageId: string, params?: Record<string, unknown>, options?: CreateEventOptions): TypedSemanticEvent<`message.${MessageVariant}`>;
-/**
- * Create an empty event (for events with no data).
- *
- * @example
- * ```typescript
- * const event = createEmptyEvent('platform.quit_cancelled');
- * ```
- */
-export declare function createEmptyEvent<T extends EventType>(type: T, options?: CreateEventOptions): TypedSemanticEvent<T>;
-/**
- * Reset the event counter (useful for testing).
- */
-export declare function resetEventCounter(): void;
-```
-
-### events/event-helpers
-
-```typescript
-/**
- * Event Helpers - Type-safe event consumption utilities
- *
- * These functions help consumers safely extract typed data from events
- * without resorting to `as any` casts.
- *
- * @see ADR-082 for design rationale
- */
-import { EventDataRegistry, EventType } from './event-registry.js';
-import { ISemanticEvent } from './types.js';
-/**
- * Check if an event is of a specific type and narrow its type.
- *
- * This is a type guard that allows TypeScript to narrow the event
- * type in conditional branches.
- *
- * @example
- * ```typescript
- * function processEvent(event: ISemanticEvent) {
- *   if (isEventType(event, 'query.invalid')) {
- *     // TypeScript knows event.data is QueryInvalidData
- *     console.log(event.data.message);
- *     console.log(event.data.hint);
- *   }
- * }
- * ```
- */
-export declare function isEventType<T extends EventType>(event: ISemanticEvent, type: T): event is ISemanticEvent & {
-    type: T;
-    data: EventDataRegistry[T];
-};
-/**
- * Check if an event type starts with a prefix.
- *
- * Useful for handling categories of events (e.g., all message.* events).
- *
- * @example
- * ```typescript
- * if (hasEventPrefix(event, 'message.')) {
- *   // Handle any message event
- * }
- * ```
- */
-export declare function hasEventPrefix(event: ISemanticEvent, prefix: string): boolean;
-/**
- * Get typed event data if the event matches the expected type.
- *
- * Returns undefined if the event type doesn't match. This is the safe
- * way to extract data when you're not sure of the event type.
- *
- * @example
- * ```typescript
- * const data = getEventData(event, 'quit.confirmed');
- * if (data) {
- *   console.log(`Final score: ${data.finalScore}`);
- * }
- * ```
- */
-export declare function getEventData<T extends EventType>(event: ISemanticEvent, expectedType: T): EventDataRegistry[T] | undefined;
-/**
- * Get event data with a fallback for missing properties.
- *
- * This is useful when you need default values for optional fields.
- *
- * @example
- * ```typescript
- * const { message, hint } = getEventDataWithDefaults(
- *   event,
- *   'query.invalid',
- *   { message: 'Invalid response.', hint: undefined }
- * );
- * ```
- */
-export declare function getEventDataWithDefaults<T extends EventType>(event: ISemanticEvent, expectedType: T, defaults: EventDataRegistry[T]): EventDataRegistry[T];
-/**
- * Assert and get typed event data.
- *
- * Throws if the event type doesn't match. Use this when you're certain
- * of the event type and want a clear error if assumptions are wrong.
- *
- * @example
- * ```typescript
- * // In a handler that only receives 'quit.confirmed' events
- * const data = requireEventData(event, 'quit.confirmed');
- * console.log(`Score: ${data.finalScore}/${data.maxScore}`);
- * ```
- */
-export declare function requireEventData<T extends EventType>(event: ISemanticEvent, expectedType: T): EventDataRegistry[T];
-/**
- * Safely access a property from event data with type inference.
- *
- * Returns undefined if the event type doesn't match or the property
- * doesn't exist.
- *
- * @example
- * ```typescript
- * const message = getEventProperty(event, 'query.invalid', 'message');
- * // message is string | undefined
- * ```
- */
-export declare function getEventProperty<T extends EventType, K extends keyof EventDataRegistry[T]>(event: ISemanticEvent, expectedType: T, property: K): EventDataRegistry[T][K] | undefined;
-/**
- * Get event data as a generic record for untyped event access.
- *
- * Use this when working with events that aren't yet in the EventDataRegistry.
- * Prefer using typed helpers (isEventType, getEventData) when the event
- * type is known.
- *
- * @example
- * ```typescript
- * const data = getUntypedEventData(event);
- * if (data.customField) {
- *   console.log(data.customField);
- * }
- * ```
- */
-export declare function getUntypedEventData(event: ISemanticEvent): Record<string, unknown>;
-```
-
-### events/event-source
-
-```typescript
-/**
- * Generic event source infrastructure for the narrative engine.
- * This provides a simple pub/sub mechanism for any type of event.
- */
-/**
- * Generic event source interface for pub/sub pattern
- */
-export interface IGenericEventSource<T> {
-    /**
-     * Emit an event to all subscribers
-     */
-    emit(event: T): void;
-    /**
-     * Subscribe to events
-     * @returns Unsubscribe function
-     */
-    subscribe(handler: (event: T) => void): () => void;
-}
-/**
- * Simple synchronous implementation of EventSource
- */
-export declare class SimpleEventSource<T> implements IGenericEventSource<T> {
-    private handlers;
-    emit(event: T): void;
-    subscribe(handler: (event: T) => void): () => void;
-    /**
-     * Get the current number of subscribers
-     */
-    get subscriberCount(): number;
-    /**
-     * Remove all subscribers
-     */
-    clear(): void;
-}
-/**
- * Create a new event source for a specific event type
- */
-export declare function createEventSource<T>(): IGenericEventSource<T>;
-```
-
-### events/semantic-event-source
-
-```typescript
-/**
- * Semantic event source - specialized event source for story events
- * Builds on the generic event source infrastructure
- */
-import { IGenericEventSource, SimpleEventSource } from './event-source.js';
-import { ISemanticEvent, IEventEmitter } from './types.js';
-import { EntityId } from '../types/entity.js';
-/**
- * Specialized event source for semantic (story) events
- * Provides additional filtering and query capabilities
- */
-export interface ISemanticEventSource extends IGenericEventSource<ISemanticEvent> {
-    /**
-     * Add an event to the source
-     */
-    addEvent(event: ISemanticEvent): void;
-    /**
-     * Get all events in the source
-     */
-    getAllEvents(): ISemanticEvent[];
-    /**
-     * Get events of a specific type
-     */
-    getEventsByType(type: string): ISemanticEvent[];
-    /**
-     * Get events involving a specific entity
-     */
-    getEventsByEntity(entityId: EntityId): ISemanticEvent[];
-    /**
-     * Get events with a specific tag
-     */
-    getEventsByTag(tag: string): ISemanticEvent[];
-    /**
-     * Clear all events
-     */
-    clearEvents(): void;
-    /**
-     * Apply a filter to the events
-     */
-    filter(predicate: (event: ISemanticEvent) => boolean): ISemanticEvent[];
-    /**
-     * Get the event emitter associated with this source
-     */
-    getEmitter(): IEventEmitter;
-}
-/**
- * Implementation of semantic event source
- */
-export declare class SemanticEventSourceImpl extends SimpleEventSource<ISemanticEvent> implements ISemanticEventSource {
-    private events;
-    private eventEmitter;
-    private lastProcessedIndex;
-    constructor();
-    addEvent(event: ISemanticEvent): void;
-    getAllEvents(): ISemanticEvent[];
-    getEventsByType(type: string): ISemanticEvent[];
-    getEventsByEntity(entityId: EntityId): ISemanticEvent[];
-    getEventsByTag(tag: string): ISemanticEvent[];
-    filter(predicate: (event: ISemanticEvent) => boolean): ISemanticEvent[];
-    clearEvents(): void;
-    getEmitter(): IEventEmitter;
-    /**
-     * Get events since a specific event ID
-     */
-    getEventsSince(eventId?: string): ISemanticEvent[];
-    /**
-     * Get unprocessed events and mark them as processed
-     */
-    getUnprocessedEvents(): ISemanticEvent[];
-}
-/**
- * Create a new semantic event source
- */
-export declare function createSemanticEventSource(): ISemanticEventSource;
-/**
- * Type alias for backwards compatibility
- * @deprecated Use SemanticEventSource instead
- */
-export type EventSource = ISemanticEventSource;
-/**
- * Create event source for backwards compatibility
- * @deprecated Use createSemanticEventSource instead
- */
-export declare function createEventSource(): EventSource;
-```
-
-### events/event-system
-
-```typescript
-import { ISemanticEvent } from './types.js';
-import { EntityId } from '../types/entity.js';
-import { ISemanticEventSource } from './semantic-event-source.js';
-/**
- * Create a new semantic event
- */
-export declare function createEvent(type: string, data?: Record<string, unknown>, entities?: {
-    actor?: EntityId;
-    target?: EntityId;
-    instrument?: EntityId;
-    location?: EntityId;
-    others?: EntityId[];
-}, metadata?: {
-    tags?: string[];
-    priority?: number;
-    narrate?: boolean;
-    source?: string;
-    sessionId?: string;
-    [key: string]: unknown;
-}): ISemanticEvent;
-export { SemanticEventSourceImpl as EventSourceImpl } from './semantic-event-source.js';
-/**
- * Create a new event source
- * @deprecated Use createSemanticEventSource from './semantic-event-source.js'
- */
-export declare function createEventSource(): ISemanticEventSource;
-```
-
-### extensions/types
-
-```typescript
-import { ISemanticEvent } from '../events/types.js';
-/**
- * Base interface for all extensions
- */
-export interface IExtension {
-    /**
-     * Unique identifier for this extension
-     */
-    id: string;
-    /**
-     * Human-readable name of the extension
-     */
-    name: string;
-    /**
-     * Version of the extension
-     */
-    version?: string;
-    /**
-     * Extension dependencies
-     */
-    dependencies?: string[];
-}
-/**
- * Extension for command handling (generic)
- * The IF-specific version with ParsedCommand and GameContext is in stdlib
- */
-export interface ICommandExtension extends IExtension {
-    /**
-     * Verbs that this extension can handle
-     */
-    verbs: string[];
-}
-/**
- * Extension for abilities (generic)
- * The IF-specific version with GameContext is in stdlib
- */
-export interface IAbilityExtension extends IExtension {
-    /**
-     * Name of the ability
-     */
-    abilityName: string;
-}
-/**
- * Extension for event processing (generic)
- * The IF-specific version with GameContext is in stdlib
- */
-export interface IEventExtension extends IExtension {
-    /**
-     * Event types that this extension handles
-     */
-    eventTypes: string[];
-    /**
-     * Process an event
-     */
-    processEvent: (event: ISemanticEvent) => ISemanticEvent[];
-}
-/**
- * Extension for parser enhancements (generic)
- * The IF-specific version with ParsedCommand is in stdlib
- */
-export interface IParserExtension extends IExtension {
-    /**
-     * Grammar rules, dictionaries, etc.
-     */
-    vocabulary?: Record<string, string[]>;
-    /**
-     * Pre-processing hook for input text
-     */
-    preProcessInput?: (input: string) => string;
-}
-/**
- * Extension types enum
- */
-export declare enum ExtensionType {
-    COMMAND = "command",
-    ABILITY = "ability",
-    EVENT = "event",
-    PARSER = "parser"
-}
-/**
- * Union type for all extension types
- */
-export type AnyExtension = ICommandExtension | IAbilityExtension | IEventExtension | IParserExtension;
-```
-
-### execution/types
-
-```typescript
-/**
- * Generic context interface for execution
- * Domain-specific contexts should extend this interface
- */
-export interface IExecutionContext {
-    /**
-     * Additional context data
-     */
-    [key: string]: any;
-}
-/**
- * Generic handler interface for any command-like system
- * This is kept generic - specific implementations (IF, visual novel, etc)
- * should define their own command and result types
- */
-export interface ICommandHandler<TCommand = any, TResult = any> {
-    /**
-     * The verb or verbs that this handler can process
-     */
-    verbs: string[];
-    /**
-     * Check if this handler can handle the given command
-     */
-    canHandle: (command: TCommand, context: IExecutionContext) => boolean;
-    /**
-     * Execute the command
-     */
-    execute: (command: TCommand, context: IExecutionContext) => Promise<TResult> | TResult;
-    /**
-     * Validate the command before execution
-     */
-    validate?: (command: TCommand, context: IExecutionContext) => {
-        valid: boolean;
-        error?: string;
-    };
-}
-/**
- * Generic action interface
- * Actions are handlers with unique identifiers
- */
-export interface IAction<TCommand = any, TResult = any> extends ICommandHandler<TCommand, TResult> {
-    /**
-     * Unique identifier for the action
-     */
-    id: string;
-    /**
-     * Action metadata (if any)
-     */
-    metadata?: any;
-}
-/**
- * Generic router interface for command-like systems
- */
-export interface ICommandRouter<TCommand = any, TResult = any> {
-    /**
-     * Register a command handler
-     */
-    registerHandler: (handler: ICommandHandler<TCommand, TResult>) => void;
-    /**
-     * Unregister a command handler
-     */
-    unregisterHandler: (handler: ICommandHandler<TCommand, TResult>) => void;
-    /**
-     * Get a handler for the command
-     */
-    getHandler: (command: TCommand, context: IExecutionContext) => ICommandHandler<TCommand, TResult> | undefined;
-    /**
-     * Route and execute a command
-     */
-    execute: (command: TCommand, context: IExecutionContext, options?: ICommandExecutionOptions<TCommand>) => Promise<TResult>;
-    /**
-     * Process the result of command execution and return text output
-     */
-    processResult?: (result: TResult) => string;
-}
-/**
- * Generic factory interface for creating handlers
- */
-export interface ICommandHandlerFactory<TCommand = any, TResult = any> {
-    /**
-     * Create a standard command handler
-     */
-    createHandler: (config: {
-        verbs: string[];
-        canHandle?: (command: TCommand, context: IExecutionContext) => boolean;
-        execute: (command: TCommand, context: IExecutionContext) => Promise<TResult> | TResult;
-        validate?: (command: TCommand, context: IExecutionContext) => {
-            valid: boolean;
-            error?: string;
-        };
-    }) => ICommandHandler<TCommand, TResult>;
-}
-/**
- * Options for command execution
- */
-export interface ICommandExecutionOptions<TCommand = any, TResult = any> {
-    /**
-     * Whether to skip validation
-     */
-    skipValidation?: boolean;
-    /**
-     * Custom validation callback
-     */
-    customValidation?: (command: TCommand, context: IExecutionContext) => {
-        valid: boolean;
-        error?: string;
-    };
-    /**
-     * Pre-execution hooks
-     */
-    preExecute?: ((command: TCommand, context: IExecutionContext) => Promise<void> | void)[];
-    /**
-     * Post-execution hooks
-     */
-    postExecute?: ((result: TResult, command: TCommand, context: IExecutionContext) => Promise<TResult> | TResult)[];
-}
-```
-
-### debug/types
-
-```typescript
-/**
- * Debug event types for diagnostic information.
- * These are separate from semantic events and used for development/debugging.
- */
-/**
- * Debug event emitted by various subsystems for diagnostic purposes.
- * These events are NOT part of the game's semantic event system.
- */
-export interface IDebugEvent {
-    /** Unique identifier for this debug event */
-    id: string;
-    /** When the event was emitted */
-    timestamp: number;
-    /** Which subsystem emitted this event */
-    subsystem: 'parser' | 'validator' | 'executor' | 'world-model' | 'text-service';
-    /** Type of debug event within the subsystem */
-    type: string;
-    /** Event-specific data */
-    data: any;
-}
-/**
- * Callback function for receiving debug events
- */
-export type DebugEventCallback = (event: IDebugEvent) => void;
-/**
- * Context for debug event emission, passed to subsystems
- */
-export interface IDebugContext {
-    /** Optional callback to emit debug events */
-    emit?: DebugEventCallback;
-    /** Whether debug events are enabled */
-    enabled: boolean;
-}
-/**
- * Common debug event types by subsystem
- */
-export declare const DebugEventTypes: {
-    readonly parser: {
-        readonly TOKEN_ANALYSIS: "token_analysis";
-        readonly PATTERN_MATCH: "pattern_match";
-        readonly CANDIDATE_SCORING: "candidate_scoring";
-    };
-    readonly validator: {
-        readonly ENTITY_RESOLUTION: "entity_resolution";
-        readonly SCOPE_CHECK: "scope_check";
-        readonly AMBIGUITY_RESOLUTION: "ambiguity_resolution";
-        readonly VALIDATION_ERROR: "validation_error";
-    };
-    readonly executor: {
-        readonly ACTION_START: "action_start";
-        readonly ACTION_COMPLETE: "action_complete";
-        readonly ACTION_ERROR: "action_error";
-    };
-    readonly worldModel: {
-        readonly ENTITY_CHANGE: "entity_change";
-        readonly RELATION_CHANGE: "relation_change";
-        readonly PROPERTY_CHANGE: "property_change";
-    };
-    readonly textService: {
-        readonly TEMPLATE_SELECTION: "template_selection";
-        readonly TEXT_GENERATION: "text_generation";
-        readonly CHANNEL_ROUTING: "channel_routing";
-    };
-};
-```
-
 ### query/types
 
 ```typescript
@@ -2578,62 +2028,6 @@ export interface SeededRandom {
 export declare function createSeededRandom(seed?: number): SeededRandom;
 ```
 
-### random/choice-point
-
-```typescript
-/**
- * Choice points — declared draw sites and the process-global catalog (ADR-293 D2, D4).
- *
- * Public interface: `ChoicePoint<C>`, `definePoint(name, opts?)`, `getRegisteredPoints()`,
- * `getPoint(name)`.
- * Owner context: @sharpee/core random substrate. Core holds static metadata only —
- * no state that draws lives here (D5); stream state is per-engine, per-session.
- *
- * The catalog is process-global BY DESIGN (D2, amended A1): entries are immutable,
- * idempotent metadata holding no stream, which is what makes import-time registration
- * safe where D6 kills module-scope *streams*. In a multi-story process the
- * catalog holds the union; consumers filter by story id / package prefix, which works
- * because entries retain their D2 name prefix.
- */
-/**
- * A declared draw site. With `classes` it is a choice point (traced, counted in
- * coverage, forceable); without, it is a plain draw (seeded and traced only) — D4.
- */
-export interface ChoicePoint<C extends string = string> {
-    /** Dotted, first segment is the story/package id, no abbreviations (D2): 'dungeo.melee.blow.hero' */
-    readonly name: string;
-    /** Outcome classes; absent ⇒ plain draw (D4) */
-    readonly classes?: readonly C[];
-}
-/**
- * Declare a choice point (or, with no classes, a plain draw) and register it in the
- * process-global catalog. The draw API accepts only the returned handle (D2).
- *
- * Idempotent: redeclaring the same name with identical classes returns the original
- * handle. Immutable: redeclaring with different classes throws — the catalog never
- * mutates an entry.
- *
- * @param name - dotted point name; first segment is the story or package id (D2)
- * @param opts - `classes`: the point's outcome classes; omit for a plain draw (D4)
- * @returns the frozen, catalog-registered handle
- * @throws Error if `name` is empty, or already registered with different classes
- */
-export declare function definePoint<C extends string>(name: string, opts?: {
-    classes: readonly C[];
-}): ChoicePoint<C>;
-/**
- * Snapshot of every registered point, for engine's story-start snapshot and
- * `catalog − fired` coverage. Returns a fresh array; the entries themselves are frozen.
- */
-export declare function getRegisteredPoints(): readonly ChoicePoint[];
-/**
- * Look up a registered point by name.
- *
- * @returns the handle, or undefined if no point with that name is declared
- */
-export declare function getPoint(name: string): ChoicePoint | undefined;
-```
-
 ### random/random-service
 
 ```typescript
@@ -2729,6 +2123,62 @@ export declare const SEED_DERIVATION_VERSION = 1;
  * @returns an unsigned 32-bit seed for the point's stream
  */
 export declare function deriveStreamSeed(masterSeed: number, pointName: string): number;
+```
+
+### random/choice-point
+
+```typescript
+/**
+ * Choice points — declared draw sites and the process-global catalog (ADR-293 D2, D4).
+ *
+ * Public interface: `ChoicePoint<C>`, `definePoint(name, opts?)`, `getRegisteredPoints()`,
+ * `getPoint(name)`.
+ * Owner context: @sharpee/core random substrate. Core holds static metadata only —
+ * no state that draws lives here (D5); stream state is per-engine, per-session.
+ *
+ * The catalog is process-global BY DESIGN (D2, amended A1): entries are immutable,
+ * idempotent metadata holding no stream, which is what makes import-time registration
+ * safe where D6 kills module-scope *streams*. In a multi-story process the
+ * catalog holds the union; consumers filter by story id / package prefix, which works
+ * because entries retain their D2 name prefix.
+ */
+/**
+ * A declared draw site. With `classes` it is a choice point (traced, counted in
+ * coverage, forceable); without, it is a plain draw (seeded and traced only) — D4.
+ */
+export interface ChoicePoint<C extends string = string> {
+    /** Dotted, first segment is the story/package id, no abbreviations (D2): 'dungeo.melee.blow.hero' */
+    readonly name: string;
+    /** Outcome classes; absent ⇒ plain draw (D4) */
+    readonly classes?: readonly C[];
+}
+/**
+ * Declare a choice point (or, with no classes, a plain draw) and register it in the
+ * process-global catalog. The draw API accepts only the returned handle (D2).
+ *
+ * Idempotent: redeclaring the same name with identical classes returns the original
+ * handle. Immutable: redeclaring with different classes throws — the catalog never
+ * mutates an entry.
+ *
+ * @param name - dotted point name; first segment is the story or package id (D2)
+ * @param opts - `classes`: the point's outcome classes; omit for a plain draw (D4)
+ * @returns the frozen, catalog-registered handle
+ * @throws Error if `name` is empty, or already registered with different classes
+ */
+export declare function definePoint<C extends string>(name: string, opts?: {
+    classes: readonly C[];
+}): ChoicePoint<C>;
+/**
+ * Snapshot of every registered point, for engine's story-start snapshot and
+ * `catalog − fired` coverage. Returns a fresh array; the entries themselves are frozen.
+ */
+export declare function getRegisteredPoints(): readonly ChoicePoint[];
+/**
+ * Look up a registered point by name.
+ *
+ * @returns the handle, or undefined if no point with that name is declared
+ */
+export declare function getPoint(name: string): ChoicePoint | undefined;
 ```
 
 ### random/force

@@ -1,0 +1,46 @@
+
+> @sharpee/channel-service@5.5.1 test:ci /Users/david/repos/sharpee/packages/channel-service
+> vitest run
+
+
+ RUN  v3.2.4 /Users/david/repos/sharpee/packages/channel-service
+
+ ✓ tests/ac-17-two-listeners-only.test.ts (3 tests) 2ms
+ ✓ tests/render-to-string.test.ts (31 tests) 3ms
+ ✓ tests/prose.test.ts (25 tests) 2ms
+ ✓ tests/ac-02-wire-protocol.test.ts (10 tests) 97ms
+stdout | tests/renderer.test.ts > AC-6 — clear truncation > clear empties the state store and fires onClear on append channels
+[clear] {"target":"main"}
+
+stdout | tests/renderer.test.ts > AC-6 — clear truncation > clear with no target clears every append-mode channel
+[main] ["x"]
+[log] ["y"]
+[score] 5
+[clear] {}
+
+stdout | tests/renderer.test.ts > AC-7 — state store lifecycle > reset on applyCmgt; replaying captured packets restores the snapshot
+[main] ["first"]
+[main] ["second"]
+[score] {"current":5,"max":100}
+[main] ["third"]
+[main] ["first"]
+[main] ["second"]
+[score] {"current":5,"max":100}
+[main] ["third"]
+
+stdout | tests/renderer.test.ts > AC-7 — state store lifecycle > snapshot is a deep clone — caller mutation does not leak back
+[main] [{"val":1}]
+
+ ✓ tests/channel-service.test.ts (26 tests) 3ms
+ ✓ tests/renderer.test.ts (20 tests) 6ms
+ ✓ tests/ac-14-browser-real-path.test.ts (2 tests) 552ms
+ ✓ tests/ac-13-cli-real-path.test.ts (2 tests) 919ms
+   ✓ AC-13 — CLI real-path against dist/cli/sharpee.js > runs wt-01-get-torch-early through the bundle and reports a passing transcript  697ms
+ ✓ tests/ac-16-cleanup-grep-gate.test.ts (2 tests) 2219ms
+   ✓ AC-16 — ADR-101 emission cleanup grep gate > finds every ADR-101 event-type only in allow-listed locations  2218ms
+
+ Test Files  9 passed (9)
+      Tests  121 passed (121)
+   Start at  02:15:44
+   Duration  2.42s (transform 233ms, setup 0ms, collect 555ms, tests 3.80s, environment 1ms, prepare 308ms)
+
