@@ -1,0 +1,15 @@
+
+> @sharpee/queries@5.5.1 test:ci /Users/david/repos/sharpee/packages/queries
+> vitest run
+
+
+ RUN  v1.6.1 /Users/david/repos/sharpee/packages/queries
+
+ ✓ tests/e2e-augmentation.test.ts  (18 tests) 2ms
+ ✓ tests/entity-query.test.ts  (84 tests) 5ms
+
+ Test Files  2 passed (2)
+      Tests  102 passed (102)
+   Start at  01:55:01
+   Duration  491ms (transform 294ms, setup 0ms, collect 761ms, tests 7ms, environment 0ms, prepare 64ms)
+
