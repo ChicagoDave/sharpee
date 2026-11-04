@@ -4,7 +4,7 @@
  * @see ADR-082 for design rationale
  */
 
-import { EventDataRegistry, EventType, MessageData } from './event-registry.js';
+import { EventDataRegistry, EventType } from './event-registry.js';
 import { ISemanticEvent } from './types.js';
 
 /**
@@ -91,45 +91,3 @@ export function createTypedEvent<T extends EventType>(
  * Message event variant types.
  */
 export type MessageVariant = 'success' | 'failure' | 'info' | 'warning' | 'debug';
-
-/**
- * Create a message event (convenience helper).
- *
- * @example
- * ```typescript
- * const event = createMessageEvent('success', 'item_taken', {
- *   item: 'brass lantern'
- * });
- * ```
- */
-export function createMessageEvent(
-  variant: MessageVariant,
-  messageId: string,
-  params?: Record<string, unknown>,
-  options?: CreateEventOptions
-): TypedSemanticEvent<`message.${MessageVariant}`> {
-  const type = `message.${variant}` as `message.${MessageVariant}`;
-  return createTypedEvent(type, { messageId, params } as MessageData, options);
-}
-
-/**
- * Create an empty event (for events with no data).
- *
- * @example
- * ```typescript
- * const event = createEmptyEvent('platform.quit_cancelled');
- * ```
- */
-export function createEmptyEvent<T extends EventType>(
-  type: T,
-  options?: CreateEventOptions
-): TypedSemanticEvent<T> {
-  return createTypedEvent(type, {} as EventDataRegistry[T], options);
-}
-
-/**
- * Reset the event counter (useful for testing).
- */
-export function resetEventCounter(): void {
-  eventCounter = 0;
-}

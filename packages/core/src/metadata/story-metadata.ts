@@ -86,12 +86,3 @@ export interface SharpeeConfig {
   /** Zarfian forgiveness scale */
   forgiveness?: 'Merciful' | 'Polite' | 'Tough' | 'Nasty' | 'Cruel';
 }
-
-/**
- * Validation result for story configuration
- */
-export interface StoryConfigValidationResult {
-  valid: boolean;
-  error?: string;
-  warnings?: string[];
-}

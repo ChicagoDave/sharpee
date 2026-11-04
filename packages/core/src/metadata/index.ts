@@ -1,6 +1,5 @@
 // packages/core/src/metadata/index.ts
 export type {
   StoryMetadata,
-  SharpeeConfig,
-  StoryConfigValidationResult
+  SharpeeConfig
 } from './story-metadata.js';

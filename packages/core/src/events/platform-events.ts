@@ -155,22 +155,6 @@ export function isPlatformRequestEvent(event: ISemanticEvent): boolean {
   );
 }
 
-export function isPlatformCompletionEvent(event: ISemanticEvent): boolean {
-  return isPlatformEvent(event) && (
-    event.type === PlatformEventType.SAVE_COMPLETED ||
-    event.type === PlatformEventType.RESTORE_COMPLETED ||
-    event.type === PlatformEventType.QUIT_CONFIRMED ||
-    event.type === PlatformEventType.RESTART_COMPLETED ||
-    event.type === PlatformEventType.UNDO_COMPLETED ||
-    event.type === PlatformEventType.SAVE_FAILED ||
-    event.type === PlatformEventType.RESTORE_FAILED ||
-    event.type === PlatformEventType.QUIT_CANCELLED ||
-    event.type === PlatformEventType.RESTART_CANCELLED ||
-    event.type === PlatformEventType.UNDO_FAILED ||
-    event.type === PlatformEventType.AGAIN_FAILED
-  );
-}
-
 /**
  * Helper functions to create platform events
  */

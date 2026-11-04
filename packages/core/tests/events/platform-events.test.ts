@@ -11,7 +11,6 @@ import {
   IRestartContext,
   isPlatformEvent,
   isPlatformRequestEvent,
-  isPlatformCompletionEvent,
   createPlatformEvent,
   createSaveRequestedEvent,
   createRestoreRequestedEvent,
@@ -70,16 +69,6 @@ describe('Platform Events', () => {
       
       expect(isPlatformRequestEvent(saveRequest)).toBe(true);
       expect(isPlatformRequestEvent(saveComplete)).toBe(false);
-    });
-
-    it('should identify platform completion events', () => {
-      const saveRequest = createSaveRequestedEvent({ timestamp: Date.now() });
-      const saveComplete = createSaveCompletedEvent(true);
-      const saveFailed = createSaveCompletedEvent(false, 'Test error');
-      
-      expect(isPlatformCompletionEvent(saveRequest)).toBe(false);
-      expect(isPlatformCompletionEvent(saveComplete)).toBe(true);
-      expect(isPlatformCompletionEvent(saveFailed)).toBe(true);
     });
   });
 
@@ -247,7 +236,6 @@ describe('Platform Events', () => {
       expect(event.type).toBe(PlatformEventType.UNDO_COMPLETED);
       expect(event.payload.success).toBe(true);
       expect(event.payload.restoredToTurn).toBe(5);
-      expect(isPlatformCompletionEvent(event)).toBe(true);
     });
 
     it('should create undo failed event on failure', () => {
@@ -256,7 +244,6 @@ describe('Platform Events', () => {
       expect(event.type).toBe(PlatformEventType.UNDO_FAILED);
       expect(event.payload.success).toBe(false);
       expect(event.payload.error).toBe('No undo history');
-      expect(isPlatformCompletionEvent(event)).toBe(true);
     });
   });
 
@@ -280,7 +267,6 @@ describe('Platform Events', () => {
       expect(event.type).toBe(PlatformEventType.AGAIN_FAILED);
       expect(event.payload.success).toBe(false);
       expect(event.payload.error).toBe('No previous command');
-      expect(isPlatformCompletionEvent(event)).toBe(true);
     });
   });
 

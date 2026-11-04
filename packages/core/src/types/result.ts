@@ -90,29 +90,3 @@ export const Result = {
     return defaultValue;
   }
 };
-
-/**
- * Generic command result type for operations that produce events
- * Domain-specific implementations can extend this
- */
-export interface ICommandResult<TEvent = any> {
-  /**
-   * Whether the command was successful
-   */
-  success: boolean;
-
-  /**
-   * Events generated during command execution
-   */
-  events: TEvent[];
-
-  /**
-   * Error message if the command failed
-   */
-  error?: string;
-
-  /**
-   * Additional metadata about the command execution
-   */
-  metadata?: Record<string, unknown>;
-}

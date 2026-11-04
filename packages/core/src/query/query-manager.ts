@@ -14,7 +14,6 @@ import {
   IQueryHandler,
   QueryValidator,
   IValidationResult,
-  IQueryEvents,
   StandardValidators
 } from './types.js';
 import { ISemanticEvent, ISemanticEventSource, createSemanticEventSource } from '../events/index.js';
@@ -433,14 +432,4 @@ export class QueryManager extends EventEmitter {
  */
 export function createQueryManager(): QueryManager {
   return new QueryManager();
-}
-
-/**
- * Type guard for query events
- */
-export function isQueryEvent<K extends keyof IQueryEvents>(
-  event: string | symbol,
-  key: K
-): event is K {
-  return event === key;
 }

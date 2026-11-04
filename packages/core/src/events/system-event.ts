@@ -58,8 +58,6 @@ export const Subsystems = {
   RANDOM: 'random',
 } as const;
 
-export type SubsystemType = typeof Subsystems[keyof typeof Subsystems];
-
 /**
  * Helper to create a system event with common fields
  */
@@ -89,19 +87,4 @@ export function createSystemEvent(
 let eventCounter = 0;
 function generateEventId(): string {
   return `sys_${Date.now()}_${++eventCounter}`;
-}
-
-/**
- * Type guard to check if an object is a SystemEvent
- */
-export function isSystemEvent(obj: unknown): obj is ISystemEvent {
-  return (
-    typeof obj === 'object' &&
-    obj !== null &&
-    'id' in obj &&
-    'timestamp' in obj &&
-    'subsystem' in obj &&
-    'type' in obj &&
-    'data' in obj
-  );
 }

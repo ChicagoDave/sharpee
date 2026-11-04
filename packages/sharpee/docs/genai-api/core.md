@@ -40,19 +40,6 @@ export interface IEntityCreationParams {
     attributes?: Record<string, unknown>;
     relationships?: Record<string, EntityId[]>;
 }
-/**
- * Configuration for how entity operations should be performed
- */
-export interface IEntityOperationOptions {
-    /**
-     * Whether to merge arrays in relationships instead of replacing them
-     */
-    mergeRelationships?: boolean;
-    /**
-     * Whether to validate relationship target existence
-     */
-    validateRelationships?: boolean;
-}
 ```
 
 ### types/result
@@ -116,28 +103,6 @@ export declare const Result: {
      */
     unwrapOr<T, E>(result: Result<T, E>, defaultValue: T): T;
 };
-/**
- * Generic command result type for operations that produce events
- * Domain-specific implementations can extend this
- */
-export interface ICommandResult<TEvent = any> {
-    /**
-     * Whether the command was successful
-     */
-    success: boolean;
-    /**
-     * Events generated during command execution
-     */
-    events: TEvent[];
-    /**
-     * Error message if the command failed
-     */
-    error?: string;
-    /**
-     * Additional metadata about the command execution
-     */
-    metadata?: Record<string, unknown>;
-}
 ```
 
 ### types/save-data
@@ -851,30 +816,6 @@ export declare function createTypedEvent<T extends EventType>(type: T, data: Eve
  * Message event variant types.
  */
 export type MessageVariant = 'success' | 'failure' | 'info' | 'warning' | 'debug';
-/**
- * Create a message event (convenience helper).
- *
- * @example
- * ```typescript
- * const event = createMessageEvent('success', 'item_taken', {
- *   item: 'brass lantern'
- * });
- * ```
- */
-export declare function createMessageEvent(variant: MessageVariant, messageId: string, params?: Record<string, unknown>, options?: CreateEventOptions): TypedSemanticEvent<`message.${MessageVariant}`>;
-/**
- * Create an empty event (for events with no data).
- *
- * @example
- * ```typescript
- * const event = createEmptyEvent('platform.quit_cancelled');
- * ```
- */
-export declare function createEmptyEvent<T extends EventType>(type: T, options?: CreateEventOptions): TypedSemanticEvent<T>;
-/**
- * Reset the event counter (useful for testing).
- */
-export declare function resetEventCounter(): void;
 ```
 
 ### events/event-helpers
@@ -1182,10 +1123,6 @@ export interface TurnData {
  * All known event type strings.
  */
 export type EventType = keyof EventDataRegistry;
-/**
- * Get the data type for a specific event type.
- */
-export type EventDataFor<T extends EventType> = EventDataRegistry[T];
 ```
 
 ### events/system-event
@@ -1242,7 +1179,6 @@ export declare const Subsystems: {
     /** The randomness subsystem — per-draw trace records (ADR-293 D16, Phase C). */
     readonly RANDOM: "random";
 };
-export type SubsystemType = typeof Subsystems[keyof typeof Subsystems];
 /**
  * Helper to create a system event with common fields
  */
@@ -1250,10 +1186,6 @@ export declare function createSystemEvent(subsystem: string, type: string, data:
     severity?: ISystemEvent['severity'];
     correlationId?: string;
 }): ISystemEvent;
-/**
- * Type guard to check if an object is a SystemEvent
- */
-export declare function isSystemEvent(obj: unknown): obj is ISystemEvent;
 ```
 
 ### events/platform-events
@@ -1378,7 +1310,6 @@ export { IQuitContext, IRestartContext };
  */
 export declare function isPlatformEvent(event: ISemanticEvent): event is IPlatformEvent;
 export declare function isPlatformRequestEvent(event: ISemanticEvent): boolean;
-export declare function isPlatformCompletionEvent(event: ISemanticEvent): boolean;
 /**
  * Helper functions to create platform events
  */
@@ -1477,8 +1408,6 @@ export interface GameEventErrorData {
     message?: string;
     stack?: string;
 }
-/** Game state values */
-export type GameState = 'initializing' | 'ready' | 'running' | 'ending' | 'ended';
 export interface GameLifecycleInitializingData {
     gameState: 'initializing';
     [key: string]: unknown;
@@ -1591,42 +1520,9 @@ export interface GameLifecycleResumedData {
     gameState: 'running';
     [key: string]: unknown;
 }
-export interface GameLifecycleSessionSavingData {
-    saveId?: string;
-    [key: string]: unknown;
-}
-export interface GameLifecycleSessionSavedData {
-    saveId?: string;
-    timestamp: number;
-    [key: string]: unknown;
-}
-export interface GameLifecycleSessionRestoringData {
-    saveId?: string;
-    [key: string]: unknown;
-}
-export interface GameLifecycleSessionRestoredData {
-    saveId?: string;
-    timestamp: number;
-    [key: string]: unknown;
-}
 export interface GameLifecyclePcSwitchedData {
     previousPlayerId: string;
     newPlayerId: string;
-    [key: string]: unknown;
-}
-export interface GameLifecycleInitFailedData {
-    error: GameEventErrorData;
-    [key: string]: unknown;
-}
-export interface GameLifecycleStoryLoadFailedData {
-    story?: {
-        id?: string;
-    };
-    error: GameEventErrorData;
-    [key: string]: unknown;
-}
-export interface GameLifecycleFatalErrorData {
-    error: GameEventErrorData;
     [key: string]: unknown;
 }
 /**
@@ -1656,19 +1552,6 @@ export declare const GameEventType: {
     readonly FATAL_ERROR: "game.fatal_error";
 };
 export type GameEventTypeValue = typeof GameEventType[keyof typeof GameEventType];
-/**
- * Check if an event is a game lifecycle event (any GameEventType).
- * Use specific type guards (isGameStartedEvent, etc.) for typed data access.
- */
-export declare function isGameEvent(event: ISemanticEvent): boolean;
-/**
- * Check if an event is part of the game start sequence.
- */
-export declare function isGameStartSequenceEvent(event: ISemanticEvent): boolean;
-/**
- * Check if an event is part of the game end sequence.
- */
-export declare function isGameEndSequenceEvent(event: ISemanticEvent): boolean;
 /**
  * Create a generic game event with typed data.
  * Use specific creators (createGameStartedEvent, etc.) when possible for type safety.
@@ -1703,25 +1586,6 @@ export declare function createGameAbortedEvent(error: string, session?: GameEven
  */
 export declare function createGameResumedEvent(): ISemanticEvent;
 export declare function createPcSwitchedEvent(previousPlayerId: string, newPlayerId: string): ISemanticEvent;
-/** Type guard to check if an event has specific data type */
-export declare function isGameStartedEvent(event: ISemanticEvent): event is ISemanticEvent & {
-    data: GameLifecycleStartedData;
-};
-export declare function isGameEndedEvent(event: ISemanticEvent): event is ISemanticEvent & {
-    data: GameLifecycleEndedData;
-};
-export declare function isGameWonEvent(event: ISemanticEvent): event is ISemanticEvent & {
-    data: GameLifecycleWonData;
-};
-export declare function isGameLostEvent(event: ISemanticEvent): event is ISemanticEvent & {
-    data: GameLifecycleLostData;
-};
-export declare function isGameQuitEvent(event: ISemanticEvent): event is ISemanticEvent & {
-    data: GameLifecycleQuitData;
-};
-export declare function isGameAbortedEvent(event: ISemanticEvent): event is ISemanticEvent & {
-    data: GameLifecycleAbortedData;
-};
 ```
 
 ### query/types
@@ -1934,7 +1798,7 @@ export declare const StandardValidators: {
  * appropriate handlers.
  */
 import EventEmitter from 'eventemitter3';
-import { IPendingQuery, IQueryResponse, IQueryState, IQueryHandler, QueryValidator, IQueryEvents } from './types.js';
+import { IPendingQuery, IQueryResponse, IQueryState, IQueryHandler, QueryValidator } from './types.js';
 import { ISemanticEventSource } from '../events/index.js';
 /**
  * Query Manager implementation
@@ -2007,10 +1871,6 @@ export declare class QueryManager extends EventEmitter {
  * Create a new query manager instance
  */
 export declare function createQueryManager(): QueryManager;
-/**
- * Type guard for query events
- */
-export declare function isQueryEvent<K extends keyof IQueryEvents>(event: string | symbol, key: K): event is K;
 ```
 
 ### random/seeded-random

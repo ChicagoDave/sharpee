@@ -40,18 +40,3 @@ export interface IEntityCreationParams {
   attributes?: Record<string, unknown>;
   relationships?: Record<string, EntityId[]>;
 }
-
-/**
- * Configuration for how entity operations should be performed
- */
-export interface IEntityOperationOptions {
-  /**
-   * Whether to merge arrays in relationships instead of replacing them
-   */
-  mergeRelationships?: boolean;
-  
-  /**
-   * Whether to validate relationship target existence
-   */
-  validateRelationships?: boolean;
-}

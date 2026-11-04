@@ -52,9 +52,6 @@ export interface GameEventErrorData {
   stack?: string;
 }
 
-/** Game state values */
-export type GameState = 'initializing' | 'ready' | 'running' | 'ending' | 'ended';
-
 // Per-event typed data interfaces
 // Named GameLifecycle* to avoid conflicts with event-registry.ts exports
 
@@ -154,47 +151,9 @@ export interface GameLifecycleResumedData {
   [key: string]: unknown;
 }
 
-export interface GameLifecycleSessionSavingData {
-  saveId?: string;
-  [key: string]: unknown;
-}
-
-export interface GameLifecycleSessionSavedData {
-  saveId?: string;
-  timestamp: number;
-  [key: string]: unknown;
-}
-
-export interface GameLifecycleSessionRestoringData {
-  saveId?: string;
-  [key: string]: unknown;
-}
-
-export interface GameLifecycleSessionRestoredData {
-  saveId?: string;
-  timestamp: number;
-  [key: string]: unknown;
-}
-
 export interface GameLifecyclePcSwitchedData {
   previousPlayerId: string;
   newPlayerId: string;
-  [key: string]: unknown;
-}
-
-export interface GameLifecycleInitFailedData {
-  error: GameEventErrorData;
-  [key: string]: unknown;
-}
-
-export interface GameLifecycleStoryLoadFailedData {
-  story?: { id?: string };
-  error: GameEventErrorData;
-  [key: string]: unknown;
-}
-
-export interface GameLifecycleFatalErrorData {
-  error: GameEventErrorData;
   [key: string]: unknown;
 }
 
@@ -241,43 +200,6 @@ export const GameEventType = {
 } as const;
 
 export type GameEventTypeValue = typeof GameEventType[keyof typeof GameEventType];
-
-
-/**
- * Check if an event is a game lifecycle event (any GameEventType).
- * Use specific type guards (isGameStartedEvent, etc.) for typed data access.
- */
-export function isGameEvent(event: ISemanticEvent): boolean {
-  return Object.values(GameEventType).includes(event.type as GameEventTypeValue);
-}
-
-/**
- * Check if an event is part of the game start sequence.
- */
-export function isGameStartSequenceEvent(event: ISemanticEvent): boolean {
-  return (
-    event.type === GameEventType.GAME_INITIALIZING ||
-    event.type === GameEventType.GAME_INITIALIZED ||
-    event.type === GameEventType.STORY_LOADING ||
-    event.type === GameEventType.STORY_LOADED ||
-    event.type === GameEventType.GAME_STARTING ||
-    event.type === GameEventType.GAME_STARTED
-  );
-}
-
-/**
- * Check if an event is part of the game end sequence.
- */
-export function isGameEndSequenceEvent(event: ISemanticEvent): boolean {
-  return (
-    event.type === GameEventType.GAME_ENDING ||
-    event.type === GameEventType.GAME_ENDED ||
-    event.type === GameEventType.GAME_WON ||
-    event.type === GameEventType.GAME_LOST ||
-    event.type === GameEventType.GAME_QUIT ||
-    event.type === GameEventType.GAME_ABORTED
-  );
-}
 
 // =============================================================================
 // Helper Functions to Create Game Events
@@ -485,33 +407,4 @@ export function createPcSwitchedEvent(previousPlayerId: string, newPlayerId: str
     previousPlayerId,
     newPlayerId
   });
-}
-
-// =============================================================================
-// Type Guards for Game Events
-// =============================================================================
-
-/** Type guard to check if an event has specific data type */
-export function isGameStartedEvent(event: ISemanticEvent): event is ISemanticEvent & { data: GameLifecycleStartedData } {
-  return event.type === GameEventType.GAME_STARTED;
-}
-
-export function isGameEndedEvent(event: ISemanticEvent): event is ISemanticEvent & { data: GameLifecycleEndedData } {
-  return event.type === GameEventType.GAME_ENDED;
-}
-
-export function isGameWonEvent(event: ISemanticEvent): event is ISemanticEvent & { data: GameLifecycleWonData } {
-  return event.type === GameEventType.GAME_WON;
-}
-
-export function isGameLostEvent(event: ISemanticEvent): event is ISemanticEvent & { data: GameLifecycleLostData } {
-  return event.type === GameEventType.GAME_LOST;
-}
-
-export function isGameQuitEvent(event: ISemanticEvent): event is ISemanticEvent & { data: GameLifecycleQuitData } {
-  return event.type === GameEventType.GAME_QUIT;
-}
-
-export function isGameAbortedEvent(event: ISemanticEvent): event is ISemanticEvent & { data: GameLifecycleAbortedData } {
-  return event.type === GameEventType.GAME_ABORTED;
 }

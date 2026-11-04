@@ -253,8 +253,3 @@ export interface TurnData {
  * All known event type strings.
  */
 export type EventType = keyof EventDataRegistry;
-
-/**
- * Get the data type for a specific event type.
- */
-export type EventDataFor<T extends EventType> = EventDataRegistry[T];
