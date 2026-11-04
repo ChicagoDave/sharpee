@@ -38,11 +38,11 @@ describe('GameEngine.resume', () => {
   // method strict, and two of them must not be. D8 carved out stop(); D8a
   // carved out resume() after the same survey was run properly.
   //
-  // The dependency is real, not hypothetical: branch-tester's tree walker
-  // (`tree-walker.ts:360`) calls reviveEngine() — this method, via bootstrap
-  // — on EVERY test line, under the comment "Harmless when the engine is
-  // running", because a line's prefix may or may not have ended the game. A
-  // strict resume() throws on every non-death line of every tree.
+  // The host dependency this was written for — branch-tester's tree walker
+  // calling a bootstrap revive member on every test line — ended under
+  // ADR-356 D4, and the member was deleted on 2026-11-04 (ADR-345 D8a
+  // amendment). The tolerance now rests on this test alone and on
+  // `derivePhaseFromEnding`'s internal use of resume().
   //
   // If you are here because you made resume() strict and this failed: that
   // is a challenge to ADR-345 D7 (no consumer outside the engine reads the

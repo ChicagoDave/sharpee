@@ -134,13 +134,6 @@ export interface LoadedGame {
   };
   /** Execute one command; returns the turn's composed prose as text. */
   executeCommand(input: string): Promise<string>;
-  /**
-   * Resume the engine if a game-over stopped it (player death, victory).
-   * Called by the branch-tester's tree walker on every test line
-   * (`tree-walker.ts:360`): a line's prefix may have ended the game, and the
-   * line's own cards still have to run. Touches no world state.
-   */
-  reviveEngine(): void;
 }
 
 export { resolveStoryModulePath } from './resolve.js';
@@ -440,10 +433,6 @@ export function assembleGame(
 
     getPluginRegistry() {
       return engine.getPluginRegistry();
-    },
-
-    reviveEngine() {
-      engine.resume();
     },
 
     async executeCommand(input: string): Promise<string> {

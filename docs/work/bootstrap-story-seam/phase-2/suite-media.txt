@@ -1,0 +1,16 @@
+
+> @sharpee/media@5.5.1 test:ci /Users/david/repos/sharpee/packages/media
+> vitest run
+
+
+ RUN  v3.2.4 /Users/david/repos/sharpee/packages/media
+
+ ✓ tests/events.test.ts (26 tests) 2ms
+ ✓ tests/audio-forwarding-pipeline.test.ts (8 tests) 3ms
+ ✓ tests/audio-registry.test.ts (16 tests) 3ms
+
+ Test Files  3 passed (3)
+      Tests  50 passed (50)
+   Start at  14:18:53
+   Duration  249ms (transform 82ms, setup 0ms, collect 215ms, tests 8ms, environment 0ms, prepare 89ms)
+

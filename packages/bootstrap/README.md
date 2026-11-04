@@ -35,8 +35,7 @@ const game2 = assembleGame(storyInstance);
 
 A `LoadedGame` exposes `engine`, `world`, `testingExtension`, the last turn's
 `lastOutput` / `lastEvents` / `lastTurnResult`, `getPluginRegistry()` (save/restore
-plugin state), `executeCommand(input)`, and `reviveEngine()` (resume the engine
-after a game-over, for the runner's RETRY restore path).
+plugin state), and `executeCommand(input)`.
 
 ## Exports
 

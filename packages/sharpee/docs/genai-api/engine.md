@@ -316,13 +316,13 @@ export declare class GameEngine implements StoryEngine {
     /**
      * Resume a stopped engine without touching world state.
      *
-     * The post-mortem revival seam: after `stop('defeat')`, a harness (or a
-     * story resurrection policy) with more work for an engine a game-over
-     * stopped — the branch-tester's tree walker, whose test line may fork on
-     * the very card that ended the game (`tree-walker.ts:360`, reaching this
-     * method through bootstrap's `reviveEngine()`) — needs turn execution back
-     * without any world teardown (a full reboot would clear the world the line
-     * is still testing).
+     * The post-mortem revival seam: after `stop('defeat')`, an engine a
+     * game-over stopped gets turn execution back without any world teardown
+     * (a full reboot would clear the world). Its callers are engine-internal:
+     * `derivePhaseFromEnding`, when a restore or an undo lands on a world with
+     * no Ending. Nothing outside the engine calls it — the branch-tester walker
+     * that once reached it through a bootstrap revive member stopped under
+     * ADR-356 D4, and that member is gone (ADR-345 D8a amendment, 2026-11-04).
      * Returns the phase to `playing` and emits `game.resumed`; rebuilds nothing.
      *
      * No-op when already playing. Throws if the engine was never started —
@@ -637,10 +637,9 @@ export declare class GameEngine implements StoryEngine {
      * owns it.
      *
      * Only this seam, deliberately (ADR-347 D5). A live engine may legitimately
-     * be `playing` while the world carries an Ending — the branch-tester revives
-     * a line that forked on the card that ended the game and leaves that Ending
-     * standing on purpose, and ADR-345 D8a's tolerance exists for it. Deriving
-     * continuously would break that.
+     * be `playing` while the world carries an Ending — a harness that resumes
+     * after a game-over leaves that Ending standing on purpose, which is what
+     * ADR-345 D8a's tolerance permits. Deriving continuously would break that.
      *
      * Neither direction adds a state or an edge to ADR-345's closed set
      * (D10, D11): `playing → stopped` is `stop()`'s own edge and
