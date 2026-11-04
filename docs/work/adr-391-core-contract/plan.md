@@ -146,8 +146,39 @@
 - **Files**: `packages/core/src/events/game-events.ts`, `packages/core/src/events/system-event.ts`, `packages/core/src/events/platform-events.ts`, `packages/core/src/events/event-factory.ts`, `packages/core/src/events/event-registry.ts`, `packages/core/src/query/`, `packages/core/src/types/save-data.ts`, `packages/core/src/types/entity.ts`, `packages/core/src/types/result.ts`, `packages/core/src/metadata/`, `packages/core/tests/events/platform-events.test.ts`, `packages/core/tests/events/typed-events.test.ts`, `packages/core/tests/events/event-system.test.ts`, `packages/core/src/index.ts`
 - **Exit state**: every table row executed as confirmed; the event-helpers.ts hash equals Phase 0's snapshot; workspace `tsc --noEmit` clean; core suite at the recorded arithmetic; downstream suites at baseline; compare-gates.sh identical. STOP on any mismatch.
 - **Demonstration**: running compare-gates.sh with the baseline directory against the phase4 directory all identical; `git diff --stat 911370216 -- packages/core/src/events/event-helpers.ts` prints nothing.
+- **Step 1 posted (2026-11-03, session 99293e, HEAD `da0c4a917`)** — every row re-verified after Phase 3's deletions: non-declaration uses in its own file (including uses on `export` lines), other core files, core tests, and external readers across tracked `.ts` under `packages/`, `tools/`, `stories/`.
+
+  **delete** (no use anywhere but the declaration, or a core test only):
+
+  | symbol | file | reader |
+  |---|---|---|
+  | `isGameEvent`, `isGameStartSequenceEvent`, `isGameEndSequenceEvent`, `isGameStartedEvent`, `isGameEndedEvent`, `isGameWonEvent`, `isGameLostEvent`, `isGameAbortedEvent`, `isGameQuitEvent` | `events/game-events.ts` | none |
+  | `GameState` | `events/game-events.ts` | none |
+  | `GameLifecycleFatalErrorData`, `GameLifecycleInitFailedData`, `GameLifecycleSessionSavingData`, `GameLifecycleSessionSavedData`, `GameLifecycleSessionRestoringData`, `GameLifecycleSessionRestoredData`, `GameLifecycleStoryLoadFailedData` | `events/game-events.ts` | none |
+  | `isSystemEvent`, `SubsystemType` | `events/system-event.ts` | none |
+  | `isQueryEvent` | `query/query-manager.ts` | none |
+  | `IEntityOperationOptions` | `types/entity.ts` | none |
+  | `ICommandResult` | `types/result.ts` | none |
+  | `StoryConfigValidationResult` (and its line in `metadata/index.ts`) | `metadata/story-metadata.ts` | none |
+  | `EventDataFor` | `events/event-registry.ts` | none (its reader was `typed-event.ts`, gone in Phase 3) |
+  | `isPlatformCompletionEvent` | `events/platform-events.ts` | `tests/events/platform-events.test.ts` only — the case "should identify platform completion events" goes; three assertions inside other cases (undo completed, undo failed, again failed) go, those cases keep their `event.type` assertions |
+  | `createEmptyEvent`, `createMessageEvent`, `resetEventCounter` | `events/event-factory.ts` | `tests/events/typed-events.test.ts` only — the `createMessageEvent` (3 cases), `createEmptyEvent` (2) and `resetEventCounter` (1) describe blocks go, and the `beforeEach(resetEventCounter)` line; the five `createTypedEvent` cases stay |
+
+  **keep — the ADR's table was wrong about these**, each is read by live code in its own file and must stay exported from its module for declaration emit (the root barrel already omits them, so they are internal since Phase 1):
+
+  | symbol | why it stays |
+  |---|---|
+  | `isPlatformEvent` | called by the live `isPlatformRequestEvent` (`platform-events.ts:148`) and by `isPlatformCompletionEvent` until that goes; its test case stays |
+  | `IUndoContext` | parameter type of the live `createUndoRequestedEvent` (`:266`) |
+  | `IQueryContext` | member of `IPendingQuery` (`query/types.ts:71`) |
+  | `ISerializedDaemonState`, `ISerializedFuseState`, `ISerializedSchedulerState`, `IStoryConfig` | members of the live save-data types (`save-data.ts:22,122,162,165`) |
+  | `SimpleEventSource` | base class of the live `SemanticEventSourceImpl`; its test file stays (ADR Q-2 named it in error) |
+  | `createGameEvent`, the factory-side `GameLifecycle*Data` / `GameEvent*Data` interfaces, `PlatformEventTypeValue`, `CreateEventOptions`, `MessageVariant` | used by the live factories in their own files; the ADR's "un-export" verb collapses to "already internal" — nothing to do |
+  | every function in `events/event-helpers.ts` | D8 |
+
+  **Suite arithmetic**: 160 − 6 (typed-events) − 1 (platform-events) = **153 expected**, measured at execution. 27 symbols deleted. **STOPPED for David's confirmation.**
 - **Demonstrated**: 
-- **Status**: PENDING (HELD)
+- **Status**: CURRENT (since 2026-11-03)
 
 ### Phase 5: Regenerated reference and acceptance sweep
 - **Tier**: Small
