@@ -1,7 +1,7 @@
 # Session Plan: Implement ADR-391 — `@sharpee/core` names its contract
 
 **Created**: 2026-11-03
-**Plan Status**: ACTIVE
+**Plan Status**: DONE
 **Overall scope**: Replace `packages/core/src/index.ts`'s eight `export *` lines with a named export list of the symbols other packages import (the 71, plus `EventDataRegistry`), explain the event registry's declaration-merging liveness in its header, delete the dead subsystems after David confirms the list (D2), and trim the dead halves of live files from a per-symbol table after David confirms it (D3). Every phase lands byte-identical; event-helpers.ts is not touched (D8); no importer outside `core` changes a line.
 **Bounded contexts touched**: N/A — structural refactor of one infrastructure package at the bottom of the stack (`packages/core`); no domain behavior changes, no event shape, save format, random stream, or IFID rule changes.
 **Key domain language**: N/A — uses the ADR's terms: contract (the named root barrel), dead subsystem, trim table (delete / un-export / keep), declaration merging, byte-identical phase.
