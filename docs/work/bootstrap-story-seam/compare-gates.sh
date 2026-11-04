@@ -18,15 +18,18 @@ for f in "$A"/*.txt; do
   if [ ! -f "$g" ]; then echo "MISSING   $name"; rc=1; continue; fi
   case "$name" in
     dungeo-unit)
-      # Two unit transcripts are not seed-pinned — brick-explosion and
-      # wave-rainbow run on a clock seed and flip an NPC-movement claim run to
-      # run (GH #646; shown 4× on one build, 2026-11-04) — so this gate is
-      # compared per transcript (name + its passed/failed line, timings
-      # stripped) with exactly those two left out. Every other transcript is
-      # held byte-for-byte on its result line. The chain stays a byte compare.
-      per() { ansi "$1" | awk '/^Running: / {t=$2} /^  [0-9]+ passed/ {print t": "$0}' | sed -E 's/ \([0-9]+ms\)//g' | grep -v -E '/(brick-explosion|wave-rainbow)\.transcript:'; }
+      # Three unit transcripts are not seed-pinned and flip on the thief's
+      # clock-seeded draws (GH #646): brick-explosion and wave-rainbow on an
+      # NPC-movement claim (shown 4× on one build, 2026-11-04), and
+      # royal-puzzle-basic when the thief reaches the sandstone maze and kills
+      # the player (replayed at the capture's seed 1793824815622, Phase 3).
+      # So this gate is compared per transcript (name + its passed/failed
+      # line, timings stripped) with exactly those three left out. Every
+      # other transcript is held byte-for-byte on its result line. The chain
+      # stays a byte compare.
+      per() { ansi "$1" | awk '/^Running: / {t=$2} /^  [0-9]+ passed/ {print t": "$0}' | sed -E 's/ \([0-9]+ms\)//g' | grep -v -E '/(brick-explosion|wave-rainbow|royal-puzzle-basic)\.transcript:'; }
       if diff -q <(per "$f") <(per "$g") > /dev/null; then
-        echo "IDENTICAL $name  [per transcript, #646 pair excluded; totals baseline '$(ansi "$f" | grep -E '[0-9]+ passed.*(failed|skipped)' | tail -1)' phase '$(ansi "$g" | grep -E '[0-9]+ passed.*(failed|skipped)' | tail -1)']"
+        echo "IDENTICAL $name  [per transcript, #646 trio excluded; totals baseline '$(ansi "$f" | grep -E '[0-9]+ passed.*(failed|skipped)' | tail -1)' phase '$(ansi "$g" | grep -E '[0-9]+ passed.*(failed|skipped)' | tail -1)']"
       else echo "DIFFERS   $name"; diff <(per "$f") <(per "$g") | head -20; rc=1; fi ;;
     suite-*)
       sa=$(ansi "$f" | grep -E '^\s*(Test Files|Tests) '); sb=$(ansi "$g" | grep -E '^\s*(Test Files|Tests) ')

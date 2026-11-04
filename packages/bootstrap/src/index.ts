@@ -8,7 +8,7 @@
  * output path (the canonical CLI/test output capture).
  *
  * Owner context: build/test devkit layer (ADR-180).
- * Public interface: `resolveStoryModulePath`, `purgeStoryModuleCache`, `loadStory`, `assembleGame`, `moduleFreshStory`, `LoadedGame`.
+ * Public interface: `resolveStoryModulePath`, `purgeStoryModuleCache`, `loadStory`, `assembleGame`, `moduleFreshStory`, `LoadedGame`, `resolveDeclaredChannelId` with `ChannelIdSource`, `flattenChannelValue`, `CLI_CAPABILITIES`.
  */
 
 import { resolveStoryModulePath } from './resolve.js';
@@ -48,6 +48,14 @@ export const CLI_CAPABILITIES = {
   customFonts: false,
   authorChannels: false,
 } as const;
+
+/**
+ * What `resolveDeclaredChannelId` reads of a channel registry: the registered
+ * ids. `IChannelRegistry` satisfies it; a test can hand it a list of ids.
+ */
+export interface ChannelIdSource {
+  all(): ReadonlyArray<{ readonly id: string }>;
+}
 
 /**
  * `ClientCapabilities` with its flags writable. The assembler starts from
@@ -223,11 +231,12 @@ export function moduleFreshStory(location: string, modulePath: string): () => St
  * never mistaken for a path into a shorter one.
  *
  * @param id the declared id, as written in a `channels:` header or a claim
- * @param registry the channel registry after story registration
+ * @param registry the channel registry after story registration — only its
+ *   ids are read, so any `ChannelIdSource` serves
  * @returns the registered channel id, or undefined when no registered id
  *   prefixes the declared one
  */
-export function resolveDeclaredChannelId(id: string, registry: IChannelRegistry): string | undefined {
+export function resolveDeclaredChannelId(id: string, registry: ChannelIdSource): string | undefined {
   let best: string | undefined;
   for (const channel of registry.all()) {
     const candidate = channel.id;

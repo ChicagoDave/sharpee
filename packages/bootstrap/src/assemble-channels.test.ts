@@ -10,14 +10,20 @@
 
 import { describe, it, expect } from 'vitest';
 import { createRequire } from 'module';
+import type { WorldModel, IFEntity, ConversationIntent } from '@sharpee/world-model';
+import type { IChannelRegistry, TurnPacket } from '@sharpee/if-domain';
+import type { CharacterAuthorRow } from '@sharpee/stdlib';
 
 // Same loading rationale as assemble-restart.test.ts: the built dist is the
 // artifact the CLI bundle consumes; importing src pulls the platform through
-// vite's transform and overflows its module graph.
+// vite's transform and overflows its module graph. The `typeof import` casts
+// give the untyped require the source's own types, so the story fakes are
+// checked against the real `Story` contract.
 const nodeRequire = createRequire(__filename);
-const { assembleGame, flattenChannelValue, resolveDeclaredChannelId } = nodeRequire('../dist/index.js');
+const { assembleGame, flattenChannelValue, resolveDeclaredChannelId } =
+  nodeRequire('../dist/index.js') as typeof import('./index.js');
 const { EntityType, IdentityTrait, RoomTrait, ActorTrait, CharacterModelTrait } =
-  nodeRequire('@sharpee/world-model');
+  nodeRequire('@sharpee/world-model') as typeof import('@sharpee/world-model');
 
 function makeStory(opts?: { registerGated?: boolean; registerDotted?: boolean }) {
   return {
@@ -30,7 +36,7 @@ function makeStory(opts?: { registerGated?: boolean; registerDotted?: boolean })
       version: '1.0.0',
       description: 'ADR-294 D15 channel capture test story',
     },
-    createPlayer(world: any) {
+    createPlayer(world: WorldModel) {
       // ADR-327 D10: initializeWorld runs first now, so the room exists.
       const player = world.createEntity('you', EntityType.ACTOR);
       player.add(new ActorTrait({ isPlayable: true }));
@@ -38,7 +44,7 @@ function makeStory(opts?: { registerGated?: boolean; registerDotted?: boolean })
       if (this._startRoomId) world.moveEntity(player.id, this._startRoomId);
       return player;
     },
-    initializeWorld(world: any) {
+    initializeWorld(world: WorldModel) {
       const room = world.createEntity('Test Chamber', EntityType.ROOM);
       room.add(new IdentityTrait({
         name: 'Test Chamber',
@@ -49,7 +55,7 @@ function makeStory(opts?: { registerGated?: boolean; registerDotted?: boolean })
     },
     ...(opts?.registerGated || opts?.registerDotted
       ? {
-          registerChannels(registry: any) {
+          registerChannels(registry: IChannelRegistry) {
             if (opts?.registerGated) {
               registry.add({
                 id: 'chime',
@@ -171,7 +177,7 @@ describe('ADR-294 D15 assembleGame channel capture', () => {
   function makeCharacterStory() {
     return {
       ...makeStory(),
-      initializeWorld(world: any) {
+      initializeWorld(world: WorldModel) {
         const room = world.createEntity('Test Chamber', EntityType.ROOM);
         room.add(new IdentityTrait({
           name: 'Test Chamber',
@@ -187,7 +193,7 @@ describe('ADR-294 D15 assembleGame channel capture', () => {
         world.moveEntity(hermit.id, room.id);
 
         world.registerDialogueSelector({
-          select: (npc: any, intent: any) => ({
+          select: (npc: IFEntity, intent: ConversationIntent) => ({
             handled: true,
             messageId: 'character.conversation.hermit-answers',
             authorEvents: [{
@@ -213,7 +219,7 @@ describe('ADR-294 D15 assembleGame channel capture', () => {
     // The selection's author event rode the action's report events into the
     // turn's packet, and the `character` channel projected it into a row —
     // the raw per-NPC-turn readout a testing/IDE surface reads.
-    const rows = game.lastChannelValues.character?.flat() as Array<Record<string, unknown>>;
+    const rows = game.lastChannelValues.character?.flat() as CharacterAuthorRow[];
     expect(rows).toBeDefined();
     const mint = rows.find(r => r.kind === 'character.author.ledger_mint')!;
     expect(mint).toBeDefined();
@@ -231,8 +237,8 @@ describe('ADR-294 D15 assembleGame channel capture', () => {
     // so a published client receives nothing to leak.
     const game = assembleGame(makeCharacterStory(), { seed: 42 });
     const packetChannelIds: string[] = [];
-    game.engine.on('channel:packet', (packet: any) => {
-      packetChannelIds.push(...Object.keys(packet?.payload ?? {}));
+    game.engine.on('channel:packet', (packet: TurnPacket) => {
+      packetChannelIds.push(...Object.keys(packet.payload));
     });
 
     await game.executeCommand('ask hermit about the crime');

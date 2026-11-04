@@ -10,18 +10,24 @@
 
 import { describe, it, expect } from 'vitest';
 import { createRequire } from 'module';
+import type { Story } from '@sharpee/engine';
+import type { WorldModel } from '@sharpee/world-model';
+import type { ISaveData } from '@sharpee/core';
 
 // Load through Node's resolver, not vite's transform: importing bootstrap's
 // index pulls the entire platform through vite and overflows its module
 // graph. The built dist is the artifact the CLI bundle actually consumes,
 // so this is also the more faithful surface. (Requires a built bootstrap —
-// same precondition as everything else that consumes dist.)
+// same precondition as everything else that consumes dist.) The `typeof
+// import` casts give the untyped require the source's own types, so the
+// fakes below are checked against the real `Story` contract.
 const nodeRequire = createRequire(__filename);
-const { assembleGame } = nodeRequire('../dist/index.js');
-const { EntityType, ActorTrait, IdentityTrait, RoomTrait } = nodeRequire('@sharpee/world-model');
+const { assembleGame } = nodeRequire('../dist/index.js') as typeof import('./index.js');
+const { EntityType, ActorTrait, IdentityTrait, RoomTrait } =
+  nodeRequire('@sharpee/world-model') as typeof import('@sharpee/world-model');
 
 interface TestStoryHandle {
-  story: any;
+  story: Story;
   /** How many times initializeWorld ran on this instance. */
   initCount(): number;
 }
@@ -41,7 +47,7 @@ function makeStory(): TestStoryHandle {
       version: '1.0.0',
       description: 'ADR-248 harness reboot test story',
     },
-    createPlayer(world: any) {
+    createPlayer(world: WorldModel) {
       // ADR-327 D10: initializeWorld runs first now, so the room exists.
       const player = world.createEntity('you', EntityType.ACTOR);
       player.add(new ActorTrait({ isPlayable: true }));
@@ -49,7 +55,7 @@ function makeStory(): TestStoryHandle {
       if (this._startRoomId) world.moveEntity(player.id, this._startRoomId);
       return player;
     },
-    initializeWorld(world: any) {
+    initializeWorld(world: WorldModel) {
       inits += 1;
       const room = world.createEntity('Test Chamber', EntityType.ROOM);
       room.add(new IdentityTrait({
@@ -127,9 +133,9 @@ describe('ADR-248 assembleGame restart reboot', () => {
       },
     });
 
-    let captured: unknown = null;
+    let captured: ISaveData | null = null;
     game.engine.registerSaveRestoreHooks({
-      onSaveRequested: async (data: unknown) => { captured = data; },
+      onSaveRequested: async (data: ISaveData) => { captured = data; },
       onRestoreRequested: async () => null,
     });
 
