@@ -791,8 +791,18 @@ export declare function createEventSource(): ISemanticEventSource;
  * @see ADR-082 for design rationale
  */
 import { EventDataRegistry, EventType } from './event-registry.js';
-import { TypedSemanticEvent } from './typed-event.js';
 import { ISemanticEvent } from './types.js';
+/**
+ * A semantic event whose `data` is typed by its event type: the return type of
+ * `createTypedEvent`. Exported from this module because declaration emit needs
+ * a nameable return type; it is not part of the package's root barrel.
+ */
+export interface TypedSemanticEvent<T extends EventType> extends Omit<ISemanticEvent, 'type' | 'data'> {
+    /** The event type — a literal string type for discrimination. */
+    type: T;
+    /** Typed event data based on the event type. */
+    data: EventDataRegistry[T];
+}
 /**
  * Options for creating an event.
  */

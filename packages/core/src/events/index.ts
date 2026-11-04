@@ -9,14 +9,12 @@
 
 // Export types first
 export * from './types.js';
-export * from './standard-events.js';
 export * from './system-event.js';
 export * from './platform-events.js';
 export * from './game-events.js';
 
 // Export typed event system (ADR-082)
 export * from './event-registry.js';
-export * from './typed-event.js';
 export * from './event-factory.js';
 export * from './event-helpers.js';
 

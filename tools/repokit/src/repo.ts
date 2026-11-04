@@ -51,6 +51,11 @@ export const PLATFORM_PACKAGES: ReadonlyArray<readonly [string, string]> = [
   ['@sharpee/platform-browser', 'platform-browser'],
   ['@sharpee/sharpee', 'sharpee'],
   ['@sharpee/transcript-tester', 'transcript-tester'],
+  // The world index (ADR-321): branch-tester's derived runner and coverage read
+  // it (ADR-356), so it builds before branch-tester. It was missing from this
+  // list until 2026-11-03; warm builds hid that because its dist/ survived
+  // from earlier runs, and the first `./repokit clean` after ADR-356 exposed it.
+  ['@sharpee/world-index', 'world-index'],
   // The tree-document harness (ADR-307). It depends on transcript-tester for
   // the assertion core (ADR-340 D1), so it builds after it. It is deliberately
   // NOT in the npm consumer closure (consumer-gen / test-npm) — the Family Zoo tutorial

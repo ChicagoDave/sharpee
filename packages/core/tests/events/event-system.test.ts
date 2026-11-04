@@ -178,35 +178,4 @@ describe('Event System Helpers', () => {
     });
   });
 
-  describe('Integration with StandardEventTypes', () => {
-    it('should create standard narrative events', async () => {
-      // Import StandardEventTypes to verify integration
-      const { StandardEventTypes } = await import('../../src/events/standard-events');
-      
-      const event = createEvent(
-        StandardEventTypes.NARRATIVE,
-        { message: 'The door creaks open.' },
-        { location: 'haunted-mansion' }
-      );
-
-      expect(event.type).toBe('narrative');
-      expect((event.data as Record<string, unknown>)?.message).toBe('The door creaks open.');
-    });
-
-    it('should create standard error events', async () => {
-      const { StandardEventTypes } = await import('../../src/events/standard-events');
-      
-      const event = createEvent(
-        StandardEventTypes.ERROR,
-        { 
-          code: 'INVALID_TARGET',
-          message: 'Cannot find that object.' 
-        },
-        { actor: 'player' }
-      );
-
-      expect(event.type).toBe('error');
-      expect((event.data as Record<string, unknown>)?.code).toBe('INVALID_TARGET');
-    });
-  });
 });

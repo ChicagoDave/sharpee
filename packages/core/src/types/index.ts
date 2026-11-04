@@ -6,7 +6,5 @@
  */
 
 export * from './entity.js';
-export * from './relationship.js';
-export * from './attribute.js';
 export * from './result.js';
 export * from './save-data.js';
