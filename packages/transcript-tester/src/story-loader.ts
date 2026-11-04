@@ -15,6 +15,7 @@ import {
   assembleGame,
   type LoadedGame,
 } from '@sharpee/bootstrap';
+import type { Story } from '@sharpee/engine';
 
 /** A loaded, runnable game — now provided by @sharpee/bootstrap. */
 export type TestableGame = LoadedGame;
@@ -44,7 +45,7 @@ export async function loadStory(
 /**
  * Assemble a testable game from an already-loaded story instance.
  */
-export function createTestableGame(story: any): TestableGame {
+export function createTestableGame(story: Story): TestableGame {
   return assembleGame(story);
 }
 

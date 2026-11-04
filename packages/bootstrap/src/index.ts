@@ -13,9 +13,9 @@
 
 import { resolveStoryModulePath } from './resolve.js';
 import { purgeStoryModuleCache } from './purge.js';
-import { GameEngine, type TurnResult } from '@sharpee/engine';
+import { GameEngine, type Story, type TurnResult } from '@sharpee/engine';
 import { type ISemanticEvent } from '@sharpee/core';
-import { type IChannelRegistry } from '@sharpee/if-domain';
+import { type ClientCapabilities, type IChannelRegistry, type TurnPacket } from '@sharpee/if-domain';
 import { packetProseText } from '@sharpee/channel-service';
 import { WorldModel } from '@sharpee/world-model';
 import { Parser } from '@sharpee/parser-en-us';
@@ -48,6 +48,14 @@ export const CLI_CAPABILITIES = {
   customFonts: false,
   authorChannels: false,
 } as const;
+
+/**
+ * `ClientCapabilities` with its flags writable. The assembler starts from
+ * `CLI_CAPABILITIES` and switches on each `gatedBy` flag a declared capture
+ * channel needs (ADR-294 D15); `gatedBy` is a `CapabilityFlag`, so every key
+ * written here is one of the boolean flags by construction.
+ */
+type CapabilityProfile = { -readonly [K in keyof ClientCapabilities]: ClientCapabilities[K] };
 
 /** A loaded, started, runnable game with text-output capture. */
 export interface LoadedGame {
@@ -169,6 +177,15 @@ export async function loadStory(
 }
 
 /**
+ * What a story module exports under the ADR-248 factory-only contract:
+ * `export function createStory(): Story`, and nothing else the loader reads.
+ * Optional because the module is untyped until `moduleFreshStory` checks it.
+ */
+interface StoryModule {
+  createStory?: () => Story;
+}
+
+/**
  * Build an ADR-248 `freshStory` provider for a module story: purge the
  * story's module cache, re-require the module, and call its `createStory()`
  * factory. The single implementation behind every module-story boot and
@@ -178,11 +195,12 @@ export async function loadStory(
  * @param modulePath resolved module file to require
  * @throws (when invoked) if the module does not export `createStory()`
  */
-export function moduleFreshStory(location: string, modulePath: string): () => any {
+export function moduleFreshStory(location: string, modulePath: string): () => Story {
   return () => {
     purgeStoryModuleCache(location);
+    // `require` is untyped; the module's shape is named once, here, where it enters.
     // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const freshModule = require(modulePath);
+    const freshModule = require(modulePath) as StoryModule;
     // ADR-248 factory-only contract: no fallback to a `story`/default singleton.
     if (typeof freshModule.createStory !== 'function') {
       throw new Error(`Story module at ${modulePath} does not export createStory() (ADR-248 factory contract)`);
@@ -227,9 +245,9 @@ export function resolveDeclaredChannelId(id: string, registry: IChannelRegistry)
 }
 
 export function assembleGame(
-  story: any,
+  story: Story,
   opts?: {
-    freshStory?: () => any;
+    freshStory?: () => Story;
     /**
      * Master seed for the session (ADR-293 D1), forwarded to
      * `EngineConfig.seed`. A restart reboot reuses it, so a pinned run
@@ -268,7 +286,7 @@ export function assembleGame(
   // derivation — a story-registered gated channel declared in `channels`
   // needs its `gatedBy` looked up now. Registration is last-wins, so the
   // engine's own registration during start() is a harmless re-register.
-  story?.registerChannels?.(channelRegistry);
+  story.registerChannels?.(channelRegistry);
   // ADR-300 D8: there is no `main` to exclude any more. A transcript that
   // declares a prose channel by name (`channels: room-name`) gets it
   // captured here as well as composed into `lastOutput` — the two are
@@ -280,8 +298,7 @@ export function assembleGame(
   // standard channels join the capture set. Unioned, not replacing: a
   // transcript's own declared channels are untouched, and the extra capture
   // is invisible to golden recordings (they read only the ids they name).
-  const policy = (story?.config as { autoAssertion?: LoadedGame['autoAssertionPolicy'] } | undefined)
-    ?.autoAssertion;
+  const policy = story.config.autoAssertion;
   const policyChannels =
     policy === 'room-description' || policy === 'room-name-and-description'
       ? ['room-name', 'room-description']
@@ -304,7 +321,7 @@ export function assembleGame(
   // (`story.chapter.title` captures `story.chapter`, GH #369). The capture
   // set is the resolved BASE ids, each once.
   const capturedChannels: string[] = [];
-  const capabilities: Record<string, boolean> = { ...CLI_CAPABILITIES };
+  const capabilities: CapabilityProfile = { ...CLI_CAPABILITIES };
   for (const declared of [...(opts?.channels ?? []), ...policyChannels, ...openingChannels]) {
     const id = resolveDeclaredChannelId(declared, channelRegistry);
     if (id === undefined) {
@@ -321,7 +338,7 @@ export function assembleGame(
   const testingExtension = TestingExtension ? new TestingExtension() : null;
 
   /** Build world/parser/engine for one boot and wire output capture. */
-  function boot(s: any): void {
+  function boot(s: Story): void {
     world = new WorldModel();
 
     const language = new LanguageProvider();
@@ -357,7 +374,7 @@ export function assembleGame(
     // The profile is CLI_CAPABILITIES plus any gatedBy flags the declared
     // capture channels require (ADR-294 D15) — identical to
     // CLI_CAPABILITIES when no extra channels were declared.
-    engine.start({ capabilities } as any);
+    engine.start({ capabilities });
 
     // No placeholder to clean up: the engine takes no player at construction and
     // the story supplies the only one there is (ADR-344 D6). The removal that used
@@ -381,14 +398,14 @@ export function assembleGame(
       ...(opts?.presence !== undefined ? { presence: opts.presence } : {}),
       locationLabel: (id: string) => world.getEntity(id)?.name ?? id,
     };
-    engine.on('channel:packet', (packet: any) => {
-      const out = packetProseText(packet?.payload, presentation);
+    engine.on('channel:packet', (packet: TurnPacket) => {
+      const out = packetProseText(packet.payload, presentation);
       if (out) outputBuffer.push(out);
       // ADR-294 D15: capture each declared channel's payload as
       // deterministic lines. Absent payload = the channel emitted nothing
       // this turn (sparse) — meaningful, recorded as absence.
       for (const id of capturedChannels) {
-        const value = packet?.payload?.[id];
+        const value = packet.payload[id];
         if (value === undefined) continue;
         (channelBuffers[id] ??= []).push(...flattenChannelValue(value));
         (channelValueBuffers[id] ??= []).push(value);
@@ -422,10 +439,7 @@ export function assembleGame(
     bootChannelValues: {},
 
     getPluginRegistry() {
-      return (engine as any).getPluginRegistry() as {
-        getStates(): Record<string, unknown>;
-        setStates(states: Record<string, unknown>): void;
-      };
+      return engine.getPluginRegistry();
     },
 
     reviveEngine() {

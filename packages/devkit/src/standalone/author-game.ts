@@ -18,6 +18,7 @@
 import * as path from 'node:path';
 import { readdirSync, readFileSync } from 'node:fs';
 import type { LoadedGame } from '@sharpee/bootstrap';
+import type { Story } from '@sharpee/engine';
 
 /**
  * Build an fs-backed `importResolver` for `compile()` (ADR-251 Phase 2).
@@ -101,7 +102,7 @@ export function compileChordStory(storyFile: string): import('@sharpee/chord').S
  * @returns the constructed story instance (not yet assembled into a game)
  * @throws on gate errors, with every diagnostic in the message
  */
-export function loadChordStory(storyFile: string, seed?: number): unknown {
+export function loadChordStory(storyFile: string, seed?: number): Story {
   const ir = compileChordStory(storyFile);
 
   const { createStory } = require('@sharpee/story-loader') as typeof import('@sharpee/story-loader');

@@ -1,0 +1,18 @@
+
+> @sharpee/helpers@5.5.1 test:ci /Users/david/repos/sharpee/packages/helpers
+> vitest run
+
+
+ RUN  v3.2.4 /Users/david/repos/sharpee/packages/helpers
+
+ ✓ tests/external-story-boundary.test.ts (4 tests) 155ms
+ ✓ tests/container-builder.test.ts (4 tests) 1ms
+ ✓ tests/door-builder-parity.test.ts (2 tests) 2ms
+ ✓ tests/actor-builder-playable.test.ts (4 tests) 1ms
+ ✓ tests/no-prototype-augmentation.test.ts (3 tests) 1ms
+
+ Test Files  5 passed (5)
+      Tests  17 passed (17)
+   Start at  11:26:53
+   Duration  615ms (transform 356ms, setup 0ms, collect 1.78s, tests 161ms, environment 0ms, prepare 149ms)
+

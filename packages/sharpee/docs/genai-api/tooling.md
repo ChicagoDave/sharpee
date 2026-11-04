@@ -339,6 +339,7 @@ export declare function buildPlaygroundBundle(env: PlaygroundBuildEnv, opts?: Br
 
 ```typescript
 import type { LoadedGame } from '@sharpee/bootstrap';
+import type { Story } from '@sharpee/engine';
 /**
  * Build an fs-backed `importResolver` for `compile()` (ADR-251 Phase 2).
  * The compiler appends `.chord` and hands us the full fragment name (e.g.
@@ -384,7 +385,7 @@ export declare function compileChordStory(storyFile: string): import('@sharpee/c
  * @returns the constructed story instance (not yet assembled into a game)
  * @throws on gate errors, with every diagnostic in the message
  */
-export declare function loadChordStory(storyFile: string, seed?: number): unknown;
+export declare function loadChordStory(storyFile: string, seed?: number): Story;
 /**
  * Reports the boundaries of the work that happens before a test can run.
  *
@@ -2657,6 +2658,7 @@ export declare function formatTraitProse(traitType: string, props: Record<string
  * Owner context: transcript-tester (test harness).
  */
 import { type LoadedGame } from '@sharpee/bootstrap';
+import type { Story } from '@sharpee/engine';
 /** A loaded, runnable game — now provided by @sharpee/bootstrap. */
 export type TestableGame = LoadedGame;
 /**
@@ -2675,7 +2677,7 @@ export declare function loadStory(storyPath: string, entry?: string, seed?: numb
 /**
  * Assemble a testable game from an already-loaded story instance.
  */
-export declare function createTestableGame(story: any): TestableGame;
+export declare function createTestableGame(story: Story): TestableGame;
 /**
  * Find all transcript files in a directory.
  */

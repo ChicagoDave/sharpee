@@ -1,0 +1,41 @@
+
+> @sharpee/transcript-tester@5.5.1 test:ci /Users/david/repos/sharpee/packages/transcript-tester
+> vitest run
+
+
+ RUN  v1.6.1 /Users/david/repos/sharpee/packages/transcript-tester
+
+ ✓ tests/channel-assert.test.ts  (23 tests) 2ms
+ ✓ tests/golden-format.test.ts  (18 tests) 3ms
+ ✓ tests/header-config.test.ts  (34 tests) 5ms
+ ✓ tests/fenced-payloads.test.ts  (21 tests) 5ms
+ ✓ tests/header-folding.test.ts  (11 tests) 23ms
+ ✓ tests/removed-forms.test.ts  (20 tests) 4ms
+ ✓ tests/serializer-roundtrip.test.ts  (13 tests) 52ms
+ ✓ tests/search.test.ts  (10 tests) 5ms
+ ✓ tests/run-observer.test.ts  (15 tests) 9ms
+ ✓ tests/fenced-runner.test.ts  (9 tests) 3ms
+ ✓ tests/save-restore-directives.test.ts  (7 tests) 6ms
+ ✓ tests/golden-channels.test.ts  (8 tests) 9ms
+ ✓ tests/skip-executes.test.ts  (4 tests) 4ms
+ ✓ tests/golden-dimensions.test.ts  (6 tests) 9ms
+ ✓ tests/golden-runner.test.ts  (16 tests) 14ms
+ ✓ tests/auto-assertion.test.ts  (12 tests) 14ms
+ ✓ tests/coverage.test.ts  (13 tests) 12ms
+ ✓ tests/runner-forces.test.ts  (17 tests) 13ms
+ ✓ tests/seed-directive.test.ts  (9 tests) 4ms
+ ✓ tests/opening-and-channels.test.ts  (7 tests) 2ms
+ ✓ tests/aggregate.test.ts  (14 tests) 2ms
+ ✓ tests/run-event-stream.test.ts  (4 tests) 2ms
+ ✓ tests/assertion-core.test.ts  (9 tests) 4ms
+ ✓ tests/claim-kinds.test.ts  (20 tests) 4ms
+ ✓ tests/pin-forms.test.ts  (31 tests) 5ms
+ ✓ tests/fenced-reporter.test.ts  (4 tests) 2ms
+ ✓ tests/ok-any.test.ts  (3 tests) 2ms
+ ✓ tests/watch.test.ts  (13 tests) 2443ms
+
+ Test Files  28 passed (28)
+      Tests  371 passed (371)
+   Start at  11:22:40
+   Duration  2.64s (transform 2.44s, setup 0ms, collect 27.28s, tests 2.66s, environment 2ms, prepare 1.18s)
+

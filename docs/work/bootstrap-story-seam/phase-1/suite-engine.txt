@@ -1,0 +1,161 @@
+
+> @sharpee/engine@5.5.1 test:ci /Users/david/repos/sharpee/packages/engine
+> vitest run
+
+
+ RUN  v3.2.4 /Users/david/repos/sharpee/packages/engine
+
+ ✓ tests/unit/public-surface.test.ts (2 tests) 377ms
+   ✓ the engine package contract (ADR-342) > exports exactly the names ADR-342 D1 lists (D5)  376ms
+ ✓ tests/interceptor-dual-instance.test.ts (1 test) 59ms
+ ✓ tests/on-world-restored.test.ts (4 tests) 47ms
+ ✓ tests/action-rng-determinism.test.ts (2 tests) 83ms
+ ✓ tests/integration/adr-349-heading-cutover.test.ts (7 tests) 85ms
+ ✓ tests/unit/held-command.test.ts (11 tests) 98ms
+ ✓ tests/integration/command-history.test.ts (9 tests) 84ms
+ ✓ tests/integration/story-ending-channel.test.ts (4 tests) 103ms
+stdout | tests/performance/event-size-analysis.test.ts > Event Size Analysis > should measure event sizes for common actions
+
+=== Event Size Analysis ===
+
+Event Type                           | Count | Avg Size    | Total Size
+-------------------------------------|-------|-------------|------------
+if.event.list.contents               |     2 |     1.66 KB |     3.33 KB
+if.event.dropped                     |     2 |     1.46 KB |     2.92 KB
+if.event.room.description            |     2 |     1.36 KB |     2.71 KB
+if.event.looked                      |     2 |     1.35 KB |     2.70 KB
+system.scope_check                   |     4 |     1.11 KB |     4.45 KB
+system.entity_resolution             |     8 | 814.75 bytes |     6.37 KB
+system.entity_search                 |     4 |   728 bytes |     2.84 KB
+if.event.taken                       |     2 |   660 bytes |     1.29 KB
+if.event.inventory                   |     2 |   447 bytes |   894 bytes
+game.started                         |     1 |   382 bytes |   382 bytes
+if.event.went                        |     1 |   328 bytes |   328 bytes
+game.starting                        |     1 |   228 bytes |   228 bytes
+game.initialized                     |     1 |   132 bytes |   132 bytes
+-------------------------------------|-------|-------------|------------
+TOTAL                                |    32 | 912.84375 bytes |    28.53 KB
+
+
+
+ ✓ tests/historical-accuracy.test.ts (9 tests | 3 skipped) 110ms
+ ✓ tests/unit/turn-stages.test.ts (14 tests) 111ms
+stdout | tests/performance/event-size-analysis.test.ts > Event Size Analysis > should compare snapshot vs reference sizes
+
+=== Snapshot vs Reference Comparison ===
+
+Full snapshot event: 660 bytes
+Reference-only event: 212 bytes
+Size increase: 448 bytes (211.3%)
+
+
+
+ ✓ tests/command-executor.test.ts (20 tests | 1 skipped) 109ms
+ ✓ tests/save-restore-roundtrip.test.ts (12 tests) 147ms
+ ✓ tests/integration.test.ts (12 tests | 3 skipped) 162ms
+ ✓ tests/platform-operations.test.ts (24 tests) 171ms
+stdout | tests/performance/event-size-analysis.test.ts > Event Size Analysis > should analyze memory usage patterns
+
+=== Memory Usage Patterns ===
+
+Average turn size: 3.44 KB
+Maximum turn size: 4.89 KB
+Minimum turn size: 385 bytes
+Total events stored: 73
+Total memory used: 69.43 KB
+
+Estimated memory for 500-turn game: 1.68 MB
+
+
+
+ ✓ tests/integration/channel-bootstrap.test.ts (18 tests) 158ms
+ ✓ tests/unit/platform-dispatcher.test.ts (12 tests) 181ms
+ ✓ tests/performance/event-size-analysis.test.ts (3 tests) 150ms
+ ✓ tests/unit/engine-lifecycle-phase.test.ts (21 tests) 180ms
+ ✓ tests/game-engine.test.ts (30 tests) 205ms
+ ✓ tests/universal-capability-dispatch.test.ts (16 tests) 86ms
+ ✓ tests/parser-extension.test.ts (8 tests) 24ms
+ ✓ tests/execute-as-actor.test.ts (14 tests) 38ms
+ ✓ tests/sound/engine-wiring.test.ts (4 tests) 35ms
+ ✓ tests/save-restore-hooks-merge.test.ts (7 tests) 37ms
+ ✓ tests/story-testing-verification.test.ts (2 tests) 48ms
+ ✓ tests/unit/turn-stage-order.test.ts (8 tests) 34ms
+ ✓ tests/actor-turn-plugin.test.ts (7 tests) 48ms
+ ✓ tests/sound/integration.test.ts (4 tests) 37ms
+ ✓ tests/unit/engine-resume.test.ts (6 tests) 41ms
+ ✓ tests/unit/presence-tagging.test.ts (10 tests) 43ms
+ ✓ tests/unit/engine-failure-reports.test.ts (7 tests) 41ms
+ ✓ tests/sound/heard-presence.test.ts (3 tests) 32ms
+ ✓ tests/unit/plugin-facts-applied.test.ts (6 tests) 40ms
+ ✓ tests/command-chaining.test.ts (8 tests) 41ms
+ ✓ tests/unit/story-install-order.test.ts (12 tests) 38ms
+ ✓ tests/unit/adr-390-player-role.test.ts (7 tests) 35ms
+ ✓ tests/engine-master-seed.test.ts (7 tests) 27ms
+ ✓ tests/debug-xyzzy.test.ts (2 tests) 20ms
+ ✓ tests/unit/player-death-routing.test.ts (2 tests) 22ms
+ ✓ tests/self-dispatching-actions.test.ts (2 tests) 12ms
+ ✓ tests/lifecycle-call-site.test.ts (3 tests) 16ms
+ ✓ tests/unit/adr-296-transaction-stamping.test.ts (7 tests) 24ms
+ ✓ tests/unit/deadly-room.test.ts (2 tests) 24ms
+ ✓ tests/unit/validate-role-holder.test.ts (8 tests) 22ms
+ ✓ tests/integration/query-events.test.ts (3 tests) 27ms
+ ✓ tests/unit/engine-parser.test.ts (6 tests) 26ms
+ ✓ tests/integration/adr-296-trap-scenario.test.ts (1 test) 20ms
+ ✓ tests/introspect-interceptors.test.ts (2 tests) 18ms
+ ✓ tests/engine-random-service-forcing.test.ts (29 tests) 19ms
+ ✓ tests/unit/engine-stop-session.test.ts (2 tests) 14ms
+ ✓ tests/unit/story-info-projection.test.ts (6 tests) 15ms
+ ✓ tests/unit/adr-344-d7-switch-player-playability.test.ts (4 tests) 19ms
+ ✓ tests/unit/banner-engine-version.test.ts (2 tests) 14ms
+ ✓ tests/save-version-reader.test.ts (9 tests) 9ms
+ ✓ tests/prose-pipeline/stages/sort.test.ts (24 tests) 3ms
+ ✓ tests/prose-pipeline/decorations/parser.test.ts (27 tests) 4ms
+ ✓ tests/unit/scheduler/scheduler-service.test.ts (20 tests) 5ms
+ ✓ tests/unit/snippet-validation.test.ts (17 tests) 5ms
+ ✓ tests/sound/propagation.test.ts (27 tests) 5ms
+ ✓ tests/sound/dispatcher.test.ts (9 tests) 4ms
+ ✓ tests/engine-random-service.test.ts (12 tests) 4ms
+ ✓ tests/prose-pipeline/phrase-render.test.ts (12 tests) 4ms
+ ✓ tests/sound/listener-wiring.test.ts (2 tests) 12ms
+ ✓ tests/prose-pipeline/handlers/game.test.ts (6 tests) 3ms
+ ✓ tests/prose-pipeline/handlers/audibility.test.ts (7 tests) 3ms
+ ✓ tests/prose-pipeline/slot-entries.test.ts (14 tests) 8ms
+ ✓ tests/prose-pipeline/pipeline.test.ts (37 tests) 5ms
+ ✓ tests/unit/scene-evaluation-plugin.test.ts (23 tests) 6ms
+ ✓ tests/sound/emit-sound.test.ts (5 tests) 4ms
+ ✓ tests/prose-pipeline/handlers/revealed.test.ts (8 tests) 3ms
+ ✓ tests/prose-pipeline/actor-voice.test.ts (6 tests) 6ms
+ ✓ tests/prose-pipeline/handlers/room-detail-slot.test.ts (4 tests) 5ms
+ ✓ tests/prose-pipeline/handlers/facts.test.ts (4 tests) 4ms
+ ✓ tests/prose-pipeline/handlers/domain-message.test.ts (8 tests) 3ms
+ ✓ tests/prose-pipeline/handlers/examined.test.ts (3 tests) 4ms
+ ✓ tests/prose-pipeline/render-context.test.ts (13 tests) 4ms
+ ✓ tests/prose-pipeline/assemble.test.ts (16 tests) 3ms
+ ✓ tests/unit/events/event-emitter.test.ts (11 tests) 3ms
+ ✓ tests/unit/module-layering.test.ts (6 tests) 2ms
+ ✓ tests/prose-pipeline/decorations/resolver.test.ts (23 tests) 2ms
+ ✓ tests/prose-pipeline/handlers/generic.test.ts (13 tests) 2ms
+ ✓ tests/prose-pipeline/handlers/examined-snippets.test.ts (3 tests) 4ms
+ ✓ tests/engine-random-service-reseed.test.ts (11 tests) 2ms
+ ✓ tests/prose-pipeline/decorations/platform-vocabulary.test.ts (9 tests) 2ms
+ ✓ tests/unit/combatant-health-validation.test.ts (4 tests) 3ms
+ ✓ tests/story.test.ts (7 tests) 3ms
+ ✓ tests/prose-pipeline/handlers/platform.test.ts (4 tests) 2ms
+ ✓ tests/unit/snippet-validation-id-mode.test.ts (4 tests) 3ms
+ ✓ tests/integration/event-handlers.test.ts (2 tests) 2ms
+ ✓ tests/unit/scheduler/scheduler-plugin-seed.test.ts (3 tests) 3ms
+ ✓ tests/unit/adr-349-single-derivation.test.ts (3 tests) 4ms
+ ✓ tests/unit/enrich-turn-events.test.ts (6 tests) 2ms
+ ✓ tests/prose-pipeline/stages/filter.test.ts (8 tests) 2ms
+ ✓ tests/prose-pipeline/handlers/client-query.test.ts (3 tests) 1ms
+ ✓ tests/unit/command-failed-story-rule.test.ts (2 tests) 1ms
+ ✓ tests/unit/command-failed-named.test.ts (3 tests) 2ms
+ ✓ tests/prose-pipeline/text-state.test.ts (5 tests) 3ms
+ ✓ tests/prose-pipeline/handlers/room.test.ts (10 tests) 3ms
+ ✓ tests/prose-pipeline/handlers/description-id.test.ts (6 tests) 2ms
+
+ Test Files  99 passed (99)
+      Tests  884 passed | 7 skipped (891)
+   Start at  11:22:03
+   Duration  4.51s (transform 2.58s, setup 0ms, collect 52.22s, tests 3.82s, environment 8ms, prepare 3.43s)
+
