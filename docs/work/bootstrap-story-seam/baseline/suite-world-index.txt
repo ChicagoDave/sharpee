@@ -1,0 +1,32 @@
+
+> @sharpee/world-index@5.5.1 test:ci /Users/david/repos/sharpee/packages/world-index
+> vitest run
+
+
+ RUN  v1.6.1 /Users/david/repos/sharpee/packages/world-index
+
+ ✓ tests/statements.test.ts  (10 tests) 16ms
+ ✓ tests/readers.test.ts  (6 tests) 16ms
+ ✓ tests/multi-arm-gates.test.ts  (2 tests) 14ms
+ ✓ tests/refusal.test.ts  (8 tests) 15ms
+ ✓ tests/branches.test.ts  (27 tests) 6ms
+ ✓ tests/outside-exits.test.ts  (5 tests) 2ms
+ ✓ tests/corpus-shape.test.ts  (7 tests) 44ms
+ ✓ tests/map.test.ts  (15 tests) 49ms
+ ✓ tests/reach.test.ts  (23 tests) 80ms
+ ✓ tests/endings.test.ts  (4 tests) 13ms
+ ✓ tests/timer-clause-gate.test.ts  (2 tests) 14ms
+ ✓ tests/synthetic-corpus.test.ts  (25 tests) 376ms
+ ✓ tests/loader-semantics.test.ts  (23 tests) 16ms
+ ✓ tests/vocabulary.test.ts  (4 tests) 62ms
+ ✓ tests/roles.test.ts  (11 tests) 64ms
+ ✓ tests/incomplete.test.ts  (43 tests) 96ms
+ ✓ tests/unnamed.test.ts  (8 tests) 110ms
+ ✓ tests/cli.test.ts  (10 tests) 647ms
+ ✓ tests/scale-timing.test.ts  (5 tests | 1 skipped) 726ms
+
+ Test Files  19 passed (19)
+      Tests  237 passed | 1 skipped (238)
+   Start at  10:55:10
+   Duration  1.70s (transform 1.19s, setup 0ms, collect 9.81s, tests 2.37s, environment 1ms, prepare 964ms)
+

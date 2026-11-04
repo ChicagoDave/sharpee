@@ -1,0 +1,126 @@
+
+> @sharpee/chord@5.5.1 test:ci /Users/david/repos/sharpee/packages/chord
+> vitest run
+
+
+ RUN  v3.2.4 /Users/david/repos/sharpee/packages/chord
+
+ ✓ tests/adr-329-d10-perform-step.test.ts (18 tests) 42ms
+ ✓ tests/act-seats.test.ts (15 tests) 32ms
+ ✓ tests/adr-375-sailing-front-end.test.ts (21 tests) 50ms
+ ✓ tests/adr-376-expanses-front-end.test.ts (34 tests) 50ms
+ ✓ tests/counter.test.ts (23 tests) 26ms
+ ✓ tests/identity.test.ts (18 tests) 53ms
+ ✓ tests/adr-327-phase1.test.ts (41 tests) 51ms
+ ✓ tests/validate-ir.test.ts (32 tests) 61ms
+ ✓ tests/act-statement.test.ts (18 tests) 64ms
+ ✓ tests/claims-cone.test.ts (10 tests) 67ms
+ ✓ tests/adr-378-passages-front-end.test.ts (45 tests) 70ms
+ ✓ tests/claims.test.ts (26 tests) 77ms
+ ✓ tests/character-declarations.test.ts (95 tests) 82ms
+ ✓ tests/adr-360-room-groups.test.ts (34 tests) 90ms
+ ✓ tests/adr-366-vehicle-front-end.test.ts (62 tests) 100ms
+ ✓ tests/phrasebooks.test.ts (30 tests) 27ms
+ ✓ tests/adr-369-container-settings.test.ts (20 tests) 33ms
+ ✓ tests/timers.test.ts (17 tests) 33ms
+ ✓ tests/topics.test.ts (19 tests) 29ms
+ ✓ tests/analyzer-one-rule.test.ts (11 tests) 40ms
+ ✓ tests/adr-320-phase4.test.ts (23 tests) 36ms
+ ✓ tests/message-override.test.ts (8 tests) 35ms
+ ✓ tests/adr-320-threads.test.ts (16 tests) 29ms
+ ✓ tests/pattern-constructs.test.ts (28 tests) 31ms
+ ✓ tests/adr-330-chapters.test.ts (22 tests) 37ms
+ ✓ tests/adr-374-scope-senses.test.ts (19 tests) 52ms
+ ✓ tests/grammar-alterations.test.ts (22 tests) 25ms
+ ✓ tests/comments.test.ts (18 tests) 29ms
+ ✓ tests/adr-327-phase3.test.ts (22 tests) 45ms
+ ✓ tests/patterns.test.ts (18 tests) 32ms
+ ✓ tests/adr-368-gerund-list.test.ts (33 tests) 560ms
+   ✓ AC-5 — a corpus with its sibling clauses folded compiles to the same IR > branch-stories/secret-letter/secret-letter.story: identical IR apart from spans  402ms
+ ✓ tests/adr-362-corpus-fold.test.ts (15 tests) 616ms
+   ✓ ADR-362 AC-1 — a folded corpus compiles to the same IR > branch-stories/secret-letter/secret-letter.story: identical IR apart from spans, exits as a set  454ms
+ ✓ tests/adr-289-d3-d10.test.ts (17 tests) 27ms
+ ✓ tests/zoo-surfaces-phase3.test.ts (18 tests) 23ms
+ ✓ tests/places.test.ts (10 tests) 29ms
+ ✓ tests/starts-state.test.ts (11 tests) 19ms
+ ✓ tests/doors.test.ts (18 tests) 20ms
+ ✓ tests/adr-320-phase3.test.ts (16 tests) 25ms
+ ✓ tests/adr-362-folds.test.ts (19 tests) 32ms
+ ✓ tests/landing.test.ts (13 tests) 31ms
+ ✓ tests/player-timers.test.ts (16 tests) 35ms
+ ✓ tests/movement-clauses.test.ts (18 tests) 43ms
+ ✓ tests/dialogue-only-forms.test.ts (4 tests) 43ms
+ ✓ tests/ac3-cloak-sweep.test.ts (6 tests) 28ms
+ ✓ tests/adr-373-physical-state.test.ts (12 tests) 22ms
+ ✓ tests/secret-letter-phase4-resolution.test.ts (10 tests) 24ms
+ ✓ tests/channel-capability.test.ts (10 tests) 21ms
+ ✓ tests/adr-372-counterpart-tail.test.ts (11 tests) 22ms
+ ✓ tests/channel-record.test.ts (11 tests) 18ms
+ ✓ tests/use-extensions.test.ts (15 tests) 21ms
+ ✓ tests/phrase-overlap.test.ts (12 tests) 21ms
+ ✓ tests/adr-289-d5-d6.test.ts (10 tests) 18ms
+ ✓ tests/rank-ladder-analysis.test.ts (16 tests) 24ms
+ ✓ tests/action-pattern-articles.test.ts (15 tests) 23ms
+ ✓ tests/zoo-surfaces-phase1.test.ts (19 tests) 23ms
+ ✓ tests/alteration-targets.test.ts (9 tests) 29ms
+ ✓ tests/import.test.ts (18 tests) 32ms
+ ✓ tests/clause-ids.test.ts (9 tests) 40ms
+ ✓ tests/dynamic-channels.test.ts (13 tests) 26ms
+ ✓ tests/adr-289-d8.test.ts (14 tests) 30ms
+ ✓ tests/slot-spelling.test.ts (8 tests) 18ms
+ ✓ tests/region-membership.test.ts (15 tests) 31ms
+ ✓ tests/composition-legality.test.ts (16 tests) 25ms
+ ✓ tests/adjacent-room.test.ts (8 tests) 41ms
+ ✓ tests/story-block-fields.test.ts (38 tests) 18ms
+ ✓ tests/lexer-golden.test.ts (2 tests) 19ms
+ ✓ tests/adr-325-w1-make-wear.test.ts (7 tests) 19ms
+ ✓ tests/setting-domains.test.ts (11 tests) 18ms
+ ✓ tests/action-about-rows.test.ts (9 tests) 22ms
+ ✓ tests/scope-requirements.test.ts (8 tests) 18ms
+ ✓ tests/adr-359-d1-thing.test.ts (13 tests) 17ms
+ ✓ tests/person-identity.test.ts (16 tests) 17ms
+ ✓ tests/compile-gate-sweep.test.ts (9 tests) 23ms
+ ✓ tests/seat-tables.test.ts (23 tests) 17ms
+ ✓ tests/analysis-passes.test.ts (6 tests) 18ms
+ ✓ tests/zoo-surfaces-phase2.test.ts (11 tests) 19ms
+ ✓ tests/grammar-file.test.ts (16 tests) 23ms
+ ✓ tests/publish-readiness-phase3.test.ts (7 tests) 22ms
+ ✓ tests/state-machine.test.ts (9 tests) 20ms
+ ✓ tests/parser-death.test.ts (13 tests) 19ms
+ ✓ tests/gh-359-detail-gate-timer-read.test.ts (5 tests) 21ms
+ ✓ tests/adr-362-d5-trailing-words.test.ts (8 tests) 16ms
+ ✓ tests/adr-372-topics-and-costs.test.ts (7 tests) 17ms
+ ✓ tests/entity-line-builders.test.ts (5 tests) 20ms
+ ✓ tests/channel-return.test.ts (8 tests) 15ms
+ ✓ tests/story-daemon.test.ts (6 tests) 15ms
+ ✓ tests/announce-mode.test.ts (5 tests) 16ms
+ ✓ tests/adr-349-room-name.test.ts (11 tests) 20ms
+ ✓ tests/adr-371-settable-and-value-tail.test.ts (9 tests) 18ms
+ ✓ tests/blocked-exit-unreachable.test.ts (4 tests) 13ms
+ ✓ tests/scoring-gate.test.ts (7 tests) 15ms
+ ✓ tests/adr-276-acceptance.test.ts (2 tests) 13ms
+ ✓ tests/hunger.test.ts (6 tests) 14ms
+ ✓ tests/adr-360-d3a-duplicate-exit.test.ts (7 tests) 17ms
+ ✓ tests/media-sugar.test.ts (5 tests) 15ms
+ ✓ tests/formatting.test.ts (10 tests) 16ms
+ ✓ tests/adr-360-exit-table.test.ts (22 tests) 19ms
+ ✓ tests/analyzer-each-package.test.ts (20 tests) 15ms
+ ✓ tests/condition-discharge.test.ts (5 tests) 2ms
+ ✓ tests/language-version.test.ts (2 tests) 1ms
+ ✓ tests/parser-phase-b.test.ts (26 tests) 11ms
+ ✓ tests/analyzer.test.ts (24 tests) 14ms
+ ✓ tests/adr-361-hatches-removed.test.ts (7 tests) 14ms
+ ✓ tests/dotted-key-rejection.test.ts (8 tests) 6ms
+ ✓ tests/rank-ladder-parse.test.ts (15 tests) 6ms
+ ✓ tests/parser.test.ts (32 tests) 10ms
+ ✓ tests/parser-each-package.test.ts (12 tests) 6ms
+ ✓ tests/emit-payload.test.ts (5 tests) 3ms
+ ✓ tests/analyzer-phase-c.test.ts (18 tests) 12ms
+ ✓ tests/analyzer-phase-b.test.ts (25 tests) 11ms
+ ✓ tests/zoo-phase-c-parse.test.ts (5 tests) 9ms
+
+ Test Files  111 passed (111)
+      Tests  1779 passed (1779)
+   Start at  10:50:45
+   Duration  2.50s (transform 1.54s, setup 0ms, collect 15.34s, tests 4.18s, environment 9ms, prepare 4.52s)
+

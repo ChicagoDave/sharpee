@@ -1,0 +1,47 @@
+
+> @sharpee/lang-en-us@5.5.1 test:ci /Users/david/repos/sharpee/packages/lang-en-us
+> vitest run
+
+
+ RUN  v3.2.4 /Users/david/repos/sharpee/packages/lang-en-us
+
+ ✓ tests/assembler/optional-choice.test.ts (11 tests) 3ms
+ ✓ tests/assembler/verb-agreement.test.ts (18 tests) 3ms
+ ✓ tests/one-home.test.ts (11 tests) 41ms
+ ✓ tests/assembler/english-assembler.test.ts (51 tests) 6ms
+ ✓ tests/parser/parse-phrase-template.test.ts (40 tests) 5ms
+ ✓ tests/assembler/sentence-quote.test.ts (17 tests) 3ms
+ ✓ tests/assembler/chosen-provenance.test.ts (10 tests) 3ms
+ ✓ tests/assembler/spliced.test.ts (10 tests) 2ms
+ ✓ tests/assembler/contents.test.ts (6 tests) 2ms
+ ✓ tests/parser/quote-pronoun-parse.test.ts (15 tests) 3ms
+ ✓ tests/assembler/snippet-splice.test.ts (8 tests) 213ms
+ ✓ tests/ac9-showcase.test.ts (2 tests) 3ms
+ ✓ tests/pronoun-sets.test.ts (4 tests) 4ms
+ ✓ tests/examining-default-description.test.ts (5 tests) 4ms
+ ✓ tests/render-message.test.ts (12 tests) 5ms
+ ✓ tests/unit/grammar.test.ts (38 tests) 5ms
+ ✓ tests/dialogue-attribution.test.ts (9 tests) 6ms
+ ✓ tests/sound-messages.test.ts (11 tests) 5ms
+ ✓ tests/concealment-message-shapes.test.ts (10 tests) 7ms
+ ✓ tests/actor-voice.test.ts (17 tests) 7ms
+ ✓ tests/text-processing.test.ts (43 tests) 10ms
+ ✓ tests/language-provider.test.ts (44 tests) 19ms
+ ✓ tests/unit/perspective/placeholder-resolver.test.ts (29 tests) 3ms
+ ✓ tests/parser/verb-parse.test.ts (6 tests) 2ms
+ ✓ tests/assembler/numeral.test.ts (26 tests) 2ms
+ ✓ tests/parse-cardinal.test.ts (4 tests) 2ms
+ ✓ tests/assembler/pronoun.test.ts (5 tests) 2ms
+ ✓ tests/attack-ineffective-messages.test.ts (4 tests) 4ms
+ ✓ tests/direction-lines.test.ts (4 tests) 2ms
+ ✓ tests/bare-hint.test.ts (2 tests) 3ms
+ ✓ tests/examined-self-detail.test.ts (2 tests) 3ms
+ ✓ tests/scope-violation-lines.test.ts (4 tests) 1ms
+ ✓ tests/parser-error-templates.test.ts (2 tests) 2ms
+ ✓ tests/assembler/structural-mandate.test.ts (4 tests) 2ms
+
+ Test Files  34 passed (34)
+      Tests  484 passed (484)
+   Start at  10:50:54
+   Duration  934ms (transform 782ms, setup 0ms, collect 5.98s, tests 389ms, environment 3ms, prepare 1.33s)
+
