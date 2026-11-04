@@ -1,7 +1,7 @@
 # Session Plan: Type the bootstrap story seam, delete reviveEngine (#645)
 
 **Created**: 2026-11-04
-**Plan Status**: ACTIVE
+**Plan Status**: DONE
 **Authorization**: No ADR. Nothing here is a decision: the no-`any`/`unknown` rule (David, 2026-10-25) and ADR-180's single-loader invariant already decide it, and the survey's convention for issue-only cleanups (lang-en-us #382, parser-en-us #385) applies. David's "bootstrap it is - plan it" (2026-11-04) is the discuss-first authorization for a `packages/` plan scoped to exactly #645; it does not authorize the edits. Each phase runs on David's go, and the reviveEngine deletion (Phase 2) is HELD for his confirmation of the exact list.
 **Overall scope**: `packages/bootstrap/src/index.ts` types its one story-loading seam as the engine's `Story`, loses three stale `as any` casts and the dead `LoadedGame.reviveEngine()`, and its test fakes are typed. Type-only except the deletion.
 **Bounded contexts touched**: N/A — infrastructure/tooling (the story loader under the Dungeo chain and the Chord trees)
