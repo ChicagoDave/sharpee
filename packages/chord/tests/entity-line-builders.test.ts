@@ -37,6 +37,7 @@ describe('ENTITY_LINE_BUILDERS order', () => {
       'states',
       'counters',
       'holds',
+      'servings',
       'pushing',
       'vehicle',
       'expanse',

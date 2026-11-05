@@ -134,6 +134,8 @@ export interface EntityDraft {
   counters: IRCounterDecl[];
   /** `holds <n>` (ADR-369 D2); undefined when the block has no line. */
   holds?: number;
+  /** `servings <n>`; undefined when the block has no line. */
+  servings?: number;
   /** The vehicle's declaration (ADR-366); undefined off a `vehicle` block. */
   vehicle?: IRVehicle;
   /** `admits:` (ADR-366 D6) as entity ids; undefined when the block has no line. */

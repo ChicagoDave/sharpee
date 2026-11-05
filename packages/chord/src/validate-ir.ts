@@ -250,6 +250,16 @@ export function validateIR(ir: StoryIR): Diagnostic[] {
       );
     }
 
+    // `servings <n>` counts the bites or sips of something eaten or drunk,
+    // so it means nothing on a block that is neither.
+    if (entity.servings !== undefined && !entity.traits.some((t) => t.name === 'edible' || t.name === 'drinkable')) {
+      diagnostics.error(
+        'analysis.servings-owner',
+        `\`servings\` says how many bites or sips \`${entity.name}\` has — add \`edible\` or \`drinkable\` beside its kind.`,
+        entity.span,
+      );
+    }
+
     // ADR-359 D1: every block names its kind. A kind noun written bare is
     // named as such below, so it does not also report as missing.
     if (entity.kinds.length === 0 && !entity.traits.some((t) => KIND_NOUNS.has(t.name))) {

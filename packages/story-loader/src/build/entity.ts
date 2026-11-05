@@ -23,7 +23,8 @@
  * - ADR-327 D10, ADR-344 D7 — the role-holder is one of these entities;
  *   `playable` reaches the runtime.
  * - ADR-234 D4 — doors; ADR-236 D1 — regions; ADR-359 D1 — `a thing`;
- *   ADR-366 D1, D2 — vehicles; ADR-369 D2 — `holds`; ADR-376 D2, D6 —
+ *   ADR-366 D1, D2 — vehicles; ADR-369 D2 — `holds` (and `servings`,
+ *   the line built like it); ADR-376 D2, D6 —
  *   expanses, landmarks and `sight:`.
  * - ADR-231 D5a — `starts <state>` onto the paired trait's field.
  * - GH #355 — the IR id attribute the tree-document runner reads.
@@ -33,6 +34,7 @@ import {
   ActorTrait,
   BreakableTrait,
   ContainerTrait,
+  EdibleTrait,
   EnterableTrait,
   IdentityTrait,
   IFEntity,
@@ -255,6 +257,19 @@ export function buildEntity(story: BuildContext, world: WorldModel, irEntity: IR
   }
 
   applyTraitAdjectives(story, entity, irEntity, kind);
+  // `servings <n>` is how many bites or sips the thing has; absent leaves
+  // the edible trait's own one serving. It runs after the adjectives because
+  // `edible` and `drinkable` are what build the trait it writes to.
+  if (irEntity.servings !== undefined) {
+    const edible = entity.get(TraitType.EDIBLE) as EdibleTrait | undefined;
+    // validateIR refuses the line on a block that is neither edible nor
+    // drinkable before a world is built, so a missing trait here is a
+    // loader defect, not a story error.
+    if (!edible) {
+      throw new LoadError(`\`${irEntity.name}\` has servings but nothing to eat or drink was built for it.`, irEntity.span);
+    }
+    edible.servings = irEntity.servings;
+  }
   applyStartsStates(entity, irEntity);
   // GH #355: the same mapping, readable from the world alone — the
   // tree-document runner resolves `chord.state.<ir-id>` through it.

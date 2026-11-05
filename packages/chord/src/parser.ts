@@ -150,6 +150,7 @@ import {
   ScoreDecl,
   CounterDecl,
   HoldsDecl,
+  ServingsDecl,
   VehicleLine,
   PositionBlockDecl,
   PushingBlockDecl,
@@ -458,6 +459,7 @@ function newCreateDecl(name: NameRef, span: Span): CreateDecl {
     scores: [],
     counters: [],
     holds: [],
+    servings: [],
     vehicleLines: [],
     positionBlock: null,
     pushingBlock: null,
@@ -2259,6 +2261,26 @@ class Parser {
     return { kind: 'holds', count, span: lineSpan(line) };
   }
 
+  /**
+   * `servings <n>`: one whole number of one or more. Anything else — a
+   * word, zero, a negative, a fraction, trailing words, no number at all —
+   * is `parse.servings-number`. Which blocks may carry the line is an IR
+   * invariant (`analysis.servings-owner`).
+   * @param line the `servings` line
+   * @returns the declaration, or null when the line was refused
+   */
+  private parseServingsLine(line: Line): ServingsDecl | null {
+    const c = new Cursor(line.tokens, line);
+    c.matchWord('servings');
+    const tok = c.next();
+    const count = tok && tok.kind === 'number' ? Number(tok.text) : NaN;
+    if (!Number.isInteger(count) || count < 1 || !c.atEnd()) {
+      this.diagnostics.error('parse.servings-number', '`servings` takes a whole number of one or more: `servings 3`.', tok ? mergeSpans(tok.span, c.restSpan()) : c.restSpan());
+      return null;
+    }
+    return { kind: 'servings', count, span: lineSpan(line) };
+  }
+
   private parseCounterLine(line: Line): CounterDecl | null {
     const c = new Cursor(line.tokens, line);
     c.matchWord('counter');
@@ -2591,6 +2613,11 @@ class Parser {
         this.pos++;
         const h = this.parseHoldsLine(line);
         if (h) decl.holds.push(h);
+      } else if (word === 'servings') {
+        // How many bites or sips an edible or drinkable thing has.
+        this.pos++;
+        const s = this.parseServingsLine(line);
+        if (s) decl.servings.push(s);
       } else if (word === 'wears') {
         this.pos++;
         cur.matchWord('wears');

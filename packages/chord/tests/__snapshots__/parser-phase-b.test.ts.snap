@@ -1097,6 +1097,7 @@ exports[`traits-basic.story (design.md §2.2/§3.2 + ownership package) > matche
       "roomGroups": [],
       "sailingBlock": null,
       "scores": [],
+      "servings": [],
       "span": {
         "column": 1,
         "endColumn": 40,
@@ -1242,6 +1243,7 @@ exports[`traits-basic.story (design.md §2.2/§3.2 + ownership package) > matche
       "roomGroups": [],
       "sailingBlock": null,
       "scores": [],
+      "servings": [],
       "span": {
         "column": 1,
         "endColumn": 41,
@@ -1373,6 +1375,7 @@ exports[`traits-basic.story (design.md §2.2/§3.2 + ownership package) > matche
       "roomGroups": [],
       "sailingBlock": null,
       "scores": [],
+      "servings": [],
       "span": {
         "column": 1,
         "endColumn": 11,
@@ -1583,6 +1586,7 @@ exports[`zoo-actions.story (design.md §3.4 + ownership package) > matches the g
       "roomGroups": [],
       "sailingBlock": null,
       "scores": [],
+      "servings": [],
       "span": {
         "column": 1,
         "endColumn": 48,
@@ -1740,6 +1744,7 @@ exports[`zoo-actions.story (design.md §3.4 + ownership package) > matches the g
       "roomGroups": [],
       "sailingBlock": null,
       "scores": [],
+      "servings": [],
       "span": {
         "column": 1,
         "endColumn": 7,
@@ -3175,6 +3180,7 @@ exports[`zoo-actions.story (design.md §3.4 + ownership package) > matches the g
           "worth": 10,
         },
       ],
+      "servings": [],
       "span": {
         "column": 1,
         "endColumn": 27,
@@ -3321,6 +3327,7 @@ exports[`zoo-actions.story (design.md §3.4 + ownership package) > matches the g
       "roomGroups": [],
       "sailingBlock": null,
       "scores": [],
+      "servings": [],
       "span": {
         "column": 1,
         "endColumn": 32,
@@ -3495,6 +3502,7 @@ exports[`zoo-actions.story (design.md §3.4 + ownership package) > matches the g
       "roomGroups": [],
       "sailingBlock": null,
       "scores": [],
+      "servings": [],
       "span": {
         "column": 1,
         "endColumn": 42,
@@ -3685,6 +3693,7 @@ exports[`zoo-timeline.story (design.md §3.3 + ownership package) > matches the 
       "roomGroups": [],
       "sailingBlock": null,
       "scores": [],
+      "servings": [],
       "span": {
         "column": 1,
         "endColumn": 35,
@@ -3840,6 +3849,7 @@ exports[`zoo-timeline.story (design.md §3.3 + ownership package) > matches the 
       "roomGroups": [],
       "sailingBlock": null,
       "scores": [],
+      "servings": [],
       "span": {
         "column": 1,
         "endColumn": 7,
@@ -4683,6 +4693,7 @@ exports[`zoo-timeline.story (design.md §3.3 + ownership package) > matches the 
       "roomGroups": [],
       "sailingBlock": null,
       "scores": [],
+      "servings": [],
       "span": {
         "column": 1,
         "endColumn": 32,
@@ -5010,6 +5021,7 @@ exports[`zoo-timeline.story (design.md §3.3 + ownership package) > matches the 
       "roomGroups": [],
       "sailingBlock": null,
       "scores": [],
+      "servings": [],
       "span": {
         "column": 1,
         "endColumn": 40,
@@ -5207,6 +5219,7 @@ exports[`zoo-timeline.story (design.md §3.3 + ownership package) > matches the 
       "roomGroups": [],
       "sailingBlock": null,
       "scores": [],
+      "servings": [],
       "span": {
         "column": 1,
         "endColumn": 33,

@@ -1,0 +1,22 @@
+title: Servings — a loaf with three servings is still held after the first and second bite
+story: eating-removal-test
+description: The loaf's block says `servings 3`. Each of the first two bites
+  eats some of it and leaves it in the player's hands.
+seed: 7
+
+---
+
+> take loaf
+[OK: contains "Taken."]
+
+> eat loaf
+[OK: contains "You eat some of the loaf."]
+
+> inventory
+[OK: contains "a loaf"]
+
+> eat loaf
+[OK: contains "You eat some of the loaf."]
+
+> inventory
+[OK: contains "a loaf"]

@@ -838,6 +838,7 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
       "roomGroups": [],
       "sailingBlock": null,
       "scores": [],
+      "servings": [],
       "span": {
         "column": 1,
         "endColumn": 44,
@@ -984,6 +985,7 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
       "roomGroups": [],
       "sailingBlock": null,
       "scores": [],
+      "servings": [],
       "span": {
         "column": 1,
         "endColumn": 28,
@@ -1362,6 +1364,7 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
       "roomGroups": [],
       "sailingBlock": null,
       "scores": [],
+      "servings": [],
       "span": {
         "column": 1,
         "endColumn": 50,

@@ -413,6 +413,14 @@ holds-line   = "holds" NUMBER NL ;                         (* ADR-369 D2: the it
                                                               NUMBER >= 1 (parse.holds-
                                                               number); at most one
                                                               (analysis.holds-duplicate) *)
+servings-line = "servings" NUMBER NL ;                     (* how many bites or sips
+                                                              an edible or drinkable
+                                                              thing has (analysis.
+                                                              servings-owner elsewhere);
+                                                              NUMBER >= 1 (parse.
+                                                              servings-number); at most
+                                                              one (analysis.servings-
+                                                              duplicate); absent = one *)
 vehicle-line = "movement" ":" ( "none" | "line" | "streets"
                               | "compass" | "flight"
                               | "open" ) NL               (* ADR-366 D5: every vehicle
@@ -811,6 +819,7 @@ create-line  = "aka" alias { "," alias } NL
              | score-line
              | counter-line                                (* ADR-264 D1 *)
              | holds-line                                  (* ADR-369 D2 *)
+             | servings-line
              | vehicle-line                                (* ADR-366 D2, D5, D7 *)
              | admits-line                                 (* ADR-366 D6 *)
              | position-block                              (* ADR-366 D5a *)

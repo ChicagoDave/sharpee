@@ -168,6 +168,7 @@ exports[`ac5-random.story (determinism fixture) > matches the golden AST snapsho
       "roomGroups": [],
       "sailingBlock": null,
       "scores": [],
+      "servings": [],
       "span": {
         "column": 1,
         "endColumn": 28,
@@ -417,6 +418,7 @@ exports[`ac5-random.story (determinism fixture) > matches the golden AST snapsho
       "roomGroups": [],
       "sailingBlock": null,
       "scores": [],
+      "servings": [],
       "span": {
         "column": 1,
         "endColumn": 50,
@@ -574,6 +576,7 @@ exports[`ac5-random.story (determinism fixture) > matches the golden AST snapsho
       "roomGroups": [],
       "sailingBlock": null,
       "scores": [],
+      "servings": [],
       "span": {
         "column": 1,
         "endColumn": 22,
@@ -995,6 +998,7 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
       "roomGroups": [],
       "sailingBlock": null,
       "scores": [],
+      "servings": [],
       "span": {
         "column": 1,
         "endColumn": 71,
@@ -1091,6 +1095,7 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
       "roomGroups": [],
       "sailingBlock": null,
       "scores": [],
+      "servings": [],
       "span": {
         "column": 1,
         "endColumn": 67,
@@ -1399,6 +1404,7 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
       "roomGroups": [],
       "sailingBlock": null,
       "scores": [],
+      "servings": [],
       "span": {
         "column": 1,
         "endColumn": 46,
@@ -1562,6 +1568,7 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
       "roomGroups": [],
       "sailingBlock": null,
       "scores": [],
+      "servings": [],
       "span": {
         "column": 1,
         "endColumn": 27,
@@ -1689,6 +1696,7 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
       "roomGroups": [],
       "sailingBlock": null,
       "scores": [],
+      "servings": [],
       "span": {
         "column": 1,
         "endColumn": 63,
@@ -1859,6 +1867,7 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
       "roomGroups": [],
       "sailingBlock": null,
       "scores": [],
+      "servings": [],
       "span": {
         "column": 1,
         "endColumn": 53,
@@ -2199,6 +2208,7 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
       "roomGroups": [],
       "sailingBlock": null,
       "scores": [],
+      "servings": [],
       "span": {
         "column": 1,
         "endColumn": 24,

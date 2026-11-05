@@ -386,6 +386,14 @@ export interface HoldsDecl {
   span: Span;
 }
 
+/** `servings <n>` — how many bites or sips an edible or drinkable thing has before it is finished. */
+export interface ServingsDecl {
+  kind: 'servings';
+  /** A whole number of one or more (the parser refuses anything else). */
+  count: number;
+  span: Span;
+}
+
 export type Declaration =
   | CreateDecl
   | DefineCondition
@@ -985,6 +993,8 @@ export interface CreateDecl {
   counters: CounterDecl[];
   /** `holds <n>` lines (ADR-369 D2) — collected so the analyzer can refuse a second one. */
   holds: HoldsDecl[];
+  /** `servings <n>` lines — collected so the analyzer can refuse a second one. */
+  servings: ServingsDecl[];
   /**
    * The vehicle colon lines and `admits:` lines (ADR-366), in declaration
    * order. Which a block may carry is the analyzer's gate.

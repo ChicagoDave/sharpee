@@ -22,6 +22,7 @@ import { clausesBuilder } from './clauses.js';
 import { compositionsBuilder } from './compositions.js';
 import { countersBuilder } from './counters.js';
 import { holdsBuilder } from './holds.js';
+import { servingsBuilder } from './servings.js';
 import { pushingBuilder } from './pushing.js';
 import { exitsBuilder } from './exits.js';
 import { hostGatesBuilder } from './host-gates.js';
@@ -56,6 +57,7 @@ export const ENTITY_LINE_BUILDERS: ReadonlyArray<EntityLineBuilder> = [
   statesBuilder,
   countersBuilder,
   holdsBuilder,
+  servingsBuilder,
   pushingBuilder,
   vehicleBuilder,
   expanseBuilder,

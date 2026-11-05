@@ -498,6 +498,13 @@ export interface IREntity {
    */
   holds?: number;
   /**
+   * `servings <n>`: how many bites or sips an edible or drinkable thing has
+   * before it is finished, lowered to its edible trait's `servings`.
+   * Additive and optional; absent means one. Only an entity that composes
+   * `edible` or `drinkable` may carry it (`analysis.servings-owner`).
+   */
+  servings?: number;
+  /**
    * The vehicle's declaration (ADR-366): its movement type and the lines
    * that type takes. Present exactly on `vehicle`-kind entities; the loader
    * builds `VehicleTrait.model` from it and nothing else (D8).

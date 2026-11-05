@@ -82,6 +82,7 @@ export function assembleEntity(draft: EntityDraft): IREntity {
     statesReversible: draft.statesReversible,
     counters: draft.counters,
     ...(draft.holds !== undefined ? { holds: draft.holds } : {}),
+    ...(draft.servings !== undefined ? { servings: draft.servings } : {}),
     ...(draft.vehicle !== undefined ? { vehicle: draft.vehicle } : {}),
     ...(draft.admits !== undefined ? { admits: draft.admits } : {}),
     ...(draft.pushing !== undefined ? { pushing: draft.pushing } : {}),

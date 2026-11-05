@@ -223,7 +223,11 @@ const PINNED = {
   // ADR-383 D9): `action-line` gains `topic-row` — `about …:` rows answering
   // a `define action`'s topic slot — and `extend-action`'s behavior-line list
   // names it. Additive, on the same unpublished 4.0.0 surface — no bump.
-  ebnfSha256: '873a6cd24576d9abf5981c44b352e26bd7ea93fc4a86746c8305d1020ae688b8',
+  // Re-pinned 2026-11-05 (session e6d737, event-processor-one-writer plan
+  // Phase 5): `entity-line` gains `servings-line` — `servings <n>`, how many
+  // bites or sips an edible or drinkable thing has. Additive — no bump; the
+  // number moves when the next version is cut.
+  ebnfSha256: '73f232a68619109680dba380c4f08ae1adf61f3830ef746c77207671a020290a',
 };
 
 // Colocated with the version pin it gates (2026-08-14). It previously lived at

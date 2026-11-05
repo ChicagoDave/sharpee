@@ -32,6 +32,22 @@ supporters; on anything else each is an error that names the kind it
 found. The old `with max items N`, `with max weight N` and `with
 capacity N` settings are errors whose message shows the `holds` line.
 
+A thing that is eaten or drunk in more than one go says so with
+`servings <n>`, a whole number of bites or sips; without the line it has
+one:
+
+```chord
+create the loaf
+  a thing, edible
+  servings 3
+  in the Root Cellar
+
+  A round loaf of bread.
+```
+
+`servings` belongs to a thing that is `edible` or `drinkable`; on anything
+else it is an error that says so.
+
 `with` attaches settings to a trait adjective. The last token of each
 setting is its value and the words before it are the key; several
 settings join with `and`. When a keyed value is an entity name, the article marks

@@ -323,5 +323,12 @@
  * IR carries its identity manifest and stamp (D4). No grammar changes and no
  * story stops compiling; David ruled the cutover a PATCH (Q-3 interview),
  * applied when the next version is cut, not here.
+ *
+ * **Pending publish — `servings <n>`, 2026-11-05.** A new entity line: how
+ * many bites or sips an edible or drinkable thing has before it is finished
+ * (David's answer of 2026-11-04 that Chord can state servings). Additive:
+ * `entity-line` gains `servings-line` and no story stops compiling. The EBNF
+ * hash is re-recorded; the number moves when the next version is cut, not
+ * here.
  */
 export const CHORD_LANGUAGE_VERSION = '4.0.0';
