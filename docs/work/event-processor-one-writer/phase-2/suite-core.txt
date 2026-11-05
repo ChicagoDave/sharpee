@@ -1,0 +1,26 @@
+
+> @sharpee/core@5.5.1 test:ci /Users/david/repos/sharpee/packages/core
+> vitest run
+
+
+ RUN  v3.2.4 /Users/david/repos/sharpee/packages/core
+
+ ✓ tests/types/result.test.ts (23 tests) 3ms
+ ✓ tests/events/typed-events.test.ts (5 tests) 2ms
+ ✓ tests/random/seed-derivation.test.ts (6 tests) 2ms
+ ✓ tests/random/stream-independence.test.ts (3 tests) 1ms
+ ✓ tests/random/choice-point.test.ts (9 tests) 3ms
+ ✓ tests/ifid/ifid.test.ts (15 tests) 2ms
+ ✓ tests/events/platform-events.test.ts (24 tests) 3ms
+ ✓ tests/random/seeded-random.test.ts (16 tests) 5ms
+ ✓ tests/events/event-system.test.ts (13 tests) 14ms
+ ✓ tests/query/query-manager.test.ts (14 tests) 4ms
+ ✓ tests/events/simple-event-source.test.ts (9 tests) 4ms
+ ✓ tests/events/semantic-event-source.test.ts (13 tests) 5ms
+ ✓ tests/surface.test.ts (3 tests) 8ms
+
+ Test Files  13 passed (13)
+      Tests  153 passed (153)
+   Start at  20:03:02
+   Duration  264ms (transform 383ms, setup 0ms, collect 702ms, tests 55ms, environment 1ms, prepare 506ms)
+

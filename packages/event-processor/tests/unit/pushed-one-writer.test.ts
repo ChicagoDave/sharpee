@@ -1,15 +1,18 @@
 /**
  * pushed-one-writer.test.ts — a press is written once, by
- * `SwitchableBehavior` in the pushing action (alignment-fixes D10). The
- * standard handlers no longer mirror a `pushed` event's predicted `newState`
- * onto the switch, so an outcome changed after execute is not overwritten
- * by the event.
+ * `SwitchableBehavior` in the pushing action. Processing a `pushed` event
+ * does not mirror its predicted `newState` onto the switch, so an outcome
+ * changed after execute is not overwritten by the event.
  *
  * Owner context: event-processor test suite.
+ *
+ * References:
+ * - alignment-fixes D10 — the press has one writer.
+ * - tests/unit/opened-closed-one-writer.test.ts — the same rule for isOpen.
  */
 import { describe, it, beforeEach, expect } from 'vitest';
 import { EventProcessor } from '../../src/processor';
-import { registerStandardHandlers } from '../../src/handlers';
+import type { Effect } from '../../src/effects';
 import { WorldModel, EntityType, SwitchableTrait, TraitType } from '@sharpee/world-model';
 import { IFEvents } from '@sharpee/if-domain';
 import type { ISemanticEvent } from '@sharpee/core';
@@ -21,12 +24,12 @@ describe('a pushed event does not write the switch (D10)', () => {
   beforeEach(() => {
     world = new WorldModel();
     processor = new EventProcessor(world);
+    // The wiring the engine performs: world-level handlers reach the processor.
     world.connectEventProcessor({
       registerHandler: (eventType, handler) => {
-        processor.registerHandler(eventType, (event) => handler(event) as any);
+        processor.registerHandler(eventType, (event) => handler(event) as Effect[]);
       }
     });
-    registerStandardHandlers(world);
   });
 
   it('leaves isOn as the behavior left it, whatever the event predicted', () => {

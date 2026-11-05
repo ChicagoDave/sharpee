@@ -48,7 +48,7 @@ Thirty-one packages under `packages/`. Grouped by what they are for, not by depe
 
 **`@sharpee/engine`** — The runtime: turn cycle, command execution, event dispatch, save/restore, and the prose pipeline that turns turn-end events into `ITextBlock[]`. `GameEngine` takes `{ world, parser, language, perceptionService?, config? }` — no player: the role holder comes from the story at `installStory()` (ADR-344 D6) — and owns the master seed every random stream derives from (ADR-293).
 
-**`@sharpee/event-processor`** — Applies semantic events to the world model through registered handlers, bridging event-producing actions and actual state mutation. It also hosts the effects system (ADR-075).
+**`@sharpee/event-processor`** — Runs each turn's semantic events past the world's validators, records them, and hands them to the handlers registered for their type: a story's own, the world-level handlers the engine wires in, and event chains. Handlers return effects, which its effects system (ADR-075) applies. It registers no handlers of its own and writes no state for a standard action: a behavior does that in the action's execute phase, and the event is the record.
 
 **`@sharpee/stdlib`** — The standard actions (taking, going, opening, and the rest) written in the four-phase pattern, plus scope resolution, command validation, capability schemas, and the `PerceptionService` implementation. Each action is a directory of six files rather than a single module.
 

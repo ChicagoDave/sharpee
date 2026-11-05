@@ -10,12 +10,14 @@ npm install @sharpee/event-processor
 
 ## Overview
 
-Applies semantic events to the world model:
+Runs each turn's semantic events through the handlers registered for them:
 
-- **Event Application** - Updates world state based on events
-- **Event Ordering** - Ensures consistent state transitions
-- **Side Effects** - Triggers handlers for event types
-- **Effects System (ADR-075)** - Also exports `WorldQuery` / `createWorldQuery`, `EffectProcessor`, and `registerStandardHandlers`
+- **Validation and history** - Each event is checked by the world's validator and recorded
+- **Handlers** - A story's own handlers, the world-level handlers the engine wires in, and event chains run for the event's type
+- **Reactions** - Events that handlers emit are processed in turn, to a bounded depth
+- **Effects System (ADR-075)** - Handlers return effects; also exports `WorldQuery` / `createWorldQuery` and `EffectProcessor`
+
+The processor registers no handlers of its own. A standard action's state change is made by a behavior in the action's execute phase; the event that follows records it.
 
 ## Usage
 
@@ -24,7 +26,7 @@ import { EventProcessor } from '@sharpee/event-processor';
 
 const processor = new EventProcessor(world);
 
-// Apply events from action execution (the world is mutated in place)
+// Process the events an action reported (handlers' effects are applied in place)
 const results = processor.processEvents(events);
 // results: { applied, failed, changes, reactions }
 ```

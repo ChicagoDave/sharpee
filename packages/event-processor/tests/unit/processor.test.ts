@@ -40,14 +40,10 @@ describe('EventProcessor', () => {
       expect(customProcessor).toBeDefined();
     });
     
-    it('should register standard handlers on creation', () => {
-      // Check that handlers were registered
-      expect(mockWorld.registeredHandlers.length).toBeGreaterThan(0);
-      // Check for actual IF event types that are registered
-      expect(mockWorld.registeredHandlers).toContain('taken');
-      expect(mockWorld.registeredHandlers).toContain('dropped');
-      expect(mockWorld.registeredHandlers).toContain('opened');
-      expect(mockWorld.registeredHandlers).toContain('closed');
+    it('registers no handlers on the world when created', () => {
+      // A standard action's change is made by a behavior in its execute
+      // phase; the processor adds no second writer of its own.
+      expect(mockWorld.registeredHandlers).toEqual([]);
     });
   });
   

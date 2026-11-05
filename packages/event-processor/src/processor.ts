@@ -1,14 +1,30 @@
 /**
- * Event processor implementation
+ * The event processor: runs each semantic event past the world's validator,
+ * records it in the world's event history, and hands it to the handlers
+ * registered for its type. A handler reads the world through a `WorldQuery`
+ * and returns effects; the `EffectProcessor` applies them, and any events
+ * they emit are processed in turn as reactions, to a bounded depth.
  *
- * Applies semantic events to the world model through registered handlers.
- * ADR-075: Entity handlers receive WorldQuery and return Effect[].
+ * The processor registers no handlers of its own and writes no state for a
+ * standard action. A standard action's change is made once, by a behavior in
+ * the action's execute phase; the event that follows is the record of it.
+ * The handlers that run here are a story's own (`registerHandler`), the
+ * world-level handlers and event chains the engine wires in, and nothing else.
+ *
+ * Public interface: `EventProcessor` (`registerHandler`, `unregisterHandler`,
+ * `processEvents`, `getWorld`, `setOptions`); re-exported types
+ * `StoryEventHandler`, `IGameEvent`, `Effect`, `WorldQuery`.
+ * Owner context: @sharpee/event-processor.
+ *
+ * References:
+ * - ADR-075 — handlers receive a WorldQuery and return Effect[].
+ * - ADR-086 — world-level handlers are wired into this processor.
+ * - ADR-296 D4 — the game.message partition in `invokeEntityHandlers`.
  */
 
 import { type ISemanticEvent } from '@sharpee/core';
 import { WorldModel } from '@sharpee/world-model';
 import { type WorldChange, type ProcessedEvents, type ProcessorOptions } from '@sharpee/if-domain';
-import { registerStandardHandlers } from './handlers/index.js';
 import {
   Effect,
   EffectProcessor,
@@ -53,9 +69,6 @@ export class EventProcessor {
       // Recursively process emitted events
       this.processEvents(events);
     });
-
-    // Register standard handlers on creation
-    registerStandardHandlers(world);
   }
 
   /**

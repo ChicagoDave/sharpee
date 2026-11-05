@@ -1,0 +1,2628 @@
+Loading story from: stories/dungeo
+Found 116 transcript(s) to run
+Seed: 1793843978528 (clock)
+
+Running: stories/dungeo/tests/transcripts/adr-287-fenced-literals.transcript
+  "ADR-287 literal text blocks"
+
+  > look                                             PASS
+  > examine welcome mat                              PASS
+  > open mailbox                                     FAIL
+    ✗ Output did not match expected
+    ─── Output ───
+    You open the small mailbox.
+    
+    In the small mailbox you see a leaflet.
+    ─────────────
+
+    Expected (text block):
+    + You open the small mailbox.
+    + 
+    + Inside the small mailbox you see leaflet.
+  > examine welcome mat                              PASS
+  > examine welcome mat                              EXPECTED FAIL
+      (Expected failure)
+
+  4 passed, 1 failed, 1 expected failures (35ms)
+Seed: 1793843978585 (clock)
+
+Running: stories/dungeo/tests/transcripts/again-minimal.transcript
+  "AGAIN Minimal"
+
+  > look                                             PASS
+  > again                                            PASS
+
+  2 passed (14ms)
+Seed: 1793843978612 (clock)
+
+Running: stories/dungeo/tests/transcripts/again-simple.transcript
+  "AGAIN Simple Test"
+
+  > look                                             PASS
+  > again                                            PASS
+
+  2 passed (13ms)
+Seed: 1793843978638 (clock)
+
+Running: stories/dungeo/tests/transcripts/again.transcript
+  "AGAIN Command"
+
+  > look                                             PASS
+  > examine mailbox                                  PASS
+  > again                                            PASS
+  > open mailbox                                     PASS
+  > take leaflet                                     PASS
+  > g                                                PASS
+  > north                                            PASS
+  > g                                                PASS
+
+  8 passed (33ms)
+Seed: 1793843978683 (clock)
+
+Running: stories/dungeo/tests/transcripts/annotations.transcript
+  "Annotation System Test"
+
+  > look                                             PASS
+  > take mailbox                                     PASS
+  > open mailbox                                     PASS
+  > take leaflet                                     PASS
+  > read leaflet                                     PASS
+
+  5 passed (31ms)
+Seed: 1793843978726 (clock)
+
+Running: stories/dungeo/tests/transcripts/article-rendering.transcript
+  "Article Rendering Regression"
+
+  > look                                             PASS
+  > take white house                                 PASS
+  > take house                                       PASS
+
+  3 passed (16ms)
+Seed: 1793843978756 (clock)
+
+Running: stories/dungeo/tests/transcripts/attic-dark.transcript
+  "Attic Darkness Test"
+
+  > open mailbox                                     PASS
+  > north                                            PASS
+  > east                                             PASS
+  > open window                                      PASS
+  > west                                             PASS
+  > up                                               PASS
+  > down                                             PASS
+  > west                                             PASS
+  > take lamp                                        PASS
+  > turn on lamp                                     PASS
+  > east                                             PASS
+  > up                                               PASS
+
+  12 passed (38ms)
+Seed: 1793843978806 (clock)
+
+Running: stories/dungeo/tests/transcripts/balloon-actions.transcript
+  "Balloon Actions"
+
+  > gdt                                              PASS
+  > tk brass lantern                                 PASS
+  > ah Volcano Bottom                                PASS
+  > ex                                               PASS
+  > turn on lantern                                  PASS
+  > look at balloon                                  PASS
+  > tie wire                                         PASS
+  > enter balloon                                    PASS
+  > exit balloon                                     PASS
+
+  9 passed (32ms)
+Seed: 1793843978851 (clock)
+
+Running: stories/dungeo/tests/transcripts/balloon-flight.transcript
+  "Balloon Flight Basic"
+
+  > gdt                                              PASS
+  > tk brass lantern                                 PASS
+  > ah Volcano Bottom                                PASS
+  > ex                                               PASS
+  > turn on lantern                                  PASS
+  > look                                             PASS
+  > enter balloon                                    PASS
+  > exit                                             PASS
+  > enter balloon                                    PASS
+  > exit                                             PASS
+
+  10 passed (31ms)
+Seed: 1793843978894 (clock)
+
+Running: stories/dungeo/tests/transcripts/balloon-full-flight.transcript
+  "Balloon Full Flight"
+
+  > gdt                                              PASS
+  > tk brass lantern                                 PASS
+  > tk guidebook                                     PASS
+  > ah Volcano Bottom                                PASS
+  > ex                                               PASS
+  > turn on lantern                                  PASS
+  > look                                             PASS
+  > enter balloon                                    PASS
+  > open receptacle                                  PASS
+  > burn guidebook                                   PASS
+  > put guidebook in receptacle                      PASS
+  > wait                                             PASS
+  > wait                                             PASS
+  > wait                                             PASS
+  > tie wire                                         PASS
+  > exit                                             PASS
+  > look                                             PASS
+  > take coin                                        PASS
+  > south                                            PASS
+  > take book                                        PASS
+  > north                                            PASS
+  > enter balloon                                    PASS
+  > untie wire                                       PASS
+  > wait                                             PASS
+  > wait                                             PASS
+  > wait                                             PASS
+  > wait                                             PASS
+  > wait                                             PASS
+  > wait                                             PASS
+  > tie wire                                         PASS
+  > exit                                             PASS
+  > look                                             PASS
+
+  32 passed (101ms)
+Seed: 1793843979008 (clock)
+
+Running: stories/dungeo/tests/transcripts/bank-puzzle.transcript
+  "Bank of Zork Puzzle Test"
+
+  > gdt                                              PASS
+  > tk brass lantern                                 PASS
+  > ex                                               PASS
+  > turn on lantern                                  PASS
+  > gdt                                              PASS
+  > ah West Teller's Room                            PASS
+  > ex                                               PASS
+  > l                                                PASS
+  > w                                                PASS
+  > examine cube                                     PASS
+  > read cube                                        PASS
+  > walk through curtain                             PASS
+  > n                                                PASS
+  > look                                             PASS
+  > walk through south wall                          PASS
+  > walk through north wall                          PASS
+  > take zorkmid bills                               PASS
+  > walk through north wall                          PASS
+  > walk through curtain                             PASS
+  > south                                            PASS
+  > northeast                                        PASS
+  > south                                            PASS
+  > take portrait                                    PASS
+  > inventory                                        PASS
+
+  24 passed (76ms)
+Seed: 1793843979098 (clock)
+
+Running: stories/dungeo/tests/transcripts/basket-elevator.transcript
+  "Basket Elevator"
+
+  > gdt                                              PASS
+  > tk brass lantern                                 PASS
+  > ah Shaft Room                                    PASS
+  > ex                                               PASS
+  > turn on lantern                                  PASS
+  > look at basket                                   PASS
+  > lower basket                                     PASS
+  > lower basket                                     PASS
+  > raise basket                                     PASS
+  > raise basket                                     PASS
+  > lower basket                                     PASS
+  > lift basket                                      PASS
+  > raise basket                                     PASS
+
+  13 passed (45ms)
+Seed: 1793843979156 (clock)
+
+Running: stories/dungeo/tests/transcripts/bat-with-garlic.transcript
+  "Squeaky Room With Garlic"
+
+  > north                                            PASS
+  > east                                             PASS
+  > open window                                      PASS
+  > west                                             PASS
+  > take sack                                        PASS
+  > west                                             PASS
+  > take lantern                                     PASS
+  > switch on lantern                                PASS
+  > gdt                                              PASS
+  > ah Mine Entrance                                 PASS
+  > ex                                               PASS
+  > look                                             PASS
+  > northwest                                        PASS
+
+  13 passed (42ms)
+Seed: 1793843979209 (clock)
+
+Running: stories/dungeo/tests/transcripts/bat-without-garlic.transcript
+  "Squeaky Room Without Garlic"
+
+  > north                                            PASS
+  > east                                             PASS
+  > open window                                      PASS
+  > west                                             PASS
+  > west                                             PASS
+  > take lantern                                     PASS
+  > switch on lantern                                PASS
+  > gdt                                              PASS
+  > ah Mine Entrance                                 PASS
+  > ex                                               PASS
+  > look                                             PASS
+  > northwest                                        PASS
+
+  12 passed (35ms)
+Seed: 1793843979257 (clock)
+
+Running: stories/dungeo/tests/transcripts/boat-inflate-deflate.transcript
+  "Boat Inflate/Deflate"
+
+  > gdt                                              PASS
+  > tk brass lantern                                 PASS
+  > tk hand pump                                     PASS
+  > ah Dam Base                                      PASS
+  > ex                                               PASS
+  > turn on lantern                                  PASS
+  > look                                             PASS
+  > examine plastic                                  PASS
+  > deflate boat                                     PASS
+  > inflate boat                                     PASS
+  > examine boat                                     PASS
+  > examine boat                                     PASS
+  > inflate boat                                     PASS
+  > deflate boat                                     PASS
+  > look                                             PASS
+  > inflate boat                                     PASS
+  > open valve                                       PASS
+  > pump boat                                        PASS
+  > deflate boat                                     PASS
+  > pump up boat                                     PASS
+  > take boat                                        PASS
+  > gdt                                              PASS
+  > ah Shore                                         PASS
+  > ex                                               PASS
+  > drop boat                                        PASS
+  > enter boat                                       PASS
+  > look                                             PASS
+
+  27 passed (92ms)
+Seed: 1793843979361 (clock)
+
+Running: stories/dungeo/tests/transcripts/boat-stick-puncture.transcript
+  "Boat Stick Puncture Test"
+
+  > gdt                                              PASS
+  > tk brass lantern                                 PASS
+  > tk hand pump                                     PASS
+  > tk sharp stick                                   PASS
+  > ah Dam Base                                      PASS
+  > ex                                               PASS
+  > turn on lantern                                  PASS
+  > look                                             PASS
+  > inflate boat                                     PASS
+  > i                                                PASS
+  > enter boat                                       PASS
+  > look                                             PASS
+  > inflate boat                                     PASS
+  > put stick in boat                                PASS
+  > enter boat                                       PASS
+  > look                                             PASS
+
+  16 passed (53ms)
+Seed: 1793843979426 (clock)
+
+Running: stories/dungeo/tests/transcripts/brick-explosion.transcript
+  "Brick/Fuse/Safe Explosion"
+
+  > gdt                                              PASS
+  > tk brass lantern                                 PASS
+  > ah Dusty Room                                    PASS
+  > ex                                               PASS
+  > turn on lantern                                  PASS
+  > look                                             PASS
+  > open safe                                        PASS
+  > examine hole                                     PASS
+  > examine safe                                     PASS
+  > gdt                                              PASS
+  > tk brick                                         PASS
+  > tk shiny wire                                    PASS
+  > ex                                               PASS
+  > put brick in hole                                PASS
+  > burn wire                                        PASS
+  > wait                                             PASS
+  > wait                                             PASS
+  > take crown                                       PASS
+  > examine safe                                     PASS
+  > close safe                                       PASS
+  > north                                            PASS
+  > wait                                             PASS
+  > wait                                             PASS
+  > south                                            PASS
+
+  24 passed (70ms)
+Seed: 1793843979507 (clock)
+
+Running: stories/dungeo/tests/transcripts/bucket-well.transcript
+  "Bucket/Well Puzzle"
+
+  > gdt                                              PASS
+  > tk brass lantern                                 PASS
+  > ex                                               PASS
+  > turn on lantern                                  PASS
+  > gdt                                              PASS
+  > ah Kitchen                                       PASS
+  > ex                                               PASS
+  > look                                             PASS
+  > take bottle                                      PASS
+  > gdt                                              PASS
+  > ah Well Bottom                                   PASS
+  > ex                                               PASS
+  > look                                             PASS
+  > examine bucket                                   PASS
+  > enter bucket                                     PASS
+  > pour water                                       PASS
+  > look                                             PASS
+  > fill bottle                                      PASS
+  > look                                             PASS
+  > exit bucket                                      PASS
+
+  20 passed (61ms)
+Seed: 1793843979580 (clock)
+
+Running: stories/dungeo/tests/transcripts/cage-puzzle.transcript
+  "Cage/Sphere Puzzle (Dingy Closet)"
+
+  > gdt                                              PASS
+  > tk brass lantern                                 PASS
+  > ah Dingy Closet                                  PASS
+  > ao robot here                                    PASS
+  > ex                                               PASS
+  > turn on lantern                                  PASS
+  > look                                             PASS
+  > take sphere                                      PASS
+  > north                                            PASS
+  > tell robot to raise cage                         PASS
+  > take sphere                                      PASS
+  > inventory                                        PASS
+
+  12 passed (36ms)
+Seed: 1793843979629 (clock)
+
+Running: stories/dungeo/tests/transcripts/cake-mechanics.transcript
+  "Cake Mechanics (Tea Room / Well Area)"
+
+  > gdt                                              PASS
+  > tk brass lantern                                 PASS
+  > ex                                               PASS
+  > turn on lantern                                  PASS
+  > gdt                                              PASS
+  > ah Tea Room                                      PASS
+  > ex                                               PASS
+  > look                                             PASS
+  > eat eat-me cake                                  PASS
+  > look                                             PASS
+  > east                                             PASS
+  > look                                             PASS
+  > take spices                                      PASS
+  > west                                             PASS
+  > eat blue cake                                    PASS
+  > look                                             PASS
+  > eat red cake                                     PASS
+  > look                                             PASS
+  > east                                             PASS
+  > east                                             PASS
+  > gdt                                              PASS
+  > ah Tea Room                                      PASS
+  > ex                                               PASS
+  > east                                             PASS
+  > east                                             PASS
+  > take tin                                         PASS
+  > west                                             PASS
+  > west                                             PASS
+  > west                                             PASS
+  > east                                             PASS
+
+  30 passed (85ms)
+Seed: 1793843979725 (clock)
+
+Running: stories/dungeo/tests/transcripts/cake-orange-explosion.transcript
+  "Orange Cake Explosion Death"
+
+  > gdt                                              PASS
+  > tk brass lantern                                 PASS
+  > ex                                               PASS
+  > turn on lantern                                  PASS
+  > gdt                                              PASS
+  > ah Tea Room                                      PASS
+  > ex                                               PASS
+  > eat orange cake                                  PASS
+
+  8 passed (22ms)
+Seed: 1793843979760 (clock)
+
+Running: stories/dungeo/tests/transcripts/cake-red-pool-dissolve.transcript
+  "Red Cake Pool Dissolve"
+
+  > gdt                                              PASS
+  > tk brass lantern                                 PASS
+  > ex                                               PASS
+  > turn on lantern                                  PASS
+  > gdt                                              PASS
+  > ah Tea Room                                      PASS
+  > ex                                               PASS
+  > take red cake                                    PASS
+  > eat eat-me cake                                  PASS
+  > east                                             PASS
+  > take tin                                         PASS
+  > throw red cake at pool                           PASS
+  > take tin                                         PASS
+
+  13 passed (43ms)
+Seed: 42 (seed:)
+
+Running: stories/dungeo/tests/transcripts/carousel.transcript
+  "Low Room Carousel (Magnet Room)"
+
+  > gdt                                              PASS
+  > tk brass lantern                                 PASS
+  > ah Tea Room                                      PASS
+  > ex                                               PASS
+  > turn on lantern                                  PASS
+  > northwest                                        PASS
+  > east                                             PASS
+  > gdt                                              PASS
+  > ah button machine room                           PASS
+  > ao robot here                                    PASS
+  > ex                                               PASS
+  > look                                             PASS
+  > tell robot to push button                        PASS
+  > west                                             PASS
+  > east                                             PASS
+  > look                                             PASS
+
+  16 passed (43ms)
+Seed: 1793843979868 (clock)
+
+Running: stories/dungeo/tests/transcripts/chimney-restriction.transcript
+  "Chimney Restriction"
+
+  > north                                            PASS
+  > east                                             PASS
+  > open window                                      PASS
+  > west                                             PASS
+  > west                                             PASS
+  > take lantern                                     PASS
+  > take sword                                       PASS
+  > turn on lantern                                  PASS
+  > gdt                                              PASS
+  > ah studio                                        PASS
+  > ex                                               PASS
+  > look                                             PASS
+  > inventory                                        PASS
+  > up                                               PASS
+  > gdt                                              PASS
+  > ah studio                                        PASS
+  > ex                                               PASS
+  > drop all                                         PASS
+  > inventory                                        PASS
+  > up                                               PASS
+  > take sword                                       PASS
+  > up                                               PASS
+  > drop sword                                       PASS
+  > take lantern                                     PASS
+  > turn on lantern                                  PASS
+  > up                                               PASS
+  > look                                             PASS
+
+  27 passed (76ms)
+Seed: 1793843979957 (clock)
+
+Running: stories/dungeo/tests/transcripts/coal-machine.transcript
+  "Coal Machine Puzzle"
+
+  > gdt                                              PASS
+  > tk brass lantern                                 PASS
+  > ah Machine Room                                  PASS
+  > ex                                               PASS
+  > turn on lantern                                  PASS
+  > examine machine                                  PASS
+  > turn switch                                      PASS
+  > gdt                                              PASS
+  > tk coal                                          PASS
+  > ex                                               PASS
+  > put coal in machine                              PASS
+  > turn switch                                      PASS
+  > look in machine                                  PASS
+  > take diamond                                     PASS
+  > inventory                                        PASS
+  > turn switch                                      PASS
+
+  16 passed (44ms)
+Seed: 1793843980012 (clock)
+
+Running: stories/dungeo/tests/transcripts/coal-mine-navigation.transcript
+  "Coal Mine Navigation Verification"
+
+  > gdt                                              PASS
+  > tk torch                                         PASS
+  > tk brass lantern                                 PASS
+  > ah Mirror Room                                   PASS
+  > ex                                               PASS
+  > look                                             PASS
+  > rub mirror                                       PASS
+  > west                                             PASS
+  > west                                             PASS
+  > north                                            PASS
+  > northeast                                        PASS
+  > north                                            PASS
+  > west                                             PASS
+  > drop torch                                       PASS
+  > turn on lantern                                  PASS
+  > down                                             PASS
+  > look                                             PASS
+  > take bracelet                                    PASS
+  > up                                               PASS
+  > take torch                                       PASS
+  > turn off lantern                                 PASS
+  > east                                             PASS
+  > northeast                                        PASS
+  > north                                            PASS
+  > northeast                                        PASS
+  > northwest                                        PASS
+  > down                                             PASS
+  > down                                             PASS
+  > northeast                                        PASS
+  > take coal                                        PASS
+  > south                                            PASS
+  > south                                            PASS
+  > southwest                                        PASS
+  > east                                             PASS
+  > put coal in machine                              PASS
+  > turn switch                                      PASS
+  > take diamond                                     PASS
+  > northwest                                        PASS
+  > northeast                                        PASS
+  > north                                            PASS
+  > up                                               PASS
+  > up                                               PASS
+  > east                                             PASS
+  > east                                             PASS
+  > south                                            PASS
+  > west                                             PASS
+  > south                                            PASS
+  > down                                             PASS
+  > down                                             PASS
+  > down                                             PASS
+  > east                                             PASS
+  > south                                            PASS
+  > take red sphere                                  PASS
+  > north                                            PASS
+  > up                                               PASS
+  > down                                             PASS
+  > down                                             PASS
+  > inventory                                        PASS
+
+  58 passed (154ms)
+Seed: 1793843980178 (clock)
+
+Running: stories/dungeo/tests/transcripts/coffin-puzzle.transcript
+  "Coffin Puzzle - Take and Store"
+
+  > gdt                                              PASS
+  > tk brass lantern                                 PASS
+  > ah Egyptian Room                                 PASS
+  > ex                                               PASS
+  > turn on lantern                                  PASS
+  > look                                             PASS
+  > take coffin                                      PASS
+  > inventory                                        PASS
+  > gdt                                              PASS
+  > ah Living Room                                   PASS
+  > ex                                               PASS
+  > open trophy case                                 PASS
+  > put coffin in trophy case                        PASS
+  > score                                            PASS
+
+  14 passed (37ms)
+Seed: 1793843980227 (clock)
+
+Running: stories/dungeo/tests/transcripts/coffin-trident.transcript
+  "Coffin and Trident Treasure Retrieval"
+
+  > gdt                                              PASS
+  > tk brass lantern                                 PASS
+  > ah egyptian room                                 PASS
+  > ex                                               PASS
+  > turn on lantern                                  PASS
+  > look                                             PASS
+  > get coffin                                       PASS
+  > gdt                                              PASS
+  > ah atlantis room                                 PASS
+  > ex                                               PASS
+  > look                                             PASS
+  > get trident                                      PASS
+  > gdt                                              PASS
+  > ah living room                                   PASS
+  > ex                                               PASS
+  > open trophy case                                 PASS
+  > put coffin in trophy case                        PASS
+  > put trident in trophy case                       PASS
+  > score                                            PASS
+
+  19 passed (55ms)
+Seed: 42 (seed:)
+
+Running: stories/dungeo/tests/transcripts/combat-disengagement.transcript
+  "Combat Disengagement"
+
+  > gdt                                              PASS
+  > nd                                               PASS
+  > ex                                               PASS
+  > north                                            PASS
+  > east                                             PASS
+  > open window                                      PASS
+  > west                                             PASS
+  > west                                             PASS
+  > take lantern                                     PASS
+  > take sword                                       PASS
+  > switch on lantern                                PASS
+  > push rug                                         PASS
+  > open trapdoor                                    PASS
+  > down                                             PASS
+  > east                                             PASS
+  > attack troll with sword                          PASS
+  > west                                             PASS
+  > east                                             PASS
+  > attack troll with sword                          PASS
+  > west                                             PASS
+  > diagnose                                         PASS
+  > east                                             PASS
+
+  22 passed (69ms)
+Seed: 42 (seed:)
+
+Running: stories/dungeo/tests/transcripts/cyclops-magic-word.transcript
+  "Cyclops Magic Word"
+
+  > gdt                                              PASS
+  > nd                                               PASS
+  > ex                                               PASS
+  > north                                            PASS
+  > east                                             PASS
+  > open window                                      PASS
+  > west                                             PASS
+  > west                                             PASS
+  > take lantern                                     PASS
+  > switch on lantern                                PASS
+  > gdt                                              PASS
+  > ah Cyclops Room                                  PASS
+  > ex                                               PASS
+  > look                                             PASS
+  > north                                            EXPECTED FAIL
+      (contains "Living Room")
+  > look                                             PASS
+  > say odysseus                                     PASS
+  > north                                            PASS
+  > east                                             PASS
+  > gdt                                              PASS
+  > ah Cyclops Room                                  PASS
+  > ex                                               PASS
+  > look                                             EXPECTED FAIL
+
+  23 passed, 2 expected failures (58ms)
+Seed: 1793843980444 (clock)
+
+Running: stories/dungeo/tests/transcripts/dam-drain.transcript
+  "Dam Drain and Reservoir Walkability"
+
+  > gdt                                              PASS
+  > tk brass lantern                                 PASS
+  > ah Reservoir South                               PASS
+  > ex                                               PASS
+  > turn on lantern                                  PASS
+  > look                                             PASS
+  > north                                            PASS
+  > look                                             PASS
+  > up                                               PASS
+
+  9 passed (25ms)
+Seed: 1793843980480 (clock)
+
+Running: stories/dungeo/tests/transcripts/dam-puzzle.transcript
+  "Dam Puzzle"
+
+  > gdt                                              PASS
+  > tk brass lantern                                 PASS
+  > tk wrench                                        PASS
+  > ah Maintenance Room                              PASS
+  > ex                                               PASS
+  > turn on lantern                                  PASS
+  > look                                             PASS
+  > press yellow                                     FAIL
+    ✗ Output does not contain "Click"
+    ─── Output ───
+    That's not a button.
+    ─────────────
+  > gdt                                              PASS
+  > ah Flood Control Dam #3                          PASS
+  > ex                                               PASS
+  > look                                             PASS
+  > turn bolt                                        FAIL
+    ✗ Output does not contain "sluice gates"
+    ─── Output ───
+    The bolt won't turn. Perhaps the control panel has something to do with it.
+    ─────────────
+
+  11 passed, 2 failed (36ms)
+Seed: 1793843980527 (clock)
+
+Running: stories/dungeo/tests/transcripts/dig-statue.transcript
+  "Dig Action - Buried Statue"
+
+  > gdt                                              PASS
+  > tk brass lantern                                 PASS
+  > tk shovel                                        PASS
+  > ex                                               PASS
+  > turn on lantern                                  PASS
+  > gdt                                              PASS
+  > ah Sandy Beach                                   PASS
+  > ex                                               PASS
+  > look                                             PASS
+  > dig                                              PASS
+  > dig                                              PASS
+  > dig                                              PASS
+  > dig                                              PASS
+  > look                                             PASS
+  > take statue                                      PASS
+
+  15 passed (38ms)
+Seed: 1793843980576 (clock)
+
+Running: stories/dungeo/tests/transcripts/disambiguation.transcript
+  "Disambiguation Prompt Test"
+
+  > gdt                                              PASS
+  > tk skeleton key                                  PASS
+  > tk small key                                     PASS
+  > ex                                               PASS
+  > drop key                                         PASS
+  > inventory                                        PASS
+  > gdt                                              PASS
+  > tk guidebook                                     PASS
+  > tk purple book                                   PASS
+  > ex                                               PASS
+  > examine book                                     PASS
+  > examine mailbox                                  PASS
+  > examine mat                                      PASS
+
+  13 passed (29ms)
+Seed: 1793843980617 (clock)
+
+Running: stories/dungeo/tests/transcripts/drop-all-empty.transcript
+  "DROP ALL Empty Inventory Test"
+
+  > drop all                                         PASS
+
+  1 passed (3ms)
+Seed: 1793843980630 (clock)
+
+Running: stories/dungeo/tests/transcripts/eat-cake-quick.transcript
+  "Quick eat cake test"
+
+  > gdt                                              PASS
+  > tk brass lantern                                 PASS
+  > ex                                               PASS
+  > turn on lantern                                  PASS
+  > gdt                                              PASS
+  > ah Tea Room                                      PASS
+  > ex                                               PASS
+  > look                                             PASS
+  > take blue cake                                   PASS
+  > eat eat-me cake                                  PASS
+  > look                                             PASS
+  > east                                             PASS
+  > west                                             PASS
+  > eat blue cake                                    PASS
+  > look                                             PASS
+  > eat red cake                                     PASS
+  > look                                             PASS
+  > east                                             PASS
+  > east                                             PASS
+  > west                                             PASS
+  > west                                             PASS
+  > west                                             PASS
+  > east                                             PASS
+
+  23 passed (69ms)
+Seed: 1793843980710 (clock)
+
+Running: stories/dungeo/tests/transcripts/egg-canary.transcript
+  "Egg/Canary - Complete Puzzle Flow"
+
+  > gdt                                              PASS
+  > tk brass lantern                                 PASS
+  > ex                                               PASS
+  > turn on lantern                                  PASS
+  > gdt                                              PASS
+  > ah Up a Tree                                     PASS
+  > ex                                               PASS
+  > look                                             PASS
+  > look in nest                                     PASS
+  > take egg                                         PASS
+  > inventory                                        PASS
+  > look in egg                                      PASS
+  > gdt                                              PASS
+  > FO egg                                           PASS
+  > ex                                               PASS
+  > look in egg                                      PASS
+  > take canary                                      PASS
+  > inventory                                        PASS
+  > wind canary                                      PASS
+  > gdt                                              PASS
+  > ah Forest Path                                   PASS
+  > ex                                               PASS
+  > wind canary                                      PASS
+  > take bauble                                      PASS
+  > inventory                                        PASS
+
+  25 passed (62ms)
+Seed: 1793843980783 (clock)
+
+Running: stories/dungeo/tests/transcripts/egg-opening.transcript
+  "Egg Opening - Player Cannot Open"
+
+  > gdt                                              PASS
+  > ah Up a Tree                                     PASS
+  > ex                                               PASS
+  > look                                             PASS
+  > take egg                                         PASS
+  > i                                                PASS
+  > open egg                                         PASS
+  > examine egg                                      PASS
+  > open jewel-encrusted egg                         PASS
+
+  9 passed (25ms)
+Seed: 1793843980819 (clock)
+
+Running: stories/dungeo/tests/transcripts/endgame-dial.transcript
+  "Endgame Dial - Parapet Dial Puzzle"
+
+  > gdt                                              PASS
+  > tk brass lantern                                 PASS
+  > ah Parapet                                       PASS
+  > dl                                               PASS
+  > ex                                               PASS
+  > turn on lantern                                  PASS
+  > look                                             PASS
+  > set dial to 4                                    PASS
+  > gdt                                              PASS
+  > dl                                               PASS
+  > dl push                                          PASS
+  > dl set 6                                         PASS
+  > dl cell 4                                        PASS
+  > dl open                                          PASS
+  > ex                                               PASS
+  > d                                                PASS
+
+  16 passed (38ms)
+Seed: 1793843980868 (clock)
+
+Running: stories/dungeo/tests/transcripts/endgame-incant.transcript
+  "INCANT Endgame Cheat"
+
+  > incant mhoram wrongxx                            PASS
+  > incant mhoram dfnobo                             PASS
+  > look                                             PASS
+  > west                                             PASS
+  > south                                            PASS
+  > south                                            PASS
+
+  6 passed (16ms)
+Seed: 1793843980895 (clock)
+
+Running: stories/dungeo/tests/transcripts/endgame-laser-puzzle.transcript
+  "Endgame Laser Puzzle"
+
+  > incant mhoram dfnobo                             PASS
+  > look                                             PASS
+  > west                                             PASS
+  > push button                                      PASS
+  > south                                            PASS
+  > examine beam                                     PASS
+  > drop sword                                       PASS
+  > look                                             PASS
+  > north                                            PASS
+  > push button                                      PASS
+
+  10 passed (34ms)
+Seed: 1793843980940 (clock)
+
+Running: stories/dungeo/tests/transcripts/endgame-mirror.transcript
+  "Endgame Inside Mirror Puzzle"
+
+  > incant mhoram dfnobo                             PASS
+  > look                                             PASS
+  > west                                             PASS
+  > south                                            PASS
+  > south                                            PASS
+  > in                                               PASS
+  > raise pole                                       PASS
+  > push red panel                                   PASS
+  > push yellow                                      PASS
+  > lower pole                                       PASS
+  > push mahogany                                    PASS
+  > push pine                                        PASS
+  > raise pole                                       PASS
+  > push red                                         PASS
+  > push red                                         PASS
+  > lower pole                                       PASS
+  > look                                             PASS
+  > out                                              PASS
+  > look                                             PASS
+
+  19 passed (53ms)
+Seed: 1793843981006 (clock)
+
+Running: stories/dungeo/tests/transcripts/endgame-trivia.transcript
+  "Endgame Trivia - Dungeon Master Questions"
+
+  > gdt                                              PASS
+  > tk brass lantern                                 PASS
+  > ah Dungeon Entrance                              PASS
+  > ex                                               PASS
+  > turn on lantern                                  PASS
+  > look                                             PASS
+  > knock                                            PASS
+  > gdt                                              PASS
+  > tq reset                                         PASS
+  > ex                                               PASS
+  > answer temple                                    PASS
+  > answer flask                                     PASS
+  > answer rusty knife                               PASS
+  > n                                                PASS
+
+  14 passed (35ms)
+Seed: 1793843981052 (clock)
+
+Running: stories/dungeo/tests/transcripts/endgame-victory.transcript
+  "Endgame Victory - Treasury of Zork"
+
+  > gdt                                              PASS
+  > tk brass lantern                                 PASS
+  > ah Parapet                                       PASS
+  > dl cell 4                                        PASS
+  > dl open                                          PASS
+  > dl endgame                                       PASS
+  > ah Prison Cell                                   PASS
+  > ex                                               PASS
+  > turn on lantern                                  PASS
+  > look                                             PASS
+  > s                                                PASS
+
+  11 passed (27ms)
+Seed: 1793843981091 (clock)
+
+Running: stories/dungeo/tests/transcripts/exorcism-ritual.transcript
+  "Exorcism Ritual"
+
+  > look                                             PASS
+  > north                                            PASS
+  > east                                             PASS
+  > open window                                      PASS
+  > west                                             PASS
+  > west                                             PASS
+  > take lantern                                     PASS
+  > switch on lantern                                PASS
+  > gdt                                              PASS
+  > ah Altar                                         PASS
+  > ex                                               PASS
+  > look                                             PASS
+  > take bell                                        PASS
+  > take black book                                  PASS
+  > take candles                                     PASS
+  > gdt                                              PASS
+  > ah Entrance to Hades                             PASS
+  > ex                                               PASS
+  > look                                             PASS
+  > ring bell                                        PASS
+  > read black book                                  PASS
+  > switch on candles                                PASS
+  > inventory                                        PASS
+
+  23 passed (87ms)
+Seed: 1793843981190 (clock)
+
+Running: stories/dungeo/tests/transcripts/ext-testing-commands.transcript
+  "ext-testing Commands Integration"
+
+  > look                                             PASS
+  > look                                             PASS
+  > inventory                                        PASS
+  > turn on lantern                                  PASS
+  > look                                             PASS
+
+  5 passed (18ms)
+Seed: 1793843981219 (clock)
+
+Running: stories/dungeo/tests/transcripts/falls-deadly-exit.transcript
+  "Falls Deadly Exit"
+
+  > gdt                                              PASS
+  > ah Aragain Falls                                 PASS
+  > ex                                               PASS
+  > look                                             PASS
+  > wait                                             PASS
+  > inventory                                        PASS
+  > take rainbow                                     PASS
+  > north                                            PASS
+  > south                                            PASS
+  > south                                            PASS
+
+  10 passed (25ms)
+Seed: 1793843981255 (clock)
+
+Running: stories/dungeo/tests/transcripts/flooding.transcript
+  "Blue Button Flooding"
+
+  > gdt                                              PASS
+  > tk brass lantern                                 PASS
+  > ah Maintenance Room                              PASS
+  > ex                                               PASS
+  > turn on lantern                                  PASS
+  > look                                             PASS
+  > press blue                                       FAIL
+    ✗ Output does not contain "rumbling sound"
+    ✗ Output does not contain "leak"
+    ─── Output ───
+    That's not a button.
+    ─────────────
+  > wait                                             FAIL
+    ✗ Output does not contain "ankles"
+    ─── Output ───
+    Time passes...
+    ─────────────
+  > wait                                             FAIL
+    ✗ Output does not contain "shins"
+    ─── Output ───
+    Time passes...
+    ─────────────
+  > wait                                             FAIL
+    ✗ Output does not contain "knees"
+    ─── Output ───
+    Time passes...
+    ─────────────
+  > w                                                PASS
+  > gdt                                              PASS
+  > ah Maintenance Room                              PASS
+  > ex                                               PASS
+  > press blue                                       FAIL
+    ✗ Output does not contain "jammed"
+    ─── Output ───
+    That's not a button.
+    ─────────────
+
+  10 passed, 5 failed (40ms)
+Seed: 4242 (seed:)
+
+Running: stories/dungeo/tests/transcripts/force-forest-ambience.transcript
+  "Forced Forest Ambience (ADR-293 Phase C)"
+
+  > north                                            PASS
+  > north                                            PASS
+  > look                                             PASS
+  > look                                             PASS
+
+  ✓ matched recording stories/dungeo/tests/transcripts/force-forest-ambience.golden
+  4 passed (51ms)
+Seed: 4242 (seed:)
+
+Running: stories/dungeo/tests/transcripts/force-villain-killed.transcript
+  "Villain KILLED via wound spiral (ADR-293 AC-9)"
+
+  > north                                            PASS
+  > east                                             PASS
+  > open window                                      PASS
+  > west                                             FAIL
+    Error: output diverged from the recording (force-villain-killed.golden); divergence save written: stories/dungeo/tests/transcripts/force-villain-killed.divergence.json — restore one command before the divergence with --restore stories/dungeo/tests/transcripts/force-villain-killed.divergence.json --seed 4242, then replay: west
+    ─── Diff (recorded vs actual) ───
+      Kitchen
+      This is the kitchen of the white house. A table seems to have been used recently for the preparation of food. A passage leads to the west, and a dark staircase can be seen leading upward. To the east is a small window which is open.
+      
+      You can see an elongated brown sack and a glass bottle here.
+    + 
+    + In the elongated brown sack you see a lunch and a clove of garlic.
+    ─────────────
+
+  3 passed, 1 failed (43ms)
+Seed: 1793843981423 (clock)
+
+Running: stories/dungeo/tests/transcripts/frame-after-thief.transcript
+  "Canvas Puzzle - Frame Mechanics"
+
+  > gdt                                              PASS
+  > tk brass lantern                                 PASS
+  > kl thief                                         PASS
+  > ah Treasure Room                                 PASS
+  > ex                                               PASS
+  > turn on lantern                                  PASS
+  > look                                             PASS
+  > examine frame                                    PASS
+  > read frame                                       PASS
+  > take frame                                       PASS
+  > break frame                                      PASS
+  > look                                             PASS
+  > take frame piece                                 PASS
+  > read frame piece                                 PASS
+
+  14 passed (45ms)
+Seed: 1793843981480 (clock)
+
+Running: stories/dungeo/tests/transcripts/frigid-river-full.transcript
+  "Frigid River Full Navigation"
+
+  > gdt                                              PASS
+  > tk brass lantern                                 PASS
+  > tk hand pump                                     PASS
+  > ah Dam Base                                      PASS
+  > ex                                               PASS
+  > switch on lantern                                PASS
+  > look                                             PASS
+  > x water                                          PASS
+  > inflate boat                                     PASS
+  > get stick                                        PASS
+  > put stick in boat                                PASS
+  > enter boat                                       PASS
+  > launch                                           PASS
+  > look                                             PASS
+  > d                                                PASS
+  > get buoy                                         PASS
+  > open buoy                                        PASS
+  > get emerald                                      PASS
+  > drop buoy                                        PASS
+  > d                                                PASS
+  > w                                                PASS
+  > disembark                                        PASS
+  > nw                                               PASS
+  > get shovel                                       PASS
+  > s                                                PASS
+  > enter boat                                       PASS
+  > launch                                           PASS
+  > d                                                PASS
+  > w                                                PASS
+  > disembark                                        PASS
+  > dig                                              PASS
+  > dig                                              PASS
+  > dig                                              PASS
+  > dig                                              PASS
+  > get statue                                       PASS
+  > get stick                                        PASS
+  > s                                                PASS
+  > s                                                PASS
+  > wave stick                                       PASS
+  > e                                                PASS
+  > e                                                PASS
+  > get pot                                          PASS
+  > se                                               PASS
+  > u                                                PASS
+  > u                                                PASS
+  > w                                                PASS
+  > w                                                PASS
+  > w                                                PASS
+  > s                                                PASS
+  > s                                                PASS
+  > e                                                PASS
+  > open window                                      PASS
+  > w                                                PASS
+  > w                                                PASS
+  > open trophy case                                 PASS
+  > put emerald in trophy case                       PASS
+  > put statue in trophy case                        PASS
+  > look                                             PASS
+
+  58 passed (165ms)
+Seed: 1793843981657 (clock)
+
+Running: stories/dungeo/tests/transcripts/gas-room-explosion.transcript
+  "Gas Room Explosion - Torch Death"
+
+  > take lantern                                     PASS
+  > turn on lantern                                  PASS
+  > take torch                                       PASS
+  > look                                             PASS
+  > down                                             PASS
+
+  5 passed (18ms)
+Seed: 1793843981687 (clock)
+
+Running: stories/dungeo/tests/transcripts/gas-room-safe-lantern.transcript
+  "Gas Room Safe Entry - Lantern Only"
+
+  > take lantern                                     PASS
+  > turn on lantern                                  PASS
+  > look                                             PASS
+  > down                                             PASS
+  > look                                             PASS
+  > take bracelet                                    PASS
+  > up                                               PASS
+
+  7 passed (25ms)
+Seed: 1793843981723 (clock)
+
+Running: stories/dungeo/tests/transcripts/gdt-aa-score.transcript
+  "GDT AA (Alter Adventurer) — score setting and its rejections"
+
+  > gdt                                              PASS
+  > aa score 493                                     PASS
+  > ex                                               PASS
+  > score                                            PASS
+  > gdt                                              PASS
+  > aa score 493                                     PASS
+  > ex                                               PASS
+  > score                                            PASS
+  > gdt                                              PASS
+  > aa score 25                                      PASS
+  > ex                                               PASS
+  > score                                            PASS
+  > gdt                                              PASS
+  > aa                                               PASS
+  > aa bogus 5                                       PASS
+  > aa score                                         PASS
+  > aa score twelve                                  PASS
+  > aa score -5                                      PASS
+  > ex                                               PASS
+  > score                                            PASS
+
+  20 passed (30ms)
+Seed: 1793843981764 (clock)
+
+Running: stories/dungeo/tests/transcripts/gdt-basic.transcript
+  "GDT Basic Functionality"
+
+  > gdt                                              PASS
+  > he                                               PASS
+  > ex                                               PASS
+  > look                                             PASS
+
+  4 passed (9ms)
+Seed: 1793843981785 (clock)
+
+Running: stories/dungeo/tests/transcripts/gdt-commands.transcript
+  "GDT Command Test"
+
+  > gdt                                              PASS
+  > HE                                               PASS
+  > DA                                               PASS
+  > DR                                               PASS
+  > DX                                               PASS
+  > DS                                               PASS
+  > DO torch                                         PASS
+  > DE west-of-house                                 PASS
+  > AH kitchen                                       PASS
+  > NR                                               PASS
+  > TK rusty-knife                                   PASS
+  > ND                                               PASS
+  > RD                                               PASS
+  > RR                                               PASS
+  > DF                                               PASS
+  > KL troll                                         PASS
+  > PZ                                               PASS
+  > TQ                                               PASS
+  > AF                                               PASS
+  > DL                                               PASS
+  > KO thief                                         PASS
+  > WU thief                                         PASS
+  > FO trophy-case                                   PASS
+  > AO brass-lantern cellar                          PASS
+  > EX                                               PASS
+
+  25 passed (40ms)
+Seed: 1793843981836 (clock)
+
+Running: stories/dungeo/tests/transcripts/gdt-phase2.transcript
+  "GDT Phase 2 Commands"
+
+  > gdt                                              PASS
+  > da                                               PASS
+  > dr                                               PASS
+  > ds                                               PASS
+  > dx                                               PASS
+  > do                                               PASS
+  > do mailbox                                       PASS
+  > tk                                               PASS
+  > ao                                               PASS
+  > ah                                               PASS
+  > nd                                               PASS
+  > nd                                               PASS
+  > da                                               PASS
+  > rd                                               PASS
+  > rd                                               PASS
+  > da                                               PASS
+  > ex                                               PASS
+  > look                                             PASS
+
+  18 passed (31ms)
+Seed: 1793843981878 (clock)
+
+Running: stories/dungeo/tests/transcripts/gdt-unrestricted-access.transcript
+  "GDT Unrestricted Access"
+
+  > gdt                                              PASS
+  > tk brass lantern                                 PASS
+  > da                                               PASS
+  > ao brass lantern kitchen                         PASS
+  > dr kitchen                                       PASS
+  > tk brass lantern                                 PASS
+  > ao brass lantern player                          PASS
+  > da                                               PASS
+  > ex                                               PASS
+  > inventory                                        PASS
+
+  10 passed (16ms)
+Seed: 1793843981908 (clock)
+
+Running: stories/dungeo/tests/transcripts/get-all.transcript
+  "Get All / Drop All (ISSUE-001)"
+
+  > open mailbox                                     PASS
+  > get leaflet                                      PASS
+  > get all                                          PASS
+  > inventory                                        PASS
+  > drop all                                         PASS
+  > inventory                                        PASS
+  > get all but leaflet                              PASS
+  > inventory                                        PASS
+  > drop all but mat                                 PASS
+  > get all                                          PASS
+  > drop all but welcome mat                         PASS
+  > inventory                                        PASS
+
+  12 passed (30ms)
+Seed: 1793843981949 (clock)
+
+Running: stories/dungeo/tests/transcripts/go-out-exiting.transcript
+  "Go Out Resolves To Exiting"
+
+  > gdt                                              PASS
+  > tk brass lantern                                 PASS
+  > ah Volcano Bottom                                PASS
+  > ex                                               PASS
+  > turn on lantern                                  PASS
+  > enter balloon                                    PASS
+  > go out                                           PASS
+
+  7 passed (18ms)
+Seed: 1793843981978 (clock)
+
+Running: stories/dungeo/tests/transcripts/grating-key.transcript
+  "Grating and Skeleton Key Puzzle"
+
+  > gdt                                              PASS
+  > tk brass lantern                                 PASS
+  > tk skeleton key                                  PASS
+  > ah Clearing                                      PASS
+  > ex                                               PASS
+  > switch on lantern                                PASS
+  > look                                             PASS
+  > down                                             PASS
+  > gdt                                              PASS
+  > ah Grating Room                                  PASS
+  > ex                                               PASS
+  > look                                             PASS
+  > up                                               PASS
+  > open grating                                     PASS
+  > unlock grating with skeleton key                 PASS
+  > open grating                                     PASS
+  > up                                               PASS
+  > down                                             PASS
+
+  18 passed (51ms)
+Seed: 1793843982041 (clock)
+
+Running: stories/dungeo/tests/transcripts/grue-death-simple.transcript
+  "Grue Death Simple Test"
+
+  > n                                                PASS
+  > e                                                PASS
+  > open window                                      PASS
+  > w                                                PASS
+  > w                                                PASS
+  > take lamp                                        PASS
+  > push rug                                         PASS
+  > open trap                                        PASS
+  > d                                                PASS
+  > gdt                                              PASS
+  > kl troll                                         PASS
+  > ex                                               PASS
+  > e                                                SKIP
+
+  12 passed, 1 skipped (35ms)
+Seed: 1793843982087 (clock)
+
+Running: stories/dungeo/tests/transcripts/grue-mechanics.transcript
+  "Grue Death Mechanics"
+
+  > north                                            PASS
+  > east                                             PASS
+  > open window                                      PASS
+  > west                                             PASS
+  > west                                             PASS
+  > take lantern                                     PASS
+  > take sword                                       PASS
+  > push rug                                         PASS
+  > open trapdoor                                    PASS
+  > down                                             PASS
+  > switch on lantern                                PASS
+  > look                                             PASS
+  > gdt                                              PASS
+  > kl troll                                         PASS
+  > ex                                               PASS
+  > east                                             EXPECTED FAIL
+  > west                                             EXPECTED FAIL
+  > gdt                                              PASS
+  > nd                                               PASS
+  > ex                                               PASS
+  > switch off lantern                               PASS
+  > look                                             PASS
+  > east                                             EXPECTED FAIL
+      (contains "grue")
+  > switch on lantern                                PASS
+  > look                                             PASS
+  > gdt                                              PASS
+  > rd                                               PASS
+  > ex                                               PASS
+  > switch off lantern                               PASS
+  > west                                             SKIP
+
+  29 passed, 3 expected failures, 1 skipped (77ms)
+Seed: 1793843982175 (clock)
+
+Running: stories/dungeo/tests/transcripts/help-about.transcript
+  "Help and About Commands"
+
+  > help                                             PASS
+  > about                                            PASS
+  > info                                             PASS
+  > credits                                          PASS
+
+  4 passed (5ms)
+Seed: 1793843982191 (clock)
+
+Running: stories/dungeo/tests/transcripts/help-commands.transcript
+  "Help and Room Info Commands"
+
+  > help                                             PASS
+  > about                                            PASS
+  > diagnose                                         PASS
+  > room                                             PASS
+
+  4 passed (5ms)
+Seed: 1793843982206 (clock)
+
+Running: stories/dungeo/tests/transcripts/hidden-max-score.transcript
+  "Hidden Max Score Test"
+
+  > GDT                                              PASS
+  > DA                                               PASS
+  > KL thief                                         PASS
+  > DA                                               PASS
+
+  4 passed (7ms)
+Seed: 1793843982224 (clock)
+
+Running: stories/dungeo/tests/transcripts/house-interior.transcript
+  "House Interior Exploration"
+
+  > look                                             PASS
+  > north                                            PASS
+  > east                                             PASS
+  > open window                                      PASS
+  > west                                             PASS
+  > examine sack                                     PASS
+  > examine bottle                                   PASS
+  > west                                             PASS
+  > examine lantern                                  PASS
+  > examine sword                                    PASS
+  > take lantern                                     PASS
+  > take sword                                       PASS
+  > inventory                                        PASS
+  > switch on lantern                                PASS
+  > east                                             PASS
+  > up                                               PASS
+  > examine rope                                     PASS
+  > examine knife                                    PASS
+  > take rope                                        PASS
+  > take knife                                       PASS
+  > inventory                                        PASS
+  > down                                             PASS
+
+  22 passed (62ms)
+Seed: 1793843982297 (clock)
+
+Running: stories/dungeo/tests/transcripts/implicit-inference.transcript
+  "Implicit Take for Reading (ADR-104 - Inference Disabled)"
+
+  > open mailbox                                     PASS
+  > read it                                          PASS
+  > examine it                                       PASS
+  > read mailbox                                     PASS
+  > take leaflet                                     PASS
+  > read leaflet                                     PASS
+  > drop leaflet                                     PASS
+  > read leaflet                                     PASS
+  > read leaflet                                     PASS
+
+  9 passed (32ms)
+Seed: 1793843982340 (clock)
+
+Running: stories/dungeo/tests/transcripts/implicit-take-put.transcript
+  "Implicit Take for Put Test"
+
+  > gdt                                              PASS
+  > tk brass lantern                                 PASS
+  > tk hand pump                                     PASS
+  > ah Dam Base                                      PASS
+  > ex                                               PASS
+  > turn on lantern                                  PASS
+  > inflate boat                                     PASS
+  > look                                             PASS
+  > i                                                EXPECTED FAIL
+      (contains "stick")
+  > put stick in boat                                PASS
+  > x boat                                           PASS
+  > i                                                EXPECTED FAIL
+      (contains "stick")
+
+  12 passed, 2 expected failures (31ms)
+Seed: 1793843982382 (clock)
+
+Running: stories/dungeo/tests/transcripts/implicit-take-test.transcript
+  "Implicit Take Test"
+
+  > look                                             PASS
+  > open mailbox                                     PASS
+  > read leaflet                                     PASS
+  > i                                                PASS
+  > search mailbox                                   PASS
+
+  5 passed (17ms)
+Seed: 1793843982409 (clock)
+
+Running: stories/dungeo/tests/transcripts/interceptor-save-restore.transcript
+  "Interceptor Bindings Survive Save/Restore (ADR-208 AC-9)"
+
+  > north                                            PASS
+  > east                                             PASS
+  > open window                                      PASS
+  > west                                             PASS
+  > west                                             PASS
+  > push rug                                         PASS
+  > push rug                                         PASS
+
+  7 passed (35ms)
+Seed: 1793843982458 (clock)
+
+Running: stories/dungeo/tests/transcripts/inventory-message.transcript
+  "ISSUE-007 Inventory Message"
+
+  > take mat                                         PASS
+  > i                                                PASS
+
+  2 passed (5ms)
+Seed: 1793843982473 (clock)
+
+Running: stories/dungeo/tests/transcripts/lamp-article.transcript
+  "Lamp Article Test (ISSUE-013)"
+
+  > gdt                                              PASS
+  > tk brass lantern                                 PASS
+  > ah Cellar                                        PASS
+  > ex                                               PASS
+  > turn on lantern                                  PASS
+
+  5 passed (12ms)
+Seed: 1793843982496 (clock)
+
+Running: stories/dungeo/tests/transcripts/light-reveals-room.transcript
+  "Light Reveals Room Description"
+
+  > north                                            PASS
+  > east                                             PASS
+  > open window                                      PASS
+  > west                                             PASS
+  > west                                             PASS
+  > take lantern                                     PASS
+  > push rug                                         PASS
+  > open trap door                                   PASS
+  > down                                             PASS
+  > look                                             PASS
+  > turn on lantern                                  PASS
+  > look                                             PASS
+
+  12 passed (41ms)
+Seed: 1793843982548 (clock)
+
+Running: stories/dungeo/tests/transcripts/mail-order-stamp.transcript
+  "Mail Order Puzzle - Don Woods Stamp"
+
+  > gdt                                              PASS
+  > tk brass lantern                                 PASS
+  > ex                                               PASS
+  > turn on lantern                                  PASS
+  > gdt                                              PASS
+  > ah Dam Lobby                                     PASS
+  > ex                                               PASS
+  > take matchbook                                   PASS
+  > read matchbook                                   PASS
+  > send for brochure                                PASS
+  > send for brochure                                PASS
+  > gdt                                              PASS
+  > ah Living Room                                   PASS
+  > ex                                               PASS
+  > east                                             PASS
+  > wait                                             PASS
+  > wait                                             PASS
+  > wait                                             PASS
+  > gdt                                              PASS
+  > ah West of House                                 PASS
+  > ex                                               PASS
+  > open mailbox                                     PASS
+  > look in mailbox                                  PASS
+  > take brochure                                    PASS
+  > read brochure                                    PASS
+  > look in brochure                                 PASS
+  > take stamp                                       PASS
+  > read stamp                                       PASS
+  > gdt                                              PASS
+  > ah Living Room                                   PASS
+  > ex                                               PASS
+  > open case                                        PASS
+  > put stamp in case                                PASS
+  > score                                            PASS
+  > send for brochure                                PASS
+
+  35 passed (93ms)
+Seed: 1793843982653 (clock)
+
+Running: stories/dungeo/tests/transcripts/mailbox.transcript
+  "Mailbox and Leaflet"
+
+  > examine mailbox                                  PASS
+  > open mailbox                                     PASS
+  > search mailbox                                   PASS
+  > take leaflet                                     PASS
+  > read leaflet                                     PASS
+  > inventory                                        PASS
+  > put leaflet in mailbox                           PASS
+  > close mailbox                                    PASS
+
+  8 passed (30ms)
+Seed: 1793843982694 (clock)
+
+Running: stories/dungeo/tests/transcripts/maze-loops.transcript
+  "Maze Self-Loops and Dead Ends"
+
+  > gdt                                              PASS
+  > tk brass lantern                                 PASS
+  > nd                                               PASS
+  > ex                                               PASS
+  > turn on lantern                                  PASS
+  > gdt                                              PASS
+  > ah troll room                                    PASS
+  > ex                                               PASS
+  > south                                            PASS
+  > north                                            PASS
+  > east                                             PASS
+  > gdt                                              PASS
+  > ah maze 6                                        PASS
+  > ex                                               PASS
+  > west                                             PASS
+  > east                                             PASS
+  > gdt                                              PASS
+  > ah maze 8                                        PASS
+  > ex                                               PASS
+  > west                                             PASS
+  > northeast                                        PASS
+  > gdt                                              PASS
+  > ah maze 9                                        PASS
+  > ex                                               PASS
+  > northwest                                        PASS
+  > east                                             PASS
+  > gdt                                              PASS
+  > ah maze 14                                       PASS
+  > ex                                               PASS
+  > northwest                                        PASS
+  > west                                             PASS
+  > gdt                                              PASS
+  > ah maze 4                                        PASS
+  > ex                                               PASS
+  > east                                             PASS
+  > south                                            PASS
+  > gdt                                              PASS
+  > ah maze 5                                        PASS
+  > ex                                               PASS
+  > east                                             PASS
+  > west                                             PASS
+  > gdt                                              PASS
+  > ah maze 8                                        PASS
+  > ex                                               PASS
+  > southeast                                        PASS
+  > north                                            PASS
+  > gdt                                              PASS
+  > ah maze 12                                       PASS
+  > ex                                               PASS
+  > north                                            PASS
+  > south                                            PASS
+
+  51 passed (102ms)
+Seed: 42 (seed:)
+
+Running: stories/dungeo/tests/transcripts/maze-navigation.transcript
+  "Maze Navigation"
+
+  > gdt                                              PASS
+  > tk brass lantern                                 PASS
+  > nd                                               PASS
+  > ah grating room                                  PASS
+  > ex                                               PASS
+  > turn on lantern                                  PASS
+  > look                                             PASS
+  > southwest                                        PASS
+  > southwest                                        PASS
+  > west                                             PASS
+  > look                                             PASS
+  > southwest                                        PASS
+  > east                                             PASS
+  > south                                            PASS
+  > northeast                                        PASS
+  > up                                               PASS
+  > down                                             PASS
+  > gdt                                              PASS
+  > ah troll room                                    PASS
+  > ex                                               PASS
+  > south                                            PASS
+  > east                                             PASS
+  > west                                             PASS
+  > up                                               PASS
+  > north                                            PASS
+  > gdt                                              PASS
+  > ah maze 9                                        PASS
+  > ex                                               PASS
+  > east                                             PASS
+  > northeast                                        PASS
+  > gdt                                              PASS
+  > ah maze 14                                       PASS
+  > ex                                               PASS
+  > west                                             PASS
+  > northeast                                        PASS
+  > west                                             PASS
+
+  36 passed (79ms)
+Seed: 1793843982899 (clock)
+
+Running: stories/dungeo/tests/transcripts/melt-glacier.transcript
+  "Melt Glacier Verb"
+
+  > gdt                                              PASS
+  > tk brass lantern                                 PASS
+  > tk ivory torch                                   PASS
+  > ah Glacier Room                                  PASS
+  > ex                                               PASS
+  > turn on lantern                                  PASS
+  > melt glacier with lantern                        PASS
+  > melt glacier                                     PASS
+  > turn on torch                                    PASS
+  > melt glacier with torch                          PASS
+
+  10 passed (31ms)
+Seed: 1793843982940 (clock)
+
+Running: stories/dungeo/tests/transcripts/mirror-room-toggle.transcript
+  "Mirror Room State Toggle"
+
+  > gdt                                              PASS
+  > tk brass lantern                                 PASS
+  > ex                                               PASS
+  > turn on lantern                                  PASS
+  > gdt                                              PASS
+  > ah mirror room                                   PASS
+  > ex                                               PASS
+  > look                                             PASS
+  > e                                                PASS
+  > w                                                PASS
+  > w                                                PASS
+  > e                                                PASS
+  > n                                                PASS
+  > sw                                               PASS
+  > rub mirror                                       PASS
+  > w                                                PASS
+  > e                                                PASS
+  > n                                                PASS
+  > s                                                PASS
+  > e                                                PASS
+  > n                                                PASS
+  > rub mirror                                       PASS
+  > w                                                PASS
+  > e                                                PASS
+  > n                                                PASS
+  > sw                                               PASS
+
+  26 passed (60ms)
+Seed: 1793843983012 (clock)
+
+Running: stories/dungeo/tests/transcripts/multi-object-format.transcript
+  "Multi-object take/drop compact format"
+
+  > open mailbox                                     PASS
+  > take leaflet                                     PASS
+  > s                                                PASS
+  > e                                                PASS
+  > open window                                      PASS
+  > w                                                PASS
+  > take all                                         PASS
+  > drop all                                         PASS
+
+  8 passed (24ms)
+Seed: 1793843983049 (clock)
+
+Running: stories/dungeo/tests/transcripts/navigation.transcript
+  "White House Navigation"
+
+  > look                                             PASS
+  > north                                            PASS
+  > east                                             PASS
+  > south                                            PASS
+  > west                                             PASS
+  > south                                            PASS
+  > east                                             PASS
+  > north                                            PASS
+  > west                                             PASS
+
+  9 passed (22ms)
+Seed: 1793843983082 (clock)
+
+Running: stories/dungeo/tests/transcripts/nest-in-description.transcript
+  "Nest in Description Test (ISSUE-011)"
+
+  > open mailbox                                     PASS
+  > take all                                         PASS
+  > n                                                PASS
+  > n                                                PASS
+  > u                                                PASS
+
+  5 passed (14ms)
+Seed: 1793843983108 (clock)
+
+Running: stories/dungeo/tests/transcripts/pray-altar-teleport.transcript
+  "Pray at Altar Teleportation"
+
+  > gdt                                              PASS
+  > tk brass lantern                                 PASS
+  > ah Altar                                         PASS
+  > ex                                               PASS
+  > turn on lantern                                  PASS
+  > look                                             PASS
+  > pray                                             PASS
+  > look                                             PASS
+  > gdt                                              PASS
+  > ah Living Room                                   PASS
+  > ex                                               PASS
+  > pray                                             PASS
+  > look                                             PASS
+
+  13 passed (32ms)
+Seed: 1793843983152 (clock)
+
+Running: stories/dungeo/tests/transcripts/rank-survives-ceiling-change.transcript
+  "ADR-260 #7 — the thief's death raises the ceiling without moving the rank"
+
+  > gdt                                              PASS
+  > aa score 493                                     PASS
+  > ex                                               PASS
+  > score                                            PASS
+  > gdt                                              PASS
+  > kl thief                                         PASS
+  > ex                                               PASS
+  > score                                            PASS
+  > score                                            PASS
+
+  9 passed (12ms)
+Seed: 1793843983175 (clock)
+
+Running: stories/dungeo/tests/transcripts/restart.transcript
+  "RESTART reboots the story (ADR-248 acceptance)"
+
+  > look                                             PASS
+  > open mailbox                                     PASS
+  > take leaflet                                     PASS
+  > north                                            PASS
+  > restart                                          PASS
+  > look                                             PASS
+  > open mailbox                                     PASS
+
+  7 passed (35ms)
+Seed: 1793843983220 (clock)
+
+Running: stories/dungeo/tests/transcripts/robot-commands.transcript
+  "Robot Commands"
+
+  > gdt                                              PASS
+  > tk brass lantern                                 PASS
+  > ah Dingy Closet                                  PASS
+  > ao robot here                                    PASS
+  > ex                                               PASS
+  > switch on lantern                                PASS
+  > look                                             PASS
+  > tell robot to follow                             PASS
+  > order robot to come                              PASS
+  > tell robot to stay                               PASS
+  > tell robot to wait                               PASS
+  > tell robot to push button                        PASS
+  > tell robot to dance                              PASS
+  > order robot to sing a song                       PASS
+  > tell robot to go north                           PASS
+  > look                                             PASS
+  > north                                            PASS
+  > drop lantern                                     PASS
+  > tell robot to take lantern                       PASS
+  > look                                             PASS
+  > tell robot to drop lantern                       PASS
+  > take lantern                                     PASS
+  > tell robot to push button                        PASS
+  > tell robot to press button                       PASS
+  > tell robot to throw lantern                      PASS
+  > tell robot to turn dial                          PASS
+  > tell robot to leap                               PASS
+  > gdt                                              PASS
+  > ah Cyclops Room                                  PASS
+  > ex                                               PASS
+  > tell cyclops to dance                            PASS
+
+  31 passed (114ms)
+Seed: 1793843983345 (clock)
+
+Running: stories/dungeo/tests/transcripts/room-contents-on-entry.transcript
+  "Room Contents on Entry (ISSUE-010)"
+
+  > open mailbox                                     PASS
+  > north                                            PASS
+  > east                                             PASS
+  > look                                             PASS
+
+  4 passed (12ms)
+Seed: 1793843983371 (clock)
+
+Running: stories/dungeo/tests/transcripts/room-scoring.transcript
+  "Room Scoring"
+
+  > look                                             PASS
+  > n                                                PASS
+  > e                                                PASS
+  > open window                                      PASS
+  > w                                                PASS
+  > score                                            PASS
+  > e                                                PASS
+  > w                                                PASS
+  > score                                            PASS
+  > gdt                                              PASS
+  > tk brass lantern                                 PASS
+  > ah Timber Room                                   PASS
+  > ex                                               PASS
+  > turn on lantern                                  PASS
+  > look                                             PASS
+  > sw                                               PASS
+  > score                                            PASS
+  > ne                                               PASS
+  > sw                                               PASS
+  > score                                            PASS
+
+  20 passed (42ms)
+Seed: 1793843983424 (clock)
+
+Running: stories/dungeo/tests/transcripts/rope-puzzle.transcript
+  "Rope Puzzle"
+
+  > gdt                                              PASS
+  > ah Living Room                                   PASS
+  > ex                                               PASS
+  > take lantern                                     PASS
+  > switch on lantern                                PASS
+  > gdt                                              PASS
+  > ah Attic                                         PASS
+  > ex                                               PASS
+  > take rope                                        PASS
+  > gdt                                              PASS
+  > ah Dome Room                                     PASS
+  > ex                                               PASS
+  > look                                             PASS
+  > examine railing                                  PASS
+  > down                                             PASS
+  > tie rope to railing                              PASS
+  > down                                             PASS
+  > look                                             PASS
+  > take torch                                       PASS
+  > up                                               PASS
+  > score                                            PASS
+
+  21 passed (54ms)
+Seed: 1793843983491 (clock)
+
+Running: stories/dungeo/tests/transcripts/round-room-hub.transcript
+  "Round Room Hub Navigation"
+
+  > gdt                                              PASS
+  > tk brass lantern                                 PASS
+  > ex                                               PASS
+  > turn on lantern                                  PASS
+  > gdt                                              PASS
+  > ah Low Room                                      PASS
+  > ex                                               PASS
+  > tell robot to go east                            PASS
+  > east                                             PASS
+  > tell robot to push button                        PASS
+  > gdt                                              PASS
+  > ah round room                                    PASS
+  > ex                                               PASS
+  > look                                             PASS
+  > ne                                               PASS
+  > sw                                               PASS
+  > nw                                               PASS
+  > se                                               PASS
+  > e                                                PASS
+  > w                                                PASS
+  > se                                               PASS
+  > e                                                PASS
+  > w                                                PASS
+  > n                                                PASS
+  > w                                                PASS
+  > u                                                PASS
+  > d                                                PASS
+  > w                                                PASS
+  > s                                                PASS
+  > se                                               PASS
+  > u                                                PASS
+  > n                                                PASS
+  > ne                                               PASS
+  > ne                                               PASS
+  > u                                                PASS
+  > d                                                PASS
+  > w                                                PASS
+  > sw                                               PASS
+
+  38 passed (89ms)
+Seed: 1793843983591 (clock)
+
+Running: stories/dungeo/tests/transcripts/royal-puzzle-basic.transcript
+  "Royal Puzzle Basic Test"
+
+  > gdt                                              PASS
+  > tk brass lantern                                 PASS
+  > ex                                               PASS
+  > turn on lantern                                  PASS
+  > gdt                                              PASS
+  > ah Puzzle Room                                   PASS
+  > ex                                               PASS
+  > look                                             PASS
+  > down                                             PASS
+  > up                                               PASS
+  > push east wall                                   PASS
+  > south                                            PASS
+  > take card                                        PASS
+  > look                                             PASS
+  > south                                            PASS
+  > east                                             PASS
+  > east                                             PASS
+  > push south wall                                  PASS
+  > look                                             PASS
+  > take card                                        PASS
+  > inventory                                        PASS
+
+  21 passed (46ms)
+Seed: 1793843983648 (clock)
+
+Running: stories/dungeo/tests/transcripts/royal-puzzle-exit.transcript
+  "Royal Puzzle Exit Test"
+
+  > gdt                                              PASS
+  > tk brass lantern                                 PASS
+  > ex                                               PASS
+  > turn on lantern                                  PASS
+  > gdt                                              PASS
+  > ah Puzzle Room                                   PASS
+  > ex                                               PASS
+  > look                                             PASS
+  > down                                             PASS
+  > up                                               PASS
+  > gdt                                              PASS
+  > pz exit                                          PASS
+  > ex                                               PASS
+  > look                                             PASS
+  > up                                               PASS
+  > look                                             PASS
+
+  16 passed (35ms)
+Seed: 1793843983694 (clock)
+
+Running: stories/dungeo/tests/transcripts/rug-trapdoor.transcript
+  "Rug and Trapdoor Puzzle"
+
+  > look                                             PASS
+  > north                                            PASS
+  > east                                             PASS
+  > open window                                      PASS
+  > west                                             PASS
+  > west                                             PASS
+  > push rug                                         PASS
+  > examine trap door                                PASS
+  > down                                             PASS
+  > open trap door                                   PASS
+  > take lantern                                     PASS
+  > switch on lantern                                PASS
+  > down                                             PASS
+  > up                                               PASS
+
+  14 passed (43ms)
+Seed: 42 (seed:)
+
+Running: stories/dungeo/tests/transcripts/save-restore-basic.transcript
+  "Save/Restore Basic Test"
+
+  > look                                             PASS
+  > open mailbox                                     PASS
+  > take leaflet                                     PASS
+  > inventory                                        PASS
+  > inventory                                        PASS
+  > open mailbox                                     PASS
+  > examine mailbox                                  PASS
+
+  7 passed (29ms)
+Seed: 1793843983789 (clock)
+
+Running: stories/dungeo/tests/transcripts/save-test.transcript
+  "Save Test"
+
+  > save                                             PASS
+
+  1 passed (1ms)
+Seed: 1793843983799 (clock)
+
+Running: stories/dungeo/tests/transcripts/take-all-filter.transcript
+  "TAKE ALL Filter Test"
+
+  > look                                             PASS
+  > take mat                                         PASS
+  > open mailbox                                     PASS
+  > take all                                         PASS
+  > i                                                PASS
+
+  5 passed (15ms)
+Seed: 1793843983827 (clock)
+
+Running: stories/dungeo/tests/transcripts/thiefs-canvas.transcript
+  "Thief's Canvas Puzzle - Basic Mechanics"
+
+  > north                                            PASS
+  > east                                             PASS
+  > open window                                      PASS
+  > west                                             PASS
+  > west                                             PASS
+  > take lantern                                     PASS
+  > switch on lantern                                PASS
+  > pray                                             PASS
+  > gdt                                              PASS
+  > ah Basin Room                                    PASS
+  > ex                                               PASS
+  > look                                             PASS
+  > gdt                                              PASS
+  > dr                                               PASS
+  > ex                                               PASS
+  > gdt                                              PASS
+  > ah Gallery                                       PASS
+  > ex                                               PASS
+  > look                                             PASS
+  > gdt                                              PASS
+  > do incense                                       PASS
+  > ex                                               PASS
+
+  22 passed (52ms)
+Seed: 1793843983891 (clock)
+
+Running: stories/dungeo/tests/transcripts/throw-torch-glacier.transcript
+  "Throw Torch at Glacier"
+
+  > gdt                                              PASS
+  > tk brass lantern                                 PASS
+  > ah Torch Room                                    PASS
+  > ex                                               PASS
+  > take torch                                       PASS
+  > turn on lantern                                  PASS
+  > gdt                                              PASS
+  > ah Glacier Room                                  PASS
+  > ex                                               PASS
+  > look                                             PASS
+  > west                                             PASS
+  > throw lantern at glacier                         PASS
+  > throw torch at glacier                           PASS
+  > west                                             PASS
+  > south                                            PASS
+  > look at glacier                                  PASS
+
+  16 passed (45ms)
+Seed: 1793843983949 (clock)
+
+Running: stories/dungeo/tests/transcripts/tiny-room-puzzle.transcript
+  "Tiny Room Key Puzzle"
+
+  > gdt                                              PASS
+  > tk brass lantern                                 PASS
+  > tk welcome mat                                   PASS
+  > tk screwdriver                                   PASS
+  > ah tiny room                                     PASS
+  > dr                                               PASS
+  > do small door                                    PASS
+  > ex                                               PASS
+  > turn on lantern                                  PASS
+  > look                                             PASS
+  > north                                            PASS
+  > inventory                                        PASS
+  > put mat under door                               PASS
+  > put mat under door                               PASS
+  > push key with screwdriver                        PASS
+  > push key with screwdriver                        PASS
+  > take mat                                         PASS
+  > inventory                                        PASS
+  > unlock door with key                             PASS
+  > open door                                        PASS
+  > north                                            PASS
+  > look                                             PASS
+
+  22 passed (61ms)
+Seed: 1793843984021 (clock)
+
+Running: stories/dungeo/tests/transcripts/tomb-crypt-navigation.transcript
+  "Tomb Navigation (Entry to Hades Area)"
+
+  > gdt                                              PASS
+  > tk brass lantern                                 PASS
+  > ah Land of the Dead                              PASS
+  > ex                                               PASS
+  > turn on lantern                                  PASS
+  > look                                             PASS
+  > east                                             PASS
+  > look                                             PASS
+  > west                                             PASS
+  > west                                             PASS
+
+  10 passed (25ms)
+Seed: 42 (seed:)
+
+Running: stories/dungeo/tests/transcripts/troll-blocking.transcript
+  "Troll Blocking"
+
+  > gdt                                              PASS
+  > nd                                               PASS
+  > ex                                               PASS
+  > north                                            PASS
+  > east                                             PASS
+  > open window                                      PASS
+  > west                                             PASS
+  > west                                             PASS
+  > take lantern                                     PASS
+  > switch on lantern                                PASS
+  > look                                             PASS
+  > push rug                                         PASS
+  > open trapdoor                                    PASS
+  > down                                             PASS
+  > east                                             PASS
+  > north                                            EXPECTED FAIL
+      (contains "East-West Passage")
+  > look                                             PASS
+  > west                                             PASS
+
+  18 passed, 1 expected failures (53ms)
+Seed: 42 (seed:)
+
+Running: stories/dungeo/tests/transcripts/troll-combat.transcript
+  "Troll Combat - Melee Interceptor"
+
+  > gdt                                              PASS
+  > nd                                               PASS
+  > ex                                               PASS
+  > north                                            PASS
+  > east                                             PASS
+  > open window                                      PASS
+  > west                                             PASS
+  > west                                             PASS
+  > take lantern                                     PASS
+  > take sword                                       PASS
+  > switch on lantern                                PASS
+  > push rug                                         PASS
+  > open trapdoor                                    PASS
+  > down                                             PASS
+  > east                                             PASS
+  > attack troll with sword                          PASS
+  > attack troll with sword                          PASS
+  > north                                            PASS
+  > west                                             PASS
+
+  19 passed (58ms)
+Seed: 42 (seed:)
+
+Running: stories/dungeo/tests/transcripts/troll-interactions.transcript
+  "Troll Player Interactions"
+
+  > gdt                                              PASS
+  > nd                                               PASS
+  > ex                                               PASS
+  > north                                            PASS
+  > east                                             PASS
+  > open window                                      PASS
+  > west                                             PASS
+  > west                                             PASS
+  > take lantern                                     PASS
+  > switch on lantern                                PASS
+  > take sword                                       PASS
+  > push rug                                         PASS
+  > open trapdoor                                    PASS
+  > down                                             PASS
+  > east                                             PASS
+  > take troll                                       PASS
+  > drop sword                                       PASS
+  > attack troll                                     FAIL
+    ✗ No event matching game.message. Events: if.event.attacked, if.event.attacked, if.event.actor_exited, if.event.actor_moved, if.event.actor_entered, media.ambient.play
+    ─── Output ───
+    Fighting unarmed is suicide.
+    
+    The troll seems afraid to approach your crumpled form.
+    ─────────────
+  > kill troll                                       FAIL
+    ✗ No event matching game.message. Events: if.event.attacked, if.event.attacked
+    ─── Output ───
+    Fighting unarmed is suicide.
+    
+    Conquering his fears, the troll puts you to death.
+    ─────────────
+  > take sword                                       PASS
+  > attack troll                                     EXPECTED FAIL
+      (contains "laughs")
+
+  19 passed, 2 failed, 1 expected failures (67ms)
+Seed: 42 (seed:)
+
+Running: stories/dungeo/tests/transcripts/troll-recovery.transcript
+  "Troll Recovery Daemon"
+
+  > GDT                                              PASS
+  > TK brass lantern                                 PASS
+  > ND                                               PASS
+  > EX                                               PASS
+  > turn on lantern                                  PASS
+  > GDT                                              PASS
+  > AH Troll Room                                    PASS
+  > EX                                               PASS
+  > look                                             PASS
+  > examine troll                                    PASS
+  > north                                            PASS
+  > GDT                                              PASS
+  > KO troll                                         PASS
+  > EX                                               PASS
+  > examine troll                                    PASS
+  > north                                            PASS
+  > west                                             PASS
+  > examine troll                                    PASS
+  > examine troll                                    PASS
+  > examine troll                                    PASS
+  > examine troll                                    PASS
+  > north                                            PASS
+
+  22 passed (48ms)
+Seed: 42 (seed:)
+
+Running: stories/dungeo/tests/transcripts/troll-talking.transcript
+  "Troll Talking Interceptor (ADR-228 Phase 5 + ADR-229 R4)"
+
+  > GDT                                              PASS
+  > TK brass lantern                                 PASS
+  > ND                                               PASS
+  > AH Troll Room                                    PASS
+  > EX                                               PASS
+  > turn on lantern                                  PASS
+  > talk to troll                                    PASS
+  > GDT                                              PASS
+  > KO troll                                         PASS
+  > EX                                               PASS
+  > speak to troll                                   PASS
+  > talk to troll                                    PASS
+  > hello troll                                      PASS
+
+  13 passed (32ms)
+Seed: 42 (seed:)
+
+Running: stories/dungeo/tests/transcripts/troll-visibility.transcript
+  "Troll Axe Visibility"
+
+  > GDT                                              PASS
+  > tk brass lantern                                 PASS
+  > nd                                               PASS
+  > ex                                               PASS
+  > turn on lantern                                  PASS
+  > GDT                                              PASS
+  > AH Troll Room                                    PASS
+  > ex                                               PASS
+  > look                                             PASS
+  > examine axe                                      PASS
+  > take axe                                         PASS
+  > GDT                                              PASS
+  > KL troll                                         PASS
+  > ex                                               PASS
+  > look                                             PASS
+  > examine axe                                      PASS
+
+  16 passed (39ms)
+Seed: 1793843984421 (clock)
+
+Running: stories/dungeo/tests/transcripts/trophy-case-put-all.transcript
+  "Trophy Case Multi-Put Scoring (ADR-228 D4)"
+
+  > gdt                                              PASS
+  > tk jeweled egg                                   PASS
+  > tk canary                                        PASS
+  > ah Living Room                                   PASS
+  > ex                                               PASS
+  > open case                                        PASS
+  > put all in case                                  PASS
+  > score                                            PASS
+
+  8 passed (17ms)
+Seed: 1793843984449 (clock)
+
+Running: stories/dungeo/tests/transcripts/trophy-case-scoring.transcript
+  "Trophy Case Scoring"
+
+  > score                                            PASS
+  > north                                            PASS
+  > north                                            PASS
+  > up                                               PASS
+  > take egg                                         PASS
+  > score                                            PASS
+  > down                                             PASS
+  > south                                            PASS
+  > east                                             PASS
+  > open window                                      PASS
+  > west                                             PASS
+  > west                                             PASS
+  > open trophy case                                 PASS
+  > put egg in trophy case                           PASS
+  > score                                            PASS
+  > search trophy case                               PASS
+  > score                                            PASS
+  > get egg                                          PASS
+  > score                                            PASS
+  > put egg in trophy case                           PASS
+  > score                                            PASS
+
+  21 passed (53ms)
+Seed: 1793843984513 (clock)
+
+Running: stories/dungeo/tests/transcripts/undo-basic.transcript
+  "Basic undo test"
+
+  > look                                             PASS
+  > north                                            PASS
+  > look                                             PASS
+  > undo                                             PASS
+  > look                                             PASS
+
+  5 passed (15ms)
+Seed: 1793843984540 (clock)
+
+Running: stories/dungeo/tests/transcripts/version.transcript
+  "Version Command Test"
+
+  > version                                          PASS
+
+  1 passed (0ms)
+Seed: 1793843984550 (clock)
+
+Running: stories/dungeo/tests/transcripts/wave-rainbow.transcript
+  "Wave Stick - Rainbow Puzzle"
+
+  > gdt                                              PASS
+  > tk brass lantern                                 PASS
+  > tk stick                                         PASS
+  > ex                                               PASS
+  > turn on lantern                                  PASS
+  > gdt                                              PASS
+  > ah Aragain Falls                                 PASS
+  > ex                                               PASS
+  > look                                             PASS
+  > east                                             PASS
+  > wave stick                                       PASS
+  > east                                             PASS
+  > east                                             PASS
+  > take pot                                         PASS
+  > west                                             PASS
+  > west                                             PASS
+  > wave stick                                       PASS
+  > east                                             PASS
+
+  18 passed (46ms)
+Seed: 1793843984608 (clock)
+
+Running: stories/dungeo/tests/transcripts/weight-capacity.transcript
+  "Weight Capacity Limits"
+
+  > gdt                                              PASS
+  > tk brass lantern                                 PASS
+  > tk elvish sword                                  PASS
+  > tk painting                                      PASS
+  > tk platinum bar                                  PASS
+  > tk bloody axe                                    PASS
+  > tk large coil of rope                            PASS
+  > tk nasty knife                                   PASS
+  > tk clove of garlic                               PASS
+  > ex                                               PASS
+  > gdt                                              PASS
+  > ah Egyptian Room                                 PASS
+  > ex                                               PASS
+  > turn on lantern                                  PASS
+  > take coffin                                      PASS
+
+  15 passed (31ms)
+Seed: 1793843984650 (clock)
+
+Running: stories/dungeo/tests/transcripts/wind-canary.transcript
+  "Wind Canary - Bauble Puzzle"
+
+  > gdt                                              PASS
+  > tk brass lantern                                 PASS
+  > tk golden clockwork canary                       PASS
+  > ex                                               PASS
+  > turn on lantern                                  PASS
+  > wind canary                                      PASS
+  > gdt                                              PASS
+  > ah Forest Path                                   PASS
+  > ex                                               PASS
+  > look                                             PASS
+  > wind canary                                      PASS
+  > look                                             PASS
+  > take bauble                                      PASS
+  > inventory                                        PASS
+  > wind canary                                      PASS
+  > gdt                                              PASS
+  > ah Living Room                                   PASS
+  > ex                                               PASS
+  > open case                                        PASS
+  > put bauble in case                               PASS
+  > score                                            PASS
+
+  21 passed (57ms)
+Seed: 1793843984719 (clock)
+
+Running: stories/dungeo/tests/transcripts/window-in-direction.transcript
+  "Window In Direction Test (ISSUE-002)"
+
+  > n                                                PASS
+  > e                                                PASS
+  > in                                               PASS
+  > open window                                      PASS
+  > in                                               PASS
+
+  5 passed (12ms)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Total: 1745 tests in 116 transcripts
+1722 passed, 11 failed, 10 expected failures, 2 skipped
+Duration: 4861ms
+
+✗ 11 test(s) failed
+
+Coverage: 18 of 32 points fired, 14 never fired, 43 classes unobserved
