@@ -71,7 +71,6 @@ story-specific action implementations, daemons/event handlers, and timed events.
 
 - `docs/work/dungeo/implementation-plan.md` - Progress tracking, room/treasure/puzzle checklists
 - `docs/work/dungeo/dungeon-catalog.md` - Complete inventory of rooms, objects, NPCs, puzzles
-- `docs/work/dungeo/context/` - Session work summaries for context continuity
 
 ## Implementation Patterns
 
@@ -85,12 +84,6 @@ item.add(new IdentityTrait({ name: 'gold coin', points: 10, pointsDescription: '
 
 // Trophy case scoring: trophyCaseValue on story TreasureTrait (OTVAL from MDL)
 item.add(new TreasureTrait({ trophyCaseValue: 5 }));
-```
-
-### Room Puzzle State
-```typescript
-(room as any).riddleSolved = false;    // For puzzles that modify room
-(room as any).isFixed = true;          // For Round Room carousel
 ```
 
 ### Word Puzzles
