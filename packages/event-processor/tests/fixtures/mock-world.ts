@@ -5,17 +5,6 @@
 import { WorldModel, type WorldChange, IFEntity } from '@sharpee/world-model';
 import type { ISemanticEvent as SemanticEvent } from '@sharpee/core';
 
-// Mock IFEvents constants
-export const MockIFEvents = {
-  TAKEN: 'taken',
-  DROPPED: 'dropped',
-  REMOVED: 'removed',
-  ACTOR_MOVED: 'actor_moved',
-  PUT_IN: 'put_in',
-  PUT_ON: 'put_on',
-  REMOVED_FROM: 'removed_from'
-};
-
 export class MockWorldModel implements Partial<WorldModel> {
   private eventHandlers: Map<string, any> = new Map();
   private appliedEvents: SemanticEvent[] = [];

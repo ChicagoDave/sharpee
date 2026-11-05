@@ -1,0 +1,119 @@
+
+> @sharpee/world-model@5.5.1 test:ci /Users/david/repos/sharpee/packages/world-model
+> vitest run
+
+
+ RUN  v3.2.4 /Users/david/repos/sharpee/packages/world-model
+
+ ✓ tests/unit/traits/identity.test.ts (23 tests) 3ms
+ ✓ tests/unit/entities/if-entity.test.ts (25 tests) 5ms
+ ✓ tests/unit/world/traversal-readers.test.ts (5 tests) 78ms
+ ✓ tests/scope/magic-sight.test.ts (3 tests) 3ms
+ ✓ tests/unit/traits/expanse-sight.test.ts (10 tests) 4ms
+ ✓ tests/unit/traits/expanse-scope.test.ts (7 tests) 6ms
+ ✓ tests/unit/traits/expanse-drift.test.ts (12 tests) 6ms
+ ✓ tests/unit/traits/vehicle-machine.test.ts (14 tests) 6ms
+ ✓ tests/unit/traits/vehicle-open.test.ts (32 tests) 9ms
+ ✓ tests/unit/world/visibility-behavior.test.ts (54 tests) 9ms
+ ✓ tests/unit/world/world-model.test.ts (75 tests) 13ms
+ ✓ tests/integration/wearable-clothing.test.ts (14 tests) 5ms
+ ✓ tests/integration/container-hierarchies.test.ts (13 tests) 8ms
+ ✓ tests/integration/visibility-chains.test.ts (22 tests) 8ms
+ ✓ tests/unit/world/connect-rooms-door.test.ts (14 tests) 6ms
+ ✓ tests/integration/trait-combinations.test.ts (17 tests) 7ms
+ ✓ tests/unit/world/night-vision.test.ts (4 tests) 3ms
+ ✓ tests/unit/world/score-ranks.test.ts (16 tests) 5ms
+ ✓ tests/unit/world/spatial-index.test.ts (32 tests) 5ms
+ ✓ tests/unit/traits/vehicle-composition.test.ts (26 tests) 6ms
+ ✓ tests/unit/traits/vehicle-sailing.test.ts (11 tests) 6ms
+ ✓ tests/unit/world/traversal.test.ts (21 tests) 6ms
+ ✓ tests/unit/world/traversal-computed.test.ts (12 tests) 5ms
+ ✓ tests/unit/traits/supporter.test.ts (36 tests) 5ms
+ ✓ tests/unit/traits/readable.test.ts (33 tests) 5ms
+ ✓ tests/unit/world/sight-and-place.test.ts (13 tests) 5ms
+ ✓ tests/unit/traits/clothing.test.ts (15 tests) 4ms
+ ✓ tests/unit/traits/container.test.ts (27 tests) 5ms
+ ✓ tests/integration/door-mechanics.test.ts (15 tests) 5ms
+ ✓ tests/unit/capabilities/exit-resolver.test.ts (16 tests) 4ms
+ ✓ tests/unit/world/wall.test.ts (31 tests) 6ms
+ ✓ tests/unit/author-model.test.ts (17 tests) 6ms
+ ✓ tests/unit/traits/character-model.test.ts (90 tests) 620ms
+   ✓ CharacterModelTrait > rehydration through IFEntity.toJSON/fromJSON (D17) > a rehydrated trait keeps every mutable field and evaluates predicates  612ms
+ ✓ tests/unit/behaviors/attack.test.ts (16 tests) 5ms
+ ✓ tests/unit/traits/trait-registration.test.ts (3 tests) 6ms
+ ✓ tests/unit/entities/entity-store.test.ts (16 tests) 4ms
+ ✓ tests/unit/parsed-command.test.ts (25 tests) 5ms
+ ✓ tests/unit/traits/scenery.test.ts (29 tests) 4ms
+ ✓ tests/unit/traits/obstructor-protocol.test.ts (15 tests) 5ms
+ ✓ tests/unit/world/event-chaining.test.ts (31 tests) 5ms
+ ✓ tests/unit/world/entity-removal-observer.test.ts (8 tests) 4ms
+ ✓ tests/unit/traits/actor.test.ts (35 tests) 4ms
+ ✓ tests/unit/traits/room.test.ts (24 tests) 4ms
+ ✓ tests/unit/traits/openable.test.ts (20 tests) 4ms
+ ✓ tests/unit/capabilities/interceptor-report-result.test.ts (11 tests) 4ms
+ ✓ tests/scope/window-visibility-fixed.test.ts (4 tests) 4ms
+ ✓ tests/unit/world/location-heading.test.ts (13 tests) 4ms
+ ✓ tests/unit/traits/vehicle-refusals.test.ts (10 tests) 6ms
+ ✓ tests/unit/traits/lockable.test.ts (20 tests) 4ms
+ ✓ tests/unit/behaviors/combat.test.ts (16 tests) 6ms
+ ✓ tests/unit/traits/acoustic.test.ts (14 tests) 3ms
+ ✓ tests/unit/capabilities/capability-dispatch.test.ts (30 tests) 6ms
+ ✓ tests/unit/capabilities/interceptor-blocked-result.test.ts (9 tests) 4ms
+ ✓ tests/unit/world/reachability-behavior.test.ts (10 tests) 5ms
+ ✓ tests/unit/traits/edible.test.ts (35 tests) 4ms
+ ✓ tests/unit/world/get-in-scope.test.ts (9 tests) 4ms
+ ✓ tests/scope/darkness-light.test.ts (10 tests) 5ms
+ ✓ tests/annotations.test.ts (19 tests) 4ms
+ ✓ tests/unit/traits/light-source.test.ts (32 tests) 3ms
+ ✓ tests/unit/traits/moveable-scenery.test.ts (24 tests) 4ms
+ ✓ tests/unit/traits/wearable.test.ts (34 tests) 5ms
+ ✓ tests/unit/capabilities/interceptor-bindings.test.ts (12 tests) 3ms
+ ✓ tests/unit/traits/door.test.ts (19 tests) 4ms
+ ✓ tests/scope/sound-traveling.test.ts (6 tests) 3ms
+ ✓ tests/unit/world/move-entity-worn.test.ts (5 tests) 4ms
+ ✓ tests/unit/world/evaluator-registry.test.ts (9 tests) 4ms
+ ✓ tests/unit/behaviors/destructible.test.ts (14 tests) 7ms
+ ✓ tests/unit/traits/switchable.test.ts (18 tests) 3ms
+ ✓ tests/integration/room-actor-containers.test.ts (7 tests) 4ms
+ ✓ tests/unit/traits/region.test.ts (15 tests) 3ms
+ ✓ tests/unit/behaviors/behavior.test.ts (12 tests) 3ms
+ ✓ tests/unit/traits/pullable.test.ts (19 tests) 3ms
+ ✓ tests/unit/entities/trait-rehydration.test.ts (4 tests) 3ms
+ ✓ tests/unit/traits/region-queries.test.ts (17 tests) 4ms
+ ✓ tests/unit/traits/placing-behaviors.test.ts (7 tests) 3ms
+ ✓ tests/unit/traits/expanse-weather.test.ts (6 tests) 3ms
+ ✓ tests/unit/traits/button.test.ts (19 tests) 3ms
+ ✓ tests/unit/traits/language-words.test.ts (7 tests) 4ms
+ ✓ tests/unit/world/getcontents-worn.test.ts (4 tests) 3ms
+ ✓ tests/unit/visibility/container-state-visibility.test.ts (5 tests) 4ms
+ ✓ tests/unit/behaviors/weapon.test.ts (12 tests) 3ms
+ ✓ tests/unit/traits/scene.test.ts (25 tests) 4ms
+ ✓ tests/unit/entity-system-updates.test.ts (9 tests) 4ms
+ ✓ tests/unit/id-generation.test.ts (9 tests) 4ms
+ ✓ tests/unit/traits/attached.test.ts (20 tests) 3ms
+ ✓ tests/unit/traits/noun-match.test.ts (12 tests) 4ms
+ ✓ tests/unit/behaviors/breakable.test.ts (11 tests) 4ms
+ ✓ tests/unit/traits/tool-requirement.test.ts (6 tests) 2ms
+ ✓ tests/unit/traits/breakable.test.ts (13 tests) 3ms
+ ✓ tests/unit/traits/container-capability.test.ts (13 tests) 3ms
+ ✓ tests/unit/traits/health.test.ts (18 tests) 3ms
+ ✓ tests/unit/traits/room-snippets.test.ts (4 tests) 2ms
+ ✓ tests/unit/world/story-ending.test.ts (6 tests) 4ms
+ ✓ tests/unit/traits/name-vocabulary.test.ts (7 tests) 3ms
+ ✓ tests/unit/world/capability-data.test.ts (5 tests) 3ms
+ ✓ tests/unit/traits/deadly-room.test.ts (6 tests) 3ms
+ ✓ tests/unit/world/connect-rooms-one-way.test.ts (3 tests) 2ms
+ ✓ tests/unit/state-adjectives.test.ts (4 tests) 2ms
+ ✓ tests/unit/world/band.test.ts (6 tests) 3ms
+ ✓ tests/unit/world/create-entity-id.test.ts (3 tests) 2ms
+ ✓ tests/unit/world/default-traits.test.ts (5 tests) 3ms
+ ✓ tests/unit/traits/identity-snippets.test.ts (2 tests) 1ms
+ ✓ tests/unit/traits/identity-plural.test.ts (2 tests) 2ms
+ ✓ tests/unit/traits/pushable.test.ts (2 tests) 2ms
+ ✓ tests/unit/traits/listener.test.ts (4 tests) 2ms
+
+ Test Files  105 passed (105)
+      Tests  1689 passed (1689)
+   Start at  01:18:22
+   Duration  2.12s (transform 2.09s, setup 0ms, collect 14.23s, tests 1.14s, environment 9ms, prepare 3.80s)
+
