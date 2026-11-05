@@ -154,7 +154,7 @@
 - **Exit state**: every importer of the event-processor package still compiles (root tsc, `./repokit build dungeo`, devkit and branch-tester suites); the umbrella API-surface baseline test, if one exists, passes unchanged; gates byte-identical to baseline.
 - **Demonstration**: the consumer table in the Outcome with a result for each export; compare-gates.sh of the baseline directory against the phase-4 capture reports every gate IDENTICAL.
 - **Demonstrated**: 
-- **Status**: PENDING
+- **Status**: CURRENT (since 2026-11-04)
 
 ### Phase 5: Chord can state servings
 - **Tier**: Medium
