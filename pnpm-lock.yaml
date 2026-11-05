@@ -9,8 +9,8 @@ importers:
   .:
     devDependencies:
       '@davidcornelson/tsf':
-        specifier: ^1.0.4
-        version: 1.0.4
+        specifier: ^1.1.0
+        version: 1.1.0(typescript@5.9.3)
       '@stryker-mutator/core':
         specifier: ^9.6.0
         version: 9.6.0(@types/node@20.19.27)
@@ -1800,10 +1800,15 @@ packages:
     resolution: {integrity: sha512-6zABk/ECA/QYSCQ1NGiVwwbQerUCZ+TQbp64Q3AgmfNvurHH0j8TtXa1qbShXA6qqkpAj4V5W8pP6mLe1mcMqA==}
     engines: {node: '>=18'}
 
-  '@davidcornelson/tsf@1.0.4':
-    resolution: {integrity: sha512-gXdC0/xuPSTpH3cNpRbu4XPKu+Y6APqFJlpsonnONXy+GidwYRlKzKqiPwNih97jg/nr0Fo8Q/OyExtRrn0WYQ==}
+  '@davidcornelson/tsf@1.1.0':
+    resolution: {integrity: sha512-Ex+D8mBBz3fv0JZf8sFWKcn1J77eP2/3QqKLrgShIjz7gtdSKcHrThq5vbzgu3bUVrXeQArlZnS4onLNw1f+Bg==}
     engines: {node: '>=18'}
     hasBin: true
+    peerDependencies:
+      typescript: '>=5.7 <7'
+    peerDependenciesMeta:
+      typescript:
+        optional: true
 
   '@esbuild/aix-ppc64@0.21.5':
     resolution: {integrity: sha512-1SDgH6ZSPTlggy1yI6+Dbkiz8xzpHJEVAlF/AM1tHPLsf5STom9rwtjE4hKAF20FfXXNTFqEYXyJNWh1GiZedQ==}
@@ -5304,9 +5309,10 @@ snapshots:
 
   '@bcoe/v8-coverage@1.0.2': {}
 
-  '@davidcornelson/tsf@1.0.4':
+  '@davidcornelson/tsf@1.1.0(typescript@5.9.3)':
     dependencies:
       glob: 13.0.6
+    optionalDependencies:
       typescript: 5.9.3
 
   '@esbuild/aix-ppc64@0.21.5':

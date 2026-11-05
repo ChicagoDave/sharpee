@@ -52,7 +52,7 @@
     "publish:beta": "tsf build --npm && tsf publish --tag beta"
   },
   "devDependencies": {
-    "@davidcornelson/tsf": "^1.0.4",
+    "@davidcornelson/tsf": "^1.1.0",
     "@stryker-mutator/core": "^9.6.0",
     "@stryker-mutator/vitest-runner": "^9.6.0",
     "@types/node": "^20.8.0",
