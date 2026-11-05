@@ -1,0 +1,15 @@
+
+> @sharpee/plugins@5.5.1 test:ci /Users/david/repos/sharpee/packages/plugins
+> vitest run
+
+
+ RUN  v1.6.1 /Users/david/repos/sharpee/packages/plugins
+
+ ✓ tests/turn-bands.test.ts  (4 tests) 1ms
+ ✓ tests/band-crossing.test.ts  (13 tests) 3ms
+
+ Test Files  2 passed (2)
+      Tests  17 passed (17)
+   Start at  18:18:57
+   Duration  467ms (transform 284ms, setup 0ms, collect 739ms, tests 4ms, environment 0ms, prepare 52ms)
+

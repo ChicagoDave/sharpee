@@ -1,0 +1,283 @@
+
+> @sharpee/world-model@5.5.1 typecheck:tests /Users/david/repos/sharpee/packages/world-model
+> tsc -p tsconfig.test.json
+
+tests/debug-visibility.ts(7,49): error TS2345: Argument of type '"Player"' is not assignable to parameter of type 'boolean | undefined'.
+tests/debug-visibility.ts(8,55): error TS2345: Argument of type 'string' is not assignable to parameter of type 'Record<string, any>'.
+tests/fixtures/test-entities.ts(268,7): error TS7053: Element implicitly has an 'any' type because expression of type 'string' can't be used to index type 'Partial<Record<ExitKey, IExitInfo>>'.
+  No index signature with a parameter of type 'string' was found on type 'Partial<Record<ExitKey, IExitInfo>>'.
+tests/fixtures/test-entities.ts(275,11): error TS7053: Element implicitly has an 'any' type because expression of type 'string' can't be used to index type 'Partial<Record<ExitKey, IExitInfo>>'.
+  No index signature with a parameter of type 'string' was found on type 'Partial<Record<ExitKey, IExitInfo>>'.
+tests/fixtures/test-helpers.ts(11,20): error TS2339: Property 'getId' does not exist on type 'WorldModel'.
+tests/fixtures/test-helpers.ts(42,29): error TS2339: Property 'getName' does not exist on type 'WorldModel'.
+tests/fixtures/test-helpers.ts(49,26): error TS2339: Property 'getId' does not exist on type 'WorldModel'.
+tests/fixtures/test-helpers.ts(50,43): error TS2339: Property 'getId' does not exist on type 'WorldModel'.
+tests/fixtures/test-helpers.ts(157,3): error TS7053: Element implicitly has an 'any' type because expression of type 'string' can't be used to index type 'Partial<Record<ExitKey, IExitInfo>>'.
+  No index signature with a parameter of type 'string' was found on type 'Partial<Record<ExitKey, IExitInfo>>'.
+tests/fixtures/test-helpers.ts(161,5): error TS7053: Element implicitly has an 'any' type because expression of type 'string' can't be used to index type 'Partial<Record<ExitKey, IExitInfo>>'.
+  No index signature with a parameter of type 'string' was found on type 'Partial<Record<ExitKey, IExitInfo>>'.
+tests/fixtures/test-interactive.ts(83,5): error TS2561: Object literal may only specify known properties, but 'east' does not exist in type 'Partial<Record<ExitKey, IExitInfo>>'. Did you mean to write 'EAST'?
+tests/fixtures/test-interactive.ts(87,5): error TS2561: Object literal may only specify known properties, but 'west' does not exist in type 'Partial<Record<ExitKey, IExitInfo>>'. Did you mean to write 'WEST'?
+tests/integration/door-mechanics.test.ts(49,9): error TS2561: Object literal may only specify known properties, but 'east' does not exist in type 'Partial<Record<ExitKey, IExitInfo>>'. Did you mean to write 'EAST'?
+tests/integration/door-mechanics.test.ts(52,9): error TS2561: Object literal may only specify known properties, but 'west' does not exist in type 'Partial<Record<ExitKey, IExitInfo>>'. Did you mean to write 'WEST'?
+tests/integration/door-mechanics.test.ts(186,9): error TS2353: Object literal may only specify known properties, and 'behind' does not exist in type 'Partial<Record<ExitKey, IExitInfo>>'.
+tests/integration/door-mechanics.test.ts(190,9): error TS2561: Object literal may only specify known properties, but 'out' does not exist in type 'Partial<Record<ExitKey, IExitInfo>>'. Did you mean to write 'OUT'?
+tests/integration/door-mechanics.test.ts(217,9): error TS2561: Object literal may only specify known properties, but 'north' does not exist in type 'Partial<Record<ExitKey, IExitInfo>>'. Did you mean to write 'NORTH'?
+tests/integration/door-mechanics.test.ts(221,9): error TS2561: Object literal may only specify known properties, but 'south' does not exist in type 'Partial<Record<ExitKey, IExitInfo>>'. Did you mean to write 'SOUTH'?
+tests/integration/door-mechanics.test.ts(246,9): error TS2561: Object literal may only specify known properties, but 'out' does not exist in type 'Partial<Record<ExitKey, IExitInfo>>'. Did you mean to write 'OUT'?
+tests/integration/door-mechanics.test.ts(250,9): error TS2561: Object literal may only specify known properties, but 'in' does not exist in type 'Partial<Record<ExitKey, IExitInfo>>'. Did you mean to write 'IN'?
+tests/integration/door-mechanics.test.ts(255,9): error TS2561: Object literal may only specify known properties, but 'in' does not exist in type 'Partial<Record<ExitKey, IExitInfo>>'. Did you mean to write 'IN'?
+tests/integration/door-mechanics.test.ts(302,17): error TS2339: Property 'hasWindow' does not exist on type 'DoorTrait'.
+tests/integration/door-mechanics.test.ts(303,17): error TS2339: Property 'windowTransparent' does not exist on type 'DoorTrait'.
+tests/integration/door-mechanics.test.ts(309,24): error TS2339: Property 'hasWindow' does not exist on type 'DoorTrait'.
+tests/integration/door-mechanics.test.ts(310,24): error TS2339: Property 'windowTransparent' does not exist on type 'DoorTrait'.
+tests/integration/door-mechanics.test.ts(330,9): error TS2561: Object literal may only specify known properties, but 'north' does not exist in type 'Partial<Record<ExitKey, IExitInfo>>'. Did you mean to write 'NORTH'?
+tests/integration/door-mechanics.test.ts(338,9): error TS2561: Object literal may only specify known properties, but 'south' does not exist in type 'Partial<Record<ExitKey, IExitInfo>>'. Did you mean to write 'SOUTH'?
+tests/integration/door-mechanics.test.ts(341,9): error TS2561: Object literal may only specify known properties, but 'north' does not exist in type 'Partial<Record<ExitKey, IExitInfo>>'. Did you mean to write 'NORTH'?
+tests/integration/door-mechanics.test.ts(344,9): error TS2561: Object literal may only specify known properties, but 'west' does not exist in type 'Partial<Record<ExitKey, IExitInfo>>'. Did you mean to write 'WEST'?
+tests/integration/door-mechanics.test.ts(347,9): error TS2561: Object literal may only specify known properties, but 'east' does not exist in type 'Partial<Record<ExitKey, IExitInfo>>'. Did you mean to write 'EAST'?
+tests/integration/door-mechanics.test.ts(378,9): error TS2353: Object literal may only specify known properties, and ''enter-left'' does not exist in type 'Partial<Record<ExitKey, IExitInfo>>'.
+tests/integration/door-mechanics.test.ts(383,9): error TS2353: Object literal may only specify known properties, and ''exit-left'' does not exist in type 'Partial<Record<ExitKey, IExitInfo>>'.
+tests/integration/door-mechanics.test.ts(469,11): error TS2353: Object literal may only specify known properties, and 'next' does not exist in type 'Partial<Record<ExitKey, IExitInfo>>'.
+tests/integration/door-mechanics.test.ts(474,11): error TS2353: Object literal may only specify known properties, and 'prev' does not exist in type 'Partial<Record<ExitKey, IExitInfo>>'.
+tests/integration/trait-combinations.test.ts(325,9): error TS2561: Object literal may only specify known properties, but 'east' does not exist in type 'Partial<Record<ExitKey, IExitInfo>>'. Did you mean to write 'EAST'?
+tests/integration/trait-combinations.test.ts(328,9): error TS2561: Object literal may only specify known properties, but 'west' does not exist in type 'Partial<Record<ExitKey, IExitInfo>>'. Did you mean to write 'WEST'?
+tests/integration/trait-combinations.test.ts(332,9): error TS2561: Object literal may only specify known properties, but 'up' does not exist in type 'Partial<Record<ExitKey, IExitInfo>>'. Did you mean to write 'UP'?
+tests/scope/darkness-light.test.ts(8,10): error TS2724: '"../../src/scope/scope-rule"' has no exported member named 'ScopeRule'. Did you mean 'IScopeRule'?
+tests/scope/darkness-light.test.ts(90,25): error TS7006: Parameter 'context' implicitly has an 'any' type.
+tests/scope/darkness-light.test.ts(92,27): error TS2347: Untyped function calls may not accept type arguments.
+tests/scope/darkness-light.test.ts(100,37): error TS7006: Parameter 'e' implicitly has an 'any' type.
+tests/scope/darkness-light.test.ts(109,32): error TS2347: Untyped function calls may not accept type arguments.
+tests/scope/darkness-light.test.ts(120,34): error TS2347: Untyped function calls may not accept type arguments.
+tests/scope/darkness-light.test.ts(142,38): error TS7006: Parameter 'e' implicitly has an 'any' type.
+tests/scope/darkness-light.test.ts(147,38): error TS7006: Parameter 'e' implicitly has an 'any' type.
+tests/scope/darkness-light.test.ts(279,26): error TS2339: Property 'isOpen' does not exist on type 'ITrait'.
+tests/scope/darkness-light.test.ts(281,26): error TS2339: Property 'isOpen' does not exist on type 'ITrait'.
+tests/scope/darkness-light.test.ts(332,19): error TS7006: Parameter 'context' implicitly has an 'any' type.
+tests/scope/darkness-light.test.ts(334,27): error TS2347: Untyped function calls may not accept type arguments.
+tests/scope/magic-sight.test.ts(8,10): error TS2724: '"../../src/scope/scope-rule"' has no exported member named 'ScopeRule'. Did you mean 'IScopeRule'?
+tests/scope/magic-sight.test.ts(101,25): error TS7006: Parameter 'context' implicitly has an 'any' type.
+tests/scope/magic-sight.test.ts(129,37): error TS7006: Parameter 'e' implicitly has an 'any' type.
+tests/scope/magic-sight.test.ts(134,30): error TS2347: Untyped function calls may not accept type arguments.
+tests/scope/magic-sight.test.ts(137,53): error TS7006: Parameter 'e' implicitly has an 'any' type.
+tests/scope/magic-sight.test.ts(155,25): error TS7006: Parameter 'context' implicitly has an 'any' type.
+tests/scope/magic-sight.test.ts(174,17): error TS7006: Parameter 'entityId' implicitly has an 'any' type.
+tests/scope/magic-sight.test.ts(198,25): error TS7006: Parameter 'context' implicitly has an 'any' type.
+tests/scope/magic-sight.test.ts(203,37): error TS7006: Parameter 'item' implicitly has an 'any' type.
+tests/scope/magic-sight.test.ts(218,44): error TS7006: Parameter 'e' implicitly has an 'any' type.
+tests/scope/magic-sight.test.ts(223,17): error TS7006: Parameter 'entityId' implicitly has an 'any' type.
+tests/scope/magic-sight.test.ts(245,25): error TS7006: Parameter 'context' implicitly has an 'any' type.
+tests/scope/sound-traveling.test.ts(8,10): error TS2724: '"../../src/scope/scope-rule"' has no exported member named 'ScopeRule'. Did you mean 'IScopeRule'?
+tests/scope/sound-traveling.test.ts(80,25): error TS7006: Parameter 'context' implicitly has an 'any' type.
+tests/scope/sound-traveling.test.ts(90,39): error TS7006: Parameter 'e' implicitly has an 'any' type.
+tests/scope/sound-traveling.test.ts(97,40): error TS7006: Parameter 'e' implicitly has an 'any' type.
+tests/scope/sound-traveling.test.ts(101,39): error TS7006: Parameter 'e' implicitly has an 'any' type.
+tests/scope/sound-traveling.test.ts(123,25): error TS7006: Parameter 'context' implicitly has an 'any' type.
+tests/scope/sound-traveling.test.ts(142,17): error TS7006: Parameter 'entityId' implicitly has an 'any' type.
+tests/scope/sound-traveling.test.ts(173,25): error TS7006: Parameter 'context' implicitly has an 'any' type.
+tests/scope/sound-traveling.test.ts(208,17): error TS7006: Parameter 'entityId' implicitly has an 'any' type.
+tests/scope/sound-traveling.test.ts(230,25): error TS7006: Parameter 'context' implicitly has an 'any' type.
+tests/scope/sound-traveling.test.ts(293,25): error TS7006: Parameter 'context' implicitly has an 'any' type.
+tests/scope/sound-traveling.test.ts(340,25): error TS7006: Parameter 'context' implicitly has an 'any' type.
+tests/scope/sound-traveling.test.ts(364,25): error TS7006: Parameter 'context' implicitly has an 'any' type.
+tests/scope/sound-traveling.test.ts(416,25): error TS7006: Parameter 'context' implicitly has an 'any' type.
+tests/scope/sound-traveling.test.ts(424,42): error TS7006: Parameter 'e' implicitly has an 'any' type.
+tests/scope/sound-traveling.test.ts(438,25): error TS7006: Parameter 'context' implicitly has an 'any' type.
+tests/scope/window-visibility-fixed.test.ts(8,10): error TS2724: '"../../src/scope/scope-rule"' has no exported member named 'ScopeRule'. Did you mean 'IScopeRule'?
+tests/scope/window-visibility-fixed.test.ts(91,19): error TS7006: Parameter 'context' implicitly has an 'any' type.
+tests/scope/window-visibility-fixed.test.ts(93,26): error TS2347: Untyped function calls may not accept type arguments.
+tests/scope/window-visibility-fixed.test.ts(115,25): error TS7006: Parameter 'context' implicitly has an 'any' type.
+tests/scope/window-visibility-fixed.test.ts(177,19): error TS7006: Parameter 'context' implicitly has an 'any' type.
+tests/unit/behaviors/attack.test.ts(49,16): error TS2352: Conversion of type '{ type: "breakable"; broken: false; breaksInto: string; material: string; }' to type 'BreakableTrait' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Property 'fragile' is missing in type '{ type: "breakable"; broken: false; breaksInto: string; material: string; }' but required in type 'BreakableTrait'.
+tests/unit/behaviors/attack.test.ts(56,47): error TS7006: Parameter 'id' implicitly has an 'any' type.
+tests/unit/behaviors/attack.test.ts(74,16): error TS2352: Conversion of type '{ type: "breakable"; broken: true; breaksInto: string; material: string; }' to type 'BreakableTrait' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Property 'fragile' is missing in type '{ type: "breakable"; broken: true; breaksInto: string; material: string; }' but required in type 'BreakableTrait'.
+tests/unit/behaviors/attack.test.ts(99,47): error TS7006: Parameter 'id' implicitly has an 'any' type.
+tests/unit/behaviors/attack.test.ts(124,47): error TS7006: Parameter 'id' implicitly has an 'any' type.
+tests/unit/behaviors/attack.test.ts(176,47): error TS7006: Parameter 'id' implicitly has an 'any' type.
+tests/unit/behaviors/attack.test.ts(194,18): error TS2352: Conversion of type '{ type: "container"; canContain: boolean; contents: string[]; }' to type 'ContainerTrait' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Type '{ type: "container"; canContain: boolean; contents: string[]; }' is missing the following properties from type 'ContainerTrait': isTransparent, enterable
+tests/unit/behaviors/attack.test.ts(200,47): error TS7006: Parameter 'id' implicitly has an 'any' type.
+tests/unit/behaviors/attack.test.ts(246,18): error TS2352: Conversion of type '{ type: "breakable"; broken: false; breaksInto: string; }' to type 'BreakableTrait' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Property 'fragile' is missing in type '{ type: "breakable"; broken: false; breaksInto: string; }' but required in type 'BreakableTrait'.
+tests/unit/behaviors/attack.test.ts(258,47): error TS7006: Parameter 'id' implicitly has an 'any' type.
+tests/unit/behaviors/attack.test.ts(270,18): error TS2352: Conversion of type '{ type: "breakable"; broken: true; breaksInto: string; }' to type 'BreakableTrait' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Property 'fragile' is missing in type '{ type: "breakable"; broken: true; breaksInto: string; }' but required in type 'BreakableTrait'.
+tests/unit/behaviors/attack.test.ts(283,47): error TS7006: Parameter 'id' implicitly has an 'any' type.
+tests/unit/behaviors/breakable.test.ts(58,14): error TS18048: 'breakableTrait' is possibly 'undefined'.
+tests/unit/behaviors/breakable.test.ts(58,29): error TS2339: Property 'broken' does not exist on type 'ITrait'.
+tests/unit/behaviors/combat.test.ts(21,16): error TS2352: Conversion of type '{ type: "container"; canContain: boolean; maxCapacity: number; contents: string[]; }' to type 'ContainerTrait' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Type '{ type: "container"; canContain: boolean; maxCapacity: number; contents: string[]; }' is missing the following properties from type 'ContainerTrait': isTransparent, enterable
+tests/unit/capabilities/capability-dispatch.test.ts(336,50): error TS2345: Argument of type 'null' is not assignable to parameter of type 'WorldModel'.
+tests/unit/capabilities/capability-dispatch.test.ts(346,50): error TS2345: Argument of type 'null' is not assignable to parameter of type 'WorldModel'.
+tests/unit/capabilities/capability-dispatch.test.ts(354,34): error TS2345: Argument of type 'null' is not assignable to parameter of type 'WorldModel'.
+tests/unit/capabilities/capability-dispatch.test.ts(362,49): error TS2345: Argument of type 'null' is not assignable to parameter of type 'WorldModel'.
+tests/unit/capabilities/capability-dispatch.test.ts(371,50): error TS2345: Argument of type 'null' is not assignable to parameter of type 'WorldModel'.
+tests/unit/entity-system-updates.test.ts(98,11): error TS2561: Object literal may only specify known properties, but 'north' does not exist in type 'Partial<Record<ExitKey, IExitInfo>>'. Did you mean to write 'NORTH'?
+tests/unit/entity-system-updates.test.ts(105,20): error TS2551: Property 'north' does not exist on type 'Partial<Record<ExitKey, IExitInfo>>'. Did you mean 'NORTH'?
+tests/unit/entity-system-updates.test.ts(106,20): error TS2551: Property 'north' does not exist on type 'Partial<Record<ExitKey, IExitInfo>>'. Did you mean 'NORTH'?
+tests/unit/entity-system-updates.test.ts(149,11): error TS2561: Object literal may only specify known properties, but 'north' does not exist in type 'Partial<Record<ExitKey, IExitInfo>>'. Did you mean to write 'NORTH'?
+tests/unit/entity-system-updates.test.ts(182,30): error TS2551: Property 'north' does not exist on type 'Partial<Record<ExitKey, IExitInfo>>'. Did you mean 'NORTH'?
+tests/unit/entity-system-updates.test.ts(183,30): error TS2551: Property 'north' does not exist on type 'Partial<Record<ExitKey, IExitInfo>>'. Did you mean 'NORTH'?
+tests/unit/parsed-command.test.ts(9,3): error TS2724: '"../../src/commands/parsed-command"' has no exported member named 'ParsedCommand'. Did you mean 'IParsedCommand'?
+tests/unit/parsed-command.test.ts(10,3): error TS2724: '"../../src/commands/parsed-command"' has no exported member named 'ParsedCommandV1'. Did you mean 'IParsedCommandV1'?
+tests/unit/parsed-command.test.ts(11,3): error TS2724: '"../../src/commands/parsed-command"' has no exported member named 'ParsedObjectReference'. Did you mean 'IParsedObjectReference'?
+tests/unit/parsed-command.test.ts(12,3): error TS2724: '"../../src/commands/parsed-command"' has no exported member named 'Token'. Did you mean 'IToken'?
+tests/unit/parsed-command.test.ts(13,3): error TS2724: '"../../src/commands/parsed-command"' has no exported member named 'TokenCandidate'. Did you mean 'ITokenCandidate'?
+tests/unit/parsed-command.test.ts(14,3): error TS2724: '"../../src/commands/parsed-command"' has no exported member named 'VerbPhrase'. Did you mean 'IVerbPhrase'?
+tests/unit/parsed-command.test.ts(15,3): error TS2724: '"../../src/commands/parsed-command"' has no exported member named 'NounPhrase'. Did you mean 'INounPhrase'?
+tests/unit/parsed-command.test.ts(16,3): error TS2724: '"../../src/commands/parsed-command"' has no exported member named 'PrepPhrase'. Did you mean 'IPrepPhrase'?
+tests/unit/parsed-command.test.ts(18,3): error TS2724: '"../../src/commands/parsed-command"' has no exported member named 'ParseError'. Did you mean 'IParseError'?
+tests/unit/traits/character-model.test.ts(221,9): error TS2740: Type '{ honest: number; loyal: number; }' is missing the following properties from type 'Record<PersonalityTrait, number>': cowardly, paranoid, cruel, cunning, and 8 more.
+tests/unit/traits/character-model.test.ts(774,45): error TS2352: Conversion of type '{ schemaVersion: number; knowledge: { rumor: { source: "told"; turnLearned: number; }; }; }' to type 'ICharacterModelData' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Types of property 'knowledge' are incompatible.
+    Type '{ rumor: { source: "told"; turnLearned: number; }; }' is not comparable to type 'Record<string, Fact>'.
+      Property 'rumor' is incompatible with index signature.
+        Property 'confidence' is missing in type '{ source: "told"; turnLearned: number; }' but required in type 'Fact'.
+tests/unit/traits/character-model.test.ts(789,9): error TS2740: Type '{ honest: number; }' is missing the following properties from type 'Record<PersonalityTrait, number>': loyal, cowardly, paranoid, cruel, and 9 more.
+tests/unit/traits/character-model.test.ts(1105,9): error TS2740: Type '{ honest: number; cowardly: number; }' is missing the following properties from type 'Record<PersonalityTrait, number>': loyal, paranoid, cruel, cunning, and 8 more.
+tests/unit/traits/character-model.test.ts(1148,9): error TS2740: Type '{ cowardly: number; }' is missing the following properties from type 'Record<PersonalityTrait, number>': honest, loyal, paranoid, cruel, and 9 more.
+tests/unit/traits/door.test.ts(209,31): error TS2551: Property 'east' does not exist on type 'Partial<Record<ExitKey, IExitInfo>>'. Did you mean 'EAST'?
+tests/unit/traits/door.test.ts(214,31): error TS2551: Property 'west' does not exist on type 'Partial<Record<ExitKey, IExitInfo>>'. Did you mean 'WEST'?
+tests/unit/traits/room.test.ts(4,21): error TS2724: '"../../../src/traits/room/roomTrait"' has no exported member named 'ExitInfo'. Did you mean 'IExitInfo'?
+tests/unit/traits/room.test.ts(38,11): error TS2561: Object literal may only specify known properties, but 'north' does not exist in type 'Partial<Record<ExitKey, IExitInfo>>'. Did you mean to write 'NORTH'?
+tests/unit/traits/room.test.ts(41,25): error TS2561: Object literal may only specify known properties, but 'south' does not exist in type 'Partial<Record<ExitKey, string>>'. Did you mean to write 'SOUTH'?
+tests/unit/traits/room.test.ts(53,26): error TS2551: Property 'north' does not exist on type 'Partial<Record<ExitKey, IExitInfo>>'. Did you mean 'NORTH'?
+tests/unit/traits/room.test.ts(54,26): error TS2551: Property 'east' does not exist on type 'Partial<Record<ExitKey, IExitInfo>>'. Did you mean 'EAST'?
+tests/unit/traits/room.test.ts(55,34): error TS2551: Property 'south' does not exist on type 'Partial<Record<ExitKey, string>>'. Did you mean 'SOUTH'?
+tests/unit/traits/room.test.ts(74,9): error TS2561: Object literal may only specify known properties, but 'north' does not exist in type 'Partial<Record<ExitKey, IExitInfo>>'. Did you mean to write 'NORTH'?
+tests/unit/traits/room.test.ts(80,26): error TS2551: Property 'north' does not exist on type 'Partial<Record<ExitKey, IExitInfo>>'. Did you mean 'NORTH'?
+tests/unit/traits/room.test.ts(81,26): error TS2551: Property 'south' does not exist on type 'Partial<Record<ExitKey, IExitInfo>>'. Did you mean 'SOUTH'?
+tests/unit/traits/room.test.ts(82,26): error TS2551: Property 'up' does not exist on type 'Partial<Record<ExitKey, IExitInfo>>'. Did you mean 'UP'?
+tests/unit/traits/room.test.ts(90,9): error TS2561: Object literal may only specify known properties, but 'west' does not exist in type 'Partial<Record<ExitKey, IExitInfo>>'. Did you mean to write 'WEST'?
+tests/unit/traits/room.test.ts(94,26): error TS2551: Property 'west' does not exist on type 'Partial<Record<ExitKey, IExitInfo>>'. Did you mean 'WEST'?
+tests/unit/traits/room.test.ts(95,26): error TS2551: Property 'east' does not exist on type 'Partial<Record<ExitKey, IExitInfo>>'. Did you mean 'EAST'?
+tests/unit/traits/room.test.ts(103,9): error TS2561: Object literal may only specify known properties, but 'north' does not exist in type 'Partial<Record<ExitKey, IExitInfo>>'. Did you mean to write 'NORTH'?
+tests/unit/traits/room.test.ts(106,9): error TS2561: Object literal may only specify known properties, but 'south' does not exist in type 'Partial<Record<ExitKey, string>>'. Did you mean to write 'SOUTH'?
+tests/unit/traits/room.test.ts(111,34): error TS2551: Property 'south' does not exist on type 'Partial<Record<ExitKey, string>>'. Did you mean 'SOUTH'?
+tests/unit/traits/room.test.ts(112,34): error TS2551: Property 'east' does not exist on type 'Partial<Record<ExitKey, string>>'. Did you mean 'EAST'?
+tests/unit/traits/room.test.ts(120,9): error TS2353: Object literal may only specify known properties, and 'portal' does not exist in type 'Partial<Record<ExitKey, IExitInfo>>'.
+tests/unit/traits/room.test.ts(125,26): error TS2339: Property 'portal' does not exist on type 'Partial<Record<ExitKey, IExitInfo>>'.
+tests/unit/traits/room.test.ts(126,26): error TS2339: Property 'slide' does not exist on type 'Partial<Record<ExitKey, IExitInfo>>'.
+tests/unit/traits/room.test.ts(127,26): error TS2339: Property 'teleporter' does not exist on type 'Partial<Record<ExitKey, IExitInfo>>'.
+tests/unit/traits/room.test.ts(258,18): error TS2561: Object literal may only specify known properties, but 'north' does not exist in type 'Partial<Record<ExitKey, IExitInfo>>'. Did you mean to write 'NORTH'?
+tests/unit/traits/room.test.ts(265,35): error TS2551: Property 'north' does not exist on type 'Partial<Record<ExitKey, IExitInfo>>'. Did you mean 'NORTH'?
+tests/unit/traits/room.test.ts(282,9): error TS2561: Object literal may only specify known properties, but 'north' does not exist in type 'Partial<Record<ExitKey, IExitInfo>>'. Did you mean to write 'NORTH'?
+tests/unit/traits/room.test.ts(300,9): error TS2561: Object literal may only specify known properties, but 'up' does not exist in type 'Partial<Record<ExitKey, IExitInfo>>'. Did you mean to write 'UP'?
+tests/unit/traits/room.test.ts(306,26): error TS2551: Property 'up' does not exist on type 'Partial<Record<ExitKey, IExitInfo>>'. Did you mean 'UP'?
+tests/unit/traits/room.test.ts(307,26): error TS2551: Property 'down' does not exist on type 'Partial<Record<ExitKey, IExitInfo>>'. Did you mean 'DOWN'?
+tests/unit/traits/room.test.ts(316,9): error TS2561: Object literal may only specify known properties, but 'in' does not exist in type 'Partial<Record<ExitKey, IExitInfo>>'. Did you mean to write 'IN'?
+tests/unit/traits/room.test.ts(323,26): error TS2551: Property 'in' does not exist on type 'Partial<Record<ExitKey, IExitInfo>>'. Did you mean 'IN'?
+tests/unit/traits/trait-registration.test.ts(78,27): error TS2345: Argument of type 'ITraitConstructor<ITrait>' is not assignable to parameter of type '{ readonly IDENTITY: "identity"; readonly CONTAINER: "container"; readonly SUPPORTER: "supporter"; readonly ROOM: "room"; readonly WEARABLE: "wearable"; readonly EDIBLE: "edible"; ... 44 more ...; readonly STORY_INFO: "storyInfo"; } | ... 287 more ... | ((entity: IFEntity) => ITrait[])'.
+  Type 'ITraitConstructor<ITrait>' is not assignable to type '{ readonly IDENTITY: "identity"; readonly CONTAINER: "container"; readonly SUPPORTER: "supporter"; readonly ROOM: "room"; readonly WEARABLE: "wearable"; readonly EDIBLE: "edible"; ... 44 more ...; readonly STORY_INFO: "storyInfo"; } | ... 285 more ... | ((entity: IFEntity) => ITrait[])'.
+    Type 'ITraitConstructor<ITrait>' is missing the following properties from type 'typeof TraitRegistry': traits, register, get, has, and 2 more.
+tests/unit/traits/trait-registration.test.ts(79,28): error TS2345: Argument of type 'ITraitConstructor<ITrait>' is not assignable to parameter of type '{ readonly IDENTITY: "identity"; readonly CONTAINER: "container"; readonly SUPPORTER: "supporter"; readonly ROOM: "room"; readonly WEARABLE: "wearable"; readonly EDIBLE: "edible"; ... 44 more ...; readonly STORY_INFO: "storyInfo"; } | ... 240 more ... | ((trait: any) => trait is CharacterModelTrait)'.
+  Type 'ITraitConstructor<ITrait>' is not assignable to type '{ readonly IDENTITY: "identity"; readonly CONTAINER: "container"; readonly SUPPORTER: "supporter"; readonly ROOM: "room"; readonly WEARABLE: "wearable"; readonly EDIBLE: "edible"; ... 44 more ...; readonly STORY_INFO: "storyInfo"; } | ... 239 more ... | ((trait: any) => trait is CharacterModelTrait)'.
+    Type 'ITraitConstructor<ITrait>' is missing the following properties from type 'typeof TraitRegistry': traits, register, get, has, and 2 more.
+tests/unit/traits/trait-registration.test.ts(94,29): error TS2345: Argument of type 'unknown' is not assignable to parameter of type '{ readonly IDENTITY: "identity"; readonly CONTAINER: "container"; readonly SUPPORTER: "supporter"; readonly ROOM: "room"; readonly WEARABLE: "wearable"; readonly EDIBLE: "edible"; ... 44 more ...; readonly STORY_INFO: "storyInfo"; } | ... 287 more ... | ((entity: IFEntity) => ITrait[])'.
+tests/unit/traits/trait-registration.test.ts(95,30): error TS2345: Argument of type 'unknown' is not assignable to parameter of type '{ readonly IDENTITY: "identity"; readonly CONTAINER: "container"; readonly SUPPORTER: "supporter"; readonly ROOM: "room"; readonly WEARABLE: "wearable"; readonly EDIBLE: "edible"; ... 44 more ...; readonly STORY_INFO: "storyInfo"; } | ... 240 more ... | ((trait: any) => trait is CharacterModelTrait)'.
+tests/unit/traits/vehicle-machine.test.ts(92,20): error TS2344: Type '{ kind: "line"; turnsToStep: number; }' does not satisfy the constraint 'VehicleMovement | undefined'.
+  Type '{ kind: "line"; turnsToStep: number; }' is missing the following properties from type 'VehicleLineMovement': stops, oneWay, drive, underWay, travelDirection
+tests/unit/traits/vehicle-machine.test.ts(98,20): error TS2344: Type '{ kind: "line"; turnsToStep: number; }' does not satisfy the constraint 'VehicleMovement | undefined'.
+  Type '{ kind: "line"; turnsToStep: number; }' is missing the following properties from type 'VehicleLineMovement': stops, oneWay, drive, underWay, travelDirection
+tests/unit/traits/vehicle-machine.test.ts(166,20): error TS2344: Type '{ kind: "compass"; heading: string | null; turnsToStep: number; }' does not satisfy the constraint 'VehicleMovement | undefined'.
+  Type '{ kind: "compass"; heading: string | null; turnsToStep: number; }' is missing the following properties from type 'VehicleCompassMovement': drive, pace
+tests/unit/traits/vehicle-machine.test.ts(180,20): error TS2344: Type '{ kind: "compass"; heading: string | null; turnsToStep: number; }' does not satisfy the constraint 'VehicleMovement | undefined'.
+  Type '{ kind: "compass"; heading: string | null; turnsToStep: number; }' is missing the following properties from type 'VehicleCompassMovement': drive, pace
+tests/unit/traits/vehicle-machine.test.ts(190,20): error TS2344: Type '{ kind: "compass"; heading: string | null; turnsToStep: number; }' does not satisfy the constraint 'VehicleMovement | undefined'.
+  Type '{ kind: "compass"; heading: string | null; turnsToStep: number; }' is missing the following properties from type 'VehicleCompassMovement': drive, pace
+tests/unit/traits/vehicle-machine.test.ts(237,20): error TS2344: Type '{ kind: "compass"; heading: string | null; turnsToStep: number; }' does not satisfy the constraint 'VehicleMovement | undefined'.
+  Type '{ kind: "compass"; heading: string | null; turnsToStep: number; }' is missing the following properties from type 'VehicleCompassMovement': drive, pace
+tests/unit/traits/vehicle-machine.test.ts(265,20): error TS2344: Type '{ kind: "flight"; destination: string | null; turnsRemaining: number; }' does not satisfy the constraint 'VehicleMovement | undefined'.
+  Type '{ kind: "flight"; destination: string | null; turnsRemaining: number; }' is missing the following properties from type 'VehicleFlightMovement': drive, destinations, pace
+tests/unit/traits/vehicle-machine.test.ts(269,20): error TS2344: Type '{ kind: "flight"; turnsRemaining: number; }' does not satisfy the constraint 'VehicleMovement | undefined'.
+  Type '{ kind: "flight"; turnsRemaining: number; }' is missing the following properties from type 'VehicleFlightMovement': drive, destinations, pace, destination
+tests/unit/traits/vehicle-machine.test.ts(276,20): error TS2344: Type '{ kind: "flight"; destination: string | null; turnsRemaining: number; }' does not satisfy the constraint 'VehicleMovement | undefined'.
+  Type '{ kind: "flight"; destination: string | null; turnsRemaining: number; }' is missing the following properties from type 'VehicleFlightMovement': drive, destinations, pace
+tests/unit/world/event-chaining.test.ts(73,61): error TS2322: Type '{ type: string; data: { containerId: any; }; }' is not assignable to type 'void | ISemanticEvent | ISemanticEvent[] | null | undefined'.
+  Type '{ type: string; data: { containerId: any; }; }' is missing the following properties from type 'ISemanticEvent': id, timestamp, entities
+tests/unit/world/event-chaining.test.ts(75,30): error TS18046: 'event.data' is of type 'unknown'.
+tests/unit/world/event-chaining.test.ts(85,14): error TS2571: Object is of type 'unknown'.
+tests/unit/world/event-chaining.test.ts(110,9): error TS2739: Type '{ type: string; data: { itemId: string; }; }' is missing the following properties from type 'ISemanticEvent': id, timestamp, entities
+tests/unit/world/event-chaining.test.ts(111,9): error TS2739: Type '{ type: string; data: { itemId: string; }; }' is missing the following properties from type 'ISemanticEvent': id, timestamp, entities
+tests/unit/world/event-chaining.test.ts(120,14): error TS2571: Object is of type 'unknown'.
+tests/unit/world/event-chaining.test.ts(121,14): error TS2571: Object is of type 'unknown'.
+tests/unit/world/event-chaining.test.ts(127,54): error TS2322: Type '{ type: string; data: {}; }' is not assignable to type 'void | ISemanticEvent | ISemanticEvent[] | null | undefined'.
+  Type '{ type: string; data: {}; }' is missing the following properties from type 'ISemanticEvent': id, timestamp, entities
+tests/unit/world/event-chaining.test.ts(132,54): error TS2322: Type '{ type: string; data: {}; }' is not assignable to type 'void | ISemanticEvent | ISemanticEvent[] | null | undefined'.
+  Type '{ type: string; data: {}; }' is missing the following properties from type 'ISemanticEvent': id, timestamp, entities
+tests/unit/world/event-chaining.test.ts(150,54): error TS2322: Type '{ type: string; data: {}; }' is not assignable to type 'void | ISemanticEvent | ISemanticEvent[] | null | undefined'.
+  Type '{ type: string; data: {}; }' is missing the following properties from type 'ISemanticEvent': id, timestamp, entities
+tests/unit/world/event-chaining.test.ts(155,54): error TS2322: Type '{ type: string; data: {}; }' is not assignable to type 'void | ISemanticEvent | ISemanticEvent[] | null | undefined'.
+  Type '{ type: string; data: {}; }' is missing the following properties from type 'ISemanticEvent': id, timestamp, entities
+tests/unit/world/event-chaining.test.ts(161,54): error TS2322: Type '{ type: string; data: {}; }' is not assignable to type 'void | ISemanticEvent | ISemanticEvent[] | null | undefined'.
+  Type '{ type: string; data: {}; }' is missing the following properties from type 'ISemanticEvent': id, timestamp, entities
+tests/unit/world/event-chaining.test.ts(178,54): error TS2322: Type '{ type: string; data: {}; }' is not assignable to type 'void | ISemanticEvent | ISemanticEvent[] | null | undefined'.
+  Type '{ type: string; data: {}; }' is missing the following properties from type 'ISemanticEvent': id, timestamp, entities
+tests/unit/world/event-chaining.test.ts(183,54): error TS2322: Type '{ type: string; data: {}; }' is not assignable to type 'void | ISemanticEvent | ISemanticEvent[] | null | undefined'.
+  Type '{ type: string; data: {}; }' is missing the following properties from type 'ISemanticEvent': id, timestamp, entities
+tests/unit/world/event-chaining.test.ts(198,54): error TS2322: Type '{ type: string; data: {}; }' is not assignable to type 'void | ISemanticEvent | ISemanticEvent[] | null | undefined'.
+  Type '{ type: string; data: {}; }' is missing the following properties from type 'ISemanticEvent': id, timestamp, entities
+tests/unit/world/event-chaining.test.ts(203,54): error TS2322: Type '{ type: string; data: {}; }' is not assignable to type 'void | ISemanticEvent | ISemanticEvent[] | null | undefined'.
+  Type '{ type: string; data: {}; }' is missing the following properties from type 'ISemanticEvent': id, timestamp, entities
+tests/unit/world/event-chaining.test.ts(219,54): error TS2322: Type '{ type: string; data: {}; }' is not assignable to type 'void | ISemanticEvent | ISemanticEvent[] | null | undefined'.
+  Type '{ type: string; data: {}; }' is missing the following properties from type 'ISemanticEvent': id, timestamp, entities
+tests/unit/world/event-chaining.test.ts(224,54): error TS2322: Type '{ type: string; data: {}; }' is not assignable to type 'void | ISemanticEvent | ISemanticEvent[] | null | undefined'.
+  Type '{ type: string; data: {}; }' is missing the following properties from type 'ISemanticEvent': id, timestamp, entities
+tests/unit/world/event-chaining.test.ts(229,54): error TS2322: Type '{ type: string; data: {}; }' is not assignable to type 'void | ISemanticEvent | ISemanticEvent[] | null | undefined'.
+  Type '{ type: string; data: {}; }' is missing the following properties from type 'ISemanticEvent': id, timestamp, entities
+tests/unit/world/event-chaining.test.ts(248,54): error TS2322: Type '{ type: string; data: {}; }' is not assignable to type 'void | ISemanticEvent | ISemanticEvent[] | null | undefined'.
+  Type '{ type: string; data: {}; }' is missing the following properties from type 'ISemanticEvent': id, timestamp, entities
+tests/unit/world/event-chaining.test.ts(262,54): error TS2322: Type '{ type: string; data: {}; }' is not assignable to type 'void | ISemanticEvent | ISemanticEvent[] | null | undefined'.
+  Type '{ type: string; data: {}; }' is missing the following properties from type 'ISemanticEvent': id, timestamp, entities
+tests/unit/world/event-chaining.test.ts(277,53): error TS2322: Type '{ type: string; data: {}; }' is not assignable to type 'void | ISemanticEvent | ISemanticEvent[] | null | undefined'.
+  Type '{ type: string; data: {}; }' is missing the following properties from type 'ISemanticEvent': id, timestamp, entities
+tests/unit/world/event-chaining.test.ts(291,54): error TS2322: Type '{ type: string; data: {}; }' is not assignable to type 'void | ISemanticEvent | ISemanticEvent[] | null | undefined'.
+  Type '{ type: string; data: {}; }' is missing the following properties from type 'ISemanticEvent': id, timestamp, entities
+tests/unit/world/event-chaining.test.ts(306,54): error TS2322: Type '{ type: string; data: {}; }' is not assignable to type 'void | ISemanticEvent | ISemanticEvent[] | null | undefined'.
+  Type '{ type: string; data: {}; }' is missing the following properties from type 'ISemanticEvent': id, timestamp, entities
+tests/unit/world/event-chaining.test.ts(321,54): error TS2322: Type '{ type: string; data: {}; }' is not assignable to type 'void | ISemanticEvent | ISemanticEvent[] | null | undefined'.
+  Type '{ type: string; data: {}; }' is missing the following properties from type 'ISemanticEvent': id, timestamp, entities
+tests/unit/world/event-chaining.test.ts(338,52): error TS2322: Type '{ type: string; data: {}; }' is not assignable to type 'void | ISemanticEvent | ISemanticEvent[] | null | undefined'.
+  Type '{ type: string; data: {}; }' is missing the following properties from type 'ISemanticEvent': id, timestamp, entities
+tests/unit/world/event-chaining.test.ts(354,52): error TS2322: Type '{ type: string; data: {}; }' is not assignable to type 'void | ISemanticEvent | ISemanticEvent[] | null | undefined'.
+  Type '{ type: string; data: {}; }' is missing the following properties from type 'ISemanticEvent': id, timestamp, entities
+tests/unit/world/event-chaining.test.ts(372,54): error TS2322: Type '{ type: string; data: {}; }' is not assignable to type 'void | ISemanticEvent | ISemanticEvent[] | null | undefined'.
+  Type '{ type: string; data: {}; }' is missing the following properties from type 'ISemanticEvent': id, timestamp, entities
+tests/unit/world/event-chaining.test.ts(393,54): error TS2322: Type '{ type: string; data: {}; }' is not assignable to type 'void | ISemanticEvent | ISemanticEvent[] | null | undefined'.
+  Type '{ type: string; data: {}; }' is missing the following properties from type 'ISemanticEvent': id, timestamp, entities
+tests/unit/world/event-chaining.test.ts(411,51): error TS2322: Type '{ type: string; data: {}; }' is not assignable to type 'void | ISemanticEvent | ISemanticEvent[] | null | undefined'.
+  Type '{ type: string; data: {}; }' is missing the following properties from type 'ISemanticEvent': id, timestamp, entities
+tests/unit/world/event-chaining.test.ts(412,51): error TS2322: Type '{ type: string; data: {}; }' is not assignable to type 'void | ISemanticEvent | ISemanticEvent[] | null | undefined'.
+  Type '{ type: string; data: {}; }' is missing the following properties from type 'ISemanticEvent': id, timestamp, entities
+tests/unit/world/event-chaining.test.ts(426,54): error TS2322: Type '{ type: string; data: {}; }' is not assignable to type 'void | ISemanticEvent | ISemanticEvent[] | null | undefined'.
+  Type '{ type: string; data: {}; }' is missing the following properties from type 'ISemanticEvent': id, timestamp, entities
+tests/unit/world/event-chaining.test.ts(446,54): error TS2322: Type '{ type: string; data: {}; }' is not assignable to type 'void | ISemanticEvent | ISemanticEvent[] | null | undefined'.
+  Type '{ type: string; data: {}; }' is missing the following properties from type 'ISemanticEvent': id, timestamp, entities
+tests/unit/world/event-chaining.test.ts(481,54): error TS2322: Type '{ type: string; data: {}; }' is not assignable to type 'void | ISemanticEvent | ISemanticEvent[] | null | undefined'.
+  Type '{ type: string; data: {}; }' is missing the following properties from type 'ISemanticEvent': id, timestamp, entities
+tests/unit/world/event-chaining.test.ts(500,54): error TS2322: Type '{ type: string; data: { messageId: string; }; }' is not assignable to type 'void | ISemanticEvent | ISemanticEvent[] | null | undefined'.
+  Type '{ type: string; data: { messageId: string; }; }' is missing the following properties from type 'ISemanticEvent': id, timestamp, entities
+tests/unit/world/event-chaining.test.ts(517,54): error TS2322: Type '{ type: string; data: { messageId: string; }; }' is not assignable to type 'void | ISemanticEvent | ISemanticEvent[] | null | undefined'.
+  Type '{ type: string; data: { messageId: string; }; }' is missing the following properties from type 'ISemanticEvent': id, timestamp, entities
+tests/unit/world/event-chaining.test.ts(534,49): error TS2322: Type '{ type: string; data: { messageId: string; }; }' is not assignable to type 'void | ISemanticEvent | ISemanticEvent[] | null | undefined'.
+  Type '{ type: string; data: { messageId: string; }; }' is missing the following properties from type 'ISemanticEvent': id, timestamp, entities
+tests/unit/world/event-chaining.test.ts(551,49): error TS2322: Type '{ type: string; data: { messageId: string; _narrativeSlot: string; }; }' is not assignable to type 'void | ISemanticEvent | ISemanticEvent[] | null | undefined'.
+  Type '{ type: string; data: { messageId: string; _narrativeSlot: string; }; }' is missing the following properties from type 'ISemanticEvent': id, timestamp, entities
+tests/unit/world/event-chaining.test.ts(571,9): error TS2739: Type '{ type: string; data: { itemId: string; }; }' is missing the following properties from type 'ISemanticEvent': id, timestamp, entities
+tests/unit/world/event-chaining.test.ts(572,9): error TS2739: Type '{ type: string; data: { messageId: string; }; }' is missing the following properties from type 'ISemanticEvent': id, timestamp, entities
+tests/unit/world/event-chaining.test.ts(598,43): error TS2345: Argument of type '(event: ISemanticEvent, w: IWorldModel) => { type: string; data: { foundEntity: string | undefined; }; }' is not assignable to parameter of type 'EventChainHandler'.
+  Type '{ type: string; data: { foundEntity: string | undefined; }; }' is not assignable to type 'void | ISemanticEvent | ISemanticEvent[] | null | undefined'.
+    Type '{ type: string; data: { foundEntity: string | undefined; }; }' is missing the following properties from type 'ISemanticEvent': id, timestamp, entities
+tests/unit/world/event-chaining.test.ts(611,14): error TS2571: Object is of type 'unknown'.
+tests/unit/world/world-model.test.ts(12,10): error TS2724: '"@sharpee/core"' has no exported member named 'SemanticEvent'. Did you mean 'ISemanticEvent'?
+tests/unit/world/world-model.test.ts(578,28): error TS2561: Object literal may only specify known properties, but 'east' does not exist in type 'Partial<Record<ExitKey, IExitInfo>>'. Did you mean to write 'EAST'?
+tests/unit/world/world-model.test.ts(580,9): error TS2561: Object literal may only specify known properties, but 'west' does not exist in type 'Partial<Record<ExitKey, IExitInfo>>'. Did you mean to write 'WEST'?
+tests/unit/world/world-model.test.ts(840,28): error TS2339: Property 'valid' does not exist on type '{}'.
+tests/verify-visibility-works.ts(70,47): error TS2554: Expected 1 arguments, but got 2.
+tests/verify-visibility-works.ts(71,64): error TS2339: Property 'map' does not exist on type 'IOpenResult'.
+tests/verify-visibility-works.ts(71,68): error TS7006: Parameter 'e' implicitly has an 'any' type.
+/Users/david/repos/sharpee/packages/world-model:
+ ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  @sharpee/world-model@5.5.1 typecheck:tests: `tsc -p tsconfig.test.json`
+Exit status 2
