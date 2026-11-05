@@ -212,7 +212,8 @@ export const openingAction: Action & { metadata: ActionMetadata } = {
       params = { container: nounPhraseFor(noun) };
     }
 
-    // 1. Primary domain event with messageId (simplified pattern - ADR-097)
+    // The one event for this fact: the domain event with its messageId
+    // (simplified pattern - ADR-097).
     events.push(context.event('if.event.opened', {
       // Rendering data (messageId + params for text-service)
       messageId: `${context.action.id}.${messageKey}`,
@@ -223,14 +224,9 @@ export const openingAction: Action & { metadata: ActionMetadata } = {
       actorId: context.actor.id
     }));
 
-    // 2. Domain event for backward compatibility (simplified)
-    events.push(context.event('opened', {
-      targetId: noun.id,
-      targetName: noun.name
-    }));
-
-    // Note: if.event.revealed is emitted by the opened event handler in stdlib
-    // This ensures revealed events fire regardless of what action opened the container
+    // if.event.revealed is not emitted here: the opened→revealed chain
+    // (src/chains/opened-revealed.ts) derives it from if.event.opened, so it
+    // fires whatever action opened the container.
 
     return events;
   },

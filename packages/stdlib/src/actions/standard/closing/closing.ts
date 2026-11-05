@@ -169,7 +169,9 @@ export const closingAction: Action & { metadata: ActionMetadata } = {
     // Delegate to behavior for closing
     const result: ICloseResult = OpenableBehavior.close(noun);
 
-    // Store result for report phase using sharedData
+    // Keep the behavior's result on sharedData. Nothing reads it today: its
+    // closeMessage and closeSound were carried only by an unprefixed event
+    // that no longer exists, and no renderer ever consumed them.
     const sharedData = getClosingSharedData(context);
     sharedData.closeResult = result;
 
@@ -183,18 +185,8 @@ export const closingAction: Action & { metadata: ActionMetadata } = {
    */
   report(context: ActionContext): ISemanticEvent[] {
     const noun = context.command.directObject!.entity!;
-    const sharedData = getClosingSharedData(context);
-    const result = sharedData.closeResult as ICloseResult;
 
     const events: ISemanticEvent[] = [];
-
-    // Add the backward compat domain event (closed)
-    events.push(context.event('closed', {
-      targetId: noun.id,
-      targetName: noun.name,
-      customMessage: result.closeMessage,
-      sound: result.closeSound
-    }));
 
     // Build domain data for the primary event
     const eventData = buildEventData(closedDataConfig, context);

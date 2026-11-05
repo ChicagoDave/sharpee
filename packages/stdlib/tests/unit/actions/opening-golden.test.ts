@@ -187,6 +187,28 @@ describe('openingAction (Golden Pattern)', () => {
       expect(openedEvent?.data).not.toHaveProperty('revealedItems');
     });
 
+    test('reports the opening as one event, the primary one', () => {
+      const { world, object } = TestData.withObject('simple box', {
+        [TraitType.OPENABLE]: {
+          type: TraitType.OPENABLE,
+          isOpen: false
+        }
+      });
+
+      const command = createCommand(
+        IFActions.OPENING,
+        { entity: object }
+      );
+      const context = createRealTestContext(openingAction, world, command);
+
+      const events = executeWithValidation(openingAction, context);
+
+      // The box is open, and the report says so exactly once: no second,
+      // unprefixed copy of the event travels with the primary one.
+      expect((object.get(TraitType.OPENABLE) as OpenableTrait).isOpen).toBe(true);
+      expect(events.map(e => e.type)).toEqual(['if.event.opened']);
+    });
+
     // `if.event.revealed` is not this action's to emit: the opened→revealed chain
     // (ADR-094, `src/chains/opened-revealed.ts`) derives it from `if.event.opened`,
     // and `tests/unit/chains/opened-revealed.test.ts` covers the contents listing.

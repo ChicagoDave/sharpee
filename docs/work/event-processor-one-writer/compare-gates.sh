@@ -2,11 +2,12 @@
 # compare-gates.sh — byte-compare two run-gates.sh capture directories.
 #
 # Usage: bash docs/work/event-processor-one-writer/compare-gates.sh <baseline-dir> <phase-dir>
-# Transcript, tree and typecheck captures are diffed after stripping wall-clock
-# noise: per-block "(NNNms)" suffixes, "Duration" lines, and "Seed: ... (clock)"
+# Transcript and tree captures are diffed after stripping wall-clock noise:
+# per-block "(NNNms)" suffixes, "Duration" lines, and "Seed: ... (clock)"
 # lines on transcripts that pin no seed. Vitest captures are compared on
-# their summary lines only ("Test Files" and "Tests"). Prints IDENTICAL or
-# DIFFERS per gate and exits 1 if any differs.
+# their summary lines only ("Test Files" and "Tests"). Typecheck captures are
+# compared as a count of each error with its file(line,col) position removed.
+# Prints IDENTICAL or DIFFERS per gate and exits 1 if any differs.
 set -u
 A="$1"; B="$2"
 rc=0
@@ -32,6 +33,17 @@ for f in "$A"/*.txt; do
     suite-*)
       sa=$(ansi "$f" | grep -E '^\s*(Test Files|Tests) '); sb=$(ansi "$g" | grep -E '^\s*(Test Files|Tests) ')
       if [ "$sa" = "$sb" ]; then echo "IDENTICAL $name  [$(echo "$sb" | tr -s ' \n' ' ')]"; else echo "DIFFERS   $name"; echo "  baseline: $sa"; echo "  phase:    $sb"; rc=1; fi ;;
+    typecheck-tests-*)
+      # tsc reports each error at file(line,col). A test added above an
+      # existing error moves that error's line number without adding one
+      # (Phase 3: three errors in closing-golden.test.ts each moved 22 lines).
+      # So these legs compare the errors with the position removed and
+      # identical lines counted: a new error still shows, as a new line or as
+      # a higher count on an existing one. David approved this, 2026-11-04.
+      tc() { ansi "$1" | sed -E 's/\([0-9]+,[0-9]+\)//' | sort | uniq -c; }
+      if diff -q <(tc "$f") <(tc "$g") > /dev/null; then
+        echo "IDENTICAL $name  [positions removed; $(ansi "$g" | grep -c 'error TS') errors]"
+      else echo "DIFFERS   $name"; diff <(tc "$f") <(tc "$g") | head -20; rc=1; fi ;;
     *)
       if diff -q <(strip "$f") <(strip "$g") > /dev/null; then echo "IDENTICAL $name"; else echo "DIFFERS   $name"; diff <(strip "$f") <(strip "$g") | head -20; rc=1; fi ;;
   esac

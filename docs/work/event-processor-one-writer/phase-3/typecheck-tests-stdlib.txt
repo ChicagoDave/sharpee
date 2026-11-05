@@ -1,0 +1,1021 @@
+
+> @sharpee/stdlib@5.5.1 typecheck:tests /Users/david/repos/sharpee/packages/stdlib
+> tsc -p tsconfig.test.json
+
+tests/channels/standard.test.ts(106,27): error TS2339: Property 'getCapability' does not exist on type '{}'.
+tests/channels/standard.test.ts(362,31): error TS2353: Object literal may only specify known properties, and 'type' does not exist in type 'IDecoration | IChosen'.
+tests/emit-illustrations.test.ts(51,12): error TS2571: Object is of type 'unknown'.
+tests/emit-illustrations.test.ts(52,12): error TS2571: Object is of type 'unknown'.
+tests/emit-illustrations.test.ts(53,12): error TS2571: Object is of type 'unknown'.
+tests/emit-illustrations.test.ts(54,12): error TS2571: Object is of type 'unknown'.
+tests/emit-illustrations.test.ts(55,12): error TS2571: Object is of type 'unknown'.
+tests/emit-illustrations.test.ts(94,12): error TS2571: Object is of type 'unknown'.
+tests/emit-illustrations.test.ts(109,12): error TS2571: Object is of type 'unknown'.
+tests/emit-illustrations.test.ts(110,12): error TS2571: Object is of type 'unknown'.
+tests/emit-illustrations.test.ts(126,12): error TS2571: Object is of type 'unknown'.
+tests/emit-illustrations.test.ts(165,12): error TS2571: Object is of type 'unknown'.
+tests/emit-illustrations.test.ts(166,12): error TS2571: Object is of type 'unknown'.
+tests/integration/action-language-integration.test.ts(15,3): error TS2305: Module '"@sharpee/world-model"' has no exported member 'LanguageProvider'.
+tests/integration/action-language-integration.test.ts(16,3): error TS2724: '"@sharpee/world-model"' has no exported member named 'ParsedCommand'. Did you mean 'IParsedCommand'?
+tests/integration/action-language-integration.test.ts(160,67): error TS2345: Argument of type '{ parsed: { action: string; extras: {}; }; directObject: null; indirectObject: null; }' is not assignable to parameter of type 'IValidatedCommand'.
+  Property 'actionId' is missing in type '{ parsed: { action: string; extras: {}; }; directObject: null; indirectObject: null; }' but required in type 'IValidatedCommand'.
+tests/integration/action-language-integration.test.ts(172,11): error TS18046: 'waitedEvent.data' is of type 'unknown'.
+tests/integration/action-language-integration.test.ts(173,11): error TS18046: 'waitedEvent.data' is of type 'unknown'.
+tests/integration/action-language-integration.test.ts(268,172): error TS2694: Namespace '"/Users/david/repos/sharpee/packages/world-model/dist/index"' has no exported member 'ValidatedCommand'.
+tests/integration/container-visibility-knowledge.test.ts(52,7): error TS2353: Object literal may only specify known properties, and 'name' does not exist in type 'ITrait'.
+tests/integration/container-visibility-knowledge.test.ts(58,7): error TS2353: Object literal may only specify known properties, and 'isOpen' does not exist in type 'ITrait'.
+tests/integration/container-visibility-knowledge.test.ts(66,7): error TS2353: Object literal may only specify known properties, and 'name' does not exist in type 'ITrait'.
+tests/integration/meta-commands.test.ts(11,10): error TS2724: '"@sharpee/core"' has no exported member named 'SemanticEvent'. Did you mean 'ISemanticEvent'?
+tests/integration/npc-attribution-realpath.test.ts(80,20): error TS2722: Cannot invoke an object which is possibly 'undefined'.
+tests/platform-test-helpers.ts(32,5): error TS2353: Object literal may only specify known properties, and 'id' does not exist in type 'Partial<ICapabilityRegistration>'.
+tests/query-handlers/platform-handlers.test.ts(13,3): error TS2724: '"@sharpee/core"' has no exported member named 'PendingQuery'. Did you mean 'IPendingQuery'?
+tests/query-handlers/platform-handlers.test.ts(14,3): error TS2724: '"@sharpee/core"' has no exported member named 'QueryResponse'. Did you mean 'IQueryResponse'?
+tests/scope-integration.test.ts(42,45): error TS2353: Object literal may only specify known properties, and 'capacity' does not exist in type 'ITrait'.
+tests/scope-integration.test.ts(63,45): error TS2353: Object literal may only specify known properties, and 'isOpen' does not exist in type 'ITrait'.
+tests/scope-integration.test.ts(84,41): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(command: IParsedCommand): Result<ValidatedCommand, IValidationError>', gave the following error.
+    Argument of type '{ rawInput: string; action: string; tokens: string[]; structure: { verb: { tokens: number[]; text: string; head: string; }; directObject: { text: string; modifiers: never[]; }; }; pattern: string; }' is not assignable to parameter of type 'IParsedCommand'.
+      Types of property 'tokens' are incompatible.
+        Type 'string[]' is not assignable to type 'IToken[]'.
+          Type 'string' is not assignable to type 'IToken'.
+  Overload 2 of 2, '(command: IParsedCommand): Result<ValidatedCommand, IValidationError>', gave the following error.
+    Argument of type '{ rawInput: string; action: string; tokens: string[]; structure: { verb: { tokens: number[]; text: string; head: string; }; directObject: { text: string; modifiers: never[]; }; }; pattern: string; }' is not assignable to parameter of type 'IParsedCommand'.
+      Types of property 'tokens' are incompatible.
+        Type 'string[]' is not assignable to type 'IToken[]'.
+          Type 'string' is not assignable to type 'IToken'.
+tests/scope-integration.test.ts(115,41): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(command: IParsedCommand): Result<ValidatedCommand, IValidationError>', gave the following error.
+    Argument of type '{ rawInput: string; action: string; tokens: string[]; structure: { verb: { tokens: number[]; text: string; head: string; }; directObject: { text: string; modifiers: never[]; }; }; pattern: string; }' is not assignable to parameter of type 'IParsedCommand'.
+      Types of property 'tokens' are incompatible.
+        Type 'string[]' is not assignable to type 'IToken[]'.
+          Type 'string' is not assignable to type 'IToken'.
+  Overload 2 of 2, '(command: IParsedCommand): Result<ValidatedCommand, IValidationError>', gave the following error.
+    Argument of type '{ rawInput: string; action: string; tokens: string[]; structure: { verb: { tokens: number[]; text: string; head: string; }; directObject: { text: string; modifiers: never[]; }; }; pattern: string; }' is not assignable to parameter of type 'IParsedCommand'.
+      Types of property 'tokens' are incompatible.
+        Type 'string[]' is not assignable to type 'IToken[]'.
+          Type 'string' is not assignable to type 'IToken'.
+tests/scope-integration.test.ts(117,21): error TS2339: Property 'value' does not exist on type 'Result<ValidatedCommand, IValidationError>'.
+  Property 'value' does not exist on type '{ success: false; error: IValidationError; }'.
+tests/scope-integration.test.ts(151,41): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(command: IParsedCommand): Result<ValidatedCommand, IValidationError>', gave the following error.
+    Argument of type '{ rawInput: string; action: string; tokens: string[]; structure: { verb: { tokens: number[]; text: string; head: string; }; directObject: { text: string; modifiers: never[]; }; preposition: string; indirectObject: { ...; }; }; pattern: string; }' is not assignable to parameter of type 'IParsedCommand'.
+      Types of property 'tokens' are incompatible.
+        Type 'string[]' is not assignable to type 'IToken[]'.
+          Type 'string' is not assignable to type 'IToken'.
+  Overload 2 of 2, '(command: IParsedCommand): Result<ValidatedCommand, IValidationError>', gave the following error.
+    Argument of type '{ rawInput: string; action: string; tokens: string[]; structure: { verb: { tokens: number[]; text: string; head: string; }; directObject: { text: string; modifiers: never[]; }; preposition: string; indirectObject: { ...; }; }; pattern: string; }' is not assignable to parameter of type 'IParsedCommand'.
+      Types of property 'tokens' are incompatible.
+        Type 'string[]' is not assignable to type 'IToken[]'.
+          Type 'string' is not assignable to type 'IToken'.
+tests/scope-integration.test.ts(154,21): error TS2339: Property 'value' does not exist on type 'Result<ValidatedCommand, IValidationError>'.
+  Property 'value' does not exist on type '{ success: false; error: IValidationError; }'.
+tests/scope-integration.test.ts(155,21): error TS2339: Property 'value' does not exist on type 'Result<ValidatedCommand, IValidationError>'.
+  Property 'value' does not exist on type '{ success: false; error: IValidationError; }'.
+tests/scope-integration.test.ts(183,41): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(command: IParsedCommand): Result<ValidatedCommand, IValidationError>', gave the following error.
+    Argument of type '{ rawInput: string; action: string; tokens: string[]; structure: { verb: { tokens: number[]; text: string; head: string; }; directObject: { text: string; modifiers: never[]; }; preposition: string; indirectObject: { ...; }; }; pattern: string; }' is not assignable to parameter of type 'IParsedCommand'.
+      Types of property 'tokens' are incompatible.
+        Type 'string[]' is not assignable to type 'IToken[]'.
+          Type 'string' is not assignable to type 'IToken'.
+  Overload 2 of 2, '(command: IParsedCommand): Result<ValidatedCommand, IValidationError>', gave the following error.
+    Argument of type '{ rawInput: string; action: string; tokens: string[]; structure: { verb: { tokens: number[]; text: string; head: string; }; directObject: { text: string; modifiers: never[]; }; preposition: string; indirectObject: { ...; }; }; pattern: string; }' is not assignable to parameter of type 'IParsedCommand'.
+      Types of property 'tokens' are incompatible.
+        Type 'string[]' is not assignable to type 'IToken[]'.
+          Type 'string' is not assignable to type 'IToken'.
+tests/scope-integration.test.ts(185,21): error TS2339: Property 'value' does not exist on type 'Result<ValidatedCommand, IValidationError>'.
+  Property 'value' does not exist on type '{ success: false; error: IValidationError; }'.
+tests/scope-integration.test.ts(186,21): error TS2339: Property 'value' does not exist on type 'Result<ValidatedCommand, IValidationError>'.
+  Property 'value' does not exist on type '{ success: false; error: IValidationError; }'.
+tests/scope-integration.test.ts(197,43): error TS2353: Object literal may only specify known properties, and 'room1' does not exist in type 'ITrait'.
+tests/scope-integration.test.ts(198,47): error TS2353: Object literal may only specify known properties, and 'isOpen' does not exist in type 'ITrait'.
+tests/scope-integration.test.ts(206,18): error TS2339: Property 'customProperties' does not exist on type 'ITrait'.
+tests/scope-integration.test.ts(224,41): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(command: IParsedCommand): Result<ValidatedCommand, IValidationError>', gave the following error.
+    Argument of type '{ rawInput: string; action: string; tokens: string[]; structure: { verb: { tokens: number[]; text: string; head: string; }; preposition: string; directObject: { text: string; modifiers: never[]; }; }; pattern: string; }' is not assignable to parameter of type 'IParsedCommand'.
+      Types of property 'tokens' are incompatible.
+        Type 'string[]' is not assignable to type 'IToken[]'.
+          Type 'string' is not assignable to type 'IToken'.
+  Overload 2 of 2, '(command: IParsedCommand): Result<ValidatedCommand, IValidationError>', gave the following error.
+    Argument of type '{ rawInput: string; action: string; tokens: string[]; structure: { verb: { tokens: number[]; text: string; head: string; }; preposition: string; directObject: { text: string; modifiers: never[]; }; }; pattern: string; }' is not assignable to parameter of type 'IParsedCommand'.
+      Types of property 'tokens' are incompatible.
+        Type 'string[]' is not assignable to type 'IToken[]'.
+          Type 'string' is not assignable to type 'IToken'.
+tests/scope-integration.test.ts(228,21): error TS2339: Property 'value' does not exist on type 'Result<ValidatedCommand, IValidationError>'.
+  Property 'value' does not exist on type '{ success: false; error: IValidationError; }'.
+tests/scope-integration.test.ts(239,43): error TS2353: Object literal may only specify known properties, and 'room1' does not exist in type 'ITrait'.
+tests/scope-integration.test.ts(240,47): error TS2353: Object literal may only specify known properties, and 'isOpen' does not exist in type 'ITrait'.
+tests/scope-integration.test.ts(245,46): error TS2353: Object literal may only specify known properties, and 'name' does not exist in type 'ITrait'.
+tests/scope-integration.test.ts(261,41): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(command: IParsedCommand): Result<ValidatedCommand, IValidationError>', gave the following error.
+    Argument of type '{ rawInput: string; action: string; tokens: string[]; structure: { verb: { tokens: number[]; text: string; head: string; }; directObject: { text: string; modifiers: never[]; }; }; pattern: string; }' is not assignable to parameter of type 'IParsedCommand'.
+      Types of property 'tokens' are incompatible.
+        Type 'string[]' is not assignable to type 'IToken[]'.
+          Type 'string' is not assignable to type 'IToken'.
+  Overload 2 of 2, '(command: IParsedCommand): Result<ValidatedCommand, IValidationError>', gave the following error.
+    Argument of type '{ rawInput: string; action: string; tokens: string[]; structure: { verb: { tokens: number[]; text: string; head: string; }; directObject: { text: string; modifiers: never[]; }; }; pattern: string; }' is not assignable to parameter of type 'IParsedCommand'.
+      Types of property 'tokens' are incompatible.
+        Type 'string[]' is not assignable to type 'IToken[]'.
+          Type 'string' is not assignable to type 'IToken'.
+tests/scope-integration.test.ts(263,21): error TS2339: Property 'value' does not exist on type 'Result<ValidatedCommand, IValidationError>'.
+  Property 'value' does not exist on type '{ success: false; error: IValidationError; }'.
+tests/scope-integration.test.ts(277,43): error TS2353: Object literal may only specify known properties, and 'room1' does not exist in type 'ITrait'.
+tests/scope-integration.test.ts(278,47): error TS2353: Object literal may only specify known properties, and 'isOpen' does not exist in type 'ITrait'.
+tests/scope-integration.test.ts(283,46): error TS2353: Object literal may only specify known properties, and 'name' does not exist in type 'ITrait'.
+tests/scope-integration.test.ts(299,41): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(command: IParsedCommand): Result<ValidatedCommand, IValidationError>', gave the following error.
+    Argument of type '{ rawInput: string; action: string; tokens: string[]; structure: { verb: { tokens: number[]; text: string; head: string; }; directObject: { text: string; modifiers: never[]; }; }; pattern: string; }' is not assignable to parameter of type 'IParsedCommand'.
+      Types of property 'tokens' are incompatible.
+        Type 'string[]' is not assignable to type 'IToken[]'.
+          Type 'string' is not assignable to type 'IToken'.
+  Overload 2 of 2, '(command: IParsedCommand): Result<ValidatedCommand, IValidationError>', gave the following error.
+    Argument of type '{ rawInput: string; action: string; tokens: string[]; structure: { verb: { tokens: number[]; text: string; head: string; }; directObject: { text: string; modifiers: never[]; }; }; pattern: string; }' is not assignable to parameter of type 'IParsedCommand'.
+      Types of property 'tokens' are incompatible.
+        Type 'string[]' is not assignable to type 'IToken[]'.
+          Type 'string' is not assignable to type 'IToken'.
+tests/scope-integration.test.ts(303,21): error TS2339: Property 'value' does not exist on type 'Result<ValidatedCommand, IValidationError>'.
+  Property 'value' does not exist on type '{ success: false; error: IValidationError; }'.
+tests/scope-integration.test.ts(325,41): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(command: IParsedCommand): Result<ValidatedCommand, IValidationError>', gave the following error.
+    Argument of type '{ rawInput: string; action: string; tokens: string[]; structure: { verb: { tokens: number[]; text: string; head: string; }; directObject: { text: string; modifiers: never[]; }; }; pattern: string; }' is not assignable to parameter of type 'IParsedCommand'.
+      Types of property 'tokens' are incompatible.
+        Type 'string[]' is not assignable to type 'IToken[]'.
+          Type 'string' is not assignable to type 'IToken'.
+  Overload 2 of 2, '(command: IParsedCommand): Result<ValidatedCommand, IValidationError>', gave the following error.
+    Argument of type '{ rawInput: string; action: string; tokens: string[]; structure: { verb: { tokens: number[]; text: string; head: string; }; directObject: { text: string; modifiers: never[]; }; }; pattern: string; }' is not assignable to parameter of type 'IParsedCommand'.
+      Types of property 'tokens' are incompatible.
+        Type 'string[]' is not assignable to type 'IToken[]'.
+          Type 'string' is not assignable to type 'IToken'.
+tests/scope-integration.test.ts(327,21): error TS2339: Property 'value' does not exist on type 'Result<ValidatedCommand, IValidationError>'.
+  Property 'value' does not exist on type '{ success: false; error: IValidationError; }'.
+tests/scope-integration.test.ts(329,21): error TS2339: Property 'value' does not exist on type 'Result<ValidatedCommand, IValidationError>'.
+  Property 'value' does not exist on type '{ success: false; error: IValidationError; }'.
+tests/scope-integration.test.ts(330,21): error TS2339: Property 'value' does not exist on type 'Result<ValidatedCommand, IValidationError>'.
+  Property 'value' does not exist on type '{ success: false; error: IValidationError; }'.
+tests/test-utils/index.ts(87,38): error TS2352: Conversion of type '{ world: WorldModel; player: IFEntity; command: IValidatedCommand; currentLocation: IFEntity; canSee: (entity: IFEntity) => boolean; ... 5 more ...; getSharedData: () => { ...; }; }' to type 'ActionContext & { getSharedData?: (() => Record<string, unknown>) | undefined; }' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Type '{ world: WorldModel; player: IFEntity; command: IValidatedCommand; currentLocation: IFEntity; canSee: (entity: IFEntity) => boolean; ... 5 more ...; getSharedData: () => { ...; }; }' is missing the following properties from type 'ActionContext': actor, scopeResolver, random, getEntityScope, and 8 more.
+tests/test-utils/index.ts(248,7): error TS2741: Property 'verb' is missing in type 'Record<string, unknown>' but required in type '{ verb: IVerbPhrase; directObject?: INounPhrase | undefined; preposition?: IPrepPhrase | undefined; indirectObject?: INounPhrase | undefined; }'.
+tests/test-utils/index.ts(253,5): error TS2322: Type '{ entity: IFEntity; parsed: unknown; } | undefined' is not assignable to type 'IValidatedObjectReference | undefined'.
+  Type '{ entity: IFEntity; parsed: unknown; }' is not assignable to type 'IValidatedObjectReference'.
+    Types of property 'parsed' are incompatible.
+      Type 'unknown' is not assignable to type 'IParsedObjectReference'.
+tests/test-utils/index.ts(257,5): error TS2322: Type '{ entity: IFEntity; parsed: unknown; } | undefined' is not assignable to type 'IValidatedObjectReference | undefined'.
+  Type '{ entity: IFEntity; parsed: unknown; }' is not assignable to type 'IValidatedObjectReference'.
+    Types of property 'parsed' are incompatible.
+      Type 'unknown' is not assignable to type 'IParsedObjectReference'.
+tests/test-utils/index.ts(347,18): error TS7053: Element implicitly has an 'any' type because expression of type 'string' can't be used to index type '{}'.
+  No index signature with a parameter of type 'string' was found on type '{}'.
+tests/test-utils/index.ts(351,18): error TS7053: Element implicitly has an 'any' type because expression of type 'string' can't be used to index type '{}'.
+  No index signature with a parameter of type 'string' was found on type '{}'.
+tests/test-utils/index.ts(353,18): error TS7053: Element implicitly has an 'any' type because expression of type 'string' can't be used to index type '{}'.
+  No index signature with a parameter of type 'string' was found on type '{}'.
+tests/test-utils/parser-helpers.ts(12,15): error TS2724: '"@sharpee/world-model"' has no exported member named 'ParsedCommand'. Did you mean 'IParsedCommand'?
+tests/test-utils/parser-helpers.ts(29,36): error TS2345: Argument of type 'LanguageProvider' is not assignable to parameter of type 'ParserLanguageProvider'.
+  Type 'LanguageProvider' is missing the following properties from type 'ParserLanguageProvider': getVerbs, getDirections, getSpecialVocabulary, getPrepositions, and 16 more.
+tests/test-utils/parser-helpers.ts(167,14): error TS2420: Class 'MockLanguageProvider' incorrectly implements interface 'LanguageProvider'.
+  Type 'MockLanguageProvider' is missing the following properties from type 'LanguageProvider': getNarrativePerson, getLanguageWords
+tests/unit/actions/_action-test-template.ts(56,47): error TS2339: Property 'YOUR_ACTION' does not exist on type '{ readonly GOING: "if.action.going"; readonly ENTERING_ROOM: "if.action.entering_room"; readonly ENTERING: "if.action.entering"; readonly EXITING: "if.action.exiting"; readonly CLIMBING: "if.action.climbing"; ... 74 more ...; readonly ABOUT: "if.action.about"; }'.
+tests/unit/actions/_action-test-template.ts(83,47): error TS2339: Property 'YOUR_ACTION' does not exist on type '{ readonly GOING: "if.action.going"; readonly ENTERING_ROOM: "if.action.entering_room"; readonly ENTERING: "if.action.entering"; readonly EXITING: "if.action.exiting"; readonly CLIMBING: "if.action.climbing"; ... 74 more ...; readonly ABOUT: "if.action.about"; }'.
+tests/unit/actions/_action-test-template.ts(116,47): error TS2339: Property 'YOUR_ACTION' does not exist on type '{ readonly GOING: "if.action.going"; readonly ENTERING_ROOM: "if.action.entering_room"; readonly ENTERING: "if.action.entering"; readonly EXITING: "if.action.exiting"; readonly CLIMBING: "if.action.climbing"; ... 74 more ...; readonly ABOUT: "if.action.about"; }'.
+tests/unit/actions/_action-test-template.ts(146,47): error TS2339: Property 'YOUR_ACTION' does not exist on type '{ readonly GOING: "if.action.going"; readonly ENTERING_ROOM: "if.action.entering_room"; readonly ENTERING: "if.action.entering"; readonly EXITING: "if.action.exiting"; readonly CLIMBING: "if.action.climbing"; ... 74 more ...; readonly ABOUT: "if.action.about"; }'.
+tests/unit/actions/about-golden.test.ts(82,22): error TS2722: Cannot invoke an object which is possibly 'undefined'.
+tests/unit/actions/about-golden.test.ts(82,22): error TS18048: 'aboutAction.report' is possibly 'undefined'.
+tests/unit/actions/about-golden.test.ts(89,22): error TS2722: Cannot invoke an object which is possibly 'undefined'.
+tests/unit/actions/about-golden.test.ts(89,22): error TS18048: 'aboutAction.report' is possibly 'undefined'.
+tests/unit/actions/about-golden.test.ts(102,22): error TS2722: Cannot invoke an object which is possibly 'undefined'.
+tests/unit/actions/about-golden.test.ts(102,22): error TS18048: 'aboutAction.report' is possibly 'undefined'.
+tests/unit/actions/adr-231-provenance.test.ts(82,56): error TS2353: Object literal may only specify known properties, and 'text' does not exist in type '{ verb?: string | undefined; entity?: IFEntity | undefined; secondEntity?: IFEntity | undefined; preposition?: string | undefined; extras?: Record<string, any> | undefined; nounPhrase?: string | undefined; all?: boolean | undefined; rawInput?: string | undefined; }'.
+tests/unit/actions/adr-231-provenance.test.ts(162,56): error TS2353: Object literal may only specify known properties, and 'text' does not exist in type '{ verb?: string | undefined; entity?: IFEntity | undefined; secondEntity?: IFEntity | undefined; preposition?: string | undefined; extras?: Record<string, any> | undefined; nounPhrase?: string | undefined; all?: boolean | undefined; rawInput?: string | undefined; }'.
+tests/unit/actions/adr-231-provenance.test.ts(240,46): error TS2353: Object literal may only specify known properties, and 'isTransparent' does not exist in type 'ITrait'.
+tests/unit/actions/adr-231-provenance.test.ts(241,45): error TS2353: Object literal may only specify known properties, and 'isOpen' does not exist in type 'ITrait'.
+tests/unit/actions/adr-231-provenance.test.ts(252,56): error TS2353: Object literal may only specify known properties, and 'text' does not exist in type '{ verb?: string | undefined; entity?: IFEntity | undefined; secondEntity?: IFEntity | undefined; preposition?: string | undefined; extras?: Record<string, any> | undefined; nounPhrase?: string | undefined; all?: boolean | undefined; rawInput?: string | undefined; }'.
+tests/unit/actions/adr-231-provenance.test.ts(313,42): error TS2353: Object literal may only specify known properties, and 'cantTakeMessage' does not exist in type 'ITrait'.
+tests/unit/actions/adr-370-looking-under-emptying.test.ts(41,41): error TS2353: Object literal may only specify known properties, and 'name' does not exist in type 'ITrait'.
+tests/unit/actions/adr-370-looking-under-emptying.test.ts(175,43): error TS2353: Object literal may only specify known properties, and 'capacity' does not exist in type 'ITrait'.
+tests/unit/actions/adr-370-looking-under-emptying.test.ts(224,45): error TS2353: Object literal may only specify known properties, and 'isOpen' does not exist in type 'ITrait'.
+tests/unit/actions/adr-371-dispatching-verbs.test.ts(110,19): error TS7006: Parameter 'entity' implicitly has an 'any' type.
+tests/unit/actions/adr-371-dispatching-verbs.test.ts(199,18): error TS7006: Parameter '_e' implicitly has an 'any' type.
+tests/unit/actions/adr-371-dispatching-verbs.test.ts(199,22): error TS7006: Parameter '_w' implicitly has an 'any' type.
+tests/unit/actions/adr-371-dispatching-verbs.test.ts(199,26): error TS7006: Parameter '_a' implicitly has an 'any' type.
+tests/unit/actions/adr-371-dispatching-verbs.test.ts(199,30): error TS7006: Parameter 'shared' implicitly has an 'any' type.
+tests/unit/actions/adr-371-dispatching-verbs.test.ts(200,17): error TS7006: Parameter 'entity' implicitly has an 'any' type.
+tests/unit/actions/adr-371-dispatching-verbs.test.ts(200,25): error TS7006: Parameter '_w' implicitly has an 'any' type.
+tests/unit/actions/adr-371-dispatching-verbs.test.ts(200,29): error TS7006: Parameter '_a' implicitly has an 'any' type.
+tests/unit/actions/adr-371-dispatching-verbs.test.ts(200,33): error TS7006: Parameter 'shared' implicitly has an 'any' type.
+tests/unit/actions/adr-371-dispatching-verbs.test.ts(201,16): error TS7006: Parameter '_e' implicitly has an 'any' type.
+tests/unit/actions/adr-371-dispatching-verbs.test.ts(201,20): error TS7006: Parameter '_w' implicitly has an 'any' type.
+tests/unit/actions/adr-371-dispatching-verbs.test.ts(201,24): error TS7006: Parameter '_a' implicitly has an 'any' type.
+tests/unit/actions/adr-371-dispatching-verbs.test.ts(201,28): error TS7006: Parameter 'shared' implicitly has an 'any' type.
+tests/unit/actions/adr-371-dispatching-verbs.test.ts(202,17): error TS7006: Parameter '_e' implicitly has an 'any' type.
+tests/unit/actions/adr-371-dispatching-verbs.test.ts(202,21): error TS7006: Parameter '_w' implicitly has an 'any' type.
+tests/unit/actions/adr-371-dispatching-verbs.test.ts(202,25): error TS7006: Parameter '_a' implicitly has an 'any' type.
+tests/unit/actions/adr-371-dispatching-verbs.test.ts(202,29): error TS7006: Parameter 'error' implicitly has an 'any' type.
+tests/unit/actions/adr-376-expanse-actions.test.ts(129,12): error TS2571: Object is of type 'unknown'.
+tests/unit/actions/adr-376-expanse-actions.test.ts(275,28): error TS18046: 'e.data' is of type 'unknown'.
+tests/unit/actions/adr-376-expanse-actions.test.ts(278,28): error TS18046: 'e.data' is of type 'unknown'.
+tests/unit/actions/adr-376-expanse-actions.test.ts(284,30): error TS18046: 'e.data' is of type 'unknown'.
+tests/unit/actions/adr-376-expanse-actions.test.ts(285,12): error TS2571: Object is of type 'unknown'.
+tests/unit/actions/adr-376-expanse-actions.test.ts(296,51): error TS2339: Property 'messageId' does not exist on type '{}'.
+tests/unit/actions/adr-376-expanse-actions.test.ts(297,12): error TS2571: Object is of type 'unknown'.
+tests/unit/actions/adr-376-expanse-actions.test.ts(300,12): error TS2571: Object is of type 'unknown'.
+tests/unit/actions/adr-376-expanse-actions.test.ts(309,12): error TS2571: Object is of type 'unknown'.
+tests/unit/actions/adr-378-pushing-between-rooms.test.ts(147,13): error TS2352: Conversion of type 'ITrait | undefined' to type '{ isOn: boolean; }' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Property 'isOn' is missing in type 'ITrait' but required in type '{ isOn: boolean; }'.
+tests/unit/actions/adr-378-pushing-between-rooms.test.ts(207,13): error TS2352: Conversion of type 'ITrait | undefined' to type '{ isOn: boolean; }' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Property 'isOn' is missing in type 'ITrait' but required in type '{ isOn: boolean; }'.
+tests/unit/actions/adr-378-pushing-between-rooms.test.ts(238,6): error TS2352: Conversion of type 'ITrait | undefined' to type '{ isOpen: boolean; }' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Property 'isOpen' is missing in type 'ITrait' but required in type '{ isOpen: boolean; }'.
+tests/unit/actions/attacking-golden.test.ts(163,45): error TS2353: Object literal may only specify known properties, and 'broken' does not exist in type 'ITrait'.
+tests/unit/actions/attacking-golden.test.ts(186,9): error TS2353: Object literal may only specify known properties, and 'hitPoints' does not exist in type 'ITrait'.
+tests/unit/actions/attacking-golden.test.ts(206,14): error TS18048: 'destructible' is possibly 'undefined'.
+tests/unit/actions/attacking-golden.test.ts(206,27): error TS2339: Property 'hitPoints' does not exist on type 'ITrait'.
+tests/unit/actions/attacking-player-death.test.ts(36,74): error TS2353: Object literal may only specify known properties, and 'text' does not exist in type '{ verb?: string | undefined; entity?: IFEntity | undefined; secondEntity?: IFEntity | undefined; preposition?: string | undefined; extras?: Record<string, any> | undefined; nounPhrase?: string | undefined; all?: boolean | undefined; rawInput?: string | undefined; }'.
+tests/unit/actions/attacking-player-death.test.ts(40,20): error TS2722: Cannot invoke an object which is possibly 'undefined'.
+tests/unit/actions/attacking-player-death.test.ts(40,20): error TS18048: 'attackingAction.report' is possibly 'undefined'.
+tests/unit/actions/attacking-player-death.test.ts(56,71): error TS2353: Object literal may only specify known properties, and 'text' does not exist in type '{ verb?: string | undefined; entity?: IFEntity | undefined; secondEntity?: IFEntity | undefined; preposition?: string | undefined; extras?: Record<string, any> | undefined; nounPhrase?: string | undefined; all?: boolean | undefined; rawInput?: string | undefined; }'.
+tests/unit/actions/attacking-player-death.test.ts(60,20): error TS2722: Cannot invoke an object which is possibly 'undefined'.
+tests/unit/actions/attacking-player-death.test.ts(60,20): error TS18048: 'attackingAction.report' is possibly 'undefined'.
+tests/unit/actions/attacking-reason-codes.test.ts(51,7): error TS2353: Object literal may only specify known properties, and 'hitPoints' does not exist in type 'ITrait'.
+tests/unit/actions/attacking-reason-codes.test.ts(72,7): error TS2353: Object literal may only specify known properties, and 'hitPoints' does not exist in type 'ITrait'.
+tests/unit/actions/attacking-reason-codes.test.ts(81,41): error TS2353: Object literal may only specify known properties, and 'weaponType' does not exist in type 'ITrait'.
+tests/unit/actions/attacking-reason-codes.test.ts(102,7): error TS2353: Object literal may only specify known properties, and 'hitPoints' does not exist in type 'ITrait'.
+tests/unit/actions/attacking-reason-codes.test.ts(123,7): error TS2353: Object literal may only specify known properties, and 'hitPoints' does not exist in type 'ITrait'.
+tests/unit/actions/attacking.test.ts(48,7): error TS2353: Object literal may only specify known properties, and 'minDamage' does not exist in type 'ITrait'.
+tests/unit/actions/attacking.test.ts(68,9): error TS2353: Object literal may only specify known properties, and 'text' does not exist in type '{ verb?: string | undefined; entity?: IFEntity | undefined; secondEntity?: IFEntity | undefined; preposition?: string | undefined; extras?: Record<string, any> | undefined; nounPhrase?: string | undefined; all?: boolean | undefined; rawInput?: string | undefined; }'.
+tests/unit/actions/attacking.test.ts(82,9): error TS2353: Object literal may only specify known properties, and 'text' does not exist in type '{ verb?: string | undefined; entity?: IFEntity | undefined; secondEntity?: IFEntity | undefined; preposition?: string | undefined; extras?: Record<string, any> | undefined; nounPhrase?: string | undefined; all?: boolean | undefined; rawInput?: string | undefined; }'.
+tests/unit/actions/attacking.test.ts(94,9): error TS2353: Object literal may only specify known properties, and 'text' does not exist in type '{ verb?: string | undefined; entity?: IFEntity | undefined; secondEntity?: IFEntity | undefined; preposition?: string | undefined; extras?: Record<string, any> | undefined; nounPhrase?: string | undefined; all?: boolean | undefined; rawInput?: string | undefined; }'.
+tests/unit/actions/attacking.test.ts(101,22): error TS2722: Cannot invoke an object which is possibly 'undefined'.
+tests/unit/actions/attacking.test.ts(101,22): error TS18048: 'attackingAction.report' is possibly 'undefined'.
+tests/unit/actions/attacking.test.ts(129,9): error TS2353: Object literal may only specify known properties, and 'text' does not exist in type '{ verb?: string | undefined; entity?: IFEntity | undefined; secondEntity?: IFEntity | undefined; preposition?: string | undefined; extras?: Record<string, any> | undefined; nounPhrase?: string | undefined; all?: boolean | undefined; rawInput?: string | undefined; }'.
+tests/unit/actions/attacking.test.ts(147,9): error TS2353: Object literal may only specify known properties, and 'text' does not exist in type '{ verb?: string | undefined; entity?: IFEntity | undefined; secondEntity?: IFEntity | undefined; preposition?: string | undefined; extras?: Record<string, any> | undefined; nounPhrase?: string | undefined; all?: boolean | undefined; rawInput?: string | undefined; }'.
+tests/unit/actions/attacking.test.ts(164,9): error TS2353: Object literal may only specify known properties, and 'text' does not exist in type '{ verb?: string | undefined; entity?: IFEntity | undefined; secondEntity?: IFEntity | undefined; preposition?: string | undefined; extras?: Record<string, any> | undefined; nounPhrase?: string | undefined; all?: boolean | undefined; rawInput?: string | undefined; }'.
+tests/unit/actions/attacking.test.ts(180,9): error TS2353: Object literal may only specify known properties, and 'minDamage' does not exist in type 'ITrait'.
+tests/unit/actions/attacking.test.ts(202,9): error TS2353: Object literal may only specify known properties, and 'text' does not exist in type '{ verb?: string | undefined; entity?: IFEntity | undefined; secondEntity?: IFEntity | undefined; preposition?: string | undefined; extras?: Record<string, any> | undefined; nounPhrase?: string | undefined; all?: boolean | undefined; rawInput?: string | undefined; }'.
+tests/unit/actions/attacking.test.ts(229,9): error TS2353: Object literal may only specify known properties, and 'text' does not exist in type '{ verb?: string | undefined; entity?: IFEntity | undefined; secondEntity?: IFEntity | undefined; preposition?: string | undefined; extras?: Record<string, any> | undefined; nounPhrase?: string | undefined; all?: boolean | undefined; rawInput?: string | undefined; }'.
+tests/unit/actions/attacking.test.ts(243,9): error TS2353: Object literal may only specify known properties, and 'text' does not exist in type '{ verb?: string | undefined; entity?: IFEntity | undefined; secondEntity?: IFEntity | undefined; preposition?: string | undefined; extras?: Record<string, any> | undefined; nounPhrase?: string | undefined; all?: boolean | undefined; rawInput?: string | undefined; }'.
+tests/unit/actions/attacking.test.ts(257,9): error TS2353: Object literal may only specify known properties, and 'text' does not exist in type '{ verb?: string | undefined; entity?: IFEntity | undefined; secondEntity?: IFEntity | undefined; preposition?: string | undefined; extras?: Record<string, any> | undefined; nounPhrase?: string | undefined; all?: boolean | undefined; rawInput?: string | undefined; }'.
+tests/unit/actions/attacking.test.ts(271,9): error TS2353: Object literal may only specify known properties, and 'text' does not exist in type '{ verb?: string | undefined; entity?: IFEntity | undefined; secondEntity?: IFEntity | undefined; preposition?: string | undefined; extras?: Record<string, any> | undefined; nounPhrase?: string | undefined; all?: boolean | undefined; rawInput?: string | undefined; }'.
+tests/unit/actions/attacking.test.ts(286,9): error TS2353: Object literal may only specify known properties, and 'health' does not exist in type 'ITrait'.
+tests/unit/actions/attacking.test.ts(310,9): error TS2353: Object literal may only specify known properties, and 'text' does not exist in type '{ verb?: string | undefined; entity?: IFEntity | undefined; secondEntity?: IFEntity | undefined; preposition?: string | undefined; extras?: Record<string, any> | undefined; nounPhrase?: string | undefined; all?: boolean | undefined; rawInput?: string | undefined; }'.
+tests/unit/actions/attacking.test.ts(325,9): error TS2353: Object literal may only specify known properties, and 'health' does not exist in type 'ITrait'.
+tests/unit/actions/attacking.test.ts(346,9): error TS2353: Object literal may only specify known properties, and 'broken' does not exist in type 'ITrait'.
+tests/unit/actions/attacking.test.ts(352,9): error TS2353: Object literal may only specify known properties, and 'text' does not exist in type '{ verb?: string | undefined; entity?: IFEntity | undefined; secondEntity?: IFEntity | undefined; preposition?: string | undefined; extras?: Record<string, any> | undefined; nounPhrase?: string | undefined; all?: boolean | undefined; rawInput?: string | undefined; }'.
+tests/unit/actions/attacking.test.ts(369,9): error TS2353: Object literal may only specify known properties, and 'broken' does not exist in type 'ITrait'.
+tests/unit/actions/attacking.test.ts(375,9): error TS2353: Object literal may only specify known properties, and 'text' does not exist in type '{ verb?: string | undefined; entity?: IFEntity | undefined; secondEntity?: IFEntity | undefined; preposition?: string | undefined; extras?: Record<string, any> | undefined; nounPhrase?: string | undefined; all?: boolean | undefined; rawInput?: string | undefined; }'.
+tests/unit/actions/attacking.test.ts(380,22): error TS2722: Cannot invoke an object which is possibly 'undefined'.
+tests/unit/actions/attacking.test.ts(380,22): error TS18048: 'attackingAction.report' is possibly 'undefined'.
+tests/unit/actions/attacking.test.ts(394,9): error TS2353: Object literal may only specify known properties, and 'broken' does not exist in type 'ITrait'.
+tests/unit/actions/attacking.test.ts(400,9): error TS2353: Object literal may only specify known properties, and 'text' does not exist in type '{ verb?: string | undefined; entity?: IFEntity | undefined; secondEntity?: IFEntity | undefined; preposition?: string | undefined; extras?: Record<string, any> | undefined; nounPhrase?: string | undefined; all?: boolean | undefined; rawInput?: string | undefined; }'.
+tests/unit/actions/attacking.test.ts(405,22): error TS2722: Cannot invoke an object which is possibly 'undefined'.
+tests/unit/actions/attacking.test.ts(405,22): error TS18048: 'attackingAction.report' is possibly 'undefined'.
+tests/unit/actions/attacking.test.ts(421,22): error TS2722: Cannot invoke an object which is possibly 'undefined'.
+tests/unit/actions/attacking.test.ts(421,22): error TS18048: 'attackingAction.blocked' is possibly 'undefined'.
+tests/unit/actions/attacking.test.ts(434,9): error TS2353: Object literal may only specify known properties, and 'broken' does not exist in type 'ITrait'.
+tests/unit/actions/attacking.test.ts(446,22): error TS2722: Cannot invoke an object which is possibly 'undefined'.
+tests/unit/actions/attacking.test.ts(446,22): error TS18048: 'attackingAction.report' is possibly 'undefined'.
+tests/unit/actions/attacking.test.ts(459,9): error TS2353: Object literal may only specify known properties, and 'text' does not exist in type '{ verb?: string | undefined; entity?: IFEntity | undefined; secondEntity?: IFEntity | undefined; preposition?: string | undefined; extras?: Record<string, any> | undefined; nounPhrase?: string | undefined; all?: boolean | undefined; rawInput?: string | undefined; }'.
+tests/unit/actions/attacking.test.ts(464,22): error TS2722: Cannot invoke an object which is possibly 'undefined'.
+tests/unit/actions/attacking.test.ts(464,22): error TS18048: 'attackingAction.blocked' is possibly 'undefined'.
+tests/unit/actions/attacking.test.ts(479,9): error TS2353: Object literal may only specify known properties, and 'broken' does not exist in type 'ITrait'.
+tests/unit/actions/attacking.test.ts(485,9): error TS2353: Object literal may only specify known properties, and 'text' does not exist in type '{ verb?: string | undefined; entity?: IFEntity | undefined; secondEntity?: IFEntity | undefined; preposition?: string | undefined; extras?: Record<string, any> | undefined; nounPhrase?: string | undefined; all?: boolean | undefined; rawInput?: string | undefined; }'.
+tests/unit/actions/attacking.test.ts(490,22): error TS2722: Cannot invoke an object which is possibly 'undefined'.
+tests/unit/actions/attacking.test.ts(490,22): error TS18048: 'attackingAction.report' is possibly 'undefined'.
+tests/unit/actions/attacking.test.ts(495,14): error TS18046: 'attackedEvent.data' is of type 'unknown'.
+tests/unit/actions/attacking.test.ts(505,9): error TS2353: Object literal may only specify known properties, and 'text' does not exist in type '{ verb?: string | undefined; entity?: IFEntity | undefined; secondEntity?: IFEntity | undefined; preposition?: string | undefined; extras?: Record<string, any> | undefined; nounPhrase?: string | undefined; all?: boolean | undefined; rawInput?: string | undefined; }'.
+tests/unit/actions/attacking.test.ts(510,22): error TS2722: Cannot invoke an object which is possibly 'undefined'.
+tests/unit/actions/attacking.test.ts(510,22): error TS18048: 'attackingAction.report' is possibly 'undefined'.
+tests/unit/actions/climbing-golden.test.ts(89,9): error TS2353: Object literal may only specify known properties, and 'enterable' does not exist in type 'ITrait'.
+tests/unit/actions/climbing-golden.test.ts(130,9): error TS2353: Object literal may only specify known properties, and 'exits' does not exist in type 'ITrait'.
+tests/unit/actions/climbing-golden.test.ts(187,9): error TS2353: Object literal may only specify known properties, and 'exits' does not exist in type 'ITrait'.
+tests/unit/actions/climbing-golden.test.ts(195,9): error TS2353: Object literal may only specify known properties, and 'exits' does not exist in type 'ITrait'.
+tests/unit/actions/climbing-golden.test.ts(242,9): error TS2353: Object literal may only specify known properties, and 'exits' does not exist in type 'ITrait'.
+tests/unit/actions/climbing-golden.test.ts(274,9): error TS2353: Object literal may only specify known properties, and 'enterable' does not exist in type 'ITrait'.
+tests/unit/actions/climbing-golden.test.ts(310,9): error TS2353: Object literal may only specify known properties, and 'canClimb' does not exist in type 'ITrait'.
+tests/unit/actions/climbing-golden.test.ts(333,9): error TS2353: Object literal may only specify known properties, and 'canClimb' does not exist in type 'ITrait'.
+tests/unit/actions/climbing-golden.test.ts(335,48): error TS2353: Object literal may only specify known properties, and 'enterable' does not exist in type 'ITrait'.
+tests/unit/actions/climbing-golden.test.ts(366,9): error TS2353: Object literal may only specify known properties, and 'canClimb' does not exist in type 'ITrait'.
+tests/unit/actions/climbing-golden.test.ts(398,9): error TS2353: Object literal may only specify known properties, and 'exits' does not exist in type 'ITrait'.
+tests/unit/actions/climbing-golden.test.ts(436,9): error TS2353: Object literal may only specify known properties, and 'enterable' does not exist in type 'ITrait'.
+tests/unit/actions/climbing-golden.test.ts(475,7): error TS18048: 'roomTrait' is possibly 'undefined'.
+tests/unit/actions/climbing-golden.test.ts(475,17): error TS2339: Property 'exits' does not exist on type 'ITrait'.
+tests/unit/actions/climbing-golden.test.ts(508,7): error TS18048: 'atticRoom' is possibly 'undefined'.
+tests/unit/actions/climbing-golden.test.ts(508,17): error TS2339: Property 'exits' does not exist on type 'ITrait'.
+tests/unit/actions/climbing-golden.test.ts(534,45): error TS2353: Object literal may only specify known properties, and 'enterable' does not exist in type 'ITrait'.
+tests/unit/actions/climbing-traversal.test.ts(81,39): error TS2339: Property 'params' does not exist on type '{}'.
+tests/unit/actions/closing-golden.test.ts(41,9): error TS2353: Object literal may only specify known properties, and 'text' does not exist in type '{ verb?: string | undefined; entity?: IFEntity | undefined; secondEntity?: IFEntity | undefined; preposition?: string | undefined; extras?: Record<string, any> | undefined; nounPhrase?: string | undefined; all?: boolean | undefined; rawInput?: string | undefined; }'.
+tests/unit/actions/closing-golden.test.ts(188,9): error TS2353: Object literal may only specify known properties, and 'isOpen' does not exist in type 'ITrait'.
+tests/unit/actions/closing-golden.test.ts(353,7): error TS2353: Object literal may only specify known properties, and 'isOpen' does not exist in type 'ITrait'.
+tests/unit/actions/closing-golden.test.ts(511,55): error TS2353: Object literal may only specify known properties, and 'text' does not exist in type '{ verb?: string | undefined; entity?: IFEntity | undefined; secondEntity?: IFEntity | undefined; preposition?: string | undefined; extras?: Record<string, any> | undefined; nounPhrase?: string | undefined; all?: boolean | undefined; rawInput?: string | undefined; }'.
+tests/unit/actions/deadly-room-death.test.ts(52,20): error TS2722: Cannot invoke an object which is possibly 'undefined'.
+tests/unit/actions/deadly-room-death.test.ts(52,20): error TS18048: 'deadlyRoomDeathAction.report' is possibly 'undefined'.
+tests/unit/actions/dialogue-selector-socket.test.ts(55,10): error TS2722: Cannot invoke an object which is possibly 'undefined'.
+tests/unit/actions/dialogue-selector-socket.test.ts(123,18): error TS2722: Cannot invoke an object which is possibly 'undefined'.
+tests/unit/actions/dialogue-selector-socket.test.ts(141,20): error TS2722: Cannot invoke an object which is possibly 'undefined'.
+tests/unit/actions/dialogue-selector-socket.test.ts(163,20): error TS2722: Cannot invoke an object which is possibly 'undefined'.
+tests/unit/actions/dialogue-selector-socket.test.ts(163,20): error TS18048: 'askingAction.report' is possibly 'undefined'.
+tests/unit/actions/drinking-interceptor.test.ts(41,55): error TS2353: Object literal may only specify known properties, and 'text' does not exist in type '{ verb?: string | undefined; entity?: IFEntity | undefined; secondEntity?: IFEntity | undefined; preposition?: string | undefined; extras?: Record<string, any> | undefined; nounPhrase?: string | undefined; all?: boolean | undefined; rawInput?: string | undefined; }'.
+tests/unit/actions/dropping-golden.test.ts(43,9): error TS2353: Object literal may only specify known properties, and 'text' does not exist in type '{ verb?: string | undefined; entity?: IFEntity | undefined; secondEntity?: IFEntity | undefined; preposition?: string | undefined; extras?: Record<string, any> | undefined; nounPhrase?: string | undefined; all?: boolean | undefined; rawInput?: string | undefined; }'.
+tests/unit/actions/dropping-golden.test.ts(109,9): error TS2353: Object literal may only specify known properties, and 'worn' does not exist in type 'ITrait'.
+tests/unit/actions/dropping-golden.test.ts(139,9): error TS2353: Object literal may only specify known properties, and 'capacity' does not exist in type 'ITrait'.
+tests/unit/actions/dropping-golden.test.ts(180,21): error TS18048: 'room' is possibly 'undefined'.
+tests/unit/actions/dropping-golden.test.ts(202,9): error TS2353: Object literal may only specify known properties, and 'isOpen' does not exist in type 'ITrait'.
+tests/unit/actions/dropping-golden.test.ts(410,43): error TS2353: Object literal may only specify known properties, and 'isOpen' does not exist in type 'ITrait'.
+tests/unit/actions/dropping-golden.test.ts(484,9): error TS2353: Object literal may only specify known properties, and 'worn' does not exist in type 'ITrait'.
+tests/unit/actions/dropping-golden.test.ts(545,7): error TS2353: Object literal may only specify known properties, and 'worn' does not exist in type 'ITrait'.
+tests/unit/actions/dropping-golden.test.ts(582,57): error TS2353: Object literal may only specify known properties, and 'text' does not exist in type '{ verb?: string | undefined; entity?: IFEntity | undefined; secondEntity?: IFEntity | undefined; preposition?: string | undefined; extras?: Record<string, any> | undefined; nounPhrase?: string | undefined; all?: boolean | undefined; rawInput?: string | undefined; }'.
+tests/unit/actions/eating-interceptor.test.ts(41,53): error TS2353: Object literal may only specify known properties, and 'text' does not exist in type '{ verb?: string | undefined; entity?: IFEntity | undefined; secondEntity?: IFEntity | undefined; preposition?: string | undefined; extras?: Record<string, any> | undefined; nounPhrase?: string | undefined; all?: boolean | undefined; rawInput?: string | undefined; }'.
+tests/unit/actions/entering-golden.test.ts(83,9): error TS2353: Object literal may only specify known properties, and 'enterable' does not exist in type 'ITrait'.
+tests/unit/actions/entering-golden.test.ts(87,9): error TS2353: Object literal may only specify known properties, and 'preposition' does not exist in type 'ITrait'.
+tests/unit/actions/entering-golden.test.ts(91,9): error TS2353: Object literal may only specify known properties, and 'isOpen' does not exist in type 'ITrait'.
+tests/unit/actions/entering-golden.test.ts(116,9): error TS2353: Object literal may only specify known properties, and 'enterable' does not exist in type 'ITrait'.
+tests/unit/actions/entering-golden.test.ts(120,9): error TS2353: Object literal may only specify known properties, and 'preposition' does not exist in type 'ITrait'.
+tests/unit/actions/entering-golden.test.ts(146,9): error TS2353: Object literal may only specify known properties, and 'enterable' does not exist in type 'ITrait'.
+tests/unit/actions/entering-golden.test.ts(151,9): error TS2353: Object literal may only specify known properties, and 'preposition' does not exist in type 'ITrait'.
+tests/unit/actions/entering-golden.test.ts(155,9): error TS2353: Object literal may only specify known properties, and 'isOpen' does not exist in type 'ITrait'.
+tests/unit/actions/entering-golden.test.ts(180,9): error TS2353: Object literal may only specify known properties, and 'enterable' does not exist in type 'ITrait'.
+tests/unit/actions/entering-golden.test.ts(184,9): error TS2353: Object literal may only specify known properties, and 'preposition' does not exist in type 'ITrait'.
+tests/unit/actions/entering-golden.test.ts(212,9): error TS2353: Object literal may only specify known properties, and 'enterable' does not exist in type 'ITrait'.
+tests/unit/actions/entering-golden.test.ts(216,9): error TS2353: Object literal may only specify known properties, and 'preposition' does not exist in type 'ITrait'.
+tests/unit/actions/entering-golden.test.ts(243,9): error TS2353: Object literal may only specify known properties, and 'enterable' does not exist in type 'ITrait'.
+tests/unit/actions/entering-golden.test.ts(247,9): error TS2353: Object literal may only specify known properties, and 'preposition' does not exist in type 'ITrait'.
+tests/unit/actions/entering-golden.test.ts(283,7): error TS2353: Object literal may only specify known properties, and 'enterable' does not exist in type 'ITrait'.
+tests/unit/actions/entering-golden.test.ts(287,7): error TS2353: Object literal may only specify known properties, and 'preposition' does not exist in type 'ITrait'.
+tests/unit/actions/entering-golden.test.ts(313,7): error TS2353: Object literal may only specify known properties, and 'enterable' does not exist in type 'ITrait'.
+tests/unit/actions/entering-golden.test.ts(317,7): error TS2353: Object literal may only specify known properties, and 'preposition' does not exist in type 'ITrait'.
+tests/unit/actions/entering-golden.test.ts(366,7): error TS2353: Object literal may only specify known properties, and 'enterable' does not exist in type 'ITrait'.
+tests/unit/actions/entering-golden.test.ts(370,7): error TS2353: Object literal may only specify known properties, and 'preposition' does not exist in type 'ITrait'.
+tests/unit/actions/entering-golden.test.ts(374,7): error TS2353: Object literal may only specify known properties, and 'isOpen' does not exist in type 'ITrait'.
+tests/unit/actions/entering-golden.test.ts(401,7): error TS2353: Object literal may only specify known properties, and 'enterable' does not exist in type 'ITrait'.
+tests/unit/actions/entering-golden.test.ts(405,7): error TS2353: Object literal may only specify known properties, and 'preposition' does not exist in type 'ITrait'.
+tests/unit/actions/entering-golden.test.ts(433,7): error TS2353: Object literal may only specify known properties, and 'enterable' does not exist in type 'ITrait'.
+tests/unit/actions/entering-golden.test.ts(437,7): error TS2353: Object literal may only specify known properties, and 'preposition' does not exist in type 'ITrait'.
+tests/unit/actions/entering-golden.test.ts(441,7): error TS2353: Object literal may only specify known properties, and 'isOpen' does not exist in type 'ITrait'.
+tests/unit/actions/examining-golden.test.ts(136,9): error TS2353: Object literal may only specify known properties, and 'description' does not exist in type 'ITrait'.
+tests/unit/actions/examining-golden.test.ts(219,9): error TS2353: Object literal may only specify known properties, and 'isOpen' does not exist in type 'ITrait'.
+tests/unit/actions/examining-golden.test.ts(221,43): error TS2353: Object literal may only specify known properties, and 'name' does not exist in type 'ITrait'.
+tests/unit/actions/examining-golden.test.ts(327,45): error TS2353: Object literal may only specify known properties, and 'name' does not exist in type 'ITrait'.
+tests/unit/actions/examining-golden.test.ts(490,51): error TS2353: Object literal may only specify known properties, and 'name' does not exist in type 'ITrait'.
+tests/unit/actions/examining-golden.test.ts(493,9): error TS2353: Object literal may only specify known properties, and 'isOpen' does not exist in type 'ITrait'.
+tests/unit/actions/examining-golden.test.ts(497,9): error TS2353: Object literal may only specify known properties, and 'isOn' does not exist in type 'ITrait'.
+tests/unit/actions/examining-golden.test.ts(684,41): error TS2353: Object literal may only specify known properties, and 'isOpen' does not exist in type 'ITrait'.
+tests/unit/actions/examining-golden.test.ts(690,41): error TS2353: Object literal may only specify known properties, and 'name' does not exist in type 'ITrait'.
+tests/unit/actions/examining-golden.test.ts(713,43): error TS2353: Object literal may only specify known properties, and 'name' does not exist in type 'ITrait'.
+tests/unit/actions/examining-golden.test.ts(736,43): error TS2353: Object literal may only specify known properties, and 'name' does not exist in type 'ITrait'.
+tests/unit/actions/examining-id-mode.test.ts(51,44): error TS2353: Object literal may only specify known properties, and 'name' does not exist in type 'ITrait'.
+tests/unit/actions/exit-legality.test.ts(19,3): error TS2300: Duplicate identifier 'ActorTrait'.
+tests/unit/actions/exit-legality.test.ts(24,10): error TS2300: Duplicate identifier 'ActorTrait'.
+tests/unit/actions/exit-legality.test.ts(72,53): error TS2345: Argument of type '"north"' is not assignable to parameter of type 'ExitKey'.
+tests/unit/actions/exit-legality.test.ts(85,6): error TS2352: Conversion of type 'ITrait | undefined' to type '{ isLocked: boolean; }' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Property 'isLocked' is missing in type 'ITrait' but required in type '{ isLocked: boolean; }'.
+tests/unit/actions/exit-legality.test.ts(95,53): error TS2345: Argument of type '"north"' is not assignable to parameter of type 'ExitKey'.
+tests/unit/actions/exit-legality.test.ts(150,53): error TS2345: Argument of type '"north"' is not assignable to parameter of type 'ExitKey'.
+tests/unit/actions/exiting-golden.test.ts(68,47): error TS2353: Object literal may only specify known properties, and 'enterable' does not exist in type 'ITrait'.
+tests/unit/actions/exiting-golden.test.ts(90,47): error TS2353: Object literal may only specify known properties, and 'enterable' does not exist in type 'ITrait'.
+tests/unit/actions/exiting-golden.test.ts(112,47): error TS2353: Object literal may only specify known properties, and 'enterable' does not exist in type 'ITrait'.
+tests/unit/actions/exiting-golden.test.ts(160,9): error TS2353: Object literal may only specify known properties, and 'enterable' does not exist in type 'ITrait'.
+tests/unit/actions/exiting-golden.test.ts(187,9): error TS2353: Object literal may only specify known properties, and 'enterable' does not exist in type 'ITrait'.
+tests/unit/actions/exiting-golden.test.ts(213,9): error TS2353: Object literal may only specify known properties, and 'enterable' does not exist in type 'ITrait'.
+tests/unit/actions/exiting-golden.test.ts(217,9): error TS2353: Object literal may only specify known properties, and 'isOpen' does not exist in type 'ITrait'.
+tests/unit/actions/exiting-golden.test.ts(243,9): error TS2353: Object literal may only specify known properties, and 'enterable' does not exist in type 'ITrait'.
+tests/unit/actions/exiting-golden.test.ts(278,7): error TS2353: Object literal may only specify known properties, and 'enterable' does not exist in type 'ITrait'.
+tests/unit/actions/exiting-golden.test.ts(303,7): error TS2353: Object literal may only specify known properties, and 'enterable' does not exist in type 'ITrait'.
+tests/unit/actions/exiting-golden.test.ts(372,7): error TS2353: Object literal may only specify known properties, and 'enterable' does not exist in type 'ITrait'.
+tests/unit/actions/exiting-golden.test.ts(376,7): error TS2353: Object literal may only specify known properties, and 'isOpen' does not exist in type 'ITrait'.
+tests/unit/actions/exiting-golden.test.ts(401,7): error TS2353: Object literal may only specify known properties, and 'enterable' does not exist in type 'ITrait'.
+tests/unit/actions/exiting-golden.test.ts(405,7): error TS2353: Object literal may only specify known properties, and 'isOpen' does not exist in type 'ITrait'.
+tests/unit/actions/giving-golden.test.ts(138,9): error TS2353: Object literal may only specify known properties, and 'inventoryLimit' does not exist in type 'ITrait'.
+tests/unit/actions/giving-golden.test.ts(170,9): error TS2353: Object literal may only specify known properties, and 'weight' does not exist in type 'ITrait'.
+tests/unit/actions/giving-golden.test.ts(176,9): error TS2353: Object literal may only specify known properties, and 'inventoryLimit' does not exist in type 'ITrait'.
+tests/unit/actions/giving-golden.test.ts(207,9): error TS2353: Object literal may only specify known properties, and 'preferences' does not exist in type 'ITrait'.
+tests/unit/actions/giving-golden.test.ts(238,9): error TS2353: Object literal may only specify known properties, and 'preferences' does not exist in type 'ITrait'.
+tests/unit/actions/giving-golden.test.ts(273,9): error TS2353: Object literal may only specify known properties, and 'preferences' does not exist in type 'ITrait'.
+tests/unit/actions/giving-golden.test.ts(393,7): error TS2353: Object literal may only specify known properties, and 'preferences' does not exist in type 'ITrait'.
+tests/unit/actions/giving-golden.test.ts(424,7): error TS2353: Object literal may only specify known properties, and 'weight' does not exist in type 'ITrait'.
+tests/unit/actions/giving-golden.test.ts(430,7): error TS2353: Object literal may only specify known properties, and 'inventoryLimit' does not exist in type 'ITrait'.
+tests/unit/actions/giving-golden.test.ts(460,7): error TS2353: Object literal may only specify known properties, and 'inventoryLimit' does not exist in type 'ITrait'.
+tests/unit/actions/giving-golden.test.ts(525,7): error TS2353: Object literal may only specify known properties, and 'preferences' does not exist in type 'ITrait'.
+tests/unit/actions/giving-golden.test.ts(558,7): error TS2353: Object literal may only specify known properties, and 'inventoryLimit' does not exist in type 'ITrait'.
+tests/unit/actions/giving-golden.test.ts(596,7): error TS2353: Object literal may only specify known properties, and 'preferences' does not exist in type 'ITrait'.
+tests/unit/actions/going-computed-exits.test.ts(359,37): error TS2339: Property 'messageId' does not exist on type '{}'.
+tests/unit/actions/going-computed-exits.test.ts(370,37): error TS2339: Property 'messageId' does not exist on type '{}'.
+tests/unit/actions/going-golden.test.ts(165,9): error TS2353: Object literal may only specify known properties, and 'exits' does not exist in type 'ITrait'.
+tests/unit/actions/going-golden.test.ts(194,9): error TS2353: Object literal may only specify known properties, and 'isOpen' does not exist in type 'ITrait'.
+tests/unit/actions/going-golden.test.ts(203,9): error TS2353: Object literal may only specify known properties, and 'exits' does not exist in type 'ITrait'.
+tests/unit/actions/going-golden.test.ts(229,44): error TS2353: Object literal may only specify known properties, and 'isOpen' does not exist in type 'ITrait'.
+tests/unit/actions/going-golden.test.ts(242,9): error TS2353: Object literal may only specify known properties, and 'exits' does not exist in type 'ITrait'.
+tests/unit/actions/going-golden.test.ts(256,15): error TS2352: Conversion of type 'ITrait | undefined' to type '{ isOpen: boolean; }' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Property 'isOpen' is missing in type 'ITrait' but required in type '{ isOpen: boolean; }'.
+tests/unit/actions/going-golden.test.ts(269,9): error TS2353: Object literal may only specify known properties, and 'isOpen' does not exist in type 'ITrait'.
+tests/unit/actions/going-golden.test.ts(273,9): error TS2353: Object literal may only specify known properties, and 'isLocked' does not exist in type 'ITrait'.
+tests/unit/actions/going-golden.test.ts(283,9): error TS2353: Object literal may only specify known properties, and 'exits' does not exist in type 'ITrait'.
+tests/unit/actions/going-golden.test.ts(319,9): error TS2353: Object literal may only specify known properties, and 'exits' does not exist in type 'ITrait'.
+tests/unit/actions/going-golden.test.ts(352,9): error TS2353: Object literal may only specify known properties, and 'exits' does not exist in type 'ITrait'.
+tests/unit/actions/going-golden.test.ts(359,9): error TS2353: Object literal may only specify known properties, and 'isDark' does not exist in type 'ITrait'.
+tests/unit/actions/going-golden.test.ts(393,9): error TS2353: Object literal may only specify known properties, and 'exits' does not exist in type 'ITrait'.
+tests/unit/actions/going-golden.test.ts(400,9): error TS2353: Object literal may only specify known properties, and 'exits' does not exist in type 'ITrait'.
+tests/unit/actions/going-golden.test.ts(456,9): error TS2353: Object literal may only specify known properties, and 'exits' does not exist in type 'ITrait'.
+tests/unit/actions/going-golden.test.ts(460,9): error TS2353: Object literal may only specify known properties, and 'exits' does not exist in type 'ITrait'.
+tests/unit/actions/going-golden.test.ts(498,9): error TS2353: Object literal may only specify known properties, and 'exits' does not exist in type 'ITrait'.
+tests/unit/actions/going-golden.test.ts(533,9): error TS2353: Object literal may only specify known properties, and 'visited' does not exist in type 'ITrait'.
+tests/unit/actions/going-golden.test.ts(541,9): error TS2353: Object literal may only specify known properties, and 'visited' does not exist in type 'ITrait'.
+tests/unit/actions/going-golden.test.ts(576,9): error TS2353: Object literal may only specify known properties, and 'isOpen' does not exist in type 'ITrait'.
+tests/unit/actions/going-golden.test.ts(584,9): error TS2353: Object literal may only specify known properties, and 'exits' does not exist in type 'ITrait'.
+tests/unit/actions/going-golden.test.ts(617,9): error TS2353: Object literal may only specify known properties, and 'isLit' does not exist in type 'ITrait'.
+tests/unit/actions/going-golden.test.ts(625,9): error TS2353: Object literal may only specify known properties, and 'exits' does not exist in type 'ITrait'.
+tests/unit/actions/going-golden.test.ts(632,9): error TS2353: Object literal may only specify known properties, and 'isDark' does not exist in type 'ITrait'.
+tests/unit/actions/going-golden.test.ts(665,9): error TS2353: Object literal may only specify known properties, and 'exits' does not exist in type 'ITrait'.
+tests/unit/actions/going-golden.test.ts(677,9): error TS2353: Object literal may only specify known properties, and 'text' does not exist in type '{ verb?: string | undefined; entity?: IFEntity | undefined; secondEntity?: IFEntity | undefined; preposition?: string | undefined; extras?: Record<string, any> | undefined; nounPhrase?: string | undefined; all?: boolean | undefined; rawInput?: string | undefined; }'.
+tests/unit/actions/going-golden.test.ts(706,9): error TS2353: Object literal may only specify known properties, and 'exits' does not exist in type 'ITrait'.
+tests/unit/actions/going-golden.test.ts(759,11): error TS2353: Object literal may only specify known properties, and 'exits' does not exist in type 'ITrait'.
+tests/unit/actions/going-golden.test.ts(807,7): error TS2353: Object literal may only specify known properties, and 'exits' does not exist in type 'ITrait'.
+tests/unit/actions/going-golden.test.ts(842,7): error TS2353: Object literal may only specify known properties, and 'isOpen' does not exist in type 'ITrait'.
+tests/unit/actions/going-golden.test.ts(850,7): error TS2353: Object literal may only specify known properties, and 'exits' does not exist in type 'ITrait'.
+tests/unit/actions/going-golden.test.ts(887,7): error TS2353: Object literal may only specify known properties, and 'exits' does not exist in type 'ITrait'.
+tests/unit/actions/going-golden.test.ts(924,7): error TS2353: Object literal may only specify known properties, and 'visited' does not exist in type 'ITrait'.
+tests/unit/actions/going-golden.test.ts(932,7): error TS2353: Object literal may only specify known properties, and 'visited' does not exist in type 'ITrait'.
+tests/unit/actions/going-golden.test.ts(960,38): error TS2353: Object literal may only specify known properties, and 'requiresLight' does not exist in type 'ITrait'.
+tests/unit/actions/going-vehicles.test.ts(66,71): error TS2345: Argument of type '{ kind: "line"; stops: string[]; oneWay: false; drive: "control"; }' is not assignable to parameter of type 'VehicleMovement | undefined'.
+  Type '{ kind: "line"; stops: string[]; oneWay: false; drive: "control"; }' is missing the following properties from type 'VehicleLineMovement': underWay, travelDirection, turnsToStep
+tests/unit/actions/going-witnessed.test.ts(68,10): error TS2722: Cannot invoke an object which is possibly 'undefined'.
+tests/unit/actions/help-first-time.test.ts(18,49): error TS2344: Type '((context: ActionContext) => ISemanticEvent[]) | undefined' does not satisfy the constraint '(...args: any) => any'.
+  Type 'undefined' is not assignable to type '(...args: any) => any'.
+tests/unit/actions/implicit-take.test.ts(42,38): error TS2322: Type '{ entity: IFEntity; parsed: { text: string; candidates: string[]; }; } | undefined' is not assignable to type 'IValidatedObjectReference | undefined'.
+  Type '{ entity: IFEntity; parsed: { text: string; candidates: string[]; }; }' is not assignable to type 'IValidatedObjectReference'.
+    Types of property 'parsed' are incompatible.
+      Object literal may only specify known properties, and 'candidates' does not exist in type 'IParsedObjectReference'.
+tests/unit/actions/implicit-take.test.ts(71,23): error TS2554: Expected 5-7 arguments, but got 4.
+tests/unit/actions/implicit-take.test.ts(87,23): error TS2554: Expected 5-7 arguments, but got 4.
+tests/unit/actions/implicit-take.test.ts(107,23): error TS2554: Expected 5-7 arguments, but got 4.
+tests/unit/actions/implicit-take.test.ts(116,14): error TS2571: Object is of type 'unknown'.
+tests/unit/actions/implicit-take.test.ts(124,23): error TS2554: Expected 5-7 arguments, but got 4.
+tests/unit/actions/implicit-take.test.ts(140,23): error TS2554: Expected 5-7 arguments, but got 4.
+tests/unit/actions/implicit-take.test.ts(158,23): error TS2554: Expected 5-7 arguments, but got 4.
+tests/unit/actions/implicit-take.test.ts(176,23): error TS2554: Expected 5-7 arguments, but got 4.
+tests/unit/actions/implicit-take.test.ts(193,23): error TS2554: Expected 5-7 arguments, but got 4.
+tests/unit/actions/implicit-take.test.ts(212,23): error TS2554: Expected 5-7 arguments, but got 4.
+tests/unit/actions/implicit-take.test.ts(225,23): error TS2554: Expected 5-7 arguments, but got 4.
+tests/unit/actions/implicit-take.test.ts(235,23): error TS2554: Expected 5-7 arguments, but got 4.
+tests/unit/actions/implicit-take.test.ts(252,23): error TS2554: Expected 5-7 arguments, but got 4.
+tests/unit/actions/inserting-golden.test.ts(40,9): error TS2353: Object literal may only specify known properties, and 'text' does not exist in type '{ verb?: string | undefined; entity?: IFEntity | undefined; secondEntity?: IFEntity | undefined; preposition?: string | undefined; extras?: Record<string, any> | undefined; nounPhrase?: string | undefined; all?: boolean | undefined; rawInput?: string | undefined; }'.
+tests/unit/actions/inserting-golden.test.ts(108,34): error TS2339: Property 'command' does not exist on type 'never'.
+tests/unit/actions/inserting-golden.test.ts(161,9): error TS2353: Object literal may only specify known properties, and 'isOpen' does not exist in type 'ITrait'.
+tests/unit/actions/inserting-golden.test.ts(190,9): error TS2353: Object literal may only specify known properties, and 'isOpen' does not exist in type 'ITrait'.
+tests/unit/actions/inserting-golden.test.ts(244,9): error TS2353: Object literal may only specify known properties, and 'capacity' does not exist in type 'ITrait'.
+tests/unit/actions/inserting-golden.test.ts(352,7): error TS2353: Object literal may only specify known properties, and 'capacity' does not exist in type 'ITrait'.
+tests/unit/actions/inserting-golden.test.ts(414,43): error TS2353: Object literal may only specify known properties, and 'isOpen' does not exist in type 'ITrait'.
+tests/unit/actions/inserting-golden.test.ts(442,44): error TS2353: Object literal may only specify known properties, and 'isOpen' does not exist in type 'ITrait'.
+tests/unit/actions/inserting-golden.test.ts(472,7): error TS2353: Object literal may only specify known properties, and 'capacity' does not exist in type 'ITrait'.
+tests/unit/actions/inserting-golden.test.ts(511,7): error TS2353: Object literal may only specify known properties, and 'capacity' does not exist in type 'ITrait'.
+tests/unit/actions/inventory-golden.test.ts(88,14): error TS18046: 'invEvent.data' is of type 'unknown'.
+tests/unit/actions/inventory-golden.test.ts(89,14): error TS18046: 'invEvent.data' is of type 'unknown'.
+tests/unit/actions/inventory-golden.test.ts(105,9): error TS2353: Object literal may only specify known properties, and 'worn' does not exist in type 'ITrait'.
+tests/unit/actions/inventory-golden.test.ts(112,9): error TS2353: Object literal may only specify known properties, and 'worn' does not exist in type 'ITrait'.
+tests/unit/actions/inventory-golden.test.ts(129,14): error TS18046: 'invEvent.data' is of type 'unknown'.
+tests/unit/actions/inventory-golden.test.ts(158,9): error TS2353: Object literal may only specify known properties, and 'worn' does not exist in type 'ITrait'.
+tests/unit/actions/inventory-golden.test.ts(166,9): error TS2353: Object literal may only specify known properties, and 'worn' does not exist in type 'ITrait'.
+tests/unit/actions/inventory-golden.test.ts(182,14): error TS18046: 'invEvent.data' is of type 'unknown'.
+tests/unit/actions/inventory-golden.test.ts(185,25): error TS18046: 'invEvent.data' is of type 'unknown'.
+tests/unit/actions/inventory-golden.test.ts(186,25): error TS18046: 'invEvent.data' is of type 'unknown'.
+tests/unit/actions/inventory-golden.test.ts(208,14): error TS18046: 'invEvent.data' is of type 'unknown'.
+tests/unit/actions/inventory-golden.test.ts(209,14): error TS18046: 'invEvent.data' is of type 'unknown'.
+tests/unit/actions/inventory-golden.test.ts(233,14): error TS18046: 'invEvent.data' is of type 'unknown'.
+tests/unit/actions/inventory-golden.test.ts(252,14): error TS18046: 'invEvent.data' is of type 'unknown'.
+tests/unit/actions/inventory-golden.test.ts(271,14): error TS18046: 'invEvent.data' is of type 'unknown'.
+tests/unit/actions/inventory-golden.test.ts(291,24): error TS2339: Property 'observable' does not exist on type 'ISemanticEvent'.
+tests/unit/actions/inventory-golden.test.ts(321,9): error TS2353: Object literal may only specify known properties, and 'worn' does not exist in type 'ITrait'.
+tests/unit/actions/inventory-golden.test.ts(340,14): error TS18046: 'invEvent.data' is of type 'unknown'.
+tests/unit/actions/inventory-golden.test.ts(362,11): error TS2353: Object literal may only specify known properties, and 'worn' does not exist in type 'ITrait'.
+tests/unit/actions/inventory-golden.test.ts(374,12): error TS18046: 'invEvent.data' is of type 'unknown'.
+tests/unit/actions/inventory-golden.test.ts(385,12): error TS18046: 'invEvent.data' is of type 'unknown'.
+tests/unit/actions/inventory-golden.test.ts(386,12): error TS18046: 'invEvent.data' is of type 'unknown'.
+tests/unit/actions/lifecycle-engine.test.ts(62,40): error TS2353: Object literal may only specify known properties, and 'text' does not exist in type 'ITrait'.
+tests/unit/actions/lifecycle-engine.test.ts(65,39): error TS2353: Object literal may only specify known properties, and 'isOpen' does not exist in type 'ITrait'.
+tests/unit/actions/lifecycle-engine.test.ts(403,7): error TS2322: Type '() => { override: { messageId: string; }; emit: { type: string; data: {}; }[]; }' is not assignable to type '(entity: IFEntity, world: WorldModel, actorId: string, sharedData: InterceptorSharedData, random?: RandomService | undefined) => InterceptorReportResult'.
+  Call signature return types '{ override: { messageId: string; }; emit: { type: string; data: {}; }[]; }' and 'InterceptorReportResult' are incompatible.
+    The types of 'emit' are incompatible between these types.
+      Type '{ type: string; data: {}; }[]' is not assignable to type 'CapabilityEffect[]'.
+        Property 'payload' is missing in type '{ type: string; data: {}; }' but required in type 'CapabilityEffect'.
+tests/unit/actions/lifecycle-engine.test.ts(487,44): error TS2353: Object literal may only specify known properties, and 'text' does not exist in type 'ITrait'.
+tests/unit/actions/lifecycle-engine.test.ts(531,42): error TS2353: Object literal may only specify known properties, and 'servings' does not exist in type 'ITrait'.
+tests/unit/actions/listening-golden.test.ts(58,9): error TS2353: Object literal may only specify known properties, and 'isOn' does not exist in type 'ITrait'.
+tests/unit/actions/listening-golden.test.ts(87,9): error TS2353: Object literal may only specify known properties, and 'isOn' does not exist in type 'ITrait'.
+tests/unit/actions/listening-golden.test.ts(115,9): error TS2353: Object literal may only specify known properties, and 'capacity' does not exist in type 'ITrait'.
+tests/unit/actions/listening-golden.test.ts(148,9): error TS2353: Object literal may only specify known properties, and 'capacity' does not exist in type 'ITrait'.
+tests/unit/actions/listening-golden.test.ts(154,9): error TS2353: Object literal may only specify known properties, and 'liquid' does not exist in type 'ITrait'.
+tests/unit/actions/listening-golden.test.ts(182,9): error TS2353: Object literal may only specify known properties, and 'capacity' does not exist in type 'ITrait'.
+tests/unit/actions/listening-golden.test.ts(253,9): error TS2353: Object literal may only specify known properties, and 'isOn' does not exist in type 'ITrait'.
+tests/unit/actions/listening-golden.test.ts(259,9): error TS2353: Object literal may only specify known properties, and 'isOn' does not exist in type 'ITrait'.
+tests/unit/actions/listening-golden.test.ts(287,9): error TS2353: Object literal may only specify known properties, and 'isOn' does not exist in type 'ITrait'.
+tests/unit/actions/listening-golden.test.ts(293,9): error TS2353: Object literal may only specify known properties, and 'isOn' does not exist in type 'ITrait'.
+tests/unit/actions/listening-golden.test.ts(319,9): error TS2353: Object literal may only specify known properties, and 'isOn' does not exist in type 'ITrait'.
+tests/unit/actions/listening-golden.test.ts(325,9): error TS2353: Object literal may only specify known properties, and 'isOn' does not exist in type 'ITrait'.
+tests/unit/actions/listening-golden.test.ts(355,9): error TS2353: Object literal may only specify known properties, and 'capacity' does not exist in type 'ITrait'.
+tests/unit/actions/listening-golden.test.ts(362,9): error TS2353: Object literal may only specify known properties, and 'liquid' does not exist in type 'ITrait'.
+tests/unit/actions/listening-golden.test.ts(393,9): error TS2353: Object literal may only specify known properties, and 'isOn' does not exist in type 'ITrait'.
+tests/unit/actions/listening-golden.test.ts(397,9): error TS2353: Object literal may only specify known properties, and 'capacity' does not exist in type 'ITrait'.
+tests/unit/actions/locking-interceptor.test.ts(31,5): error TS2353: Object literal may only specify known properties, and 'isLocked' does not exist in type 'ITrait'.
+tests/unit/actions/locking-interceptor.test.ts(187,43): error TS2353: Object literal may only specify known properties, and 'isLocked' does not exist in type 'ITrait'.
+tests/unit/actions/looking-golden.test.ts(199,9): error TS2353: Object literal may only specify known properties, and 'requiresLight' does not exist in type 'ITrait'.
+tests/unit/actions/looking-golden.test.ts(230,9): error TS2353: Object literal may only specify known properties, and 'requiresLight' does not exist in type 'ITrait'.
+tests/unit/actions/looking-golden.test.ts(237,9): error TS2353: Object literal may only specify known properties, and 'isOn' does not exist in type 'ITrait'.
+tests/unit/actions/looking-golden.test.ts(269,9): error TS2353: Object literal may only specify known properties, and 'requiresLight' does not exist in type 'ITrait'.
+tests/unit/actions/looking-golden.test.ts(276,9): error TS2353: Object literal may only specify known properties, and 'isOn' does not exist in type 'ITrait'.
+tests/unit/actions/looking-golden.test.ts(305,9): error TS2353: Object literal may only specify known properties, and 'enterable' does not exist in type 'ITrait'.
+tests/unit/actions/looking-golden.test.ts(340,9): error TS2353: Object literal may only specify known properties, and 'enterable' does not exist in type 'ITrait'.
+tests/unit/actions/looking-golden.test.ts(389,44): error TS2353: Object literal may only specify known properties, and 'name' does not exist in type 'ITrait'.
+tests/unit/actions/looking-golden.test.ts(416,44): error TS2353: Object literal may only specify known properties, and 'name' does not exist in type 'ITrait'.
+tests/unit/actions/looking-golden.test.ts(437,44): error TS2353: Object literal may only specify known properties, and 'name' does not exist in type 'ITrait'.
+tests/unit/actions/looking-golden.test.ts(475,17): error TS2339: Property 'messageId' does not exist on type '{}'.
+tests/unit/actions/looking-golden.test.ts(517,33): error TS2339: Property 'timestamp' does not exist on type '{}'.
+tests/unit/actions/looking-golden.test.ts(518,40): error TS2339: Property 'timestamp' does not exist on type '{}'.
+tests/unit/actions/looking-golden.test.ts(522,35): error TS2339: Property 'timestamp' does not exist on type '{}'.
+tests/unit/actions/looking-golden.test.ts(606,42): error TS2353: Object literal may only specify known properties, and 'name' does not exist in type 'ITrait'.
+tests/unit/actions/looking-golden.test.ts(627,41): error TS2353: Object literal may only specify known properties, and 'isOpen' does not exist in type 'ITrait'.
+tests/unit/actions/looking-golden.test.ts(633,41): error TS2353: Object literal may only specify known properties, and 'name' does not exist in type 'ITrait'.
+tests/unit/actions/looking-golden.test.ts(653,41): error TS2353: Object literal may only specify known properties, and 'isOpen' does not exist in type 'ITrait'.
+tests/unit/actions/looking-golden.test.ts(657,41): error TS2353: Object literal may only specify known properties, and 'name' does not exist in type 'ITrait'.
+tests/unit/actions/looking-golden.test.ts(675,41): error TS2353: Object literal may only specify known properties, and 'isOpen' does not exist in type 'ITrait'.
+tests/unit/actions/looking-golden.test.ts(679,41): error TS2353: Object literal may only specify known properties, and 'name' does not exist in type 'ITrait'.
+tests/unit/actions/opening-golden.test.ts(44,9): error TS2353: Object literal may only specify known properties, and 'text' does not exist in type '{ verb?: string | undefined; entity?: IFEntity | undefined; secondEntity?: IFEntity | undefined; preposition?: string | undefined; extras?: Record<string, any> | undefined; nounPhrase?: string | undefined; all?: boolean | undefined; rawInput?: string | undefined; }'.
+tests/unit/actions/opening-tool.test.ts(33,5): error TS2353: Object literal may only specify known properties, and 'isOpen' does not exist in type 'ITrait'.
+tests/unit/actions/pulling-golden.test.ts(87,45): error TS2353: Object literal may only specify known properties, and 'isWorn' does not exist in type 'ITrait'.
+tests/unit/actions/pulling-golden.test.ts(88,45): error TS2353: Object literal may only specify known properties, and 'state' does not exist in type 'ITrait'.
+tests/unit/actions/pulling-golden.test.ts(103,45): error TS2353: Object literal may only specify known properties, and 'state' does not exist in type 'ITrait'.
+tests/unit/actions/pulling-golden.test.ts(131,44): error TS2353: Object literal may only specify known properties, and 'state' does not exist in type 'ITrait'.
+tests/unit/actions/pulling-golden.test.ts(164,9): error TS2353: Object literal may only specify known properties, and 'state' does not exist in type 'ITrait'.
+tests/unit/actions/pulling-golden.test.ts(204,9): error TS2353: Object literal may only specify known properties, and 'state' does not exist in type 'ITrait'.
+tests/unit/actions/pulling-interceptor.test.ts(42,56): error TS2353: Object literal may only specify known properties, and 'text' does not exist in type '{ verb?: string | undefined; entity?: IFEntity | undefined; secondEntity?: IFEntity | undefined; preposition?: string | undefined; extras?: Record<string, any> | undefined; nounPhrase?: string | undefined; all?: boolean | undefined; rawInput?: string | undefined; }'.
+tests/unit/actions/pushing-golden.test.ts(68,9): error TS2353: Object literal may only specify known properties, and 'worn' does not exist in type 'ITrait'.
+tests/unit/actions/pushing-golden.test.ts(117,48): error TS2353: Object literal may only specify known properties, and 'isOn' does not exist in type 'ITrait'.
+tests/unit/actions/pushing-golden.test.ts(140,53): error TS2353: Object literal may only specify known properties, and 'isOn' does not exist in type 'ITrait'.
+tests/unit/actions/pushing-golden.test.ts(183,48): error TS2353: Object literal may only specify known properties, and 'isOn' does not exist in type 'ITrait'.
+tests/unit/actions/pushing-golden.test.ts(212,48): error TS2353: Object literal may only specify known properties, and 'isOn' does not exist in type 'ITrait'.
+tests/unit/actions/pushing-golden.test.ts(231,53): error TS2353: Object literal may only specify known properties, and 'isOn' does not exist in type 'ITrait'.
+tests/unit/actions/putting-golden.test.ts(41,9): error TS2353: Object literal may only specify known properties, and 'text' does not exist in type '{ verb?: string | undefined; entity?: IFEntity | undefined; secondEntity?: IFEntity | undefined; preposition?: string | undefined; extras?: Record<string, any> | undefined; nounPhrase?: string | undefined; all?: boolean | undefined; rawInput?: string | undefined; }'.
+tests/unit/actions/putting-golden.test.ts(206,9): error TS2353: Object literal may only specify known properties, and 'isOpen' does not exist in type 'ITrait'.
+tests/unit/actions/putting-golden.test.ts(265,9): error TS2353: Object literal may only specify known properties, and 'isOpen' does not exist in type 'ITrait'.
+tests/unit/actions/putting-golden.test.ts(402,9): error TS2353: Object literal may only specify known properties, and 'capacity' does not exist in type 'ITrait'.
+tests/unit/actions/putting-golden.test.ts(437,9): error TS2353: Object literal may only specify known properties, and 'weight' does not exist in type 'ITrait'.
+tests/unit/actions/putting-golden.test.ts(443,9): error TS2353: Object literal may only specify known properties, and 'capacity' does not exist in type 'ITrait'.
+tests/unit/actions/putting-golden.test.ts(450,9): error TS2353: Object literal may only specify known properties, and 'weight' does not exist in type 'ITrait'.
+tests/unit/actions/putting-golden.test.ts(479,9): error TS2353: Object literal may only specify known properties, and 'capacity' does not exist in type 'ITrait'.
+tests/unit/actions/putting-golden.test.ts(668,43): error TS2353: Object literal may only specify known properties, and 'isOpen' does not exist in type 'ITrait'.
+tests/unit/actions/putting-golden.test.ts(699,7): error TS2353: Object literal may only specify known properties, and 'capacity' does not exist in type 'ITrait'.
+tests/unit/actions/putting-golden.test.ts(738,7): error TS2353: Object literal may only specify known properties, and 'volume' does not exist in type 'ITrait'.
+tests/unit/actions/putting-golden.test.ts(744,7): error TS2353: Object literal may only specify known properties, and 'capacity' does not exist in type 'ITrait'.
+tests/unit/actions/putting-golden.test.ts(751,7): error TS2353: Object literal may only specify known properties, and 'volume' does not exist in type 'ITrait'.
+tests/unit/actions/putting-golden.test.ts(783,7): error TS2353: Object literal may only specify known properties, and 'capacity' does not exist in type 'ITrait'.
+tests/unit/actions/putting-golden.test.ts(888,7): error TS2353: Object literal may only specify known properties, and 'weight' does not exist in type 'ITrait'.
+tests/unit/actions/putting-golden.test.ts(895,7): error TS2353: Object literal may only specify known properties, and 'capacity' does not exist in type 'ITrait'.
+tests/unit/actions/putting-golden.test.ts(907,9): error TS2353: Object literal may only specify known properties, and 'weight' does not exist in type 'ITrait'.
+tests/unit/actions/putting-golden.test.ts(942,41): error TS2353: Object literal may only specify known properties, and 'isOpen' does not exist in type 'ITrait'.
+tests/unit/actions/putting-golden.test.ts(971,5): error TS2722: Cannot invoke an object which is possibly 'undefined'.
+tests/unit/actions/quitting.test.ts(99,36): error TS2339: Property 'find' does not exist on type 'void | ISemanticEvent[]'.
+  Property 'find' does not exist on type 'void'.
+tests/unit/actions/quitting.test.ts(99,41): error TS7006: Parameter 'e' implicitly has an 'any' type.
+tests/unit/actions/quitting.test.ts(135,19): error TS2345: Argument of type 'void | ISemanticEvent[]' is not assignable to parameter of type 'ISemanticEvent[]'.
+  Type 'void' is not assignable to type 'ISemanticEvent[]'.
+tests/unit/actions/quitting.test.ts(166,36): error TS2339: Property 'find' does not exist on type 'void | ISemanticEvent[]'.
+  Property 'find' does not exist on type 'void'.
+tests/unit/actions/quitting.test.ts(166,41): error TS7006: Parameter 'e' implicitly has an 'any' type.
+tests/unit/actions/quitting.test.ts(173,19): error TS2345: Argument of type 'void | ISemanticEvent[]' is not assignable to parameter of type 'ISemanticEvent[]'.
+  Type 'void' is not assignable to type 'ISemanticEvent[]'.
+tests/unit/actions/quitting.test.ts(201,36): error TS2339: Property 'filter' does not exist on type 'void | ISemanticEvent[]'.
+  Property 'filter' does not exist on type 'void'.
+tests/unit/actions/quitting.test.ts(201,43): error TS7006: Parameter 'e' implicitly has an 'any' type.
+tests/unit/actions/quitting.test.ts(226,36): error TS2339: Property 'find' does not exist on type 'void | ISemanticEvent[]'.
+  Property 'find' does not exist on type 'void'.
+tests/unit/actions/quitting.test.ts(226,41): error TS7006: Parameter 'e' implicitly has an 'any' type.
+tests/unit/actions/quitting.test.ts(233,36): error TS2339: Property 'filter' does not exist on type 'void | ISemanticEvent[]'.
+  Property 'filter' does not exist on type 'void'.
+tests/unit/actions/quitting.test.ts(233,43): error TS7006: Parameter 'e' implicitly has an 'any' type.
+tests/unit/actions/quitting.test.ts(246,36): error TS2339: Property 'find' does not exist on type 'void | ISemanticEvent[]'.
+  Property 'find' does not exist on type 'void'.
+tests/unit/actions/quitting.test.ts(246,41): error TS7006: Parameter 'e' implicitly has an 'any' type.
+tests/unit/actions/quitting.test.ts(261,36): error TS2339: Property 'find' does not exist on type 'void | ISemanticEvent[]'.
+  Property 'find' does not exist on type 'void'.
+tests/unit/actions/quitting.test.ts(261,41): error TS7006: Parameter 'e' implicitly has an 'any' type.
+tests/unit/actions/quitting.test.ts(288,36): error TS2339: Property 'find' does not exist on type 'void | ISemanticEvent[]'.
+  Property 'find' does not exist on type 'void'.
+tests/unit/actions/quitting.test.ts(288,41): error TS7006: Parameter 'e' implicitly has an 'any' type.
+tests/unit/actions/quitting.test.ts(313,36): error TS2339: Property 'find' does not exist on type 'void | ISemanticEvent[]'.
+  Property 'find' does not exist on type 'void'.
+tests/unit/actions/quitting.test.ts(313,41): error TS7006: Parameter 'e' implicitly has an 'any' type.
+tests/unit/actions/quitting.test.ts(338,36): error TS2339: Property 'find' does not exist on type 'void | ISemanticEvent[]'.
+  Property 'find' does not exist on type 'void'.
+tests/unit/actions/quitting.test.ts(338,41): error TS7006: Parameter 'e' implicitly has an 'any' type.
+tests/unit/actions/quitting.test.ts(356,36): error TS2339: Property 'find' does not exist on type 'void | ISemanticEvent[]'.
+  Property 'find' does not exist on type 'void'.
+tests/unit/actions/quitting.test.ts(356,41): error TS7006: Parameter 'e' implicitly has an 'any' type.
+tests/unit/actions/quitting.test.ts(386,36): error TS2339: Property 'find' does not exist on type 'void | ISemanticEvent[]'.
+  Property 'find' does not exist on type 'void'.
+tests/unit/actions/quitting.test.ts(386,41): error TS7006: Parameter 'e' implicitly has an 'any' type.
+tests/unit/actions/quitting.test.ts(418,36): error TS2339: Property 'find' does not exist on type 'void | ISemanticEvent[]'.
+  Property 'find' does not exist on type 'void'.
+tests/unit/actions/quitting.test.ts(418,41): error TS7006: Parameter 'e' implicitly has an 'any' type.
+tests/unit/actions/reading-golden.test.ts(31,29): error TS2339: Property 'world' does not exist on type 'TestData'.
+tests/unit/actions/reading-golden.test.ts(36,16): error TS2339: Property 'world' does not exist on type 'TestData'.
+tests/unit/actions/reading-golden.test.ts(36,51): error TS2339: Property 'room' does not exist on type 'TestData'.
+tests/unit/actions/reading-golden.test.ts(44,63): error TS2339: Property 'world' does not exist on type 'TestData'.
+tests/unit/actions/reading-golden.test.ts(64,29): error TS2339: Property 'world' does not exist on type 'TestData'.
+tests/unit/actions/reading-golden.test.ts(69,16): error TS2339: Property 'world' does not exist on type 'TestData'.
+tests/unit/actions/reading-golden.test.ts(69,51): error TS2339: Property 'room' does not exist on type 'TestData'.
+tests/unit/actions/reading-golden.test.ts(75,63): error TS2339: Property 'world' does not exist on type 'TestData'.
+tests/unit/actions/reading-golden.test.ts(89,29): error TS2339: Property 'world' does not exist on type 'TestData'.
+tests/unit/actions/reading-golden.test.ts(94,16): error TS2339: Property 'world' does not exist on type 'TestData'.
+tests/unit/actions/reading-golden.test.ts(94,51): error TS2339: Property 'room' does not exist on type 'TestData'.
+tests/unit/actions/reading-golden.test.ts(100,63): error TS2339: Property 'world' does not exist on type 'TestData'.
+tests/unit/actions/reading-golden.test.ts(114,30): error TS2339: Property 'world' does not exist on type 'TestData'.
+tests/unit/actions/reading-golden.test.ts(119,16): error TS2339: Property 'world' does not exist on type 'TestData'.
+tests/unit/actions/reading-golden.test.ts(119,52): error TS2339: Property 'room' does not exist on type 'TestData'.
+tests/unit/actions/reading-golden.test.ts(125,63): error TS2339: Property 'world' does not exist on type 'TestData'.
+tests/unit/actions/reading-golden.test.ts(141,29): error TS2339: Property 'world' does not exist on type 'TestData'.
+tests/unit/actions/reading-golden.test.ts(151,16): error TS2339: Property 'world' does not exist on type 'TestData'.
+tests/unit/actions/reading-golden.test.ts(151,51): error TS2339: Property 'room' does not exist on type 'TestData'.
+tests/unit/actions/reading-golden.test.ts(157,63): error TS2339: Property 'world' does not exist on type 'TestData'.
+tests/unit/actions/reading-golden.test.ts(176,63): error TS2339: Property 'world' does not exist on type 'TestData'.
+tests/unit/actions/reading-golden.test.ts(185,29): error TS2339: Property 'world' does not exist on type 'TestData'.
+tests/unit/actions/reading-golden.test.ts(186,16): error TS2339: Property 'world' does not exist on type 'TestData'.
+tests/unit/actions/reading-golden.test.ts(186,51): error TS2339: Property 'room' does not exist on type 'TestData'.
+tests/unit/actions/reading-golden.test.ts(193,63): error TS2339: Property 'world' does not exist on type 'TestData'.
+tests/unit/actions/reading-golden.test.ts(203,31): error TS2339: Property 'world' does not exist on type 'TestData'.
+tests/unit/actions/reading-golden.test.ts(209,16): error TS2339: Property 'world' does not exist on type 'TestData'.
+tests/unit/actions/reading-golden.test.ts(209,53): error TS2339: Property 'room' does not exist on type 'TestData'.
+tests/unit/actions/reading-golden.test.ts(215,63): error TS2339: Property 'world' does not exist on type 'TestData'.
+tests/unit/actions/reading-golden.test.ts(226,31): error TS2339: Property 'world' does not exist on type 'TestData'.
+tests/unit/actions/reading-golden.test.ts(233,16): error TS2339: Property 'world' does not exist on type 'TestData'.
+tests/unit/actions/reading-golden.test.ts(233,53): error TS2339: Property 'room' does not exist on type 'TestData'.
+tests/unit/actions/reading-golden.test.ts(239,63): error TS2339: Property 'world' does not exist on type 'TestData'.
+tests/unit/actions/reading-golden.test.ts(250,31): error TS2339: Property 'world' does not exist on type 'TestData'.
+tests/unit/actions/reading-golden.test.ts(256,16): error TS2339: Property 'world' does not exist on type 'TestData'.
+tests/unit/actions/reading-golden.test.ts(256,53): error TS2339: Property 'room' does not exist on type 'TestData'.
+tests/unit/actions/reading-golden.test.ts(264,63): error TS2339: Property 'world' does not exist on type 'TestData'.
+tests/unit/actions/reading-golden.test.ts(271,30): error TS2339: Property 'world' does not exist on type 'TestData'.
+tests/unit/actions/reading-golden.test.ts(276,16): error TS2339: Property 'world' does not exist on type 'TestData'.
+tests/unit/actions/reading-golden.test.ts(276,52): error TS2339: Property 'room' does not exist on type 'TestData'.
+tests/unit/actions/reading-golden.test.ts(282,63): error TS2339: Property 'world' does not exist on type 'TestData'.
+tests/unit/actions/registry-golden.test.ts(118,13): error TS2741: Property 'validate' is missing in type '{ id: string; execute: () => never[]; requiredMessages: never[]; }' but required in type 'Action'.
+tests/unit/actions/registry-golden.test.ts(143,13): error TS2741: Property 'validate' is missing in type '{ id: string; execute: () => never[]; requiredMessages: never[]; }' but required in type 'Action'.
+tests/unit/actions/registry-golden.test.ts(243,13): error TS2741: Property 'validate' is missing in type '{ id: string; execute: () => never[]; requiredMessages: never[]; }' but required in type 'Action'.
+tests/unit/actions/registry-golden.test.ts(272,41): error TS2352: Conversion of type '{ id: string; execute: () => never[]; requiredMessages: never[]; aliases: string[]; }' to type 'Action & { aliases: string[]; }' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Property 'validate' is missing in type '{ id: string; execute: () => never[]; requiredMessages: never[]; aliases: string[]; }' but required in type 'Action'.
+tests/unit/actions/removing-golden.test.ts(39,9): error TS2353: Object literal may only specify known properties, and 'text' does not exist in type '{ verb?: string | undefined; entity?: IFEntity | undefined; secondEntity?: IFEntity | undefined; preposition?: string | undefined; extras?: Record<string, any> | undefined; nounPhrase?: string | undefined; all?: boolean | undefined; rawInput?: string | undefined; }'.
+tests/unit/actions/removing-golden.test.ts(188,9): error TS2353: Object literal may only specify known properties, and 'isOpen' does not exist in type 'ITrait'.
+tests/unit/actions/removing-golden.test.ts(222,9): error TS2353: Object literal may only specify known properties, and 'isOpen' does not exist in type 'ITrait'.
+tests/unit/actions/removing-golden.test.ts(549,43): error TS2353: Object literal may only specify known properties, and 'isOpen' does not exist in type 'ITrait'.
+tests/unit/actions/removing-golden.test.ts(606,44): error TS2353: Object literal may only specify known properties, and 'isOpen' does not exist in type 'ITrait'.
+tests/unit/actions/report-helpers.test.ts(87,14): error TS2532: Object is possibly 'undefined'.
+tests/unit/actions/report-helpers.test.ts(123,14): error TS2532: Object is possibly 'undefined'.
+tests/unit/actions/report-helpers.test.ts(125,14): error TS2532: Object is possibly 'undefined'.
+tests/unit/actions/report-helpers.test.ts(125,14): error TS2571: Object is of type 'unknown'.
+tests/unit/actions/report-helpers.test.ts(145,14): error TS2532: Object is possibly 'undefined'.
+tests/unit/actions/report-helpers.test.ts(170,14): error TS2532: Object is possibly 'undefined'.
+tests/unit/actions/report-helpers.test.ts(172,14): error TS2532: Object is possibly 'undefined'.
+tests/unit/actions/report-helpers.test.ts(172,14): error TS2571: Object is of type 'unknown'.
+tests/unit/actions/report-helpers.test.ts(198,14): error TS2532: Object is possibly 'undefined'.
+tests/unit/actions/report-helpers.test.ts(226,14): error TS2532: Object is possibly 'undefined'.
+tests/unit/actions/report-helpers.test.ts(312,14): error TS2532: Object is possibly 'undefined'.
+tests/unit/actions/report-helpers.test.ts(332,14): error TS2532: Object is possibly 'undefined'.
+tests/unit/actions/report-helpers.test.ts(353,22): error TS2722: Cannot invoke an object which is possibly 'undefined'.
+tests/unit/actions/report-helpers.test.ts(353,22): error TS18048: 'takingAction.blocked' is possibly 'undefined'.
+tests/unit/actions/report-helpers.test.ts(374,22): error TS2722: Cannot invoke an object which is possibly 'undefined'.
+tests/unit/actions/report-helpers.test.ts(374,22): error TS18048: 'takingAction.report' is possibly 'undefined'.
+tests/unit/actions/searching-golden.test.ts(63,9): error TS2353: Object literal may only specify known properties, and 'capacity' does not exist in type 'ITrait'.
+tests/unit/actions/searching-golden.test.ts(67,9): error TS2353: Object literal may only specify known properties, and 'isOpen' does not exist in type 'ITrait'.
+tests/unit/actions/searching-golden.test.ts(91,9): error TS2353: Object literal may only specify known properties, and 'capacity' does not exist in type 'ITrait'.
+tests/unit/actions/searching-golden.test.ts(124,9): error TS2353: Object literal may only specify known properties, and 'capacity' does not exist in type 'ITrait'.
+tests/unit/actions/searching-golden.test.ts(164,9): error TS2353: Object literal may only specify known properties, and 'capacity' does not exist in type 'ITrait'.
+tests/unit/actions/searching-golden.test.ts(172,9): error TS2353: Object literal may only specify known properties, and 'name' does not exist in type 'ITrait'.
+tests/unit/actions/searching-golden.test.ts(215,9): error TS2353: Object literal may only specify known properties, and 'capacity' does not exist in type 'ITrait'.
+tests/unit/actions/searching-golden.test.ts(254,9): error TS2353: Object literal may only specify known properties, and 'capacity' does not exist in type 'ITrait'.
+tests/unit/actions/searching-golden.test.ts(262,9): error TS2353: Object literal may only specify known properties, and 'name' does not exist in type 'ITrait'.
+tests/unit/actions/searching-golden.test.ts(294,9): error TS2353: Object literal may only specify known properties, and 'capacity' does not exist in type 'ITrait'.
+tests/unit/actions/searching-golden.test.ts(352,9): error TS2353: Object literal may only specify known properties, and 'name' does not exist in type 'ITrait'.
+tests/unit/actions/searching-golden.test.ts(382,9): error TS2353: Object literal may only specify known properties, and 'name' does not exist in type 'ITrait'.
+tests/unit/actions/searching-golden.test.ts(439,9): error TS2353: Object literal may only specify known properties, and 'capacity' does not exist in type 'ITrait'.
+tests/unit/actions/searching-golden.test.ts(443,9): error TS2353: Object literal may only specify known properties, and 'isOpen' does not exist in type 'ITrait'.
+tests/unit/actions/searching-golden.test.ts(475,9): error TS2353: Object literal may only specify known properties, and 'capacity' does not exist in type 'ITrait'.
+tests/unit/actions/searching-golden.test.ts(484,9): error TS2353: Object literal may only specify known properties, and 'name' does not exist in type 'ITrait'.
+tests/unit/actions/searching-golden.test.ts(490,9): error TS2353: Object literal may only specify known properties, and 'name' does not exist in type 'ITrait'.
+tests/unit/actions/searching-golden.test.ts(558,14): error TS18046: 'searchEvent.data' is of type 'unknown'.
+tests/unit/actions/searching-golden.test.ts(559,14): error TS18046: 'searchEvent.data' is of type 'unknown'.
+tests/unit/actions/searching-golden.test.ts(574,45): error TS2353: Object literal may only specify known properties, and 'capacity' does not exist in type 'ITrait'.
+tests/unit/actions/searching-golden.test.ts(580,9): error TS2353: Object literal may only specify known properties, and 'name' does not exist in type 'ITrait'.
+tests/unit/actions/searching-golden.test.ts(607,45): error TS2353: Object literal may only specify known properties, and 'name' does not exist in type 'ITrait'.
+tests/unit/actions/searching-golden.test.ts(611,43): error TS2353: Object literal may only specify known properties, and 'name' does not exist in type 'ITrait'.
+tests/unit/actions/searching-golden.test.ts(648,44): error TS2339: Property 'concealed' does not exist on type 'ITrait'.
+tests/unit/actions/searching-interceptor.test.ts(27,42): error TS2353: Object literal may only specify known properties, and 'capacity' does not exist in type 'ITrait'.
+tests/unit/actions/searching-interceptor.test.ts(33,40): error TS2353: Object literal may only specify known properties, and 'concealed' does not exist in type 'ITrait'.
+tests/unit/actions/searching-interceptor.test.ts(43,58): error TS2353: Object literal may only specify known properties, and 'text' does not exist in type '{ verb?: string | undefined; entity?: IFEntity | undefined; secondEntity?: IFEntity | undefined; preposition?: string | undefined; extras?: Record<string, any> | undefined; nounPhrase?: string | undefined; all?: boolean | undefined; rawInput?: string | undefined; }'.
+tests/unit/actions/searching-transparent.test.ts(16,40): error TS2353: Object literal may only specify known properties, and 'isTransparent' does not exist in type 'ITrait'.
+tests/unit/actions/searching-transparent.test.ts(21,39): error TS2353: Object literal may only specify known properties, and 'isOpen' does not exist in type 'ITrait'.
+tests/unit/actions/showing-golden.test.ts(109,9): error TS2353: Object literal may only specify known properties, and 'worn' does not exist in type 'ITrait'.
+tests/unit/actions/showing-golden.test.ts(210,9): error TS2353: Object literal may only specify known properties, and 'customProperties' does not exist in type 'ITrait'.
+tests/unit/actions/showing-golden.test.ts(236,9): error TS2353: Object literal may only specify known properties, and 'customProperties' does not exist in type 'ITrait'.
+tests/unit/actions/showing-golden.test.ts(262,9): error TS2353: Object literal may only specify known properties, and 'customProperties' does not exist in type 'ITrait'.
+tests/unit/actions/showing-golden.test.ts(288,9): error TS2353: Object literal may only specify known properties, and 'customProperties' does not exist in type 'ITrait'.
+tests/unit/actions/showing-golden.test.ts(314,9): error TS2353: Object literal may only specify known properties, and 'customProperties' does not exist in type 'ITrait'.
+tests/unit/actions/showing-golden.test.ts(428,7): error TS2353: Object literal may only specify known properties, and 'worn' does not exist in type 'ITrait'.
+tests/unit/actions/showing-golden.test.ts(436,7): error TS2353: Object literal may only specify known properties, and 'customProperties' does not exist in type 'ITrait'.
+tests/unit/actions/showing-golden.test.ts(467,7): error TS2353: Object literal may only specify known properties, and 'customProperties' does not exist in type 'ITrait'.
+tests/unit/actions/smelling-golden.test.ts(60,9): error TS2353: Object literal may only specify known properties, and 'liquid' does not exist in type 'ITrait'.
+tests/unit/actions/smelling-golden.test.ts(86,9): error TS2353: Object literal may only specify known properties, and 'liquid' does not exist in type 'ITrait'.
+tests/unit/actions/smelling-golden.test.ts(111,9): error TS2353: Object literal may only specify known properties, and 'isLit' does not exist in type 'ITrait'.
+tests/unit/actions/smelling-golden.test.ts(136,9): error TS2353: Object literal may only specify known properties, and 'isLit' does not exist in type 'ITrait'.
+tests/unit/actions/smelling-golden.test.ts(160,9): error TS2353: Object literal may only specify known properties, and 'capacity' does not exist in type 'ITrait'.
+tests/unit/actions/smelling-golden.test.ts(164,9): error TS2353: Object literal may only specify known properties, and 'isOpen' does not exist in type 'ITrait'.
+tests/unit/actions/smelling-golden.test.ts(170,9): error TS2353: Object literal may only specify known properties, and 'consumed' does not exist in type 'ITrait'.
+tests/unit/actions/smelling-golden.test.ts(199,9): error TS2353: Object literal may only specify known properties, and 'capacity' does not exist in type 'ITrait'.
+tests/unit/actions/smelling-golden.test.ts(203,9): error TS2353: Object literal may only specify known properties, and 'isOpen' does not exist in type 'ITrait'.
+tests/unit/actions/smelling-golden.test.ts(209,9): error TS2353: Object literal may only specify known properties, and 'consumed' does not exist in type 'ITrait'.
+tests/unit/actions/smelling-golden.test.ts(272,9): error TS2353: Object literal may only specify known properties, and 'consumed' does not exist in type 'ITrait'.
+tests/unit/actions/smelling-golden.test.ts(296,9): error TS2353: Object literal may only specify known properties, and 'isLit' does not exist in type 'ITrait'.
+tests/unit/actions/smelling-golden.test.ts(320,9): error TS2353: Object literal may only specify known properties, and 'isLit' does not exist in type 'ITrait'.
+tests/unit/actions/smelling-golden.test.ts(326,9): error TS2353: Object literal may only specify known properties, and 'consumed' does not exist in type 'ITrait'.
+tests/unit/actions/smelling-golden.test.ts(373,9): error TS2353: Object literal may only specify known properties, and 'liquid' does not exist in type 'ITrait'.
+tests/unit/actions/smelling-golden.test.ts(396,9): error TS2353: Object literal may only specify known properties, and 'consumed' does not exist in type 'ITrait'.
+tests/unit/actions/smelling-golden.test.ts(421,9): error TS2353: Object literal may only specify known properties, and 'consumed' does not exist in type 'ITrait'.
+tests/unit/actions/switching_off-golden.test.ts(90,9): error TS2353: Object literal may only specify known properties, and 'isOn' does not exist in type 'ITrait'.
+tests/unit/actions/switching_off-golden.test.ts(113,9): error TS2353: Object literal may only specify known properties, and 'isOn' does not exist in type 'ITrait'.
+tests/unit/actions/switching_off-golden.test.ts(141,9): error TS2353: Object literal may only specify known properties, and 'isOn' does not exist in type 'ITrait'.
+tests/unit/actions/switching_off-golden.test.ts(172,9): error TS2353: Object literal may only specify known properties, and 'isOn' does not exist in type 'ITrait'.
+tests/unit/actions/switching_off-golden.test.ts(200,9): error TS2353: Object literal may only specify known properties, and 'isOn' does not exist in type 'ITrait'.
+tests/unit/actions/switching_off-golden.test.ts(235,9): error TS2353: Object literal may only specify known properties, and 'isOn' does not exist in type 'ITrait'.
+tests/unit/actions/switching_off-golden.test.ts(239,9): error TS2353: Object literal may only specify known properties, and 'radius' does not exist in type 'ITrait'.
+tests/unit/actions/switching_off-golden.test.ts(269,9): error TS2353: Object literal may only specify known properties, and 'isOn' does not exist in type 'ITrait'.
+tests/unit/actions/switching_off-golden.test.ts(278,9): error TS2353: Object literal may only specify known properties, and 'isOn' does not exist in type 'ITrait'.
+tests/unit/actions/switching_off-golden.test.ts(306,9): error TS2353: Object literal may only specify known properties, and 'isOn' does not exist in type 'ITrait'.
+tests/unit/actions/switching_off-golden.test.ts(315,9): error TS2353: Object literal may only specify known properties, and 'isOn' does not exist in type 'ITrait'.
+tests/unit/actions/switching_off-golden.test.ts(343,9): error TS2353: Object literal may only specify known properties, and 'isOn' does not exist in type 'ITrait'.
+tests/unit/actions/switching_off-golden.test.ts(367,9): error TS2353: Object literal may only specify known properties, and 'isOn' does not exist in type 'ITrait'.
+tests/unit/actions/switching_off-golden.test.ts(371,9): error TS2353: Object literal may only specify known properties, and 'capacity' does not exist in type 'ITrait'.
+tests/unit/actions/switching_off-golden.test.ts(375,9): error TS2353: Object literal may only specify known properties, and 'isOpen' does not exist in type 'ITrait'.
+tests/unit/actions/switching_off-golden.test.ts(403,9): error TS2353: Object literal may only specify known properties, and 'isOn' does not exist in type 'ITrait'.
+tests/unit/actions/switching_off-golden.test.ts(407,9): error TS2353: Object literal may only specify known properties, and 'capacity' does not exist in type 'ITrait'.
+tests/unit/actions/switching_off-golden.test.ts(411,9): error TS2353: Object literal may only specify known properties, and 'isOpen' does not exist in type 'ITrait'.
+tests/unit/actions/switching_off-golden.test.ts(424,14): error TS18046: 'switchedEvent.data' is of type 'unknown'.
+tests/unit/actions/switching_off-golden.test.ts(437,9): error TS2353: Object literal may only specify known properties, and 'isOn' does not exist in type 'ITrait'.
+tests/unit/actions/switching_off-golden.test.ts(441,9): error TS2353: Object literal may only specify known properties, and 'capacity' does not exist in type 'ITrait'.
+tests/unit/actions/switching_off-golden.test.ts(445,9): error TS2353: Object literal may only specify known properties, and 'isOpen' does not exist in type 'ITrait'.
+tests/unit/actions/switching_off-golden.test.ts(458,14): error TS18046: 'switchedEvent.data' is of type 'unknown'.
+tests/unit/actions/switching_off-golden.test.ts(468,9): error TS2353: Object literal may only specify known properties, and 'isOn' does not exist in type 'ITrait'.
+tests/unit/actions/switching_off-golden.test.ts(502,7): error TS2353: Object literal may only specify known properties, and 'isOn' does not exist in type 'ITrait'.
+tests/unit/actions/switching_off-golden.test.ts(529,7): error TS2353: Object literal may only specify known properties, and 'isOn' does not exist in type 'ITrait'.
+tests/unit/actions/switching_off-golden.test.ts(559,7): error TS2353: Object literal may only specify known properties, and 'isOn' does not exist in type 'ITrait'.
+tests/unit/actions/switching_off-golden.test.ts(607,7): error TS2353: Object literal may only specify known properties, and 'isOn' does not exist in type 'ITrait'.
+tests/unit/actions/switching_off-golden.test.ts(611,7): error TS2353: Object literal may only specify known properties, and 'isLit' does not exist in type 'ITrait'.
+tests/unit/actions/switching_off-golden.test.ts(643,7): error TS2353: Object literal may only specify known properties, and 'isOn' does not exist in type 'ITrait'.
+tests/unit/actions/switching_off-interceptor.test.ts(40,62): error TS2353: Object literal may only specify known properties, and 'text' does not exist in type '{ verb?: string | undefined; entity?: IFEntity | undefined; secondEntity?: IFEntity | undefined; preposition?: string | undefined; extras?: Record<string, any> | undefined; nounPhrase?: string | undefined; all?: boolean | undefined; rawInput?: string | undefined; }'.
+tests/unit/actions/switching_on-golden.test.ts(90,9): error TS2353: Object literal may only specify known properties, and 'isOn' does not exist in type 'ITrait'.
+tests/unit/actions/switching_on-golden.test.ts(111,9): error TS2353: Object literal may only specify known properties, and 'isOn' does not exist in type 'ITrait'.
+tests/unit/actions/switching_on-golden.test.ts(136,9): error TS2353: Object literal may only specify known properties, and 'isOn' does not exist in type 'ITrait'.
+tests/unit/actions/switching_on-golden.test.ts(164,9): error TS2353: Object literal may only specify known properties, and 'isOn' does not exist in type 'ITrait'.
+tests/unit/actions/switching_on-golden.test.ts(195,9): error TS2353: Object literal may only specify known properties, and 'isOn' does not exist in type 'ITrait'.
+tests/unit/actions/switching_on-golden.test.ts(226,9): error TS2353: Object literal may only specify known properties, and 'isOn' does not exist in type 'ITrait'.
+tests/unit/actions/switching_on-golden.test.ts(230,9): error TS2353: Object literal may only specify known properties, and 'radius' does not exist in type 'ITrait'.
+tests/unit/actions/switching_on-golden.test.ts(262,9): error TS2353: Object literal may only specify known properties, and 'isOn' does not exist in type 'ITrait'.
+tests/unit/actions/switching_on-golden.test.ts(266,9): error TS2353: Object literal may only specify known properties, and 'radius' does not exist in type 'ITrait'.
+tests/unit/actions/switching_on-golden.test.ts(295,9): error TS2353: Object literal may only specify known properties, and 'isOn' does not exist in type 'ITrait'.
+tests/unit/actions/switching_on-golden.test.ts(304,9): error TS2353: Object literal may only specify known properties, and 'isOn' does not exist in type 'ITrait'.
+tests/unit/actions/switching_on-golden.test.ts(332,9): error TS2353: Object literal may only specify known properties, and 'isOn' does not exist in type 'ITrait'.
+tests/unit/actions/switching_on-golden.test.ts(363,9): error TS2353: Object literal may only specify known properties, and 'isOn' does not exist in type 'ITrait'.
+tests/unit/actions/switching_on-golden.test.ts(367,9): error TS2353: Object literal may only specify known properties, and 'capacity' does not exist in type 'ITrait'.
+tests/unit/actions/switching_on-golden.test.ts(371,9): error TS2353: Object literal may only specify known properties, and 'isOpen' does not exist in type 'ITrait'.
+tests/unit/actions/switching_on-golden.test.ts(398,9): error TS2353: Object literal may only specify known properties, and 'isOn' does not exist in type 'ITrait'.
+tests/unit/actions/switching_on-golden.test.ts(402,9): error TS2353: Object literal may only specify known properties, and 'capacity' does not exist in type 'ITrait'.
+tests/unit/actions/switching_on-golden.test.ts(406,9): error TS2353: Object literal may only specify known properties, and 'isOpen' does not exist in type 'ITrait'.
+tests/unit/actions/switching_on-golden.test.ts(418,14): error TS18046: 'switchedEvent.data' is of type 'unknown'.
+tests/unit/actions/switching_on-golden.test.ts(433,9): error TS2353: Object literal may only specify known properties, and 'isOn' does not exist in type 'ITrait'.
+tests/unit/actions/switching_on-golden.test.ts(457,9): error TS2353: Object literal may only specify known properties, and 'isOn' does not exist in type 'ITrait'.
+tests/unit/actions/switching_on-golden.test.ts(491,7): error TS2353: Object literal may only specify known properties, and 'isOn' does not exist in type 'ITrait'.
+tests/unit/actions/switching_on-golden.test.ts(518,7): error TS2353: Object literal may only specify known properties, and 'isOn' does not exist in type 'ITrait'.
+tests/unit/actions/switching_on-golden.test.ts(549,7): error TS2353: Object literal may only specify known properties, and 'isOn' does not exist in type 'ITrait'.
+tests/unit/actions/switching_on-golden.test.ts(577,7): error TS2353: Object literal may only specify known properties, and 'isOn' does not exist in type 'ITrait'.
+tests/unit/actions/switching_on-golden.test.ts(627,7): error TS2353: Object literal may only specify known properties, and 'isOn' does not exist in type 'ITrait'.
+tests/unit/actions/switching_on-golden.test.ts(631,7): error TS2353: Object literal may only specify known properties, and 'isLit' does not exist in type 'ITrait'.
+tests/unit/actions/taking-golden.test.ts(45,9): error TS2353: Object literal may only specify known properties, and 'text' does not exist in type '{ verb?: string | undefined; entity?: IFEntity | undefined; secondEntity?: IFEntity | undefined; preposition?: string | undefined; extras?: Record<string, any> | undefined; nounPhrase?: string | undefined; all?: boolean | undefined; rawInput?: string | undefined; }'.
+tests/unit/actions/taking-golden.test.ts(206,9): error TS2353: Object literal may only specify known properties, and 'capacity' does not exist in type 'ITrait'.
+tests/unit/actions/taking-golden.test.ts(244,9): error TS2353: Object literal may only specify known properties, and 'capacity' does not exist in type 'ITrait'.
+tests/unit/actions/taking-golden.test.ts(252,9): error TS2353: Object literal may only specify known properties, and 'worn' does not exist in type 'ITrait'.
+tests/unit/actions/taking-golden.test.ts(284,47): error TS2353: Object literal may only specify known properties, and 'capacity' does not exist in type 'ITrait'.
+tests/unit/actions/taking-golden.test.ts(288,49): error TS2353: Object literal may only specify known properties, and 'name' does not exist in type 'ITrait'.
+tests/unit/actions/taking-golden.test.ts(385,9): error TS2353: Object literal may only specify known properties, and 'worn' does not exist in type 'ITrait'.
+tests/unit/actions/taking-golden.test.ts(646,55): error TS2353: Object literal may only specify known properties, and 'text' does not exist in type '{ verb?: string | undefined; entity?: IFEntity | undefined; secondEntity?: IFEntity | undefined; preposition?: string | undefined; extras?: Record<string, any> | undefined; nounPhrase?: string | undefined; all?: boolean | undefined; rawInput?: string | undefined; }'.
+tests/unit/actions/taking_off-golden.test.ts(60,9): error TS2353: Object literal may only specify known properties, and 'worn' does not exist in type 'ITrait'.
+tests/unit/actions/taking_off-golden.test.ts(99,9): error TS2353: Object literal may only specify known properties, and 'worn' does not exist in type 'ITrait'.
+tests/unit/actions/taking_off-golden.test.ts(122,9): error TS2353: Object literal may only specify known properties, and 'worn' does not exist in type 'ITrait'.
+tests/unit/actions/taking_off-golden.test.ts(132,9): error TS2353: Object literal may only specify known properties, and 'worn' does not exist in type 'ITrait'.
+tests/unit/actions/taking_off-golden.test.ts(158,9): error TS2353: Object literal may only specify known properties, and 'worn' does not exist in type 'ITrait'.
+tests/unit/actions/taking_off-golden.test.ts(183,9): error TS2353: Object literal may only specify known properties, and 'worn' does not exist in type 'ITrait'.
+tests/unit/actions/taking_off-golden.test.ts(208,9): error TS2353: Object literal may only specify known properties, and 'worn' does not exist in type 'ITrait'.
+tests/unit/actions/taking_off-golden.test.ts(233,9): error TS2353: Object literal may only specify known properties, and 'worn' does not exist in type 'ITrait'.
+tests/unit/actions/taking_off-golden.test.ts(242,9): error TS2353: Object literal may only specify known properties, and 'worn' does not exist in type 'ITrait'.
+tests/unit/actions/taking_off-golden.test.ts(251,9): error TS2353: Object literal may only specify known properties, and 'worn' does not exist in type 'ITrait'.
+tests/unit/actions/taking_off-golden.test.ts(281,9): error TS2353: Object literal may only specify known properties, and 'worn' does not exist in type 'ITrait'.
+tests/unit/actions/taking_off-golden.test.ts(290,9): error TS2353: Object literal may only specify known properties, and 'worn' does not exist in type 'ITrait'.
+tests/unit/actions/taking_off-golden.test.ts(317,9): error TS2353: Object literal may only specify known properties, and 'worn' does not exist in type 'ITrait'.
+tests/unit/actions/taking_off-golden.test.ts(345,9): error TS2353: Object literal may only specify known properties, and 'worn' does not exist in type 'ITrait'.
+tests/unit/actions/taking_off-golden.test.ts(381,7): error TS2353: Object literal may only specify known properties, and 'worn' does not exist in type 'ITrait'.
+tests/unit/actions/taking_off-golden.test.ts(412,7): error TS2353: Object literal may only specify known properties, and 'worn' does not exist in type 'ITrait'.
+tests/unit/actions/taking_off-golden.test.ts(447,7): error TS2353: Object literal may only specify known properties, and 'worn' does not exist in type 'ITrait'.
+tests/unit/actions/taking_off-golden.test.ts(498,7): error TS2353: Object literal may only specify known properties, and 'worn' does not exist in type 'ITrait'.
+tests/unit/actions/taking_off-golden.test.ts(508,7): error TS2353: Object literal may only specify known properties, and 'worn' does not exist in type 'ITrait'.
+tests/unit/actions/taking_off-golden.test.ts(543,7): error TS2353: Object literal may only specify known properties, and 'worn' does not exist in type 'ITrait'.
+tests/unit/actions/taking_off-interceptor.test.ts(29,5): error TS2353: Object literal may only specify known properties, and 'worn' does not exist in type 'ITrait'.
+tests/unit/actions/taking_off-interceptor.test.ts(43,56): error TS2353: Object literal may only specify known properties, and 'text' does not exist in type '{ verb?: string | undefined; entity?: IFEntity | undefined; secondEntity?: IFEntity | undefined; preposition?: string | undefined; extras?: Record<string, any> | undefined; nounPhrase?: string | undefined; all?: boolean | undefined; rawInput?: string | undefined; }'.
+tests/unit/actions/taking_off-interceptor.test.ts(137,7): error TS2353: Object literal may only specify known properties, and 'worn' does not exist in type 'ITrait'.
+tests/unit/actions/talking-golden.test.ts(103,9): error TS2353: Object literal may only specify known properties, and 'conversation' does not exist in type 'ITrait'.
+tests/unit/actions/talking-golden.test.ts(156,9): error TS2353: Object literal may only specify known properties, and 'conversation' does not exist in type 'ITrait'.
+tests/unit/actions/talking-golden.test.ts(185,9): error TS2353: Object literal may only specify known properties, and 'conversation' does not exist in type 'ITrait'.
+tests/unit/actions/talking-golden.test.ts(210,9): error TS2353: Object literal may only specify known properties, and 'conversation' does not exist in type 'ITrait'.
+tests/unit/actions/talking-golden.test.ts(237,9): error TS2353: Object literal may only specify known properties, and 'conversation' does not exist in type 'ITrait'.
+tests/unit/actions/talking-golden.test.ts(262,9): error TS2353: Object literal may only specify known properties, and 'conversation' does not exist in type 'ITrait'.
+tests/unit/actions/talking-golden.test.ts(287,9): error TS2353: Object literal may only specify known properties, and 'conversation' does not exist in type 'ITrait'.
+tests/unit/actions/talking-golden.test.ts(314,9): error TS2353: Object literal may only specify known properties, and 'conversation' does not exist in type 'ITrait'.
+tests/unit/actions/talking-golden.test.ts(346,9): error TS2353: Object literal may only specify known properties, and 'conversation' does not exist in type 'ITrait'.
+tests/unit/actions/talking-golden.test.ts(373,9): error TS2353: Object literal may only specify known properties, and 'conversation' does not exist in type 'ITrait'.
+tests/unit/actions/talking-golden.test.ts(415,9): error TS2353: Object literal may only specify known properties, and 'customProperties' does not exist in type 'ITrait'.
+tests/unit/actions/talking-golden.test.ts(421,26): error TS18048: 'actorBefore' is possibly 'undefined'.
+tests/unit/actions/talking-golden.test.ts(421,38): error TS2339: Property 'customProperties' does not exist on type 'ITrait'.
+tests/unit/actions/talking-golden.test.ts(433,25): error TS18048: 'actorAfter' is possibly 'undefined'.
+tests/unit/actions/talking-golden.test.ts(433,36): error TS2339: Property 'customProperties' does not exist on type 'ITrait'.
+tests/unit/actions/talking-interceptor.test.ts(45,56): error TS2353: Object literal may only specify known properties, and 'text' does not exist in type '{ verb?: string | undefined; entity?: IFEntity | undefined; secondEntity?: IFEntity | undefined; preposition?: string | undefined; extras?: Record<string, any> | undefined; nounPhrase?: string | undefined; all?: boolean | undefined; rawInput?: string | undefined; }'.
+tests/unit/actions/throwing-golden.test.ts(397,9): error TS2353: Object literal may only specify known properties, and 'isOpen' does not exist in type 'ITrait'.
+tests/unit/actions/throwing-golden.test.ts(428,9): error TS2353: Object literal may only specify known properties, and 'isOpen' does not exist in type 'ITrait'.
+tests/unit/actions/throwing-golden.test.ts(515,14): error TS2571: Object is of type 'unknown'.
+tests/unit/actions/throwing-golden.test.ts(518,14): error TS2571: Object is of type 'unknown'.
+tests/unit/actions/throwing-golden.test.ts(598,11): error TS2353: Object literal may only specify known properties, and 'name' does not exist in type 'ITrait'.
+tests/unit/actions/throwing-golden.test.ts(639,20): error TS18046: 'event.data' is of type 'unknown'.
+tests/unit/actions/throwing-golden.test.ts(642,15): error TS18046: 'event.data' is of type 'unknown'.
+tests/unit/actions/throwing-golden.test.ts(643,20): error TS18046: 'event.data' is of type 'unknown'.
+tests/unit/actions/throwing-golden.test.ts(705,41): error TS2353: Object literal may only specify known properties, and 'isOpen' does not exist in type 'ITrait'.
+tests/unit/actions/throwing-golden.test.ts(730,43): error TS2353: Object literal may only specify known properties, and 'isOpen' does not exist in type 'ITrait'.
+tests/unit/actions/throwing-item-interceptor.test.ts(125,15): error TS7006: Parameter '_entity' implicitly has an 'any' type.
+tests/unit/actions/throwing-item-interceptor.test.ts(125,24): error TS7006: Parameter 'w' implicitly has an 'any' type.
+tests/unit/actions/touching-golden.test.ts(265,9): error TS2353: Object literal may only specify known properties, and 'capacity' does not exist in type 'ITrait'.
+tests/unit/actions/touching-golden.test.ts(271,9): error TS2353: Object literal may only specify known properties, and 'isDrink' does not exist in type 'ITrait'.
+tests/unit/actions/touching-interceptor.test.ts(39,57): error TS2353: Object literal may only specify known properties, and 'text' does not exist in type '{ verb?: string | undefined; entity?: IFEntity | undefined; secondEntity?: IFEntity | undefined; preposition?: string | undefined; extras?: Record<string, any> | undefined; nounPhrase?: string | undefined; all?: boolean | undefined; rawInput?: string | undefined; }'.
+tests/unit/actions/unlocking-golden.test.ts(230,9): error TS2353: Object literal may only specify known properties, and 'isLocked' does not exist in type 'ITrait'.
+tests/unit/actions/unlocking-golden.test.ts(268,9): error TS2353: Object literal may only specify known properties, and 'isLocked' does not exist in type 'ITrait'.
+tests/unit/actions/unlocking-golden.test.ts(273,9): error TS2353: Object literal may only specify known properties, and 'connectsTo' does not exist in type 'ITrait'.
+tests/unit/actions/unlocking-golden.test.ts(346,9): error TS2353: Object literal may only specify known properties, and 'isLocked' does not exist in type 'ITrait'.
+tests/unit/actions/unlocking-golden.test.ts(375,9): error TS2353: Object literal may only specify known properties, and 'isLocked' does not exist in type 'ITrait'.
+tests/unit/actions/unlocking-golden.test.ts(409,9): error TS2353: Object literal may only specify known properties, and 'isLocked' does not exist in type 'ITrait'.
+tests/unit/actions/unlocking-golden.test.ts(413,9): error TS2353: Object literal may only specify known properties, and 'isOpen' does not exist in type 'ITrait'.
+tests/unit/actions/unlocking-golden.test.ts(432,35): error TS2339: Property 'willAutoOpen' does not exist on type '{}'.
+tests/unit/actions/unlocking-golden.test.ts(441,9): error TS2353: Object literal may only specify known properties, and 'isLocked' does not exist in type 'ITrait'.
+tests/unit/actions/unlocking-golden.test.ts(445,9): error TS2353: Object literal may only specify known properties, and 'isOpen' does not exist in type 'ITrait'.
+tests/unit/actions/unlocking-golden.test.ts(458,35): error TS2339: Property 'willAutoOpen' does not exist on type '{}'.
+tests/unit/actions/unlocking-golden.test.ts(523,7): error TS2353: Object literal may only specify known properties, and 'isLocked' does not exist in type 'ITrait'.
+tests/unit/actions/unlocking-golden.test.ts(553,7): error TS2353: Object literal may only specify known properties, and 'isLocked' does not exist in type 'ITrait'.
+tests/unit/actions/unlocking-golden.test.ts(581,7): error TS2353: Object literal may only specify known properties, and 'isLocked' does not exist in type 'ITrait'.
+tests/unit/actions/unlocking-golden.test.ts(618,7): error TS2353: Object literal may only specify known properties, and 'isLocked' does not exist in type 'ITrait'.
+tests/unit/actions/unlocking-golden.test.ts(645,7): error TS2353: Object literal may only specify known properties, and 'isOpen' does not exist in type 'ITrait'.
+tests/unit/actions/unlocking-golden.test.ts(650,7): error TS2353: Object literal may only specify known properties, and 'isLocked' does not exist in type 'ITrait'.
+tests/unit/actions/unlocking-golden.test.ts(681,7): error TS2353: Object literal may only specify known properties, and 'isLocked' does not exist in type 'ITrait'.
+tests/unit/actions/unlocking-golden.test.ts(711,7): error TS2353: Object literal may only specify known properties, and 'isLocked' does not exist in type 'ITrait'.
+tests/unit/actions/unlocking-golden.test.ts(763,7): error TS2353: Object literal may only specify known properties, and 'isOpen' does not exist in type 'ITrait'.
+tests/unit/actions/unlocking-golden.test.ts(767,7): error TS2353: Object literal may only specify known properties, and 'connectsTo' does not exist in type 'ITrait'.
+tests/unit/actions/unlocking-golden.test.ts(772,7): error TS2353: Object literal may only specify known properties, and 'isLocked' does not exist in type 'ITrait'.
+tests/unit/actions/unlocking-interceptor.test.ts(31,5): error TS2353: Object literal may only specify known properties, and 'isLocked' does not exist in type 'ITrait'.
+tests/unit/actions/unlocking-interceptor.test.ts(187,43): error TS2353: Object literal may only specify known properties, and 'isLocked' does not exist in type 'ITrait'.
+tests/unit/actions/wearing-golden.test.ts(124,9): error TS2353: Object literal may only specify known properties, and 'worn' does not exist in type 'ITrait'.
+tests/unit/actions/wearing-golden.test.ts(149,9): error TS2353: Object literal may only specify known properties, and 'worn' does not exist in type 'ITrait'.
+tests/unit/actions/wearing-golden.test.ts(157,9): error TS2353: Object literal may only specify known properties, and 'worn' does not exist in type 'ITrait'.
+tests/unit/actions/wearing-golden.test.ts(185,9): error TS2353: Object literal may only specify known properties, and 'worn' does not exist in type 'ITrait'.
+tests/unit/actions/wearing-golden.test.ts(194,9): error TS2353: Object literal may only specify known properties, and 'worn' does not exist in type 'ITrait'.
+tests/unit/actions/wearing-golden.test.ts(307,9): error TS2353: Object literal may only specify known properties, and 'worn' does not exist in type 'ITrait'.
+tests/unit/actions/wearing-golden.test.ts(316,9): error TS2353: Object literal may only specify known properties, and 'worn' does not exist in type 'ITrait'.
+tests/unit/actions/wearing-golden.test.ts(347,9): error TS2353: Object literal may only specify known properties, and 'worn' does not exist in type 'ITrait'.
+tests/unit/actions/wearing-golden.test.ts(355,9): error TS2353: Object literal may only specify known properties, and 'worn' does not exist in type 'ITrait'.
+tests/unit/actions/wearing-golden.test.ts(422,7): error TS2353: Object literal may only specify known properties, and 'worn' does not exist in type 'ITrait'.
+tests/unit/actions/wearing-golden.test.ts(452,7): error TS2353: Object literal may only specify known properties, and 'worn' does not exist in type 'ITrait'.
+tests/unit/actions/wearing-golden.test.ts(486,7): error TS2353: Object literal may only specify known properties, and 'worn' does not exist in type 'ITrait'.
+tests/unit/actions/wearing-golden.test.ts(540,7): error TS2353: Object literal may only specify known properties, and 'worn' does not exist in type 'ITrait'.
+tests/unit/actions/wearing-golden.test.ts(551,7): error TS2353: Object literal may only specify known properties, and 'worn' does not exist in type 'ITrait'.
+tests/unit/actions/wearing-golden.test.ts(585,7): error TS2353: Object literal may only specify known properties, and 'worn' does not exist in type 'ITrait'.
+tests/unit/actions/wearing-interceptor.test.ts(40,54): error TS2353: Object literal may only specify known properties, and 'text' does not exist in type '{ verb?: string | undefined; entity?: IFEntity | undefined; secondEntity?: IFEntity | undefined; preposition?: string | undefined; extras?: Record<string, any> | undefined; nounPhrase?: string | undefined; all?: boolean | undefined; rawInput?: string | undefined; }'.
+tests/unit/actions/wearing-interceptor.test.ts(134,7): error TS2353: Object literal may only specify known properties, and 'worn' does not exist in type 'ITrait'.
+tests/unit/capabilities/interceptor-context-binding.test.ts(40,23): error TS2459: Module '"../../../src/actions/enhanced-types"' declares 'ValidatedCommand' locally, but it is not exported.
+tests/unit/capabilities/interceptor-context-binding.test.ts(65,17): error TS2554: Expected 5-7 arguments, but got 4.
+tests/unit/capabilities/interceptor-context-binding.test.ts(95,17): error TS2554: Expected 5-7 arguments, but got 4.
+tests/unit/capabilities/interceptor-context-binding.test.ts(123,17): error TS2554: Expected 5-7 arguments, but got 4.
+tests/unit/npc/npc-service.test.ts(373,9): error TS2322: Type '() => { direction: "north"; destination: string; }[]' is not assignable to type '() => { direction: DirectionType; destination: string; }[]'.
+  Type '{ direction: "north"; destination: string; }[]' is not assignable to type '{ direction: DirectionType; destination: string; }[]'.
+    Type '{ direction: "north"; destination: string; }' is not assignable to type '{ direction: DirectionType; destination: string; }'.
+      Types of property 'direction' are incompatible.
+        Type '"north"' is not assignable to type 'DirectionType'. Did you mean '"NORTH"'?
+tests/unit/npc/npc-service.test.ts(403,9): error TS2322: Type '() => { direction: "east"; destination: string; }[]' is not assignable to type '() => { direction: DirectionType; destination: string; }[]'.
+  Type '{ direction: "east"; destination: string; }[]' is not assignable to type '{ direction: DirectionType; destination: string; }[]'.
+    Type '{ direction: "east"; destination: string; }' is not assignable to type '{ direction: DirectionType; destination: string; }'.
+      Types of property 'direction' are incompatible.
+        Type '"east"' is not assignable to type 'DirectionType'. Did you mean '"EAST"'?
+tests/unit/npc/npc-service.test.ts(420,9): error TS2322: Type '() => { direction: "east"; destination: string; }[]' is not assignable to type '() => { direction: DirectionType; destination: string; }[]'.
+  Type '{ direction: "east"; destination: string; }[]' is not assignable to type '{ direction: DirectionType; destination: string; }[]'.
+    Type '{ direction: "east"; destination: string; }' is not assignable to type '{ direction: DirectionType; destination: string; }'.
+      Types of property 'direction' are incompatible.
+        Type '"east"' is not assignable to type 'DirectionType'. Did you mean '"EAST"'?
+tests/unit/parser/parser-factory.test.ts(40,7): error TS2420: Class 'MockLanguageProvider' incorrectly implements interface 'LanguageProvider'.
+  Type 'MockLanguageProvider' is missing the following properties from type 'LanguageProvider': getActionPatterns, getMessage, getNarrativePerson, getLanguageWords, hasMessage
+tests/unit/scope/scope-resolver.test.ts(70,43): error TS2353: Object literal may only specify known properties, and 'isOpen' does not exist in type 'ITrait'.
+tests/unit/scope/scope-resolver.test.ts(83,43): error TS2353: Object literal may only specify known properties, and 'isOpen' does not exist in type 'ITrait'.
+tests/unit/scope/scope-resolver.test.ts(96,45): error TS2353: Object literal may only specify known properties, and 'isOpen' does not exist in type 'ITrait'.
+tests/unit/scope/scope-resolver.test.ts(101,43): error TS2353: Object literal may only specify known properties, and 'isOpen' does not exist in type 'ITrait'.
+tests/unit/scope/scope-resolver.test.ts(113,45): error TS2353: Object literal may only specify known properties, and 'isOpen' does not exist in type 'ITrait'.
+tests/unit/scope/scope-resolver.test.ts(118,43): error TS2353: Object literal may only specify known properties, and 'isOpen' does not exist in type 'ITrait'.
+tests/unit/scope/scope-resolver.test.ts(179,43): error TS2353: Object literal may only specify known properties, and 'isOpen' does not exist in type 'ITrait'.
+tests/unit/scope/scope-resolver.test.ts(191,43): error TS2353: Object literal may only specify known properties, and 'isOpen' does not exist in type 'ITrait'.
+tests/unit/scope/scope-resolver.test.ts(232,49): error TS2353: Object literal may only specify known properties, and 'isOpen' does not exist in type 'ITrait'.
+tests/unit/scope/scope-resolver.test.ts(636,44): error TS2353: Object literal may only specify known properties, and 'name' does not exist in type 'ITrait'.
+tests/unit/scope/scope-resolver.test.ts(642,44): error TS2353: Object literal may only specify known properties, and 'name' does not exist in type 'ITrait'.
+tests/unit/scope/scope-resolver.test.ts(736,51): error TS2353: Object literal may only specify known properties, and 'name' does not exist in type 'ITrait'.
+tests/unit/scope/scope-resolver.test.ts(742,49): error TS2353: Object literal may only specify known properties, and 'name' does not exist in type 'ITrait'.
+tests/unit/scope/sensory-extensions.test.ts(32,42): error TS2353: Object literal may only specify known properties, and 'name' does not exist in type 'ITrait'.
+tests/unit/scope/sensory-extensions.test.ts(36,45): error TS2353: Object literal may only specify known properties, and 'name' does not exist in type 'ITrait'.
+tests/unit/scope/sensory-extensions.test.ts(46,44): error TS2353: Object literal may only specify known properties, and 'name' does not exist in type 'ITrait'.
+tests/unit/scope/sensory-extensions.test.ts(56,45): error TS2353: Object literal may only specify known properties, and 'name' does not exist in type 'ITrait'.
+tests/unit/scope/sensory-extensions.test.ts(68,9): error TS2353: Object literal may only specify known properties, and 'room1' does not exist in type 'ITrait'.
+tests/unit/scope/sensory-extensions.test.ts(71,44): error TS2353: Object literal may only specify known properties, and 'isOpen' does not exist in type 'ITrait'.
+tests/unit/scope/sensory-extensions.test.ts(77,43): error TS2353: Object literal may only specify known properties, and 'name' does not exist in type 'ITrait'.
+tests/unit/scope/sensory-extensions.test.ts(90,9): error TS2353: Object literal may only specify known properties, and 'room1' does not exist in type 'ITrait'.
+tests/unit/scope/sensory-extensions.test.ts(93,44): error TS2353: Object literal may only specify known properties, and 'isOpen' does not exist in type 'ITrait'.
+tests/unit/scope/sensory-extensions.test.ts(99,43): error TS2353: Object literal may only specify known properties, and 'name' does not exist in type 'ITrait'.
+tests/unit/scope/sensory-extensions.test.ts(121,45): error TS2353: Object literal may only specify known properties, and 'name' does not exist in type 'ITrait'.
+tests/unit/scope/sensory-extensions.test.ts(128,9): error TS2353: Object literal may only specify known properties, and 'room1' does not exist in type 'ITrait'.
+tests/unit/scope/sensory-extensions.test.ts(131,44): error TS2353: Object literal may only specify known properties, and 'isOpen' does not exist in type 'ITrait'.
+tests/unit/scope/sensory-extensions.test.ts(137,43): error TS2353: Object literal may only specify known properties, and 'name' does not exist in type 'ITrait'.
+tests/unit/scope/sensory-extensions.test.ts(144,45): error TS2353: Object literal may only specify known properties, and 'name' does not exist in type 'ITrait'.
+tests/unit/scope/sensory-extensions.test.ts(167,45): error TS2353: Object literal may only specify known properties, and 'name' does not exist in type 'ITrait'.
+tests/unit/scope/sensory-extensions.test.ts(176,43): error TS2353: Object literal may only specify known properties, and 'name' does not exist in type 'ITrait'.
+tests/unit/scope/sensory-extensions.test.ts(186,9): error TS2353: Object literal may only specify known properties, and 'room1' does not exist in type 'ITrait'.
+tests/unit/scope/sensory-extensions.test.ts(189,44): error TS2353: Object literal may only specify known properties, and 'isOpen' does not exist in type 'ITrait'.
+tests/unit/scope/sensory-extensions.test.ts(195,45): error TS2353: Object literal may only specify known properties, and 'name' does not exist in type 'ITrait'.
+tests/unit/scope/sensory-extensions.test.ts(207,9): error TS2353: Object literal may only specify known properties, and 'room1' does not exist in type 'ITrait'.
+tests/unit/scope/sensory-extensions.test.ts(210,44): error TS2353: Object literal may only specify known properties, and 'isOpen' does not exist in type 'ITrait'.
+tests/unit/scope/sensory-extensions.test.ts(216,45): error TS2353: Object literal may only specify known properties, and 'name' does not exist in type 'ITrait'.
+tests/unit/scope/sensory-extensions.test.ts(224,44): error TS2353: Object literal may only specify known properties, and 'name' does not exist in type 'ITrait'.
+tests/unit/scope/sensory-extensions.test.ts(238,44): error TS2353: Object literal may only specify known properties, and 'name' does not exist in type 'ITrait'.
+tests/unit/scope/sensory-extensions.test.ts(253,45): error TS2353: Object literal may only specify known properties, and 'name' does not exist in type 'ITrait'.
+tests/unit/scope/sensory-extensions.test.ts(254,49): error TS2353: Object literal may only specify known properties, and 'isLit' does not exist in type 'ITrait'.
+tests/unit/scope/sensory-extensions.test.ts(258,44): error TS2353: Object literal may only specify known properties, and 'name' does not exist in type 'ITrait'.
+tests/unit/scope/sensory-extensions.test.ts(271,50): error TS2353: Object literal may only specify known properties, and 'isLit' does not exist in type 'ITrait'.
+tests/unit/scope/sensory-extensions.test.ts(274,44): error TS2353: Object literal may only specify known properties, and 'name' does not exist in type 'ITrait'.
+tests/unit/scope/sensory-extensions.test.ts(283,44): error TS2353: Object literal may only specify known properties, and 'name' does not exist in type 'ITrait'.
+tests/unit/scope/witness-system.test.ts(171,14): error TS2532: Object is possibly 'undefined'.
+tests/unit/utils/noun-phrase.test.ts(62,13): error TS2352: Conversion of type 'NounPhrase' to type 'Record<string, unknown>' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Index signature for type 'string' is missing in type 'NounPhrase'.
+tests/unit/validation/adr-231-d4-topic.test.ts(201,20): error TS2722: Cannot invoke an object which is possibly 'undefined'.
+tests/unit/validation/adr-231-d4-topic.test.ts(201,20): error TS18048: 'askingAction.report' is possibly 'undefined'.
+tests/unit/validation/adr-231-d4-topic.test.ts(222,20): error TS2722: Cannot invoke an object which is possibly 'undefined'.
+tests/unit/validation/adr-231-d4-topic.test.ts(222,20): error TS18048: 'askingAction.report' is possibly 'undefined'.
+tests/unit/validation/adr-231-d4-topic.test.ts(240,20): error TS2722: Cannot invoke an object which is possibly 'undefined'.
+tests/unit/validation/adr-231-d4-topic.test.ts(240,20): error TS18048: 'tellingAction.report' is possibly 'undefined'.
+tests/unit/validation/adr-231-d4-topic.test.ts(257,20): error TS2722: Cannot invoke an object which is possibly 'undefined'.
+tests/unit/validation/adr-231-d4-topic.test.ts(257,20): error TS18048: 'tellingAction.report' is possibly 'undefined'.
+tests/unit/validation/command-validator-golden.test.ts(16,3): error TS2724: '"@sharpee/core"' has no exported member named 'SystemEvent'. Did you mean 'ISystemEvent'?
+tests/unit/validation/command-validator-golden.test.ts(17,3): error TS2724: '"@sharpee/core"' has no exported member named 'GenericEventSource'. Did you mean 'IGenericEventSource'?
+tests/unit/validation/command-validator-golden.test.ts(153,9): error TS2353: Object literal may only specify known properties, and 'name' does not exist in type 'ITrait'.
+tests/unit/validation/command-validator-golden.test.ts(188,9): error TS2353: Object literal may only specify known properties, and 'name' does not exist in type 'ITrait'.
+tests/unit/validation/command-validator-golden.test.ts(229,9): error TS2353: Object literal may only specify known properties, and 'name' does not exist in type 'ITrait'.
+tests/unit/validation/command-validator-golden.test.ts(237,9): error TS2353: Object literal may only specify known properties, and 'name' does not exist in type 'ITrait'.
+tests/unit/validation/command-validator-golden.test.ts(305,9): error TS2353: Object literal may only specify known properties, and 'name' does not exist in type 'ITrait'.
+tests/unit/validation/command-validator-golden.test.ts(340,9): error TS2353: Object literal may only specify known properties, and 'name' does not exist in type 'ITrait'.
+tests/unit/validation/command-validator-golden.test.ts(365,9): error TS2353: Object literal may only specify known properties, and 'name' does not exist in type 'ITrait'.
+tests/unit/validation/command-validator-golden.test.ts(395,9): error TS2353: Object literal may only specify known properties, and 'name' does not exist in type 'ITrait'.
+tests/unit/validation/command-validator-golden.test.ts(421,9): error TS2353: Object literal may only specify known properties, and 'name' does not exist in type 'ITrait'.
+tests/unit/validation/command-validator-golden.test.ts(440,9): error TS2353: Object literal may only specify known properties, and 'name' does not exist in type 'ITrait'.
+tests/unit/validation/command-validator-golden.test.ts(472,9): error TS2353: Object literal may only specify known properties, and 'name' does not exist in type 'ITrait'.
+tests/unit/validation/command-validator-golden.test.ts(477,9): error TS2353: Object literal may only specify known properties, and 'name' does not exist in type 'ITrait'.
+tests/unit/validation/command-validator-golden.test.ts(509,9): error TS2353: Object literal may only specify known properties, and 'name' does not exist in type 'ITrait'.
+tests/unit/validation/command-validator-golden.test.ts(516,9): error TS2353: Object literal may only specify known properties, and 'name' does not exist in type 'ITrait'.
+tests/unit/validation/command-validator-golden.test.ts(550,9): error TS2353: Object literal may only specify known properties, and 'name' does not exist in type 'ITrait'.
+tests/unit/validation/command-validator-golden.test.ts(580,9): error TS2353: Object literal may only specify known properties, and 'name' does not exist in type 'ITrait'.
+tests/unit/validation/command-validator-golden.test.ts(612,9): error TS2353: Object literal may only specify known properties, and 'name' does not exist in type 'ITrait'.
+tests/unit/validation/command-validator-golden.test.ts(618,9): error TS2353: Object literal may only specify known properties, and 'name' does not exist in type 'ITrait'.
+tests/unit/validation/exact-out-of-scope.test.ts(73,46): error TS2353: Object literal may only specify known properties, and 'name' does not exist in type 'ITrait'.
+tests/unit/validation/exact-out-of-scope.test.ts(83,43): error TS2353: Object literal may only specify known properties, and 'name' does not exist in type 'ITrait'.
+tests/unit/validation/exact-out-of-scope.test.ts(94,42): error TS2353: Object literal may only specify known properties, and 'name' does not exist in type 'ITrait'.
+tests/unit/validation/exact-out-of-scope.test.ts(97,43): error TS2353: Object literal may only specify known properties, and 'name' does not exist in type 'ITrait'.
+tests/unit/validation/exact-out-of-scope.test.ts(108,42): error TS2353: Object literal may only specify known properties, and 'name' does not exist in type 'ITrait'.
+tests/unit/validation/exact-out-of-scope.test.ts(119,41): error TS2353: Object literal may only specify known properties, and 'name' does not exist in type 'ITrait'.
+tests/unit/validation/exact-out-of-scope.test.ts(121,41): error TS2353: Object literal may only specify known properties, and 'isOpen' does not exist in type 'ITrait'.
+tests/unit/validation/exact-out-of-scope.test.ts(124,42): error TS2353: Object literal may only specify known properties, and 'name' does not exist in type 'ITrait'.
+tests/unit/validation/list-resolution.test.ts(96,39): error TS2353: Object literal may only specify known properties, and 'name' does not exist in type 'ITrait'.
+tests/unit/validation/preferred-scope-disambiguation.test.ts(92,42): error TS2353: Object literal may only specify known properties, and 'name' does not exist in type 'ITrait'.
+tests/unit/validation/scoped-resolution.test.ts(71,48): error TS2353: Object literal may only specify known properties, and 'name' does not exist in type 'ITrait'.
+tests/unit/validation/scoped-resolution.test.ts(73,47): error TS2353: Object literal may only specify known properties, and 'name' does not exist in type 'ITrait'.
+tests/unit/validation/self-words.test.ts(65,44): error TS2353: Object literal may only specify known properties, and 'name' does not exist in type 'ITrait'.
+tests/unit/validation/self-words.test.ts(84,43): error TS2353: Object literal may only specify known properties, and 'name' does not exist in type 'ITrait'.
+tests/unit/validation/unplaced-entity-scope.test.ts(77,49): error TS2353: Object literal may only specify known properties, and 'name' does not exist in type 'ITrait'.
+tests/unit/validation/unplaced-entity-scope.test.ts(94,46): error TS2353: Object literal may only specify known properties, and 'name' does not exist in type 'ITrait'.
+tests/unit/validation/unplaced-entity-scope.test.ts(114,46): error TS2353: Object literal may only specify known properties, and 'name' does not exist in type 'ITrait'.
+tests/unit/validation/word-vocabulary-resolution.test.ts(118,7): error TS2353: Object literal may only specify known properties, and 'name' does not exist in type 'ITrait'.
+tests/unit/validation/word-vocabulary-resolution.test.ts(294,14): error TS2571: Object is of type 'unknown'.
+tests/unit/validation/word-vocabulary-resolution.test.ts(317,46): error TS2353: Object literal may only specify known properties, and 'name' does not exist in type 'ITrait'.
+tests/validation/entity-alias-resolution.test.ts(6,10): error TS2724: '"@sharpee/world-model"' has no exported member named 'ParsedCommand'. Did you mean 'IParsedCommand'?
+tests/validation/entity-alias-resolution.test.ts(6,25): error TS2724: '"@sharpee/world-model"' has no exported member named 'NounPhrase'. Did you mean 'INounPhrase'?
+tests/validation/entity-alias-resolution.test.ts(7,37): error TS2724: '"@sharpee/core"' has no exported member named 'SystemEvent'. Did you mean 'ISystemEvent'?
+tests/validation/entity-alias-resolution.test.ts(76,38): error TS7006: Parameter 'e' implicitly has an 'any' type.
+tests/validation/entity-alias-resolution.test.ts(87,28): error TS7006: Parameter 'e' implicitly has an 'any' type.
+/Users/david/repos/sharpee/packages/stdlib:
+ ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  @sharpee/stdlib@5.5.1 typecheck:tests: `tsc -p tsconfig.test.json`
+Exit status 2

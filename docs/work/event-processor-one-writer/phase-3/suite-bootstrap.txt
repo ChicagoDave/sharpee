@@ -1,0 +1,19 @@
+
+> @sharpee/bootstrap@5.5.1 test:ci /Users/david/repos/sharpee/packages/bootstrap
+> vitest run
+
+
+ RUN  v1.6.1 /Users/david/repos/sharpee/packages/bootstrap
+
+ ✓ src/resolve.test.ts  (10 tests) 3ms
+ ✓ src/purge.test.ts  (5 tests) 7ms
+ ✓ src/assemble-channels.test.ts  (10 tests) 38ms
+ ✓ src/assemble-restart.test.ts  (7 tests) 45ms
+ ✓ src/adr-327-phase3-role.test.ts  (9 tests) 67ms
+ ✓ src/introspect.test.ts  (16 tests) 3ms
+
+ Test Files  6 passed (6)
+      Tests  57 passed (57)
+   Start at  20:34:27
+   Duration  771ms (transform 619ms, setup 0ms, collect 1.12s, tests 163ms, environment 0ms, prepare 160ms)
+

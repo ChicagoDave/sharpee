@@ -156,6 +156,28 @@ describe('closingAction (Golden Pattern)', () => {
       });
     });
 
+    test('reports the closing as one event, the primary one', () => {
+      const { world, object } = TestData.withObject('wooden box', {
+        [TraitType.OPENABLE]: {
+          type: TraitType.OPENABLE,
+          isOpen: true,
+          canClose: true
+        }
+      });
+
+      const command = createCommand(IFActions.CLOSING, {
+        entity: object
+      });
+      const context = createRealTestContext(closingAction, world, command);
+
+      const events = executeWithValidation(closingAction, context);
+
+      // The box is closed, and the report says so exactly once: no second,
+      // unprefixed copy of the event travels with the primary one.
+      expect((object.get(TraitType.OPENABLE) as OpenableTrait).isOpen).toBe(false);
+      expect(events.map(e => e.type)).toEqual(['if.event.closed']);
+    });
+
     test('should include container contents in event', () => {
       const { world, player, room } = setupBasicWorld();
       
