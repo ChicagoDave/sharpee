@@ -699,11 +699,13 @@ import { EdibleBehavior } from '@sharpee/world-model';
  */
 describe('World State Mutations', () => {
   test('should actually move item to inventory on implicit take', () => {
-    // Item in room, not held
+    // Item in room, not held. Two servings, so it is still there to be
+    // looked for after the one sip this test takes.
     const { world, player, room, object } = TestData.withObject('can of soda', {
       [TraitType.EDIBLE]: {
         type: TraitType.EDIBLE,
-        liquid: true
+        liquid: true,
+        servings: 2
       }
     });
 
@@ -726,10 +728,12 @@ describe('World State Mutations', () => {
   });
 
   test('should not move item that is already held', () => {
+    // Two servings, so it is still held after the one sip this test takes.
     const { world, player, item } = TestData.withInventoryItem('cup of coffee', {
       [TraitType.EDIBLE]: {
         type: TraitType.EDIBLE,
-        liquid: true
+        liquid: true,
+        servings: 2
       }
     });
 
@@ -772,10 +776,11 @@ describe('World State Mutations', () => {
     expect(validation.valid).toBe(true);
     drinkingAction.execute(context);
 
-    // VERIFY POSTCONDITION: item is now consumed
+    // VERIFY POSTCONDITION: item is now consumed, and has left the world
     const edibleAfter = item.getTrait(EdibleTrait)!;
     expect(edibleAfter.servings).toBe(0);
     expect(EdibleBehavior.canConsume(item)).toBe(false);
+    expect(world.hasEntity(item.id)).toBe(false);
   });
 
   test('should decrement servings when drinking multi-serving item', () => {
@@ -862,5 +867,181 @@ describe('World State Mutations', () => {
     // VERIFY POSTCONDITION: container is now empty
     const containerAfter = item.getTrait(ContainerTrait)!;
     expect(containerAfter.liquidAmount).toBe(0);
+  });
+});
+
+/**
+ * A drink that is itself the item leaves the world with its last serving.
+ * A vessel that holds liquid never does. Every test runs the action through
+ * the phase runner on a real world and asserts on the world afterwards.
+ */
+describe('A finished drink leaves the world', () => {
+  const drink = (world: ReturnType<typeof setupBasicWorld>['world'], target: Parameters<typeof createCommand>[1]) =>
+    executeWithValidation(
+      drinkingAction,
+      createRealTestContext(drinkingAction, world, createCommand(IFActions.DRINKING, target))
+    );
+
+  test('a one-serving drink is gone from the world and from the drinker', () => {
+    const { world, player, item } = TestData.withInventoryItem('glass of cordial', {
+      [TraitType.EDIBLE]: {
+        type: TraitType.EDIBLE,
+        liquid: true,
+        servings: 1,
+        nutrition: 2
+      }
+    });
+
+    // VERIFY PRECONDITION: one serving, in the world, held by the player
+    expect(EdibleBehavior.getServings(item)).toBe(1);
+    expect(world.hasEntity(item.id)).toBe(true);
+    expect(world.getContents(player.id).map((e) => e.id)).toContain(item.id);
+
+    const events = drink(world, { entity: item });
+
+    // VERIFY POSTCONDITION: no serving left, and the item has left the world
+    expect(EdibleBehavior.getServings(item)).toBe(0);
+    expect(world.hasEntity(item.id)).toBe(false);
+    expect(world.getContents(player.id).map((e) => e.id)).not.toContain(item.id);
+
+    // The drunk event still reports the item it was, by id, name and nutrition
+    const drunk = events.find((e) => e.type === 'if.event.drunk');
+    expect(drunk).toBeDefined();
+    expect(drunk!.data).toMatchObject({
+      item: item.id,
+      itemName: 'glass of cordial',
+      nutrition: 2,
+      messageId: 'if.action.drinking.drunk'
+    });
+  });
+
+  test('a multi-serving drink stays until its last serving is drunk', () => {
+    const { world, player, item } = TestData.withInventoryItem('jug of cider', {
+      [TraitType.EDIBLE]: {
+        type: TraitType.EDIBLE,
+        liquid: true,
+        servings: 2
+      }
+    });
+    const held = () => world.getContents(player.id).map((e) => e.id);
+
+    drink(world, { entity: item });
+    expect(EdibleBehavior.getServings(item)).toBe(1);
+    expect(world.hasEntity(item.id)).toBe(true);
+    expect(held()).toContain(item.id);
+
+    drink(world, { entity: item });
+    expect(EdibleBehavior.getServings(item)).toBe(0);
+    expect(world.hasEntity(item.id)).toBe(false);
+    expect(held()).not.toContain(item.id);
+  });
+
+  test('a drink picked up by the drinking itself is gone from the room and the drinker', () => {
+    const { world, player, room, object } = TestData.withObject('cup of milk', {
+      [TraitType.EDIBLE]: {
+        type: TraitType.EDIBLE,
+        liquid: true
+      }
+    });
+
+    // VERIFY PRECONDITION: on the floor of the room
+    expect(world.getLocation(object.id)).toBe(room.id);
+
+    const events = drink(world, { entity: object });
+
+    // VERIFY POSTCONDITION: in neither place, and not in the world
+    expect(world.hasEntity(object.id)).toBe(false);
+    expect(world.getContents(room.id).map((e) => e.id)).not.toContain(object.id);
+    expect(world.getContents(player.id).map((e) => e.id)).not.toContain(object.id);
+
+    // The pick-up and the drink are both still reported
+    expect(events.find((e) => e.type === 'if.event.taken')).toBeDefined();
+    expect(events.find((e) => e.type === 'if.event.drunk')).toBeDefined();
+  });
+
+  test('a vessel that holds liquid survives being emptied', () => {
+    const { world, player, item } = TestData.withInventoryItem('tin cup', {
+      [TraitType.CONTAINER]: {
+        type: TraitType.CONTAINER,
+        containsLiquid: true,
+        liquidType: 'tea',
+        liquidAmount: 1
+      }
+    });
+
+    drink(world, { entity: item });
+
+    // VERIFY POSTCONDITION: empty, still in the world, still held
+    expect(item.getTrait(ContainerTrait)!.liquidAmount).toBe(0);
+    expect(world.hasEntity(item.id)).toBe(true);
+    expect(world.getLocation(item.id)).toBe(player.id);
+  });
+
+  test('a vessel that is also a drink of its own survives its last serving', () => {
+    const { world, player, item } = TestData.withInventoryItem('wineskin', {
+      [TraitType.EDIBLE]: {
+        type: TraitType.EDIBLE,
+        liquid: true,
+        servings: 1
+      },
+      [TraitType.CONTAINER]: {
+        type: TraitType.CONTAINER,
+        containsLiquid: true,
+        liquidType: 'wine',
+        liquidAmount: 3
+      }
+    });
+
+    drink(world, { entity: item });
+
+    // VERIFY POSTCONDITION: the serving is spent and the skin is still held
+    expect(EdibleBehavior.getServings(item)).toBe(0);
+    expect(item.getTrait(ContainerTrait)!.liquidAmount).toBe(2);
+    expect(world.hasEntity(item.id)).toBe(true);
+    expect(world.getLocation(item.id)).toBe(player.id);
+  });
+
+  test('a refused drink removes nothing', () => {
+    // Each case checks that the refusal was actually reported, so the
+    // "still there" assertions are about a drink that was attempted.
+    const refusal = (events: ReturnType<typeof drink>) =>
+      events.find((e) => e.type === 'if.event.drunk')?.data;
+
+    const undrinkable = TestData.withInventoryItem('brass key', {});
+    const undrinkableEvents = drink(undrinkable.world, { entity: undrinkable.item });
+    expect(refusal(undrinkableEvents)).toMatchObject({ blocked: true, reason: 'not_drinkable' });
+    expect(undrinkable.world.hasEntity(undrinkable.item.id)).toBe(true);
+    expect(undrinkable.world.getLocation(undrinkable.item.id)).toBe(undrinkable.player.id);
+
+    const spent = TestData.withInventoryItem('empty glass', {
+      [TraitType.EDIBLE]: {
+        type: TraitType.EDIBLE,
+        liquid: true,
+        servings: 0
+      }
+    });
+    const spentEvents = drink(spent.world, { entity: spent.item });
+    expect(refusal(spentEvents)).toMatchObject({ blocked: true, reason: 'already_consumed' });
+    expect(EdibleBehavior.getServings(spent.item)).toBe(0);
+    expect(spent.world.hasEntity(spent.item.id)).toBe(true);
+    expect(spent.world.getLocation(spent.item.id)).toBe(spent.player.id);
+
+    const stoppered = TestData.withInventoryItem('stoppered flask', {
+      [TraitType.CONTAINER]: {
+        type: TraitType.CONTAINER,
+        containsLiquid: true,
+        liquidType: 'water',
+        liquidAmount: 2
+      },
+      [TraitType.OPENABLE]: {
+        type: TraitType.OPENABLE,
+        isOpen: false
+      }
+    });
+    const stopperedEvents = drink(stoppered.world, { entity: stoppered.item });
+    expect(refusal(stopperedEvents)).toMatchObject({ blocked: true, reason: 'container_closed' });
+    expect(stoppered.item.getTrait(ContainerTrait)!.liquidAmount).toBe(2);
+    expect(stoppered.world.hasEntity(stoppered.item.id)).toBe(true);
+    expect(stoppered.world.getLocation(stoppered.item.id)).toBe(stoppered.player.id);
   });
 });

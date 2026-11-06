@@ -1,0 +1,63 @@
+
+> @sharpee/parser-en-us@5.5.1 test:ci /Users/david/repos/sharpee/packages/parser-en-us
+> vitest run
+
+
+ RUN  v3.2.4 /Users/david/repos/sharpee/packages/parser-en-us
+
+ ✓ tests/unit/english-parser.test.ts (20 tests) 41ms
+ ✓ tests/articles-optional.test.ts (6 tests) 22ms
+ ✓ tests/adr-387-d6-phrase-words.test.ts (7 tests) 31ms
+ ✓ tests/literal-case.test.ts (10 tests) 32ms
+ ✓ tests/going-direction-from-rule.test.ts (8 tests) 33ms
+ ✓ tests/pushing-direction.test.ts (12 tests) 43ms
+ ✓ tests/adr-320-continuation-prompts.test.ts (13 tests) 45ms
+ ✓ tests/adr-385-d2-determiners.test.ts (11 tests) 49ms
+ ✓ tests/verb-phrase.test.ts (14 tests) 52ms
+ ✓ tests/adr-080-grammar-enhancements.test.ts (36 tests) 57ms
+ ✓ tests/vehicle-commands.test.ts (22 tests) 69ms
+ ✓ tests/declared-seats.test.ts (27 tests) 71ms
+ ✓ tests/platform-grammar.test.ts (24 tests) 85ms
+ ✓ tests/adr-385-d3-gate.test.ts (8 tests) 45ms
+ ✓ tests/adr-386-d4-noun-rank.test.ts (17 tests) 37ms
+ ✓ tests/adr-386-d6-list-separators.test.ts (11 tests) 66ms
+ ✓ tests/parser-integration.test.ts (39 tests) 111ms
+ ✓ tests/slot-consumers/typed-slot-consumer.test.ts (12 tests) 16ms
+ ✓ tests/colored-buttons.test.ts (6 tests) 22ms
+ ✓ tests/story-grammar.test.ts (7 tests) 30ms
+ ✓ tests/entity-slot-constraints.test.ts (4 tests) 21ms
+ ✓ tests/push-panel-pattern.test.ts (5 tests) 22ms
+ ✓ tests/grammar-scope.test.ts (3 tests) 17ms
+ ✓ tests/adr-082-typed-slots.test.ts (20 tests) 14ms
+ ✓ tests/adr-231-d3-articles.test.ts (6 tests) 28ms
+ ✓ tests/adr-387-d5-direction-table.test.ts (6 tests) 24ms
+ ✓ tests/adr-387-d3-no-sentences.test.ts (4 tests) 30ms
+ ✓ tests/adr-387-d4-two-parsers.test.ts (2 tests) 24ms
+ ✓ tests/adr-231-d4-topic.test.ts (6 tests) 27ms
+ ✓ tests/adr-385-d8-gate-failures.test.ts (5 tests) 43ms
+ ✓ tests/adr-231-d2b-specificity.test.ts (12 tests) 50ms
+ ✓ tests/adr-387-d1-language-table.test.ts (4 tests) 22ms
+ ✓ tests/noun-phrase-slot.test.ts (3 tests) 21ms
+ ✓ tests/structured-parts.test.ts (25 tests) 37ms
+ ✓ tests/improved-error-messages.test.ts (11 tests) 3ms
+ ✓ tests/adr-386-d2-search.test.ts (9 tests) 14ms
+ ✓ tests/english-pattern-compiler.test.ts (17 tests) 5ms
+ ✓ tests/grammar-scope-resolver-bases.test.ts (12 tests) 6ms
+ ✓ tests/pronoun-context.test.ts (19 tests) 4ms
+ ✓ tests/adr-385-d7-pronoun-roles.test.ts (5 tests) 2ms
+ ✓ tests/adr-386-d7-d8-quick-reject-numbers.test.ts (7 tests) 14ms
+ ✓ tests/english-grammar-engine.test.ts (14 tests) 11ms
+ ✓ tests/walk-through-pattern.test.ts (7 tests) 8ms
+ ✓ tests/ranking-specificity-first.test.ts (6 tests) 13ms
+ ✓ tests/grammar-lang-sync.test.ts (5 tests) 7ms
+ ✓ tests/slot-consumers/text-slot-consumer.test.ts (10 tests) 8ms
+ ✓ tests/ranking-skipped-optional.test.ts (3 tests) 5ms
+ ✓ tests/grammar-gate.test.ts (5 tests) 6ms
+ ✓ tests/slot-consumers/slot-consumer-registry.test.ts (6 tests) 3ms
+ ✓ tests/grammar-vocabulary-sync.test.ts (2 tests) 7ms
+
+ Test Files  50 passed (50)
+      Tests  553 passed (553)
+   Start at  21:08:44
+   Duration  1.97s (transform 1.31s, setup 0ms, collect 20.55s, tests 1.45s, environment 4ms, prepare 2.08s)
+

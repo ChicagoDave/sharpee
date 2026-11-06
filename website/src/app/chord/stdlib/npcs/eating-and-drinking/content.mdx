@@ -15,11 +15,13 @@ the parser's reach. The message honors the trait's data: `taste`
 imbibe X`, plus `drink from X` and `sip from X`. Two things are
 drinkable. The first is an edible marked liquid: in a `.story`, the
 `drinkable` adjective, which composes the edible trait with the liquid
-flag set, order-independent with `edible` (ratchet G1). The second is a
+flag set, order-independent with `edible` (ratchet G1). It follows the
+rule for food: one serving unless its block says `servings <n>`, and
+**the last serving takes the drink out of the world**. The second is a
 **container of liquid** (`containsLiquid`, TypeScript territory), open
 if openable. Container drinking decrements `liquidAmount` and reports
-`from_container` / `empty_now`. Verb flavor: `sipped`, `quaffed`.
-Event: `drunk`.
+`from_container` / `empty_now`, and the container is never removed,
+however empty. Verb flavor: `sipped`, `quaffed`. Event: `drunk`.
 
 The author writes:
 
@@ -115,12 +117,14 @@ a ship's biscuit
 You drink the elderflower cordial.
 
 > sip the cordial
-There's nothing left to drink.
+You can't see any such thing.
 ```
 
 The transcript shows the cross-refusals, the implicit take, and the two
 ways a meal can end. The apple is the default: one serving, so eating it
 removes it, and the second `eat the apple` finds nothing to name. The
+cordial goes the same way: one drink finishes it, and the sip that
+follows finds nothing either. The
 biscuit is a story that wants something else. `servings 2` means the first
 bite leaves it in hand, and its own `on the player eating` clause refuses
 the second, so the last serving is never eaten and the biscuit stays for
@@ -128,9 +132,10 @@ the rest of the story, gnawed. Anything more elaborate is built the same
 way: a `servings` count for how long the thing lasts, and a clause on the
 thing for what each bite does.
 
-One thing to plan for: once a thing has been eaten away it no longer
-exists, and a later rule that names it fails. Give a thing the story means
-to mention again a serving that is never eaten, as the biscuit has.
+One thing to plan for: once a thing has been eaten or drunk away it no
+longer exists, and a later rule that names it fails. Give a thing the
+story means to mention again a serving that is never taken, as the
+biscuit has.
 
 | | eat (`eating-*`) | drink (`drinking-*`) |
 |---|---|---|

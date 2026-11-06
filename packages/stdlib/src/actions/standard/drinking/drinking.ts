@@ -6,9 +6,14 @@
  *
  * Uses four-phase pattern:
  * 1. validate: Check if item is drinkable and can be consumed
- * 2. execute: Perform implicit take if needed, store data in sharedData
+ * 2. execute: Perform implicit take if needed, consume a serving, store
+ *    data in sharedData
  * 3. blocked: Generate events when validation fails
  * 4. report: Generate success events
+ *
+ * A drink that is itself the item leaves the world with its last serving,
+ * as food does. A vessel that holds liquid is never removed, whether or not
+ * it also has servings of its own.
  *
  * Interceptor consultation (ADR-118) runs through the shared lifecycle
  * engine (ADR-228) via `drinkingLifecycle` — no hand-rolled hook plumbing.
@@ -309,6 +314,13 @@ export const drinkingAction: Action & { metadata: ActionMetadata } = {
       if (servingsBefore > 1) {
         eventData.portions = servingsBefore;
         eventData.portionsRemaining = servingsAfter;
+      }
+
+      // A finished drink leaves the world, unless the item is a vessel that
+      // holds liquid. The behavior decides and removes; `item` stays a valid
+      // reference, so the report still names it.
+      if (!containerTrait?.containsLiquid) {
+        EdibleBehavior.removeIfFinished(item, context.world);
       }
     }
 

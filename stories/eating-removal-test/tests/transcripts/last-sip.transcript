@@ -1,0 +1,43 @@
+title: Last sip — a drink with no serving left is gone
+story: eating-removal-test
+description: The cordial has one serving, so one drink finishes it, straight
+  from the cellar floor, and it can no longer be seen, held or drunk. The
+  cider has two and is gone after the second.
+seed: 7
+
+---
+
+> down
+[OK: contains "a cordial and a cider"]
+
+> drink cordial
+[OK: contains "You drink the cordial."]
+
+> inventory
+[OK: not contains "cordial"]
+
+> look
+[OK: contains "a cider"]
+[OK: not contains "cordial"]
+
+> drink cordial
+[OK: contains "You can't see any such thing."]
+
+> take cider
+[OK: contains "Taken."]
+
+> drink cider
+[OK: contains "You drink some of the cider."]
+
+> inventory
+[OK: contains "a cider"]
+
+> drink cider
+[OK: contains "You drink the cider."]
+
+> inventory
+[OK: not contains "cider"]
+
+> look
+[OK: not contains "cider"]
+[OK: not contains "cordial"]

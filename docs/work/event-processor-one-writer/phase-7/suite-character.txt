@@ -1,0 +1,67 @@
+
+> @sharpee/character@5.5.1 test:ci /Users/david/repos/sharpee/packages/character
+> vitest run
+
+
+ RUN  v3.2.4 /Users/david/repos/sharpee/packages/character
+
+ ✓ tests/influence/influence.test.ts (33 tests) 4ms
+ ✓ tests/propagation/propagation.test.ts (28 tests) 11ms
+ ✓ tests/conversation/dialogue-extension.test.ts (15 tests) 4ms
+ ✓ tests/conversation/selector.test.ts (16 tests) 6ms
+ ✓ tests/conversation/thread-runtime.test.ts (23 tests) 6ms
+ ✓ tests/conversation/interruption-d10a.test.ts (10 tests) 4ms
+ ✓ tests/character-builder.test.ts (39 tests) 5ms
+ ✓ tests/act-detection/character-observer.test.ts (35 tests) 6ms
+ ✓ tests/roundtrip/normative-roundtrip.test.ts (8 tests) 4ms
+ ✓ tests/roundtrip/id-translation.test.ts (3 tests) 14ms
+ ✓ tests/roundtrip/compiled-roundtrip.test.ts (13 tests) 5ms
+ ✓ tests/roundtrip/thealderman-port.test.ts (5 tests) 6ms
+ ✓ tests/conversation/scene-dispatch.test.ts (15 tests) 8ms
+ ✓ tests/tick-phases/off-stage-narration.test.ts (3 tests) 6ms
+ ✓ tests/tick-phases/goal-world-mutations.test.ts (15 tests) 6ms
+ ✓ tests/tick-phases/observe-substep.test.ts (7 tests) 5ms
+ ✓ tests/tick-phases/oracle-goals.test.ts (8 tests) 6ms
+ ✓ tests/tick-phases/arrival-narration.test.ts (8 tests) 6ms
+ ✓ tests/tick-phases/face-act-propagation.test.ts (2 tests) 6ms
+ ✓ tests/tick-phases/character-model-phase.test.ts (16 tests) 12ms
+ ✓ tests/tick-phases/thread-interruption.test.ts (6 tests) 7ms
+ ✓ tests/tick-phases/scene-sub-step.test.ts (19 tests) 15ms
+ ✓ tests/act-detection/witness-statement.test.ts (7 tests) 6ms
+ ✓ tests/integration.test.ts (4 tests) 4ms
+ ✓ tests/conversation/lifecycle.test.ts (34 tests) 4ms
+ ✓ tests/conversation/builder.test.ts (15 tests) 4ms
+ ✓ tests/goals/goals.test.ts (29 tests) 4ms
+ ✓ tests/influence/builder.test.ts (18 tests) 4ms
+ ✓ tests/goals/goal-builder.test.ts (11 tests) 3ms
+ ✓ tests/conversation/constraint-evaluator.test.ts (22 tests) 4ms
+ ✓ tests/conversation/acl.test.ts (14 tests) 3ms
+ ✓ tests/conversation/scene-runtime.test.ts (17 tests) 6ms
+ ✓ tests/conversation/scene-binding.test.ts (5 tests) 3ms
+ ✓ tests/conversation/manner.test.ts (6 tests) 3ms
+ ✓ tests/act-detection/act-detection.test.ts (8 tests) 7ms
+ ✓ tests/arbiter/pressure.test.ts (7 tests) 3ms
+ ✓ tests/tick-phases/conversation-suppression.test.ts (3 tests) 3ms
+ ✓ tests/conversation/topic-registry.test.ts (18 tests) 4ms
+ ✓ tests/influence/round-trip.test.ts (3 tests) 4ms
+ ✓ tests/propagation/builder.test.ts (7 tests) 2ms
+ ✓ tests/tick-phases/presence-location.test.ts (1 test) 4ms
+ ✓ tests/tick-phases/influence-sub-step.test.ts (2 tests) 4ms
+ ✓ tests/tick-phases/modeled-pc-decay.test.ts (3 tests) 3ms
+ ✓ tests/tick-phases/sub-step-order.test.ts (5 tests) 5ms
+ ✓ tests/tick-phases/integration-fragment.test.ts (5 tests) 4ms
+ ✓ tests/conversation/conversation-marker.test.ts (6 tests) 2ms
+ ✓ tests/conversation/trait-memory-access.test.ts (6 tests) 3ms
+ ✓ tests/propagation/visibility.test.ts (6 tests) 2ms
+ ✓ tests/conversation/scene-scoring.test.ts (12 tests) 2ms
+ ✓ tests/conversation/conversation-memory.test.ts (8 tests) 2ms
+ ✓ tests/goals/movement-builder.test.ts (6 tests) 2ms
+ ✓ tests/arbiter/arbiter.test.ts (15 tests) 4ms
+ ✓ tests/conversation/initiative.test.ts (6 tests) 1ms
+ ✓ tests/tick-phases/save-restore.test.ts (5 tests) 2ms
+
+ Test Files  54 passed (54)
+      Tests  641 passed (641)
+   Start at  21:08:40
+   Duration  3.18s (transform 2.45s, setup 0ms, collect 38.96s, tests 259ms, environment 5ms, prepare 2.06s)
+

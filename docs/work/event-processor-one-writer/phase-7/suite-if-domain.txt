@@ -1,0 +1,20 @@
+
+> @sharpee/if-domain@5.5.1 test:ci /Users/david/repos/sharpee/packages/if-domain
+> vitest run
+
+
+ RUN  v3.2.4 /Users/david/repos/sharpee/packages/if-domain
+
+ ✓ tests/phrase/snippets.test.ts (8 tests) 2ms
+ ✓ tests/grammar/rule-order.test.ts (10 tests) 2ms
+ ✓ tests/grammar/scope-builder.test.ts (15 tests) 2ms
+ ✓ tests/phrase/phrase-contracts.test.ts (12 tests) 3ms
+ ✓ tests/sound/types.test.ts (16 tests) 2ms
+ ✓ tests/grammar/grammar-builder.test.ts (24 tests) 5ms
+ ✓ tests/vocabulary-provider.test.ts (25 tests) 3ms
+
+ Test Files  7 passed (7)
+      Tests  110 passed (110)
+   Start at  21:13:00
+   Duration  221ms (transform 164ms, setup 0ms, collect 252ms, tests 19ms, environment 0ms, prepare 227ms)
+
