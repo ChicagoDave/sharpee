@@ -72,7 +72,7 @@
     {
       "assertions": {
         "contains": [
-          "There's nothing left of the apple to eat."
+          "No time for breakfast right now!"
         ]
       },
       "command": "eat apple",

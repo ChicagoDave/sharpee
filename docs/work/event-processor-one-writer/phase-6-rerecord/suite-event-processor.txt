@@ -1,0 +1,22 @@
+
+> @sharpee/event-processor@5.5.1 test:ci /Users/david/repos/sharpee/packages/event-processor
+> vitest run
+
+
+ RUN  v3.2.4 /Users/david/repos/sharpee/packages/event-processor
+
+ ✓ tests/unit/barrel-surface.test.ts (1 test) 1ms
+ ✓ tests/unit/handler-double-dispatch.test.ts (1 test) 1ms
+ ✓ tests/unit/pushed-one-writer.test.ts (1 test) 2ms
+ ✓ tests/unit/opened-closed-one-writer.test.ts (4 tests) 2ms
+ ✓ tests/unit/entity-handlers.test.ts (2 tests) 2ms
+ ✓ tests/unit/adr-296-d4-partition.test.ts (6 tests) 3ms
+ ✓ tests/unit/handler-failure.test.ts (3 tests) 2ms
+ ✓ tests/unit/processor-reactions.test.ts (4 tests) 3ms
+ ✓ tests/unit/processor.test.ts (11 tests) 3ms
+
+ Test Files  9 passed (9)
+      Tests  33 passed (33)
+   Start at  20:02:06
+   Duration  672ms (transform 455ms, setup 0ms, collect 4.41s, tests 20ms, environment 1ms, prepare 308ms)
+

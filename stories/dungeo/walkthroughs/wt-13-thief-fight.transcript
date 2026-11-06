@@ -14,10 +14,6 @@ $restore wt-12
 [GOAL: Lighten inventory for thief fight]
 
 # Drop accumulated items from earlier walkthroughs (IF-gated since thief may have stolen some)
-> drop blue cake
-
-> drop eat-me cake
-
 > drop sack
 
 > inventory
@@ -131,10 +127,8 @@ $restore wt-12
 
 # The disarm drops his stiletto (and he snatches the torch); "knife" is now
 # ambiguous between the nasty knife and the nasty stiletto, so we finish him
-# with his own blade. Seven blows is the seed-42 kill sequence.
+# with his own blade. Six blows is the seed-42 kill sequence.
 > take stiletto
-
-> attack thief with stiletto
 
 > attack thief with stiletto
 

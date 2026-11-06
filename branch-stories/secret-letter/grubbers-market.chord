@@ -513,6 +513,7 @@ create the display of bananas
 create the apple
   aka round, firm, green apple
   a thing, edible
+  servings 2
   states: whole, bitten
   on the display of apples
 
@@ -527,6 +528,7 @@ create the apple
 
   on the player eating
     refuse when the player is not in the Alley: apple-not-here
+    refuse when the apple is bitten: apple-second-bite
     phrase apple-first-bite
     change the apple to bitten
     move the voices to the Alley
@@ -871,6 +873,19 @@ end phrase
 define phrase apple-first-bite
   (TODO during play-testing — You settle yourself on a crate and take a bite
   of your apple. Crisp and delicious.)
+end phrase
+
+## The second bite — Gentry's line, verbatim (`story.ni:2417-2418`, "Before
+## eating or tasting the apple when Avoiding Soldiers is happening or
+## Eavesdropping on Soldiers is happening"). The apple has two servings
+## (David, 2026-11-05) so that the first bite leaves it in hand, bitten; this
+## refusal is what keeps the second serving from ever being eaten, so the
+## apple stays until the jail takes it. One difference from the source: the
+## source refuses only during those two scenes, and here the refusal holds for
+## as long as the apple is bitten.
+
+define phrase apple-second-bite
+  No time for breakfast right now!
 end phrase
 
 ## The other eight stalls' wares and the source's generic theft rule — what

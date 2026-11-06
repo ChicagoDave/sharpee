@@ -58,10 +58,12 @@
 ##     arms. The captain IS carried, as the scenery he is on the roof.
 ##   * "You can't do anything to the gates from up here" — cross-room scope
 ##     is not a Chord thing; the gates are examinable at the junction only.
-##   * "No time for breakfast right now!" (`story.ni:2417`) — the engine
-##     keeps the bitten apple at zero servings and stdlib refuses a second
-##     bite in `validate` ("There's nothing left of the apple to eat"),
-##     before any story clause is consulted. Gentry's line has no way in.
+##
+## CARRIED SINCE 2026-11-05: "No time for breakfast right now!"
+## (`story.ni:2417`) is the apple's second-bite refusal in
+## `grubbers-market.chord`. It had no way in while the apple had one serving
+## (stdlib refused the second bite before any story clause was consulted);
+## the apple now has two.
 ##
 ## Every line below is Gentry's, carried from `story.ni:1474-1804`.
 ## ===========================================================================
