@@ -90,7 +90,12 @@ const PINNED = {
   // ADR-380 are breaking; the rest of the 4.0 set is additive. The hash is
   // unchanged by the bump — the surface re-pinned 2026-10-24 (below) is the
   // 4.0.0 surface.
-  languageVersion: '4.0.0',
+  // 4.0.1 — 2026-11-05 (session 09116f): PATCH by owner ruling ("bump to
+  // 5.6.0 and 4.0.1"), cut alongside Sharpee 5.6.0. Carries ADR-388's
+  // persisted identity and the `servings <n>` entity line. The hash is
+  // unchanged by the bump — the surface re-pinned 2026-11-05 for
+  // `servings-line` (below) is the 4.0.1 surface.
+  languageVersion: '4.0.1',
   // Re-pinned 2026-08-29 (ADR-330 Phase 1): `define chapters` under `use
   // chapters` — the first additive grammar of the chapters extension,
   // folded into the unpublished 3.5.0 set per ADR-257 D2 as amended.

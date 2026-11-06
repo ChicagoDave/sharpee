@@ -330,5 +330,14 @@
  * `entity-line` gains `servings-line` and no story stops compiling. The EBNF
  * hash is re-recorded; the number moves when the next version is cut, not
  * here.
+ *
+ * 4.0.1 — 2026-11-05 (session 09116f, David: "bump to 5.6.0 and 4.0.1"),
+ * cut alongside Sharpee 5.6.0. The public delta since 4.0.0 is the two
+ * pending entries above: ADR-388's persisted identity (`story language 6`,
+ * ruled a PATCH) and the `servings <n>` entity line. `servings` is additive,
+ * which ADR-257 D2's ordinary rule makes a minor; the owner set the number
+ * at 4.0.1, so the cut is a PATCH by his ruling. The EBNF hash is unchanged
+ * by the bump (the surface re-pinned 2026-11-05 for `servings-line` is the
+ * 4.0.1 surface).
  */
-export const CHORD_LANGUAGE_VERSION = '4.0.0';
+export const CHORD_LANGUAGE_VERSION = '4.0.1';
