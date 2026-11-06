@@ -27,8 +27,10 @@ What the two Chord Writer heads (`tools/ide/SharpeeIDE`, macOS Swift; `tools/ide
 | F-05 | [#656](https://github.com/ChicagoDave/sharpee/issues/656) | S2 | The Swift lexer port lexes `&` as punctuation; the TypeScript lexer makes it a word. The golden corpus has no `&`. Older than the delta range. |
 | F-06 | [#657](https://github.com/ChicagoDave/sharpee/issues/657) | S3 | The Avalonia head reads the IR and the world index by hand-written key with no version gate; its generated types are used only by a test. |
 | F-07 | [#658](https://github.com/ChicagoDave/sharpee/issues/658) | S3 | The IR `format` field is documented as the shells' hard wire gate and compared by neither head. |
+| F-08 | [#659](https://github.com/ChicagoDave/sharpee/issues/659) | S5 | A rebuild of the testing-surface bundle at HEAD pulls 55 Chord compiler modules in from `dist-esm` (11,496 lines nothing calls), because the assertion core now imports the `@sharpee/chord` barrel. |
+| F-09 | [#660](https://github.com/ChicagoDave/sharpee/issues/660) | S4, S6 | The New Story template compiles clean on 4.0.1 and opens with two World tab findings. |
 
-Existing issues this audit builds on rather than repeats: #648 (bundled docs lag), #457 (vendored toolchain exports), #480 (Avalonia bundle identity), #488 (Avalonia parity), #502 (docs-tab vitest).
+Existing issues this audit builds on rather than repeats: #648 (bundled docs lag; measured in Section F, comment added), #457 (vendored toolchain exports), #480 (Avalonia bundle identity), #488 (Avalonia parity), #502 (docs-tab vitest; reproduced in Section G, cause corrected in a comment).
 
 ## Section A: the delta range
 
@@ -287,6 +289,143 @@ Two findings:
 
 A search of `tools/ide/SharpeeIDE`, `tools/ide/PaneHost`, `tools/ide/web/testing-surface/src`, `tools/ide/web/docs-tab/src` and `tools/ide/editor-bridge/src` for `save_reconciled`, `saveReconciled`, `playerId` and `getPlayer` returns nothing. No IDE source handles the ADR-388 reconcile channel or reads a player id. Both reach the app only inside the browser bundle `sharpee build` writes; the Play pane is checked in Phase 3.
 
+## Section F: bundled content
+
+Measured 2026-11-06 at `cd6e5f2f0` (Phase 3, session 351c89). The tree differs from `2a71ec866` only by this audit's own documents and session records.
+
+### F.1 Method
+
+The two bundlers (`web/docs-tab/build.mjs`, `web/testing-surface/build.mjs`) write to a fixed path inside `SharpeeIDE/Resources` and have no check mode, and the two mirror scripts delete their target before copying. None was run in place. Instead the tracked sources were exported to a scratch directory (`git archive HEAD packages website/src tools/ide/web tools/ide/SharpeeIDE/Resources tsconfig.base.json tsconfig.json package.json`, with `node_modules` linked in for esbuild), the two bundlers were run there, and their output was compared with the checked-in bundles by `diff -r`. The mirrors are plain copies, so `diff -r` of source against mirror is the whole check. `git status` afterwards shows the checked-in tree untouched.
+
+`tools/ide/vendor/node` holds the four Node archives and no unpacked `bin/node`, so the scripts' first tier misses and they fall through to the Node on `PATH`. The scratch builds ran on that Node, `v25.8.1`.
+
+### F.2 Verdict per content class
+
+| Class | Committed copy | Verdict | Differing items |
+|---|---|---|---|
+| Docs tab (`Resources/docs-tab`) | 163 pages, `chordLanguageVersion` 3.6.0, last built at `388ac54c7` (10-23) | **stale** | 16 of 177 files: 4 pages missing, 11 pages changed, the index |
+| Story template (`Resources/story-templates`) | 2 files | fresh | 0 (`diff -r` against `packages/devkit/templates/story-chord` prints nothing) |
+| Play themes (`Resources/play-themes`) | manifest, 4 themes, 2 fonts | fresh | 0 (`diff -r` against `packages/platform-browser/styles/themes` prints nothing) |
+| API reference | not shipped (F-03) | not applicable | — |
+| Sample stories | none bundled; the template stands in | fresh, with F-09 | — |
+
+Both pre-build mirrors and both bundlers run on every macOS build (`project.yml:103-124`), so the docs bundle and the testing-surface bundle (Section G) are rewritten in the working tree the next time the app is built.
+
+### F.3 The docs tab, page by page
+
+```
+$ node tools/ide/web/docs-tab/build.mjs        (in the scratch export)
+docs tab: 167 pages in nav order, 5 excluded by EXCLUDED_GROUPS/EXCLUDED_PAGES, 6 images (Chord 4.0.1)
+exit status: 0
+```
+
+The build is healthy at HEAD: no unhandled MDX component, and the nav and the content tree agree. Compared with the committed bundle: 12 files changed, 4 added, 0 removed, 161 identical.
+
+| Page | State | Website change behind it |
+|---|---|---|
+| `chord/guide/world/vehicles` | missing from the app | new page, `67d41ee38` (10-26) |
+| `chord/guide/world/expanses` | missing | new page, same commit |
+| `chord/guide/world/sailing` | missing | new page, same commit |
+| `chord/guide/flow/state-machines` | missing | new page, same commit |
+| `chord/stdlib/npcs/eating-and-drinking` | changed (10 lines out, 27 in) | the page #648 names |
+| `chord/guide/vocabulary/define-action` | changed (1 out, 18 in) | ranking, seats, gate refusals (`64a7108ba`) |
+| `chord/guide/vocabulary/extend-action` | changed | |
+| `chord/guide/world/kinds-traits-and-settings` | changed (8 in) | `servings` |
+| `chord/guide/world/states` | changed | |
+| `chord/guide/world` (overview) | changed | links to the three new pages |
+| `chord/guide/flow` (overview) | changed | link to the new page |
+| `chord/guide/tooling/migrating-from-removed-constructs` | changed | |
+| `chord/stdlib/plugins/npc-and-state-machine-plugins` | changed | |
+| `chord/stdlib/reference` | changed | |
+| `chord-writer` (overview) | changed | its status-bar example prints `versions.json`, now 5.6.0 / 4.0.1 |
+| `docs-index.json` | changed | version stamp 3.6.0 to 4.0.1, four nav entries, search text |
+
+`docs.js`, `docs.css`, `index.html` and the six images are identical. The 15 pages map one to one onto the range's changes under the bundler's inputs: 14 `content.mdx` files (10 changed, 4 new) and `versions.json`. This closes Q-06 and is recorded on #648: the lag is the whole Chord 4.0 documentation delta, not one page.
+
+The bundle's version stamp matters twice. The tab shows a banner when the running toolchain reports a different Chord version; today the committed stamp (3.6.0) matches the shipped 1.4.0 toolchain and would mismatch a toolchain vendored at HEAD (F-02). And it is the value `DocsTabRealPathTests` compares against the Swift pin (F-01).
+
+### F.4 The story template on the current compiler
+
+The template was scaffolded in the scratch directory with `sharpee init -y`, and the `.story` and its config sidecar were copied alone into a second directory to match what the IDE's New Story writes. The commands are the ones the Swift head runs, on the workspace CLI (`Sharpee 5.6.0 · Chord 4.0.1`, `dist` built 2026-11-06 03:26, after the last `packages` commit).
+
+| Command | Result |
+|---|---|
+| `compose <story> --json` | `"schemaVersion":2,"diagnostics":[]`, `"format":"story language 6"`, `"languageVersion":"4.0.1"` |
+| `build <story> --no-menu` | "Validated … (gate-clean)", `game.js` 1715.8 KB, "Wired 4 theme(s): modern-dark, retro-terminal, paper, system-6", "Build complete" |
+| `world-index <ir>` | `world-index/4`, `ok: true`, `analyzerVersion` 5.6.0; `incomplete.counts`: missingWord 1, noObject 1, ambiguous 0, undescribed 0 |
+| `test <story> --tree --capture-output --capture-world --json` | "no test tree found … expected a <story-id>.tests/ directory" (the story has none) |
+
+The template uses the kind-led create block and needs nothing from the range. Its two World findings are **F-09** ([#660](https://github.com/ChicagoDave/sharpee/issues/660)): the lantern's description says "old" and the lantern has no such word, and the Landing's description says "story" with no object to answer it.
+
+Not measured: the same story on the shipped 1.4.0 toolchain. A hand run of the Avalonia bundle's CLI stopped at `Cannot find module '@sharpee/platform-browser'`; the app supplies a module path the hand run did not, and #457 already says that toolchain cannot build a Chord story. It was not pursued, so whether the range changed the template's World findings is unknown.
+
+### F.5 Play themes
+
+The mirror equals its source, and `packages/platform-browser/styles` did not change in the range (`git diff --stat` prints nothing). The manifest's four ids are the four the template's `themes:` line names and the four the build wired. The theme files style 13 class names without the `sharpee-` prefix (`command-echo`, `game-status`, `system-message`, `selected`, and nine save-dialog and startup-dialog classes); every one sampled (7) still exists in the client's source or templates, so no theme rule points at a class the client stopped writing.
+
+## Section G: testing surface, tree runtime, World tab, Play pane
+
+Measured 2026-11-06 at `cd6e5f2f0`.
+
+### G.1 The committed testing-surface bundle (Q-05)
+
+```
+$ node tools/ide/web/testing-surface/build.mjs        (in the scratch export)
+testing-surface bundled
+```
+
+| | Committed (`8480b15d2`, 10-22) | Rebuilt at HEAD |
+|---|---|---|
+| `surface.js` | 5,049 lines, 218,168 bytes | 16,545 lines, 797,590 bytes |
+| `surface.css` | — | identical |
+
+The diff is 11,496 lines added and none removed. All of them are 55 modules from `packages/chord/dist-esm`. With those lines removed the rebuilt file is byte-identical to the committed one.
+
+The cause is one line: `packages/transcript-tester/src/assertion-core.ts:47`, `import { clauseHeadId, spokenClauseHead } from '@sharpee/chord'`, added by `b504f4652` (ADR-388 Phase 2, 10-29). `build.mjs` aliases nine modules to source and has no alias for `@sharpee/chord`; the package declares no `sideEffects`, so esbuild keeps the whole barrel. Neither name appears in the rest of the bundle. This is **F-08** ([#659](https://github.com/ChicagoDave/sharpee/issues/659)).
+
+So Q-05 has two answers. The committed bundle is functionally current: every module the surface runs is unchanged. And it cannot be rebuilt cleanly: the next build adds about 580 KB read from `dist-esm`, which the bundler's own header says it must not depend on.
+
+### G.2 The surface against the tree runtime's public surface
+
+- `npx tsc --noEmit -p tools/ide/web/testing-surface/tsconfig.json` printed no errors. The surface's source and tests type-check against the current sources of the modules it imports.
+- `packages/branch-tester/src` changed in 7 files over the range (`claims/claim-candidates`, `claim-lock`, `claim-predicates`, `claims-game`, `claims-walk`, `derived-runner`, `tree-walker`). None is one of the four the bundle carries (`auto-assertion`, `types`, `tree-document`, `claims/claim-report`). The two bundled modules that did change, `assertion-core.ts` and `story-loader/src/pin-grammar.ts`, change nothing the surface reaches (G.1).
+- The line-visit and story-as-suite decisions (ADR-353, ADR-356) are carried by those modules and by the surface's own source, which did not change in the range (`git diff --stat 8480b15d2 HEAD -- tools/ide/web/testing-surface/src` prints nothing).
+
+### G.3 Tree-document format
+
+`TREE_DOCUMENT_VERSION = 3` (`packages/branch-tester/src/tree-document.ts:85`); the file did not change in the range. The reader refuses a newer version by name and calls an older one malformed. Neither native head reads the version: the Swift head reads the manifest's pinned seed (`TestingSurfaceViewController.swift:310`) and treats the `<story-id>.tests/` directory as files, as does `PaneHost/Shell/TestingSession.cs`. The version check lives only in the web surface, through the imported module. Nothing is owed.
+
+### G.4 The docs tab's own suite (#502)
+
+```
+$ npx vitest run --root tools/ide/web/docs-tab
+tests/markdown.test.mjs (16 tests)      passed
+tests/mdx.test.mjs (9 tests)            passed
+tests/nav-bridge.test.mjs (18 tests | 3 failed)
+```
+
+40 passing, 3 failures. The three are the "the real site" tests, each with `Failed to resolve module specifier "./versions.json" from "data:text/javascript;base64,…"`. #502 is reproduced, and its body names the wrong function: `build.mjs`'s `loadNav` bundles `nav.ts` and works (F.3 exited 0). The test keeps its own copy, `loadRealNav` (`tests/nav-bridge.test.mjs:208-213`), which still calls `esbuild.transform`; a bare transform leaves the relative import in place and a data URL has nothing to resolve it against. Recorded as a comment on #502. The test file's own comment says the suite is not in `pnpm test:ci`, which is how it has stayed red since `nav.ts` gained the import (`3d3c9d829`, 2026-08-18).
+
+### G.5 World tab
+
+`packages/world-index/src` changed in 6 files over the range (`vocabulary.ts` most of it). `document.ts`, which declares the output, did not, and the schema is still `world-index/4`. The current CLI's output on the scaffolded story carries that schema. The Swift head gates the schema; the Avalonia head reads by key with no gate (F-06). The decoders themselves were not exercised here: `WorldIndex*` tests run in Phase 4.
+
+### G.6 Play pane
+
+| The Swift head expects | The current build writes |
+|---|---|
+| `index.html`, `index-testing.html` | both |
+| `game.js`, `game.js.map` | both |
+| `themes/<id>.css` | four, plus `themes/system-6/fonts` |
+| channels `turnEvents`, `testingSurface`, `testingConsole` (testing page only) | `host-bridge.ts` unchanged in the range |
+
+`packages/platform-browser/src` changed by two lines over the range, both the ADR-390 player read (`SaveManager.ts`, `world-digest.ts`). The built `game.js` embeds `story language 6`.
+
+- **ADR-388 reconcile.** `save_reconciled` is a platform event rendered from `lang-en-us/src/platform-messages.ts` through the engine's platform dispatcher; it is in the built `game.js`. It needs no IDE code. In the Play pane it can hardly occur: every boot clears the page's storage (`PlayViewController.swift:83`), so no save outlives a rebuild there, and the testing page uses a non-persistent data store (`TestingSurfaceViewController.swift:215`).
+- **ADR-390 player role.** Read inside the client only. No IDE source names it (E.4).
+
+Nothing is stale in the Play pane's contract. The Avalonia Play sub-pane serves the same build output (Section B) and was not examined separately; head parity is Phase 5.
+
 ## Carried questions
 
 | Id | Settled in | Question |
@@ -295,7 +434,7 @@ A search of `tools/ide/SharpeeIDE`, `tools/ide/PaneHost`, `tools/ide/web/testing
 | Q-02 | Phase 2: closed | The IR `format` field is never compared: F-07. |
 | Q-03 | Phase 2: closed | The generated protocol is fresh (E.1). |
 | Q-04 | Phase 2: closed | Neither head enumerates diagnostic codes (D.3). |
-| Q-05 | Phase 3 | The committed testing-surface bundle dates from 10-22; its sources changed after: `branch-tester/src` 7 files, `transcript-tester/src` 4 files (`assertion-core.ts`, 18 lines added and 11 removed, for ADR-388's clause occurrence key). |
-| Q-06 | Phase 3 | The committed docs bundle against 18 changed files under `website/src/app/chord`; #648 names one page. |
+| Q-05 | Phase 3: closed | The committed testing-surface bundle is functionally current and cannot be rebuilt cleanly: F-08 (G.1). |
+| Q-06 | Phase 3: closed | The docs bundle is stale by 16 files, 15 of them pages (F.3); recorded on #648. |
 | Q-07 | Phase 4 | Test fixtures carry `story language 1` and `2` and language versions `2.1.0` and `3.0.0`; `fernhill-frozen` is a 2026-08-07 snapshot. Which suites still pass on the 4.0.1 compiler? |
 | Q-08 | Phase 5 | The built Avalonia bundle holds `docs-tab`, `editor-bridge`, `testing-surface` and `toolchain`, and no `play-themes` or `story-templates`. Is that in #488? |

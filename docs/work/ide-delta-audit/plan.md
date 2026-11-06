@@ -57,8 +57,8 @@
 - **Files**: `docs/work/ide-delta-audit/census.md`
 - **Exit state**: each bundled content class has a stale / fresh verdict with the differing items named and a count; GH #648 and #502 each carry an audit comment or a corrected body; defects filed and linked
 - **Demonstration**: re-running one diff per content class in the scratch directory reproduces the recorded stale count
-- **Demonstrated**: 
-- **Status**: CURRENT (since 2026-11-06)
+- **Demonstrated**: 2026-11-06, session 351c89, at cd6e5f2f0. One diff per class, re-run against the scratch rebuild after the census numbers were first taken: docs tab `diff -rq` printed 16 entries (census F.2: 16 of 177 files); testing surface `diff` of `surface.js` printed 11,496 added lines and 0 removed (census G.1); story template `diff -r` printed 0 lines; play themes `diff -r` printed 0 lines. `git status` showed the checked-in bundles untouched. #648 and #502 each carry one audit comment (`gh issue view --json comments`: 1 and 1). Findings F-08 and F-09 filed as #659 and #660; Q-05 and Q-06 closed. [reported by session, unverified]
+- **Status**: DONE
 
 ### Phase 4: The IDE's own test suites and real-path seams
 - **Tier**: Medium
