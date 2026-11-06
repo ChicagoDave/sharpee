@@ -198,4 +198,4 @@
 - **Exit state**: tests green on world state; gates identical to the Phase 6 capture except census lines David has reviewed and this phase re-recorded.
 - **Demonstration**: the dedicated story's transcript passes through the bundle including the vessel-survives case; compare-gates.sh against the Phase 6 capture is IDENTICAL or lists only reviewed lines.
 - **Demonstrated**: 
-- **Status**: PENDING
+- **Status**: CURRENT (since 2026-11-05)
