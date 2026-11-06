@@ -1,0 +1,60 @@
+title: Last bite — a thing with no serving left is gone
+story: eating-removal-test
+description: The ration has one serving, so one bite finishes it and it can
+  no longer be seen, held or eaten. The loaf has three and is gone after the
+  third. The plum says its own line when it goes, after the eating line.
+seed: 7
+
+---
+
+> take ration
+[OK: contains "Taken."]
+
+> eat ration
+[OK: contains "You eat the ration."]
+
+> inventory
+[OK: not contains "ration"]
+
+> look
+[OK: contains "a loaf and a plum"]
+[OK: not contains "ration"]
+
+> eat ration
+[OK: contains "You can't see any such thing."]
+
+> take loaf
+[OK: contains "Taken."]
+
+> eat loaf
+[OK: contains "You eat some of the loaf."]
+
+> eat loaf
+[OK: contains "You eat some of the loaf."]
+
+> inventory
+[OK: contains "a loaf"]
+
+> eat loaf
+[OK: contains "You eat the loaf."]
+
+> inventory
+[OK: not contains "loaf"]
+
+> take plum
+[OK: contains "Taken."]
+
+> eat plum
+[OK: contains]
+text
+You eat the plum.
+
+Not a scrap of the plum is left.
+end text
+
+> inventory
+[OK: not contains "plum"]
+
+> look
+[OK: not contains "plum"]
+[OK: not contains "loaf"]

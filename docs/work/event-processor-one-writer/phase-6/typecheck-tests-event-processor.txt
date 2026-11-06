@@ -1,0 +1,4 @@
+
+> @sharpee/event-processor@5.5.1 typecheck:tests /Users/david/repos/sharpee/packages/event-processor
+> tsc -p tsconfig.test.json
+

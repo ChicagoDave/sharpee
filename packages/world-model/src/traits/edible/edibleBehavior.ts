@@ -1,7 +1,20 @@
-// packages/world-model/src/traits/edible/edibleBehavior.ts
+/**
+ * edibleBehavior.ts — the rules for a thing that is eaten or drunk: whether
+ * it can be consumed, consuming one serving, and taking it out of the world
+ * once nothing is left of it. The trait holds the data; every change to it,
+ * and the removal, is made here.
+ *
+ * Public interface: EdibleBehavior (`canConsume`, `consume`,
+ * `removeIfFinished`, `isEmpty`, and the read accessors).
+ * Owner context: @sharpee/world-model, the edible trait.
+ *
+ * References:
+ * - ADR-213 — `world.removeEntity` is the removed-from-play seam.
+ */
 
 import { Behavior } from '../../behaviors/behavior.js';
 import { IFEntity } from '../../entities/if-entity.js';
+import type { WorldModel } from '../../world/WorldModel.js';
 import { TraitType } from '../trait-types.js';
 import { EdibleTrait, TasteQuality } from './edibleTrait.js';
 import { type ISemanticEvent, createEvent } from '@sharpee/core';
@@ -71,8 +84,7 @@ export class EdibleBehavior extends Behavior {
         createEvent(
           IFEvents.ITEM_DESTROYED,
           {
-            reason: 'consumed',
-            remainsType: edible.remainsType
+            reason: 'consumed'
           },
           { target: item.id, actor: actor.id }
         )
@@ -82,6 +94,25 @@ export class EdibleBehavior extends Behavior {
     return events;
   }
   
+  /**
+   * Take a finished item out of the world: one with no serving left is
+   * removed, so it is gone from whoever held it and from every lookup by id.
+   * An item with a serving left is untouched.
+   *
+   * The caller keeps its reference to the entity, whose traits stay readable
+   * after the removal, so a report built from that reference still names it.
+   *
+   * @param item the edible item, after a consume
+   * @param world the world the item is in
+   * @returns true when the item was removed, false when a serving remains
+   * @throws if the item has no edible trait
+   */
+  static removeIfFinished(item: IFEntity, world: WorldModel): boolean {
+    if (!EdibleBehavior.isEmpty(item)) return false;
+    world.removeEntity(item.id);
+    return true;
+  }
+
   /**
    * Check if item is fully consumed
    */

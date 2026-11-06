@@ -19,9 +19,6 @@ export interface IEdibleData {
   /** Custom message when eating/drinking */
   consumeMessage?: string;
 
-  /** What remains after consumption (entity type to create) */
-  remainsType?: string;
-
   /** Whether consuming this has special effects */
   hasEffect?: boolean;
 
@@ -64,7 +61,6 @@ export class EdibleTrait implements ITrait, IEdibleData {
   servings: number;
   liquid: boolean;
   consumeMessage?: string;
-  remainsType?: string;
   hasEffect: boolean;
   effectDescription?: string;
   weight: number;
@@ -81,7 +77,6 @@ export class EdibleTrait implements ITrait, IEdibleData {
     this.nutrition = data.nutrition ?? 1;
     this.liquid = data.liquid ?? false;
     this.consumeMessage = data.consumeMessage;
-    this.remainsType = data.remainsType;
     this.hasEffect = data.hasEffect ?? (data.effects && data.effects.length > 0) ?? false;
     this.effectDescription = data.effectDescription;
     this.weight = data.weight ?? 1;

@@ -472,26 +472,81 @@ describe('eatingAction (Golden Pattern)', () => {
    * not just emits events. Servings must decrement and consumption must be tracked.
    */
   describe('World State Mutations', () => {
-    test('should decrement servings after eating single-serving item', () => {
-      const { world, item } = TestData.withInventoryItem('ham sandwich', {
+    test('a single-serving item is gone from the world and the inventory after it is eaten', () => {
+      const { world, player, item } = TestData.withInventoryItem('ham sandwich', {
         [TraitType.EDIBLE]: {
           type: TraitType.EDIBLE,
-          servings: 1
+          servings: 1,
+          nutrition: 4
         }
       });
 
-      // VERIFY PRECONDITION: 1 serving
+      // VERIFY PRECONDITION: 1 serving, held by the player
       expectTraitValue(item, TraitType.EDIBLE, 'servings', 1);
+      expect(world.hasEntity(item.id)).toBe(true);
+      expect(world.getContents(player.id).map((e) => e.id)).toContain(item.id);
 
       const command = createCommand(IFActions.EATING, { entity: item });
       const context = createRealTestContext(eatingAction, world, command);
+      const events = executeWithValidation(eatingAction, context);
 
-      const validation = eatingAction.validate(context);
-      expect(validation.valid).toBe(true);
-      eatingAction.execute(context);
-
-      // VERIFY POSTCONDITION: 0 servings
+      // VERIFY POSTCONDITION: no serving left, and the item has left the world
       expectTraitValue(item, TraitType.EDIBLE, 'servings', 0);
+      expect(world.hasEntity(item.id)).toBe(false);
+      expect(world.getContents(player.id).map((e) => e.id)).not.toContain(item.id);
+
+      // The eaten event still reports the item it was, by id, name and nutrition
+      const eaten = events.find((e) => e.type === 'if.event.eaten');
+      expect(eaten).toBeDefined();
+      expect(eaten!.data).toMatchObject({ item: item.id, itemName: 'ham sandwich', nutrition: 4 });
+    });
+
+    test('a multi-serving item stays until its last serving is eaten', () => {
+      const { world, player, item } = TestData.withInventoryItem('seed cake', {
+        [TraitType.EDIBLE]: {
+          type: TraitType.EDIBLE,
+          servings: 2
+        }
+      });
+      const held = () => world.getContents(player.id).map((e) => e.id);
+      const eat = () =>
+        executeWithValidation(
+          eatingAction,
+          createRealTestContext(eatingAction, world, createCommand(IFActions.EATING, { entity: item }))
+        );
+
+      eat();
+      expectTraitValue(item, TraitType.EDIBLE, 'servings', 1);
+      expect(world.hasEntity(item.id)).toBe(true);
+      expect(held()).toContain(item.id);
+
+      eat();
+      expectTraitValue(item, TraitType.EDIBLE, 'servings', 0);
+      expect(world.hasEntity(item.id)).toBe(false);
+      expect(held()).not.toContain(item.id);
+    });
+
+    test('a refused eat removes nothing', () => {
+      const inedible = TestData.withInventoryItem('brass key', {});
+      executeWithValidation(
+        eatingAction,
+        createRealTestContext(eatingAction, inedible.world, createCommand(IFActions.EATING, { entity: inedible.item }))
+      );
+      expect(inedible.world.hasEntity(inedible.item.id)).toBe(true);
+      expect(inedible.world.getContents(inedible.player.id).map((e) => e.id)).toContain(inedible.item.id);
+
+      const spent = TestData.withInventoryItem('empty rind', {
+        [TraitType.EDIBLE]: {
+          type: TraitType.EDIBLE,
+          servings: 0
+        }
+      });
+      executeWithValidation(
+        eatingAction,
+        createRealTestContext(eatingAction, spent.world, createCommand(IFActions.EATING, { entity: spent.item }))
+      );
+      expect(spent.world.hasEntity(spent.item.id)).toBe(true);
+      expect(spent.world.getContents(spent.player.id).map((e) => e.id)).toContain(spent.item.id);
     });
 
     test('should decrement servings for multi-serving food', () => {

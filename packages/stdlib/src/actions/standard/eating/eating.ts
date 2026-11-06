@@ -176,6 +176,10 @@ export const eatingAction: Action & { metadata: ActionMetadata } = {
     // Calculate servings remaining after consumption
     const servingsRemaining = EdibleBehavior.getServings(item);
 
+    // A fully eaten item leaves the world. The behavior decides and removes;
+    // `item` stays a valid reference, so the report below still names it.
+    EdibleBehavior.removeIfFinished(item, context.world);
+
     // Build event data
     const eventData: EatenEventData = {
       item: item.id,

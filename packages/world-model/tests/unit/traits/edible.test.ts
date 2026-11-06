@@ -22,7 +22,6 @@ describe('EdibleTrait', () => {
       expect(trait.servings).toBe(1);
       expect(trait.liquid).toBe(false);
       expect(trait.consumeMessage).toBeUndefined();
-      expect(trait.remainsType).toBeUndefined();
       expect(trait.hasEffect).toBe(false);
       expect(trait.effectDescription).toBeUndefined();
       expect(trait.weight).toBe(1);
@@ -35,7 +34,6 @@ describe('EdibleTrait', () => {
         servings: 3,
         liquid: true,
         consumeMessage: 'You drink the refreshing water.',
-        remainsType: 'empty_bottle',
         hasEffect: true,
         effectDescription: 'You feel refreshed!',
         weight: 0.5,
@@ -46,7 +44,6 @@ describe('EdibleTrait', () => {
       expect(trait.servings).toBe(3);
       expect(trait.liquid).toBe(true);
       expect(trait.consumeMessage).toBe('You drink the refreshing water.');
-      expect(trait.remainsType).toBe('empty_bottle');
       expect(trait.hasEffect).toBe(true);
       expect(trait.effectDescription).toBe('You feel refreshed!');
       expect(trait.weight).toBe(0.5);
@@ -159,36 +156,6 @@ describe('EdibleTrait', () => {
       
       trait.servings = 0;
       expect(trait.servings).toBe(0);
-    });
-  });
-
-  describe('remains after consumption', () => {
-    it('should specify remains type', () => {
-      const bottledWater = new EdibleTrait({
-        liquid: true,
-        remainsType: 'empty_bottle'
-      });
-      
-      expect(bottledWater.remainsType).toBe('empty_bottle');
-    });
-
-    it('should handle items with no remains', () => {
-      const apple = new EdibleTrait({
-        nutrition: 3
-        // No remainsType specified
-      });
-      
-      expect(apple.remainsType).toBeUndefined();
-    });
-
-    it('should support various remain types', () => {
-      const cannedFood = new EdibleTrait({ remainsType: 'empty_can' });
-      const wrappedCandy = new EdibleTrait({ remainsType: 'candy_wrapper' });
-      const bottledPotion = new EdibleTrait({ remainsType: 'empty_vial' });
-      
-      expect(cannedFood.remainsType).toBe('empty_can');
-      expect(wrappedCandy.remainsType).toBe('candy_wrapper');
-      expect(bottledPotion.remainsType).toBe('empty_vial');
     });
   });
 
@@ -335,8 +302,7 @@ describe('EdibleTrait', () => {
         liquid: true,
         nutrition: 0,
         hasEffect: true,
-        effectDescription: 'Your wounds heal!',
-        remainsType: 'empty_vial'
+        effectDescription: 'Your wounds heal!'
       }));
       
       const wine = world.createEntity('Bottle of Wine', 'item');
@@ -345,8 +311,7 @@ describe('EdibleTrait', () => {
         nutrition: 2,
         servings: 4,
         hasEffect: true,
-        effectDescription: 'You feel slightly tipsy.',
-        remainsType: 'empty_bottle'
+        effectDescription: 'You feel slightly tipsy.'
       }));
       
       expect(bread.hasTrait(TraitType.EDIBLE)).toBe(true);
@@ -361,8 +326,7 @@ describe('EdibleTrait', () => {
       bottle.add(new EdibleTrait({
         liquid: true,
         servings: 3,
-        nutrition: 1,
-        remainsType: 'empty_bottle'
+        nutrition: 1
       }));
       
       expect(bottle.hasTrait(TraitType.CONTAINER)).toBe(true);

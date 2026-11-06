@@ -1,0 +1,53 @@
+
+> @sharpee/branch-tester@5.5.1 test:ci /Users/david/repos/sharpee/packages/branch-tester
+> vitest run --exclude tests/claims-fernhill.test.ts && vitest run tests/claims-fernhill.test.ts
+
+
+ RUN  v3.2.4 /Users/david/repos/sharpee/packages/branch-tester
+
+ ✓ tests/assertion-core-ownership.test.ts (59 tests) 37ms
+ ✓ tests/claims-fragment.test.ts (3 tests) 68ms
+ ✓ tests/tree-document.test.ts (82 tests) 13ms
+ ✓ tests/claim-predicates.test.ts (8 tests) 11ms
+ ✓ tests/auto-assertion.test.ts (15 tests) 4ms
+ ✓ tests/chord-state-claim.test.ts (16 tests) 4ms
+ ✓ tests/tree-walker.test.ts (34 tests) 9ms
+ ✓ tests/tree-end-state.test.ts (5 tests) 80ms
+ ✓ tests/derived-plan.test.ts (29 tests) 7ms
+ ✓ tests/derived-counterpart.test.ts (6 tests) 5ms
+ ✓ tests/claims-inert-line.test.ts (2 tests) 102ms
+ ✓ tests/derived-coverage.test.ts (7 tests) 145ms
+ ✓ tests/claim-floor.test.ts (5 tests) 183ms
+ ✓ tests/claim-set.test.ts (11 tests) 7ms
+ ✓ tests/derived-stream.test.ts (4 tests) 180ms
+ ✓ tests/lock-failed-card.test.ts (5 tests) 189ms
+ ✓ tests/claim-lock.test.ts (19 tests) 222ms
+ ✓ tests/claim-report.test.ts (6 tests) 2ms
+ ✓ tests/claims-walk.test.ts (8 tests) 239ms
+ ✓ tests/tree-locks.test.ts (2 tests) 2ms
+ ✓ tests/claim-fragment-gate.test.ts (5 tests) 2ms
+ ✓ tests/story-state-claim.test.ts (5 tests) 2ms
+ ✓ tests/skip-executes.test.ts (4 tests) 2ms
+ ✓ tests/world-capture.test.ts (4 tests) 3ms
+ ✓ tests/read-world-snapshot.test.ts (1 test) 2ms
+ ✓ tests/derived-physical-state.test.ts (4 tests) 2ms
+ ✓ tests/derived-runner.test.ts (27 tests) 924ms
+ ✓ tests/claims-cone-acceptance.test.ts (2 tests) 1599ms
+   ✓ AC-9 — Secret Letter's market claim as AC-8 wrote it > the trimmed set — the rooms alone — holds the claim by exhaustion in about a second on the real engine  1325ms
+
+ Test Files  28 passed (28)
+      Tests  378 passed (378)
+   Start at  02:48:52
+   Duration  4.26s (transform 2.98s, setup 0ms, collect 43.89s, tests 4.05s, environment 4ms, prepare 1.15s)
+
+
+ RUN  v3.2.4 /Users/david/repos/sharpee/packages/branch-tester
+
+ ✓ tests/claims-fernhill.test.ts (5 tests) 106998ms
+   ✓ REAL-PATH — Fernhill's claims through the real engine (ADR-365 AC-1, AC-2) > settles all ten claims with the measured verdicts and witness depths  106986ms
+
+ Test Files  1 passed (1)
+      Tests  5 passed (5)
+   Start at  02:48:57
+   Duration  109.13s (transform 1.35s, setup 0ms, collect 1.91s, tests 107.00s, environment 0ms, prepare 29ms)
+
