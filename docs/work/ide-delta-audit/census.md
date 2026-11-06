@@ -24,6 +24,9 @@ What the two Chord Writer heads (`tools/ide/SharpeeIDE`, macOS Swift; `tools/ide
 | F-02 | [#653](https://github.com/ChicagoDave/sharpee/issues/653) | S1 | Chord Writer 1.4.0 carries a pre-4.0 toolchain in both heads; no build pairs with Sharpee 5.6.0 / Chord 4.0.1. |
 | F-03 | [#654](https://github.com/ChicagoDave/sharpee/issues/654) | S4 | The generated API reference reaches no author: not in the npm package, not in the app, though two documents say otherwise. |
 | F-04 | [#655](https://github.com/ChicagoDave/sharpee/issues/655) | (docs) | `tools/ide/README.md` describes the July app. Older than the delta range. |
+| F-05 | [#656](https://github.com/ChicagoDave/sharpee/issues/656) | S2 | The Swift lexer port lexes `&` as punctuation; the TypeScript lexer makes it a word. The golden corpus has no `&`. Older than the delta range. |
+| F-06 | [#657](https://github.com/ChicagoDave/sharpee/issues/657) | S3 | The Avalonia head reads the IR and the world index by hand-written key with no version gate; its generated types are used only by a test. |
+| F-07 | [#658](https://github.com/ChicagoDave/sharpee/issues/658) | S3 | The IR `format` field is documented as the shells' hard wire gate and compared by neither head. |
 
 Existing issues this audit builds on rather than repeats: #648 (bundled docs lag), #457 (vendored toolchain exports), #480 (Avalonia bundle identity), #488 (Avalonia parity), #502 (docs-tab vitest).
 
@@ -183,14 +186,115 @@ All rows measured 2026-11-06.
 
 **Reading.** At the baseline the Swift pin equalled the language version, because `CHORD_LANGUAGE_VERSION` stayed at 3.6.0 for the whole of the `chord-4-0` branch and moved only at the cut (`a9e3c226c`). The pin therefore never said whether the IDE's language surfaces knew the unpublished 4.0 syntax (Q-01). The app version, the pin and the docs bundle's version are the three hand-moved numbers; everything else in S1 follows the workspace at build time.
 
+## Section D: language knowledge
+
+Measured 2026-11-06 at `9305edab5` (Phase 2). The tree differs from `2a71ec866` only by this audit's own documents.
+
+### D.1 Where each head keeps what it knows about Chord
+
+"Derived" is built from `packages/chord` by a script or an import; "hand" is typed into the IDE's source and must be moved by a person.
+
+| # | Knowledge | Head | Kind | Pinned by | State |
+|---|---|---|---|---|---|
+| D-1 | Tokenizer: `SharpeeIDE/Editor/ChordLexer.swift` | macOS | hand port of `packages/chord/src/lexer.ts` | `ChordLexerGoldenTests` against `lexer-golden.json` | The TypeScript lexer did not change in the range. One older divergence: `&` (F-05) |
+| D-2 | Tokenizer: `editor-bridge/src/lexer-server.ts` behind `PaneHost/Hosting/ChordLexerService.cs` | Avalonia | derived: bundles `lexer.ts` and `diagnostics.ts` from source | no test in `PaneHost.Tests` names the lexer or the colorizer | Current when rebuilt. The bundle on disk (2026-09-16, gitignored) postdates the last behavioural lexer change (2026-09-06) |
+| D-3 | Keyword set (40 words) and header property keys (15): `SharpeeIDE/Editor/SyntaxHighlighter.swift` | macOS | hand | `SyntaxHighlighterTests` | Nothing owed by the range. Six block forms added since 1.4.0 are absent (below) |
+| D-4 | The same 40 and 15, copied: `PaneHost/Editor/ChordColorizer.cs` | Avalonia | hand copy of D-3 | none | Identical to D-3 today (both counted); every change is made twice |
+| D-5 | Chord version pin: `SharpeeIDE/Compose/ChordVersionCheck.swift:66` | macOS | hand | `ChordVersionCheckTests`, `DocsTabRealPathTests` | Stale (F-01). The Avalonia head has no pin and no launch check |
+| D-6 | Story header readers and writers: `SharpeeIDE/Workspace/StoryHeader{Lines,IFID,Themes,PublishSource,AutoAssertion}.swift` | macOS | hand | four `StoryHeader*Tests` (IFID, themes, publish-source, auto-assertion) | The parser's header code did not change in the range. The three `auto-assertion` values equal the parser's (`parser.ts:1045-1047`) |
+| D-7 | New Story: `Workspace/StoryScaffold.swift` over `Resources/story-templates` | macOS | derived mirror | `StoryScaffoldTests` | Mirror identical to `packages/devkit/templates/story-chord` (C-18) |
+| D-8 | Import and fragment edits: `Editor/ImportCommands.swift`, `ImportRefactor.swift` | macOS | hand (`story` … `end`, import lines) | `ImportRefactorTests`, `EditorImportCommandTests` | The range's EBNF changes do not touch these productions |
+| D-9 | World tab source edits: `World/WorldSourceEdit.swift`, `WorldPhraseLocator.swift`, `WorldProseChunker.swift` | macOS | hand (`create`, `aka`, `the` line shapes) | `WorldSourceEditTests`, `WorldPhraseLocatorTests` | The range's EBNF changes do not touch these productions |
+| D-10 | Index bucketing by kind name (room, region, person, thing): `Compose/StoryIndex.swift` and `PaneHost/Shell/StoryIndex.cs` | both | hand, twin copies | `StoryIndexTests` in each suite | The IR members they read did not change in the range (Section E) |
+| D-11 | Diagnostic codes | both | none kept | — | No production source in either head names a `parse.` or `analysis.` code; codes pass through as text |
+| D-12 | Claim syntax in the Testing tab | shared web pane | derived: imported from `@sharpee/branch-tester` | `web/testing-surface/tests` | Bundle freshness is Q-05 |
+
+Not present in either head: completion, an alias catalog, any copy of `chord.ebnf`. `Editor/AutoIndenter.swift` and `BracketMatcher.swift` hold no Chord words.
+
+### D.2 The six grammar-log rows, per head
+
+Classified against the IDE's source at HEAD, not against the shipped binary, which runs a 3.6.0 compiler whatever the editor knows (F-02).
+
+| Row | macOS head | Avalonia head |
+|---|---|---|
+| ADR-382: rules cross as structured parts (no EBNF change) | not applicable | not applicable |
+| ADR-383 D3/D4: seats; `analysis.seat-conflict`, `analysis.unknown-slot` (no EBNF change) | handled: codes pass through Problems | handled: the head prints the CLI's own output (`ShellWindow.axaml.cs:991`) |
+| ADR-383 D9: `about` rows in a `define action` (EBNF `topic-row`) | handled: no new token kind; `about` was never colored in topic tables either; the IR's new `topics` is not read | handled: the real lexer; same list |
+| Chord 4.0.0 bump | **stale**: the pin (F-01) | not applicable: no pin |
+| `servings <n>` entity line (EBNF `servings-line`) | handled: a word and a number; entity lines are not colored by the set's own rule; three new codes pass through | handled |
+| Chord 4.0.1 bump | **stale**: the pin (F-01) | not applicable: no pin |
+| **Totals** | handled 3, stale 2, not applicable 1 = **6** | handled 3, stale 0, not applicable 3 = **6** |
+
+### D.3 Diagnostic codes
+
+Seven codes appear only on added lines of `git diff 388ac54c7 HEAD -- packages/chord/src`: `analysis.about-without-topic`, `analysis.act-unseated-slot`, `analysis.seat-conflict`, `analysis.servings-duplicate`, `analysis.servings-owner`, `analysis.unknown-slot`, `parse.servings-number`. None was removed. `validate-ir.ts` (ADR-389) carries 51 code-literal occurrences, all in the `analysis.` family. `diagnostics.ts` gained one method (`add`), no code. Neither head enumerates codes, so nothing is owed (Q-04 closed).
+
+### D.4 What the pin move owes, by its own precedent
+
+The comment above the pin says a bump is honest only when the golden corpus exercises the new surface; the 3.3.0 and 3.6.0 bumps each added a corpus file and extended the keyword set. Measured, and recorded as a comment on #652:
+
+- The seven corpus stories contain none of `end claims`, `end landmarks`, `end passage`, `end position`, `end pushing`, `end sailing`, `servings`, `vehicle`, `expanse`, `define machine`.
+- `chord.ebnf` gained six block forms between 1.4.0 (`d936024cc`, 2026-09-04) and the baseline: claims, landmarks, passage, position, pushing, sailing. None is in the keyword set. The range itself added no block form and no `define` noun (28 at the baseline, the same 28 now).
+- Older gaps in the same lists, for a ruling on whether the set is curated or complete: 11 of the 28 `define` nouns are uncolored, and the header key `auto-assertion` is not in the property set.
+
+This answers Q-01: the keyword set does not cover the 4.0 surface, and nothing in the range made that worse.
+
+## Section E: wire contract
+
+Measured 2026-11-06 at `9305edab5`.
+
+### E.1 Generated protocol
+
+```
+$ ./repokit protocol --check
+protocol --check: generated protocol types match the TypeScript wire contract
+exit status: 0
+```
+
+`--check` regenerates in memory and compares; it wrote nothing (`git status` unchanged). Both `tools/ide/SharpeeIDE/Generated/SharpeeProtocol.swift` and `tools/ide/PaneHost/Generated/SharpeeProtocol.cs` are fresh (Q-03 closed).
+
+### E.2 The IR members the heads read, against `story language 6`
+
+Over the range `packages/chord/src/ir.ts` changed as follows (non-comment lines of the diff): `IR_FORMAT` 5 to 6; a new required `identity: IRIdentity` on the story (stamp, entities, exits, clauses, selects, chapters, timers, landings, counters); `servings?` on an entity; `id` on an on-clause; `topics?` on an action; the function `primarySlotOf` removed.
+
+The heads decode a projection, `IdeStoryIR` in `tools/repokit/src/commands/protocol-projection.ts`: `format`, `languageVersion`, `meta` (title, fields: id, storyVersion, authors), `grammarFile`, `entities` (id, name, isPlayable, kinds, containing, descriptionSource, roomNameSource, span), `actions` (name, span), `phrases` (defaultLocale, locales). None of these members changed. The projection carries a compile-time assertion that it narrows the real `StoryIR` (`STORY_IR_PROJECTION_IS_A_NARROWING`), and `tools/repokit` compiled at HEAD: its `dist/commands/protocol.js` was rebuilt on 2026-11-06 by the Phase 1 commit gate's run.
+
+| Member added by the range | Read by the macOS head | Read by the Avalonia head |
+|---|---|---|
+| `identity` (ADR-388 manifest and stamp) | no | no |
+| `servings` | no | no |
+| on-clause `id` | no | no |
+| action `topics` | no | no |
+
+Nothing is stale here. The identity manifest is consumed by the loader and the restore path inside the toolchain, not by the IDE.
+
+### E.3 Version gates
+
+| Contract | Platform | macOS head | Avalonia head |
+|---|---|---|---|
+| Compose payload `schemaVersion` | 2 (`compose-diagnostics.ts:28`) | gate, 2 (`Compose/ComposeDiagnostics.swift:35, 52`) | no gate; the head does not call `compose --json` |
+| Introspection manifest `schemaVersion` | 1 (`types.ts:19`) | gate, 1 (`Project/ProjectManifest.swift:17, 30`) | not read |
+| World index `schema` | `world-index/4` (`world-index/src/document.ts:67`, file unchanged in the range) | gate (`World/WorldIndexDocument.swift:25, 848`) | no gate (`Shell/WorldMapView.cs:52` parses the file by key) |
+| Run events `schemaVersion` | 2 (`run-events.ts:52`, unchanged in the range) | none native, by ADR-352: the Testing tab is TypeScript and imports the guards | same |
+| IR `format` | `story language 6` | decoded, compared to nothing | not read |
+
+Two findings:
+
+- **F-06** ([#657](https://github.com/ChicagoDave/sharpee/issues/657)): the Avalonia head's production code uses none of the generated C# types. `Shell/StoryIndex.cs` reads `dist/<id>.ir.json` by 18 string keys and `Shell/WorldMapView.cs` reads the world index by string key, with no version gate. All 18 keys are members of the projection today, so nothing is broken; a rename would fail no build.
+- **F-07** ([#658](https://github.com/ChicagoDave/sharpee/issues/658)): the projection documents `format` as "the shell's hard wire gate" and neither head compares it (Q-02 closed as a finding). The envelope's `schemaVersion` did not move when the IR format did.
+
+### E.4 Reconcile and player identity
+
+A search of `tools/ide/SharpeeIDE`, `tools/ide/PaneHost`, `tools/ide/web/testing-surface/src`, `tools/ide/web/docs-tab/src` and `tools/ide/editor-bridge/src` for `save_reconciled`, `saveReconciled`, `playerId` and `getPlayer` returns nothing. No IDE source handles the ADR-388 reconcile channel or reads a player id. Both reach the app only inside the browser bundle `sharpee build` writes; the Play pane is checked in Phase 3.
+
 ## Carried questions
 
 | Id | Settled in | Question |
 |---|---|---|
-| Q-01 | Phase 2 | Does the highlighter's keyword set cover the 4.0 surface (kind-led create blocks, vehicles, expanses, state machines, `about` rows, `servings`)? The pin cannot answer (Section C reading). |
-| Q-02 | Phase 2 | The generated `ComposeStoryIR.format` is documented as "the shell's hard wire gate", and no source in either head compares it to anything: `story language` appears only in test fixtures, which carry formats 1 and 2. |
-| Q-03 | Phase 2 | The generated protocol is expected fresh (C-17: the generator's inputs did not change), to be confirmed by the generator's own check. |
-| Q-04 | Phase 2 | `packages/chord/src/diagnostics.ts` gained 5 lines and the range added diagnostic codes (`analysis.seat-conflict`, `analysis.about-without-topic`, the `servings` codes). Does any IDE table enumerate codes? |
+| Q-01 | Phase 2: closed | The keyword set does not cover the 4.0 surface (D.4); recorded on #652. |
+| Q-02 | Phase 2: closed | The IR `format` field is never compared: F-07. |
+| Q-03 | Phase 2: closed | The generated protocol is fresh (E.1). |
+| Q-04 | Phase 2: closed | Neither head enumerates diagnostic codes (D.3). |
 | Q-05 | Phase 3 | The committed testing-surface bundle dates from 10-22; its sources changed after: `branch-tester/src` 7 files, `transcript-tester/src` 4 files (`assertion-core.ts`, 18 lines added and 11 removed, for ADR-388's clause occurrence key). |
 | Q-06 | Phase 3 | The committed docs bundle against 18 changed files under `website/src/app/chord`; #648 names one page. |
 | Q-07 | Phase 4 | Test fixtures carry `story language 1` and `2` and language versions `2.1.0` and `3.0.0`; `fernhill-frozen` is a 2026-08-07 snapshot. Which suites still pass on the 4.0.1 compiler? |

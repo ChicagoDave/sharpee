@@ -44,8 +44,8 @@
 - **Files**: `docs/work/ide-delta-audit/census.md`
 - **Exit state**: every grammar-log row added since commit 388ac54c7 is classified handled / stale / not-applicable for each head; the generated-protocol check result is recorded verbatim; each stale item is a filed issue linked from the census
 - **Demonstration**: the row counts in Section D sum to the number of rows the grammar log gained over the delta range (the added table rows in git diff 388ac54c7 HEAD of the grammar log; six on 2026-11-06); the protocol check command's exit status and output appear in Section E
-- **Demonstrated**: 
-- **Status**: PENDING
+- **Demonstrated**: 2026-11-06, session b9404f, at 9305edab5. Census D.2 classifies six rows per head: macOS handled 3 + stale 2 + not applicable 1 = 6; Avalonia handled 3 + stale 0 + not applicable 3 = 6; the grammar log gained six rows over the range. Census E.1 records `./repokit protocol --check` verbatim: "protocol --check: generated protocol types match the TypeScript wire contract", exit status 0. The one stale item (the Swift pin, both version rows) is #652. Findings F-05 to F-07 filed as #656, #657, #658; Q-01 to Q-04 closed.
+- **Status**: DONE
 
 ### Phase 3: Bundled content, testing surface and tree-document runtime
 - **Tier**: Medium
