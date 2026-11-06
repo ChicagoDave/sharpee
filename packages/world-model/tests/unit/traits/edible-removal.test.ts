@@ -6,7 +6,7 @@
  * Owner context: world-model test suite (edible trait and behavior).
  *
  * References:
- * - docs/work/event-processor-one-writer/plan.md, Phase 6 — the ruling that
+ * - docs/work/archive/event-processor-one-writer/plan.md, Phase 6 — the ruling that
  *   eaten items disappear, and the removal of `remainsType`.
  */
 import { EdibleBehavior } from '../../../src/traits/edible/edibleBehavior';

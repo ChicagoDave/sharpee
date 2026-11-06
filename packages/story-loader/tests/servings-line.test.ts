@@ -8,7 +8,7 @@
  * Owner context: @sharpee/story-loader test suite.
  *
  * References:
- * - docs/work/event-processor-one-writer/plan.md, Phase 5 — the line.
+ * - docs/work/archive/event-processor-one-writer/plan.md, Phase 5 — the line.
  * - packages/chord/tests/servings-line.test.ts — the language side.
  */
 import { describe, expect, it } from 'vitest';

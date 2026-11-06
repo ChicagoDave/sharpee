@@ -11,7 +11,7 @@
  * Owner context: event-processor test suite.
  *
  * References:
- * - docs/work/event-processor-one-writer/plan.md, Phase 2.
+ * - docs/work/archive/event-processor-one-writer/plan.md, Phase 2.
  * - tests/unit/pushed-one-writer.test.ts — the same rule for a press.
  */
 import { describe, it, beforeEach, expect } from 'vitest';

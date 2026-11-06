@@ -1,7 +1,7 @@
 # Session Plan: Event-processor one writer — delete the dead handlers, drop the second `isOpen` writer, eaten items leave the world, narrow the barrel
 
 **Created**: 2026-11-04
-**Plan Status**: ACTIVE
+**Plan Status**: DONE
 **Authorization**: David's direction this session on all four parts. The eaten-item rule is a NEW RULING, verbatim, 2026-11-04: "yes, eaten items should disappear". This is a `packages/` plan: it is discuss-first authorization for the plan only. Nothing proceeds to implementation without David's go on each phase, and the deletion phase (Phase 2) is HELD for his confirmation of the exact list.
 **Overall scope**: `packages/event-processor` stops registering standard handlers nothing emits for, `OpenableBehavior` becomes the only writer of `isOpen`, a fully eaten item leaves the world through a behavior-owned removal, and the event-processor barrel exports only what has consumers.
 **Bounded contexts touched**: event-processor (handlers, barrel); stdlib actions (opening, closing, eating, and drinking if David extends the ruling); world-model (`EdibleBehavior`); Dungeo story text (cakes). Not DDD-framed: the work is single-writer cleanup plus one behavior ruling.

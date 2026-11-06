@@ -6,7 +6,7 @@
  * Owner context: @sharpee/chord test suite.
  *
  * References:
- * - docs/work/event-processor-one-writer/plan.md, Phase 5 — the line and its refusals.
+ * - docs/work/archive/event-processor-one-writer/plan.md, Phase 5 — the line and its refusals.
  * - tests/adr-369-container-settings.test.ts — `holds <n>`, the line this one is built like.
  */
 import { describe, expect, it } from 'vitest';
