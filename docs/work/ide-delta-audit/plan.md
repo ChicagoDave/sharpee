@@ -58,7 +58,7 @@
 - **Exit state**: each bundled content class has a stale / fresh verdict with the differing items named and a count; GH #648 and #502 each carry an audit comment or a corrected body; defects filed and linked
 - **Demonstration**: re-running one diff per content class in the scratch directory reproduces the recorded stale count
 - **Demonstrated**: 
-- **Status**: PENDING
+- **Status**: CURRENT (since 2026-11-06)
 
 ### Phase 4: The IDE's own test suites and real-path seams
 - **Tier**: Medium
