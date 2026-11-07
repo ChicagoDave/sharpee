@@ -1,7 +1,7 @@
 # Session Plan: Full delta audit of the two IDE heads against Sharpee 5.6.0 / Chord 4.0.1
 
 **Created**: 2026-11-06
-**Plan Status**: ACTIVE
+**Plan Status**: DONE
 **Overall scope**: Establish, with dated inline evidence, everything in the macOS Chord Writer (`tools/ide/SharpeeIDE`) and the Avalonia head (`tools/ide/PaneHost`) that has fallen behind the platform and the Chord language since the last `tools/ide` commit (388ac54c7, 2026-10-23). The deliverable is a census document plus a categorised, costed list of IDE updates; defects and gaps are filed as GitHub issues and linked from the census. This plan fixes nothing: the fix work gets its own plan after David reads the audit.
 **Bounded contexts touched**: N/A - audit of infrastructure/tooling (`tools/ide`, `packages/ide-protocol` read-only)
 **Key domain language**: delta range (388ac54c7..HEAD), head (macOS Swift app vs Avalonia PaneHost), generated protocol (ADR-352), the toolchain (vendored Node + `bin/sharpee`), real-path test
