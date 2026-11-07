@@ -32,7 +32,13 @@ import type { Span, StoryIR } from '@sharpee/chord';
  * than failing the whole decode.
  */
 export interface IdeStoryIR {
-  /** IR format stamp — the shell's hard wire gate. */
+  /**
+   * The loader's IR format stamp (`IR_FORMAT`): informational to the shell,
+   * like `languageVersion` below. It moves on any full-schema change, most of
+   * which touch nothing the shell reads, so a shell gated on it would refuse
+   * stories it can display. The shell's wire gate is the compose envelope's
+   * `schemaVersion` (ADR-258 D5), bumped only when a projected shape breaks.
+   */
   format: string;
   /** Chord LANGUAGE version that compiled this story (ADR-257, informational). */
   languageVersion: string;

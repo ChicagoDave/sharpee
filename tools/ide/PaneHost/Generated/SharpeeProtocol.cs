@@ -257,7 +257,13 @@ public sealed record ComposeJsonPayload
 /// </summary>
 public sealed record ComposeStoryIR
 {
-    /// <summary>IR format stamp — the shell's hard wire gate.</summary>
+    /// <summary>
+    /// The loader's IR format stamp (`IR_FORMAT`): informational to the shell, like
+    /// `languageVersion` below. It moves on any full-schema change, most of which touch nothing
+    /// the shell reads, so a shell gated on it would refuse stories it can display. The shell's
+    /// wire gate is the compose envelope's `schemaVersion` (ADR-258 D5), bumped only when a
+    /// projected shape breaks.
+    /// </summary>
     [JsonPropertyName("format")]
     public required string Format { get; init; }
 
