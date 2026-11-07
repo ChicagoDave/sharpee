@@ -32,8 +32,9 @@ What the two Chord Writer heads (`tools/ide/SharpeeIDE`, macOS Swift; `tools/ide
 | F-10 | [#661](https://github.com/ChicagoDave/sharpee/issues/661) | S8 | `toolchain-realpath-test.sh` fails at step 2 on a relative path, with an error that reads as a broken toolchain. |
 | F-11 | [#662](https://github.com/ChicagoDave/sharpee/issues/662) | S8 | Four seams have no automated check: the Avalonia editor bridge, Avalonia packaging, the C# protocol round trip, growth of the committed bundles. |
 | F-12 | [#663](https://github.com/ChicagoDave/sharpee/issues/663) | S8 | `assemble-dmg.sh` uses `hdiutil` verbs this macOS reports as deprecated. |
+| F-13 | [#457](https://github.com/ChicagoDave/sharpee/issues/457) | S1, S8 | The published macOS Chord Writer 1.4.0 cannot build any story: its toolchain (vendored 09-04) ships `@sharpee/character` without `dist-esm`. The Avalonia 1.4.0 toolchain (vendored 09-17, after `f875425f3`) builds one. Measured on the real path (H.2); recorded on #457. |
 
-Existing issues this audit builds on rather than repeats: #648 (bundled docs lag; measured in Section F, comment added), #457 (vendored toolchain exports), #480 (Avalonia bundle identity), #488 (Avalonia parity), #502 (docs-tab vitest; reproduced in Section G, cause corrected in a comment).
+Existing issues this audit builds on rather than repeats: #648 (bundled docs lag; measured in Section F, comment added), #457 (vendored toolchain exports; confirmed on the shipped macOS app in Section H as F-13, comment added), #480 (Avalonia bundle identity), #488 (Avalonia parity), #502 (docs-tab vitest; reproduced in Section G, cause corrected in a comment).
 
 ## Section A: the delta range
 
@@ -431,7 +432,7 @@ Nothing is stale in the Play pane's contract. The Avalonia Play sub-pane serves 
 
 ## Section H: the IDE's own tests
 
-Measured 2026-11-06 at `abf2b9d24` (Phase 4, session 351c89).
+Measured 2026-11-06 at `abf2b9d24` (Phase 4, session 351c89). Two measurements re-run 2026-11-07 at `4ae0396f6` (session 35701b) on David's ruling: the toolchain real-path script given absolute paths, and the Avalonia capability tests given their environment. Both re-runs were in place (neither touches a tracked file; `git status` afterwards unchanged), each once.
 
 ### H.1 Method
 
@@ -442,11 +443,11 @@ The macOS build's four pre-build phases write into `SharpeeIDE/Resources` (Secti
 | Suite | Command | Result |
 |---|---|---|
 | `SharpeeIDETests` (macOS, 79 test classes) | the pinned `xcodebuild test` (below) | 626 tests: 624 passing, 2 failures |
-| `PaneHost.Tests` (Avalonia) | `dotnet test PaneHost.Tests/PaneHost.Tests.csproj` | 135 tests: 127 passing, 8 failures, 0 skipped |
+| `PaneHost.Tests` (Avalonia) | `dotnet test PaneHost.Tests/PaneHost.Tests.csproj` | environment unset (11-06): 135 tests, 127 passing, 8 failures; with `SHARPEE_IDE_TOOLCHAIN`, `SHARPEE_IDE_CAPABILITY_FIXTURE` and `SHARPEE_IDE_CAPABILITY_STORY` set (11-07): 135 tests, 135 passing, 0 failures, 0 skipped, 2 s |
 | `web/testing-surface` | `npx vitest run --root tools/ide/web/testing-surface` | 23 files, 247 tests: 247 passing, 0 failures |
 | `web/docs-tab` | `npx vitest run --root tools/ide/web/docs-tab` (the Phase 3 run, G.4; not repeated) | 43 tests: 40 passing, 3 failures (#502) |
 | `dmg/dmg-layout-test.sh` | no arguments | 20 passing, 0 failures |
-| `toolchain-realpath-test.sh` | against the two built 1.4.0 apps | not measured: stopped on the path it was given (F-10) |
+| `toolchain-realpath-test.sh` | against the two built 1.4.0 apps, absolute paths (11-07) | macOS app (`Sharpee 5.3.0 · Chord 3.6.0`): FAIL at step 3, `sharpee build` cannot resolve `@sharpee/character` (F-13, #457); Avalonia app (`Sharpee 5.4.1 · Chord 3.6.0`): PASS, `game.js` 1,441,895 bytes, `engine.css` beside it |
 | `sparkle/update-realpath-test.sh` | — | not run: it signs with the real Sparkle key from the keychain |
 | `tools/ide/editor-bridge` | — | has no suite (Section B) |
 | `test-fixtures/fernhill-frozen` | `sharpee compose fernhill.story --check` | "Chord 4.0.1 — … is gate-clean" |
@@ -472,11 +473,16 @@ The two failures are the two predicted in Phase 1, and both are F-01 (recorded o
 
 The build confirmed Sections F and G on the real path. Its log carries "docs tab: 167 pages … (Chord 4.0.1)" and "testing-surface bundled", and `git status` in the clone afterwards lists 17 changed tracked files: the 16 docs files and `surface.js`, now 16,545 lines with 55 banners reading `packages/chord/dist-esm/…`. `TestingSurfaceRealPathTests` passed against that enlarged bundle, so F-08 is weight and a `dist-esm` dependency, not a behaviour change (recorded on #659).
 
-**The Avalonia suite.** All 8 failures are one unmet precondition, not assertions about the product: 7 read `SHARPEE_IDE_TOOLCHAIN is not set` and 1 reads `SHARPEE_IDE_CAPABILITY_FIXTURE is not set`. They are the capability tests in `HostCapabilityTests.cs` (`SubprocessTests` 5, `DocumentsFolderTests` 2, `ToolchainResolutionTests` 1), which by design fail rather than skip when their environment is missing (`PaneHost/README.md`). They need a vendored toolchain and a dedicated Documents story folder the tests write into. Neither was supplied, and the run was not repeated. So the Avalonia head's real-path layer (the vendored Node, the sealed shim, compose through it, the Documents folder) is **unmeasured**, and the 127 that pass are the tests that need no toolchain.
+**The Avalonia suite.** On 11-06 all 8 failures were one unmet precondition, not assertions about the product: 7 read `SHARPEE_IDE_TOOLCHAIN is not set` and 1 reads `SHARPEE_IDE_CAPABILITY_FIXTURE is not set`. They are the capability tests in `HostCapabilityTests.cs` (`SubprocessTests` 5, `DocumentsFolderTests` 2, `ToolchainResolutionTests` 1), which by design fail rather than skip when their environment is missing (`PaneHost/README.md`).
 
-Two things stand between this audit and that measurement. A toolchain vendored at HEAD needs `vendor-toolchain.sh`, which signs with the Developer ID Application certificate and a timestamp, so it was not run. The staged toolchain the README points at exists (`~/Library/Caches/net.sharpee.panehost/stage/toolchain`) and is `Sharpee 5.4.1 · Chord 3.6.0`, dated 09-26: running the capability tests against it would measure the September toolchain, not HEAD.
+On 11-07, on David's ruling, the suite was re-run once with the three variables the README names: `SHARPEE_IDE_TOOLCHAIN` at the staged toolchain (`~/Library/Caches/net.sharpee.panehost/stage/toolchain`, `Sharpee 5.4.1 · Chord 3.6.0`, dated 09-26), `SHARPEE_IDE_CAPABILITY_FIXTURE` at `~/Documents/Sharpee Capability Fixture` and `SHARPEE_IDE_CAPABILITY_STORY` at its `capability-fixture.story`. `dotnet test` printed `Passed!  - Failed:     0, Passed:   135, Skipped:     0, Total:   135, Duration: 2 s`. The tests rewrote the fixture's `avalonia-capability-check.txt` (stamp `2026-11-07T00:07:34`), which is what they are for. So the Avalonia head's real-path layer (the vendored Node, the sealed shim, compose through it, the Documents folder) **passes against the September toolchain**. It is still not measured against a toolchain vendored at HEAD: `vendor-toolchain.sh` signs with the Developer ID Application certificate and a timestamp, so it was not run, and the staged toolchain is the one from 09-26.
 
-**The toolchain real-path script.** Given a relative path from `tools/ide`, both runs passed the scrub check and the version check (`Sharpee 5.3.0 · Chord 3.6.0` for the macOS app, `Sharpee 5.4.1 · Chord 3.6.0` for the Avalonia app) and then failed at `sharpee init` with `env: …/toolchain/bin/sharpee: No such file or directory`. The script changes directory before step 2 and never makes its argument absolute. That is **F-10** ([#661](https://github.com/ChicagoDave/sharpee/issues/661)); it says nothing about either toolchain, and the script was not re-run with an absolute path. Whether the shipped toolchains can build a story (#457 says they cannot) is still unmeasured by this audit.
+**The toolchain real-path script.** On 11-06, given a relative path from `tools/ide`, both runs passed the scrub check and the version check (`Sharpee 5.3.0 · Chord 3.6.0` for the macOS app, `Sharpee 5.4.1 · Chord 3.6.0` for the Avalonia app) and then failed at `sharpee init` with `env: …/toolchain/bin/sharpee: No such file or directory`. The script changes directory before step 2 and never makes its argument absolute. That is **F-10** ([#661](https://github.com/ChicagoDave/sharpee/issues/661)); it says nothing about either toolchain.
+
+On 11-07, on David's ruling, the script was re-run once per app with an absolute path (`release/arm64/Chord Writer.app` and `release-avalonia/arm64/Chord Writer (Avalonia).app`, the two built 1.4.0 bundles of C-10 and C-12). Both passed steps 0 to 2, which confirms F-10 is path handling and nothing else. They then diverge:
+
+- The macOS app's toolchain (`Sharpee 5.3.0`, vendored 2026-09-04, the slice the appcast publishes, C-7) **fails step 3**: `sharpee build` validates the story gate-clean, writes the IR, and dies in esbuild with `Could not resolve "@sharpee/character"` three times, each `The module "./dist-esm/index.js" was not found on the file system` from `@sharpee/story-loader/dist-esm/{evaluator,loader,runtime}.js`. The vendored `@sharpee/character` holds `dist`, `package.json`, `README.md` and no `dist-esm`. This is [#457](https://github.com/ChicagoDave/sharpee/issues/457) exactly, now measured on the shipped bundle rather than a fresh vendoring: **the published Chord Writer 1.4.0 cannot build any story**. That is **F-13**.
+- The Avalonia app's toolchain (`Sharpee 5.4.1`, vendored 2026-09-17) **passes**: `game.js` 1,441,895 bytes and `engine.css` beside it, `PASS — the bundled toolchain is self-contained`. Its vendored `@sharpee/character` carries `dist-esm`. The difference is `f875425f3` (2026-09-16, "toolchain correctness (Phase 3a)"), which added `dist-esm` to the `files` list of `bootstrap`, `character` and `sharpee`, between the two vendorings. Of #457's seven packages, `bridge` and `runtime` still list only `dist`, and `branch-tester` and `transcript-tester` now have no `files` key at all; none of the four is imported by the story bundle, so the build passes with them as they are.
 
 **The DMG script** printed a deprecation warning for every `hdiutil` verb it and the production `assemble-dmg.sh` use: **F-12** ([#663](https://github.com/ChicagoDave/sharpee/issues/663)).
 
@@ -498,10 +504,10 @@ Six test files carry hand-written IR with `story language 1` (1 occurrence) or `
 | Swift lexer port | `SharpeeIDETests/ChordLexerGoldenTests.swift` | pass; the corpus has no `&` and none of the 4.0 forms (F-05, D.4) | corpus stories for both |
 | Avalonia editor bridge | none | untested | F-11: the built lexer-server against the lexer golden |
 | Avalonia pane door | `PaneHost.Tests/PaneDoorTests.cs`, `PaneServerTests.cs`, `LocalOriginHttpTests.cs` (real HTTP; `PaneRelayTests.cs` is a unit test beside them) | pass | — |
-| Avalonia host capabilities | `PaneHost.Tests/HostCapabilityTests.cs` | unmeasured: environment not supplied (H.2) | — |
+| Avalonia host capabilities | `PaneHost.Tests/HostCapabilityTests.cs` | pass against the staged 5.4.1 toolchain of 09-26 (H.2); a HEAD toolchain is not measured | — |
 | Generated protocol round trip, C# | none; `PaneHost.Tests/ProtocolTypeTests.cs` decodes hand-written JSON | scaffolding only | F-11: the capability test's real `compose --json` output through the generated type |
 | Save identity and reconcile, player role | none | no IDE code to test (E.4, G.6) | — |
-| macOS packaging: bundled toolchain | `toolchain-realpath-test.sh` | unmeasured (F-10) | — |
+| macOS packaging: bundled toolchain | `toolchain-realpath-test.sh` | FAIL on the shipped 1.4.0 app: cannot build a story (F-13, #457); PASS on the Avalonia 1.4.0 app | — |
 | macOS packaging: DMG | `dmg/dmg-layout-test.sh` | pass | — |
 | macOS packaging: update feed | `sparkle/update-realpath-test.sh` | not run: signs | — |
 | Avalonia packaging | none | untested | F-11: the toolchain real-path script as the last step of `package-avalonia.sh` |
