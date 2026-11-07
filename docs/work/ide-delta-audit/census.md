@@ -29,6 +29,9 @@ What the two Chord Writer heads (`tools/ide/SharpeeIDE`, macOS Swift; `tools/ide
 | F-07 | [#658](https://github.com/ChicagoDave/sharpee/issues/658) | S3 | The IR `format` field is documented as the shells' hard wire gate and compared by neither head. |
 | F-08 | [#659](https://github.com/ChicagoDave/sharpee/issues/659) | S5 | A rebuild of the testing-surface bundle at HEAD pulls 55 Chord compiler modules in from `dist-esm` (11,496 lines nothing calls), because the assertion core now imports the `@sharpee/chord` barrel. |
 | F-09 | [#660](https://github.com/ChicagoDave/sharpee/issues/660) | S4, S6 | The New Story template compiles clean on 4.0.1 and opens with two World tab findings. |
+| F-10 | [#661](https://github.com/ChicagoDave/sharpee/issues/661) | S8 | `toolchain-realpath-test.sh` fails at step 2 on a relative path, with an error that reads as a broken toolchain. |
+| F-11 | [#662](https://github.com/ChicagoDave/sharpee/issues/662) | S8 | Four seams have no automated check: the Avalonia editor bridge, Avalonia packaging, the C# protocol round trip, growth of the committed bundles. |
+| F-12 | [#663](https://github.com/ChicagoDave/sharpee/issues/663) | S8 | `assemble-dmg.sh` uses `hdiutil` verbs this macOS reports as deprecated. |
 
 Existing issues this audit builds on rather than repeats: #648 (bundled docs lag; measured in Section F, comment added), #457 (vendored toolchain exports), #480 (Avalonia bundle identity), #488 (Avalonia parity), #502 (docs-tab vitest; reproduced in Section G, cause corrected in a comment).
 
@@ -426,6 +429,86 @@ tests/nav-bridge.test.mjs (18 tests | 3 failed)
 
 Nothing is stale in the Play pane's contract. The Avalonia Play sub-pane serves the same build output (Section B) and was not examined separately; head parity is Phase 5.
 
+## Section H: the IDE's own tests
+
+Measured 2026-11-06 at `abf2b9d24` (Phase 4, session 351c89).
+
+### H.1 Method
+
+The macOS build's four pre-build phases write into `SharpeeIDE/Resources` (Section F.2), so an in-place `xcodebuild test` would have rewritten 17 tracked files. Every suite below was therefore run in a copy-on-write clone of the repository in the scratch directory (`cp -cR`, 26 seconds), which carries the workspace's built `dist` and `node_modules` as they stood. Each suite ran once. Nothing was retried and nothing was fixed. `git status` in the real tree afterwards shows only this audit's own `plan.md` stamp.
+
+### H.2 Results
+
+| Suite | Command | Result |
+|---|---|---|
+| `SharpeeIDETests` (macOS, 79 test classes) | the pinned `xcodebuild test` (below) | 626 tests: 624 passing, 2 failures |
+| `PaneHost.Tests` (Avalonia) | `dotnet test PaneHost.Tests/PaneHost.Tests.csproj` | 135 tests: 127 passing, 8 failures, 0 skipped |
+| `web/testing-surface` | `npx vitest run --root tools/ide/web/testing-surface` | 23 files, 247 tests: 247 passing, 0 failures |
+| `web/docs-tab` | `npx vitest run --root tools/ide/web/docs-tab` (the Phase 3 run, G.4; not repeated) | 43 tests: 40 passing, 3 failures (#502) |
+| `dmg/dmg-layout-test.sh` | no arguments | 20 passing, 0 failures |
+| `toolchain-realpath-test.sh` | against the two built 1.4.0 apps | not measured: stopped on the path it was given (F-10) |
+| `sparkle/update-realpath-test.sh` | — | not run: it signs with the real Sparkle key from the keychain |
+| `tools/ide/editor-bridge` | — | has no suite (Section B) |
+| `test-fixtures/fernhill-frozen` | `sharpee compose fernhill.story --check` | "Chord 4.0.1 — … is gate-clean" |
+
+**The macOS suite.** `xcodegen generate`, then from `tools/ide` in the clone:
+
+```
+xcodebuild test -project SharpeeIDE.xcodeproj -scheme SharpeeIDE -destination 'platform=macOS'
+  -derivedDataPath ./DerivedData-audit -clonedSourcePackagesDirPath ./DerivedData/SourcePackages
+  SYMROOT=<clone>/tools/ide/DerivedData-audit/Build/Products
+  OBJROOT=<clone>/tools/ide/DerivedData-audit/Build/Intermediates.noindex
+
+Executed 626 tests, with 2 failures (0 unexpected) in 51.895 (52.039) seconds
+** TEST FAILED **
+```
+
+It differs from the pinned invocation in two ways: a fresh derived-data directory, because the cloned one holds the real tree's paths, and `-clonedSourcePackagesDirPath`, to reuse the Sparkle checkout already on disk. The Manual-signed test bundle signed from the keychain and the hosted app launched in the logged-in session; the run finished in about a minute without waiting on a prompt. The Phase 4 concern about signing and a GUI session did not materialise.
+
+The two failures are the two predicted in Phase 1, and both are F-01 (recorded on #652):
+
+- `ChordVersionCheckTests.testRealVersionOutputParses` (`ChordVersionCheckTests.swift:86`): `("3.6.0") is not equal to ("4.0.1")`.
+- `DocsTabRealPathTests.testTheBundledCorpusIsPinnedToTheCompilersChordVersion` (`DocsTabRealPathTests.swift:277`): `("4.0.1") is not equal to ("3.6.0")`. The 4.0.1 is the docs bundle the build had just regenerated.
+
+The build confirmed Sections F and G on the real path. Its log carries "docs tab: 167 pages … (Chord 4.0.1)" and "testing-surface bundled", and `git status` in the clone afterwards lists 17 changed tracked files: the 16 docs files and `surface.js`, now 16,545 lines with 55 banners reading `packages/chord/dist-esm/…`. `TestingSurfaceRealPathTests` passed against that enlarged bundle, so F-08 is weight and a `dist-esm` dependency, not a behaviour change (recorded on #659).
+
+**The Avalonia suite.** All 8 failures are one unmet precondition, not assertions about the product: 7 read `SHARPEE_IDE_TOOLCHAIN is not set` and 1 reads `SHARPEE_IDE_CAPABILITY_FIXTURE is not set`. They are the capability tests in `HostCapabilityTests.cs` (`SubprocessTests` 5, `DocumentsFolderTests` 2, `ToolchainResolutionTests` 1), which by design fail rather than skip when their environment is missing (`PaneHost/README.md`). They need a vendored toolchain and a dedicated Documents story folder the tests write into. Neither was supplied, and the run was not repeated. So the Avalonia head's real-path layer (the vendored Node, the sealed shim, compose through it, the Documents folder) is **unmeasured**, and the 127 that pass are the tests that need no toolchain.
+
+Two things stand between this audit and that measurement. A toolchain vendored at HEAD needs `vendor-toolchain.sh`, which signs with the Developer ID Application certificate and a timestamp, so it was not run. The staged toolchain the README points at exists (`~/Library/Caches/net.sharpee.panehost/stage/toolchain`) and is `Sharpee 5.4.1 · Chord 3.6.0`, dated 09-26: running the capability tests against it would measure the September toolchain, not HEAD.
+
+**The toolchain real-path script.** Given a relative path from `tools/ide`, both runs passed the scrub check and the version check (`Sharpee 5.3.0 · Chord 3.6.0` for the macOS app, `Sharpee 5.4.1 · Chord 3.6.0` for the Avalonia app) and then failed at `sharpee init` with `env: …/toolchain/bin/sharpee: No such file or directory`. The script changes directory before step 2 and never makes its argument absolute. That is **F-10** ([#661](https://github.com/ChicagoDave/sharpee/issues/661)); it says nothing about either toolchain, and the script was not re-run with an absolute path. Whether the shipped toolchains can build a story (#457 says they cannot) is still unmeasured by this audit.
+
+**The DMG script** printed a deprecation warning for every `hdiutil` verb it and the production `assemble-dmg.sh` use: **F-12** ([#663](https://github.com/ChicagoDave/sharpee/issues/663)).
+
+### H.3 Old-format fixtures (Q-07)
+
+Six test files carry hand-written IR with `story language 1` (1 occurrence) or `story language 2` (6), and language versions `2.1.0` (1) and `3.0.0` (6): `StoryIndexTests.swift`, `SplitDividerTests.swift`, `WindowTitleTests.swift`, `ComposeDiagnosticsTests.swift`, `IRTreeStateTests.swift` and `PaneHost.Tests/ProtocolTypeTests.cs`. Every one of those tests passes, because neither head compares the format (F-07). The frozen Fernhill fixture compiles gate-clean on 4.0.1. Its README names a consumer, `TestingTabRealPathTests.swift`, that no longer exists; the fixture is used today by `ShippedThemesRealPathTests.swift` and `AutoAssertionMenuTests.swift` (recorded on #655). Q-07 is closed: no suite fails on the 4.0.1 compiler for a fixture reason.
+
+### H.4 The seam map
+
+"Real path" means the test drives the owned dependency itself: the workspace CLI, a real page, a real socket, a real image.
+
+| Seam | Real-path test | State | Smallest missing check |
+|---|---|---|---|
+| Swift head to the CLI (compose, build, test, world-index) | `SharpeeIDETests/ComposeRunnerTests.swift`, `BuildRunnerTests.swift`, `TestRunnerTests.swift`, `WorldIndexTests.swift`, through `TestToolchain.devkitCLI` | pass | — |
+| Testing surface: page, CLI, sidecar | `SharpeeIDETests/TestingSurfaceRealPathTests.swift`; `web/testing-surface/tests/claims-real-path.test.ts`, `derived-real-path.test.ts`, `lock-gesture-real-path.test.ts`, `tree-session-real-path.test.ts`, `ac-signoff-cli.test.ts` | pass | — |
+| Play pane and shipped themes | `SharpeeIDETests/ShippedThemesRealPathTests.swift` (unit tests beside it: `PlayURLSchemeHandlerTests.swift`, `PlaySurfaceScriptTests.swift`) | pass | — |
+| Docs-tab build | `SharpeeIDETests/DocsTabRealPathTests.swift`; `web/docs-tab/tests/nav-bridge.test.mjs` | 1 failure (the pin), 3 failures (#502) | the test's `loadRealNav` bundling as `build.mjs` does |
+| Chord version pin | `SharpeeIDETests/ChordVersionCheckTests.swift` | 1 failure (F-01) | — |
+| Swift lexer port | `SharpeeIDETests/ChordLexerGoldenTests.swift` | pass; the corpus has no `&` and none of the 4.0 forms (F-05, D.4) | corpus stories for both |
+| Avalonia editor bridge | none | untested | F-11: the built lexer-server against the lexer golden |
+| Avalonia pane door | `PaneHost.Tests/PaneDoorTests.cs`, `PaneServerTests.cs`, `LocalOriginHttpTests.cs` (real HTTP; `PaneRelayTests.cs` is a unit test beside them) | pass | — |
+| Avalonia host capabilities | `PaneHost.Tests/HostCapabilityTests.cs` | unmeasured: environment not supplied (H.2) | — |
+| Generated protocol round trip, C# | none; `PaneHost.Tests/ProtocolTypeTests.cs` decodes hand-written JSON | scaffolding only | F-11: the capability test's real `compose --json` output through the generated type |
+| Save identity and reconcile, player role | none | no IDE code to test (E.4, G.6) | — |
+| macOS packaging: bundled toolchain | `toolchain-realpath-test.sh` | unmeasured (F-10) | — |
+| macOS packaging: DMG | `dmg/dmg-layout-test.sh` | pass | — |
+| macOS packaging: update feed | `sparkle/update-realpath-test.sh` | not run: signs | — |
+| Avalonia packaging | none | untested | F-11: the toolchain real-path script as the last step of `package-avalonia.sh` |
+| Growth of the committed bundles | none | untested | F-11: the bundler refusing a module outside its alias list |
+
+Neither `package.sh` nor `package-avalonia.sh` calls the real-path scripts; they run when someone runs them. The four untested seams are **F-11** ([#662](https://github.com/ChicagoDave/sharpee/issues/662)).
+
 ## Carried questions
 
 | Id | Settled in | Question |
@@ -436,5 +519,5 @@ Nothing is stale in the Play pane's contract. The Avalonia Play sub-pane serves 
 | Q-04 | Phase 2: closed | Neither head enumerates diagnostic codes (D.3). |
 | Q-05 | Phase 3: closed | The committed testing-surface bundle is functionally current and cannot be rebuilt cleanly: F-08 (G.1). |
 | Q-06 | Phase 3: closed | The docs bundle is stale by 16 files, 15 of them pages (F.3); recorded on #648. |
-| Q-07 | Phase 4 | Test fixtures carry `story language 1` and `2` and language versions `2.1.0` and `3.0.0`; `fernhill-frozen` is a 2026-08-07 snapshot. Which suites still pass on the 4.0.1 compiler? |
+| Q-07 | Phase 4: closed | No suite fails on the 4.0.1 compiler for a fixture reason; the old-format fixtures pass because nothing compares the format (H.3, F-07). |
 | Q-08 | Phase 5 | The built Avalonia bundle holds `docs-tab`, `editor-bridge`, `testing-surface` and `toolchain`, and no `play-themes` or `story-templates`. Is that in #488? |

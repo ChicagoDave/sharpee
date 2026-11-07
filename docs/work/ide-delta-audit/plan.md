@@ -70,8 +70,8 @@
 - **Files**: `docs/work/ide-delta-audit/census.md`
 - **Exit state**: each suite has a recorded pass / fail count; every untested seam is named with the smallest automated check that would cover it; failures are filed issues
 - **Demonstration**: the recorded counts for `tools/ide/PaneHost.Tests` match one fresh read of its test output, and each seam on the map names a test file path or the word none
-- **Demonstrated**: 
-- **Status**: PENDING
+- **Demonstrated**: 2026-11-06, session 351c89, at abf2b9d24. A fresh read of the `dotnet test` log printed "Failed!  - Failed:     8, Passed:   127, Skipped:     0, Total:   135", the counts in census H.2 (all 8 are the unset-environment precondition, so the Avalonia capability layer is recorded as unmeasured, not as failing). The same read gave `SharpeeIDETests` "Executed 626 tests, with 2 failures", testing-surface vitest "Tests  247 passed (247)" and the DMG script "20 passing, 0 failures". The seam map (census H.4) has 16 rows; each names a test file path or the word none. Every suite ran once, in a copy-on-write clone, and none was retried: the toolchain real-path script and the Avalonia capability tests are recorded as unmeasured, and the Sparkle script as not run because it signs. Findings F-10 to F-12 filed as #661, #662, #663; #652, #655 and #659 commented; Q-07 closed.
+- **Status**: CURRENT (since 2026-11-06)
 
 ### Phase 5: Head parity and the open-issue triage
 - **Tier**: Medium
