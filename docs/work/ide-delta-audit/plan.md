@@ -83,8 +83,8 @@
 - **Files**: `docs/work/ide-delta-audit/census.md`
 - **Exit state**: the issue triage table covers every open issue the list returns, count matching; parity gaps are issues or #488 comments; no gap appears in both #488 and the census without a cross-reference
 - **Demonstration**: the number of rows in Section J equals the count from the issue list command recorded at the top of that section
-- **Demonstrated**: 
-- **Status**: PENDING
+- **Demonstrated**: 2026-11-07, session 35701b, at d8f426311. `gh issue list --state open --limit 400` returned 247 lines; `grep -Eiwc 'Chord Writer|Avalonia|IDE'` over them printed 46, recorded at the top of census Section J; `awk '/^### J.1 The table/,/^46 rows/' census.md | grep -c '^| [0-9][0-9]* | '` printed 46. Section I compares both heads from code: one #488 item overtaken (Index landed) and six gaps plus persistence not in #488, recorded as F-14 in one comment on #488 (`gh issue view 488 --json comments`: 1 comment carrying "35701b"); every census gap row cites #488 or the issue that holds it. Eight stale rows commented with evidence (#188, #489, #193, #194, #198, #252, #254, #461), none closed, listed in J.2 for David's ruling. Q-08 closed.
+- **Status**: DONE
 
 ### Phase 6: The categorised, costed list and the follow-on plan's shape
 - **Tier**: Small

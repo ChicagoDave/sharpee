@@ -33,6 +33,7 @@ What the two Chord Writer heads (`tools/ide/SharpeeIDE`, macOS Swift; `tools/ide
 | F-11 | [#662](https://github.com/ChicagoDave/sharpee/issues/662) | S8 | Four seams have no automated check: the Avalonia editor bridge, Avalonia packaging, the C# protocol round trip, growth of the committed bundles. |
 | F-12 | [#663](https://github.com/ChicagoDave/sharpee/issues/663) | S8 | `assemble-dmg.sh` uses `hdiutil` verbs this macOS reports as deprecated. |
 | F-13 | [#457](https://github.com/ChicagoDave/sharpee/issues/457) | S1, S8 | The published macOS Chord Writer 1.4.0 cannot build any story: its toolchain (vendored 09-04) ships `@sharpee/character` without `dist-esm`. The Avalonia 1.4.0 toolchain (vendored 09-17, after `f875425f3`) builds one. Measured on the real path (H.2); recorded on #457. |
+| F-14 | [#488](https://github.com/ChicagoDave/sharpee/issues/488) | S9 | Six parity gaps #488 does not list (inline diagnostics and editor helpers, project-tree depth and menu, status-bar versions, Settings and Build Settings, structured Problems, Play header controls) plus session persistence; one #488 item overtaken (Index landed). Recorded on #488. |
 
 Existing issues this audit builds on rather than repeats: #648 (bundled docs lag; measured in Section F, comment added), #457 (vendored toolchain exports; confirmed on the shipped macOS app in Section H as F-13, comment added), #480 (Avalonia bundle identity), #488 (Avalonia parity), #502 (docs-tab vitest; reproduced in Section G, cause corrected in a comment).
 
@@ -515,6 +516,119 @@ Six test files carry hand-written IR with `story language 1` (1 occurrence) or `
 
 Neither `package.sh` nor `package-avalonia.sh` calls the real-path scripts; they run when someone runs them. The four untested seams are **F-11** ([#662](https://github.com/ChicagoDave/sharpee/issues/662)).
 
+## Section I: head parity
+
+Read from the code of both heads 2026-11-07 at `d8f426311` (Phase 5, session 35701b). #488 (2026-09-17) is the parity record this section builds on; it is cited for what it already holds and extended only where the code says something it does not.
+
+### I.1 What #488 records, re-checked
+
+| #488 item | State on 2026-11-07 | Evidence |
+|---|---|---|
+| Four menu stubs: New Import…, Extract Selection to Import…, Shipped Themes ▸, Auto-Assertion ▸ | still stubs, greyed | `PaneHost/Shell/ShellWindow.axaml.cs:200, 217, 244, 252` (`NotYet(...)`) |
+| Right panel: five tabs of eight, Index / Diagnosis / Publish missing | **six of eight**: Index landed; Diagnosis and Publish still absent | `ShellWindow.axaml.cs:158` (`RightTabs.Tabs = Build, Play, Testing, Index, Documentation, World`); `Shell/IndexPaneView.cs`, `Shell/StoryIndex.cs` (the six sections the Swift `IndexView.swift:210-215` has) |
+| The remark in the shell that still says "five of them" | stale comment | `ShellWindow.axaml.cs:1447-1450` |
+| Menu structure mirrors the Swift menu (6 top-level) | still so; the Swift App menu's Settings… and Check for Updates… have no Avalonia counterpart (I.2) | `ShellWindow.axaml.cs:198-260`; `SharpeeIDE/Menus/MenuBuilder.swift` |
+
+### I.2 The four areas #488 left unchecked
+
+| Area | macOS head | Avalonia head | Gap not in #488 |
+|---|---|---|---|
+| Editor | lexer-driven highlighting; bracket matching (`Editor/BracketMatcher.swift`); auto-indent (`Editor/AutoIndenter.swift`); line numbers (`Editor/LineNumberRulerView.swift`); diagnostic underlines and gutter flags with click-to-jump from Problems (`Editor/EditorViewController.swift:439-458, 398-421`); import commands and the extract refactor (`Editor/ImportCommands.swift`, `ImportRefactor.swift`); tabs with dirty dot and close (`Editor/TabBarView.swift`) | AvaloniaEdit with the real lexer's colours (`ShellWindow.axaml.cs:146`, `Editor/ChordColorizer.cs`); line numbers and word wrap; undo/redo/cut/copy/paste; tabs with dirty dot and close (`Shell/EditorTabBarView.cs`) | inline diagnostics (no underline, gutter or Problems-row navigation: no `underline`, `Indent`, `Bracket` hit in `ShellWindow.axaml.cs`), bracket matching, auto-indent. Neither head has completions, hover or go-to-definition (#281, #282, #283 stay open for both) |
+| Project pane | typed groups Story / Walkthroughs / Assets / Feelies / Web Template / Other (`Project/ProjectArtifacts.swift:39-44`), nested folders, double-click opens, Reveal in Finder context menu (`Project/ProjectTreeViewController.swift:244`), expanded-folder persistence | the same groups minus Feelies, top-level files only (`Shell/ProjectPaneView.cs:57-63`), single click selects and double opens (#489), no context menu (`RevealInFinder()` exists in the shell at `:822`) | Feelies group, nested folders, the tree's context menu |
+| Status bar | build pill (click cancels a build or toggles the panel) and `Chord Writer <app> · Sharpee <x> / Chord <y>` (`AppIdentity.swift:35-43`, `MainWindow.swift:1838-1849`) | `BuildPill` (built / not built / unbuilt changes / build failed / gate-clean / gate errors) and `StatusText` (`sharpee (bundled toolchain)` or `(vendored)`, tests passed / failed, the running command; `ShellWindow.axaml.cs:480, 904-906, 992, 1018, 1047`) | no app or toolchain version shown; `--version` is never called by the shell |
+| Settings | Settings… window: reopen last story at launch, snap panes to 50% (`Settings/SettingsWindowController.swift`); Build Settings sheet (`Build/BuildSettingsViewController.swift`); Check for Updates… (Sparkle, `Updates/`) | none: no Settings window, no Build Settings, no updater (no `velopack`, `sparkle` or `checkForUpdates` in `PaneHost`); Font and Appearance are View-menu items in both heads | Settings window, Build Settings, in-app updates (#462 covers Velopack packaging, not the menu) |
+
+### I.3 Other surfaces compared
+
+| Surface | macOS head | Avalonia head | Where recorded |
+|---|---|---|---|
+| Launch | landing page: product name, five recents, Open / Create Story / Close (`Launch/LandingPageViewController.swift`) | reopen the last story, else the Docs pane; New Story… through the toolchain's `init` and a `NameDialog` | #479 (product decision, open) |
+| Bottom panel | Problems as a structured, clickable list (`Compose/ProblemsView.swift`) and Game Errors (`Build/GameErrorsView.swift`) | tabs Problems / Game Errors / Log over one text log; the tab selection handler is empty (`ShellWindow.axaml.cs:159, 168, 1089`) | **new**: structured Problems rows and navigation. ADR-324 (PROPOSED) would move the Swift Problems into Build (#297), so the target is moving |
+| Persistence | project, open documents, active tab, expanded folders, pane visibility, right tab (`Persistence/SessionState.swift:10-22`); recents (`RecentProjectsStore.swift`) | last story and eight recents (`Shell/ShellState.cs:12, 26`) | **new**: open documents, tab and layout restore; Testing view-state is #586 |
+| Play | header with Restart and Play after build, theme picker (`Play/PlayViewController.swift:14-19`) | the built bundle in a web view; no Restart, no play-after-build, no theme picker (no `Restart` or `PlayAfterBuild` in `ShellWindow.axaml.cs`) | **new**: Play header controls. Explains Q-08: the Avalonia bundle carries no `play-themes` because nothing in that head selects one |
+| World | Map / Reach / Incomplete (`World/*.swift`) | Map / Reach / Incomplete with counts (`ShellWindow.axaml.cs:164, 1419-1424`) | parity |
+| Index | six section tabs over a table (`Play/IndexView.swift`) | six grouped sections in a drawn list (`Shell/IndexPaneView.cs`) | parity in content (I.1) |
+| Documentation | bundled docs tab | the same bundle, copied at packaging (S4) | parity (#648 applies to both) |
+| Testing | the surface plus the view-state sidecar | the surface, no sidecar | #586 |
+| Publish | tab and menu | menu item only | #488 |
+| Updates | Sparkle feed (`sparkle/`) | none | #462 (packaging), I.2 (menu) |
+| Story templates | bundled `story-templates` | none; `init` in the toolchain supplies the template | answers Q-08: not a gap, the template travels with the toolchain |
+
+### I.4 Disposition
+
+Six gaps are new to #488 (bold above): inline diagnostics and editor helpers, the project tree's depth and menu, the status bar's versions, Settings and Build Settings, the structured Problems list, Play header controls, plus session persistence; and one item in #488 is overtaken (Index landed). All are recorded in one comment on #488 rather than as new issues, because #488 is the list David asked to be worked through, and a second list would split it: **F-14**. Q-08 is closed: the two bundle omissions are explained (play-themes: no picker; story-templates: the toolchain's), and the picker is now a row on #488.
+
+## Section J: open-issue triage
+
+Taken 2026-11-07 at `d8f426311`: `gh issue list --state open --limit 400` returned **247** open issues; the title filter `grep -Eiw 'Chord Writer|Avalonia|IDE'` (whole words, case-insensitive, so `ide-protocol` matches and "decide" does not) returned **46**. Every one is a row below. Verdicts: **still true** (the issue's claim holds in the code at HEAD), **fixed, open** (the code no longer has the defect, the issue was never closed), **superseded** (a later ruling retired the surface the issue is about), **ruling** (the issue exists to carry a decision only David can make). Nothing was closed this session; the eight rows marked ⚑ carry a comment with the evidence and are listed for David's ruling in J.2.
+
+### J.1 The table
+
+| # | Title (short) | Verdict | Evidence |
+|---|---|---|---|
+| 188 | Window title shows the story title | fixed, open ⚑ | `MainWindow.swift:654` applies `WindowTitle.title(for:)`; the issue's own 2026-08-02 comment records the implementation |
+| 193 | Bless is dead until Record | superseded ⚑ | Bless and Record are retired: `MenuBuilder.swift:294` ("No Bless / Checkpoint items: ADR-299 D8"); no `RecordingSession.swift` in the tree |
+| 194 | Blessed turns not marked in Play | superseded ⚑ | same as #193 |
+| 198 | Saving a test asks for a location | superseded ⚑ | `saveSingleTranscript` and `transcriptsSaveDirectory` are gone from `Play/PlayViewController.swift`; tests live in the `<story-id>.tests/` tree (ADR-355) |
+| 238 | Docs tab layout and continuity | still true, part done | the decided fix landed: `web/docs-tab/build.mjs:55-61` orders by `nav.ts` section titles; "continuity" is still undefined, as the issue says |
+| 252 | Testing workspace, Play beside Testing | superseded ⚑ | built as ADR-304, retired by ADR-306 D1: `MainWindow.swift:1762-1764` |
+| 254 | Create Transcript from played commands | superseded ⚑ | retired by ADR-306 D1: `Play/PlayViewController.swift:8-10` |
+| 281 | Tap a phrase name to edit its test | still true | no symbol interaction in `SharpeeIDE/Editor/` (no `definition` or `complet` hit); same in the Avalonia head (I.2) |
+| 282 | Hover a phrase name for its definition | still true | as #281 |
+| 283 | Hold a modifier to reveal phrase text | still true | as #281 |
+| 284 | A right-panel Read tab | still true | `Play/RightPanelViewController.swift:88-95` registers eight tabs, no Read |
+| 289 | Remove Test ▸ Testing Play Surface | still true | `MenuBuilder.swift` still has the item; the Avalonia head mirrors it (`ShellWindow.axaml.cs:250`) |
+| 291 | Annotations: markdown attached to code | still true | `packages/chord/chord.ebnf` has no annotation form |
+| 292 | Feature flags in Settings | still true | Settings has two preferences (`Settings/SettingsWindowController.swift`); the World tab is unconditional (`RightPanelViewController.swift:95`) |
+| 293 | Move the World map into Index | still true | `Play/IndexView.swift:210-215` has six sections, no Map; the map stays in `World/WorldMapView.swift` |
+| 294 | Index tab mocks | still true | `Play/IndexView.swift:21` is still an `NSTableView` |
+| 296 | Diagnosis tab's permanent slot | still true, parked | folded into ADR-324, still PROPOSED (2026-08-22); the tab is registered at `RightPanelViewController.swift:92` |
+| 297 | Remove the bottom Problems panel | still true, parked | ADR-324 as #296; `Build/BottomPanelViewController.swift` present |
+| 298 | Extensions with declared Chord version support | still true | `chord.ebnf` has platform `use` extensions (ADR-235, ADR-330) and no author-shareable extension with a version declaration |
+| 299 | Source control for authors | still true | no git anywhere in `SharpeeIDE` (the two `git` hits are unrelated words) |
+| 386 | ADR-341: Chord Writer for Windows | still true, re-shaped | ADR-341 ACCEPTED (WPF or WinUI 3 by spike); since then the four-way evaluation and David's ruling "native macOS paired with Avalonia on Windows — and Linux?" (`docs/work/avalonia-ide-evaluation/plan.md:4`); ADR-351 DRAFT; `tools/winide` empty. The ADR is not amended to the Avalonia route — a ruling (J.2) |
+| 390 | Opening another story closes all files | still true | `Persistence/SessionState.swift:10-11`: one `projectURL`, one `openDocumentURLs` list, not keyed by project |
+| 392 | Export the Testing view to HTML | still true | no export in `SharpeeIDE` or `MenuBuilder.swift` |
+| 438 | An ADR on keeping OpenSilver reachable | ruling | the four-way comparison is complete (comments 2026-09-13 to 09-15); ADR-351 is DRAFT; no ruling recorded |
+| 461 | Web IDE Phase 1 owed items | ruling ⚑ | `docs/work/web-ide-evaluation/plan.md:4` is DONE and the web shape was not chosen; the two owed checks are moot unless the web tier is reopened |
+| 462 | Avalonia + Velopack: four owed items | still true in part | (1) answered (comment 2026-09-16); (3) `PaneHost/Editor/ChordColorizer.cs:50-54` still owns its brush constants; (2) and (4) unexercised |
+| 477 | `IPaneDoor.Configure` untested | still true | `PaneHost.Tests/PaneDoorTests.cs:7` says so; F-11 (#662) |
+| 479 | Installed Avalonia app opens empty | ruling | partially addressed (reopen last story, else Docs: comment 2026-09-17); the product question stands |
+| 480 | Avalonia bundle identity provisional | ruling | `package-avalonia.sh:60-61`: `Chord Writer (Avalonia)`, `com.The_Sharpee_Project.ChordWriterAvalonia` |
+| 484 | `ShellWindow` has no xunit coverage | still true | no test references `ShellWindow` except the stub note in `TestingSurfacePostsTests.cs:6`; F-11 |
+| 488 | Avalonia parity audit: remaining gaps | still true, updated | Section I: Index landed, six gaps added (F-14) |
+| 489 | One file at a time, single-click open, dead close glyph | fixed, open ⚑ | `Shell/EditorTabBarView.cs:8-9` hit-tests the close glyph; `Shell/ProjectPaneView.cs` selects on one click and opens on two; `ShellWindow.axaml.cs:683` keeps a document list |
+| 495 | Ephemeral-port localStorage | ruling | `Hosting/LocalOrigin.cs:6-7, 62`: still an ephemeral loopback port |
+| 502 | docs-tab vitest fails 3 of 43 | still true | reproduced in Phase 3 (G.4) |
+| 544 | Re-land ADR-333 play-to-write | still true | no `PlayToWrite` or `MessageCatalog` in `SharpeeIDE` |
+| 574 | ADR-361 Scope amendment | still true | `adr-361` has no amendment line; its Scope names neither `packages/bootstrap` nor `website/.../examples.ts` |
+| 581 | `TestRunnerTests` cancel timeout | still true, not reproduced | `SharpeeIDETests/TestRunnerTests.swift:288` still waits 30 s; the test passed in the 11-06 full run (H.2) |
+| 586 | Avalonia Testing view-state sidecar | still true | `Shell/TestingSession.cs` has no sidecar or `LocalApplicationData` |
+| 648 | Bundled docs lag the website | still true | this audit, F.3 |
+| 652 | Swift Chord pin 3.6.0 | still true | this audit, F-01 |
+| 653 | 1.4.0 carries a pre-4.0 toolchain | still true | this audit, F-02; H.2 adds that the macOS one cannot build (F-13) |
+| 654 | API reference reaches no author | still true | this audit, F-03 |
+| 655 | `tools/ide/README.md` describes the July app | still true | this audit, F-04 |
+| 657 | Avalonia reads IR by hand-written key | still true | this audit, F-06 |
+| 658 | IR format field compared by neither head | still true | this audit, F-07 |
+| 662 | Four seams with no automated check | still true | this audit, F-11; #477 and #484 are two of its seams |
+
+46 rows.
+
+### J.2 For David's ruling
+
+Eight rows carry a comment with the evidence and a recommendation to close; none was closed, because each was reported by David or records a ruling, and the verification is his:
+
+- **Fixed, open**: #188 (window title), #489 (one file at a time).
+- **Superseded by his own rulings**: #193, #194, #198 (ADR-299 D8 retired Bless; the tree document replaced transcript saving), #252 and #254 (ADR-306 D1 shred ruling, 2026-08-09).
+- **Moot unless reopened**: #461 (web tier not chosen).
+
+Five more are decisions, not defects, and stay as they are: #438 (an OpenSilver ADR), #479 (what the Avalonia app opens), #480 (its bundle identity), #495 (its origin), and #386's shape question — whether ADR-341 is amended to record the Avalonia route the evaluations chose.
+
+### J.3 Outside the title pattern
+
+Issues this audit filed or confirmed whose titles carry none of the three words, so the table does not list them: #457 (vendored toolchain exports, F-13), #656 (Swift lexer `&`), #659 (testing-surface bundle growth), #660 (New Story template findings), #661 (`toolchain-realpath-test.sh` path), #663 (`hdiutil` deprecation). All are IDE issues and all are still true.
+
 ## Carried questions
 
 | Id | Settled in | Question |
@@ -526,4 +640,4 @@ Neither `package.sh` nor `package-avalonia.sh` calls the real-path scripts; they
 | Q-05 | Phase 3: closed | The committed testing-surface bundle is functionally current and cannot be rebuilt cleanly: F-08 (G.1). |
 | Q-06 | Phase 3: closed | The docs bundle is stale by 16 files, 15 of them pages (F.3); recorded on #648. |
 | Q-07 | Phase 4: closed | No suite fails on the 4.0.1 compiler for a fixture reason; the old-format fixtures pass because nothing compares the format (H.3, F-07). |
-| Q-08 | Phase 5 | The built Avalonia bundle holds `docs-tab`, `editor-bridge`, `testing-surface` and `toolchain`, and no `play-themes` or `story-templates`. Is that in #488? |
+| Q-08 | Phase 5: closed | The built Avalonia bundle holds no `play-themes` or `story-templates`. Not in #488 until now: themes because that head has no theme picker (I.3, now on #488 as a Play-header gap); templates because `init` in the toolchain supplies them, so that one is not a gap. |
