@@ -95,5 +95,5 @@
 - **Files**: `docs/work/ide-delta-audit/census.md`
 - **Exit state**: every finding in Sections A-J appears once in Section K with an issue link; the counts per category sum to the total; the open rulings are listed as questions
 - **Demonstration**: the total in Section K equals the sum of per-section finding counts, and every issue number cited resolves with `gh issue view`
-- **Demonstrated**: 
-- **Status**: PENDING
+- **Demonstrated**: 2026-11-07, session 35701b, at f87f6812f. Census K.1 reconciles per phase 4 + 3 + 2 + 4 + 1 = 14 findings, equal to the fourteen rows of the "Findings so far" table and the fourteen F-ids in K.2 (`awk '/^### K.2 By category/,/^Severity counts/' census.md | grep -c '^| [A-Z]'` printed 17: the header plus 16 rows, the 14 findings and the two existing issues #648 and #502). Every issue number cited in Section K (32 distinct: 652, 653, 457, 656, 657, 658, 654, 655, 648, 660, 659, 661, 662, 663, 502, 488, 188, 489, 193, 194, 198, 252, 254, 461, 438, 479, 480, 495, 386, 586, 477, 484) resolved with `gh issue view --json state` as OPEN. K.3 proposes seven phases in cost order; K.4 lists the open rulings as questions. Nothing implemented.
+- **Status**: DONE

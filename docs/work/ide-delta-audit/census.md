@@ -629,6 +629,77 @@ Five more are decisions, not defects, and stay as they are: #438 (an OpenSilver 
 
 Issues this audit filed or confirmed whose titles carry none of the three words, so the table does not list them: #457 (vendored toolchain exports, F-13), #656 (Swift lexer `&`), #659 (testing-surface bundle growth), #660 (New Story template findings), #661 (`toolchain-realpath-test.sh` path), #663 (`hdiutil` deprecation). All are IDE issues and all are still true.
 
+## Section K: the categorised, costed list
+
+Written 2026-11-07 at `f87f6812f` (Phase 6, session 35701b). Nothing here is implemented; this is the shape of the fix plan, for David's reading. Tier and budget follow the plan's own scale (Small ≈ 100 tool calls, Medium ≈ 250). "Ruling" means a decision only David can make; "platform" means a change under `packages/` that CLAUDE.md says is discussed first.
+
+### K.1 Reconciliation
+
+| Phase | Sections | Findings | Ids |
+|---|---|---|---|
+| 1 | A, B, C | 4 | F-01, F-02, F-03, F-04 |
+| 2 | D, E | 3 | F-05, F-06, F-07 |
+| 3 | F, G | 2 | F-08, F-09 |
+| 4 | H | 4 | F-10, F-11, F-12, F-13 |
+| 5 | I, J | 1 | F-14 |
+| **Total** | | **14** | |
+
+Fourteen findings, fourteen rows in the "Findings so far" table, fourteen rows in K.2. Three existing issues the audit measured rather than filed (#648, #502, #457) appear in K.2 beside the finding they belong to and are not counted as findings. The triage (Section J) produced no findings of its own: its output is the eight close candidates and five rulings in K.4.
+
+### K.2 By category
+
+| Category | Finding | Issue | Severity | Tier, budget | Depends on | Ruling or platform |
+|---|---|---|---|---|---|---|
+| Version and toolchain | F-01 Swift Chord pin 3.6.0; keyword set lacks the six 4.0 block forms | [#652](https://github.com/ChicagoDave/sharpee/issues/652) | high: two failing tests, a docs banner that will fire against a HEAD toolchain | Small, ~40 | fixes #648 in the same commit, or the docs pin test inverts (K.3) | neither |
+| Version and toolchain | F-02 Chord Writer 1.4.0 carries a pre-4.0 toolchain in both heads | [#653](https://github.com/ChicagoDave/sharpee/issues/653) | high: the shipped app and the language disagree | Medium, ~150: vendor at HEAD, both heads, both slices, notarize | F-01 first (the pin must match the vendored compiler); F-13's package fix is already in the tree | ruling: a release, and versions move at publish |
+| Version and toolchain | F-13 the published macOS 1.4.0 cannot build any story (`@sharpee/character` without `dist-esm`) | [#457](https://github.com/ChicagoDave/sharpee/issues/457) | **critical**: Build is dead in the app authors download | the ship fix is F-02; the remaining #457 work (bridge and runtime `files`, a content seal in `vendor-toolchain.sh`) is Small, ~40 | — | platform (`packages/bridge`, `packages/runtime` manifests) |
+| Language knowledge | F-05 the Swift lexer port lexes `&` as punctuation | [#656](https://github.com/ChicagoDave/sharpee/issues/656) | low: no corpus story has `&` | Small, ~20, plus a corpus story that does | — | neither |
+| Wire | F-06 the Avalonia head reads IR and world index by hand-written key, no version gate | [#657](https://github.com/ChicagoDave/sharpee/issues/657) | medium: a renamed IR member fails silently in that head | Medium, ~80 | F-07's ruling says what the gate is | neither, after F-07 |
+| Wire | F-07 the IR `format` field is documented as the hard gate and compared by neither head | [#658](https://github.com/ChicagoDave/sharpee/issues/658) | medium | Small, ~30 once ruled | — | **ruling**: keep the field as the gate and compare it, or retire the claim |
+| Bundled content | F-03 the generated API reference reaches no author | [#654](https://github.com/ChicagoDave/sharpee/issues/654) | low | Small, ~30 to fix the two documents; Medium if it is to ship | — | **ruling**: ship it (where), or correct the docs that say it ships |
+| Bundled content | F-04 `tools/ide/README.md` describes the July app | [#655](https://github.com/ChicagoDave/sharpee/issues/655) | low | Small, ~20 | — | neither |
+| Bundled content | (existing) bundled docs lag the website by 16 files | [#648](https://github.com/ChicagoDave/sharpee/issues/648) | low | Small, ~10: run `build-docs-tab.sh` | must land with F-01 (K.3) | neither |
+| Bundled content | F-09 the New Story template opens with two World findings | [#660](https://github.com/ChicagoDave/sharpee/issues/660) | low | Small, ~20 | — | **ruling**: change the template, the analyzer's threshold, or accept |
+| Testing surface | F-08 a rebuild of the testing-surface bundle pulls 55 Chord compiler modules from `dist-esm` | [#659](https://github.com/ChicagoDave/sharpee/issues/659) | medium: 11,496 dead lines in every rebuild; the committed bundle cannot be regenerated cleanly | Small, ~30 | — | platform: the import at `packages/transcript-tester/src/assertion-core.ts:47` |
+| The IDE's tests | F-10 `toolchain-realpath-test.sh` fails on a relative path | [#661](https://github.com/ChicagoDave/sharpee/issues/661) | low | Small, ~5 | — | neither |
+| The IDE's tests | F-11 four seams with no automated check: Avalonia editor bridge, Avalonia packaging, C# protocol round trip, bundle growth | [#662](https://github.com/ChicagoDave/sharpee/issues/662) | medium | Medium, ~150 | F-10 (the packaging check runs that script); #477 and #484 are two of the seams | neither |
+| The IDE's tests | F-12 `assemble-dmg.sh` uses `hdiutil` verbs this macOS reports as deprecated | [#663](https://github.com/ChicagoDave/sharpee/issues/663) | low: warnings today | Small, ~25 | — | neither |
+| The IDE's tests | (existing) docs-tab vitest fails 3 of 43 | [#502](https://github.com/ChicagoDave/sharpee/issues/502) | low | Small, ~20 | — | neither |
+| Parity | F-14 six gaps plus persistence not in #488; Index landed | [#488](https://github.com/ChicagoDave/sharpee/issues/488) | medium: the Avalonia head is the Windows route and the list is what it is measured by | Large: several Medium phases (editor helpers; Problems list; Play header; persistence; Settings; status bar), ~400 in all | ADR-324 (PROPOSED) decides where Problems lives before the Problems list is built; #586 is one of the persistence rows | ruling on ADR-324; otherwise neither |
+
+Severity counts: 1 critical, 2 high, 5 medium, 8 low (16 rows: 14 findings and 2 existing issues; #457 is F-13's row).
+
+### K.3 The follow-on plan's shape
+
+Ordered by cost and risk, cheapest and safest first; a phase bundles the items that must land together.
+
+1. **Mechanical fixes, no rulings** (Small): F-10, F-04, F-05, #502, F-12. Five independent commits or one; none touches `packages/`.
+2. **The pin and the docs bundle together** (Small): F-01 and #648 in one commit. They are coupled: `DocsTabRealPathTests.swift:277` compares the bundle's Chord stamp to the Swift pin, so moving either alone fails that test (today the bundle says 3.6.0 and a rebuild says 4.0.1). Also the keyword set's six block forms (D.4). This turns the two failing macOS tests green.
+3. **Platform discussion, then two small changes**: F-08 (the assertion-core import) and the #457 remainder (`bridge` and `runtime` `files`, a content seal in `vendor-toolchain.sh`). Discussed first per CLAUDE.md; each is a Small change once agreed.
+4. **The release** (Medium, David's hands and certificate): F-02 and F-13's ship fix. Vendor a HEAD toolchain into both heads, both macOS slices, notarize, publish the appcast. Waits on phase 2 (the pin must match) and on David's ruling on the version numbers (versions move at publish). This is the only phase that changes what an author downloads, and it is the one that fixes the critical finding.
+5. **Rulings, then the small wire and content fixes** (Small each): F-07 then F-06; F-09; F-03. Each waits on a question in K.4 and is cheap afterwards.
+6. **The seams** (Medium): F-11, after phase 1's F-10. Four checks, one per seam; the Avalonia packaging check is `toolchain-realpath-test.sh` as the last step of `package-avalonia.sh`.
+7. **Parity** (Large, its own plan): F-14 with #488 as the list, after ADR-324 is ruled so the Problems row has a target. The eight close candidates in K.4 shrink the open list before it starts.
+
+Phases 1, 2, 3 and 6 can run without David present. Phases 4, 5 and 7 cannot start until a question below is answered.
+
+### K.4 Open rulings, as questions
+
+Findings:
+- **F-07 (#658)**: is the IR `format` field the shells' hard gate? If yes, both heads compare it and refuse on mismatch; if no, the documentation that says so is corrected and F-06 chooses another gate.
+- **F-03 (#654)**: should the generated API reference ship to authors, and where (npm package, the app's Documentation tab, the website)? Or do the two documents that say it ships get corrected?
+- **F-09 (#660)**: the New Story template opens with `missingWord 1, noObject 1`. Change the template, change the analyzer, or accept it as the first thing a new author sees?
+- **F-02 / F-13 (#653, #457)**: what version does the re-release carry (1.4.1, 1.5.0), and does the Avalonia head ship under its provisional identity (#480) or wait?
+- **F-14 (#488) and ADR-324**: is ADR-324 accepted as written, so the Problems list moves into Build on both heads?
+
+Triage (Section J.2):
+- Close as fixed: #188, #489?
+- Close as superseded by ADR-299 D8 and ADR-306 D1: #193, #194, #198, #252, #254?
+- Close as moot: #461?
+- Decisions carried unchanged: #438 (an OpenSilver ADR), #479 (what the Avalonia app opens), #480 (its identity), #495 (its origin), #386 (amend ADR-341 to the Avalonia route the evaluations chose?).
+
+Carried from earlier phases and unchanged: the scratch-versus-in-place rebuild question was taken at the plan's default (scratch) and is closed.
+
 ## Carried questions
 
 | Id | Settled in | Question |
