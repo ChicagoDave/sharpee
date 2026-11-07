@@ -33,6 +33,12 @@
  * passes over it, and named by no passage but its own. Nothing in the story tells the
  * player it is there — which is exactly the finding D13 asked for.
  *
+ * **The player's own inventory is the room listing's twin.** A thing the player
+ * starts out carrying or wearing is announced by the standard `inventory` action
+ * without a word of prose, so it is guarded the same way (the New Story template's
+ * lantern, carried by its playable from the first turn, was reported here until it
+ * was). A thing held by anyone else still needs prose to announce it.
+ *
  * Public interface: UnnamedTool, deriveUnnamedTools.
  *
  * Owner context: @sharpee/world-index — the derivation package. No platform
@@ -115,7 +121,8 @@ function isNotAThingToUse(entity: IREntity): boolean {
  * mentions it, and reporting it here would report the platform's own behaviour as an
  * authoring hole. Scenery is passed over by that listing, and anything held by a
  * container, a supporter or a person is not directly in the room at all: those are
- * the placements that need prose to do the announcing.
+ * the placements that need prose to do the announcing — except what the player
+ * holds, which `isAnnouncedByTheInventory` covers.
  *
  * Doors read as unannounced deliberately. A door is not room contents — it is reached
  * through the exit that names it — so a door no passage mentions is a real finding.
@@ -132,6 +139,25 @@ function isAnnouncedByTheRoomListing(entity: IREntity, index: ContainmentIndex):
   if (holder === undefined || !isRoom(holder)) return false;
 
   return isPortableByDefault(entity, isDoor(entity));
+}
+
+/**
+ * Whether the player's own inventory listing announces this thing without being asked.
+ *
+ * `inventory` lists everything the player carries or wears, so a thing a playable
+ * person holds from the first turn is announced the moment the player takes stock,
+ * whether or not any passage names it. The holder has to be playable: a thing an NPC
+ * carries is in nobody's inventory listing, and only prose can tell the player it
+ * exists.
+ *
+ * @param entity the entity to test
+ * @param index the containment index for this story
+ * @returns true when a playable person holds it at start of play
+ */
+function isAnnouncedByTheInventory(entity: IREntity, index: ContainmentIndex): boolean {
+  const holderId = index.holderOf.get(entity.id);
+  if (holderId === undefined) return false;
+  return index.byId.get(holderId)?.isPlayable === true;
 }
 
 /**
@@ -176,6 +202,7 @@ export function deriveUnnamedTools(
     const role = roles.get(entity.id);
     if (!isMechanical(role) || isNotAThingToUse(entity)) continue;
     if (isAnnouncedByTheRoomListing(entity, index)) continue;
+    if (isAnnouncedByTheInventory(entity, index)) continue;
 
     const vocabulary = [...entityVocabulary(entity, words)];
     // A thing with no naming surface at all cannot be reported unannounced: there is

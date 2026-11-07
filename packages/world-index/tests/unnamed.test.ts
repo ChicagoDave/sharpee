@@ -60,6 +60,49 @@ end before
 
 `;
 
+/**
+ * A hall, a key no passage names, a bystander and the playable. `holder` is who
+ * carries the key from the first turn: Alex (the player, whose inventory lists it)
+ * or Morgan (an NPC, whose hands announce nothing). Nothing else differs, so the two
+ * readings isolate the holder.
+ */
+function carriedKey(holder: 'Alex' | 'Morgan'): string {
+  const carries = '  carries the brass key\n';
+  return `story
+  title: Carried
+  authors:
+    Test
+  id: carried
+  story-version: 1.0.0
+
+create the Hall
+  a room
+
+  A hall. A worn rug covers the boards.
+
+create the brass key
+  a thing
+
+  Small and cold.
+
+create Morgan
+  a person
+  starts in the Hall
+${holder === 'Morgan' ? carries : ''}
+  Someone waiting.
+
+create Alex
+  a person
+  playable
+  starts in the Hall
+${holder === 'Alex' ? carries : ''}
+before the game starts
+  change the player to Alex
+end before
+
+`;
+}
+
 describe('D13 — a thing the mechanics need that nothing announces', () => {
   let fernhill: StoryIR;
   let alderman: StoryIR;
@@ -112,6 +155,20 @@ describe('D13 — a thing the mechanics need that nothing announces', () => {
     const document = buildDocument(fernhill, '0.0.0');
     expect(document.incomplete.edges.some((edge) => edge.entity === 'crowbar')).toBe(false);
     expect(unnamed(fernhill).map((finding) => finding.id)).not.toContain('crowbar');
+  });
+
+  // THE INVENTORY TWIN. A thing the player starts out holding is listed by
+  // `inventory` whether or not a passage names it, exactly as a loose thing is listed
+  // by `looking`. The same thing in an NPC's hands has no listing to announce it.
+  it("never reports what the player's own inventory announces", () => {
+    const carriedByPlayer = compileSource(carriedKey('Alex'));
+    expect(unnamed(carriedByPlayer).map((finding) => finding.id)).not.toContain('brass-key');
+  });
+
+  it('still reports the same thing when a non-playable person holds it', () => {
+    const carriedByNpc = compileSource(carriedKey('Morgan'));
+    const finding = unnamed(carriedByNpc).find((candidate) => candidate.id === 'brass-key');
+    expect(finding).toMatchObject({ name: 'brass key', vocabulary: ['brass', 'key'] });
   });
 
   // FAULT INJECTION (the ADR's acceptance method): rename a thing to a word the story
