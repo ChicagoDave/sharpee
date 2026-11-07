@@ -623,6 +623,8 @@ Eight rows carry a comment with the evidence and a recommendation to close; none
 - **Superseded by his own rulings**: #193, #194, #198 (ADR-299 D8 retired Bless; the tree document replaced transcript saving), #252 and #254 (ADR-306 D1 shred ruling, 2026-08-09).
 - **Moot unless reopened**: #461 (web tier not chosen).
 
+Ruled 2026-11-07 (session 9f22d5): David ruled "if the audit items are complete, close and archive"; each code fact above was re-verified and all eight were closed with the evidence in a closing comment. The five decision rows below stay open.
+
 Five more are decisions, not defects, and stay as they are: #438 (an OpenSilver ADR), #479 (what the Avalonia app opens), #480 (its bundle identity), #495 (its origin), and #386's shape question — whether ADR-341 is amended to record the Avalonia route the evaluations chose.
 
 ### J.3 Outside the title pattern
