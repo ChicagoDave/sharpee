@@ -403,7 +403,7 @@ describe('runPostReport (D2 shape, override arbitration)', () => {
       postReport() {
         return {
           override: { messageId: 'test.container_override' },
-          emit: [{ type: 'if.event.container_grumbled', data: {} }]
+          emit: [{ type: 'if.event.container_grumbled', payload: {} }]
         };
       }
     });

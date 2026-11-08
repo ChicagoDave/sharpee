@@ -36,8 +36,10 @@ import {
   TraitType
 } from '@sharpee/world-model';
 import { setupBasicWorld } from '../../test-utils';
+import { createFixtureRandomService } from '../../test-utils/fixture-random-service';
 import { createActionContext } from '../../../src/actions/enhanced-context';
-import type { Action, ValidatedCommand } from '../../../src/actions/enhanced-types';
+import type { Action } from '../../../src/actions/enhanced-types';
+import type { ValidatedCommand } from '../../../src/validation/types';
 import type { ISemanticEvent } from '@sharpee/core';
 
 const fakeAction: Action = {
@@ -62,7 +64,7 @@ function fakeCommand(actionId: string): ValidatedCommand {
 describe('applyInterceptorReportResult through InternalActionContext', () => {
   test('emit appends events without "this" being lost (regression for ISSUE-074 wt-15 crash)', () => {
     const { world } = setupBasicWorld();
-    const ctx = createActionContext(world, world.playerCharacter, fakeAction, fakeCommand('if.action.fake'));
+    const ctx = createActionContext(world, world.playerCharacter, fakeAction, fakeCommand('if.action.fake'), createFixtureRandomService());
 
     const events: ISemanticEvent[] = [
       ctx.event('if.event.fake', { messageId: 'standard.fake' })
@@ -92,7 +94,7 @@ describe('applyInterceptorReportResult through InternalActionContext', () => {
 
   test('override mutates the primary event message via the class context', () => {
     const { world } = setupBasicWorld();
-    const ctx = createActionContext(world, world.playerCharacter, fakeAction, fakeCommand('if.action.fake'));
+    const ctx = createActionContext(world, world.playerCharacter, fakeAction, fakeCommand('if.action.fake'), createFixtureRandomService());
 
     const events: ISemanticEvent[] = [
       ctx.event('if.event.fake', { messageId: 'standard.fake', params: { x: 1 } })
@@ -120,7 +122,7 @@ describe('applyInterceptorReportResult through InternalActionContext', () => {
 
   test('combined override + emit operates on the same class context without throwing', () => {
     const { world } = setupBasicWorld();
-    const ctx = createActionContext(world, world.playerCharacter, fakeAction, fakeCommand('if.action.fake'));
+    const ctx = createActionContext(world, world.playerCharacter, fakeAction, fakeCommand('if.action.fake'), createFixtureRandomService());
 
     const events: ISemanticEvent[] = [
       ctx.event('if.event.fake', { messageId: 'standard.fake' })

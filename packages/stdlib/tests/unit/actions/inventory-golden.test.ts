@@ -271,8 +271,9 @@ describe('inventoryAction (Golden Pattern)', () => {
       
       // Should emit observable event
       const invEvent = events.find(e => e.type === 'if.event.inventory');
+      // ISemanticEvent carries no `observable` flag; the field this test once
+      // read never existed on the emitted event, so the assertion is the emission itself.
       expect(invEvent).toBeDefined();
-      expect(invEvent?.observable).not.toBe(false); // Default is observable
     });
   });
 

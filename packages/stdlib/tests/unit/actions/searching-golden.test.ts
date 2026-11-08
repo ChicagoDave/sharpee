@@ -584,7 +584,7 @@ describe('searchingAction (Golden Pattern)', () => {
       searchingAction.execute(context);
 
       // No identity trait to change — coin was never concealed
-      expect(coin.get(TraitType.IDENTITY)?.concealed).toBeFalsy();
+      expect(coin.get(IdentityTrait)?.concealed).toBeFalsy();
     });
   });
 });

@@ -15,7 +15,7 @@ import { ActionContext } from '../../../src/actions/enhanced-types';
 import { WorldModel, StandardCapabilities } from '@sharpee/world-model';
 import { createRealTestContext, setupBasicWorld, createCommand } from '../../test-utils';
 
-function runHelp(world: WorldModel): ReturnType<typeof helpAction.report> {
+function runHelp(world: WorldModel): ReturnType<NonNullable<typeof helpAction.report>> {
   const command = createCommand(IFActions.HELP, { verb: 'help' });
   const context = createRealTestContext(helpAction, world, command);
   helpAction.validate(context);

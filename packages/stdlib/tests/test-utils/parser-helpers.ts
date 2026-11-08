@@ -7,7 +7,7 @@
 
 import { EnglishParser } from '@sharpee/parser-en-us';
 import { WorldModel } from '@sharpee/world-model';
-import { type LanguageProvider } from '@sharpee/if-domain';
+import { type LanguageProvider, type ParserLanguageProvider } from '@sharpee/if-domain';
 import EnglishLanguageProvider from '@sharpee/lang-en-us';
 import type { IParsedCommand } from '@sharpee/world-model';
 import { CommandValidator } from '../../src/validation/command-validator';
@@ -22,8 +22,8 @@ import type { ValidatedCommand } from '../../src/validation/types';
  * @returns A configured parser instance
  */
 export function createParserWithLanguage(
-  world: WorldModel, 
-  languageProvider: LanguageProvider = EnglishLanguageProvider
+  world: WorldModel,
+  languageProvider: ParserLanguageProvider = EnglishLanguageProvider
 ): EnglishParser {
   // Create the parser with the language provider
   const parser = new EnglishParser(languageProvider);
@@ -48,7 +48,7 @@ export function createParserWithWorld(world: WorldModel): EnglishParser {
 export function parseCommandWithLanguage(
   input: string, 
   world: WorldModel,
-  languageProvider: LanguageProvider = EnglishLanguageProvider
+  languageProvider: ParserLanguageProvider = EnglishLanguageProvider
 ): IParsedCommand | null {
   const parser = createParserWithLanguage(world, languageProvider);
   const result = parser.parse(input);
@@ -201,6 +201,14 @@ export class MockLanguageProvider implements LanguageProvider {
 
   hasMessage(messageId: string): boolean {
     return this.messages.has(messageId);
+  }
+
+  getNarrativePerson(): 'first' | 'second' | 'third' {
+    return 'second';
+  }
+
+  getLanguageWords() {
+    return { selfWords: ['me', 'myself', 'self', 'yourself'], nameStopwords: ['the', 'a', 'an', 'of'] };
   }
 
   getActionPatterns(actionId: string): string[] | undefined {

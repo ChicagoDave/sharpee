@@ -16,12 +16,14 @@ import {
   OpenableTrait,
   LockableTrait,
   type IFEntity,
+  type ExitKey,
+  type IExitInfo,
   ActorTrait,
 } from '@sharpee/world-model';
 import { hasTraversableExit, canActorLeave } from '../../../src/actions/helpers/exit-legality';
 import { exitBlockedKey } from '@sharpee/world-model';
 import { createFixtureRandomService } from '../../test-utils/fixture-random-service';
-import { ActorTrait, EntityType as ET } from '@sharpee/world-model';
+import { EntityType as ET, Direction } from '@sharpee/world-model';
 
 /** English, handed to hand-built worlds as the language's words (ADR-387 D2). */
 const ENGLISH_WORDS = { selfWords: ['me', 'myself', 'self', 'yourself'], nameStopwords: ['the', 'a', 'an', 'of'] };
@@ -46,8 +48,8 @@ describe('hasTraversableExit (ADR-320 D8)', () => {
     yard = makeRoom('Yard');
   });
 
-  function setExits(exits: Record<string, { destination: string; via?: string }>): void {
-    (room.get(TraitType.ROOM) as { exits?: unknown }).exits = exits;
+  function setExits(exits: Partial<Record<ExitKey, IExitInfo>>): void {
+    room.get(RoomTrait)!.exits = exits;
   }
 
   test('a room with no exits offers no way out', () => {
@@ -55,21 +57,21 @@ describe('hasTraversableExit (ADR-320 D8)', () => {
   });
 
   test('a plain static exit is traversable', () => {
-    setExits({ north: { destination: yard.id } });
+    setExits({ [Direction.NORTH]: { destination: yard.id } });
     expect(hasTraversableExit(world, room.id)).toBe(true);
   });
 
   test('a blocked-map direction is not traversable (going`s trait fallback)', () => {
-    setExits({ north: { destination: yard.id } });
-    (room.get(TraitType.ROOM) as { blockedExits?: Record<string, string> }).blockedExits = {
-      north: 'The way is barred.',
+    setExits({ [Direction.NORTH]: { destination: yard.id } });
+    room.get(RoomTrait)!.blockedExits = {
+      [Direction.NORTH]: 'The way is barred.',
     };
     expect(hasTraversableExit(world, room.id)).toBe(false);
   });
 
   test('a live blocked-exit evaluator is authoritative over the open trait map (ADR-240)', () => {
-    setExits({ north: { destination: yard.id } });
-    world.registerEvaluator(exitBlockedKey(room.id, 'north'), () => true);
+    setExits({ [Direction.NORTH]: { destination: yard.id } });
+    world.registerEvaluator(exitBlockedKey(room.id, Direction.NORTH), () => true);
     expect(hasTraversableExit(world, room.id)).toBe(false);
   });
 
@@ -78,21 +80,21 @@ describe('hasTraversableExit (ADR-320 D8)', () => {
     door.add(new IdentityTrait({ name: 'stage door' }));
     door.add(new OpenableTrait({ isOpen: false }));
     door.add(new LockableTrait({ isLocked: true }));
-    setExits({ north: { destination: yard.id, via: door.id } });
+    setExits({ [Direction.NORTH]: { destination: yard.id, via: door.id } });
 
     expect(hasTraversableExit(world, room.id)).toBe(false);
 
-    (door.get(TraitType.LOCKABLE) as { isLocked: boolean }).isLocked = false;
+    door.get(LockableTrait)!.isLocked = false;
     // Closed but unlocked: openable, so the exit is takeable
     expect(hasTraversableExit(world, room.id)).toBe(true);
   });
 
   test('one barred direction does not bar the room when another is open', () => {
     setExits({
-      north: { destination: yard.id },
-      south: { destination: yard.id },
+      [Direction.NORTH]: { destination: yard.id },
+      [Direction.SOUTH]: { destination: yard.id },
     });
-    world.registerEvaluator(exitBlockedKey(room.id, 'north'), () => true);
+    world.registerEvaluator(exitBlockedKey(room.id, Direction.NORTH), () => true);
     expect(hasTraversableExit(world, room.id)).toBe(true);
   });
 });
@@ -113,8 +115,8 @@ describe('canActorLeave — going`s own validate, run for the leaver (ADR-328 D5
     return r;
   }
 
-  function setExits(exits: Record<string, { destination: string; via?: string }>): void {
-    (room.get(TraitType.ROOM) as { exits?: unknown }).exits = exits;
+  function setExits(exits: Partial<Record<ExitKey, IExitInfo>>): void {
+    room.get(RoomTrait)!.exits = exits;
   }
 
   beforeEach(() => {
@@ -140,14 +142,14 @@ describe('canActorLeave — going`s own validate, run for the leaver (ADR-328 D5
   });
 
   test('an open exit validates for the leaver — validate only, nothing moves', () => {
-    setExits({ north: { destination: yard.id } });
+    setExits({ [Direction.NORTH]: { destination: yard.id } });
     expect(canActorLeave(world, npc, player, random)).toBe(true);
     expect(world.getLocation(npc.id)).toBe(room.id);
   });
 
   test('a live blocked-exit evaluator refuses the leaver exactly as it refuses going', () => {
-    setExits({ north: { destination: yard.id } });
-    world.registerEvaluator(exitBlockedKey(room.id, 'north'), () => true);
+    setExits({ [Direction.NORTH]: { destination: yard.id } });
+    world.registerEvaluator(exitBlockedKey(room.id, Direction.NORTH), () => true);
     expect(canActorLeave(world, npc, player, random)).toBe(false);
   });
 
@@ -156,7 +158,7 @@ describe('canActorLeave — going`s own validate, run for the leaver (ADR-328 D5
     door.add(new IdentityTrait({ name: 'stage door' }));
     door.add(new OpenableTrait({ isOpen: false }));
     door.add(new LockableTrait({ isLocked: true }));
-    setExits({ north: { destination: yard.id, via: door.id } });
+    setExits({ [Direction.NORTH]: { destination: yard.id, via: door.id } });
     expect(canActorLeave(world, npc, player, random)).toBe(false);
   });
 });

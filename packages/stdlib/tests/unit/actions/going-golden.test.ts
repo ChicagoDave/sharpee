@@ -234,7 +234,7 @@ describe('goingAction (Golden Pattern)', () => {
       expect(validation.error).toBe('test.door.jammed');
       expect(validation.errorQualified).toBe(true);
       expect(world.getLocation(player.id)).toBe(room1.id);
-      expect((door.get(TraitType.OPENABLE) as { isOpen: boolean }).isOpen).toBe(false);
+      expect(door.get(OpenableTrait)!.isOpen).toBe(false);
     });
 
     test('should fail when door is locked', () => {

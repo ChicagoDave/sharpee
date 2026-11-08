@@ -19,8 +19,10 @@ import {
   expectEvent,
   executeWithValidation,
   TestData,
-  createCommand
+  createCommand,
+  dataOf
 } from '../../test-utils';
+import type { LookedEventData, RoomDescriptionEventData } from '../../../src/actions/standard/looking/looking-events';
 import { WorldModel } from '@sharpee/world-model';
 
 /** English, handed to hand-built worlds as the language's words (ADR-387 D2). */
@@ -451,7 +453,7 @@ describe('lookingAction (Golden Pattern)', () => {
       
       // Should not add extra messages for short form
       const examineMessage = events.find(e => 
-        e.data?.messageId?.includes('examine_surroundings')
+        dataOf<{ messageId?: string }>(e)?.messageId?.includes('examine_surroundings')
       );
       expect(examineMessage).toBeUndefined();
     });
@@ -493,12 +495,12 @@ describe('lookingAction (Golden Pattern)', () => {
       
       // Check LOOKED event has timestamp
       const lookedEvent = events.find(e => e.type === 'if.event.looked');
-      expect(lookedEvent?.data?.timestamp).toBeDefined();
-      expect(typeof lookedEvent?.data?.timestamp).toBe('number');
+      expect(dataOf<LookedEventData>(lookedEvent)?.timestamp).toBeDefined();
+      expect(typeof dataOf<LookedEventData>(lookedEvent)?.timestamp).toBe('number');
       
       // Check room description event has timestamp
       const roomDescEvent = events.find(e => e.type === 'if.event.room.description');
-      expect(roomDescEvent?.data?.timestamp).toBeDefined();
+      expect(dataOf<RoomDescriptionEventData>(roomDescEvent)?.timestamp).toBeDefined();
       
       // Check entities
       events.forEach(event => {

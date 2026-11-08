@@ -147,7 +147,7 @@ describe('push <thing> <direction> (ADR-378 D6, D7)', () => {
     const events = push(world, cart, Direction.NORTH);
 
     expect(messageIds(events)).toContain('if.action.pushing.cannot_push_that_way');
-    expect((cart.get(TraitType.SWITCHABLE) as { isOn: boolean }).isOn).toBe(false);
+    expect(cart.get(SwitchableTrait)!.isOn).toBe(false);
     expect(world.getLocation(cart.id)).toBe(room.id);
   });
 
@@ -207,7 +207,7 @@ describe('push <thing> with no direction is the press (ADR-378 D6)', () => {
     const { world, cart } = setup();
     cart.add(new SwitchableTrait({ isOn: false }));
     const events = push(world, cart);
-    expect((cart.get(TraitType.SWITCHABLE) as { isOn: boolean }).isOn).toBe(true);
+    expect(cart.get(SwitchableTrait)!.isOn).toBe(true);
     expect(messageIds(events)).toContain('if.action.pushing.switch_toggled');
   });
 
@@ -238,7 +238,7 @@ describe('going by a way the home answers (ADR-378 D0, D1a, D3)', () => {
     expect(messageIds(go(world, 'passage:climb-the-rope'))).toContain('if.action.going.door_closed');
     expect(world.getLocation(player.id)).toBe(room.id);
 
-    (hatch.get(TraitType.OPENABLE) as { isOpen: boolean }).isOpen = true;
+    hatch.get(OpenableTrait)!.isOpen = true;
     go(world, 'passage:climb-the-rope');
     expect(world.getLocation(player.id)).toBe(loft.id);
   });

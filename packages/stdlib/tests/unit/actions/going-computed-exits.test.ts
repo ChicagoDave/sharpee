@@ -32,7 +32,8 @@ import {
   expectEvent,
   executeWithValidation,
   createCommand,
-  TEST_MARKER_TRAIT
+  TEST_MARKER_TRAIT,
+  dataOf
 } from '../../test-utils';
 
 const CARRIER_TYPE = 'test.scrambled_exits';
@@ -357,7 +358,7 @@ describe('goingAction × computed exits (ADR-295)', () => {
 
     const events = executeWithValidation(goingAction, goNorth(world));
 
-    expect(events.some(e => e.data?.messageId === 'if.action.going.vehicle_cannot_go')).toBe(true);
+    expect(events.some(e => dataOf<{ messageId?: string }>(e)?.messageId === 'if.action.going.vehicle_cannot_go')).toBe(true);
     expect(world.getLocation(boat.id)).toBe(room.id);
     expect(world.getLocation(player.id)).toBe(boat.id);
     expect(resolver).toHaveBeenCalledTimes(1);
@@ -368,7 +369,7 @@ describe('goingAction × computed exits (ADR-295)', () => {
 
     const events = executeWithValidation(goingAction, goNorth(world));
 
-    expect(events.some(e => e.data?.messageId?.endsWith('vehicle_cannot_go'))).toBe(true);
+    expect(events.some(e => dataOf<{ messageId?: string }>(e)?.messageId?.endsWith('vehicle_cannot_go'))).toBe(true);
     expect(world.getLocation(boat.id)).toBe(room.id);
     expect(world.getLocation(player.id)).toBe(boat.id);
     expect(resolver).not.toHaveBeenCalled();

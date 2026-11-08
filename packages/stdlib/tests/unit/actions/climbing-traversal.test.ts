@@ -30,6 +30,7 @@ import {
   createRealTestContext,
   createCommand,
   executeWithValidation,
+  dataOf,
 } from '../../test-utils';
 
 /** room --up--> loft (and down again), the player in room. */
@@ -78,7 +79,7 @@ describe('climb up / climb down ask traversal (D21)', () => {
     const events = climb(world, Direction.UP);
 
     expect(world.getLocation(player.id)).toBe(room.id);
-    expect(events.find((e) => e.data?.params?.message === 'The ladder is roped off.')).toBeDefined();
+    expect(events.find((e) => dataOf<{ params?: { message?: string } }>(e)?.params?.message === 'The ladder is roped off.')).toBeDefined();
   });
 
   test('a closed hatch overhead stops the climber in going\'s words', () => {

@@ -8,6 +8,7 @@
 import { describe, test, expect, beforeEach } from 'vitest';
 import { WorldModel, TraitType, EntityType, IFEntity, ActorTrait, ContainerTrait, SceneryTrait, RoomTrait } from '@sharpee/world-model';
 import { createActionContext } from '../../../src/actions/enhanced-context';
+import { createFixtureRandomService } from '../../test-utils/fixture-random-service';
 import { Action, ValidationResult } from '../../../src/actions/enhanced-types';
 import { ScopeLevel } from '../../../src/scope/types';
 import { ValidatedCommand } from '../../../src/validation/types';
@@ -39,7 +40,7 @@ describe('Implicit Takes (requireCarriedOrImplicitTake)', () => {
       actionId: testAction.id,
       directObject: entity ? {
         entity,
-        parsed: { text: entity.name, candidates: [entity.name] }
+        parsed: { text: entity.name }
       } : undefined
     };
   }
@@ -68,7 +69,7 @@ describe('Implicit Takes (requireCarriedOrImplicitTake)', () => {
       world.moveEntity(coin.id, player.id);
 
       const command = createTestCommand(coin);
-      const context = createActionContext(world, player, testAction, command);
+      const context = createActionContext(world, player, testAction, command, createFixtureRandomService());
 
       const result = context.requireCarriedOrImplicitTake(coin);
 
@@ -84,7 +85,7 @@ describe('Implicit Takes (requireCarriedOrImplicitTake)', () => {
       world.moveEntity(coin.id, room.id);
 
       const command = createTestCommand(coin);
-      const context = createActionContext(world, player, testAction, command);
+      const context = createActionContext(world, player, testAction, command, createFixtureRandomService());
 
       // Verify precondition
       expect(world.getLocation(coin.id)).toBe(room.id);
@@ -104,7 +105,7 @@ describe('Implicit Takes (requireCarriedOrImplicitTake)', () => {
       world.moveEntity(coin.id, room.id);
 
       const command = createTestCommand(coin);
-      const context = createActionContext(world, player, testAction, command);
+      const context = createActionContext(world, player, testAction, command, createFixtureRandomService());
 
       const result = context.requireCarriedOrImplicitTake(coin);
 
@@ -121,7 +122,7 @@ describe('Implicit Takes (requireCarriedOrImplicitTake)', () => {
       world.moveEntity(coin.id, room.id);
 
       const command = createTestCommand(coin);
-      const context = createActionContext(world, player, testAction, command);
+      const context = createActionContext(world, player, testAction, command, createFixtureRandomService());
 
       const result = context.requireCarriedOrImplicitTake(coin);
 
@@ -137,7 +138,7 @@ describe('Implicit Takes (requireCarriedOrImplicitTake)', () => {
       world.moveEntity(coin.id, room.id);
 
       const command = createTestCommand(coin);
-      const context = createActionContext(world, player, testAction, command);
+      const context = createActionContext(world, player, testAction, command, createFixtureRandomService());
 
       context.requireCarriedOrImplicitTake(coin);
 
@@ -155,7 +156,7 @@ describe('Implicit Takes (requireCarriedOrImplicitTake)', () => {
       world.moveEntity(coin.id, otherRoom.id);
 
       const command = createTestCommand(coin);
-      const context = createActionContext(world, player, testAction, command);
+      const context = createActionContext(world, player, testAction, command, createFixtureRandomService());
 
       const result = context.requireCarriedOrImplicitTake(coin);
 
@@ -173,7 +174,7 @@ describe('Implicit Takes (requireCarriedOrImplicitTake)', () => {
       world.moveEntity(coin.id, otherRoom.id);
 
       const command = createTestCommand(coin);
-      const context = createActionContext(world, player, testAction, command);
+      const context = createActionContext(world, player, testAction, command, createFixtureRandomService());
 
       const result = context.requireCarriedOrImplicitTake(coin);
 
@@ -190,7 +191,7 @@ describe('Implicit Takes (requireCarriedOrImplicitTake)', () => {
       world.moveEntity(statue.id, room.id);
 
       const command = createTestCommand(statue);
-      const context = createActionContext(world, player, testAction, command);
+      const context = createActionContext(world, player, testAction, command, createFixtureRandomService());
 
       const result = context.requireCarriedOrImplicitTake(statue);
 
@@ -209,7 +210,7 @@ describe('Implicit Takes (requireCarriedOrImplicitTake)', () => {
       world.moveEntity(statue.id, room.id);
 
       const command = createTestCommand(statue);
-      const context = createActionContext(world, player, testAction, command);
+      const context = createActionContext(world, player, testAction, command, createFixtureRandomService());
 
       context.requireCarriedOrImplicitTake(statue);
 
@@ -222,7 +223,7 @@ describe('Implicit Takes (requireCarriedOrImplicitTake)', () => {
     test('should return error when trying to take yourself', () => {
       // Player is an actor which can't be taken
       const command = createTestCommand(player);
-      const context = createActionContext(world, player, testAction, command);
+      const context = createActionContext(world, player, testAction, command, createFixtureRandomService());
 
       const result = context.requireCarriedOrImplicitTake(player);
 
@@ -232,7 +233,7 @@ describe('Implicit Takes (requireCarriedOrImplicitTake)', () => {
 
     test('should return error when trying to take a room', () => {
       const command = createTestCommand(room);
-      const context = createActionContext(world, player, testAction, command);
+      const context = createActionContext(world, player, testAction, command, createFixtureRandomService());
 
       const result = context.requireCarriedOrImplicitTake(room);
 
@@ -249,7 +250,7 @@ describe('Implicit Takes (requireCarriedOrImplicitTake)', () => {
       world.moveEntity(key.id, room.id);
 
       const command = createTestCommand(coin);
-      const context = createActionContext(world, player, testAction, command);
+      const context = createActionContext(world, player, testAction, command, createFixtureRandomService());
 
       // First implicit take
       const result1 = context.requireCarriedOrImplicitTake(coin);

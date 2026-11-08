@@ -97,13 +97,14 @@ function makeWorldStub(opts: {
   player?: { id: string };
   room?: { id: string; name: string };
 } = {}) {
+  const getCapability = (name: string): Record<string, unknown> | undefined => {
+    if (name === 'storyInfo' && opts.storyInfo) return opts.storyInfo as Record<string, unknown>;
+    return undefined;
+  };
   return {
-    getCapability(name: string): Record<string, unknown> | undefined {
-      if (name === 'storyInfo' && opts.storyInfo) return opts.storyInfo as Record<string, unknown>;
-      return undefined;
-    },
+    getCapability,
     hasCapability(name: string) {
-      return Boolean(this.getCapability(name));
+      return Boolean(getCapability(name));
     },
     ...(opts.ledger
       ? {
@@ -359,7 +360,7 @@ describe('promptChannel.produce', () => {
         blocks: [
           {
             key: CORE_BLOCK_KEYS.PROMPT,
-            content: ['? ', { type: 'em', content: ['hi'] }, ' '],
+            content: ['? ', { className: 'sharpee-em', content: ['hi'] }, ' '],
           },
         ],
       }),

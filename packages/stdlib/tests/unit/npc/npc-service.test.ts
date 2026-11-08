@@ -26,7 +26,7 @@ import {
 } from '../../../src/npc';
 import { IFActions } from '../../../src/actions/constants';
 import { createFixtureRandomService } from '../../test-utils/fixture-random-service';
-import { IFEntity, WorldModel, TraitType, NpcTrait, HealthTrait, CombatantTrait, CombatBehavior } from '@sharpee/world-model';
+import { IFEntity, WorldModel, TraitType, NpcTrait, HealthTrait, CombatantTrait, CombatBehavior, Direction } from '@sharpee/world-model';
 
 // Helper to create mock entity
 function createMockEntity(
@@ -370,12 +370,12 @@ describe('standard behaviors', () => {
         npc: createMockEntity('npc', 'Wanderer', {}),
         playerLocation: 'room-2',
         playerVisible: false,
-        getAvailableExits: () => [{ direction: 'north' as const, destination: 'room-2' }],
+        getAvailableExits: () => [{ direction: Direction.NORTH, destination: 'room-2' }],
       });
 
       wanderer.onTurn(context);
 
-      expect(context.entry.calls).toEqual([['npc', IFActions.GOING, { direction: 'north' }]]);
+      expect(context.entry.calls).toEqual([['npc', IFActions.GOING, { direction: Direction.NORTH }]]);
     });
 
     it('does not act when there are no exits', () => {
@@ -400,12 +400,12 @@ describe('standard behaviors', () => {
         npc: createMockEntity('npc', 'Dog', {}),
         playerLocation: 'room-2',
         playerVisible: false,
-        getAvailableExits: () => [{ direction: 'east' as const, destination: 'room-2' }],
+        getAvailableExits: () => [{ direction: Direction.EAST, destination: 'room-2' }],
       });
 
       follower.onPlayerLeaves!(context);
 
-      expect(context.entry.calls).toEqual([['npc', IFActions.GOING, { direction: 'east' }]]);
+      expect(context.entry.calls).toEqual([['npc', IFActions.GOING, { direction: Direction.EAST }]]);
       expect(context.narrated).toHaveLength(1);
       expect((context.narrated[0] as { message: string }).message).toBe(NpcMessages.NPC_FOLLOWS);
     });
@@ -417,7 +417,7 @@ describe('standard behaviors', () => {
         npc: createMockEntity('npc', 'Dog', {}),
         playerLocation: 'room-2',
         playerVisible: false,
-        getAvailableExits: () => [{ direction: 'east' as const, destination: 'room-2' }],
+        getAvailableExits: () => [{ direction: Direction.EAST, destination: 'room-2' }],
         act: (actionId, slots) => refused('npc', actionId, slots),
       });
 

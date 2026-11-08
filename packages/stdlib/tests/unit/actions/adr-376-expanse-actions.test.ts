@@ -37,7 +37,7 @@ import { examiningAction } from '../../../src/actions/standard/examining';
 import { lookThroughBehavior } from '../../../src/actions/standard/searching';
 import { createVehicleCommandTransformer } from '../../../src/actions/standard/vehicle-command-transformer';
 import { IFActions } from '../../../src/actions/constants';
-import { createCommand, createRealTestContext, executeWithValidation, setupBasicWorld, validateTyped } from '../../test-utils';
+import { createCommand, createRealTestContext, executeWithValidation, setupBasicWorld, validateTyped, dataOf } from '../../test-utils';
 
 interface Belt {
   world: WorldModel;
@@ -293,8 +293,8 @@ describe('seeing (D6)', () => {
     model(skiff).position = { x: 9, y: 6 };
     cask.get(IdentityTrait)!.description = 'A tarred cask.';
     const afar = run(examiningAction, world, derelict);
-    expect(afar.map((e) => JSON.stringify(e.data?.messageId ?? e.data))).toContain('"if.action.examining.seen_from_afar"');
-    expect(afar[0].data.params.description).toBe('a long dead hull');
+    expect(afar.map((e) => JSON.stringify(dataOf<{ messageId?: string }>(e)?.messageId ?? e.data))).toContain('"if.action.examining.seen_from_afar"');
+    expect(dataOf<{ params?: { description?: string } }>(afar[0])?.params?.description).toBe('a long dead hull');
     const near = run(examiningAction, world, cask);
     expect(messageIds(near)).toEqual(['if.action.examining.examined']);
     expect(near[0].data.params.description).toBe('A tarred cask.');

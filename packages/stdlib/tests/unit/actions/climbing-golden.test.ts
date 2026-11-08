@@ -426,7 +426,7 @@ describe('climbingAction (Golden Pattern)', () => {
       const attic = world.createEntity('Attic', EntityType.ROOM);
       attic.add(new RoomTrait());
 
-      const roomTrait = groundFloor.get(TraitType.ROOM);
+      const roomTrait = groundFloor.get(RoomTrait)!;
       roomTrait.exits = { [Direction.UP]: { destination: attic.id } };
 
       const player = world.createEntity('yourself', EntityType.ACTOR);
@@ -459,7 +459,7 @@ describe('climbingAction (Golden Pattern)', () => {
       const attic = world.createEntity('Attic', EntityType.ROOM);
       attic.add(new RoomTrait());
 
-      const atticRoom = attic.get(TraitType.ROOM);
+      const atticRoom = attic.get(RoomTrait)!;
       atticRoom.exits = { [Direction.DOWN]: { destination: groundFloor.id } };
 
       const player = world.createEntity('yourself', EntityType.ACTOR);

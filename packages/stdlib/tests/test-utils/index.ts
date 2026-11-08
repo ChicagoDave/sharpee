@@ -16,6 +16,7 @@ import {
   IFEntity,
   TraitType,
   type IValidatedCommand as ValidatedCommand,
+  type IParsedCommand,
   IdentityTrait, ActorTrait, ContainerTrait, RoomTrait } from '@sharpee/world-model';
 import { registerStandardCapabilities } from '../../src/capabilities';
 import { createActionContext } from '../../src/actions/enhanced-context';
@@ -83,56 +84,6 @@ export function createRealTestContext(
     currentLocation = location;
   }
   
-  // Create base context with shared data support
-  const baseContext: ActionContext = {
-    world,
-    player,
-    command,
-    currentLocation: currentLocation!,
-    canSee: (entity) => world.canSee(player.id, entity.id),
-    canReach: (entity) => {
-      // Can always reach things we're carrying (check first for performance)
-      if (world.getLocation(entity.id) === player.id) return true;
-
-      // Basic reachability logic
-      if (!world.canSee(player.id, entity.id)) return false;
-      
-      // Check if in same room
-      const playerRoom = world.getContainingRoom(player.id);
-      const entityRoom = world.getContainingRoom(entity.id);
-      if (!playerRoom || !entityRoom || playerRoom.id !== entityRoom.id) {
-        return false;
-      }
-      
-      // Check position-based reachability
-      const entityIdentity = entity.get(IdentityTrait);
-      if (entityIdentity) {
-        const pos = (entityIdentity as IdentityTrait & { position?: { y?: number } }).position;
-        // Items with y > 3 are considered out of reach
-        if (pos?.y && pos.y > 3) {
-          return false;
-        }
-      }
-      
-      return true;
-    },
-    canTake: (entity) => !entity.hasTrait(TraitType.SCENERY) && !entity.hasTrait(TraitType.ROOM) && !entity.hasTrait(TraitType.DOOR),
-    isInScope: (entity) => world.getInScope(player.id).some(e => e.id === entity.id),
-    getVisible: () => world.getVisible(player.id),
-    getInScope: () => world.getInScope(player.id),
-    // Add shared data support for actions that need it (like quitting)
-    getSharedData: () => ({
-      score: 0,
-      moves: 0,
-      hasUnsavedChanges: false,
-      stats: {
-        maxScore: 100,
-        nearComplete: false,
-        playTime: 0,
-        achievements: []
-      }
-    })
-  } as ActionContext & { getSharedData?: () => Record<string, unknown> };
 
   // Fixed-seed per-point RandomService: deterministic tests are harness
   // policy, not story policy (ADR-293 — fixture construction is D6's
@@ -171,7 +122,7 @@ export function createCommand(
   const verb = options.verb || actionId.split('.').pop() || 'unknown';
   const rawInput = options.rawInput || verb;
   
-  const structure: Record<string, unknown> = {
+  const structure: IParsedCommand['structure'] = {
     verb: {
       tokens: [0],
       text: verb,
@@ -252,11 +203,11 @@ export function createCommand(
     actionId: actionId,
     directObject: options.entity ? { 
       entity: options.entity,
-      parsed: structure.directObject
+      parsed: structure.directObject! // built above whenever options.entity is set
     } : undefined,
     indirectObject: options.secondEntity ? { 
       entity: options.secondEntity,
-      parsed: structure.indirectObject
+      parsed: structure.indirectObject! // built above whenever options.secondEntity is set
     } : undefined
   };
 }
@@ -326,7 +277,7 @@ export function expectEvent(
     const eventRecord = event as unknown as Record<string, unknown>;
     const dataRecord = event.data as Record<string, unknown> | undefined;
     const payloadRecord = eventRecord.payload as Record<string, unknown> | undefined;
-    const eventData = payloadRecord?.data || dataRecord?.data || event.data || {};
+    const eventData = (payloadRecord?.data || dataRecord?.data || event.data || {}) as Record<string, unknown>;
 
     Object.entries(expectedData).forEach(([key, value]) => {
       // Special handling for old test format
@@ -614,6 +565,15 @@ export function executeWithValidation(
 
   runExecutePhase(action, context);
   return runReportPhase(action, context);
+}
+
+/**
+ * An event's `data` read as the shape the test expects. `ISemanticEvent.data`
+ * is `unknown`, so the cast is made once here and the shape is named at the
+ * call site: `dataOf<LookedEventData>(event)?.timestamp`.
+ */
+export function dataOf<T>(event: SemanticEvent | undefined): T | undefined {
+  return event?.data as T | undefined;
 }
 
 /**

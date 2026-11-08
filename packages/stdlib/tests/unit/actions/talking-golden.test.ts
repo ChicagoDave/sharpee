@@ -360,7 +360,7 @@ describe('talkingAction (Golden Pattern)', () => {
       world.moveEntity(npc.id, room.id);
 
       // VERIFY PRECONDITION: conversation state before talking
-      const actorBefore = npc.get(TraitType.ACTOR);
+      const actorBefore = npc.get(ActorTrait)!;
       const convBefore = actorBefore.customProperties?.conversation;
       expect(convBefore?.hasGreeted).toBe(false);
 
@@ -372,7 +372,7 @@ describe('talkingAction (Golden Pattern)', () => {
       talkingAction.execute(context);
 
       // VERIFY POSTCONDITION: conversation state unchanged
-      const actorAfter = npc.get(TraitType.ACTOR);
+      const actorAfter = npc.get(ActorTrait)!;
       const convAfter = actorAfter.customProperties?.conversation;
       expect(convAfter?.hasGreeted).toBe(false);
       expect(convAfter?.personality).toBe('formal');

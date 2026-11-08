@@ -19,7 +19,8 @@ import {
   TestData,
   createCommand,
   setupBasicWorld,
-  findEntityByName
+  findEntityByName,
+  dataOf
 } from '../../test-utils';
 
 describe('unlockingAction (Golden Pattern)', () => {
@@ -405,7 +406,7 @@ describe('unlockingAction (Golden Pattern)', () => {
 
       // Check that willAutoOpen is present in the event params
       const unlockedEvent = events.find(e => e.type === 'if.event.unlocked');
-      expect(unlockedEvent?.data?.willAutoOpen).toBe(true);
+      expect(dataOf<{ willAutoOpen?: boolean }>(unlockedEvent)?.willAutoOpen).toBe(true);
     });
 
     test('should not auto-open if not configured', () => {
@@ -425,7 +426,7 @@ describe('unlockingAction (Golden Pattern)', () => {
       const events = executeWithValidation(unlockingAction, context);
 
       const unlockedEvent = events.find(e => e.type === 'if.event.unlocked');
-      expect(unlockedEvent?.data?.willAutoOpen).toBeFalsy();
+      expect(dataOf<{ willAutoOpen?: boolean }>(unlockedEvent)?.willAutoOpen).toBeFalsy();
     });
   });
 

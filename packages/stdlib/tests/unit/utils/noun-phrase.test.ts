@@ -59,7 +59,7 @@ describe('nounPhraseFor', () => {
 
     const np = nounPhraseFor(sword);
 
-    expect((np as Record<string, unknown>).article).toBeUndefined();
+    expect('article' in np).toBe(false);
     expect(np.articleType).toBe('indefinite');
   });
 

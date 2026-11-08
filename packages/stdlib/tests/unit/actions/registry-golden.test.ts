@@ -117,6 +117,7 @@ describe('StandardActionRegistry (Golden Pattern)', () => {
       // Create a custom action without a group
       const customAction: Action = {
         id: 'CUSTOM',
+        validate: () => ({ valid: true }),
         execute: () => [],
         requiredMessages: []
       };
@@ -142,6 +143,7 @@ describe('StandardActionRegistry (Golden Pattern)', () => {
     test('should handle pattern updates when language provider changes', () => {
       const customAction: Action = {
         id: 'CUSTOM_ACTION',
+        validate: () => ({ valid: true }),
         execute: () => [],
         requiredMessages: []
       };
@@ -242,6 +244,7 @@ describe('StandardActionRegistry (Golden Pattern)', () => {
     test('should handle empty pattern arrays from language provider', () => {
       const action: Action = {
         id: 'NO_PATTERNS',
+        validate: () => ({ valid: true }),
         execute: () => [],
         requiredMessages: []
       };
@@ -269,12 +272,14 @@ describe('StandardActionRegistry (Golden Pattern)', () => {
   describe('Backward Compatibility', () => {
     test('should support direct aliases on actions', () => {
       // Some actions might have direct aliases for backward compatibility
-      const actionWithAliases: Action = {
+      const actionWithAliases: Action & { aliases: string[] } = {
         id: 'if.action.custom',
-        execute: () => [],
+        validate: () => ({ valid: true }),
+        execute: () => {},
+        report: () => [],
         requiredMessages: [],
         aliases: ['foo', 'bar'] // Direct aliases, not patterns
-      } as Action & { aliases: string[] };
+      };
       
       registry.register(actionWithAliases);
       

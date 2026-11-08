@@ -122,7 +122,7 @@ describe('Capability path runs interceptor hooks after the behavior (ADR-228 D7.
     const order: string[] = [];
     world.registerCapabilityBehavior(ThrowCapableTrait.type, IFActions.THROWING, {
       validate() { return { valid: true }; },
-      execute(_entity, w) {
+      execute(_entity: IFEntity, w: WorldModel) {
         order.push('capability.execute');
         w.setStateValue('glacier.hit', true);
       },

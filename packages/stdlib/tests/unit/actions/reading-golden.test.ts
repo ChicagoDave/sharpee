@@ -11,14 +11,13 @@ import {
   setupBasicWorld,
   expectEvent,
   executeWithValidation,
-  TestData,
   createCommand
 } from '../../test-utils';
 import { WorldModel, IFEntity, TraitType, ReadableTrait, EntityType } from '@sharpee/world-model';
 import type { ActionContext } from '../../../src/actions/enhanced-types';
 
 describe('Reading Action - Golden Path', () => {
-  let testData: TestData;
+  let testData: ReturnType<typeof setupBasicWorld>;
 
   beforeEach(() => {
     // Setup the test world with basic entities

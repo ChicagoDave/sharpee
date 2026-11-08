@@ -73,7 +73,7 @@ describe('Entity alias resolution', () => {
         results.push(context.currentLocation);
         // Include contents of current location
         const contents = context.world.getContents(context.currentLocation);
-        results.push(...contents.map(e => e.id));
+        results.push(...contents.map((e: IFEntity) => e.id));
         return results;
       }
     });
@@ -84,25 +84,27 @@ describe('Entity alias resolution', () => {
       includeEntities: (context) => {
         // Include carried items
         const carried = context.world.getContents(context.actorId);
-        return carried.map(e => e.id);
+        return carried.map((e: IFEntity) => e.id);
       }
     });
   });
 
   it('should find entity by its primary name', async () => {
     const command: IParsedCommand = {
+      rawInput: '',
+      tokens: [],
       pattern: 'VERB_NOUN',
       action: 'if.action.examining',
       structure: {
-        verb: 'examine',
+        verb: { tokens: [0], text: 'examine', head: 'examine' },
         directObject: {
           text: 'brass hook',
           head: 'hook',
           modifiers: ['brass'],
-          determiner: null,
-          quantity: null,
-          isAll: false
-        } as INounPhrase
+          tokens: [],
+          articles: [],
+          determiners: []
+        }
       }
     };
 
@@ -115,18 +117,20 @@ describe('Entity alias resolution', () => {
 
   it('should find entity by alias "hook"', async () => {
     const command: IParsedCommand = {
+      rawInput: '',
+      tokens: [],
       pattern: 'VERB_NOUN',
       action: 'if.action.examining',
       structure: {
-        verb: 'examine',
+        verb: { tokens: [0], text: 'examine', head: 'examine' },
         directObject: {
           text: 'hook',
           head: 'hook',
           modifiers: [],
-          determiner: null,
-          quantity: null,
-          isAll: false
-        } as INounPhrase
+          tokens: [],
+          articles: [],
+          determiners: []
+        }
       }
     };
 
@@ -139,18 +143,20 @@ describe('Entity alias resolution', () => {
 
   it('should find entity by alias "peg"', async () => {
     const command: IParsedCommand = {
+      rawInput: '',
+      tokens: [],
       pattern: 'VERB_NOUN',
       action: 'if.action.examining',
       structure: {
-        verb: 'examine',
+        verb: { tokens: [0], text: 'examine', head: 'examine' },
         directObject: {
           text: 'peg',
           head: 'peg',
           modifiers: [],
-          determiner: null,
-          quantity: null,
-          isAll: false
-        } as INounPhrase
+          tokens: [],
+          articles: [],
+          determiners: []
+        }
       }
     };
 
@@ -174,27 +180,29 @@ describe('Entity alias resolution', () => {
     world.moveEntity(cloak.id, player.id); // Player is carrying it
     
     const command: IParsedCommand = {
+      rawInput: '',
+      tokens: [],
       pattern: 'VERB_NOUN_PREP_NOUN',
       action: 'if.action.putting',
       structure: {
-        verb: 'hang',
+        verb: { tokens: [0], text: 'hang', head: 'hang' },
         directObject: {
           text: 'cloak',
           head: 'cloak',
           modifiers: [],
-          determiner: null,
-          quantity: null,
-          isAll: false
-        } as INounPhrase,
-        preposition: 'on',
+          tokens: [],
+          articles: [],
+          determiners: []
+        },
+        preposition: { tokens: [2], text: 'on' },
         indirectObject: {
           text: 'hook',
           head: 'hook',
           modifiers: [],
-          determiner: null,
-          quantity: null,
-          isAll: false
-        } as INounPhrase
+          tokens: [],
+          articles: [],
+          determiners: []
+        }
       }
     };
 
@@ -224,18 +232,20 @@ describe('Entity alias resolution', () => {
 
     it('should resolve multi-word alias "bush babies" via full text match', async () => {
       const command: IParsedCommand = {
+        rawInput: '',
+        tokens: [],
         pattern: 'VERB_NOUN',
         action: 'if.action.examining',
         structure: {
-          verb: 'examine',
+          verb: { tokens: [0], text: 'examine', head: 'examine' },
           directObject: {
             text: 'bush babies',
             head: 'babies',     // Parser sets head to last token
             modifiers: ['bush'],
-            determiner: null,
-            quantity: null,
-            isAll: false
-          } as INounPhrase
+            tokens: [],
+            articles: [],
+            determiners: []
+          }
         }
       };
 
@@ -248,18 +258,20 @@ describe('Entity alias resolution', () => {
 
     it('should resolve single-word alias "galagos" normally', async () => {
       const command: IParsedCommand = {
+        rawInput: '',
+        tokens: [],
         pattern: 'VERB_NOUN',
         action: 'if.action.examining',
         structure: {
-          verb: 'examine',
+          verb: { tokens: [0], text: 'examine', head: 'examine' },
           directObject: {
             text: 'galagos',
             head: 'galagos',
             modifiers: [],
-            determiner: null,
-            quantity: null,
-            isAll: false
-          } as INounPhrase
+            tokens: [],
+            articles: [],
+            determiners: []
+          }
         }
       };
 
@@ -273,18 +285,20 @@ describe('Entity alias resolution', () => {
     it('should resolve multi-word entity name as primary name', async () => {
       // "bush babies" is the entity name, not just an alias
       const command: IParsedCommand = {
+        rawInput: '',
+        tokens: [],
         pattern: 'VERB_NOUN',
         action: 'if.action.examining',
         structure: {
-          verb: 'examine',
+          verb: { tokens: [0], text: 'examine', head: 'examine' },
           directObject: {
             text: 'bush babies',
             head: 'babies',
             modifiers: ['bush'],
-            determiner: null,
-            quantity: null,
-            isAll: false
-          } as INounPhrase
+            tokens: [],
+            articles: [],
+            determiners: []
+          }
         }
       };
 
@@ -307,18 +321,20 @@ describe('Entity alias resolution', () => {
       // "examine bush babies" — full text "bush babies" should match bush-babies entity,
       // not the "babies" entity (which only matches the head token)
       const command: IParsedCommand = {
+        rawInput: '',
+        tokens: [],
         pattern: 'VERB_NOUN',
         action: 'if.action.examining',
         structure: {
-          verb: 'examine',
+          verb: { tokens: [0], text: 'examine', head: 'examine' },
           directObject: {
             text: 'bush babies',
             head: 'babies',
             modifiers: ['bush'],
-            determiner: null,
-            quantity: null,
-            isAll: false
-          } as INounPhrase
+            tokens: [],
+            articles: [],
+            determiners: []
+          }
         }
       };
 
@@ -337,18 +353,20 @@ describe('Entity alias resolution', () => {
       // this to the brass hook; that was the wrong-resolution class the
       // ruling removes.
       const command: IParsedCommand = {
+        rawInput: '',
+        tokens: [],
         pattern: 'VERB_NOUN',
         action: 'if.action.examining',
         structure: {
-          verb: 'examine',
+          verb: { tokens: [0], text: 'examine', head: 'examine' },
           directObject: {
             text: 'old hook',
             head: 'hook',
             modifiers: ['old'],
-            determiner: null,
-            quantity: null,
-            isAll: false
-          } as INounPhrase
+            tokens: [],
+            articles: [],
+            determiners: []
+          }
         }
       };
 
@@ -377,18 +395,20 @@ describe('Entity alias resolution', () => {
     
     // Player should only see the hook in their current room
     const command: IParsedCommand = {
+      rawInput: '',
+      tokens: [],
       pattern: 'VERB_NOUN',
       action: 'if.action.examining',
       structure: {
-        verb: 'examine',
+        verb: { tokens: [0], text: 'examine', head: 'examine' },
         directObject: {
           text: 'hook',
           head: 'hook',
           modifiers: [],
-          determiner: null,
-          quantity: null,
-          isAll: false
-        } as INounPhrase
+          tokens: [],
+          articles: [],
+          determiners: []
+        }
       }
     };
 

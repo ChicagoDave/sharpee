@@ -84,7 +84,8 @@ describe('insertingAction (Golden Pattern)', () => {
       
       // Mock putting action to verify delegation
       const originalExecute = puttingAction.execute;
-      let delegatedContext: ActionContext | null = null;
+      // Assigned inside the mock below, which control-flow narrowing cannot see.
+      let delegatedContext = null as ActionContext | null;
       
       puttingAction.execute = vi.fn((context) => {
         delegatedContext = context;
@@ -104,7 +105,7 @@ describe('insertingAction (Golden Pattern)', () => {
         expect(puttingAction.execute).toHaveBeenCalled();
         
         // Verify preposition was set to 'in'
-        expect(delegatedContext?.command.parsed.preposition).toBe('in');
+        expect(delegatedContext?.command.parsed.structure.preposition?.text).toBe('in');
         
         // Should get same result as putting with 'in'
         expectEvent(events, 'if.event.put_in', {

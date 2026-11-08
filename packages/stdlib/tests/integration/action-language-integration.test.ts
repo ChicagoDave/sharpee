@@ -10,7 +10,7 @@ import { StandardActionRegistry } from '../../src/actions';
 import { waitingAction } from '../../src/actions/standard/waiting';
 import { CommandValidator } from '../../src/validation/command-validator';
 import { WorldModel, IFEntity, TraitType, ActorTrait, RoomTrait } from '@sharpee/world-model';
-import { createRealTestContext } from '../test-utils';
+import { createRealTestContext, createCommand } from '../test-utils';
 import type { IParsedCommand } from '@sharpee/world-model';
 import type { LanguageProvider } from '@sharpee/if-domain';
 
@@ -147,14 +147,7 @@ describe('Action Integration Test Pattern', () => {
 
   describe('Message Resolution Flow', () => {
     test('should resolve messages through language provider', () => {
-      const command = {
-        parsed: {
-          action: 'wait',
-          extras: {}
-        },
-        directObject: null,
-        indirectObject: null
-      };
+      const command = createCommand(waitingAction.id);
       const context = createRealTestContext(waitingAction, world, command);
       waitingAction.validate(context);
       waitingAction.execute(context);
@@ -254,16 +247,9 @@ describe('Testing Complex Actions with Dependencies', () => {
     };
     
     // Test various precondition failures
-    const command = {
-      parsed: {
-        action: 'take',
-        extras: {}
-      },
-      directObject: { entity: ball },
-      indirectObject: null
-    };
-    
-    const context = createRealTestContext(mockTakeAction as unknown as import('../../src/actions/enhanced-types').Action, world, command as import('@sharpee/world-model').ValidatedCommand);
+    const command = createCommand('take', { entity: ball });
+
+    const context = createRealTestContext(mockTakeAction as unknown as import('../../src/actions/enhanced-types').Action, world, command);
     
     // Override canTake for testing
     context.canTake = () => true;

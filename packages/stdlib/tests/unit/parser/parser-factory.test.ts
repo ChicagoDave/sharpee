@@ -57,6 +57,11 @@ class MockLanguageProvider implements LanguageProvider {
   getIndefiniteArticle(noun: string) { return 'a'; }
   pluralize(noun: string) { return noun + 's'; }
   isIgnoreWord(word: string) { return false; }
+  getActionPatterns(_actionId: string) { return undefined; }
+  getMessage(messageId: string) { return messageId; }
+  hasMessage(_messageId: string) { return false; }
+  getNarrativePerson(): 'first' | 'second' | 'third' { return 'second'; }
+  getLanguageWords() { return { selfWords: ['me', 'myself', 'self', 'yourself'], nameStopwords: ['the', 'a', 'an', 'of'] }; }
 }
 
 describe('ParserFactory', () => {

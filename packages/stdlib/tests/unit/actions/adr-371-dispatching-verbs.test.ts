@@ -110,7 +110,7 @@ for (const c of dispatching) {
         execute: (entity) => { (entity.get(LiftTrait.type) as any).position = c.name === 'lowering' ? 'down' : 'up'; },
         report: () => [{ type: 'if.event.lift_moved', payload: { messageId: 'test.lift.moved' } }],
         blocked: () => [],
-      } as any);
+      });
       const { validation, events } = drive(c.action, world, createCommand(c.id, { entity: lift }));
       expect(validation.valid).toBe(true);
       expect((lift.get(LiftTrait.type) as any).position).toBe(c.name === 'lowering' ? 'down' : 'up');
@@ -200,7 +200,7 @@ describe('settingAction (ADR-371 D3)', () => {
       execute: (entity, _w, _a, shared) => { (entity.get(DialTrait.type) as any).value = shared.value; },
       report: (_e, _w, _a, shared) => [{ type: 'if.event.set', payload: { messageId: 'if.action.setting.set', value: shared.value } }],
       blocked: (_e, _w, _a, error) => [{ type: 'if.event.set_blocked', payload: { messageId: error } }],
-    } as any);
+    });
 
     const ok = drive(settingAction, world, withTopic(createCommand(IFActions.SETTING, { entity: dial }), 'high'));
     expect(ok.validation.valid).toBe(true);

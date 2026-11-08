@@ -191,7 +191,7 @@ describe('attackingAction (Golden Pattern)', () => {
       attackingAction.execute(context);
 
       // VERIFY POSTCONDITION: hitPoints reduced (unarmed does 1 damage by default)
-      const destructible = wall.get(TraitType.DESTRUCTIBLE);
+      const destructible = wall.get(DestructibleTrait)!;
       expect(destructible.hitPoints).toBeLessThan(3);
     });
 

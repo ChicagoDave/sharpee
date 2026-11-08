@@ -29,10 +29,8 @@ export function setupSharedData(world: WorldModel, data: SharedGameData): void {
   
   // First register the capability
   world.registerCapability('sharedData', {
-    id: 'sharedData',
     name: 'Shared Game Data',
-    version: '1.0.0',
-    data: sharedData
+    initialData: sharedData
   });
 
   // Then update it with the data

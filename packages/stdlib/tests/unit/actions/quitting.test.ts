@@ -9,11 +9,13 @@
 import { describe, test, expect, beforeEach } from 'vitest';
 import { quittingAction } from '../../../src/actions/standard/quitting';
 import { IFActions } from '../../../src/actions/constants';
+import type { IPlatformEvent } from '@sharpee/core';
 import {
   createRealTestContext,
   setupBasicWorld,
   expectEvent,
-  createCommand
+  createCommand,
+  executeWithValidation
 } from '../../test-utils';
 import type { WorldModel } from '@sharpee/world-model';
 import type { ActionContext, Action } from '../../../src/actions/enhanced-types';
@@ -31,29 +33,6 @@ interface QuitContext {
     achievements: string[];
   };
 }
-
-/**
- * Helper to execute action with proper three-phase pattern support
- */
-const executeWithValidation = (action: Action, context: ActionContext) => {
-  const validation = action.validate(context);
-  if (!validation.valid) {
-    return [context.event('action.error', {
-      actionId: action.id,
-      error: validation.error,
-      messageId: validation.error
-    })];
-  }
-
-  // Three-phase pattern: execute returns void, report returns events
-  if (action.report) {
-    action.execute(context);
-    return action.report(context);
-  }
-
-  // Old two-phase pattern: execute returns events
-  return action.execute(context);
-};
 
 describe('quittingAction', () => {
   describe('Action Metadata', () => {
@@ -98,7 +77,7 @@ describe('quittingAction', () => {
       
       const platformEvent = events.find(e => e.type === 'platform.quit_requested');
       expect(platformEvent).toBeDefined();
-      expect(platformEvent!.payload.context).toEqual({
+      expect((platformEvent as IPlatformEvent).payload.context).toEqual({
         score: 10,
         moves: 5,
         hasUnsavedChanges: false,
@@ -165,7 +144,7 @@ describe('quittingAction', () => {
       
       const platformEvent = events.find(e => e.type === 'platform.quit_requested');
       expect(platformEvent).toBeDefined();
-      const quitContext = platformEvent!.payload.context as QuitContext;
+      const quitContext = (platformEvent as IPlatformEvent).payload.context as QuitContext;
       expect(quitContext.hasUnsavedChanges).toBe(true);
       expect(quitContext.force).toBe(false);
       
@@ -225,7 +204,7 @@ describe('quittingAction', () => {
       
       const platformEvent = events.find(e => e.type === 'platform.quit_requested');
       expect(platformEvent).toBeDefined();
-      const quitContext = platformEvent!.payload.context as QuitContext;
+      const quitContext = (platformEvent as IPlatformEvent).payload.context as QuitContext;
       expect(quitContext.hasUnsavedChanges).toBe(true);
       expect(quitContext.force).toBe(true); // Force quit despite unsaved changes
       
@@ -245,7 +224,7 @@ describe('quittingAction', () => {
       
       const platformEvent = events.find(e => e.type === 'platform.quit_requested');
       expect(platformEvent).toBeDefined();
-      const quitContext = platformEvent!.payload.context as QuitContext;
+      const quitContext = (platformEvent as IPlatformEvent).payload.context as QuitContext;
       expect(quitContext.force).toBe(true);
     });
 
@@ -260,7 +239,7 @@ describe('quittingAction', () => {
       
       const platformEvent = events.find(e => e.type === 'platform.quit_requested');
       expect(platformEvent).toBeDefined();
-      const quitContext = platformEvent!.payload.context as QuitContext;
+      const quitContext = (platformEvent as IPlatformEvent).payload.context as QuitContext;
       expect(quitContext.force).toBe(true);
     });
   });
@@ -287,7 +266,7 @@ describe('quittingAction', () => {
       
       const platformEvent = events.find(e => e.type === 'platform.quit_requested');
       expect(platformEvent).toBeDefined();
-      const quitContext = platformEvent!.payload.context as QuitContext;
+      const quitContext = (platformEvent as IPlatformEvent).payload.context as QuitContext;
       expect(quitContext.stats.maxScore).toBe(100);
       expect(quitContext.stats.nearComplete).toBe(true);
     });
@@ -312,7 +291,7 @@ describe('quittingAction', () => {
       
       const platformEvent = events.find(e => e.type === 'platform.quit_requested');
       expect(platformEvent).toBeDefined();
-      const quitContext = platformEvent!.payload.context as QuitContext;
+      const quitContext = (platformEvent as IPlatformEvent).payload.context as QuitContext;
       expect(quitContext.stats.maxScore).toBe(100);
       expect(quitContext.stats.nearComplete).toBe(false);
     });
@@ -337,7 +316,7 @@ describe('quittingAction', () => {
       
       const platformEvent = events.find(e => e.type === 'platform.quit_requested');
       expect(platformEvent).toBeDefined();
-      const quitContext = platformEvent!.payload.context as QuitContext;
+      const quitContext = (platformEvent as IPlatformEvent).payload.context as QuitContext;
       expect(quitContext.stats.maxScore).toBe(0);
       expect(quitContext.stats.nearComplete).toBe(false);
     });
@@ -355,7 +334,7 @@ describe('quittingAction', () => {
       
       const platformEvent = events.find(e => e.type === 'platform.quit_requested');
       expect(platformEvent).toBeDefined();
-      const quitContext = platformEvent!.payload.context as QuitContext;
+      const quitContext = (platformEvent as IPlatformEvent).payload.context as QuitContext;
       expect(quitContext.score).toBe(0);
       expect(quitContext.moves).toBe(0);
       expect(quitContext.hasUnsavedChanges).toBe(false);
@@ -385,7 +364,7 @@ describe('quittingAction', () => {
       
       const platformEvent = events.find(e => e.type === 'platform.quit_requested');
       expect(platformEvent).toBeDefined();
-      const quitContext = platformEvent!.payload.context as QuitContext;
+      const quitContext = (platformEvent as IPlatformEvent).payload.context as QuitContext;
       expect(quitContext.score).toBe(0);
       expect(quitContext.moves).toBe(0);
       expect(quitContext.hasUnsavedChanges).toBe(false);
@@ -417,7 +396,7 @@ describe('quittingAction', () => {
       
       const platformEvent = events.find(e => e.type === 'platform.quit_requested');
       expect(platformEvent).toBeDefined();
-      expect(platformEvent!.payload.context).toEqual({
+      expect((platformEvent as IPlatformEvent).payload.context).toEqual({
         score: 42,
         moves: 75,
         hasUnsavedChanges: true,

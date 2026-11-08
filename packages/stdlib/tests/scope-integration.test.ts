@@ -13,6 +13,12 @@ import { throwingAction } from '../src/actions/standard/throwing/throwing';
 import { listeningAction } from '../src/actions/standard/listening/listening';
 import { smellingAction } from '../src/actions/standard/smelling/smelling';
 
+/** The validated command of a successful result; fails the test on a refusal. */
+function valueOf<T>(result: { success: true; value: T } | { success: false }): T {
+  if (!result.success) throw new Error('expected the validator to succeed');
+  return result.value;
+}
+
 /** English, handed to hand-built worlds as the language's words (ADR-387 D2). */
 const ENGLISH_WORDS = { selfWords: ['me', 'myself', 'self', 'yourself'], nameStopwords: ['the', 'a', 'an', 'of'] };
 
@@ -70,12 +76,16 @@ describe('Scope Integration Tests', () => {
       const command = {
         rawInput: 'take gem',
         action: 'if.action.taking',
-        tokens: ['take', 'gem'],
+        tokens: [],
         structure: {
           verb: { tokens: [0], text: 'take', head: 'take' },
           directObject: { 
+            tokens: [],
             text: 'gem',
-            modifiers: []
+            head: 'gem',
+            modifiers: [],
+            articles: [],
+            determiners: []
           }
         },
         pattern: 'VERB_OBJECT'      };
@@ -88,7 +98,7 @@ describe('Scope Integration Tests', () => {
       // or it might not find anything. Either way, we can't take the gem.
       if (result.success) {
         // If something was found, it shouldn't be the gem
-        expect(result.value?.directObject?.entity.id).not.toBe(gem.id);
+        expect(valueOf(result).directObject?.entity.id).not.toBe(gem.id);
       } else {
         // If nothing was found, that's also correct
         expect(result.error?.code).toBe('ENTITY_NOT_FOUND');
@@ -102,19 +112,23 @@ describe('Scope Integration Tests', () => {
       const command = {
         rawInput: 'take coin',
         action: 'if.action.taking',
-        tokens: ['take', 'coin'],
+        tokens: [],
         structure: {
           verb: { tokens: [0], text: 'take', head: 'take' },
           directObject: { 
+            tokens: [],
             text: 'coin',
-            modifiers: []
+            head: 'coin',
+            modifiers: [],
+            articles: [],
+            determiners: []
           }
         },
         pattern: 'VERB_OBJECT'      };
       
       const result = validator.validate(command);
       expect(result.success).toBe(true);
-      expect(result.value?.directObject?.entity.name).toBe('coin');
+      expect(valueOf(result).directObject?.entity.name).toBe('coin');
     });
   });
   
@@ -133,17 +147,25 @@ describe('Scope Integration Tests', () => {
       const command = {
         rawInput: 'throw rock at window',
         action: 'if.action.throwing',
-        tokens: ['throw', 'rock', 'at', 'window'],
+        tokens: [],
         structure: {
           verb: { tokens: [0], text: 'throw', head: 'throw' },
           directObject: {
+            tokens: [],
             text: 'rock',
-            modifiers: []
+            head: 'rock',
+            modifiers: [],
+            articles: [],
+            determiners: []
           },
-          preposition: 'at',
+          preposition: { tokens: [2], text: 'at' },
           indirectObject: {
+            tokens: [],
             text: 'window',
-            modifiers: []
+            head: 'window',
+            modifiers: [],
+            articles: [],
+            determiners: []
           }
         },
         pattern: 'VERB_OBJECT_PREP_OBJECT'      };
@@ -151,8 +173,8 @@ describe('Scope Integration Tests', () => {
       const result = validator.validate(command);
       // Rock is REACHABLE (in the room), and throwing requires REACHABLE scope
       expect(result.success).toBe(true);
-      expect(result.value?.directObject?.entity.name).toBe('rock');
-      expect(result.value?.indirectObject?.entity.name).toBe('window');
+      expect(valueOf(result).directObject?.entity.name).toBe('rock');
+      expect(valueOf(result).indirectObject?.entity.name).toBe('window');
     });
     
     it('should succeed when object is carried', () => {
@@ -165,25 +187,33 @@ describe('Scope Integration Tests', () => {
       const command = {
         rawInput: 'throw rock at window',
         action: 'if.action.throwing',
-        tokens: ['throw', 'rock', 'at', 'window'],
+        tokens: [],
         structure: {
           verb: { tokens: [0], text: 'throw', head: 'throw' },
           directObject: { 
+            tokens: [],
             text: 'rock',
-            modifiers: []
+            head: 'rock',
+            modifiers: [],
+            articles: [],
+            determiners: []
           },
-          preposition: 'at',
+          preposition: { tokens: [2], text: 'at' },
           indirectObject: {
+            tokens: [],
             text: 'window',
-            modifiers: []
+            head: 'window',
+            modifiers: [],
+            articles: [],
+            determiners: []
           }
         },
         pattern: 'VERB_OBJECT_PREP_OBJECT'      };
       
       const result = validator.validate(command);
       expect(result.success).toBe(true);
-      expect(result.value?.directObject?.entity.name).toBe('rock');
-      expect(result.value?.indirectObject?.entity.name).toBe('window');
+      expect(valueOf(result).directObject?.entity.name).toBe('rock');
+      expect(valueOf(result).indirectObject?.entity.name).toBe('window');
     });
   });
   
@@ -201,6 +231,8 @@ describe('Scope Integration Tests', () => {
       // Create a loud chime in the next room (avoiding "bell" vs "doorbell" confusion)
       const chime = author.createEntity('chime', EntityType.OBJECT);
       // Don't override the identity trait - it's already set by createEntity
+      // Left as-is on purpose: scope-resolver.ts:145 reads `identity.customProperties.loud`,
+      // a field IdentityTrait does not declare (sharpee #664). Awaiting a platform ruling.
       const identity = chime.get(TraitType.IDENTITY);
       if (identity) {
         identity.customProperties = { loud: true };
@@ -210,13 +242,17 @@ describe('Scope Integration Tests', () => {
       const command = {
         rawInput: 'listen to chime',
         action: 'if.action.listening',
-        tokens: ['listen', 'to', 'chime'],
+        tokens: [],
         structure: {
           verb: { tokens: [0], text: 'listen', head: 'listen' },
-          preposition: 'to',
+          preposition: { tokens: [1], text: 'to' },
           directObject: { 
+            tokens: [],
             text: 'chime',
-            modifiers: []
+            head: 'chime',
+            modifiers: [],
+            articles: [],
+            determiners: []
           }
         },
         pattern: 'VERB_PREP_OBJECT'      };
@@ -225,7 +261,7 @@ describe('Scope Integration Tests', () => {
       
       
       expect(result.success).toBe(true);
-      expect(result.value?.directObject?.entity.name).toBe('chime');
+      expect(valueOf(result).directObject?.entity.name).toBe('chime');
     });
   });
   
@@ -249,19 +285,23 @@ describe('Scope Integration Tests', () => {
       const command = {
         rawInput: 'smell cheese',
         action: 'if.action.smelling',
-        tokens: ['smell', 'cheese'],
+        tokens: [],
         structure: {
           verb: { tokens: [0], text: 'smell', head: 'smell' },
           directObject: { 
+            tokens: [],
             text: 'cheese',
-            modifiers: []
+            head: 'cheese',
+            modifiers: [],
+            articles: [],
+            determiners: []
           }
         },
         pattern: 'VERB_OBJECT'      };
       
       const result = validator.validate(command);
       expect(result.success).toBe(true);
-      expect(result.value?.directObject?.entity.name).toBe('cheese');
+      expect(valueOf(result).directObject?.entity.name).toBe('cheese');
     });
     
     it('should resolve entity behind closed door at AWARE scope (sound passes through)', () => {
@@ -288,12 +328,16 @@ describe('Scope Integration Tests', () => {
       const command = {
         rawInput: 'smell cheese',
         action: 'if.action.smelling',
-        tokens: ['smell', 'cheese'],
+        tokens: [],
         structure: {
           verb: { tokens: [0], text: 'smell', head: 'smell' },
           directObject: {
+            tokens: [],
             text: 'cheese',
-            modifiers: []
+            head: 'cheese',
+            modifiers: [],
+            articles: [],
+            determiners: []
           }
         },
         pattern: 'VERB_OBJECT'      };
@@ -302,7 +346,7 @@ describe('Scope Integration Tests', () => {
 
       // Cheese is findable at AWARE scope (canHear returns true through closed doors)
       expect(result.success).toBe(true);
-      expect(result.value?.directObject?.entity.name).toBe('cheese');
+      expect(valueOf(result).directObject?.entity.name).toBe('cheese');
     });
   });
   
@@ -314,22 +358,26 @@ describe('Scope Integration Tests', () => {
       const command = {
         rawInput: 'take coin',
         action: 'if.action.taking',
-        tokens: ['take', 'coin'],
+        tokens: [],
         structure: {
           verb: { tokens: [0], text: 'take', head: 'take' },
           directObject: { 
+            tokens: [],
             text: 'coin',
-            modifiers: []
+            head: 'coin',
+            modifiers: [],
+            articles: [],
+            determiners: []
           }
         },
         pattern: 'VERB_OBJECT'      };
       
       const result = validator.validate(command);
       expect(result.success).toBe(true);
-      expect(result.value?.scopeInfo).toBeDefined();
+      expect(valueOf(result).scopeInfo).toBeDefined();
       // The coin is on the floor so it's reachable, not just visible
-      expect(result.value?.scopeInfo?.directObject?.level).toBe(ScopeLevel.REACHABLE);
-      expect(result.value?.scopeInfo?.directObject?.perceivedBy).toContain('sight');
+      expect(valueOf(result).scopeInfo?.directObject?.level).toBe(ScopeLevel.REACHABLE);
+      expect(valueOf(result).scopeInfo?.directObject?.perceivedBy).toContain('sight');
     });
   });
 });
