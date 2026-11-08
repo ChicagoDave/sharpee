@@ -28,8 +28,8 @@ Every claim about current code cites a file and line read this session at `0ed88
 | R6 | Row 8 — Chord words now, or fold into the 5.0 senses row | Do the scope half and the two bare adjectives `smelly` and `loud` now; the per-sense prose lines stay 5.0 and land on the same traits | Now |
 | R7 | Row 3 — Chord word for an unremovable wearable | None; the `on the player taking off → refuse` clause is the idiom | None |
 | R8 | Row 4 — Chord words for NPC carrying capacity and gift preferences | None for either; capacity is "out" per the 2026-10-12 checklist, refusals are clauses | None |
-| R9 | Row 5 — retire talking's pre-ADR-320 `conversation` property | Not in #664; file a separate issue | Separate issue |
-| R10 | ADR | One ADR after the rulings, covering R5/R6 (sensory traits) and the Chord words of R1/R4 | One ADR, before Phase 3 |
+| R9 | Row 5 — retire talking's pre-ADR-320 `conversation` property | Not in #664; file a separate issue | Separate issue — filed as #665 (2026-11-08) |
+| R10 | ADR | One ADR after the rulings, covering R5/R6 (sensory traits) and the Chord words of R1/R4 | One ADR, before Phase 3 — ADR-392, PROPOSED, adr-review 13/13 READY; awaiting acceptance |
 
 ---
 
