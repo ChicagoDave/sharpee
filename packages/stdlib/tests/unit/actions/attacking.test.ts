@@ -12,7 +12,7 @@
 import { describe, test, expect, beforeEach, vi } from 'vitest';
 import { attackingAction } from '../../../src/actions/standard/attacking';
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType, WorldModel, EntityType, IFEntity, AttackBehavior } from '@sharpee/world-model';
+import { TraitType, WorldModel, EntityType, IFEntity, AttackBehavior, WeaponTrait, CombatantTrait, BreakableTrait } from '@sharpee/world-model';
 import { 
   createRealTestContext,
   setupBasicWorld,
@@ -43,12 +43,7 @@ describe('attackingAction - Three-Phase Implementation', () => {
     
     // Create a weapon
     weapon = world.createEntity('sword', EntityType.OBJECT);
-    weapon.add({
-      type: TraitType.WEAPON,
-      minDamage: 5,
-      maxDamage: 10,
-      weaponType: 'blade'
-    });
+    weapon.add(new WeaponTrait({ minDamage: 5, maxDamage: 10, weaponType: 'blade' }));
     world.moveEntity(weapon.id, player.id); // Player is holding it
   });
 
@@ -175,12 +170,7 @@ describe('attackingAction - Three-Phase Implementation', () => {
       // Place weapon in a different room so implicit take can't reach it
       const otherRoom = world.createEntity('other room', EntityType.ROOM);
       const otherWeapon = world.createEntity('axe', EntityType.OBJECT);
-      otherWeapon.add({
-        type: TraitType.WEAPON,
-        minDamage: 3,
-        maxDamage: 8,
-        weaponType: 'blade'
-      });
+      otherWeapon.add(new WeaponTrait({ minDamage: 3, maxDamage: 8, weaponType: 'blade' }));
       world.moveEntity(otherWeapon.id, otherRoom.id); // In a different room, not reachable
 
       const command = createCommand(IFActions.ATTACKING, {
@@ -281,11 +271,7 @@ describe('attackingAction - Three-Phase Implementation', () => {
 
     test('should not infer weapon if explicitly specified', () => {
       // Add combat trait to target
-      target.add({
-        type: TraitType.COMBATANT,
-        health: 100,
-        maxHealth: 100
-      });
+      target.add(new CombatantTrait());
       
       const command = createCommand(IFActions.ATTACKING, {
         entity: target,
@@ -320,11 +306,7 @@ describe('attackingAction - Three-Phase Implementation', () => {
 
     test('should store weapon used in shared data', () => {
       // Add combat trait to target so attack succeeds
-      target.add({
-        type: TraitType.COMBATANT,
-        health: 100,
-        maxHealth: 100
-      });
+      target.add(new CombatantTrait());
       
       const command = createCommand(IFActions.ATTACKING, {
         entity: target,
@@ -341,10 +323,7 @@ describe('attackingAction - Three-Phase Implementation', () => {
     test('should store custom message if provided', () => {
       // Create a breakable target that will have a custom message
       const vase = world.createEntity('vase', EntityType.OBJECT);
-      vase.add({
-        type: TraitType.BREAKABLE,
-        broken: false
-      });
+      vase.add(new BreakableTrait({ broken: false }));
       world.moveEntity(vase.id, room.id);
       
       const command = createCommand(IFActions.ATTACKING, {
@@ -364,10 +343,7 @@ describe('attackingAction - Three-Phase Implementation', () => {
     test('should generate attacked event on success', () => {
       // Use a breakable target (non-combatant) so AttackBehavior handles it
       const vase = world.createEntity('vase', EntityType.OBJECT);
-      vase.add({
-        type: TraitType.BREAKABLE,
-        broken: false
-      });
+      vase.add(new BreakableTrait({ broken: false }));
       world.moveEntity(vase.id, room.id);
 
       const command = createCommand(IFActions.ATTACKING, {
@@ -389,10 +365,7 @@ describe('attackingAction - Three-Phase Implementation', () => {
     test('should generate attacked event with messageId', () => {
       // Use a breakable target (non-combatant) so AttackBehavior handles it
       const vase = world.createEntity('vase', EntityType.OBJECT);
-      vase.add({
-        type: TraitType.BREAKABLE,
-        broken: false
-      });
+      vase.add(new BreakableTrait({ broken: false }));
       world.moveEntity(vase.id, room.id);
 
       const command = createCommand(IFActions.ATTACKING, {
@@ -429,10 +402,7 @@ describe('attackingAction - Three-Phase Implementation', () => {
     test('should include weapon in attacked event when used', () => {
       // Use a breakable target (non-combatant) so AttackBehavior handles it
       const vase = world.createEntity('vase', EntityType.OBJECT);
-      vase.add({
-        type: TraitType.BREAKABLE,
-        broken: false
-      });
+      vase.add(new BreakableTrait({ broken: false }));
       world.moveEntity(vase.id, room.id);
 
       const command = createCommand(IFActions.ATTACKING, {
@@ -474,10 +444,7 @@ describe('attackingAction - Three-Phase Implementation', () => {
   describe('Attack Result Types', () => {
     test('should handle broke result type', () => {
       const vase = world.createEntity('vase', EntityType.OBJECT);
-      vase.add({
-        type: TraitType.BREAKABLE,
-        broken: false
-      });
+      vase.add(new BreakableTrait({ broken: false }));
       world.moveEntity(vase.id, room.id);
 
       const command = createCommand(IFActions.ATTACKING, {

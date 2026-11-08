@@ -13,7 +13,7 @@
 import { describe, test, expect, beforeEach, vi } from 'vitest';
 import { searchingAction } from '../../../src/actions/standard/searching';
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType, ContainerTrait, SupporterTrait, IdentityTrait } from '@sharpee/world-model';
+import { TraitType, ContainerTrait, SupporterTrait, IdentityTrait, OpenableTrait } from '@sharpee/world-model';
 import {
   createRealTestContext,
   setupBasicWorld,
@@ -59,10 +59,7 @@ describe('searchingAction (Golden Pattern)', () => {
       const { world, player, room } = setupBasicWorld();
       const chest = world.createEntity('treasure chest', 'object');
       chest.add(new ContainerTrait());
-      chest.add({
-        type: TraitType.OPENABLE,
-        isOpen: false
-      });
+      chest.add(new OpenableTrait({ isOpen: false }));
       world.moveEntity(chest.id, room.id);
       
       const context = createRealTestContext(searchingAction, world, createCommand(IFActions.SEARCHING, {
@@ -398,10 +395,7 @@ describe('searchingAction (Golden Pattern)', () => {
       const { world, player, room } = setupBasicWorld();
       const safe = world.createEntity('wall safe', 'object');
       safe.add(new ContainerTrait());
-      safe.add({
-        type: TraitType.OPENABLE,
-        isOpen: true // Already open
-      });
+      safe.add(new OpenableTrait({ isOpen: true })); // Already open
       world.moveEntity(safe.id, room.id);
       
       const document = world.createEntity('secret document', 'object');

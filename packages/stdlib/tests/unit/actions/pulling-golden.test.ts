@@ -9,7 +9,7 @@
 import { describe, test, expect, beforeEach } from 'vitest';
 import { pullingAction } from '../../../src/actions/standard/pulling';
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType, WorldModel, IFEntity, PullableTrait } from '@sharpee/world-model';
+import { TraitType, WorldModel, IFEntity, PullableTrait, WearableTrait } from '@sharpee/world-model';
 import {
   createRealTestContext,
   setupBasicWorld,
@@ -84,8 +84,8 @@ describe('pullingAction (Golden Pattern - Simplified)', () => {
     test('should fail when pulling worn items', () => {
       // Create a wearable item
       const shirt = world.createEntity('shirt', 'object');
-      shirt.add({ type: TraitType.WEARABLE, isWorn: true });
-      shirt.add({ type: TraitType.PULLABLE, state: 'ready' });
+      shirt.add(new WearableTrait({ isWorn: true }));
+      shirt.add(new PullableTrait({ state: 'default' }));
       world.moveEntity(shirt.id, player.id);
       
       const command = createCommand(IFActions.PULLING, {
@@ -100,7 +100,7 @@ describe('pullingAction (Golden Pattern - Simplified)', () => {
 
     test('should fail when already pulled', () => {
       const lever = world.createEntity('lever', 'object');
-      lever.add({ type: TraitType.PULLABLE, state: 'pulled' });
+      lever.add(new PullableTrait({ state: 'pulled' }));
       world.moveEntity(lever.id, room.id);
       
       const command = createCommand(IFActions.PULLING, {
@@ -128,7 +128,7 @@ describe('pullingAction (Golden Pattern - Simplified)', () => {
 
     test('should execute pull successfully', () => {
       const rope = world.createEntity('rope', 'object');
-      rope.add({ type: TraitType.PULLABLE, state: 'ready', pullCount: 0 });
+      rope.add(new PullableTrait({ state: 'default', pullCount: 0 }));
       world.moveEntity(rope.id, room.id);
       
       const command = createCommand(IFActions.PULLING, {
@@ -159,12 +159,7 @@ describe('pullingAction (Golden Pattern - Simplified)', () => {
 
     test('should track pull count', () => {
       const cord = world.createEntity('cord', 'object');
-      cord.add({ 
-        type: TraitType.PULLABLE,
-        state: 'ready', 
-        pullCount: 5,
-        pullType: 'cord'
-      });
+      cord.add(new PullableTrait({ state: 'default', pullCount: 5, pullType: 'cord' }));
       world.moveEntity(cord.id, room.id);
       
       const command = createCommand(IFActions.PULLING, {
@@ -199,11 +194,7 @@ describe('pullingAction (Golden Pattern - Simplified)', () => {
       const room = setup.room;
       
       const lever = world.createEntity('lever', 'object');
-      lever.add({ 
-        type: TraitType.PULLABLE,
-        state: 'ready',
-        pullType: 'lever'
-      });
+      lever.add(new PullableTrait({ state: 'default', pullType: 'lever' }));
       world.moveEntity(lever.id, room.id);
       
       const command = createCommand(IFActions.PULLING, {

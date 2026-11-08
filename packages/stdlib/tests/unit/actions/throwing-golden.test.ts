@@ -14,7 +14,7 @@
 import { describe, test, expect, beforeEach, vi } from 'vitest';
 import { throwingAction } from '../../../src/actions/standard/throwing';
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType, WorldModel, Direction, ITrait, IdentityTrait, BreakableTrait, RoomTrait, ActorTrait, ContainerTrait, SupporterTrait } from '@sharpee/world-model';
+import { TraitType, WorldModel, Direction, ITrait, IdentityTrait, BreakableTrait, RoomTrait, ActorTrait, ContainerTrait, SupporterTrait, OpenableTrait } from '@sharpee/world-model';
 import {
   createRealTestContext,
   expectEvent,
@@ -135,7 +135,7 @@ describe('throwingAction (Golden Pattern)', () => {
     test('a throw by the parser\'s Direction constant sails the item through the exit', () => {
       const { world, room, item: coin } = TestData.withInventoryItem('gold coin');
       const field = world.createEntity('North Field', 'object');
-      field.add({ type: TraitType.ROOM });
+      field.add(new RoomTrait());
       room.getTrait(RoomTrait)!.exits = { [Direction.NORTH]: { destination: field.id } };
 
       const command = createCommand(IFActions.THROWING, {
@@ -382,10 +382,7 @@ describe('throwingAction (Golden Pattern)', () => {
       const { world, player, room, item: ball } = TestData.withInventoryItem('rubber ball');
       const box = world.createEntity('open box', 'object');
       box.add(new ContainerTrait());
-      box.add({
-        type: TraitType.OPENABLE,
-        isOpen: true
-      });
+      box.add(new OpenableTrait({ isOpen: true }));
       world.moveEntity(box.id, room.id);
       
       const context = createRealTestContext(throwingAction, world,
@@ -411,10 +408,7 @@ describe('throwingAction (Golden Pattern)', () => {
       const { world, player, room, item: pebble } = TestData.withInventoryItem('small pebble');
       const chest = world.createEntity('closed chest', 'object');
       chest.add(new ContainerTrait());
-      chest.add({
-        type: TraitType.OPENABLE,
-        isOpen: false
-      });
+      chest.add(new OpenableTrait({ isOpen: false }));
       world.moveEntity(chest.id, room.id);
       
       const context = createRealTestContext(throwingAction, world,
@@ -684,7 +678,7 @@ describe('World State Mutations', () => {
     const { world, player, room, item: ball } = TestData.withInventoryItem('rubber ball');
     const box = world.createEntity('open box', 'object');
     box.add(new ContainerTrait());
-    box.add({ type: TraitType.OPENABLE, isOpen: true });
+    box.add(new OpenableTrait({ isOpen: true }));
     world.moveEntity(box.id, room.id);
 
     // VERIFY PRECONDITION: ball is in player's inventory
@@ -709,7 +703,7 @@ describe('World State Mutations', () => {
     const { world, player, room, item: pebble } = TestData.withInventoryItem('small pebble');
     const chest = world.createEntity('closed chest', 'object');
     chest.add(new ContainerTrait());
-    chest.add({ type: TraitType.OPENABLE, isOpen: false });
+    chest.add(new OpenableTrait({ isOpen: false }));
     world.moveEntity(chest.id, room.id);
 
     // VERIFY PRECONDITION: pebble is in player's inventory

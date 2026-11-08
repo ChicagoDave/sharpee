@@ -13,7 +13,7 @@
 import { describe, test, expect } from 'vitest';
 import { inventoryAction } from '../../../src/actions/standard/inventory';
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType, ActorTrait } from '@sharpee/world-model';
+import { TraitType, ActorTrait, WearableTrait } from '@sharpee/world-model';
 import {
   createRealTestContext,
   setupBasicWorld,
@@ -100,18 +100,10 @@ describe('inventoryAction (Golden Pattern)', () => {
       const { world, player, room } = setupBasicWorld();
       
       const cloak = world.createEntity('dark cloak', 'object');
-      cloak.add({
-        type: TraitType.WEARABLE,
-        worn: true,
-        bodyParts: ['torso']
-      });
+      cloak.add(new WearableTrait({ isWorn: true, bodyPart: 'torso' }));
       
       const boots = world.createEntity('leather boots', 'object');
-      boots.add({
-        type: TraitType.WEARABLE,
-        worn: true,
-        bodyParts: ['feet']
-      });
+      boots.add(new WearableTrait({ isWorn: true, bodyPart: 'feet' }));
       
       world.moveEntity(cloak.id, player.id);
       world.moveEntity(boots.id, player.id);
@@ -153,19 +145,11 @@ describe('inventoryAction (Golden Pattern)', () => {
       
       // Worn items
       const hat = world.createEntity('wizard hat', 'object');
-      hat.add({
-        type: TraitType.WEARABLE,
-        worn: true,
-        bodyParts: ['head']
-      });
+      hat.add(new WearableTrait({ isWorn: true, bodyPart: 'head' }));
       
       // Wearable but not currently worn
       const gloves = world.createEntity('silk gloves', 'object');
-      gloves.add({
-        type: TraitType.WEARABLE,
-        worn: false,
-        bodyParts: ['hands']
-      });
+      gloves.add(new WearableTrait({ isWorn: false, bodyPart: 'hands' }));
       
       world.moveEntity(key.id, player.id);
       world.moveEntity(coin.id, player.id);
@@ -316,11 +300,7 @@ describe('inventoryAction (Golden Pattern)', () => {
       
       const sword = world.createEntity('silver sword', 'object');
       const armor = world.createEntity('plate armor', 'object');
-      armor.add({
-        type: TraitType.WEARABLE,
-        worn: true,
-        bodyParts: ['torso']
-      });
+      armor.add(new WearableTrait({ isWorn: true, bodyPart: 'torso' }));
       
       world.moveEntity(sword.id, player.id);
       world.moveEntity(armor.id, player.id);
@@ -357,11 +337,7 @@ describe('Testing Pattern Examples for Inventory', () => {
     items.forEach(itemData => {
       const item = world.createEntity(itemData.name, 'object');
       if (itemData.wearable) {
-        item.add({
-          type: TraitType.WEARABLE,
-          worn: itemData.worn || false,
-          bodyParts: itemData.bodyParts
-        });
+        item.add(new WearableTrait({ isWorn: itemData.worn || false, bodyPart: itemData.bodyParts?.[0] }));
       }
       world.moveEntity(item.id, player.id);
     });

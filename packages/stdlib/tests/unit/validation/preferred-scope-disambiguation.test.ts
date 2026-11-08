@@ -20,6 +20,7 @@ import {
   WorldModel,
   ActorTrait,
   IdentityTrait,
+  RoomTrait,
 } from '@sharpee/world-model';
 import { LanguageProvider } from '@sharpee/if-domain';
 
@@ -77,7 +78,7 @@ describe('CommandValidator — preferredScope disambiguation (Phase 6/10)', () =
 
     player = author.createEntity('yourself', EntityType.ACTOR);
     room = author.createEntity('Test Room', EntityType.ROOM);
-    room.add({ type: TraitType.ROOM });
+    room.add(new RoomTrait());
     author.moveEntity(player.id, room.id);
     player.add(new ActorTrait({ isPlayable: true }));
     world.setPlayer(player.id);

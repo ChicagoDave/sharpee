@@ -12,7 +12,7 @@
 import { describe, test, expect, beforeEach } from 'vitest';
 import { listeningAction } from '../../../src/actions/standard/listening';
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType, ContainerTrait } from '@sharpee/world-model';
+import { TraitType, ContainerTrait, SwitchableTrait, EdibleTrait } from '@sharpee/world-model';
 import {
   createRealTestContext,
   setupBasicWorld,
@@ -53,10 +53,7 @@ describe('listeningAction (Golden Pattern)', () => {
     test('should detect sound from active device', () => {
       const { world, player, room } = setupBasicWorld();
       const fan = world.createEntity('electric fan', 'object');
-      fan.add({
-        type: TraitType.SWITCHABLE,
-        isOn: true
-      });
+      fan.add(new SwitchableTrait({ isOn: true }));
       
       // Put fan in the same room as player
       world.moveEntity(fan.id, room.id);
@@ -82,10 +79,7 @@ describe('listeningAction (Golden Pattern)', () => {
     test('should detect no sound from inactive device', () => {
       const { world, player, room } = setupBasicWorld();
       const radio = world.createEntity('portable radio', 'object');
-      radio.add({
-        type: TraitType.SWITCHABLE,
-        isOn: false
-      });
+      radio.add(new SwitchableTrait({ isOn: false }));
       
       // Put radio in the same room as player
       world.moveEntity(radio.id, room.id);
@@ -143,10 +137,7 @@ describe('listeningAction (Golden Pattern)', () => {
       bottle.add(new ContainerTrait());
       
       const water = world.createEntity('water', 'object');
-      water.add({
-        type: TraitType.EDIBLE,
-        liquid: true
-      });
+      water.add(new EdibleTrait({ liquid: true }));
       
       // Put bottle in player's hands and water in bottle
       world.moveEntity(bottle.id, player.id);
@@ -239,16 +230,10 @@ describe('listeningAction (Golden Pattern)', () => {
       const { world, player, room } = setupBasicWorld();
       
       const radio = world.createEntity('old radio', 'object');
-      radio.add({
-        type: TraitType.SWITCHABLE,
-        isOn: true
-      });
+      radio.add(new SwitchableTrait({ isOn: true }));
       
       const fan = world.createEntity('ceiling fan', 'object');
-      fan.add({
-        type: TraitType.SWITCHABLE,
-        isOn: true
-      });
+      fan.add(new SwitchableTrait({ isOn: true }));
       
       // Put devices in the room
       world.moveEntity(radio.id, room.id);
@@ -273,16 +258,10 @@ describe('listeningAction (Golden Pattern)', () => {
       const { world, player, room } = setupBasicWorld();
       
       const radio = world.createEntity('broken radio', 'object');
-      radio.add({
-        type: TraitType.SWITCHABLE,
-        isOn: false
-      });
+      radio.add(new SwitchableTrait({ isOn: false }));
       
       const tv = world.createEntity('television', 'object');
-      tv.add({
-        type: TraitType.SWITCHABLE,
-        isOn: false
-      });
+      tv.add(new SwitchableTrait({ isOn: false }));
       
       // Put devices in the room
       world.moveEntity(radio.id, room.id);
@@ -305,16 +284,10 @@ describe('listeningAction (Golden Pattern)', () => {
       const { world, player, room } = setupBasicWorld();
       
       const activeRadio = world.createEntity('portable radio', 'object');
-      activeRadio.add({
-        type: TraitType.SWITCHABLE,
-        isOn: true
-      });
+      activeRadio.add(new SwitchableTrait({ isOn: true }));
       
       const inactiveTv = world.createEntity('old television', 'object');
-      inactiveTv.add({
-        type: TraitType.SWITCHABLE,
-        isOn: false
-      });
+      inactiveTv.add(new SwitchableTrait({ isOn: false }));
       
       // Put devices in the room
       world.moveEntity(activeRadio.id, room.id);
@@ -345,10 +318,7 @@ describe('listeningAction (Golden Pattern)', () => {
       
       const keys = world.createEntity('brass keys', 'object');
       const potion = world.createEntity('magic potion', 'object');
-      potion.add({
-        type: TraitType.EDIBLE,
-        liquid: true
-      });
+      potion.add(new EdibleTrait({ liquid: true }));
       
       // Put bag in player's hands and items in bag
       world.moveEntity(bag.id, player.id);
@@ -376,10 +346,7 @@ describe('listeningAction (Golden Pattern)', () => {
       
       // A device that is also a container
       const musicBox = world.createEntity('music box', 'object');
-      musicBox.add({
-        type: TraitType.SWITCHABLE,
-        isOn: true
-      });
+      musicBox.add(new SwitchableTrait({ isOn: true }));
       musicBox.add(new ContainerTrait());
       
       // Put music box in player's hands

@@ -11,7 +11,7 @@
 import { describe, test, expect, beforeEach, vi } from 'vitest';
 import { examiningAction } from '../../../src/actions/standard/examining'; // Now from folder
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType, ContainerTrait, SupporterTrait, IdentityTrait } from '@sharpee/world-model';
+import { TraitType, ContainerTrait, SupporterTrait, IdentityTrait, RoomTrait, OpenableTrait, SwitchableTrait } from '@sharpee/world-model';
 import {
   createRealTestContext,
   expectEvent,
@@ -68,7 +68,7 @@ describe('examiningAction (Golden Pattern)', () => {
 
       // Move object to a different room so it's not visible
       const otherRoom = world.createEntity('Other Room', 'room');
-      otherRoom.add({ type: TraitType.ROOM });
+      otherRoom.add(new RoomTrait());
       world.moveEntity(object.id, otherRoom.id);
 
       const command = createCommand(IFActions.EXAMINING, {
@@ -211,10 +211,7 @@ describe('examiningAction (Golden Pattern)', () => {
 
       const box = world.createEntity('wooden box', 'container');
       box.add(new ContainerTrait());
-      box.add({
-        type: TraitType.OPENABLE,
-        isOpen: true
-      });
+      box.add(new OpenableTrait({ isOpen: true }));
       box.add(new IdentityTrait({ name: 'wooden box', description: 'A sturdy wooden box.' }));
       world.moveEntity(box.id, room.id);
 
@@ -485,14 +482,8 @@ describe('examiningAction (Golden Pattern)', () => {
       displayCase.add(new ContainerTrait());
       displayCase.add(new SupporterTrait());
       displayCase.add(new IdentityTrait({ name: 'display case', description: 'A lit glass display case.' }));
-      displayCase.add({
-        type: TraitType.OPENABLE,
-        isOpen: true
-      });
-      displayCase.add({
-        type: TraitType.SWITCHABLE,
-        isOn: true
-      });
+      displayCase.add(new OpenableTrait({ isOpen: true }));
+      displayCase.add(new SwitchableTrait({ isOn: true }));
       world.moveEntity(displayCase.id, room.id);
 
       const trophy = world.createEntity('golden trophy', 'object');
@@ -678,7 +669,7 @@ describe('Concealment filtering (platform-issue-sweep Phase 2)', () => {
 
     const box = world.createEntity('wooden box', 'container');
     box.add(new ContainerTrait());
-    box.add({ type: TraitType.OPENABLE, isOpen: true });
+    box.add(new OpenableTrait({ isOpen: true }));
     world.moveEntity(box.id, room.id);
 
     const coin = world.createEntity('gold coin', 'object');

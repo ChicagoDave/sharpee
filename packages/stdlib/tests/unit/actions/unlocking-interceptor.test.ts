@@ -26,11 +26,7 @@ const setup = () => {
   const { world, player, room } = setupBasicWorld();
   const key = world.createEntity('iron key', 'object');
   const chest = world.createEntity('iron chest', 'object');
-  chest.add({
-    type: TraitType.LOCKABLE,
-    isLocked: true,
-    keyId: key.id
-  });
+  chest.add(new LockableTrait({ isLocked: true, keyId: key.id }));
   // Inert marker trait — the interceptor registration key.
   chest.add({ type: TEST_MARKER_TRAIT } as any);
   world.moveEntity(chest.id, room.id);
@@ -184,7 +180,7 @@ describe('Key slot (ADR-229 R2)', () => {
     const { world, player, room } = setupBasicWorld();
     // Keyless lock so UNLOCK CHEST is valid with no key in the command.
     const chest = world.createEntity('plain chest', 'object');
-    chest.add({ type: TraitType.LOCKABLE, isLocked: true });
+    chest.add(new LockableTrait({ isLocked: true }));
     world.moveEntity(chest.id, room.id);
     const key = world.createEntity('iron key', 'object');
     // Inert marker trait — a distinct interceptor registration key for the key slot.

@@ -24,7 +24,7 @@ describe('ADR-240: going consults the evaluator registry first', () => {
   test('a registered exit.blocked → true blocks with NO trait-map entry, message from exit.message', () => {
     const { world, room } = setupBasicWorld();
     const room2 = world.createEntity('North Field', 'object');
-    room2.add({ type: TraitType.ROOM });
+    room2.add(new RoomTrait());
     room.getTrait(RoomTrait)!.exits = { [Direction.NORTH]: { destination: room2.id } };
 
     let sealed = true;
@@ -45,7 +45,7 @@ describe('ADR-240: going consults the evaluator registry first', () => {
   test('a registered exit.blocked → false overrides a STAMPED trait-map block', () => {
     const { world, room } = setupBasicWorld();
     const room2 = world.createEntity('North Field', 'object');
-    room2.add({ type: TraitType.ROOM });
+    room2.add(new RoomTrait());
     room.getTrait(RoomTrait)!.exits = { [Direction.NORTH]: { destination: room2.id } };
     RoomBehavior.blockExit(room, Direction.NORTH, 'Stamped shut.');
 
@@ -57,7 +57,7 @@ describe('ADR-240: going consults the evaluator registry first', () => {
   test('a block with no phrase of its own refuses with lang\'s stock line, not an English fallback', () => {
     const { world, room, player } = setupBasicWorld();
     const room2 = world.createEntity('North Field', 'object');
-    room2.add({ type: TraitType.ROOM });
+    room2.add(new RoomTrait());
     room.getTrait(RoomTrait)!.exits = { [Direction.NORTH]: { destination: room2.id } };
     world.registerEvaluator(exitBlockedKey(room.id, Direction.NORTH), () => true);
 
@@ -71,7 +71,7 @@ describe('ADR-240: going consults the evaluator registry first', () => {
   test('unregistered rooms fall through to the trait map unchanged', () => {
     const { world, room } = setupBasicWorld();
     const room2 = world.createEntity('North Field', 'object');
-    room2.add({ type: TraitType.ROOM });
+    room2.add(new RoomTrait());
     room.getTrait(RoomTrait)!.exits = { [Direction.NORTH]: { destination: room2.id } };
     RoomBehavior.blockExit(room, Direction.NORTH, 'Stamped shut.');
 

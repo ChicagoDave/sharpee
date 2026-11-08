@@ -183,10 +183,7 @@ describe('removingAction (Golden Pattern)', () => {
       const gem = world.createEntity('ruby', 'object');
       const chest = world.createEntity('treasure chest', 'object');
       chest.add(new ContainerTrait());
-      chest.add({ 
-        type: TraitType.OPENABLE,
-        isOpen: true  // Start open to allow placing gem
-      });
+      chest.add(new OpenableTrait({ isOpen: true })); // Start open to allow placing gem
       
       world.moveEntity(chest.id, room.id);
       world.moveEntity(gem.id, chest.id);  // Gem in chest
@@ -217,10 +214,7 @@ describe('removingAction (Golden Pattern)', () => {
       const coin = world.createEntity('silver coin', 'object');
       const box = world.createEntity('small box', 'object');
       box.add(new ContainerTrait());
-      box.add({ 
-        type: TraitType.OPENABLE,
-        isOpen: true
-      });
+      box.add(new OpenableTrait({ isOpen: true }));
       
       world.moveEntity(box.id, room.id);
       world.moveEntity(coin.id, box.id);
@@ -546,7 +540,7 @@ describe('World State Mutations', () => {
     const coin = world.createEntity('gold doubloon', 'object');
     const chest = world.createEntity('pirate chest', 'object');
     chest.add(new ContainerTrait());
-    chest.add({ type: TraitType.OPENABLE, isOpen: true });
+    chest.add(new OpenableTrait({ isOpen: true }));
 
     world.moveEntity(chest.id, room.id);
     world.moveEntity(coin.id, chest.id);
@@ -603,7 +597,7 @@ describe('World State Mutations', () => {
     const ring = world.createEntity('diamond ring', 'object');
     const casket = world.createEntity('jewelry casket', 'object');
     casket.add(new ContainerTrait());
-    casket.add({ type: TraitType.OPENABLE, isOpen: true }); // Start open to place item
+    casket.add(new OpenableTrait({ isOpen: true })); // Start open to place item
 
     world.moveEntity(casket.id, room.id);
     world.moveEntity(ring.id, casket.id);

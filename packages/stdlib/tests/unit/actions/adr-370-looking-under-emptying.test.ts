@@ -22,7 +22,7 @@
  */
 
 import { describe, test, expect } from 'vitest';
-import { TraitType, IdentityBehavior, IdentityTrait, ContainerTrait, SupporterTrait } from '@sharpee/world-model';
+import { TraitType, IdentityBehavior, IdentityTrait, ContainerTrait, SupporterTrait, OpenableTrait } from '@sharpee/world-model';
 import { lookingUnderAction, lookingUnderLifecycle } from '../../../src/actions/standard/looking_under';
 import { emptyingAction, emptyingLifecycle } from '../../../src/actions/standard/emptying';
 import { interceptorConsultingActionIds } from '../../../src/actions/lifecycle/registry';
@@ -221,7 +221,7 @@ describe('emptyingAction (ADR-370 D6)', () => {
     const pebble = world.createEntity('pebble', 'object');
     world.moveEntity(pebble.id, shutBox.id);
     // Close it after the pebble is inside: a closed container refuses a move in.
-    shutBox.add({ type: TraitType.OPENABLE, isOpen: false });
+    shutBox.add(new OpenableTrait({ isOpen: false }));
 
     const cases: Array<[Parameters<typeof createCommand>[1], string]> = [
       [{ entity: rock }, 'not_a_container'],

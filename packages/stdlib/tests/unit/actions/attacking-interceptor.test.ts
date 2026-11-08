@@ -13,7 +13,7 @@
 import { describe, test, expect } from 'vitest';
 import { attackingAction, attackingLifecycle } from '../../../src/actions/standard/attacking';
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType, ActorTrait } from '@sharpee/world-model';
+import { TraitType, ActorTrait, CombatantTrait } from '@sharpee/world-model';
 import { setupBasicWorld, createRealTestContext, createCommand, TEST_MARKER_TRAIT, SECOND_TEST_MARKER_TRAIT } from '../../test-utils';
 import { runValidatePhase, runExecutePhase, runReportPhase } from '../../../src/actions/lifecycle/phase-runner';
 
@@ -26,7 +26,7 @@ describe('Attacking interceptor surface (ADR-228)', () => {
     const { world, room } = setupBasicWorld();
     const troll = world.createEntity('nasty troll', 'actor');
     troll.add(new ActorTrait());
-    troll.add({ type: TraitType.COMBATANT } as any);
+    troll.add(new CombatantTrait());
     // Inert marker trait — the target's interceptor registration key.
     troll.add({ type: TEST_MARKER_TRAIT } as any);
     world.moveEntity(troll.id, room.id);
@@ -93,7 +93,7 @@ describe('Attacking interceptor surface (ADR-228)', () => {
     const { world, room } = setupBasicWorld();
     const troll = world.createEntity('meek troll', 'actor');
     troll.add(new ActorTrait());
-    troll.add({ type: TraitType.COMBATANT } as any);
+    troll.add(new CombatantTrait());
     world.moveEntity(troll.id, room.id);
 
     const command = createCommand(IFActions.ATTACKING, { entity: troll });

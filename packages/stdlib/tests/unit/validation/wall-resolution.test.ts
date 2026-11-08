@@ -30,6 +30,7 @@ import {
   WallEntity,
   WorldModel,
   ActorTrait,
+  RoomTrait,
 } from '@sharpee/world-model';
 import { LanguageProvider } from '@sharpee/if-domain';
 
@@ -56,7 +57,7 @@ const mockLanguageProvider = {
 
 function makeRoom(author: AuthorModel, displayName: string): IFEntity {
   const room = author.createEntity(displayName, EntityType.ROOM);
-  room.add({ type: TraitType.ROOM });
+  room.add(new RoomTrait());
   return room;
 }
 

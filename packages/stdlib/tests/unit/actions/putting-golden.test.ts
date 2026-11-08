@@ -11,7 +11,7 @@
 import { describe, test, expect, beforeEach, vi } from 'vitest';
 import { puttingAction } from '../../../src/actions/standard/putting';
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType, EntityType, ContainerTrait, SupporterTrait, IdentityTrait } from '@sharpee/world-model';
+import { TraitType, EntityType, ContainerTrait, SupporterTrait, IdentityTrait, OpenableTrait } from '@sharpee/world-model';
 import {
   createRealTestContext,
   setupBasicWorld,
@@ -197,10 +197,7 @@ describe('puttingAction (Golden Pattern)', () => {
       const gem = world.createEntity('ruby', 'object');
       const box = world.createEntity('jewel box', 'object');
       box.add(new ContainerTrait());
-      box.add({
-        type: TraitType.OPENABLE,
-        isOpen: true
-      });
+      box.add(new OpenableTrait({ isOpen: true }));
       
       world.moveEntity(gem.id, player.id);
       world.moveEntity(box.id, room.id);
@@ -256,10 +253,7 @@ describe('puttingAction (Golden Pattern)', () => {
       const coin = world.createEntity('silver coin', EntityType.OBJECT);
       const chest = world.createEntity('locked chest', EntityType.CONTAINER);
       chest.add(new ContainerTrait());
-      chest.add({ 
-        type: TraitType.OPENABLE,
-        isOpen: false  // Closed
-      });
+      chest.add(new OpenableTrait({ isOpen: false })); // Closed
       
       world.moveEntity(coin.id, player.id);
       world.moveEntity(chest.id, room.id);
@@ -644,7 +638,7 @@ describe('World State Mutations', () => {
     const coin = world.createEntity('silver coin', 'object');
     const chest = world.createEntity('locked chest', 'object');
     chest.add(new ContainerTrait());
-    chest.add({ type: TraitType.OPENABLE, isOpen: false });
+    chest.add(new OpenableTrait({ isOpen: false }));
 
     world.moveEntity(coin.id, player.id);
     world.moveEntity(chest.id, room.id);
@@ -887,7 +881,7 @@ describe('Multi-object putting drives per-item container hooks (ADR-228 D4 — t
     const { world, player, room } = setupBasicWorld();
     const box = world.createEntity('wooden box', 'object');
     box.add(new ContainerTrait());
-    box.add({ type: TraitType.OPENABLE, isOpen: true });
+    box.add(new OpenableTrait({ isOpen: true }));
     world.moveEntity(box.id, room.id);
     const coin = world.createEntity('copper coin', 'object');
     const gem = world.createEntity('green gem', 'object');

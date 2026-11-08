@@ -9,7 +9,7 @@ import { describe, test, expect, beforeEach } from 'vitest';
 import { StandardActionRegistry } from '../../src/actions';
 import { waitingAction } from '../../src/actions/standard/waiting';
 import { CommandValidator } from '../../src/validation/command-validator';
-import { WorldModel, IFEntity, TraitType, ActorTrait } from '@sharpee/world-model';
+import { WorldModel, IFEntity, TraitType, ActorTrait, RoomTrait } from '@sharpee/world-model';
 import { createRealTestContext } from '../test-utils';
 import type { 
   LanguageProvider, 
@@ -105,7 +105,7 @@ describe('Action Integration Test Pattern', () => {
     player.add(new ActorTrait({ isPlayer: true }));
     world.setPlayer(player.id); // Set player in world model
     const room = world.createEntity('Test Room', 'room');
-    room.add({ type: TraitType.ROOM });
+    room.add(new RoomTrait());
     world.moveEntity(player.id, room.id);
     
     // Setup validator
@@ -209,7 +209,7 @@ describe('Testing Complex Actions with Dependencies', () => {
     player.add(new ActorTrait({ isPlayer: true }));
     world.setPlayer(player.id); // Set player in world model
     const room = world.createEntity('Test Room', 'room');
-    room.add({ type: TraitType.ROOM });
+    room.add(new RoomTrait());
     const ball = world.createEntity('red ball', 'object');
     
     world.moveEntity(player.id, room.id);

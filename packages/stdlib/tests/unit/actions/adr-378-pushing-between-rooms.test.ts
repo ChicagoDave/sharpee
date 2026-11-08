@@ -21,6 +21,8 @@ import {
   IFEntity,
   exitHiddenKey,
   ContainerTrait,
+  OpenableTrait,
+  SwitchableTrait,
   type Admittance,
 } from '@sharpee/world-model';
 import { pushingAction } from '../../../src/actions/standard/pushing';
@@ -56,7 +58,7 @@ function setup(options: { admits?: string[]; exitAdmits?: string[]; closedDoor?:
   if (options.closedDoor) {
     door = world.createEntity('dock door', 'door');
     door.add(new DoorTrait({ room1: room.id, room2: dock.id }));
-    door.add({ type: TraitType.OPENABLE, isOpen: false } as any);
+    door.add(new OpenableTrait({ isOpen: false }));
   }
   world.connectRooms(room.id, dock.id, Direction.NORTH, door?.id, { oneWay: options.oneWay });
   if (options.exitAdmits) room.getTrait(RoomTrait)!.exits[Direction.NORTH]!.admits = admittance(options.exitAdmits);
@@ -140,7 +142,7 @@ describe('push <thing> <direction> (ADR-378 D6, D7)', () => {
 
   test('a switchable pushable pushed with a direction it cannot take refuses and is not toggled', () => {
     const { world, room, cart } = setup();
-    cart.add({ type: TraitType.SWITCHABLE, isOn: false } as any);
+    cart.add(new SwitchableTrait({ isOn: false }));
 
     const events = push(world, cart, Direction.NORTH);
 
@@ -203,7 +205,7 @@ describe('push <thing> <direction> (ADR-378 D6, D7)', () => {
 describe('push <thing> with no direction is the press (ADR-378 D6)', () => {
   test('a switchable thing is toggled and says so', () => {
     const { world, cart } = setup();
-    cart.add({ type: TraitType.SWITCHABLE, isOn: false } as any);
+    cart.add(new SwitchableTrait({ isOn: false }));
     const events = push(world, cart);
     expect((cart.get(TraitType.SWITCHABLE) as { isOn: boolean }).isOn).toBe(true);
     expect(messageIds(events)).toContain('if.action.pushing.switch_toggled');
@@ -230,7 +232,7 @@ describe('going by a way the home answers (ADR-378 D0, D1a, D3)', () => {
     loft.add(new RoomTrait());
     const hatch = world.createEntity('hatch', 'door');
     hatch.add(new DoorTrait({ room1: room.id, room2: loft.id }));
-    hatch.add({ type: TraitType.OPENABLE, isOpen: false } as any);
+    hatch.add(new OpenableTrait({ isOpen: false }));
     world.connectRooms(room.id, loft.id, 'passage:climb-the-rope', hatch.id, { oneWay: true });
 
     expect(messageIds(go(world, 'passage:climb-the-rope'))).toContain('if.action.going.door_closed');

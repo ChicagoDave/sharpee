@@ -16,7 +16,7 @@ import {
   IFEntity,
   TraitType,
   type IValidatedCommand as ValidatedCommand,
-  IdentityTrait, ActorTrait, ContainerTrait } from '@sharpee/world-model';
+  IdentityTrait, ActorTrait, ContainerTrait, RoomTrait } from '@sharpee/world-model';
 import { registerStandardCapabilities } from '../../src/capabilities';
 import { createActionContext } from '../../src/actions/enhanced-context';
 import { Action, ActionContext } from '../../src/actions/enhanced-types';
@@ -41,7 +41,7 @@ export function setupBasicWorld(options: {
   
   // Create room
   const room = world.createEntity('Test Room', 'room');
-  room.add({ type: TraitType.ROOM });
+  room.add(new RoomTrait());
   
   // Create player
   const player = world.createEntity('yourself', 'actor');

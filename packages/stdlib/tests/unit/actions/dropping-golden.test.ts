@@ -11,7 +11,7 @@
 import { describe, test, expect } from 'vitest';
 import { droppingAction } from '../../../src/actions/standard/dropping'; // Now from folder
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType, IParsedCommand, BreakableTrait, ContainerTrait, SupporterTrait } from '@sharpee/world-model';
+import { TraitType, IParsedCommand, BreakableTrait, ContainerTrait, SupporterTrait, WearableTrait, OpenableTrait, EnterableTrait } from '@sharpee/world-model';
 import {
   createRealTestContext,
   setupBasicWorld,
@@ -104,11 +104,7 @@ describe('droppingAction (Golden Pattern)', () => {
       const { world, player, room } = setupBasicWorld();
       
       const hat = world.createEntity('blue hat', 'object');
-      hat.add({
-        type: TraitType.WEARABLE,
-        worn: true,
-        slot: 'head'
-      });
+      hat.add(new WearableTrait({ isWorn: true, slot: 'head' }));
       world.moveEntity(hat.id, player.id);
       
       const command = createCommand(IFActions.DROPPING, {
@@ -194,10 +190,7 @@ describe('droppingAction (Golden Pattern)', () => {
       
       const box = world.createEntity('wooden box', 'object');
       box.add(new ContainerTrait());
-      box.add({ 
-        type: TraitType.OPENABLE,
-        isOpen: true
-      });
+      box.add(new OpenableTrait({ isOpen: true }));
       world.moveEntity(box.id, room.id);
       
       const gem = world.createEntity('ruby', 'object');
@@ -315,7 +308,7 @@ describe('droppingAction (Golden Pattern)', () => {
       const { world, player, room } = setupBasicWorld();
       const crate = world.createEntity('crate', 'object');
       crate.add(new ContainerTrait());
-      crate.add({ type: TraitType.ENTERABLE });
+      crate.add(new EnterableTrait());
       world.moveEntity(crate.id, room.id);
       world.moveEntity(player.id, crate.id);
       const jar = world.createEntity('specimen jar', 'object');
@@ -404,7 +397,7 @@ describe('droppingAction (Golden Pattern)', () => {
 
       const box = world.createEntity('wooden box', 'object');
       box.add(new ContainerTrait());
-      box.add({ type: TraitType.OPENABLE, isOpen: true });
+      box.add(new OpenableTrait({ isOpen: true }));
       world.moveEntity(box.id, room.id);
 
       const gem = world.createEntity('ruby', 'object');
@@ -476,11 +469,7 @@ describe('droppingAction (Golden Pattern)', () => {
       const { world, player, room } = setupBasicWorld();
 
       const hat = world.createEntity('blue hat', 'object');
-      hat.add({
-        type: TraitType.WEARABLE,
-        worn: true,
-        slot: 'head'
-      });
+      hat.add(new WearableTrait({ isWorn: true, slot: 'head' }));
       world.moveEntity(hat.id, player.id);
 
       // VERIFY PRECONDITION: hat is in player inventory
@@ -537,11 +526,7 @@ describe('Dropping Action Edge Cases', () => {
     
     // Wearable item that is not currently worn
     const coat = world.createEntity('winter coat', 'object');
-    coat.add({
-      type: TraitType.WEARABLE,
-      worn: false,  // Not worn
-      slot: 'body'
-    });
+    coat.add(new WearableTrait({ isWorn: false, slot: 'body' })); // Not worn
     world.moveEntity(coat.id, player.id);
     
     const command = createCommand(IFActions.DROPPING, {

@@ -8,7 +8,7 @@
 import { describe, test, expect, beforeEach } from 'vitest';
 import { CommandValidator } from '../../../src/validation/command-validator';
 import { StandardActionRegistry } from '../../../src/actions/registry';
-import { AuthorModel, WorldModel, IFEntity, TraitType, EntityType, IParsedCommand, ActorTrait, IdentityTrait, ContainerTrait } from '@sharpee/world-model';
+import { AuthorModel, WorldModel, IFEntity, TraitType, EntityType, IParsedCommand, ActorTrait, IdentityTrait, ContainerTrait, RoomTrait } from '@sharpee/world-model';
 import { LanguageProvider } from '@sharpee/if-domain';
 import { createCommand, createParserWithWorld, parseCommand } from '../../test-utils';
 import { StandardScopeResolver } from '../../../src/scope/scope-resolver';
@@ -66,7 +66,7 @@ describe('CommandValidator (Golden Pattern)', () => {
     // Create player and room using AuthorModel to bypass sanity checks
     player = author.createEntity('yourself', EntityType.ACTOR);
     room = author.createEntity('Test Room', EntityType.ROOM);
-    room.add({ type: TraitType.ROOM });
+    room.add(new RoomTrait());
     author.moveEntity(player.id, room.id);
     player.add(new ActorTrait({ isPlayable: true }));
     world.setPlayer(player.id);
@@ -365,7 +365,7 @@ describe('CommandValidator (Golden Pattern)', () => {
       
       // Create another room and put ball there
       const room2 = author.createEntity('Other Room', EntityType.ROOM);
-      room2.add({ type: TraitType.ROOM });
+      room2.add(new RoomTrait());
       author.moveEntity(ball.id, room2.id);
       
       const parsed = parseCommand('take red ball', world);

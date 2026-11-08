@@ -12,7 +12,7 @@
 import { describe, test, expect, beforeEach } from 'vitest';
 import { goingAction } from '../../../src/actions/standard/going'; // Now from folder
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType, WorldModel, Direction, DirectionType, RoomTrait, IFEntity, ActorTrait, ContainerTrait, SceneryTrait } from '@sharpee/world-model';
+import { TraitType, WorldModel, Direction, DirectionType, RoomTrait, IFEntity, ActorTrait, ContainerTrait, SceneryTrait, OpenableTrait, LockableTrait, LightSourceTrait, passageKey } from '@sharpee/world-model';
 import {
   createRealTestContext,
   setupBasicWorld,
@@ -39,7 +39,7 @@ describe('goingAction (Golden Pattern)', () => {
     test('should use report() for ALL event generation', () => {
       const { world, player, room } = setupBasicWorld();
       const room2 = world.createEntity('Room 2', 'object');
-      room2.add({ type: TraitType.ROOM });
+      room2.add(new RoomTrait());
       
       const roomTrait = room.getTrait(RoomTrait)!;
       roomTrait.exits = {
@@ -131,10 +131,7 @@ describe('goingAction (Golden Pattern)', () => {
       world.setPlayer(player.id);
 
       const room = world.createEntity('Empty Room', 'object');
-      room.add({
-        type: TraitType.ROOM
-        // No exits defined
-      });
+      room.add(new RoomTrait()); // No exits defined
       world.moveEntity(player.id, room.id);
 
       const command = createCommand(IFActions.GOING);
@@ -158,14 +155,9 @@ describe('goingAction (Golden Pattern)', () => {
 
       const room = world.createEntity('Room with South Exit', 'object');
       const room2 = world.createEntity('South Room', 'object');
-      room2.add({ type: TraitType.ROOM });
+      room2.add(new RoomTrait());
 
-      room.add({
-        type: TraitType.ROOM,
-        exits: {
-          [Direction.SOUTH]: { destination: room2.id }
-        }
-      });
+      room.add(new RoomTrait({ exits: { [Direction.SOUTH]: { destination: room2.id } } }));
       world.moveEntity(player.id, room.id);
 
       const command = createCommand(IFActions.GOING);
@@ -189,21 +181,13 @@ describe('goingAction (Golden Pattern)', () => {
       world.setPlayer(player.id);
 
       const door = world.createEntity('wooden door', 'object');
-      door.add({
-        type: TraitType.OPENABLE,
-        isOpen: false  // Closed
-      });
+      door.add(new OpenableTrait({ isOpen: false })); // Closed
 
       const room1 = world.createEntity('First Room', 'object');
       const room2 = world.createEntity('Second Room', 'object');
-      room2.add({ type: TraitType.ROOM });
+      room2.add(new RoomTrait());
 
-      room1.add({
-        type: TraitType.ROOM,
-        exits: {
-          [Direction.NORTH]: { destination: room2.id, via: door.id }
-        }
-      });
+      room1.add(new RoomTrait({ exits: { [Direction.NORTH]: { destination: room2.id, via: door.id } } }));
 
       world.moveEntity(player.id, room1.id);
 
@@ -226,7 +210,7 @@ describe('goingAction (Golden Pattern)', () => {
     test('GH #245 (5): a closed door with an authored opening refusal speaks that refusal instead of door_closed', () => {
       const { world, player } = setupBasicWorld();
       const door = world.createEntity('warped door', 'object');
-      door.add({ type: TraitType.OPENABLE, isOpen: false });
+      door.add(new OpenableTrait({ isOpen: false }));
       door.add({ type: TEST_MARKER_TRAIT } as any);
       world.registerActionInterceptor(TEST_MARKER_TRAIT, IFActions.OPENING, {
         postValidate() {
@@ -236,11 +220,8 @@ describe('goingAction (Golden Pattern)', () => {
 
       const room1 = world.createEntity('First Room', 'object');
       const room2 = world.createEntity('Second Room', 'object');
-      room2.add({ type: TraitType.ROOM });
-      room1.add({
-        type: TraitType.ROOM,
-        exits: { [Direction.NORTH]: { destination: room2.id, via: door.id } }
-      });
+      room2.add(new RoomTrait());
+      room1.add(new RoomTrait({ exits: { [Direction.NORTH]: { destination: room2.id, via: door.id } } }));
       world.moveEntity(player.id, room1.id);
 
       const command = createCommand(IFActions.GOING);
@@ -264,26 +245,14 @@ describe('goingAction (Golden Pattern)', () => {
       world.setPlayer(player.id);
 
       const door = world.createEntity('iron door', 'object');
-      door.add({
-        type: TraitType.OPENABLE,
-        isOpen: false
-      });
-      door.add({
-        type: TraitType.LOCKABLE,
-        isLocked: true,  // Locked
-        keyId: 'iron_key'
-      });
+      door.add(new OpenableTrait({ isOpen: false }));
+      door.add(new LockableTrait({ isLocked: true, keyId: 'iron_key' })); // Locked
 
       const room1 = world.createEntity('First Room', 'object');
       const room2 = world.createEntity('Second Room', 'object');
-      room2.add({ type: TraitType.ROOM });
+      room2.add(new RoomTrait());
 
-      room1.add({
-        type: TraitType.ROOM,
-        exits: {
-          [Direction.EAST]: { destination: room2.id, via: door.id }
-        }
-      });
+      room1.add(new RoomTrait({ exits: { [Direction.EAST]: { destination: room2.id, via: door.id } } }));
 
       world.moveEntity(player.id, room1.id);
 
@@ -314,12 +283,7 @@ describe('goingAction (Golden Pattern)', () => {
       world.setPlayer(player.id);
 
       const room = world.createEntity('Room with Bad Exit', 'object');
-      room.add({
-        type: TraitType.ROOM,
-        exits: {
-          [Direction.WEST]: { destination: 'nonexistent_room' }
-        }
-      });
+      room.add(new RoomTrait({ exits: { [Direction.WEST]: { destination: 'nonexistent_room' } } }));
       world.moveEntity(player.id, room.id);
 
       const command = createCommand(IFActions.GOING);
@@ -347,17 +311,9 @@ describe('goingAction (Golden Pattern)', () => {
       const room1 = world.createEntity('Lit Room', 'object');
       const room2 = world.createEntity('Dark Cave', 'object');
 
-      room1.add({
-        type: TraitType.ROOM,
-        exits: {
-          [Direction.DOWN]: { destination: room2.id }
-        }
-      });
+      room1.add(new RoomTrait({ exits: { [Direction.DOWN]: { destination: room2.id } } }));
 
-      room2.add({
-        type: TraitType.ROOM,
-        isDark: true  // Dark room
-      });
+      room2.add(new RoomTrait({ requiresLight: true })); // Dark room
 
       world.moveEntity(player.id, room1.id);
 
@@ -388,20 +344,9 @@ describe('goingAction (Golden Pattern)', () => {
       const room1 = world.createEntity('Garden', 'object');
       const room2 = world.createEntity('Library', 'object');
       
-      room1.add({
-        type: TraitType.ROOM,
-        exits: {
-          [Direction.NORTH]: { destination: room2.id }
-        }
-      });
+      room1.add(new RoomTrait({ exits: { [Direction.NORTH]: { destination: room2.id } } }));
       
-      room2.add({
-        type: TraitType.ROOM,
-        exits: {
-          [Direction.SOUTH]: { destination: room1.id }
-        },
-        visited: true  // Mark as already visited so we get 'moved_to' not 'first_visit'
-      });
+      room2.add(new RoomTrait({ exits: { [Direction.SOUTH]: { destination: room1.id } }, visited: true })); // Mark as already visited so we get 'moved_to' not 'first_visit'
       
       world.moveEntity(player.id, room1.id);
       
@@ -451,15 +396,8 @@ describe('goingAction (Golden Pattern)', () => {
       const room1 = world.createEntity('Garden', 'object');
       const room2 = world.createEntity('Library', 'object');
 
-      room1.add({
-        type: TraitType.ROOM,
-        exits: { [Direction.NORTH]: { destination: room2.id } }
-      });
-      room2.add({
-        type: TraitType.ROOM,
-        exits: { [Direction.SOUTH]: { destination: room1.id } },
-        visited: true
-      });
+      room1.add(new RoomTrait({ exits: { [Direction.NORTH]: { destination: room2.id } } }));
+      room2.add(new RoomTrait({ exits: { [Direction.SOUTH]: { destination: room1.id } }, visited: true }));
 
       // A portable book and a scenery statue in the destination.
       const book = world.createEntity('dusty book', 'object');
@@ -493,14 +431,9 @@ describe('goingAction (Golden Pattern)', () => {
       const room1 = world.createEntity('Start', 'object');
       const room2 = world.createEntity('End', 'object');
       
-      room1.add({
-        type: TraitType.ROOM,
-        exits: {
-          [Direction.NORTHEAST]: { destination: room2.id }
-        }
-      });
+      room1.add(new RoomTrait({ exits: { [Direction.NORTHEAST]: { destination: room2.id } } }));
       
-      room2.add({ type: TraitType.ROOM });
+      room2.add(new RoomTrait());
       
       world.moveEntity(player.id, room1.id);
       
@@ -528,18 +461,9 @@ describe('goingAction (Golden Pattern)', () => {
       const room1 = world.createEntity('Entrance', 'object');
       const room2 = world.createEntity('Attic', 'object');
       
-      room1.add({
-        type: TraitType.ROOM,
-        visited: true,
-        exits: {
-          [Direction.UP]: { destination: room2.id }
-        }
-      });
+      room1.add(new RoomTrait({ visited: true, exits: { [Direction.UP]: { destination: room2.id } } }));
       
-      room2.add({
-        type: TraitType.ROOM,
-        visited: false  // Never visited
-      });
+      room2.add(new RoomTrait({ visited: false })); // Never visited
       
       world.moveEntity(player.id, room1.id);
       
@@ -571,22 +495,14 @@ describe('goingAction (Golden Pattern)', () => {
       world.setPlayer(player.id);
       
       const door = world.createEntity('oak door', 'object');
-      door.add({
-        type: TraitType.OPENABLE,
-        isOpen: true  // Open
-      });
+      door.add(new OpenableTrait({ isOpen: true })); // Open
       
       const room1 = world.createEntity('Hall', 'object');
       const room2 = world.createEntity('Study', 'object');
       
-      room1.add({
-        type: TraitType.ROOM,
-        exits: {
-          [Direction.WEST]: { destination: room2.id, via: door.id }
-        }
-      });
+      room1.add(new RoomTrait({ exits: { [Direction.WEST]: { destination: room2.id, via: door.id } } }));
       
-      room2.add({ type: TraitType.ROOM });
+      room2.add(new RoomTrait());
       
       world.moveEntity(player.id, room1.id);
       
@@ -612,31 +528,20 @@ describe('goingAction (Golden Pattern)', () => {
       world.setPlayer(player.id);
       
       const torch = world.createEntity('burning torch', 'object');
-      torch.add({
-        type: TraitType.LIGHT_SOURCE,
-        isLit: true  // Providing light
-      });
+      torch.add(new LightSourceTrait({ isLit: true })); // Providing light
       
       const room1 = world.createEntity('Lit Area', 'object');
       const room2 = world.createEntity('Dark Cave', 'object');
       
-      room1.add({
-        type: TraitType.ROOM,
-        exits: {
-          inside: { destination: room2.id }
-        }
-      });
+      room1.add(new RoomTrait({ exits: { [Direction.IN]: { destination: room2.id } } }));
       
-      room2.add({
-        type: TraitType.ROOM,
-        isDark: true
-      });
+      room2.add(new RoomTrait({ requiresLight: true }));
       
       world.moveEntity(player.id, room1.id);
       world.moveEntity(torch.id, player.id);  // Player carries torch
       
       const command = createCommand(IFActions.GOING);
-      command.parsed.extras = { direction: 'inside' };
+      command.parsed.extras = { direction: Direction.IN };
       
       const context = createRealTestContext(goingAction, world, command);
       
@@ -644,7 +549,7 @@ describe('goingAction (Golden Pattern)', () => {
       
       // Should succeed since player has light
       expectEvent(events, 'if.event.actor_moved', {
-        direction: 'inside',
+        direction: Direction.IN,
         fromRoom: room1.id,
         toRoom: room2.id
       });
@@ -660,20 +565,17 @@ describe('goingAction (Golden Pattern)', () => {
       const room1 = world.createEntity('Start', 'object');
       const room2 = world.createEntity('Garden', 'object');
       
-      room1.add({
-        type: TraitType.ROOM,
-        exits: {
-          outside: { destination: room2.id }
-        }
-      });
+      // A direction-named direct object is taken verbatim as the exit key (ADR-378 passage keys).
+      const way = passageKey(['outside']);
+      room1.add(new RoomTrait({ exits: { [way]: { destination: room2.id } } }));
       
-      room2.add({ type: TraitType.ROOM });
+      room2.add(new RoomTrait());
       
       world.moveEntity(player.id, room1.id);
       
       // Direction can come from directObject instead of extras
       const command = createCommand(IFActions.GOING, {
-        entity: { id: 'direction', name: 'outside' } as unknown as IFEntity,
+        entity: { id: 'direction', name: way } as unknown as IFEntity,
         text: 'outside'
       });
       
@@ -682,7 +584,7 @@ describe('goingAction (Golden Pattern)', () => {
       const events = executeWithValidation(goingAction, context);
       
       expectEvent(events, 'if.event.actor_moved', {
-        direction: 'outside',
+        direction: way,
         fromRoom: room1.id,
         toRoom: room2.id
       });
@@ -699,14 +601,9 @@ describe('goingAction (Golden Pattern)', () => {
       
       const room1 = world.createEntity('Room 1', 'object');
       const room2 = world.createEntity('Room 2', 'object');
-      room2.add({ type: TraitType.ROOM });
+      room2.add(new RoomTrait());
       
-      room1.add({
-        type: TraitType.ROOM,
-        exits: {
-          [Direction.SOUTH]: { destination: room2.id }
-        }
-      });
+      room1.add(new RoomTrait({ exits: { [Direction.SOUTH]: { destination: room2.id } } }));
       
       world.moveEntity(player.id, room1.id);
       
@@ -754,14 +651,9 @@ describe('goingAction (Golden Pattern)', () => {
         const room1 = world.createEntity('Room 1', 'object');
         const room2 = world.createEntity('Room 2', 'object');
         
-        room1.add({
-          type: TraitType.ROOM,
-          exits: {
-            [dir]: { destination: room2.id }
-          }
-        });
+        room1.add(new RoomTrait({ exits: { [dir]: { destination: room2.id } } }));
         
-        room2.add({ type: TraitType.ROOM });
+        room2.add(new RoomTrait());
         
         world.moveEntity(player.id, room1.id);
         
@@ -802,14 +694,9 @@ describe('World State Mutations', () => {
     const room1 = world.createEntity('Garden', 'object');
     const room2 = world.createEntity('Library', 'object');
 
-    room1.add({
-      type: TraitType.ROOM,
-      exits: {
-        [Direction.NORTH]: { destination: room2.id }
-      }
-    });
+    room1.add(new RoomTrait({ exits: { [Direction.NORTH]: { destination: room2.id } } }));
 
-    room2.add({ type: TraitType.ROOM });
+    room2.add(new RoomTrait());
 
     world.moveEntity(player.id, room1.id);
 
@@ -837,22 +724,14 @@ describe('World State Mutations', () => {
     world.setPlayer(player.id);
 
     const door = world.createEntity('wooden door', 'object');
-    door.add({
-      type: TraitType.OPENABLE,
-      isOpen: false  // Closed
-    });
+    door.add(new OpenableTrait({ isOpen: false })); // Closed
 
     const room1 = world.createEntity('Hall', 'object');
     const room2 = world.createEntity('Study', 'object');
 
-    room1.add({
-      type: TraitType.ROOM,
-      exits: {
-        [Direction.WEST]: { destination: room2.id, via: door.id }
-      }
-    });
+    room1.add(new RoomTrait({ exits: { [Direction.WEST]: { destination: room2.id, via: door.id } } }));
 
-    room2.add({ type: TraitType.ROOM });
+    room2.add(new RoomTrait());
 
     world.moveEntity(player.id, room1.id);
 
@@ -882,14 +761,9 @@ describe('World State Mutations', () => {
     const room1 = world.createEntity('Room', 'object');
     const room2 = world.createEntity('Other Room', 'object');
 
-    room1.add({
-      type: TraitType.ROOM,
-      exits: {
-        [Direction.SOUTH]: { destination: room2.id }  // Only south exit
-      }
-    });
+    room1.add(new RoomTrait({ exits: { [Direction.SOUTH]: { destination: room2.id } } })); // Only south exit
 
-    room2.add({ type: TraitType.ROOM });
+    room2.add(new RoomTrait());
 
     world.moveEntity(player.id, room1.id);
 
@@ -919,18 +793,9 @@ describe('World State Mutations', () => {
     const room1 = world.createEntity('Start', 'object');
     const room2 = world.createEntity('New Room', 'object');
 
-    room1.add({
-      type: TraitType.ROOM,
-      visited: true,
-      exits: {
-        [Direction.EAST]: { destination: room2.id }
-      }
-    });
+    room1.add(new RoomTrait({ visited: true, exits: { [Direction.EAST]: { destination: room2.id } } }));
 
-    room2.add({
-      type: TraitType.ROOM,
-      visited: false  // Never visited
-    });
+    room2.add(new RoomTrait({ visited: false })); // Never visited
 
     world.moveEntity(player.id, room1.id);
 
@@ -957,7 +822,7 @@ describe('Going interceptor hooks on the dark path (ADR-228 D7.1)', () => {
   test('destination postReport runs even when the destination is dark (old early return skipped it)', () => {
     const { world, player, room } = setupBasicWorld();
     const cave = world.createEntity('Dark Cave', 'object');
-    cave.add({ type: TraitType.ROOM, requiresLight: true });
+    cave.add(new RoomTrait({ requiresLight: true }));
     // Inert marker trait — the interceptor registration key.
     cave.add({ type: TEST_MARKER_TRAIT } as any);
     const roomTrait = room.getTrait(RoomTrait)!;

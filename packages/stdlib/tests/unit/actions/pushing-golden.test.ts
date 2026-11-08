@@ -13,7 +13,7 @@
 import { describe, test, expect } from 'vitest';
 import { pushingAction } from '../../../src/actions/standard/pushing';
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType, SceneryTrait } from '@sharpee/world-model';
+import { TraitType, SceneryTrait, WearableTrait, PushableTrait, ButtonTrait, SwitchableTrait } from '@sharpee/world-model';
 import {
   createRealTestContext,
   setupBasicWorld,
@@ -63,10 +63,7 @@ describe('pushingAction (Golden Pattern)', () => {
     test('should fail when pushing worn items', () => {
       const { world, player } = setupBasicWorld();
       const shirt = world.createEntity('blue shirt', 'object');
-      shirt.add({
-        type: TraitType.WEARABLE,
-        worn: true
-      });
+      shirt.add(new WearableTrait({ isWorn: true }));
       world.moveEntity(shirt.id, player.id);
 
       const command = createCommand(IFActions.PUSHING, { entity: shirt });
@@ -112,9 +109,9 @@ describe('pushingAction (Golden Pattern)', () => {
     test('should press a button with a click', () => {
       const { world, room } = setupBasicWorld();
       const button = world.createEntity('red button', 'object');
-      button.add({ type: TraitType.PUSHABLE });
-      button.add({ type: TraitType.BUTTON });
-      button.add({ type: TraitType.SWITCHABLE, isOn: false });
+      button.add(new PushableTrait());
+      button.add(new ButtonTrait());
+      button.add(new SwitchableTrait({ isOn: false }));
       world.moveEntity(button.id, room.id);
 
       const command = createCommand(IFActions.PUSHING, { entity: button });
@@ -136,8 +133,8 @@ describe('pushingAction (Golden Pattern)', () => {
     test('should toggle switch state', () => {
       const { world, room } = setupBasicWorld();
       const lightSwitch = world.createEntity('light switch', 'object');
-      lightSwitch.add({ type: TraitType.PUSHABLE });
-      lightSwitch.add({ type: TraitType.SWITCHABLE, isOn: true });
+      lightSwitch.add(new PushableTrait());
+      lightSwitch.add(new SwitchableTrait({ isOn: true }));
       world.moveEntity(lightSwitch.id, room.id);
 
       const command = createCommand(IFActions.PUSHING, { entity: lightSwitch });
@@ -158,7 +155,7 @@ describe('pushingAction (Golden Pattern)', () => {
     test('should use button_pushed for non-switchable things', () => {
       const { world, room } = setupBasicWorld();
       const doorbell = world.createEntity('doorbell', 'object');
-      doorbell.add({ type: TraitType.PUSHABLE });
+      doorbell.add(new PushableTrait());
       world.moveEntity(doorbell.id, room.id);
 
       const command = createCommand(IFActions.PUSHING, { entity: doorbell });
@@ -179,8 +176,8 @@ describe('pushingAction (Golden Pattern)', () => {
     test('should include proper entities in all events', () => {
       const { world, player, room } = setupBasicWorld();
       const button = world.createEntity('reset button', 'object');
-      button.add({ type: TraitType.PUSHABLE });
-      button.add({ type: TraitType.SWITCHABLE, isOn: false });
+      button.add(new PushableTrait());
+      button.add(new SwitchableTrait({ isOn: false }));
       world.moveEntity(button.id, room.id);
 
       const command = createCommand(IFActions.PUSHING, { entity: button });
@@ -208,8 +205,8 @@ describe('pushingAction (Golden Pattern)', () => {
     test('should toggle SwitchableTrait.isOn from false to true after pushing button', () => {
       const { world, room } = setupBasicWorld();
       const button = world.createEntity('red button', 'object');
-      button.add({ type: TraitType.PUSHABLE });
-      button.add({ type: TraitType.SWITCHABLE, isOn: false });
+      button.add(new PushableTrait());
+      button.add(new SwitchableTrait({ isOn: false }));
       world.moveEntity(button.id, room.id);
 
       expectTraitValue(button, TraitType.SWITCHABLE, 'isOn', false);
@@ -227,8 +224,8 @@ describe('pushingAction (Golden Pattern)', () => {
     test('should toggle SwitchableTrait.isOn from true to false after pushing switch', () => {
       const { world, room } = setupBasicWorld();
       const lightSwitch = world.createEntity('light switch', 'object');
-      lightSwitch.add({ type: TraitType.PUSHABLE });
-      lightSwitch.add({ type: TraitType.SWITCHABLE, isOn: true });
+      lightSwitch.add(new PushableTrait());
+      lightSwitch.add(new SwitchableTrait({ isOn: true }));
       world.moveEntity(lightSwitch.id, room.id);
 
       expectTraitValue(lightSwitch, TraitType.SWITCHABLE, 'isOn', true);

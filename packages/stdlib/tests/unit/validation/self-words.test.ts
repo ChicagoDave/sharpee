@@ -10,7 +10,7 @@
  * does; assertions are on the resolved entity.
  */
 import { describe, test, expect, beforeEach } from 'vitest';
-import { AuthorModel, EntityType, IFEntity, IParsedCommand, TraitType, WorldModel, ActorTrait, IdentityTrait } from '@sharpee/world-model';
+import { AuthorModel, EntityType, IFEntity, IParsedCommand, TraitType, WorldModel, ActorTrait, IdentityTrait, RoomTrait } from '@sharpee/world-model';
 import { LanguageProvider } from '@sharpee/if-domain';
 import { CommandValidator } from '../../../src/validation/command-validator';
 import { StandardActionRegistry } from '../../../src/actions/registry';
@@ -60,7 +60,7 @@ describe('the self words name the current player (ADR-327)', () => {
     world.setLanguageWords(ENGLISH_WORDS);
     author = new AuthorModel(world.getDataStore(), world);
     const room = author.createEntity('Foyer', EntityType.ROOM);
-    room.add({ type: TraitType.ROOM });
+    room.add(new RoomTrait());
     player = author.createEntity('Alex', EntityType.ACTOR);
     player.add(new IdentityTrait({ name: 'Alex', properName: true }));
     player.add(new ActorTrait({ isPlayable: true }));

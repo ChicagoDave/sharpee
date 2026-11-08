@@ -11,7 +11,7 @@
 import { describe, test, expect, beforeEach } from 'vitest';
 import { takingAction } from '../../../src/actions/standard/taking'; // Now from folder
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType, WorldModel, EntityType, ActorTrait, ContainerTrait, SupporterTrait, SceneryTrait, IdentityTrait } from '@sharpee/world-model';
+import { TraitType, WorldModel, EntityType, ActorTrait, ContainerTrait, SupporterTrait, SceneryTrait, IdentityTrait, RoomTrait, WearableTrait, OpenInventoryTrait, ReadableTrait } from '@sharpee/world-model';
 import {
   createRealTestContext,
   setupBasicWorld,
@@ -196,7 +196,7 @@ describe('takingAction (Golden Pattern)', () => {
       const world = new WorldModel();
       world.setLanguageWords(ENGLISH_WORDS);
       const room = world.createEntity('Test Room', 'room');
-      room.add({ type: TraitType.ROOM });
+      room.add(new RoomTrait());
       
       // Create player with limited container capacity
       const player = world.createEntity('yourself', 'actor');
@@ -232,7 +232,7 @@ describe('takingAction (Golden Pattern)', () => {
       const world = new WorldModel();
       world.setLanguageWords(ENGLISH_WORDS);
       const room = world.createEntity('Test Room', 'room');
-      room.add({ type: TraitType.ROOM });
+      room.add(new RoomTrait());
       
       const player = world.createEntity('yourself', 'actor');
       player.add(new ActorTrait({ isPlayable: true }));
@@ -241,11 +241,7 @@ describe('takingAction (Golden Pattern)', () => {
       
       // Add a worn item
       const hat = world.createEntity('red hat', 'object');
-      hat.add({
-        type: TraitType.WEARABLE,
-        worn: true,
-        slot: 'head'
-      });
+      hat.add(new WearableTrait({ isWorn: true, slot: 'head' }));
       
       const newItem = world.createEntity('ball', 'object');
       
@@ -271,7 +267,7 @@ describe('takingAction (Golden Pattern)', () => {
       const world = new WorldModel();
       world.setLanguageWords(ENGLISH_WORDS);
       const room = world.createEntity('Test Room', 'room');
-      room.add({ type: TraitType.ROOM });
+      room.add(new RoomTrait());
       
       const player = world.createEntity('yourself', 'actor');
       player.add(new ActorTrait({ isPlayable: true }));
@@ -372,13 +368,9 @@ describe('takingAction (Golden Pattern)', () => {
       
       const npc = world.createEntity('guard', 'actor');
       npc.add(new ActorTrait());
-      npc.add({ type: TraitType.OPEN_INVENTORY }); // NPC inventory accessible to player
+      npc.add(new OpenInventoryTrait()); // NPC inventory accessible to player
       const hat = world.createEntity('fancy hat', 'object');
-      hat.add({
-        type: TraitType.WEARABLE,
-        worn: true,
-        slot: 'head'
-      });
+      hat.add(new WearableTrait({ isWorn: true, slot: 'head' }));
 
       world.moveEntity(npc.id, room.id);
       world.moveEntity(hat.id, npc.id);
@@ -593,7 +585,7 @@ describe('Taking Action Edge Cases', () => {
     const world = new WorldModel();
     world.setLanguageWords(ENGLISH_WORDS);
     const room = world.createEntity('Test Room', 'room');
-    room.add({ type: TraitType.ROOM });
+    room.add(new RoomTrait());
     
     // Player without container trait
     const player = world.createEntity('yourself', 'actor');
@@ -630,7 +622,7 @@ describe('Interceptor postExecute/postReport (ADR-118 full contract)', () => {
     world.moveEntity(item.id, room.id);
     // Any trait type works as the interceptor registration key; READABLE
     // is benign for taking.
-    item.add({ type: TraitType.READABLE, text: '' } as any);
+    item.add(new ReadableTrait({ text: '' }));
     return { world, player, room, item };
   };
   const drive = (world: WorldModel, item: any) => {
@@ -708,8 +700,8 @@ describe('Multi-object taking drives per-item interceptor hooks (ADR-118)', () =
     const gem = world.createEntity('green gem', 'object');
     world.moveEntity(coin.id, room.id);
     world.moveEntity(gem.id, room.id);
-    coin.add({ type: TraitType.READABLE, text: '' } as any);
-    gem.add({ type: TraitType.READABLE, text: '' } as any);
+    coin.add(new ReadableTrait({ text: '' }));
+    gem.add(new ReadableTrait({ text: '' }));
 
     const executed: string[] = [];
     const reported: string[] = [];

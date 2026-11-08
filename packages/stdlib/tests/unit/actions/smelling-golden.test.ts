@@ -13,7 +13,7 @@
 import { describe, test, expect, beforeEach, vi } from 'vitest';
 import { smellingAction } from '../../../src/actions/standard/smelling';
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType, ContainerTrait } from '@sharpee/world-model';
+import { TraitType, ContainerTrait, EdibleTrait, LightSourceTrait, OpenableTrait } from '@sharpee/world-model';
 import {
   createRealTestContext,
   setupBasicWorld,
@@ -54,11 +54,7 @@ describe('smellingAction (Golden Pattern)', () => {
     test('should detect food scent', () => {
       const { world, player, room } = setupBasicWorld();
       const bread = world.createEntity('fresh bread', 'object');
-      bread.add({
-        type: TraitType.EDIBLE,
-
-        liquid: false
-      });
+      bread.add(new EdibleTrait({ liquid: false }));
       world.moveEntity(bread.id, room.id);
       
       const context = createRealTestContext(smellingAction, world, createCommand(IFActions.SMELLING, {
@@ -80,11 +76,7 @@ describe('smellingAction (Golden Pattern)', () => {
     test('should detect drink scent', () => {
       const { world, player } = setupBasicWorld();
       const coffee = world.createEntity('hot coffee', 'object');
-      coffee.add({
-        type: TraitType.EDIBLE,
-
-        liquid: true
-      });
+      coffee.add(new EdibleTrait({ liquid: true }));
       world.moveEntity(coffee.id, player.id);
       
       const context = createRealTestContext(smellingAction, world, createCommand(IFActions.SMELLING, {
@@ -106,10 +98,7 @@ describe('smellingAction (Golden Pattern)', () => {
     test('should detect burning scent from lit objects', () => {
       const { world, player, room } = setupBasicWorld();
       const torch = world.createEntity('burning torch', 'object');
-      torch.add({
-        type: TraitType.LIGHT_SOURCE,
-        isLit: true
-      });
+      torch.add(new LightSourceTrait({ isLit: true }));
       world.moveEntity(torch.id, room.id);
       
       const context = createRealTestContext(smellingAction, world, createCommand(IFActions.SMELLING, {
@@ -131,10 +120,7 @@ describe('smellingAction (Golden Pattern)', () => {
     test('should detect no scent from unlit light source', () => {
       const { world, player, room } = setupBasicWorld();
       const candle = world.createEntity('unlit candle', 'object');
-      candle.add({
-        type: TraitType.LIGHT_SOURCE,
-        isLit: false
-      });
+      candle.add(new LightSourceTrait({ isLit: false }));
       world.moveEntity(candle.id, room.id);
       
       const context = createRealTestContext(smellingAction, world, createCommand(IFActions.SMELLING, {
@@ -156,16 +142,10 @@ describe('smellingAction (Golden Pattern)', () => {
       
       const basket = world.createEntity('wicker basket', 'object');
       basket.add(new ContainerTrait());
-      basket.add({
-        type: TraitType.OPENABLE,
-        isOpen: true
-      });
+      basket.add(new OpenableTrait({ isOpen: true }));
       
       const apple = world.createEntity('red apple', 'object');
-      apple.add({
-        type: TraitType.EDIBLE,
-        consumed: false
-      });
+      apple.add(new EdibleTrait());
       
       world.moveEntity(basket.id, player.id);
       world.moveEntity(apple.id, basket.id);
@@ -192,16 +172,10 @@ describe('smellingAction (Golden Pattern)', () => {
       
       const box = world.createEntity('sealed box', 'object');
       box.add(new ContainerTrait());
-      box.add({
-        type: TraitType.OPENABLE,
-        isOpen: false  // Closed
-      });
+      box.add(new OpenableTrait({ isOpen: false })); // Closed
       
       const cheese = world.createEntity('smelly cheese', 'object');
-      cheese.add({
-        type: TraitType.EDIBLE,
-        consumed: false
-      });
+      cheese.add(new EdibleTrait());
       
       world.moveEntity(box.id, player.id);
       world.moveEntity(cheese.id, box.id);
@@ -261,10 +235,7 @@ describe('smellingAction (Golden Pattern)', () => {
       const { world, player, room } = setupBasicWorld();
       
       const sandwich = world.createEntity('ham sandwich', 'object');
-      sandwich.add({
-        type: TraitType.EDIBLE,
-        consumed: false
-      });
+      sandwich.add(new EdibleTrait());
       
       world.moveEntity(sandwich.id, room.id);
       
@@ -285,10 +256,7 @@ describe('smellingAction (Golden Pattern)', () => {
       const { world, player, room } = setupBasicWorld();
       
       const fireplace = world.createEntity('stone fireplace', 'object');
-      fireplace.add({
-        type: TraitType.LIGHT_SOURCE,
-        isLit: true
-      });
+      fireplace.add(new LightSourceTrait({ isLit: true }));
       
       world.moveEntity(fireplace.id, room.id);
       
@@ -309,16 +277,10 @@ describe('smellingAction (Golden Pattern)', () => {
       const { world, player, room } = setupBasicWorld();
       
       const candle = world.createEntity('lit candle', 'object');
-      candle.add({
-        type: TraitType.LIGHT_SOURCE,
-        isLit: true
-      });
+      candle.add(new LightSourceTrait({ isLit: true }));
       
       const pie = world.createEntity('apple pie', 'object');
-      pie.add({
-        type: TraitType.EDIBLE,
-        consumed: false
-      });
+      pie.add(new EdibleTrait());
       
       world.moveEntity(candle.id, room.id);
       world.moveEntity(pie.id, room.id);
@@ -361,11 +323,7 @@ describe('smellingAction (Golden Pattern)', () => {
     test('should allow smelling items in inventory', () => {
       const { world, player } = setupBasicWorld();
       const perfume = world.createEntity('bottle of perfume', 'object');
-      perfume.add({
-        type: TraitType.EDIBLE,
-
-        liquid: true  // Liquid perfume
-      });
+      perfume.add(new EdibleTrait({ liquid: true })); // Liquid perfume
       world.moveEntity(perfume.id, player.id);
       
       const context = createRealTestContext(smellingAction, world, createCommand(IFActions.SMELLING, {
@@ -385,10 +343,7 @@ describe('smellingAction (Golden Pattern)', () => {
     test('should allow smelling items in same room', () => {
       const { world, player, room } = setupBasicWorld();
       const cake = world.createEntity('chocolate cake', 'object');
-      cake.add({
-        type: TraitType.EDIBLE,
-        consumed: false
-      });
+      cake.add(new EdibleTrait());
       world.moveEntity(cake.id, room.id);
       
       const context = createRealTestContext(smellingAction, world, createCommand(IFActions.SMELLING, {
@@ -410,10 +365,7 @@ describe('smellingAction (Golden Pattern)', () => {
     test('should include proper entities in all events', () => {
       const { world, player, room } = setupBasicWorld();
       const soup = world.createEntity('hot soup', 'object');
-      soup.add({
-        type: TraitType.EDIBLE,
-        consumed: false
-      });
+      soup.add(new EdibleTrait());
       world.moveEntity(soup.id, room.id);
       
       const context = createRealTestContext(smellingAction, world, createCommand(IFActions.SMELLING, {

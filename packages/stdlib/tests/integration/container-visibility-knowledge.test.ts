@@ -3,7 +3,7 @@
  */
 
 import { describe, test, expect, beforeEach } from 'vitest';
-import { WorldModel, AuthorModel, IFEntity, TraitType, OpenableTrait, ActorTrait, IdentityTrait, ContainerTrait } from '@sharpee/world-model';
+import { WorldModel, AuthorModel, IFEntity, TraitType, OpenableTrait, ActorTrait, IdentityTrait, ContainerTrait, RoomTrait } from '@sharpee/world-model';
 import { LanguageProvider } from '@sharpee/if-domain';
 import { StandardScopeResolver } from '../../src/scope/scope-resolver';
 import { CommandValidator } from '../../src/validation/command-validator';
@@ -35,10 +35,10 @@ describe('Container visibility and knowledge', () => {
 
     // 2. Create and connect rooms
     room1 = author.createEntity('Kitchen', 'location');
-    room1.add({ type: TraitType.ROOM });
+    room1.add(new RoomTrait());
     
     room2 = author.createEntity('Living Room', 'location');
-    room2.add({ type: TraitType.ROOM });
+    room2.add(new RoomTrait());
     
     // An inert marker on each room (these fixtures never traverse; the
     // retired exit-as-entity trait used to stand here, ADR-378 D1b)
@@ -49,10 +49,7 @@ describe('Container visibility and knowledge', () => {
     box = author.createEntity('box', 'container');
     box.add(new IdentityTrait({ name: 'box', adjectives: ['wooden'] }));
     box.add(new ContainerTrait());
-    box.add({
-      type: TraitType.OPENABLE,
-      isOpen: false
-    });
+    box.add(new OpenableTrait({ isOpen: false }));
     author.moveEntity(box.id, room1.id);
 
     // 4. Create ball in box

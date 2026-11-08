@@ -3,7 +3,7 @@
  */
 
 import { describe, test, expect, beforeEach, vi, afterEach, Mock } from 'vitest';
-import { WorldModel, TraitType, EntityType, ActorTrait, ContainerTrait } from '@sharpee/world-model';
+import { WorldModel, TraitType, EntityType, ActorTrait, ContainerTrait, RoomTrait } from '@sharpee/world-model';
 import { StandardScopeResolver } from '../../../src/scope/scope-resolver';
 import { StandardWitnessSystem } from '../../../src/scope/witness-system';
 import { StateChange, WitnessLevel, SenseType } from '../../../src/scope/types';
@@ -39,7 +39,7 @@ describe('StandardWitnessSystem', () => {
 
     // Create basic test world
     room = world.createEntity('Test Room', EntityType.ROOM);
-    room.add({ type: TraitType.ROOM });
+    room.add(new RoomTrait());
 
     player = world.createEntity('Player', EntityType.ACTOR);
     player.add(new ActorTrait({ isPlayer: true }));
@@ -105,7 +105,7 @@ describe('StandardWitnessSystem', () => {
 
     test('should not witness events in different rooms', () => {
       const otherRoom = world.createEntity('Other Room', EntityType.ROOM);
-      otherRoom.add({ type: TraitType.ROOM });
+      otherRoom.add(new RoomTrait());
       
       const stranger = world.createEntity('Stranger', EntityType.ACTOR);
       stranger.add(new ActorTrait());

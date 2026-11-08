@@ -6,7 +6,7 @@
  */
 
 import { describe, test, expect, beforeEach } from 'vitest';
-import { WorldModel, TraitType, EntityType, IFEntity, ActorTrait, ContainerTrait, SceneryTrait } from '@sharpee/world-model';
+import { WorldModel, TraitType, EntityType, IFEntity, ActorTrait, ContainerTrait, SceneryTrait, RoomTrait } from '@sharpee/world-model';
 import { createActionContext } from '../../../src/actions/enhanced-context';
 import { Action, ValidationResult } from '../../../src/actions/enhanced-types';
 import { ScopeLevel } from '../../../src/scope/types';
@@ -50,7 +50,7 @@ describe('Implicit Takes (requireCarriedOrImplicitTake)', () => {
 
     // Create room
     room = world.createEntity('Test Room', EntityType.ROOM);
-    room.add({ type: TraitType.ROOM });
+    room.add(new RoomTrait());
 
     // Create player
     player = world.createEntity('Player', EntityType.ACTOR);
@@ -149,7 +149,7 @@ describe('Implicit Takes (requireCarriedOrImplicitTake)', () => {
   describe('Not Reachable', () => {
     test('should return scope error when item is not reachable', () => {
       const otherRoom = world.createEntity('Other Room', EntityType.ROOM);
-      otherRoom.add({ type: TraitType.ROOM });
+      otherRoom.add(new RoomTrait());
 
       const coin = world.createEntity('gold coin', EntityType.OBJECT);
       world.moveEntity(coin.id, otherRoom.id);
@@ -167,7 +167,7 @@ describe('Implicit Takes (requireCarriedOrImplicitTake)', () => {
 
     test('should not attempt to take item in different room', () => {
       const otherRoom = world.createEntity('Other Room', EntityType.ROOM);
-      otherRoom.add({ type: TraitType.ROOM });
+      otherRoom.add(new RoomTrait());
 
       const coin = world.createEntity('gold coin', EntityType.OBJECT);
       world.moveEntity(coin.id, otherRoom.id);

@@ -11,7 +11,7 @@
 import { describe, test, expect } from 'vitest';
 import { enteringAction } from '../../../src/actions/standard/entering';
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType, EntityType, ContainerTrait, SupporterTrait, ActorTrait } from '@sharpee/world-model';
+import { TraitType, EntityType, ContainerTrait, SupporterTrait, ActorTrait, EnterableTrait, OpenableTrait } from '@sharpee/world-model';
 import {
   createRealTestContext,
   setupBasicWorld,
@@ -79,14 +79,8 @@ describe('enteringAction (Golden Pattern)', () => {
 
       const crate = world.createEntity('wooden crate', EntityType.CONTAINER);
       crate.add(new ContainerTrait({ enterable: true }));
-      crate.add({
-        type: TraitType.ENTERABLE,
-        preposition: 'in'
-      });
-      crate.add({
-        type: TraitType.OPENABLE,
-        isOpen: false  // Closed
-      });
+      crate.add(new EnterableTrait({ preposition: 'in' }));
+      crate.add(new OpenableTrait({ isOpen: false })); // Closed
       world.moveEntity(crate.id, room.id);
       
       const command = createCommand(IFActions.ENTERING, {
@@ -109,10 +103,7 @@ describe('enteringAction (Golden Pattern)', () => {
 
       const car = world.createEntity('luxury car', EntityType.CONTAINER);
       car.add(new ContainerTrait({ enterable: true }));
-      car.add({
-        type: TraitType.ENTERABLE,
-        preposition: 'in'
-      });
+      car.add(new EnterableTrait({ preposition: 'in' }));
       world.moveEntity(car.id, room.id);
       
       const command = createCommand(IFActions.ENTERING, {
@@ -136,14 +127,8 @@ describe('enteringAction (Golden Pattern)', () => {
 
       const box = world.createEntity('large box', 'container');
       box.add(new ContainerTrait({ enterable: true }));
-      box.add({
-        type: TraitType.ENTERABLE,
-        preposition: 'in'
-      });
-      box.add({
-        type: TraitType.OPENABLE,
-        isOpen: true  // Open
-      });
+      box.add(new EnterableTrait({ preposition: 'in' }));
+      box.add(new OpenableTrait({ isOpen: true })); // Open
       world.moveEntity(box.id, room.id);
       
       const command = createCommand(IFActions.ENTERING, {
@@ -166,10 +151,7 @@ describe('enteringAction (Golden Pattern)', () => {
 
       const bed = world.createEntity('comfortable bed', 'supporter');
       bed.add(new SupporterTrait({ enterable: true }));
-      bed.add({
-        type: TraitType.ENTERABLE,
-        preposition: 'on'
-      });
+      bed.add(new EnterableTrait({ preposition: 'on' }));
       world.moveEntity(bed.id, room.id);
       
       const command = createCommand(IFActions.ENTERING, {
@@ -195,10 +177,7 @@ describe('enteringAction (Golden Pattern)', () => {
 
       const booth = world.createEntity('guard booth', 'container');
       booth.add(new ContainerTrait({ enterable: true }));
-      booth.add({
-        type: TraitType.ENTERABLE,
-        preposition: 'in'
-      });
+      booth.add(new EnterableTrait({ preposition: 'in' }));
 
       world.moveEntity(booth.id, room.id);
       world.moveEntity(npc.id, booth.id);
@@ -223,10 +202,7 @@ describe('enteringAction (Golden Pattern)', () => {
 
       const chair = world.createEntity('office chair', EntityType.SUPPORTER);
       chair.add(new SupporterTrait({ enterable: true }));
-      chair.add({
-        type: TraitType.ENTERABLE,
-        preposition: 'on'
-      });
+      chair.add(new EnterableTrait({ preposition: 'on' }));
       world.moveEntity(chair.id, room.id);
       
       const command = createCommand(IFActions.ENTERING, {
@@ -260,10 +236,7 @@ describe('World State Mutations', () => {
 
     const car = world.createEntity('luxury car', EntityType.CONTAINER);
     car.add(new ContainerTrait({ enterable: true }));
-    car.add({
-      type: TraitType.ENTERABLE,
-      preposition: 'in'
-    });
+    car.add(new EnterableTrait({ preposition: 'in' }));
     world.moveEntity(car.id, room.id);
 
     // VERIFY PRECONDITION: player is in the room
@@ -287,10 +260,7 @@ describe('World State Mutations', () => {
 
     const bed = world.createEntity('comfortable bed', EntityType.SUPPORTER);
     bed.add(new SupporterTrait({ enterable: true }));
-    bed.add({
-      type: TraitType.ENTERABLE,
-      preposition: 'on'
-    });
+    bed.add(new EnterableTrait({ preposition: 'on' }));
     world.moveEntity(bed.id, room.id);
 
     // VERIFY PRECONDITION: player is in the room
@@ -337,14 +307,8 @@ describe('World State Mutations', () => {
 
     const crate = world.createEntity('wooden crate', EntityType.CONTAINER);
     crate.add(new ContainerTrait({ enterable: true }));
-    crate.add({
-      type: TraitType.ENTERABLE,
-      preposition: 'in'
-    });
-    crate.add({
-      type: TraitType.OPENABLE,
-      isOpen: false // Closed
-    });
+    crate.add(new EnterableTrait({ preposition: 'in' }));
+    crate.add(new OpenableTrait({ isOpen: false })); // Closed
     world.moveEntity(crate.id, room.id);
 
     // VERIFY PRECONDITION: player is in the room
@@ -369,10 +333,7 @@ describe('World State Mutations', () => {
 
     const car = world.createEntity('sports car', EntityType.CONTAINER);
     car.add(new ContainerTrait({ enterable: true }));
-    car.add({
-      type: TraitType.ENTERABLE,
-      preposition: 'in'
-    });
+    car.add(new EnterableTrait({ preposition: 'in' }));
     world.moveEntity(car.id, room.id);
     world.moveEntity(player.id, car.id); // Already in car
 
@@ -398,14 +359,8 @@ describe('World State Mutations', () => {
 
     const box = world.createEntity('large box', EntityType.CONTAINER);
     box.add(new ContainerTrait({ enterable: true }));
-    box.add({
-      type: TraitType.ENTERABLE,
-      preposition: 'in'
-    });
-    box.add({
-      type: TraitType.OPENABLE,
-      isOpen: true // Open
-    });
+    box.add(new EnterableTrait({ preposition: 'in' }));
+    box.add(new OpenableTrait({ isOpen: true })); // Open
     world.moveEntity(box.id, room.id);
 
     // VERIFY PRECONDITION: player is in the room

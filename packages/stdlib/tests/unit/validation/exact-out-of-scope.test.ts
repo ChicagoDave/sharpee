@@ -10,7 +10,7 @@
  * does; assertions are on the resolution result.
  */
 import { describe, test, expect, beforeEach } from 'vitest';
-import { AuthorModel, EntityType, IFEntity, IParsedCommand, TraitType, WorldModel, ActorTrait, IdentityTrait, ContainerTrait } from '@sharpee/world-model';
+import { AuthorModel, EntityType, IFEntity, IParsedCommand, TraitType, WorldModel, ActorTrait, IdentityTrait, ContainerTrait, RoomTrait, OpenableTrait } from '@sharpee/world-model';
 import { LanguageProvider } from '@sharpee/if-domain';
 import { CommandValidator } from '../../../src/validation/command-validator';
 import { StandardActionRegistry } from '../../../src/actions/registry';
@@ -63,9 +63,9 @@ describe('GH #206: an exact match out of scope is not displaced by a word match 
     author = new AuthorModel(world.getDataStore(), world);
     player = author.createEntity('yourself', EntityType.ACTOR);
     room = author.createEntity('Treasure Room', EntityType.ROOM);
-    room.add({ type: TraitType.ROOM });
+    room.add(new RoomTrait());
     elsewhere = author.createEntity('Cellar', EntityType.ROOM);
-    elsewhere.add({ type: TraitType.ROOM });
+    elsewhere.add(new RoomTrait());
     author.moveEntity(player.id, room.id);
     player.add(new ActorTrait({ isPlayable: true }));
     world.setPlayer(player.id);
@@ -118,7 +118,7 @@ describe('GH #206: an exact match out of scope is not displaced by a word match 
     const box = author.createEntity('deed box', EntityType.OBJECT);
     box.add(new IdentityTrait({ name: 'deed box', aliases: ['box'] }));
     box.add(new ContainerTrait());
-    box.add({ type: TraitType.OPENABLE, isOpen: false });
+    box.add(new OpenableTrait({ isOpen: false }));
     author.moveEntity(box.id, room.id);
     const deed = author.createEntity('deed', EntityType.OBJECT);
     deed.add(new IdentityTrait({ name: 'deed' }));

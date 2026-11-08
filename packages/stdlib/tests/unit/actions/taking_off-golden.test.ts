@@ -55,10 +55,7 @@ describe('takingOffAction (Golden Pattern)', () => {
     test('should fail when item not on actor', () => {
       const { world, player, room } = setupBasicWorld();
       const hat = world.createEntity('red hat', 'object');
-      hat.add({
-        type: TraitType.WEARABLE,
-        worn: false
-      });
+      hat.add(new WearableTrait({ isWorn: false }));
       world.moveEntity(hat.id, room.id); // Hat is in room, not on player
       
       const context = createRealTestContext(takingOffAction, world, createCommand(IFActions.TAKING_OFF, {
@@ -94,10 +91,7 @@ describe('takingOffAction (Golden Pattern)', () => {
     test('should fail when item not actually worn', () => {
       const { world, player } = setupBasicWorld();
       const shirt = world.createEntity('blue shirt', 'object');
-      shirt.add({
-        type: TraitType.WEARABLE,
-        worn: false  // Not worn, just carried
-      });
+      shirt.add(new WearableTrait({ isWorn: false })); // Not worn, just carried
       world.moveEntity(shirt.id, player.id);
       
       const context = createRealTestContext(takingOffAction, world, createCommand(IFActions.TAKING_OFF, {
@@ -117,23 +111,11 @@ describe('takingOffAction (Golden Pattern)', () => {
       
       // Wearing shirt (layer 1)
       const shirt = world.createEntity('dress shirt', 'object');
-      shirt.add({
-        type: TraitType.WEARABLE,
-        worn: true,
-        wornBy: player.id,
-        bodyPart: 'torso',
-        layer: 1
-      });
+      shirt.add(new WearableTrait({ isWorn: true, wornBy: player.id, bodyPart: 'torso', layer: 1 }));
       
       // Wearing jacket over it (layer 2)
       const jacket = world.createEntity('leather jacket', 'object');
-      jacket.add({
-        type: TraitType.WEARABLE,
-        worn: true,
-        wornBy: player.id,
-        bodyPart: 'torso',
-        layer: 2
-      });
+      jacket.add(new WearableTrait({ isWorn: true, wornBy: player.id, bodyPart: 'torso', layer: 2 }));
       
       world.moveEntity(shirt.id, player.id);
       world.moveEntity(jacket.id, player.id);
@@ -178,12 +160,7 @@ describe('takingOffAction (Golden Pattern)', () => {
     test('should remove worn item', () => {
       const { world, player } = setupBasicWorld();
       const hat = world.createEntity('wool hat', 'object');
-      hat.add({
-        type: TraitType.WEARABLE,
-        worn: true,
-        wornBy: player.id,
-        bodyPart: 'head'
-      });
+      hat.add(new WearableTrait({ isWorn: true, wornBy: player.id, bodyPart: 'head' }));
       world.moveEntity(hat.id, player.id);
       
       const context = createRealTestContext(takingOffAction, world, createCommand(IFActions.TAKING_OFF, {
@@ -200,15 +177,10 @@ describe('takingOffAction (Golden Pattern)', () => {
       });
     });
 
-    test('should remove item without body part', () => {
+    test('should remove item that names no body part (the trait defaults one)', () => {
       const { world, player } = setupBasicWorld();
       const bracelet = world.createEntity('silver bracelet', 'object');
-      bracelet.add({
-        type: TraitType.WEARABLE,
-        worn: true,
-        wornBy: player.id
-        // No bodyPart specified
-      });
+      bracelet.add(new WearableTrait({ isWorn: true, wornBy: player.id })); // No bodyPart specified
       world.moveEntity(bracelet.id, player.id);
       
       const context = createRealTestContext(takingOffAction, world, createCommand(IFActions.TAKING_OFF, {
@@ -219,7 +191,7 @@ describe('takingOffAction (Golden Pattern)', () => {
       
       expectEvent(events, 'if.event.removed', {
         itemId: bracelet.id,
-        bodyPart: undefined
+        bodyPart: 'torso' // WearableTrait defaults bodyPart when the fixture names none
       });
     });
 
@@ -228,31 +200,13 @@ describe('takingOffAction (Golden Pattern)', () => {
       
       // Wearing multiple layers
       const shirt = world.createEntity('shirt', 'object');
-      shirt.add({
-        type: TraitType.WEARABLE,
-        worn: true,
-        wornBy: player.id,
-        bodyPart: 'torso',
-        layer: 1
-      });
+      shirt.add(new WearableTrait({ isWorn: true, wornBy: player.id, bodyPart: 'torso', layer: 1 }));
       
       const vest = world.createEntity('vest', 'object');
-      vest.add({
-        type: TraitType.WEARABLE,
-        worn: true,
-        wornBy: player.id,
-        bodyPart: 'torso',
-        layer: 2
-      });
+      vest.add(new WearableTrait({ isWorn: true, wornBy: player.id, bodyPart: 'torso', layer: 2 }));
       
       const jacket = world.createEntity('jacket', 'object');
-      jacket.add({
-        type: TraitType.WEARABLE,
-        worn: true,
-        wornBy: player.id,
-        bodyPart: 'torso',
-        layer: 3
-      });
+      jacket.add(new WearableTrait({ isWorn: true, wornBy: player.id, bodyPart: 'torso', layer: 3 }));
       
       world.moveEntity(shirt.id, player.id);
       world.moveEntity(vest.id, player.id);
@@ -276,22 +230,10 @@ describe('takingOffAction (Golden Pattern)', () => {
       
       // Wearing items on different body parts
       const hat = world.createEntity('hat', 'object');
-      hat.add({
-        type: TraitType.WEARABLE,
-        worn: true,
-        wornBy: player.id,
-        bodyPart: 'head',
-        layer: 1
-      });
+      hat.add(new WearableTrait({ isWorn: true, wornBy: player.id, bodyPart: 'head', layer: 1 }));
       
       const coat = world.createEntity('coat', 'object');
-      coat.add({
-        type: TraitType.WEARABLE,
-        worn: true,
-        wornBy: player.id,
-        bodyPart: 'torso',
-        layer: 2
-      });
+      coat.add(new WearableTrait({ isWorn: true, wornBy: player.id, bodyPart: 'torso', layer: 2 }));
       
       world.moveEntity(hat.id, player.id);
       world.moveEntity(coat.id, player.id);
@@ -312,13 +254,7 @@ describe('takingOffAction (Golden Pattern)', () => {
     test('should include layer information in events', () => {
       const { world, player } = setupBasicWorld();
       const gloves = world.createEntity('work gloves', 'object');
-      gloves.add({
-        type: TraitType.WEARABLE,
-        worn: true,
-        wornBy: player.id,
-        bodyPart: 'hands',
-        layer: 1
-      });
+      gloves.add(new WearableTrait({ isWorn: true, wornBy: player.id, bodyPart: 'hands', layer: 1 }));
       world.moveEntity(gloves.id, player.id);
       
       const context = createRealTestContext(takingOffAction, world, createCommand(IFActions.TAKING_OFF, {
@@ -340,12 +276,7 @@ describe('takingOffAction (Golden Pattern)', () => {
     test('should include proper entities in all events', () => {
       const { world, player, room } = setupBasicWorld();
       const shoes = world.createEntity('running shoes', 'object');
-      shoes.add({
-        type: TraitType.WEARABLE,
-        worn: true,
-        wornBy: player.id,
-        bodyPart: 'feet'
-      });
+      shoes.add(new WearableTrait({ isWorn: true, wornBy: player.id, bodyPart: 'feet' }));
       world.moveEntity(shoes.id, player.id);
       
       const context = createRealTestContext(takingOffAction, world, createCommand(IFActions.TAKING_OFF, {
@@ -376,12 +307,7 @@ describe('World State Mutations', () => {
   test('should actually set worn to false after taking off', () => {
     const { world, player } = setupBasicWorld();
     const hat = world.createEntity('wool hat', 'object');
-    hat.add({
-      type: TraitType.WEARABLE,
-      worn: true,
-      wornBy: player.id,
-      bodyPart: 'head'
-    });
+    hat.add(new WearableTrait({ isWorn: true, wornBy: player.id, bodyPart: 'head' }));
     world.moveEntity(hat.id, player.id);
 
     // VERIFY PRECONDITION: hat is worn
@@ -407,13 +333,7 @@ describe('World State Mutations', () => {
   test('should actually set worn to false with body part preserved', () => {
     const { world, player } = setupBasicWorld();
     const gloves = world.createEntity('leather gloves', 'object');
-    gloves.add({
-      type: TraitType.WEARABLE,
-      worn: true,
-      wornBy: player.id,
-      bodyPart: 'hands',
-      layer: 1
-    });
+    gloves.add(new WearableTrait({ isWorn: true, wornBy: player.id, bodyPart: 'hands', layer: 1 }));
     world.moveEntity(gloves.id, player.id);
 
     // VERIFY PRECONDITION: gloves are worn
@@ -442,11 +362,7 @@ describe('World State Mutations', () => {
   test('should NOT change worn when not wearing', () => {
     const { world, player } = setupBasicWorld();
     const scarf = world.createEntity('silk scarf', 'object');
-    scarf.add({
-      type: TraitType.WEARABLE,
-      worn: false, // Not worn
-      bodyPart: 'neck'
-    });
+    scarf.add(new WearableTrait({ isWorn: false, bodyPart: 'neck' })); // Not worn
     world.moveEntity(scarf.id, player.id);
 
     // VERIFY PRECONDITION: scarf is not worn
@@ -493,23 +409,11 @@ describe('World State Mutations', () => {
 
     // Wearing shirt (layer 1) and jacket (layer 2)
     const shirt = world.createEntity('cotton shirt', 'object');
-    shirt.add({
-      type: TraitType.WEARABLE,
-      worn: true,
-      wornBy: player.id,
-      bodyPart: 'torso',
-      layer: 1
-    });
+    shirt.add(new WearableTrait({ isWorn: true, wornBy: player.id, bodyPart: 'torso', layer: 1 }));
     world.moveEntity(shirt.id, player.id);
 
     const jacket = world.createEntity('leather jacket', 'object');
-    jacket.add({
-      type: TraitType.WEARABLE,
-      worn: true,
-      wornBy: player.id,
-      bodyPart: 'torso',
-      layer: 2
-    });
+    jacket.add(new WearableTrait({ isWorn: true, wornBy: player.id, bodyPart: 'torso', layer: 2 }));
     world.moveEntity(jacket.id, player.id);
 
     // VERIFY PRECONDITION: both are worn
@@ -538,12 +442,7 @@ describe('World State Mutations', () => {
   test('should take off item without bodyPart specified', () => {
     const { world, player } = setupBasicWorld();
     const ring = world.createEntity('gold ring', 'object');
-    ring.add({
-      type: TraitType.WEARABLE,
-      worn: true,
-      wornBy: player.id
-      // No bodyPart
-    });
+    ring.add(new WearableTrait({ isWorn: true, wornBy: player.id })); // No bodyPart
     world.moveEntity(ring.id, player.id);
 
     // VERIFY PRECONDITION: ring is worn

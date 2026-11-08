@@ -14,7 +14,7 @@
 import { describe, test, expect, beforeEach, vi } from 'vitest';
 import { switchingOffAction } from '../../../src/actions/standard/switching_off';
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType, SwitchableTrait, LightSourceTrait, ContainerTrait } from '@sharpee/world-model';
+import { TraitType, SwitchableTrait, LightSourceTrait, ContainerTrait, OpenableTrait } from '@sharpee/world-model';
 import {
   createRealTestContext,
   setupBasicWorld,
@@ -85,10 +85,7 @@ describe('switchingOffAction (Golden Pattern)', () => {
     test('should fail when already off', () => {
       const { world, player, room } = setupBasicWorld();
       const radio = world.createEntity('portable radio', 'object');
-      radio.add({
-        type: TraitType.SWITCHABLE,
-        isOn: false // Already off
-      });
+      radio.add(new SwitchableTrait({ isOn: false })); // Already off
       world.moveEntity(radio.id, room.id);
 
       const context = createRealTestContext(switchingOffAction, world, createCommand(IFActions.SWITCHING_OFF, {
@@ -108,10 +105,7 @@ describe('switchingOffAction (Golden Pattern)', () => {
     test('should switch off simple device', () => {
       const { world, player, room } = setupBasicWorld();
       const fan = world.createEntity('ceiling fan', 'object');
-      fan.add({
-        type: TraitType.SWITCHABLE,
-        isOn: true
-      });
+      fan.add(new SwitchableTrait({ isOn: true }));
       world.moveEntity(fan.id, room.id);
       
       const context = createRealTestContext(switchingOffAction, world, createCommand(IFActions.SWITCHING_OFF, {
@@ -136,11 +130,7 @@ describe('switchingOffAction (Golden Pattern)', () => {
     test('should handle device with custom off sound', () => {
       const { world, player, room } = setupBasicWorld();
       const engine = world.createEntity('diesel engine', 'object');
-      engine.add({
-        type: TraitType.SWITCHABLE,
-        isOn: true,
-        offSound: 'a sputtering cough'
-      });
+      engine.add(new SwitchableTrait({ isOn: true, offSound: 'a sputtering cough' }));
       world.moveEntity(engine.id, room.id);
       
       const context = createRealTestContext(switchingOffAction, world, createCommand(IFActions.SWITCHING_OFF, {
@@ -167,11 +157,7 @@ describe('switchingOffAction (Golden Pattern)', () => {
     test('should handle device with running sound', () => {
       const { world, player, room } = setupBasicWorld();
       const generator = world.createEntity('power generator', 'object');
-      generator.add({
-        type: TraitType.SWITCHABLE,
-        isOn: true,
-        runningSound: 'a steady hum'
-      });
+      generator.add(new SwitchableTrait({ isOn: true, runningSound: 'a steady hum' }));
       world.moveEntity(generator.id, room.id);
       
       const context = createRealTestContext(switchingOffAction, world, createCommand(IFActions.SWITCHING_OFF, {
@@ -195,11 +181,7 @@ describe('switchingOffAction (Golden Pattern)', () => {
     test('should handle temporary device', () => {
       const { world, player, room } = setupBasicWorld();
       const timer = world.createEntity('kitchen timer', 'object');
-      timer.add({
-        type: TraitType.SWITCHABLE,
-        isOn: true,
-        autoOffCounter: 45 // 45 seconds remaining
-      });
+      timer.add(new SwitchableTrait({ isOn: true, autoOffCounter: 45 })); // 45 seconds remaining
       world.moveEntity(timer.id, room.id);
       
       const context = createRealTestContext(switchingOffAction, world, createCommand(IFActions.SWITCHING_OFF, {
@@ -230,10 +212,7 @@ describe('switchingOffAction (Golden Pattern)', () => {
       const { world, player, room } = setupBasicWorld();
       
       const lamp = world.createEntity('bright lamp', 'object');
-      lamp.add({
-        type: TraitType.SWITCHABLE,
-        isOn: true
-      });
+      lamp.add(new SwitchableTrait({ isOn: true }));
       lamp.add({
         type: TraitType.LIGHT_SOURCE,
         radius: 3
@@ -264,22 +243,12 @@ describe('switchingOffAction (Golden Pattern)', () => {
       const { world, player, room } = setupBasicWorld();
       
       const lamp1 = world.createEntity('desk lamp', 'object');
-      lamp1.add({
-        type: TraitType.SWITCHABLE,
-        isOn: true
-      });
-      lamp1.add({
-        type: TraitType.LIGHT_SOURCE
-      });
+      lamp1.add(new SwitchableTrait({ isOn: true }));
+      lamp1.add(new LightSourceTrait());
       
       const lamp2 = world.createEntity('floor lamp', 'object');
-      lamp2.add({
-        type: TraitType.SWITCHABLE,
-        isOn: true
-      });
-      lamp2.add({
-        type: TraitType.LIGHT_SOURCE
-      });
+      lamp2.add(new SwitchableTrait({ isOn: true }));
+      lamp2.add(new LightSourceTrait());
       
       world.moveEntity(lamp1.id, room.id);
       world.moveEntity(lamp2.id, room.id);
@@ -301,22 +270,12 @@ describe('switchingOffAction (Golden Pattern)', () => {
       const { world, player, room } = setupBasicWorld();
       
       const roomLamp = world.createEntity('table lamp', 'object');
-      roomLamp.add({
-        type: TraitType.SWITCHABLE,
-        isOn: true
-      });
-      roomLamp.add({
-        type: TraitType.LIGHT_SOURCE
-      });
+      roomLamp.add(new SwitchableTrait({ isOn: true }));
+      roomLamp.add(new LightSourceTrait());
       
       const flashlight = world.createEntity('LED flashlight', 'object');
-      flashlight.add({
-        type: TraitType.SWITCHABLE,
-        isOn: true
-      });
-      flashlight.add({
-        type: TraitType.LIGHT_SOURCE
-      });
+      flashlight.add(new SwitchableTrait({ isOn: true }));
+      flashlight.add(new LightSourceTrait());
       
       world.moveEntity(roomLamp.id, room.id);
       world.moveEntity(flashlight.id, player.id); // Carried
@@ -338,11 +297,7 @@ describe('switchingOffAction (Golden Pattern)', () => {
     test('should free power consumption', () => {
       const { world, player, room } = setupBasicWorld();
       const server = world.createEntity('rack server', 'object');
-      server.add({
-        type: TraitType.SWITCHABLE,
-        isOn: true,
-        powerConsumption: 500
-      });
+      server.add(new SwitchableTrait({ isOn: true, powerConsumption: 500 }));
       world.moveEntity(server.id, room.id);
       
       const context = createRealTestContext(switchingOffAction, world, createCommand(IFActions.SWITCHING_OFF, {
@@ -362,10 +317,7 @@ describe('switchingOffAction (Golden Pattern)', () => {
     test('should close automatic door when turned off', () => {
       const { world, player, room } = setupBasicWorld();
       const door = world.createEntity('automatic door', 'object');
-      door.add({
-        type: TraitType.SWITCHABLE,
-        isOn: true
-      });
+      door.add(new SwitchableTrait({ isOn: true }));
       door.add(new ContainerTrait()); // Passage
       door.add({
         type: TraitType.OPENABLE,
@@ -395,10 +347,7 @@ describe('switchingOffAction (Golden Pattern)', () => {
     test('should not affect door without autoCloseOnOff', () => {
       const { world, player, room } = setupBasicWorld();
       const gate = world.createEntity('security gate', 'object');
-      gate.add({
-        type: TraitType.SWITCHABLE,
-        isOn: true
-      });
+      gate.add(new SwitchableTrait({ isOn: true }));
       gate.add(new ContainerTrait());
       gate.add({
         type: TraitType.OPENABLE,
@@ -426,10 +375,7 @@ describe('switchingOffAction (Golden Pattern)', () => {
     test('should not close already closed door', () => {
       const { world, player, room } = setupBasicWorld();
       const portal = world.createEntity('energy portal', 'object');
-      portal.add({
-        type: TraitType.SWITCHABLE,
-        isOn: true
-      });
+      portal.add(new SwitchableTrait({ isOn: true }));
       portal.add(new ContainerTrait());
       portal.add({
         type: TraitType.OPENABLE,
@@ -454,10 +400,7 @@ describe('switchingOffAction (Golden Pattern)', () => {
     test('should include proper entities in all events', () => {
       const { world, player, room } = setupBasicWorld();
       const device = world.createEntity('electronic device', 'object');
-      device.add({
-        type: TraitType.SWITCHABLE,
-        isOn: true
-      });
+      device.add(new SwitchableTrait({ isOn: true }));
       world.moveEntity(device.id, room.id);
       
       const context = createRealTestContext(switchingOffAction, world, createCommand(IFActions.SWITCHING_OFF, {
@@ -488,10 +431,7 @@ describe('World State Mutations', () => {
   test('should actually set isOn to false after switching off', () => {
     const { world, player, room } = setupBasicWorld();
     const lamp = world.createEntity('desk lamp', 'object');
-    lamp.add({
-      type: TraitType.SWITCHABLE,
-      isOn: true
-    });
+    lamp.add(new SwitchableTrait({ isOn: true }));
     world.moveEntity(lamp.id, room.id);
 
     // VERIFY PRECONDITION: lamp is on
@@ -515,11 +455,7 @@ describe('World State Mutations', () => {
   test('should actually set isOn to false and clear autoOffCounter', () => {
     const { world, player, room } = setupBasicWorld();
     const timer = world.createEntity('kitchen timer', 'object');
-    timer.add({
-      type: TraitType.SWITCHABLE,
-      isOn: true,
-      autoOffCounter: 60 // 60 seconds remaining
-    });
+    timer.add(new SwitchableTrait({ isOn: true, autoOffCounter: 60 })); // 60 seconds remaining
     world.moveEntity(timer.id, room.id);
 
     // VERIFY PRECONDITION: timer is on with counter
@@ -545,10 +481,7 @@ describe('World State Mutations', () => {
   test('should NOT change isOn when already off', () => {
     const { world, player, room } = setupBasicWorld();
     const radio = world.createEntity('portable radio', 'object');
-    radio.add({
-      type: TraitType.SWITCHABLE,
-      isOn: false // Already off
-    });
+    radio.add(new SwitchableTrait({ isOn: false })); // Already off
     world.moveEntity(radio.id, room.id);
 
     // VERIFY PRECONDITION: radio is off
@@ -593,10 +526,7 @@ describe('World State Mutations', () => {
   test('should actually turn off a light source and coordinate with LightSourceBehavior', () => {
     const { world, player, room } = setupBasicWorld();
     const flashlight = world.createEntity('LED flashlight', 'object');
-    flashlight.add({
-      type: TraitType.SWITCHABLE,
-      isOn: true
-    });
+    flashlight.add(new SwitchableTrait({ isOn: true }));
     flashlight.add({
       type: TraitType.LIGHT_SOURCE,
       isLit: true,
@@ -629,13 +559,7 @@ describe('World State Mutations', () => {
   test('should turn off device with power requirements', () => {
     const { world, player, room } = setupBasicWorld();
     const computer = world.createEntity('desktop computer', 'object');
-    computer.add({
-      type: TraitType.SWITCHABLE,
-      isOn: true,
-      requiresPower: true,
-      hasPower: true,
-      powerConsumption: 250
-    });
+    computer.add(new SwitchableTrait({ isOn: true, requiresPower: true, hasPower: true, powerConsumption: 250 }));
     world.moveEntity(computer.id, room.id);
 
     // VERIFY PRECONDITION: computer is on

@@ -11,7 +11,7 @@
 import { describe, test, expect, beforeEach } from 'vitest';
 import { showingAction } from '../../../src/actions/standard/showing';
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType, ITrait, ActorTrait } from '@sharpee/world-model';
+import { TraitType, ITrait, ActorTrait, WearableTrait, RoomTrait } from '@sharpee/world-model';
 import {
   createRealTestContext,
   setupBasicWorld,
@@ -104,11 +104,7 @@ describe('showingAction (Golden Pattern)', () => {
     test('should succeed when showing worn item', () => {
       const { world, player, room } = setupBasicWorld();
       const badge = world.createEntity('sheriff badge', 'object');
-      badge.add({
-        type: TraitType.WEARABLE,
-        worn: true,
-        bodyPart: 'chest'
-      });
+      badge.add(new WearableTrait({ isWorn: true, bodyPart: 'chest' }));
       world.moveEntity(badge.id, player.id);
 
       const deputy = world.createEntity('deputy', 'actor');
@@ -136,7 +132,7 @@ describe('showingAction (Golden Pattern)', () => {
     test('should fail when viewer not visible', () => {
       const { world, player, room } = setupBasicWorld();
       const otherRoom = world.createEntity('Other Room', 'room');
-      otherRoom.add({ type: TraitType.ROOM });
+      otherRoom.add(new RoomTrait());
 
       const treasure = world.createEntity('ancient treasure', 'object');
       world.moveEntity(treasure.id, player.id);
@@ -402,11 +398,7 @@ describe('Showing Action Edge Cases', () => {
     const { world, player, room } = setupBasicWorld();
 
     const uniform = world.createEntity('military uniform', 'object');
-    uniform.add({
-      type: TraitType.WEARABLE,
-      worn: true,
-      bodyPart: 'torso'
-    });
+    uniform.add(new WearableTrait({ isWorn: true, bodyPart: 'torso' }));
     world.moveEntity(uniform.id, player.id);
 
     const general = world.createEntity('stern general', 'actor');

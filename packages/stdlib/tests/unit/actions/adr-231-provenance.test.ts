@@ -19,7 +19,7 @@
  */
 
 import { describe, test, expect } from 'vitest';
-import { TraitType, WorldModel, WearableTrait, ActorTrait, ContainerTrait, SceneryTrait } from '@sharpee/world-model';
+import { TraitType, WorldModel, WearableTrait, ActorTrait, ContainerTrait, SceneryTrait, CuttableTrait, OpenableTrait } from '@sharpee/world-model';
 import { wearingAction } from '../../../src/actions/standard/wearing';
 import { givingAction } from '../../../src/actions/standard/giving';
 import { touchingAction } from '../../../src/actions/standard/touching';
@@ -149,7 +149,7 @@ describe('Capability-behavior veto pass-through (ADR-231 D1)', () => {
   const setupCuttableRope = () => {
     const { world, player, room } = setupBasicWorld();
     const rope = world.createEntity('thick rope', 'object');
-    rope.add({ type: TraitType.CUTTABLE } as any); // no tool requirement
+    rope.add(new CuttableTrait()); // no tool requirement
     rope.add(new DullSeverableTrait() as any);
     world.moveEntity(rope.id, room.id);
     return { world, player, room, rope };
@@ -238,7 +238,7 @@ describe('Scope refusals emit fully-qualified scope.* keys', () => {
     // gem goes in while the cabinet is open; then we close it.
     const cabinet = world.createEntity('glass cabinet', 'object');
     cabinet.add(new ContainerTrait({ isTransparent: true }));
-    cabinet.add({ type: TraitType.OPENABLE, isOpen: true });
+    cabinet.add(new OpenableTrait({ isOpen: true }));
     world.moveEntity(cabinet.id, room.id);
     const gem = world.createEntity('ruby gem', 'object');
     world.moveEntity(gem.id, cabinet.id);

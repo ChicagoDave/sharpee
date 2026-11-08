@@ -4,7 +4,7 @@
  */
 
 import { describe, test, expect, beforeEach } from 'vitest';
-import { WorldModel, AuthorModel, TraitType, IFEntity, EntityType, IdentityTrait, RoomTrait, LightSourceTrait, ActorTrait, ContainerTrait } from '@sharpee/world-model';
+import { WorldModel, AuthorModel, TraitType, IFEntity, EntityType, IdentityTrait, RoomTrait, LightSourceTrait, ActorTrait, ContainerTrait, DoorTrait, OpenableTrait, EdibleTrait } from '@sharpee/world-model';
 import { StandardScopeResolver } from '../../../src/scope/scope-resolver';
 import { ScopeLevel } from '../../../src/scope/types';
 import { TEST_MARKER_TRAIT } from '../../test-utils';
@@ -28,11 +28,11 @@ describe('Sensory Extensions', () => {
 
     // Create test world using AuthorModel
     room = author.createEntity('Living Room', EntityType.ROOM);
-    room.add({ type: TraitType.ROOM });
+    room.add(new RoomTrait());
     room.add(new IdentityTrait({ name: 'Living Room' }));
 
     hallway = author.createEntity('Hallway', EntityType.ROOM);
-    hallway.add({ type: TraitType.ROOM });
+    hallway.add(new RoomTrait());
     hallway.add(new IdentityTrait({ name: 'Hallway' }));
 
     // An inert marker on each room (these fixtures never traverse; the
@@ -63,12 +63,8 @@ describe('Sensory Extensions', () => {
     test('should hear through open doors', () => {
       // Create door connecting the rooms
       const door = author.createEntity(EntityType.DOOR, EntityType.DOOR);
-      door.add({ 
-        type: TraitType.DOOR,
-        room1: room.id,
-        room2: hallway.id
-      });
-      door.add({ type: TraitType.OPENABLE, isOpen: true });
+      door.add(new DoorTrait({ room1: room.id, room2: hallway.id }));
+      door.add(new OpenableTrait({ isOpen: true }));
       // Door must be placed in one of the rooms
       author.moveEntity(door.id, room.id);
 
@@ -85,12 +81,8 @@ describe('Sensory Extensions', () => {
     test('should hear through closed doors (muffled)', () => {
       // Create closed door
       const door = author.createEntity(EntityType.DOOR, EntityType.DOOR);
-      door.add({ 
-        type: TraitType.DOOR,
-        room1: room.id,
-        room2: hallway.id
-      });
-      door.add({ type: TraitType.OPENABLE, isOpen: false });
+      door.add(new DoorTrait({ room1: room.id, room2: hallway.id }));
+      door.add(new OpenableTrait({ isOpen: false }));
       // Place door in one of the rooms
       author.moveEntity(door.id, room.id);
 
@@ -105,7 +97,7 @@ describe('Sensory Extensions', () => {
 
     test('should not hear in unconnected rooms', () => {
       const basement = author.createEntity('Basement', EntityType.ROOM);
-      basement.add({ type: TraitType.ROOM });
+      basement.add(new RoomTrait());
 
       const npc = author.createEntity('Bob', EntityType.ACTOR);
       npc.add(new ActorTrait());
@@ -123,12 +115,8 @@ describe('Sensory Extensions', () => {
 
       // In connected room with door
       const door = author.createEntity(EntityType.DOOR, EntityType.DOOR);
-      door.add({ 
-        type: TraitType.DOOR,
-        room1: room.id,
-        room2: hallway.id
-      });
-      door.add({ type: TraitType.OPENABLE, isOpen: false });
+      door.add(new DoorTrait({ room1: room.id, room2: hallway.id }));
+      door.add(new OpenableTrait({ isOpen: false }));
       // Place door in one of the rooms
       author.moveEntity(door.id, room.id);
 
@@ -139,7 +127,7 @@ describe('Sensory Extensions', () => {
 
       // In unconnected room
       const basement = author.createEntity('Basement', EntityType.ROOM);
-      basement.add({ type: TraitType.ROOM });
+      basement.add(new RoomTrait());
       const mouse = author.createEntity('mouse', EntityType.OBJECT);
       mouse.add(new IdentityTrait({ name: 'mouse' }));
       author.moveEntity(mouse.id, basement.id);
@@ -163,7 +151,7 @@ describe('Sensory Extensions', () => {
   describe('Smell', () => {
     test('should smell food items in same room', () => {
       const bread = author.createEntity('fresh bread', EntityType.OBJECT);
-      bread.add({ type: TraitType.EDIBLE });
+      bread.add(new EdibleTrait());
       bread.add(new IdentityTrait({ name: 'fresh bread' }));
       author.moveEntity(bread.id, room.id);
 
@@ -181,17 +169,13 @@ describe('Sensory Extensions', () => {
 
     test('should smell through open doors', () => {
       const door = author.createEntity(EntityType.DOOR, EntityType.DOOR);
-      door.add({ 
-        type: TraitType.DOOR,
-        room1: room.id,
-        room2: hallway.id
-      });
-      door.add({ type: TraitType.OPENABLE, isOpen: true });
+      door.add(new DoorTrait({ room1: room.id, room2: hallway.id }));
+      door.add(new OpenableTrait({ isOpen: true }));
       // Place door in one of the rooms
       author.moveEntity(door.id, room.id);
 
       const bread = author.createEntity('fresh bread', EntityType.OBJECT);
-      bread.add({ type: TraitType.EDIBLE });
+      bread.add(new EdibleTrait());
       bread.add(new IdentityTrait({ name: 'fresh bread' }));
       author.moveEntity(bread.id, hallway.id);
 
@@ -202,17 +186,13 @@ describe('Sensory Extensions', () => {
 
     test('should not smell through closed doors', () => {
       const door = author.createEntity(EntityType.DOOR, EntityType.DOOR);
-      door.add({ 
-        type: TraitType.DOOR,
-        room1: room.id,
-        room2: hallway.id
-      });
-      door.add({ type: TraitType.OPENABLE, isOpen: false });
+      door.add(new DoorTrait({ room1: room.id, room2: hallway.id }));
+      door.add(new OpenableTrait({ isOpen: false }));
       // Place door in one of the rooms
       author.moveEntity(door.id, room.id);
 
       const bread = author.createEntity('fresh bread', EntityType.OBJECT);
-      bread.add({ type: TraitType.EDIBLE });
+      bread.add(new EdibleTrait());
       bread.add(new IdentityTrait({ name: 'fresh bread' }));
       author.moveEntity(bread.id, hallway.id);
 
@@ -251,7 +231,7 @@ describe('Sensory Extensions', () => {
       // Give player a lit torch (proper LightSourceTrait)
       const torch = author.createEntity('torch', EntityType.OBJECT);
       torch.add(new IdentityTrait({ name: 'torch' }));
-      torch.add({ type: TraitType.LIGHT_SOURCE, isLit: true });
+      torch.add(new LightSourceTrait({ isLit: true }));
       author.moveEntity(torch.id, player.id);
 
       const ball = author.createEntity('ball', EntityType.OBJECT);
@@ -268,7 +248,7 @@ describe('Sensory Extensions', () => {
       roomTrait.requiresLight = true;
 
       // Give the player a lit light source (acts as "player glows")
-      player.add({ type: TraitType.LIGHT_SOURCE, isLit: true });
+      player.add(new LightSourceTrait({ isLit: true }));
 
       const ball = author.createEntity('ball', EntityType.OBJECT);
       ball.add(new IdentityTrait({ name: 'ball' }));

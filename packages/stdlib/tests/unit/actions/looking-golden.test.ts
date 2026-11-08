@@ -12,7 +12,7 @@
 import { describe, test, expect, vi } from 'vitest';
 import { lookingAction } from '../../../src/actions/standard/looking';
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType, RoomTrait, RoomBehavior, ActorTrait, ContainerTrait, SupporterTrait, SceneryTrait, IdentityTrait } from '@sharpee/world-model';
+import { TraitType, RoomTrait, RoomBehavior, ActorTrait, ContainerTrait, SupporterTrait, SceneryTrait, IdentityTrait, LightSourceTrait, SwitchableTrait, OpenableTrait } from '@sharpee/world-model';
 import {
   createRealTestContext,
   setupBasicWorld,
@@ -194,10 +194,7 @@ describe('lookingAction (Golden Pattern)', () => {
       world.setPlayer(player.id);
       
       const darkRoom = world.createEntity('Dark Cave', 'room');
-      darkRoom.add({
-        type: TraitType.ROOM,
-        requiresLight: true
-      });
+      darkRoom.add(new RoomTrait({ requiresLight: true }));
       
       world.moveEntity(player.id, darkRoom.id);
       
@@ -225,17 +222,11 @@ describe('lookingAction (Golden Pattern)', () => {
       world.setPlayer(player.id);
       
       const darkRoom = world.createEntity('Dark Cave', 'room');
-      darkRoom.add({
-        type: TraitType.ROOM,
-        requiresLight: true
-      });
+      darkRoom.add(new RoomTrait({ requiresLight: true }));
       
       const torch = world.createEntity('burning torch', 'object');
-      torch.add({ type: TraitType.LIGHT_SOURCE });
-      torch.add({ 
-        type: TraitType.SWITCHABLE,
-        isOn: true
-      });
+      torch.add(new LightSourceTrait());
+      torch.add(new SwitchableTrait({ isOn: true }));
       
       world.moveEntity(player.id, darkRoom.id);
       world.moveEntity(torch.id, player.id);  // Player carries torch
@@ -264,17 +255,11 @@ describe('lookingAction (Golden Pattern)', () => {
       world.setPlayer(player.id);
       
       const darkRoom = world.createEntity('Lit Cave', 'room');
-      darkRoom.add({
-        type: TraitType.ROOM,
-        requiresLight: true
-      });
+      darkRoom.add(new RoomTrait({ requiresLight: true }));
       
       const lamp = world.createEntity('electric lamp', 'object');
-      lamp.add({ type: TraitType.LIGHT_SOURCE });
-      lamp.add({ 
-        type: TraitType.SWITCHABLE,
-        isOn: true
-      });
+      lamp.add(new LightSourceTrait());
+      lamp.add(new SwitchableTrait({ isOn: true }));
       
       world.moveEntity(player.id, darkRoom.id);
       world.moveEntity(lamp.id, darkRoom.id);  // Lamp in room
@@ -618,7 +603,7 @@ describe('Concealment filtering (platform-issue-sweep Phase 2)', () => {
 
     const box = world.createEntity('wooden box', 'object');
     box.add(new ContainerTrait());
-    box.add({ type: TraitType.OPENABLE, isOpen: true });
+    box.add(new OpenableTrait({ isOpen: true }));
     world.moveEntity(box.id, room.id);
 
     const coin = world.createEntity('gold coin', 'object');
@@ -644,7 +629,7 @@ describe('Concealment filtering (platform-issue-sweep Phase 2)', () => {
 
     const box = world.createEntity('wooden box', 'object');
     box.add(new ContainerTrait());
-    box.add({ type: TraitType.OPENABLE, isOpen: true });
+    box.add(new OpenableTrait({ isOpen: true }));
     world.moveEntity(box.id, room.id);
 
     const key = world.createEntity('secret key', 'object');
@@ -666,7 +651,7 @@ describe('Concealment filtering (platform-issue-sweep Phase 2)', () => {
 
     const box = world.createEntity('wooden box', 'object');
     box.add(new ContainerTrait());
-    box.add({ type: TraitType.OPENABLE, isOpen: true });
+    box.add(new OpenableTrait({ isOpen: true }));
     world.moveEntity(box.id, room.id);
 
     const key = world.createEntity('secret key', 'object');

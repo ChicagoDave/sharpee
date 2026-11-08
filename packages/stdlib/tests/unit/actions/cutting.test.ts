@@ -15,7 +15,7 @@
 import { describe, test, expect } from 'vitest';
 import { cuttingAction } from '../../../src/actions/standard/cutting';
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType, WorldModel, toolRequirement, type IToolGated, type ITrait } from '@sharpee/world-model';
+import { TraitType, WorldModel, toolRequirement, CuttableTrait, type IToolGated, type ITrait } from '@sharpee/world-model';
 import {
   createRealTestContext,
   createCommand,
@@ -39,10 +39,7 @@ const setup = (opts: { toolRequired?: boolean } = {}) => {
   const { world, player, room } = setupBasicWorld();
   const knife = world.createEntity('sharp knife', 'object');
   const rope = world.createEntity('thick rope', 'object');
-  rope.add({
-    type: TraitType.CUTTABLE,
-    ...(opts.toolRequired ? { toolRequirement: toolRequirement(knife.id) } : {})
-  } as any);
+  rope.add(new CuttableTrait(opts.toolRequired ? { toolRequirement: toolRequirement(knife.id) } : {}));
   // Inert marker trait — the target-side registration key.
   rope.add({ type: TEST_MARKER_TRAIT } as any);
   world.moveEntity(rope.id, room.id);

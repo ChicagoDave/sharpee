@@ -129,6 +129,9 @@ describe('Folded execute-phase refusal (ADR-229 R1)', () => {
     const { world, player, item } = setup();
     // Another unlayered item already worn on the same body part conflicts.
     const vest = world.createEntity('quilted vest', 'object');
+    // Left as a literal on purpose: wearable-shared's body-part conflict check
+    // fires only when `layer` is undefined, which WearableTrait's constructor
+    // never produces (it defaults layer to 1). Awaiting a platform ruling.
     vest.add({
       type: TraitType.WEARABLE,
       worn: true,

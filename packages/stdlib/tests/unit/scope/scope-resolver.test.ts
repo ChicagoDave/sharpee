@@ -3,7 +3,7 @@
  */
 
 import { describe, test, expect, beforeEach } from 'vitest';
-import { WorldModel, TraitType, EntityType, IFEntity, IdentityTrait, ActorTrait, ContainerTrait, SupporterTrait, SceneryTrait } from '@sharpee/world-model';
+import { WorldModel, TraitType, EntityType, IFEntity, IdentityTrait, ActorTrait, ContainerTrait, SupporterTrait, SceneryTrait, RoomTrait, OpenableTrait, VehicleTrait, EnterableTrait } from '@sharpee/world-model';
 import { StandardScopeResolver } from '../../../src/scope/scope-resolver';
 import { ScopeLevel } from '../../../src/scope/types';
 
@@ -23,7 +23,7 @@ describe('StandardScopeResolver', () => {
 
     // Create basic test world
     room = world.createEntity('Test Room', EntityType.ROOM);
-    room.add({ type: TraitType.ROOM });
+    room.add(new RoomTrait());
 
     player = world.createEntity('Player', EntityType.ACTOR);
     player.add(new ActorTrait({ isPlayer: true }));
@@ -45,7 +45,7 @@ describe('StandardScopeResolver', () => {
 
     test('should not see objects in different room', () => {
       const otherRoom = world.createEntity('Other Room', EntityType.ROOM);
-      otherRoom.add({ type: TraitType.ROOM });
+      otherRoom.add(new RoomTrait());
       
       const ball = world.createEntity('red ball', EntityType.OBJECT);
       world.moveEntity(ball.id, otherRoom.id);
@@ -67,7 +67,7 @@ describe('StandardScopeResolver', () => {
     test('should see objects in open containers', () => {
       const box = world.createEntity('wooden box', EntityType.CONTAINER);
       box.add(new ContainerTrait());
-      box.add({ type: TraitType.OPENABLE, isOpen: true });
+      box.add(new OpenableTrait({ isOpen: true }));
       world.moveEntity(box.id, room.id);
 
       const coin = world.createEntity('gold coin', EntityType.OBJECT);
@@ -80,7 +80,7 @@ describe('StandardScopeResolver', () => {
     test('should not see objects in closed containers', () => {
       const box = world.createEntity('wooden box', EntityType.CONTAINER);
       box.add(new ContainerTrait());
-      box.add({ type: TraitType.OPENABLE, isOpen: false });
+      box.add(new OpenableTrait({ isOpen: false }));
       world.moveEntity(box.id, room.id);
 
       const coin = world.createEntity('gold coin', EntityType.OBJECT);
@@ -93,12 +93,12 @@ describe('StandardScopeResolver', () => {
     test('should see nested containers when open', () => {
       const chest = world.createEntity('treasure chest', EntityType.CONTAINER);
       chest.add(new ContainerTrait());
-      chest.add({ type: TraitType.OPENABLE, isOpen: true });
+      chest.add(new OpenableTrait({ isOpen: true }));
       world.moveEntity(chest.id, room.id);
 
       const box = world.createEntity('small box', EntityType.CONTAINER);
       box.add(new ContainerTrait());
-      box.add({ type: TraitType.OPENABLE, isOpen: true });
+      box.add(new OpenableTrait({ isOpen: true }));
       world.moveEntity(box.id, chest.id);
 
       const ring = world.createEntity('diamond ring', EntityType.OBJECT);
@@ -110,12 +110,12 @@ describe('StandardScopeResolver', () => {
     test('should not see through any closed container in hierarchy', () => {
       const chest = world.createEntity('treasure chest', EntityType.CONTAINER);
       chest.add(new ContainerTrait());
-      chest.add({ type: TraitType.OPENABLE, isOpen: true });
+      chest.add(new OpenableTrait({ isOpen: true }));
       world.moveEntity(chest.id, room.id);
 
       const box = world.createEntity('small box', EntityType.CONTAINER);
       box.add(new ContainerTrait());
-      box.add({ type: TraitType.OPENABLE, isOpen: false }); // Closed!
+      box.add(new OpenableTrait({ isOpen: false })); // Closed!
       world.moveEntity(box.id, chest.id);
 
       const ring = world.createEntity('diamond ring', EntityType.OBJECT);
@@ -176,7 +176,7 @@ describe('StandardScopeResolver', () => {
     test('should reach objects in open containers', () => {
       const box = world.createEntity('box', EntityType.CONTAINER);
       box.add(new ContainerTrait());
-      box.add({ type: TraitType.OPENABLE, isOpen: true });
+      box.add(new OpenableTrait({ isOpen: true }));
       world.moveEntity(box.id, room.id);
 
       const coin = world.createEntity('coin', EntityType.OBJECT);
@@ -188,7 +188,7 @@ describe('StandardScopeResolver', () => {
     test('should not reach objects in closed containers', () => {
       const box = world.createEntity('box', EntityType.CONTAINER);
       box.add(new ContainerTrait());
-      box.add({ type: TraitType.OPENABLE, isOpen: false });
+      box.add(new OpenableTrait({ isOpen: false }));
       world.moveEntity(box.id, room.id);
 
       const coin = world.createEntity('coin', EntityType.OBJECT);
@@ -229,7 +229,7 @@ describe('StandardScopeResolver', () => {
 
       const closedBox = world.createEntity('locked box', EntityType.CONTAINER);
       closedBox.add(new ContainerTrait());
-      closedBox.add({ type: TraitType.OPENABLE, isOpen: false });
+      closedBox.add(new OpenableTrait({ isOpen: false }));
       world.moveEntity(closedBox.id, room.id);
 
       const vase = world.createEntity('vase', EntityType.OBJECT);
@@ -292,7 +292,7 @@ describe('StandardScopeResolver', () => {
 
     test('should apply minimum scope only to specific rooms', () => {
       const otherRoom = world.createEntity('Other Room', EntityType.ROOM);
-      otherRoom.add({ type: TraitType.ROOM });
+      otherRoom.add(new RoomTrait());
 
       const mountain = world.createEntity('distant mountain', EntityType.OBJECT);
       // Only visible from the test room, not other room
@@ -310,10 +310,10 @@ describe('StandardScopeResolver', () => {
 
     test('should apply minimum scope to multiple specific rooms', () => {
       const room2 = world.createEntity('Room 2', EntityType.ROOM);
-      room2.add({ type: TraitType.ROOM });
+      room2.add(new RoomTrait());
 
       const room3 = world.createEntity('Room 3', EntityType.ROOM);
-      room3.add({ type: TraitType.ROOM });
+      room3.add(new RoomTrait());
 
       const sound = world.createEntity('ticking sound', EntityType.OBJECT);
       sound.setMinimumScope(ScopeLevel.AWARE, [room.id, room2.id]);
@@ -369,7 +369,7 @@ describe('StandardScopeResolver', () => {
 
     test('should clear minimum scope for specific rooms only', () => {
       const room2 = world.createEntity('Room 2', EntityType.ROOM);
-      room2.add({ type: TraitType.ROOM });
+      room2.add(new RoomTrait());
 
       const sound = world.createEntity('sound', EntityType.OBJECT);
       sound.setMinimumScope(ScopeLevel.AWARE, [room.id, room2.id]);
@@ -442,16 +442,16 @@ describe('StandardScopeResolver', () => {
       // setMinimumScope(REACHABLE, [vairRoom]) should make the hook reachable.
 
       const vairRoom = world.createEntity('Vair Room', EntityType.ROOM);
-      vairRoom.add({ type: TraitType.ROOM });
+      vairRoom.add(new RoomTrait());
 
       const ledgeRoom = world.createEntity('Narrow Ledge', EntityType.ROOM);
-      ledgeRoom.add({ type: TraitType.ROOM });
+      ledgeRoom.add(new RoomTrait());
 
       // Balloon is an enterable item (vehicle) in the vair room.
       // Must also have ENTERABLE trait so canContain() allows moveEntity.
       const balloon = world.createEntity('balloon', EntityType.ITEM);
-      balloon.add({ type: TraitType.VEHICLE });
-      balloon.add({ type: TraitType.ENTERABLE });
+      balloon.add(new VehicleTrait());
+      balloon.add(new EnterableTrait());
       world.moveEntity(balloon.id, vairRoom.id);
 
       // Player is inside the balloon — verify move succeeds
@@ -480,17 +480,17 @@ describe('StandardScopeResolver', () => {
     test('should NOT make entity reachable from wrong vehicle room', () => {
       // Same setup, but the hook's minimum scope is for a different room
       const vairRoom = world.createEntity('Vair Room', EntityType.ROOM);
-      vairRoom.add({ type: TraitType.ROOM });
+      vairRoom.add(new RoomTrait());
 
       const otherVairRoom = world.createEntity('Other Vair Room', EntityType.ROOM);
-      otherVairRoom.add({ type: TraitType.ROOM });
+      otherVairRoom.add(new RoomTrait());
 
       const ledgeRoom = world.createEntity('Wide Ledge', EntityType.ROOM);
-      ledgeRoom.add({ type: TraitType.ROOM });
+      ledgeRoom.add(new RoomTrait());
 
       const balloon = world.createEntity('balloon', EntityType.ITEM);
-      balloon.add({ type: TraitType.VEHICLE });
-      balloon.add({ type: TraitType.ENTERABLE });
+      balloon.add(new VehicleTrait());
+      balloon.add(new EnterableTrait());
       world.moveEntity(balloon.id, vairRoom.id);
 
       const moved = world.moveEntity(player.id, balloon.id);
@@ -509,14 +509,14 @@ describe('StandardScopeResolver', () => {
 
     test('should include vehicle-scoped entities in getReachable', () => {
       const vairRoom = world.createEntity('Vair Room', EntityType.ROOM);
-      vairRoom.add({ type: TraitType.ROOM });
+      vairRoom.add(new RoomTrait());
 
       const ledgeRoom = world.createEntity('Ledge Room', EntityType.ROOM);
-      ledgeRoom.add({ type: TraitType.ROOM });
+      ledgeRoom.add(new RoomTrait());
 
       const balloon = world.createEntity('balloon', EntityType.ITEM);
-      balloon.add({ type: TraitType.VEHICLE });
-      balloon.add({ type: TraitType.ENTERABLE });
+      balloon.add(new VehicleTrait());
+      balloon.add(new EnterableTrait());
       world.moveEntity(balloon.id, vairRoom.id);
 
       const moved = world.moveEntity(player.id, balloon.id);
@@ -542,15 +542,15 @@ describe('StandardScopeResolver', () => {
       // 5. Verify scope resolution still works
 
       const vairRoom = world.createEntity('Vair Room', EntityType.ROOM);
-      vairRoom.add({ type: TraitType.ROOM });
+      vairRoom.add(new RoomTrait());
 
       const ledgeRoom = world.createEntity('Narrow Ledge', EntityType.ROOM);
-      ledgeRoom.add({ type: TraitType.ROOM });
+      ledgeRoom.add(new RoomTrait());
 
       // Balloon is enterable vehicle in vairRoom
       const balloon = world.createEntity('balloon', EntityType.ITEM);
-      balloon.add({ type: TraitType.VEHICLE });
-      balloon.add({ type: TraitType.ENTERABLE });
+      balloon.add(new VehicleTrait());
+      balloon.add(new EnterableTrait());
       balloon.add(new ContainerTrait()); // Balloon also has container (like real game)
       world.moveEntity(balloon.id, vairRoom.id);
 
@@ -616,15 +616,15 @@ describe('StandardScopeResolver', () => {
       // This tests the FULL chain that fails at runtime with ENTITY_NOT_FOUND
 
       const vairRoom = world.createEntity('Vair Room', EntityType.ROOM);
-      vairRoom.add({ type: TraitType.ROOM });
+      vairRoom.add(new RoomTrait());
 
       const ledgeRoom = world.createEntity('Narrow Ledge', EntityType.ROOM);
-      ledgeRoom.add({ type: TraitType.ROOM });
+      ledgeRoom.add(new RoomTrait());
 
       // Balloon
       const balloon = world.createEntity('balloon', EntityType.ITEM);
-      balloon.add({ type: TraitType.VEHICLE });
-      balloon.add({ type: TraitType.ENTERABLE });
+      balloon.add(new VehicleTrait());
+      balloon.add(new EnterableTrait());
       balloon.add(new ContainerTrait());
       world.moveEntity(balloon.id, vairRoom.id);
 
@@ -722,11 +722,11 @@ describe('StandardScopeResolver', () => {
       // 5. Command validator returns ENTITY_NOT_FOUND (modifiers not matched)
 
       const vairRoom = world.createEntity('Vair Room', EntityType.ROOM);
-      vairRoom.add({ type: TraitType.ROOM });
+      vairRoom.add(new RoomTrait());
 
       const balloon = world.createEntity('balloon', EntityType.ITEM);
-      balloon.add({ type: TraitType.VEHICLE });
-      balloon.add({ type: TraitType.ENTERABLE });
+      balloon.add(new VehicleTrait());
+      balloon.add(new EnterableTrait());
       balloon.add(new ContainerTrait());
       world.moveEntity(balloon.id, vairRoom.id);
       world.moveEntity(player.id, balloon.id);

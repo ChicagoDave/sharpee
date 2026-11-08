@@ -28,6 +28,7 @@ import {
   TraitType,
   WorldModel,
   ActorTrait,
+  RoomTrait,
 } from '@sharpee/world-model';
 
 import { examiningAction } from '../../../src/actions/standard/examining';
@@ -44,7 +45,7 @@ const ENGLISH_WORDS = { selfWords: ['me', 'myself', 'self', 'yourself'], nameSto
 
 function makeRoom(author: AuthorModel, displayName: string): IFEntity {
   const room = author.createEntity(displayName, EntityType.ROOM);
-  room.add({ type: TraitType.ROOM });
+  room.add(new RoomTrait());
   return room;
 }
 

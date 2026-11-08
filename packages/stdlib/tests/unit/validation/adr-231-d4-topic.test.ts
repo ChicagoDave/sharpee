@@ -20,7 +20,7 @@
 import { describe, test, expect, beforeEach } from 'vitest';
 import { CommandValidator } from '../../../src/validation/command-validator';
 import { StandardActionRegistry } from '../../../src/actions/registry';
-import { AuthorModel, WorldModel, IFEntity, TraitType, EntityType, ActorTrait } from '@sharpee/world-model';
+import { AuthorModel, WorldModel, IFEntity, TraitType, EntityType, ActorTrait, RoomTrait } from '@sharpee/world-model';
 import { LanguageProvider } from '@sharpee/if-domain';
 import { askingAction } from '../../../src/actions/standard/asking';
 import { tellingAction } from '../../../src/actions/standard/telling';
@@ -49,7 +49,7 @@ describe('CommandValidator topic resolution (ADR-231 D4)', () => {
 
     player = author.createEntity('yourself', EntityType.ACTOR);
     room = author.createEntity('Hermitage', EntityType.ROOM);
-    room.add({ type: TraitType.ROOM });
+    room.add(new RoomTrait());
     author.moveEntity(player.id, room.id);
     player.add(new ActorTrait({ isPlayable: true }));
     world.setPlayer(player.id);
@@ -119,7 +119,7 @@ describe('CommandValidator topic resolution (ADR-231 D4)', () => {
 
   test('an out-of-scope entity name falls back to text (no rejection, no entity)', () => {
     const otherRoom = author.createEntity('Cave', EntityType.ROOM);
-    otherRoom.add({ type: TraitType.ROOM });
+    otherRoom.add(new RoomTrait());
     const dragon = author.createEntity('dragon', EntityType.ACTOR);
     dragon.add(new ActorTrait());
     author.moveEntity(dragon.id, otherRoom.id);
@@ -176,7 +176,7 @@ describe('asking/telling report the first-class topic (ADR-231 D4)', () => {
     const author = new AuthorModel(world.getDataStore(), world);
     const player = author.createEntity('yourself', EntityType.ACTOR);
     const room = author.createEntity('Hermitage', EntityType.ROOM);
-    room.add({ type: TraitType.ROOM });
+    room.add(new RoomTrait());
     author.moveEntity(player.id, room.id);
     player.add(new ActorTrait({ isPlayable: true }));
     world.setPlayer(player.id);

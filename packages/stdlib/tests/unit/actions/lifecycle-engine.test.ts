@@ -18,7 +18,7 @@
 
 import { describe, test, expect } from 'vitest';
 import { ISemanticEvent } from '@sharpee/core';
-import { TraitType, WorldModel, IFEntity } from '@sharpee/world-model';
+import { TraitType, WorldModel, IFEntity, ReadableTrait, OpenableTrait, EdibleTrait } from '@sharpee/world-model';
 import {
   ActionLifecycleDescriptor,
   ACTOR_SLOT_ID,
@@ -59,10 +59,10 @@ const stubAction: Action = {
 function setup() {
   const { world, player, room } = setupBasicWorld();
   const item = world.createEntity('brass widget', 'object');
-  item.add({ type: TraitType.READABLE, text: '' });
+  item.add(new ReadableTrait({ text: '' }));
   world.moveEntity(item.id, room.id);
   const box = world.createEntity('wooden box', 'object');
-  box.add({ type: TraitType.OPENABLE, isOpen: true });
+  box.add(new OpenableTrait({ isOpen: true }));
   world.moveEntity(box.id, room.id);
   return { world, player, room, item, box };
 }
@@ -484,7 +484,7 @@ describe('multi-object lifecycle (D4)', () => {
   function multiSetup() {
     const { world, player, room, box } = setup();
     const vetoed = world.createEntity('cursed widget', 'object');
-    vetoed.add({ type: TraitType.READABLE, text: '' });
+    vetoed.add(new ReadableTrait({ text: '' }));
     world.moveEntity(vetoed.id, room.id);
     const heavy = world.createEntity('heavy widget', 'object');
     world.moveEntity(heavy.id, room.id);
@@ -528,7 +528,7 @@ describe('multi-object lifecycle (D4)', () => {
   test('a postValidate hook veto fails its item inside the multi-object path', () => {
     const { world, room, vetoed, heavy, clean } = multiSetup();
     const sticky = world.createEntity('sticky widget', 'object');
-    sticky.add({ type: TraitType.EDIBLE, servings: 1 });
+    sticky.add(new EdibleTrait({ servings: 1 }));
     world.moveEntity(sticky.id, room.id);
     world.registerActionInterceptor(TraitType.EDIBLE, TEST_ACTION, {
       postValidate() {

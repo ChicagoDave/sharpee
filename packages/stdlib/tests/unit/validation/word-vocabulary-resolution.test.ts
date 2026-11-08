@@ -28,6 +28,7 @@ import {
   WorldModel,
   ActorTrait,
   IdentityTrait,
+  RoomTrait,
 } from '@sharpee/world-model';
 import { LanguageProvider } from '@sharpee/if-domain';
 import type { ISystemEvent, IGenericEventSource } from '@sharpee/core';
@@ -126,7 +127,7 @@ describe('CommandValidator — word-level vocabulary resolution (ADR-231 D3)', (
 
     player = author.createEntity('yourself', EntityType.ACTOR);
     room = author.createEntity('Test Room', EntityType.ROOM);
-    room.add({ type: TraitType.ROOM });
+    room.add(new RoomTrait());
     author.moveEntity(player.id, room.id);
     player.add(new ActorTrait({ isPlayable: true }));
     world.setPlayer(player.id);
@@ -308,7 +309,7 @@ describe('CommandValidator — word-level vocabulary resolution (ADR-231 D3)', (
   describe('scope stays orthogonal', () => {
     test('a word-tier match in another room is not resolvable', () => {
       const otherRoom = author.createEntity('Other Room', EntityType.ROOM);
-      otherRoom.add({ type: TraitType.ROOM });
+      otherRoom.add(new RoomTrait());
       const farKey = author.createEntity('brass key', EntityType.OBJECT);
       farKey.add(new IdentityTrait({ name: 'brass key' }));
       author.moveEntity(farKey.id, otherRoom.id);

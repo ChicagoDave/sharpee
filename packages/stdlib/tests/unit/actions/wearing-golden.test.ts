@@ -11,7 +11,7 @@
 import { describe, test, expect } from 'vitest';
 import { wearingAction } from '../../../src/actions/standard/wearing';
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType, WearableTrait } from '@sharpee/world-model';
+import { TraitType, WearableTrait, RoomTrait } from '@sharpee/world-model';
 import {
 createRealTestContext,
 expectEvent,
@@ -116,13 +116,10 @@ describe('wearingAction (Golden Pattern)', () => {
     test('should fail when item is out of scope (in another room)', () => {
       const { world, player } = setupBasicWorld();
       const otherRoom = world.createEntity('Other Room', 'room');
-      otherRoom.add({ type: TraitType.ROOM });
+      otherRoom.add(new RoomTrait());
       
       const shirt = world.createEntity('blue shirt', 'object');
-      shirt.add({
-        type: TraitType.WEARABLE,
-        worn: false
-      });
+      shirt.add(new WearableTrait({ isWorn: false }));
       
       world.moveEntity(shirt.id, otherRoom.id); // In different room
       
@@ -144,6 +141,9 @@ describe('wearingAction (Golden Pattern)', () => {
       
       // Already wearing a hat
       const oldHat = world.createEntity('old hat', 'object');
+      // Left as a literal on purpose: wearable-shared's body-part conflict check
+      // fires only when `layer` is undefined, which WearableTrait's constructor
+      // never produces (it defaults layer to 1). Awaiting a platform ruling.
       oldHat.add({
         type: TraitType.WEARABLE,
         worn: true,
@@ -180,21 +180,11 @@ describe('wearingAction (Golden Pattern)', () => {
       
       // Already wearing a coat (outer layer)
       const coat = world.createEntity('winter coat', 'object');
-      coat.add({
-        type: TraitType.WEARABLE,
-        worn: true,
-        bodyPart: 'torso',
-        layer: 2  // Outer layer
-      });
+      coat.add(new WearableTrait({ isWorn: true, bodyPart: 'torso', layer: 2 })); // Outer layer
       
       // Trying to wear a shirt (inner layer) while coat is on
       const shirt = world.createEntity('cotton shirt', 'object');
-      shirt.add({
-        type: TraitType.WEARABLE,
-        worn: false,
-        bodyPart: 'torso',
-        layer: 1  // Inner layer
-      });
+      shirt.add(new WearableTrait({ isWorn: false, bodyPart: 'torso', layer: 1 })); // Inner layer
       
       world.moveEntity(coat.id, player.id);
       world.moveEntity(shirt.id, player.id);
@@ -302,21 +292,11 @@ describe('wearingAction (Golden Pattern)', () => {
       
       // Already wearing underwear (layer 0)
       const underwear = world.createEntity('underwear', 'object');
-      underwear.add({
-        type: TraitType.WEARABLE,
-        worn: true,
-        bodyPart: 'torso',
-        layer: 0
-      });
+      underwear.add(new WearableTrait({ isWorn: true, bodyPart: 'torso', layer: 0 }));
       
       // Wearing shirt (layer 1) - should succeed
       const shirt = world.createEntity('dress shirt', 'object');
-      shirt.add({
-        type: TraitType.WEARABLE,
-        worn: false,
-        bodyPart: 'torso',
-        layer: 1
-      });
+      shirt.add(new WearableTrait({ isWorn: false, bodyPart: 'torso', layer: 1 }));
       
       world.moveEntity(underwear.id, player.id);
       world.moveEntity(shirt.id, player.id);
@@ -342,19 +322,11 @@ describe('wearingAction (Golden Pattern)', () => {
       
       // Already wearing hat
       const hat = world.createEntity('hat', 'object');
-      hat.add({
-        type: TraitType.WEARABLE,
-        worn: true,
-        bodyPart: 'head'
-      });
+      hat.add(new WearableTrait({ isWorn: true, bodyPart: 'head' }));
       
       // Wearing gloves - different body part
       const gloves = world.createEntity('gloves', 'object');
-      gloves.add({
-        type: TraitType.WEARABLE,
-        worn: false,
-        bodyPart: 'hands'
-      });
+      gloves.add(new WearableTrait({ isWorn: false, bodyPart: 'hands' }));
       
       world.moveEntity(hat.id, player.id);
       world.moveEntity(gloves.id, player.id);
@@ -417,11 +389,7 @@ describe('World State Mutations', () => {
   test('should actually set worn to true after wearing', () => {
     const { world, player } = setupBasicWorld();
     const hat = world.createEntity('wool hat', 'object');
-    hat.add({
-      type: TraitType.WEARABLE,
-      worn: false,
-      bodyPart: 'head'
-    });
+    hat.add(new WearableTrait({ isWorn: false, bodyPart: 'head' }));
     world.moveEntity(hat.id, player.id);
 
     // VERIFY PRECONDITION: hat is not worn
@@ -447,12 +415,7 @@ describe('World State Mutations', () => {
   test('should actually set worn to true with body part preserved', () => {
     const { world, player } = setupBasicWorld();
     const gloves = world.createEntity('leather gloves', 'object');
-    gloves.add({
-      type: TraitType.WEARABLE,
-      worn: false,
-      bodyPart: 'hands',
-      layer: 1
-    });
+    gloves.add(new WearableTrait({ isWorn: false, bodyPart: 'hands', layer: 1 }));
     world.moveEntity(gloves.id, player.id);
 
     // VERIFY PRECONDITION: gloves are not worn
@@ -481,12 +444,7 @@ describe('World State Mutations', () => {
   test('should NOT change worn when already wearing', () => {
     const { world, player } = setupBasicWorld();
     const scarf = world.createEntity('silk scarf', 'object');
-    scarf.add({
-      type: TraitType.WEARABLE,
-      worn: true, // Already worn
-      wornBy: player.id,
-      bodyPart: 'neck'
-    });
+    scarf.add(new WearableTrait({ isWorn: true, wornBy: player.id, bodyPart: 'neck' })); // Already worn
     world.moveEntity(scarf.id, player.id);
 
     // VERIFY PRECONDITION: scarf is worn
@@ -535,23 +493,12 @@ describe('World State Mutations', () => {
 
     // Already wearing underwear (layer 0)
     const underwear = world.createEntity('underwear', 'object');
-    underwear.add({
-      type: TraitType.WEARABLE,
-      worn: true,
-      wornBy: player.id,
-      bodyPart: 'torso',
-      layer: 0
-    });
+    underwear.add(new WearableTrait({ isWorn: true, wornBy: player.id, bodyPart: 'torso', layer: 0 }));
     world.moveEntity(underwear.id, player.id);
 
     // Trying to wear shirt (layer 1)
     const shirt = world.createEntity('cotton shirt', 'object');
-    shirt.add({
-      type: TraitType.WEARABLE,
-      worn: false,
-      bodyPart: 'torso',
-      layer: 1
-    });
+    shirt.add(new WearableTrait({ isWorn: false, bodyPart: 'torso', layer: 1 }));
     world.moveEntity(shirt.id, player.id);
 
     // VERIFY PRECONDITION: shirt is not worn
@@ -580,11 +527,7 @@ describe('World State Mutations', () => {
   test('should wear item without bodyPart specified', () => {
     const { world, player } = setupBasicWorld();
     const ring = world.createEntity('gold ring', 'object');
-    ring.add({
-      type: TraitType.WEARABLE,
-      worn: false
-      // No bodyPart
-    });
+    ring.add(new WearableTrait({ isWorn: false })); // No bodyPart
     world.moveEntity(ring.id, player.id);
 
     // VERIFY PRECONDITION: ring is not worn

@@ -11,7 +11,7 @@ import { describe, test, expect, beforeEach, vi } from 'vitest';
 import { insertingAction } from '../../../src/actions/standard/inserting';
 import { puttingAction } from '../../../src/actions/standard/putting';
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType, WorldModel, ContainerTrait, SupporterTrait } from '@sharpee/world-model';
+import { TraitType, WorldModel, ContainerTrait, SupporterTrait, OpenableTrait } from '@sharpee/world-model';
 import {
   createRealTestContext,
   setupBasicWorld,
@@ -156,10 +156,7 @@ describe('insertingAction (Golden Pattern)', () => {
       const gem = world.createEntity('ruby', 'object');
       const box = world.createEntity('jewel box', 'container');
       box.add(new ContainerTrait());
-      box.add({ 
-        type: TraitType.OPENABLE,
-        isOpen: true
-      });
+      box.add(new OpenableTrait({ isOpen: true }));
       
       world.moveEntity(gem.id, player.id);
       world.moveEntity(box.id, room.id);
@@ -185,10 +182,7 @@ describe('insertingAction (Golden Pattern)', () => {
       const coin = world.createEntity('gold coin', 'object');
       const chest = world.createEntity('treasure chest', 'container');
       chest.add(new ContainerTrait());
-      chest.add({ 
-        type: TraitType.OPENABLE,
-        isOpen: false  // Closed
-      });
+      chest.add(new OpenableTrait({ isOpen: false })); // Closed
       
       world.moveEntity(coin.id, player.id);
       world.moveEntity(chest.id, room.id);
@@ -405,7 +399,7 @@ describe('World State Mutations', () => {
     const coin = world.createEntity('gold doubloon', 'object');
     const chest = world.createEntity('pirate chest', 'container');
     chest.add(new ContainerTrait());
-    chest.add({ type: TraitType.OPENABLE, isOpen: true });
+    chest.add(new OpenableTrait({ isOpen: true }));
 
     world.moveEntity(coin.id, player.id);
     world.moveEntity(chest.id, room.id);
@@ -433,7 +427,7 @@ describe('World State Mutations', () => {
     const ring = world.createEntity('diamond ring', 'object');
     const casket = world.createEntity('jewelry casket', 'container');
     casket.add(new ContainerTrait());
-    casket.add({ type: TraitType.OPENABLE, isOpen: false });
+    casket.add(new OpenableTrait({ isOpen: false }));
 
     world.moveEntity(ring.id, player.id);
     world.moveEntity(casket.id, room.id);

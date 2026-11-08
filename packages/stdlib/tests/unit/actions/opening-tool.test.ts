@@ -28,11 +28,7 @@ const setup = (toolRequired: boolean) => {
   const { world, player, room } = setupBasicWorld();
   const crowbar = world.createEntity('rusty crowbar', 'object');
   const crate = world.createEntity('nailed crate', 'object');
-  crate.add({
-    type: TraitType.OPENABLE,
-    isOpen: false,
-    ...(toolRequired ? { toolRequirement: toolRequirement(crowbar.id) } : {})
-  });
+  crate.add(new OpenableTrait({ isOpen: false, ...(toolRequired ? { toolRequirement: toolRequirement(crowbar.id) } : {}) }));
   // Inert marker trait — the target-side interceptor registration key.
   crate.add({ type: TEST_MARKER_TRAIT } as any);
   world.moveEntity(crate.id, room.id);

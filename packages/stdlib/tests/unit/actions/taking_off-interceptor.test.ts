@@ -24,12 +24,7 @@ import { runValidatePhase, runExecutePhase, runReportPhase, runBlockedPhase } fr
 const setup = () => {
   const { world, player, room } = setupBasicWorld();
   const hat = world.createEntity('wool hat', 'object');
-  hat.add({
-    type: TraitType.WEARABLE,
-    worn: true,
-    wornBy: player.id,
-    bodyPart: 'head'
-  });
+  hat.add(new WearableTrait({ isWorn: true, wornBy: player.id, bodyPart: 'head' }));
   // Inert marker trait — the interceptor registration key.
   hat.add({ type: TEST_MARKER_TRAIT } as any);
   world.moveEntity(hat.id, player.id);
@@ -132,13 +127,7 @@ describe('Folded execute-phase refusals (ADR-229 R1)', () => {
     const { world, player, hat } = setup();
     (hat.get(TraitType.WEARABLE) as WearableTrait).layer = 1;
     const balaclava = world.createEntity('balaclava', 'object');
-    balaclava.add({
-      type: TraitType.WEARABLE,
-      worn: true,
-      wornBy: player.id,
-      bodyPart: 'head',
-      layer: 2
-    });
+    balaclava.add(new WearableTrait({ isWorn: true, wornBy: player.id, bodyPart: 'head', layer: 2 }));
     world.moveEntity(balaclava.id, player.id);
 
     let blockedError: string | undefined;

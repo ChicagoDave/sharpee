@@ -183,11 +183,7 @@ describe('closingAction (Golden Pattern)', () => {
       
       // Create container with items
       const box = world.createEntity('wooden box', EntityType.CONTAINER);
-      box.add({
-        type: TraitType.OPENABLE,
-        isOpen: true,
-        canClose: true
-      });
+      box.add(new OpenableTrait({ isOpen: true, canClose: true }));
       box.add(new ContainerTrait());
       world.moveEntity(box.id, room.id);
       
@@ -346,11 +342,7 @@ describe('World State Mutations', () => {
 
     // Create container with items
     const box = world.createEntity('treasure chest', EntityType.CONTAINER);
-    box.add({
-      type: TraitType.OPENABLE,
-      isOpen: true,
-      canClose: true
-    });
+    box.add(new OpenableTrait({ isOpen: true, canClose: true }));
     box.add(new ContainerTrait());
     world.moveEntity(box.id, room.id);
 
@@ -489,7 +481,7 @@ describe('Interceptor postReport (ADR-118, interceptor-wiring audit 2026-07-12)'
   test('postReport override rewrites if.event.closed; emits append', () => {
     const { world, player, room } = setupBasicWorld();
     const box = world.createEntity('music box', 'object');
-    box.add({ type: TraitType.OPENABLE, isOpen: true, canClose: true } as any);
+    box.add(new OpenableTrait({ isOpen: true, canClose: true }));
     world.moveEntity(box.id, room.id);
 
     world.registerActionInterceptor(TraitType.OPENABLE, IFActions.CLOSING, {

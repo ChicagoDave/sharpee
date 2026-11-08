@@ -11,7 +11,7 @@
 import { describe, test, expect, beforeEach } from 'vitest';
 import { climbingAction } from '../../../src/actions/standard/climbing';
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType, WorldModel, EntityType, RoomTrait, Direction, ActorTrait, SupporterTrait, ContainerTrait } from '@sharpee/world-model';
+import { TraitType, WorldModel, EntityType, RoomTrait, Direction, ActorTrait, SupporterTrait, ContainerTrait, ClimbableTrait } from '@sharpee/world-model';
 import {
   createRealTestContext,
   expectEvent,
@@ -122,12 +122,7 @@ describe('climbingAction (Golden Pattern)', () => {
       world.setLanguageWords(ENGLISH_WORDS);
 
       const room = world.createEntity('Ground Floor', EntityType.ROOM);
-      room.add({
-        type: TraitType.ROOM,
-        exits: {
-          [Direction.NORTH]: { destination: 'room2' }  // No up/down exits
-        }
-      });
+      room.add(new RoomTrait({ exits: { [Direction.NORTH]: { destination: 'room2' } } })); // No up/down exits
 
       const player = world.createEntity('yourself', EntityType.ACTOR);
       player.add(new ActorTrait({ isPlayer: true }));
@@ -179,20 +174,10 @@ describe('climbingAction (Golden Pattern)', () => {
       world.setLanguageWords(ENGLISH_WORDS);
       
       const groundFloor = world.createEntity('Ground Floor', EntityType.ROOM);
-      groundFloor.add({
-        type: TraitType.ROOM,
-        exits: {
-          [Direction.UP]: { destination: 'attic' }
-        }
-      });
+      groundFloor.add(new RoomTrait({ exits: { [Direction.UP]: { destination: 'attic' } } }));
       
       const attic = world.createEntity('Attic', EntityType.ROOM);
-      attic.add({
-        type: TraitType.ROOM,
-        exits: {
-          [Direction.DOWN]: { destination: groundFloor.id }
-        }
-      });
+      attic.add(new RoomTrait({ exits: { [Direction.DOWN]: { destination: groundFloor.id } } }));
       
       // Update ground floor exit to use actual ID
       const roomTrait = groundFloor.getTrait(RoomTrait)!;
@@ -231,15 +216,10 @@ describe('climbingAction (Golden Pattern)', () => {
       world.setLanguageWords(ENGLISH_WORDS);
 
       const groundFloor = world.createEntity('Ground Floor', EntityType.ROOM);
-      groundFloor.add({ type: TraitType.ROOM });
+      groundFloor.add(new RoomTrait());
 
       const attic = world.createEntity('Attic', EntityType.ROOM);
-      attic.add({
-        type: TraitType.ROOM,
-        exits: {
-          [Direction.DOWN]: { destination: groundFloor.id }
-        }
-      });
+      attic.add(new RoomTrait({ exits: { [Direction.DOWN]: { destination: groundFloor.id } } }));
 
       const player = world.createEntity('yourself', EntityType.ACTOR);
       player.add(new ActorTrait({ isPlayer: true }));
@@ -299,11 +279,7 @@ describe('climbingAction (Golden Pattern)', () => {
       const { world, player, room } = setupBasicWorld();
 
       const ladder = world.createEntity('wooden ladder', EntityType.OBJECT);
-      ladder.add({
-        type: TraitType.CLIMBABLE,
-        canClimb: true,
-        direction: 'up'
-      });
+      ladder.add(new ClimbableTrait({ canClimb: true, direction: 'up' }));
       world.moveEntity(ladder.id, room.id);
 
       const command = createCommand(IFActions.CLIMBING, {
@@ -322,10 +298,7 @@ describe('climbingAction (Golden Pattern)', () => {
       const { world, player, room } = setupBasicWorld();
 
       const boulder = world.createEntity('mossy boulder', EntityType.OBJECT);
-      boulder.add({
-        type: TraitType.CLIMBABLE,
-        canClimb: true
-      });
+      boulder.add(new ClimbableTrait({ canClimb: true }));
       boulder.add(new SupporterTrait({ enterable: true }));
       world.moveEntity(boulder.id, room.id);
 
@@ -352,14 +325,10 @@ describe('climbingAction (Golden Pattern)', () => {
       const { world, player, room } = setupBasicWorld();
 
       const treetop = world.createEntity('Treetop', EntityType.ROOM);
-      treetop.add({ type: TraitType.ROOM });
+      treetop.add(new RoomTrait());
 
       const tree = world.createEntity('tall tree', EntityType.OBJECT);
-      tree.add({
-        type: TraitType.CLIMBABLE,
-        canClimb: true,
-        destination: treetop.id
-      });
+      tree.add(new ClimbableTrait({ canClimb: true, destination: treetop.id }));
       world.moveEntity(tree.id, room.id);
 
       const command = createCommand(IFActions.CLIMBING, {
@@ -387,15 +356,10 @@ describe('climbingAction (Golden Pattern)', () => {
       world.setLanguageWords(ENGLISH_WORDS);
       
       const room1 = world.createEntity('Room', EntityType.ROOM);
-      room1.add({
-        type: TraitType.ROOM,
-        exits: {
-          [Direction.UP]: { destination: 'room2' }
-        }
-      });
+      room1.add(new RoomTrait({ exits: { [Direction.UP]: { destination: 'room2' } } }));
       
       const room2 = world.createEntity('Upper Room', EntityType.ROOM);
-      room2.add({ type: TraitType.ROOM });
+      room2.add(new RoomTrait());
       
       // Update exit to use actual ID
       const roomTrait = room1.getTrait(RoomTrait)!;
@@ -457,10 +421,10 @@ describe('climbingAction (Golden Pattern)', () => {
       world.setLanguageWords(ENGLISH_WORDS);
 
       const groundFloor = world.createEntity('Ground Floor', EntityType.ROOM);
-      groundFloor.add({ type: TraitType.ROOM });
+      groundFloor.add(new RoomTrait());
 
       const attic = world.createEntity('Attic', EntityType.ROOM);
-      attic.add({ type: TraitType.ROOM });
+      attic.add(new RoomTrait());
 
       const roomTrait = groundFloor.get(TraitType.ROOM);
       roomTrait.exits = { [Direction.UP]: { destination: attic.id } };
@@ -490,10 +454,10 @@ describe('climbingAction (Golden Pattern)', () => {
       world.setLanguageWords(ENGLISH_WORDS);
 
       const groundFloor = world.createEntity('Ground Floor', EntityType.ROOM);
-      groundFloor.add({ type: TraitType.ROOM });
+      groundFloor.add(new RoomTrait());
 
       const attic = world.createEntity('Attic', EntityType.ROOM);
-      attic.add({ type: TraitType.ROOM });
+      attic.add(new RoomTrait());
 
       const atticRoom = attic.get(TraitType.ROOM);
       atticRoom.exits = { [Direction.DOWN]: { destination: groundFloor.id } };

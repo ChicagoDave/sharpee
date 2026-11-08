@@ -203,10 +203,7 @@ describe('exitingAction (Golden Pattern)', () => {
       
       const trunk = world.createEntity('car trunk', EntityType.CONTAINER);
       trunk.add(new ContainerTrait({ enterable: true }));
-      trunk.add({
-        type: TraitType.OPENABLE,
-        isOpen: true  // Open
-      });
+      trunk.add(new OpenableTrait({ isOpen: true })); // Open
       
       world.moveEntity(trunk.id, room.id);
       world.moveEntity(player.id, trunk.id);
@@ -350,10 +347,7 @@ describe('World State Mutations', () => {
 
     const trunk = world.createEntity('car trunk', EntityType.CONTAINER);
     trunk.add(new ContainerTrait({ enterable: true }));
-    trunk.add({
-      type: TraitType.OPENABLE,
-      isOpen: true // Open
-    });
+    trunk.add(new OpenableTrait({ isOpen: true })); // Open
     world.moveEntity(trunk.id, room.id);
     world.moveEntity(player.id, trunk.id);
 
@@ -376,10 +370,7 @@ describe('World State Mutations', () => {
 
     const crate = world.createEntity('shipping crate', EntityType.CONTAINER);
     crate.add(new ContainerTrait({ enterable: true }));
-    crate.add({
-      type: TraitType.OPENABLE,
-      isOpen: true // Start open so we can put player inside
-    });
+    crate.add(new OpenableTrait({ isOpen: true })); // Start open so we can put player inside
     world.moveEntity(crate.id, room.id);
     world.moveEntity(player.id, crate.id);
 

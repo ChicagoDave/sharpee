@@ -5,7 +5,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { CommandValidator } from '../src/validation/command-validator';
 import { StandardActionRegistry } from '../src/actions/registry';
-import { WorldModel, AuthorModel, IFEntity, TraitType, EntityType, ActorTrait, ContainerTrait, IdentityTrait, EdibleTrait } from '@sharpee/world-model';
+import { WorldModel, AuthorModel, IFEntity, TraitType, EntityType, ActorTrait, ContainerTrait, IdentityTrait, EdibleTrait, RoomTrait, OpenableTrait, DoorTrait } from '@sharpee/world-model';
 import { StandardScopeResolver } from '../src/scope/scope-resolver';
 import { ScopeLevel } from '../src/scope/types';
 import { takingAction } from '../src/actions/standard/taking/taking';
@@ -35,7 +35,7 @@ describe('Scope Integration Tests', () => {
     
     // Create test world using AuthorModel for setup
     room = author.createEntity('Test Room', EntityType.ROOM);
-    room.add({ type: TraitType.ROOM });
+    room.add(new RoomTrait());
     
     player = author.createEntity('player', EntityType.ACTOR);
     player.add(new ActorTrait({ isPlayer: true }));
@@ -60,7 +60,7 @@ describe('Scope Integration Tests', () => {
       // Create a closed chest in the room (AuthorModel allows this)
       const chest = author.createEntity('chest', EntityType.CONTAINER);
       chest.add(new ContainerTrait());
-      chest.add({ type: TraitType.OPENABLE, isOpen: false });
+      chest.add(new OpenableTrait({ isOpen: false }));
       author.moveEntity(chest.id, room.id);
       
       // Put gem in closed chest (AuthorModel allows this setup)
@@ -190,12 +190,12 @@ describe('Scope Integration Tests', () => {
   describe('AUDIBLE scope validation', () => {
     it('should succeed when listening to something audible from another room', () => {
       const nextRoom = author.createEntity('Next Room', EntityType.ROOM);
-      nextRoom.add({ type: TraitType.ROOM });
+      nextRoom.add(new RoomTrait());
       
       // Connect rooms with an open passage
       const passage = author.createEntity('passage', EntityType.DOOR);
-      passage.add({ type: TraitType.DOOR, room1: room.id, room2: nextRoom.id });
-      passage.add({ type: TraitType.OPENABLE, isOpen: true });
+      passage.add(new DoorTrait({ room1: room.id, room2: nextRoom.id }));
+      passage.add(new OpenableTrait({ isOpen: true }));
       author.moveEntity(passage.id, room.id);
       
       // Create a loud chime in the next room (avoiding "bell" vs "doorbell" confusion)
@@ -232,12 +232,12 @@ describe('Scope Integration Tests', () => {
   describe('DETECTABLE scope validation', () => {
     it('should succeed when smelling something smelly from another room', () => {
       const nextRoom = author.createEntity('Kitchen', EntityType.ROOM);
-      nextRoom.add({ type: TraitType.ROOM });
+      nextRoom.add(new RoomTrait());
       
       // Connect rooms with open passage
       const passage = author.createEntity('passage', EntityType.DOOR);
-      passage.add({ type: TraitType.DOOR, room1: room.id, room2: nextRoom.id });
-      passage.add({ type: TraitType.OPENABLE, isOpen: true });
+      passage.add(new DoorTrait({ room1: room.id, room2: nextRoom.id }));
+      passage.add(new OpenableTrait({ isOpen: true }));
       author.moveEntity(passage.id, room.id);
       
       // Create smelly cheese in kitchen
@@ -271,12 +271,12 @@ describe('Scope Integration Tests', () => {
       // scope. The smelling action's validate phase then handles the
       // "too far to smell" rejection for different rooms.
       const nextRoom = author.createEntity('Kitchen', EntityType.ROOM);
-      nextRoom.add({ type: TraitType.ROOM });
+      nextRoom.add(new RoomTrait());
 
       // Connect rooms with closed passage
       const passage = author.createEntity('passage', EntityType.DOOR);
-      passage.add({ type: TraitType.DOOR, room1: room.id, room2: nextRoom.id });
-      passage.add({ type: TraitType.OPENABLE, isOpen: false });
+      passage.add(new DoorTrait({ room1: room.id, room2: nextRoom.id }));
+      passage.add(new OpenableTrait({ isOpen: false }));
       author.moveEntity(passage.id, room.id);
 
       // Create smelly cheese in kitchen

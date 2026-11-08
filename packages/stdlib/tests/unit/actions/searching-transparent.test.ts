@@ -7,7 +7,7 @@
 import { describe, test, expect } from 'vitest';
 import { searchingAction } from '../../../src/actions/standard/searching';
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType, ContainerTrait } from '@sharpee/world-model';
+import { TraitType, ContainerTrait, OpenableTrait } from '@sharpee/world-model';
 import { createRealTestContext, setupBasicWorld, expectEvent, createCommand, executeWithValidation } from '../../test-utils';
 
 function closedJar(transparent: boolean) {
@@ -18,7 +18,7 @@ function closedJar(transparent: boolean) {
   // Fill the jar before closing it: the world refuses a move into a closed container.
   const beetle = world.createEntity('beetle', 'object');
   world.moveEntity(beetle.id, jar.id);
-  jar.add({ type: TraitType.OPENABLE, isOpen: false });
+  jar.add(new OpenableTrait({ isOpen: false }));
   return { world, jar, beetle };
 }
 

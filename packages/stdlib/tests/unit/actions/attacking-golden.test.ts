@@ -14,7 +14,7 @@
 import { describe, test, expect } from 'vitest';
 import { attackingAction } from '../../../src/actions/standard/attacking';
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType, EntityType, ActorTrait } from '@sharpee/world-model';
+import { TraitType, EntityType, ActorTrait, BreakableTrait, DestructibleTrait } from '@sharpee/world-model';
 import {
   createRealTestContext,
   expectEvent,
@@ -126,9 +126,7 @@ describe('attackingAction (Golden Pattern)', () => {
       const { world, player, room } = setupBasicWorld();
 
       const gate = world.createEntity('iron gate', EntityType.OBJECT);
-      gate.add({
-        type: TraitType.BREAKABLE
-      });
+      gate.add(new BreakableTrait());
       world.moveEntity(gate.id, room.id);
 
       const command = createCommand(IFActions.ATTACKING, {
@@ -158,7 +156,7 @@ describe('attackingAction (Golden Pattern)', () => {
       const { world, player, room } = setupBasicWorld();
 
       const vase = world.createEntity('ceramic vase', EntityType.OBJECT);
-      vase.add({ type: TraitType.BREAKABLE, broken: false });
+      vase.add(new BreakableTrait({ broken: false }));
       world.moveEntity(vase.id, room.id);
 
       // VERIFY PRECONDITION: vase is not broken
@@ -179,14 +177,7 @@ describe('attackingAction (Golden Pattern)', () => {
       const { world, player, room } = setupBasicWorld();
 
       const wall = world.createEntity('cracked wall', EntityType.OBJECT);
-      wall.add({
-        type: TraitType.DESTRUCTIBLE,
-        hitPoints: 3,
-        maxHitPoints: 3,
-        armor: 0,
-        invulnerable: false,
-        requiresWeapon: false
-      });
+      wall.add(new DestructibleTrait({ hitPoints: 3, maxHitPoints: 3, armor: 0, invulnerable: false, requiresWeapon: false }));
       world.moveEntity(wall.id, room.id);
 
       // VERIFY PRECONDITION: wall has full hit points
