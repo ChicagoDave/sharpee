@@ -11,7 +11,7 @@
 import { describe, test, expect, beforeEach } from 'vitest';
 import { removingAction } from '../../../src/actions/standard/removing';
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType, WorldModel, OpenableTrait } from '@sharpee/world-model';
+import { TraitType, WorldModel, OpenableTrait, ContainerTrait, SupporterTrait } from '@sharpee/world-model';
 import {
   createRealTestContext,
   setupBasicWorld,
@@ -106,7 +106,7 @@ describe('removingAction (Golden Pattern)', () => {
       
       const coin = world.createEntity('gold coin', 'object');
       const box = world.createEntity('wooden box', 'object');
-      box.add({ type: TraitType.CONTAINER });
+      box.add(new ContainerTrait());
       
       world.moveEntity(coin.id, room.id);  // Coin on floor
       world.moveEntity(box.id, room.id);
@@ -133,7 +133,7 @@ describe('removingAction (Golden Pattern)', () => {
       
       const book = world.createEntity('old book', 'object');
       const table = world.createEntity('oak table', 'object');
-      table.add({ type: TraitType.SUPPORTER });
+      table.add(new SupporterTrait());
       
       world.moveEntity(book.id, room.id);  // Book on floor
       world.moveEntity(table.id, room.id);
@@ -161,7 +161,7 @@ describe('removingAction (Golden Pattern)', () => {
       world.moveEntity(key.id, player.id);  // Key in inventory
       
       const box = world.createEntity('box', 'object');
-      box.add({ type: TraitType.CONTAINER });
+      box.add(new ContainerTrait());
       
       const context = createRealTestContext(removingAction, world, createCommand(IFActions.REMOVING, {
         entity: key,
@@ -182,7 +182,7 @@ describe('removingAction (Golden Pattern)', () => {
       
       const gem = world.createEntity('ruby', 'object');
       const chest = world.createEntity('treasure chest', 'object');
-      chest.add({ type: TraitType.CONTAINER });
+      chest.add(new ContainerTrait());
       chest.add({ 
         type: TraitType.OPENABLE,
         isOpen: true  // Start open to allow placing gem
@@ -216,7 +216,7 @@ describe('removingAction (Golden Pattern)', () => {
       
       const coin = world.createEntity('silver coin', 'object');
       const box = world.createEntity('small box', 'object');
-      box.add({ type: TraitType.CONTAINER });
+      box.add(new ContainerTrait());
       box.add({ 
         type: TraitType.OPENABLE,
         isOpen: true
@@ -256,7 +256,7 @@ describe('removingAction (Golden Pattern)', () => {
       
       const apple = world.createEntity('red apple', 'object');
       const basket = world.createEntity('wicker basket', 'object');
-      basket.add({ type: TraitType.CONTAINER });
+      basket.add(new ContainerTrait());
       // No openable trait - always accessible
       
       world.moveEntity(basket.id, room.id);
@@ -283,7 +283,7 @@ describe('removingAction (Golden Pattern)', () => {
       
       const lamp = world.createEntity('desk lamp', 'object');
       const desk = world.createEntity('wooden desk', 'object');
-      desk.add({ type: TraitType.SUPPORTER });
+      desk.add(new SupporterTrait());
       
       world.moveEntity(desk.id, room.id);
       world.moveEntity(lamp.id, desk.id);
@@ -347,8 +347,8 @@ describe('removingAction (Golden Pattern)', () => {
       
       const pen = world.createEntity('fountain pen', 'object');
       const desk = world.createEntity('writing desk', 'object');
-      desk.add({ type: TraitType.CONTAINER });  // Has drawers
-      desk.add({ type: TraitType.SUPPORTER });   // Has surface
+      desk.add(new ContainerTrait());  // Has drawers
+      desk.add(new SupporterTrait());   // Has surface
       
       world.moveEntity(desk.id, room.id);
       world.moveEntity(pen.id, desk.id);
@@ -383,7 +383,7 @@ describe('removingAction (Golden Pattern)', () => {
       
       const ring = world.createEntity('gold ring', 'object');
       const box = world.createEntity('jewelry box', 'object');
-      box.add({ type: TraitType.CONTAINER });
+      box.add(new ContainerTrait());
       
       world.moveEntity(box.id, room.id);
       world.moveEntity(ring.id, box.id);
@@ -413,7 +413,7 @@ describe('Removing Action Edge Cases', () => {
     
     const marble = world.createEntity('glass marble', 'object');
     const jar = world.createEntity('empty jar', 'object');
-    jar.add({ type: TraitType.CONTAINER });
+    jar.add(new ContainerTrait());
     
     world.moveEntity(jar.id, room.id);
     world.moveEntity(marble.id, jar.id);
@@ -441,9 +441,9 @@ describe('Removing Action Edge Cases', () => {
     
     const coin = world.createEntity('silver coin', 'object');
     const pouch = world.createEntity('leather pouch', 'object');
-    pouch.add({ type: TraitType.CONTAINER });
+    pouch.add(new ContainerTrait());
     const chest = world.createEntity('treasure chest', 'object');
-    chest.add({ type: TraitType.CONTAINER });
+    chest.add(new ContainerTrait());
     
     world.moveEntity(chest.id, room.id);
     world.moveEntity(pouch.id, chest.id);  // Pouch in chest
@@ -478,9 +478,9 @@ describe('Removing Action Edge Cases', () => {
 
     const card = world.createEntity('playing card', 'object');
     const box1 = world.createEntity('red box', 'object');
-    box1.add({ type: TraitType.CONTAINER });
+    box1.add(new ContainerTrait());
     const box2 = world.createEntity('blue box', 'object');
-    box2.add({ type: TraitType.CONTAINER });
+    box2.add(new ContainerTrait());
 
     world.moveEntity(box1.id, room.id);
     world.moveEntity(box2.id, room.id);
@@ -517,7 +517,7 @@ describe('World State Mutations', () => {
 
     const gem = world.createEntity('ruby', 'object');
     const box = world.createEntity('velvet box', 'object');
-    box.add({ type: TraitType.CONTAINER });
+    box.add(new ContainerTrait());
 
     world.moveEntity(box.id, room.id);
     world.moveEntity(gem.id, box.id);
@@ -545,7 +545,7 @@ describe('World State Mutations', () => {
 
     const coin = world.createEntity('gold doubloon', 'object');
     const chest = world.createEntity('pirate chest', 'object');
-    chest.add({ type: TraitType.CONTAINER });
+    chest.add(new ContainerTrait());
     chest.add({ type: TraitType.OPENABLE, isOpen: true });
 
     world.moveEntity(chest.id, room.id);
@@ -574,7 +574,7 @@ describe('World State Mutations', () => {
 
     const lamp = world.createEntity('brass lamp', 'object');
     const table = world.createEntity('oak table', 'object');
-    table.add({ type: TraitType.SUPPORTER });
+    table.add(new SupporterTrait());
 
     world.moveEntity(table.id, room.id);
     world.moveEntity(lamp.id, table.id);
@@ -602,7 +602,7 @@ describe('World State Mutations', () => {
 
     const ring = world.createEntity('diamond ring', 'object');
     const casket = world.createEntity('jewelry casket', 'object');
-    casket.add({ type: TraitType.CONTAINER });
+    casket.add(new ContainerTrait());
     casket.add({ type: TraitType.OPENABLE, isOpen: true }); // Start open to place item
 
     world.moveEntity(casket.id, room.id);
@@ -636,9 +636,9 @@ describe('World State Mutations', () => {
 
     const key = world.createEntity('brass key', 'object');
     const box1 = world.createEntity('red box', 'object');
-    box1.add({ type: TraitType.CONTAINER });
+    box1.add(new ContainerTrait());
     const box2 = world.createEntity('blue box', 'object');
-    box2.add({ type: TraitType.CONTAINER });
+    box2.add(new ContainerTrait());
 
     world.moveEntity(box1.id, room.id);
     world.moveEntity(box2.id, room.id);
@@ -668,9 +668,9 @@ describe('World State Mutations', () => {
 
     const coin = world.createEntity('ancient coin', 'object');
     const pouch = world.createEntity('leather pouch', 'object');
-    pouch.add({ type: TraitType.CONTAINER });
+    pouch.add(new ContainerTrait());
     const chest = world.createEntity('treasure chest', 'object');
-    chest.add({ type: TraitType.CONTAINER });
+    chest.add(new ContainerTrait());
 
     world.moveEntity(chest.id, room.id);
     world.moveEntity(pouch.id, chest.id);

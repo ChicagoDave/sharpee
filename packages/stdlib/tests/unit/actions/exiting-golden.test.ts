@@ -11,7 +11,7 @@
 import { describe, test, expect } from 'vitest';
 import { exitingAction } from '../../../src/actions/standard/exiting';
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType, WorldModel, EntityType, OpenableTrait, ActorTrait } from '@sharpee/world-model';
+import { TraitType, WorldModel, EntityType, OpenableTrait, ActorTrait, ContainerTrait, SupporterTrait } from '@sharpee/world-model';
 import {
   createRealTestContext,
   setupBasicWorld,
@@ -65,7 +65,7 @@ describe('exitingAction (Golden Pattern)', () => {
       // used to exit the basket — the target was ignored entirely.
       const { world, player, room } = setupBasicWorld();
       const basket = world.createEntity('wicker basket', EntityType.CONTAINER);
-      basket.add({ type: TraitType.CONTAINER, enterable: true });
+      basket.add(new ContainerTrait({ enterable: true }));
       world.moveEntity(basket.id, room.id);
       const hairpin = world.createEntity('steel hairpin', EntityType.OBJECT);
       world.moveEntity(hairpin.id, room.id);
@@ -87,10 +87,10 @@ describe('exitingAction (Golden Pattern)', () => {
     test('targeted exit naming a supporter the player is not on refuses with not_on_that', () => {
       const { world, player, room } = setupBasicWorld();
       const basket = world.createEntity('wicker basket', EntityType.CONTAINER);
-      basket.add({ type: TraitType.CONTAINER, enterable: true });
+      basket.add(new ContainerTrait({ enterable: true }));
       world.moveEntity(basket.id, room.id);
       const table = world.createEntity('oak table', EntityType.SUPPORTER);
-      table.add({ type: TraitType.SUPPORTER });
+      table.add(new SupporterTrait());
       world.moveEntity(table.id, room.id);
       world.moveEntity(player.id, basket.id);
 
@@ -109,7 +109,7 @@ describe('exitingAction (Golden Pattern)', () => {
     test('targeted exit naming the ACTUAL container proceeds', () => {
       const { world, player, room } = setupBasicWorld();
       const basket = world.createEntity('wicker basket', EntityType.CONTAINER);
-      basket.add({ type: TraitType.CONTAINER, enterable: true });
+      basket.add(new ContainerTrait({ enterable: true }));
       world.moveEntity(basket.id, room.id);
       world.moveEntity(player.id, basket.id);
 
@@ -132,7 +132,7 @@ describe('exitingAction (Golden Pattern)', () => {
       world.setPlayer(player.id);
 
       const floatingBox = world.createEntity('floating box', EntityType.CONTAINER);
-      floatingBox.add({ type: TraitType.CONTAINER });
+      floatingBox.add(new ContainerTrait());
 
       world.moveEntity(player.id, floatingBox.id);
       // Box has no location (floating in void)
@@ -155,10 +155,7 @@ describe('exitingAction (Golden Pattern)', () => {
       const { world, player, room } = setupBasicWorld();
       
       const box = world.createEntity('cardboard box', EntityType.CONTAINER);
-      box.add({
-        type: TraitType.CONTAINER,
-        enterable: true
-      });
+      box.add(new ContainerTrait({ enterable: true }));
       
       world.moveEntity(box.id, room.id);
       world.moveEntity(player.id, box.id);
@@ -182,10 +179,7 @@ describe('exitingAction (Golden Pattern)', () => {
       const { world, player, room } = setupBasicWorld();
       
       const platform = world.createEntity('raised platform', EntityType.SUPPORTER);
-      platform.add({
-        type: TraitType.SUPPORTER,
-        enterable: true
-      });
+      platform.add(new SupporterTrait({ enterable: true }));
       
       world.moveEntity(platform.id, room.id);
       world.moveEntity(player.id, platform.id);
@@ -208,10 +202,7 @@ describe('exitingAction (Golden Pattern)', () => {
       const { world, player, room } = setupBasicWorld();
       
       const trunk = world.createEntity('car trunk', EntityType.CONTAINER);
-      trunk.add({
-        type: TraitType.CONTAINER,
-        enterable: true
-      });
+      trunk.add(new ContainerTrait({ enterable: true }));
       trunk.add({
         type: TraitType.OPENABLE,
         isOpen: true  // Open
@@ -238,10 +229,7 @@ describe('exitingAction (Golden Pattern)', () => {
       const { world, player, room } = setupBasicWorld();
       
       const bed = world.createEntity('comfortable bed', EntityType.SUPPORTER);
-      bed.add({
-        type: TraitType.SUPPORTER,
-        enterable: true
-      });
+      bed.add(new SupporterTrait({ enterable: true }));
       
       world.moveEntity(bed.id, room.id);
       world.moveEntity(player.id, bed.id);
@@ -273,10 +261,7 @@ describe('World State Mutations', () => {
     const { world, player, room } = setupBasicWorld();
 
     const box = world.createEntity('cardboard box', EntityType.CONTAINER);
-    box.add({
-      type: TraitType.CONTAINER,
-      enterable: true
-    });
+    box.add(new ContainerTrait({ enterable: true }));
     world.moveEntity(box.id, room.id);
     world.moveEntity(player.id, box.id);
 
@@ -298,10 +283,7 @@ describe('World State Mutations', () => {
     const { world, player, room } = setupBasicWorld();
 
     const platform = world.createEntity('raised platform', EntityType.SUPPORTER);
-    platform.add({
-      type: TraitType.SUPPORTER,
-      enterable: true
-    });
+    platform.add(new SupporterTrait({ enterable: true }));
     world.moveEntity(platform.id, room.id);
     world.moveEntity(player.id, platform.id);
 
@@ -345,7 +327,7 @@ describe('World State Mutations', () => {
     world.setPlayer(player.id);
 
     const floatingBox = world.createEntity('floating box', EntityType.CONTAINER);
-    floatingBox.add({ type: TraitType.CONTAINER });
+    floatingBox.add(new ContainerTrait());
     world.moveEntity(player.id, floatingBox.id);
 
     // VERIFY PRECONDITION: player is in the floating box
@@ -367,10 +349,7 @@ describe('World State Mutations', () => {
     const { world, player, room } = setupBasicWorld();
 
     const trunk = world.createEntity('car trunk', EntityType.CONTAINER);
-    trunk.add({
-      type: TraitType.CONTAINER,
-      enterable: true
-    });
+    trunk.add(new ContainerTrait({ enterable: true }));
     trunk.add({
       type: TraitType.OPENABLE,
       isOpen: true // Open
@@ -396,10 +375,7 @@ describe('World State Mutations', () => {
     const { world, player, room } = setupBasicWorld();
 
     const crate = world.createEntity('shipping crate', EntityType.CONTAINER);
-    crate.add({
-      type: TraitType.CONTAINER,
-      enterable: true
-    });
+    crate.add(new ContainerTrait({ enterable: true }));
     crate.add({
       type: TraitType.OPENABLE,
       isOpen: true // Start open so we can put player inside

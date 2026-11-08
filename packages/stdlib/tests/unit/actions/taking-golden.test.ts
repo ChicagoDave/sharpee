@@ -11,7 +11,7 @@
 import { describe, test, expect, beforeEach } from 'vitest';
 import { takingAction } from '../../../src/actions/standard/taking'; // Now from folder
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType, WorldModel, EntityType, ActorTrait } from '@sharpee/world-model';
+import { TraitType, WorldModel, EntityType, ActorTrait, ContainerTrait, SupporterTrait, SceneryTrait, IdentityTrait } from '@sharpee/world-model';
 import {
   createRealTestContext,
   setupBasicWorld,
@@ -152,7 +152,7 @@ describe('takingAction (Golden Pattern)', () => {
     test('should fail when object is scenery', () => {
       const { world, player, room } = setupBasicWorld();
       const scenery = world.createEntity('ornate fountain', 'object');
-      scenery.add({ type: TraitType.SCENERY });
+      scenery.add(new SceneryTrait());
       world.moveEntity(scenery.id, room.id);
 
       const context = createRealTestContext(
@@ -201,10 +201,7 @@ describe('takingAction (Golden Pattern)', () => {
       // Create player with limited container capacity
       const player = world.createEntity('yourself', 'actor');
       player.add(new ActorTrait({ isPlayable: true }));
-      player.add({
-        type: TraitType.CONTAINER,
-        capacity: { maxItems: 2 }
-      });
+      player.add(new ContainerTrait({ capacity: { maxItems: 2 } }));
       world.setPlayer(player.id);
       
       // Add items already in inventory
@@ -239,10 +236,7 @@ describe('takingAction (Golden Pattern)', () => {
       
       const player = world.createEntity('yourself', 'actor');
       player.add(new ActorTrait({ isPlayable: true }));
-      player.add({
-        type: TraitType.CONTAINER,
-        capacity: { maxItems: 1 }
-      });
+      player.add(new ContainerTrait({ capacity: { maxItems: 1 } }));
       world.setPlayer(player.id);
       
       // Add a worn item
@@ -281,11 +275,11 @@ describe('takingAction (Golden Pattern)', () => {
       
       const player = world.createEntity('yourself', 'actor');
       player.add(new ActorTrait({ isPlayable: true }));
-      player.add({ type: TraitType.CONTAINER, capacity: { maxWeight: 10 } });
+      player.add(new ContainerTrait({ capacity: { maxWeight: 10 } }));
       world.setPlayer(player.id);
 
       const heavyItem = world.createEntity('heavy boulder', 'object');
-      heavyItem.add({ type: TraitType.IDENTITY, name: 'heavy boulder', weight: 50 });
+      heavyItem.add(new IdentityTrait({ name: 'heavy boulder', weight: 50 }));
       
       world.moveEntity(player.id, room.id);
       world.moveEntity(heavyItem.id, room.id);
@@ -329,7 +323,7 @@ describe('takingAction (Golden Pattern)', () => {
       const { world, player, room } = setupBasicWorld();
 
       const box = world.createEntity('wooden box', 'object');
-      box.add({ type: TraitType.CONTAINER });
+      box.add(new ContainerTrait());
       const coin = world.createEntity('gold coin', 'object');
 
       world.moveEntity(box.id, room.id);
@@ -353,7 +347,7 @@ describe('takingAction (Golden Pattern)', () => {
       const { world, player, room } = setupBasicWorld();
 
       const table = world.createEntity('wooden table', 'object');
-      table.add({ type: TraitType.SUPPORTER });
+      table.add(new SupporterTrait());
       const book = world.createEntity('old book', 'object');
 
       world.moveEntity(table.id, room.id);
@@ -377,7 +371,7 @@ describe('takingAction (Golden Pattern)', () => {
       const { world, player, room } = setupBasicWorld();
       
       const npc = world.createEntity('guard', 'actor');
-      npc.add({ type: TraitType.ACTOR });
+      npc.add(new ActorTrait());
       npc.add({ type: TraitType.OPEN_INVENTORY }); // NPC inventory accessible to player
       const hat = world.createEntity('fancy hat', 'object');
       hat.add({
@@ -493,7 +487,7 @@ describe('World State Mutations', () => {
   test('should actually move item from container to player inventory', () => {
     const { world, player, room } = setupBasicWorld();
     const box = world.createEntity('wooden box', 'object');
-    box.add({ type: TraitType.CONTAINER });
+    box.add(new ContainerTrait());
     const coin = world.createEntity('gold coin', 'object');
 
     world.moveEntity(box.id, room.id);
@@ -519,7 +513,7 @@ describe('World State Mutations', () => {
   test('should actually move item from supporter to player inventory', () => {
     const { world, player, room } = setupBasicWorld();
     const table = world.createEntity('wooden table', 'object');
-    table.add({ type: TraitType.SUPPORTER });
+    table.add(new SupporterTrait());
     const book = world.createEntity('old book', 'object');
 
     world.moveEntity(table.id, room.id);
@@ -571,9 +565,9 @@ describe('Taking Action Edge Cases', () => {
     const { world, player, room } = setupBasicWorld();
     
     const chest = world.createEntity('treasure chest', 'object');
-    chest.add({ type: TraitType.CONTAINER });
+    chest.add(new ContainerTrait());
     const box = world.createEntity('small box', 'object');
-    box.add({ type: TraitType.CONTAINER });
+    box.add(new ContainerTrait());
     const gem = world.createEntity('diamond', 'object');
     
     world.moveEntity(chest.id, room.id);

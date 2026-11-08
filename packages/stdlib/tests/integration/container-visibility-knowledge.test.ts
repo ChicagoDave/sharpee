@@ -3,7 +3,7 @@
  */
 
 import { describe, test, expect, beforeEach } from 'vitest';
-import { WorldModel, AuthorModel, IFEntity, TraitType, OpenableTrait, ActorTrait } from '@sharpee/world-model';
+import { WorldModel, AuthorModel, IFEntity, TraitType, OpenableTrait, ActorTrait, IdentityTrait, ContainerTrait } from '@sharpee/world-model';
 import { LanguageProvider } from '@sharpee/if-domain';
 import { StandardScopeResolver } from '../../src/scope/scope-resolver';
 import { CommandValidator } from '../../src/validation/command-validator';
@@ -47,12 +47,8 @@ describe('Container visibility and knowledge', () => {
 
     // 3. Create closed box
     box = author.createEntity('box', 'container');
-    box.add({
-      type: TraitType.IDENTITY,
-      name: 'box',
-      adjectives: ['wooden']
-    });
-    box.add({ type: TraitType.CONTAINER });
+    box.add(new IdentityTrait({ name: 'box', adjectives: ['wooden'] }));
+    box.add(new ContainerTrait());
     box.add({
       type: TraitType.OPENABLE,
       isOpen: false
@@ -61,11 +57,7 @@ describe('Container visibility and knowledge', () => {
 
     // 4. Create ball in box
     ball = author.createEntity('ball', 'object');
-    ball.add({
-      type: TraitType.IDENTITY,
-      name: 'ball',
-      adjectives: ['red']
-    });
+    ball.add(new IdentityTrait({ name: 'ball', adjectives: ['red'] }));
     author.moveEntity(ball.id, box.id);
 
     // 5. Create actor in room2

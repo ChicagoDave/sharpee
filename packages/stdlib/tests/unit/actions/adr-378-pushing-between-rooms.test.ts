@@ -20,6 +20,7 @@ import {
   WorldModel,
   IFEntity,
   exitHiddenKey,
+  ContainerTrait,
   type Admittance,
 } from '@sharpee/world-model';
 import { pushingAction } from '../../../src/actions/standard/pushing';
@@ -152,7 +153,7 @@ describe('push <thing> <direction> (ADR-378 D6, D7)', () => {
     const { world, player, room, cart } = setup({ admits: ['pushing'] });
     const tram = world.createEntity('tram', 'object');
     tram.add(new VehicleTrait({ movement: { kind: 'line', stops: ['a', 'b'], oneWay: false, drive: 'control' } }));
-    tram.add({ type: TraitType.CONTAINER, enterable: true } as any);
+    tram.add(new ContainerTrait({ enterable: true }));
     world.moveEntity(tram.id, room.id);
     world.moveEntity(player.id, tram.id);
 
@@ -277,7 +278,7 @@ describe('the push follows wherever going took the actor (ADR-378 D6; mutation g
     const { world, player, room, dock, cart } = setup();
     const car = world.createEntity('car', 'object');
     car.add(new VehicleTrait({ movement: { kind: 'streets' } }));
-    car.add({ type: TraitType.CONTAINER, enterable: true } as any);
+    car.add(new ContainerTrait({ enterable: true }));
     world.moveEntity(car.id, room.id);
     world.moveEntity(player.id, car.id);
     dock.getTrait(RoomTrait)!.admits = admittance([car.id, 'pushing']);
@@ -293,7 +294,7 @@ describe('the push follows wherever going took the actor (ADR-378 D6; mutation g
     const { world, player, room, dock, cart } = setup();
     const car = world.createEntity('car', 'object');
     car.add(new VehicleTrait({ movement: { kind: 'streets' } }));
-    car.add({ type: TraitType.CONTAINER, enterable: true } as any);
+    car.add(new ContainerTrait({ enterable: true }));
     world.moveEntity(car.id, room.id);
     world.moveEntity(player.id, car.id);
 

@@ -11,7 +11,7 @@
 import { describe, test, expect } from 'vitest';
 import { unlockingAction } from '../../../src/actions/standard/unlocking';
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType, LockableTrait } from '@sharpee/world-model';
+import { TraitType, LockableTrait, ContainerTrait } from '@sharpee/world-model';
 import {
   createRealTestContext,
   expectEvent,
@@ -230,7 +230,7 @@ describe('unlockingAction (Golden Pattern)', () => {
         isLocked: true,
         keyId: key.id
       });
-      chest.add({ type: TraitType.CONTAINER });
+      chest.add(new ContainerTrait());
       world.moveEntity(chest.id, room.id);
       world.moveEntity(key.id, player.id);
 
@@ -374,9 +374,7 @@ describe('unlockingAction (Golden Pattern)', () => {
         type: TraitType.LOCKABLE,
         isLocked: true
       });
-      box.add({
-        type: TraitType.CONTAINER
-      });
+      box.add(new ContainerTrait());
       world.moveEntity(box.id, room.id);
 
       const treasure = world.createEntity('gold coins', 'object');
@@ -580,9 +578,7 @@ describe('Unlocking Action Edge Cases', () => {
       type: TraitType.LOCKABLE,
       isLocked: true
     });
-    safe.add({
-      type: TraitType.CONTAINER
-    });
+    safe.add(new ContainerTrait());
     world.moveEntity(safe.id, room.id);
 
     const context = createRealTestContext(unlockingAction, world,

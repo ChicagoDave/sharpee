@@ -11,7 +11,7 @@
 import { describe, test, expect, beforeEach } from 'vitest';
 import { climbingAction } from '../../../src/actions/standard/climbing';
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType, WorldModel, EntityType, RoomTrait, Direction, ActorTrait } from '@sharpee/world-model';
+import { TraitType, WorldModel, EntityType, RoomTrait, Direction, ActorTrait, SupporterTrait, ContainerTrait } from '@sharpee/world-model';
 import {
   createRealTestContext,
   expectEvent,
@@ -84,10 +84,7 @@ describe('climbingAction (Golden Pattern)', () => {
       const { world, player, room } = setupBasicWorld();
 
       const platform = world.createEntity('wooden platform', EntityType.SUPPORTER);
-      platform.add({
-        type: TraitType.SUPPORTER,
-        enterable: true
-      });
+      platform.add(new SupporterTrait({ enterable: true }));
       world.moveEntity(platform.id, room.id);
       world.moveEntity(player.id, platform.id); // Already on platform
 
@@ -155,7 +152,7 @@ describe('climbingAction (Golden Pattern)', () => {
       world.setLanguageWords(ENGLISH_WORDS);
 
       const container = world.createEntity('box', EntityType.CONTAINER);
-      container.add({ type: TraitType.CONTAINER });
+      container.add(new ContainerTrait());
 
       const player = world.createEntity('yourself', EntityType.ACTOR);
       player.add(new ActorTrait({ isPlayer: true }));
@@ -269,10 +266,7 @@ describe('climbingAction (Golden Pattern)', () => {
       const { world, player, room } = setupBasicWorld();
       
       const tree = world.createEntity('oak tree', EntityType.SCENERY);
-      tree.add({
-        type: TraitType.SUPPORTER,
-        enterable: true
-      });
+      tree.add(new SupporterTrait({ enterable: true }));
       world.moveEntity(tree.id, room.id);
       
       const command = createCommand(IFActions.CLIMBING, {
@@ -332,7 +326,7 @@ describe('climbingAction (Golden Pattern)', () => {
         type: TraitType.CLIMBABLE,
         canClimb: true
       });
-      boulder.add({ type: TraitType.SUPPORTER, enterable: true });
+      boulder.add(new SupporterTrait({ enterable: true }));
       world.moveEntity(boulder.id, room.id);
 
       const command = createCommand(IFActions.CLIMBING, {
@@ -431,10 +425,7 @@ describe('climbingAction (Golden Pattern)', () => {
       const { world, player, room } = setupBasicWorld();
 
       const platform = world.createEntity('platform', EntityType.SUPPORTER);
-      platform.add({
-        type: TraitType.SUPPORTER,
-        enterable: true
-      });
+      platform.add(new SupporterTrait({ enterable: true }));
       world.moveEntity(platform.id, room.id);
 
       const command = createCommand(IFActions.CLIMBING, {
@@ -531,7 +522,7 @@ describe('climbingAction (Golden Pattern)', () => {
       const { world, player, room } = setupBasicWorld();
 
       const tree = world.createEntity('oak tree', EntityType.SCENERY);
-      tree.add({ type: TraitType.SUPPORTER, enterable: true });
+      tree.add(new SupporterTrait({ enterable: true }));
       world.moveEntity(tree.id, room.id);
 
       // VERIFY PRECONDITION: player is in the room

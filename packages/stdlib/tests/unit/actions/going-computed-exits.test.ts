@@ -23,6 +23,7 @@ import {
   VehicleTrait,
   IFEntity,
   WorldModel,
+  ContainerTrait,
   type ExitResolver
 } from '@sharpee/world-model';
 import {
@@ -306,7 +307,7 @@ describe('goingAction × computed exits (ADR-295)', () => {
 
     const boat = world.createEntity('magic boat', 'object');
     boat.add(new VehicleTrait({ movement: { kind: 'streets' } }));
-    boat.add({ type: TraitType.CONTAINER, enterable: true } as any);
+    boat.add(new ContainerTrait({ enterable: true }));
     world.moveEntity(boat.id, room.id);
     world.moveEntity(player.id, boat.id);
     admit(staticDestination, boat);
@@ -333,7 +334,7 @@ describe('goingAction × computed exits (ADR-295)', () => {
     world.registerExitResolver(CARRIER_TYPE, resolver);
     const boat = world.createEntity('magic boat', 'object');
     boat.add(new VehicleTrait({ movement: { kind: 'streets' } }));
-    boat.add({ type: TraitType.CONTAINER, enterable: true } as any);
+    boat.add(new ContainerTrait({ enterable: true }));
     world.moveEntity(boat.id, room.id);
     world.moveEntity(player.id, boat.id);
     return { ...fixture, boat, resolver };

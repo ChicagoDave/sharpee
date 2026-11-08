@@ -8,7 +8,7 @@
  */
 
 import { describe, test, expect, beforeEach } from 'vitest';
-import { AuthorModel, EntityType, IFEntity, IParsedCommand, TraitType, WorldModel, ActorTrait } from '@sharpee/world-model';
+import { AuthorModel, EntityType, IFEntity, IParsedCommand, TraitType, WorldModel, ActorTrait, IdentityTrait } from '@sharpee/world-model';
 import { LanguageProvider } from '@sharpee/if-domain';
 import { CommandValidator } from '../../../src/validation/command-validator';
 import { StandardActionRegistry } from '../../../src/actions/registry';
@@ -68,9 +68,9 @@ describe('CommandValidator resolves a scoped phrase among the admitted ids (ADR-
     world.setPlayer(player.id);
 
     brassClock = author.createEntity('brass clock', EntityType.OBJECT);
-    brassClock.add({ type: TraitType.IDENTITY, name: 'brass clock' });
+    brassClock.add(new IdentityTrait({ name: 'brass clock' }));
     wallClock = author.createEntity('wall clock', EntityType.OBJECT);
-    wallClock.add({ type: TraitType.IDENTITY, name: 'wall clock' });
+    wallClock.add(new IdentityTrait({ name: 'wall clock' }));
     author.moveEntity(brassClock.id, player.id);
     author.moveEntity(wallClock.id, room.id);
 

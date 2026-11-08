@@ -10,7 +10,7 @@
  * does; assertions are on the resolved entity.
  */
 import { describe, test, expect, beforeEach } from 'vitest';
-import { AuthorModel, EntityType, IFEntity, IParsedCommand, TraitType, WorldModel, ActorTrait } from '@sharpee/world-model';
+import { AuthorModel, EntityType, IFEntity, IParsedCommand, TraitType, WorldModel, ActorTrait, IdentityTrait } from '@sharpee/world-model';
 import { LanguageProvider } from '@sharpee/if-domain';
 import { CommandValidator } from '../../../src/validation/command-validator';
 import { StandardActionRegistry } from '../../../src/actions/registry';
@@ -62,7 +62,7 @@ describe('the self words name the current player (ADR-327)', () => {
     const room = author.createEntity('Foyer', EntityType.ROOM);
     room.add({ type: TraitType.ROOM });
     player = author.createEntity('Alex', EntityType.ACTOR);
-    player.add({ type: TraitType.IDENTITY, name: 'Alex', properName: true });
+    player.add(new IdentityTrait({ name: 'Alex', properName: true }));
     player.add(new ActorTrait({ isPlayable: true }));
     author.moveEntity(player.id, room.id);
     world.setPlayer(player.id);
@@ -81,8 +81,8 @@ describe('the self words name the current player (ADR-327)', () => {
 
   test('a self word never resolves a non-player entity', () => {
     const other = author.createEntity('Mara', EntityType.ACTOR);
-    other.add({ type: TraitType.IDENTITY, name: 'Mara', properName: true });
-    other.add({ type: TraitType.ACTOR });
+    other.add(new IdentityTrait({ name: 'Mara', properName: true }));
+    other.add(new ActorTrait());
     author.moveEntity(other.id, world.getLocation(player.id)!);
 
     const result = validator.validate(commandFor('yourself'));

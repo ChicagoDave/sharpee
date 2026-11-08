@@ -12,7 +12,7 @@
 import { describe, test, expect } from 'vitest';
 import { talkingAction } from '../../../src/actions/standard/talking';
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType } from '@sharpee/world-model';
+import { TraitType, ActorTrait } from '@sharpee/world-model';
 import {
   createRealTestContext,
   setupBasicWorld,
@@ -98,12 +98,7 @@ describe('talkingAction (Golden Pattern)', () => {
     test('should fail when NPC is not available to talk', () => {
       const { world, player, room } = setupBasicWorld();
       const busyNpc = world.createEntity('busy worker', 'actor');
-      busyNpc.add({
-        type: TraitType.ACTOR,
-        conversation: {
-          isAvailable: false
-        }
-      });
+      busyNpc.add(new ActorTrait({ customProperties: { conversation: { isAvailable: false } } }));
 
       world.moveEntity(busyNpc.id, room.id);
 
@@ -124,10 +119,7 @@ describe('talkingAction (Golden Pattern)', () => {
     test('should talk to NPC without conversation system', () => {
       const { world, player, room } = setupBasicWorld();
       const simpleNpc = world.createEntity('service robot', 'actor');
-      simpleNpc.add({
-        type: TraitType.ACTOR
-        // No conversation object
-      });
+      simpleNpc.add(new ActorTrait()); // No conversation object
       
       world.moveEntity(simpleNpc.id, room.id);
       
@@ -151,13 +143,7 @@ describe('talkingAction (Golden Pattern)', () => {
     test('should handle first meeting with NPC', () => {
       const { world, player, room } = setupBasicWorld();
       const newNpc = world.createEntity('traveling merchant', 'actor');
-      newNpc.add({
-        type: TraitType.ACTOR,
-        conversation: {
-          hasGreeted: false,
-          state: 'initial'
-        }
-      });
+      newNpc.add(new ActorTrait({ customProperties: { conversation: { hasGreeted: false, state: 'initial' } } }));
       
       world.moveEntity(newNpc.id, room.id);
       
@@ -180,13 +166,7 @@ describe('talkingAction (Golden Pattern)', () => {
     test('should handle formal personality on first meeting', () => {
       const { world, player, room } = setupBasicWorld();
       const formalNpc = world.createEntity('distinguished professor', 'actor');
-      formalNpc.add({
-        type: TraitType.ACTOR,
-        conversation: {
-          hasGreeted: false,
-          personality: 'formal'
-        }
-      });
+      formalNpc.add(new ActorTrait({ customProperties: { conversation: { hasGreeted: false, personality: 'formal' } } }));
       
       world.moveEntity(formalNpc.id, room.id);
       
@@ -205,13 +185,7 @@ describe('talkingAction (Golden Pattern)', () => {
     test('should handle casual personality on first meeting', () => {
       const { world, player, room } = setupBasicWorld();
       const casualNpc = world.createEntity('friendly bartender', 'actor');
-      casualNpc.add({
-        type: TraitType.ACTOR,
-        conversation: {
-          hasGreeted: false,
-          personality: 'casual'
-        }
-      });
+      casualNpc.add(new ActorTrait({ customProperties: { conversation: { hasGreeted: false, personality: 'casual' } } }));
       
       world.moveEntity(casualNpc.id, room.id);
       
@@ -232,13 +206,7 @@ describe('talkingAction (Golden Pattern)', () => {
     test('should handle subsequent meeting with friendly NPC', () => {
       const { world, player, room } = setupBasicWorld();
       const friendlyNpc = world.createEntity('trusted ally', 'actor');
-      friendlyNpc.add({
-        type: TraitType.ACTOR,
-        conversation: {
-          hasGreeted: true,
-          relationship: 'friendly'
-        }
-      });
+      friendlyNpc.add(new ActorTrait({ customProperties: { conversation: { hasGreeted: true, relationship: 'friendly' } } }));
       
       world.moveEntity(friendlyNpc.id, room.id);
       
@@ -257,13 +225,7 @@ describe('talkingAction (Golden Pattern)', () => {
     test('should handle NPC that remembers player', () => {
       const { world, player, room } = setupBasicWorld();
       const memoryNpc = world.createEntity('old innkeeper', 'actor');
-      memoryNpc.add({
-        type: TraitType.ACTOR,
-        conversation: {
-          hasGreeted: true,
-          remembersPlayer: true
-        }
-      });
+      memoryNpc.add(new ActorTrait({ customProperties: { conversation: { hasGreeted: true, remembersPlayer: true } } }));
       
       world.moveEntity(memoryNpc.id, room.id);
       
@@ -282,13 +244,7 @@ describe('talkingAction (Golden Pattern)', () => {
     test('should handle regular subsequent greeting', () => {
       const { world, player, room } = setupBasicWorld();
       const regularNpc = world.createEntity('store clerk', 'actor');
-      regularNpc.add({
-        type: TraitType.ACTOR,
-        conversation: {
-          hasGreeted: true
-          // No special relationship
-        }
-      });
+      regularNpc.add(new ActorTrait({ customProperties: { conversation: { hasGreeted: true } } })); // No special relationship
       
       world.moveEntity(regularNpc.id, room.id);
       
@@ -309,17 +265,18 @@ describe('talkingAction (Golden Pattern)', () => {
     test('should detect NPC with topics to discuss', () => {
       const { world, player, room } = setupBasicWorld();
       const informativeNpc = world.createEntity('helpful librarian', 'actor');
-      informativeNpc.add({
-        type: TraitType.ACTOR,
-        conversation: {
-          hasGreeted: true,
-          topics: {
-            books: 'I have many rare books in the collection.',
-            history: 'The town has a fascinating history.',
-            magic: 'Magic? Oh, that\'s a dangerous subject...'
+      informativeNpc.add(new ActorTrait({
+        customProperties: {
+          conversation: {
+            hasGreeted: true,
+            topics: {
+              books: 'I have many rare books in the collection.',
+              history: 'The town has a fascinating history.',
+              magic: 'Magic? Oh, that\'s a dangerous subject...'
+            }
           }
         }
-      });
+      }));
       
       world.moveEntity(informativeNpc.id, room.id);
       
@@ -341,13 +298,7 @@ describe('talkingAction (Golden Pattern)', () => {
     test('should detect NPC with no topics', () => {
       const { world, player, room } = setupBasicWorld();
       const quietNpc = world.createEntity('silent guard', 'actor');
-      quietNpc.add({
-        type: TraitType.ACTOR,
-        conversation: {
-          hasGreeted: true,
-          topics: {} // Empty topics
-        }
-      });
+      quietNpc.add(new ActorTrait({ customProperties: { conversation: { hasGreeted: true, topics: {} } } })); // Empty topics
       
       world.moveEntity(quietNpc.id, room.id);
       
@@ -368,12 +319,7 @@ describe('talkingAction (Golden Pattern)', () => {
     test('should include proper entities in all events', () => {
       const { world, player, room } = setupBasicWorld();
       const npc = world.createEntity('helpful assistant', 'actor');
-      npc.add({
-        type: TraitType.ACTOR,
-        conversation: {
-          state: 'active'
-        }
-      });
+      npc.add(new ActorTrait({ customProperties: { conversation: { state: 'active' } } }));
 
       world.moveEntity(npc.id, room.id);
 
@@ -410,10 +356,7 @@ describe('talkingAction (Golden Pattern)', () => {
         personality: 'formal',
         topics: { quest: 'Find the sword' }
       };
-      npc.add({
-        type: TraitType.ACTOR,
-        customProperties: { conversation }
-      });
+      npc.add(new ActorTrait({ customProperties: { conversation } }));
       world.moveEntity(npc.id, room.id);
 
       // VERIFY PRECONDITION: conversation state before talking

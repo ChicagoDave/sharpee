@@ -25,7 +25,7 @@
  */
 
 import { describe, test, expect } from 'vitest';
-import { TraitType } from '@sharpee/world-model';
+import { TraitType, ActorTrait } from '@sharpee/world-model';
 import { jumpingAction, jumpingLifecycle } from '../../../src/actions/standard/jumping';
 import { sayingYesAction, sayingYesLifecycle } from '../../../src/actions/standard/saying_yes';
 import { sayingNoAction, sayingNoLifecycle } from '../../../src/actions/standard/saying_no';
@@ -102,7 +102,7 @@ describe('the saying actions consult the scene speaker when the actor is in a li
   function worldWithScene() {
     const { world, player, room } = setupBasicWorld();
     const quint = world.createEntity('pad master', 'actor');
-    quint.add({ type: TraitType.ACTOR });
+    quint.add(new ActorTrait());
     quint.add({ type: TEST_MARKER_TRAIT } as any);
     world.moveEntity(quint.id, room.id);
     // A live scene between the player and Quint, written where the runtime
@@ -147,7 +147,7 @@ describe('the saying actions consult the scene speaker when the actor is in a li
   test('with no scene, a person in the room is not consulted and the report names no speaker', () => {
     const { world, room } = setupBasicWorld();
     const quint = world.createEntity('pad master', 'actor');
-    quint.add({ type: TraitType.ACTOR });
+    quint.add(new ActorTrait());
     quint.add({ type: TEST_MARKER_TRAIT } as any);
     world.moveEntity(quint.id, room.id);
     world.registerActionInterceptor(TEST_MARKER_TRAIT, IFActions.SAYING_YES, {
@@ -178,7 +178,7 @@ describe('kissingAction (ADR-370)', () => {
   test('a person: kissed_person; a thing: kissed_thing; nothing moves', () => {
     const { world, room } = setupBasicWorld();
     const quint = world.createEntity('pad master', 'actor');
-    quint.add({ type: TraitType.ACTOR });
+    quint.add(new ActorTrait());
     const crate = world.createEntity('mail crate', 'object');
     world.moveEntity(quint.id, room.id);
     world.moveEntity(crate.id, room.id);

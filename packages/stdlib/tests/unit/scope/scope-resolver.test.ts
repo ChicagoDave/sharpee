@@ -3,7 +3,7 @@
  */
 
 import { describe, test, expect, beforeEach } from 'vitest';
-import { WorldModel, TraitType, EntityType, IFEntity, IdentityTrait, ActorTrait } from '@sharpee/world-model';
+import { WorldModel, TraitType, EntityType, IFEntity, IdentityTrait, ActorTrait, ContainerTrait, SupporterTrait, SceneryTrait } from '@sharpee/world-model';
 import { StandardScopeResolver } from '../../../src/scope/scope-resolver';
 import { ScopeLevel } from '../../../src/scope/types';
 
@@ -27,7 +27,7 @@ describe('StandardScopeResolver', () => {
 
     player = world.createEntity('Player', EntityType.ACTOR);
     player.add(new ActorTrait({ isPlayer: true }));
-    player.add({ type: TraitType.CONTAINER }); // Can hold things
+    player.add(new ContainerTrait()); // Can hold things
     
     world.moveEntity(player.id, room.id);
     player.add(new ActorTrait({ isPlayable: true }));
@@ -66,7 +66,7 @@ describe('StandardScopeResolver', () => {
   describe('Container Visibility', () => {
     test('should see objects in open containers', () => {
       const box = world.createEntity('wooden box', EntityType.CONTAINER);
-      box.add({ type: TraitType.CONTAINER });
+      box.add(new ContainerTrait());
       box.add({ type: TraitType.OPENABLE, isOpen: true });
       world.moveEntity(box.id, room.id);
 
@@ -79,7 +79,7 @@ describe('StandardScopeResolver', () => {
 
     test('should not see objects in closed containers', () => {
       const box = world.createEntity('wooden box', EntityType.CONTAINER);
-      box.add({ type: TraitType.CONTAINER });
+      box.add(new ContainerTrait());
       box.add({ type: TraitType.OPENABLE, isOpen: false });
       world.moveEntity(box.id, room.id);
 
@@ -92,12 +92,12 @@ describe('StandardScopeResolver', () => {
 
     test('should see nested containers when open', () => {
       const chest = world.createEntity('treasure chest', EntityType.CONTAINER);
-      chest.add({ type: TraitType.CONTAINER });
+      chest.add(new ContainerTrait());
       chest.add({ type: TraitType.OPENABLE, isOpen: true });
       world.moveEntity(chest.id, room.id);
 
       const box = world.createEntity('small box', EntityType.CONTAINER);
-      box.add({ type: TraitType.CONTAINER });
+      box.add(new ContainerTrait());
       box.add({ type: TraitType.OPENABLE, isOpen: true });
       world.moveEntity(box.id, chest.id);
 
@@ -109,12 +109,12 @@ describe('StandardScopeResolver', () => {
 
     test('should not see through any closed container in hierarchy', () => {
       const chest = world.createEntity('treasure chest', EntityType.CONTAINER);
-      chest.add({ type: TraitType.CONTAINER });
+      chest.add(new ContainerTrait());
       chest.add({ type: TraitType.OPENABLE, isOpen: true });
       world.moveEntity(chest.id, room.id);
 
       const box = world.createEntity('small box', EntityType.CONTAINER);
-      box.add({ type: TraitType.CONTAINER });
+      box.add(new ContainerTrait());
       box.add({ type: TraitType.OPENABLE, isOpen: false }); // Closed!
       world.moveEntity(box.id, chest.id);
 
@@ -128,7 +128,7 @@ describe('StandardScopeResolver', () => {
   describe('Supporter Visibility', () => {
     test('should see objects on supporters', () => {
       const table = world.createEntity('wooden table', EntityType.SUPPORTER);
-      table.add({ type: TraitType.SUPPORTER });
+      table.add(new SupporterTrait());
       world.moveEntity(table.id, room.id);
 
       const lamp = world.createEntity('table lamp', EntityType.OBJECT);
@@ -140,11 +140,11 @@ describe('StandardScopeResolver', () => {
 
     test('should see objects on nested supporters', () => {
       const table = world.createEntity('table', EntityType.SUPPORTER);
-      table.add({ type: TraitType.SUPPORTER });
+      table.add(new SupporterTrait());
       world.moveEntity(table.id, room.id);
 
       const tray = world.createEntity('silver tray', EntityType.SUPPORTER);
-      tray.add({ type: TraitType.SUPPORTER });
+      tray.add(new SupporterTrait());
       world.moveEntity(tray.id, table.id);
 
       const cup = world.createEntity('teacup', EntityType.OBJECT);
@@ -164,7 +164,7 @@ describe('StandardScopeResolver', () => {
 
     test('should reach objects on supporters', () => {
       const table = world.createEntity('table', EntityType.SUPPORTER);
-      table.add({ type: TraitType.SUPPORTER });
+      table.add(new SupporterTrait());
       world.moveEntity(table.id, room.id);
 
       const book = world.createEntity('book', EntityType.OBJECT);
@@ -175,7 +175,7 @@ describe('StandardScopeResolver', () => {
 
     test('should reach objects in open containers', () => {
       const box = world.createEntity('box', EntityType.CONTAINER);
-      box.add({ type: TraitType.CONTAINER });
+      box.add(new ContainerTrait());
       box.add({ type: TraitType.OPENABLE, isOpen: true });
       world.moveEntity(box.id, room.id);
 
@@ -187,7 +187,7 @@ describe('StandardScopeResolver', () => {
 
     test('should not reach objects in closed containers', () => {
       const box = world.createEntity('box', EntityType.CONTAINER);
-      box.add({ type: TraitType.CONTAINER });
+      box.add(new ContainerTrait());
       box.add({ type: TraitType.OPENABLE, isOpen: false });
       world.moveEntity(box.id, room.id);
 
@@ -228,7 +228,7 @@ describe('StandardScopeResolver', () => {
       world.moveEntity(ball.id, room.id);
 
       const closedBox = world.createEntity('locked box', EntityType.CONTAINER);
-      closedBox.add({ type: TraitType.CONTAINER });
+      closedBox.add(new ContainerTrait());
       closedBox.add({ type: TraitType.OPENABLE, isOpen: false });
       world.moveEntity(closedBox.id, room.id);
 
@@ -461,7 +461,7 @@ describe('StandardScopeResolver', () => {
 
       // Hook is scenery in the ledge room (different room!)
       const hook = world.createEntity('hook', EntityType.SCENERY);
-      hook.add({ type: TraitType.SCENERY });
+      hook.add(new SceneryTrait());
       world.moveEntity(hook.id, ledgeRoom.id);
 
       // Without minimum scope, hook is UNAWARE (different rooms)
@@ -497,7 +497,7 @@ describe('StandardScopeResolver', () => {
       expect(moved).toBe(true);
 
       const hook = world.createEntity('hook', EntityType.SCENERY);
-      hook.add({ type: TraitType.SCENERY });
+      hook.add(new SceneryTrait());
       world.moveEntity(hook.id, ledgeRoom.id);
 
       // Hook is reachable from otherVairRoom, NOT from vairRoom
@@ -523,7 +523,7 @@ describe('StandardScopeResolver', () => {
       expect(moved).toBe(true);
 
       const hook = world.createEntity('hook', EntityType.SCENERY);
-      hook.add({ type: TraitType.SCENERY });
+      hook.add(new SceneryTrait());
       // Hook is in a DIFFERENT room (not the one the player came from)
       world.moveEntity(hook.id, ledgeRoom.id);
 
@@ -551,7 +551,7 @@ describe('StandardScopeResolver', () => {
       const balloon = world.createEntity('balloon', EntityType.ITEM);
       balloon.add({ type: TraitType.VEHICLE });
       balloon.add({ type: TraitType.ENTERABLE });
-      balloon.add({ type: TraitType.CONTAINER }); // Balloon also has container (like real game)
+      balloon.add(new ContainerTrait()); // Balloon also has container (like real game)
       world.moveEntity(balloon.id, vairRoom.id);
 
       // Player enters balloon
@@ -560,7 +560,7 @@ describe('StandardScopeResolver', () => {
 
       // Hook is scenery in ledge room
       const hook = world.createEntity('hook', EntityType.SCENERY);
-      hook.add({ type: TraitType.SCENERY });
+      hook.add(new SceneryTrait());
       world.moveEntity(hook.id, ledgeRoom.id);
 
       // Wire is inside balloon (carried by player or in balloon)
@@ -625,7 +625,7 @@ describe('StandardScopeResolver', () => {
       const balloon = world.createEntity('balloon', EntityType.ITEM);
       balloon.add({ type: TraitType.VEHICLE });
       balloon.add({ type: TraitType.ENTERABLE });
-      balloon.add({ type: TraitType.CONTAINER });
+      balloon.add(new ContainerTrait());
       world.moveEntity(balloon.id, vairRoom.id);
 
       // Player in balloon
@@ -633,14 +633,14 @@ describe('StandardScopeResolver', () => {
 
       // Wire in balloon (with alias "wire")
       const wire = world.createEntity('braided wire', EntityType.SCENERY);
-      wire.add({ type: TraitType.IDENTITY, name: 'braided wire', aliases: ['wire', 'rope'] });
-      wire.add({ type: TraitType.SCENERY });
+      wire.add(new IdentityTrait({ name: 'braided wire', aliases: ['wire', 'rope'] }));
+      wire.add(new SceneryTrait());
       world.moveEntity(wire.id, balloon.id);
 
       // Hook in ledge room with minimumScope for vairRoom
       const hook = world.createEntity('hook', EntityType.SCENERY);
-      hook.add({ type: TraitType.IDENTITY, name: 'hook', aliases: ['metal hook'] });
-      hook.add({ type: TraitType.SCENERY });
+      hook.add(new IdentityTrait({ name: 'hook', aliases: ['metal hook'] }));
+      hook.add(new SceneryTrait());
       world.moveEntity(hook.id, ledgeRoom.id);
       hook.setMinimumScope(ScopeLevel.REACHABLE, [vairRoom.id]);
 
@@ -727,19 +727,19 @@ describe('StandardScopeResolver', () => {
       const balloon = world.createEntity('balloon', EntityType.ITEM);
       balloon.add({ type: TraitType.VEHICLE });
       balloon.add({ type: TraitType.ENTERABLE });
-      balloon.add({ type: TraitType.CONTAINER });
+      balloon.add(new ContainerTrait());
       world.moveEntity(balloon.id, vairRoom.id);
       world.moveEntity(player.id, balloon.id);
 
       // Wire 1: "braided wire" with alias "wire" but NO adjectives
       const braidedWire = world.createEntity('braided wire', EntityType.SCENERY);
-      braidedWire.add({ type: TraitType.IDENTITY, name: 'braided wire', aliases: ['wire', 'rope'] });
-      braidedWire.add({ type: TraitType.SCENERY });
+      braidedWire.add(new IdentityTrait({ name: 'braided wire', aliases: ['wire', 'rope'] }));
+      braidedWire.add(new SceneryTrait());
       world.moveEntity(braidedWire.id, balloon.id);
 
       // Wire 2: "shiny wire" with alias "wire" - in player inventory
       const shinyWire = world.createEntity('shiny wire', EntityType.ITEM);
-      shinyWire.add({ type: TraitType.IDENTITY, name: 'shiny wire', aliases: ['wire', 'fuse wire'] });
+      shinyWire.add(new IdentityTrait({ name: 'shiny wire', aliases: ['wire', 'fuse wire'] }));
       world.moveEntity(shinyWire.id, player.id);
 
       // Simulate what command validator does for "braided wire" with head="wire"

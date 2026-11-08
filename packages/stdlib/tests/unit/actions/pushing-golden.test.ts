@@ -13,7 +13,7 @@
 import { describe, test, expect } from 'vitest';
 import { pushingAction } from '../../../src/actions/standard/pushing';
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType } from '@sharpee/world-model';
+import { TraitType, SceneryTrait } from '@sharpee/world-model';
 import {
   createRealTestContext,
   setupBasicWorld,
@@ -95,7 +95,7 @@ describe('pushingAction (Golden Pattern)', () => {
     test('should fail when scenery is not pushable', () => {
       const { world, room } = setupBasicWorld();
       const fountain = world.createEntity('marble fountain', 'object');
-      fountain.add({ type: TraitType.SCENERY });
+      fountain.add(new SceneryTrait());
       world.moveEntity(fountain.id, room.id);
 
       const command = createCommand(IFActions.PUSHING, { entity: fountain });

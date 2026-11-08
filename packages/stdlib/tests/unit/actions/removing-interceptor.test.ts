@@ -11,14 +11,14 @@
 import { describe, test, expect } from 'vitest';
 import { removingAction } from '../../../src/actions/standard/removing';
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType, WorldModel, IFEntity } from '@sharpee/world-model';
+import { TraitType, WorldModel, IFEntity, ContainerTrait } from '@sharpee/world-model';
 import { setupBasicWorld, createRealTestContext, createCommand, TEST_MARKER_TRAIT } from '../../test-utils';
 import { runValidatePhase, runExecutePhase, runReportPhase, runBlockedPhase } from '../../../src/actions/lifecycle/phase-runner';
 
 const setup = () => {
   const { world, player, room } = setupBasicWorld();
   const box = world.createEntity('wooden box', 'object');
-  box.add({ type: TraitType.CONTAINER } as any);
+  box.add(new ContainerTrait());
   box.add({ type: TraitType.OPENABLE, isOpen: true } as any);
   world.moveEntity(box.id, room.id);
   const axe = world.createEntity('bloody axe', 'object');

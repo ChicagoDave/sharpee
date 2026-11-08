@@ -40,7 +40,7 @@ function setupPersonWorld(withCharacterModel: boolean) {
   player.add(new ActorTrait({ isPlayable: true }));
   world.setPlayer(player.id);
   const hermit = author.createEntity('hermit', EntityType.ACTOR);
-  hermit.add({ type: TraitType.ACTOR });
+  hermit.add(new ActorTrait());
   if (withCharacterModel) hermit.add(new CharacterModelTrait({}));
   author.moveEntity(hermit.id, room.id);
   return { world, player, room, hermit };

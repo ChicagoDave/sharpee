@@ -3,7 +3,7 @@
  */
 
 import { describe, test, expect, beforeEach, vi, afterEach, Mock } from 'vitest';
-import { WorldModel, TraitType, EntityType, ActorTrait } from '@sharpee/world-model';
+import { WorldModel, TraitType, EntityType, ActorTrait, ContainerTrait } from '@sharpee/world-model';
 import { StandardScopeResolver } from '../../../src/scope/scope-resolver';
 import { StandardWitnessSystem } from '../../../src/scope/witness-system';
 import { StateChange, WitnessLevel, SenseType } from '../../../src/scope/types';
@@ -43,11 +43,11 @@ describe('StandardWitnessSystem', () => {
 
     player = world.createEntity('Player', EntityType.ACTOR);
     player.add(new ActorTrait({ isPlayer: true }));
-    player.add({ type: TraitType.CONTAINER });
+    player.add(new ContainerTrait());
     
     npc = world.createEntity('Bob', EntityType.ACTOR);
-    npc.add({ type: TraitType.ACTOR, isPlayer: false });
-    npc.add({ type: TraitType.CONTAINER });
+    npc.add(new ActorTrait({ isPlayer: false }));
+    npc.add(new ContainerTrait());
     
     world.moveEntity(player.id, room.id);
     world.moveEntity(npc.id, room.id);
@@ -108,7 +108,7 @@ describe('StandardWitnessSystem', () => {
       otherRoom.add({ type: TraitType.ROOM });
       
       const stranger = world.createEntity('Stranger', EntityType.ACTOR);
-      stranger.add({ type: TraitType.ACTOR });
+      stranger.add(new ActorTrait());
       world.moveEntity(stranger.id, otherRoom.id);
 
       const change: StateChange = {
@@ -417,7 +417,7 @@ describe('StandardWitnessSystem', () => {
 
     test('should return empty array for actor with no knowledge', () => {
       const newActor = world.createEntity('New Actor', EntityType.ACTOR);
-      newActor.add({ type: TraitType.ACTOR });
+      newActor.add(new ActorTrait());
 
       const knownEntities = witnessSystem.getKnownEntities(newActor.id);
 

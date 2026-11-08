@@ -10,7 +10,7 @@
 import { describe, test, expect, beforeEach } from 'vitest';
 import { closingAction } from '../../../src/actions/standard/closing/closing';
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType, EntityType, OpenableTrait } from '@sharpee/world-model';
+import { TraitType, EntityType, OpenableTrait, ContainerTrait } from '@sharpee/world-model';
 import {
   createRealTestContext,
   executeWithValidation,
@@ -188,9 +188,7 @@ describe('closingAction (Golden Pattern)', () => {
         isOpen: true,
         canClose: true
       });
-      box.add({
-        type: TraitType.CONTAINER
-      });
+      box.add(new ContainerTrait());
       world.moveEntity(box.id, room.id);
       
       const coin = world.createEntity('gold coin', EntityType.OBJECT);
@@ -353,9 +351,7 @@ describe('World State Mutations', () => {
       isOpen: true,
       canClose: true
     });
-    box.add({
-      type: TraitType.CONTAINER
-    });
+    box.add(new ContainerTrait());
     world.moveEntity(box.id, room.id);
 
     const coin = world.createEntity('gold coin', EntityType.OBJECT);

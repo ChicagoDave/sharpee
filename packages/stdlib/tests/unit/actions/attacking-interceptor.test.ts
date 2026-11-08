@@ -13,7 +13,7 @@
 import { describe, test, expect } from 'vitest';
 import { attackingAction, attackingLifecycle } from '../../../src/actions/standard/attacking';
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType } from '@sharpee/world-model';
+import { TraitType, ActorTrait } from '@sharpee/world-model';
 import { setupBasicWorld, createRealTestContext, createCommand, TEST_MARKER_TRAIT, SECOND_TEST_MARKER_TRAIT } from '../../test-utils';
 import { runValidatePhase, runExecutePhase, runReportPhase } from '../../../src/actions/lifecycle/phase-runner';
 
@@ -25,7 +25,7 @@ describe('Attacking interceptor surface (ADR-228)', () => {
   test('combatant: target postExecute replaces combat resolution; weapon slot fires too', () => {
     const { world, room } = setupBasicWorld();
     const troll = world.createEntity('nasty troll', 'actor');
-    troll.add({ type: TraitType.ACTOR } as any);
+    troll.add(new ActorTrait());
     troll.add({ type: TraitType.COMBATANT } as any);
     // Inert marker trait — the target's interceptor registration key.
     troll.add({ type: TEST_MARKER_TRAIT } as any);
@@ -92,7 +92,7 @@ describe('Attacking interceptor surface (ADR-228)', () => {
   test('combatant with NO interceptor blocks with violence_not_the_answer', () => {
     const { world, room } = setupBasicWorld();
     const troll = world.createEntity('meek troll', 'actor');
-    troll.add({ type: TraitType.ACTOR } as any);
+    troll.add(new ActorTrait());
     troll.add({ type: TraitType.COMBATANT } as any);
     world.moveEntity(troll.id, room.id);
 

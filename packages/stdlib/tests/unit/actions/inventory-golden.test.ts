@@ -13,7 +13,7 @@
 import { describe, test, expect } from 'vitest';
 import { inventoryAction } from '../../../src/actions/standard/inventory';
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType } from '@sharpee/world-model';
+import { TraitType, ActorTrait } from '@sharpee/world-model';
 import {
   createRealTestContext,
   setupBasicWorld,
@@ -277,7 +277,7 @@ describe('inventoryAction (Golden Pattern)', () => {
       const { world, player, room } = setupBasicWorld();
       
       const guard = world.createEntity('suspicious guard', 'actor');
-      guard.add({ type: TraitType.ACTOR });
+      guard.add(new ActorTrait());
       world.moveEntity(guard.id, room.id);
       
       const command = createCommand(IFActions.INVENTORY);

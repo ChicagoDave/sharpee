@@ -10,7 +10,7 @@
  * does; assertions are on the resolution result.
  */
 import { describe, test, expect, beforeEach } from 'vitest';
-import { AuthorModel, EntityType, IFEntity, IParsedCommand, TraitType, WorldModel, ActorTrait } from '@sharpee/world-model';
+import { AuthorModel, EntityType, IFEntity, IParsedCommand, TraitType, WorldModel, ActorTrait, IdentityTrait, ContainerTrait } from '@sharpee/world-model';
 import { LanguageProvider } from '@sharpee/if-domain';
 import { CommandValidator } from '../../../src/validation/command-validator';
 import { StandardActionRegistry } from '../../../src/actions/registry';
@@ -70,7 +70,7 @@ describe('GH #206: an exact match out of scope is not displaced by a word match 
     player.add(new ActorTrait({ isPlayable: true }));
     world.setPlayer(player.id);
     const stiletto = author.createEntity('nasty stiletto', EntityType.OBJECT);
-    stiletto.add({ type: TraitType.IDENTITY, name: 'nasty stiletto', aliases: ['stiletto', 'thief knife'] });
+    stiletto.add(new IdentityTrait({ name: 'nasty stiletto', aliases: ['stiletto', 'thief knife'] }));
     author.moveEntity(stiletto.id, player.id);
     const registry = new StandardActionRegistry();
     registry.setLanguageProvider(mockLanguageProvider);
@@ -80,7 +80,7 @@ describe('GH #206: an exact match out of scope is not displaced by a word match 
 
   test('`x thief` with the thief out of sight resolves the thief (for the action to refuse by scope), not the knife', () => {
     const thief = author.createEntity('seedy-looking thief', EntityType.ACTOR);
-    thief.add({ type: TraitType.IDENTITY, name: 'seedy-looking thief', aliases: ['thief'] });
+    thief.add(new IdentityTrait({ name: 'seedy-looking thief', aliases: ['thief'] }));
     author.moveEntity(thief.id, elsewhere.id);
 
     const result = validator.validate(commandFor('thief'));
@@ -91,10 +91,10 @@ describe('GH #206: an exact match out of scope is not displaced by a word match 
 
   test('an in-scope entity whose own name carries the head still resolves when a namesake is out of sight', () => {
     const rare = author.createEntity('rare stamp', EntityType.OBJECT);
-    rare.add({ type: TraitType.IDENTITY, name: 'rare stamp' });
+    rare.add(new IdentityTrait({ name: 'rare stamp' }));
     author.moveEntity(rare.id, room.id);
     const other = author.createEntity('stamp', EntityType.OBJECT);
-    other.add({ type: TraitType.IDENTITY, name: 'stamp', aliases: ['stamp'] });
+    other.add(new IdentityTrait({ name: 'stamp', aliases: ['stamp'] }));
     author.moveEntity(other.id, elsewhere.id);
 
     const result = validator.validate(commandFor('stamp'));
@@ -105,7 +105,7 @@ describe('GH #206: an exact match out of scope is not displaced by a word match 
 
   test('with no in-scope competitor at all, an out-of-sight exact match stays not found at validation', () => {
     const ball = author.createEntity('ball', EntityType.OBJECT);
-    ball.add({ type: TraitType.IDENTITY, name: 'ball' });
+    ball.add(new IdentityTrait({ name: 'ball' }));
     author.moveEntity(ball.id, elsewhere.id);
 
     const result = validator.validate(commandFor('ball'));
@@ -116,12 +116,12 @@ describe('GH #206: an exact match out of scope is not displaced by a word match 
 
   test('GH #245 (4): `x deed` with the deed shut in a box resolves the deed, not the in-scope "deed box"', () => {
     const box = author.createEntity('deed box', EntityType.OBJECT);
-    box.add({ type: TraitType.IDENTITY, name: 'deed box', aliases: ['box'] });
-    box.add({ type: TraitType.CONTAINER });
+    box.add(new IdentityTrait({ name: 'deed box', aliases: ['box'] }));
+    box.add(new ContainerTrait());
     box.add({ type: TraitType.OPENABLE, isOpen: false });
     author.moveEntity(box.id, room.id);
     const deed = author.createEntity('deed', EntityType.OBJECT);
-    deed.add({ type: TraitType.IDENTITY, name: 'deed' });
+    deed.add(new IdentityTrait({ name: 'deed' }));
     author.moveEntity(deed.id, box.id);
 
     const result = validator.validate(commandFor('deed'));

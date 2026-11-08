@@ -12,7 +12,7 @@
 import { describe, test, expect, beforeEach } from 'vitest';
 import { goingAction } from '../../../src/actions/standard/going'; // Now from folder
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType, WorldModel, Direction, DirectionType, RoomTrait, IFEntity, ActorTrait } from '@sharpee/world-model';
+import { TraitType, WorldModel, Direction, DirectionType, RoomTrait, IFEntity, ActorTrait, ContainerTrait, SceneryTrait } from '@sharpee/world-model';
 import {
   createRealTestContext,
   setupBasicWorld,
@@ -107,7 +107,7 @@ describe('goingAction (Golden Pattern)', () => {
     test('should fail when actor is not in a room', () => {
       const { world, player } = setupBasicWorld();
       const container = world.createEntity('box', 'object');
-      container.add({ type: TraitType.CONTAINER });
+      container.add(new ContainerTrait());
       world.moveEntity(container.id, world.getLocation(player.id)!);
       world.moveEntity(player.id, container.id);
 
@@ -464,7 +464,7 @@ describe('goingAction (Golden Pattern)', () => {
       // A portable book and a scenery statue in the destination.
       const book = world.createEntity('dusty book', 'object');
       const statue = world.createEntity('marble statue', 'object');
-      statue.add({ type: TraitType.SCENERY });
+      statue.add(new SceneryTrait());
       world.moveEntity(book.id, room2.id);
       world.moveEntity(statue.id, room2.id);
 

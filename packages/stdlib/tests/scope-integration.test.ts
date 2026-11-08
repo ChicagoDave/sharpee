@@ -5,7 +5,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { CommandValidator } from '../src/validation/command-validator';
 import { StandardActionRegistry } from '../src/actions/registry';
-import { WorldModel, AuthorModel, IFEntity, TraitType, EntityType, ActorTrait } from '@sharpee/world-model';
+import { WorldModel, AuthorModel, IFEntity, TraitType, EntityType, ActorTrait, ContainerTrait, IdentityTrait, EdibleTrait } from '@sharpee/world-model';
 import { StandardScopeResolver } from '../src/scope/scope-resolver';
 import { ScopeLevel } from '../src/scope/types';
 import { takingAction } from '../src/actions/standard/taking/taking';
@@ -39,7 +39,7 @@ describe('Scope Integration Tests', () => {
     
     player = author.createEntity('player', EntityType.ACTOR);
     player.add(new ActorTrait({ isPlayer: true }));
-    player.add({ type: TraitType.CONTAINER, capacity: { maxItems: 10 } });
+    player.add(new ContainerTrait({ capacity: { maxItems: 10 } }));
     
     // Set player as the active player
     player.add(new ActorTrait({ isPlayable: true }));
@@ -59,7 +59,7 @@ describe('Scope Integration Tests', () => {
     it('should fail when trying to take an object that is not reachable', () => {
       // Create a closed chest in the room (AuthorModel allows this)
       const chest = author.createEntity('chest', EntityType.CONTAINER);
-      chest.add({ type: TraitType.CONTAINER });
+      chest.add(new ContainerTrait());
       chest.add({ type: TraitType.OPENABLE, isOpen: false });
       author.moveEntity(chest.id, room.id);
       
@@ -242,7 +242,8 @@ describe('Scope Integration Tests', () => {
       
       // Create smelly cheese in kitchen
       const cheese = author.createEntity('cheese', EntityType.OBJECT);
-      cheese.add({ type: TraitType.IDENTITY, name: 'cheese', customProperties: { smelly: true } });
+      cheese.add(new IdentityTrait({ name: 'cheese' }));
+      cheese.add(new EdibleTrait()); // food has a scent (scope-resolver hasScent)
       author.moveEntity(cheese.id, nextRoom.id);
       
       const command = {
@@ -280,7 +281,8 @@ describe('Scope Integration Tests', () => {
 
       // Create smelly cheese in kitchen
       const cheese = author.createEntity('cheese', EntityType.OBJECT);
-      cheese.add({ type: TraitType.IDENTITY, name: 'cheese', customProperties: { smelly: true } });
+      cheese.add(new IdentityTrait({ name: 'cheese' }));
+      cheese.add(new EdibleTrait()); // food has a scent (scope-resolver hasScent)
       author.moveEntity(cheese.id, nextRoom.id);
 
       const command = {

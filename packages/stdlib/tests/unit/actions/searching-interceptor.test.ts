@@ -11,7 +11,7 @@
 import { describe, test, expect } from 'vitest';
 import { searchingAction } from '../../../src/actions/standard/searching';
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType, WorldModel, IdentityBehavior } from '@sharpee/world-model';
+import { TraitType, WorldModel, IdentityBehavior, ContainerTrait, IdentityTrait } from '@sharpee/world-model';
 import {
   createRealTestContext,
   setupBasicWorld,
@@ -24,13 +24,13 @@ const setup = () => {
   const { world, player, room } = setupBasicWorld();
 
   const crate = world.createEntity('wooden crate', 'object');
-  crate.add({ type: TraitType.CONTAINER, capacity: 10 });
+  crate.add(new ContainerTrait());
   // Inert marker trait — the interceptor registration key.
   crate.add({ type: TEST_MARKER_TRAIT } as any);
   world.moveEntity(crate.id, room.id);
 
   const coin = world.createEntity('gold coin', 'object');
-  coin.add({ type: TraitType.IDENTITY, concealed: true });
+  coin.add(new IdentityTrait({ concealed: true }));
   world.moveEntity(coin.id, crate.id);
 
   return { world, player, room, crate, coin };

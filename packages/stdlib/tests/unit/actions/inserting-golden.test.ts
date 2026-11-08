@@ -11,7 +11,7 @@ import { describe, test, expect, beforeEach, vi } from 'vitest';
 import { insertingAction } from '../../../src/actions/standard/inserting';
 import { puttingAction } from '../../../src/actions/standard/putting';
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType, WorldModel } from '@sharpee/world-model';
+import { TraitType, WorldModel, ContainerTrait, SupporterTrait } from '@sharpee/world-model';
 import {
   createRealTestContext,
   setupBasicWorld,
@@ -78,7 +78,7 @@ describe('insertingAction (Golden Pattern)', () => {
       
       const ball = world.createEntity('red ball', 'object');
       const box = world.createEntity('wooden box', 'container');
-      box.add({ type: TraitType.CONTAINER });
+      box.add(new ContainerTrait());
       
       world.moveEntity(ball.id, player.id);  // Player holds ball
       world.moveEntity(box.id, room.id);
@@ -155,7 +155,7 @@ describe('insertingAction (Golden Pattern)', () => {
       
       const gem = world.createEntity('ruby', 'object');
       const box = world.createEntity('jewel box', 'container');
-      box.add({ type: TraitType.CONTAINER });
+      box.add(new ContainerTrait());
       box.add({ 
         type: TraitType.OPENABLE,
         isOpen: true
@@ -184,7 +184,7 @@ describe('insertingAction (Golden Pattern)', () => {
       
       const coin = world.createEntity('gold coin', 'object');
       const chest = world.createEntity('treasure chest', 'container');
-      chest.add({ type: TraitType.CONTAINER });
+      chest.add(new ContainerTrait());
       chest.add({ 
         type: TraitType.OPENABLE,
         isOpen: false  // Closed
@@ -212,7 +212,7 @@ describe('insertingAction (Golden Pattern)', () => {
       
       const paper = world.createEntity('piece of paper', 'object');
       const table = world.createEntity('wooden table', 'supporter');
-      table.add({ type: TraitType.SUPPORTER });
+      table.add(new SupporterTrait());
       
       world.moveEntity(paper.id, player.id);
       world.moveEntity(table.id, room.id);
@@ -239,10 +239,7 @@ describe('insertingAction (Golden Pattern)', () => {
       
       const newItem = world.createEntity('glass marble', 'object');
       const pouch = world.createEntity('small pouch', 'container');
-      pouch.add({ 
-        type: TraitType.CONTAINER,
-        capacity: { maxItems: 3 }
-      });
+      pouch.add(new ContainerTrait({ capacity: { maxItems: 3 } }));
       
       // Create existing items in pouch
       const coin1 = world.createEntity('copper coin', 'object');
@@ -277,7 +274,7 @@ describe('insertingAction (Golden Pattern)', () => {
       
       const letter = world.createEntity('letter', 'object');
       const envelope = world.createEntity('envelope', 'container');
-      envelope.add({ type: TraitType.CONTAINER });
+      envelope.add(new ContainerTrait());
       
       world.moveEntity(letter.id, player.id);
       world.moveEntity(envelope.id, room.id);
@@ -307,7 +304,7 @@ describe('Inserting Action Integration', () => {
     
     const item = world.createEntity('small item', 'object');
     const container = world.createEntity('container', 'container');
-    container.add({ type: TraitType.CONTAINER });
+    container.add(new ContainerTrait());
     
     world.moveEntity(item.id, player.id);
     world.moveEntity(container.id, room.id);
@@ -344,13 +341,10 @@ describe('Inserting Action Integration', () => {
     const { world, player, room } = setupBasicWorld();
 
     const smallBox = world.createEntity('small box', 'container');
-    smallBox.add({ type: TraitType.CONTAINER });
+    smallBox.add(new ContainerTrait());
 
     const largeBox = world.createEntity('large box', 'container');
-    largeBox.add({
-      type: TraitType.CONTAINER,
-      capacity: { maxItems: 5 }
-    });
+    largeBox.add(new ContainerTrait({ capacity: { maxItems: 5 } }));
 
     world.moveEntity(smallBox.id, player.id);
     world.moveEntity(largeBox.id, room.id);
@@ -383,7 +377,7 @@ describe('World State Mutations', () => {
 
     const gem = world.createEntity('emerald', 'object');
     const box = world.createEntity('velvet box', 'container');
-    box.add({ type: TraitType.CONTAINER });
+    box.add(new ContainerTrait());
 
     world.moveEntity(gem.id, player.id);
     world.moveEntity(box.id, room.id);
@@ -410,7 +404,7 @@ describe('World State Mutations', () => {
 
     const coin = world.createEntity('gold doubloon', 'object');
     const chest = world.createEntity('pirate chest', 'container');
-    chest.add({ type: TraitType.CONTAINER });
+    chest.add(new ContainerTrait());
     chest.add({ type: TraitType.OPENABLE, isOpen: true });
 
     world.moveEntity(coin.id, player.id);
@@ -438,7 +432,7 @@ describe('World State Mutations', () => {
 
     const ring = world.createEntity('diamond ring', 'object');
     const casket = world.createEntity('jewelry casket', 'container');
-    casket.add({ type: TraitType.CONTAINER });
+    casket.add(new ContainerTrait());
     casket.add({ type: TraitType.OPENABLE, isOpen: false });
 
     world.moveEntity(ring.id, player.id);
@@ -467,10 +461,7 @@ describe('World State Mutations', () => {
 
     const newCoin = world.createEntity('platinum coin', 'object');
     const pouch = world.createEntity('leather pouch', 'container');
-    pouch.add({
-      type: TraitType.CONTAINER,
-      capacity: { maxItems: 2 }
-    });
+    pouch.add(new ContainerTrait({ capacity: { maxItems: 2 } }));
 
     // Fill the pouch
     const coin1 = world.createEntity('copper coin', 'object');
@@ -503,13 +494,10 @@ describe('World State Mutations', () => {
     const { world, player, room } = setupBasicWorld();
 
     const innerBox = world.createEntity('small tin box', 'container');
-    innerBox.add({ type: TraitType.CONTAINER });
+    innerBox.add(new ContainerTrait());
 
     const outerBox = world.createEntity('large wooden crate', 'container');
-    outerBox.add({
-      type: TraitType.CONTAINER,
-      capacity: { maxItems: 10 }
-    });
+    outerBox.add(new ContainerTrait({ capacity: { maxItems: 10 } }));
 
     world.moveEntity(innerBox.id, player.id);
     world.moveEntity(outerBox.id, room.id);

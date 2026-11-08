@@ -9,7 +9,7 @@
  */
 
 import { describe, test, expect, beforeEach } from 'vitest';
-import { AuthorModel, EntityType, IFEntity, INounPhrase, IParsedCommand, TraitType, WorldModel, ActorTrait } from '@sharpee/world-model';
+import { AuthorModel, EntityType, IFEntity, INounPhrase, IParsedCommand, TraitType, WorldModel, ActorTrait, IdentityTrait } from '@sharpee/world-model';
 import { LanguageProvider } from '@sharpee/if-domain';
 import { CommandValidator } from '../../../src/validation/command-validator';
 import { StandardActionRegistry } from '../../../src/actions/registry';
@@ -93,7 +93,7 @@ describe('CommandValidator resolves a list through the matcher (ADR-385 D5)', ()
 
   const thing = (name: string, aliases: string[] = []): IFEntity => {
     const e = author.createEntity(name, EntityType.OBJECT);
-    e.add({ type: TraitType.IDENTITY, name, aliases });
+    e.add(new IdentityTrait({ name, aliases }));
     author.moveEntity(e.id, room.id);
     return e;
   };

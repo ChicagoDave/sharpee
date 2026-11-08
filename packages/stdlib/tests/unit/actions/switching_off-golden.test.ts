@@ -14,7 +14,7 @@
 import { describe, test, expect, beforeEach, vi } from 'vitest';
 import { switchingOffAction } from '../../../src/actions/standard/switching_off';
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType, SwitchableTrait, LightSourceTrait } from '@sharpee/world-model';
+import { TraitType, SwitchableTrait, LightSourceTrait, ContainerTrait } from '@sharpee/world-model';
 import {
   createRealTestContext,
   setupBasicWorld,
@@ -366,10 +366,7 @@ describe('switchingOffAction (Golden Pattern)', () => {
         type: TraitType.SWITCHABLE,
         isOn: true
       });
-      door.add({
-        type: TraitType.CONTAINER,
-        capacity: 0 // Passage
-      });
+      door.add(new ContainerTrait()); // Passage
       door.add({
         type: TraitType.OPENABLE,
         isOpen: true,
@@ -402,10 +399,7 @@ describe('switchingOffAction (Golden Pattern)', () => {
         type: TraitType.SWITCHABLE,
         isOn: true
       });
-      gate.add({
-        type: TraitType.CONTAINER,
-        capacity: 0
-      });
+      gate.add(new ContainerTrait());
       gate.add({
         type: TraitType.OPENABLE,
         isOpen: true,
@@ -436,10 +430,7 @@ describe('switchingOffAction (Golden Pattern)', () => {
         type: TraitType.SWITCHABLE,
         isOn: true
       });
-      portal.add({
-        type: TraitType.CONTAINER,
-        capacity: 0
-      });
+      portal.add(new ContainerTrait());
       portal.add({
         type: TraitType.OPENABLE,
         isOpen: false, // Already closed

@@ -19,6 +19,7 @@ import {
   TraitType,
   WorldModel,
   ActorTrait,
+  IdentityTrait,
 } from '@sharpee/world-model';
 import { LanguageProvider } from '@sharpee/if-domain';
 
@@ -89,7 +90,7 @@ describe('CommandValidator — preferredScope disambiguation (Phase 6/10)', () =
 
   function makeBook(name: string, where: IFEntity, aliases: string[] = []): IFEntity {
     const book = author.createEntity(name, EntityType.OBJECT);
-    book.add({ type: TraitType.IDENTITY, name, aliases });
+    book.add(new IdentityTrait({ name, aliases }));
     author.moveEntity(book.id, where.id);
     return book;
   }

@@ -11,7 +11,7 @@
 import { describe, test, expect } from 'vitest';
 import { enteringAction } from '../../../src/actions/standard/entering';
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType, EntityType } from '@sharpee/world-model';
+import { TraitType, EntityType, ContainerTrait, SupporterTrait, ActorTrait } from '@sharpee/world-model';
 import {
   createRealTestContext,
   setupBasicWorld,
@@ -78,10 +78,7 @@ describe('enteringAction (Golden Pattern)', () => {
       const { world, player, room } = setupBasicWorld();
 
       const crate = world.createEntity('wooden crate', EntityType.CONTAINER);
-      crate.add({
-        type: TraitType.CONTAINER,
-        enterable: true
-      });
+      crate.add(new ContainerTrait({ enterable: true }));
       crate.add({
         type: TraitType.ENTERABLE,
         preposition: 'in'
@@ -111,10 +108,7 @@ describe('enteringAction (Golden Pattern)', () => {
       const { world, player, room } = setupBasicWorld();
 
       const car = world.createEntity('luxury car', EntityType.CONTAINER);
-      car.add({
-        type: TraitType.CONTAINER,
-        enterable: true
-      });
+      car.add(new ContainerTrait({ enterable: true }));
       car.add({
         type: TraitType.ENTERABLE,
         preposition: 'in'
@@ -141,11 +135,7 @@ describe('enteringAction (Golden Pattern)', () => {
       const { world, player, room } = setupBasicWorld();
 
       const box = world.createEntity('large box', 'container');
-      box.add({
-        type: TraitType.CONTAINER,
-        enterable: true,
-        capacity: 100
-      });
+      box.add(new ContainerTrait({ enterable: true }));
       box.add({
         type: TraitType.ENTERABLE,
         preposition: 'in'
@@ -175,10 +165,7 @@ describe('enteringAction (Golden Pattern)', () => {
       const { world, player, room } = setupBasicWorld();
 
       const bed = world.createEntity('comfortable bed', 'supporter');
-      bed.add({
-        type: TraitType.SUPPORTER,
-        enterable: true
-      });
+      bed.add(new SupporterTrait({ enterable: true }));
       bed.add({
         type: TraitType.ENTERABLE,
         preposition: 'on'
@@ -204,13 +191,10 @@ describe('enteringAction (Golden Pattern)', () => {
       const { world, player, room } = setupBasicWorld();
 
       const npc = world.createEntity('guard', 'actor');
-      npc.add({ type: TraitType.ACTOR });
+      npc.add(new ActorTrait());
 
       const booth = world.createEntity('guard booth', 'container');
-      booth.add({
-        type: TraitType.CONTAINER,
-        enterable: true
-      });
+      booth.add(new ContainerTrait({ enterable: true }));
       booth.add({
         type: TraitType.ENTERABLE,
         preposition: 'in'
@@ -238,10 +222,7 @@ describe('enteringAction (Golden Pattern)', () => {
       const { world, player, room } = setupBasicWorld();
 
       const chair = world.createEntity('office chair', EntityType.SUPPORTER);
-      chair.add({
-        type: TraitType.SUPPORTER,
-        enterable: true
-      });
+      chair.add(new SupporterTrait({ enterable: true }));
       chair.add({
         type: TraitType.ENTERABLE,
         preposition: 'on'
@@ -278,10 +259,7 @@ describe('World State Mutations', () => {
     const { world, player, room } = setupBasicWorld();
 
     const car = world.createEntity('luxury car', EntityType.CONTAINER);
-    car.add({
-      type: TraitType.CONTAINER,
-      enterable: true
-    });
+    car.add(new ContainerTrait({ enterable: true }));
     car.add({
       type: TraitType.ENTERABLE,
       preposition: 'in'
@@ -308,10 +286,7 @@ describe('World State Mutations', () => {
     const { world, player, room } = setupBasicWorld();
 
     const bed = world.createEntity('comfortable bed', EntityType.SUPPORTER);
-    bed.add({
-      type: TraitType.SUPPORTER,
-      enterable: true
-    });
+    bed.add(new SupporterTrait({ enterable: true }));
     bed.add({
       type: TraitType.ENTERABLE,
       preposition: 'on'
@@ -361,10 +336,7 @@ describe('World State Mutations', () => {
     const { world, player, room } = setupBasicWorld();
 
     const crate = world.createEntity('wooden crate', EntityType.CONTAINER);
-    crate.add({
-      type: TraitType.CONTAINER,
-      enterable: true
-    });
+    crate.add(new ContainerTrait({ enterable: true }));
     crate.add({
       type: TraitType.ENTERABLE,
       preposition: 'in'
@@ -396,10 +368,7 @@ describe('World State Mutations', () => {
     const { world, player, room } = setupBasicWorld();
 
     const car = world.createEntity('sports car', EntityType.CONTAINER);
-    car.add({
-      type: TraitType.CONTAINER,
-      enterable: true
-    });
+    car.add(new ContainerTrait({ enterable: true }));
     car.add({
       type: TraitType.ENTERABLE,
       preposition: 'in'
@@ -428,10 +397,7 @@ describe('World State Mutations', () => {
     const { world, player, room } = setupBasicWorld();
 
     const box = world.createEntity('large box', EntityType.CONTAINER);
-    box.add({
-      type: TraitType.CONTAINER,
-      enterable: true
-    });
+    box.add(new ContainerTrait({ enterable: true }));
     box.add({
       type: TraitType.ENTERABLE,
       preposition: 'in'

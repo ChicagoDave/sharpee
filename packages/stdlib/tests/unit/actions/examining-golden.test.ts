@@ -11,7 +11,7 @@
 import { describe, test, expect, beforeEach, vi } from 'vitest';
 import { examiningAction } from '../../../src/actions/standard/examining'; // Now from folder
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType } from '@sharpee/world-model';
+import { TraitType, ContainerTrait, SupporterTrait, IdentityTrait } from '@sharpee/world-model';
 import {
   createRealTestContext,
   expectEvent,
@@ -131,10 +131,7 @@ describe('examiningAction (Golden Pattern)', () => {
 
     test('should include the player description when examining self', () => {
       const { world, player } = setupBasicWorld();
-      player.add({
-        type: TraitType.IDENTITY,
-        description: 'Just an ordinary visitor to the zoo.'
-      });
+      player.add(new IdentityTrait({ description: 'Just an ordinary visitor to the zoo.' }));
 
       const command = createCommand(IFActions.EXAMINING, {
         entity: player
@@ -213,12 +210,12 @@ describe('examiningAction (Golden Pattern)', () => {
       const { world, player, room } = setupBasicWorld();
 
       const box = world.createEntity('wooden box', 'container');
-      box.add({ type: TraitType.CONTAINER });
+      box.add(new ContainerTrait());
       box.add({
         type: TraitType.OPENABLE,
         isOpen: true
       });
-      box.add({ type: TraitType.IDENTITY, name: 'wooden box', description: 'A sturdy wooden box.' });
+      box.add(new IdentityTrait({ name: 'wooden box', description: 'A sturdy wooden box.' }));
       world.moveEntity(box.id, room.id);
 
       const coin = world.createEntity('gold coin', 'object');
@@ -323,8 +320,8 @@ describe('examiningAction (Golden Pattern)', () => {
       const { world, player, room } = setupBasicWorld();
 
       const table = world.createEntity('oak table', 'supporter');
-      table.add({ type: TraitType.SUPPORTER });
-      table.add({ type: TraitType.IDENTITY, name: 'oak table', description: 'A heavy oak table.' });
+      table.add(new SupporterTrait());
+      table.add(new IdentityTrait({ name: 'oak table', description: 'A heavy oak table.' }));
       world.moveEntity(table.id, room.id);
 
       const book = world.createEntity('old book', 'object');
@@ -485,9 +482,9 @@ describe('examiningAction (Golden Pattern)', () => {
 
       // A container that is also a supporter and switchable (e.g., a display case with lights)
       const displayCase = world.createEntity('display case', 'container');
-      displayCase.add({ type: TraitType.CONTAINER });
-      displayCase.add({ type: TraitType.SUPPORTER });
-      displayCase.add({ type: TraitType.IDENTITY, name: 'display case', description: 'A lit glass display case.' });
+      displayCase.add(new ContainerTrait());
+      displayCase.add(new SupporterTrait());
+      displayCase.add(new IdentityTrait({ name: 'display case', description: 'A lit glass display case.' }));
       displayCase.add({
         type: TraitType.OPENABLE,
         isOpen: true
@@ -680,14 +677,14 @@ describe('Concealment filtering (platform-issue-sweep Phase 2)', () => {
     const { world, player, room } = setupBasicWorld();
 
     const box = world.createEntity('wooden box', 'container');
-    box.add({ type: TraitType.CONTAINER });
+    box.add(new ContainerTrait());
     box.add({ type: TraitType.OPENABLE, isOpen: true });
     world.moveEntity(box.id, room.id);
 
     const coin = world.createEntity('gold coin', 'object');
     world.moveEntity(coin.id, box.id);
     const key = world.createEntity('secret key', 'object');
-    key.add({ type: TraitType.IDENTITY, name: 'secret key', concealed: true });
+    key.add(new IdentityTrait({ name: 'secret key', concealed: true }));
     world.moveEntity(key.id, box.id);
 
     const command = createCommand(IFActions.EXAMINING, { entity: box });
@@ -706,11 +703,11 @@ describe('Concealment filtering (platform-issue-sweep Phase 2)', () => {
     const { world, player, room } = setupBasicWorld();
 
     const shelf = world.createEntity('dusty shelf', 'supporter');
-    shelf.add({ type: TraitType.SUPPORTER });
+    shelf.add(new SupporterTrait());
     world.moveEntity(shelf.id, room.id);
 
     const lever = world.createEntity('hidden lever', 'object');
-    lever.add({ type: TraitType.IDENTITY, name: 'hidden lever', concealed: true });
+    lever.add(new IdentityTrait({ name: 'hidden lever', concealed: true }));
     world.moveEntity(lever.id, shelf.id);
 
     const command = createCommand(IFActions.EXAMINING, { entity: shelf });
@@ -729,11 +726,11 @@ describe('Concealment filtering (platform-issue-sweep Phase 2)', () => {
     const { world, player, room } = setupBasicWorld();
 
     const shelf = world.createEntity('dusty shelf', 'supporter');
-    shelf.add({ type: TraitType.SUPPORTER });
+    shelf.add(new SupporterTrait());
     world.moveEntity(shelf.id, room.id);
 
     const lever = world.createEntity('hidden lever', 'object');
-    lever.add({ type: TraitType.IDENTITY, name: 'hidden lever', concealed: false });
+    lever.add(new IdentityTrait({ name: 'hidden lever', concealed: false }));
     world.moveEntity(lever.id, shelf.id);
 
     const command = createCommand(IFActions.EXAMINING, { entity: shelf });

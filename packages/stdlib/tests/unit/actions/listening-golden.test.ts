@@ -12,7 +12,7 @@
 import { describe, test, expect, beforeEach } from 'vitest';
 import { listeningAction } from '../../../src/actions/standard/listening';
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType } from '@sharpee/world-model';
+import { TraitType, ContainerTrait } from '@sharpee/world-model';
 import {
   createRealTestContext,
   setupBasicWorld,
@@ -110,10 +110,7 @@ describe('listeningAction (Golden Pattern)', () => {
       const { world, player, room } = setupBasicWorld();
       
       const box = world.createEntity('metal box', 'object');
-      box.add({
-        type: TraitType.CONTAINER,
-        capacity: 5
-      });
+      box.add(new ContainerTrait());
       
       const coin = world.createEntity('gold coin', 'object');
       
@@ -143,10 +140,7 @@ describe('listeningAction (Golden Pattern)', () => {
       const { world, player, room } = setupBasicWorld();
       
       const bottle = world.createEntity('glass bottle', 'object');
-      bottle.add({
-        type: TraitType.CONTAINER,
-        capacity: 1
-      });
+      bottle.add(new ContainerTrait());
       
       const water = world.createEntity('water', 'object');
       water.add({
@@ -177,10 +171,7 @@ describe('listeningAction (Golden Pattern)', () => {
     test('should detect no sound from empty container', () => {
       const { world, player, room } = setupBasicWorld();
       const box = world.createEntity('empty box', 'object');
-      box.add({
-        type: TraitType.CONTAINER,
-        capacity: 5
-      });
+      box.add(new ContainerTrait());
       
       // Put box in the same room as player
       world.moveEntity(box.id, room.id);
@@ -350,10 +341,7 @@ describe('listeningAction (Golden Pattern)', () => {
       const { world, player } = setupBasicWorld();
       
       const bag = world.createEntity('leather bag', 'object');
-      bag.add({
-        type: TraitType.CONTAINER,
-        capacity: 10
-      });
+      bag.add(new ContainerTrait());
       
       const keys = world.createEntity('brass keys', 'object');
       const potion = world.createEntity('magic potion', 'object');
@@ -392,10 +380,7 @@ describe('listeningAction (Golden Pattern)', () => {
         type: TraitType.SWITCHABLE,
         isOn: true
       });
-      musicBox.add({
-        type: TraitType.CONTAINER,
-        capacity: 1
-      });
+      musicBox.add(new ContainerTrait());
       
       // Put music box in player's hands
       world.moveEntity(musicBox.id, player.id);

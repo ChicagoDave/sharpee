@@ -27,6 +27,7 @@ import {
   TraitType,
   WorldModel,
   ActorTrait,
+  IdentityTrait,
 } from '@sharpee/world-model';
 import { LanguageProvider } from '@sharpee/if-domain';
 import type { ISystemEvent, IGenericEventSource } from '@sharpee/core';
@@ -113,12 +114,7 @@ describe('CommandValidator — word-level vocabulary resolution (ADR-231 D3)', (
 
   function makeObject(name: string, adjectives: string[] = [], aliases: string[] = []): IFEntity {
     const entity = author.createEntity(name, EntityType.OBJECT);
-    entity.add({
-      type: TraitType.IDENTITY,
-      name,
-      adjectives,
-      aliases
-    });
+    entity.add(new IdentityTrait({ name, adjectives, aliases }));
     author.moveEntity(entity.id, room.id);
     return entity;
   }
@@ -314,7 +310,7 @@ describe('CommandValidator — word-level vocabulary resolution (ADR-231 D3)', (
       const otherRoom = author.createEntity('Other Room', EntityType.ROOM);
       otherRoom.add({ type: TraitType.ROOM });
       const farKey = author.createEntity('brass key', EntityType.OBJECT);
-      farKey.add({ type: TraitType.IDENTITY, name: 'brass key' });
+      farKey.add(new IdentityTrait({ name: 'brass key' }));
       author.moveEntity(farKey.id, otherRoom.id);
 
       const result = validator.validate(commandFor('if.action.examining', 'examine', 'key'));

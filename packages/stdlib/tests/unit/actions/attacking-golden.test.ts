@@ -14,7 +14,7 @@
 import { describe, test, expect } from 'vitest';
 import { attackingAction } from '../../../src/actions/standard/attacking';
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType, EntityType } from '@sharpee/world-model';
+import { TraitType, EntityType, ActorTrait } from '@sharpee/world-model';
 import {
   createRealTestContext,
   expectEvent,
@@ -104,9 +104,7 @@ describe('attackingAction (Golden Pattern)', () => {
       const { world, player, room } = setupBasicWorld();
 
       const npc = world.createEntity('innocent child', EntityType.ACTOR);
-      npc.add({
-        type: TraitType.ACTOR
-      });
+      npc.add(new ActorTrait());
       world.moveEntity(npc.id, room.id);
 
       const command = createCommand(IFActions.ATTACKING, {

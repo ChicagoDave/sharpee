@@ -12,7 +12,7 @@
 import { describe, test, expect } from 'vitest';
 import { throwingAction } from '../../../src/actions/standard/throwing';
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType, WorldModel, IFEntity } from '@sharpee/world-model';
+import { TraitType, WorldModel, IFEntity, SceneryTrait } from '@sharpee/world-model';
 import {
   createRealTestContext,
   setupBasicWorld,
@@ -70,7 +70,7 @@ describe('Thrown-item interceptor resolution (ADR-118 extension)', () => {
   test('item AND target interceptors both fire, item (direct object) first (ADR-228 D3)', () => {
     const { world, room, bomb } = setup();
     const statue = world.createEntity('stone statue', 'object');
-    statue.add({ type: TraitType.SCENERY } as any);
+    statue.add(new SceneryTrait());
     // Inert marker trait — a distinct interceptor registration key for the target.
     statue.add({ type: SECOND_TEST_MARKER_TRAIT } as any);
     world.moveEntity(statue.id, room.id);

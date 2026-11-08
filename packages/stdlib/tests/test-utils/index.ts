@@ -16,7 +16,7 @@ import {
   IFEntity,
   TraitType,
   type IValidatedCommand as ValidatedCommand,
-  IdentityTrait, ActorTrait } from '@sharpee/world-model';
+  IdentityTrait, ActorTrait, ContainerTrait } from '@sharpee/world-model';
 import { registerStandardCapabilities } from '../../src/capabilities';
 import { createActionContext } from '../../src/actions/enhanced-context';
 import { Action, ActionContext } from '../../src/actions/enhanced-types';
@@ -46,7 +46,7 @@ export function setupBasicWorld(options: {
   // Create player
   const player = world.createEntity('yourself', 'actor');
   player.add(new ActorTrait({ isPlayable: true }));
-  player.add({ type: TraitType.CONTAINER });
+  player.add(new ContainerTrait());
   
   // Move player to room
   world.moveEntity(player.id, room.id);
@@ -391,7 +391,7 @@ export class TestData {
     const { world, player, room } = setupBasicWorld(worldOptions);
     
     const container = world.createEntity(containerName, 'object');
-    container.add({ type: TraitType.CONTAINER });
+    container.add(new ContainerTrait());
     
     const object = world.createEntity(objectName, 'object');
     
@@ -408,7 +408,7 @@ export class TestData {
     const { world, player, room } = setupBasicWorld(worldOptions);
     
     const npc = world.createEntity(name, 'actor');
-    npc.add({ type: TraitType.ACTOR });
+    npc.add(new ActorTrait());
     
     // Add additional traits
     Object.entries(traits).forEach(([traitType, traitData]) => {

@@ -108,7 +108,7 @@ describe('ADR-364 D4 — the four combinators that consult world state', () => {
   });
 
   it('a filled Slot marks its contribution; an empty Slot produces no run', () => {
-    const slot: Slot = { kind: 'slot', key: 'here' } as Slot;
+    const slot: Slot = { kind: 'slot', slotKey: 'here' };
     const filled = makeCtx({ slotContributions: () => [lit('Bob is here.')] });
     expect(split(contentOf(slot, filled)).chosen).toEqual(['Bob is here.']);
 
@@ -119,7 +119,7 @@ describe('ADR-364 D4 — the four combinators that consult world state', () => {
 
 describe('ADR-364 D4 — composition carries each child\'s own flag', () => {
   it('AC-8 shape: a stable segment beside a chosen one stays separable', () => {
-    const slot: Slot = { kind: 'slot', key: 'here' } as Slot;
+    const slot: Slot = { kind: 'slot', slotKey: 'here' };
     const ctx = makeCtx({ slotContributions: () => [lit('Bob is here.')] });
     const tree = seq([lit('A tidy kitchen. '), slot]);
 
@@ -137,7 +137,7 @@ describe('ADR-364 D4 — composition carries each child\'s own flag', () => {
   });
 
   it('the same room with nothing contributed pins the same stable text', () => {
-    const slot: Slot = { kind: 'slot', key: 'here' } as Slot;
+    const slot: Slot = { kind: 'slot', slotKey: 'here' };
     const ctx = makeCtx({ slotContributions: () => [] });
     const tree = seq([lit('A tidy kitchen. '), slot]);
 
@@ -161,7 +161,7 @@ describe('ADR-364 D4 — the wire shape', () => {
   });
 
   it('a chosen run that is also decorated nests the decoration inside', () => {
-    const decorated: Literal = { kind: 'literal', text: 'lamp', decorations: ['sharpee-item'] } as Literal;
+    const decorated: Literal = { kind: 'literal', text: 'lamp', decorations: [{ className: 'sharpee-item', content: [] }] };
     const opt: Optional = { kind: 'optional', present: true, child: decorated } as Optional;
     const content = contentOf(opt);
 
@@ -183,7 +183,7 @@ describe('ADR-364 D4 — the wire shape', () => {
     expect(isChosen(node)).toBe(true);
     expect(isDecoration(node)).toBe(false);
 
-    const decorated: Literal = { kind: 'literal', text: 'lamp', decorations: ['sharpee-item'] } as Literal;
+    const decorated: Literal = { kind: 'literal', text: 'lamp', decorations: [{ className: 'sharpee-item', content: [] }] };
     const decoNode = contentOf(decorated)[0];
     expect(isDecoration(decoNode)).toBe(true);
     expect(isChosen(decoNode)).toBe(false);

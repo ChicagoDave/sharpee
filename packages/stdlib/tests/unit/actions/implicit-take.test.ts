@@ -6,7 +6,7 @@
  */
 
 import { describe, test, expect, beforeEach } from 'vitest';
-import { WorldModel, TraitType, EntityType, IFEntity, ActorTrait } from '@sharpee/world-model';
+import { WorldModel, TraitType, EntityType, IFEntity, ActorTrait, ContainerTrait, SceneryTrait } from '@sharpee/world-model';
 import { createActionContext } from '../../../src/actions/enhanced-context';
 import { Action, ValidationResult } from '../../../src/actions/enhanced-types';
 import { ScopeLevel } from '../../../src/scope/types';
@@ -55,7 +55,7 @@ describe('Implicit Takes (requireCarriedOrImplicitTake)', () => {
     // Create player
     player = world.createEntity('Player', EntityType.ACTOR);
     player.add(new ActorTrait({ isPlayer: true }));
-    player.add({ type: TraitType.CONTAINER }); // Can hold things
+    player.add(new ContainerTrait()); // Can hold things
 
     world.moveEntity(player.id, room.id);
     player.add(new ActorTrait({ isPlayable: true }));
@@ -186,7 +186,7 @@ describe('Implicit Takes (requireCarriedOrImplicitTake)', () => {
   describe('Scenery (Not Takeable)', () => {
     test('should return fixed_in_place error for scenery items', () => {
       const statue = world.createEntity('marble statue', EntityType.OBJECT);
-      statue.add({ type: TraitType.SCENERY });
+      statue.add(new SceneryTrait());
       world.moveEntity(statue.id, room.id);
 
       const command = createTestCommand(statue);
@@ -205,7 +205,7 @@ describe('Implicit Takes (requireCarriedOrImplicitTake)', () => {
 
     test('should not attempt to take scenery', () => {
       const statue = world.createEntity('marble statue', EntityType.OBJECT);
-      statue.add({ type: TraitType.SCENERY });
+      statue.add(new SceneryTrait());
       world.moveEntity(statue.id, room.id);
 
       const command = createTestCommand(statue);

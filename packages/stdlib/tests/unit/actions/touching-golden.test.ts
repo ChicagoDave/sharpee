@@ -12,7 +12,7 @@
 import { describe, test, expect } from 'vitest';
 import { touchingAction } from '../../../src/actions/standard/touching';
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType } from '@sharpee/world-model';
+import { TraitType, ContainerTrait } from '@sharpee/world-model';
 import {
   createRealTestContext,
   expectEvent,
@@ -260,10 +260,7 @@ describe('touchingAction (Golden Pattern)', () => {
       const { world, player, room } = setupBasicWorld();
       
       const bottle = world.createEntity('glass bottle', 'object');
-      bottle.add({
-        type: TraitType.CONTAINER,
-        capacity: 1
-      });
+      bottle.add(new ContainerTrait());
       
       const water = world.createEntity('water', 'object');
       water.add({

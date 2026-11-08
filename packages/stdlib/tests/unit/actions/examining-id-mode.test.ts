@@ -11,7 +11,7 @@
 import { describe, test, expect } from 'vitest';
 import { examiningAction } from '../../../src/actions/standard/examining';
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType } from '@sharpee/world-model';
+import { TraitType, IdentityTrait } from '@sharpee/world-model';
 import { createRealTestContext, createCommand, executeWithValidation, TestData } from '../../test-utils';
 
 describe('examining an entity in ADR-107 id mode (ADR-333 D1a)', () => {
@@ -48,7 +48,7 @@ describe('examining an entity in ADR-107 id mode (ADR-333 D1a)', () => {
 
   test('examining yourself in id mode selects examined_self with the id, not the self fallback', () => {
     const { world, player } = TestData.withObject('pebble');
-    player.add({ type: TraitType.IDENTITY, name: 'Jack', descriptionId: 'jack.description' });
+    player.add(new IdentityTrait({ name: 'Jack', descriptionId: 'jack.description' }));
     const context = createRealTestContext(examiningAction, world, createCommand(IFActions.EXAMINING, { entity: player }));
 
     const events = executeWithValidation(examiningAction, context);

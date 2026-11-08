@@ -13,7 +13,7 @@
 import { describe, test, expect } from 'vitest';
 import { showingAction } from '../../../src/actions/standard/showing';
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType, WorldModel, IFEntity } from '@sharpee/world-model';
+import { TraitType, WorldModel, IFEntity, ActorTrait } from '@sharpee/world-model';
 import {
   createRealTestContext,
   setupBasicWorld,
@@ -29,7 +29,7 @@ const setup = () => {
   amulet.add({ type: TEST_MARKER_TRAIT } as any);
   world.moveEntity(amulet.id, player.id); // carried
   const npc = world.createEntity('tower guard', 'actor');
-  npc.add({ type: TraitType.ACTOR });
+  npc.add(new ActorTrait());
   world.moveEntity(npc.id, room.id);
   return { world, player, room, amulet, npc };
 };

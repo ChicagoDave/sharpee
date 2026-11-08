@@ -12,7 +12,7 @@
 import { describe, test, expect, vi } from 'vitest';
 import { lookingAction } from '../../../src/actions/standard/looking';
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType, RoomTrait, RoomBehavior, ActorTrait } from '@sharpee/world-model';
+import { TraitType, RoomTrait, RoomBehavior, ActorTrait, ContainerTrait, SupporterTrait, SceneryTrait, IdentityTrait } from '@sharpee/world-model';
 import {
   createRealTestContext,
   setupBasicWorld,
@@ -76,13 +76,13 @@ describe('lookingAction (Golden Pattern)', () => {
       const { world, player, room } = setupBasicWorld();
       const ball = world.createEntity('red ball', 'object');
       const box = world.createEntity('wooden box', 'object');
-      box.add({ type: TraitType.CONTAINER });
+      box.add(new ContainerTrait());
       
       const table = world.createEntity('oak table', 'object');
-      table.add({ type: TraitType.SUPPORTER });
+      table.add(new SupporterTrait());
       
       const npc = world.createEntity('security guard', 'actor');
-      npc.add({ type: TraitType.ACTOR });
+      npc.add(new ActorTrait());
       
       // Place all items in the room
       [ball, box, table, npc].forEach(entity => {
@@ -128,11 +128,11 @@ describe('lookingAction (Golden Pattern)', () => {
       const ball = world.createEntity('red ball', 'object');
 
       const fence = world.createEntity('iron fence', 'object');
-      fence.add({ type: TraitType.SCENERY });
+      fence.add(new SceneryTrait());
 
       const bench = world.createEntity('park bench', 'object');
-      bench.add({ type: TraitType.SUPPORTER });
-      bench.add({ type: TraitType.SCENERY });
+      bench.add(new SupporterTrait());
+      bench.add(new SceneryTrait());
 
       [ball, fence, bench].forEach(entity => {
         world.moveEntity(entity.id, room.id);
@@ -169,7 +169,7 @@ describe('lookingAction (Golden Pattern)', () => {
       const { world, player, room } = setupBasicWorld();
 
       const fence = world.createEntity('iron fence', 'object');
-      fence.add({ type: TraitType.SCENERY });
+      fence.add(new SceneryTrait());
       world.moveEntity(fence.id, room.id);
 
       const command = createCommand(IFActions.LOOKING);
@@ -300,10 +300,7 @@ describe('lookingAction (Golden Pattern)', () => {
       
       const room = world.createEntity('Test Room', 'room');
       const crate = world.createEntity('shipping crate', 'object');
-      crate.add({
-        type: TraitType.CONTAINER,
-        enterable: true
-      });
+      crate.add(new ContainerTrait({ enterable: true }));
       
       // Place crate in room and player in crate
       world.moveEntity(crate.id, room.id);
@@ -335,10 +332,7 @@ describe('lookingAction (Golden Pattern)', () => {
       
       const room = world.createEntity('Test Room', 'room');
       const platform = world.createEntity('observation platform', 'object');
-      platform.add({
-        type: TraitType.SUPPORTER,
-        enterable: true
-      });
+      platform.add(new SupporterTrait({ enterable: true }));
       
       // Place platform in room and player on platform
       world.moveEntity(platform.id, room.id);
@@ -386,7 +380,7 @@ describe('lookingAction (Golden Pattern)', () => {
     test('should show the initial description on first visit, then mark the room visited', () => {
       const { world, player, room } = setupBasicWorld();
       // Standard (identity) description + a distinct first-visit description.
-      room.add({ type: TraitType.IDENTITY, name: 'Test Room', description: 'A plain test room.' });
+      room.add(new IdentityTrait({ name: 'Test Room', description: 'A plain test room.' }));
       const roomTrait = room.getTrait(RoomTrait) as RoomTrait;
       roomTrait.initialDescription = 'You step into the room for the very first time.';
 
@@ -413,7 +407,7 @@ describe('lookingAction (Golden Pattern)', () => {
 
     test('should show the standard description on a subsequent visit', () => {
       const { world, player, room } = setupBasicWorld();
-      room.add({ type: TraitType.IDENTITY, name: 'Test Room', description: 'A plain test room.' });
+      room.add(new IdentityTrait({ name: 'Test Room', description: 'A plain test room.' }));
       const roomTrait = room.getTrait(RoomTrait) as RoomTrait;
       roomTrait.initialDescription = 'You step into the room for the very first time.';
       // Pre-mark the room visited so this look is NOT the first.
@@ -434,7 +428,7 @@ describe('lookingAction (Golden Pattern)', () => {
 
     test('should fall back to the standard description when no initial description is set', () => {
       const { world, player, room } = setupBasicWorld();
-      room.add({ type: TraitType.IDENTITY, name: 'Test Room', description: 'A plain test room.' });
+      room.add(new IdentityTrait({ name: 'Test Room', description: 'A plain test room.' }));
 
       // PRECONDITION: unvisited, but no initial description configured.
       expect(RoomBehavior.hasBeenVisited(room)).toBeFalsy();
@@ -603,7 +597,7 @@ describe('Concealment filtering (platform-issue-sweep Phase 2)', () => {
     world.moveEntity(ball.id, room.id);
 
     const coin = world.createEntity('silver coin', 'object');
-    coin.add({ type: TraitType.IDENTITY, name: 'silver coin', concealed: true });
+    coin.add(new IdentityTrait({ name: 'silver coin', concealed: true }));
     world.moveEntity(coin.id, room.id);
 
     const command = createCommand(IFActions.LOOKING);
@@ -623,14 +617,14 @@ describe('Concealment filtering (platform-issue-sweep Phase 2)', () => {
     const { world, player, room } = setupBasicWorld();
 
     const box = world.createEntity('wooden box', 'object');
-    box.add({ type: TraitType.CONTAINER });
+    box.add(new ContainerTrait());
     box.add({ type: TraitType.OPENABLE, isOpen: true });
     world.moveEntity(box.id, room.id);
 
     const coin = world.createEntity('gold coin', 'object');
     world.moveEntity(coin.id, box.id);
     const key = world.createEntity('secret key', 'object');
-    key.add({ type: TraitType.IDENTITY, name: 'secret key', concealed: true });
+    key.add(new IdentityTrait({ name: 'secret key', concealed: true }));
     world.moveEntity(key.id, box.id);
 
     const command = createCommand(IFActions.LOOKING);
@@ -649,12 +643,12 @@ describe('Concealment filtering (platform-issue-sweep Phase 2)', () => {
     const { world, player, room } = setupBasicWorld();
 
     const box = world.createEntity('wooden box', 'object');
-    box.add({ type: TraitType.CONTAINER });
+    box.add(new ContainerTrait());
     box.add({ type: TraitType.OPENABLE, isOpen: true });
     world.moveEntity(box.id, room.id);
 
     const key = world.createEntity('secret key', 'object');
-    key.add({ type: TraitType.IDENTITY, name: 'secret key', concealed: true });
+    key.add(new IdentityTrait({ name: 'secret key', concealed: true }));
     world.moveEntity(key.id, box.id);
 
     const command = createCommand(IFActions.LOOKING);
@@ -671,12 +665,12 @@ describe('Concealment filtering (platform-issue-sweep Phase 2)', () => {
     const { world, player, room } = setupBasicWorld();
 
     const box = world.createEntity('wooden box', 'object');
-    box.add({ type: TraitType.CONTAINER });
+    box.add(new ContainerTrait());
     box.add({ type: TraitType.OPENABLE, isOpen: true });
     world.moveEntity(box.id, room.id);
 
     const key = world.createEntity('secret key', 'object');
-    key.add({ type: TraitType.IDENTITY, name: 'secret key', concealed: false });
+    key.add(new IdentityTrait({ name: 'secret key', concealed: false }));
     world.moveEntity(key.id, box.id);
 
     const command = createCommand(IFActions.LOOKING);

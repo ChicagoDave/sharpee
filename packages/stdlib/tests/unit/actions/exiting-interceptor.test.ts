@@ -10,14 +10,14 @@
 import { describe, test, expect } from 'vitest';
 import { exitingAction } from '../../../src/actions/standard/exiting';
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType, WorldModel } from '@sharpee/world-model';
+import { TraitType, WorldModel, ContainerTrait } from '@sharpee/world-model';
 import { setupBasicWorld, createRealTestContext, createCommand, TEST_MARKER_TRAIT } from '../../test-utils';
 import { runValidatePhase, runExecutePhase, runReportPhase, runBlockedPhase } from '../../../src/actions/lifecycle/phase-runner';
 
 const setup = () => {
   const { world, player, room } = setupBasicWorld();
   const cage = world.createEntity('iron cage', 'object');
-  cage.add({ type: TraitType.CONTAINER } as any);
+  cage.add(new ContainerTrait());
   cage.add({ type: TraitType.ENTERABLE, canEnter: true } as any);
   // Inert marker trait — the interceptor registration key.
   cage.add({ type: TEST_MARKER_TRAIT } as any);

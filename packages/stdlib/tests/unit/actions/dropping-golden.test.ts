@@ -11,7 +11,7 @@
 import { describe, test, expect } from 'vitest';
 import { droppingAction } from '../../../src/actions/standard/dropping'; // Now from folder
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType, IParsedCommand, BreakableTrait } from '@sharpee/world-model';
+import { TraitType, IParsedCommand, BreakableTrait, ContainerTrait, SupporterTrait } from '@sharpee/world-model';
 import {
   createRealTestContext,
   setupBasicWorld,
@@ -134,10 +134,7 @@ describe('droppingAction (Golden Pattern)', () => {
       const { world, player, room } = setupBasicWorld();
       
       const box = world.createEntity('small box', 'object');
-      box.add({ 
-        type: TraitType.CONTAINER,
-        capacity: { maxItems: 1 }
-      });
+      box.add(new ContainerTrait({ capacity: { maxItems: 1 } }));
       world.moveEntity(box.id, room.id);
       
       const existingItem = world.createEntity('gold coin', 'object');
@@ -196,7 +193,7 @@ describe('droppingAction (Golden Pattern)', () => {
       const { world, player, room } = setupBasicWorld();
       
       const box = world.createEntity('wooden box', 'object');
-      box.add({ type: TraitType.CONTAINER });
+      box.add(new ContainerTrait());
       box.add({ 
         type: TraitType.OPENABLE,
         isOpen: true
@@ -238,7 +235,7 @@ describe('droppingAction (Golden Pattern)', () => {
       const { world, player, room } = setupBasicWorld();
       
       const table = world.createEntity('oak table', 'object');
-      table.add({ type: TraitType.SUPPORTER });
+      table.add(new SupporterTrait());
       world.moveEntity(table.id, room.id);
       
       const book = world.createEntity('old book', 'object');
@@ -317,7 +314,7 @@ describe('droppingAction (Golden Pattern)', () => {
     test('a fragile thing dropped while the actor is inside a container does not break', () => {
       const { world, player, room } = setupBasicWorld();
       const crate = world.createEntity('crate', 'object');
-      crate.add({ type: TraitType.CONTAINER });
+      crate.add(new ContainerTrait());
       crate.add({ type: TraitType.ENTERABLE });
       world.moveEntity(crate.id, room.id);
       world.moveEntity(player.id, crate.id);
@@ -406,7 +403,7 @@ describe('droppingAction (Golden Pattern)', () => {
       const { world, player, room } = setupBasicWorld();
 
       const box = world.createEntity('wooden box', 'object');
-      box.add({ type: TraitType.CONTAINER });
+      box.add(new ContainerTrait());
       box.add({ type: TraitType.OPENABLE, isOpen: true });
       world.moveEntity(box.id, room.id);
 
@@ -434,7 +431,7 @@ describe('droppingAction (Golden Pattern)', () => {
       const { world, player, room } = setupBasicWorld();
 
       const table = world.createEntity('oak table', 'object');
-      table.add({ type: TraitType.SUPPORTER });
+      table.add(new SupporterTrait());
       world.moveEntity(table.id, room.id);
 
       const book = world.createEntity('old book', 'object');
@@ -509,7 +506,7 @@ describe('Dropping Action Edge Cases', () => {
     
     // Container without explicit capacity
     const basket = world.createEntity('wicker basket', 'object');
-    basket.add({ type: TraitType.CONTAINER });
+    basket.add(new ContainerTrait());
     world.moveEntity(basket.id, room.id);
     
     const apple = world.createEntity('red apple', 'object');

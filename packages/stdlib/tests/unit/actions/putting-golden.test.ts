@@ -11,7 +11,7 @@
 import { describe, test, expect, beforeEach, vi } from 'vitest';
 import { puttingAction } from '../../../src/actions/standard/putting';
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType, EntityType } from '@sharpee/world-model';
+import { TraitType, EntityType, ContainerTrait, SupporterTrait, IdentityTrait } from '@sharpee/world-model';
 import {
   createRealTestContext,
   setupBasicWorld,
@@ -115,9 +115,7 @@ describe('puttingAction (Golden Pattern)', () => {
       const { world, player } = setupBasicWorld();
       
       const box = world.createEntity('magic box', 'object');
-      box.add({
-        type: TraitType.CONTAINER
-      });
+      box.add(new ContainerTrait());
       
       world.moveEntity(box.id, player.id);  // Player holds box
       
@@ -140,7 +138,7 @@ describe('puttingAction (Golden Pattern)', () => {
       const { world, player } = setupBasicWorld();
       
       const table = world.createEntity('folding table', EntityType.SUPPORTER);
-      table.add({ type: TraitType.SUPPORTER });
+      table.add(new SupporterTrait());
       
       world.moveEntity(table.id, player.id);  // Player holds table
       
@@ -164,7 +162,7 @@ describe('puttingAction (Golden Pattern)', () => {
       
       const key = world.createEntity('brass key', EntityType.OBJECT);
       const drawer = world.createEntity('desk drawer', EntityType.CONTAINER);
-      drawer.add({ type: TraitType.CONTAINER });
+      drawer.add(new ContainerTrait());
       
       world.moveEntity(drawer.id, room.id);
       world.moveEntity(key.id, drawer.id);  // Key already in drawer
@@ -198,9 +196,7 @@ describe('puttingAction (Golden Pattern)', () => {
       
       const gem = world.createEntity('ruby', 'object');
       const box = world.createEntity('jewel box', 'object');
-      box.add({
-        type: TraitType.CONTAINER
-      });
+      box.add(new ContainerTrait());
       box.add({
         type: TraitType.OPENABLE,
         isOpen: true
@@ -233,7 +229,7 @@ describe('puttingAction (Golden Pattern)', () => {
       
       const letter = world.createEntity('sealed letter', EntityType.OBJECT);
       const envelope = world.createEntity('large envelope', EntityType.CONTAINER);
-      envelope.add({ type: TraitType.CONTAINER });
+      envelope.add(new ContainerTrait());
       
       world.moveEntity(letter.id, player.id);
       world.moveEntity(envelope.id, room.id);
@@ -259,7 +255,7 @@ describe('puttingAction (Golden Pattern)', () => {
       
       const coin = world.createEntity('silver coin', EntityType.OBJECT);
       const chest = world.createEntity('locked chest', EntityType.CONTAINER);
-      chest.add({ type: TraitType.CONTAINER });
+      chest.add(new ContainerTrait());
       chest.add({ 
         type: TraitType.OPENABLE,
         isOpen: false  // Closed
@@ -288,7 +284,7 @@ describe('puttingAction (Golden Pattern)', () => {
       
       const ball = world.createEntity('tennis ball', EntityType.OBJECT);
       const box = world.createEntity('cardboard box', EntityType.CONTAINER);
-      box.add({ type: TraitType.CONTAINER });
+      box.add(new ContainerTrait());
       
       world.moveEntity(ball.id, player.id);
       world.moveEntity(box.id, room.id);
@@ -315,7 +311,7 @@ describe('puttingAction (Golden Pattern)', () => {
       
       const book = world.createEntity('thick book', EntityType.OBJECT);
       const table = world.createEntity('round table', EntityType.SUPPORTER);
-      table.add({ type: TraitType.SUPPORTER });
+      table.add(new SupporterTrait());
       
       world.moveEntity(book.id, player.id);
       world.moveEntity(table.id, room.id);
@@ -344,7 +340,7 @@ describe('puttingAction (Golden Pattern)', () => {
       
       const vase = world.createEntity('crystal vase', EntityType.OBJECT);
       const shelf = world.createEntity('wooden shelf', EntityType.SUPPORTER);
-      shelf.add({ type: TraitType.SUPPORTER });
+      shelf.add(new SupporterTrait());
       
       world.moveEntity(vase.id, player.id);
       world.moveEntity(shelf.id, room.id);
@@ -370,7 +366,7 @@ describe('puttingAction (Golden Pattern)', () => {
       
       const cup = world.createEntity('coffee cup', EntityType.OBJECT);
       const counter = world.createEntity('kitchen counter', EntityType.SUPPORTER);
-      counter.add({ type: TraitType.SUPPORTER });
+      counter.add(new SupporterTrait());
       
       world.moveEntity(cup.id, player.id);
       world.moveEntity(counter.id, room.id);
@@ -397,10 +393,7 @@ describe('puttingAction (Golden Pattern)', () => {
       
       const newCoin = world.createEntity('copper coin', EntityType.OBJECT);
       const pouch = world.createEntity('coin pouch', EntityType.CONTAINER);
-      pouch.add({ 
-        type: TraitType.CONTAINER,
-        capacity: { maxItems: 5 }
-      });
+      pouch.add(new ContainerTrait({ capacity: { maxItems: 5 } }));
       
       // Create 5 existing coins
       const coins = [];
@@ -432,23 +425,14 @@ describe('puttingAction (Golden Pattern)', () => {
       const { world, player, room } = setupBasicWorld();
       
       const brick = world.createEntity('heavy brick', EntityType.OBJECT);
-      brick.add({
-        type: TraitType.IDENTITY,
-        weight: 5
-      });
+      brick.add(new IdentityTrait({ weight: 5 }));
       
       const bag = world.createEntity('canvas bag', EntityType.CONTAINER);
-      bag.add({ 
-        type: TraitType.CONTAINER,
-        capacity: { maxWeight: 10 }
-      });
+      bag.add(new ContainerTrait({ capacity: { maxWeight: 10 } }));
       
       // Existing heavy item
       const rock = world.createEntity('large rock', EntityType.OBJECT);
-      rock.add({
-        type: TraitType.IDENTITY,
-        weight: 6
-      });
+      rock.add(new IdentityTrait({ weight: 6 }));
       
       world.moveEntity(brick.id, player.id);
       world.moveEntity(bag.id, room.id);
@@ -474,10 +458,7 @@ describe('puttingAction (Golden Pattern)', () => {
       
       const plate = world.createEntity('dinner plate', EntityType.OBJECT);
       const tray = world.createEntity('serving tray', EntityType.SUPPORTER);
-      tray.add({ 
-        type: TraitType.SUPPORTER,
-        capacity: { maxItems: 3 }
-      });
+      tray.add(new SupporterTrait({ capacity: { maxItems: 3 } }));
       
       // Create 3 existing plates
       const plates = [];
@@ -512,8 +493,8 @@ describe('puttingAction (Golden Pattern)', () => {
       
       const pen = world.createEntity('fountain pen', EntityType.OBJECT);
       const desk = world.createEntity('writing desk', EntityType.SUPPORTER);
-      desk.add({ type: TraitType.CONTAINER });  // Has drawers
-      desk.add({ type: TraitType.SUPPORTER });   // Has surface
+      desk.add(new ContainerTrait());  // Has drawers
+      desk.add(new SupporterTrait());   // Has surface
       
       world.moveEntity(pen.id, player.id);
       world.moveEntity(desk.id, room.id);
@@ -537,8 +518,8 @@ describe('puttingAction (Golden Pattern)', () => {
       
       const lamp = world.createEntity('desk lamp', EntityType.OBJECT);
       const desk = world.createEntity('writing desk', EntityType.SUPPORTER);
-      desk.add({ type: TraitType.CONTAINER });  // Has drawers
-      desk.add({ type: TraitType.SUPPORTER });   // Has surface
+      desk.add(new ContainerTrait());  // Has drawers
+      desk.add(new SupporterTrait());   // Has surface
       
       world.moveEntity(lamp.id, player.id);
       world.moveEntity(desk.id, room.id);
@@ -568,9 +549,7 @@ describe('puttingAction (Golden Pattern)', () => {
       
       const ring = world.createEntity('gold ring', 'object');
       const box = world.createEntity('ring box', 'object');
-      box.add({
-        type: TraitType.CONTAINER
-      });
+      box.add(new ContainerTrait());
       
       world.moveEntity(ring.id, player.id);
       world.moveEntity(box.id, room.id);
@@ -608,7 +587,7 @@ describe('World State Mutations', () => {
 
     const gem = world.createEntity('ruby', 'object');
     const box = world.createEntity('jewel box', 'object');
-    box.add({ type: TraitType.CONTAINER });
+    box.add(new ContainerTrait());
 
     world.moveEntity(gem.id, player.id);
     world.moveEntity(box.id, room.id);
@@ -636,7 +615,7 @@ describe('World State Mutations', () => {
 
     const book = world.createEntity('thick book', 'object');
     const table = world.createEntity('round table', EntityType.SUPPORTER);
-    table.add({ type: TraitType.SUPPORTER });
+    table.add(new SupporterTrait());
 
     world.moveEntity(book.id, player.id);
     world.moveEntity(table.id, room.id);
@@ -664,7 +643,7 @@ describe('World State Mutations', () => {
 
     const coin = world.createEntity('silver coin', 'object');
     const chest = world.createEntity('locked chest', 'object');
-    chest.add({ type: TraitType.CONTAINER });
+    chest.add(new ContainerTrait());
     chest.add({ type: TraitType.OPENABLE, isOpen: false });
 
     world.moveEntity(coin.id, player.id);
@@ -694,10 +673,7 @@ describe('World State Mutations', () => {
 
     const newCoin = world.createEntity('copper coin', 'object');
     const pouch = world.createEntity('coin pouch', 'object');
-    pouch.add({
-      type: TraitType.CONTAINER,
-      capacity: { maxItems: 2 }
-    });
+    pouch.add(new ContainerTrait({ capacity: { maxItems: 2 } }));
 
     // Fill the pouch
     const coin1 = world.createEntity('coin 1', 'object');
@@ -733,23 +709,14 @@ describe('Putting Action Edge Cases', () => {
     const { world, player, room } = setupBasicWorld();
     
     const watermelon = world.createEntity('large watermelon', EntityType.OBJECT);
-    watermelon.add({
-      type: TraitType.IDENTITY,
-      volume: 8
-    });
+    watermelon.add(new IdentityTrait({ volume: 8 }));
     
     const basket = world.createEntity('fruit basket', EntityType.CONTAINER);
-    basket.add({ 
-      type: TraitType.CONTAINER,
-      capacity: { maxVolume: 10 }
-    });
+    basket.add(new ContainerTrait({ capacity: { maxVolume: 10 } }));
     
     // Existing fruit
     const apple = world.createEntity('red apple', EntityType.OBJECT);
-    apple.add({
-      type: TraitType.IDENTITY,
-      volume: 3
-    });
+    apple.add(new IdentityTrait({ volume: 3 }));
     
     world.moveEntity(watermelon.id, player.id);
     world.moveEntity(basket.id, room.id);
@@ -778,10 +745,7 @@ describe('Putting Action Edge Cases', () => {
     // No identity trait with weight/volume
     
     const pouch = world.createEntity('small pouch', EntityType.CONTAINER);
-    pouch.add({ 
-      type: TraitType.CONTAINER,
-      capacity: { maxWeight: 5 }
-    });
+    pouch.add(new ContainerTrait({ capacity: { maxWeight: 5 } }));
     
     world.moveEntity(feather.id, player.id);
     world.moveEntity(pouch.id, room.id);
@@ -830,7 +794,7 @@ describe('Putting Action Edge Cases', () => {
     
     const book = world.createEntity('novel', EntityType.OBJECT);
     const shelf = world.createEntity('bookshelf', EntityType.SUPPORTER);
-    shelf.add({ type: TraitType.SUPPORTER });
+    shelf.add(new SupporterTrait());
     
     world.moveEntity(book.id, player.id);
     world.moveEntity(shelf.id, room.id);
@@ -855,10 +819,7 @@ describe('Putting Action Edge Cases', () => {
     
     const item = world.createEntity('mysterious item', EntityType.OBJECT);
     const vortex = world.createEntity('dimensional vortex', EntityType.CONTAINER);
-    vortex.add({ 
-      type: TraitType.CONTAINER
-      // No capacity limits
-    });
+    vortex.add(new ContainerTrait()); // No capacity limits
     
     world.moveEntity(item.id, player.id);
     world.moveEntity(vortex.id, room.id);
@@ -883,29 +844,16 @@ describe('Putting Action Edge Cases', () => {
     const { world, player, room } = setupBasicWorld();
     
     const newBook = world.createEntity('thick encyclopedia', EntityType.OBJECT);
-    newBook.add({
-      type: TraitType.IDENTITY,
-      weight: 3,
-      volume: 4
-    });
+    newBook.add(new IdentityTrait({ weight: 3, volume: 4 }));
     
     const shelf = world.createEntity('bookshelf', EntityType.SUPPORTER);
-    shelf.add({ 
-      type: TraitType.SUPPORTER,
-      capacity: { 
-        maxWeight: 20,
-        maxItems: 10
-      }
-    });
+    shelf.add(new SupporterTrait({ capacity: { maxWeight: 20, maxItems: 10 } }));
     
     // Create existing books
     const books = [];
     for (let i = 1; i <= 5; i++) {
       const book = world.createEntity(`book ${i}`, EntityType.OBJECT);
-      book.add({
-        type: TraitType.IDENTITY,
-        weight: 2
-      });
+      book.add(new IdentityTrait({ weight: 2 }));
       books.push(book);
       world.moveEntity(book.id, shelf.id);
     }
@@ -938,7 +886,7 @@ describe('Multi-object putting drives per-item container hooks (ADR-228 D4 — t
     const { setupBasicWorld, createRealTestContext, createCommand } = await import('../../test-utils');
     const { world, player, room } = setupBasicWorld();
     const box = world.createEntity('wooden box', 'object');
-    box.add({ type: TraitType.CONTAINER });
+    box.add(new ContainerTrait());
     box.add({ type: TraitType.OPENABLE, isOpen: true });
     world.moveEntity(box.id, room.id);
     const coin = world.createEntity('copper coin', 'object');

@@ -22,7 +22,7 @@
  */
 
 import { describe, test, expect } from 'vitest';
-import { TraitType, IdentityBehavior } from '@sharpee/world-model';
+import { TraitType, IdentityBehavior, IdentityTrait, ContainerTrait, SupporterTrait } from '@sharpee/world-model';
 import { lookingUnderAction, lookingUnderLifecycle } from '../../../src/actions/standard/looking_under';
 import { emptyingAction, emptyingLifecycle } from '../../../src/actions/standard/emptying';
 import { interceptorConsultingActionIds } from '../../../src/actions/lifecycle/registry';
@@ -38,7 +38,7 @@ import {
 
 function concealed(world: ReturnType<typeof setupBasicWorld>['world'], name: string) {
   const thing = world.createEntity(name, 'object');
-  thing.add({ type: TraitType.IDENTITY, name, concealed: true });
+  thing.add(new IdentityTrait({ name, concealed: true }));
   return thing;
 }
 
@@ -54,7 +54,7 @@ describe('lookingUnderAction (ADR-370 D5)', () => {
     const { world, room } = setupBasicWorld();
     // The mat holds things (D5: the set is what the target holds), so it is a container.
     const mat = world.createEntity('door mat', 'object');
-    mat.add({ type: TraitType.CONTAINER });
+    mat.add(new ContainerTrait());
     const key = concealed(world, 'brass key');
     const coin = world.createEntity('plain coin', 'object');
     world.moveEntity(mat.id, room.id);
@@ -80,7 +80,7 @@ describe('lookingUnderAction (ADR-370 D5)', () => {
   test('with nothing concealed, changes nothing and speaks nothing_under', () => {
     const { world, room } = setupBasicWorld();
     const mat = world.createEntity('door mat', 'object');
-    mat.add({ type: TraitType.CONTAINER });
+    mat.add(new ContainerTrait());
     const coin = world.createEntity('plain coin', 'object');
     world.moveEntity(mat.id, room.id);
     world.moveEntity(coin.id, mat.id);
@@ -124,7 +124,7 @@ describe('lookingUnderAction (ADR-370 D5)', () => {
 describe('emptyingAction (ADR-370 D6)', () => {
   function tray(world: ReturnType<typeof setupBasicWorld>['world'], roomId: string, items: string[]) {
     const container = world.createEntity('route tray', 'object');
-    container.add({ type: TraitType.CONTAINER });
+    container.add(new ContainerTrait());
     world.moveEntity(container.id, roomId);
     const contents = items.map((name) => {
       const item = world.createEntity(name, 'object');
@@ -172,7 +172,7 @@ describe('emptyingAction (ADR-370 D6)', () => {
     const { world, room } = setupBasicWorld();
     const { container, contents } = tray(world, room.id, ['ceres parcel', 'titan parcel', 'kepler parcel']);
     const slot = world.createEntity('card slot', 'object');
-    slot.add({ type: TraitType.CONTAINER, capacity: { maxItems: 2 } });
+    slot.add(new ContainerTrait({ capacity: { maxItems: 2 } }));
     world.moveEntity(slot.id, room.id);
 
     const context = createRealTestContext(emptyingAction, world, createCommand(IFActions.EMPTYING, { entity: container, secondEntity: slot, preposition: 'into' }));
@@ -198,7 +198,7 @@ describe('emptyingAction (ADR-370 D6)', () => {
     const { world, room } = setupBasicWorld();
     const { container, contents } = tray(world, room.id, ['ceres parcel']);
     const bench = world.createEntity('sorting bench', 'object');
-    bench.add({ type: TraitType.SUPPORTER });
+    bench.add(new SupporterTrait());
     world.moveEntity(bench.id, room.id);
 
     const context = createRealTestContext(emptyingAction, world, createCommand(IFActions.EMPTYING, { entity: container, secondEntity: bench, preposition: 'onto' }));
@@ -213,10 +213,10 @@ describe('emptyingAction (ADR-370 D6)', () => {
     const rock = world.createEntity('rock', 'object');
     world.moveEntity(rock.id, room.id);
     const emptyBox = world.createEntity('empty box', 'object');
-    emptyBox.add({ type: TraitType.CONTAINER });
+    emptyBox.add(new ContainerTrait());
     world.moveEntity(emptyBox.id, room.id);
     const shutBox = world.createEntity('shut box', 'object');
-    shutBox.add({ type: TraitType.CONTAINER });
+    shutBox.add(new ContainerTrait());
     world.moveEntity(shutBox.id, room.id);
     const pebble = world.createEntity('pebble', 'object');
     world.moveEntity(pebble.id, shutBox.id);

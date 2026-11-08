@@ -11,7 +11,7 @@
 import { describe, test, expect, beforeEach } from 'vitest';
 import { showingAction } from '../../../src/actions/standard/showing';
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType, ITrait } from '@sharpee/world-model';
+import { TraitType, ITrait, ActorTrait } from '@sharpee/world-model';
 import {
   createRealTestContext,
   setupBasicWorld,
@@ -85,7 +85,7 @@ describe('showingAction (Golden Pattern)', () => {
       const { world, player, room } = setupBasicWorld();
       const photo = world.createEntity('old photo', 'object');
       const detective = world.createEntity('detective', 'actor');
-      detective.add({ type: TraitType.ACTOR });
+      detective.add(new ActorTrait());
       world.moveEntity(photo.id, room.id);
       world.moveEntity(detective.id, room.id);
 
@@ -112,7 +112,7 @@ describe('showingAction (Golden Pattern)', () => {
       world.moveEntity(badge.id, player.id);
 
       const deputy = world.createEntity('deputy', 'actor');
-      deputy.add({ type: TraitType.ACTOR });
+      deputy.add(new ActorTrait());
       world.moveEntity(deputy.id, room.id);
 
       const context = createRealTestContext(showingAction, world, createCommand(
@@ -142,7 +142,7 @@ describe('showingAction (Golden Pattern)', () => {
       world.moveEntity(treasure.id, player.id);
 
       const pirate = world.createEntity('old pirate', 'actor');
-      pirate.add({ type: TraitType.ACTOR });
+      pirate.add(new ActorTrait());
       world.moveEntity(pirate.id, otherRoom.id);
 
       const context = createRealTestContext(showingAction, world, createCommand(
@@ -205,12 +205,7 @@ describe('showingAction (Golden Pattern)', () => {
       world.moveEntity(crown.id, player.id);
 
       const noble = world.createEntity('haughty noble', 'actor');
-      noble.add({
-        type: TraitType.ACTOR,
-        customProperties: {
-          reactions: { recognizes: ['crown', 'scepter', 'throne'] }
-        }
-      });
+      noble.add(new ActorTrait({ customProperties: { reactions: { recognizes: ['crown', 'scepter', 'throne'] } } }));
       world.moveEntity(noble.id, room.id);
 
       const context = createRealTestContext(showingAction, world, createCommand(
@@ -231,12 +226,7 @@ describe('showingAction (Golden Pattern)', () => {
       world.moveEntity(diamond.id, player.id);
 
       const merchant = world.createEntity('greedy merchant', 'actor');
-      merchant.add({
-        type: TraitType.ACTOR,
-        customProperties: {
-          reactions: { impressed: ['diamond', 'gold', 'jewel'] }
-        }
-      });
+      merchant.add(new ActorTrait({ customProperties: { reactions: { impressed: ['diamond', 'gold', 'jewel'] } } }));
       world.moveEntity(merchant.id, room.id);
 
       const context = createRealTestContext(showingAction, world, createCommand(
@@ -257,12 +247,7 @@ describe('showingAction (Golden Pattern)', () => {
       world.moveEntity(stick.id, player.id);
 
       const king = world.createEntity('mighty king', 'actor');
-      king.add({
-        type: TraitType.ACTOR,
-        customProperties: {
-          reactions: { unimpressed: ['stick', 'rock', 'dirt'] }
-        }
-      });
+      king.add(new ActorTrait({ customProperties: { reactions: { unimpressed: ['stick', 'rock', 'dirt'] } } }));
       world.moveEntity(king.id, room.id);
 
       const context = createRealTestContext(showingAction, world, createCommand(
@@ -283,12 +268,7 @@ describe('showingAction (Golden Pattern)', () => {
       world.moveEntity(document.id, player.id);
 
       const clerk = world.createEntity('meticulous clerk', 'actor');
-      clerk.add({
-        type: TraitType.ACTOR,
-        customProperties: {
-          reactions: { examines: ['document', 'letter', 'scroll'] }
-        }
-      });
+      clerk.add(new ActorTrait({ customProperties: { reactions: { examines: ['document', 'letter', 'scroll'] } } }));
       world.moveEntity(clerk.id, room.id);
 
       const context = createRealTestContext(showingAction, world, createCommand(
@@ -309,15 +289,14 @@ describe('showingAction (Golden Pattern)', () => {
       world.moveEntity(rock.id, player.id);
 
       const farmer = world.createEntity('busy farmer', 'actor');
-      farmer.add({
-        type: TraitType.ACTOR,
+      farmer.add(new ActorTrait({
         customProperties: {
           reactions: {
             impressed: ['crops', 'seeds'],
             examines: ['soil', 'water']
           }
         }
-      });
+      }));
       world.moveEntity(farmer.id, room.id);
 
       const context = createRealTestContext(showingAction, world, createCommand(
@@ -338,7 +317,7 @@ describe('showingAction (Golden Pattern)', () => {
       const { world, player, room } = setupBasicWorld();
       const card = world.createEntity('business card', 'object');
       const secretary = world.createEntity('secretary', 'actor');
-      secretary.add({ type: TraitType.ACTOR });
+      secretary.add(new ActorTrait());
 
       world.moveEntity(card.id, player.id);
       world.moveEntity(secretary.id, room.id);
@@ -371,7 +350,7 @@ describe('showingAction (Golden Pattern)', () => {
 
       const photo = world.createEntity('family photo', 'object');
       const stranger = world.createEntity('stranger', 'actor');
-      stranger.add({ type: TraitType.ACTOR });
+      stranger.add(new ActorTrait());
 
       world.moveEntity(photo.id, player.id);
       world.moveEntity(stranger.id, room.id);
@@ -395,7 +374,7 @@ describe('showingAction (Golden Pattern)', () => {
 
       const necklace = world.createEntity('pearl necklace', 'object');
       const appraiser = world.createEntity('jewelry appraiser', 'actor');
-      appraiser.add({ type: TraitType.ACTOR });
+      appraiser.add(new ActorTrait());
 
       world.moveEntity(necklace.id, player.id);
       world.moveEntity(appraiser.id, room.id);
@@ -431,12 +410,7 @@ describe('Showing Action Edge Cases', () => {
     world.moveEntity(uniform.id, player.id);
 
     const general = world.createEntity('stern general', 'actor');
-    general.add({
-      type: TraitType.ACTOR,
-      customProperties: {
-        reactions: { recognizes: ['uniform', 'medal', 'insignia'] }
-      }
-    });
+    general.add(new ActorTrait({ customProperties: { reactions: { recognizes: ['uniform', 'medal', 'insignia'] } } }));
     world.moveEntity(general.id, room.id);
 
     const context = createRealTestContext(showingAction, world, createCommand(
@@ -460,14 +434,9 @@ describe('Showing Action Edge Cases', () => {
 
     const evidence = world.createEntity('crucial evidence', 'object');
     const detective1 = world.createEntity('junior detective', 'actor');
-    detective1.add({ type: TraitType.ACTOR });
+    detective1.add(new ActorTrait());
     const detective2 = world.createEntity('senior detective', 'actor');
-    detective2.add({
-      type: TraitType.ACTOR,
-      customProperties: {
-        reactions: { examines: ['evidence', 'clue', 'weapon'] }
-      }
-    });
+    detective2.add(new ActorTrait({ customProperties: { reactions: { examines: ['evidence', 'clue', 'weapon'] } } }));
 
     world.moveEntity(evidence.id, player.id);
     world.moveEntity(detective1.id, room.id);
@@ -503,7 +472,7 @@ describe('Showing Action Edge Cases', () => {
 
     const map = world.createEntity('treasure map', 'object');
     const pirate = world.createEntity('one-eyed pirate', 'actor');
-    pirate.add({ type: TraitType.ACTOR });
+    pirate.add(new ActorTrait());
 
     world.moveEntity(map.id, player.id);
     world.moveEntity(pirate.id, room.id);

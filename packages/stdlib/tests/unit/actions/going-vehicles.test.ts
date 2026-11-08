@@ -16,7 +16,8 @@ import {
   VehicleTrait,
   type VehicleMovement,
   IFEntity,
-  WorldModel
+  WorldModel,
+  ContainerTrait
 } from '@sharpee/world-model';
 import {
   createRealTestContext,
@@ -43,7 +44,7 @@ function setupVehicleWorld(movement: VehicleMovement | undefined): VehicleFixtur
 
   const vehicle = world.createEntity('cart', 'object');
   vehicle.add(new VehicleTrait({ movement }));
-  vehicle.add({ type: TraitType.CONTAINER, enterable: true } as any);
+  vehicle.add(new ContainerTrait({ enterable: true }));
   world.moveEntity(vehicle.id, room.id);
   world.moveEntity(player.id, vehicle.id);
 

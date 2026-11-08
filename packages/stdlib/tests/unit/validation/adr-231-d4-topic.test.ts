@@ -55,7 +55,7 @@ describe('CommandValidator topic resolution (ADR-231 D4)', () => {
     world.setPlayer(player.id);
 
     hermit = author.createEntity('hermit', EntityType.ACTOR);
-    hermit.add({ type: TraitType.ACTOR });
+    hermit.add(new ActorTrait());
     author.moveEntity(hermit.id, room.id);
 
     const registry = new StandardActionRegistry();
@@ -102,7 +102,7 @@ describe('CommandValidator topic resolution (ADR-231 D4)', () => {
 
   test('an in-scope entity topic carries the resolved EntityId', () => {
     const gull = author.createEntity('gull', EntityType.ACTOR);
-    gull.add({ type: TraitType.ACTOR });
+    gull.add(new ActorTrait());
     author.moveEntity(gull.id, room.id);
 
     const parsed = parseCommand('ask hermit about the gull', world);
@@ -121,7 +121,7 @@ describe('CommandValidator topic resolution (ADR-231 D4)', () => {
     const otherRoom = author.createEntity('Cave', EntityType.ROOM);
     otherRoom.add({ type: TraitType.ROOM });
     const dragon = author.createEntity('dragon', EntityType.ACTOR);
-    dragon.add({ type: TraitType.ACTOR });
+    dragon.add(new ActorTrait());
     author.moveEntity(dragon.id, otherRoom.id);
 
     const parsed = parseCommand('ask hermit about dragon', world);
@@ -181,7 +181,7 @@ describe('asking/telling report the first-class topic (ADR-231 D4)', () => {
     player.add(new ActorTrait({ isPlayable: true }));
     world.setPlayer(player.id);
     const hermit = author.createEntity('hermit', EntityType.ACTOR);
-    hermit.add({ type: TraitType.ACTOR });
+    hermit.add(new ActorTrait());
     author.moveEntity(hermit.id, room.id);
     return { world, player, room, hermit };
   };

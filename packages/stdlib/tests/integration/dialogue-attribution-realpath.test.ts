@@ -12,7 +12,7 @@
  */
 
 import { describe, test, expect } from 'vitest';
-import { EntityType, IdentityTrait, TraitType } from '@sharpee/world-model';
+import { EntityType, IdentityTrait, TraitType, ActorTrait } from '@sharpee/world-model';
 import type { NarrativeAgreement, RenderContext } from '@sharpee/if-domain';
 import { EnglishLanguageProvider } from '@sharpee/lang-en-us';
 import { talkingAction } from '../../src/actions/standard/talking';
@@ -53,10 +53,7 @@ describe('dialogue attribution — real path (ADR-201 §6, AC-3/AC-7)', () => {
     // so talkingAction selects the `formal_greeting` attribution message.
     const acrobats = world.createEntity('triplet acrobats', EntityType.ACTOR);
     acrobats.add(new IdentityTrait({ name: 'triplet acrobats', nounType: 'plural' }));
-    acrobats.add({
-      type: TraitType.ACTOR,
-      conversation: { hasGreeted: false, personality: 'formal' },
-    } as any);
+    acrobats.add(new ActorTrait({ customProperties: { conversation: { hasGreeted: false, personality: 'formal' } } }));
     world.moveEntity(acrobats.id, room.id);
 
     // Drive the real action (validate → execute → report).

@@ -13,7 +13,7 @@
 import { describe, test, expect, beforeEach, vi } from 'vitest';
 import { smellingAction } from '../../../src/actions/standard/smelling';
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType } from '@sharpee/world-model';
+import { TraitType, ContainerTrait } from '@sharpee/world-model';
 import {
   createRealTestContext,
   setupBasicWorld,
@@ -155,10 +155,7 @@ describe('smellingAction (Golden Pattern)', () => {
       const { world, player } = setupBasicWorld();
       
       const basket = world.createEntity('wicker basket', 'object');
-      basket.add({
-        type: TraitType.CONTAINER,
-        capacity: 5
-      });
+      basket.add(new ContainerTrait());
       basket.add({
         type: TraitType.OPENABLE,
         isOpen: true
@@ -194,10 +191,7 @@ describe('smellingAction (Golden Pattern)', () => {
       const { world, player } = setupBasicWorld();
       
       const box = world.createEntity('sealed box', 'object');
-      box.add({
-        type: TraitType.CONTAINER,
-        capacity: 5
-      });
+      box.add(new ContainerTrait());
       box.add({
         type: TraitType.OPENABLE,
         isOpen: false  // Closed

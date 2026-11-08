@@ -22,6 +22,7 @@ import {
   IFEntity,
   HealthTrait,
   HealthBehavior,
+  ActorTrait,
 } from '@sharpee/world-model';
 import {
   createRealTestContext,
@@ -33,7 +34,7 @@ import { runValidatePhase, runExecutePhase, runReportPhase, runBlockedPhase } fr
 const setup = () => {
   const { world, player, room } = setupBasicWorld();
   const npc = world.createEntity('gruff troll', 'actor');
-  npc.add({ type: TraitType.ACTOR });
+  npc.add(new ActorTrait());
   world.moveEntity(npc.id, room.id);
   return { world, player, room, npc };
 };

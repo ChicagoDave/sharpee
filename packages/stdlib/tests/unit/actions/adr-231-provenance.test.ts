@@ -19,7 +19,7 @@
  */
 
 import { describe, test, expect } from 'vitest';
-import { TraitType, WorldModel, WearableTrait } from '@sharpee/world-model';
+import { TraitType, WorldModel, WearableTrait, ActorTrait, ContainerTrait, SceneryTrait } from '@sharpee/world-model';
 import { wearingAction } from '../../../src/actions/standard/wearing';
 import { givingAction } from '../../../src/actions/standard/giving';
 import { touchingAction } from '../../../src/actions/standard/touching';
@@ -103,7 +103,7 @@ describe('Interceptor veto pass-through (formerly always-prefixed actions)', () 
     coin.add({ type: TEST_MARKER_TRAIT } as any);
     world.moveEntity(coin.id, player.id); // carried
     const npc = world.createEntity('old sailor', 'actor');
-    npc.add({ type: TraitType.ACTOR });
+    npc.add(new ActorTrait());
     world.moveEntity(npc.id, room.id);
 
     world.registerActionInterceptor(TEST_MARKER_TRAIT, IFActions.GIVING, {
@@ -237,7 +237,7 @@ describe('Scope refusals emit fully-qualified scope.* keys', () => {
     // NOTE: moveEntity refuses closed containers (canMoveEntity), so the
     // gem goes in while the cabinet is open; then we close it.
     const cabinet = world.createEntity('glass cabinet', 'object');
-    cabinet.add({ type: TraitType.CONTAINER, isTransparent: true });
+    cabinet.add(new ContainerTrait({ isTransparent: true }));
     cabinet.add({ type: TraitType.OPENABLE, isOpen: true });
     world.moveEntity(cabinet.id, room.id);
     const gem = world.createEntity('ruby gem', 'object');
@@ -276,10 +276,10 @@ describe('Cross-action helper key survives the consuming action', () => {
   test('GIVING a scenery item: blocked messageId is taking\'s fixed_in_place, not giving\'s', () => {
     const { world, room } = setupBasicWorld();
     const statue = world.createEntity('marble statue', 'object');
-    statue.add({ type: TraitType.SCENERY });
+    statue.add(new SceneryTrait());
     world.moveEntity(statue.id, room.id); // reachable, not carried, not takeable
     const npc = world.createEntity('old sailor', 'actor');
-    npc.add({ type: TraitType.ACTOR });
+    npc.add(new ActorTrait());
     world.moveEntity(npc.id, room.id);
 
     const context = createRealTestContext(
@@ -310,7 +310,7 @@ describe('Cross-action helper key survives the consuming action', () => {
     // 'if.action.taking.dungeo.frame.cant_take' and rendered blank.
     const { world, room } = setupBasicWorld();
     const frame = world.createEntity('gilded frame', 'object');
-    frame.add({ type: TraitType.SCENERY, cantTakeMessage: 'story.frame.wall-mounted' });
+    frame.add(new SceneryTrait({ cantTakeMessage: 'story.frame.wall-mounted' }));
     world.moveEntity(frame.id, room.id);
 
     const context = createRealTestContext(

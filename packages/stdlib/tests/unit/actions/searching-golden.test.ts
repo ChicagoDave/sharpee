@@ -13,7 +13,7 @@
 import { describe, test, expect, beforeEach, vi } from 'vitest';
 import { searchingAction } from '../../../src/actions/standard/searching';
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType } from '@sharpee/world-model';
+import { TraitType, ContainerTrait, SupporterTrait, IdentityTrait } from '@sharpee/world-model';
 import {
   createRealTestContext,
   setupBasicWorld,
@@ -58,10 +58,7 @@ describe('searchingAction (Golden Pattern)', () => {
     test('should fail when container is closed', () => {
       const { world, player, room } = setupBasicWorld();
       const chest = world.createEntity('treasure chest', 'object');
-      chest.add({
-        type: TraitType.CONTAINER,
-        capacity: 10
-      });
+      chest.add(new ContainerTrait());
       chest.add({
         type: TraitType.OPENABLE,
         isOpen: false
@@ -86,10 +83,7 @@ describe('searchingAction (Golden Pattern)', () => {
     test('should search empty container', () => {
       const { world, player, room } = setupBasicWorld();
       const box = world.createEntity('cardboard box', 'object');
-      box.add({
-        type: TraitType.CONTAINER,
-        capacity: 5
-      });
+      box.add(new ContainerTrait());
       world.moveEntity(box.id, room.id);
       
       // No contents - box is empty
@@ -119,10 +113,7 @@ describe('searchingAction (Golden Pattern)', () => {
       const { world, player } = setupBasicWorld();
       
       const box = world.createEntity('jewelry box', 'object');
-      box.add({
-        type: TraitType.CONTAINER,
-        capacity: 3
-      });
+      box.add(new ContainerTrait());
       world.moveEntity(box.id, player.id);
       
       const ring = world.createEntity('gold ring', 'object');
@@ -159,19 +150,12 @@ describe('searchingAction (Golden Pattern)', () => {
       const { world, player } = setupBasicWorld();
       
       const desk = world.createEntity('oak desk', 'object');
-      desk.add({
-        type: TraitType.CONTAINER,
-        capacity: 5
-      });
+      desk.add(new ContainerTrait());
       world.moveEntity(desk.id, player.id);
       
       const paper = world.createEntity('blank paper', 'object');
       const key = world.createEntity('secret key', 'object');
-      key.add({
-        type: TraitType.IDENTITY,
-        name: 'secret key',
-        concealed: true
-      });
+      key.add(new IdentityTrait({ name: 'secret key', concealed: true }));
       
       // Put items in desk
       world.moveEntity(paper.id, desk.id);
@@ -210,10 +194,7 @@ describe('searchingAction (Golden Pattern)', () => {
       const { world, player } = setupBasicWorld();
       
       const table = world.createEntity('dining table', 'object');
-      table.add({
-        type: TraitType.SUPPORTER,
-        capacity: 10
-      });
+      table.add(new SupporterTrait());
       world.moveEntity(table.id, player.id);
       
       const plate = world.createEntity('dinner plate', 'object');
@@ -249,19 +230,12 @@ describe('searchingAction (Golden Pattern)', () => {
       const { world, player } = setupBasicWorld();
       
       const altar = world.createEntity('stone altar', 'object');
-      altar.add({
-        type: TraitType.SUPPORTER,
-        capacity: 5
-      });
+      altar.add(new SupporterTrait());
       world.moveEntity(altar.id, player.id);
       
       const chalice = world.createEntity('golden chalice', 'object');
       const gem = world.createEntity('hidden gem', 'object');
-      gem.add({
-        type: TraitType.IDENTITY,
-        name: 'hidden gem',
-        concealed: true
-      });
+      gem.add(new IdentityTrait({ name: 'hidden gem', concealed: true }));
       
       // Put items on altar
       world.moveEntity(chalice.id, altar.id);
@@ -289,10 +263,7 @@ describe('searchingAction (Golden Pattern)', () => {
     test('should handle empty supporter', () => {
       const { world, player, room } = setupBasicWorld();
       const pedestal = world.createEntity('marble pedestal', 'object');
-      pedestal.add({
-        type: TraitType.SUPPORTER,
-        capacity: 1
-      });
+      pedestal.add(new SupporterTrait());
       world.moveEntity(pedestal.id, room.id);
       
       // No contents
@@ -347,11 +318,7 @@ describe('searchingAction (Golden Pattern)', () => {
       world.moveEntity(painting.id, player.id);
       
       const safe = world.createEntity('wall safe', 'object');
-      safe.add({
-        type: TraitType.IDENTITY,
-        name: 'wall safe',
-        concealed: true
-      });
+      safe.add(new IdentityTrait({ name: 'wall safe', concealed: true }));
       
       // Safe is "behind" the painting
       world.moveEntity(safe.id, painting.id);
@@ -377,11 +344,7 @@ describe('searchingAction (Golden Pattern)', () => {
       const { world, player, room } = setupBasicWorld();
       
       const coin = world.createEntity('silver coin', 'object');
-      coin.add({
-        type: TraitType.IDENTITY,
-        name: 'silver coin',
-        concealed: true
-      });
+      coin.add(new IdentityTrait({ name: 'silver coin', concealed: true }));
       
       // Coin is hidden in room
       world.moveEntity(coin.id, room.id);
@@ -434,10 +397,7 @@ describe('searchingAction (Golden Pattern)', () => {
     test('should handle open container requirement', () => {
       const { world, player, room } = setupBasicWorld();
       const safe = world.createEntity('wall safe', 'object');
-      safe.add({
-        type: TraitType.CONTAINER,
-        capacity: 5
-      });
+      safe.add(new ContainerTrait());
       safe.add({
         type: TraitType.OPENABLE,
         isOpen: true // Already open
@@ -470,26 +430,15 @@ describe('searchingAction (Golden Pattern)', () => {
       const { world, player } = setupBasicWorld();
       
       const bookshelf = world.createEntity('dusty bookshelf', 'object');
-      bookshelf.add({
-        type: TraitType.SUPPORTER,
-        capacity: 20
-      });
+      bookshelf.add(new SupporterTrait());
       world.moveEntity(bookshelf.id, player.id);
       
       const book1 = world.createEntity('red book', 'object');
       const book2 = world.createEntity('blue book', 'object');
       const lever = world.createEntity('hidden lever', 'object');
-      lever.add({
-        type: TraitType.IDENTITY,
-        name: 'hidden lever',
-        concealed: true
-      });
+      lever.add(new IdentityTrait({ name: 'hidden lever', concealed: true }));
       const compartment = world.createEntity('secret compartment', 'object');
-      compartment.add({
-        type: TraitType.IDENTITY,
-        name: 'secret compartment',
-        concealed: true
-      });
+      compartment.add(new IdentityTrait({ name: 'secret compartment', concealed: true }));
       
       // Put all items on bookshelf
       world.moveEntity(book1.id, bookshelf.id);
@@ -571,15 +520,11 @@ describe('searchingAction (Golden Pattern)', () => {
       const { world, player, room } = setupBasicWorld();
 
       const desk = world.createEntity('oak desk', 'object');
-      desk.add({ type: TraitType.CONTAINER, capacity: 5 });
+      desk.add(new ContainerTrait());
       world.moveEntity(desk.id, room.id);
 
       const key = world.createEntity('secret key', 'object');
-      key.add({
-        type: TraitType.IDENTITY,
-        name: 'secret key',
-        concealed: true
-      });
+      key.add(new IdentityTrait({ name: 'secret key', concealed: true }));
       world.moveEntity(key.id, desk.id);
 
       // VERIFY PRECONDITION: key is concealed
@@ -600,15 +545,15 @@ describe('searchingAction (Golden Pattern)', () => {
       const { world, player, room } = setupBasicWorld();
 
       const shelf = world.createEntity('dusty shelf', 'object');
-      shelf.add({ type: TraitType.SUPPORTER });
+      shelf.add(new SupporterTrait());
       world.moveEntity(shelf.id, room.id);
 
       const lever = world.createEntity('hidden lever', 'object');
-      lever.add({ type: TraitType.IDENTITY, name: 'hidden lever', concealed: true });
+      lever.add(new IdentityTrait({ name: 'hidden lever', concealed: true }));
       world.moveEntity(lever.id, shelf.id);
 
       const key = world.createEntity('brass key', 'object');
-      key.add({ type: TraitType.IDENTITY, name: 'brass key', concealed: true });
+      key.add(new IdentityTrait({ name: 'brass key', concealed: true }));
       world.moveEntity(key.id, shelf.id);
 
       // VERIFY PRECONDITION: both items concealed
@@ -631,7 +576,7 @@ describe('searchingAction (Golden Pattern)', () => {
       const { world, player, room } = setupBasicWorld();
 
       const box = world.createEntity('open box', 'object');
-      box.add({ type: TraitType.CONTAINER });
+      box.add(new ContainerTrait());
       world.moveEntity(box.id, room.id);
 
       const coin = world.createEntity('gold coin', 'object');

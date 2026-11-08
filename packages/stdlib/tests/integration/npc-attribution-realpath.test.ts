@@ -87,7 +87,7 @@ describe('ADR-203 NPC attribution — real path', () => {
     const world = new WorldModel();
     world.setLanguageWords(ENGLISH_WORDS);
     const player = world.createEntity('yourself', EntityType.ACTOR);
-    player.add({ type: TraitType.ACTOR, isPlayer: true } as never);
+    player.add(new ActorTrait({ isPlayer: true }));
     player.add(new ActorTrait({ isPlayable: true }));
     world.setPlayer(player.id);
 

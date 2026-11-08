@@ -22,6 +22,7 @@ import {
   getConcealmentState,
   VisibilityBehavior,
   registerConcealedVisibilityBehavior,
+  ActorTrait,
 } from '@sharpee/world-model';
 import {
   createRealTestContext,
@@ -312,7 +313,7 @@ describe('ConcealedVisibilityBehavior', () => {
 
     // Create NPC in same room
     const npc = world.createEntity('guard', 'actor');
-    npc.add({ type: TraitType.ACTOR });
+    npc.add(new ActorTrait());
     world.moveEntity(npc.id, room.id);
 
     // PRECONDITION: NPC can see player before hiding
@@ -339,7 +340,7 @@ describe('ConcealedVisibilityBehavior', () => {
       quality: 'good',
     });
     const npc = world.createEntity('guard', 'actor');
-    npc.add({ type: TraitType.ACTOR });
+    npc.add(new ActorTrait());
     world.moveEntity(npc.id, room.id);
 
     // Hide
@@ -520,7 +521,7 @@ describe('end-to-end concealment pipeline', () => {
       quality: 'good',
     });
     const npc = world.createEntity('servant', 'actor');
-    npc.add({ type: TraitType.ACTOR });
+    npc.add(new ActorTrait());
     world.moveEntity(npc.id, room.id);
 
     // Step 1: Preconditions

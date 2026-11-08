@@ -11,7 +11,7 @@
  * suite does; assertions are on the resolution result and the scope level.
  */
 import { describe, test, expect, beforeEach } from 'vitest';
-import { AuthorModel, EntityType, IFEntity, IParsedCommand, TraitType, WorldModel, ActorTrait } from '@sharpee/world-model';
+import { AuthorModel, EntityType, IFEntity, IParsedCommand, TraitType, WorldModel, ActorTrait, IdentityTrait } from '@sharpee/world-model';
 import { LanguageProvider } from '@sharpee/if-domain';
 import { CommandValidator } from '../../../src/validation/command-validator';
 import { StandardActionRegistry } from '../../../src/actions/registry';
@@ -74,7 +74,7 @@ describe('GH #374: an unplaced entity never wins scope over a carried one', () =
 
     // Created and never placed: no location at all.
     escapeDress = author.createEntity('dress', EntityType.OBJECT);
-    escapeDress.add({ type: TraitType.IDENTITY, name: 'dress', aliases: ['gown', 'green dress'] });
+    escapeDress.add(new IdentityTrait({ name: 'dress', aliases: ['gown', 'green dress'] }));
     escapeDress.add({ type: TraitType.WEARABLE });
 
     const registry = new StandardActionRegistry();
@@ -91,7 +91,7 @@ describe('GH #374: an unplaced entity never wins scope over a carried one', () =
 
   test('`wear dress` with a carried day dress aliased "dress" resolves the carried one', () => {
     const dayDress = author.createEntity('daydress', EntityType.OBJECT);
-    dayDress.add({ type: TraitType.IDENTITY, name: 'daydress', aliases: ['dress', 'day dress'] });
+    dayDress.add(new IdentityTrait({ name: 'daydress', aliases: ['dress', 'day dress'] }));
     dayDress.add({ type: TraitType.WEARABLE });
     author.moveEntity(dayDress.id, player.id);
 
@@ -111,7 +111,7 @@ describe('GH #374: an unplaced entity never wins scope over a carried one', () =
 
   test('`wear gown`, an alias only the unplaced dress carries, is not found even with the day dress in hand', () => {
     const dayDress = author.createEntity('daydress', EntityType.OBJECT);
-    dayDress.add({ type: TraitType.IDENTITY, name: 'daydress', aliases: ['dress', 'day dress'] });
+    dayDress.add(new IdentityTrait({ name: 'daydress', aliases: ['dress', 'day dress'] }));
     dayDress.add({ type: TraitType.WEARABLE });
     author.moveEntity(dayDress.id, player.id);
 

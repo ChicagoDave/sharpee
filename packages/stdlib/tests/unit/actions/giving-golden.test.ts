@@ -11,7 +11,7 @@
 import { describe, test, expect } from 'vitest';
 import { givingAction } from '../../../src/actions/standard/giving';
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType } from '@sharpee/world-model';
+import { TraitType, ActorTrait, IdentityTrait } from '@sharpee/world-model';
 import {
   createRealTestContext,
   setupBasicWorld,
@@ -133,10 +133,7 @@ describe('givingAction (Golden Pattern)', () => {
       const { world, player, room, item } = TestData.withInventoryItem('book');
       
       const librarian = world.createEntity('librarian', 'actor');
-      librarian.add({ 
-        type: TraitType.ACTOR,
-        inventoryLimit: { maxItems: 2 }
-      });
+      librarian.add(new ActorTrait({ capacity: { maxItems: 2 } }));
       
       // Create items already held by librarian
       const book1 = world.createEntity('old book', 'object');
@@ -165,16 +162,10 @@ describe('givingAction (Golden Pattern)', () => {
       const { world, player, room } = setupBasicWorld();
       
       const boulder = world.createEntity('heavy boulder', 'object');
-      boulder.add({
-        type: TraitType.IDENTITY,
-        weight: 50
-      });
+      boulder.add(new IdentityTrait({ weight: 50 }));
       
       const child = world.createEntity('small child', 'actor');
-      child.add({ 
-        type: TraitType.ACTOR,
-        inventoryLimit: { maxWeight: 10 }
-      });
+      child.add(new ActorTrait({ capacity: { maxWeight: 10 } }));
       
       world.moveEntity(boulder.id, player.id);
       world.moveEntity(child.id, room.id);
@@ -202,12 +193,7 @@ describe('givingAction (Golden Pattern)', () => {
       const poison = world.createEntity('bottle of poison', 'object');
       
       const guard = world.createEntity('cautious guard', 'actor');
-      guard.add({ 
-        type: TraitType.ACTOR,
-        preferences: {
-          refuses: ['poison', 'weapon', 'explosive']
-        }
-      });
+      guard.add(new ActorTrait({ customProperties: { preferences: { refuses: ['poison', 'weapon', 'explosive'] } } }));
       
       world.moveEntity(poison.id, player.id);
       world.moveEntity(guard.id, room.id);
@@ -233,12 +219,7 @@ describe('givingAction (Golden Pattern)', () => {
       const flower = world.createEntity('beautiful flower', 'object');
       
       const maiden = world.createEntity('young maiden', 'actor');
-      maiden.add({ 
-        type: TraitType.ACTOR,
-        preferences: {
-          likes: ['flower', 'jewelry', 'gift']
-        }
-      });
+      maiden.add(new ActorTrait({ customProperties: { preferences: { likes: ['flower', 'jewelry', 'gift'] } } }));
       
       world.moveEntity(flower.id, player.id);
       world.moveEntity(maiden.id, room.id);
@@ -268,12 +249,7 @@ describe('givingAction (Golden Pattern)', () => {
       const garbage = world.createEntity('smelly garbage', 'object');
       
       const janitor = world.createEntity('tired janitor', 'actor');
-      janitor.add({ 
-        type: TraitType.ACTOR,
-        preferences: {
-          dislikes: ['garbage', 'trash', 'waste']
-        }
-      });
+      janitor.add(new ActorTrait({ customProperties: { preferences: { dislikes: ['garbage', 'trash', 'waste'] } } }));
       
       world.moveEntity(garbage.id, player.id);
       world.moveEntity(janitor.id, room.id);
@@ -300,7 +276,7 @@ describe('givingAction (Golden Pattern)', () => {
       
       const coin = world.createEntity('gold coin', 'object');
       const merchant = world.createEntity('merchant', 'actor');
-      merchant.add({ type: TraitType.ACTOR });
+      merchant.add(new ActorTrait());
       
       world.moveEntity(coin.id, player.id);
       world.moveEntity(merchant.id, room.id);
@@ -329,7 +305,7 @@ describe('givingAction (Golden Pattern)', () => {
       
       const book = world.createEntity('interesting book', 'object');
       const scholar = world.createEntity('old scholar', 'actor');
-      scholar.add({ type: TraitType.ACTOR });
+      scholar.add(new ActorTrait());
       // No preferences defined
       
       world.moveEntity(book.id, player.id);
@@ -357,7 +333,7 @@ describe('givingAction (Golden Pattern)', () => {
       
       const gem = world.createEntity('ruby', 'object');
       const thief = world.createEntity('thief', 'actor');
-      thief.add({ type: TraitType.ACTOR });
+      thief.add(new ActorTrait());
       
       world.moveEntity(gem.id, player.id);
       world.moveEntity(thief.id, room.id);
@@ -388,14 +364,15 @@ describe('Giving Action Edge Cases', () => {
     
     const ring = world.createEntity('golden ring', 'object');
     const dragon = world.createEntity('greedy dragon', 'actor');
-    dragon.add({ 
-      type: TraitType.ACTOR,
-      preferences: {
-        likes: ['gold', 'treasure', 'jewel'],
-        dislikes: ['food', 'wood'],
-        refuses: ['weapon']
+    dragon.add(new ActorTrait({
+      customProperties: {
+        preferences: {
+          likes: ['gold', 'treasure', 'jewel'],
+          dislikes: ['food', 'wood'],
+          refuses: ['weapon']
+        }
       }
-    });
+    }));
     
     world.moveEntity(ring.id, player.id);
     world.moveEntity(dragon.id, room.id);
@@ -419,16 +396,10 @@ describe('Giving Action Edge Cases', () => {
     const { world, player, room } = setupBasicWorld();
     
     const pkg = world.createEntity('small package', 'object');
-    pkg.add({
-      type: TraitType.IDENTITY,
-      weight: 3
-    });
+    pkg.add(new IdentityTrait({ weight: 3 }));
     
     const courier = world.createEntity('courier', 'actor');
-    courier.add({ 
-      type: TraitType.ACTOR,
-      inventoryLimit: { maxWeight: 20 }
-    });
+    courier.add(new ActorTrait({ capacity: { maxWeight: 20 } }));
     
     world.moveEntity(pkg.id, player.id);
     world.moveEntity(courier.id, room.id);
@@ -455,10 +426,7 @@ describe('Giving Action Edge Cases', () => {
     // No identity trait with weight
 
     const bird = world.createEntity('small bird', 'actor');
-    bird.add({
-      type: TraitType.ACTOR,
-      inventoryLimit: { maxWeight: 1 }
-    });
+    bird.add(new ActorTrait({ capacity: { maxWeight: 1 } }));
 
     world.moveEntity(feather.id, player.id);
     world.moveEntity(bird.id, room.id);
@@ -492,7 +460,7 @@ describe('World State Mutations', () => {
 
     const coin = world.createEntity('gold coin', 'object');
     const merchant = world.createEntity('merchant', 'actor');
-    merchant.add({ type: TraitType.ACTOR });
+    merchant.add(new ActorTrait());
 
     world.moveEntity(coin.id, player.id);
     world.moveEntity(merchant.id, room.id);
@@ -520,12 +488,7 @@ describe('World State Mutations', () => {
 
     const flower = world.createEntity('beautiful flower', 'object');
     const maiden = world.createEntity('young maiden', 'actor');
-    maiden.add({
-      type: TraitType.ACTOR,
-      preferences: {
-        likes: ['flower', 'jewelry', 'gift']
-      }
-    });
+    maiden.add(new ActorTrait({ customProperties: { preferences: { likes: ['flower', 'jewelry', 'gift'] } } }));
 
     world.moveEntity(flower.id, player.id);
     world.moveEntity(maiden.id, room.id);
@@ -553,10 +516,7 @@ describe('World State Mutations', () => {
 
     const newBook = world.createEntity('new book', 'object');
     const librarian = world.createEntity('librarian', 'actor');
-    librarian.add({
-      type: TraitType.ACTOR,
-      inventoryLimit: { maxItems: 2 }
-    });
+    librarian.add(new ActorTrait({ capacity: { maxItems: 2 } }));
 
     // Fill librarian's inventory
     const book1 = world.createEntity('old book', 'object');
@@ -591,12 +551,7 @@ describe('World State Mutations', () => {
 
     const poison = world.createEntity('bottle of poison', 'object');
     const guard = world.createEntity('cautious guard', 'actor');
-    guard.add({
-      type: TraitType.ACTOR,
-      preferences: {
-        refuses: ['poison', 'weapon', 'explosive']
-      }
-    });
+    guard.add(new ActorTrait({ customProperties: { preferences: { refuses: ['poison', 'weapon', 'explosive'] } } }));
 
     world.moveEntity(poison.id, player.id);
     world.moveEntity(guard.id, room.id);

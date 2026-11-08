@@ -14,7 +14,7 @@
 import { describe, test, expect, beforeEach, vi } from 'vitest';
 import { throwingAction } from '../../../src/actions/standard/throwing';
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType, WorldModel, Direction, ITrait, IdentityTrait, BreakableTrait, RoomTrait } from '@sharpee/world-model';
+import { TraitType, WorldModel, Direction, ITrait, IdentityTrait, BreakableTrait, RoomTrait, ActorTrait, ContainerTrait, SupporterTrait } from '@sharpee/world-model';
 import {
   createRealTestContext,
   expectEvent,
@@ -304,10 +304,7 @@ describe('throwingAction (Golden Pattern)', () => {
     test('should miss an agile actor, who ducks', () => {
       const { world, player, room, item: stone } = TestData.withInventoryItem('small stone');
       const npc = world.createEntity('nimble thief', 'actor');
-      npc.add({
-        type: TraitType.ACTOR,
-        customProperties: { agility: 8 }
-      } as unknown as ITrait);
+      npc.add(new ActorTrait({ customProperties: { agility: 8 } }));
       world.moveEntity(npc.id, room.id);
       
       const context = createRealTestContext(throwingAction, world,
@@ -331,10 +328,7 @@ describe('throwingAction (Golden Pattern)', () => {
     test('should allow an NPC that can catch to catch the thrown item', () => {
       const { world, player, room, item: apple } = TestData.withInventoryItem('red apple');
       const child = world.createEntity('young child', 'actor');
-      child.add({
-        type: TraitType.ACTOR,
-        customProperties: { canCatch: true }
-      } as unknown as ITrait);
+      child.add(new ActorTrait({ customProperties: { canCatch: true } }));
       world.moveEntity(child.id, room.id);
       
       const context = createRealTestContext(throwingAction, world,
@@ -362,9 +356,7 @@ describe('throwingAction (Golden Pattern)', () => {
     test('should land on supporter when hit', () => {
       const { world, player, room, item: coin } = TestData.withInventoryItem('silver coin');
       const table = world.createEntity('wooden table', 'object');
-      table.add({
-        type: TraitType.SUPPORTER
-      });
+      table.add(new SupporterTrait());
       world.moveEntity(table.id, room.id);
       
       const context = createRealTestContext(throwingAction, world,
@@ -389,9 +381,7 @@ describe('throwingAction (Golden Pattern)', () => {
     test('should land in open container', () => {
       const { world, player, room, item: ball } = TestData.withInventoryItem('rubber ball');
       const box = world.createEntity('open box', 'object');
-      box.add({
-        type: TraitType.CONTAINER
-      });
+      box.add(new ContainerTrait());
       box.add({
         type: TraitType.OPENABLE,
         isOpen: true
@@ -420,9 +410,7 @@ describe('throwingAction (Golden Pattern)', () => {
     test('should bounce off closed container', () => {
       const { world, player, room, item: pebble } = TestData.withInventoryItem('small pebble');
       const chest = world.createEntity('closed chest', 'object');
-      chest.add({
-        type: TraitType.CONTAINER
-      });
+      chest.add(new ContainerTrait());
       chest.add({
         type: TraitType.OPENABLE,
         isOpen: false
@@ -491,9 +479,7 @@ describe('throwingAction (Golden Pattern)', () => {
     test('should anger hit NPC', () => {
       const { world, player, room, item: rock } = TestData.withInventoryItem('heavy rock');
       const guard = world.createEntity('palace guard', 'actor');
-      guard.add({
-        type: TraitType.ACTOR
-      });
+      guard.add(new ActorTrait());
       world.moveEntity(guard.id, room.id);
       
       const context = createRealTestContext(throwingAction, world,
@@ -593,11 +579,7 @@ describe('throwingAction (Golden Pattern)', () => {
         const world = new WorldModel();
         world.setLanguageWords(ENGLISH_WORDS);
         const entity = world.createEntity(item.name || 'test item', 'object');
-        entity.add({
-          type: TraitType.IDENTITY,
-          name: item.name || 'test item',
-          description: item.description || ''
-        });
+        entity.add(new IdentityTrait({ name: item.name || 'test item', description: item.description || '' }));
         
         // Extract fragility check logic from action (matches implementation)
         const identity = entity.get(IdentityTrait)!;
@@ -677,7 +659,7 @@ describe('World State Mutations', () => {
   test('should actually move item onto supporter when thrown at it', () => {
     const { world, player, room, item: coin } = TestData.withInventoryItem('silver coin');
     const table = world.createEntity('wooden table', 'object');
-    table.add({ type: TraitType.SUPPORTER });
+    table.add(new SupporterTrait());
     world.moveEntity(table.id, room.id);
 
     // VERIFY PRECONDITION: coin is in player's inventory
@@ -701,7 +683,7 @@ describe('World State Mutations', () => {
   test('should actually move item into open container when thrown at it', () => {
     const { world, player, room, item: ball } = TestData.withInventoryItem('rubber ball');
     const box = world.createEntity('open box', 'object');
-    box.add({ type: TraitType.CONTAINER });
+    box.add(new ContainerTrait());
     box.add({ type: TraitType.OPENABLE, isOpen: true });
     world.moveEntity(box.id, room.id);
 
@@ -726,7 +708,7 @@ describe('World State Mutations', () => {
   test('should move item to floor when bouncing off closed container', () => {
     const { world, player, room, item: pebble } = TestData.withInventoryItem('small pebble');
     const chest = world.createEntity('closed chest', 'object');
-    chest.add({ type: TraitType.CONTAINER });
+    chest.add(new ContainerTrait());
     chest.add({ type: TraitType.OPENABLE, isOpen: false });
     world.moveEntity(chest.id, room.id);
 

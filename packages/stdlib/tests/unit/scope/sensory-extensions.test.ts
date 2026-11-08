@@ -4,7 +4,7 @@
  */
 
 import { describe, test, expect, beforeEach } from 'vitest';
-import { WorldModel, AuthorModel, TraitType, IFEntity, EntityType, IdentityTrait, RoomTrait, LightSourceTrait, ActorTrait } from '@sharpee/world-model';
+import { WorldModel, AuthorModel, TraitType, IFEntity, EntityType, IdentityTrait, RoomTrait, LightSourceTrait, ActorTrait, ContainerTrait } from '@sharpee/world-model';
 import { StandardScopeResolver } from '../../../src/scope/scope-resolver';
 import { ScopeLevel } from '../../../src/scope/types';
 import { TEST_MARKER_TRAIT } from '../../test-utils';
@@ -29,11 +29,11 @@ describe('Sensory Extensions', () => {
     // Create test world using AuthorModel
     room = author.createEntity('Living Room', EntityType.ROOM);
     room.add({ type: TraitType.ROOM });
-    room.add({ type: TraitType.IDENTITY, name: 'Living Room' });
+    room.add(new IdentityTrait({ name: 'Living Room' }));
 
     hallway = author.createEntity('Hallway', EntityType.ROOM);
     hallway.add({ type: TraitType.ROOM });
-    hallway.add({ type: TraitType.IDENTITY, name: 'Hallway' });
+    hallway.add(new IdentityTrait({ name: 'Hallway' }));
 
     // An inert marker on each room (these fixtures never traverse; the
     // retired exit-as-entity trait used to stand here, ADR-378 D1b)
@@ -42,8 +42,8 @@ describe('Sensory Extensions', () => {
 
     player = author.createEntity('Player', EntityType.ACTOR);
     player.add(new ActorTrait({ isPlayer: true }));
-    player.add({ type: TraitType.CONTAINER });
-    player.add({ type: TraitType.IDENTITY, name: 'Player' });
+    player.add(new ContainerTrait());
+    player.add(new IdentityTrait({ name: 'Player' }));
     
     author.moveEntity(player.id, room.id);
     player.add(new ActorTrait({ isPlayable: true }));
@@ -53,7 +53,7 @@ describe('Sensory Extensions', () => {
   describe('Hearing', () => {
     test('should hear entities in same room', () => {
       const radio = author.createEntity('radio', EntityType.OBJECT);
-      radio.add({ type: TraitType.IDENTITY, name: 'radio' });
+      radio.add(new IdentityTrait({ name: 'radio' }));
       author.moveEntity(radio.id, room.id);
 
       expect(resolver.canHear(player, radio)).toBe(true);
@@ -73,8 +73,8 @@ describe('Sensory Extensions', () => {
       author.moveEntity(door.id, room.id);
 
       const npc = author.createEntity('Bob', EntityType.ACTOR);
-      npc.add({ type: TraitType.ACTOR });
-      npc.add({ type: TraitType.IDENTITY, name: 'Bob' });
+      npc.add(new ActorTrait());
+      npc.add(new IdentityTrait({ name: 'Bob' }));
       author.moveEntity(npc.id, hallway.id);
 
       expect(resolver.canHear(player, npc)).toBe(true);
@@ -95,8 +95,8 @@ describe('Sensory Extensions', () => {
       author.moveEntity(door.id, room.id);
 
       const npc = author.createEntity('Bob', EntityType.ACTOR);
-      npc.add({ type: TraitType.ACTOR });
-      npc.add({ type: TraitType.IDENTITY, name: 'Bob' });
+      npc.add(new ActorTrait());
+      npc.add(new IdentityTrait({ name: 'Bob' }));
       author.moveEntity(npc.id, hallway.id);
 
       expect(resolver.canHear(player, npc)).toBe(true);
@@ -108,7 +108,7 @@ describe('Sensory Extensions', () => {
       basement.add({ type: TraitType.ROOM });
 
       const npc = author.createEntity('Bob', EntityType.ACTOR);
-      npc.add({ type: TraitType.ACTOR });
+      npc.add(new ActorTrait());
       author.moveEntity(npc.id, basement.id);
 
       expect(resolver.canHear(player, npc)).toBe(false);
@@ -118,7 +118,7 @@ describe('Sensory Extensions', () => {
     test('should get all audible entities', () => {
       // In same room
       const radio = author.createEntity('radio', EntityType.OBJECT);
-      radio.add({ type: TraitType.IDENTITY, name: 'radio' });
+      radio.add(new IdentityTrait({ name: 'radio' }));
       author.moveEntity(radio.id, room.id);
 
       // In connected room with door
@@ -133,15 +133,15 @@ describe('Sensory Extensions', () => {
       author.moveEntity(door.id, room.id);
 
       const npc = author.createEntity('Bob', EntityType.ACTOR);
-      npc.add({ type: TraitType.ACTOR });
-      npc.add({ type: TraitType.IDENTITY, name: 'Bob' });
+      npc.add(new ActorTrait());
+      npc.add(new IdentityTrait({ name: 'Bob' }));
       author.moveEntity(npc.id, hallway.id);
 
       // In unconnected room
       const basement = author.createEntity('Basement', EntityType.ROOM);
       basement.add({ type: TraitType.ROOM });
       const mouse = author.createEntity('mouse', EntityType.OBJECT);
-      mouse.add({ type: TraitType.IDENTITY, name: 'mouse' });
+      mouse.add(new IdentityTrait({ name: 'mouse' }));
       author.moveEntity(mouse.id, basement.id);
 
       const audible = resolver.getAudible(player);
@@ -164,7 +164,7 @@ describe('Sensory Extensions', () => {
     test('should smell food items in same room', () => {
       const bread = author.createEntity('fresh bread', EntityType.OBJECT);
       bread.add({ type: TraitType.EDIBLE });
-      bread.add({ type: TraitType.IDENTITY, name: 'fresh bread' });
+      bread.add(new IdentityTrait({ name: 'fresh bread' }));
       author.moveEntity(bread.id, room.id);
 
       expect(resolver.canSmell(player, bread)).toBe(true);
@@ -172,8 +172,8 @@ describe('Sensory Extensions', () => {
 
     test('should smell actors in same room', () => {
       const npc = author.createEntity('Bob', EntityType.ACTOR);
-      npc.add({ type: TraitType.ACTOR });
-      npc.add({ type: TraitType.IDENTITY, name: 'Bob' });
+      npc.add(new ActorTrait());
+      npc.add(new IdentityTrait({ name: 'Bob' }));
       author.moveEntity(npc.id, room.id);
 
       expect(resolver.canSmell(player, npc)).toBe(true);
@@ -192,7 +192,7 @@ describe('Sensory Extensions', () => {
 
       const bread = author.createEntity('fresh bread', EntityType.OBJECT);
       bread.add({ type: TraitType.EDIBLE });
-      bread.add({ type: TraitType.IDENTITY, name: 'fresh bread' });
+      bread.add(new IdentityTrait({ name: 'fresh bread' }));
       author.moveEntity(bread.id, hallway.id);
 
       expect(resolver.canSmell(player, bread)).toBe(true);
@@ -213,7 +213,7 @@ describe('Sensory Extensions', () => {
 
       const bread = author.createEntity('fresh bread', EntityType.OBJECT);
       bread.add({ type: TraitType.EDIBLE });
-      bread.add({ type: TraitType.IDENTITY, name: 'fresh bread' });
+      bread.add(new IdentityTrait({ name: 'fresh bread' }));
       author.moveEntity(bread.id, hallway.id);
 
       expect(resolver.canSmell(player, bread)).toBe(false);
@@ -221,7 +221,7 @@ describe('Sensory Extensions', () => {
 
     test('should not smell non-scented items', () => {
       const rock = author.createEntity('rock', EntityType.OBJECT);
-      rock.add({ type: TraitType.IDENTITY, name: 'rock' });
+      rock.add(new IdentityTrait({ name: 'rock' }));
       author.moveEntity(rock.id, room.id);
 
       expect(resolver.canSmell(player, rock)).toBe(false);
@@ -235,7 +235,7 @@ describe('Sensory Extensions', () => {
       roomTrait.requiresLight = true;
 
       const ball = author.createEntity('ball', EntityType.OBJECT);
-      ball.add({ type: TraitType.IDENTITY, name: 'ball' });
+      ball.add(new IdentityTrait({ name: 'ball' }));
       author.moveEntity(ball.id, room.id);
 
       expect(resolver.canSee(player, ball)).toBe(false);
@@ -250,12 +250,12 @@ describe('Sensory Extensions', () => {
 
       // Give player a lit torch (proper LightSourceTrait)
       const torch = author.createEntity('torch', EntityType.OBJECT);
-      torch.add({ type: TraitType.IDENTITY, name: 'torch' });
+      torch.add(new IdentityTrait({ name: 'torch' }));
       torch.add({ type: TraitType.LIGHT_SOURCE, isLit: true });
       author.moveEntity(torch.id, player.id);
 
       const ball = author.createEntity('ball', EntityType.OBJECT);
-      ball.add({ type: TraitType.IDENTITY, name: 'ball' });
+      ball.add(new IdentityTrait({ name: 'ball' }));
       author.moveEntity(ball.id, room.id);
 
       expect(resolver.canSee(player, ball)).toBe(true);
@@ -271,7 +271,7 @@ describe('Sensory Extensions', () => {
       player.add({ type: TraitType.LIGHT_SOURCE, isLit: true });
 
       const ball = author.createEntity('ball', EntityType.OBJECT);
-      ball.add({ type: TraitType.IDENTITY, name: 'ball' });
+      ball.add(new IdentityTrait({ name: 'ball' }));
       author.moveEntity(ball.id, room.id);
 
       expect(resolver.canSee(player, ball)).toBe(true);
@@ -280,7 +280,7 @@ describe('Sensory Extensions', () => {
     test('should see in lit rooms', () => {
       // Rooms are lit by default
       const ball = author.createEntity('ball', EntityType.OBJECT);
-      ball.add({ type: TraitType.IDENTITY, name: 'ball' });
+      ball.add(new IdentityTrait({ name: 'ball' }));
       author.moveEntity(ball.id, room.id);
 
       expect(resolver.canSee(player, ball)).toBe(true);
