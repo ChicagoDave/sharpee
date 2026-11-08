@@ -8,6 +8,7 @@ import { IFActions } from '../../../src/actions/constants';
 import { ActionContext } from '../../../src/actions/enhanced-types';
 import { WorldModel, AuthorModel } from '@sharpee/world-model';
 import { createRealTestContext, setupBasicWorld, createCommand, executeWithValidation, expectEvent } from '../../test-utils';
+import { runReportPhase } from '../../../src/actions/lifecycle/phase-runner';
 
 describe('about action', () => {
   let world: WorldModel;
@@ -79,14 +80,14 @@ describe('about action', () => {
 
   describe('report phase', () => {
     it('should emit about_displayed event', () => {
-      const events = aboutAction.report(context);
+      const events = runReportPhase(aboutAction, context);
 
       expect(events).toHaveLength(1);
       expect(events[0].type).toBe('if.event.about_displayed');
     });
 
     it('should emit event with messageId and params', () => {
-      const events = aboutAction.report(context);
+      const events = runReportPhase(aboutAction, context);
 
       expectEvent(events, 'if.event.about_displayed', {
         messageId: 'if.action.about.success',
@@ -99,7 +100,7 @@ describe('about action', () => {
     });
 
     it('should create well-formed semantic event', () => {
-      const events = aboutAction.report(context);
+      const events = runReportPhase(aboutAction, context);
       const event = events[0];
 
       expect(event).toHaveProperty('type');

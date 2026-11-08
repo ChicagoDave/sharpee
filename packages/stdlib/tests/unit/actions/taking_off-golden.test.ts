@@ -135,12 +135,9 @@ describe('takingOffAction (Golden Pattern)', () => {
     test('should fail when item is cursed', () => {
       const { world, player } = setupBasicWorld();
       const ring = world.createEntity('cursed ring', 'object');
-      ring.add({
-        type: TraitType.WEARABLE,
-        worn: true,
-        wornBy: player.id,
-        cursed: true  // Can't be removed
-      });
+      // `cursed` is read by wearable-shared.ts:201 through a cast; WearableTrait does
+      // not declare it (sharpee #664). The intersection carries it until ruled.
+      ring.add(Object.assign(new WearableTrait({ isWorn: true, wornBy: player.id }), { cursed: true }));
       world.moveEntity(ring.id, player.id);
 
       const context = createRealTestContext(takingOffAction, world, createCommand(IFActions.TAKING_OFF, {

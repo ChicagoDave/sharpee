@@ -126,7 +126,7 @@ describe('steering an open vehicle (D3, D8)', () => {
     world.registerEvaluator(`exit.message.${expanse.id}.NORTH`, () => 'Ice closes the way north.');
     const refused = steer(world, Direction.NORTHEAST);
     expect(messageIds(refused)).toContain('if.action.going.movement_blocked');
-    expect(refused[0].data.params.message).toBe('Ice closes the way north.');
+    expect(dataOf<{ params?: { message?: string } }>(refused[0])?.params?.message).toBe('Ice closes the way north.');
     expect(model(skiff).heading).toBeNull();
     expect(messageIds(steer(world, Direction.SOUTH))).toContain('if.action.steering.steered');
   });
@@ -272,17 +272,17 @@ describe('seeing (D6)', () => {
     // At (10,6): the Derelict 4 units east, the cask 5 units southwest.
     model(skiff).position = { x: 10, y: 6 };
     const rows = run(lookingAction, world).filter((e) => e.type === 'if.event.sighted');
-    expect(rows.map((e) => e.data.thingId)).toEqual([derelict.id, cask.id]);
+    expect(rows.map((e) => dataOf<{ thingId?: string }>(e)?.thingId)).toEqual([derelict.id, cask.id]);
     expect(rows[0].data).toMatchObject({ messageId: 'if.action.looking.sighting_in_the_distance', band: 'in-the-distance', direction: 'EAST' });
     expect(rows[1].data).toMatchObject({ messageId: 'if.action.looking.sighting_on_the_horizon', direction: 'SOUTHWEST' });
-    expect(rows.map((e) => e.data.thingId)).not.toContain(platform.id);
+    expect(rows.map((e) => dataOf<{ thingId?: string }>(e)?.thingId)).not.toContain(platform.id);
 
     world.moveEntity(player.id, platform.id);
     model(skiff).position = { x: 5, y: 3 };
     // From (3,3) with sight 4: the skiff at 2 and the cask at 3 are in the distance.
     const ashore = run(lookingAction, world).filter((e) => e.type === 'if.event.sighted');
-    expect(ashore.map((e) => e.data.thingId)).toEqual([skiff.id, cask.id]);
-    expect(ashore[0].data.messageId).toBe('if.action.looking.sighting_in_the_distance');
+    expect(ashore.map((e) => dataOf<{ thingId?: string }>(e)?.thingId)).toEqual([skiff.id, cask.id]);
+    expect(dataOf<{ messageId?: string }>(ashore[0])?.messageId).toBe('if.action.looking.sighting_in_the_distance');
 
     world.moveEntity(player.id, derelict.id);
     expect(run(lookingAction, world).filter((e) => e.type === 'if.event.sighted')).toEqual([]);
@@ -297,7 +297,7 @@ describe('seeing (D6)', () => {
     expect(dataOf<{ params?: { description?: string } }>(afar[0])?.params?.description).toBe('a long dead hull');
     const near = run(examiningAction, world, cask);
     expect(messageIds(near)).toEqual(['if.action.examining.examined']);
-    expect(near[0].data.params.description).toBe('A tarred cask.');
+    expect(dataOf<{ params?: { description?: string } }>(near[0])?.params?.description).toBe('A tarred cask.');
   });
 
   test('examining a far open vehicle shows the distant prose its model carries (D19)', () => {
@@ -306,7 +306,7 @@ describe('seeing (D6)', () => {
     model(skiff).position = { x: 6, y: 3 };
     const afar = run(examiningAction, world, skiff);
     expect(messageIds(afar)).toEqual(['if.action.examining.seen_from_afar']);
-    expect(afar[0].data.params.description).toBe('a glint of hull');
+    expect(dataOf<{ params?: { description?: string } }>(afar[0])?.params?.description).toBe('a glint of hull');
   });
 
   test('moored at a landmark, a course departs from the landmark\'s row (F8)', () => {

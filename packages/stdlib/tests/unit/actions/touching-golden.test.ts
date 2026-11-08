@@ -12,7 +12,7 @@
 import { describe, test, expect } from 'vitest';
 import { touchingAction } from '../../../src/actions/standard/touching';
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType, ContainerTrait } from '@sharpee/world-model';
+import { TraitType, ContainerTrait, EdibleTrait } from '@sharpee/world-model';
 import {
   createRealTestContext,
   expectEvent,
@@ -263,10 +263,9 @@ describe('touchingAction (Golden Pattern)', () => {
       bottle.add(new ContainerTrait());
       
       const water = world.createEntity('water', 'object');
-      water.add({
-        type: TraitType.EDIBLE,
-        isDrink: true
-      });
+      // `isDrink` is read by touching.ts:181 through a cast; EdibleTrait declares
+      // `liquid` instead (sharpee #664). The intersection carries it until ruled.
+      water.add(Object.assign(new EdibleTrait(), { isDrink: true }));
       
       world.moveEntity(bottle.id, player.id);
       world.moveEntity(water.id, bottle.id);

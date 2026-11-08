@@ -17,8 +17,10 @@ import {
   createRealTestContext,
   setupBasicWorld,
   createCommand,
-  expectEvent
+  expectEvent,
+  dataOf
 } from '../../test-utils';
+import { runReportPhase, runBlockedPhase } from '../../../src/actions/lifecycle/phase-runner';
 import type { ActionContext, ValidationResult } from '../../../src/actions/enhanced-types';
 import type { ISemanticEvent } from '@sharpee/core';
 import { ScopeLevel } from '../../../src/scope/types';
@@ -90,7 +92,7 @@ describe('attackingAction - Three-Phase Implementation', () => {
       // Execute first to populate shared data
       attackingAction.execute(context);
       
-      const events = attackingAction.report(context);
+      const events = runReportPhase(attackingAction, context);
       
       expect(Array.isArray(events)).toBe(true);
       expect(events.length).toBeGreaterThan(0);
@@ -339,7 +341,7 @@ describe('attackingAction - Three-Phase Implementation', () => {
       context = createRealTestContext(attackingAction, world, command);
 
       attackingAction.execute(context);
-      const events = attackingAction.report(context);
+      const events = runReportPhase(attackingAction, context);
 
       const attackedEvent = events.find(e => e.type === 'if.event.attacked');
       expect(attackedEvent).toBeDefined();
@@ -360,7 +362,7 @@ describe('attackingAction - Three-Phase Implementation', () => {
       context = createRealTestContext(attackingAction, world, command);
 
       attackingAction.execute(context);
-      const events = attackingAction.report(context);
+      const events = runReportPhase(attackingAction, context);
 
       // The action emits if.event.attacked (not action.success) with a messageId
       const attackedEvent = events.find(e => e.type === 'if.event.attacked');
@@ -376,7 +378,7 @@ describe('attackingAction - Three-Phase Implementation', () => {
       expect(validationResult.valid).toBe(false);
 
       // Validation failures go through the blocked() method, not report()
-      const events = attackingAction.blocked(context, validationResult);
+      const events = runBlockedPhase(attackingAction, context, validationResult);
 
       expect(events.length).toBe(1);
       expect(events[0].type).toBe('if.event.attacked');
@@ -398,7 +400,7 @@ describe('attackingAction - Three-Phase Implementation', () => {
       context = createRealTestContext(attackingAction, world, command);
 
       attackingAction.execute(context);
-      const events = attackingAction.report(context);
+      const events = runReportPhase(attackingAction, context);
 
       const attackedEvent = events.find(e => e.type === 'if.event.attacked');
       expect(attackedEvent).toBeDefined();
@@ -415,7 +417,7 @@ describe('attackingAction - Three-Phase Implementation', () => {
       context = createRealTestContext(attackingAction, world, command);
 
       const validationResult = { valid: false as const, error: 'not_reachable', params: { target: 'goblin' } };
-      const events = attackingAction.blocked(context, validationResult);
+      const events = runBlockedPhase(attackingAction, context, validationResult);
 
       expect(events.length).toBe(1);
       expect(events[0].type).toBe('if.event.attacked');
@@ -437,12 +439,12 @@ describe('attackingAction - Three-Phase Implementation', () => {
       context = createRealTestContext(attackingAction, world, command);
 
       attackingAction.execute(context);
-      const events = attackingAction.report(context);
+      const events = runReportPhase(attackingAction, context);
 
       // The action emits if.event.attacked with a messageId containing target_broke
       const attackedEvent = events.find(e => e.type === 'if.event.attacked');
       expect(attackedEvent).toBeDefined();
-      expect(attackedEvent?.data.messageId).toContain('target_broke');
+      expect(dataOf<{ messageId?: string }>(attackedEvent)?.messageId).toContain('target_broke');
     });
 
     test('should handle ineffective attack', () => {
@@ -456,7 +458,7 @@ describe('attackingAction - Three-Phase Implementation', () => {
       context = createRealTestContext(attackingAction, world, command);
 
       attackingAction.execute(context);
-      const events = attackingAction.report(context);
+      const events = runReportPhase(attackingAction, context);
 
       // Ineffective attacks emit if.event.attacked with failed: true
       const attackedEvent = events.find(e => e.type === 'if.event.attacked');

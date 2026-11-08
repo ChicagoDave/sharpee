@@ -168,7 +168,7 @@ describe('StandardWitnessSystem', () => {
       expect(knowledge!.lastKnownLocation).toBe(player.id);
       expect(knowledge!.lastSeen).toBe(timestamp);
       expect(knowledge!.movementHistory).toHaveLength(1);
-      expect(knowledge!.movementHistory[0]).toMatchObject({
+      expect(knowledge!.movementHistory?.[0]).toMatchObject({
         from: room.id,
         to: player.id,
         witnessedAt: timestamp

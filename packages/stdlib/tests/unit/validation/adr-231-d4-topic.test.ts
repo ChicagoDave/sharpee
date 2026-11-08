@@ -30,6 +30,7 @@ import {
   createCommand,
   parseCommand
 } from '../../test-utils';
+import { runReportPhase } from '../../../src/actions/lifecycle/phase-runner';
 
 /** English, handed to hand-built worlds as the language's words (ADR-387 D2). */
 const ENGLISH_WORDS = { selfWords: ['me', 'myself', 'self', 'yourself'], nameStopwords: ['the', 'a', 'an', 'of'] };
@@ -198,7 +199,7 @@ describe('asking/telling report the first-class topic (ADR-231 D4)', () => {
     expect(validation.valid).toBe(true);
 
     askingAction.execute(context);
-    const events = askingAction.report(context);
+    const events = runReportPhase(askingAction, context);
     const asked = events.find(e => e.type === 'if.event.asked')!;
     expect(asked).toBeDefined();
     expect((asked.data as any).messageId).toBe('if.action.asking.unknown_topic');
@@ -219,7 +220,7 @@ describe('asking/telling report the first-class topic (ADR-231 D4)', () => {
 
     expect(askingAction.validate(context).valid).toBe(true);
     askingAction.execute(context);
-    const events = askingAction.report(context);
+    const events = runReportPhase(askingAction, context);
     const asked = events.find(e => e.type === 'if.event.asked')!;
     expect((asked.data as any).topicEntityId).toBe(lantern.id);
     expect((asked.data as any).params.topic).toBe('lantern');
@@ -237,7 +238,7 @@ describe('asking/telling report the first-class topic (ADR-231 D4)', () => {
 
     expect(tellingAction.validate(context).valid).toBe(true);
     tellingAction.execute(context);
-    const events = tellingAction.report(context);
+    const events = runReportPhase(tellingAction, context);
     const told = events.find(e => e.type === 'if.event.told')!;
     expect((told.data as any).topicEntityId).toBe(lantern.id);
     expect((told.data as any).params.topic).toBe('lantern');
@@ -254,7 +255,7 @@ describe('asking/telling report the first-class topic (ADR-231 D4)', () => {
     expect(validation.valid).toBe(true);
 
     tellingAction.execute(context);
-    const events = tellingAction.report(context);
+    const events = runReportPhase(tellingAction, context);
     const told = events.find(e => e.type === 'if.event.told')!;
     expect(told).toBeDefined();
     expect((told.data as any).messageId).toBe('if.action.telling.not_interested');

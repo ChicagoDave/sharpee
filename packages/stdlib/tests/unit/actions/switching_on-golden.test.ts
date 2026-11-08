@@ -21,8 +21,10 @@ import {
   expectEvent,
   executeWithValidation,
   TestData,
-  createCommand
+  createCommand,
+  dataOf
 } from '../../test-utils';
+import type { SwitchedOnEventData } from '../../../src/actions/standard/switching_on/switching_on-events';
 
 describe('switchingOnAction (Golden Pattern)', () => {
   describe('Action Metadata', () => {
@@ -203,11 +205,10 @@ describe('switchingOnAction (Golden Pattern)', () => {
       const { world, player, room } = setupBasicWorld();
       const lamp = world.createEntity('desk lamp', 'object');
       lamp.add(new SwitchableTrait({ isOn: false }));
-      lamp.add({
-        type: TraitType.LIGHT_SOURCE,
-        radius: 2,
-        intensity: 'bright'
-      });
+      // `radius` and `intensity` are read by switching-shared.ts:38-39 through a cast;
+      // LightSourceTrait declares neither (sharpee #664). The intersection carries
+      // them until ruled.
+      lamp.add(Object.assign(new LightSourceTrait(), { radius: 2, intensity: 'bright' }));
       world.moveEntity(lamp.id, room.id);
       
       const context = createRealTestContext(switchingOnAction, world, createCommand(IFActions.SWITCHING_ON, {
@@ -236,10 +237,7 @@ describe('switchingOnAction (Golden Pattern)', () => {
       
       const flashlight = world.createEntity('LED flashlight', 'object');
       flashlight.add(new SwitchableTrait({ isOn: false }));
-      flashlight.add({
-        type: TraitType.LIGHT_SOURCE,
-        radius: 3
-      });
+      flashlight.add(Object.assign(new LightSourceTrait(), { radius: 3 })); // radius: sharpee #664
       
       world.moveEntity(flashlight.id, player.id); // Held by player
       
@@ -356,7 +354,7 @@ describe('switchingOnAction (Golden Pattern)', () => {
       
       // Should not have willOpen flag
       const switchedEvent = events.find(e => e.type === 'if.event.switched_on');
-      expect(switchedEvent?.data.willOpen).toBeUndefined();
+      expect(dataOf<SwitchedOnEventData>(switchedEvent)?.willOpen).toBeUndefined();
       
       // Should emit device_humming message
       expectEvent(events, 'if.event.switched_on', {
@@ -541,11 +539,7 @@ describe('World State Mutations', () => {
     const { world, player, room } = setupBasicWorld();
     const flashlight = world.createEntity('LED flashlight', 'object');
     flashlight.add(new SwitchableTrait({ isOn: false }));
-    flashlight.add({
-      type: TraitType.LIGHT_SOURCE,
-      isLit: false,
-      radius: 3
-    });
+    flashlight.add(Object.assign(new LightSourceTrait({ isLit: false }), { radius: 3 })); // radius: sharpee #664
     world.moveEntity(flashlight.id, player.id);
 
     // VERIFY PRECONDITION: flashlight is off and not lit

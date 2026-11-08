@@ -141,22 +141,16 @@ describe('wearingAction (Golden Pattern)', () => {
       
       // Already wearing a hat
       const oldHat = world.createEntity('old hat', 'object');
-      // Left as a literal on purpose: wearable-shared's body-part conflict check
-      // fires only when `layer` is undefined, which WearableTrait's constructor
-      // never produces (it defaults layer to 1). Awaiting a platform ruling.
-      oldHat.add({
-        type: TraitType.WEARABLE,
-        worn: true,
-        bodyPart: 'head'
-      });
+      // wearable-shared.ts:54's body-part conflict check fires only when `layer` is
+      // undefined, which WearableTrait's constructor never produces (it defaults
+      // layer to 1; sharpee #664). Clearing it this way keeps the test on that path
+      // until it is ruled.
+      const unlayered: { layer: number | undefined } = { layer: undefined };
+      oldHat.add(Object.assign(new WearableTrait({ isWorn: true, bodyPart: 'head' }), unlayered));
       
       // Trying to wear another hat
       const newHat = world.createEntity('new hat', 'object');
-      newHat.add({
-        type: TraitType.WEARABLE,
-        worn: false,
-        bodyPart: 'head'
-      });
+      newHat.add(Object.assign(new WearableTrait({ isWorn: false, bodyPart: 'head' }), unlayered));
       
       world.moveEntity(oldHat.id, player.id);
       world.moveEntity(newHat.id, player.id);

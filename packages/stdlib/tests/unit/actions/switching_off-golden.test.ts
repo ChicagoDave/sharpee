@@ -21,8 +21,10 @@ import {
   expectEvent,
   executeWithValidation,
   TestData,
-  createCommand
+  createCommand,
+  dataOf
 } from '../../test-utils';
+import type { SwitchedOffEventData } from '../../../src/actions/standard/switching_off/switching_off-events';
 
 describe('switchingOffAction (Golden Pattern)', () => {
   describe('Action Metadata', () => {
@@ -213,10 +215,9 @@ describe('switchingOffAction (Golden Pattern)', () => {
       
       const lamp = world.createEntity('bright lamp', 'object');
       lamp.add(new SwitchableTrait({ isOn: true }));
-      lamp.add({
-        type: TraitType.LIGHT_SOURCE,
-        radius: 3
-      });
+      // `radius` is read by switching-shared.ts:38 through a cast; LightSourceTrait
+      // does not declare it (sharpee #664). The intersection carries it until ruled.
+      lamp.add(Object.assign(new LightSourceTrait(), { radius: 3 }));
       
       world.moveEntity(lamp.id, room.id);
       
@@ -319,11 +320,9 @@ describe('switchingOffAction (Golden Pattern)', () => {
       const door = world.createEntity('automatic door', 'object');
       door.add(new SwitchableTrait({ isOn: true }));
       door.add(new ContainerTrait()); // Passage
-      door.add({
-        type: TraitType.OPENABLE,
-        isOpen: true,
-        autoCloseOnOff: true
-      });
+      // `autoCloseOnOff` is read by switching_off.ts:201 through a cast; OpenableTrait
+      // does not declare it (sharpee #664). The intersection carries it until ruled.
+      door.add(Object.assign(new OpenableTrait({ isOpen: true }), { autoCloseOnOff: true }));
       world.moveEntity(door.id, room.id);
       
       const context = createRealTestContext(switchingOffAction, world, createCommand(IFActions.SWITCHING_OFF, {
@@ -349,11 +348,7 @@ describe('switchingOffAction (Golden Pattern)', () => {
       const gate = world.createEntity('security gate', 'object');
       gate.add(new SwitchableTrait({ isOn: true }));
       gate.add(new ContainerTrait());
-      gate.add({
-        type: TraitType.OPENABLE,
-        isOpen: true,
-        autoCloseOnOff: false // No auto-close
-      });
+      gate.add(Object.assign(new OpenableTrait({ isOpen: true }), { autoCloseOnOff: false })); // no auto-close (sharpee #664)
       world.moveEntity(gate.id, room.id);
       
       const context = createRealTestContext(switchingOffAction, world, createCommand(IFActions.SWITCHING_OFF, {
@@ -364,7 +359,7 @@ describe('switchingOffAction (Golden Pattern)', () => {
       
       // Should not have willClose flag
       const switchedEvent = events.find(e => e.type === 'if.event.switched_off');
-      expect(switchedEvent?.data.willClose).toBeUndefined();
+      expect(dataOf<SwitchedOffEventData>(switchedEvent)?.willClose).toBeUndefined();
       
       // Should emit device_stops message
       expectEvent(events, 'if.event.switched_off', {
@@ -377,11 +372,7 @@ describe('switchingOffAction (Golden Pattern)', () => {
       const portal = world.createEntity('energy portal', 'object');
       portal.add(new SwitchableTrait({ isOn: true }));
       portal.add(new ContainerTrait());
-      portal.add({
-        type: TraitType.OPENABLE,
-        isOpen: false, // Already closed
-        autoCloseOnOff: true
-      });
+      portal.add(Object.assign(new OpenableTrait({ isOpen: false }), { autoCloseOnOff: true })); // already closed (sharpee #664)
       world.moveEntity(portal.id, room.id);
       
       const context = createRealTestContext(switchingOffAction, world, createCommand(IFActions.SWITCHING_OFF, {
@@ -392,7 +383,7 @@ describe('switchingOffAction (Golden Pattern)', () => {
       
       // Should not have willClose flag
       const switchedEvent = events.find(e => e.type === 'if.event.switched_off');
-      expect(switchedEvent?.data.willClose).toBeUndefined();
+      expect(dataOf<SwitchedOffEventData>(switchedEvent)?.willClose).toBeUndefined();
     });
   });
 
@@ -527,11 +518,7 @@ describe('World State Mutations', () => {
     const { world, player, room } = setupBasicWorld();
     const flashlight = world.createEntity('LED flashlight', 'object');
     flashlight.add(new SwitchableTrait({ isOn: true }));
-    flashlight.add({
-      type: TraitType.LIGHT_SOURCE,
-      isLit: true,
-      radius: 3
-    });
+    flashlight.add(Object.assign(new LightSourceTrait({ isLit: true }), { radius: 3 })); // radius: sharpee #664
     world.moveEntity(flashlight.id, player.id);
 
     // VERIFY PRECONDITION: flashlight is on and lit

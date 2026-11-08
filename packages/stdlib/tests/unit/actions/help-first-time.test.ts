@@ -13,7 +13,7 @@ import { helpAction } from '../../../src/actions/standard/help/help';
 import { IFActions } from '../../../src/actions/constants';
 import { ActionContext } from '../../../src/actions/enhanced-types';
 import { WorldModel, StandardCapabilities } from '@sharpee/world-model';
-import { createRealTestContext, setupBasicWorld, createCommand } from '../../test-utils';
+import { createRealTestContext, setupBasicWorld, createCommand, dataOf } from '../../test-utils';
 
 function runHelp(world: WorldModel): ReturnType<NonNullable<typeof helpAction.report>> {
   const command = createCommand(IFActions.HELP, { verb: 'help' });
@@ -39,7 +39,7 @@ describe('help action — first-time tracking', () => {
     const events = runHelp(world);
 
     expect(events).toHaveLength(1);
-    expect(events[0].data.messageId).toBe('if.action.help.first_time');
+    expect(dataOf<{ messageId?: string }>(events[0])?.messageId).toBe('if.action.help.first_time');
 
     // POSTCONDITION — the mutation: flag persisted in world capability data
     expect(world.getCapability(StandardCapabilities.GAME_META)?.helpRequested).toBe(true);
@@ -50,7 +50,7 @@ describe('help action — first-time tracking', () => {
     const second = runHelp(world);
 
     expect(second).toHaveLength(1);
-    expect(second[0].data.messageId).toBe('if.action.help.general');
+    expect(dataOf<{ messageId?: string }>(second[0])?.messageId).toBe('if.action.help.general');
   });
 
   it('should not clobber other gameMeta fields when recording the flag', () => {

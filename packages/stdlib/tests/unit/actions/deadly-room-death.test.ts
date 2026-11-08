@@ -18,6 +18,7 @@ import {
 } from '../../../src/death';
 import { TraitType, WorldModel, IFEntity, HealthTrait } from '@sharpee/world-model';
 import { createRealTestContext, setupBasicWorld, createCommand } from '../../test-utils';
+import { runReportPhase } from '../../../src/actions/lifecycle/phase-runner';
 import type { ActionContext } from '../../../src/actions/enhanced-types';
 
 describe('deadlyRoomDeathAction — the generic death redirect target', () => {
@@ -49,7 +50,7 @@ describe('deadlyRoomDeathAction — the generic death redirect target', () => {
     expect(health?.causeOfDeath).toBe('aragain_falls');
 
     // report() emits the canonical event execute() produced.
-    const events = deadlyRoomDeathAction.report(context);
+    const events = runReportPhase(deadlyRoomDeathAction, context);
     const death = events.find((e) => e.type === PLAYER_DIED_EVENT);
     expect(death).toBeDefined();
     expect(death!.data).toMatchObject({

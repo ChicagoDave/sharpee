@@ -572,7 +572,7 @@ export function executeWithValidation(
  * is `unknown`, so the cast is made once here and the shape is named at the
  * call site: `dataOf<LookedEventData>(event)?.timestamp`.
  */
-export function dataOf<T>(event: SemanticEvent | undefined): T | undefined {
+export function dataOf<T>(event: { data?: unknown } | undefined): T | undefined {
   return event?.data as T | undefined;
 }
 

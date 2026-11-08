@@ -33,6 +33,7 @@ import { goingAction } from '../../src/actions/standard/going';
 import { IFActions } from '../../src/actions/constants';
 import { createActionContext } from '../../src/actions/enhanced-context';
 import { createCommand } from '../test-utils';
+import { runReportPhase } from '../../src/actions/lifecycle/phase-runner';
 import { createFixtureRandomService } from '../test-utils/fixture-random-service';
 import { nounPhraseFor } from '../../src/utils';
 
@@ -77,7 +78,7 @@ describe('ADR-203 NPC attribution — real path', () => {
     const context = createActionContext(world, player, goingAction, command, createFixtureRandomService(1), undefined, mover);
     expect(goingAction.validate(context).valid).toBe(true);
     goingAction.execute(context);
-    const exited = goingAction.report(context).find((e) => e.type === 'if.event.actor_exited')!;
+    const exited = runReportPhase(goingAction, context).find((e) => e.type === 'if.event.actor_exited')!;
     const { messageId, params } = exited.data as { messageId: string; params: Record<string, unknown> };
     // The engine binds the acting entity under ACTOR_PARAM_KEY at render (ADR-328 D4).
     return { messageId, params: { ...params, [ACTOR_PARAM_KEY]: nounPhraseFor(mover) } };

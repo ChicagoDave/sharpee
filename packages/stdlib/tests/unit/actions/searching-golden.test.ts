@@ -21,8 +21,10 @@ import {
   executeWithValidation,
   expectTraitValue,
   TestData,
-  createCommand
+  createCommand,
+  dataOf
 } from '../../test-utils';
+import type { SearchedEventData } from '../../../src/actions/standard/searching/searching-events';
 import type { ActionContext } from '../../../src/actions/enhanced-types';
 
 describe('searchingAction (Golden Pattern)', () => {
@@ -498,8 +500,8 @@ describe('searchingAction (Golden Pattern)', () => {
       const events = executeWithValidation(searchingAction, context);
 
       const searchEvent = events.find(e => e.type === 'if.event.searched');
-      expect(searchEvent?.data.target).toBe(room.id);
-      expect(searchEvent?.data.searchingLocation).toBe(true);
+      expect(dataOf<SearchedEventData>(searchEvent)?.target).toBe(room.id);
+      expect(dataOf<SearchedEventData>(searchEvent)?.searchingLocation).toBe(true);
     });
   });
 

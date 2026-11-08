@@ -9,6 +9,7 @@ import { describe, test, expect, beforeEach } from 'vitest';
 import { WorldModel, TraitType, EntityType, IFEntity, ActorTrait, ContainerTrait, SceneryTrait, RoomTrait } from '@sharpee/world-model';
 import { createActionContext } from '../../../src/actions/enhanced-context';
 import { createFixtureRandomService } from '../../test-utils/fixture-random-service';
+import { dataOf } from '../../test-utils';
 import { Action, ValidationResult } from '../../../src/actions/enhanced-types';
 import { ScopeLevel } from '../../../src/scope/types';
 import { ValidatedCommand } from '../../../src/validation/types';
@@ -114,7 +115,7 @@ describe('Implicit Takes (requireCarriedOrImplicitTake)', () => {
         e => e.type === 'if.event.implicit_take'
       );
       expect(implicitEvent).toBeDefined();
-      expect(implicitEvent!.data.itemName).toBe('gold coin');
+      expect(dataOf<{ itemName?: string }>(implicitEvent)?.itemName).toBe('gold coin');
     });
 
     test('should emit if.event.taken event after implicit take', () => {

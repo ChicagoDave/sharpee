@@ -20,8 +20,10 @@ import {
   executeWithValidation,
   expectEvent,
   TestData,
-  createCommand
+  createCommand,
+  dataOf
 } from '../../test-utils';
+import type { InventoryEventData } from '../../../src/actions/standard/inventory/inventory-events';
 
 describe('inventoryAction (Golden Pattern)', () => {
   describe('Action Metadata', () => {
@@ -85,8 +87,8 @@ describe('inventoryAction (Golden Pattern)', () => {
       
       // Event should contain item data
       const invEvent = events.find(e => e.type === 'if.event.inventory');
-      expect(invEvent?.data.items).toHaveLength(2);
-      expect(invEvent?.data.items).toEqual(
+      expect(dataOf<InventoryEventData>(invEvent)?.items).toHaveLength(2);
+      expect(dataOf<InventoryEventData>(invEvent)?.items).toEqual(
         expect.arrayContaining([
           expect.objectContaining({ id: sword.id, name: 'steel sword' }),
           expect.objectContaining({ id: torch.id, name: 'burning torch' })
@@ -118,7 +120,7 @@ describe('inventoryAction (Golden Pattern)', () => {
       expect(invEvent).toBeDefined();
       
       // Items should be marked as worn
-      expect(invEvent?.data.items).toEqual(
+      expect(dataOf<InventoryEventData>(invEvent)?.items).toEqual(
         expect.arrayContaining([
           expect.objectContaining({ 
             id: cloak.id, 
@@ -163,11 +165,11 @@ describe('inventoryAction (Golden Pattern)', () => {
       
       // Should emit inventory event with all items
       const invEvent = events.find(e => e.type === 'if.event.inventory');
-      expect(invEvent?.data.items).toHaveLength(4);
+      expect(dataOf<InventoryEventData>(invEvent)?.items).toHaveLength(4);
       
       // Should differentiate worn vs held
-      const wornItems = invEvent?.data.items.filter((i: any) => i.worn);
-      const heldItems = invEvent?.data.items.filter((i: any) => !i.worn);
+      const wornItems = dataOf<InventoryEventData>(invEvent)?.items.filter((i: any) => i.worn);
+      const heldItems = dataOf<InventoryEventData>(invEvent)?.items.filter((i: any) => !i.worn);
       
       expect(wornItems).toHaveLength(1); // just the hat
       expect(heldItems).toHaveLength(3); // key, coin, gloves
@@ -189,8 +191,8 @@ describe('inventoryAction (Golden Pattern)', () => {
       
       // Should not include weight data
       const invEvent = events.find(e => e.type === 'if.event.inventory');
-      expect(invEvent?.data.totalWeight).toBeUndefined();
-      expect(invEvent?.data.maxWeight).toBeUndefined();
+      expect(dataOf<InventoryEventData>(invEvent)?.totalWeight).toBeUndefined();
+      expect(dataOf<InventoryEventData>(invEvent)?.maxWeight).toBeUndefined();
     });
   });
 
@@ -214,7 +216,7 @@ describe('inventoryAction (Golden Pattern)', () => {
       
       // Should mark as brief in event
       const invEvent = events.find(e => e.type === 'if.event.inventory');
-      expect(invEvent?.data.brief).toBe(true);
+      expect(dataOf<InventoryEventData>(invEvent)?.brief).toBe(true);
     });
 
     test('should detect brief format from "inv" command', () => {
@@ -233,7 +235,7 @@ describe('inventoryAction (Golden Pattern)', () => {
       
       // Should mark as brief
       const invEvent = events.find(e => e.type === 'if.event.inventory');
-      expect(invEvent?.data.brief).toBe(true);
+      expect(dataOf<InventoryEventData>(invEvent)?.brief).toBe(true);
     });
 
     test('should use full format for "inventory" command', () => {
@@ -252,7 +254,7 @@ describe('inventoryAction (Golden Pattern)', () => {
       
       // Should not mark as brief
       const invEvent = events.find(e => e.type === 'if.event.inventory');
-      expect(invEvent?.data.brief).toBeFalsy();
+      expect(dataOf<InventoryEventData>(invEvent)?.brief).toBeFalsy();
     });
   });
 
@@ -318,7 +320,7 @@ describe('inventoryAction (Golden Pattern)', () => {
         isEmpty: false
       });
       
-      expect(invEvent?.data.items).toHaveLength(2);
+      expect(dataOf<InventoryEventData>(invEvent)?.items).toHaveLength(2);
     });
   });
 });
@@ -348,7 +350,7 @@ describe('Testing Pattern Examples for Inventory', () => {
     const events = executeWithValidation(inventoryAction, context);
     
     const invEvent = events.find(e => e.type === 'if.event.inventory');
-    expect(invEvent?.data.items).toHaveLength(4);
+    expect(dataOf<InventoryEventData>(invEvent)?.items).toHaveLength(4);
   });
 
   test('pattern: empty inventory variations', () => {
@@ -359,7 +361,7 @@ describe('Testing Pattern Examples for Inventory', () => {
     const events = executeWithValidation(inventoryAction, context);
     
     const invEvent = events.find(e => e.type === 'if.event.inventory');
-    expect(invEvent?.data.isEmpty).toBe(true);
-    expect(invEvent?.data.items).toHaveLength(0);
+    expect(dataOf<InventoryEventData>(invEvent)?.isEmpty).toBe(true);
+    expect(dataOf<InventoryEventData>(invEvent)?.items).toHaveLength(0);
   });
 });

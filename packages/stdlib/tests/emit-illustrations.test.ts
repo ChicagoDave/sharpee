@@ -2,6 +2,18 @@ import { describe, it, expect } from 'vitest';
 import { IFEntity, SwitchableTrait } from '@sharpee/world-model';
 import { emitIllustrations } from '../src/actions/helpers/emit-illustrations';
 import { ActionContext } from '../src/actions/enhanced-types';
+import { dataOf } from './test-utils';
+
+/** The data `emitIllustrations` puts on each `if.event.illustrated` (built in place, no exported interface). */
+type IllustratedData = {
+  groupId: string;
+  entityId: string;
+  src: string;
+  alt: string;
+  position: string;
+  width: string;
+  targetPanel?: string;
+};
 
 /**
  * Minimal mock for ActionContext — only the parts emitIllustrations uses.
@@ -48,11 +60,11 @@ describe('emitIllustrations (ADR-124)', () => {
 
     expect(result).toHaveLength(1);
     expect(result[0].type).toBe('if.event.illustrated');
-    expect(result[0].data.groupId).toBe('group-1');
-    expect(result[0].data.entityId).toBe('dam');
-    expect(result[0].data.src).toBe('dam-dry.jpg');
-    expect(result[0].data.alt).toBe('The dam');
-    expect(result[0].data.position).toBe('right');
+    expect(dataOf<IllustratedData>(result[0])?.groupId).toBe('group-1');
+    expect(dataOf<IllustratedData>(result[0])?.entityId).toBe('dam');
+    expect(dataOf<IllustratedData>(result[0])?.src).toBe('dam-dry.jpg');
+    expect(dataOf<IllustratedData>(result[0])?.alt).toBe('The dam');
+    expect(dataOf<IllustratedData>(result[0])?.position).toBe('right');
   });
 
   it('should filter out annotations with non-matching trigger', () => {
@@ -91,7 +103,7 @@ describe('emitIllustrations (ADR-124)', () => {
     const result = emitIllustrations(lamp, 'on-examine', 'group-1', ctx);
 
     expect(result).toHaveLength(1);
-    expect(result[0].data.src).toBe('lamp-lit.jpg');
+    expect(dataOf<IllustratedData>(result[0])?.src).toBe('lamp-lit.jpg');
   });
 
   it('should use default position and width when not specified', () => {
@@ -106,8 +118,8 @@ describe('emitIllustrations (ADR-124)', () => {
     const ctx = mockContext(mockWorld());
     const result = emitIllustrations(room, 'on-enter', 'group-1', ctx);
 
-    expect(result[0].data.position).toBe('right');
-    expect(result[0].data.width).toBe('40%');
+    expect(dataOf<IllustratedData>(result[0])?.position).toBe('right');
+    expect(dataOf<IllustratedData>(result[0])?.width).toBe('40%');
   });
 
   it('should pass through targetPanel when present', () => {
@@ -123,7 +135,7 @@ describe('emitIllustrations (ADR-124)', () => {
     const ctx = mockContext(mockWorld());
     const result = emitIllustrations(room, 'on-enter', 'group-1', ctx);
 
-    expect(result[0].data.targetPanel).toBe('sidebar');
+    expect(dataOf<IllustratedData>(result[0])?.targetPanel).toBe('sidebar');
   });
 
   it('should not include targetPanel when absent', () => {
@@ -162,7 +174,7 @@ describe('emitIllustrations (ADR-124)', () => {
     const result = emitIllustrations(room, 'on-enter', 'group-1', ctx);
 
     expect(result).toHaveLength(2);
-    expect(result[0].data.src).toBe('left.jpg');
-    expect(result[1].data.src).toBe('right.jpg');
+    expect(dataOf<IllustratedData>(result[0])?.src).toBe('left.jpg');
+    expect(dataOf<IllustratedData>(result[1])?.src).toBe('right.jpg');
   });
 });

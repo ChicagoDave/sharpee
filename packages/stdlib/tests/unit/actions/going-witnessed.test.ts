@@ -29,6 +29,7 @@ import { goingAction } from '../../../src/actions/standard/going';
 import { IFActions } from '../../../src/actions/constants';
 import { createActionContext } from '../../../src/actions/enhanced-context';
 import { createCommand } from '../../test-utils';
+import { runReportPhase } from '../../../src/actions/lifecycle/phase-runner';
 import { createFixtureRandomService } from '../../test-utils/fixture-random-service';
 
 /** English, handed to hand-built worlds as the language's words (ADR-387 D2). */
@@ -65,7 +66,7 @@ function goNorth(world: WorldModel, player: ReturnType<typeof buildWorld>['playe
   const context = createActionContext(world, player, goingAction, command, createFixtureRandomService(1), undefined, actor);
   expect(goingAction.validate(context).valid).toBe(true);
   goingAction.execute(context);
-  return goingAction.report(context);
+  return runReportPhase(goingAction, context);
 }
 
 describe('a witnessed mover (ADR-328 D3/D5)', () => {

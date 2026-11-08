@@ -26,6 +26,7 @@ import { tellingAction } from '../../../src/actions/standard/telling';
 import { talkingAction } from '../../../src/actions/standard/talking';
 import { IFActions } from '../../../src/actions/constants';
 import { createRealTestContext, createCommand } from '../../test-utils';
+import { runReportPhase } from '../../../src/actions/lifecycle/phase-runner';
 
 /** English, handed to hand-built worlds as the language's words (ADR-387 D2). */
 const ENGLISH_WORDS = { selfWords: ['me', 'myself', 'self', 'yourself'], nameStopwords: ['the', 'a', 'an', 'of'] };
@@ -53,7 +54,7 @@ function runAsk(world: WorldModel, hermit: IFEntity, topicText: string) {
   const context = createRealTestContext(askingAction, world, command);
   expect(askingAction.validate(context).valid).toBe(true);
   askingAction.execute(context);
-  return askingAction.report(context).find(e => e.type === 'if.event.asked')!;
+  return runReportPhase(askingAction, context).find(e => e.type === 'if.event.asked')!;
 }
 
 describe('conversation actions × the dialogue-selector socket (ADR-310 D15)', () => {
@@ -121,7 +122,7 @@ describe('conversation actions × the dialogue-selector socket (ADR-310 D15)', (
     const context = createRealTestContext(tellingAction, world, command);
     expect(tellingAction.validate(context).valid).toBe(true);
     tellingAction.execute(context);
-    const told = tellingAction.report(context).find(e => e.type === 'if.event.told')!;
+    const told = runReportPhase(tellingAction, context).find(e => e.type === 'if.event.told')!;
 
     expect(intents[0].type).toBe('tell');
     expect((told.data as any).messageId).toBe('character.conversation.hermit-listens');
@@ -139,7 +140,7 @@ describe('conversation actions × the dialogue-selector socket (ADR-310 D15)', (
     const context = createRealTestContext(talkingAction, world, command);
     expect(talkingAction.validate(context).valid).toBe(true);
     talkingAction.execute(context);
-    const talked = talkingAction.report(context).find(e => e.type === 'if.event.talked')!;
+    const talked = runReportPhase(talkingAction, context).find(e => e.type === 'if.event.talked')!;
 
     expect((talked.data as any).messageId).toBe('character.conversation.greeting');
   });
@@ -161,7 +162,7 @@ describe('conversation actions × the dialogue-selector socket (ADR-310 D15)', (
     const context = createRealTestContext(askingAction, world, command);
     expect(askingAction.validate(context).valid).toBe(true);
     askingAction.execute(context);
-    const events = askingAction.report(context);
+    const events = runReportPhase(askingAction, context);
 
     const mint = events.find(e => e.type === 'character.author.ledger_mint')!;
     expect(mint).toBeDefined();

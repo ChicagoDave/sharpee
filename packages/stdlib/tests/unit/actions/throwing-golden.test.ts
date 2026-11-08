@@ -22,8 +22,10 @@ import {
   TestData,
   createCommand,
   setupBasicWorld,
-  forceRandom
+  forceRandom,
+  dataOf
 } from '../../test-utils';
+import type { ThrownEventData } from '../../../src/actions/standard/throwing/throwing-events';
 
 /** English, handed to hand-built worlds as the language's words (ADR-387 D2). */
 const ENGLISH_WORDS = { selfWords: ['me', 'myself', 'self', 'yourself'], nameStopwords: ['the', 'a', 'an', 'of'] };
@@ -492,10 +494,10 @@ describe('throwingAction (Golden Pattern)', () => {
       expect(thrownEvents).toHaveLength(2);
 
       // First should be hits_target
-      expect(thrownEvents[0].data.messageId).toContain('hits_target');
+      expect(dataOf<{ messageId?: string }>(thrownEvents[0])?.messageId).toContain('hits_target');
 
       // Second should be target_angry
-      expect(thrownEvents[1].data.messageId).toContain('target_angry');    });
+      expect(dataOf<{ messageId?: string }>(thrownEvents[1])?.messageId).toContain('target_angry');    });
   });
 
 
@@ -612,11 +614,11 @@ describe('throwingAction (Golden Pattern)', () => {
           
           // Item entity might be in the event data rather than entities
           if (event.type === 'if.event.thrown') {
-            expect(event.data.item).toBe(dice.id);
+            expect(dataOf<ThrownEventData>(event)?.item).toBe(dice.id);
           }
           
-          if (event.data.target) {
-            expect(event.data.target).toBe(table.id);
+          if (dataOf<ThrownEventData>(event)?.target) {
+            expect(dataOf<ThrownEventData>(event)?.target).toBe(table.id);
           }
         }
       });    });

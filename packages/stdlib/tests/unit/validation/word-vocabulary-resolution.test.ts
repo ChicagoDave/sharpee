@@ -30,6 +30,7 @@ import {
   IdentityTrait,
   RoomTrait,
 } from '@sharpee/world-model';
+import { dataOf } from '../../test-utils';
 import { LanguageProvider } from '@sharpee/if-domain';
 import type { ISystemEvent, IGenericEventSource } from '@sharpee/core';
 
@@ -288,7 +289,7 @@ describe('CommandValidator — word-level vocabulary resolution (ADR-231 D3)', (
       // The disambiguation event mechanism fires (preserved path)
       const disambiguationEvents = eventSource.getEventsByType('disambiguation_required');
       expect(disambiguationEvents.length).toBeGreaterThan(0);
-      expect(disambiguationEvents[0].data.searchText).toBe('key');
+      expect(dataOf<{ searchText?: string }>(disambiguationEvents[0])?.searchText).toBe('key');
     });
 
     test('a distinguishing word auto-resolves instead of prompting', () => {

@@ -1,7 +1,7 @@
 # Session Plan: Burn down stdlib test-file type errors (GH #401) and promote stdlib to the typecheck gate
 
 **Created**: 2026-11-07
-**Plan Status**: ACTIVE
+**Plan Status**: DONE
 **Overall scope**: Bring `packages/stdlib/tests` from 866 errors in 102 files (measured 2026-11-07 with `tsc -p tsconfig.test.json`) to zero, then append the test leg to stdlib's `typecheck` script. Test files and test utilities only; no `src/` file in any package changes.
 **Bounded contexts touched**: N/A (test maintenance, no domain change)
 **Key domain language**: N/A
@@ -82,5 +82,5 @@ Cluster 1 is 454 multi-line `entity.add({ type: TraitType.X, ... })` rewrites. U
 - **Files**: `packages/stdlib/tests/`, `packages/stdlib/package.json`
 - **Exit state**: stdlib test tsc is 0; vitest green (150 files); every `pnpm typecheck` task successful (76 tasks at 2026-11-07; record the count the run prints); #401 comment posted.
 - **Demonstration**: Run `pnpm typecheck` and observe "N successful, N total" with N equal (76 at 2026-11-07); run `pnpm typecheck:tests` and confirm stdlib is no longer among the failing packages; show the #401 comment URL.
-- **Demonstrated**: 
-- **Status**: PENDING
+- **Demonstrated**: 2026-11-08 03:30. `pnpm exec tsc -p tsconfig.test.json` in packages/stdlib: 0 errors (from 19). `pnpm typecheck`: 76 successful, 76 total, exit 0, with stdlib's script now `tsc -p tsconfig.json --noEmit && tsc -p tsconfig.test.json`. `pnpm typecheck:tests --continue`: 52 successful, 65 total; the 13 failing are character, core, engine, ext-hunger, ext-scoring, if-domain, media, parser-en-us, platform-browser, queries, story-loader, transcript-tester, world-model (624 errors between them, counted per package); stdlib is not among them. `pnpm exec vitest run` in packages/stdlib: 150 files, 1915 tests passing, 0 failures. #401 comment: https://github.com/ChicagoDave/sharpee/issues/401#issuecomment-6719797156. Of the 19: `_action-test-template.ts` (4) excluded in `tsconfig.test.json` on David's ruling of 2026-11-08 (scaffolding, not a test); the 15 #664 sites rewritten as typed intersections, `Object.assign(new XTrait({...}), { field })`, naming the undeclared field at the call site with no cast, `any` or `unknown`: LightSourceTrait + radius/intensity ×5 (switching_on, switching_off), OpenableTrait + autoCloseOnOff ×3 (switching_off) and + autoOpenOnUnlock ×1 (unlocking), WearableTrait + cursed ×1 (taking_off), EdibleTrait + isDrink ×1 (touching), IdentityTrait + customProperties.loud ×1 (scope-integration), and the three body-part-conflict wearables (wearing-golden ×2, wearing-interceptor ×1) clearing `layer` through a source typed `{ layer: number | undefined }`, because a bare `{ layer: undefined }` collapses the intersection to `never` and compiles for the wrong reason (probed with a `const t: never =` file, then removed). Every site keeps its #664 comment; #664 stays open as the source ruling. Files changed this phase since 297a186d8: 29 under packages/stdlib/tests plus packages/stdlib/package.json and packages/stdlib/tsconfig.test.json. Within budget. [verified by session: tsc, turbo and vitest output read directly]
+- **Status**: DONE

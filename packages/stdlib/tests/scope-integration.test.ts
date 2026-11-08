@@ -230,12 +230,13 @@ describe('Scope Integration Tests', () => {
       
       // Create a loud chime in the next room (avoiding "bell" vs "doorbell" confusion)
       const chime = author.createEntity('chime', EntityType.OBJECT);
-      // Don't override the identity trait - it's already set by createEntity
-      // Left as-is on purpose: scope-resolver.ts:145 reads `identity.customProperties.loud`,
-      // a field IdentityTrait does not declare (sharpee #664). Awaiting a platform ruling.
-      const identity = chime.get(TraitType.IDENTITY);
+      // Don't override the identity trait - it's already set by createEntity.
+      // scope-resolver.ts:145 reads `identity.customProperties.loud`, a field
+      // IdentityTrait does not declare (sharpee #664); the intersection carries it
+      // until that is ruled.
+      const identity = chime.get(IdentityTrait);
       if (identity) {
-        identity.customProperties = { loud: true };
+        Object.assign(identity, { customProperties: { loud: true } });
       }
       author.moveEntity(chime.id, nextRoom.id);
       

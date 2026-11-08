@@ -20,6 +20,7 @@ import {
   TestData,
   createCommand
 } from '../../test-utils';
+import { runReportPhase } from '../../../src/actions/lifecycle/phase-runner';
 import type { WorldModel } from '@sharpee/world-model';
 import type { ActionContext } from '../../../src/actions/enhanced-types';
 
@@ -909,7 +910,7 @@ describe('Multi-object putting drives per-item container hooks (ADR-228 D4 — t
     const validation = puttingAction.validate(context);
     expect(validation.valid).toBe(true);
     puttingAction.execute(context);
-    puttingAction.report(context);
+    runReportPhase(puttingAction, context);
 
     // THE state assertions: both items moved AND the hook ran per item.
     expect(world.getLocation(coin.id)).toBe(box.id);

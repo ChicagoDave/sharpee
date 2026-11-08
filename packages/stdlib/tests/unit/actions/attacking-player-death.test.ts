@@ -14,6 +14,7 @@ import { IFActions } from '../../../src/actions/constants';
 import { PLAYER_DIED_EVENT } from '../../../src/death';
 import { TraitType, WorldModel, EntityType, IFEntity, HealthTrait } from '@sharpee/world-model';
 import { createRealTestContext, setupBasicWorld, createCommand } from '../../test-utils';
+import { runReportPhase } from '../../../src/actions/lifecycle/phase-runner';
 import type { ActionContext } from '../../../src/actions/enhanced-types';
 
 describe('attackingAction — player-death re-point (ADR-224)', () => {
@@ -37,7 +38,7 @@ describe('attackingAction — player-death re-point (ADR-224)', () => {
     context = createRealTestContext(attackingAction, world, command);
     context.sharedData.attackResult = { success: true, type: 'killed', targetKilled: true } as any;
 
-    const events = attackingAction.report(context);
+    const events = runReportPhase(attackingAction, context);
     const types = events.map((e) => e.type);
 
     expect(types).toContain(PLAYER_DIED_EVENT);
@@ -57,7 +58,7 @@ describe('attackingAction — player-death re-point (ADR-224)', () => {
     context = createRealTestContext(attackingAction, world, command);
     context.sharedData.attackResult = { success: true, type: 'killed', targetKilled: true } as any;
 
-    const events = attackingAction.report(context);
+    const events = runReportPhase(attackingAction, context);
     const types = events.map((e) => e.type);
 
     expect(types).toContain('if.event.death');

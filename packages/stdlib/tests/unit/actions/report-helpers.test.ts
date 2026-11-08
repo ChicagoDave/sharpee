@@ -18,6 +18,7 @@ import {
   createRealTestContext,
   createCommand
 } from '../../test-utils';
+import { runReportPhase, runBlockedPhase } from '../../../src/actions/lifecycle/phase-runner';
 import { IFActions } from '../../../src/actions/constants';
 import { takingAction } from '../../../src/actions/standard/taking';
 
@@ -26,7 +27,12 @@ interface ErrorEventData {
   error?: string;
   messageId?: string;
   actionId?: string;
-  params?: Record<string, unknown>;
+  params?: {
+    item?: string;
+    error?: string;
+    targetSnapshot?: { id: string };
+    indirectTargetSnapshot?: { id: string };
+  };
 }
 
 describe('report-helpers', () => {
@@ -84,7 +90,7 @@ describe('report-helpers', () => {
       const result = handleValidationError(context, validationResult);
 
       expect(result).not.toBeNull();
-      expect((result![0].data as ErrorEventData).params.item).toBe('golden key');
+      expect((result![0].data as ErrorEventData).params?.item).toBe('golden key');
     });
 
     test('should use messageId from validationResult if provided', () => {
@@ -120,9 +126,9 @@ describe('report-helpers', () => {
       const result = handleValidationError(context, validationResult);
 
       expect(result).not.toBeNull();
-      expect((result![0].data as ErrorEventData).params.targetSnapshot).toBeDefined();
+      expect((result![0].data as ErrorEventData).params?.targetSnapshot).toBeDefined();
       // Snapshot captures id and name - id is always available
-      expect((result![0].data as ErrorEventData).params.targetSnapshot.id).toBe(item.id);
+      expect((result![0].data as ErrorEventData).params?.targetSnapshot?.id).toBe(item.id);
     });
 
     test('should exclude target snapshot when includeTargetSnapshot is false', () => {
@@ -142,7 +148,7 @@ describe('report-helpers', () => {
       const result = handleValidationError(context, validationResult, options);
 
       expect(result).not.toBeNull();
-      expect((result![0].data as ErrorEventData).params.targetSnapshot).toBeUndefined();
+      expect((result![0].data as ErrorEventData).params?.targetSnapshot).toBeUndefined();
     });
 
     test('should include indirect target snapshot by default when indirectObject exists', () => {
@@ -167,9 +173,9 @@ describe('report-helpers', () => {
       const result = handleValidationError(context, validationResult);
 
       expect(result).not.toBeNull();
-      expect((result![0].data as ErrorEventData).params.indirectTargetSnapshot).toBeDefined();
+      expect((result![0].data as ErrorEventData).params?.indirectTargetSnapshot).toBeDefined();
       // Snapshot captures id and name - id is always available
-      expect((result![0].data as ErrorEventData).params.indirectTargetSnapshot.id).toBe(container.id);
+      expect((result![0].data as ErrorEventData).params?.indirectTargetSnapshot?.id).toBe(container.id);
     });
 
     test('should exclude indirect target snapshot when includeIndirectSnapshot is false', () => {
@@ -195,7 +201,7 @@ describe('report-helpers', () => {
       const result = handleValidationError(context, validationResult, options);
 
       expect(result).not.toBeNull();
-      expect((result![0].data as ErrorEventData).params.indirectTargetSnapshot).toBeUndefined();
+      expect((result![0].data as ErrorEventData).params?.indirectTargetSnapshot).toBeUndefined();
     });
   });
 
@@ -223,7 +229,7 @@ describe('report-helpers', () => {
       expect(result![0].type).toBe('action.error');
       expect((result![0].data as ErrorEventData).error).toBe('execution_failed');
       expect((result![0].data as ErrorEventData).messageId).toBe('action_failed');
-      expect((result![0].data as ErrorEventData).params.error).toBe('Something went wrong');
+      expect((result![0].data as ErrorEventData).params?.error).toBe('Something went wrong');
     });
 
     test('should include action ID in error event', () => {
@@ -309,7 +315,7 @@ describe('report-helpers', () => {
 
       expect(result).not.toBeNull();
       expect((result![0].data as ErrorEventData).error).toBe('execution_failed');
-      expect((result![0].data as ErrorEventData).params.error).toBe('Execution failed');
+      expect((result![0].data as ErrorEventData).params?.error).toBe('Execution failed');
     });
 
     test('should pass options through to handleValidationError', () => {
@@ -329,7 +335,7 @@ describe('report-helpers', () => {
       const result = handleReportErrors(context, validationResult, undefined, options);
 
       expect(result).not.toBeNull();
-      expect((result![0].data as ErrorEventData).params.targetSnapshot).toBeUndefined();
+      expect((result![0].data as ErrorEventData).params?.targetSnapshot).toBeUndefined();
     });
   });
 
@@ -350,7 +356,7 @@ describe('report-helpers', () => {
       };
 
       // Call blocked with validation error (as the engine would for failed validation)
-      const events = takingAction.blocked(context, validationResult);
+      const events = runBlockedPhase(takingAction, context, validationResult);
 
       expect(events).toHaveLength(1);
       expect(events[0].type).toBe('if.event.take_blocked');
@@ -371,7 +377,7 @@ describe('report-helpers', () => {
 
       takingAction.execute(context);
 
-      const events = takingAction.report(context);
+      const events = runReportPhase(takingAction, context);
 
       // ADR-097 simplified pattern: domain event carries messageId directly,
       // no separate action.success event needed

@@ -385,11 +385,9 @@ describe('unlockingAction (Golden Pattern)', () => {
 
       const cabinet = world.createEntity('medicine cabinet', 'object');
       cabinet.add(new LockableTrait({ isLocked: true }));
-      cabinet.add({
-        type: TraitType.OPENABLE,
-        isOpen: false,
-        autoOpenOnUnlock: true
-      });
+      // `autoOpenOnUnlock` is read by unlocking.ts:232 through a cast; OpenableTrait
+      // does not declare it (sharpee #664). The intersection carries it until ruled.
+      cabinet.add(Object.assign(new OpenableTrait({ isOpen: false }), { autoOpenOnUnlock: true }));
       world.moveEntity(cabinet.id, room.id);
 
       const context = createRealTestContext(unlockingAction, world,

@@ -10,7 +10,7 @@ import { CommandValidator } from '../../../src/validation/command-validator';
 import { StandardActionRegistry } from '../../../src/actions/registry';
 import { AuthorModel, WorldModel, IFEntity, TraitType, EntityType, IParsedCommand, ActorTrait, IdentityTrait, ContainerTrait, RoomTrait } from '@sharpee/world-model';
 import { LanguageProvider } from '@sharpee/if-domain';
-import { createCommand, createParserWithWorld, parseCommand } from '../../test-utils';
+import { createCommand, createParserWithWorld, parseCommand, dataOf } from '../../test-utils';
 import { StandardScopeResolver } from '../../../src/scope/scope-resolver';
 import type { ISystemEvent, IGenericEventSource } from '@sharpee/core';
 
@@ -390,8 +390,9 @@ describe('CommandValidator (Golden Pattern)', () => {
 
       const resolutionEvents = eventSource.getEventsByType('entity_resolution');
       expect(resolutionEvents.length).toBeGreaterThan(0);
-      expect(resolutionEvents[0].data.objectType).toBe('direct');
-      expect(resolutionEvents[0].data.reference.text).toBe('red ball');
+      const resolution = dataOf<{ objectType?: string; reference?: { text?: string } }>(resolutionEvents[0]);
+      expect(resolution?.objectType).toBe('direct');
+      expect(resolution?.reference?.text).toBe('red ball');
     });
 
     test('emits scope check debug events', () => {
@@ -416,8 +417,9 @@ describe('CommandValidator (Golden Pattern)', () => {
 
       const scopeEvents = eventSource.getEventsByType('scope_check');
       expect(scopeEvents.length).toBeGreaterThan(0);
-      expect(scopeEvents[0].data.requiredScope).toBeDefined();
-      expect(scopeEvents[0].data.entitiesInScope).toBeGreaterThanOrEqual(1);
+      const scope = dataOf<{ requiredScope?: string; entitiesInScope?: number }>(scopeEvents[0]);
+      expect(scope?.requiredScope).toBeDefined();
+      expect(scope?.entitiesInScope).toBeGreaterThanOrEqual(1);
     });
   });
 

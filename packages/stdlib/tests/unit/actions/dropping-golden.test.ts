@@ -166,10 +166,11 @@ describe('droppingAction (Golden Pattern)', () => {
       
       // Should emit DROPPED event
       const room = world.getContainingRoom(player.id);
+      expect(room).toBeDefined();
       expectEvent(events, 'if.event.dropped', {
         itemId: item.id,
         itemName: 'red ball',
-        toLocation: room.id,
+        toLocation: room!.id,
         toLocationName: 'Test Room',
         toRoom: true
       });

@@ -10,7 +10,7 @@ import { StandardActionRegistry } from '../../src/actions';
 import { waitingAction } from '../../src/actions/standard/waiting';
 import { CommandValidator } from '../../src/validation/command-validator';
 import { WorldModel, IFEntity, TraitType, ActorTrait, RoomTrait } from '@sharpee/world-model';
-import { createRealTestContext, createCommand } from '../test-utils';
+import { createRealTestContext, createCommand, dataOf } from '../test-utils';
 import type { IParsedCommand } from '@sharpee/world-model';
 import type { LanguageProvider } from '@sharpee/if-domain';
 
@@ -157,12 +157,10 @@ describe('Action Integration Test Pattern', () => {
       const waitedEvent = events.find(e => e.type === 'if.event.waited');
       expect(waitedEvent).toBeDefined();
 
-      if (waitedEvent) {
+      const waited = dataOf<{ messageId?: string; params?: Record<string, unknown> }>(waitedEvent);
+      if (waitedEvent && waited?.messageId) {
         // Resolve message through language provider
-        const message = languageProvider.getMessage(
-          waitedEvent.data.messageId,
-          waitedEvent.data.params
-        );
+        const message = languageProvider.getMessage(waited.messageId, waited.params);
 
         // Message might not be in test language provider
         if (message.includes('[Missing:')) {

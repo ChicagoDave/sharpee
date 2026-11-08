@@ -9,6 +9,10 @@
 // checks; `exclude` is replaced rather than extended, since the parent's
 // exclusion of *.test.ts is the very thing being undone. `vitest/globals` supplies
 // describe/it/expect, matching `globals: true` in the vitest configs.
+//
+// `_action-test-template.ts` is scaffolding an author copies, not a test: its
+// `IFActions.YOUR_ACTION` placeholders are meant to be replaced, so it is excluded
+// here rather than made to compile (ruled 2026-11-08).
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
@@ -31,6 +35,7 @@
   "exclude": [
     "node_modules",
     "dist",
-    "dist-esm"
+    "dist-esm",
+    "tests/unit/actions/_action-test-template.ts"
   ]
 }
