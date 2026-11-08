@@ -24,7 +24,7 @@ describe('WearableTrait', () => {
       expect(trait.isWorn).toBe(false);
       expect(trait.wornBy).toBeUndefined();
       expect(trait.slot).toBe('clothing');
-      expect(trait.layer).toBe(1);
+      expect(trait.placement).toBeUndefined();
       expect(trait.wearMessage).toBeUndefined();
       expect(trait.removeMessage).toBeUndefined();
       expect(trait.wearableOver).toBe(true);
@@ -32,7 +32,6 @@ describe('WearableTrait', () => {
       expect(trait.weight).toBe(1);
       expect(trait.bulk).toBe(1);
       expect(trait.canRemove).toBe(true);
-      expect(trait.bodyPart).toBe('torso');
     });
 
     it('should create trait with provided data', () => {
@@ -40,21 +39,20 @@ describe('WearableTrait', () => {
         isWorn: true,
         wornBy: 'player',
         slot: 'head',
-        layer: 2,
+        placement: { bodyPart: 'head', layer: 2 },
         wearMessage: 'You put on the helmet.',
         removeMessage: 'You take off the helmet.',
         wearableOver: false,
         blocksSlots: ['face', 'ears'],
         weight: 3,
         bulk: 2,
-        canRemove: true,
-        bodyPart: 'head'
+        canRemove: true
       });
       
       expect(trait.isWorn).toBe(true);
       expect(trait.wornBy).toBe('player');
       expect(trait.slot).toBe('head');
-      expect(trait.layer).toBe(2);
+      expect(trait.placement).toEqual({ bodyPart: 'head', layer: 2 });
       expect(trait.wearMessage).toBe('You put on the helmet.');
       expect(trait.removeMessage).toBe('You take off the helmet.');
       expect(trait.wearableOver).toBe(false);
@@ -62,7 +60,6 @@ describe('WearableTrait', () => {
       expect(trait.weight).toBe(3);
       expect(trait.bulk).toBe(2);
       expect(trait.canRemove).toBe(true);
-      expect(trait.bodyPart).toBe('head');
     });
 
     it('should handle partial initialization', () => {
@@ -73,7 +70,7 @@ describe('WearableTrait', () => {
       
       expect(trait.isWorn).toBe(false);
       expect(trait.slot).toBe('hands');
-      expect(trait.layer).toBe(1);
+      expect(trait.placement).toBeUndefined();
       expect(trait.wearableOver).toBe(true);
       expect(trait.blocksSlots).toEqual([]);
       expect(trait.weight).toBe(0.5);
@@ -130,15 +127,15 @@ describe('WearableTrait', () => {
 
   describe('layering system', () => {
     it('should support different layers', () => {
-      const underwear = new WearableTrait({ slot: 'torso', layer: 0 });
-      const shirt = new WearableTrait({ slot: 'torso', layer: 1 });
-      const jacket = new WearableTrait({ slot: 'torso', layer: 2 });
-      const coat = new WearableTrait({ slot: 'torso', layer: 3 });
-      
-      expect(underwear.layer).toBe(0);
-      expect(shirt.layer).toBe(1);
-      expect(jacket.layer).toBe(2);
-      expect(coat.layer).toBe(3);
+      const underwear = new WearableTrait({ placement: { bodyPart: 'torso', layer: 0 } });
+      const shirt = new WearableTrait({ placement: { bodyPart: 'torso', layer: 1 } });
+      const jacket = new WearableTrait({ placement: { bodyPart: 'torso', layer: 2 } });
+      const coat = new WearableTrait({ placement: { bodyPart: 'torso', layer: 3 } });
+
+      expect(underwear.placement?.layer).toBe(0);
+      expect(shirt.placement?.layer).toBe(1);
+      expect(jacket.placement?.layer).toBe(2);
+      expect(coat.placement?.layer).toBe(3);
     });
 
     it('should handle wearableOver property', () => {
@@ -295,14 +292,14 @@ describe('WearableTrait', () => {
       gloves.add(new WearableTrait({
         slot: 'hands',
         weight: 0.5,
-        layer: 1
+        placement: { bodyPart: 'hands', layer: 1 }
       }));
       
       const cloak = world.createEntity('Traveling Cloak', 'item');
       cloak.add(new WearableTrait({
         slot: 'back',
         weight: 2,
-        layer: 3,
+        placement: { bodyPart: 'back', layer: 3 },
         wearableOver: true
       }));
       
@@ -331,21 +328,21 @@ describe('WearableTrait', () => {
 
   describe('complex wearable scenarios', () => {
     it('should handle layered armor system', () => {
-      const padding = new WearableTrait({ slot: 'torso', layer: 0, weight: 2 });
-      const chainmail = new WearableTrait({ slot: 'torso', layer: 1, weight: 15 });
-      const breastplate = new WearableTrait({ slot: 'torso', layer: 2, weight: 20 });
-      const tabard = new WearableTrait({ slot: 'torso', layer: 3, weight: 0.5 });
-      
-      // All occupy same slot but different layers
-      expect(padding.slot).toBe('torso');
-      expect(chainmail.slot).toBe('torso');
-      expect(breastplate.slot).toBe('torso');
-      expect(tabard.slot).toBe('torso');
-      
+      const padding = new WearableTrait({ placement: { bodyPart: 'torso', layer: 0 }, weight: 2 });
+      const chainmail = new WearableTrait({ placement: { bodyPart: 'torso', layer: 1 }, weight: 15 });
+      const breastplate = new WearableTrait({ placement: { bodyPart: 'torso', layer: 2 }, weight: 20 });
+      const tabard = new WearableTrait({ placement: { bodyPart: 'torso', layer: 3 }, weight: 0.5 });
+
+      // All occupy the same body part at different layers
+      expect(padding.placement!.bodyPart).toBe('torso');
+      expect(chainmail.placement!.bodyPart).toBe('torso');
+      expect(breastplate.placement!.bodyPart).toBe('torso');
+      expect(tabard.placement!.bodyPart).toBe('torso');
+
       // Layers increase from inner to outer
-      expect(padding.layer < chainmail.layer).toBe(true);
-      expect(chainmail.layer < breastplate.layer).toBe(true);
-      expect(breastplate.layer < tabard.layer).toBe(true);
+      expect(padding.placement!.layer < chainmail.placement!.layer).toBe(true);
+      expect(chainmail.placement!.layer < breastplate.placement!.layer).toBe(true);
+      expect(breastplate.placement!.layer < tabard.placement!.layer).toBe(true);
     });
 
     it('should handle jewelry with multiple items per slot', () => {
@@ -366,8 +363,8 @@ describe('WearableTrait', () => {
       });
       
       const wizardRobe = new WearableTrait({ 
-        slot: 'torso', 
-        layer: 2,
+        slot: 'torso',
+        placement: { bodyPart: 'torso', layer: 2 },
         wearMessage: 'The robe swirls dramatically around you.'
       });
       
@@ -388,7 +385,7 @@ describe('WearableTrait', () => {
       
       expect(trait.isWorn).toBe(false);
       expect(trait.slot).toBe('clothing');
-      expect(trait.layer).toBe(1);
+      expect(trait.placement).toBeUndefined();
       expect(trait.wearableOver).toBe(true);
       expect(trait.blocksSlots).toEqual([]);
       expect(trait.weight).toBe(1);
@@ -400,7 +397,7 @@ describe('WearableTrait', () => {
       
       expect(trait.worn).toBe(false);
       expect(trait.slot).toBe('clothing');
-      expect(trait.layer).toBe(1);
+      expect(trait.placement).toBeUndefined();
     });
 
     it('should maintain type constant', () => {
@@ -423,22 +420,22 @@ describe('WearableTrait', () => {
 
     it('should handle zero and negative values', () => {
       const trait = new WearableTrait({
-        layer: 0,
+        placement: { bodyPart: 'torso', layer: 0 },
         weight: 0,
         bulk: 0
       });
-      
-      expect(trait.layer).toBe(0);
+
+      expect(trait.placement?.layer).toBe(0);
       expect(trait.weight).toBe(0);
       expect(trait.bulk).toBe(0);
-      
+
       // Negative values (game logic should validate)
       const negativeTrait = new WearableTrait({
-        layer: -1,
+        placement: { bodyPart: 'torso', layer: -1 },
         weight: -5
       });
-      
-      expect(negativeTrait.layer).toBe(-1);
+
+      expect(negativeTrait.placement?.layer).toBe(-1);
       expect(negativeTrait.weight).toBe(-5);
     });
 

@@ -1,7 +1,37 @@
 // packages/world-model/src/traits/wearable/wearableTrait.ts
 
+/**
+ * Wearable trait — the data of a thing an actor can put on and take off.
+ *
+ * A wearable is one of two shapes, told apart by `placement`:
+ *
+ * - **Simple** (`placement` absent): a ring, a badge, a satchel. It is worn or
+ *   not, and it never conflicts with or blocks any other wearable.
+ * - **Placed** (`placement` present): it sits on a named body part at a
+ *   layer. Two placed things on the same part conflict at the same layer and
+ *   stack at different layers, outer over inner; an outer thing blocks taking
+ *   off the inner one. Both fields of the pair are required together — there
+ *   is no half-placed wearable, which is what the old free-standing
+ *   `bodyPart`/`layer` fields (defaulted to 'torso' and 1) allowed, and why
+ *   the conflict rule could never fire for a constructed trait.
+ *
+ * Pure data (ADR-346 D1): defaults, no policing. WearableBehavior owns the
+ * mutations; stdlib's wearable-shared owns the conflict and layering rules.
+ *
+ * Public interface: WearableTrait, IWearableData, IWearablePlacement.
+ * Owner context: @sharpee/world-model — traits.
+ */
+
 import { ITrait } from '../trait.js';
 import { TraitType } from '../trait-types.js';
+
+/** Where a placed wearable sits: the body part, and its layer (higher is outer). */
+export interface IWearablePlacement {
+  /** The body part this is worn on — compared by equality, nothing more. */
+  bodyPart: string;
+  /** Layer on that part; equal layers conflict, a higher layer is worn over a lower. */
+  layer: number;
+}
 
 export interface IWearableData {
   /** Whether the item is currently being worn */
@@ -13,8 +43,8 @@ export interface IWearableData {
   /** Body slot this item occupies when worn */
   slot?: string;
 
-  /** Layer for items in same slot (higher = outer) */
-  layer?: number;
+  /** Where it sits on the body; absent means a simple wearable that never conflicts */
+  placement?: IWearablePlacement;
 
   /** Custom message when wearing this item */
   wearMessage?: string;
@@ -36,15 +66,12 @@ export interface IWearableData {
 
   /** Whether this item can be removed once worn */
   canRemove?: boolean;
-
-  /** Body part this item is worn on */
-  bodyPart?: string;
 }
 
 /**
  * Wearable trait indicates an entity can be worn by the player.
  * This is the base trait for all wearable items (rings, necklaces, clothing, etc.)
- * 
+ *
  * This trait contains only data - all logic for wearing/removing
  * is in WearableBehavior.
  */
@@ -56,7 +83,7 @@ export class WearableTrait implements ITrait, IWearableData {
   worn: boolean = false;
   wornBy?: string;
   slot: string;
-  layer: number;
+  placement?: IWearablePlacement;
   wearMessage?: string;
   removeMessage?: string;
   wearableOver: boolean;
@@ -64,7 +91,6 @@ export class WearableTrait implements ITrait, IWearableData {
   weight: number;
   bulk: number;
   canRemove: boolean;
-  bodyPart: string;
 
   // Public accessor
   get isWorn(): boolean {
@@ -80,7 +106,9 @@ export class WearableTrait implements ITrait, IWearableData {
     this.worn = data.isWorn ?? false;
     this.wornBy = data.wornBy;
     this.slot = data.slot ?? 'clothing';
-    this.layer = data.layer ?? 1;
+    this.placement = data.placement === undefined
+      ? undefined
+      : { bodyPart: data.placement.bodyPart, layer: data.placement.layer };
     this.wearMessage = data.wearMessage;
     this.removeMessage = data.removeMessage;
     this.wearableOver = data.wearableOver ?? true;
@@ -88,6 +116,5 @@ export class WearableTrait implements ITrait, IWearableData {
     this.weight = data.weight ?? 1;
     this.bulk = data.bulk ?? 1;
     this.canRemove = data.canRemove ?? true;
-    this.bodyPart = data.bodyPart ?? 'torso';
   }
 }

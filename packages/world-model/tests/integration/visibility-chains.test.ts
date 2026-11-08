@@ -216,7 +216,7 @@ describe('Visibility Chains Integration Tests', () => {
         isWorn: true,
         wornBy: npc.id,
         canRemove: true,
-        bodyPart: 'head'
+        placement: { bodyPart: 'head', layer: 1 }
       }));
 
       world.moveEntity(player.id, room.id);

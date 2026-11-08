@@ -195,19 +195,19 @@ describe('Wearable and Clothing Integration Tests', () => {
     it('should support multiple layers of clothing', () => {
       const layers = [
         createTestClothing(world, 'Undershirt', {
-          slot: 'torso',
+          bodyPart: 'torso',
           layer: 0
         }),
         createTestClothing(world, 'Shirt', {
-          slot: 'torso',
+          bodyPart: 'torso',
           layer: 1
         }),
         createTestClothing(world, 'Sweater', {
-          slot: 'torso',
+          bodyPart: 'torso',
           layer: 2
         }),
         createTestClothing(world, 'Coat', {
-          slot: 'torso',
+          bodyPart: 'torso',
           layer: 3
         })
       ];
@@ -224,7 +224,7 @@ describe('Wearable and Clothing Integration Tests', () => {
       layers.forEach((item, index) => {
         const wearable = item.getTrait(TraitType.WEARABLE) as WearableTrait;
         expect(wearable.isWorn).toBe(true);
-        expect(wearable.layer).toBe(index);
+        expect(wearable.placement?.layer).toBe(index);
       });
     });
 

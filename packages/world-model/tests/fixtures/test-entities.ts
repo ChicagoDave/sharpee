@@ -175,13 +175,15 @@ export function createTestClothing(
     slot: props.slot ?? 'torso',
     isWorn: props.worn ?? props.isWorn ?? false,
     wornBy: props.wornBy,
-    layer: props.layer,
+    // A placed wearable needs both halves; a fixture naming only one gets layer 1 / no part.
+    placement: props.bodyPart !== undefined
+      ? { bodyPart: props.bodyPart, layer: props.layer ?? 1 }
+      : undefined,
     canRemove: props.canRemove,
     blocksSlots: props.blocksSlots,
     wearMessage: props.wearMessage,
     removeMessage: props.removeMessage,
     wearableOver: props.wearableOver,
-    bodyPart: props.bodyPart,
     weight: props.weight,
     bulk: props.bulk,
   }));

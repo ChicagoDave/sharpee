@@ -25,7 +25,7 @@ const setup = () => {
     [TraitType.WEARABLE]: {
       type: TraitType.WEARABLE,
       worn: false,
-      bodyPart: 'torso'
+      placement: { bodyPart: 'torso', layer: 1 }
     },
     // Inert marker trait — the interceptor registration key.
     [TEST_MARKER_TRAIT]: { type: TEST_MARKER_TRAIT }
@@ -127,14 +127,9 @@ describe('Wearing interceptor hooks (ADR-118)', () => {
 describe('Folded execute-phase refusal (ADR-229 R1)', () => {
   test('a wearing conflict refuses in validate and reaches onBlocked — item stays unworn', () => {
     const { world, player, item } = setup();
-    // Another unlayered item already worn on the same body part conflicts.
+    // Another item already worn on the same body part at the same layer conflicts.
     const vest = world.createEntity('quilted vest', 'object');
-    // wearable-shared.ts:54's body-part conflict check fires only when `layer` is
-    // undefined, which WearableTrait's constructor never produces (it defaults
-    // layer to 1; sharpee #664). Clearing it this way keeps the test on that path
-    // until it is ruled.
-    const unlayered: { layer: number | undefined } = { layer: undefined };
-    vest.add(Object.assign(new WearableTrait({ isWorn: true, wornBy: player.id, bodyPart: 'torso' }), unlayered));
+    vest.add(new WearableTrait({ isWorn: true, wornBy: player.id, placement: { bodyPart: 'torso', layer: 1 } }));
     world.moveEntity(vest.id, player.id);
 
     let blockedError: string | undefined;

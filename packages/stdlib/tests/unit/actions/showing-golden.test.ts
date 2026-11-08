@@ -104,7 +104,7 @@ describe('showingAction (Golden Pattern)', () => {
     test('should succeed when showing worn item', () => {
       const { world, player, room } = setupBasicWorld();
       const badge = world.createEntity('sheriff badge', 'object');
-      badge.add(new WearableTrait({ isWorn: true, bodyPart: 'chest' }));
+      badge.add(new WearableTrait({ isWorn: true, placement: { bodyPart: 'chest', layer: 1 } }));
       world.moveEntity(badge.id, player.id);
 
       const deputy = world.createEntity('deputy', 'actor');
@@ -398,7 +398,7 @@ describe('Showing Action Edge Cases', () => {
     const { world, player, room } = setupBasicWorld();
 
     const uniform = world.createEntity('military uniform', 'object');
-    uniform.add(new WearableTrait({ isWorn: true, bodyPart: 'torso' }));
+    uniform.add(new WearableTrait({ isWorn: true, placement: { bodyPart: 'torso', layer: 1 } }));
     world.moveEntity(uniform.id, player.id);
 
     const general = world.createEntity('stern general', 'actor');

@@ -136,9 +136,9 @@ export const takingOffAction: Action & { metadata: ActionMetadata } = {
     const wearableContext = analyzeWearableContext(context, item, actor);
     const { wearableTrait } = wearableContext;
 
-    // Store body part and layer
-    sharedData.bodyPart = wearableTrait.bodyPart;
-    sharedData.layer = wearableTrait.layer;
+    // Store body part and layer (absent for a simple wearable)
+    sharedData.bodyPart = wearableTrait.placement?.bodyPart;
+    sharedData.layer = wearableTrait.placement?.layer;
 
     // Layering blockers and removal restrictions are validate-phase
     // refusals now (ADR-229 R1) — execute only keeps the behavior-result

@@ -97,7 +97,7 @@ export class WearableBehavior {
     return {
       success: true,
       slot: wearable.slot,
-      layer: wearable.layer,
+      layer: wearable.placement?.layer,
       wearMessage: wearable.wearMessage
     };
   }
@@ -161,11 +161,11 @@ export class WearableBehavior {
   }
   
   /**
-   * Get the layer for sorting
+   * Get the layer for sorting — undefined for a simple (unplaced) wearable
    */
-  static getLayer(item: IFEntity): number {
+  static getLayer(item: IFEntity): number | undefined {
     const wearable = item.get(TraitType.WEARABLE) as WearableTrait;
-    return wearable ? wearable.layer : 1;
+    return wearable?.placement?.layer;
   }
   
   /**

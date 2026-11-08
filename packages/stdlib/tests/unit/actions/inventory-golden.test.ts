@@ -102,10 +102,10 @@ describe('inventoryAction (Golden Pattern)', () => {
       const { world, player, room } = setupBasicWorld();
       
       const cloak = world.createEntity('dark cloak', 'object');
-      cloak.add(new WearableTrait({ isWorn: true, bodyPart: 'torso' }));
-      
+      cloak.add(new WearableTrait({ isWorn: true, placement: { bodyPart: 'torso', layer: 1 } }));
+
       const boots = world.createEntity('leather boots', 'object');
-      boots.add(new WearableTrait({ isWorn: true, bodyPart: 'feet' }));
+      boots.add(new WearableTrait({ isWorn: true, placement: { bodyPart: 'feet', layer: 1 } }));
       
       world.moveEntity(cloak.id, player.id);
       world.moveEntity(boots.id, player.id);
@@ -147,11 +147,11 @@ describe('inventoryAction (Golden Pattern)', () => {
       
       // Worn items
       const hat = world.createEntity('wizard hat', 'object');
-      hat.add(new WearableTrait({ isWorn: true, bodyPart: 'head' }));
-      
+      hat.add(new WearableTrait({ isWorn: true, placement: { bodyPart: 'head', layer: 1 } }));
+
       // Wearable but not currently worn
       const gloves = world.createEntity('silk gloves', 'object');
-      gloves.add(new WearableTrait({ isWorn: false, bodyPart: 'hands' }));
+      gloves.add(new WearableTrait({ isWorn: false, placement: { bodyPart: 'hands', layer: 1 } }));
       
       world.moveEntity(key.id, player.id);
       world.moveEntity(coin.id, player.id);
@@ -303,7 +303,7 @@ describe('inventoryAction (Golden Pattern)', () => {
       
       const sword = world.createEntity('silver sword', 'object');
       const armor = world.createEntity('plate armor', 'object');
-      armor.add(new WearableTrait({ isWorn: true, bodyPart: 'torso' }));
+      armor.add(new WearableTrait({ isWorn: true, placement: { bodyPart: 'torso', layer: 1 } }));
       
       world.moveEntity(sword.id, player.id);
       world.moveEntity(armor.id, player.id);
@@ -340,7 +340,10 @@ describe('Testing Pattern Examples for Inventory', () => {
     items.forEach(itemData => {
       const item = world.createEntity(itemData.name, 'object');
       if (itemData.wearable) {
-        item.add(new WearableTrait({ isWorn: itemData.worn || false, bodyPart: itemData.bodyParts?.[0] }));
+        item.add(new WearableTrait({
+          isWorn: itemData.worn || false,
+          ...(itemData.bodyParts ? { placement: { bodyPart: itemData.bodyParts[0], layer: 1 } } : {})
+        }));
       }
       world.moveEntity(item.id, player.id);
     });

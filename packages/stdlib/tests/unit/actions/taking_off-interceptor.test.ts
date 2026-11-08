@@ -24,7 +24,7 @@ import { runValidatePhase, runExecutePhase, runReportPhase, runBlockedPhase } fr
 const setup = () => {
   const { world, player, room } = setupBasicWorld();
   const hat = world.createEntity('wool hat', 'object');
-  hat.add(new WearableTrait({ isWorn: true, wornBy: player.id, bodyPart: 'head' }));
+  hat.add(new WearableTrait({ isWorn: true, wornBy: player.id, placement: { bodyPart: 'head', layer: 1 } }));
   // Inert marker trait — the interceptor registration key.
   hat.add({ type: TEST_MARKER_TRAIT } as any);
   world.moveEntity(hat.id, player.id);
@@ -125,9 +125,8 @@ describe('Taking off interceptor hooks (ADR-118 / ADR-228)', () => {
 describe('Folded execute-phase refusals (ADR-229 R1)', () => {
   test('layering blocker refuses in validate and reaches onBlocked — item still worn', () => {
     const { world, player, hat } = setup();
-    (hat.get(TraitType.WEARABLE) as WearableTrait).layer = 1;
     const balaclava = world.createEntity('balaclava', 'object');
-    balaclava.add(new WearableTrait({ isWorn: true, wornBy: player.id, bodyPart: 'head', layer: 2 }));
+    balaclava.add(new WearableTrait({ isWorn: true, wornBy: player.id, placement: { bodyPart: 'head', layer: 2 } }));
     world.moveEntity(balaclava.id, player.id);
 
     let blockedError: string | undefined;
@@ -149,9 +148,9 @@ describe('Folded execute-phase refusals (ADR-229 R1)', () => {
     expect((hat.get(TraitType.WEARABLE) as WearableTrait).worn).toBe(true);
   });
 
-  test('the cursed-flag probe refuses through the folded path and reaches onBlocked', () => {
+  test('an unremovable wearable (canRemove false) refuses through the folded path and reaches onBlocked', () => {
     const { world, hat } = setup();
-    (hat.get(TraitType.WEARABLE) as any).cursed = true;
+    (hat.get(TraitType.WEARABLE) as WearableTrait).canRemove = false;
 
     let blockedError: string | undefined;
     world.registerActionInterceptor(TEST_MARKER_TRAIT, IFActions.TAKING_OFF, {

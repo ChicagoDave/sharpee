@@ -121,12 +121,12 @@ export const wearingAction: Action & { metadata: ActionMetadata } = {
     // as standard validation and its failure flows through blocked() →
     // onBlocked like every other refusal.
     const wearableContext = analyzeWearableContext(context, item, actor);
-    const conflictingItem = checkWearingConflicts(wearableContext);
-    if (conflictingItem) {
+    const conflict = checkWearingConflicts(wearableContext);
+    if (conflict) {
       return {
         valid: false,
-        error: wearableContext.wearableTrait.layer !== undefined ? 'hands_full' : 'already_wearing',
-        params: { item: nounPhraseFor(conflictingItem) }
+        error: conflict.kind === 'under-outer' ? 'hands_full' : 'already_wearing',
+        params: { item: nounPhraseFor(conflict.item) }
       };
     }
 
@@ -146,9 +146,9 @@ export const wearingAction: Action & { metadata: ActionMetadata } = {
     const wearableContext = analyzeWearableContext(context, item, actor);
     const { wearableTrait } = wearableContext;
 
-    // Store body part and layer
-    sharedData.bodyPart = wearableTrait.bodyPart;
-    sharedData.layer = wearableTrait.layer;
+    // Store body part and layer (absent for a simple wearable)
+    sharedData.bodyPart = wearableTrait.placement?.bodyPart;
+    sharedData.layer = wearableTrait.placement?.layer;
 
     // Wearing conflicts are a validate-phase refusal now (ADR-229 R1) —
     // execute only keeps the behavior-result defensive branch below as

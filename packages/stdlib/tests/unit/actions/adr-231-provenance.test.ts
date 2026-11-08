@@ -66,7 +66,7 @@ describe('blockedMessageId (ADR-231 D1) — the one qualification seam', () => {
 describe('Interceptor veto pass-through (formerly always-prefixed actions)', () => {
   test('WEARING: preValidate veto with a bare hyphenated key reaches the blocked event unprefixed', () => {
     const { world, item } = TestData.withInventoryItem('gold ring', {
-      [TraitType.WEARABLE]: { type: TraitType.WEARABLE, worn: false, bodyPart: 'hand' },
+      [TraitType.WEARABLE]: { type: TraitType.WEARABLE, worn: false, placement: { bodyPart: 'hand', layer: 1 } },
       // Inert marker trait — the interceptor registration key.
       [TEST_MARKER_TRAIT]: { type: TEST_MARKER_TRAIT },
     });

@@ -27,19 +27,19 @@ describe('Clothing (WearableTrait) — ADR-247', () => {
       expect(trait.isWorn).toBe(false);
       expect(trait.wornBy).toBeUndefined();
       expect(trait.slot).toBe('clothing');
-      expect(trait.layer).toBe(1);
+      expect(trait.placement).toBeUndefined();
       expect(trait.canRemove).toBe(true);
     });
 
     it('should create trait with provided data', () => {
       const trait = new WearableTrait({
         slot: 'torso',
-        layer: 2,
+        placement: { bodyPart: 'torso', layer: 2 },
         canRemove: false
       });
 
       expect(trait.slot).toBe('torso');
-      expect(trait.layer).toBe(2);
+      expect(trait.placement).toEqual({ bodyPart: 'torso', layer: 2 });
       expect(trait.canRemove).toBe(false);
     });
 
@@ -49,13 +49,12 @@ describe('Clothing (WearableTrait) — ADR-247', () => {
       expect(trait).toHaveProperty('isWorn');
       expect(trait).toHaveProperty('wornBy');
       expect(trait).toHaveProperty('slot');
-      expect(trait).toHaveProperty('layer');
+      expect(trait).toHaveProperty('placement');
       expect(trait).toHaveProperty('wearableOver');
       expect(trait).toHaveProperty('blocksSlots');
       expect(trait).toHaveProperty('weight');
       expect(trait).toHaveProperty('bulk');
       expect(trait).toHaveProperty('canRemove');
-      expect(trait).toHaveProperty('bodyPart');
     });
   });
 
@@ -156,29 +155,29 @@ describe('Clothing (WearableTrait) — ADR-247', () => {
 
     it('should support layered clothing', () => {
       const undershirt = createTestClothing(world, 'Undershirt', {
-        slot: 'torso',
+        bodyPart: 'torso',
         layer: 0
       });
 
       const shirt = createTestClothing(world, 'Dress Shirt', {
-        slot: 'torso',
+        bodyPart: 'torso',
         layer: 1
       });
 
       const vest = createTestClothing(world, 'Vest', {
-        slot: 'torso',
+        bodyPart: 'torso',
         layer: 2
       });
 
       const jacket = createTestClothing(world, 'Suit Jacket', {
-        slot: 'torso',
+        bodyPart: 'torso',
         layer: 3
       });
 
-      expect((undershirt.getTrait(TraitType.WEARABLE) as WearableTrait).layer).toBe(0);
-      expect((shirt.getTrait(TraitType.WEARABLE) as WearableTrait).layer).toBe(1);
-      expect((vest.getTrait(TraitType.WEARABLE) as WearableTrait).layer).toBe(2);
-      expect((jacket.getTrait(TraitType.WEARABLE) as WearableTrait).layer).toBe(3);
+      expect((undershirt.getTrait(TraitType.WEARABLE) as WearableTrait).placement?.layer).toBe(0);
+      expect((shirt.getTrait(TraitType.WEARABLE) as WearableTrait).placement?.layer).toBe(1);
+      expect((vest.getTrait(TraitType.WEARABLE) as WearableTrait).placement?.layer).toBe(2);
+      expect((jacket.getTrait(TraitType.WEARABLE) as WearableTrait).placement?.layer).toBe(3);
     });
   });
 

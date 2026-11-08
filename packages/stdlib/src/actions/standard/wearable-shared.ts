@@ -41,77 +41,81 @@ export function analyzeWearableContext(
   };
 }
 
+/** How a worn item stands in the way of wearing another on the same body part. */
+export type WearingConflictKind =
+  /** Same part, same layer — the part is taken. */
+  | 'same-layer'
+  /** Same part, the worn item is a higher layer — the new one would go under it. */
+  | 'under-outer';
+
+/** A worn item that refuses the wearing, and why. */
+export interface WearingConflict {
+  item: IFEntity;
+  kind: WearingConflictKind;
+}
+
 /**
- * Checks for layering conflicts when wearing an item
- * Returns conflicting item if found, null otherwise
+ * The worn wearables in the actor's inventory other than `item`, with their traits.
+ */
+function wornOthers(
+  item: IFEntity,
+  inventory: IFEntity[]
+): Array<{ entity: IFEntity; wearable: WearableTrait }> {
+  const worn: Array<{ entity: IFEntity; wearable: WearableTrait }> = [];
+  for (const other of inventory) {
+    if (other.id === item.id) continue;
+    const wearable = other.getTrait(WearableTrait);
+    if (wearable?.worn) worn.push({ entity: other, wearable });
+  }
+  return worn;
+}
+
+/**
+ * Checks for body-part and layering conflicts when wearing an item.
+ *
+ * A simple wearable (no placement) never conflicts. A placed one conflicts
+ * with a worn item on the same body part at the same layer, and cannot go on
+ * under a worn item of a higher layer on that part.
+ *
+ * @returns the conflicting worn item and the kind of conflict, or null
  */
 export function checkWearingConflicts(
   wearableContext: WearableContext
-): IFEntity | null {
+): WearingConflict | null {
   const { item, wearableTrait, inventory } = wearableContext;
-  
-  // Check for body part conflicts (non-layered items)
-  if (wearableTrait.bodyPart && wearableTrait.layer === undefined) {
-    const conflictingItem = inventory.find(invItem => {
-      if (invItem.id === item.id) return false;
-      if (!invItem.has(TraitType.WEARABLE)) return false;
-      
-      const otherWearable = invItem.get(TraitType.WEARABLE) as WearableTrait;
-      return otherWearable.worn && 
-             otherWearable.bodyPart === wearableTrait.bodyPart &&
-             otherWearable.layer === undefined;
-    });
-    
-    if (conflictingItem) {
-      return conflictingItem;
-    }
+  const placement = wearableTrait.placement;
+  if (!placement) return null;
+
+  for (const { entity, wearable } of wornOthers(item, inventory)) {
+    const other = wearable.placement;
+    if (!other || other.bodyPart !== placement.bodyPart) continue;
+    if (other.layer === placement.layer) return { item: entity, kind: 'same-layer' };
+    if (other.layer > placement.layer) return { item: entity, kind: 'under-outer' };
   }
-  
-  // Check for layering rule violations
-  if (wearableTrait.layer !== undefined && wearableTrait.bodyPart) {
-    const wornItems = inventory.filter(invItem => {
-      if (!invItem.has(TraitType.WEARABLE)) return false;
-      const otherWearable = invItem.get(TraitType.WEARABLE) as WearableTrait;
-      return otherWearable.worn;
-    });
-    
-    for (const wornItem of wornItems) {
-      const otherWearable = wornItem.get(TraitType.WEARABLE) as WearableTrait;
-      if (otherWearable.layer !== undefined && 
-          otherWearable.layer > wearableTrait.layer &&
-          otherWearable.bodyPart === wearableTrait.bodyPart) {
-        return wornItem; // Can't wear under something already worn
-      }
-    }
-  }
-  
+
   return null;
 }
 
 /**
- * Checks for items blocking removal due to layering
- * Returns blocking item if found, null otherwise
+ * Checks for items blocking removal due to layering: a worn item of a higher
+ * layer on the same body part. A simple wearable is never blocked.
+ *
+ * @returns the blocking worn item, or null
  */
 export function checkRemovalBlockers(
   wearableContext: WearableContext
 ): IFEntity | null {
   const { item, wearableTrait, inventory } = wearableContext;
-  
-  if (wearableTrait.layer !== undefined && wearableTrait.bodyPart) {
-    const blockingItem = inventory.find(invItem => {
-      if (invItem.id === item.id) return false;
-      if (!invItem.has(TraitType.WEARABLE)) return false;
-      
-      const otherWearable = invItem.get(TraitType.WEARABLE) as WearableTrait;
-      return otherWearable.worn && 
-             otherWearable.layer !== undefined &&
-             otherWearable.layer > wearableTrait.layer &&
-             otherWearable.bodyPart === wearableTrait.bodyPart;
-    });
-    
-    return blockingItem || null;
+  const placement = wearableTrait.placement;
+  if (!placement) return null;
+
+  for (const { entity, wearable } of wornOthers(item, inventory)) {
+    const other = wearable.placement;
+    if (other && other.bodyPart === placement.bodyPart && other.layer > placement.layer) {
+      return entity;
+    }
   }
-  
+
   return null;
 }
 
@@ -127,14 +131,11 @@ export function buildWearableEventParams(
     item: nounPhraseFor(item)
   };
   
-  if (wearableTrait.bodyPart) {
-    params.bodyPart = wearableTrait.bodyPart;
+  if (wearableTrait.placement) {
+    params.bodyPart = wearableTrait.placement.bodyPart;
+    params.layer = wearableTrait.placement.layer;
   }
-  
-  if (wearableTrait.layer !== undefined) {
-    params.layer = wearableTrait.layer;
-  }
-  
+
   return params;
 }
 
@@ -192,11 +193,11 @@ export function isWornByActor(
 }
 
 /**
- * Checks if an item has special removal restrictions
+ * Checks if an item refuses to come off once worn (a cursed ring, a welded
+ * collar): the trait's own `canRemove` flag, false.
  */
 export function hasRemovalRestrictions(
   wearableTrait: WearableTrait
 ): boolean {
-  // Check for cursed or otherwise unremovable items
-  return !!(wearableTrait as unknown as Record<string, unknown>).cursed;
+  return !wearableTrait.canRemove;
 }
