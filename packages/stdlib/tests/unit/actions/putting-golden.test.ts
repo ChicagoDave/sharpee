@@ -37,8 +37,7 @@ describe('puttingAction (Golden Pattern)', () => {
       world.moveEntity(item.id, room.id);
       
       const command = createCommand(IFActions.PUTTING, {
-        entity: item,
-        text: 'test item'
+        entity: item
       });
       const context = createRealTestContext(puttingAction, world, command);
       

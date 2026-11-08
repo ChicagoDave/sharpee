@@ -11,10 +11,8 @@ import { waitingAction } from '../../src/actions/standard/waiting';
 import { CommandValidator } from '../../src/validation/command-validator';
 import { WorldModel, IFEntity, TraitType, ActorTrait, RoomTrait } from '@sharpee/world-model';
 import { createRealTestContext } from '../test-utils';
-import type { 
-  LanguageProvider, 
-  ParsedCommand
-} from '@sharpee/world-model';
+import type { IParsedCommand } from '@sharpee/world-model';
+import type { LanguageProvider } from '@sharpee/if-domain';
 
 /** English, handed to hand-built worlds as the language's words (ADR-387 D2). */
 const ENGLISH_WORDS = { selfWords: ['me', 'myself', 'self', 'yourself'], nameStopwords: ['the', 'a', 'an', 'of'] };
@@ -56,7 +54,7 @@ class MockLanguageProvider implements Partial<LanguageProvider> {
     return message;
   }
 
-  parseCommand(input: string): ParsedCommand {
+  parseCommand(input: string): IParsedCommand {
     // Simplified parsing for testing
     const words = input.toLowerCase().trim().split(/\s+/);
     const verb = words[0];
@@ -78,7 +76,7 @@ class MockLanguageProvider implements Partial<LanguageProvider> {
         verb: { tokens: [0], text: verb, head: verb }
       },
       pattern: 'VERB_ONLY'
-    } as unknown as ParsedCommand;
+    } as unknown as IParsedCommand;
   }
 }
 

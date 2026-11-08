@@ -37,8 +37,7 @@ describe('closingAction (Golden Pattern)', () => {
       world.moveEntity(item.id, room.id);
       
       const command = createCommand(IFActions.CLOSING, {
-        entity: item,
-        text: 'test item'
+        entity: item
       });
       const context = createRealTestContext(closingAction, world, command);
       
@@ -496,7 +495,7 @@ describe('Interceptor postReport (ADR-118, interceptor-wiring audit 2026-07-12)'
     const context = createRealTestContext(
       closingAction,
       world,
-      createCommand(IFActions.CLOSING, { entity: box, text: 'music box' })
+      createCommand(IFActions.CLOSING, { entity: box })
     );
     const validation = runValidatePhase(closingAction, context);
     expect(validation.valid).toBe(true);

@@ -40,8 +40,7 @@ describe('openingAction (Golden Pattern)', () => {
       world.moveEntity(item.id, room.id);
       
       const command = createCommand(IFActions.OPENING, {
-        entity: item,
-        text: 'test item'
+        entity: item
       });
       const context = createRealTestContext(openingAction, world, command);
       

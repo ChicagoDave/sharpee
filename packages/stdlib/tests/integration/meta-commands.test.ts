@@ -8,7 +8,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { MetaCommandRegistry, MetaAction } from '../../src/actions';
 import { ActionContext } from '../../src/actions/enhanced-types';
-import { SemanticEvent } from '@sharpee/core';
+import { ISemanticEvent } from '@sharpee/core';
 
 // Test meta-action implementation
 class TestMetaAction extends MetaAction {
@@ -20,7 +20,7 @@ class TestMetaAction extends MetaAction {
     this.ensureRegistered();
   }
   
-  execute(context: ActionContext): SemanticEvent[] {
+  execute(context: ActionContext): ISemanticEvent[] {
     return [
       context.event('test.meta_executed', {
         message: 'Meta command executed'
@@ -34,7 +34,7 @@ class TestRegularAction {
   id = 'test.regular_command';
   verbs = ['testregular'];
   
-  execute(context: ActionContext): SemanticEvent[] {
+  execute(context: ActionContext): ISemanticEvent[] {
     return [
       context.event('test.regular_executed', {
         message: 'Regular command executed'

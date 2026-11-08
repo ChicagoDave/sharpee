@@ -33,7 +33,7 @@ describe('attackingAction — player-death re-point (ADR-224)', () => {
   });
 
   test('a lethal attack on the PLAYER emits if.event.player.died (cause combat), not if.event.death', () => {
-    const command = createCommand(IFActions.ATTACKING, { entity: player, text: 'yourself' });
+    const command = createCommand(IFActions.ATTACKING, { entity: player });
     context = createRealTestContext(attackingAction, world, command);
     context.sharedData.attackResult = { success: true, type: 'killed', targetKilled: true } as any;
 
@@ -53,7 +53,7 @@ describe('attackingAction — player-death re-point (ADR-224)', () => {
   });
 
   test('a lethal attack on an NPC still emits the generic if.event.death (regression)', () => {
-    const command = createCommand(IFActions.ATTACKING, { entity: npc, text: 'goblin' });
+    const command = createCommand(IFActions.ATTACKING, { entity: npc });
     context = createRealTestContext(attackingAction, world, command);
     context.sharedData.attackResult = { success: true, type: 'killed', targetKilled: true } as any;
 

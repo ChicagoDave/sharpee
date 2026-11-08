@@ -12,10 +12,7 @@ import { AuthorModel, WorldModel, IFEntity, TraitType, EntityType, IParsedComman
 import { LanguageProvider } from '@sharpee/if-domain';
 import { createCommand, createParserWithWorld, parseCommand } from '../../test-utils';
 import { StandardScopeResolver } from '../../../src/scope/scope-resolver';
-import type { 
-  SystemEvent,
-  GenericEventSource
-} from '@sharpee/core';
+import type { ISystemEvent, IGenericEventSource } from '@sharpee/core';
 
 // Import standard actions
 import { takingAction } from '../../../src/actions/standard/taking';
@@ -27,14 +24,14 @@ import { pushingAction } from '../../../src/actions/standard/pushing';
 const ENGLISH_WORDS = { selfWords: ['me', 'myself', 'self', 'yourself'], nameStopwords: ['the', 'a', 'an', 'of'] };
 
 // Mock event source for testing debug events
-class TestEventSource implements GenericEventSource<SystemEvent> {
-  events: SystemEvent[] = [];
+class TestEventSource implements IGenericEventSource<ISystemEvent> {
+  events: ISystemEvent[] = [];
 
-  emit(event: SystemEvent): void {
+  emit(event: ISystemEvent): void {
     this.events.push(event);
   }
 
-  subscribe(handler: (event: SystemEvent) => void): () => void {
+  subscribe(handler: (event: ISystemEvent) => void): () => void {
     return () => {};
   }
 
@@ -42,7 +39,7 @@ class TestEventSource implements GenericEventSource<SystemEvent> {
     this.events = [];
   }
 
-  getEventsByType(type: string): SystemEvent[] {
+  getEventsByType(type: string): ISystemEvent[] {
     return this.events.filter(e => e.type === type);
   }
 }

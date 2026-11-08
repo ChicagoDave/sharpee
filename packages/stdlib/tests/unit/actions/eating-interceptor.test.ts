@@ -38,7 +38,7 @@ const drive = (world: WorldModel, item: any) => {
   const context = createRealTestContext(
     eatingAction,
     world,
-    createCommand(IFActions.EATING, { entity: item, text: 'seed cake' })
+    createCommand(IFActions.EATING, { entity: item })
   );
   const validation = runValidatePhase(eatingAction, context);
   if (!validation.valid) {

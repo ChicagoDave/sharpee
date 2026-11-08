@@ -36,8 +36,7 @@ describe('insertingAction (Golden Pattern)', () => {
       world.moveEntity(item.id, room.id);
       
       const command = createCommand(IFActions.INSERTING, {
-        entity: item,
-        text: 'test item'
+        entity: item
       });
       const context = createRealTestContext(insertingAction, world, command);
       

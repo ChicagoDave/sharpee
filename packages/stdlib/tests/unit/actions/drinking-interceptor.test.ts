@@ -38,7 +38,7 @@ const drive = (world: WorldModel, item: any) => {
   const context = createRealTestContext(
     drinkingAction,
     world,
-    createCommand(IFActions.DRINKING, { entity: item, text: 'elixir' })
+    createCommand(IFActions.DRINKING, { entity: item })
   );
   const validation = runValidatePhase(drinkingAction, context);
   if (!validation.valid) {

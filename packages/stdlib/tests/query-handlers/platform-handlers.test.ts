@@ -10,8 +10,8 @@ import {
   createRestartQueryHandler
 } from '../../src/query-handlers';
 import { 
-  PendingQuery,
-  QueryResponse,
+  IPendingQuery,
+  IQueryResponse,
   QuerySource,
   QueryType,
   PlatformEventType
@@ -30,7 +30,7 @@ describe('Platform Query Handlers', () => {
 
     describe('canHandle', () => {
       test('should handle quit confirmation queries', () => {
-        const query: PendingQuery = {
+        const query: IPendingQuery = {
           id: 'q1',
           source: QuerySource.SYSTEM,
           type: QueryType.YES_NO,
@@ -44,7 +44,7 @@ describe('Platform Query Handlers', () => {
       });
 
       test('should handle quit with unsaved changes queries', () => {
-        const query: PendingQuery = {
+        const query: IPendingQuery = {
           id: 'q1',
           source: QuerySource.SYSTEM,
           type: QueryType.MULTIPLE_CHOICE,
@@ -59,7 +59,7 @@ describe('Platform Query Handlers', () => {
       });
 
       test('should not handle non-quit queries', () => {
-        const query: PendingQuery = {
+        const query: IPendingQuery = {
           id: 'q1',
           source: QuerySource.SYSTEM,
           type: QueryType.YES_NO,
@@ -75,7 +75,7 @@ describe('Platform Query Handlers', () => {
 
     describe('handleResponse', () => {
       test('should emit quit requested event for quit option', () => {
-        const query: PendingQuery = {
+        const query: IPendingQuery = {
           id: 'q1',
           source: QuerySource.SYSTEM,
           type: QueryType.MULTIPLE_CHOICE,
@@ -86,7 +86,7 @@ describe('Platform Query Handlers', () => {
           created: Date.now()
         };
         
-        const response: QueryResponse = {
+        const response: IQueryResponse = {
           queryId: 'q1',
           rawInput: '1',
           response: 'quit',
@@ -107,7 +107,7 @@ describe('Platform Query Handlers', () => {
       });
 
       it('should handle save and quit option', () => {
-        const query: PendingQuery = {
+        const query: IPendingQuery = {
           id: 'q1',
           source: QuerySource.SYSTEM,
           type: QueryType.MULTIPLE_CHOICE,
@@ -118,7 +118,7 @@ describe('Platform Query Handlers', () => {
           created: Date.now()
         };
         
-        const response: QueryResponse = {
+        const response: IQueryResponse = {
           queryId: 'q1',
           rawInput: '1',
           response: 'save_and_quit',
@@ -139,7 +139,7 @@ describe('Platform Query Handlers', () => {
       });
 
       it('should emit quit cancelled for cancel option', () => {
-        const query: PendingQuery = {
+        const query: IPendingQuery = {
           id: 'q1',
           source: QuerySource.SYSTEM,
           type: QueryType.MULTIPLE_CHOICE,
@@ -150,7 +150,7 @@ describe('Platform Query Handlers', () => {
           created: Date.now()
         };
         
-        const response: QueryResponse = {
+        const response: IQueryResponse = {
           queryId: 'q1',
           rawInput: '2',
           response: 'cancel',
@@ -166,7 +166,7 @@ describe('Platform Query Handlers', () => {
       });
 
       it('should handle yes/no responses', () => {
-        const query: PendingQuery = {
+        const query: IPendingQuery = {
           id: 'q1',
           source: QuerySource.SYSTEM,
           type: QueryType.YES_NO,
@@ -176,7 +176,7 @@ describe('Platform Query Handlers', () => {
           created: Date.now()
         };
         
-        const response: QueryResponse = {
+        const response: IQueryResponse = {
           queryId: 'q1',
           rawInput: 'yes',
           response: true,
@@ -193,7 +193,7 @@ describe('Platform Query Handlers', () => {
 
     describe('handleTimeout', () => {
       it('should emit quit cancelled on timeout', () => {
-        const query: PendingQuery = {
+        const query: IPendingQuery = {
           id: 'q1',
           source: QuerySource.SYSTEM,
           type: QueryType.YES_NO,
@@ -216,7 +216,7 @@ describe('Platform Query Handlers', () => {
 
     describe('handleCancel', () => {
       it('should emit quit cancelled on cancellation', () => {
-        const query: PendingQuery = {
+        const query: IPendingQuery = {
           id: 'q1',
           source: QuerySource.SYSTEM,
           type: QueryType.YES_NO,
@@ -246,7 +246,7 @@ describe('Platform Query Handlers', () => {
 
     describe('canHandle', () => {
       it('should handle restart confirmation queries', () => {
-        const query: PendingQuery = {
+        const query: IPendingQuery = {
           id: 'q1',
           source: QuerySource.SYSTEM,
           type: QueryType.YES_NO,
@@ -260,7 +260,7 @@ describe('Platform Query Handlers', () => {
       });
 
       it('should handle restart with unsaved changes queries', () => {
-        const query: PendingQuery = {
+        const query: IPendingQuery = {
           id: 'q1',
           source: QuerySource.SYSTEM,
           type: QueryType.MULTIPLE_CHOICE,
@@ -275,7 +275,7 @@ describe('Platform Query Handlers', () => {
       });
 
       it('should not handle non-restart queries', () => {
-        const query: PendingQuery = {
+        const query: IPendingQuery = {
           id: 'q1',
           source: QuerySource.SYSTEM,
           type: QueryType.YES_NO,
@@ -291,7 +291,7 @@ describe('Platform Query Handlers', () => {
 
     describe('handleResponse', () => {
       it('should emit restart requested event for restart option', () => {
-        const query: PendingQuery = {
+        const query: IPendingQuery = {
           id: 'q1',
           source: QuerySource.SYSTEM,
           type: QueryType.YES_NO,
@@ -306,7 +306,7 @@ describe('Platform Query Handlers', () => {
           created: Date.now()
         };
         
-        const response: QueryResponse = {
+        const response: IQueryResponse = {
           queryId: 'q1',
           rawInput: 'yes',
           response: true,
@@ -330,7 +330,7 @@ describe('Platform Query Handlers', () => {
       });
 
       it('should handle save and restart option', () => {
-        const query: PendingQuery = {
+        const query: IPendingQuery = {
           id: 'q1',
           source: QuerySource.SYSTEM,
           type: QueryType.MULTIPLE_CHOICE,
@@ -341,7 +341,7 @@ describe('Platform Query Handlers', () => {
           created: Date.now()
         };
         
-        const response: QueryResponse = {
+        const response: IQueryResponse = {
           queryId: 'q1',
           rawInput: '1',
           response: 'save_and_restart',
@@ -363,7 +363,7 @@ describe('Platform Query Handlers', () => {
       });
 
       it('should emit restart cancelled for cancel option', () => {
-        const query: PendingQuery = {
+        const query: IPendingQuery = {
           id: 'q1',
           source: QuerySource.SYSTEM,
           type: QueryType.YES_NO,
@@ -373,7 +373,7 @@ describe('Platform Query Handlers', () => {
           created: Date.now()
         };
         
-        const response: QueryResponse = {
+        const response: IQueryResponse = {
           queryId: 'q1',
           rawInput: 'no',
           response: false,
@@ -390,7 +390,7 @@ describe('Platform Query Handlers', () => {
 
     describe('handleTimeout', () => {
       it('should emit restart cancelled on timeout', () => {
-        const query: PendingQuery = {
+        const query: IPendingQuery = {
           id: 'q1',
           source: QuerySource.SYSTEM,
           type: QueryType.YES_NO,
@@ -409,7 +409,7 @@ describe('Platform Query Handlers', () => {
 
     describe('handleCancel', () => {
       it('should emit restart cancelled on cancellation', () => {
-        const query: PendingQuery = {
+        const query: IPendingQuery = {
           id: 'q1',
           source: QuerySource.SYSTEM,
           type: QueryType.YES_NO,

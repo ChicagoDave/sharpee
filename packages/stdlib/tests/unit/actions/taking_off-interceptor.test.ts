@@ -35,7 +35,7 @@ const drive = (world: WorldModel, hat: any) => {
   const context = createRealTestContext(
     takingOffAction,
     world,
-    createCommand(IFActions.TAKING_OFF, { entity: hat, text: 'wool hat' })
+    createCommand(IFActions.TAKING_OFF, { entity: hat })
   );
   const validation = runValidatePhase(takingOffAction, context);
   if (!validation.valid) {

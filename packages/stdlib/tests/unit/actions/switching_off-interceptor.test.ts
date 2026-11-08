@@ -37,7 +37,7 @@ const drive = (world: WorldModel, target: any) => {
   const context = createRealTestContext(
     switchingOffAction,
     world,
-    createCommand(IFActions.SWITCHING_OFF, { entity: target, text: 'brass lantern' })
+    createCommand(IFActions.SWITCHING_OFF, { entity: target })
   );
   const validation = runValidatePhase(switchingOffAction, context);
   if (!validation.valid) {

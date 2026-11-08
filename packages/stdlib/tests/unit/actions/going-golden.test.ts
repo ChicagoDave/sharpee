@@ -575,8 +575,7 @@ describe('goingAction (Golden Pattern)', () => {
       
       // Direction can come from directObject instead of extras
       const command = createCommand(IFActions.GOING, {
-        entity: { id: 'direction', name: way } as unknown as IFEntity,
-        text: 'outside'
+        entity: { id: 'direction', name: way } as unknown as IFEntity
       });
       
       const context = createRealTestContext(goingAction, world, command);

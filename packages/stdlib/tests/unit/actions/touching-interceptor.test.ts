@@ -36,7 +36,7 @@ const drive = (world: WorldModel, object: any) => {
   const context = createRealTestContext(
     touchingAction,
     world,
-    createCommand(IFActions.TOUCHING, { entity: object, text: 'marble statue' })
+    createCommand(IFActions.TOUCHING, { entity: object })
   );
   const validation = runValidatePhase(touchingAction, context);
   if (!validation.valid) {

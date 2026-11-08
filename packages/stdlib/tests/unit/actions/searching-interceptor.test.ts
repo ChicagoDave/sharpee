@@ -40,7 +40,7 @@ const drive = (world: WorldModel, target: any) => {
   const context = createRealTestContext(
     searchingAction,
     world,
-    createCommand(IFActions.SEARCHING, { entity: target, text: 'wooden crate' })
+    createCommand(IFActions.SEARCHING, { entity: target })
   );
   const validation = runValidatePhase(searchingAction, context);
   if (!validation.valid) {

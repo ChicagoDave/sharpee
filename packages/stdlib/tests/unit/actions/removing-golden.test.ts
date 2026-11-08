@@ -35,8 +35,7 @@ describe('removingAction (Golden Pattern)', () => {
       world.moveEntity(item.id, room.id);
       
       const command = createCommand(IFActions.REMOVING, {
-        entity: item,
-        text: 'test item'
+        entity: item
       });
       const context = createRealTestContext(removingAction, world, command);
       

@@ -3,8 +3,8 @@ import { WorldModel, IFEntity, IdentityTrait, SupporterTrait, RoomTrait, TraitTy
 import { CommandValidator } from '../../src/validation/command-validator';
 import { StandardActionRegistry } from '../../src/actions/registry';
 import { standardActions } from '../../src/actions/standard/index';
-import { ParsedCommand, NounPhrase } from '@sharpee/world-model';
-import { createSemanticEventSource, SystemEvent } from '@sharpee/core';
+import { IParsedCommand, INounPhrase } from '@sharpee/world-model';
+import { createSemanticEventSource, ISystemEvent } from '@sharpee/core';
 
 /** English, handed to hand-built worlds as the language's words (ADR-387 D2). */
 const ENGLISH_WORDS = { selfWords: ['me', 'myself', 'self', 'yourself'], nameStopwords: ['the', 'a', 'an', 'of'] };
@@ -90,7 +90,7 @@ describe('Entity alias resolution', () => {
   });
 
   it('should find entity by its primary name', async () => {
-    const command: ParsedCommand = {
+    const command: IParsedCommand = {
       pattern: 'VERB_NOUN',
       action: 'if.action.examining',
       structure: {
@@ -102,7 +102,7 @@ describe('Entity alias resolution', () => {
           determiner: null,
           quantity: null,
           isAll: false
-        } as NounPhrase
+        } as INounPhrase
       }
     };
 
@@ -114,7 +114,7 @@ describe('Entity alias resolution', () => {
   });
 
   it('should find entity by alias "hook"', async () => {
-    const command: ParsedCommand = {
+    const command: IParsedCommand = {
       pattern: 'VERB_NOUN',
       action: 'if.action.examining',
       structure: {
@@ -126,7 +126,7 @@ describe('Entity alias resolution', () => {
           determiner: null,
           quantity: null,
           isAll: false
-        } as NounPhrase
+        } as INounPhrase
       }
     };
 
@@ -138,7 +138,7 @@ describe('Entity alias resolution', () => {
   });
 
   it('should find entity by alias "peg"', async () => {
-    const command: ParsedCommand = {
+    const command: IParsedCommand = {
       pattern: 'VERB_NOUN',
       action: 'if.action.examining',
       structure: {
@@ -150,7 +150,7 @@ describe('Entity alias resolution', () => {
           determiner: null,
           quantity: null,
           isAll: false
-        } as NounPhrase
+        } as INounPhrase
       }
     };
 
@@ -173,7 +173,7 @@ describe('Entity alias resolution', () => {
     }));
     world.moveEntity(cloak.id, player.id); // Player is carrying it
     
-    const command: ParsedCommand = {
+    const command: IParsedCommand = {
       pattern: 'VERB_NOUN_PREP_NOUN',
       action: 'if.action.putting',
       structure: {
@@ -185,7 +185,7 @@ describe('Entity alias resolution', () => {
           determiner: null,
           quantity: null,
           isAll: false
-        } as NounPhrase,
+        } as INounPhrase,
         preposition: 'on',
         indirectObject: {
           text: 'hook',
@@ -194,7 +194,7 @@ describe('Entity alias resolution', () => {
           determiner: null,
           quantity: null,
           isAll: false
-        } as NounPhrase
+        } as INounPhrase
       }
     };
 
@@ -223,7 +223,7 @@ describe('Entity alias resolution', () => {
     });
 
     it('should resolve multi-word alias "bush babies" via full text match', async () => {
-      const command: ParsedCommand = {
+      const command: IParsedCommand = {
         pattern: 'VERB_NOUN',
         action: 'if.action.examining',
         structure: {
@@ -235,7 +235,7 @@ describe('Entity alias resolution', () => {
             determiner: null,
             quantity: null,
             isAll: false
-          } as NounPhrase
+          } as INounPhrase
         }
       };
 
@@ -247,7 +247,7 @@ describe('Entity alias resolution', () => {
     });
 
     it('should resolve single-word alias "galagos" normally', async () => {
-      const command: ParsedCommand = {
+      const command: IParsedCommand = {
         pattern: 'VERB_NOUN',
         action: 'if.action.examining',
         structure: {
@@ -259,7 +259,7 @@ describe('Entity alias resolution', () => {
             determiner: null,
             quantity: null,
             isAll: false
-          } as NounPhrase
+          } as INounPhrase
         }
       };
 
@@ -272,7 +272,7 @@ describe('Entity alias resolution', () => {
 
     it('should resolve multi-word entity name as primary name', async () => {
       // "bush babies" is the entity name, not just an alias
-      const command: ParsedCommand = {
+      const command: IParsedCommand = {
         pattern: 'VERB_NOUN',
         action: 'if.action.examining',
         structure: {
@@ -284,7 +284,7 @@ describe('Entity alias resolution', () => {
             determiner: null,
             quantity: null,
             isAll: false
-          } as NounPhrase
+          } as INounPhrase
         }
       };
 
@@ -306,7 +306,7 @@ describe('Entity alias resolution', () => {
 
       // "examine bush babies" — full text "bush babies" should match bush-babies entity,
       // not the "babies" entity (which only matches the head token)
-      const command: ParsedCommand = {
+      const command: IParsedCommand = {
         pattern: 'VERB_NOUN',
         action: 'if.action.examining',
         structure: {
@@ -318,7 +318,7 @@ describe('Entity alias resolution', () => {
             determiner: null,
             quantity: null,
             isAll: false
-          } as NounPhrase
+          } as INounPhrase
         }
       };
 
@@ -336,7 +336,7 @@ describe('Entity alias resolution', () => {
       // the brass key). The pre-D3 head-noun fallback silently resolved
       // this to the brass hook; that was the wrong-resolution class the
       // ruling removes.
-      const command: ParsedCommand = {
+      const command: IParsedCommand = {
         pattern: 'VERB_NOUN',
         action: 'if.action.examining',
         structure: {
@@ -348,7 +348,7 @@ describe('Entity alias resolution', () => {
             determiner: null,
             quantity: null,
             isAll: false
-          } as NounPhrase
+          } as INounPhrase
         }
       };
 
@@ -376,7 +376,7 @@ describe('Entity alias resolution', () => {
     world.moveEntity(otherHook.id, otherRoom.id);
     
     // Player should only see the hook in their current room
-    const command: ParsedCommand = {
+    const command: IParsedCommand = {
       pattern: 'VERB_NOUN',
       action: 'if.action.examining',
       structure: {
@@ -388,7 +388,7 @@ describe('Entity alias resolution', () => {
           determiner: null,
           quantity: null,
           isAll: false
-        } as NounPhrase
+        } as INounPhrase
       }
     };
 

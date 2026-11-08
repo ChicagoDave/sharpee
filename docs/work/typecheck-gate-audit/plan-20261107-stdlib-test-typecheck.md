@@ -58,8 +58,8 @@ Cluster 1 is 454 multi-line `entity.add({ type: TraitType.X, ... })` rewrites. U
 - **Files**: `packages/stdlib/tests/`
 - **Exit state**: Clusters 1 and 2 are zero; vitest green; error count reported (expected about 300, the cluster 3 tail).
 - **Demonstration**: vitest and test tsc counts printed; tsc output contains no error mentioning "text" on a parsed object.
-- **Demonstrated**: 
-- **Status**: PENDING
+- **Demonstrated**: 2026-11-08 01:05. All 43 `text` options sat beside an `entity` in a `createCommand(...)` call, and test-utils' createCommand (index.ts:157-215) sets `directObject.text` from `entity.name` whenever an entity is given, so every one was dead: deleted in 20 files, no runtime change. The renamed exports updated to the current names in 6 files: `ISemanticEvent` (meta-commands), `IPendingQuery`/`IQueryResponse` (platform-handlers), `ISystemEvent`/`IGenericEventSource` (command-validator-golden), `IParsedCommand`/`INounPhrase`/`ISystemEvent` (entity-alias-resolution), `IParsedCommand` (parser-helpers), and action-language-integration, whose `LanguageProvider` now comes from `@sharpee/if-domain` where it lives. `tsc -p packages/stdlib/tsconfig.test.json`: 341 errors (from 369); grep for "'text' does not exist" over the output: 0; TS2724/TS2305: 0. The 16 TS2353 left are the 14 #664 sites plus two outside the ITrait cluster, carried into Phase 4 with the other codes the plan did not name (TS2352 ×19, TS2322 ×18, TS2345). `pnpm --filter '@sharpee/stdlib' exec vitest run`: 150 files, 1915 tests passing, 0 failures. 26 files changed since 3844de0ae. No test's assertion changed meaning in this phase. [reported by session, unverified]
+- **Status**: DONE
 
 ### Phase 4: Long tail, part one — TS2339, TS7006, TS2554 and TS2769
 - **Tier**: Large

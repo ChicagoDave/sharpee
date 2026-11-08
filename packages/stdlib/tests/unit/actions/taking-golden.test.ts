@@ -41,8 +41,7 @@ describe('takingAction (Golden Pattern)', () => {
       world.moveEntity(item.id, room.id);
       
       const command = createCommand(IFActions.TAKING, {
-        entity: item,
-        text: 'test item'
+        entity: item
       });
       const context = createRealTestContext(takingAction, world, command);
       
@@ -629,7 +628,7 @@ describe('Interceptor postExecute/postReport (ADR-118 full contract)', () => {
     const context = createRealTestContext(
       takingAction,
       world,
-      createCommand(IFActions.TAKING, { entity: item, text: 'brass token' })
+      createCommand(IFActions.TAKING, { entity: item })
     );
     const validation = runValidatePhase(takingAction, context);
     expect(validation.valid).toBe(true);

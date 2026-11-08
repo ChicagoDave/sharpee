@@ -39,7 +39,7 @@ const drive = (world: WorldModel, object: any) => {
   const context = createRealTestContext(
     pullingAction,
     world,
-    createCommand(IFActions.PULLING, { entity: object, text: 'bell rope' })
+    createCommand(IFActions.PULLING, { entity: object })
   );
   const validation = runValidatePhase(pullingAction, context);
   if (!validation.valid) {

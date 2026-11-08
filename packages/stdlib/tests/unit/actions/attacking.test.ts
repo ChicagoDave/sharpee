@@ -59,8 +59,7 @@ describe('attackingAction - Three-Phase Implementation', () => {
 
     test('validate should return ValidationResult', () => {
       const command = createCommand(IFActions.ATTACKING, {
-        entity: target,
-        text: 'goblin'
+        entity: target
       });
       context = createRealTestContext(attackingAction, world, command);
       
@@ -73,8 +72,7 @@ describe('attackingAction - Three-Phase Implementation', () => {
 
     test('execute should return void', () => {
       const command = createCommand(IFActions.ATTACKING, {
-        entity: target,
-        text: 'goblin'
+        entity: target
       });
       context = createRealTestContext(attackingAction, world, command);
       
@@ -85,8 +83,7 @@ describe('attackingAction - Three-Phase Implementation', () => {
 
     test('report should return ISemanticEvent array', () => {
       const command = createCommand(IFActions.ATTACKING, {
-        entity: target,
-        text: 'goblin'
+        entity: target
       });
       context = createRealTestContext(attackingAction, world, command);
       
@@ -120,8 +117,7 @@ describe('attackingAction - Three-Phase Implementation', () => {
       // Don't move it to the room - it's nowhere, thus not visible
       
       const command = createCommand(IFActions.ATTACKING, {
-        entity: hiddenTarget,
-        text: 'hidden'
+        entity: hiddenTarget
       });
       context = createRealTestContext(attackingAction, world, command);
       
@@ -138,8 +134,7 @@ describe('attackingAction - Three-Phase Implementation', () => {
       world.moveEntity(farTarget.id, otherRoom.id);
       
       const command = createCommand(IFActions.ATTACKING, {
-        entity: farTarget,
-        text: 'distant goblin'
+        entity: farTarget
       });
       context = createRealTestContext(attackingAction, world, command);
       
@@ -155,8 +150,7 @@ describe('attackingAction - Three-Phase Implementation', () => {
 
     test('should fail when attacking self', () => {
       const command = createCommand(IFActions.ATTACKING, {
-        entity: player,
-        text: 'myself'
+        entity: player
       });
       context = createRealTestContext(attackingAction, world, command);
       
@@ -188,8 +182,7 @@ describe('attackingAction - Three-Phase Implementation', () => {
 
     test('should pass validation with valid target', () => {
       const command = createCommand(IFActions.ATTACKING, {
-        entity: target,
-        text: 'goblin'
+        entity: target
       });
       context = createRealTestContext(attackingAction, world, command);
       
@@ -215,8 +208,7 @@ describe('attackingAction - Three-Phase Implementation', () => {
   describe('Weapon Inference', () => {
     test('should infer weapon for stab verb', () => {
       const command = createCommand(IFActions.ATTACKING, {
-        entity: target,
-        text: 'goblin'
+        entity: target
       });
       command.parsed.action = 'stab';
       context = createRealTestContext(attackingAction, world, command);
@@ -229,8 +221,7 @@ describe('attackingAction - Three-Phase Implementation', () => {
 
     test('should infer weapon for slash verb', () => {
       const command = createCommand(IFActions.ATTACKING, {
-        entity: target,
-        text: 'goblin'
+        entity: target
       });
       command.parsed.action = 'slash';
       context = createRealTestContext(attackingAction, world, command);
@@ -243,8 +234,7 @@ describe('attackingAction - Three-Phase Implementation', () => {
 
     test('should infer weapon for cut verb', () => {
       const command = createCommand(IFActions.ATTACKING, {
-        entity: target,
-        text: 'goblin'
+        entity: target
       });
       command.parsed.action = 'cut';
       context = createRealTestContext(attackingAction, world, command);
@@ -257,8 +247,7 @@ describe('attackingAction - Three-Phase Implementation', () => {
 
     test('should not infer weapon for generic attack verb', () => {
       const command = createCommand(IFActions.ATTACKING, {
-        entity: target,
-        text: 'goblin'
+        entity: target
       });
       command.parsed.action = 'attack';
       context = createRealTestContext(attackingAction, world, command);
@@ -292,8 +281,7 @@ describe('attackingAction - Three-Phase Implementation', () => {
   describe('Shared Data Handling', () => {
     test('should store attack result in shared data', () => {
       const command = createCommand(IFActions.ATTACKING, {
-        entity: target,
-        text: 'goblin'
+        entity: target
       });
       context = createRealTestContext(attackingAction, world, command);
       
@@ -327,8 +315,7 @@ describe('attackingAction - Three-Phase Implementation', () => {
       world.moveEntity(vase.id, room.id);
       
       const command = createCommand(IFActions.ATTACKING, {
-        entity: vase,
-        text: 'vase'
+        entity: vase
       });
       context = createRealTestContext(attackingAction, world, command);
       
@@ -347,8 +334,7 @@ describe('attackingAction - Three-Phase Implementation', () => {
       world.moveEntity(vase.id, room.id);
 
       const command = createCommand(IFActions.ATTACKING, {
-        entity: vase,
-        text: 'vase'
+        entity: vase
       });
       context = createRealTestContext(attackingAction, world, command);
 
@@ -369,8 +355,7 @@ describe('attackingAction - Three-Phase Implementation', () => {
       world.moveEntity(vase.id, room.id);
 
       const command = createCommand(IFActions.ATTACKING, {
-        entity: vase,
-        text: 'vase'
+        entity: vase
       });
       context = createRealTestContext(attackingAction, world, command);
 
@@ -425,8 +410,7 @@ describe('attackingAction - Three-Phase Implementation', () => {
     test('should generate blocked event via blocked() method', () => {
       // Test the blocked path when validation explicitly fails
       const command = createCommand(IFActions.ATTACKING, {
-        entity: target,
-        text: 'goblin'
+        entity: target
       });
       context = createRealTestContext(attackingAction, world, command);
 
@@ -448,8 +432,7 @@ describe('attackingAction - Three-Phase Implementation', () => {
       world.moveEntity(vase.id, room.id);
 
       const command = createCommand(IFActions.ATTACKING, {
-        entity: vase,
-        text: 'vase'
+        entity: vase
       });
       context = createRealTestContext(attackingAction, world, command);
 
@@ -468,8 +451,7 @@ describe('attackingAction - Three-Phase Implementation', () => {
       world.moveEntity(rock.id, room.id);
 
       const command = createCommand(IFActions.ATTACKING, {
-        entity: rock,
-        text: 'rock'
+        entity: rock
       });
       context = createRealTestContext(attackingAction, world, command);
 

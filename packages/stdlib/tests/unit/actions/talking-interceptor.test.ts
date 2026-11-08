@@ -43,7 +43,7 @@ const drive = (world: WorldModel, target: IFEntity) => {
   const context = createRealTestContext(
     talkingAction,
     world,
-    createCommand(IFActions.TALKING, { entity: target, text: 'troll' })
+    createCommand(IFActions.TALKING, { entity: target })
   );
   const validation = runValidatePhase(talkingAction, context);
   if (!validation.valid) {

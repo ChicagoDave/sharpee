@@ -79,7 +79,7 @@ describe('Interceptor veto pass-through (formerly always-prefixed actions)', () 
     const context = createRealTestContext(
       wearingAction,
       world,
-      createCommand(IFActions.WEARING, { entity: item, text: 'gold ring' })
+      createCommand(IFActions.WEARING, { entity: item })
     );
     const validation = runValidatePhase(wearingAction, context);
 
@@ -159,7 +159,7 @@ describe('Capability-behavior veto pass-through (ADR-231 D1)', () => {
     const context = createRealTestContext(
       cuttingAction,
       world,
-      createCommand(IFActions.CUTTING, { entity: rope, text: 'thick rope' })
+      createCommand(IFActions.CUTTING, { entity: rope })
     );
     const validation = runValidatePhase(cuttingAction, context);
     return { validation, events: runBlockedPhase(cuttingAction, context, validation) };
@@ -249,7 +249,7 @@ describe('Scope refusals emit fully-qualified scope.* keys', () => {
     const context = createRealTestContext(
       touchingAction,
       world,
-      createCommand(IFActions.TOUCHING, { entity: gem, text: 'ruby gem' })
+      createCommand(IFActions.TOUCHING, { entity: gem })
     );
     const validation = runValidatePhase(touchingAction, context);
 

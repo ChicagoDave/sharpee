@@ -37,7 +37,7 @@ const drive = (world: WorldModel, item: any) => {
   const context = createRealTestContext(
     wearingAction,
     world,
-    createCommand(IFActions.WEARING, { entity: item, text: 'leather cloak' })
+    createCommand(IFActions.WEARING, { entity: item })
   );
   const validation = runValidatePhase(wearingAction, context);
   if (!validation.valid) {

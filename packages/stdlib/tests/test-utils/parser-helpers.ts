@@ -9,7 +9,7 @@ import { EnglishParser } from '@sharpee/parser-en-us';
 import { WorldModel } from '@sharpee/world-model';
 import { type LanguageProvider } from '@sharpee/if-domain';
 import EnglishLanguageProvider from '@sharpee/lang-en-us';
-import type { ParsedCommand } from '@sharpee/world-model';
+import type { IParsedCommand } from '@sharpee/world-model';
 import { CommandValidator } from '../../src/validation/command-validator';
 import { StandardActionRegistry } from '../../src/actions/registry';
 import type { Action } from '../../src/actions/enhanced-types';
@@ -49,7 +49,7 @@ export function parseCommandWithLanguage(
   input: string, 
   world: WorldModel,
   languageProvider: LanguageProvider = EnglishLanguageProvider
-): ParsedCommand | null {
+): IParsedCommand | null {
   const parser = createParserWithLanguage(world, languageProvider);
   const result = parser.parse(input);
   
@@ -63,7 +63,7 @@ export function parseCommandWithLanguage(
 /**
  * Parses a command string using the parser (defaults to English)
  */
-export function parseCommand(input: string, world: WorldModel): ParsedCommand | null {
+export function parseCommand(input: string, world: WorldModel): IParsedCommand | null {
   return parseCommandWithLanguage(input, world, EnglishLanguageProvider);
 }
 
@@ -99,7 +99,7 @@ export function createParsedCommand(
   directObject?: { text: string; modifiers?: string[] },
   preposition?: string,
   indirectObject?: { text: string; modifiers?: string[] }
-): ParsedCommand {
+): IParsedCommand {
   const structure: any = {
     verb: { 
       tokens: [0], 

@@ -39,8 +39,7 @@ describe('droppingAction (Golden Pattern)', () => {
       world.moveEntity(item.id, player.id);
       
       const command = createCommand(IFActions.DROPPING, {
-        entity: item,
-        text: 'test item'
+        entity: item
       });
       const context = createRealTestContext(droppingAction, world, command);
       
@@ -561,7 +560,7 @@ describe('Dropping interceptor hooks (ADR-118 via the ADR-228 lifecycle engine)'
     const context = createRealTestContext(
       droppingAction,
       world,
-      createCommand(IFActions.DROPPING, { entity: item, text: 'brass token' })
+      createCommand(IFActions.DROPPING, { entity: item })
     );
     const validation = runValidatePhase(droppingAction, context);
     if (!validation.valid) {
