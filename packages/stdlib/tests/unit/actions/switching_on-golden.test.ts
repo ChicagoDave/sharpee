@@ -205,10 +205,7 @@ describe('switchingOnAction (Golden Pattern)', () => {
       const { world, player, room } = setupBasicWorld();
       const lamp = world.createEntity('desk lamp', 'object');
       lamp.add(new SwitchableTrait({ isOn: false }));
-      // `radius` and `intensity` are read by switching-shared.ts:38-39 through a cast;
-      // LightSourceTrait declares neither (sharpee #664). The intersection carries
-      // them until ruled.
-      lamp.add(Object.assign(new LightSourceTrait(), { radius: 2, intensity: 'bright' }));
+      lamp.add(new LightSourceTrait({ brightness: 2 }));
       world.moveEntity(lamp.id, room.id);
       
       const context = createRealTestContext(switchingOnAction, world, createCommand(IFActions.SWITCHING_ON, {
@@ -217,11 +214,10 @@ describe('switchingOnAction (Golden Pattern)', () => {
       
       const events = executeWithValidation(switchingOnAction, context);
       
-      // Should include light source data
+      // Should include light source data — the radius is the trait's brightness
       expectEvent(events, 'if.event.switched_on', {
         isLightSource: true,
         lightRadius: 2,
-        lightIntensity: 'bright',
         willIlluminateLocation: true
       });
       
@@ -237,7 +233,7 @@ describe('switchingOnAction (Golden Pattern)', () => {
       
       const flashlight = world.createEntity('LED flashlight', 'object');
       flashlight.add(new SwitchableTrait({ isOn: false }));
-      flashlight.add(Object.assign(new LightSourceTrait(), { radius: 3 })); // radius: sharpee #664
+      flashlight.add(new LightSourceTrait({ brightness: 3 }));
       
       world.moveEntity(flashlight.id, player.id); // Held by player
       
@@ -539,7 +535,7 @@ describe('World State Mutations', () => {
     const { world, player, room } = setupBasicWorld();
     const flashlight = world.createEntity('LED flashlight', 'object');
     flashlight.add(new SwitchableTrait({ isOn: false }));
-    flashlight.add(Object.assign(new LightSourceTrait({ isLit: false }), { radius: 3 })); // radius: sharpee #664
+    flashlight.add(new LightSourceTrait({ isLit: false, brightness: 3 }));
     world.moveEntity(flashlight.id, player.id);
 
     // VERIFY PRECONDITION: flashlight is off and not lit

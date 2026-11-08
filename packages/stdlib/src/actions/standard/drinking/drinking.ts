@@ -2,7 +2,7 @@
  * Drinking action - consume drinkable items
  *
  * This action handles drinking items that have the EDIBLE trait
- * with the isDrink property set to true.
+ * with the `liquid` property set to true.
  *
  * Uses four-phase pattern:
  * 1. validate: Check if item is drinkable and can be consumed

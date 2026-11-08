@@ -233,7 +233,7 @@ describe('touchingAction (Golden Pattern)', () => {
       const { world, player, room, object: water } = TestData.withObject('puddle of water', {
         [TraitType.EDIBLE]: {
           type: TraitType.EDIBLE,
-          isDrink: true
+          liquid: true
         }
       });
       
@@ -256,6 +256,38 @@ describe('touchingAction (Golden Pattern)', () => {
   });
 
   describe('Special Cases', () => {
+    test('a solid edible is not wet and a container of solids is not a liquid container', () => {
+      const { world, player } = setupBasicWorld();
+
+      const bread = world.createEntity('crusty bread', 'object');
+      bread.add(new EdibleTrait({ liquid: false }));
+      world.moveEntity(bread.id, player.id);
+
+      const breadContext = createRealTestContext(touchingAction, world,
+        createCommand(IFActions.TOUCHING, { entity: bread })
+      );
+      const breadEvents = executeWithValidation(touchingAction, breadContext);
+      const touchedBread = breadEvents.find(e => e.type === 'if.event.touched')!;
+      const breadData = touchedBread.data as { texture?: string; messageId?: string };
+      expect(breadData.texture).not.toBe('liquid');
+      expect(breadData.messageId).not.toContain('feels_wet');
+
+      const basket = world.createEntity('wicker basket', 'object');
+      basket.add(new ContainerTrait());
+      const apple = world.createEntity('apple', 'object');
+      apple.add(new EdibleTrait());
+      world.moveEntity(basket.id, player.id);
+      world.moveEntity(apple.id, basket.id);
+
+      const basketContext = createRealTestContext(touchingAction, world,
+        createCommand(IFActions.TOUCHING, { entity: basket })
+      );
+      const basketEvents = executeWithValidation(touchingAction, basketContext);
+      const touchedBasket = basketEvents.find(e => e.type === 'if.event.touched')!;
+      const basketData = touchedBasket.data as { messageId?: string };
+      expect(basketData.messageId).not.toContain('liquid_container');
+    });
+
     test('should detect container with liquid inside', () => {
       const { world, player, room } = setupBasicWorld();
       
@@ -263,9 +295,7 @@ describe('touchingAction (Golden Pattern)', () => {
       bottle.add(new ContainerTrait());
       
       const water = world.createEntity('water', 'object');
-      // `isDrink` is read by touching.ts:181 through a cast; EdibleTrait declares
-      // `liquid` instead (sharpee #664). The intersection carries it until ruled.
-      water.add(Object.assign(new EdibleTrait(), { isDrink: true }));
+      water.add(new EdibleTrait({ liquid: true }));
       
       world.moveEntity(bottle.id, player.id);
       world.moveEntity(water.id, bottle.id);

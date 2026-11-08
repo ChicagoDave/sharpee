@@ -10,8 +10,8 @@ export interface SwitchingAnalysis {
   isLightSource: boolean;
   otherLightsPresent: boolean;
   isInSameRoom: boolean;
+  /** The light's brightness (LightSourceTrait.brightness), when it is a light source. */
   lightRadius?: number;
-  lightIntensity?: string;
   willAffectDarkness?: boolean;
 }
 
@@ -33,10 +33,7 @@ export function analyzeSwitchingContext(
 
   // Add light source details if applicable
   if (analysis.isLightSource) {
-    const lightTrait = target.getTrait(LightSourceTrait);
-    const lightRecord = lightTrait as unknown as Record<string, unknown> | undefined;
-    analysis.lightRadius = (lightRecord?.radius ?? lightTrait?.brightness ?? 1) as number;
-    analysis.lightIntensity = (lightTrait as unknown as Record<string, unknown>)?.intensity as string || 'normal';
+    analysis.lightRadius = target.getTrait(LightSourceTrait)?.brightness;
   }
 
   // Check room conditions

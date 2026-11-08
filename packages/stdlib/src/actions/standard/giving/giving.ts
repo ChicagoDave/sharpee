@@ -36,6 +36,26 @@ import {
 } from '../../lifecycle/index.js';
 
 /**
+ * A recipient's gift preferences, stored under `customProperties.preferences`
+ * on its ActorTrait: name fragments it refuses, likes, or takes reluctantly.
+ * A TypeScript-story knob; a Chord story refuses a gift with a clause.
+ */
+interface GivingPreferences {
+  refuses?: string[];
+  likes?: string[];
+  dislikes?: string[];
+}
+
+/**
+ * Read a recipient's gift preferences from its ActorTrait, if it declares any.
+ * @param actor the recipient's ActorTrait, or undefined for a non-actor
+ * @returns the preferences, or undefined when none are stored
+ */
+function givingPreferencesOf(actor: ActorTrait | undefined): GivingPreferences | undefined {
+  return actor?.customProperties?.['preferences'] as GivingPreferences | undefined;
+}
+
+/**
  * Interceptor surface (ADR-228): BOTH the given item and the recipient
  * are consulted (D3-B published order: direct object first), each side's
  * sharedData seeded with the other entity's identity (D3 sub-ruling —
@@ -191,7 +211,7 @@ export const givingAction: Action & { metadata: ActionMetadata } = {
     // Check inventory capacity
     const recipientActor = recipient.getTrait(ActorTrait);
     if (recipientActor) {
-      const limit = recipientActor.capacity ?? (recipientActor as unknown as Record<string, unknown>)['inventoryLimit'] as typeof recipientActor.capacity;
+      const limit = recipientActor.capacity;
 
       if (limit) {
         // ADR-247: capacity counts carried items, not worn.
@@ -225,7 +245,7 @@ export const givingAction: Action & { metadata: ActionMetadata } = {
     }
 
     // Check for preferences (stored in actor's customProperties)
-    const preferences = (recipientActor?.customProperties?.['preferences'] ?? (recipientActor as unknown as Record<string, unknown>)?.['preferences']) as Record<string, unknown> | undefined;
+    const preferences = givingPreferencesOf(recipientActor);
     if (preferences) {
       const itemName = item.name.toLowerCase();
 
@@ -274,7 +294,7 @@ export const givingAction: Action & { metadata: ActionMetadata } = {
     // Determine acceptance type based on preferences
     let acceptanceType: 'normal' | 'grateful' | 'reluctant' = 'normal';
     const recipientActor = recipient.getTrait(ActorTrait);
-    const preferences = (recipientActor?.customProperties?.['preferences'] ?? (recipientActor as unknown as Record<string, unknown>)?.['preferences']) as Record<string, unknown> | undefined;
+    const preferences = givingPreferencesOf(recipientActor);
 
     if (preferences) {
       const itemName = item.name.toLowerCase();

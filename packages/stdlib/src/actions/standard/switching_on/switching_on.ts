@@ -66,7 +66,6 @@ interface SwitchingOnSharedData {
   /** The light's behavior answered that it gives light now (D20). */
   cameAlight?: boolean;
   lightRadius?: number;
-  lightIntensity?: string;
   willIlluminateLocation?: boolean;
   // Auto-LOOK: Room was dark before turning on light
   wasDarkBefore?: boolean;
@@ -194,7 +193,6 @@ export const switchingOnAction: Action & { metadata: ActionMetadata } = {
     if (analysis.isLightSource) {
       sharedData.isLightSource = true;
       sharedData.lightRadius = analysis.lightRadius;
-      sharedData.lightIntensity = analysis.lightIntensity;
 
       if (analysis.isInSameRoom && analysis.willAffectDarkness) {
         sharedData.willIlluminateLocation = true;
@@ -282,7 +280,6 @@ export const switchingOnAction: Action & { metadata: ActionMetadata } = {
         actorId: context.actor.id,
         isLightSource: sharedData.isLightSource,
         lightRadius: sharedData.lightRadius,
-        lightIntensity: sharedData.lightIntensity,
         willIlluminateLocation: sharedData.willIlluminateLocation,
         temporary: sharedData.temporary,
         autoOffTime: sharedData.autoOffTime,

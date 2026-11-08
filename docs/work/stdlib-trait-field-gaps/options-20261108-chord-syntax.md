@@ -380,6 +380,15 @@ forbids.
 **Recommendation: A.** It is the shape David already chose for 5.0, built one round early for
 the strength half only.
 
+**Found during Phase 2 (2026-11-08), an input to R5's ADR:** stdlib's scope layer already
+carries two sensory scales of its own in the witness events (`packages/stdlib/src/scope/types.ts:263`,
+`:276`): `WitnessSoundEvent.intensity: 'faint' | 'moderate' | 'loud'` and
+`WitnessScentEvent.intensity: 'faint' | 'moderate' | 'strong'`, read by no scope module outside
+the type file. So a sound strength has two platform scales already (ADR-172's five-tier
+`VolumeTier` and the witness three-tier), and scent has one. The ADR should pick one ruler per
+sense and name the other as derived or retired; `ScentTrait.strength` fitting the witness scent
+scale (`'faint' | 'moderate' | 'strong'`) is the obvious alignment on the scent side.
+
 ### R6 — Chord words now
 
 With A in place, the minimal Chord words are two bare adjectives in the closed catalog:

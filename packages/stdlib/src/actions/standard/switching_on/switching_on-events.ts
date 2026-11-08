@@ -17,12 +17,9 @@ export interface SwitchedOnEventData {
   /** Whether the device is a light source */
   isLightSource?: boolean;
   
-  /** Light radius if it's a light source */
+  /** The light's brightness (LightSourceTrait.brightness) if it's a light source */
   lightRadius?: number;
-  
-  /** Light intensity if it's a light source */
-  lightIntensity?: string;
-  
+
   /** Whether this will illuminate the location */
   willIlluminateLocation?: boolean;
   

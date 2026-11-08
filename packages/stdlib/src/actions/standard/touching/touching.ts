@@ -16,7 +16,7 @@
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types.js';
 import { type ISemanticEvent } from '@sharpee/core';
-import { TraitType, IdentityTrait, SwitchableTrait } from '@sharpee/world-model';
+import { TraitType, IdentityTrait, SwitchableTrait, EdibleTrait } from '@sharpee/world-model';
 import { IFActions } from '../../constants.js';
 import { TouchedEventData } from './touching-events.js';
 import { ActionMetadata } from '../../../validation/index.js';
@@ -176,13 +176,7 @@ export const touchingAction: Action & { metadata: ActionMetadata } = {
       // Check for liquid contents
       if (target.has(TraitType.CONTAINER)) {
         const contents = context.world.getContents(target.id);
-        const hasLiquid = contents.some(item => {
-          if (item.has(TraitType.EDIBLE)) {
-            const edibleTrait = item.get(TraitType.EDIBLE) as { isDrink?: boolean };
-            return edibleTrait.isDrink;
-          }
-          return false;
-        });
+        const hasLiquid = contents.some(item => item.getTrait(EdibleTrait)?.liquid === true);
 
         if (hasLiquid) {
           messageId = 'liquid_container';
@@ -193,8 +187,7 @@ export const touchingAction: Action & { metadata: ActionMetadata } = {
         messageId = 'feels_hard';
       }
     } else if (target.has(TraitType.EDIBLE)) {
-      const edibleTrait = target.get(TraitType.EDIBLE) as { isDrink?: boolean };
-      if (edibleTrait.isDrink) {
+      if (target.getTrait(EdibleTrait)?.liquid) {
         eventData.texture = 'liquid';
         if (messageId === 'feels_normal') {
           messageId = 'feels_wet';

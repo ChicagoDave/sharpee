@@ -16,7 +16,7 @@
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types.js';
 import { type ISemanticEvent } from '@sharpee/core';
-import { type IFEntity, TraitType, ActorTrait, ActorBehavior } from '@sharpee/world-model';
+import { type IFEntity, TraitType, ActorTrait } from '@sharpee/world-model';
 import { IFActions } from '../../constants.js';
 import { TalkedEventData } from './talking-events.js';
 import { ActionMetadata } from '../../../validation/index.js';
@@ -174,7 +174,7 @@ export const talkingAction: Action & { metadata: ActionMetadata } = {
     // Check if NPC is available to talk
     // Handle both direct trait property and customProperties
     const targetActor = target.getTrait(ActorTrait);
-    const conversation = targetActor?.customProperties?.['conversation'] || (targetActor as unknown as Record<string, unknown>)?.['conversation'] || ActorBehavior.getCustomProperty(target, 'conversation');
+    const conversation = targetActor?.customProperties?.['conversation'];
     if (conversation && conversation.isAvailable !== undefined && !conversation.isAvailable) {
       return {
         valid: false,
@@ -220,7 +220,7 @@ export const talkingAction: Action & { metadata: ActionMetadata } = {
     // Check NPC conversation state
     // Handle both direct trait property and customProperties
     const targetActor = target.getTrait(ActorTrait);
-    const conversation = targetActor?.customProperties?.['conversation'] || (targetActor as unknown as Record<string, unknown>)?.['conversation'] || ActorBehavior.getCustomProperty(target, 'conversation');
+    const conversation = targetActor?.customProperties?.['conversation'];
     let messageId = 'talked';
 
     if (conversation) {

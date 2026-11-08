@@ -215,9 +215,7 @@ describe('switchingOffAction (Golden Pattern)', () => {
       
       const lamp = world.createEntity('bright lamp', 'object');
       lamp.add(new SwitchableTrait({ isOn: true }));
-      // `radius` is read by switching-shared.ts:38 through a cast; LightSourceTrait
-      // does not declare it (sharpee #664). The intersection carries it until ruled.
-      lamp.add(Object.assign(new LightSourceTrait(), { radius: 3 }));
+      lamp.add(new LightSourceTrait({ brightness: 3 }));
       
       world.moveEntity(lamp.id, room.id);
       
@@ -518,7 +516,7 @@ describe('World State Mutations', () => {
     const { world, player, room } = setupBasicWorld();
     const flashlight = world.createEntity('LED flashlight', 'object');
     flashlight.add(new SwitchableTrait({ isOn: true }));
-    flashlight.add(Object.assign(new LightSourceTrait({ isLit: true }), { radius: 3 })); // radius: sharpee #664
+    flashlight.add(new LightSourceTrait({ isLit: true, brightness: 3 }));
     world.moveEntity(flashlight.id, player.id);
 
     // VERIFY PRECONDITION: flashlight is on and lit
