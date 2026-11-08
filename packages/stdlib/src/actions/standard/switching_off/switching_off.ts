@@ -17,7 +17,7 @@
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types.js';
 import { ActionMetadata } from '../../../validation/index.js';
 import { type ISemanticEvent } from '@sharpee/core';
-import { TraitType, SwitchableTrait, OpenableTrait, SwitchableBehavior, LightSourceBehavior } from '@sharpee/world-model';
+import { TraitType, SwitchableTrait, OpenableTrait, OpenableBehavior, SwitchableBehavior, LightSourceBehavior } from '@sharpee/world-model';
 import { IFActions } from '../../constants.js';
 import { ScopeLevel } from '../../../scope/index.js';
 import { SwitchedOffEventData } from './switching_off-events.js';
@@ -194,11 +194,15 @@ export const switchingOffAction: Action & { metadata: ActionMetadata } = {
       sharedData.stoppedSound = hadRunningSound;
     }
 
-    // Check for side effects
+    // Auto-close (ADR-392 D3): the switch-off itself closes a thing that
+    // closes when switched off. The platform's own act — OpenableBehavior
+    // directly, no closing interceptor; a story refuses on switching off.
+    // Already closed: nothing.
     let willClose = false;
-    if (noun.has(TraitType.CONTAINER) && noun.has(TraitType.OPENABLE)) {
-      const openableTrait = noun.getTrait(OpenableTrait);
-      if (openableTrait?.isOpen && (openableTrait as unknown as Record<string, unknown>).autoCloseOnOff) {
+    const openableTrait = noun.getTrait(OpenableTrait);
+    if (openableTrait?.autoCloseOnOff && openableTrait.isOpen) {
+      const closed = OpenableBehavior.close(noun);
+      if (closed.success) {
         sharedData.willClose = true;
         willClose = true;
       }
@@ -257,6 +261,16 @@ export const switchingOffAction: Action & { metadata: ActionMetadata } = {
         willClose: sharedData.willClose
       })
     ];
+
+    // The close that the switch-off performed is its own fact (ADR-392 D3),
+    // so `after the player closing` on the thing still reacts to it.
+    if (sharedData.willClose) {
+      events.push(context.event('if.event.closed', {
+        targetId: sharedData.targetId,
+        targetName: sharedData.targetName,
+        actorId: context.actor.id
+      }));
+    }
 
     return events;
   },

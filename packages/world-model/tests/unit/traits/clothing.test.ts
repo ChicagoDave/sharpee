@@ -1,11 +1,12 @@
 // tests/unit/traits/clothing.test.ts
 //
 // ADR-247: ClothingTrait was removed and folded into WearableTrait. The worn
-// semantics (worn state, slot, wornBy, layering, blocksSlots, canRemove,
-// wear/remove messages) now live on WearableTrait. "Clothing" is modelled as a
-// WearableTrait item that also carries a ContainerTrait so it can hold pockets.
-// The ClothingTrait-only extras (material / style / condition / damageable)
-// were dropped and are not re-tested here.
+// semantics (worn state, wornBy, placement, canRemove, wear/remove messages)
+// live on WearableTrait. "Clothing" is modelled as a WearableTrait item that
+// also carries a ContainerTrait so it can hold pockets. The ClothingTrait-only
+// extras (material / style / condition / damageable) were dropped and are not
+// re-tested here. ADR-392 D1 retired the slot / blocksSlots / wearableOver
+// vocabulary; where a thing sits is its placement pair.
 
 import { WearableTrait } from '../../../src/traits/wearable/wearableTrait';
 import { TraitType } from '../../../src/traits/trait-types';
@@ -26,19 +27,16 @@ describe('Clothing (WearableTrait) — ADR-247', () => {
       expect(trait.type).toBe(TraitType.WEARABLE);
       expect(trait.isWorn).toBe(false);
       expect(trait.wornBy).toBeUndefined();
-      expect(trait.slot).toBe('clothing');
       expect(trait.placement).toBeUndefined();
       expect(trait.canRemove).toBe(true);
     });
 
     it('should create trait with provided data', () => {
       const trait = new WearableTrait({
-        slot: 'torso',
         placement: { bodyPart: 'torso', layer: 2 },
         canRemove: false
       });
 
-      expect(trait.slot).toBe('torso');
       expect(trait.placement).toEqual({ bodyPart: 'torso', layer: 2 });
       expect(trait.canRemove).toBe(false);
     });
@@ -46,12 +44,9 @@ describe('Clothing (WearableTrait) — ADR-247', () => {
     it('should have all wearable properties', () => {
       const trait = new WearableTrait();
 
-      expect(trait).toHaveProperty('isWorn');
+      expect(trait).toHaveProperty('worn');
       expect(trait).toHaveProperty('wornBy');
-      expect(trait).toHaveProperty('slot');
       expect(trait).toHaveProperty('placement');
-      expect(trait).toHaveProperty('wearableOver');
-      expect(trait).toHaveProperty('blocksSlots');
       expect(trait).toHaveProperty('weight');
       expect(trait).toHaveProperty('bulk');
       expect(trait).toHaveProperty('canRemove');
@@ -60,7 +55,7 @@ describe('Clothing (WearableTrait) — ADR-247', () => {
 
   describe('worn state', () => {
     it('should track worn state and wearer', () => {
-      const trait = new WearableTrait({ slot: 'torso' });
+      const trait = new WearableTrait({ placement: { bodyPart: 'torso', layer: 1 } });
 
       expect(trait.isWorn).toBe(false);
       expect(trait.wornBy).toBeUndefined();
@@ -77,7 +72,7 @@ describe('Clothing (WearableTrait) — ADR-247', () => {
   describe('clothing with pockets', () => {
     it('should create clothing that can contain pockets', () => {
       const coat = createTestClothing(world, 'Winter Coat', {
-        slot: 'torso'
+        bodyPart: 'torso'
       });
 
       expect(coat.hasTrait(TraitType.WEARABLE)).toBe(true);
@@ -89,7 +84,7 @@ describe('Clothing (WearableTrait) — ADR-247', () => {
 
     it('should attach pockets to clothing', () => {
       const jacket = createTestClothing(world, 'Leather Jacket', {
-        slot: 'torso'
+        bodyPart: 'torso'
       });
 
       const innerPocket = createTestPocket(world, 'inner pocket', 3);
@@ -110,7 +105,7 @@ describe('Clothing (WearableTrait) — ADR-247', () => {
     it('should maintain pocket contents when clothing is worn', () => {
       const player = createTestActor(world, 'Player');
       const coat = createTestClothing(world, 'Trench Coat', {
-        slot: 'torso'
+        bodyPart: 'torso'
       });
       const pocket = createTestPocket(world, 'deep pocket', 10);
       const key = world.createEntity('Mysterious Key', 'item');
@@ -134,9 +129,9 @@ describe('Clothing (WearableTrait) — ADR-247', () => {
     });
   });
 
-  describe('clothing slots and layers', () => {
-    it('should support standard clothing slots', () => {
-      const slots = {
+  describe('clothing placement and layers (ADR-392 D1)', () => {
+    it('should place clothing on the body parts an author names', () => {
+      const parts = {
         'head': 'Baseball Cap',
         'torso': 'T-Shirt',
         'legs': 'Jeans',
@@ -146,10 +141,10 @@ describe('Clothing (WearableTrait) — ADR-247', () => {
         'back': 'Backpack'
       };
 
-      Object.entries(slots).forEach(([slot, name]) => {
-        const clothing = createTestClothing(world, name, { slot });
+      Object.entries(parts).forEach(([bodyPart, name]) => {
+        const clothing = createTestClothing(world, name, { bodyPart });
         const trait = clothing.getTrait(TraitType.WEARABLE) as WearableTrait;
-        expect(trait.slot).toBe(slot);
+        expect(trait.placement).toEqual({ bodyPart, layer: 1 });
       });
     });
 
@@ -179,25 +174,17 @@ describe('Clothing (WearableTrait) — ADR-247', () => {
       expect((vest.getTrait(TraitType.WEARABLE) as WearableTrait).placement?.layer).toBe(2);
       expect((jacket.getTrait(TraitType.WEARABLE) as WearableTrait).placement?.layer).toBe(3);
     });
+
+    it('a layer named without a body part makes a simple wearable', () => {
+      const scarf = createTestClothing(world, 'Scarf', { layer: 2 });
+      expect((scarf.getTrait(TraitType.WEARABLE) as WearableTrait).placement).toBeUndefined();
+    });
   });
 
   describe('special clothing properties', () => {
-    it('should handle clothing that blocks other slots', () => {
-      const fullBodySuit = createTestClothing(world, 'Hazmat Suit', {
-        slot: 'torso',
-        blocksSlots: ['head', 'hands', 'feet', 'legs']
-      });
-
-      const trait = fullBodySuit.getTrait(TraitType.WEARABLE) as WearableTrait;
-      expect(trait.blocksSlots).toContain('head');
-      expect(trait.blocksSlots).toContain('hands');
-      expect(trait.blocksSlots).toContain('feet');
-      expect(trait.blocksSlots).toContain('legs');
-    });
-
     it('should handle non-removable clothing', () => {
       const cursedArmor = createTestClothing(world, 'Cursed Armor', {
-        slot: 'torso',
+        bodyPart: 'torso',
         canRemove: false
       });
 
@@ -207,7 +194,7 @@ describe('Clothing (WearableTrait) — ADR-247', () => {
 
     it('should handle custom wear/remove messages', () => {
       const magicCloak = createTestClothing(world, 'Cloak of Invisibility', {
-        slot: 'back',
+        bodyPart: 'back',
         wearMessage: 'You vanish from sight as you don the cloak.',
         removeMessage: 'You reappear as you remove the cloak.'
       });
@@ -221,11 +208,11 @@ describe('Clothing (WearableTrait) — ADR-247', () => {
   describe('entity integration', () => {
     it('should create various clothing items', () => {
       const items = [
-        { name: 'Leather Boots', slot: 'feet' },
-        { name: 'Silk Dress', slot: 'torso' },
-        { name: 'Work Gloves', slot: 'hands' },
-        { name: 'Wool Scarf', slot: 'neck' },
-        { name: 'Denim Jacket', slot: 'torso', layer: 2 }
+        { name: 'Leather Boots', bodyPart: 'feet' },
+        { name: 'Silk Dress', bodyPart: 'torso' },
+        { name: 'Work Gloves', bodyPart: 'hands' },
+        { name: 'Wool Scarf', bodyPart: 'neck' },
+        { name: 'Denim Jacket', bodyPart: 'torso', layer: 2 }
       ];
 
       items.forEach(item => {
@@ -233,32 +220,33 @@ describe('Clothing (WearableTrait) — ADR-247', () => {
         expect(clothing.hasTrait(TraitType.WEARABLE)).toBe(true);
 
         const trait = clothing.getTrait(TraitType.WEARABLE) as WearableTrait;
-        expect(trait.slot).toBe(item.slot);
+        expect(trait.placement).toEqual({ bodyPart: item.bodyPart, layer: item.layer ?? 1 });
       });
     });
 
     it('should distinguish between clothing and simple wearables', () => {
       // Clothing with pockets
       const coat = createTestClothing(world, 'Lab Coat', {
-        slot: 'torso'
+        bodyPart: 'torso'
       });
 
-      // Simple wearable (jewelry) — WearableTrait without a ContainerTrait
+      // Simple wearable (jewelry) — WearableTrait without a ContainerTrait, and no placement
       const ring = world.createEntity('Gold Ring', 'item');
-      ring.add(new WearableTrait({ slot: 'finger' }));
+      ring.add(new WearableTrait());
 
       expect(coat.hasTrait(TraitType.WEARABLE)).toBe(true);
       expect(coat.hasTrait(TraitType.CONTAINER)).toBe(true);
 
       expect(ring.hasTrait(TraitType.WEARABLE)).toBe(true);
       expect(ring.hasTrait(TraitType.CONTAINER)).toBe(false);
+      expect((ring.getTrait(TraitType.WEARABLE) as WearableTrait).placement).toBeUndefined();
     });
   });
 
   describe('complex clothing scenarios', () => {
     it('should handle multi-pocket utility clothing', () => {
       const vest = createTestClothing(world, 'Tactical Vest', {
-        slot: 'torso',
+        bodyPart: 'torso',
         layer: 2
       });
 

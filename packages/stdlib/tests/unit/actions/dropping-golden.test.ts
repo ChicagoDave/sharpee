@@ -103,7 +103,7 @@ describe('droppingAction (Golden Pattern)', () => {
       const { world, player, room } = setupBasicWorld();
       
       const hat = world.createEntity('blue hat', 'object');
-      hat.add(new WearableTrait({ isWorn: true, slot: 'head' }));
+      hat.add(new WearableTrait({ isWorn: true, placement: { bodyPart: 'head', layer: 1 } }));
       world.moveEntity(hat.id, player.id);
       
       const command = createCommand(IFActions.DROPPING, {
@@ -469,7 +469,7 @@ describe('droppingAction (Golden Pattern)', () => {
       const { world, player, room } = setupBasicWorld();
 
       const hat = world.createEntity('blue hat', 'object');
-      hat.add(new WearableTrait({ isWorn: true, slot: 'head' }));
+      hat.add(new WearableTrait({ isWorn: true, placement: { bodyPart: 'head', layer: 1 } }));
       world.moveEntity(hat.id, player.id);
 
       // VERIFY PRECONDITION: hat is in player inventory
@@ -526,7 +526,7 @@ describe('Dropping Action Edge Cases', () => {
     
     // Wearable item that is not currently worn
     const coat = world.createEntity('winter coat', 'object');
-    coat.add(new WearableTrait({ isWorn: false, slot: 'body' })); // Not worn
+    coat.add(new WearableTrait({ isWorn: false, placement: { bodyPart: 'torso', layer: 1 } })); // Not worn
     world.moveEntity(coat.id, player.id);
     
     const command = createCommand(IFActions.DROPPING, {

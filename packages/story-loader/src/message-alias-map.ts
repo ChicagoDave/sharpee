@@ -937,7 +937,9 @@ export const MESSAGE_ALIAS_TO_ACTION_ID: Readonly<Record<string, string>> = {
   'unlocking-not-lockable': 'if.action.unlocking.not_lockable',
   'unlocking-still-locked': 'if.action.unlocking.still_locked',
   'unlocking-unlocked': 'if.action.unlocking.unlocked',
+  'unlocking-unlocked-and-opened': 'if.action.unlocking.unlocked_and_opened',
   'unlocking-unlocked-with': 'if.action.unlocking.unlocked_with',
+  'unlocking-unlocked-with-and-opened': 'if.action.unlocking.unlocked_with_and_opened',
   'unlocking-wrong-key': 'if.action.unlocking.wrong_key',
   // if.action.untying (ADR-373)
   'untying-no-target': 'if.action.untying.no_target',
@@ -968,12 +970,14 @@ export const MESSAGE_ALIAS_TO_ACTION_ID: Readonly<Record<string, string>> = {
   'waving-waved-hands': 'if.action.waving.waved_hands',
   // if.action.wearing
   'wearing-already-wearing': 'if.action.wearing.already_wearing',
+  'wearing-already-wearing-there': 'if.action.wearing.already_wearing_there',
   'wearing-cant-wear-that': 'if.action.wearing.cant_wear_that',
   'wearing-hands-full': 'if.action.wearing.hands_full',
   'wearing-no-target': 'if.action.wearing.no_target',
   'wearing-not-held': 'if.action.wearing.not_held',
   'wearing-not-wearable': 'if.action.wearing.not_wearable',
   'wearing-worn': 'if.action.wearing.worn',
+  'wearing-worn-under': 'if.action.wearing.worn_under',
 };
 
 /**

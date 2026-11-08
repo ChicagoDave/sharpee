@@ -84,6 +84,8 @@ export const wearingAction: Action & { metadata: ActionMetadata } = {
     'not_wearable',
     'not_held',
     'already_wearing',
+    'already_wearing_there',
+    'worn_under',
     'worn',
     'cant_wear_that',
     'hands_full'
@@ -123,10 +125,14 @@ export const wearingAction: Action & { metadata: ActionMetadata } = {
     const wearableContext = analyzeWearableContext(context, item, actor);
     const conflict = checkWearingConflicts(wearableContext);
     if (conflict) {
+      // ADR-392 D1: the worn item is named; the part is the new item's own.
       return {
         valid: false,
-        error: conflict.kind === 'under-outer' ? 'hands_full' : 'already_wearing',
-        params: { item: nounPhraseFor(conflict.item) }
+        error: conflict.kind === 'under-outer' ? 'worn_under' : 'already_wearing_there',
+        params: {
+          item: nounPhraseFor(conflict.item),
+          part: wearableContext.wearableTrait.placement?.bodyPart
+        }
       };
     }
 

@@ -13,7 +13,7 @@
  * evaluation during parsing).
  */
 
-import { IFEntity, WorldModel, TraitType, OpenableTrait, DoorTrait, VisibilityBehavior } from '@sharpee/world-model';
+import { IFEntity, WorldModel, TraitType, OpenableTrait, DoorTrait, VisibilityBehavior, ScentTrait, SoundingTrait } from '@sharpee/world-model';
 import { ScopeLevel, ScopeResolver } from './types.js';
 
 /**
@@ -137,14 +137,10 @@ export class StandardScopeResolver implements ScopeResolver {
     if (actorRoom.id === targetRoom.id) {
       // Check if target is in a closed container that blocks sound
       if (this.isInClosedContainer(target.id)) {
-        // Only loud sounds escape closed containers
-        const identity = target.get(TraitType.IDENTITY);
-        const isLoud = identity && 
-          typeof identity === 'object' && 
-          'customProperties' in identity &&
-          (identity.customProperties as Record<string, unknown>)?.['loud'] === true;
-        
-        return isLoud === true;
+        // Only a loud thing escapes a closed container: `raised` or above on
+        // ADR-172's scale (ADR-392 D5).
+        const tier = target.getTrait(SoundingTrait)?.tier;
+        return tier === 'raised' || tier === 'shouting';
       }
       return true;
     }
@@ -189,14 +185,8 @@ export class StandardScopeResolver implements ScopeResolver {
     if (actorRoom.id === targetRoom.id) {
       // Closed containers block most scents
       if (this.isInClosedContainer(target.id)) {
-        // Only very strong scents escape
-        const identity = target.get(TraitType.IDENTITY);
-        const isVerySmelly = identity && 
-          typeof identity === 'object' && 
-          'customProperties' in identity &&
-          (identity.customProperties as Record<string, unknown>)?.['verySmelly'] === true;
-        
-        return (isVerySmelly === true) && this.hasScent(target);
+        // Only a strong scent escapes a closed container (ADR-392 D5).
+        return target.getTrait(ScentTrait)?.strength === 'strong';
       }
       return this.hasScent(target);
     }
@@ -382,15 +372,11 @@ export class StandardScopeResolver implements ScopeResolver {
    * Check if an entity has a scent
    */
   private hasScent(entity: IFEntity): boolean {
-    // Check for explicit smelly property
-    const identity = entity.get(TraitType.IDENTITY);
-    if (identity && typeof identity === 'object' && 'customProperties' in identity) {
-      const props = identity.customProperties as Record<string, unknown> | undefined;
-      if (props?.['smelly'] || props?.['verySmelly']) {
-        return true;
-      }
+    // A declared scent, at any strength (ADR-392 D5)
+    if (entity.has(TraitType.SCENT)) {
+      return true;
     }
-    
+
     // Food items have scent
     if (entity.has(TraitType.EDIBLE)) {
       return true;
@@ -400,9 +386,6 @@ export class StandardScopeResolver implements ScopeResolver {
     if (entity.has(TraitType.ACTOR)) {
       return true;
     }
-    
-    // Check for explicit scent trait (future)
-    // if (entity.has('SCENTED')) return true;
     
     return false;
   }

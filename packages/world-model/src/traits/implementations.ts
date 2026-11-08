@@ -86,6 +86,8 @@ import { ListenerTrait } from './listener/listenerTrait.js';
 import { StoryInfoTrait } from './story-info/storyInfoTrait.js';
 import { NightVisionTrait } from './night-vision/nightVisionTrait.js';
 import { BackdropTrait } from './backdrop/backdropTrait.js';
+import { ScentTrait } from './scent/scentTrait.js';
+import { SoundingTrait } from './sounding/soundingTrait.js';
 
 /**
  * Map of trait types to their constructors
@@ -99,6 +101,8 @@ export const TRAIT_IMPLEMENTATIONS: Record<TraitType, ITraitConstructor> = {
   [TraitType.WEARABLE]: WearableTrait,
   [TraitType.NIGHT_VISION]: NightVisionTrait,
   [TraitType.BACKDROP]: BackdropTrait,
+  [TraitType.SCENT]: ScentTrait,
+  [TraitType.SOUNDING]: SoundingTrait,
   [TraitType.EDIBLE]: EdibleTrait,
   [TraitType.SCENERY]: SceneryTrait,
 

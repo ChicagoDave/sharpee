@@ -20,6 +20,10 @@ export const TraitType = {
   NIGHT_VISION: 'if.trait.night_vision',
   /** Present in many rooms (ADR-374 D1) */
   BACKDROP: 'if.trait.backdrop',
+  /** Smells, and how strongly (ADR-392 D5) */
+  SCENT: 'if.trait.scent',
+  /** Sounds, and how loud (ADR-392 D5) */
+  SOUNDING: 'if.trait.sounding',
 
   // Interactive traits
   OPENABLE: 'openable',
@@ -127,6 +131,8 @@ export const TRAIT_CATEGORIES: Record<TraitType, TraitCategory> = {
   [TraitType.SCENERY]: TraitCategory.STANDARD,
   [TraitType.NIGHT_VISION]: TraitCategory.STANDARD,
   [TraitType.BACKDROP]: TraitCategory.STANDARD,
+  [TraitType.SCENT]: TraitCategory.STANDARD,
+  [TraitType.SOUNDING]: TraitCategory.STANDARD,
 
   // Interactive
   [TraitType.OPENABLE]: TraitCategory.INTERACTIVE,

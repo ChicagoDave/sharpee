@@ -15,7 +15,7 @@
  * Public interface: MESSAGE_OVERRIDE_ALIASES.
  * Owner context: @sharpee/chord (language frontend; browser-safe; generated artifact).
  *
- * 879 aliases across 78 actions.
+ * 883 aliases across 78 actions.
  *
  * References:
  * - ADR-255 D2 — one hand-maintained table; Interface Contract 3 — names
@@ -944,7 +944,9 @@ export const MESSAGE_OVERRIDE_ALIASES: ReadonlySet<string> = new Set([
   'unlocking-not-lockable',
   'unlocking-still-locked',
   'unlocking-unlocked',
+  'unlocking-unlocked-and-opened',
   'unlocking-unlocked-with',
+  'unlocking-unlocked-with-and-opened',
   'unlocking-wrong-key',
   // if.action.untying
   'untying-no-target',
@@ -975,10 +977,12 @@ export const MESSAGE_OVERRIDE_ALIASES: ReadonlySet<string> = new Set([
   'waving-waved-hands',
   // if.action.wearing
   'wearing-already-wearing',
+  'wearing-already-wearing-there',
   'wearing-cant-wear-that',
   'wearing-hands-full',
   'wearing-no-target',
   'wearing-not-held',
   'wearing-not-wearable',
   'wearing-worn',
+  'wearing-worn-under',
 ]);

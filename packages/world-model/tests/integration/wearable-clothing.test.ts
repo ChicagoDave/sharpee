@@ -36,7 +36,6 @@ describe('Wearable and Clothing Integration Tests', () => {
   describe('Basic Wearable Behavior', () => {
     it('should wear and remove simple items', () => {
       const ring = createTestWearable(world, 'Gold Ring', {
-        slot: 'finger',
         weight: 0.1
       });
 
@@ -48,7 +47,7 @@ describe('Wearable and Clothing Integration Tests', () => {
       // Wear ring
       const result = WearableBehavior.wear(ring, player);
       expect(result.success).toBe(true);
-      expect(result.slot).toBe('finger');
+      expect(result.layer).toBeUndefined(); // a simple wearable has no placement
 
       const wearable = ring.getTrait(TraitType.WEARABLE) as WearableTrait;
       expect(wearable.worn).toBe(true);
@@ -64,7 +63,7 @@ describe('Wearable and Clothing Integration Tests', () => {
 
     it('should prevent wearing already worn items', () => {
       const hat = createTestWearable(world, 'Wizard Hat', {
-        slot: 'head'
+        bodyPart: 'head'
       });
 
       world.moveEntity(hat.id, player.id);
@@ -80,9 +79,9 @@ describe('Wearable and Clothing Integration Tests', () => {
 
     it('should track multiple worn items', () => {
       const items = [
-        createTestWearable(world, 'Hat', { slot: 'head' }),
-        createTestWearable(world, 'Gloves', { slot: 'hands' }),
-        createTestWearable(world, 'Boots', { slot: 'feet' })
+        createTestWearable(world, 'Hat', { bodyPart: 'head' }),
+        createTestWearable(world, 'Gloves', { bodyPart: 'hands' }),
+        createTestWearable(world, 'Boots', { bodyPart: 'feet' })
       ];
 
       items.forEach(item => {
@@ -101,7 +100,7 @@ describe('Wearable and Clothing Integration Tests', () => {
   describe('Clothing with Pockets', () => {
     it('should create functional clothing with pockets', () => {
       const jacket = createTestClothing(world, 'Denim Jacket', {
-        slot: 'torso',
+        bodyPart: 'torso',
         layer: 2
       });
 
@@ -124,7 +123,7 @@ describe('Wearable and Clothing Integration Tests', () => {
 
     it('should maintain pocket contents when wearing clothing', () => {
       const coat = createTestClothing(world, 'Long Coat', {
-        slot: 'torso'
+        bodyPart: 'torso'
       });
       const pocket = createTestPocket(world, 'deep pocket', 5);
 
@@ -161,7 +160,7 @@ describe('Wearable and Clothing Integration Tests', () => {
 
     it('should handle items in pockets visibility', () => {
       const vest = createTestClothing(world, 'Fishing Vest', {
-        slot: 'torso'
+        bodyPart: 'torso'
       });
       const tackleBox = createTestPocket(world, 'tackle pocket', 10);
       const lure = world.createEntity('Fishing Lure', 'item');
@@ -231,19 +230,17 @@ describe('Wearable and Clothing Integration Tests', () => {
     it('should handle mixed clothing and accessories', () => {
       // Clothing items
       const shirt = createTestClothing(world, 'Dress Shirt', {
-        slot: 'torso'
+        bodyPart: 'torso'
       });
       const pants = createTestClothing(world, 'Dress Pants', {
-        slot: 'legs'
+        bodyPart: 'legs'
       });
 
-      // Accessories (simple wearables)
+      // Accessories (simple wearables, no placement)
       const watch = createTestWearable(world, 'Gold Watch', {
-        slot: 'wrist',
         weight: 0.2
       });
       const necklace = createTestWearable(world, 'Pearl Necklace', {
-        slot: 'neck',
         weight: 0.1
       });
 
@@ -275,7 +272,7 @@ describe('Wearable and Clothing Integration Tests', () => {
   describe('Complex Pocket Hierarchies', () => {
     it('should handle nested containers in pockets', () => {
       const backpack = createTestClothing(world, 'Hiking Backpack', {
-        slot: 'back'
+        bodyPart: 'back'
       });
 
       const mainPocket = createTestPocket(world, 'main compartment', 20);
@@ -306,7 +303,7 @@ describe('Wearable and Clothing Integration Tests', () => {
     it('should handle pocket access when clothing is in container', () => {
       const wardrobe = createTestContainer(world, 'Wardrobe');
       const suitJacket = createTestClothing(world, 'Suit Jacket', {
-        slot: 'torso'
+        bodyPart: 'torso'
       });
       const breastPocket = createTestPocket(world, 'breast pocket', 2);
       const businessCard = world.createEntity('Business Card', 'item');
@@ -327,32 +324,8 @@ describe('Wearable and Clothing Integration Tests', () => {
   });
 
   describe('Special Clothing Properties', () => {
-    it('should handle clothing that blocks slots', () => {
-      const helmet = createTestWearable(world, 'Full Helmet', {
-        slot: 'head',
-        blocksSlots: ['face', 'ears']
-      });
-
-      const goggles = createTestWearable(world, 'Goggles', {
-        slot: 'face'
-      });
-
-      world.moveEntity(helmet.id, player.id);
-      world.moveEntity(goggles.id, player.id);
-
-      // Wear helmet
-      WearableBehavior.wear(helmet, player);
-
-      // In a full implementation, wearing goggles should fail
-      // because helmet blocks face slot
-      const blockedSlots = WearableBehavior.getBlockedSlots(helmet);
-      expect(blockedSlots).toContain('face');
-      expect(blockedSlots).toContain('ears');
-    });
-
     it('should handle non-removable clothing', () => {
       const cursedRing = createTestWearable(world, 'Cursed Ring', {
-        slot: 'finger',
         canRemove: false
       });
 
@@ -375,7 +348,6 @@ describe('Wearable and Clothing Integration Tests', () => {
       // Create many wearable items
       for (let i = 0; i < 20; i++) {
         const item = createTestWearable(world, `Accessory ${i}`, {
-          slot: 'misc',
           weight: 0.1
         });
         items.push(item);
@@ -409,7 +381,7 @@ describe('Wearable and Clothing Integration Tests', () => {
       const carried: IFEntity[] = [];
 
       for (let i = 0; i < 10; i++) {
-        const wornItem = createTestWearable(world, `Worn ${i}`, { slot: 'misc' });
+        const wornItem = createTestWearable(world, `Worn ${i}`);
         world.moveEntity(wornItem.id, player.id);
         const wearable = wornItem.getTrait(TraitType.WEARABLE) as WearableTrait;
         wearable.isWorn = true;

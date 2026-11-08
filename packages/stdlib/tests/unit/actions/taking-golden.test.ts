@@ -240,7 +240,7 @@ describe('takingAction (Golden Pattern)', () => {
       
       // Add a worn item
       const hat = world.createEntity('red hat', 'object');
-      hat.add(new WearableTrait({ isWorn: true, slot: 'head' }));
+      hat.add(new WearableTrait({ isWorn: true, placement: { bodyPart: 'head', layer: 1 } }));
       
       const newItem = world.createEntity('ball', 'object');
       
@@ -369,7 +369,7 @@ describe('takingAction (Golden Pattern)', () => {
       npc.add(new ActorTrait());
       npc.add(new OpenInventoryTrait()); // NPC inventory accessible to player
       const hat = world.createEntity('fancy hat', 'object');
-      hat.add(new WearableTrait({ isWorn: true, slot: 'head' }));
+      hat.add(new WearableTrait({ isWorn: true, placement: { bodyPart: 'head', layer: 1 } }));
 
       world.moveEntity(npc.id, room.id);
       world.moveEntity(hat.id, npc.id);

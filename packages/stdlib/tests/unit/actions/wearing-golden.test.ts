@@ -161,8 +161,8 @@ describe('wearingAction (Golden Pattern)', () => {
       const events = executeWithValidation(wearingAction, context);
       
       expectEvent(events, 'if.event.wear_blocked', {
-        messageId: expect.stringContaining('already_wearing'),
-        params: { item: { name: 'old hat' } }
+        messageId: 'if.action.wearing.already_wearing_there',
+        params: { item: { name: 'old hat' }, part: 'head' }
       });
       // State: the new hat stays off, the old hat stays on
       expect(newHat.get(WearableTrait)!.worn).toBe(false);
@@ -192,7 +192,8 @@ describe('wearingAction (Golden Pattern)', () => {
       const events = executeWithValidation(wearingAction, context);
       
       expectEvent(events, 'if.event.wear_blocked', {
-        messageId: expect.stringContaining('hands_full') // Used as proxy for layer conflicts
+        messageId: 'if.action.wearing.worn_under',
+        params: { item: { name: 'winter coat' } }
       });
       // State: the shirt stays off, the coat stays on
       expect(shirt.get(WearableTrait)!.worn).toBe(false);

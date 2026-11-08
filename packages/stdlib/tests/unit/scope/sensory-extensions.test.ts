@@ -4,7 +4,7 @@
  */
 
 import { describe, test, expect, beforeEach } from 'vitest';
-import { WorldModel, AuthorModel, TraitType, IFEntity, EntityType, IdentityTrait, RoomTrait, LightSourceTrait, ActorTrait, ContainerTrait, DoorTrait, OpenableTrait, EdibleTrait } from '@sharpee/world-model';
+import { WorldModel, AuthorModel, TraitType, IFEntity, EntityType, IdentityTrait, RoomTrait, LightSourceTrait, ActorTrait, ContainerTrait, DoorTrait, OpenableTrait, EdibleTrait, ScentTrait, SoundingTrait } from '@sharpee/world-model';
 import { StandardScopeResolver } from '../../../src/scope/scope-resolver';
 import { ScopeLevel } from '../../../src/scope/types';
 import { TEST_MARKER_TRAIT } from '../../test-utils';
@@ -145,6 +145,84 @@ describe('Sensory Extensions', () => {
       expect(audibleNonRooms.map(e => e.name)).toContain(EntityType.DOOR);
       expect(audibleNonRooms.map(e => e.name)).toContain('Bob');
       expect(audibleNonRooms.map(e => e.name)).not.toContain('mouse');
+    });
+  });
+
+  describe('Closed containers and the sensory traits (ADR-392 D5)', () => {
+    /** A closed box in the room, with `thing` inside it. */
+    const boxed = (thing: IFEntity): void => {
+      const box = author.createEntity('tin box', EntityType.OBJECT);
+      box.add(new IdentityTrait({ name: 'tin box' }));
+      box.add(new ContainerTrait());
+      box.add(new OpenableTrait({ isOpen: false }));
+      author.moveEntity(box.id, room.id);
+      author.moveEntity(thing.id, box.id);
+    };
+
+    test('a raised or shouting thing is heard from inside a closed box', () => {
+      const chime = author.createEntity('brass chime', EntityType.OBJECT);
+      chime.add(new IdentityTrait({ name: 'brass chime' }));
+      chime.add(new SoundingTrait({ tier: 'raised' }));
+      boxed(chime);
+
+      const siren = author.createEntity('siren', EntityType.OBJECT);
+      siren.add(new IdentityTrait({ name: 'siren' }));
+      siren.add(new SoundingTrait({ tier: 'shouting' }));
+      boxed(siren);
+
+      expect(resolver.canHear(player, chime)).toBe(true);
+      expect(resolver.canHear(player, siren)).toBe(true);
+    });
+
+    test('a normal or quieter thing is not heard from inside a closed box', () => {
+      const ticker = author.createEntity('pocket watch', EntityType.OBJECT);
+      ticker.add(new IdentityTrait({ name: 'pocket watch' }));
+      ticker.add(new SoundingTrait({ tier: 'normal' }));
+      boxed(ticker);
+
+      const mute = author.createEntity('stone', EntityType.OBJECT);
+      mute.add(new IdentityTrait({ name: 'stone' }));
+      boxed(mute);
+
+      expect(resolver.canHear(player, ticker)).toBe(false);
+      expect(resolver.canHear(player, mute)).toBe(false);
+    });
+
+    test('a strong scent is smelled from inside a closed box; a moderate one is not', () => {
+      const cheese = author.createEntity('ripe cheese', EntityType.OBJECT);
+      cheese.add(new IdentityTrait({ name: 'ripe cheese' }));
+      cheese.add(new EdibleTrait());
+      cheese.add(new ScentTrait({ strength: 'strong' }));
+      boxed(cheese);
+
+      const apple = author.createEntity('apple', EntityType.OBJECT);
+      apple.add(new IdentityTrait({ name: 'apple' }));
+      apple.add(new EdibleTrait());
+      apple.add(new ScentTrait()); // defaults to moderate
+      boxed(apple);
+
+      const bread = author.createEntity('bread', EntityType.OBJECT);
+      bread.add(new IdentityTrait({ name: 'bread' }));
+      bread.add(new EdibleTrait()); // implicit faint scent, no trait
+      boxed(bread);
+
+      expect(resolver.canSmell(player, cheese)).toBe(true);
+      expect(resolver.canSmell(player, apple)).toBe(false);
+      expect(resolver.canSmell(player, bread)).toBe(false);
+    });
+
+    test('a declared scent of any strength is smelled in the open room', () => {
+      const candle = author.createEntity('scented candle', EntityType.OBJECT);
+      candle.add(new IdentityTrait({ name: 'scented candle' }));
+      candle.add(new ScentTrait({ strength: 'faint' }));
+      author.moveEntity(candle.id, room.id);
+
+      const rock = author.createEntity('rock', EntityType.OBJECT);
+      rock.add(new IdentityTrait({ name: 'rock' }));
+      author.moveEntity(rock.id, room.id);
+
+      expect(resolver.canSmell(player, candle)).toBe(true);
+      expect(resolver.canSmell(player, rock)).toBe(false);
     });
   });
 

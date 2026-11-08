@@ -267,7 +267,7 @@ describe('LightSourceTrait', () => {
       }));
       
       headlamp.add(new WearableTrait({
-        slot: 'head',
+        placement: { bodyPart: 'head', layer: 1 },
         wearMessage: 'You strap on the headlamp.'
       }));
       

@@ -13,7 +13,7 @@
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types.js';
 import { ActionMetadata } from '../../../validation/index.js';
 import { type ISemanticEvent } from '@sharpee/core';
-import { TraitType, OpenableTrait, LockableBehavior, type IUnlockResult } from '@sharpee/world-model';
+import { TraitType, OpenableTrait, OpenableBehavior, LockableBehavior, type IUnlockResult } from '@sharpee/world-model';
 import { IFActions } from '../../constants.js';
 import { ScopeLevel } from '../../../scope/index.js';
 import { UnlockedEventData } from './unlocking-events.js';
@@ -108,6 +108,8 @@ export const unlockingAction: Action & { metadata: ActionMetadata } = {
     'already_unlocked',
     'unlocked',
     'unlocked_with',
+    'unlocked_and_opened',
+    'unlocked_with_and_opened',
     'cant_reach',
     'key_not_held',
     'still_locked'
@@ -226,17 +228,20 @@ export const unlockingAction: Action & { metadata: ActionMetadata } = {
       sharedData.sound = result.unlockSound;
     }
 
-    // Check for auto-open behavior
-    if (noun.has(TraitType.OPENABLE)) {
-      const openableTrait = noun.getTrait(OpenableTrait);
-      if ((openableTrait as unknown as Record<string, unknown>)?.autoOpenOnUnlock) {
-        sharedData.willAutoOpen = true;
-      }
+    // Auto-open (ADR-392 D3): the unlock itself opens a thing that opens
+    // when unlocked. The platform's own act — OpenableBehavior directly, no
+    // opening interceptor; a story refuses on unlocking. Already open: nothing.
+    const openableTrait = noun.getTrait(OpenableTrait);
+    if (openableTrait?.autoOpenOnUnlock && !openableTrait.isOpen) {
+      const opened = OpenableBehavior.open(noun);
+      sharedData.willAutoOpen = opened.success;
     }
 
     // Determine success message — params carry EntityInfo for the
     // formatter chain (ADR-158); domain fields stay as separate strings.
-    sharedData.messageId = determineLockMessage(false, !!withKey);
+    sharedData.messageId = sharedData.willAutoOpen
+      ? (withKey ? 'unlocked_with_and_opened' : 'unlocked_and_opened')
+      : determineLockMessage(false, !!withKey);
     sharedData.params = {
       item: nounPhraseFor(noun)
     };
@@ -305,6 +310,16 @@ export const unlockingAction: Action & { metadata: ActionMetadata } = {
         contentsIds: sharedData.contentsIds
       })
     ];
+
+    // The open that the unlock performed is its own fact (ADR-392 D3), so
+    // `after the player opening` on the thing still reacts to it.
+    if (sharedData.willAutoOpen) {
+      events.push(context.event('if.event.opened', {
+        targetId: sharedData.targetId,
+        targetName: sharedData.targetName,
+        actorId: context.actor.id
+      }));
+    }
 
     return events;
   },

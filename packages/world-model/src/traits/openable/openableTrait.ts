@@ -43,6 +43,12 @@ export interface IOpenableData extends IToolGated {
 
   /** The tool opening needs (ADR-230 D3b); absent, opening needs none */
   toolRequirement?: ToolRequirement;
+
+  /** Opens by itself when it is unlocked (ADR-392 D3); the unlock does the opening */
+  autoOpenOnUnlock?: boolean;
+
+  /** Closes by itself when it is switched off (ADR-392 D3); the switch does the closing */
+  autoCloseOnOff?: boolean;
 }
 
 /**
@@ -70,6 +76,8 @@ export class OpenableTrait implements ITrait, IOpenableData {
   openDescription?: string;
   closedDescription?: string;
   toolRequirement?: ToolRequirement;
+  autoOpenOnUnlock: boolean;
+  autoCloseOnOff: boolean;
 
   constructor(data: IOpenableData = {}) {
     // Set defaults and merge with provided data
@@ -86,5 +94,7 @@ export class OpenableTrait implements ITrait, IOpenableData {
     this.openDescription = data.openDescription;
     this.closedDescription = data.closedDescription;
     this.toolRequirement = data.toolRequirement;
+    this.autoOpenOnUnlock = data.autoOpenOnUnlock ?? false;
+    this.autoCloseOnOff = data.autoCloseOnOff ?? false;
   }
 }

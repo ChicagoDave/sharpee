@@ -19,6 +19,8 @@ export const unlockingLanguage = {
     'already_unlocked': "{capitalize the item} {verb:is item} already unlocked.",
     'unlocked': "{You} {unlock} {the item}.",
     'unlocked_with': "{You} {unlock} {the item} with {the key}.",
+    'unlocked_and_opened': "{You} {unlock} {the item}, and it swings open.",
+    'unlocked_with_and_opened': "{You} {unlock} {the item} with {the key}, and it swings open.",
     'cant_reach': "{You} {can't} reach {the item}.",
     'key_not_held': "{You} {need} to be holding {the key}.",
     'still_locked': "{capitalize the item} {verb:is item} locked."

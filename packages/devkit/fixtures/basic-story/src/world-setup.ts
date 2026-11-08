@@ -214,7 +214,7 @@ export function setupWorld(world: WorldModel): void {
       article: 'a',
     }),
   );
-  hardHat.add(new WearableTrait({ slot: 'head' }));
+  hardHat.add(new WearableTrait({ placement: { bodyPart: 'head', layer: 1 } }));
   world.moveEntity(hardHat.id, controlRoom.id);
 
   // ---- CONTAINER (toolbox, openable + lockable) ----
@@ -348,7 +348,7 @@ export function setupWorld(world: WorldModel): void {
       article: 'a',
     }),
   );
-  labCoat.add(new WearableTrait({ slot: 'torso', layer: 2 }));
+  labCoat.add(new WearableTrait({ placement: { bodyPart: 'torso', layer: 2 } }));
   world.moveEntity(labCoat.id, serverRoom.id);
 
   // ---- PUSHABLE (heavy crate) ----

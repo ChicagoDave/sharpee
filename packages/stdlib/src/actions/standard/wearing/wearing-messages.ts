@@ -10,6 +10,10 @@ export const MESSAGES = {
   NOT_WEARABLE: 'not_wearable',
   NOT_HELD: 'not_held',
   ALREADY_WEARING: 'already_wearing',
+  /** Something else is already worn on that body part at that layer (ADR-392 D1) */
+  ALREADY_WEARING_THERE: 'already_wearing_there',
+  /** It would go under something already worn over that body part (ADR-392 D1) */
+  WORN_UNDER: 'worn_under',
   CANT_WEAR_THAT: 'cant_wear_that',
   HANDS_FULL: 'hands_full',
 

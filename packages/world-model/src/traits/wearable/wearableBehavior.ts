@@ -10,8 +10,7 @@ export interface IWearResult {
   success: boolean;
   alreadyWorn?: boolean;
   wornByOther?: string;
-  slotConflict?: string;
-  slot?: string;
+  /** The placed wearable's layer; absent for a simple one */
   layer?: number;
   wearMessage?: string;
 }
@@ -39,12 +38,10 @@ export class WearableBehavior {
     const wearable = item.get(TraitType.WEARABLE) as WearableTrait;
     if (!wearable) return false;
     
-    // Can't wear if already worn
+    // Can't wear if already worn. Body-part and layering conflicts are the
+    // wearing action's validate-phase rule (stdlib wearable-shared, ADR-392 D1).
     if (wearable.worn) return false;
-    
-    // TODO: Check if actor has conflicting items in same slot
-    // TODO: Check if slots are blocked
-    
+
     return true;
   }
   
@@ -88,15 +85,12 @@ export class WearableBehavior {
       }
     }
     
-    // TODO: Check slot conflicts
-    
     // Wear it
     wearable.worn = true;
     wearable.wornBy = actor.id;
-    
+
     return {
       success: true,
-      slot: wearable.slot,
       layer: wearable.placement?.layer,
       wearMessage: wearable.wearMessage
     };
@@ -153,26 +147,10 @@ export class WearableBehavior {
   }
   
   /**
-   * Get the slot this item occupies
-   */
-  static getSlot(item: IFEntity): string {
-    const wearable = item.get(TraitType.WEARABLE) as WearableTrait;
-    return wearable ? wearable.slot : 'clothing';
-  }
-  
-  /**
    * Get the layer for sorting — undefined for a simple (unplaced) wearable
    */
   static getLayer(item: IFEntity): number | undefined {
     const wearable = item.get(TraitType.WEARABLE) as WearableTrait;
     return wearable?.placement?.layer;
-  }
-  
-  /**
-   * Check if this item blocks any slots
-   */
-  static getBlockedSlots(item: IFEntity): string[] {
-    const wearable = item.get(TraitType.WEARABLE) as WearableTrait;
-    return wearable ? [...wearable.blocksSlots] : [];
   }
 }

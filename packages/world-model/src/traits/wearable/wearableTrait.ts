@@ -3,7 +3,7 @@
 /**
  * Wearable trait — the data of a thing an actor can put on and take off.
  *
- * A wearable is one of two shapes, told apart by `placement`:
+ * A wearable is one of two shapes, told apart by `placement` (ADR-392 D1):
  *
  * - **Simple** (`placement` absent): a ring, a badge, a satchel. It is worn or
  *   not, and it never conflicts with or blocks any other wearable.
@@ -14,6 +14,10 @@
  *   is no half-placed wearable, which is what the old free-standing
  *   `bodyPart`/`layer` fields (defaulted to 'torso' and 1) allowed, and why
  *   the conflict rule could never fire for a constructed trait.
+ *
+ * The placement pair is the one placement model: the earlier `slot`,
+ * `blocksSlots` and `wearableOver` vocabulary, which no action ever read, is
+ * retired with ADR-392.
  *
  * Pure data (ADR-346 D1): defaults, no policing. WearableBehavior owns the
  * mutations; stdlib's wearable-shared owns the conflict and layering rules.
@@ -40,9 +44,6 @@ export interface IWearableData {
   /** ID of who is wearing this (if worn) */
   wornBy?: string;
 
-  /** Body slot this item occupies when worn */
-  slot?: string;
-
   /** Where it sits on the body; absent means a simple wearable that never conflicts */
   placement?: IWearablePlacement;
 
@@ -51,12 +52,6 @@ export interface IWearableData {
 
   /** Custom message when removing this item */
   removeMessage?: string;
-
-  /** Whether this item can be worn over other items */
-  wearableOver?: boolean;
-
-  /** Slots this item blocks when worn */
-  blocksSlots?: string[];
 
   /** Weight of the item */
   weight?: number;
@@ -82,12 +77,9 @@ export class WearableTrait implements ITrait, IWearableData {
   // WearableData properties - internal storage
   worn: boolean = false;
   wornBy?: string;
-  slot: string;
   placement?: IWearablePlacement;
   wearMessage?: string;
   removeMessage?: string;
-  wearableOver: boolean;
-  blocksSlots: string[];
   weight: number;
   bulk: number;
   canRemove: boolean;
@@ -105,14 +97,11 @@ export class WearableTrait implements ITrait, IWearableData {
     // Set defaults and merge with provided data
     this.worn = data.isWorn ?? false;
     this.wornBy = data.wornBy;
-    this.slot = data.slot ?? 'clothing';
     this.placement = data.placement === undefined
       ? undefined
       : { bodyPart: data.placement.bodyPart, layer: data.placement.layer };
     this.wearMessage = data.wearMessage;
     this.removeMessage = data.removeMessage;
-    this.wearableOver = data.wearableOver ?? true;
-    this.blocksSlots = data.blocksSlots ?? [];
     this.weight = data.weight ?? 1;
     this.bulk = data.bulk ?? 1;
     this.canRemove = data.canRemove ?? true;

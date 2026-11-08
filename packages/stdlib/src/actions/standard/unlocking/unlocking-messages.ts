@@ -17,6 +17,9 @@ export const MESSAGES = {
   // Success messages
   UNLOCKED: 'unlocked',
   UNLOCKED_WITH: 'unlocked_with',
+  /** The unlock also opened it (ADR-392 D3) */
+  UNLOCKED_AND_OPENED: 'unlocked_and_opened',
+  UNLOCKED_WITH_AND_OPENED: 'unlocked_with_and_opened',
 } as const;
 
 export type UnlockingMessageId = typeof MESSAGES[keyof typeof MESSAGES];

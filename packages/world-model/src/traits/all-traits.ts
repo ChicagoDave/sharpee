@@ -27,6 +27,8 @@ import { RoomTrait } from './room/roomTrait.js';
 import { SceneryTrait } from './scenery/sceneryTrait.js';
 import { NightVisionTrait } from './night-vision/nightVisionTrait.js';
 import { BackdropTrait } from './backdrop/backdropTrait.js';
+import { ScentTrait } from './scent/scentTrait.js';
+import { SoundingTrait } from './sounding/soundingTrait.js';
 import { SupporterTrait } from './supporter/supporterTrait.js';
 import { SwitchableTrait } from './switchable/switchableTrait.js';
 import { WearableTrait } from './wearable/wearableTrait.js';
@@ -59,6 +61,8 @@ export const Traits = {
   SceneryTrait,
   NightVisionTrait,
   BackdropTrait,
+  ScentTrait,
+  SoundingTrait,
   SupporterTrait,
   SwitchableTrait,
   WearableTrait,
@@ -92,6 +96,8 @@ export type {
   SceneryTrait,
   NightVisionTrait,
   BackdropTrait,
+  ScentTrait,
+  SoundingTrait,
   SupporterTrait,
   SwitchableTrait,
   WearableTrait,
@@ -125,6 +131,8 @@ export type AnyTrait =
   | SceneryTrait
   | NightVisionTrait
   | BackdropTrait
+  | ScentTrait
+  | SoundingTrait
   | SupporterTrait
   | SwitchableTrait
   | WearableTrait
@@ -187,6 +195,14 @@ export function isNightVisionTrait(trait: any): trait is NightVisionTrait {
 
 export function isBackdropTrait(trait: any): trait is BackdropTrait {
   return trait?.type === 'if.trait.backdrop';
+}
+
+export function isScentTrait(trait: any): trait is ScentTrait {
+  return trait?.type === 'if.trait.scent';
+}
+
+export function isSoundingTrait(trait: any): trait is SoundingTrait {
+  return trait?.type === 'if.trait.sounding';
 }
 
 export function isSupporterTrait(trait: any): trait is SupporterTrait {

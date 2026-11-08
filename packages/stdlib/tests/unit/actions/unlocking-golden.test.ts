@@ -379,16 +379,17 @@ describe('unlockingAction (Golden Pattern)', () => {
     });
   });
 
-  describe('Auto-Open Behavior', () => {
-    test('should detect auto-open on unlock', () => {
+  describe('Auto-Open Behavior (ADR-392 D3)', () => {
+    test('unlocking a thing that opens when unlocked opens it and says so', () => {
       const { world, player, room } = setupBasicWorld();
 
       const cabinet = world.createEntity('medicine cabinet', 'object');
       cabinet.add(new LockableTrait({ isLocked: true }));
-      // `autoOpenOnUnlock` is read by unlocking.ts:232 through a cast; OpenableTrait
-      // does not declare it (sharpee #664). The intersection carries it until ruled.
-      cabinet.add(Object.assign(new OpenableTrait({ isOpen: false }), { autoOpenOnUnlock: true }));
+      cabinet.add(new OpenableTrait({ isOpen: false, autoOpenOnUnlock: true }));
       world.moveEntity(cabinet.id, room.id);
+
+      // PRECONDITION
+      expect(cabinet.get(OpenableTrait)!.isOpen).toBe(false);
 
       const context = createRealTestContext(unlockingAction, world,
         createCommand(IFActions.UNLOCKING, {
@@ -398,13 +399,72 @@ describe('unlockingAction (Golden Pattern)', () => {
 
       const events = executeWithValidation(unlockingAction, context);
 
-      expectEvent(events, 'if.event.unlocked', {
-        targetId: cabinet.id
-      });
+      // THE state assertion: the unlock opened it
+      expect(cabinet.get(OpenableTrait)!.isOpen).toBe(true);
+      expect(cabinet.get(LockableTrait)!.isLocked).toBe(false);
 
-      // Check that willAutoOpen is present in the event params
-      const unlockedEvent = events.find(e => e.type === 'if.event.unlocked');
-      expect(dataOf<{ willAutoOpen?: boolean }>(unlockedEvent)?.willAutoOpen).toBe(true);
+      expectEvent(events, 'if.event.unlocked', {
+        targetId: cabinet.id,
+        messageId: 'if.action.unlocking.unlocked_and_opened',
+        willAutoOpen: true
+      });
+      // The open is its own fact
+      expectEvent(events, 'if.event.opened', {
+        targetId: cabinet.id,
+        actorId: player.id
+      });
+    });
+
+    test('unlocking with a key a thing that opens when unlocked opens it and names the key', () => {
+      const { world, player, room } = setupBasicWorld();
+
+      const key = world.createEntity('brass key', 'object');
+      world.moveEntity(key.id, player.id);
+
+      const strongbox = world.createEntity('strongbox', 'object');
+      strongbox.add(new LockableTrait({ isLocked: true, keyId: key.id }));
+      strongbox.add(new OpenableTrait({ isOpen: false, autoOpenOnUnlock: true }));
+      world.moveEntity(strongbox.id, room.id);
+
+      const context = createRealTestContext(unlockingAction, world,
+        createCommand(IFActions.UNLOCKING, {
+          entity: strongbox,
+          secondEntity: key,
+          preposition: 'with'
+        })
+      );
+
+      const events = executeWithValidation(unlockingAction, context);
+
+      expect(strongbox.get(OpenableTrait)!.isOpen).toBe(true);
+      expectEvent(events, 'if.event.unlocked', {
+        messageId: 'if.action.unlocking.unlocked_with_and_opened',
+        keyId: key.id,
+        willAutoOpen: true
+      });
+      expectEvent(events, 'if.event.opened', { targetId: strongbox.id });
+    });
+
+    test('unlocking an already-open thing that opens when unlocked does not open it again', () => {
+      const { world, room } = setupBasicWorld();
+
+      const hatch = world.createEntity('hatch', 'object');
+      hatch.add(new LockableTrait({ isLocked: true }));
+      hatch.add(new OpenableTrait({ isOpen: true, autoOpenOnUnlock: true }));
+      world.moveEntity(hatch.id, room.id);
+
+      const context = createRealTestContext(unlockingAction, world,
+        createCommand(IFActions.UNLOCKING, { entity: hatch })
+      );
+
+      const events = executeWithValidation(unlockingAction, context);
+
+      expect(hatch.get(OpenableTrait)!.isOpen).toBe(true);
+      expectEvent(events, 'if.event.unlocked', {
+        messageId: 'if.action.unlocking.unlocked'
+      });
+      expect(events.find(e => e.type === 'if.event.opened')).toBeUndefined();
+      expect(dataOf<{ willAutoOpen?: boolean }>(events.find(e => e.type === 'if.event.unlocked'))?.willAutoOpen).toBeFalsy();
     });
 
     test('should not auto-open if not configured', () => {
@@ -425,6 +485,9 @@ describe('unlockingAction (Golden Pattern)', () => {
 
       const unlockedEvent = events.find(e => e.type === 'if.event.unlocked');
       expect(dataOf<{ willAutoOpen?: boolean }>(unlockedEvent)?.willAutoOpen).toBeFalsy();
+      // State: unlocked, still closed
+      expect(chest.get(OpenableTrait)!.isOpen).toBe(false);
+      expect(events.find(e => e.type === 'if.event.opened')).toBeUndefined();
     });
   });
 

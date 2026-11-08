@@ -28,6 +28,15 @@ describe('OpenableTrait', () => {
       expect(trait.alreadyClosedMessage).toBeUndefined();
       expect(trait.openSound).toBeUndefined();
       expect(trait.closeSound).toBeUndefined();
+      // ADR-392 D3: neither self-acting behavior unless asked for
+      expect(trait.autoOpenOnUnlock).toBe(false);
+      expect(trait.autoCloseOnOff).toBe(false);
+    });
+
+    it('takes the self-acting flags it is given (ADR-392 D3)', () => {
+      const trait = new OpenableTrait({ autoOpenOnUnlock: true, autoCloseOnOff: true });
+      expect(trait.autoOpenOnUnlock).toBe(true);
+      expect(trait.autoCloseOnOff).toBe(true);
     });
 
     it('should create trait with provided data', () => {

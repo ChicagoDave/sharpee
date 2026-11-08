@@ -312,32 +312,43 @@ describe('switchingOffAction (Golden Pattern)', () => {
     });
   });
 
-  describe('Side Effects', () => {
-    test('should close automatic door when turned off', () => {
+  describe('Side Effects (ADR-392 D3: auto-close)', () => {
+    test('switching off a thing that closes when switched off closes it and says so', () => {
       const { world, player, room } = setupBasicWorld();
       const door = world.createEntity('automatic door', 'object');
       door.add(new SwitchableTrait({ isOn: true }));
       door.add(new ContainerTrait()); // Passage
-      // `autoCloseOnOff` is read by switching_off.ts:201 through a cast; OpenableTrait
-      // does not declare it (sharpee #664). The intersection carries it until ruled.
-      door.add(Object.assign(new OpenableTrait({ isOpen: true }), { autoCloseOnOff: true }));
+      door.add(new OpenableTrait({ isOpen: true, autoCloseOnOff: true }));
       world.moveEntity(door.id, room.id);
-      
+
+      // PRECONDITION
+      expect(door.get(OpenableTrait)!.isOpen).toBe(true);
+
       const context = createRealTestContext(switchingOffAction, world, createCommand(IFActions.SWITCHING_OFF, {
         entity: door
       }));
-      
+
       const events = executeWithValidation(switchingOffAction, context);
-      
+
+      // THE state assertion: the switch-off closed it
+      expect(door.get(OpenableTrait)!.isOpen).toBe(false);
+      expect(door.get(SwitchableTrait)!.isOn).toBe(false);
+
       // Should detect it will close
       expectEvent(events, 'if.event.switched_off', {
         willClose: true
       });
-      
+
       // Should emit door_closes message
       expectEvent(events, 'if.event.switched_off', {
         messageId: expect.stringContaining('door_closes'),
         params: { target: { name: 'automatic door' } }
+      });
+
+      // The close is its own fact
+      expectEvent(events, 'if.event.closed', {
+        targetId: door.id,
+        actorId: player.id
       });
     });
 
@@ -346,7 +357,7 @@ describe('switchingOffAction (Golden Pattern)', () => {
       const gate = world.createEntity('security gate', 'object');
       gate.add(new SwitchableTrait({ isOn: true }));
       gate.add(new ContainerTrait());
-      gate.add(Object.assign(new OpenableTrait({ isOpen: true }), { autoCloseOnOff: false })); // no auto-close (sharpee #664)
+      gate.add(new OpenableTrait({ isOpen: true, autoCloseOnOff: false }));
       world.moveEntity(gate.id, room.id);
       
       const context = createRealTestContext(switchingOffAction, world, createCommand(IFActions.SWITCHING_OFF, {
@@ -355,10 +366,12 @@ describe('switchingOffAction (Golden Pattern)', () => {
       
       const events = executeWithValidation(switchingOffAction, context);
       
-      // Should not have willClose flag
+      // Should not have willClose flag, and the gate stays open
       const switchedEvent = events.find(e => e.type === 'if.event.switched_off');
       expect(dataOf<SwitchedOffEventData>(switchedEvent)?.willClose).toBeUndefined();
-      
+      expect(gate.get(OpenableTrait)!.isOpen).toBe(true);
+      expect(events.find(e => e.type === 'if.event.closed')).toBeUndefined();
+
       // Should emit device_stops message
       expectEvent(events, 'if.event.switched_off', {
         messageId: expect.stringContaining('device_stops')
@@ -370,18 +383,21 @@ describe('switchingOffAction (Golden Pattern)', () => {
       const portal = world.createEntity('energy portal', 'object');
       portal.add(new SwitchableTrait({ isOn: true }));
       portal.add(new ContainerTrait());
-      portal.add(Object.assign(new OpenableTrait({ isOpen: false }), { autoCloseOnOff: true })); // already closed (sharpee #664)
+      portal.add(new OpenableTrait({ isOpen: false, autoCloseOnOff: true })); // already closed
       world.moveEntity(portal.id, room.id);
-      
+
       const context = createRealTestContext(switchingOffAction, world, createCommand(IFActions.SWITCHING_OFF, {
         entity: portal
       }));
-      
+
       const events = executeWithValidation(switchingOffAction, context);
-      
-      // Should not have willClose flag
+
+      // Should not have willClose flag, no closed event, still closed, and no door_closes line
       const switchedEvent = events.find(e => e.type === 'if.event.switched_off');
       expect(dataOf<SwitchedOffEventData>(switchedEvent)?.willClose).toBeUndefined();
+      expect(dataOf<{ messageId?: string }>(switchedEvent)?.messageId).not.toContain('door_closes');
+      expect(events.find(e => e.type === 'if.event.closed')).toBeUndefined();
+      expect(portal.get(OpenableTrait)!.isOpen).toBe(false);
     });
   });
 

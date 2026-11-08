@@ -143,8 +143,8 @@ describe('Folded execute-phase refusal (ADR-229 R1)', () => {
     const { validation, events } = drive(world, item);
 
     expect(validation.valid).toBe(false);
-    expect(validation.error).toBe('already_wearing');
-    expect(blockedError).toBe('already_wearing');
+    expect(validation.error).toBe('already_wearing_there');
+    expect(blockedError).toBe('already_wearing_there');
     const blocked = events.find(e => e.type === 'if.event.wear_blocked')!;
     expect((blocked.data as any).messageId).toBe('test.no_room_over_vest');
     // THE state assertion: still not worn.

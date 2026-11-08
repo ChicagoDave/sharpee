@@ -5,7 +5,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { CommandValidator } from '../src/validation/command-validator';
 import { StandardActionRegistry } from '../src/actions/registry';
-import { WorldModel, AuthorModel, IFEntity, TraitType, EntityType, ActorTrait, ContainerTrait, IdentityTrait, EdibleTrait, RoomTrait, OpenableTrait, DoorTrait } from '@sharpee/world-model';
+import { WorldModel, AuthorModel, IFEntity, TraitType, EntityType, ActorTrait, ContainerTrait, IdentityTrait, EdibleTrait, RoomTrait, OpenableTrait, DoorTrait, SoundingTrait } from '@sharpee/world-model';
 import { StandardScopeResolver } from '../src/scope/scope-resolver';
 import { ScopeLevel } from '../src/scope/types';
 import { takingAction } from '../src/actions/standard/taking/taking';
@@ -230,14 +230,7 @@ describe('Scope Integration Tests', () => {
       
       // Create a loud chime in the next room (avoiding "bell" vs "doorbell" confusion)
       const chime = author.createEntity('chime', EntityType.OBJECT);
-      // Don't override the identity trait - it's already set by createEntity.
-      // scope-resolver.ts:145 reads `identity.customProperties.loud`, a field
-      // IdentityTrait does not declare (sharpee #664); the intersection carries it
-      // until that is ruled.
-      const identity = chime.get(IdentityTrait);
-      if (identity) {
-        Object.assign(identity, { customProperties: { loud: true } });
-      }
+      chime.add(new SoundingTrait({ tier: 'raised' })); // loud (ADR-392 D5)
       author.moveEntity(chime.id, nextRoom.id);
       
       const command = {

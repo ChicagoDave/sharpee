@@ -11,7 +11,7 @@ import { OpenableTrait } from '../../src/traits/openable/openableTrait';
 import { LockableTrait } from '../../src/traits/lockable/lockableTrait';
 import { ActorTrait } from '../../src/traits/actor/actorTrait';
 import { SceneryTrait } from '../../src/traits/scenery/sceneryTrait';
-import { WearableTrait } from '../../src/traits/wearable/wearableTrait';
+import { WearableTrait, type IWearableData } from '../../src/traits/wearable/wearableTrait';
 
 // Container factory
 export function createTestContainer(
@@ -171,22 +171,7 @@ export function createTestClothing(
   identity.name = displayName;
   clothing.add(identity);
   
-  clothing.add(new WearableTrait({
-    slot: props.slot ?? 'torso',
-    isWorn: props.worn ?? props.isWorn ?? false,
-    wornBy: props.wornBy,
-    // A placed wearable needs both halves; a fixture naming only one gets layer 1 / no part.
-    placement: props.bodyPart !== undefined
-      ? { bodyPart: props.bodyPart, layer: props.layer ?? 1 }
-      : undefined,
-    canRemove: props.canRemove,
-    blocksSlots: props.blocksSlots,
-    wearMessage: props.wearMessage,
-    removeMessage: props.removeMessage,
-    wearableOver: props.wearableOver,
-    weight: props.weight,
-    bulk: props.bulk,
-  }));
+  clothing.add(new WearableTrait(wearableDataFrom(props)));
   
   // Add ContainerTrait so clothing can hold pockets
   clothing.add(new ContainerTrait());
@@ -209,6 +194,26 @@ export function createTestPocket(
   return pocket;
 }
 
+/**
+ * The WearableTrait data a fixture's flat props describe. A `bodyPart` makes
+ * it a placed wearable (layer defaults to 1); no `bodyPart` makes it simple,
+ * and any `layer` given alone is ignored (ADR-392 D1: both halves or neither).
+ */
+function wearableDataFrom(props: Record<string, any>): IWearableData {
+  return {
+    isWorn: props.worn ?? props.isWorn ?? false,
+    wornBy: props.wornBy,
+    placement: props.bodyPart !== undefined
+      ? { bodyPart: props.bodyPart, layer: props.layer ?? 1 }
+      : undefined,
+    canRemove: props.canRemove,
+    wearMessage: props.wearMessage,
+    removeMessage: props.removeMessage,
+    weight: props.weight,
+    bulk: props.bulk,
+  };
+}
+
 // Wearable item factory (for non-clothing wearables like jewelry)
 export function createTestWearable(
   world: WorldModel,
@@ -216,13 +221,13 @@ export function createTestWearable(
   props: Record<string, any> = {}
 ): IFEntity {
   const wearable = world.createEntity(displayName, 'item');
-  
+
   const identity = new IdentityTrait();
   identity.name = displayName;
   wearable.add(identity);
-  
-  wearable.add(new WearableTrait(props));
-  
+
+  wearable.add(new WearableTrait(wearableDataFrom(props)));
+
   return wearable;
 }
 

@@ -2,7 +2,32 @@
  * Core types for the scope system
  */
 
-import { IFEntity } from '@sharpee/world-model';
+import { IFEntity, type ScentStrength } from '@sharpee/world-model';
+import type { VolumeTier } from '@sharpee/if-domain';
+
+/**
+ * The three-tier loudness a witness report carries (ADR-392 D5): a
+ * projection of ADR-172's five-tier `VolumeTier`, never a second scale.
+ */
+export type WitnessSoundIntensity = 'faint' | 'moderate' | 'loud';
+
+/**
+ * Project a sound's volume tier onto the witness report's three tiers.
+ * @param tier ADR-172's volume tier
+ * @returns `faint` for whisper and subdued, `moderate` for normal, `loud` for raised and shouting
+ */
+export function witnessSoundIntensityOf(tier: VolumeTier): WitnessSoundIntensity {
+  switch (tier) {
+    case 'whisper':
+    case 'subdued':
+      return 'faint';
+    case 'normal':
+      return 'moderate';
+    case 'raised':
+    case 'shouting':
+      return 'loud';
+  }
+}
 
 /**
  * Levels of scope indicating how an entity can be perceived.
@@ -260,7 +285,7 @@ export interface WitnessSoundEvent {
     witnessId: string;
     sense: SenseType;
     soundType: string;
-    intensity: 'faint' | 'moderate' | 'loud';
+    intensity: WitnessSoundIntensity;
     fromDirection?: string;
     estimatedLocation?: string;
     timestamp: number;
@@ -273,7 +298,7 @@ export interface WitnessScentEvent {
     witnessId: string;
     sense: SenseType;
     scentType: string;
-    intensity: 'faint' | 'moderate' | 'strong';
+    intensity: ScentStrength;
     fromDirection?: string;
     characteristics?: string[];
     timestamp: number;
