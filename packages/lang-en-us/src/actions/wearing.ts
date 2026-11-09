@@ -17,7 +17,7 @@ export const wearingLanguage = {
     'not_wearable': "{You} {can't} wear {the item}.",
     'not_held': "{You} {need} to be holding {the item} first.",
     'already_wearing': "{You're} already wearing {the item}.",
-    'already_wearing_there': "{You're} already wearing {the item} on {your} {part}.",
+    'already_wearing_there': "{You're} already wearing {the item} on {your} {bare part}.",
     'worn_under': "{You} would have to take off {the item} first.",
     'worn': "{You} {put} on {the item}.",
     'cant_wear_that': "{You} {can't} wear {the item}.",

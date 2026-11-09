@@ -1,0 +1,342 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "Hall",
+          "straw hat"
+        ]
+      },
+      "command": "look",
+      "id": "tft00001",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Taken."
+        ]
+      },
+      "command": "take hat",
+      "id": "tft00002",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You put on the straw hat."
+        ]
+      },
+      "command": "wear hat",
+      "id": "tft00003",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Taken."
+        ]
+      },
+      "command": "take cap",
+      "id": "tft00004",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You're already wearing the straw hat on your head."
+        ]
+      },
+      "command": "wear cap",
+      "id": "tft00005",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Taken."
+        ]
+      },
+      "command": "take scarf",
+      "id": "tft00006",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You put on the wool scarf."
+        ]
+      },
+      "command": "wear scarf",
+      "id": "tft00007",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The ring will not come off."
+        ]
+      },
+      "command": "take off ring",
+      "id": "tft00008",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Taken."
+        ]
+      },
+      "command": "take key",
+      "id": "tft00009",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "wind chime"
+        ],
+        "notContains": [
+          "can't see any such thing"
+        ]
+      },
+      "command": "listen to chime",
+      "id": "tft00010",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You unlock the cellar door with the iron key, and it swings open."
+        ],
+        "states": [
+          "the cellar door is unlocked",
+          "the cellar door is open"
+        ]
+      },
+      "command": "unlock door with key",
+      "id": "tft00011",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "wind chime"
+        ],
+        "notContains": [
+          "can't see any such thing"
+        ]
+      },
+      "command": "listen to chime",
+      "id": "tft00012",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The display case switches off and closes."
+        ],
+        "states": [
+          "the display case is off",
+          "the display case is closed"
+        ]
+      },
+      "command": "turn off case",
+      "id": "tft00013",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The cordial feels damp."
+        ]
+      },
+      "command": "touch cordial",
+      "id": "tft00014",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The ripe cheese smells delicious."
+        ]
+      },
+      "command": "smell cheese",
+      "id": "tft00015",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You can't see any such thing."
+        ]
+      },
+      "command": "smell bread",
+      "id": "tft00016",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "brass bell"
+        ],
+        "notContains": [
+          "can't see any such thing"
+        ]
+      },
+      "command": "listen to bell",
+      "id": "tft00017",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You can't see any such thing."
+        ]
+      },
+      "command": "listen to rattle",
+      "id": "tft00018",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Taken."
+        ]
+      },
+      "command": "take lamp",
+      "id": "tft00019",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "It is pitch dark"
+        ]
+      },
+      "command": "north",
+      "id": "tft00020",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The oil lamp switches on, banishing the darkness.",
+          "Cellar"
+        ],
+        "states": [
+          "the oil lamp is on"
+        ]
+      },
+      "command": "switch on lamp",
+      "id": "tft00021",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Cellar",
+          "wind chime"
+        ]
+      },
+      "command": "look",
+      "id": "tft00022",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You switch off the oil lamp, plunging the area into darkness."
+        ],
+        "states": [
+          "the oil lamp is off"
+        ]
+      },
+      "command": "switch off lamp",
+      "id": "tft00023",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Hall"
+        ]
+      },
+      "command": "south",
+      "id": "tft00024",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You open the tin box."
+        ]
+      },
+      "command": "open box",
+      "id": "tft00025",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You take the ripe cheese from the tin box."
+        ]
+      },
+      "command": "take cheese",
+      "id": "tft00026",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Barn",
+          "Mira"
+        ]
+      },
+      "command": "east",
+      "id": "tft00027",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Mira wrinkles her nose and shakes her head."
+        ]
+      },
+      "command": "give cheese to Mira",
+      "id": "tft00028",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Mira"
+        ]
+      },
+      "command": "talk to Mira",
+      "id": "tft00029",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "\"Rain by evening,\" Mira says."
+        ]
+      },
+      "command": "ask Mira about the weather",
+      "id": "tft00030",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Tobias doesn't respond."
+        ]
+      },
+      "command": "talk to Tobias",
+      "id": "tft00031",
+      "type": "turn"
+    }
+  ],
+  "id": "tftroot1"
+}
