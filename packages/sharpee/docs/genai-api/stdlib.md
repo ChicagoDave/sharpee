@@ -1973,7 +1973,7 @@ export * from './steering/index.js';
 export * from './setting_course/index.js';
 export * from './vehicle-command-transformer.js';
 import { TraceAction } from '../author/index.js';
-export declare const standardActions: (import("../enhanced-types.js").Action | TraceAction)[];
+export declare const standardActions: (TraceAction | import("../enhanced-types.js").Action)[];
 ```
 
 ### actions/author/trace
@@ -2695,7 +2695,19 @@ export declare function createRestartQueryHandler(): RestartQueryHandler;
 /**
  * Core types for the scope system
  */
-import { IFEntity } from '@sharpee/world-model';
+import { IFEntity, type ScentStrength } from '@sharpee/world-model';
+import type { VolumeTier } from '@sharpee/if-domain';
+/**
+ * The three-tier loudness a witness report carries (ADR-392 D5): a
+ * projection of ADR-172's five-tier `VolumeTier`, never a second scale.
+ */
+export type WitnessSoundIntensity = 'faint' | 'moderate' | 'loud';
+/**
+ * Project a sound's volume tier onto the witness report's three tiers.
+ * @param tier ADR-172's volume tier
+ * @returns `faint` for whisper and subdued, `moderate` for normal, `loud` for raised and shouting
+ */
+export declare function witnessSoundIntensityOf(tier: VolumeTier): WitnessSoundIntensity;
 /**
  * Levels of scope indicating how an entity can be perceived.
  *
@@ -2903,7 +2915,7 @@ export interface WitnessSoundEvent {
         witnessId: string;
         sense: SenseType;
         soundType: string;
-        intensity: 'faint' | 'moderate' | 'loud';
+        intensity: WitnessSoundIntensity;
         fromDirection?: string;
         estimatedLocation?: string;
         timestamp: number;
@@ -2915,7 +2927,7 @@ export interface WitnessScentEvent {
         witnessId: string;
         sense: SenseType;
         scentType: string;
-        intensity: 'faint' | 'moderate' | 'strong';
+        intensity: ScentStrength;
         fromDirection?: string;
         characteristics?: string[];
         timestamp: number;

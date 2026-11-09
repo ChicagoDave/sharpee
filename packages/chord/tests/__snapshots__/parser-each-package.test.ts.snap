@@ -828,6 +828,7 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
       "nevers": [],
       "obligations": [],
       "onClauses": [],
+      "openableActs": [],
       "phraseOverrides": [],
       "placement": null,
       "placementLines": [],
@@ -927,6 +928,7 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
       "nevers": [],
       "obligations": [],
       "onClauses": [],
+      "openableActs": [],
       "phraseOverrides": [],
       "placement": {
         "kind": "placement",
@@ -1306,6 +1308,7 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
           },
         },
       ],
+      "openableActs": [],
       "phraseOverrides": [],
       "placement": {
         "kind": "placement",

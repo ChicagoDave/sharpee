@@ -505,6 +505,22 @@ export interface IREntity {
    */
   servings?: number;
   /**
+   * `opens when unlocked` (ADR-392 D4): the thing opens itself when the
+   * player unlocks it, lowered to its openable trait's `autoOpenOnUnlock`.
+   * Present only when written; absent means false. Only a lockable,
+   * openable thing may carry it (`analysis.opens-when-not-lockable`,
+   * `analysis.opens-when-not-openable`).
+   */
+  opensWhenUnlocked?: true;
+  /**
+   * `closes when switched off` (ADR-392 D4): the thing closes itself when
+   * the player switches it off, lowered to its openable trait's
+   * `autoCloseOnOff`. Present only when written; absent means false. Only a
+   * switchable, openable thing may carry it
+   * (`analysis.closes-when-not-switchable`, `analysis.closes-when-not-openable`).
+   */
+  closesWhenSwitchedOff?: true;
+  /**
    * The vehicle's declaration (ADR-366): its movement type and the lines
    * that type takes. Present exactly on `vehicle`-kind entities; the loader
    * builds `VehicleTrait.model` from it and nothing else (D8).

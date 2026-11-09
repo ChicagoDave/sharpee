@@ -23,6 +23,7 @@ import { compositionsBuilder } from './compositions.js';
 import { countersBuilder } from './counters.js';
 import { holdsBuilder } from './holds.js';
 import { servingsBuilder } from './servings.js';
+import { openableActsBuilder } from './openable-acts.js';
 import { pushingBuilder } from './pushing.js';
 import { exitsBuilder } from './exits.js';
 import { hostGatesBuilder } from './host-gates.js';
@@ -58,6 +59,7 @@ export const ENTITY_LINE_BUILDERS: ReadonlyArray<EntityLineBuilder> = [
   countersBuilder,
   holdsBuilder,
   servingsBuilder,
+  openableActsBuilder,
   pushingBuilder,
   vehicleBuilder,
   expanseBuilder,

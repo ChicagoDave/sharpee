@@ -413,6 +413,26 @@ holds-line   = "holds" NUMBER NL ;                         (* ADR-369 D2: the it
                                                               NUMBER >= 1 (parse.holds-
                                                               number); at most one
                                                               (analysis.holds-duplicate) *)
+opens-when-line = "opens" "when" "unlocked" NL ;           (* ADR-392 D4: the thing
+                                                              opens itself when the
+                                                              player unlocks it — a
+                                                              lockable, openable thing
+                                                              only (analysis.opens-when-
+                                                              not-lockable, -not-
+                                                              openable); at most one
+                                                              (analysis.opens-when-
+                                                              duplicate); malformed is
+                                                              parse.opens-when *)
+closes-when-line = "closes" "when" "switched" "off" NL ;  (* ADR-392 D4: the thing
+                                                              closes itself when the
+                                                              player switches it off —
+                                                              a switchable, openable
+                                                              thing only (analysis.
+                                                              closes-when-not-switchable,
+                                                              -not-openable); at most
+                                                              one (analysis.closes-when-
+                                                              duplicate); malformed is
+                                                              parse.closes-when *)
 servings-line = "servings" NUMBER NL ;                     (* how many bites or sips
                                                               an edible or drinkable
                                                               thing has (analysis.
@@ -820,6 +840,7 @@ create-line  = "aka" alias { "," alias } NL
              | counter-line                                (* ADR-264 D1 *)
              | holds-line                                  (* ADR-369 D2 *)
              | servings-line
+             | opens-when-line | closes-when-line          (* ADR-392 D4 *)
              | vehicle-line                                (* ADR-366 D2, D5, D7 *)
              | admits-line                                 (* ADR-366 D6 *)
              | position-block                              (* ADR-366 D5a *)
@@ -1477,6 +1498,17 @@ composition  = ( ARTICLE KIND-NOUN | WORD )                (* article => kind no
                                                               fragile-not-breakable).
                                                               Malformed is parse.
                                                               attached-to *)
+             | "wearable" "on" ARTICLE WORD { WORD }       (* ADR-392 D2: where a placed
+                                                              wearable sits — the body
+                                                              part, a bare word of the
+                                                              author's (several words
+                                                              join with spaces), stored
+                                                              under the key `on`; two
+                                                              placed things on one part
+                                                              conflict. A bare `wearable`
+                                                              is simple and never
+                                                              conflicts. Malformed is
+                                                              parse.wearable-on *)
              | "starts" STATE-INIT ;                       (* ADR-231 D5a initializer:
                                                               sets the paired trait's
                                                               initial value; pairing

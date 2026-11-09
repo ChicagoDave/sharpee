@@ -66,6 +66,8 @@ export const TRAIT_ADJECTIVES: ReadonlySet<string> = new Set([
   'listener', // ADR-374 D6 — composes ListenerTrait (ADR-172): it hears the story's sounds; `after hearing the <sound>` reacts
   'night-vision', // ADR-374 D3 — person-only, unconditional marker: NightVisionTrait; the visibility gates and the observer's own view read it
   'fragile', // ADR-373 D4 — marker beside `breakable` only (analyzer gate): BreakableTrait.fragile = true; dropping on a floor or throwing breaks it
+  'smelly', // ADR-392 D6 — composes ScentTrait at `strong`: its scent escapes a closed container; no gate
+  'loud', // ADR-392 D6 — composes SoundingTrait at `raised` (ADR-172's VolumeTier): it is heard from inside a closed container; no gate
 ]);
 
 /**

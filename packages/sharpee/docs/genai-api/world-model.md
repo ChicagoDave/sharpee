@@ -775,8 +775,7 @@ export interface IWearResult {
     success: boolean;
     alreadyWorn?: boolean;
     wornByOther?: string;
-    slotConflict?: string;
-    slot?: string;
+    /** The placed wearable's layer; absent for a simple one */
     layer?: number;
     wearMessage?: string;
 }
@@ -821,17 +820,9 @@ export declare class WearableBehavior {
      */
     static getWearer(item: IFEntity): string | undefined;
     /**
-     * Get the slot this item occupies
+     * Get the layer for sorting — undefined for a simple (unplaced) wearable
      */
-    static getSlot(item: IFEntity): string;
-    /**
-     * Get the layer for sorting
-     */
-    static getLayer(item: IFEntity): number;
-    /**
-     * Check if this item blocks any slots
-     */
-    static getBlockedSlots(item: IFEntity): string[];
+    static getLayer(item: IFEntity): number | undefined;
 }
 ```
 
@@ -2144,6 +2135,10 @@ export declare const TraitType: {
     readonly NIGHT_VISION: "if.trait.night_vision";
     /** Present in many rooms (ADR-374 D1) */
     readonly BACKDROP: "if.trait.backdrop";
+    /** Smells, and how strongly (ADR-392 D5) */
+    readonly SCENT: "if.trait.scent";
+    /** Sounds, and how loud (ADR-392 D5) */
+    readonly SOUNDING: "if.trait.sounding";
     readonly OPENABLE: "openable";
     readonly LOCKABLE: "lockable";
     readonly CUTTABLE: "cuttable";
@@ -3269,6 +3264,10 @@ export interface IOpenableData extends IToolGated {
     closedDescription?: string;
     /** The tool opening needs (ADR-230 D3b); absent, opening needs none */
     toolRequirement?: ToolRequirement;
+    /** Opens by itself when it is unlocked (ADR-392 D3); the unlock does the opening */
+    autoOpenOnUnlock?: boolean;
+    /** Closes by itself when it is switched off (ADR-392 D3); the switch does the closing */
+    autoCloseOnOff?: boolean;
 }
 /**
  * Openable trait for entities that can be opened and closed.
@@ -3293,6 +3292,8 @@ export declare class OpenableTrait implements ITrait, IOpenableData {
     openDescription?: string;
     closedDescription?: string;
     toolRequirement?: ToolRequirement;
+    autoOpenOnUnlock: boolean;
+    autoCloseOnOff: boolean;
     constructor(data?: IOpenableData);
 }
 ```
@@ -3708,6 +3709,90 @@ export declare class BackdropTrait implements ITrait, IBackdropData {
 }
 ```
 
+### traits/scent/scentTrait
+
+```typescript
+/**
+ * Scent trait — how strongly a thing smells (ADR-392 D5).
+ *
+ * A thing with this trait has a scent of its own; `strength` says how far
+ * it carries. The scope layer reads it: a `strong` scent escapes a closed
+ * container, a `moderate` or `faint` one does not. A thing without the
+ * trait still has the implicit faint scent of its kind (an edible, an
+ * actor) or none at all; that fallback is the scope layer's, not this
+ * trait's.
+ *
+ * The scale is the one the witness events already used for scent
+ * (`WitnessScentEvent.intensity`), exported from here so both read one
+ * type. `descriptionId` is reserved for the per-sense prose line the
+ * senses round adds (what the thing smells of); nothing reads it yet.
+ *
+ * Pure data (ADR-346 D1): a default, no policing.
+ *
+ * Public interface: ScentTrait, IScentData, ScentStrength.
+ * Owner context: @sharpee/world-model — sensory traits.
+ */
+import { ITrait } from '../trait.js';
+/** How far a scent carries: `strong` escapes a closed container, the others do not. */
+export type ScentStrength = 'faint' | 'moderate' | 'strong';
+export interface IScentData {
+    /** How strongly the thing smells; defaults to `moderate` */
+    strength?: ScentStrength;
+    /** Message id of what it smells of; reserved for the senses round, unread today */
+    descriptionId?: string;
+}
+/**
+ * Scent trait — a thing that smells, and how strongly.
+ */
+export declare class ScentTrait implements ITrait, IScentData {
+    static readonly type: "if.trait.scent";
+    readonly type: "if.trait.scent";
+    strength: ScentStrength;
+    descriptionId?: string;
+    constructor(data?: IScentData);
+}
+```
+
+### traits/sounding/soundingTrait
+
+```typescript
+/**
+ * Sounding trait — a thing that makes a sound of its own, and how loud (ADR-392 D5).
+ *
+ * `tier` is ADR-172's `VolumeTier`, the same ruler a `play sound` or a
+ * shouted line is measured on, so "a loud thing" and "a loud sound" mean
+ * one thing. The scope layer reads it: a thing at `raised` or above is
+ * heard from inside a closed container, a quieter one is not. Propagation
+ * between rooms stays ADR-172's.
+ *
+ * `descriptionId` is reserved for the per-sense prose line the senses
+ * round adds (what the thing sounds like); nothing reads it yet.
+ *
+ * Pure data (ADR-346 D1): a default, no policing.
+ *
+ * Public interface: SoundingTrait, ISoundingData.
+ * Owner context: @sharpee/world-model — sensory traits.
+ */
+import type { VolumeTier } from '@sharpee/if-domain';
+import { ITrait } from '../trait.js';
+export interface ISoundingData {
+    /** How loud the thing is, on ADR-172's scale; defaults to `normal` */
+    tier?: VolumeTier;
+    /** Message id of what it sounds like; reserved for the senses round, unread today */
+    descriptionId?: string;
+}
+/**
+ * Sounding trait — a thing that sounds, and how loud.
+ */
+export declare class SoundingTrait implements ITrait, ISoundingData {
+    static readonly type: "if.trait.sounding";
+    readonly type: "if.trait.sounding";
+    tier: VolumeTier;
+    descriptionId?: string;
+    constructor(data?: ISoundingData);
+}
+```
+
 ### traits/supporter/supporterTrait
 
 ```typescript
@@ -4015,32 +4100,56 @@ export declare class SwitchableBehavior extends Behavior {
 ### traits/wearable/wearableTrait
 
 ```typescript
+/**
+ * Wearable trait — the data of a thing an actor can put on and take off.
+ *
+ * A wearable is one of two shapes, told apart by `placement` (ADR-392 D1):
+ *
+ * - **Simple** (`placement` absent): a ring, a badge, a satchel. It is worn or
+ *   not, and it never conflicts with or blocks any other wearable.
+ * - **Placed** (`placement` present): it sits on a named body part at a
+ *   layer. Two placed things on the same part conflict at the same layer and
+ *   stack at different layers, outer over inner; an outer thing blocks taking
+ *   off the inner one. Both fields of the pair are required together — there
+ *   is no half-placed wearable, which is what the old free-standing
+ *   `bodyPart`/`layer` fields (defaulted to 'torso' and 1) allowed, and why
+ *   the conflict rule could never fire for a constructed trait.
+ *
+ * The placement pair is the one placement model: the earlier `slot`,
+ * `blocksSlots` and `wearableOver` vocabulary, which no action ever read, is
+ * retired with ADR-392.
+ *
+ * Pure data (ADR-346 D1): defaults, no policing. WearableBehavior owns the
+ * mutations; stdlib's wearable-shared owns the conflict and layering rules.
+ *
+ * Public interface: WearableTrait, IWearableData, IWearablePlacement.
+ * Owner context: @sharpee/world-model — traits.
+ */
 import { ITrait } from '../trait.js';
+/** Where a placed wearable sits: the body part, and its layer (higher is outer). */
+export interface IWearablePlacement {
+    /** The body part this is worn on — compared by equality, nothing more. */
+    bodyPart: string;
+    /** Layer on that part; equal layers conflict, a higher layer is worn over a lower. */
+    layer: number;
+}
 export interface IWearableData {
     /** Whether the item is currently being worn */
     isWorn?: boolean;
     /** ID of who is wearing this (if worn) */
     wornBy?: string;
-    /** Body slot this item occupies when worn */
-    slot?: string;
-    /** Layer for items in same slot (higher = outer) */
-    layer?: number;
+    /** Where it sits on the body; absent means a simple wearable that never conflicts */
+    placement?: IWearablePlacement;
     /** Custom message when wearing this item */
     wearMessage?: string;
     /** Custom message when removing this item */
     removeMessage?: string;
-    /** Whether this item can be worn over other items */
-    wearableOver?: boolean;
-    /** Slots this item blocks when worn */
-    blocksSlots?: string[];
     /** Weight of the item */
     weight?: number;
     /** Bulk of the item */
     bulk?: number;
     /** Whether this item can be removed once worn */
     canRemove?: boolean;
-    /** Body part this item is worn on */
-    bodyPart?: string;
 }
 /**
  * Wearable trait indicates an entity can be worn by the player.
@@ -4054,16 +4163,12 @@ export declare class WearableTrait implements ITrait, IWearableData {
     readonly type: "wearable";
     worn: boolean;
     wornBy?: string;
-    slot: string;
-    layer: number;
+    placement?: IWearablePlacement;
     wearMessage?: string;
     removeMessage?: string;
-    wearableOver: boolean;
-    blocksSlots: string[];
     weight: number;
     bulk: number;
     canRemove: boolean;
-    bodyPart: string;
     get isWorn(): boolean;
     set isWorn(value: boolean);
     constructor(data?: IWearableData);

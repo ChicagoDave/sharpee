@@ -1087,6 +1087,7 @@ exports[`traits-basic.story (design.md §2.2/§3.2 + ownership package) > matche
       "nevers": [],
       "obligations": [],
       "onClauses": [],
+      "openableActs": [],
       "phraseOverrides": [],
       "placement": null,
       "placementLines": [],
@@ -1185,6 +1186,7 @@ exports[`traits-basic.story (design.md §2.2/§3.2 + ownership package) > matche
       "nevers": [],
       "obligations": [],
       "onClauses": [],
+      "openableActs": [],
       "phraseOverrides": [],
       "placement": {
         "kind": "placement",
@@ -1365,6 +1367,7 @@ exports[`traits-basic.story (design.md §2.2/§3.2 + ownership package) > matche
       "nevers": [],
       "obligations": [],
       "onClauses": [],
+      "openableActs": [],
       "phraseOverrides": [],
       "placement": null,
       "placementLines": [],
@@ -1576,6 +1579,7 @@ exports[`zoo-actions.story (design.md §3.4 + ownership package) > matches the g
       "nevers": [],
       "obligations": [],
       "onClauses": [],
+      "openableActs": [],
       "phraseOverrides": [],
       "placement": null,
       "placementLines": [],
@@ -1686,6 +1690,7 @@ exports[`zoo-actions.story (design.md §3.4 + ownership package) > matches the g
       "nevers": [],
       "obligations": [],
       "onClauses": [],
+      "openableActs": [],
       "phraseOverrides": [],
       "placement": {
         "kind": "placement",
@@ -3083,6 +3088,7 @@ exports[`zoo-actions.story (design.md §3.4 + ownership package) > matches the g
           },
         },
       ],
+      "openableActs": [],
       "phraseOverrides": [
         {
           "condition": null,
@@ -3269,6 +3275,7 @@ exports[`zoo-actions.story (design.md §3.4 + ownership package) > matches the g
       "nevers": [],
       "obligations": [],
       "onClauses": [],
+      "openableActs": [],
       "phraseOverrides": [],
       "placement": {
         "kind": "placement",
@@ -3444,6 +3451,7 @@ exports[`zoo-actions.story (design.md §3.4 + ownership package) > matches the g
       "nevers": [],
       "obligations": [],
       "onClauses": [],
+      "openableActs": [],
       "phraseOverrides": [],
       "placement": {
         "kind": "placement",
@@ -3683,6 +3691,7 @@ exports[`zoo-timeline.story (design.md §3.3 + ownership package) > matches the 
       "nevers": [],
       "obligations": [],
       "onClauses": [],
+      "openableActs": [],
       "phraseOverrides": [],
       "placement": null,
       "placementLines": [],
@@ -3793,6 +3802,7 @@ exports[`zoo-timeline.story (design.md §3.3 + ownership package) > matches the 
       "nevers": [],
       "obligations": [],
       "onClauses": [],
+      "openableActs": [],
       "phraseOverrides": [],
       "placement": {
         "kind": "placement",
@@ -4683,6 +4693,7 @@ exports[`zoo-timeline.story (design.md §3.3 + ownership package) > matches the 
       "nevers": [],
       "obligations": [],
       "onClauses": [],
+      "openableActs": [],
       "phraseOverrides": [],
       "placement": null,
       "placementLines": [],
@@ -4965,6 +4976,7 @@ exports[`zoo-timeline.story (design.md §3.3 + ownership package) > matches the 
           },
         },
       ],
+      "openableActs": [],
       "phraseOverrides": [],
       "placement": {
         "kind": "placement",
@@ -5163,6 +5175,7 @@ exports[`zoo-timeline.story (design.md §3.3 + ownership package) > matches the 
       "nevers": [],
       "obligations": [],
       "onClauses": [],
+      "openableActs": [],
       "phraseOverrides": [],
       "placement": {
         "kind": "placement",

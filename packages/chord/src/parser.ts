@@ -151,6 +151,7 @@ import {
   CounterDecl,
   HoldsDecl,
   ServingsDecl,
+  OpenableActDecl,
   VehicleLine,
   PositionBlockDecl,
   PushingBlockDecl,
@@ -460,6 +461,7 @@ function newCreateDecl(name: NameRef, span: Span): CreateDecl {
     counters: [],
     holds: [],
     servings: [],
+    openableActs: [],
     vehicleLines: [],
     positionBlock: null,
     pushingBlock: null,
@@ -2281,6 +2283,32 @@ class Parser {
     return { kind: 'servings', count, span: lineSpan(line) };
   }
 
+  /**
+   * `opens when unlocked` / `closes when switched off`: the one spelling
+   * each, nothing after it. Anything else — a different trigger word, a
+   * trailing word — is `parse.opens-when` or `parse.closes-when` with the
+   * form named. Which blocks may carry the line is an IR invariant
+   * (`analysis.opens-when-*`, `analysis.closes-when-*`, validateIR's).
+   * @param line the line, whose first word is `opens` or `closes`
+   * @param verb that first word
+   * @returns the declaration, or null when the line was refused
+   */
+  private parseOpenableActLine(line: Line, verb: 'opens' | 'closes'): OpenableActDecl | null {
+    const c = new Cursor(line.tokens, line);
+    c.matchWord(verb);
+    const wellFormed =
+      verb === 'opens'
+        ? c.matchWord('when') && c.matchWord('unlocked') && c.atEnd()
+        : c.matchWord('when') && c.matchWord('switched') && c.matchWord('off') && c.atEnd();
+    if (!wellFormed) {
+      const form = verb === 'opens' ? 'opens when unlocked' : 'closes when switched off';
+      const does = verb === 'opens' ? 'opens itself when the player unlocks it' : 'closes itself when the player switches it off';
+      this.diagnostics.error(`parse.${verb}-when`, `Expected \`${form}\` — the thing ${does}; the line takes nothing else.`, lineSpan(line));
+      return null;
+    }
+    return { kind: verb === 'opens' ? 'opens-when-unlocked' : 'closes-when-switched-off', span: lineSpan(line) };
+  }
+
   private parseCounterLine(line: Line): CounterDecl | null {
     const c = new Cursor(line.tokens, line);
     c.matchWord('counter');
@@ -2618,6 +2646,13 @@ class Parser {
         this.pos++;
         const s = this.parseServingsLine(line);
         if (s) decl.servings.push(s);
+      } else if (word === 'opens' || word === 'closes') {
+        // ADR-392 D4: what an openable thing does on its own — `opens when
+        // unlocked`, `closes when switched off`. Which blocks may carry a
+        // line is validateIR's gate.
+        this.pos++;
+        const act = this.parseOpenableActLine(line, word);
+        if (act) decl.openableActs.push(act);
       } else if (word === 'wears') {
         this.pos++;
         cur.matchWord('wears');
@@ -4388,6 +4423,48 @@ class Parser {
           'parse.powered-by',
           'Expected `powered by <the thing>` — what it needs inside it to run, e.g. `powered by the battery` or `powered by the cell and the spare cell`.',
           byTok ? byTok.span : poweredTok.span,
+        );
+        while (!c.atEnd()) c.next(); // resynchronize: one mistake, one diagnostic
+        break;
+      }
+
+      // ADR-392 D2: `wearable on the <part>` — where a placed wearable sits.
+      // The keyless-setting shape with the preposition `on` and a bare-word
+      // value (one or more words, the author's), stored under the key `on`
+      // so a later `over` can sit beside it. A bare `wearable` takes the
+      // ordinary adjective path below.
+      if (c.isWord('wearable') && c.isWord('on', 1)) {
+        const wearableTok = c.next()!;
+        const onTok = c.next()!;
+        const articleTok = c.peek();
+        if (articleTok?.kind === 'word' && ARTICLES.has(articleTok.text)) {
+          c.next(); // article
+          const partWords: string[] = [];
+          let lastTok = articleTok;
+          while (!c.atEnd() && c.peek()!.kind === 'word' && !c.isWord('with') && !c.isWord('while')) {
+            lastTok = c.next()!;
+            partWords.push(lastTok.text);
+          }
+          if (partWords.length > 0) {
+            items.push({
+              kind: 'composition',
+              article: null,
+              words: ['wearable'],
+              config: [{ key: ['on'], value: partWords.join(' '), valueKind: 'word', span: mergeSpans(articleTok.span, lastTok.span) }],
+              condition: null,
+              span: mergeSpans(wearableTok.span, lastTok.span),
+            });
+            if (c.peek()?.kind === 'comma') {
+              c.next();
+              continue;
+            }
+            break;
+          }
+        }
+        this.diagnostics.error(
+          'parse.wearable-on',
+          'Expected `wearable on the <part>` — the body part it is worn on, e.g. `wearable on the head`.',
+          articleTok ? articleTok.span : onTok.span,
         );
         while (!c.atEnd()) c.next(); // resynchronize: one mistake, one diagnostic
         break;

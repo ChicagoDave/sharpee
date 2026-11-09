@@ -260,6 +260,42 @@ export function validateIR(ir: StoryIR): Diagnostic[] {
       );
     }
 
+    // `opens when unlocked` is what a lockable, openable thing does when its
+    // lock turns; `closes when switched off` is what a switchable, openable
+    // thing does when it goes off. A door is openable by construction; any
+    // other kind says `openable`.
+    const isOpenable = entity.kinds[0]?.name === 'door' || entity.traits.some((t) => t.name === 'openable');
+    if (entity.opensWhenUnlocked) {
+      if (!entity.traits.some((t) => t.name === 'lockable')) {
+        diagnostics.error(
+          'analysis.opens-when-not-lockable',
+          `\`opens when unlocked\` says what \`${entity.name}\` does when its lock turns — a thing with a lock is \`lockable\`. Add it beside its kind.`,
+          entity.span,
+        );
+      } else if (!isOpenable) {
+        diagnostics.error(
+          'analysis.opens-when-not-openable',
+          `\`opens when unlocked\` needs something to open — \`${entity.name}\` is lockable but not openable. Add \`openable\` beside \`lockable\`.`,
+          entity.span,
+        );
+      }
+    }
+    if (entity.closesWhenSwitchedOff) {
+      if (!entity.traits.some((t) => t.name === 'switchable')) {
+        diagnostics.error(
+          'analysis.closes-when-not-switchable',
+          `\`closes when switched off\` says what \`${entity.name}\` does when it goes off — a thing that goes off is \`switchable\`. Add it beside its kind.`,
+          entity.span,
+        );
+      } else if (!isOpenable) {
+        diagnostics.error(
+          'analysis.closes-when-not-openable',
+          `\`closes when switched off\` needs something to close — \`${entity.name}\` is switchable but not openable. Add \`openable\` beside \`switchable\`.`,
+          entity.span,
+        );
+      }
+    }
+
     // ADR-359 D1: every block names its kind. A kind noun written bare is
     // named as such below, so it does not also report as missing.
     if (entity.kinds.length === 0 && !entity.traits.some((t) => KIND_NOUNS.has(t.name))) {

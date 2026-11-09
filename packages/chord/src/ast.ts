@@ -394,6 +394,16 @@ export interface ServingsDecl {
   span: Span;
 }
 
+/**
+ * `opens when unlocked` / `closes when switched off` — what an openable
+ * thing does on its own when the player unlocks it or switches it off.
+ * Each line is a flag; the analyzer refuses a second of either kind.
+ */
+export interface OpenableActDecl {
+  kind: 'opens-when-unlocked' | 'closes-when-switched-off';
+  span: Span;
+}
+
 export type Declaration =
   | CreateDecl
   | DefineCondition
@@ -995,6 +1005,8 @@ export interface CreateDecl {
   holds: HoldsDecl[];
   /** `servings <n>` lines — collected so the analyzer can refuse a second one. */
   servings: ServingsDecl[];
+  /** `opens when unlocked` and `closes when switched off` lines — collected so the analyzer can refuse a second of either. */
+  openableActs: OpenableActDecl[];
   /**
    * The vehicle colon lines and `admits:` lines (ADR-366), in declaration
    * order. Which a block may carry is the analyzer's gate.

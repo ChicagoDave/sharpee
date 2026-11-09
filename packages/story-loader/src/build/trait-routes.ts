@@ -40,6 +40,7 @@
  * - ADR-373 D1/D2/D4, ADR-374 D3/D6/D10, ADR-376 D10, ADR-369 D1,
  *   ADR-371 D3, ADR-372 D5, ADR-218 §1a, ADR-273 D4 (GH #313) — the
  *   rows' individual words.
+ * - ADR-392 D2, D6 — `wearable on the <part>`, `smelly`, `loud`.
  */
 import type { IRComposition, IREntity, Span } from '@sharpee/chord';
 import {
@@ -68,6 +69,8 @@ import {
   PushableTrait,
   ReadableTrait,
   SceneryTrait,
+  ScentTrait,
+  SoundingTrait,
   SwitchableTrait,
   TraitType,
   WearableTrait,
@@ -168,7 +171,23 @@ export const CORE_TRAIT_ROUTES: ReadonlyMap<string, TraitRoute> = new Map<string
   // unguarded second add REPLACES the first — and a duplicate bare
   // adjective (nothing gates `readable, readable`) silently discarded the
   // configured one's text.
-  ['wearable', addOnce(TraitType.WEARABLE, () => new WearableTrait({}))],
+  [
+    'wearable',
+    (entity, _irEntity, composition) => {
+      if (entity.has(TraitType.WEARABLE)) return;
+      // `wearable on the <part>` places it: the part is the setting under
+      // the key `on`, and every Chord wearable sits at layer 1, so two
+      // placed things on one part conflict. A bare `wearable` is simple
+      // and never conflicts with anything.
+      const part = configValue(composition, 'on');
+      entity.add(new WearableTrait(part !== undefined ? { placement: { bodyPart: part, layer: 1 } } : {}));
+    },
+  ],
+  // The sensory words: a strong scent escapes a closed container; a raised
+  // sound is heard from inside one. Both are strength words, not kinds, so
+  // neither is gated.
+  ['smelly', addOnce(TraitType.SCENT, () => new ScentTrait({ strength: 'strong' }))],
+  ['loud', addOnce(TraitType.SOUNDING, () => new SoundingTrait({ tier: 'raised' }))],
   [
     'readable',
     (entity, _irEntity, composition) => {

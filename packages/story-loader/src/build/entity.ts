@@ -25,7 +25,8 @@
  * - ADR-234 D4 — doors; ADR-236 D1 — regions; ADR-359 D1 — `a thing`;
  *   ADR-366 D1, D2 — vehicles; ADR-369 D2 — `holds` (and `servings`,
  *   the line built like it); ADR-376 D2, D6 —
- *   expanses, landmarks and `sight:`.
+ *   expanses, landmarks and `sight:`; ADR-392 D4 — `opens when unlocked`
+ *   and `closes when switched off` onto the openable trait's flags.
  * - ADR-231 D5a — `starts <state>` onto the paired trait's field.
  * - GH #355 — the IR id attribute the tree-document runner reads.
  */
@@ -269,6 +270,19 @@ export function buildEntity(story: BuildContext, world: WorldModel, irEntity: IR
       throw new LoadError(`\`${irEntity.name}\` has servings but nothing to eat or drink was built for it.`, irEntity.span);
     }
     edible.servings = irEntity.servings;
+  }
+  // `opens when unlocked` and `closes when switched off` are what the thing
+  // does on its own; both land on the openable trait its kind (a door) or
+  // `openable` built, after composition so the order of lines never matters.
+  if (irEntity.opensWhenUnlocked || irEntity.closesWhenSwitchedOff) {
+    const openable = entity.get(TraitType.OPENABLE) as OpenableTrait | undefined;
+    // validateIR refuses either line on a block that is not openable before
+    // a world is built, so a missing trait here is a loader defect.
+    if (!openable) {
+      throw new LoadError(`\`${irEntity.name}\` opens or closes on its own but nothing openable was built for it.`, irEntity.span);
+    }
+    if (irEntity.opensWhenUnlocked) openable.autoOpenOnUnlock = true;
+    if (irEntity.closesWhenSwitchedOff) openable.autoCloseOnOff = true;
   }
   applyStartsStates(entity, irEntity);
   // GH #355: the same mapping, readable from the world alone — the

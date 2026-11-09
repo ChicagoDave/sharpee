@@ -232,7 +232,12 @@ const PINNED = {
   // Phase 5): `entity-line` gains `servings-line` — `servings <n>`, how many
   // bites or sips an edible or drinkable thing has. Additive — no bump; the
   // number moves when the next version is cut.
-  ebnfSha256: '73f232a68619109680dba380c4f08ae1adf61f3830ef746c77207671a020290a',
+  // Re-pinned 2026-11-08 (session 4334bb, ADR-392 D2, D4, D6; #664 Phase 4):
+  // `composition` gains `wearable on ARTICLE WORD { WORD }`; `create-line`
+  // gains `opens-when-line` and `closes-when-line`; the catalog gains the
+  // adjectives `smelly` and `loud` (WORD terminals, no production of their
+  // own). Additive — no bump; the number moves when the next version is cut.
+  ebnfSha256: '419e8778fa8d5ade4335bf9ac3b5b2cb2ff970c7122ebe10c3e1f7bde8a13ac9',
 };
 
 // Colocated with the version pin it gates (2026-08-14). It previously lived at

@@ -83,6 +83,8 @@ export function assembleEntity(draft: EntityDraft): IREntity {
     counters: draft.counters,
     ...(draft.holds !== undefined ? { holds: draft.holds } : {}),
     ...(draft.servings !== undefined ? { servings: draft.servings } : {}),
+    ...(draft.opensWhenUnlocked !== undefined ? { opensWhenUnlocked: draft.opensWhenUnlocked } : {}),
+    ...(draft.closesWhenSwitchedOff !== undefined ? { closesWhenSwitchedOff: draft.closesWhenSwitchedOff } : {}),
     ...(draft.vehicle !== undefined ? { vehicle: draft.vehicle } : {}),
     ...(draft.admits !== undefined ? { admits: draft.admits } : {}),
     ...(draft.pushing !== undefined ? { pushing: draft.pushing } : {}),

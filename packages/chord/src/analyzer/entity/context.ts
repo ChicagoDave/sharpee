@@ -136,6 +136,10 @@ export interface EntityDraft {
   holds?: number;
   /** `servings <n>`; undefined when the block has no line. */
   servings?: number;
+  /** `opens when unlocked`; undefined when the block has no line. */
+  opensWhenUnlocked?: true;
+  /** `closes when switched off`; undefined when the block has no line. */
+  closesWhenSwitchedOff?: true;
   /** The vehicle's declaration (ADR-366); undefined off a `vehicle` block. */
   vehicle?: IRVehicle;
   /** `admits:` (ADR-366 D6) as entity ids; undefined when the block has no line. */
