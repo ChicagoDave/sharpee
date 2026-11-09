@@ -178,9 +178,10 @@
     {
       "assertions": {
         "contains": [
-          "brass bell"
+          "The brass bell is making a noise."
         ],
         "notContains": [
+          "isn't making any sound",
           "can't see any such thing"
         ]
       },
@@ -201,11 +202,35 @@
     {
       "assertions": {
         "contains": [
+          "You hear a brass bell."
+        ],
+        "notContains": [
+          "wind chime",
+          "nothing out of the ordinary"
+        ]
+      },
+      "command": "listen",
+      "id": "tft00032",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
           "Taken."
         ]
       },
       "command": "take lamp",
       "id": "tft00019",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Dropped."
+        ]
+      },
+      "command": "drop apple",
+      "id": "tft00033",
       "type": "turn"
     },
     {
@@ -254,6 +279,31 @@
       },
       "command": "switch off lamp",
       "id": "tft00023",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The bundle of lavender has a distinct smell."
+        ]
+      },
+      "command": "smell lavender",
+      "id": "tft00034",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You smell a bundle of lavender."
+        ],
+        "notContains": [
+          "don't smell anything",
+          "food nearby",
+          "smoke"
+        ]
+      },
+      "command": "smell",
+      "id": "tft00035",
       "type": "turn"
     },
     {

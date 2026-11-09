@@ -4,7 +4,7 @@ story
     Sharpee Team
   id: trait-field-test
   story-version: 0.0.1
-  description: A platform test story — one scene per standard action that reads a declared trait field: two hats on one head, a door that opens when unlocked, a case that closes when switched off, a ring that will not come off, cheese smelled through a closed box, a bell heard through a closed crate and a chime heard through the cellar door, a cordial that feels damp, a farmhand who refuses a gift, two people to talk to, and a lamp to light the cellar.
+  description: A platform test story — one scene per standard action that reads a declared trait field: two hats on one head, a door that opens when unlocked, a case that closes when switched off, a ring that will not come off, cheese smelled through a closed box, lavender smelled in the dark, a bell heard through a closed crate and a chime heard through the cellar door, a cordial that feels damp, a farmhand who refuses a gift, two people to talk to, and a lamp to light the cellar.
 
 create the Hall
   a room
@@ -161,6 +161,15 @@ create the wooden rattle
   aka rattle
 
   A child's rattle.
+
+## Row 8 — a declared scent on a thing that is not food: smelled in the dark, and `smell` names it
+
+create the bundle of lavender
+  a thing, smelly
+  in the Cellar
+  aka lavender
+
+  A bundle of dried lavender hung from a nail.
 
 create the wind chime
   a thing, loud
