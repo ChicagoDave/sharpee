@@ -1,7 +1,7 @@
 # Session Plan: Retire @sharpee/bridge and @sharpee/runtime to packages/_archive
 
 **Created**: 2026-11-08
-**Plan Status**: ACTIVE
+**Plan Status**: DONE
 **Overall scope**: Archive `packages/bridge` and `packages/runtime` the way `packages/interpreter` was retired on 2026-08-13 (commit a01ca3701 `git mv`; commit 14d398b5e annotated the ADRs). Lantern, the private authoring tool both were built for, is dead; neither package has an in-repo consumer, npm publish, bundle step, or test. David's ruling, 2026-11-08. Do not expand the touch list below.
 **Bounded contexts touched**: N/A — repository housekeeping / retirement (infrastructure, docs)
 **Key domain language**: retired package, `packages/_archive/`, RETIRED block, runtime-surface
