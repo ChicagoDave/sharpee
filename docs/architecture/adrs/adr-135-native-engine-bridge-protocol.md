@@ -3,6 +3,21 @@
 ## Status
 Accepted (implemented in `packages/bridge/`)
 
+> **RETIRED 2026-11-08 (ADR-393, session 72d34d).** `@sharpee/bridge` is
+> retired — David's call, on the grounds that Lantern, the native host this
+> protocol was written for, is dead, and no other host ever appeared: the
+> package was never published, never bundled into the `node_bridge.js` this
+> record promises, never tested, and never imported in the repository. Its
+> sibling `@sharpee/runtime` (the iframe/postMessage transport, Open Question
+> 3) is retired with it. Source archived at `packages/_archive/bridge` and
+> `packages/_archive/runtime`; the umbrella's `runtime-surface` subpath, which
+> existed only for the two of them, is removed.
+>
+> **This ADR stands as written.** It records a protocol decided when Lantern
+> was live and is not amended by the retirement — only annotated by it. A
+> future out-of-process engine host is a thin transport over
+> `@sharpee/bootstrap` (ADR-180), not a revival of this package (ADR-393).
+
 ## Context
 
 Sharpee games need to run inside native desktop applications (Swift/macOS, Blazor/Windows) that cannot embed Node.js or V8 directly. The Lantern authoring tool and the Zifmia player are converging into a single native app with two modes — authoring and playing. Both modes need to drive the Sharpee engine and consume its output.

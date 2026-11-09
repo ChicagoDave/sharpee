@@ -155,64 +155,6 @@ importers:
         specifier: ^3.2.4
         version: 3.2.4(@types/debug@4.1.12)(@types/node@20.19.27)(@vitest/ui@3.2.4)(happy-dom@15.11.7)(lightningcss@1.30.2)(terser@5.44.1)
 
-  packages/bridge:
-    dependencies:
-      '@sharpee/channel-service':
-        specifier: workspace:*
-        version: link:../channel-service
-      '@sharpee/core':
-        specifier: workspace:*
-        version: link:../core
-      '@sharpee/engine':
-        specifier: workspace:*
-        version: link:../engine
-      '@sharpee/event-processor':
-        specifier: workspace:*
-        version: link:../event-processor
-      '@sharpee/if-domain':
-        specifier: workspace:*
-        version: link:../if-domain
-      '@sharpee/if-services':
-        specifier: workspace:*
-        version: link:../if-services
-      '@sharpee/lang-en-us':
-        specifier: workspace:*
-        version: link:../lang-en-us
-      '@sharpee/parser-en-us':
-        specifier: workspace:*
-        version: link:../parser-en-us
-      '@sharpee/plugin-scheduler':
-        specifier: workspace:*
-        version: link:../plugin-scheduler
-      '@sharpee/plugin-state-machine':
-        specifier: workspace:*
-        version: link:../plugin-state-machine
-      '@sharpee/plugins':
-        specifier: workspace:*
-        version: link:../plugins
-      '@sharpee/sharpee':
-        specifier: workspace:*
-        version: link:../sharpee
-      '@sharpee/stdlib':
-        specifier: workspace:*
-        version: link:../stdlib
-      '@sharpee/text-blocks':
-        specifier: workspace:*
-        version: link:../text-blocks
-      '@sharpee/world-model':
-        specifier: workspace:*
-        version: link:../world-model
-      fflate:
-        specifier: ^0.8.2
-        version: 0.8.2
-    devDependencies:
-      rimraf:
-        specifier: ^5.0.5
-        version: 5.0.10
-      typescript:
-        specifier: ^5.3.3
-        version: 5.9.3
-
   packages/channel-service:
     dependencies:
       '@sharpee/core':
@@ -914,61 +856,6 @@ importers:
       vitest:
         specifier: ^1.6.0
         version: 1.6.1(@types/node@20.19.27)(@vitest/ui@3.2.4)(happy-dom@15.11.7)(lightningcss@1.30.2)(terser@5.44.1)
-
-  packages/runtime:
-    dependencies:
-      '@sharpee/channel-service':
-        specifier: workspace:*
-        version: link:../channel-service
-      '@sharpee/core':
-        specifier: workspace:*
-        version: link:../core
-      '@sharpee/engine':
-        specifier: workspace:*
-        version: link:../engine
-      '@sharpee/event-processor':
-        specifier: workspace:*
-        version: link:../event-processor
-      '@sharpee/if-domain':
-        specifier: workspace:*
-        version: link:../if-domain
-      '@sharpee/if-services':
-        specifier: workspace:*
-        version: link:../if-services
-      '@sharpee/lang-en-us':
-        specifier: workspace:*
-        version: link:../lang-en-us
-      '@sharpee/parser-en-us':
-        specifier: workspace:*
-        version: link:../parser-en-us
-      '@sharpee/plugin-scheduler':
-        specifier: workspace:*
-        version: link:../plugin-scheduler
-      '@sharpee/plugin-state-machine':
-        specifier: workspace:*
-        version: link:../plugin-state-machine
-      '@sharpee/plugins':
-        specifier: workspace:*
-        version: link:../plugins
-      '@sharpee/sharpee':
-        specifier: workspace:*
-        version: link:../sharpee
-      '@sharpee/stdlib':
-        specifier: workspace:*
-        version: link:../stdlib
-      '@sharpee/text-blocks':
-        specifier: workspace:*
-        version: link:../text-blocks
-      '@sharpee/world-model':
-        specifier: workspace:*
-        version: link:../world-model
-    devDependencies:
-      rimraf:
-        specifier: ^5.0.5
-        version: 5.0.10
-      typescript:
-        specifier: ^5.3.3
-        version: 5.9.3
 
   packages/sharpee:
     dependencies:

@@ -15,6 +15,11 @@ packages:
   # runner, unbuilt and importerless. Archived at
   # packages/_archive/interpreter; its ZifmiaRunner exports and
   # `zifmia-` localStorage save keys go with it.
+  # packages/bridge and packages/runtime retired 2026-11-08 (David, ADR-393) —
+  # the stdio-subprocess and iframe-postMessage engine transports built for
+  # Lantern, which is dead. Never published, never bundled, no consumer in the
+  # repo. Archived at packages/_archive/bridge and packages/_archive/runtime;
+  # the umbrella's `runtime-surface` subpath, theirs alone, goes with them.
   - '!packages/_archive/**'
   - stories/dungeo
   - stories/channel-service-test

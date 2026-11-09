@@ -24,7 +24,7 @@ before.
 
 ## The Packages
 
-Thirty-one packages under `packages/`. Grouped by what they are for, not by dependency order.
+Twenty-nine packages under `packages/`. Grouped by what they are for, not by dependency order.
 
 ### Contracts and types
 
@@ -84,9 +84,7 @@ Thirty-one packages under `packages/`. Grouped by what they are for, not by depe
 
 **`@sharpee/platform-browser`** — Browser client infrastructure: `BrowserClient`, a renderer per channel, and managers for save/restore, themes, menus, dialogs, input, and display. Framework-free, with `lz-string` as its only runtime dependency.
 
-**`@sharpee/runtime`** — A headless engine runtime for embedding in an iframe, talking to the parent frame over postMessage. It shares its Sharpee API surface with `bridge` via `@sharpee/sharpee/runtime-surface` and adds only the postMessage transport.
-
-**`@sharpee/bridge`** — The same engine surface exposed as a Node subprocess speaking newline-delimited JSON over stdin/stdout (ADR-135), for native hosts. Only the transport differs from `runtime`.
+**`@sharpee/bridge`** and **`@sharpee/runtime`** — RETIRED 2026-11-08 (ADR-393), archived at `packages/_archive/bridge` and `packages/_archive/runtime`. The stdio-subprocess (ADR-135) and iframe-postMessage engine transports, built in March 2026 for Lantern, a private authoring tool that is dead. Neither was ever published, bundled, tested, or imported in-repo; the IDE heads run the engine in-process in the web panes, and a Node host goes through `@sharpee/bootstrap`. The umbrella's `runtime-surface` subpath existed only for them and went with them. ADR-135 stands as written.
 
 **`@sharpee/interpreter`** — RETIRED 2026-08-13, archived at `packages/_archive/interpreter`. The legacy Tauri story runner; ADR-180 had already dropped it from the build. The `zifmia` name it carried is retired with it — the multi-user product is archived at `tools/_archive/zifmia`. The ADRs that decided all of this stay as written; only the live docs moved on.
 
