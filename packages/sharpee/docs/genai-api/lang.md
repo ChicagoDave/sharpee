@@ -620,6 +620,29 @@ export declare const standardActionLanguage: ({
     actionId: string;
     patterns: string[];
     messages: {
+        not_visible: string;
+        silence: string;
+        ambient_sounds: string;
+        active_devices: string;
+        sounds_nearby: string;
+        no_sound: string;
+        device_running: string;
+        device_off: string;
+        container_sounds: string;
+        liquid_sounds: string;
+        sounds_from_target: string;
+        listened_to: string;
+        listened_environment: string;
+    };
+    help: {
+        description: string;
+        examples: string;
+        summary: string;
+    };
+} | {
+    actionId: string;
+    patterns: string[];
+    messages: {
         no_target: string;
         cant_take_self: string;
         already_have: string;
@@ -1107,37 +1130,18 @@ export declare const standardActionLanguage: ({
     patterns: string[];
     messages: {
         not_visible: string;
-        silence: string;
-        ambient_sounds: string;
-        active_devices: string;
-        no_sound: string;
-        device_running: string;
-        device_off: string;
-        container_sounds: string;
-        liquid_sounds: string;
-        listened_to: string;
-        listened_environment: string;
-    };
-    help: {
-        description: string;
-        examples: string;
-        summary: string;
-    };
-} | {
-    actionId: string;
-    patterns: string[];
-    messages: {
-        not_visible: string;
         too_far: string;
         no_scent: string;
         room_scents: string;
         food_nearby: string;
         smoke_detected: string;
+        scents_nearby: string;
         no_particular_scent: string;
         food_scent: string;
         drink_scent: string;
         burning_scent: string;
         container_food_scent: string;
+        declared_scent: string;
         musty_scent: string;
         fresh_scent: string;
         smelled: string;

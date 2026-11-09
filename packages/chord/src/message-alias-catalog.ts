@@ -15,7 +15,7 @@
  * Public interface: MESSAGE_OVERRIDE_ALIASES.
  * Owner context: @sharpee/chord (language frontend; browser-safe; generated artifact).
  *
- * 883 aliases across 78 actions.
+ * 887 aliases across 78 actions.
  *
  * References:
  * - ADR-255 D2 — one hand-maintained table; Interface Contract 3 — names
@@ -476,6 +476,8 @@ export const MESSAGE_OVERRIDE_ALIASES: ReadonlySet<string> = new Set([
   'listening-no-sound',
   'listening-not-visible',
   'listening-silence',
+  'listening-sounds-from-target',
+  'listening-sounds-nearby',
   // if.action.locking
   'locking-already-locked',
   'locking-cant-reach',
@@ -736,6 +738,7 @@ export const MESSAGE_OVERRIDE_ALIASES: ReadonlySet<string> = new Set([
   // if.action.smelling
   'smelling-burning-scent',
   'smelling-container-food-scent',
+  'smelling-declared-scent',
   'smelling-drink-scent',
   'smelling-food-nearby',
   'smelling-food-scent',
@@ -745,6 +748,7 @@ export const MESSAGE_OVERRIDE_ALIASES: ReadonlySet<string> = new Set([
   'smelling-no-scent',
   'smelling-not-visible',
   'smelling-room-scents',
+  'smelling-scents-nearby',
   'smelling-smelled',
   'smelling-smelled-environment',
   'smelling-smoke-detected',

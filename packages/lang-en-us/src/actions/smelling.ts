@@ -23,6 +23,7 @@ export const smellingLanguage = {
     'room_scents': "The air carries various scents.",
     'food_nearby': "{You} {smell} food nearby.",
     'smoke_detected': "{You} {detect} a faint smell of smoke.",
+    'scents_nearby': "{You} {smell} {sources}.",
 
     // Success messages - specific targets
     'no_particular_scent': "{capitalize the target} {verb:has target} no particular smell.",
@@ -30,6 +31,7 @@ export const smellingLanguage = {
     'drink_scent': "{capitalize the target} {verb:has target} a pleasant aroma.",
     'burning_scent': "{capitalize the target} gives off a smoky smell.",
     'container_food_scent': "{You} {smell} food inside {the target}.",
+    'declared_scent': "{capitalize the target} {verb:has target} a distinct smell.",
     'musty_scent': "{capitalize the target} smells a bit musty.",
     'fresh_scent': "{capitalize the target} smells fresh and clean.",
 

@@ -467,6 +467,8 @@ export const MESSAGE_ALIAS_TO_ACTION_ID: Readonly<Record<string, string>> = {
   'listening-no-sound': 'if.action.listening.no_sound',
   'listening-not-visible': 'if.action.listening.not_visible',
   'listening-silence': 'if.action.listening.silence',
+  'listening-sounds-from-target': 'if.action.listening.sounds_from_target',
+  'listening-sounds-nearby': 'if.action.listening.sounds_nearby',
   // if.action.locking
   'locking-already-locked': 'if.action.locking.already_locked',
   'locking-cant-reach': 'if.action.locking.cant_reach',
@@ -729,6 +731,7 @@ export const MESSAGE_ALIAS_TO_ACTION_ID: Readonly<Record<string, string>> = {
   // if.action.smelling
   'smelling-burning-scent': 'if.action.smelling.burning_scent',
   'smelling-container-food-scent': 'if.action.smelling.container_food_scent',
+  'smelling-declared-scent': 'if.action.smelling.declared_scent',
   'smelling-drink-scent': 'if.action.smelling.drink_scent',
   'smelling-food-nearby': 'if.action.smelling.food_nearby',
   'smelling-food-scent': 'if.action.smelling.food_scent',
@@ -738,6 +741,7 @@ export const MESSAGE_ALIAS_TO_ACTION_ID: Readonly<Record<string, string>> = {
   'smelling-no-scent': 'if.action.smelling.no_scent',
   'smelling-not-visible': 'if.action.smelling.not_visible',
   'smelling-room-scents': 'if.action.smelling.room_scents',
+  'smelling-scents-nearby': 'if.action.smelling.scents_nearby',
   'smelling-smelled': 'if.action.smelling.smelled',
   'smelling-smelled-environment': 'if.action.smelling.smelled_environment',
   'smelling-smoke-detected': 'if.action.smelling.smoke_detected',

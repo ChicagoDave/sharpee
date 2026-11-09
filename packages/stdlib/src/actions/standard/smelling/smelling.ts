@@ -16,7 +16,7 @@
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types.js';
 import { type ISemanticEvent } from '@sharpee/core';
-import { TraitType, EdibleTrait } from '@sharpee/world-model';
+import { IFEntity, TraitType, EdibleTrait, LightSourceTrait, ScentTrait } from '@sharpee/world-model';
 import { IFActions } from '../../constants.js';
 import { SmelledEventData } from './smelling-events.js';
 import { ActionMetadata } from '../../../validation/index.js';
@@ -65,6 +65,11 @@ interface SmellAnalysis {
   hasScent: boolean;
 }
 
+/** A lit light source gives off the burning smell the heuristics have always reported. */
+function isLit(entity: IFEntity): boolean {
+  return entity.getTrait(LightSourceTrait)?.isLit === true;
+}
+
 function analyzeSmellAction(context: ActionContext): SmellAnalysis {
   const target = context.command.directObject?.entity;
   const eventData: SmelledEventData = {};
@@ -76,7 +81,11 @@ function analyzeSmellAction(context: ActionContext): SmellAnalysis {
     eventData.target = target.id;
     params.target = nounPhraseFor(target);
 
-    // Check if the target has smell-related properties
+    // The specific lines first — an edible's food or drink line and a lit
+    // light's smoke line say more than the generic one — then a declared
+    // scent (ADR-392 D5, #668), then what an open container holds.
+    const scent = target.getTrait(ScentTrait);
+
     if (target.has(TraitType.EDIBLE)) {
       hasScent = true;
       eventData.hasScent = true;
@@ -88,14 +97,17 @@ function analyzeSmellAction(context: ActionContext): SmellAnalysis {
         eventData.scentType = 'edible';
         messageId = 'food_scent';
       }
-    } else if (target.has(TraitType.LIGHT_SOURCE)) {
-      const lightTrait = target.get(TraitType.LIGHT_SOURCE) as { isLit?: boolean };
-      if (lightTrait.isLit) {
-        hasScent = true;
-        eventData.hasScent = true;
-        eventData.scentType = 'burning';
-        messageId = 'burning_scent';
-      }
+    } else if (isLit(target)) {
+      hasScent = true;
+      eventData.hasScent = true;
+      eventData.scentType = 'burning';
+      messageId = 'burning_scent';
+    } else if (scent) {
+      hasScent = true;
+      eventData.hasScent = true;
+      eventData.scentType = 'declared';
+      eventData.strength = scent.strength;
+      messageId = 'declared_scent';
     } else if (target.has(TraitType.CONTAINER) && target.has(TraitType.OPENABLE)) {
       const openableTrait = target.get(TraitType.OPENABLE) as { isOpen?: boolean };
       if (openableTrait.isOpen) {
@@ -118,37 +130,47 @@ function analyzeSmellAction(context: ActionContext): SmellAnalysis {
     // Smelling the general environment
     eventData.smellingEnvironment = true;
     
+    // Walk what the scope layer says the actor can smell — the same answer
+    // `smell <thing>` resolves against (#668) — kept to the actor's own room.
     const location = context.currentLocation;
-    const contents = context.world.getContents(location.id);
-    
+    const actorRoom = context.world.getContainingRoom(context.actor.id);
+    const smellable = context.scopeResolver.getSmellable(context.actor).filter(entity => {
+      const room = context.world.getContainingRoom(entity.id);
+      return !!actorRoom && !!room && room.id === actorRoom.id;
+    });
+
     const scentSources: string[] = [];
+    const declared: IFEntity[] = [];
     let hasFood = false;
     let hasSmoke = false;
-    
-    contents.forEach(item => {
-      if (item.has(TraitType.EDIBLE)) {
-        scentSources.push(item.id);
-        hasFood = true;
-      }
-      if (item.has(TraitType.LIGHT_SOURCE)) {
-        const lightTrait = item.get(TraitType.LIGHT_SOURCE) as { isLit?: boolean };
-        if (lightTrait.isLit) {
-          scentSources.push(item.id);
-          hasSmoke = true;
-        }
-      }
+
+    smellable.forEach(item => {
+      const edible = item.has(TraitType.EDIBLE);
+      const burning = isLit(item);
+      const scented = item.has(TraitType.SCENT);
+      if (edible) hasFood = true;
+      if (burning) hasSmoke = true;
+      if (scented && !edible && !burning) declared.push(item);
+      if (edible || burning || scented) scentSources.push(item.id);
     });
-    
+
     if (scentSources.length > 0) {
       eventData.scentSources = scentSources;
     }
-    
+
+    // The old room lines keep priority when their own condition holds; a
+    // declared scent alone gets the new line.
     if (hasSmoke) {
       messageId = 'smoke_detected';
     } else if (hasFood) {
       messageId = 'food_nearby';
-    } else if (scentSources.length > 0) {
-      messageId = 'room_scents';
+    } else if (declared.length > 0) {
+      params.sources = {
+        kind: 'list' as const,
+        conj: 'and' as const,
+        items: declared.map(s => nounPhraseFor(s))
+      };
+      messageId = 'scents_nearby';
     } else {
       messageId = 'no_scent';
     }
@@ -173,6 +195,8 @@ export const smellingAction: Action & { metadata: ActionMetadata } = {
     'drink_scent',
     'burning_scent',
     'container_food_scent',
+    'declared_scent',
+    'scents_nearby',
     'musty_scent',
     'fresh_scent',
     'smelled',

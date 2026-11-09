@@ -12,7 +12,7 @@
 import { describe, test, expect, beforeEach } from 'vitest';
 import { listeningAction } from '../../../src/actions/standard/listening';
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType, ContainerTrait, SwitchableTrait, EdibleTrait } from '@sharpee/world-model';
+import { TraitType, ContainerTrait, SwitchableTrait, EdibleTrait, SoundingTrait, OpenableTrait, RoomTrait, DoorTrait, type IFEntity, type WorldModel } from '@sharpee/world-model';
 import {
   createRealTestContext,
   setupBasicWorld,
@@ -409,6 +409,212 @@ describe('listeningAction (Golden Pattern)', () => {
           // No target for environmental listening
           expect(event.entities.target).toBeUndefined();
         }
+      });
+    });
+  });
+
+  describe('Declared sounds (ADR-392 D5, #668)', () => {
+    /**
+     * A closed crate in `room` with `things` inside it. The crate is filled
+     * while open — the world refuses a move into a closed container — and
+     * shut afterwards; each move is asserted so a refused fixture cannot
+     * pass a scan test vacuously.
+     */
+    const closedCrate = (world: WorldModel, room: IFEntity, ...things: IFEntity[]): IFEntity => {
+      const crate = world.createEntity('slatted crate', 'object');
+      crate.add(new ContainerTrait());
+      const lid = new OpenableTrait({ isOpen: true });
+      crate.add(lid);
+      expect(world.moveEntity(crate.id, room.id)).toBe(true);
+      for (const thing of things) {
+        expect(world.moveEntity(thing.id, crate.id)).toBe(true);
+      }
+      lid.isOpen = false;
+      return crate;
+    };
+
+    test('a thing with a declared sound is heard, not silent', () => {
+      const { world, room } = setupBasicWorld();
+      const bell = world.createEntity('brass bell', 'object');
+      bell.add(new SoundingTrait({ tier: 'raised' }));
+      world.moveEntity(bell.id, room.id);
+
+      const context = createRealTestContext(listeningAction, world, createCommand(IFActions.LISTENING, { entity: bell }));
+      const events = executeWithValidation(listeningAction, context);
+
+      expectEvent(events, 'if.event.listened', {
+        target: bell.id,
+        hasSound: true,
+        soundType: 'declared',
+        tier: 'raised',
+        messageId: expect.stringContaining('sounds_from_target'),
+        params: { target: { name: 'brass bell' } }
+      });
+    });
+
+    test('a loud thing inside a closed crate is still heard', () => {
+      const { world, room } = setupBasicWorld();
+      const bell = world.createEntity('brass bell', 'object');
+      bell.add(new SoundingTrait({ tier: 'raised' }));
+      closedCrate(world, room, bell);
+
+      const context = createRealTestContext(listeningAction, world, createCommand(IFActions.LISTENING, { entity: bell }));
+      const events = executeWithValidation(listeningAction, context);
+
+      expectEvent(events, 'if.event.listened', {
+        target: bell.id,
+        hasSound: true,
+        soundType: 'declared',
+        messageId: expect.stringContaining('sounds_from_target')
+      });
+    });
+
+    test('a plain thing inside a closed crate is still silent', () => {
+      const { world, room } = setupBasicWorld();
+      const rattle = world.createEntity('wooden rattle', 'object');
+      closedCrate(world, room, rattle);
+
+      const context = createRealTestContext(listeningAction, world, createCommand(IFActions.LISTENING, { entity: rattle }));
+      const events = executeWithValidation(listeningAction, context);
+
+      expectEvent(events, 'if.event.listened', {
+        target: rattle.id,
+        messageId: expect.stringContaining('no_sound')
+      });
+    });
+
+    test('a declared sound wins over a switched-off device', () => {
+      const { world, room } = setupBasicWorld();
+      const radio = world.createEntity('crackling radio', 'object');
+      radio.add(new SwitchableTrait({ isOn: false }));
+      radio.add(new SoundingTrait({ tier: 'normal' }));
+      world.moveEntity(radio.id, room.id);
+
+      const context = createRealTestContext(listeningAction, world, createCommand(IFActions.LISTENING, { entity: radio }));
+      const events = executeWithValidation(listeningAction, context);
+
+      expectEvent(events, 'if.event.listened', {
+        target: radio.id,
+        hasSound: true,
+        soundType: 'declared',
+        tier: 'normal',
+        messageId: expect.stringContaining('sounds_from_target')
+      });
+    });
+
+    test('listen names a loud thing inside a closed crate', () => {
+      const { world, room } = setupBasicWorld();
+      const bell = world.createEntity('brass bell', 'object');
+      bell.add(new SoundingTrait({ tier: 'raised' }));
+      closedCrate(world, room, bell);
+
+      const context = createRealTestContext(listeningAction, world, createCommand(IFActions.LISTENING, {}));
+      const events = executeWithValidation(listeningAction, context);
+
+      expectEvent(events, 'if.event.listened', {
+        listeningToEnvironment: true,
+        roomId: room.id,
+        soundSources: [bell.id],
+        messageId: expect.stringContaining('sounds_nearby'),
+        params: { sources: { kind: 'list', conj: 'and', items: [{ name: 'brass bell' }] } }
+      });
+    });
+
+    test('listen stays silent when the closed crate holds only a plain thing', () => {
+      const { world, room } = setupBasicWorld();
+      const rattle = world.createEntity('wooden rattle', 'object');
+      closedCrate(world, room, rattle);
+
+      const context = createRealTestContext(listeningAction, world, createCommand(IFActions.LISTENING, {}));
+      const events = executeWithValidation(listeningAction, context);
+
+      expectEvent(events, 'if.event.listened', {
+        listeningToEnvironment: true,
+        roomId: room.id,
+        soundSources: undefined,
+        messageId: expect.stringContaining('silence')
+      });
+    });
+
+    test('switched-on devices keep their line and declared sounders join the sources', () => {
+      const { world, room } = setupBasicWorld();
+      const fan = world.createEntity('electric fan', 'object');
+      fan.add(new SwitchableTrait({ isOn: true }));
+      world.moveEntity(fan.id, room.id);
+      const bell = world.createEntity('brass bell', 'object');
+      bell.add(new SoundingTrait({ tier: 'raised' }));
+      world.moveEntity(bell.id, room.id);
+
+      const context = createRealTestContext(listeningAction, world, createCommand(IFActions.LISTENING, {}));
+      const events = executeWithValidation(listeningAction, context);
+
+      expectEvent(events, 'if.event.listened', {
+        listeningToEnvironment: true,
+        roomId: room.id,
+        soundSources: [fan.id, bell.id],
+        messageId: expect.stringContaining('active_devices'),
+        params: { devices: 'electric fan' }
+      });
+    });
+
+    test('listen does not name a loud thing in the next room', () => {
+      const { world, room } = setupBasicWorld();
+      const hallway = world.createEntity('Hallway', 'room');
+      hallway.add(new RoomTrait());
+      const door = world.createEntity('oak door', 'door');
+      door.add(new DoorTrait({ room1: room.id, room2: hallway.id }));
+      door.add(new OpenableTrait({ isOpen: true }));
+      world.moveEntity(door.id, room.id);
+      const chime = world.createEntity('wind chime', 'object');
+      chime.add(new SoundingTrait({ tier: 'raised' }));
+      world.moveEntity(chime.id, hallway.id);
+
+      const context = createRealTestContext(listeningAction, world, createCommand(IFActions.LISTENING, {}));
+      const events = executeWithValidation(listeningAction, context);
+
+      expectEvent(events, 'if.event.listened', {
+        listeningToEnvironment: true,
+        roomId: room.id,
+        soundSources: undefined,
+        messageId: expect.stringContaining('silence')
+      });
+    });
+
+    test('listen lists two declared sounders in one list', () => {
+      const { world, room } = setupBasicWorld();
+      const bell = world.createEntity('brass bell', 'object');
+      bell.add(new SoundingTrait({ tier: 'raised' }));
+      expect(world.moveEntity(bell.id, room.id)).toBe(true);
+      const clock = world.createEntity('ticking clock', 'object');
+      clock.add(new SoundingTrait({ tier: 'normal' }));
+      expect(world.moveEntity(clock.id, room.id)).toBe(true);
+
+      const context = createRealTestContext(listeningAction, world, createCommand(IFActions.LISTENING, {}));
+      const events = executeWithValidation(listeningAction, context);
+
+      expectEvent(events, 'if.event.listened', {
+        listeningToEnvironment: true,
+        roomId: room.id,
+        soundSources: [bell.id, clock.id],
+        messageId: expect.stringContaining('sounds_nearby'),
+        params: { sources: { kind: 'list', conj: 'and', items: [{ name: 'brass bell' }, { name: 'ticking clock' }] } }
+      });
+    });
+
+    test('listen names a declared sounder the actor is carrying', () => {
+      const { world, player, room } = setupBasicWorld();
+      const watch = world.createEntity('pocket watch', 'object');
+      watch.add(new SoundingTrait({ tier: 'normal' }));
+      expect(world.moveEntity(watch.id, player.id)).toBe(true);
+
+      const context = createRealTestContext(listeningAction, world, createCommand(IFActions.LISTENING, {}));
+      const events = executeWithValidation(listeningAction, context);
+
+      expectEvent(events, 'if.event.listened', {
+        listeningToEnvironment: true,
+        roomId: room.id,
+        soundSources: [watch.id],
+        messageId: expect.stringContaining('sounds_nearby')
       });
     });
   });

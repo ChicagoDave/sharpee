@@ -17,7 +17,7 @@
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types.js';
 import { ActionMetadata } from '../../../validation/index.js';
 import { type ISemanticEvent } from '@sharpee/core';
-import { TraitType, EdibleTrait } from '@sharpee/world-model';
+import { IFEntity, TraitType, EdibleTrait, SoundingTrait, SwitchableTrait } from '@sharpee/world-model';
 import { IFActions } from '../../constants.js';
 import { ScopeLevel } from '../../../scope/index.js';
 import { ListenedEventData } from './listening-events.js';
@@ -65,25 +65,39 @@ interface ListeningAnalysis {
   eventData: ListenedEventData;
 }
 
+/** A switched-on device makes the running sound the heuristics have always reported. */
+function isSwitchedOn(entity: IFEntity): boolean {
+  return entity.getTrait(SwitchableTrait)?.isOn === true;
+}
+
 /**
  * Analyzes what sounds can be heard from a target or environment
  * Shared logic between validate and execute phases
  */
 function analyzeListening(context: ActionContext): ListeningAnalysis {
   const target = context.command.directObject?.entity;
-  
+
   const eventData: ListenedEventData = {};
   const params: Record<string, any> = {};
   let messageId: string;
-  
+
   if (target) {
     eventData.target = target.id;
     params.target = nounPhraseFor(target);
-    
-    // Check if the target has any sound-related properties
+
+    // A declared sound (ADR-392 D5) is the author's statement about the thing
+    // and wins over the heuristics below. The scope layer has already decided
+    // it carries to the actor; the action must not then call it silent (#668).
+    const sounding = target.getTrait(SoundingTrait);
     let hasSound = false;
-    
-    if (target.has(TraitType.SWITCHABLE)) {
+
+    if (sounding) {
+      hasSound = true;
+      eventData.hasSound = true;
+      eventData.soundType = 'declared';
+      eventData.tier = sounding.tier;
+      messageId = 'sounds_from_target';
+    } else if (target.has(TraitType.SWITCHABLE)) {
       const switchableTrait = target.get(TraitType.SWITCHABLE) as { isOn?: boolean };
       if (switchableTrait.isOn) {
         hasSound = true;
@@ -125,26 +139,37 @@ function analyzeListening(context: ActionContext): ListeningAnalysis {
     // Listening to the general environment
     eventData.listeningToEnvironment = true;
     
-    // Check for any active sound sources in the location
+    // Walk what the scope layer says the actor can hear — the same answer
+    // `listen to <thing>` resolves against (#668) — kept to the actor's own
+    // room: `listen` describes where you stand, not the next room over.
     const location = context.currentLocation;
-    const contents = context.world.getContents(location.id);
-    
-    const soundSources = contents.filter(item => {
-      if (item.has(TraitType.SWITCHABLE)) {
-        const switchableTrait = item.get(TraitType.SWITCHABLE) as { isOn?: boolean };
-        return switchableTrait.isOn;
-      }
-      return false;
+    const actorRoom = context.world.getContainingRoom(context.actor.id);
+    const audible = context.scopeResolver.getAudible(context.actor).filter(entity => {
+      const room = context.world.getContainingRoom(entity.id);
+      return !!actorRoom && !!room && room.id === actorRoom.id;
     });
-    
-    if (soundSources.length > 0) {
-      eventData.soundSources = soundSources.map(s => s.id);
-      params.devices = soundSources.map(s => s.name).join(', ');
+
+    const devices = audible.filter(isSwitchedOn);
+    const declared = audible.filter(entity => entity.has(TraitType.SOUNDING) && !isSwitchedOn(entity));
+
+    if (devices.length > 0) {
+      eventData.soundSources = [...devices, ...declared].map(s => s.id);
+      params.devices = devices.map(s => s.name).join(', ');
       messageId = 'active_devices';
+    } else if (declared.length > 0) {
+      eventData.soundSources = declared.map(s => s.id);
+      // A PhraseList of NounPhrases (ADR-192): the Assembler renders articles
+      // and the conjunction; joining names here would hard-code English.
+      params.sources = {
+        kind: 'list' as const,
+        conj: 'and' as const,
+        items: declared.map(s => nounPhraseFor(s))
+      };
+      messageId = 'sounds_nearby';
     } else {
       messageId = 'silence';
     }
-    
+
     eventData.roomId = location.id;
   }
   
@@ -167,6 +192,8 @@ export const listeningAction: Action & { metadata: ActionMetadata } = {
     'device_off',
     'container_sounds',
     'liquid_sounds',
+    'sounds_from_target',
+    'sounds_nearby',
     'listened_to',
     'listened_environment'
   ],

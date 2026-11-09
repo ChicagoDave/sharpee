@@ -3,6 +3,7 @@
  */
 
 import { type EntityId } from '@sharpee/core';
+import { type VolumeTier } from '@sharpee/if-domain';
 
 /**
  * Event data for when something is listened to
@@ -20,9 +21,12 @@ export interface ListenedEventData {
   /** Whether the target has sound */
   hasSound?: boolean;
   
-  /** Type of sound detected */
-  soundType?: 'device' | 'container' | 'liquid' | 'ambient';
-  
+  /** Type of sound detected; `declared` is a SoundingTrait the author set (ADR-392 D5) */
+  soundType?: 'device' | 'container' | 'liquid' | 'ambient' | 'declared';
+
+  /** The declared sound's loudness on ADR-172's scale, when soundType is `declared` */
+  tier?: VolumeTier;
+
   /** IDs of sound sources in the environment */
   soundSources?: EntityId[];
   

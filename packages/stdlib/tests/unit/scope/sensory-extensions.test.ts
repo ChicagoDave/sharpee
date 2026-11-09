@@ -224,6 +224,55 @@ describe('Sensory Extensions', () => {
       expect(resolver.canSmell(player, candle)).toBe(true);
       expect(resolver.canSmell(player, rock)).toBe(false);
     });
+
+    test('getSmellable lists exactly what canSmell admits (#668)', () => {
+      const cheese = author.createEntity('ripe cheese', EntityType.OBJECT);
+      cheese.add(new IdentityTrait({ name: 'ripe cheese' }));
+      cheese.add(new EdibleTrait());
+      cheese.add(new ScentTrait({ strength: 'strong' }));
+      boxed(cheese);
+
+      const apple = author.createEntity('apple', EntityType.OBJECT);
+      apple.add(new IdentityTrait({ name: 'apple' }));
+      apple.add(new EdibleTrait());
+      apple.add(new ScentTrait()); // moderate: does not escape the box
+      boxed(apple);
+
+      const bread = author.createEntity('bread', EntityType.OBJECT);
+      bread.add(new IdentityTrait({ name: 'bread' }));
+      bread.add(new EdibleTrait()); // implicit faint scent, no trait
+      boxed(bread);
+
+      const candle = author.createEntity('scented candle', EntityType.OBJECT);
+      candle.add(new IdentityTrait({ name: 'scented candle' }));
+      candle.add(new ScentTrait({ strength: 'faint' }));
+      author.moveEntity(candle.id, room.id);
+
+      const ids = resolver.getSmellable(player).map(e => e.id);
+      expect(ids).toContain(cheese.id);
+      expect(ids).toContain(candle.id);
+      expect(ids).not.toContain(apple.id);
+      expect(ids).not.toContain(bread.id);
+      expect(ids).not.toContain(player.id);
+    });
+
+    test('a lit light source is smellable and an unlit one is not (#668)', () => {
+      const lamp = author.createEntity('oil lamp', EntityType.OBJECT);
+      lamp.add(new IdentityTrait({ name: 'oil lamp' }));
+      lamp.add(new LightSourceTrait({ isLit: true }));
+      author.moveEntity(lamp.id, room.id);
+
+      const coldLamp = author.createEntity('cold lamp', EntityType.OBJECT);
+      coldLamp.add(new IdentityTrait({ name: 'cold lamp' }));
+      coldLamp.add(new LightSourceTrait({ isLit: false }));
+      author.moveEntity(coldLamp.id, room.id);
+
+      expect(resolver.canSmell(player, lamp)).toBe(true);
+      expect(resolver.canSmell(player, coldLamp)).toBe(false);
+      const ids = resolver.getSmellable(player).map(e => e.id);
+      expect(ids).toContain(lamp.id);
+      expect(ids).not.toContain(coldLamp.id);
+    });
   });
 
   describe('Smell', () => {

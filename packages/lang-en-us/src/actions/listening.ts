@@ -19,6 +19,7 @@ export const listeningLanguage = {
     'silence': "{You} {hear} nothing out of the ordinary.",
     'ambient_sounds': "{You} {hear} the usual ambient sounds.",
     'active_devices': "{You} can {hear} {devices} operating nearby.",
+    'sounds_nearby': "{You} {hear} {sources}.",
 
     // Success messages - specific targets
     'no_sound': "{capitalize the target} {verb:isn't target} making any sound.",
@@ -26,6 +27,7 @@ export const listeningLanguage = {
     'device_off': "{capitalize the target} {verb:is target} silent.",
     'container_sounds': "{You} {hear} faint sounds from inside {the target}.",
     'liquid_sounds': "{You} {hear} liquid sloshing in {the target}.",
+    'sounds_from_target': "{capitalize the target} {verb:is target} making a noise.",
 
     // Generic listening
     'listened_to': "{You} {listen} carefully to {the target}.",

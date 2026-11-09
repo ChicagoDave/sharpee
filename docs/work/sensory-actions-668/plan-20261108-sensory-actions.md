@@ -1,0 +1,63 @@
+# Session Plan: listening and smelling read SoundingTrait and ScentTrait (#668)
+
+**Created**: 2026-11-08
+**Plan Status**: ACTIVE
+**Overall scope**: Make the `listening` and `smelling` standard actions agree with the scope layer that ADR-392 D5 already changed: a target carrying SoundingTrait or ScentTrait renders a sound or smell line instead of `no_sound` / `no_particular_scent`, and the room-level `listen` / `smell` scan the scope resolver's heard / smelled set instead of the room's direct contents. Read-only actions; no world mutation.
+**Bounded contexts touched**: stdlib sensory actions and scope (platform; discussed and "proceed" given by David), lang-en-us message text, story-loader message-alias map, `stories/trait-field-test` (Chord test story)
+**Key domain language**: SoundingTrait (tier, VolumeTier), ScentTrait (strength), canHear / canSmell, `loud` / `smelly` (Chord words, ADR-392 D6), closed container
+
+## References consulted
+- `docs/architecture/adrs/adr-392-sensory-traits-and-the-trait-words-of-664.md` — D5: scope reads the traits (`strong` escapes a closed container, `raised`+ is heard); `descriptionId` is reserved for the 5.0 per-sense prose line, "nothing reads it yet"; D1: every new standard-action message id needs a curated row in story-loader's `message-alias-map.ts` (ADR-255 D5 bijection) plus `./repokit aliases`; D6 fixes the Chord words at `smelly` and `loud` only. AC-5/AC-6 are scope-level and already pinned.
+- `docs/architecture/adrs/adr-255-alias-catalog.md` — the alias catalog is generated; add the row to the map, regenerate, never hand-edit.
+- `packages/stdlib/CLAUDE.md` — stdlib emits message ids, never English; entity params via `nounPhraseFor` / `entityInfoFrom`; tests drive phases through the phase runner (`executeWithValidation`), not the action directly.
+- `CLAUDE.md` (root) — platform changes in `packages/` discussed first (done); Dungeo is a floor up to its own requirements; a moved Dungeo line is a census item, never buried; transcripts via `dist/cli/sharpee.js`.
+- `docs/context/project-profile.md` — not read (no bearing beyond the above).
+- Product ADRs not consulted (no Scope intersection): none declared product-kind that intersect `packages/stdlib/`, `packages/lang-en-us/`, `packages/story-loader/`, `stories/trait-field-test/`.
+
+## Findings that shape the plan
+- `context.scopeResolver` is already on `ActionContext` (`packages/stdlib/src/actions/enhanced-types.ts:144`), typed as the `ScopeResolver` interface (`packages/stdlib/src/scope/types.ts`).
+- The interface already has `canHear`, `canSmell`, `getAudible`. There is **no** `getSmellable`. `getAudible` is not a sound-source list: it returns every entity the actor can hear (including anything in an adjacent room, and anything with author-set minimum scope AWARE), so it must be filtered, not used as-is.
+- Seam recommendation: add `getSmellable(actor)` beside `getAudible` on the interface and `StandardScopeResolver` (same loop over `world.getAllEntities()`, `canSmell`, concealed skipped), then in each action filter the set to **same containing room as the actor** and to **declared sources** (SoundingTrait, or switched-on device as today; ScentTrait, edible, or lit light as today). Room-scoped filtering keeps today's behavior that `listen` / `smell` describe the room you are in; adjacent-room propagation is not what #668 asks for.
+- Dungeo: `grep -i "listen\|smell\|sniff"` in `stories/dungeo/tests/transcripts/` finds only the room name "Smelly Room" and one `contains "unpleasant smell"` line (gas-room-safe-lantern), no LISTEN/SMELL commands. Expected census: zero moved lines. Phase 2 confirms by running the chain.
+- Existing tests to extend: `packages/stdlib/tests/unit/actions/listening-golden.test.ts`, `smelling-golden.test.ts`, `listening-interceptor.test.ts`, `smelling-interceptor.test.ts`, `packages/stdlib/tests/scope-integration.test.ts`.
+
+## Decisions for David (surfaced, not made)
+1. **`descriptionId`**: render the trait's `descriptionId` when present (the issue's suggestion), or stay generic until the 5.0 senses round (ADR-392 D5 says "nothing reads it yet")? Plan default: stay generic, read presence and tier/strength only; the plan can add the read in Phase 1 as a small addition if you rule the other way. Either way it is not a Chord word question (D6 stands).
+2. **Generic English** for a declared sound / scent (wording is yours at review). Proposed placeholders, new ids:
+   - `listening.sounds_from_target`: "{capitalize the target} {verb:is target} making a noise." Optional tier split later; this plan uses one id.
+   - `listening.sounds_nearby` (room): "{You} {hear} {sources}."
+   - `smelling.declared_scent`: "{capitalize the target} {verb:has target} a distinct smell."
+   - `smelling.scents_nearby` (room): "{You} {smell} {sources}."
+3. **Precedence** when a target has both a trait and an old heuristic (a switched-off radio with SoundingTrait; an edible with ScentTrait). Plan default: a declared trait wins over `device_off` / `no_sound`, but an edible's specific `food_scent` / `drink_scent` and a lit light's `burning_scent` still win over the generic scent line (the specific line says more). Room-level: trait sources join the existing source list; the old room messages (`active_devices`, `food_nearby`, `smoke_detected`) keep priority when their own condition holds, else the new `*_nearby` line.
+4. **Room scope**: same room only (including inside containers the resolver admits), not adjacent rooms. Say so if you want the next room's `loud` thing to show in `listen`.
+
+## Phases
+
+### Phase 1: Sensory actions agree with Sounding and Scent traits
+- **Tier**: Medium
+- **Budget**: ~250 tool calls
+- **Domain focus**: stdlib sensory actions (`listening`, `smelling`) and the scope resolver's smell set; lang-en-us text; story-loader alias map
+- **Entry state**: David has ruled on the four Decisions above (defaults stand if he says "defaults"); plan approved. main clean at dfd0f82e1 plus session files.
+- **Deliverable**: Behavior statements (rule 12) for `analyzeListening` and `analyzeSmellAction`, then:
+  - `getSmellable(actor)` on the `ScopeResolver` interface and `StandardScopeResolver`.
+  - `analyzeListening`: a target with SoundingTrait emits `sounds_from_target` with eventData `soundType: 'declared'`, `hasSound: true`, `tier`; room-level scan uses `context.scopeResolver.getAudible` filtered to the actor's room and to declared sources, new `sounds_nearby` (eventData `soundSources` = ids) when no switched-on device line applies.
+  - `analyzeSmellAction`: a target with ScentTrait (and no edible / lit-light specific case) emits `declared_scent`, eventData `scentType: 'declared'`, `hasScent: true`, `strength`; room-level scan uses `getSmellable` filtered the same way, ScentTrait sources join `scentSources`, new `scents_nearby` when only trait sources exist.
+  - New ids added to each action's `requiredMessages`, to `packages/lang-en-us/src/actions/listening.ts` and `smelling.ts`, and as rows in `packages/story-loader/src/message-alias-map.ts`; Chord alias catalog regenerated by `./repokit aliases`. `*-events.ts` event-data types extended for the new `soundType` / `scentType` values and `tier` / `strength` fields.
+  - Tests: golden tests assert messageId and eventData for each DOES line (trait target, trait target in closed container resolved at `raised`/`strong`, no trait = old line unchanged, precedence cases, room scan with trait source in closed container, room scan with plain thing in closed container stays silent); `scope-integration.test.ts` pins `getSmellable` (strong cheese in closed box yes; plain edible in same box no; faint/moderate no). No `any` / `unknown` in new code.
+- **Files**: `packages/stdlib/src/scope/types.ts`, `packages/stdlib/src/scope/scope-resolver.ts`, `packages/stdlib/src/actions/standard/listening/listening.ts`, `packages/stdlib/src/actions/standard/listening/listening-events.ts`, `packages/stdlib/src/actions/standard/smelling/smelling.ts`, `packages/stdlib/src/actions/standard/smelling/smelling-events.ts`, `packages/lang-en-us/src/actions/listening.ts`, `packages/lang-en-us/src/actions/smelling.ts`, `packages/story-loader/src/message-alias-map.ts`, `packages/stdlib/tests/unit/actions/listening-golden.test.ts`, `packages/stdlib/tests/unit/actions/smelling-golden.test.ts`, `packages/stdlib/tests/scope-integration.test.ts`, `packages/chord/` (regenerated alias catalog only)
+- **Exit state**: stdlib, lang-en-us and story-loader suites green; alias bijection test green; the two golden suites and scope-integration contain the new assertions; platform packages rebuilt with `./repokit build` so the bundle and devkit (reads dist) see the change.
+- **Demonstration**: run `pnpm test` filtered to the stdlib package for the listening-golden, smelling-golden and scope-integration suites (new cases pass), and for the story-loader package (alias bijection test passes). Mutation spot-check: reverting the ScentTrait branch fails the new smelling case.
+- **Demonstrated**: 2026-11-08, session 69b5bc. `pnpm --filter '@sharpee/stdlib' test listening-golden smelling-golden sensory-extensions` → 3 files, listening-golden 27 tests (8 new + 2 from the mutation check), smelling-golden 28 (8 new + 2), sensory-extensions 20 (2 new, `getSmellable` and the lit-light scent), all passing. The `getSmellable` pins live in `sensory-extensions.test.ts` (the resolver's own suite) rather than `scope-integration.test.ts`, which drives the validator pipeline, not resolver methods. Full `pnpm --filter '@sharpee/stdlib' test` → 151 files, 1944 passing. `pnpm --filter '@sharpee/story-loader' test` → 195 files, 1553 passing, 1 skipped (alias bijection `message-alias-map.test.ts` 8 passing). `pnpm --filter '@sharpee/lang-en-us' test` → 34 files, 484 passing. `pnpm --filter '@sharpee/chord' test override` → 8 passing against the regenerated catalog. `./repokit aliases` → 887 aliases, 78 actions. stdlib `tsc --noEmit` clean; no other `ScopeResolver` implementer in `packages/*/src`, `packages/*/tests`, `tools/*/src`. `./repokit build dungeo` exit 0, bundle 5311030 bytes. `./sharpee test stories/trait-field-test` → 31 cards, 44 assertions passing, 4/4 branches, 3/3 rooms (unchanged, addressability only). The named revert spot-check was not run; in its place, the first fixture draft (things moved into an already-closed container, which the world refuses) made the three scan tests fail with `soundSources`/`scentSources` undefined, so the scan assertions are known to bite. One scope-layer extension beyond the plan text: `hasScent` admits a lit light source so the smelling action's smoke rule and the resolver's set agree (flagged to David). [reported by session, unverified]
+- **Status**: DONE
+
+### Phase 2: Trait-field-test pins the sentences; Dungeo census; close #668
+- **Tier**: Small
+- **Budget**: ~100 tool calls
+- **Domain focus**: Chord story `stories/trait-field-test` (tree cards), Dungeo regression floor
+- **Entry state**: Phase 1 DONE and committed; platform built (`./repokit build dungeo`) so `dist/` is current for devkit.
+- **Deliverable**: New cards in the tree appended after the existing addressability cards: `listen to bell` (in closed crate) asserts the `sounds_from_target` sentence and `notContains` "isn't making any sound"; `smell cheese` (in closed tin box) asserts the `declared_scent`/`food_scent` per precedence ruling; plain thing in the same container asserts the old line; room-level `listen` in the crate room and `smell` in the tin-box room assert `sounds_nearby` / `scents_nearby`; Cellar chime stays unheard from the Hall. Dungeo run: transcripts and chain, expecting zero moved lines; any moved line is listed for census review, not re-recorded unasked. Close #668 with evidence inline (command + result, dated).
+- **Files**: `stories/trait-field-test/trait-field-test.tests/tftroot1.json`, `stories/trait-field-test/trait-field-test.tests/manifest.json`
+- **Exit state**: the tree passes in full; Dungeo walkthrough chain and unit transcripts match their pre-change baseline (git stash comparison or recorded prior counts); #668 closed referencing the commit(s).
+- **Demonstration**: `./sharpee test stories/trait-field-test` shows all cards passing including the new sentence cards; the Dungeo walkthrough chain, run per the transcript-testing skill, shows the same pass counts as baseline; the issue shows CLOSED in gh.
+- **Demonstrated**: 
+- **Status**: PENDING

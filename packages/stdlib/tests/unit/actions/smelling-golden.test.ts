@@ -13,7 +13,7 @@
 import { describe, test, expect, beforeEach, vi } from 'vitest';
 import { smellingAction } from '../../../src/actions/standard/smelling';
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType, ContainerTrait, EdibleTrait, LightSourceTrait, OpenableTrait } from '@sharpee/world-model';
+import { TraitType, ContainerTrait, EdibleTrait, LightSourceTrait, OpenableTrait, ScentTrait, RoomTrait, DoorTrait, type IFEntity, type WorldModel } from '@sharpee/world-model';
 import {
   createRealTestContext,
   setupBasicWorld,
@@ -380,6 +380,189 @@ describe('smellingAction (Golden Pattern)', () => {
           expect(event.entities.target).toBe(soup.id);
           expect(event.entities.location).toBe(room.id);
         }
+      });
+    });
+  });
+
+  describe('Declared scents (ADR-392 D5, #668)', () => {
+    /**
+     * A box in `room`, open or closed, with `things` inside it. The box is
+     * filled while open — the world refuses a move into a closed container —
+     * and set to `isOpen` afterwards; each move is asserted so a refused
+     * fixture cannot pass a scan test vacuously.
+     */
+    const box = (world: WorldModel, room: IFEntity, isOpen: boolean, ...things: IFEntity[]): IFEntity => {
+      const tin = world.createEntity('tin box', 'object');
+      tin.add(new ContainerTrait());
+      const lid = new OpenableTrait({ isOpen: true });
+      tin.add(lid);
+      expect(world.moveEntity(tin.id, room.id)).toBe(true);
+      for (const thing of things) {
+        expect(world.moveEntity(thing.id, tin.id)).toBe(true);
+      }
+      lid.isOpen = isOpen;
+      return tin;
+    };
+
+    const smellTarget = (world: WorldModel, target: IFEntity) =>
+      executeWithValidation(smellingAction, createRealTestContext(smellingAction, world, createCommand(IFActions.SMELLING, { entity: target })));
+
+    const smellRoom = (world: WorldModel) =>
+      executeWithValidation(smellingAction, createRealTestContext(smellingAction, world, createCommand(IFActions.SMELLING)));
+
+    test('a thing with a declared scent has a smell, not none', () => {
+      const { world, room } = setupBasicWorld();
+      const flowers = world.createEntity('bouquet of flowers', 'object');
+      flowers.add(new ScentTrait());
+      world.moveEntity(flowers.id, room.id);
+
+      expectEvent(smellTarget(world, flowers), 'if.event.smelled', {
+        target: flowers.id,
+        hasScent: true,
+        scentType: 'declared',
+        strength: 'moderate',
+        messageId: expect.stringContaining('declared_scent'),
+        params: { target: { name: 'bouquet of flowers' } }
+      });
+    });
+
+    test('a strong-scented thing inside a closed box is still smelled', () => {
+      const { world, room } = setupBasicWorld();
+      const incense = world.createEntity('stick of incense', 'object');
+      incense.add(new ScentTrait({ strength: 'strong' }));
+      box(world, room, false, incense);
+
+      expectEvent(smellTarget(world, incense), 'if.event.smelled', {
+        target: incense.id,
+        hasScent: true,
+        scentType: 'declared',
+        strength: 'strong',
+        messageId: expect.stringContaining('declared_scent')
+      });
+    });
+
+    test('an edible keeps its food line over the generic scent line', () => {
+      const { world, room } = setupBasicWorld();
+      const cheese = world.createEntity('ripe cheese', 'object');
+      cheese.add(new EdibleTrait());
+      cheese.add(new ScentTrait({ strength: 'strong' }));
+      world.moveEntity(cheese.id, room.id);
+
+      expectEvent(smellTarget(world, cheese), 'if.event.smelled', {
+        target: cheese.id,
+        hasScent: true,
+        scentType: 'edible',
+        messageId: expect.stringContaining('food_scent')
+      });
+    });
+
+    test('a lit light keeps its smoke line over the generic scent line', () => {
+      const { world, room } = setupBasicWorld();
+      const lamp = world.createEntity('oil lamp', 'object');
+      lamp.add(new LightSourceTrait({ isLit: true }));
+      lamp.add(new ScentTrait());
+      world.moveEntity(lamp.id, room.id);
+
+      expectEvent(smellTarget(world, lamp), 'if.event.smelled', {
+        target: lamp.id,
+        hasScent: true,
+        scentType: 'burning',
+        messageId: expect.stringContaining('burning_scent')
+      });
+    });
+
+    test('smell names a strong-scented thing inside a closed box', () => {
+      const { world, room } = setupBasicWorld();
+      const incense = world.createEntity('stick of incense', 'object');
+      incense.add(new ScentTrait({ strength: 'strong' }));
+      box(world, room, false, incense);
+
+      expectEvent(smellRoom(world), 'if.event.smelled', {
+        smellingEnvironment: true,
+        roomId: room.id,
+        scentSources: [incense.id],
+        messageId: expect.stringContaining('scents_nearby'),
+        params: { sources: { kind: 'list', conj: 'and', items: [{ name: 'stick of incense' }] } }
+      });
+    });
+
+    test('smell does not notice a plain edible inside a closed box', () => {
+      const { world, room } = setupBasicWorld();
+      const bread = world.createEntity('plain roll', 'object');
+      bread.add(new EdibleTrait());
+      box(world, room, false, bread);
+
+      expectEvent(smellRoom(world), 'if.event.smelled', {
+        smellingEnvironment: true,
+        roomId: room.id,
+        scentSources: undefined,
+        messageId: expect.stringContaining('no_scent')
+      });
+    });
+
+    test('smelly cheese inside a closed box keeps the food line', () => {
+      const { world, room } = setupBasicWorld();
+      const cheese = world.createEntity('ripe cheese', 'object');
+      cheese.add(new EdibleTrait());
+      cheese.add(new ScentTrait({ strength: 'strong' }));
+      box(world, room, false, cheese);
+
+      expectEvent(smellRoom(world), 'if.event.smelled', {
+        smellingEnvironment: true,
+        roomId: room.id,
+        scentSources: [cheese.id],
+        messageId: expect.stringContaining('food_nearby')
+      });
+    });
+
+    test('a lit lamp inside an open basket is smelled as smoke', () => {
+      const { world, room } = setupBasicWorld();
+      const lamp = world.createEntity('oil lamp', 'object');
+      lamp.add(new LightSourceTrait({ isLit: true }));
+      box(world, room, true, lamp);
+
+      expectEvent(smellRoom(world), 'if.event.smelled', {
+        smellingEnvironment: true,
+        roomId: room.id,
+        scentSources: [lamp.id],
+        messageId: expect.stringContaining('smoke_detected')
+      });
+    });
+
+    test('smoke keeps its line beside a declared scent, and both are sources', () => {
+      const { world, room } = setupBasicWorld();
+      const lamp = world.createEntity('oil lamp', 'object');
+      lamp.add(new LightSourceTrait({ isLit: true }));
+      expect(world.moveEntity(lamp.id, room.id)).toBe(true);
+      const incense = world.createEntity('stick of incense', 'object');
+      incense.add(new ScentTrait());
+      expect(world.moveEntity(incense.id, room.id)).toBe(true);
+
+      expectEvent(smellRoom(world), 'if.event.smelled', {
+        smellingEnvironment: true,
+        roomId: room.id,
+        scentSources: [lamp.id, incense.id],
+        messageId: expect.stringContaining('smoke_detected')
+      });
+    });
+
+    test('smell does not notice a declared scent in the next room', () => {
+      const { world, room } = setupBasicWorld();
+      const hallway = world.createEntity('Hallway', 'room');
+      hallway.add(new RoomTrait());
+      const door = world.createEntity('oak door', 'door');
+      door.add(new DoorTrait({ room1: room.id, room2: hallway.id }));
+      door.add(new OpenableTrait({ isOpen: true }));
+      expect(world.moveEntity(door.id, room.id)).toBe(true);
+      const incense = world.createEntity('stick of incense', 'object');
+      incense.add(new ScentTrait({ strength: 'strong' }));
+      expect(world.moveEntity(incense.id, hallway.id)).toBe(true);
+
+      expectEvent(smellRoom(world), 'if.event.smelled', {
+        smellingEnvironment: true,
+        roomId: room.id,
+        scentSources: undefined,
+        messageId: expect.stringContaining('no_scent')
       });
     });
   });

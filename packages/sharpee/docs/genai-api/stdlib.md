@@ -2781,6 +2781,10 @@ export interface ScopeResolver {
      * Get all entities the actor can hear
      */
     getAudible(actor: IFEntity): IFEntity[];
+    /**
+     * Get all entities the actor can smell
+     */
+    getSmellable(actor: IFEntity): IFEntity[];
 }
 /**
  * Tracks what actors know about based on what they've witnessed
@@ -3019,6 +3023,13 @@ export declare class StandardScopeResolver implements ScopeResolver {
      * Includes entities with minimum scope >= AWARE.
      */
     getAudible(actor: IFEntity): IFEntity[];
+    /**
+     * Get all entities the actor can smell.
+     * The smell-side twin of getAudible: physical smell first, then author-set
+     * minimum scope >= AWARE. The smelling action's room-level scan reads this
+     * set so `smell` and `smell <thing>` agree on what carries (#668).
+     */
+    getSmellable(actor: IFEntity): IFEntity[];
     /**
      * Check if target is in actor's inventory
      */

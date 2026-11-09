@@ -13,7 +13,7 @@
  * evaluation during parsing).
  */
 
-import { IFEntity, WorldModel, TraitType, OpenableTrait, DoorTrait, VisibilityBehavior, ScentTrait, SoundingTrait } from '@sharpee/world-model';
+import { IFEntity, WorldModel, TraitType, OpenableTrait, DoorTrait, VisibilityBehavior, ScentTrait, SoundingTrait, LightSourceTrait } from '@sharpee/world-model';
 import { ScopeLevel, ScopeResolver } from './types.js';
 
 /**
@@ -296,6 +296,37 @@ export class StandardScopeResolver implements ScopeResolver {
   }
 
   /**
+   * Get all entities the actor can smell.
+   * The smell-side twin of getAudible: physical smell first, then author-set
+   * minimum scope >= AWARE. The smelling action's room-level scan reads this
+   * set so `smell` and `smell <thing>` agree on what carries (#668).
+   */
+  getSmellable(actor: IFEntity): IFEntity[] {
+    const smellable: IFEntity[] = [];
+    const entities = this.world.getAllEntities();
+    const actorRoom = this.getContainingRoom(actor.id);
+
+    for (const entity of entities) {
+      if (entity.id === actor.id) continue;
+
+      // Concealed entities are hidden from scope entirely (must SEARCH to reveal)
+      if (isConcealed(entity)) continue;
+
+      if (this.canSmell(actor, entity)) {
+        smellable.push(entity);
+        continue;
+      }
+
+      const minimumScope = entity.getMinimumScope(actorRoom?.id ?? null);
+      if (minimumScope >= ScopeLevel.AWARE) {
+        smellable.push(entity);
+      }
+    }
+
+    return smellable;
+  }
+
+  /**
    * Check if target is in actor's inventory
    */
   private isCarried(actor: IFEntity, target: IFEntity): boolean {
@@ -386,7 +417,13 @@ export class StandardScopeResolver implements ScopeResolver {
     if (entity.has(TraitType.ACTOR)) {
       return true;
     }
-    
+
+    // A lit light source smells of burning — the smelling action has always
+    // reported it, so the scope set it reads must admit it (#668)
+    if (entity.getTrait(LightSourceTrait)?.isLit === true) {
+      return true;
+    }
+
     return false;
   }
 

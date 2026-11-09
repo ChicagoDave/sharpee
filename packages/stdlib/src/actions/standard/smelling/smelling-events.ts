@@ -3,6 +3,7 @@
  */
 
 import { type EntityId } from '@sharpee/core';
+import { type ScentStrength } from '@sharpee/world-model';
 
 /**
  * Event data for when something is smelled
@@ -20,9 +21,12 @@ export interface SmelledEventData {
   /** Whether the target has a scent */
   hasScent?: boolean;
   
-  /** Type of scent detected */
-  scentType?: 'edible' | 'drinkable' | 'burning' | 'container_contents';
-  
+  /** Type of scent detected; `declared` is a ScentTrait the author set (ADR-392 D5) */
+  scentType?: 'edible' | 'drinkable' | 'burning' | 'container_contents' | 'declared';
+
+  /** The declared scent's strength, when scentType is `declared` */
+  strength?: ScentStrength;
+
   /** IDs of scent sources */
   scentSources?: EntityId[];
 }

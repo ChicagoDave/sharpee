@@ -119,6 +119,11 @@ export interface ScopeResolver {
    * Get all entities the actor can hear
    */
   getAudible(actor: IFEntity): IFEntity[];
+
+  /**
+   * Get all entities the actor can smell
+   */
+  getSmellable(actor: IFEntity): IFEntity[];
 }
 
 /**
