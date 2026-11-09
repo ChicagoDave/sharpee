@@ -29,7 +29,7 @@ description: Test the Parapet dial puzzle and GDT DL command
 [OK: contains "Returning to game"]
 
 > turn on lantern
-[OK: contains "switches on"]
+[OK: contains "You switch on the brass lantern."]
 
 > look
 [OK: contains "Parapet"]

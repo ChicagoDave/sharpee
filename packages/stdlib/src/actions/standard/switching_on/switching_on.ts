@@ -154,8 +154,10 @@ export const switchingOnAction: Action & { metadata: ActionMetadata } = {
     sharedData.targetName = noun.name;
 
     // Was the room dark to the actor BEFORE the light came on? Decides the
-    // auto-LOOK (illumination-shared.ts; ADR-374 D5 asks the actor).
-    sharedData.wasDarkBefore = darkForActor(context);
+    // illuminates_darkness line and the auto-LOOK (illumination-shared.ts;
+    // ADR-374 D5 asks the actor).
+    const wasDarkBefore = darkForActor(context);
+    sharedData.wasDarkBefore = wasDarkBefore;
 
     // Delegate state change to behavior
     const result = SwitchableBehavior.switchOn(noun, context.world);
@@ -181,8 +183,8 @@ export const switchingOnAction: Action & { metadata: ActionMetadata } = {
 
     sharedData.failed = false;
 
-    // Analyze the switching context
-    const analysis = analyzeSwitchingContext(context, noun);
+    // Analyze the switching context: did the actor's room go from dark to lit?
+    const analysis = analyzeSwitchingContext(context, noun, wasDarkBefore);
 
     // Initialize params — EntityInfo for formatter chain (ADR-158)
     sharedData.params = {
@@ -194,13 +196,13 @@ export const switchingOnAction: Action & { metadata: ActionMetadata } = {
       sharedData.isLightSource = true;
       sharedData.lightRadius = analysis.lightRadius;
 
-      if (analysis.isInSameRoom && analysis.willAffectDarkness) {
+      if (analysis.willAffectDarkness) {
         sharedData.willIlluminateLocation = true;
       }
     }
 
     // If we illuminated a dark room, capture it for the auto-LOOK
-    if (sharedData.willIlluminateLocation && sharedData.wasDarkBefore) {
+    if (sharedData.willIlluminateLocation) {
       sharedData.revealed = captureRevealedRoom(context);
     }
 
@@ -298,7 +300,7 @@ export const switchingOnAction: Action & { metadata: ActionMetadata } = {
     }
 
     // If we illuminated a dark room, describe it as a look would
-    if (sharedData.willIlluminateLocation && sharedData.wasDarkBefore && sharedData.revealed) {
+    if (sharedData.willIlluminateLocation && sharedData.revealed) {
       events.push(...revealedRoomEvents(context, sharedData.revealed));
     }
 

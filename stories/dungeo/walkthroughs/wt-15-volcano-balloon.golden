@@ -53,7 +53,7 @@ Egyptian Room
 This is a room which looks like an Egyptian tomb. There is an ascending staircase in the room as well as doors, east and south.
 
 > turn on lantern
-The brass lantern switches on, banishing the darkness.
+You switch on the brass lantern.
 
 > up
 Glacier Room
@@ -484,4 +484,4 @@ Total: 616/650 (71 entries)
 Returning to game.
 
 > turn off lantern
-You switch off the brass lantern, plunging the area into darkness.
+You switch off the brass lantern.

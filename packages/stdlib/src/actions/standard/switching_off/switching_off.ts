@@ -24,6 +24,7 @@ import { SwitchedOffEventData } from './switching_off-events.js';
 import { analyzeSwitchingContext, determineSwitchingMessage } from '../switching-shared.js';
 import { MESSAGES } from './switching_off-messages.js';
 import { nounPhraseFor } from '../../../utils/index.js';
+import { darkForActor } from '../illumination-shared.js';
 import {
   ActionLifecycleDescriptor,
   blockedMessageId
@@ -139,6 +140,10 @@ export const switchingOffAction: Action & { metadata: ActionMetadata } = {
     const hadRunningSound = switchableData?.runningSound;
     const powerConsumption = switchableData?.powerConsumption;
 
+    // Was the room dark to the actor BEFORE the light went off? Decides the
+    // light_off line (illumination-shared.ts; ADR-374 D5 asks the actor).
+    const wasDarkBefore = darkForActor(context);
+
     // Delegate state change to behavior
     const result = SwitchableBehavior.switchOff(noun);
 
@@ -160,8 +165,8 @@ export const switchingOffAction: Action & { metadata: ActionMetadata } = {
 
     sharedData.failed = false;
 
-    // Analyze the switching context
-    const analysis = analyzeSwitchingContext(context, noun);
+    // Analyze the switching context: did the actor's room go from lit to dark?
+    const analysis = analyzeSwitchingContext(context, noun, wasDarkBefore);
 
     // Initialize params — EntityInfo for formatter chain (ADR-158)
     sharedData.params = {
@@ -171,7 +176,7 @@ export const switchingOffAction: Action & { metadata: ActionMetadata } = {
     // Add light source data if applicable
     if (analysis.isLightSource) {
       sharedData.isLightSource = true;
-      if (analysis.isInSameRoom && analysis.willAffectDarkness) {
+      if (analysis.willAffectDarkness) {
         sharedData.willDarkenLocation = true;
       }
     }

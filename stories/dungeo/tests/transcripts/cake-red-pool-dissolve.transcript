@@ -17,7 +17,7 @@ description: ADR-227 Phase 2 - throwing the red-icing cake (RDICE "Evaporate")
 [OK: contains "Returning"]
 
 > turn on lantern
-[OK: contains "switches on"]
+[OK: contains "You switch on the brass lantern."]
 
 > gdt
 [OK: contains "GDT ready"]

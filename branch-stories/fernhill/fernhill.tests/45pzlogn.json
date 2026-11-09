@@ -63,7 +63,7 @@
     {
       "assertions": {
         "contains": [
-          "The oil lamp switches on"
+          "You switch on the oil lamp."
         ]
       },
       "command": "switch on lamp",

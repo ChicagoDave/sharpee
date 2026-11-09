@@ -99,7 +99,7 @@ create the display case
 
   A lit glass case. Its lid drops shut when the light goes out.
 
-## Row 1 — a light switched on and off, in the dark cellar
+## Row 1 — a light switched on and off, in the dark cellar and again in the lit hall
 
 create the oil lamp
   a thing, light-source, switchable

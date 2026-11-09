@@ -27,7 +27,7 @@ export const switchingOnLanguage = {
 
     // Success messages
     'switched_on': "{You} {switch} on {the target}.",
-    'light_on': "{You} {switch} on {the target}, illuminating the area.",
+    'light_on': "{You} {switch} on {the target}.",
     'device_humming': "{capitalize the target} hums to life.",
     'temporary_activation': "{capitalize the target} switches on temporarily.",
     'with_sound': "{You} {switch} on {the target}. {sound}",

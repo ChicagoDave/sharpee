@@ -12,7 +12,7 @@ $teleport Living Room
 [OK: contains "Taken"]
 
 > turn on lantern
-[OK: contains "switches on"]
+[OK: contains "You switch on the brass lantern."]
 
 $teleport Torch Room
 

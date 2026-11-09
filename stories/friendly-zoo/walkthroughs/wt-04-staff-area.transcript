@@ -44,4 +44,4 @@ description: Chained full-playthrough, chapter 4 of 5. The keeper's departure
 [OK: contains "Taken"]
 
 > turn on flashlight
-[OK: contains "banishing the darkness"]
+[OK: contains "You switch on the flashlight."]

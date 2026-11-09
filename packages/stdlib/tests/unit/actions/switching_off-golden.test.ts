@@ -14,7 +14,7 @@
 import { describe, test, expect, beforeEach, vi } from 'vitest';
 import { switchingOffAction } from '../../../src/actions/standard/switching_off';
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType, SwitchableTrait, LightSourceTrait, ContainerTrait, OpenableTrait } from '@sharpee/world-model';
+import { TraitType, SwitchableTrait, LightSourceTrait, ContainerTrait, OpenableTrait, RoomTrait } from '@sharpee/world-model';
 import {
   createRealTestContext,
   setupBasicWorld,
@@ -212,7 +212,8 @@ describe('switchingOffAction (Golden Pattern)', () => {
   describe('Light Source Handling', () => {
     test('should darken room when turning off only light', () => {
       const { world, player, room } = setupBasicWorld();
-      
+      room.add(new RoomTrait({ requiresLight: true })); // lit only by the lamp
+
       const lamp = world.createEntity('bright lamp', 'object');
       lamp.add(new SwitchableTrait({ isOn: true }));
       lamp.add(new LightSourceTrait({ brightness: 3 }));
@@ -236,11 +237,41 @@ describe('switchingOffAction (Golden Pattern)', () => {
         messageId: expect.stringContaining('light_off'),
         params: { target: { name: 'bright lamp' } }
       });
+
+      // The lamp is off and dark: the room's only light is gone
+      expect(lamp.getTrait(SwitchableTrait)?.isOn).toBe(false);
+      expect(lamp.getTrait(LightSourceTrait)?.isLit).toBe(false);
+    });
+
+    test('should not claim darkness in a lit room', () => {
+      const { world, player, room } = setupBasicWorld(); // the room does not require light
+      const lamp = world.createEntity('oil lamp', 'object');
+      lamp.add(new SwitchableTrait({ isOn: true }));
+      lamp.add(new LightSourceTrait({ brightness: 2 }));
+      world.moveEntity(lamp.id, room.id);
+
+      const context = createRealTestContext(switchingOffAction, world, createCommand(IFActions.SWITCHING_OFF, {
+        entity: lamp
+      }));
+
+      const events = executeWithValidation(switchingOffAction, context);
+
+      // The room was lit before and after: still_lit, and no darkening claim
+      expectEvent(events, 'if.event.switched_off', {
+        isLightSource: true,
+        messageId: expect.stringContaining('light_off_still_lit')
+      });
+      const switched = events.find(e => e.type === 'if.event.switched_off');
+      expect((switched?.data as SwitchedOffEventData).willDarkenLocation).toBeFalsy();
+      // The lamp itself still switched off and no longer gives light
+      expect(lamp.getTrait(SwitchableTrait)?.isOn).toBe(false);
+      expect(lamp.getTrait(LightSourceTrait)?.isLit).toBe(false);
     });
 
     test('should not darken room with other lights', () => {
       const { world, player, room } = setupBasicWorld();
-      
+      room.add(new RoomTrait({ requiresLight: true })); // dark, but the floor lamp stays on
+
       const lamp1 = world.createEntity('desk lamp', 'object');
       lamp1.add(new SwitchableTrait({ isOn: true }));
       lamp1.add(new LightSourceTrait());
@@ -267,7 +298,8 @@ describe('switchingOffAction (Golden Pattern)', () => {
 
     test('should consider carried lights', () => {
       const { world, player, room } = setupBasicWorld();
-      
+      room.add(new RoomTrait({ requiresLight: true })); // dark, but the flashlight in hand stays on
+
       const roomLamp = world.createEntity('table lamp', 'object');
       roomLamp.add(new SwitchableTrait({ isOn: true }));
       roomLamp.add(new LightSourceTrait());

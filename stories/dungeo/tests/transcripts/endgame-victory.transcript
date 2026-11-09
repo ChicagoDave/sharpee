@@ -42,7 +42,7 @@ description: Test victory sequence when entering Treasury of Zork
 [OK: contains "Returning to game"]
 
 > turn on lantern
-[OK: contains "switches on"]
+[OK: contains "You switch on the brass lantern."]
 
 > look
 [OK: contains "Prison Cell"]

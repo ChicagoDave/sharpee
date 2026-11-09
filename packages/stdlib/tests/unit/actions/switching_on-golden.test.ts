@@ -14,7 +14,7 @@
 import { describe, test, expect, beforeEach, vi } from 'vitest';
 import { switchingOnAction } from '../../../src/actions/standard/switching_on';
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType, SwitchableTrait, LightSourceTrait, ContainerTrait, OpenableTrait } from '@sharpee/world-model';
+import { TraitType, SwitchableTrait, LightSourceTrait, ContainerTrait, OpenableTrait, RoomTrait } from '@sharpee/world-model';
 import {
   createRealTestContext,
   setupBasicWorld,
@@ -203,10 +203,11 @@ describe('switchingOnAction (Golden Pattern)', () => {
   describe('Light Source Handling', () => {
     test('should handle basic light source', () => {
       const { world, player, room } = setupBasicWorld();
+      room.add(new RoomTrait({ requiresLight: true })); // dark until the lamp is on
       const lamp = world.createEntity('desk lamp', 'object');
       lamp.add(new SwitchableTrait({ isOn: false }));
       lamp.add(new LightSourceTrait({ brightness: 2 }));
-      world.moveEntity(lamp.id, room.id);
+      world.moveEntity(lamp.id, player.id); // in hand: reachable in the dark
       
       const context = createRealTestContext(switchingOnAction, world, createCommand(IFActions.SWITCHING_ON, {
         entity: lamp
@@ -226,11 +227,17 @@ describe('switchingOnAction (Golden Pattern)', () => {
         messageId: expect.stringContaining('illuminates_darkness'),
         params: { target: { name: 'desk lamp' } }
       });
+
+      // The lamp is on and lit, and the room it revealed is described as a look would
+      expect(lamp.getTrait(SwitchableTrait)?.isOn).toBe(true);
+      expect(lamp.getTrait(LightSourceTrait)?.isLit).toBe(true);
+      expect(events.some(e => e.type === 'if.event.room.description')).toBe(true);
     });
 
     test('should illuminate dark room', () => {
       const { world, player, room } = setupBasicWorld();
-      
+      room.add(new RoomTrait({ requiresLight: true }));
+
       const flashlight = world.createEntity('LED flashlight', 'object');
       flashlight.add(new SwitchableTrait({ isOn: false }));
       flashlight.add(new LightSourceTrait({ brightness: 3 }));
@@ -253,11 +260,42 @@ describe('switchingOnAction (Golden Pattern)', () => {
         messageId: expect.stringContaining('illuminates_darkness'),
         params: { target: { name: 'LED flashlight' } }
       });
+
+      // The revealed room is described: the auto-LOOK follows the illumination
+      expect(events.some(e => e.type === 'if.event.room.description')).toBe(true);
+    });
+
+    test('should not claim darkness in a lit room', () => {
+      const { world, player, room } = setupBasicWorld(); // the room does not require light
+      const lamp = world.createEntity('oil lamp', 'object');
+      lamp.add(new SwitchableTrait({ isOn: false }));
+      lamp.add(new LightSourceTrait({ brightness: 2 }));
+      world.moveEntity(lamp.id, room.id);
+
+      const context = createRealTestContext(switchingOnAction, world, createCommand(IFActions.SWITCHING_ON, {
+        entity: lamp
+      }));
+
+      const events = executeWithValidation(switchingOnAction, context);
+
+      // The room was lit before and after: light_on, and no illumination claim
+      expectEvent(events, 'if.event.switched_on', {
+        isLightSource: true,
+        messageId: expect.stringContaining('light_on')
+      });
+      const switched = events.find(e => e.type === 'if.event.switched_on');
+      expect((switched?.data as SwitchedOnEventData).willIlluminateLocation).toBeFalsy();
+      // No auto-LOOK either: nothing was revealed
+      expect(events.some(e => e.type === 'if.event.room.description')).toBe(false);
+      // The lamp itself still switched on and gives light
+      expect(lamp.getTrait(SwitchableTrait)?.isOn).toBe(true);
+      expect(lamp.getTrait(LightSourceTrait)?.isLit).toBe(true);
     });
 
     test('should not illuminate if other lights exist', () => {
       const { world, player, room } = setupBasicWorld();
-      
+      room.add(new RoomTrait({ requiresLight: true })); // dark, but the floor lamp is already on
+
       const lamp1 = world.createEntity('table lamp', 'object');
       lamp1.add(new SwitchableTrait({ isOn: false }));
       lamp1.add(new LightSourceTrait());

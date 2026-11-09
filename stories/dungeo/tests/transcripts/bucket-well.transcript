@@ -19,7 +19,7 @@ description: Tests the VehicleTrait counterweight mechanism for bucket and
 [EVENT: true, type="dungeo.gdt.output"]
 
 > turn on lantern
-[OK: contains "switches on"]
+[OK: contains "You switch on the brass lantern."]
 [EVENT: true, type="if.event.switched_on"]
 
 # Get the bottle with water from kitchen

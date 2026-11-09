@@ -319,6 +319,38 @@
     {
       "assertions": {
         "contains": [
+          "You switch on the oil lamp."
+        ],
+        "notContains": [
+          "banishing the darkness"
+        ],
+        "states": [
+          "the oil lamp is on"
+        ]
+      },
+      "command": "switch on lamp",
+      "id": "tft00036",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You switch off the oil lamp."
+        ],
+        "notContains": [
+          "plunging the area into darkness"
+        ],
+        "states": [
+          "the oil lamp is off"
+        ]
+      },
+      "command": "switch off lamp",
+      "id": "tft00037",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
           "You open the tin box."
         ]
       },
