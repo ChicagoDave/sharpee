@@ -1,7 +1,7 @@
 # Session Plan: Close GH #664 — stdlib actions read trait fields their traits do not declare
 
 **Created**: 2026-11-08
-**Plan Status**: ACTIVE
+**Plan Status**: DONE
 **Overall scope**: Fix all eight rows of #664 (none deleted, per David's 2026-11-08 ruling: every row is an IF standard action). Five rows realign the action to a field the trait already declares; three rows (wearable body-part/layer, openable auto-open/auto-close, smell/sound levels) get new declared fields plus Chord syntax. One dedicated Chord test story with a branch-tester tree exercises all eight, the 15 #664-commented test sites lose their workaround, and #664 closes.
 **Bounded contexts touched**: stdlib actions and scope (`packages/stdlib`), world-model traits (`packages/world-model`), story-loader trait routes and adjectives (`packages/story-loader`), Chord language catalog (`packages/chord`)
 **Key domain language**: trait field, capability dispatch, wearable layer/body part, openable auto-open/auto-close, scent/sound level
