@@ -1,7 +1,7 @@
 # Session Plan: listening and smelling read SoundingTrait and ScentTrait (#668)
 
 **Created**: 2026-11-08
-**Plan Status**: ACTIVE
+**Plan Status**: DONE
 **Overall scope**: Make the `listening` and `smelling` standard actions agree with the scope layer that ADR-392 D5 already changed: a target carrying SoundingTrait or ScentTrait renders a sound or smell line instead of `no_sound` / `no_particular_scent`, and the room-level `listen` / `smell` scan the scope resolver's heard / smelled set instead of the room's direct contents. Read-only actions; no world mutation.
 **Bounded contexts touched**: stdlib sensory actions and scope (platform; discussed and "proceed" given by David), lang-en-us message text, story-loader message-alias map, `stories/trait-field-test` (Chord test story)
 **Key domain language**: SoundingTrait (tier, VolumeTier), ScentTrait (strength), canHear / canSmell, `loud` / `smelly` (Chord words, ADR-392 D6), closed container
