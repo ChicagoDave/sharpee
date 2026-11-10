@@ -33,6 +33,7 @@
       "@sharpee/ide-protocol/claim-output": ["../../../../packages/ide-protocol/src/claim-output.ts"],
       "@sharpee/transcript-tester/assertion-core": ["../../../../packages/transcript-tester/src/assertion-core.ts"],
       "@sharpee/story-loader/pin-grammar": ["../../../../packages/story-loader/src/pin-grammar.ts"],
+      "@sharpee/chord/clause-ids": ["../../../../packages/chord/src/clause-ids.ts"],
       "@sharpee/ide-protocol/run-events": ["../../../../packages/ide-protocol/src/run-events.ts"],
       "@sharpee/ide-protocol": ["../../../../packages/ide-protocol/src/index.ts"],
       "@sharpee/branch-tester/coverage": ["../../../../packages/branch-tester/dist/coverage.d.ts"],

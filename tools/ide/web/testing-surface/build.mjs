@@ -10,10 +10,11 @@
  * Owner context: tools/ide — the testing play surface's web bundle.
  */
 
-import { cp, mkdir } from 'node:fs/promises';
+import { cp, mkdir, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import * as esbuild from 'esbuild';
+import { findNonSourceInputs } from './bundle-inputs.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(here, '../../../..');
@@ -36,11 +37,42 @@ const assertionCore = resolve(repoRoot, 'packages/transcript-tester/src/assertio
 // The pin grammar's one parser (ADR-356 D2), which the assertion core reads
 // claims with — pure, dependency-free, and from source for the same reason.
 const pinGrammar = resolve(repoRoot, 'packages/story-loader/src/pin-grammar.ts');
+// The clause key's one composer (ADR-388 D2), which the assertion core names
+// a clause with — pure, and from source for the same reason. The
+// `@sharpee/chord` barrel would bring the whole compiler with it (GH #659).
+const clauseIds = resolve(repoRoot, 'packages/chord/src/clause-ids.ts');
 // The host bridge (GH #464), from source for the same reason. It is the one
 // module that decides how this page addresses whichever host embedded it, and
 // the play client resolves the SAME file — a second copy would let the two
 // disagree about where the host lives.
 const hostBridge = resolve(repoRoot, 'packages/platform-browser/src/host-bridge.ts');
+
+/**
+ * Writes the bundle only when every file it read is a source file
+ * (bundle-inputs.mjs). The build runs with `write: false` so a refused bundle
+ * never reaches the committed `surface.js`: an import that slipped past the
+ * alias list fails here, naming the file, instead of landing as a diff.
+ */
+const sourceOnlyInputs = {
+  name: 'source-only-inputs',
+  setup(build) {
+    build.onEnd(async (result) => {
+      if (result.errors.length > 0) return undefined;
+      const offending = findNonSourceInputs(result.metafile);
+      if (offending.length > 0) {
+        return {
+          errors: offending.map((path) => ({
+            text:
+              `${path} is not a source file — the bundle takes workspace code from src/ only. ` +
+              'Import a pure subpath and alias it to its source file in build.mjs, tsconfig.json and vitest.config.ts.',
+          })),
+        };
+      }
+      for (const file of result.outputFiles) await writeFile(file.path, file.contents);
+      return undefined;
+    });
+  },
+};
 
 /** esbuild options shared by the one-shot and watch paths. */
 const options = {
@@ -60,6 +92,7 @@ const options = {
     '@sharpee/ide-protocol/claim-output': claimOutput,
     '@sharpee/transcript-tester/assertion-core': assertionCore,
     '@sharpee/story-loader/pin-grammar': pinGrammar,
+    '@sharpee/chord/clause-ids': clauseIds,
     '@sharpee/ide-protocol/run-events': runEvents,
     '@sharpee/platform-browser/host-bridge': hostBridge,
   },
@@ -71,6 +104,10 @@ const options = {
   // the folder to exist to reference it), so it has to stay diffable.
   sourcemap: false,
   minify: false,
+  // The plugin below does the writing, after it has checked the inputs.
+  write: false,
+  metafile: true,
+  plugins: [sourceOnlyInputs],
 };
 
 await mkdir(outDir, { recursive: true });

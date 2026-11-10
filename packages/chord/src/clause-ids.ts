@@ -16,7 +16,9 @@
  * {@link clauseHeadId}, {@link spokenClauseHead}, {@link clauseIdOf},
  * {@link clauseOrdinalOf}, {@link assignClauseIds}, {@link assignSelectIds}.
  * Owner context: `@sharpee/chord` (browser-safe; imports nothing from the
- * platform).
+ * platform). Published on its own subpath, `@sharpee/chord/clause-ids`, so
+ * the browser-bundled assertion core can compose a clause key without
+ * bundling the compiler; its one import is type-only and must stay so.
  *
  * References:
  * - ADR-388 D2 — head-derived clause ids, `#n` among identical heads,

@@ -10,6 +10,11 @@
       "types": "./dist/index.d.ts",
       "import": "./dist-esm/index.js",
       "require": "./dist/index.js"
+    },
+    "./clause-ids": {
+      "types": "./dist/clause-ids.d.ts",
+      "import": "./dist-esm/clause-ids.js",
+      "require": "./dist/clause-ids.js"
     }
   },
   "scripts": {
@@ -60,5 +65,12 @@
   },
   "publishConfig": {
     "access": "public"
+  },
+  "typesVersions": {
+    "*": {
+      "clause-ids": [
+        "./dist/clause-ids.d.ts"
+      ]
+    }
   }
 }

@@ -9,9 +9,10 @@
  * other half of "what a claim means".
  *
  * Browser-safe by construction: no Node import, no package barrel — the
- * IDE's testing surface bundles this file from source. Its one cross-package
- * import is `@sharpee/story-loader/pin-grammar`, a pure subpath the surface
- * aliases to source beside this file. Per-command execution,
+ * IDE's testing surface bundles this file from source. Its two cross-package
+ * imports are `@sharpee/story-loader/pin-grammar` and
+ * `@sharpee/chord/clause-ids`, pure subpaths the surface aliases to source
+ * beside this file. Per-command execution,
  * directives, and session instruments are Node-bound and live in
  * `command-core.ts`.
  *
@@ -44,7 +45,9 @@ import { checkChannelAssertion } from './channel-assert.js';
 // The subpath is pure and dependency-free, so the browser bundle stays
 // runtime-free (the barrel would drag the whole loader in).
 import { parsePin } from '@sharpee/story-loader/pin-grammar';
-import { clauseHeadId, spokenClauseHead } from '@sharpee/chord';
+// The clause key's one composer (ADR-388 D2), by its pure subpath for the
+// same reason: the `@sharpee/chord` barrel would drag the compiler in.
+import { clauseHeadId, spokenClauseHead } from '@sharpee/chord/clause-ids';
 
 export type * from './types.js';
 
