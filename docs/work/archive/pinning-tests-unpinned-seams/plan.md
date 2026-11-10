@@ -1,7 +1,8 @@
 # Session Plan: Pinning tests for the three seams named in GH #602, #635 and #662
 
 **Created**: 2026-11-09
-**Plan Status**: ACTIVE
+**Plan Status**: ABANDONED
+**Abandoned**: 2026-11-09 (session 622544, David: "this is really off the rails - recurrance is detecting empty tests", then "proceed" on abandoning Phases 2 to 5). Phase 1 landed (1fae5e72f, #635 closed). The plan was built from recurrence #435's 2026-11-08 root-cause statement ("a real seam has no pinning test"), which had drifted from what the category detects: tests that pass without exercising anything. Phase 2 would have pinned `WorldModel.findPath`, which no source file calls. #602 and #662 stay open as ordinary issues.
 **Overall scope**: Write the pinning tests (and the test wiring) for the three confirmed root-cause seams of recurrence #435: `findPath`'s non-door traversal (#602), the derived runner's `#n` identical-head spelling (#635), and the four Chord Writer seams with no automated check (#662). Tests and test wiring only; no behaviour change.
 **Bounded contexts touched**: N/A - infrastructure/tooling and test infrastructure (world-model traversal reader, branch-tester derived runner, Chord Writer `tools/ide` packaging and Avalonia head).
 **Key domain language**: N/A (plain technical framing; names used where they exist: `wayFor`, `TraversalBehavior`, clause head, `#n` ordinal, toolchain shim).
@@ -47,7 +48,7 @@
 - **Exit state**: the new file's three assertions pass on HEAD, fail under the mutation, and `git diff -- packages/world-model/src` is empty at commit; `packages/world-model/tests/unit/world/traversal-readers.test.ts` still passes unchanged. Issue #602 closed with the premise note.
 - **Demonstration**: pnpm --filter @sharpee/world-model test find-path-non-door, green, then red with the mutation applied, then pnpm --filter @sharpee/world-model test traversal-readers, green.
 - **Demonstrated**: 
-- **Status**: PENDING
+- **Status**: ABANDONED
 
 ### Phase 3: Chord Writer protocol round trip and editor bridge, real path (#662 items 3 and 1)
 - **Tier**: Medium
@@ -60,7 +61,7 @@
 - **Exit state**: both new test classes pass under `dotnet test`; the two known-fail cases pass by detecting their injected defects; items 1 and 3 of #662 are checked off in a comment on #662 (the issue stays open until Phases 4 and 5 land).
 - **Demonstration**: `dotnet test tools/ide/PaneHost.Tests --filter "FullyQualifiedName~ProtocolRoundTrip|FullyQualifiedName~EditorBridge"` reports all new cases passed, with the golden token count it compared printed in the run output.
 - **Demonstrated**: 
-- **Status**: PENDING
+- **Status**: ABANDONED
 
 ### Phase 4: Avalonia packaging ends in the bundled-toolchain real-path test (#662 item 2)
 - **Tier**: Medium
@@ -73,7 +74,7 @@
 - **Exit state**: the self-test passes (broken fixture rejected, call present as last step) and a full unsigned package-avalonia run ends with the real-path test printing its PASS line.
 - **Demonstration**: `bash tools/ide/toolchain-realpath-selftest.sh` exits 0; the background `bash tools/ide/package-avalonia.sh --no-sign --out` run into a scratch directory ends with the line "PASS - the bundled toolchain is self-contained" (quote the actual line from the log in the Demonstrated field).
 - **Demonstrated**: 
-- **Status**: PENDING
+- **Status**: ABANDONED
 
 ### Phase 5: Committed web bundles are guarded against silent growth (#662 item 4; closes #662)
 - **Tier**: Small
@@ -86,7 +87,7 @@
 - **Exit state**: the self-test passes (the #659-shaped metafile is rejected, a clean one accepted); the guard's verdict on the live rebuild is recorded (red until #659); on a closing comment #662's four checks are each mapped to the file that now checks them, and #662 is closed with the item-2 coverage limit stated.
 - **Demonstration**: `node tools/ide/web/testing-surface/bundle-guard-selftest.mjs` exits 0; `node tools/ide/web/testing-surface/bundle-guard.mjs` is run once and its verdict and byte count are quoted in the Demonstrated field; `git status --short tools/ide/SharpeeIDE/Resources` shows the committed bundle untouched.
 - **Demonstrated**: 
-- **Status**: PENDING
+- **Status**: ABANDONED
 
 ## Order and rationale
 Cheapest and least ambiguous first: #635 (one fixture, one file, no premise questions), then #602 (equally small, but its premise is stale and needs David's one-line acceptance of the corrected scope). #662 is last because it is four seams in tools/ide: Phase 3 batches the two PaneHost.Tests seams that share one environment and one harness; Phase 4 is the long real packaging run; Phase 5 goes last because its live verdict depends on #659. The three issues are independent; any order after Phase 1 is safe.
