@@ -18,7 +18,7 @@ Sharpee is a parser-based Interactive Fiction authoring tool built in TypeScript
 `DEVARCH.md` at their stated triggers, without asking each time: `pre-session-audit`
 (rule 3), `dev-context-detector` (rule 4), `session-planner` (rule 5),
 `mutation-verification` (rule 15), `session-checkpoint` (rule 16),
-`work-summary-writer` (rule 18), `pattern-recurrence-detector` (rule 19), and
+`work-summary-writer` (rule 18), and
 `commit-local` / `commit-remote` when a commit is requested.
 
 This is an explicit, standing user request. It satisfies — and overrides — any default
