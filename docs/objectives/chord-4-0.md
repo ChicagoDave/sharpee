@@ -1,6 +1,6 @@
 # Objective: Chord 4.0
 
-**Status**: DRAFT
+**Status**: CLOSED — all three outcomes MET, closed 2026-11-10 (session c6d027) on David's ruling that Chord 4.0 shipped
 **Origin**: internal initiative — David's direction of 2026-10-08 (session 0307) that two Chord objectives run in parallel, this being the second: the next Chord syntax round. Reframed by David on 2026-10-12 (session 1f771c) as the 4.0 release: claims and the necessary set in use, a vehicle object type with full capability, and the standard IF capabilities Chord has missed. Source material: the Claude Desktop syntax review of 2026-10-05 (`docs/work/chord-syntax-review.txt`), whose four EBNF text defects were fixed that day and whose open recommendation is a gerund list on the clause head. The round's first half shipped before this file existed: ADR-360 (regions declare their rooms), ADR-361 (hatches removed), ADR-362 (blocks fold), all eleven phases of `docs/work/archive/chord-syntax-round/plan-20261009-adr-360-362.md` DONE 2026-10-10. Items carried into this objective from the round: GH #568 (`in`/`out` exits), GH #558 (stale grammar comment), the gerund list, GH #466 (vehicles, ADR-350), and the state-dependent exit destinations UPPS surfaced on 2026-10-12.
 **Date**: 2026-10-12
 **Session**: 1f771c
@@ -18,7 +18,8 @@ Chord's language version is 3.6.0 at this writing. Every outcome below is measur
 - **Evidence source**: the `sharpee test` report on fernhill and UPPS (claims held over claims declared, per run, with each unproven claim naming its reason) and the Testing tab's claims list; produced by the runner, read by David.
 - **Cadence**: at each UPPS room commit, and at the 4.0 publish.
 - **Grade**: YELLOW (the window has no end date; everything else is sharp)
-- **Status**: DRAFT
+- **Result**: shipped (recorded 2026-11-10) — closed MET on David's ruling ("chord 4.0 was shipped so we can close that one"). Basis as recorded, not re-run today: `docs/work/archive/chord-4-0/status-20261024.md` lists the proposed necessary set from a played line, the lock gesture, the broken-claim report and UPPS claims as completed (plan `plan-20261013-chord-4-0.md`, 20 of 20 phases DONE); PR #633 merged to main 2026-10-26. The falsifiers were not re-measured against `sharpee test` at close.
+- **Status**: MET
 
 ### O-2: A vehicle with full capability
 - **Becomes true**: Chord has a vehicle an author declares in a `.story` file, with full capability: it is a container or supporter, has doors and windows the player opens and looks through, carries the player and its contents when it moves, and moves under a movement model the author chooses. The models named: a line, one direction or both (the tram); free spatial movement with a guidance system that takes a destination (the space ship); compass steering (a tall ship); following any way that admits the vehicle (a car or bicycle on streets and alleys). The Dungeo well-room bucket (which ADR-349 could not write in Chord), the UPPS Sparrow, the UPPS tram car and the UPPS drop shuttle are each written as one vehicle, not as per-destination doors or state-blocked rooms.
@@ -29,7 +30,8 @@ Chord's language version is 3.6.0 at this writing. Every outcome below is measur
 - **Evidence source**: the four conveyances compiling and playing as vehicles in their test trees (`sharpee test` on UPPS; Dungeo's walkthrough chain for the bucket), and ADR-350's field table re-measured by grep so that every exposed word has a platform reader.
 - **Cadence**: at each vehicle landing, and at the 4.0 publish.
 - **Grade**: YELLOW (the window has no end date)
-- **Status**: DRAFT
+- **Result**: shipped (recorded 2026-11-10) — closed MET on David's ruling. Basis as recorded, not re-run today: `status-20261024.md` lists a Chord vehicle with the line, compass, street-following and free-spatial movement models, the UPPS conveyances (Sparrow, tram, drop shuttle) and the Dungeo bucket proof as completed; the checklist's vehicle evidence row names `upps.tests/trampad2.json` and `upps.tests/a366titn.json`; PR #633 merged 2026-10-26. Vehicle follow-ups stay open as their own issues (GH #599, #604, #605, #607, #609) and were not weighed against the falsifiers at close.
+- **Status**: MET
 
 ### O-3: The standard IF checklist
 - **Becomes true**: A checklist exists crossing Sharpee's stdlib (57 standard actions and the trait catalog) with Inform 7's standard actions and kinds, and every row carries one disposition: sayable in Chord today, scheduled for 4.0, deferred to 5.0 or 6.0 by David's call, or ruled out with a reason. At the 4.0 publish every row scheduled for 4.0 is sayable in Chord and exercised by fernhill or UPPS.
@@ -40,7 +42,8 @@ Chord's language version is 3.6.0 at this writing. Every outcome below is measur
 - **Evidence source**: the checklist itself (to live under `docs/work/archive/chord-4-0/`), with each 4.0 row pointing at the fernhill or UPPS line that exercises it; read against `sharpee test` at publish.
 - **Cadence**: at each 4.0 language landing, and at the 4.0 publish.
 - **Grade**: YELLOW (the window has no end date; the baseline is captured and every row carries a disposition, so the 4.0 slice is fixed at 30 rows, corrected from 31 on 2026-10-13)
-- **Status**: DRAFT
+- **Result**: shipped (recorded 2026-11-10) — closed MET on David's ruling. Basis as recorded, not re-run today: the checklist's "4.0 evidence" table carries an exerciser for every line (24 lines for the 30-row slice, each naming a UPPS card), and `status-20261024.md` records the 4.0 evidence run as completed; PR #633 merged 2026-10-26. The table was not re-read against `sharpee test` at close.
+- **Status**: MET
 
 ## Spawned work
 - docs/work/archive/chord-syntax-round/plan-20261009-adr-360-362.md (DONE 2026-10-10; predates this file, the round's shipped half)
