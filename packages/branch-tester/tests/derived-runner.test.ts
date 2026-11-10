@@ -649,3 +649,48 @@ describe('occurrence ordinals — a later firing is arranged as the clause count
     expect(returned.shape).toBe('command-lifecycle');
   }, 30_000);
 });
+
+/**
+ * The outcome for one firing of one clause, found by the clause's compiler
+ * id. Two clauses with an identical head share a label, so `outcome`'s
+ * label match cannot tell them apart; the id can.
+ */
+function firingOutcome(run: DerivedSuiteResult, clauseId: string, ordinal: number): DerivedOutcome {
+  const hits = run.outcomes.filter((candidate) => {
+    const { clause, leaf } = candidate.branch;
+    return clause.kind === 'on' && clause.id === clauseId && leaf.kind === 'ordinal' && leaf.ordinal === ordinal;
+  });
+  if (hits.length !== 1) throw new Error(`${hits.length} outcomes match firing ${ordinal} of "${clauseId}"`);
+  return hits[0];
+}
+
+describe('occurrence ordinals — the arranged counter names its clause by head, numbered among identical heads (ADR-388 D7, GH #635)', () => {
+  it('speaks #1 and #2 for two identical heads, no number for a unique head, and the carrier and trait for a trait clause', async () => {
+    const { ir, run } = await runFixture('identical-heads');
+    expect(run.total).toBe(collectClauseBranches(ir).length);
+
+    // The compiler numbered the twins in source order; the runner must write each one's own counter.
+    const tickTwice = firingOutcome(run, 'clock.on-every-turn#1', 2);
+    expect(tickTwice.status).toBe('passed');
+    expect(tickTwice.arranged).toEqual(['clock on every-turn #1 occurrence = 1']);
+    expect(tickTwice.claims).toEqual([{ claim: 'emitted tick-two', passed: true }]);
+
+    // The guarded twin: its guard is arranged, then its own counter under #2.
+    const chimeTwice = firingOutcome(run, 'clock.on-every-turn#2', 2);
+    expect(chimeTwice.status).toBe('passed');
+    expect(chimeTwice.arranged).toEqual(['clock is wound', 'clock on every-turn #2 occurrence = 1']);
+    expect(chimeTwice.claims).toEqual([{ claim: 'emitted chime-two', passed: true }]);
+
+    // A head that is unique on its owner carries no number.
+    const faceTwice = firingOutcome(run, 'clock.on-examining-by-player', 2);
+    expect(faceTwice.status).toBe('passed');
+    expect(faceTwice.arranged).toEqual(['clock on examining by player occurrence = 1', 'player.location = hall']);
+    expect(faceTwice.claims).toEqual([{ claim: 'emitted face-twice', passed: true }]);
+
+    // A trait's clause is named by the entity that composes the trait, then the trait.
+    const glowTwice = firingOutcome(run, 'trait.glowing.on-examining-by-player', 2);
+    expect(glowTwice.status).toBe('passed');
+    expect(glowTwice.arranged).toEqual(['lamp trait glowing on examining by player occurrence = 1', 'player.location = hall']);
+    expect(glowTwice.claims).toEqual([{ claim: 'emitted glow-twice', passed: true }]);
+  }, 30_000);
+});
