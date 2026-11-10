@@ -12,7 +12,8 @@
 # runs build phases with a minimal environment that usually lacks nvm/homebrew
 # node. A miss is a WARNING, not an error: the committed bundle is still valid,
 # and failing the build of a Swift app because a JavaScript toolchain is absent
-# would be a poor trade.
+# would be a poor trade. A build that ran and failed is an ERROR and fails the
+# Xcode build; TESTING_SURFACE_OPTIONAL=1 downgrades it on purpose.
 # Owner context: tools/ide — TestingSurface.
 
 set -euo pipefail
@@ -44,6 +45,16 @@ if [ -z "$NODE" ]; then
 fi
 
 if ! "$NODE" "$BUILD_SCRIPT"; then
-  echo "warning: testing play surface bundle failed to build — using the committed copy"
-  exit 0
+  # A missing node is a warning (above). A build script that RAN and FAILED is a
+  # different thing: the source no longer produces the committed bundle — a
+  # compile error, or the bundle-inputs guard refusing a non-source input — and
+  # the error above says how. As a warning, the app would ship the stale copy
+  # and nobody would read the line that said so. Same ruling as
+  # build-docs-tab.sh. (GH #670)
+  echo "error: testing play surface bundle failed to build (see the error above)."
+  echo "       The previously committed bundle is intact and was NOT overwritten."
+  echo "       Fix the cause, or pass TESTING_SURFACE_OPTIONAL=1 to build against"
+  echo "       the committed copy deliberately rather than by accident."
+  [ "${TESTING_SURFACE_OPTIONAL:-0}" = "1" ] || exit 1
+  echo "warning: TESTING_SURFACE_OPTIONAL=1 — continuing with the committed copy"
 fi
