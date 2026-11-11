@@ -22,7 +22,7 @@
         "SHARPEE_TRANSCRIPT_CORPUS",
         "WORLD_INDEX_SCALE_TABLE"
       ],
-      "outputs": ["coverage/**"]
+      "outputs": []
     },
     "clean": {
       "cache": false

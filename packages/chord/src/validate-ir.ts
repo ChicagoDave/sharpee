@@ -24,6 +24,7 @@
  * - ADR-394 D4 — an action does not test its slot for identity with a named thing.
  * - ADR-394 D6 — a story action does not repeat standard grammar.
  * - ADR-394 D7 — a flag entity draws a warning.
+ * - ADR-394 D9 — a story action runs no thing's own `on` clause and no bare head.
  */
 import { KIND_NOUNS, TRAIT_ADJECTIVES } from './catalog.js';
 import { type Diagnostic, DiagnosticBag } from './diagnostics.js';
@@ -179,7 +180,7 @@ export function validateIR(ir: StoryIR): Diagnostic[] {
         if (slot !== undefined && entitySlots.has(slot)) {
           diagnostics.error(
             'analysis.slot-identity-test',
-            `\`select on the ${slot}\` picks a response by which thing the player named. A response that belongs to one thing is written on that thing: in its \`create\` block, write \`on the player ${action.name}\` and put the response there. To ask what sort of thing it is, test \`the ${slot} is a <kind or trait>\`.`,
+            `\`select on the ${slot}\` picks a response by which thing the player named. A response that belongs to one thing is written on that thing: in its \`create\` block, write \`after the player ${action.name}\` to react once the action succeeds, or give it a trait whose \`on the player ${action.name}\` clause refuses or answers in the action's place. To ask what sort of thing it is, test \`the ${slot} is a <kind or trait>\`.`,
             at,
           );
         }
@@ -768,6 +769,35 @@ export function validateIR(ir: StoryIR): Diagnostic[] {
     }
   }
 
+  // ADR-394 D9: a story's own action runs a thing's `after` clauses and the
+  // `on` clauses of its traits, never a thing's own `on` clause, and it
+  // consults no clause on the one acting, so a bare head never runs either.
+  // The loader refused both at load (runtime/on-clauses.ts); stated here, the
+  // compile says so too (ADR-389 D4). A story action that shares a standard
+  // action's name stays the loader's to judge (it alone knows which standard
+  // actions consult clauses), and a gerund that names an event reaction
+  // binds to the event stream instead.
+  for (const entity of ir.entities) {
+    for (const clause of entity.onClauses) {
+      const gerund = clause.action;
+      if (clause.binding === 'every-turn' || !storyActionNames.has(gerund)) continue;
+      if (STDLIB_MANIFEST.actionIds.has(`if.action.${gerund}`) || EVENT_REACTION_GERUNDS.has(gerund)) continue;
+      if (clause.binding === 'self') {
+        diagnostics.error(
+          'analysis.story-action-bare-head',
+          `\`${clause.clauseKind} ${gerund}\` in \`${entity.name}\`'s block would never run: \`${gerund}\` is this story's own action, and it runs no clause on the one acting. React on the thing acted on instead: write \`after the player ${gerund}\` in its block.`,
+          clause.actionSpan ?? clause.span,
+        );
+      } else if (clause.clauseKind === 'on') {
+        diagnostics.error(
+          'analysis.story-action-on-clause',
+          `\`on the player ${gerund}\` in \`${entity.name}\`'s block would never run: \`${gerund}\` is this story's own action, and it runs a thing's \`after\` clauses and the \`on\` clauses of its traits, never a thing's own \`on\` clause. To react once the action succeeds, write \`after the player ${gerund}\`. To refuse or answer in the action's place, move the clause into a trait and give \`${entity.name}\` that trait.`,
+          clause.actionSpan ?? clause.span,
+        );
+      }
+    }
+  }
+
   const TOOL_GATED_GERUNDS = [
     { adjective: 'cuttable', gerund: 'cutting' },
     { adjective: 'diggable', gerund: 'digging' },
@@ -894,6 +924,13 @@ function entityReferences(ir: StoryIR): Map<string, EntityReferences> {
 
 /** No keys skipped. */
 const NO_KEYS: ReadonlySet<string> = new Set();
+
+/**
+ * Gerunds whose clauses bind to the event stream on some owner (story-loader's
+ * event-contract.ts: `entering` on a room or region, `leaving` on a region,
+ * `hearing` on any listener), so a clause naming one is not an action clause.
+ */
+const EVENT_REACTION_GERUNDS: ReadonlySet<string> = new Set(['entering', 'leaving', 'hearing']);
 
 /** The fields of an entity record that are its own identity. */
 const ENTITY_IDENTITY_KEYS: ReadonlySet<string> = new Set(['id', 'name', 'article', 'aka']);
@@ -1117,7 +1154,7 @@ function slotIdentityMessage(identity: SlotIdentity, gerund: string, ir: StoryIR
   const owner = ir.entities.find((e) => e.id === identity.entityId);
   const name = owner ? `the ${owner.name}` : identity.entityId;
   const test = `the ${identity.slot} is ${identity.negated ? 'not ' : ''}${name}`;
-  return `\`${test}\` asks which thing the player named. A response that belongs to one thing is written on that thing: in \`create ${name}\`, write \`on the player ${gerund}\` and put the response there. To ask what sort of thing it is, \`the ${identity.slot} is a <kind or trait>\` is the test.`;
+  return `\`${test}\` asks which thing the player named. A response that belongs to one thing is written on that thing: in \`create ${name}\`, write \`after the player ${gerund}\` to react once the action succeeds, or give ${name} a trait whose \`on the player ${gerund}\` clause refuses or answers in the action's place. To ask what sort of thing it is, \`the ${identity.slot} is a <kind or trait>\` is the test.`;
 }
 
 /**

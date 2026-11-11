@@ -119,8 +119,13 @@ describe('D1 — actor-explicit heads carry the actor in the IR', () => {
   });
 
   it('a `define action` gerund routes to a capability and still carries the actor', () => {
-    const top = 'define action petting\n  grammar\n    pet the animal\n  the animal must be reachable\n  refuse without animal: nope\n  otherwise refuse nope\n';
-    const c = clause(ok({ top, sword: '  on the player petting\n    phrase note\n  end on\n' }), 'sword');
+    // Written in a trait the sword composes: a story action runs a trait's
+    // `on` clauses, never a thing's own (analysis.story-action-on-clause).
+    const top =
+      'define action petting\n  grammar\n    pet the animal\n  the animal must be reachable\n  refuse without animal: nope\n  otherwise refuse nope\n\n' +
+      'define trait pettable\n  on the player petting\n    phrase note\n  end on\nend trait\n';
+    const ir = ok({ top, sword: '  pettable\n' });
+    const c = ir.traits.find((t) => t.name === 'pettable')!.onClauses[0];
     expect(c).toMatchObject({ action: 'petting', binding: 'object', actor: { kind: 'player' }, routing: 'capability' });
   });
 

@@ -258,7 +258,12 @@ const PINNED = {
   // `analysis.repeats-standard-grammar` (a story pattern reading with a
   // standard pattern's shape, unless the story removes it). No production
   // changes.
-  ebnfSha256: 'ed7a3ee77b61cc633df2bded70e9c4546f01cabc5445096638dabf5cf8e34353',
+  // Re-pinned 2026-11-11 (session ece425, ADR-394 D9; chord-ownership-
+  // guards Phase 6): comments only. `on-clause`'s note names
+  // `analysis.story-action-on-clause` and `analysis.story-action-bare-head`
+  // (a thing's own `on` clause or a bare head naming a story action, which
+  // never runs). No production changes.
+  ebnfSha256: '42a891c8ed09cf6b521fd83e6189833f0bdbf674ebda9c86f5f7e304073e2454',
 };
 
 // Colocated with the version pin it gates (2026-08-14). It previously lived at

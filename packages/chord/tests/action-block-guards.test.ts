@@ -47,14 +47,14 @@ describe('an action that tests which thing was named is refused (analysis.slot-i
 
   it('names the thing and the clause to write on it, in the polarity written', () => {
     expect(errors[0].message).toBe(
-      '`the item is the sword` asks which thing the player named. A response that belongs to one thing is written on that thing: in `create the sword`, write `on the player valuing` and put the response there. To ask what sort of thing it is, `the item is a <kind or trait>` is the test.',
+      '`the item is the sword` asks which thing the player named. A response that belongs to one thing is written on that thing: in `create the sword`, write `after the player valuing` to react once the action succeeds, or give the sword a trait whose `on the player valuing` clause refuses or answers in the action\'s place. To ask what sort of thing it is, `the item is a <kind or trait>` is the test.',
     );
     expect(errors[2].message).toContain('`the item is not the sword` asks which thing the player named.');
   });
 
   it('names the `select on` spelling as the same test', () => {
     expect(errors[3].message).toContain('`select on the item` picks a response by which thing the player named.');
-    expect(errors[3].message).toContain('write `on the player valuing`');
+    expect(errors[3].message).toContain('write `after the player valuing` to react once the action succeeds, or give it a trait whose `on the player valuing` clause');
   });
 
   it('leaves `is a <trait>`, `holds the item`, a named condition, a direction slot and an owner\'s own clause alone', () => {
@@ -85,7 +85,7 @@ describe('an action that tests which thing was named is refused (analysis.slot-i
     });
     const diagnostics = validateIR(ir);
     expect(diagnostics.map((d) => `${d.span.line} ${d.code}`)).toEqual(['99 analysis.slot-identity-test']);
-    expect(diagnostics[0].message).toContain('in `create the clay pot`, write `on the player appraising`');
+    expect(diagnostics[0].message).toContain('in `create the clay pot`, write `after the player appraising`');
   });
 });
 

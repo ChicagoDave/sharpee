@@ -141,6 +141,36 @@ define action valuing
     expect(() => createStory(rogue)).toThrow(/`the item is the crate` asks which thing the player named/);
   });
 
+  it('refuses a thing\'s own `on` clause on a story action at compile and at load with one message (ADR-394 D9)', () => {
+    const OPENING = `define action prying
+  grammar
+    pry the item
+  phrase pried
+
+  phrases en-US
+    pried:
+      It gives.
+`;
+    const CLAUSE = `
+create the lever
+  a thing
+  in the Vault
+
+  A lever.
+
+  on the player prying
+    phrase pried
+  end on
+`;
+    expect(() => createStory(compileClean(BASE + OPENING))).not.toThrow();
+    const result = compile(BASE + OPENING + CLAUSE);
+    const errors = result.diagnostics.filter((d) => d.severity === 'error');
+    expect(errors.map((d) => d.code)).toEqual(['analysis.story-action-on-clause']);
+    expect(errors[0].message).toContain('write `after the player prying`');
+    expect(() => createStory(result.ir)).toThrow(LoadError);
+    expect(() => createStory(result.ir)).toThrow(errors[0].message);
+  });
+
   it('loads an IR whose compile reported only warnings', () => {
     // A room with no description is a warning (analysis.room-no-description), never an error.
     const result = compile(BASE.replace('  a room\n\n  A vault.\n', '  a room\n'));

@@ -138,8 +138,10 @@ create the badger
   on the player prodding
     phrase nope
   end on`);
-    expect(() => loadStory(source)).toThrowError(/dispatch action/);
-    expect(() => loadStory(source)).toThrowError(/Move the clause into a trait/);
+    // The compile's rule (validate-ir, ADR-394 D9) now refuses it first, with the same remedies.
+    expect(() => loadStory(source)).toThrowError(/is this story's own action/);
+    expect(() => loadStory(source)).toThrowError(/move the clause into a trait/);
+    expect(() => loadStory(source)).toThrowError(/write `after the player prodding`/);
   });
 
   it('still loads dispatch `after` reactions (fireAfterClauses path)', () => {

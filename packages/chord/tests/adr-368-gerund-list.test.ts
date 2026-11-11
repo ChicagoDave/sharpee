@@ -87,6 +87,7 @@ const ok = (s: Slots): StoryIR => {
   return r.ir;
 };
 const clausesOf = (ir: StoryIR, id: string): IROnClause[] => ir.entities.find((e) => e.id === id)!.onClauses;
+const traitClausesOf = (ir: StoryIR, name: string): IROnClause[] => ir.traits.find((t) => t.name === name)!.onClauses;
 
 /** An IR value with every span removed. */
 function withoutSpans(value: unknown): unknown {
@@ -147,10 +148,13 @@ describe('AC-2 — the list rides every head form', () => {
   });
 
   it('a role tail applies to every listed gerund', () => {
+    // Written in a trait the sword composes: a story action runs a trait's
+    // `on` clauses, never a thing's own (analysis.story-action-on-clause).
     const top =
       'define action petting\n  grammar\n    pet the animal\n  otherwise refuse nope\n\n' +
-      'define action grooming\n  grammar\n    groom the animal\n  otherwise refuse nope\n';
-    const list = clausesOf(ok({ top, sword: `  on the player petting, grooming anything as the animal\n${REFUSE}` }), 'sword');
+      'define action grooming\n  grammar\n    groom the animal\n  otherwise refuse nope\n\n' +
+      `define trait handled\n  on the player petting, grooming anything as the animal\n${REFUSE}end trait\n`;
+    const list = traitClausesOf(ok({ top, sword: '  handled\n' }), 'handled');
     expect(list.map((c) => c.action)).toEqual(['petting', 'grooming']);
     for (const c of list) expect(c).toMatchObject({ binding: 'role', role: 'animal' });
   });
@@ -242,18 +246,21 @@ describe('AC-6 — a diagnostic about one listed action lands on that word', () 
 });
 
 describe('AC-7 — a list may mix a standard action and a dispatch verb', () => {
-  const top = 'define action petting\n  grammar\n    pet the animal\n  the animal must be reachable\n  refuse without animal: nope\n  otherwise refuse nope\n';
+  // The lists are written in a trait the sword composes: a story action runs
+  // a trait's `on` clauses, never a thing's own (analysis.story-action-on-clause).
+  const top = 'define action petting\n  grammar\n    pet the animal\n  the animal must be reachable\n  refuse without animal: nope\n  otherwise refuse nope\n\n';
+  const handled = (clause: string) => ({ top: `${top}define trait handled\n${clause}end trait\n`, sword: '  handled\n' });
 
   it('routes each expanded clause by its own action', () => {
-    const list = clausesOf(ok({ top, sword: `  on the player taking, petting\n${REFUSE}` }), 'sword');
+    const list = traitClausesOf(ok(handled(`  on the player taking, petting\n${REFUSE}`)), 'handled');
     expect(list.map((c) => [c.action, c.routing])).toEqual([['taking', 'interceptor'], ['petting', 'capability']]);
   });
 
   it('a body naming the dispatch verb\'s slot is an error on the standard-action clause only', () => {
     const body = '    move the animal to the Hall\n  end on\n';
-    const alone = errors({ top, sword: `  on the player petting\n${body}` });
+    const alone = errors(handled(`  on the player petting\n${body}`));
     expect(alone).toEqual([]);
-    const mixed = errors({ top, sword: `  on the player taking, petting\n${body}` });
+    const mixed = errors(handled(`  on the player taking, petting\n${body}`));
     expect(mixed.length).toBe(1);
     expect(mixed[0].message).toContain('animal');
   });

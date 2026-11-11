@@ -679,6 +679,14 @@ on-clause    = ( "on" | "after" ) clause-form
                { "," clause-modifier } NL
                >>> { statement } "end" ( "on" | "after" ) NL ;
                                         (* terminator matches the opener *)
+                                        (* ADR-394 D9: a story `define action`
+                                           runs a thing's `after` clauses and
+                                           the `on` clauses of its traits, so a
+                                           thing's own `on the player <gerund>`
+                                           naming one is analysis.story-action-
+                                           on-clause, and a bare head naming
+                                           one is analysis.story-action-bare-
+                                           head *)
 clause-form  = head [ counterpart ]                  (* ADR-372 D1: the other
                                                         noun of a two-noun action
                                                         — the clause fires only

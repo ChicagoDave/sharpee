@@ -54,9 +54,9 @@ create the sword
 
   A sword.
 
-  on the player valuing
+  after the player valuing
     phrase gleams when the sword is the sword
-  end on
+  end after
 
 define phrases en-US
   gleams:
