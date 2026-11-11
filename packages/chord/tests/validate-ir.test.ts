@@ -243,6 +243,26 @@ create the oak door
     expect(messages(rogue)[0]).toContain('Door `oak door` is never referenced');
   });
 
+  it('a thing that loses its place and is only changed and tested is a flag entity: a warning, which the loader does not refuse (analysis.flag-entity)', () => {
+    const ir = compileClean(
+      BASE.replace('  starts in the Vault\n', '  starts in the Vault\n\n  after the player waiting\n    change the lever to thrown when the lever is upright\n  end after\n') +
+        `
+create the lever
+  a thing
+  in the Vault
+  states: upright, thrown
+`,
+    );
+    expect(validateIR(ir)).toEqual([]);
+    const rogue = structuredClone(ir);
+    entity(rogue, 'lever').placement = null;
+    const diagnostics = validateIR(rogue);
+    expect(diagnostics.map((d) => `${d.severity} ${d.code}`)).toEqual(['warning analysis.flag-entity']);
+    expect(diagnostics[0].message).toContain('`the lever` is never anywhere');
+    // The loader's backstop refuses on the first error only.
+    expect(diagnostics.find((d) => d.severity === 'error')).toBeUndefined();
+  });
+
   it('an extend-action target naming no story or standard action, with a did-you-mean (analysis.extend-target)', () => {
     const rogue = structuredClone(compileClean(`${BASE}extend action taking\n  grammar\n    snag the item\n`));
     rogue.grammarExtensions![0].action = 'takng';

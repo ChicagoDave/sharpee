@@ -6,7 +6,8 @@
  * line's scope (a kind or a story trait), a `define action` that tests its
  * slot for identity with a named thing, composition and trait adjectives with their
  * settings, exits on a non-room, worn items, tool-gated gerunds, listeners,
- * conditional deadly exits, and every door's connection. Each is a fact of
+ * conditional deadly exits, every door's connection, and the flag entity
+ * that only holds a state for something else (a warning). Each is a fact of
  * the IR alone — no AST, no analyzer state —
  * so the compile reports it as its last analysis pass and the loader asks
  * the same function once before it builds a world. One rule, two callers.
@@ -22,11 +23,12 @@
  * - ADR-394 D2 — a classifier names a kind or a story trait.
  * - ADR-394 D4 — an action does not test its slot for identity with a named thing.
  * - ADR-394 D6 — a story action does not repeat standard grammar.
+ * - ADR-394 D7 — a flag entity draws a warning.
  */
 import { KIND_NOUNS, TRAIT_ADJECTIVES } from './catalog.js';
 import { type Diagnostic, DiagnosticBag } from './diagnostics.js';
 import { nearest } from './edit-distance.js';
-import type { IRActionDef, IROnClause, StoryIR } from './ir.js';
+import type { IRActionDef, IREntity, IROnClause, IRTraitDef, StoryIR } from './ir.js';
 import { manifestForAdjective, manifestForKindNoun, manifestForMovementType } from './manifests/index.js';
 import type { PatternElement } from '@sharpee/if-domain';
 import { expandReadings, lowerParts, renderPattern, samePatternShape } from './patterns.js';
@@ -817,7 +819,133 @@ export function validateIR(ir: StoryIR): Diagnostic[] {
     );
   }
 
+  // ADR-394 D7: a thing that is never anywhere, never described, has no
+  // clauses of its own, and is only ever changed and tested is holding a
+  // state for something else. A warning: it refuses nothing.
+  const references = entityReferences(ir);
+  for (const entity of ir.entities) {
+    if (isFlagEntity(entity, references.get(entity.id), traitDefs)) {
+      diagnostics.warning('analysis.flag-entity', flagEntityMessage(entity), entity.span);
+    }
+  }
+
   return [...diagnostics.all()];
+}
+
+/** How an entity is referenced across the IR: as a held state's owner, or any other way. */
+interface EntityReferences {
+  /** `change <thing> to <state>` targets and `<thing> is <state>` subjects. */
+  stateOnly: number;
+  /** Every other mention: a placement, a `move`, a held or worn line, a value, a setting. */
+  other: number;
+}
+
+/**
+ * Count every reference to every entity in the IR. An IR field that names
+ * an entity carries its id, as an `{ kind: 'entity' }` value or a bare id
+ * string, so any string equal to an entity id counts; a trait setting names
+ * its entity by name or alias. A string that only happens to equal an id
+ * counts as a reference too, which can only withhold a warning, never add one.
+ *
+ * @param ir the compiled Story IR
+ * @returns the references by entity id; an entity referenced nowhere is absent
+ */
+function entityReferences(ir: StoryIR): Map<string, EntityReferences> {
+  const ids = new Set(ir.entities.map((e) => e.id));
+  const byName = new Map<string, string>();
+  for (const e of ir.entities) {
+    for (const name of [e.name.toLowerCase(), ...e.aka]) if (!byName.has(name)) byName.set(name, e.id);
+  }
+  const references = new Map<string, EntityReferences>();
+  const count = (id: string, how: keyof EntityReferences): void => {
+    const counted = references.get(id) ?? { stateOnly: 0, other: 0 };
+    counted[how]++;
+    references.set(id, counted);
+  };
+  const visit = (node: object, skip: ReadonlySet<string>): void => {
+    const kind = stringField(node, 'kind');
+    const stateKey = kind === 'change' ? 'entity' : kind === 'predicate' && stringField(node, 'pred') === 'is' ? 'subject' : undefined;
+    const stateTarget = stateKey !== undefined ? objectField(node, stateKey) : undefined;
+    const stateOwner = stateTarget !== undefined && stringField(stateTarget, 'kind') === 'entity' ? stringField(stateTarget, 'id') : undefined;
+    if (stateKey !== undefined && stateOwner !== undefined) count(stateOwner, 'stateOnly');
+    const valueKind = stringField(node, 'valueKind');
+    const settingValue = valueKind !== undefined ? stringField(node, 'value') : undefined;
+    const named = settingValue !== undefined ? byName.get(settingValue.toLowerCase()) : undefined;
+    if (named !== undefined) count(named, 'other');
+    for (const [key, value] of Object.entries(node) as Array<[string, object | string | number | boolean | null | undefined]>) {
+      if (skip.has(key) || (stateOwner !== undefined && key === stateKey)) continue;
+      if (typeof value === 'string') {
+        if (ids.has(value)) count(value, 'other');
+      } else if (typeof value === 'object' && value !== null) {
+        visit(value, NO_KEYS);
+      }
+    }
+  };
+  // `identity` is the save manifest derived from the rest of the IR, listing
+  // every entity by id; it restates references, it makes none.
+  for (const [key, value] of Object.entries(ir) as Array<[string, object | string | number | boolean | null | undefined]>) {
+    if (key === 'entities' || key === 'identity' || typeof value !== 'object' || value === null) continue;
+    visit(value, NO_KEYS);
+  }
+  // An entity's own id, name and aliases name it; they do not refer to it.
+  for (const e of ir.entities) visit(e, ENTITY_IDENTITY_KEYS);
+  return references;
+}
+
+/** No keys skipped. */
+const NO_KEYS: ReadonlySet<string> = new Set();
+
+/** The fields of an entity record that are its own identity. */
+const ENTITY_IDENTITY_KEYS: ReadonlySet<string> = new Set(['id', 'name', 'article', 'aka']);
+
+/**
+ * Whether an entity is a flag entity (ADR-394 D7): a thing that declares
+ * states, has no placement, no description and no clauses of its own, is
+ * not playable and carries and wears nothing, composes no trait with
+ * clauses, and is referenced only as the target of `change … to` and the
+ * subject of `is` — at least once.
+ *
+ * @param entity the entity
+ * @param references how the IR refers to it, or undefined when nothing does
+ * @param traitDefs the story's declared traits by name
+ * @returns true when the entity only holds a state for something else
+ */
+function isFlagEntity(
+  entity: IREntity,
+  references: EntityReferences | undefined,
+  traitDefs: ReadonlyMap<string, IRTraitDef>,
+): boolean {
+  if (references === undefined || references.stateOnly === 0 || references.other > 0) return false;
+  const kind = entity.kinds[0]?.name ?? 'thing';
+  if (kind === 'room' || kind === 'region' || entity.expanse !== undefined) return false;
+  if (entity.states.length === 0 || entity.placement !== null || entity.isPlayable) return false;
+  if (entity.descriptionKey !== null || entity.initialDescriptionKey !== null) return false;
+  if (entity.wears.length > 0 || entity.carries.length > 0) return false;
+  const ownClauses = [
+    entity.onClauses,
+    entity.topics,
+    entity.timerClauses ?? [],
+    entity.moveClauses ?? [],
+    entity.manner ?? [],
+    entity.greetings ?? [],
+    entity.exchanges ?? [],
+    entity.initiative ?? [],
+    entity.conversations ?? [],
+  ];
+  if (ownClauses.some((clauses) => clauses.length > 0) || entity.character !== undefined) return false;
+  return !entity.traits.some((t) => (traitDefs.get(t.name)?.onClauses.length ?? 0) > 0);
+}
+
+/**
+ * The warning for a flag entity: what the thing is doing, and where its
+ * states belong instead.
+ *
+ * @param entity the flag entity
+ * @returns the problem and its remedy
+ */
+function flagEntityMessage(entity: IREntity): string {
+  const name = entity.article !== null ? `${entity.article} ${entity.name}` : entity.name;
+  return `\`${name}\` is never anywhere and is only ever changed and tested: it is holding a state for something else. Put the states on the thing they describe, or on the story (\`states:\` in the story block).`;
 }
 
 /**
