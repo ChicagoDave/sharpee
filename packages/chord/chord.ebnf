@@ -1644,7 +1644,11 @@ STRATEGY        = "randomly" | "cycling" | "stopping" | "sticky" | "first-time" 
 
 define-trait   = "define" "trait" WORD NL
                  { trait-line }
-                 "end" "trait" NL ;
+                 "end" "trait" NL ;                      (* the WORD is a classifier
+                                                            after `is a`, so it may not
+                                                            be a kind noun, a platform
+                                                            trait word, or an extension's
+                                                            (analysis.trait-name-taken) *)
 trait-line     = "data" NL >>> { trait-field }
                | states-line
                | score-line
@@ -2061,7 +2065,11 @@ step-anchor    = "at" "turn" NUMBER                        (* absolute from stor
 
 must-line    = must-subject "must" infinitive ":" phrase-key NL ;
 must-subject = value-expr ;
-infinitive   = "be" ( ( "a" | "an" ) WORD { WORD }         (* is-a *)
+infinitive   = "be" ( ( "a" | "an" ) WORD { WORD }         (* is-a: a kind noun or a
+                                                              story `define trait`
+                                                              name, as `predicate`'s
+                                                              is-a below (analysis.
+                                                              unknown-classifier) *)
                     | "in" name                            (* is-in *)
                     | "any" WORD                           (* membership over a named
                                                               open condition *)
@@ -2365,7 +2373,20 @@ unary        = "not" unary
                                                               connective or end-of-condition
                                                               follows *)
              | value-expr predicate ;
-predicate    = "is" [ "not" ] ( ( "a" | "an" ) WORD { WORD }   (* is-a *)
+predicate    = "is" [ "not" ] ( ( "a" | "an" ) WORD { WORD }   (* is-a: the classifier is a
+                                                                  kind noun (catalog or a
+                                                                  used extension's) or a
+                                                                  story `define trait` name,
+                                                                  which holds for exactly
+                                                                  the entities composing it,
+                                                                  a `while` composition by
+                                                                  declaration. Anything else,
+                                                                  a platform trait word
+                                                                  included, is analysis.
+                                                                  unknown-classifier; a
+                                                                  scope's `a <word>` in the
+                                                                  character lines is held to
+                                                                  the same set *)
                               | "in" name                      (* is-in *)
                               | "here"                         (* Z4 deictic: subject shares
                                                                   the player's location;

@@ -3,6 +3,9 @@ action: its grammar, its requirements, its refusals, and its body. This
 one action shows the whole surface:
 
 ```chord
+define trait snake
+end trait
+
 define action petting
   grammar
     pet the animal
@@ -44,7 +47,9 @@ Reading it line by line:
 - **`score`** attaches an action-owned score.
 - **`refuse without <slot>: <key>`** refuses when the slot was not
   filled at all (nothing to pet); **`refuse when <condition>: <key>`**
-  refuses on a condition;
+  refuses on a condition. `the animal is a snake` asks what sort of thing
+  the animal is: `snake` is a trait the story declares (the `define trait
+  snake` line above the action) and composes on each snake it creates;
   **`otherwise refuse <key>`** is the
   last-resort refusal when no trait claimed the action on this target.
 - The remaining lines are the ordinary body: statements (`award`,

@@ -45,8 +45,15 @@ create the cap
 
   A cap.
 
+define trait heirloom
+  phrases en-US
+    old:
+      It is very old.
+end trait
+
 create the scarf
   a thing, wearable
+  heirloom
   in the Hall
 
   A scarf.
@@ -135,5 +142,23 @@ describe('ADR-359 D1 — `thing` is the parent of every kind but room and region
     expect(member('alex', 'thing')).toBe(true);
     expect(member('hall', 'thing')).toBe(false);
     expect(member('cap', 'container')).toBe(false);
+  });
+
+  // ADR-394 D1: a story trait classifies, at both sites; a platform trait
+  // adjective the block composes does not.
+  it('`is a <story trait>` holds only for the entity that composes it', () => {
+    expect(isA('scarf', 'heirloom')).toBe(true);
+    expect(isA('cap', 'heirloom')).toBe(false);
+    expect(isA('cap', 'heirloom', true)).toBe(true);
+  });
+
+  it('a composed platform adjective is not a classifier', () => {
+    expect(isA('cap', 'wearable')).toBe(false);
+    expect(member('cap', 'wearable')).toBe(false);
+  });
+
+  it('kind membership agrees with the evaluator on the story trait', () => {
+    expect(member('scarf', 'heirloom')).toBe(true);
+    expect(member('cap', 'heirloom')).toBe(false);
   });
 });

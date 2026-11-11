@@ -1005,6 +1005,20 @@ exports[`each-compile.story — E1/E2/E3 + must-be-any IR (each package P3) > ma
       ],
       "statesReversible": false,
     },
+    {
+      "data": [],
+      "name": "treasure",
+      "onClauses": [],
+      "scores": [],
+      "span": {
+        "column": 1,
+        "endColumn": 10,
+        "endLine": 101,
+        "line": 100,
+      },
+      "states": [],
+      "statesReversible": false,
+    },
   ],
   "uses": [],
 }

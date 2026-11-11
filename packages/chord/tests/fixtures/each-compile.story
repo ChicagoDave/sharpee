@@ -96,3 +96,6 @@ define phrases en-US
 before the game starts
   change the player to Alex
 end before
+
+define trait treasure
+end trait

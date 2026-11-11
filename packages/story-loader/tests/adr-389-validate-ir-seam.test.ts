@@ -86,6 +86,30 @@ create the keeper
     expect(npc.canMove).toBe(false);
   });
 
+  it('refuses an IR whose `is a` names neither a kind nor a declared trait (ADR-394 D2)', () => {
+    const VALUING = `define trait treasure
+  phrases en-US
+    gleams:
+      It gleams.
+end trait
+
+define action valuing
+  grammar
+    value the item
+  the item must be a treasure: worthless
+
+  phrases en-US
+    worthless:
+      Worthless.
+`;
+    const ir = compileClean(BASE + VALUING);
+    expect(() => createStory(ir)).not.toThrow();
+    const rogue = structuredClone(ir);
+    rogue.traits = rogue.traits.filter((t) => t.name !== 'treasure');
+    expect(() => createStory(rogue)).toThrow(LoadError);
+    expect(() => createStory(rogue)).toThrow(/`treasure` is not a kind, and the story declares no trait of that name/);
+  });
+
   it('loads an IR whose compile reported only warnings', () => {
     // A room with no description is a warning (analysis.room-no-description), never an error.
     const result = compile(BASE.replace('  a room\n\n  A vault.\n', '  a room\n'));

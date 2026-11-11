@@ -590,6 +590,7 @@ describe('D10 — spreads propagation lines', () => {
         'define phrase ginger-brushes-against\n  She brushes past.\nend phrase\n\n' +
         'define phrase ginger-brushes-against-no-effect\n  Nothing happens.\nend phrase\n\n' +
         'define phrase ginger-moves-off\n  The air clears.\nend phrase\n\n' +
+        'define trait woman\nend trait\n\n' +
         'create the Kitchen\n  a room\n\n  A kitchen.\n\n' +
         'create the kitchen knife\n  a thing\n  in the Kitchen\n\n  A knife.\n\n' +
         'create Robin\n  a person\n  playable\n\n  Me.\n\n' +
@@ -889,7 +890,7 @@ describe('ADR-318 D4/D5 — principles, obligations, codes', () => {
 
   it('harms takes anyone/classifier/entity scopes; a plain except is the object carve-out', () => {
     const result = compileStory(
-      'create the Duke\n  a person\n\n  Him.\n\ncreate the Bodyguard\n  a person\n  never harms a servant\n  never abandons the Duke\n  never steals, except the Duke\n\n  Him.\n',
+      'define trait servant\nend trait\n\ncreate the Duke\n  a person\n\n  Him.\n\ncreate the Bodyguard\n  a person\n  never harms a servant\n  never abandons the Duke\n  never steals, except the Duke\n\n  Him.\n',
     );
     expect(result.diagnostics.filter((d) => d.severity === 'error')).toEqual([]);
     const guard = result.ir.entities.find((e) => e.id === 'bodyguard')!;
@@ -1000,7 +1001,7 @@ describe('ADR-318 D7 — honor', () => {
   });
 
   it('a classifier scope resolves (`honor before a servant`)', () => {
-    const result = compileStory('create the Master\n  a person\n  honor before a servant\n\n  Him.\n');
+    const result = compileStory('define trait servant\nend trait\n\ncreate the Master\n  a person\n  honor before a servant\n\n  Him.\n');
     expect(result.diagnostics.filter((d) => d.severity === 'error')).toEqual([]);
     const master = result.ir.entities.find((e) => e.id === 'master')!;
     expect(master.character?.honor?.scope).toEqual({ kind: 'classifier', value: 'servant' });

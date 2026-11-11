@@ -63,7 +63,7 @@ describe('D5 — one duplicate-name gate, citing the first span (Acceptance 14)'
   });
 
   it('a second `define trait` is a duplicate-name error naming the first line', () => {
-    const trait = `define trait guard
+    const trait = `define trait sentry
   states: alert, dozing
 end trait
 
@@ -71,7 +71,7 @@ end trait
     const errors = errorsOf(`${HEADER}${trait}${trait}${WORLD}`);
     expect(errors).toHaveLength(1);
     expect(errors[0].code).toBe('analysis.duplicate-trait');
-    expect(errors[0].message).toContain('guard');
+    expect(errors[0].message).toContain('sentry');
     expect(errors[0].message).toContain('line 8');
   });
 
@@ -109,7 +109,7 @@ ${WORLD}`;
   });
 
   it('two distinct names in one namespace are both fine', () => {
-    const source = `${HEADER}define trait guard
+    const source = `${HEADER}define trait sentry
   states: alert, dozing
 end trait
 

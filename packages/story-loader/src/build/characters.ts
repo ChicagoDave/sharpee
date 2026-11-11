@@ -193,11 +193,13 @@ export function applyCharacterBlocks(story: BuildContext, world: WorldModel): vo
  * The loaded story's answer surface for the character runtime (ADR-310
  * Phase 5): compiled conditions evaluate through the loader's own
  * evaluator with `it` bound to the asking NPC; kind membership reads
- * the IR's kind-noun compositions through the same rule `is-a` uses.
+ * the IR's kind-noun and story-trait compositions through the same rule
+ * `is-a` uses.
  * @param story the build context (the IR and the evaluator)
  * @returns the oracle the registry and the topic dispatch consult
  */
 export function storyOracle(story: BuildContext): CompiledStoryOracle {
+  const storyTraits: ReadonlySet<string> = new Set(story.ir.traits.map((t) => t.name));
   return {
     // `it` is bound only for a story entity; a platform-made actor has no
     // clauses of its own, and an `it`-scoped predicate on it stays an error.
@@ -205,7 +207,7 @@ export function storyOracle(story: BuildContext): CompiledStoryOracle {
       story.evaluator.evalCondition(cond, { world, ...(story.ir.entities.some((e) => e.id === self) ? { it: self } : {}) }),
     isKindMember: (entityId, kind) => {
       const irEntity = story.ir.entities.find((e) => e.id === entityId);
-      return irEntity !== undefined && classifiesAs(irEntity, kind);
+      return irEntity !== undefined && classifiesAs(irEntity, kind, storyTraits);
     },
   };
 }

@@ -98,6 +98,8 @@ export class Evaluator {
    */
   private readonly irEntities: IREntity[];
   private readonly irEntityById = new Map<string, IREntity>();
+  /** The story's `define trait` names — the trait half of the classifier set (ADR-394 D1). */
+  private readonly storyTraitNames: ReadonlySet<string>;
   /** The resolved story seed — per-region landing streams derive from it (ADR-293). */
   private readonly storySeed: number;
   /** ADR-325 D3: timer definitions by `qualified` key, for state-word reads. */
@@ -144,6 +146,7 @@ export class Evaluator {
     for (const c of ir.conditions) this.conditions.set(c.name, c.condition);
     this.irEntities = ir.entities;
     for (const e of ir.entities) this.irEntityById.set(e.id, e);
+    this.storyTraitNames = new Set(ir.traits.map((t) => t.name));
     for (const t of ir.timers ?? []) this.timerDefs.set(t.qualified, t);
     for (const c of ir.chapters ?? []) this.chapterOrdinals.set(c.name, c.ordinal);
     for (const trait of ir.traits) {
@@ -425,14 +428,15 @@ export class Evaluator {
       }
       case 'is-a': {
         // Classification (landed with the each package, P4): the subject's
-        // IR kind-noun compositions (`a marble`, `a room`). An entity
+        // IR kind-noun compositions (`a marble`, `a room`) and the story
+        // traits its block composes (`a treasure`, ADR-394 D1). An entity
         // outside the story's IR classifies as nothing.
         const subjectId = this.entityValue(cond.subject, ctx);
         const irEntity = this.irEntityById.get(subjectId);
         if (!irEntity) return raw(false);
         const classifier =
           cond.object.kind === 'symbol' ? cond.object.name : String(this.evalValue(cond.object, ctx));
-        return raw(classifiesAs(irEntity, classifier));
+        return raw(classifiesAs(irEntity, classifier, this.storyTraitNames));
       }
       case 'is-in': {
         // ADR-325 D1: the place may be `<owner>'s location`; an offstage

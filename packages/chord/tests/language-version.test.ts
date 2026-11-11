@@ -237,7 +237,13 @@ const PINNED = {
   // gains `opens-when-line` and `closes-when-line`; the catalog gains the
   // adjectives `smelly` and `loud` (WORD terminals, no production of their
   // own). Additive — no bump; the number moves when the next version is cut.
-  ebnfSha256: '419e8778fa8d5ade4335bf9ac3b5b2cb2ff970c7122ebe10c3e1f7bde8a13ac9',
+  // Re-pinned 2026-11-10 (session 354c36, ADR-394 D1, D2; chord-ownership-
+  // guards Phase 1): comments only. `predicate`'s and `infinitive`'s is-a
+  // notes name the classifier set (a kind noun or a story trait) and
+  // `analysis.unknown-classifier`; `define-trait` names `analysis.trait-name-
+  // taken`. No production changes. The forms these gates refuse compiled
+  // before; the next publish is a minor bump by David's ruling (2026-11-10).
+  ebnfSha256: 'bd18a7290f5b009e901cb2f155ce258390e36282e8236df806eb439b2fc1b042',
 };
 
 // Colocated with the version pin it gates (2026-08-14). It previously lived at

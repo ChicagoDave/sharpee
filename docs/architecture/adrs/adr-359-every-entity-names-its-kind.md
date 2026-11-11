@@ -1,6 +1,8 @@
 # ADR-359: Chord says what absence would otherwise decide
 
 **Status**: DRAFT, a proposal to assess (David, 2026-10-04, session 4d81b6). Widened the same day at David's direction from "every entity names its kind" to every implied default of the same class, so that one migration and one major version cover them all. Every decision here is a grammar change: it goes through `docs/architecture/chord-grammar-changes.md`, each is ruled on separately by David before any code, and no log entry is written until he rules. D1 approved and logged 2026-10-04 (session 0ebc5d; former Q-2), and the IR records `thing` (former Q-1, same day). **D1 is implemented** (2026-10-05, commits `158cc2858` and `1d842b3f5`; see "D1 as built" below); it is not yet published, since 4.0.0 waits on the rest of this ADR. D5 to D11 are not built, and Q-3 to Q-6 remain open.
+**Superseded in part by**: ADR-394 D1 and D2 (2026-11-10), in the classification rule only: a story `define trait` classifies after `is a`, and a classifier that names nothing is an error. Classification no longer widens only `thing`. Every entity still names its kind.
+
 **Scope**: `packages/chord` (catalog, parser where a decision adds a form, analyzer, `chord.ebnf`, the language version), `packages/story-loader` where a default lives there today (D9), and a one-time migration of every Chord source in the repository and the manual.
 
 **The criterion** (from David's review of the grammar with Claude Desktop, 2026-10-04): *make it explicit when leaving it out changes what the story does and the author cannot see why from the text.* Where a default stays, ADR-358's balloons state it, since the grammar does not.

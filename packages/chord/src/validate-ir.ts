@@ -2,7 +2,8 @@
  * validate-ir.ts — the Story IR's own invariants, checked once over the
  * finished IR: the targets and shapes of grammar alterations, the `use`
  * line every extension's construct and word needs, kind nouns and the
- * block that names none, composition and trait adjectives with their
+ * block that names none, the classifier after `is a` and in a character
+ * line's scope (a kind or a story trait), composition and trait adjectives with their
  * settings, exits on a non-room, worn items, tool-gated gerunds, listeners,
  * conditional deadly exits, and every door's connection. Each is a fact of
  * the IR alone — no AST, no analyzer state —
@@ -17,6 +18,7 @@
  * - ADR-276 D1 (as amended by ADR-389) — compile is authoritative; the rule has one home.
  * - ADR-336 D3 — `ANALYSIS_PASSES` is the named list this joins as the last entry.
  * - ADR-270 D2/D3, ADR-382 D6 — alteration targets resolve story-first; removals match by shape.
+ * - ADR-394 D2 — a classifier names a kind or a story trait.
  */
 import { KIND_NOUNS, TRAIT_ADJECTIVES } from './catalog.js';
 import { type Diagnostic, DiagnosticBag } from './diagnostics.js';
@@ -37,6 +39,20 @@ export function validateIR(ir: StoryIR): Diagnostic[] {
   const diagnostics = new DiagnosticBag();
   const usedExtensions = new Set(ir.uses ?? []);
   const traitDefs = new Map(ir.traits.map((t) => [t.name, t]));
+
+  // ADR-394 D2: a story trait is a classifier, so its name must not already
+  // be a kind or a platform trait word — `is a container` and a composed
+  // `scenery` would each mean two things.
+  for (const trait of ir.traits) {
+    const taken = takenTraitName(trait.name);
+    if (taken !== null) {
+      diagnostics.error(
+        'analysis.trait-name-taken',
+        `\`define trait ${trait.name}\`: \`${trait.name}\` is already ${taken}, so a trait of that name would mean two things wherever it is written. Give the trait a name of its own.`,
+        trait.span,
+      );
+    }
+  }
 
   // Grammar alterations name their targets against the story's own actions
   // and the generated stdlib manifest (ADR-276 census 1–3).
@@ -128,6 +144,21 @@ export function validateIR(ir: StoryIR): Diagnostic[] {
           'An `award` statement needs `use scoring` in the story header — without it the game has no score at all, and SCORE says so.',
           at,
         );
+      }
+    } else if (kind === 'predicate' && stringField(site.node, 'pred') === 'is-a') {
+      // ADR-394 D2: `is a <word>` names a kind or a story trait, or it
+      // could only ever be false.
+      const object = objectField(site.node, 'object');
+      const classifier = object !== undefined && stringField(object, 'kind') === 'symbol' ? stringField(object, 'name') : undefined;
+      if (classifier !== undefined && !isClassifier(classifier, traitDefs)) {
+        diagnostics.error('analysis.unknown-classifier', unknownClassifierMessage(classifier, 'is', traitDefs), at);
+      }
+    } else if (kind === 'classifier') {
+      // ADR-394 D2, the character lines' half: a scope's `a <word>`
+      // (`protects a servant`) classifies by the same rule as `is a`.
+      const classifier = stringField(site.node, 'value');
+      if (classifier !== undefined && !isClassifier(classifier, traitDefs)) {
+        diagnostics.error('analysis.unknown-classifier', unknownClassifierMessage(classifier, 'scope', traitDefs), at);
       }
     } else if (kind === 'chapter' && stringField(site.node, 'relation') !== undefined) {
       if (!usedExtensions.has('chapters')) {
@@ -772,6 +803,63 @@ function* irNodes(root: object, enclosing: Span | undefined): Generator<IRNodeSi
 function stringField(node: object, key: string): string | undefined {
   const value: object | string | number | boolean | null | undefined = Object.getOwnPropertyDescriptor(node, key)?.value;
   return typeof value === 'string' ? value : undefined;
+}
+
+/** An object-valued field of a node, or undefined when absent or not an object. */
+function objectField(node: object, key: string): object | undefined {
+  const value: object | string | number | boolean | null | undefined = Object.getOwnPropertyDescriptor(node, key)?.value;
+  return typeof value === 'object' && value !== null ? value : undefined;
+}
+
+/**
+ * Whether a word may follow `is a`: a kind noun (the catalog's or an
+ * extension's) or a story `define trait` name (ADR-394 D1, D2). Platform
+ * trait adjectives are not classifiers.
+ *
+ * @param word the word after the article
+ * @param traitDefs the story's declared traits by name
+ * @returns true when the word names a kind or a declared story trait
+ */
+function isClassifier(word: string, traitDefs: ReadonlyMap<string, object>): boolean {
+  return KIND_NOUNS.has(word) || manifestForKindNoun(word) !== null || traitDefs.has(word);
+}
+
+/**
+ * What a would-be story trait name already names, if anything (ADR-394 D2).
+ *
+ * @param name the `define trait` name
+ * @returns a phrase for the message ("a kind", "a platform trait word", or
+ *   the extension's vocabulary), or null when the name is free
+ */
+function takenTraitName(name: string): string | null {
+  if (KIND_NOUNS.has(name)) return 'a kind';
+  if (TRAIT_ADJECTIVES.has(name)) return 'a platform trait word';
+  const kindManifest = manifestForKindNoun(name);
+  if (kindManifest !== null) return `a kind in the \`${kindManifest.name}\` extension`;
+  const adjective = manifestForAdjective(name);
+  if (adjective !== null) return `a trait word in the \`${adjective.manifest.name}\` extension`;
+  return null;
+}
+
+/**
+ * The message for a classifier that names nothing.
+ *
+ * @param word the word after the article
+ * @param site `is` for an `is a` / `must be a` test, `scope` for a character line's `a <word>`
+ * @param traitDefs the story's declared traits by name, for the suggestion
+ * @returns the problem and its fix, with a nearest-name suggestion when one is close
+ */
+function unknownClassifierMessage(word: string, site: 'is' | 'scope', traitDefs: ReadonlyMap<string, object>): string {
+  if (site === 'is' && (TRAIT_ADJECTIVES.has(word) || manifestForAdjective(word) !== null)) {
+    return `\`is a ${word}\`: \`${word}\` is something a thing is, not a sort of thing. Write \`is ${word}\`, without \`a\`.`;
+  }
+  const best = nearest(word, [...KIND_NOUNS, ...traitDefs.keys()]);
+  const suggestion = best ? ` Did you mean \`${best}\`?` : '';
+  const sort = `\`${word}\` is not a kind, and the story declares no trait of that name`;
+  const fix = site === 'is'
+    ? 'After `is a`, write a kind (`a container`, `a person`) or a `define trait` name; to give things a sort of your own, declare it with `define trait`'
+    : 'A scope is `anyone`, a kind (`a person`), a `define trait` name, or one entity';
+  return `\`a ${word}\`: ${sort}. ${fix}.${suggestion}`;
 }
 
 /** A number-valued field of a node, or undefined when absent or not a number. */

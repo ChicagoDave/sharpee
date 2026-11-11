@@ -1729,6 +1729,22 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
         "line": 95,
       },
     },
+    {
+      "data": [],
+      "kind": "define-trait",
+      "name": "treasure",
+      "onClauses": [],
+      "phrases": null,
+      "scores": [],
+      "span": {
+        "column": 1,
+        "endColumn": 10,
+        "endLine": 100,
+        "line": 99,
+      },
+      "states": [],
+      "statesReversible": false,
+    },
   ],
   "grammarHeader": null,
   "header": {
@@ -1771,8 +1787,8 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
   "kind": "story-file",
   "span": {
     "column": 1,
-    "endColumn": 11,
-    "endLine": 97,
+    "endColumn": 10,
+    "endLine": 100,
     "line": 1,
   },
 }

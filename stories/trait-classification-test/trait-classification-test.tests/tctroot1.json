@@ -1,0 +1,79 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "Gallery",
+          "a gold coin",
+          "a clay pot",
+          "a jewel box"
+        ]
+      },
+      "command": "look",
+      "id": "tct00001",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Worthless, I'm afraid."
+        ]
+      },
+      "command": "appraise pot",
+      "id": "tct00002",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Priceless!"
+        ]
+      },
+      "command": "appraise coin",
+      "id": "tct00003",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The sack shivers, and every loose treasure in sight flies into it."
+        ]
+      },
+      "command": "rattle sack",
+      "id": "tct00004",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You can see a magic sack and a clay pot here.",
+          "In the magic sack you see a gold coin and a jewel box."
+        ]
+      },
+      "command": "look",
+      "id": "tct00005",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The sack stays still. Nothing loose is treasure any more."
+        ]
+      },
+      "command": "rattle sack",
+      "id": "tct00006",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Priceless!"
+        ]
+      },
+      "command": "appraise box",
+      "id": "tct00007",
+      "type": "turn"
+    }
+  ],
+  "id": "tctroot1"
+}
