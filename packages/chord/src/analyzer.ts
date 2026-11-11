@@ -3444,6 +3444,12 @@ export class Analyzer {
     const headScope: Scope = { owner: null, fields: null, slots: new Set(), ownStates: null, scoreOwner: `action.${decl.name}`, inEach: false, semanticValues: new Map() };
 
     const body = decl.body.map((s, i) => this.resolveStatement(s, scope, `action.${decl.name}.body.${i}`));
+    // ADR-394 D5 (ADR-289 D3 reaching the action block): a bare refusal
+    // below a statement never fires, and a `refuse when` / `refuse without`
+    // / requirement written below one runs before it anyway — either way the
+    // source misstates the order, so refusals lead the block.
+    this.checkPhaseOrder(decl.body, { ended: null });
+    this.checkActionRefusalPlacement(decl);
     // ADR-383 D9: `about` rows answer the action's topic slot, resolved and
     // checked as a topic table's rows are.
     const topics = this.resolveTopicRows(decl.topics, scope, `action.${decl.name}.topic`);
@@ -5889,6 +5895,36 @@ export class Analyzer {
           throw new Error(`Unhandled statement kind: ${(unhandled as { kind: string }).kind}`);
         }
       }
+    }
+  }
+
+  /**
+   * The action block's hoisted refusal lines must be written above its body.
+   *
+   * The parser lifts every `refuse when`, `refuse without` and requirement
+   * line of a `define action` out of the body, so each runs before the body
+   * whatever line it is written on. One written below the first body
+   * statement therefore misstates the order it runs in, and is
+   * `analysis.refusal-misplaced` (ADR-394 D5). `otherwise refuse` is the
+   * dispatch miss and may stand anywhere.
+   *
+   * @param decl the parsed `define action` block
+   */
+  private checkActionRefusalPlacement(decl: DefineAction): void {
+    const first = decl.body[0];
+    if (first === undefined) return;
+    const word = statementWord(first);
+    const lines: Array<{ label: string; span: Span }> = [
+      ...decl.refusals.map((r) => ({ label: `refuse ${r.kind === 'without' ? 'without' : 'when'} …: ${r.phraseKey}`, span: r.span })),
+      ...decl.musts.map((m) => ({ label: `… must …: ${m.phraseKey}`, span: m.span })),
+    ];
+    for (const line of lines) {
+      if (line.span.line <= first.span.line) continue;
+      this.diagnostics.error(
+        'analysis.refusal-misplaced',
+        `Refusal below \`${word}\` — it runs before the action's body whatever line it is written on, so it must lead the block. Move \`${line.label}\` above the first \`${word}\`.`,
+        line.span,
+      );
     }
   }
 

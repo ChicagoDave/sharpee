@@ -243,7 +243,12 @@ const PINNED = {
   // `analysis.unknown-classifier`; `define-trait` names `analysis.trait-name-
   // taken`. No production changes. The forms these gates refuse compiled
   // before; the next publish is a minor bump by David's ruling (2026-11-10).
-  ebnfSha256: 'bd18a7290f5b009e901cb2f155ce258390e36282e8236df806eb439b2fc1b042',
+  // Re-pinned 2026-11-10 (session 354c36, ADR-394 D4, D5; chord-ownership-
+  // guards Phase 2): comments only. `define-action`'s note names
+  // `analysis.slot-identity-test` (a line testing an entity slot for identity
+  // with a named thing, or a `select on` over one) and `analysis.refusal-
+  // misplaced` reaching the action block. No production changes.
+  ebnfSha256: 'b79028ef62c11a87c202ea6b82539700676b53b85dbd193db5c440ff3044e347',
 };
 
 // Colocated with the version pin it gates (2026-08-14). It previously lived at

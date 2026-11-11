@@ -110,6 +110,37 @@ define action valuing
     expect(() => createStory(rogue)).toThrow(/`treasure` is not a kind, and the story declares no trait of that name/);
   });
 
+  it('refuses an IR whose action tests its slot for identity with a named thing (ADR-394 D4)', () => {
+    const OPENING = `define action prying
+  grammar
+    pry the item
+  phrase pried
+
+  phrases en-US
+    pried:
+      It gives.
+    not-that:
+      Not that.
+`;
+    const ir = compileClean(BASE + OPENING);
+    expect(() => createStory(ir)).not.toThrow();
+    const rogue = structuredClone(ir);
+    rogue.actions.find((a) => a.name === 'prying')!.refusals.push({
+      kind: 'when',
+      condition: {
+        kind: 'predicate',
+        pred: 'is',
+        negated: false,
+        subject: { kind: 'slot', name: 'item' },
+        object: { kind: 'entity', id: 'crate' },
+      },
+      phraseKey: 'not-that',
+      span: { line: 50, column: 3, endLine: 50, endColumn: 40 },
+    });
+    expect(() => createStory(rogue)).toThrow(LoadError);
+    expect(() => createStory(rogue)).toThrow(/`the item is the crate` asks which thing the player named/);
+  });
+
   it('loads an IR whose compile reported only warnings', () => {
     // A room with no description is a warning (analysis.room-no-description), never an error.
     const result = compile(BASE.replace('  a room\n\n  A vault.\n', '  a room\n'));

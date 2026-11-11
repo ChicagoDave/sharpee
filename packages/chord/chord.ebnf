@@ -1671,7 +1671,26 @@ define-action  = "define" "action" WORD [ "while" condition ] NL action-line* ;
                                                               did not exist. Story tier
                                                               only: in a grammar file it
                                                               is analysis.grammar-file-
-                                                              behavior *)
+                                                              behavior.
+                                                              No line of the block may
+                                                              test one of its entity
+                                                              slots for identity with a
+                                                              named thing (`the item is
+                                                              the sword`, in a refusal, a
+                                                              requirement or a `when`
+                                                              suffix), and no `select on`
+                                                              may route on an entity
+                                                              slot: the response belongs
+                                                              on that thing, as `on the
+                                                              player <gerund>` (analysis.
+                                                              slot-identity-test). Every
+                                                              `refuse`, `refuse when`,
+                                                              `refuse without` and `must`
+                                                              line stands above the
+                                                              block's first statement
+                                                              (analysis.refusal-
+                                                              misplaced); `otherwise
+                                                              refuse` may stand anywhere *)
 action-line    = "grammar" NL >>> { pattern-line }
                | "the" WORD "must" "be" WORD NL            (* scope constraint (no colon) *)
                | "the" WORD "takes" "the" "rest" "of" "the" "line" NL

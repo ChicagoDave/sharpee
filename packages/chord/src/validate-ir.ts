@@ -3,7 +3,8 @@
  * finished IR: the targets and shapes of grammar alterations, the `use`
  * line every extension's construct and word needs, kind nouns and the
  * block that names none, the classifier after `is a` and in a character
- * line's scope (a kind or a story trait), composition and trait adjectives with their
+ * line's scope (a kind or a story trait), a `define action` that tests its
+ * slot for identity with a named thing, composition and trait adjectives with their
  * settings, exits on a non-room, worn items, tool-gated gerunds, listeners,
  * conditional deadly exits, and every door's connection. Each is a fact of
  * the IR alone — no AST, no analyzer state —
@@ -19,11 +20,12 @@
  * - ADR-336 D3 — `ANALYSIS_PASSES` is the named list this joins as the last entry.
  * - ADR-270 D2/D3, ADR-382 D6 — alteration targets resolve story-first; removals match by shape.
  * - ADR-394 D2 — a classifier names a kind or a story trait.
+ * - ADR-394 D4 — an action does not test its slot for identity with a named thing.
  */
 import { KIND_NOUNS, TRAIT_ADJECTIVES } from './catalog.js';
 import { type Diagnostic, DiagnosticBag } from './diagnostics.js';
 import { nearest } from './edit-distance.js';
-import type { IROnClause, StoryIR } from './ir.js';
+import type { IRActionDef, IROnClause, StoryIR } from './ir.js';
 import { manifestForAdjective, manifestForKindNoun, manifestForMovementType } from './manifests/index.js';
 import { lowerParts, renderPattern, samePatternShape } from './patterns.js';
 import type { Span } from './span.js';
@@ -132,6 +134,36 @@ export function validateIR(ir: StoryIR): Diagnostic[] {
       ir.chapters![0].span,
     );
   }
+  // ADR-394 D4: an action does not decide what happens by testing which
+  // thing the player named; a response that belongs to one thing is written
+  // on that thing. Slot-against-thing identity anywhere in a `define action`
+  // (refusal, requirement, statement `when`, nested blocks, topic rows), and
+  // a `select on` over an entity slot, are refused.
+  for (const action of ir.actions) {
+    const entitySlots = actionEntitySlots(action);
+    if (entitySlots.size === 0) continue;
+    for (const site of irNodes(action, action.span)) {
+      const at = site.span ?? action.span;
+      const kind = stringField(site.node, 'kind');
+      if (kind === 'predicate' && stringField(site.node, 'pred') === 'is') {
+        const identity = slotIdentity(site.node, entitySlots);
+        if (identity !== null) {
+          diagnostics.error('analysis.slot-identity-test', slotIdentityMessage(identity, action.name, ir), at);
+        }
+      } else if (kind === 'select-on') {
+        const subject = objectField(site.node, 'subject');
+        const slot = subject !== undefined && stringField(subject, 'kind') === 'slot' ? stringField(subject, 'name') : undefined;
+        if (slot !== undefined && entitySlots.has(slot)) {
+          diagnostics.error(
+            'analysis.slot-identity-test',
+            `\`select on the ${slot}\` picks a response by which thing the player named. A response that belongs to one thing is written on that thing: in its \`create\` block, write \`on the player ${action.name}\` and put the response there. To ask what sort of thing it is, test \`the ${slot} is a <kind or trait>\`.`,
+            at,
+          );
+        }
+      }
+    }
+  }
+
   let awardReported = false;
   for (const site of irNodes(ir, undefined)) {
     const kind = stringField(site.node, 'kind');
@@ -822,6 +854,78 @@ function objectField(node: object, key: string): object | undefined {
  */
 function isClassifier(word: string, traitDefs: ReadonlyMap<string, object>): boolean {
   return KIND_NOUNS.has(word) || manifestForKindNoun(word) !== null || traitDefs.has(word);
+}
+
+/**
+ * The slots of a `define action` that bind an entity: every pattern slot but
+ * the `direction` slot under a `directions` block, a greedy slot (text), and
+ * a topic-typed slot (text).
+ *
+ * @param action the compiled action
+ * @returns the entity slot names
+ */
+function actionEntitySlots(action: IRActionDef): Set<string> {
+  const textSlots = new Set<string>([
+    ...(action.greedy ?? []),
+    ...(action.slotTypes ?? []).filter((t) => t.type === 'topic').map((t) => t.slot),
+    ...((action.directions ?? []).length > 0 ? ['direction'] : []),
+  ]);
+  const slots = new Set<string>();
+  for (const pattern of action.patterns) {
+    for (const part of pattern.parts) {
+      if (part.kind === 'slot' && !textSlots.has(part.word)) slots.add(part.word);
+    }
+  }
+  return slots;
+}
+
+/** A slot compared for identity with a named thing: which slot, which thing, and in which polarity. */
+interface SlotIdentity {
+  readonly slot: string;
+  readonly entityId: string;
+  readonly negated: boolean;
+}
+
+/**
+ * Whether an `is` predicate compares an entity slot with a named entity, in
+ * either order.
+ *
+ * @param node an IR `is` predicate node
+ * @param entitySlots the action's entity slots
+ * @returns the slot, the entity id and the polarity, or null when the
+ *   predicate is anything else
+ */
+function slotIdentity(node: object, entitySlots: ReadonlySet<string>): SlotIdentity | null {
+  const subject = objectField(node, 'subject');
+  const object = objectField(node, 'object');
+  if (subject === undefined || object === undefined) return null;
+  const negated = Object.getOwnPropertyDescriptor(node, 'negated')?.value === true;
+  const slotOf = (value: object): string | undefined =>
+    stringField(value, 'kind') === 'slot' ? stringField(value, 'name') : undefined;
+  const entityOf = (value: object): string | undefined =>
+    stringField(value, 'kind') === 'entity' ? stringField(value, 'id') : undefined;
+  for (const [slotSide, entitySide] of [[subject, object], [object, subject]] as const) {
+    const slot = slotOf(slotSide);
+    const entityId = entityOf(entitySide);
+    if (slot !== undefined && entityId !== undefined && entitySlots.has(slot)) return { slot, entityId, negated };
+  }
+  return null;
+}
+
+/**
+ * The fix-it for a slot identity test: the test as written, the owner to put
+ * the response on, and the clause to write there.
+ *
+ * @param identity the slot, the named thing and the polarity
+ * @param gerund the action's name, the clause head's gerund
+ * @param ir the IR, to name the thing as the author wrote it
+ * @returns the problem and its fix
+ */
+function slotIdentityMessage(identity: SlotIdentity, gerund: string, ir: StoryIR): string {
+  const owner = ir.entities.find((e) => e.id === identity.entityId);
+  const name = owner ? `the ${owner.name}` : identity.entityId;
+  const test = `the ${identity.slot} is ${identity.negated ? 'not ' : ''}${name}`;
+  return `\`${test}\` asks which thing the player named. A response that belongs to one thing is written on that thing: in \`create ${name}\`, write \`on the player ${gerund}\` and put the response there. To ask what sort of thing it is, \`the ${identity.slot} is a <kind or trait>\` is the test.`;
 }
 
 /**
