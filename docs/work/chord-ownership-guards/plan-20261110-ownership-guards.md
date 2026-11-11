@@ -135,7 +135,7 @@ Phase 1 comes first for a real reason: Guard 1's fix-it steers authors to trait-
 - **Exit state**: A `define action` that tests a slot for identity against a named thing does not compile and does not load, and the diagnostic names the thing and the clause to write on it. A refusal or requirement written below a statement in a `define action` does not compile. The corpus compiles as it did before the phase.
 - **Demonstration**: `pnpm --filter ./packages/chord test:ci` is green, and in it the slot identity fixture reports one diagnostic per offending line with that code, the owner's name and the gerund in the message, while the same file's is-a and holds lines report nothing; the refusal placement fixture reports the misplaced code on the bare refuse, the hoisted refuse-when and the hoisted requirement. `pnpm --filter ./packages/story-loader test:ci` is green, with a hand-built IR carrying a slot identity test refused at load. The corpus census reports zero hits for the slot identity code and the count found for refusal placement.
 - **Demonstrated**: 
-- **Status**: PENDING
+- **Status**: CURRENT (since 2026-11-10)
 
 ### Phase 3: Every `is <word>` has a reader — a word the evaluator never reads is refused
 - **Tier**: Medium

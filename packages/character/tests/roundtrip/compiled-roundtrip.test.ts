@@ -27,6 +27,7 @@ const HEADER = 'story\n  title: T\n  authors:\n    N\n  id: t\n  story-version: 
 
 const SOURCE =
   HEADER +
+  'define trait woman\nend trait\n\n' +
   'define mood haunted like grieving, but restless\n' +
   'define personality watchful\n\n' +
   'define fact the killer\n  Greta, the Colonel, nobody\nend fact\n\n' +
