@@ -73,6 +73,32 @@
       "command": "appraise box",
       "id": "tct00007",
       "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "It doesn't budge. It is part of the gallery."
+        ],
+        "notContains": [
+          "It rings hollow."
+        ]
+      },
+      "command": "tap plinth",
+      "id": "tct00008",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "It rings hollow."
+        ],
+        "notContains": [
+          "It doesn't budge."
+        ]
+      },
+      "command": "tap pot",
+      "id": "tct00009",
+      "type": "turn"
     }
   ],
   "id": "tctroot1"

@@ -248,7 +248,12 @@ const PINNED = {
   // `analysis.slot-identity-test` (a line testing an entity slot for identity
   // with a named thing, or a `select on` over one) and `analysis.refusal-
   // misplaced` reaching the action block. No production changes.
-  ebnfSha256: 'b79028ef62c11a87c202ea6b82539700676b53b85dbd193db5c440ff3044e347',
+  // Re-pinned 2026-11-10 (session 354c36, ADR-394 D3; chord-ownership-
+  // guards Phase 3): comments only. `predicate`'s plain `is` note names the
+  // readable one-word values (a trait adjective reads the composition) and
+  // the `the match` closure under `analysis.unknown-value`. No production
+  // changes.
+  ebnfSha256: '7e1b6bb79df6c10b212e894bbc7ca687518cc5f9dd7adaa19f1537a36a8d2f3b',
 };
 
 // Colocated with the version pin it gates (2026-08-14). It previously lived at

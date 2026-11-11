@@ -13,12 +13,16 @@
  * Platform trait adjectives (`scenery`) are not classifiers; the compiler
  * refuses them after `is a`.
  *
- * Public interface: classifiesAs.
+ * A trait adjective after `is` (not `is a`) reads the same compositions:
+ * `composesAdjective`.
+ *
+ * Public interface: classifiesAs, composesAdjective.
  * Owner context: @sharpee/story-loader (runtime reading of the Story IR).
  *
  * References:
  * - ADR-359 D1 — every entity names its kind; `thing` is the parent kind.
  * - ADR-394 D1 — a story trait classifies (supersedes ADR-359 D1's "widens only `thing`").
+ * - ADR-394 D3 — a trait adjective after `is` reads the composition.
  */
 import type { IREntity } from '@sharpee/chord';
 
@@ -41,4 +45,17 @@ export function classifiesAs(irEntity: IREntity, classifier: string, storyTraits
   }
   if (irEntity.kinds.some((k) => k.name === classifier)) return true;
   return storyTraits.has(classifier) && irEntity.traits.some((t) => t.name === classifier);
+}
+
+/**
+ * Whether an entity's block composes the named trait adjective
+ * (`the sword is scenery`). As with a story trait, a `while` composition
+ * counts by declaration.
+ *
+ * @param irEntity the entity's IR record
+ * @param adjective the trait adjective after `is`
+ * @returns true when the block composes it
+ */
+export function composesAdjective(irEntity: IREntity, adjective: string): boolean {
+  return irEntity.traits.some((t) => t.name === adjective);
 }

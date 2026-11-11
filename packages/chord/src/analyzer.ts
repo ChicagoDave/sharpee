@@ -8567,10 +8567,6 @@ export class Analyzer {
         );
         return { kind: 'symbol', name: word };
       }
-      // The `each`-block binder: its state set is statically unknowable
-      // (any world entity may match) — same stance as `change the match
-      // to <state>`; the runtime resolves the word against the live match.
-      if (subject.kind === 'match') return { kind: 'symbol', name: word };
       // ADR-275 D4: a semantic-word subject (`the direction`, a `means`
       // key) compares by word equality; its legal word set is the
       // construct's own — validated here, never guessed.
@@ -8592,7 +8588,14 @@ export class Analyzer {
       // whole purpose is quantifying over unknown subjects — the union of
       // every state some trait or entity declares (ADR-289 D10). The
       // vocabulary stays closed and validated; only the closure changes.
-      const validStates = subjectEntity?.states ?? (subject.kind === 'it' ? scope.ownStates ?? this.declaredStateUnion() : []);
+      // The `each`-block binder (any world entity may match) validates
+      // against the same union an unbound `it` does, plus the platform
+      // words below, so a misspelt state is an error and not a silent false
+      // (ADR-394 D3).
+      const validStates =
+        subject.kind === 'match'
+          ? this.declaredStateUnion()
+          : subjectEntity?.states ?? (subject.kind === 'it' ? scope.ownStates ?? this.declaredStateUnion() : []);
       if (validStates.includes(word)) return { kind: 'symbol', name: word };
       if (TRAIT_ADJECTIVES.has(word)) return { kind: 'symbol', name: word };
       // State adjectives (ratchet D1): read live from world trait state.

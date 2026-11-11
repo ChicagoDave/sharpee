@@ -21,7 +21,8 @@ import { qualifiedTimerKey, type IRCondition, type IREntity, type IRTimerDef, ty
 import { createSeededRandom, type RandomService, type SeededRandom } from '@sharpee/core';
 import type { ClientCapabilities } from '@sharpee/if-domain';
 import { exitBlockedKey } from '@sharpee/stdlib';
-import { classifiesAs } from './kind-classification.js';
+import { classifiesAs, composesAdjective } from './kind-classification.js';
+import { isWordReader } from './is-word-readers.js';
 import {
   AttachedBehavior,
   BreakableBehavior,
@@ -141,6 +142,8 @@ export class Evaluator {
    * classifies against the identical coordinates.
    */
   private readonly moodWordAxes: Record<string, { valence: number; arousal: number }>;
+  /** The mood words in force (platform + story customs), for the `is <word>` reader table. */
+  private readonly moodWords: ReadonlySet<string>;
 
   constructor(ir: StoryIR, seed?: number) {
     for (const c of ir.conditions) this.conditions.set(c.name, c.condition);
@@ -160,6 +163,7 @@ export class Evaluator {
       const anchor = MOOD_AXES[mood.like as Mood];
       this.moodWordAxes[mood.name] = mood.but ? applyMoodModifier(anchor, mood.but as MoodModifier) : anchor;
     }
+    this.moodWords = new Set(Object.keys(this.moodWordAxes));
     this.rng = createSeededRandom(seed);
     this.storySeed = this.rng.getSeed();
   }
@@ -508,22 +512,34 @@ export class Evaluator {
       if (subject === symbol) return true;
       const entity = ctx.world.getEntity(subject);
       if (entity) {
-        if (symbol === 'dark') {
+        // ADR-394 D3: every platform word has exactly one reader
+        // (is-word-readers.ts), so no word the compiler accepts falls
+        // through to false. A declared state wins the word first.
+        const reader = isWordReader(symbol, this.moodWords);
+        if (reader === 'darkness') {
           // Effective darkness is owned by VisibilityBehavior — it also accounts
           // for a carried lit light source — never the raw `requiresLight` field.
           return VisibilityBehavior.isDark(entity, ctx.world);
         }
         const state = ctx.world.getStateValue(CHORD_STATE_PREFIX + subject);
         if (state !== undefined && state === symbol) return true;
-        const adjective = this.stateAdjectiveHolds(entity, symbol, ctx.world);
-        if (adjective !== null) return adjective;
-        // ADR-310 D16 / ADR-318: interior classification — mood, threat,
-        // and pressure-band words read the character-model trait, the
-        // same pure-read pattern as the state adjectives above.
-        const character = entity.get(TraitType.CHARACTER_MODEL) as CharacterModelTrait | undefined;
-        if (character) {
-          const interior = this.characterWordHolds(character, symbol);
-          if (interior !== null) return interior;
+        switch (reader) {
+          case 'state-adjective':
+            return this.stateAdjectiveHolds(entity, symbol, ctx.world) ?? false;
+          case 'composition': {
+            // `the sword is scenery`: the block composes the adjective.
+            const irEntity = this.irEntityById.get(subject);
+            return irEntity !== undefined && composesAdjective(irEntity, symbol);
+          }
+          case 'character-model': {
+            // ADR-310 D16 / ADR-318: interior classification — mood, threat,
+            // and pressure-band words read the character-model trait, the
+            // same pure-read pattern as the state adjectives above.
+            const character = entity.get(TraitType.CHARACTER_MODEL) as CharacterModelTrait | undefined;
+            return character ? this.characterWordHolds(character, symbol) ?? false : false;
+          }
+          case null:
+            return false;
         }
       }
     }

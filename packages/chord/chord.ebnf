@@ -2470,7 +2470,19 @@ predicate    = "is" [ "not" ] ( ( "a" | "an" ) WORD { WORD }   (* is-a: the clas
                                                                   condition-not-for-
                                                                   movement *)
                               | word-compare NUMBER            (* ADR-264 D3 word form *)
-                              | value-expr )                   (* is *)
+                              | value-expr )                   (* is: a one-word value is a
+                                                                  declared state, `dark`, a
+                                                                  state adjective (read live),
+                                                                  a trait adjective (read from
+                                                                  the composition: `the sword
+                                                                  is scenery`), or a mood,
+                                                                  threat or pressure word; each
+                                                                  has a reader, so none is a
+                                                                  silent false. On `the match`
+                                                                  the word is held to the
+                                                                  declared states plus those
+                                                                  words (analysis.unknown-
+                                                                  value) *)
              | "are" [ "not" ] WORD                           (* ADR-375 D7: the subject is
                                                                   `<vehicle>'s sails`; the
                                                                   word one of its settings
