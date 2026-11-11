@@ -1,7 +1,7 @@
 # Session Plan: Chord refuses noun dispatch in action bodies, and story traits classify
 
 **Created**: 2026-11-10
-**Plan Status**: ACTIVE
+**Plan Status**: DONE
 **Overall scope**: The Chord compiler refuses the shape in which a `define action` body decides what happens by testing which thing the player named, and steers the author to the owner (`on the player <gerund>` on the thing or trait). A story `define trait` name becomes a working classifier after `is a` / `must be a`, so the owner idiom has a test to stand on. Conditions that compile and are always false become compile errors.
 **Bounded contexts touched**: Chord Story Language (`packages/chord` compiler, `packages/story-loader` runtime reading of the Story IR); Normative Character Layer as a consumer only (the arbiter's kind scopes share the classification rule).
 **Key domain language**: classification (kind or trait after `is a`), composition (a trait a `create` block names), slot (a `define action` grammar binding), owner clause (`on the player <gerund>` on a thing or trait), refusal partition (the leading `refuse` / `must` lines of a body), flag entity.
