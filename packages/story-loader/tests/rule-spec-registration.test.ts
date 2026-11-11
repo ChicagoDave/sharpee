@@ -53,42 +53,41 @@ end before
 
 const POKING = `define action poking
   grammar
-    poke [the target]
+    boop [the target]
   the target must be held
   phrase poked
 
   phrases en-US
     poked:
-      You poke {the target}.
+      You boop {the target}.
 `;
 
 describe('an optional slot is constrained and seated (B1)', () => {
   it('registers the constraint on the rule whose only slot is optional', () => {
     const engine = captureGrammarEngine(createStory(compileSource(HEAD + POKING)));
-    const rule = engine.getRules().find((r) => r.pattern === 'poke [:target]')!;
+    const rule = engine.getRules().find((r) => r.pattern === 'boop [:target]')!;
     expect(rule.action).toBe('chord.action.poking');
     expect(rule.parts).toEqual([
-      { kind: 'word', word: 'poke' },
+      { kind: 'word', word: 'boop' },
       { kind: 'slot', name: 'target', optional: true },
     ]);
     expect(rule.slots.get('target')?.constraints).toHaveLength(1);
   });
 
-  it('`poke coin` with the coin held binds the coin into the phrase; with the lamp unheld the rule refuses', async () => {
+  it('`boop coin` with the coin held binds the coin into the phrase; with the lamp unheld the rule refuses', async () => {
     const b = await bootTurns(HEAD + POKING);
     await b.turn('take coin');
     expect(b.world.getLocation(b.id('coin'))).toBe(b.player.id);
 
-    const held = await b.turnText('poke coin');
-    expect(held.text).toContain('You poke the coin.');
+    const held = await b.turnText('boop coin');
+    expect(held.text).toContain('You boop the coin.');
 
-    // The story rule's `must be held` refuses the unheld lamp, so the input
-    // falls to the standard `poke` (touching), which speaks its own poke line
-    // now that the verb phrase is the rule's literal (ADR-383 D7).
-    const unheld = await b.turnText('poke lamp');
-    expect(unheld.events.map((e) => e.type)).toContain('if.event.touched');
-    expect(unheld.events.find((e) => e.type === 'if.event.touched')?.data).toMatchObject({ messageId: 'if.action.touching.poked' });
-    expect(unheld.text).toContain('You poke the lamp.');
+    // The story rule's `must be held` refuses the unheld lamp. A story line
+    // may not repeat a standard one (ADR-394 D6), so no standard rule takes
+    // the words instead: the action never runs and the lamp stays put.
+    const unheld = await b.turnText('boop lamp');
+    expect(unheld.text).not.toContain('You boop the lamp.');
+    expect(unheld.events.map((e) => e.type)).not.toContain('if.event.touched');
     expect(b.world.getLocation(b.id('lamp'))).not.toBe(b.player.id);
   });
 });
@@ -97,11 +96,11 @@ describe('definition order (ADR-382 D7, B7)', () => {
   it('registers an action`s rules as written, `means` groups interleaved, and nothing more (ADR-384 D5)', () => {
     const source = `define action ducking
   grammar
-    duck under the target
+    cower under the target
       means position under
-    duck behind the target
+    cower behind the target
       means position behind
-    crouch under the target
+    huddle under the target
       means position under
   phrase ducked
 
@@ -112,9 +111,9 @@ describe('definition order (ADR-382 D7, B7)', () => {
     const engine = captureGrammarEngine(createStory(compileSource(HEAD + source)));
     const rules = engine.getRules().filter((r) => r.action === 'chord.action.ducking');
     expect(rules.map((r) => [r.pattern, r.defaultSemantics ?? null])).toEqual([
-      ['duck under :target', { position: 'under' }],
-      ['duck behind :target', { position: 'behind' }],
-      ['crouch under :target', { position: 'under' }],
+      ['cower under :target', { position: 'under' }],
+      ['cower behind :target', { position: 'behind' }],
+      ['huddle under :target', { position: 'under' }],
     ]);
     for (const rule of rules) expect(rule.tier).toBe('story');
   });

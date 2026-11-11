@@ -375,7 +375,7 @@ const MUSTS_STORY = `story
 
 define action poking
   grammar
-    poke the thing
+    boop the thing
   refuse without thing: poke-what
   otherwise refuse cant-poke
 

@@ -543,6 +543,9 @@ define action petting
     cant-pet:
       You can't pet that.
 
+remove from action touching
+  stroke the thing
+
 define action feeding
   grammar
     feed the animal

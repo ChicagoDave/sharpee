@@ -51,7 +51,7 @@ describe('a story action seats each name once (ADR-383 D3)', () => {
   it('`present the friend with the gift` after `offer the gift to the friend` seats the gift direct on both', () => {
     const rules = rulesOf(`define action offering
   grammar
-    offer the gift to the friend
+    proffer the gift to the friend
     present the friend with the gift
   phrase offered
 
@@ -60,7 +60,7 @@ describe('a story action seats each name once (ADR-383 D3)', () => {
       Offered.
 `);
     const byPattern = Object.fromEntries(rules.map((r) => [r.pattern, seats(r)]));
-    expect(byPattern['offer :gift to :friend']).toEqual({ gift: 'direct', friend: 'indirect' });
+    expect(byPattern['proffer :gift to :friend']).toEqual({ gift: 'direct', friend: 'indirect' });
     expect(byPattern['present :friend with :gift']).toEqual({ friend: 'indirect', gift: 'direct' });
   });
 });
@@ -86,7 +86,7 @@ describe('an extension seats from its target`s table (ADR-383 D4)', () => {
   it('an extension of a story action seats from that action`s own table', () => {
     const rules = rulesOf(`define action offering
   grammar
-    offer the gift to the friend
+    proffer the gift to the friend
   phrase offered
 
   phrases en-US

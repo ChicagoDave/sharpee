@@ -500,6 +500,9 @@ define trait restless
   end on
 end trait
 
+remove from action touching
+  stroke the thing
+
 define action petting
   grammar
     pet the animal

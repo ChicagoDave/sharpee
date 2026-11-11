@@ -27,23 +27,23 @@ const action = (lines: string) =>
 
 describe('landing group 2 emission (ADR-267 D3 bar)', () => {
   it('alternation: one registered rule carrying `|`, never N split rules', () => {
-    const rules = rulesFrom(action('  grammar\n    look in or inside the target\n'));
+    const rules = rulesFrom(action('  grammar\n    peer in or inside the target\n'));
     const slotted = rules.filter((r) => r.pattern.includes(':'));
     expect(slotted).toHaveLength(1);
-    expect(slotted[0].pattern).toBe('look in|inside :target');
+    expect(slotted[0].pattern).toBe('peer in|inside :target');
     expect(slotted[0].action).toBe('chord.action.testing');
   });
 
   it('optional elements: `[…]` marks the element in the emitted string, one rule', () => {
-    const rules = rulesFrom(action('  grammar\n    look [carefully] at the target\n'));
+    const rules = rulesFrom(action('  grammar\n    peer [carefully] at the target\n'));
     const slotted = rules.filter((r) => r.pattern.includes(':'));
     expect(slotted).toHaveLength(1);
-    expect(slotted[0].pattern).toBe('look [carefully] at :target');
+    expect(slotted[0].pattern).toBe('peer [carefully] at :target');
   });
 
   it('optional composes with alternation in the emitted string', () => {
-    const rules = rulesFrom(action('  grammar\n    look [in or inside] the target\n'));
-    expect(rules.some((r) => r.pattern === 'look [in|inside] :target')).toBe(true);
+    const rules = rulesFrom(action('  grammar\n    peer [in or inside] the target\n'));
+    expect(rules.some((r) => r.pattern === 'peer [in|inside] :target')).toBe(true);
   });
 
   it('greedy slot: the declared slot emits `:slot...`; undeclared slots stay plain', () => {
@@ -62,14 +62,14 @@ describe('landing group 2 emission (ADR-267 D3 bar)', () => {
   it('means (D12): per-pattern defaults land on exactly that pattern\'s rules', () => {
     const rules = rulesFrom(
       action(
-        '  grammar\n    hide under the target\n      means position under\n    hide behind the target\n      means position behind\n    hide near the target\n',
+        '  grammar\n    huddle under the target\n      means position under\n    huddle behind the target\n      means position behind\n    huddle near the target\n',
       ),
     ).filter((r) => r.pattern.includes(':'));
     expect(rules).toHaveLength(3);
     const by = (p: string) => rules.find((r) => r.pattern === p)!;
-    expect(by('hide under :target').defaultSemantics).toEqual({ position: 'under' });
-    expect(by('hide behind :target').defaultSemantics).toEqual({ position: 'behind' });
-    expect(by('hide near :target').defaultSemantics).toBeUndefined();
+    expect(by('huddle under :target').defaultSemantics).toEqual({ position: 'under' });
+    expect(by('huddle behind :target').defaultSemantics).toEqual({ position: 'behind' });
+    expect(by('huddle near :target').defaultSemantics).toBeUndefined();
   });
 
   it('directions (D12): alias × pattern cross-product, each rule carrying its canonical', () => {
@@ -98,13 +98,13 @@ describe('landing group 2 emission (ADR-267 D3 bar)', () => {
   it('typed slots (D11): the registered rule carries the SlotType for both type words', () => {
     const rules = rulesFrom(
       action(
-        '  grammar\n    unlock the target with the key\n    consult the sage about the subject\n  the key is an instrument\n  the subject is a topic\n',
+        '  grammar\n    unbar the target with the key\n    quiz the sage about the subject\n  the key is an instrument\n  the subject is a topic\n',
       ),
     );
-    const unlock = rules.find((r) => r.pattern === 'unlock :target with :key')!;
+    const unlock = rules.find((r) => r.pattern === 'unbar :target with :key')!;
     expect(unlock, rules.map((r) => r.pattern).join(' | ')).toBeDefined();
     expect(unlock.slots.get('key')?.slotType).toBe('instrument');
-    const consult = rules.find((r) => r.pattern === 'consult :sage about :subject')!;
+    const consult = rules.find((r) => r.pattern === 'quiz :sage about :subject')!;
     expect(consult.slots.get('subject')?.slotType).toBe('topic');
     // The untyped slots stay untyped — the default ENTITY path.
     expect(unlock.slots.get('target')?.slotType).toBeUndefined();

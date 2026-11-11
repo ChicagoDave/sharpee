@@ -122,3 +122,66 @@ describe('Smelling interceptor hooks (ADR-118)', () => {
     expect((smelled.data as any).messageId).toBe('if.action.smelling.food_scent');
   });
 });
+
+// ADR-394 D6 (ADR-370 D1's shape): a bare SMELL has no object, so the room
+// the actor smells in is the consulted entity — a room answers it.
+describe('Smelling with no object consults the room', () => {
+  const driveBare = (world: WorldModel) => {
+    const context = createRealTestContext(smellingAction, world, createCommand(IFActions.SMELLING));
+    const validation = runValidatePhase(smellingAction, context);
+    if (!validation.valid) {
+      return { validation, events: runBlockedPhase(smellingAction, context, validation) };
+    }
+    runExecutePhase(smellingAction, context);
+    return { validation, events: runReportPhase(smellingAction, context) };
+  };
+
+  test('the room\'s interceptor runs and its report replaces the stock line', () => {
+    const { world, room } = TestData.withObject('pebble');
+    room.add({ type: TEST_MARKER_TRAIT });
+    world.registerActionInterceptor(TEST_MARKER_TRAIT, IFActions.SMELLING, {
+      postExecute(_target, w) {
+        w.setStateValue('room.sniffed', true);
+      },
+      postReport() {
+        return { override: { messageId: 'room.smells_of_hay' } };
+      },
+    });
+
+    const { validation, events } = driveBare(world);
+
+    expect(validation.valid).toBe(true);
+    expect(world.getStateValue('room.sniffed')).toBe(true);
+    const smelled = events.find(e => e.type === 'if.event.smelled')!;
+    expect((smelled.data as { messageId?: string }).messageId).toBe('room.smells_of_hay');
+  });
+
+  test('the room\'s veto blocks a bare smell', () => {
+    const { world, room } = TestData.withObject('pebble');
+    room.add({ type: TEST_MARKER_TRAIT });
+    world.registerActionInterceptor(TEST_MARKER_TRAIT, IFActions.SMELLING, {
+      preValidate() {
+        return { valid: false, error: 'room.too_smoky' };
+      },
+    });
+
+    const { validation, events } = driveBare(world);
+
+    expect(validation).toMatchObject({ valid: false, error: 'room.too_smoky' });
+    expect(events.some(e => e.type === 'if.event.smell_blocked')).toBe(true);
+  });
+
+  test('smelling a thing consults the thing, not the room', () => {
+    const { world, room, object } = TestData.withObject('pebble');
+    room.add({ type: TEST_MARKER_TRAIT });
+    world.registerActionInterceptor(TEST_MARKER_TRAIT, IFActions.SMELLING, {
+      postExecute(_target, w) {
+        w.setStateValue('room.sniffed', true);
+      },
+    });
+
+    drive(world, object);
+
+    expect(world.getStateValue('room.sniffed')).toBeUndefined();
+  });
+});

@@ -22,7 +22,7 @@ create Alex
 define action petting
   grammar
     pet the animal
-    pat the animal
+    scratch the animal
   the animal must be reachable
   refuse without animal: pet-what
   otherwise refuse cant-pet

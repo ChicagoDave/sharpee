@@ -67,6 +67,12 @@ define action buying
     buy the target
   otherwise refuse nothing-on-sale
 
+## BUY is this story's own action, not the standard one: the market's trades
+## answer it in their own clauses, priced or not.
+
+remove from action buying
+  buy the item
+
 define phrase nothing-on-sale
   Nothing is on sale.
 end phrase

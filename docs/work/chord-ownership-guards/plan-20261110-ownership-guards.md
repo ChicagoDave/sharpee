@@ -189,6 +189,20 @@ Phase 1 comes first for a real reason: Guard 1's fix-it steers authors to trait-
 - **Tier**: Medium
 - **Budget**: 250
 - **Domain focus**: Grammar alteration: a story `define action` whose pattern repeats a standard action's shape (Guard 2).
+- **Census result and ruling (2026-11-11)**: the gate, compared by reading, fired on real stories as well as fixtures:
+  - `stories/friendly-zoo` and the published `define action` guide example: petting's `stroke` and `pat` are standard `touching` words.
+  - Secret Letter: `sniffing`, `hearkening`, `jumping`, `lifting`, `buying`, and `sliding`'s `hang … on`.
+  - `branch-stories/familyzoo` and v13 to v16, John Googol's tutorial mirrored from his hub.
+  - Four chord fixtures.
+
+  David chose the error (option C) "as long as there's an elegant rewrite". On the follow-up he chose option A: "A and John will update when we publish to npm". So the phase now carries:
+  - **Platform (stdlib)**: a bare `smell` or `listen` consults the actor's room, as a bare `jump` does (ADR-370 D1's shape), so a room answers `on the player smelling` / `on the player listening`.
+  - **Rewrites of our stories**: the zoo and the guide example remove `stroke`/`pat` from `touching`. Secret Letter's lifting, buying and jumping become clauses answering the standard action, with `extend action` for extra wording and an override for the default refusal. Its bare smell and listen become room clauses. `hang … on` is removed from `putting` for the wire.
+  - **Not rewritten**: the `familyzoo` branch stories stay as mirrored. They stop compiling until John updates them after the npm publish.
+  - **Tests (David, 2026-11-11, "A")**: the full-suite census found 13 chord failures plus one suite that does not load, and 56 story-loader failures across 14 files plus one suite that does not load. All of them come from test stories borrowing standard words.
+    - Every hit is rewritten: incidental tests take a non-standard verb or a `remove from action` line, and shared fixtures are fixed first.
+    - ADR-384's ranking tests (`ranking-specificity-first`, `ranking-skipped-optional`) and ADR-329 D10's shadowing test are reworked so they still test ranking and shadowing, with lines of different shapes or a removal. Each ADR gets a note.
+    - Secret Letter's buying, jumping and hanging take the removal route. Its buy trades answer an unpriced item, and its Rooftop Edge jump moves the player with no line of its own, so the clause route would change behaviour. Lifting and bare smell/listen take the owner route.
 - **Entry state**: David has answered Question 3: what the fix-it says, whether a matching `remove from action` exempts the pattern, and whether a fixed-noun specialisation (`take me`) is caught. This phase does not start on a default.
 - **Deliverable**: `analysis.repeats-standard-grammar`, an error in `packages/chord/src/validate-ir.ts`, on a story `define action` pattern whose shape equals a standard action's (compared with `packages/chord/src/patterns.ts#samePatternShape` against the generated manifest's grammar shapes), naming the standard action in the fix-it. Implements Guard 2.
   - Exempt by construction: a grammar file (the standard grammar is itself `define action` blocks), and `extend action` blocks (restating a standard pattern under another standard action is the recorded way to reorder).
@@ -197,8 +211,35 @@ Phase 1 comes first for a real reason: Guard 1's fix-it steers authors to trait-
 - **Files**: `packages/chord/src/validate-ir.ts`, `packages/chord/chord.ebnf`, `packages/chord/tests/language-version.test.ts`, `docs/architecture/chord-grammar-changes.md`, `packages/chord/tests/fixtures/gates/repeats-standard-grammar.story` (new), `packages/chord/tests/repeats-standard-grammar.test.ts` (new), `packages/chord/tests/validate-ir.test.ts`, `packages/chord/tests/adr-329-d10-perform-step.test.ts`
 - **Exit state**: A story `define action` that repeats a standard pattern does not compile and does not load, and the diagnostic names the standard action and the ruled remedy. `stories/grammar-alterations` (extend, remove, reorder) compiles and runs as before.
 - **Demonstration**: `pnpm --filter ./packages/chord test:ci` is green, and in it the gate fixture reports the code once per repeated pattern with the standard action named, while an extend-action block restating the same pattern, a grammar file, and (if ruled) a pattern whose standard shape the story removed report nothing. `./repokit build dungeo` then `node dist/cli/sharpee.js --test stories/grammar-alterations/tests/transcripts/alter-standard-grammar.transcript` passes as before the phase. The corpus census count is recorded.
-- **Demonstrated**: 
-- **Status**: PENDING
+- **Demonstrated**: 2026-11-11, session 354c36.
+  - `pnpm exec turbo run test:ci --continue`: 73 of 73 tasks successful. Chord 1,828 passing, story-loader 1,575 passing, 1 skipped, character 641 passing, 0 failures anywhere. [verified: session run output saved 01:38:03, "Time: 5m33.29s" so started about 01:32:30, after the last source and test edit (`ranking-skipped-optional.test.ts` 01:32:02; `validate-ir.ts` 00:51:46; stdlib sources 01:04:49, tests 01:05:33): "Tasks: 73 successful, 73 total"; chord "Tests 1828 passed (1828)", story-loader "Tests 1575 passed | 1 skipped (1576)", character "Tests 641 passed (641)", stdlib "Tests 1955 passed (1955)"; 33 test:ci tasks with cache bypass, 26 replayed from cache. The gate fixture and test (01:38:20, 01:38:38), the EBNF comment (01:38:52) and the hash re-pin (01:39:06) came after it and ran on their own: event log 2026-11-11T07:38:39Z "Tests passed, 4 passed" and 07:39:07Z "Tests passed, 2 passed"; the chord suite was not run whole with the gate test in it. The writer's `shasum -a 256 chord.ebnf` equals the pinned `ed7a3ee7…4353`]
+  - `packages/chord/tests/repeats-standard-grammar.test.ts` (4 passing) shows the gate fixture reporting `analysis.repeats-standard-grammar` exactly twice: [verified: event log 2026-11-11T07:38:39Z (01:38:39 CST) "Tests passed, 4 passed", after the fixture (01:38:20), the test file (01:38:38) and `validate-ir.ts` (00:51:46); the corpus census below reports the fixture's code at lines 8 and 17 only]
+    - line 8, `take :thing`, naming `taking` and the three remedies;
+    - line 17, the `stroke :animal` reading of `pet or stroke the animal`.
+    - The removed `nap` (line 26), the fixed-noun `take me` (line 38) and the `extend action taking` block (line 48) report nothing.
+    - A grammar file restating `take the item` reports nothing.
+  - Platform: stdlib `smelling-interceptor.test.ts` and `listening-interceptor.test.ts` (13 passing, 5 new): [verified: in the turbo run above as "smelling-interceptor.test.ts (7 tests)" and "listening-interceptor.test.ts (6 tests)", against 4 and 4 in the Phase 3 run (saved 23:48:41); after the test files' last edits (01:05:24, 01:05:33) and the two actions' (01:04:49)]
+    - A bare SMELL or LISTEN runs the room's interceptor; its postExecute state lands and its postReport override replaces the stock line.
+    - A room's veto blocks a bare smell.
+    - Smelling or listening to a thing does not consult the room.
+  - Rewrites on David's go, each compiling clean: [verified for the compiled ones: census output 01:46:21 on the chord bundle built 01:38:21 (after `validate-ir.ts`'s last edit) lists `stories/friendly-zoo/zoo.story`, `branch-stories/secret-letter/secret-letter.story`, and the `zoo-actions`, `zoo-phase-c` and `traits-basic` fixtures as ok with 0 diagnostics; the 17 test sources pass in the turbo run above. The guide example is an `.mdx` page outside the census: reported by session, unverified]
+    - `stories/friendly-zoo`;
+    - the `define action` guide example;
+    - Secret Letter (no errors, no warnings);
+    - three chord fixtures (`zoo-actions`, `zoo-phase-c`, `traits-basic`; four snapshots updated);
+    - about thirty test sources across 17 files.
+  - ADR-384's ranking tests and ADR-329 D10's shadowing test were reworked to legal shapes, each ADR noted.
+  - Census:
+    - The corpus compile's remaining hits are the five mirrored `familyzoo` stories (left for John, by ruling), the gate fixture (lines 8, 17), and `fixtures/malformed/action-bad-refusal.story`, which is only ever parsed, never compiled. [verified: census output 01:46:21 (after the trait story's last edit, 01:45:13), compared by the writer with the Phase 3 census: "files before: 281, after: 283, changed: 8": `familyzoo` 565, `familyzoo-v13` 502, `-v14` 502, `-v15` 536, `-v16` 565, `action-bad-refusal.story` 8 (beside its existing `parse.action-refusal` at 11), the gate fixture 8 and 17, and Phase 3's own `is-word-readers.story` (absent from the Phase 3 census); no other file's diagnostics moved. The `familyzoo` follow-up is issue 681]
+    - The full suite above is the census of inline test sources: zero remaining.
+  - On the rebuilt bundle:
+    - `node dist/cli/sharpee.js --test stories/grammar-alterations/tests/transcripts/alter-standard-grammar.transcript`: 6 passed. [reported by session, unverified: no saved output and no event-log row; the writer did not re-run it, by the caller's instruction. The census lists `grammar-alterations.story` as ok with 0 diagnostics]
+    - `./sharpee test stories/trait-classification-test`: 10 cards passing, 16 assertions passing, including a new `smell` card answered by the Gallery's own clause through the real path. [reported by session, unverified: no saved output and no event-log row; the writer did not re-run it, by the caller's instruction. Card tct00010 (`smell`, contains "The gallery smells of old varnish.") and the Gallery's `on the player smelling` clause are present in the files]
+    - fernhill and ides-of-march: byte-identical to the pre-Phase-1 runs, timings excluded. [verified: session run outputs saved 01:40:22 and 01:40:23, after `./repokit build dungeo` (output saved 01:40:20, "=== build complete ===", after every source edit), compared by the writer with the 21:21 pre-Phase-1 outputs, timings masked: "fernhill: identical", "ides: identical" (36 / 63, 17 / 85 branches)]
+    - Secret Letter, no longer a floor by David's ruling: 1,458 cards passing and 11 cards failing, exactly as before the phase. The same 11 cards fail; only their source line numbers moved, and the derived-branch denominator grew from 1,657 to 1,737 with the new clauses. [verified: session run output saved 01:44:32, after the build and Secret Letter's last edit (`red-gate.chord` 01:14:41): "1458 cards passing, 2639 assertions passing, 11 cards failing, 13 assertions failing", the same line as the Phase 3 run (23:53:58); the writer compared the 19 failing card-and-step names of the two runs: identical; "Branches exercised: 959 / 1737" against "959 / 1657"]
+    - Dungeo walkthrough chain: 949 passing, 0 failures. [reported by session, unverified: no saved output and no event-log row; the writer did not re-run it, by the caller's instruction]
+  - `stories/friendly-zoo` unit transcripts: 80 passing, 2 failures. Both are in `scope-constraint-gating.transcript`, which expects "can't see any such thing" where the parser has said "You can't see any goats here." since the parser review's step 6 (`21fa5291c`). They predate this phase. [reported by session, unverified: no saved output and no event-log row. Lines 13 and 17 of the transcript carry the old wording; the file's last change is aa2e2938d (2026-08-04). Filed as issue 682]
+- **Status**: DONE
 
 ### Phase 5: Flag entity warning
 - **Tier**: Small

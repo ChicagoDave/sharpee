@@ -140,6 +140,12 @@ end phrase
 
 create the Outer Market Roof
   a room
+  market-scent
+
+  on the player listening
+    phrase roof-listen-carefully when the group of mercenaries is here
+    phrase market-sound when the group of mercenaries is not here
+  end on
   aka roof, rooftop, market roof, roof top, outer market
   down to the Alley
   north is blocked: roof-precarious

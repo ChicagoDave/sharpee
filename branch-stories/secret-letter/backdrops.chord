@@ -111,30 +111,9 @@ define condition under-the-awnings: open-air or the player is in the Alley or th
 
 define condition among-the-wires: under-the-awnings or the player is in the Base of the Center Post
 
-## The rooms whose bare `smell` is the market's own — every room the market
-## backdrop stands in that has no smell line of its own (the Alley, the
-## Leather, Candle and Fruit stalls, the tent and the top have theirs).
-
 ## The ten rooms where a stallkeeper stands behind the goods.
 
 define condition at-a-stall: the player is in the Grocery Stall or the player is in the Fruit Stall or the player is in the Hat Stall or the player is in the Leather Stall or the player is in the Weapons Stall or the player is in the Exotic Gems Stall or the player is in the Herb Stall or the player is in the Rope Stall or the player is in the Candle Stall or the player is in the Pottery Stall
-
-define condition market-air: the player is in the Northwest Junction or the player is in the Grocery Stall or the player is in the Eastern Junction or the player is in the Hat Stall or the player is in the Weapons Stall or the player is in the Exotic Gems Stall or the player is in the Herb Stall or the player is in the Rope Stall or the player is in the Pottery Stall or the player is in Outside the Silk Tent or the player is in the Outer Market Roof or the player is in the Base of the Center Post
-
-## The same for a bare `listen`: the tent and the top answer for
-## themselves, and the alley and the roof answer for the eavesdrop while it
-## is on.
-
-define condition market-din: open-air or the player is in the Base of the Center Post
-
-## Chapter 4's rooms with a bare-smell answer of their own (`story.ni:6763,
-## 7121`).
-
-define condition journey-air: the player is in the Pasture or the player is in the Stream Crossing or the player is in the Underneath the Fountain or the player is in the Jail Cell or the player is in the Drain Room or the player is in the Sewers
-
-## Chapter 6's rooms with a smell or a sound of their own (`black-gate.chord`).
-
-define condition estate-air: the player is in the Rooftop or the player is in the Rooftop Edge or the player is in the Balcony or the player is in the Patio or the player is in the Rooftop Garden or the player is in the Second Floor Landing
 
 ## ---------------------------------------------------------------------------
 ## THE SHOPPERS (`story.ni:3334-3388`)
@@ -672,14 +651,43 @@ end phrase
 ## A BARE `smell` AND `listen` — the source's per-room answers, in the order
 ## Inform resolved them: a room's own `Instead` first, then the market
 ## backdrop's line wherever the backdrop stands, then the report rulebook's
-## fallback. Every line in a body fires when its guard holds, so the guards
-## partition the rooms.
+## fallback. A bare SMELL or LISTEN asks the room the player is in, so each
+## room answers for itself: a room with a line of its own carries an
+## `on the player smelling` / `on the player listening` clause, the market's
+## rooms and the two regions compose the traits below, and every other room
+## gives the fallback through the overrides.
 ## ---------------------------------------------------------------------------
 
-define action sniffing
+define trait market-scent
+  on the player smelling
+    phrase market-smell
+  end on
+end trait
+
+define trait market-noise
+  on the player listening
+    phrase market-sound
+  end on
+end trait
+
+define trait sewer-air
+  on the player smelling
+    phrase sewer-unbelievable-smell
+  end on
+
+  on the player listening
+    phrase sewer-lap-and-slosh
+  end on
+end trait
+
+define trait house-hush
+  on the player listening
+    phrase silence-expectant
+  end on
+end trait
+
+extend action smelling
   grammar
-    smell
-    sniff
     breathe
     breathe in
     breathe deeply
@@ -687,46 +695,13 @@ define action sniffing
     take a breath
     take a deep breath
 
-  phrase garbage-ripe-here when the player is in the Alley
-  phrase leather-smell when the player is in the Leather Stall
-  phrase tallow-fumes-smell when the player is in the Candle Stall
-  phrase fruit-stall-smell when the player is in the Fruit Stall
-  phrase tent-smell when the player is in Inside the Silk Tent
-  phrase top-of-post-smell when the player is in the Top of the Post
-  phrase market-smell when market-air
-  phrase mostly-cow-pies when the player is in the Pasture or the player is in the Stream Crossing
-  phrase tunnel-smells-sour when the player is in the Underneath the Fountain
-  phrase cell-smells-terrible when the player is in the Jail Cell
-  phrase alcove-overpowering when the player is in the Drain Room
-  phrase sewer-unbelievable-smell when the player is in the Sewers
-  phrase coal-smoke-smell when the player is in the Rooftop or the player is in the Rooftop Edge
-  phrase roses-from-here when the player is in the Balcony or the player is in the Patio
-  phrase no-time-to-smell-flowers when the player is in the Rooftop Garden
-  phrase smell-nothing when not within-grubbers and not journey-air and not estate-air
+override message smelling-no-scent
+  You smell nothing unexpected.
+end override
 
-define action hearkening
-  grammar
-    listen
-    hear
-
-  phrase alley-strain-to-hear when the player is in the Alley and the voices is here
-  phrase market-sound when the player is in the Alley and the voices is not here
-  phrase roof-listen-carefully when the player is in the Outer Market Roof and the group of mercenaries is here
-  phrase market-sound when the player is in the Outer Market Roof and the group of mercenaries is not here
-  phrase tent-sound when the player is in Inside the Silk Tent
-  phrase top-of-post-sound when the player is in the Top of the Post
-  phrase market-sound when market-din
-  phrase tunnel-drip when the player is in the Underneath the Fountain
-  phrase running-water-below when the player is in the Drain Room
-  phrase sewer-lap-and-slosh when the player is in the Sewers
-  phrase fountain-trickle-from-here when the player is in the Balcony or the player is in the Rooftop Garden
-  phrase fountain-no-time-to-listen when the player is in the Patio
-  phrase muttering-voices when the player is in the Second Floor Landing
-  phrase harsh-breathing when the player is in the Secret Closet
-  phrase silence-expectant when the player is in the Duke's House
-  phrase foyer-music-and-laughter when the player is in the Foyer
-  phrase quartet-far-corner when the player is in the Ballroom
-  phrase ears-pricked when not within-grubbers and not the player is in the Underneath the Fountain and not the player is in the Drain Room and not the player is in the Sewers and not the player is in the Balcony and not the player is in the Rooftop Garden and not the player is in the Patio and not the player is in the Second Floor Landing and not the player is in the Secret Closet and not the player is in the Duke's House and not the player is in the Foyer and not the player is in the Ballroom
+override message listening-silence
+  You keep your ears pricked.
+end override
 
 define phrase garbage-ripe-here
   It smells pretty ripe back here.
@@ -752,12 +727,4 @@ end phrase
 define phrase top-of-post-sound
   It is relatively quiet and peaceful up here, although the sounds of the
   market drift up faintly from below.
-end phrase
-
-define phrase smell-nothing
-  You smell nothing unexpected.
-end phrase
-
-define phrase ears-pricked
-  You keep your ears pricked.
 end phrase

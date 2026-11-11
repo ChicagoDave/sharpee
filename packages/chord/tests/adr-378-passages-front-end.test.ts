@@ -383,9 +383,9 @@ define action petting while the animal is in the Sorting Room
 describe('a story using none of it (ADR-378 D8: byte-identical IR)', () => {
   it('lowers no passage, condition or admits field on any exit, and no condition on any action', () => {
     const ir = compiled(story(`
-define action waving
+define action shrugging
   grammar
-    wave
+    shrug
   phrase dock-sealed
 `));
     for (const entity of ir.entities) {

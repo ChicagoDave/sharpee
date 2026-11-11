@@ -2,6 +2,8 @@
 
 **Status**: **ACCEPTED** (David, 2026-10-24, session b09060: "yes", after the open-questions interview and `adr-review` 19/22 with five findings folded). Q-1 resolved by David, 2026-10-24, session b09060 ("b": specificity first, the story tier as the tiebreak). Written 2026-10-24, session b09060, on `chord-4-0`, from step 4 of the parser review's recommendation (`docs/work/parser-review/review-20261022.md`, root cause 4). It supersedes ADR-268 D2: the confidence term is removed, and tier moves below specificity. It fixes D1, D2, D3, A8 and C8. No implementation is authorized.
 
+**Amended by**: ADR-394 D6 (2026-11-11): a story line may not repeat a standard line's shape, so a cross-tier race under D1 or D2 is now between lines of different shape. Examples are a story line that names its noun (`push [hard] [the] button` against `push :target`), or a broad story line whose same-shape standard twin the story has removed (`take the thing` against standard `take off the item`). The ranking itself is unchanged. `ranking-skipped-optional.test.ts` and `ranking-specificity-first.test.ts` were reworked to those shapes.
+
 ## Date: 2026-10-24
 
 **Kind**: technical

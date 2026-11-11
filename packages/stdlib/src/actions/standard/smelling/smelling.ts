@@ -28,9 +28,11 @@ import {
 } from '../../lifecycle/index.js';
 
 /**
- * Interceptor surface (ADR-228): the smelled target is the only consultable
- * entity of a SMELL command. Smelling the environment ("smell") has no direct
- * object, so the slot resolves to undefined — zero consultations.
+ * Interceptor surface (ADR-228): the smelled target is the one consultable
+ * entity of `smell <thing>`. Smelling the environment ("smell") has no direct
+ * object, so the room the actor smells in is consulted instead, as a bare
+ * JUMP consults it (ADR-370 D1): a room answers a bare SMELL with a Chord
+ * `on the player smelling` clause (ADR-394 D6).
  */
 export const smellingLifecycle: ActionLifecycleDescriptor = {
   actionId: IFActions.SMELLING,
@@ -40,7 +42,7 @@ export const smellingLifecycle: ActionLifecycleDescriptor = {
     {
       id: 'target',
       actionIds: [IFActions.SMELLING],
-      resolve: (ctx) => ctx.command.directObject?.entity
+      resolve: (ctx) => ctx.command.directObject?.entity ?? ctx.currentLocation ?? undefined
     }
   ]
 };

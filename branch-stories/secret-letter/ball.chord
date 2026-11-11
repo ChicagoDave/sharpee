@@ -128,6 +128,10 @@ end timer
 
 create the Ballroom
   a room
+
+  on the player listening
+    phrase quartet-far-corner
+  end on
   aka ball room, hall, ball, party, lights, glittering lights
   south is blocked: ballroom-press-of-people
   north is blocked: ballroom-cant-see-the-edges

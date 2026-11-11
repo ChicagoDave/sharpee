@@ -229,6 +229,10 @@ create the Sewers
 
 create the Jail Cell
   a room
+
+  on the player smelling
+    phrase cell-smells-terrible
+  end on
   in the Prison
   aka cell, holding cell, jail, prison, dank cell, cramped cell
   north to the Jailhouse through the south cell door
@@ -338,7 +342,7 @@ extend action searching
     peer through the target
 
 define trait straw-lift
-  on the player lifting
+  on the player raising
     refuse when the straw is bare: straw-disgusting
     move the piece of wire to the player
     change the straw to bare
@@ -996,6 +1000,14 @@ end phrase
 
 create the Drain Room
   a room
+
+  on the player smelling
+    phrase alcove-overpowering
+  end on
+
+  on the player listening
+    phrase running-water-below
+  end on
   in the Prison
   aka alcove, tiny alcove, drain
   down to the Sewer
@@ -1069,25 +1081,23 @@ end phrase
 
 ## The grate (`story.ni:8497-8517`): lift it, and every other verb lifts it.
 
-## `raising` is a full-delegation capability action (ADR-118) that never
-## consults entity clauses, so the lift is a story action.
+## LIFT and RAISE are the standard `raising`, which consults the thing's own
+## clauses (an `on the player raising` claims the verb for it); `lift up` and
+## `pull up` are its extra words here.
 
-define action lifting
+extend action raising
   grammar
-    lift the target
-    raise the target
     lift up the target
     pull up the target
-  otherwise refuse cant-lift-that
 
 ## GLUE — the platform's own shape for a thing that will not lift.
 
-define phrase cant-lift-that
+override message raising-cant-raise-that
   You can't lift that.
-end phrase
+end override
 
 define trait grate-lift
-  on the player lifting
+  on the player raising
     refuse when the metal grate is moved: grate-too-heavy
     change the metal grate to moved
     phrase grate-lifted when Olmer is not here
@@ -1250,6 +1260,7 @@ define condition west-marked: (the glyph layout is layout-a and the magic color 
 
 create the Sewer
   a room
+  sewer-air
   in the Sewers
   aka sewers, tunnel, tunnels, side tunnels
   north to the North Tunnel, one-way
@@ -1450,6 +1461,7 @@ end phrase
 
 create the North Tunnel
   a room
+  sewer-air
   in the Sewers
   aka tunnel, sewer, sewers
   north to the North Bend, one-way
@@ -1472,6 +1484,7 @@ create the North Tunnel
 
 create the East Tunnel
   a room
+  sewer-air
   in the Sewers
   aka tunnel, sewer, sewers
   north to the North Bend, one-way
@@ -1494,6 +1507,7 @@ create the East Tunnel
 
 create the South Tunnel
   a room
+  sewer-air
   in the Sewers
   aka tunnel, sewer, sewers
   north to the North Bend, one-way
@@ -1516,6 +1530,7 @@ create the South Tunnel
 
 create the West Tunnel
   a room
+  sewer-air
   in the Sewers
   aka tunnel, sewer, sewers
   north to the North Bend, one-way
@@ -1540,6 +1555,7 @@ create the West Tunnel
 
 create the North Bend
   a room
+  sewer-air
   in the Sewers
   aka tunnel, sewer, sewers
 
@@ -1555,6 +1571,7 @@ create the North Bend
 
 create the East Bend
   a room
+  sewer-air
   in the Sewers
   aka tunnel, sewer, sewers
 
@@ -1570,6 +1587,7 @@ create the East Bend
 
 create the South Bend
   a room
+  sewer-air
   in the Sewers
   aka tunnel, sewer, sewers
 
@@ -1585,6 +1603,7 @@ create the South Bend
 
 create the West Bend
   a room
+  sewer-air
   in the Sewers
   aka tunnel, sewer, sewers
 
@@ -1852,6 +1871,7 @@ end phrase
 
 create the Access Tunnel
   a room
+  sewer-air
   in the Sewers
   aka tunnel, sewer, sewers
   up to the Empty Alleyway, one-way

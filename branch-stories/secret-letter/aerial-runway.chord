@@ -310,6 +310,11 @@ define action sliding
     put the item over or around the target
   the item is an instrument
 
+## HANG … ON is the slide here, not the standard putting.
+
+remove from action putting
+  hang the item on the hook
+
 define trait slideable
   on the player sliding
     refuse when the wandering mercenaries is aggressive and the wandering mercenaries is here: merc-held

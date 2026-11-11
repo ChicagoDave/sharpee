@@ -79,6 +79,15 @@ before the game starts
   change the player to Alex
 end before
 
+remove from action putting
+  hang the item on the hook
+
+remove from action giving
+  offer the item to the recipient
+
+remove from action waving
+  wave
+
 define action hanging
   grammar
     hang the item on the hook

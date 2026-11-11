@@ -122,3 +122,51 @@ describe('Listening interceptor hooks (ADR-118)', () => {
     expect((listened.data as any).messageId).toBe('if.action.listening.device_running');
   });
 });
+
+// ADR-394 D6 (ADR-370 D1's shape): a bare LISTEN has no object, so the room
+// the actor listens in is the consulted entity — a room answers it.
+describe('Listening with no object consults the room', () => {
+  const driveBare = (world: WorldModel) => {
+    const context = createRealTestContext(listeningAction, world, createCommand(IFActions.LISTENING));
+    const validation = runValidatePhase(listeningAction, context);
+    if (!validation.valid) {
+      return { validation, events: runBlockedPhase(listeningAction, context, validation) };
+    }
+    runExecutePhase(listeningAction, context);
+    return { validation, events: runReportPhase(listeningAction, context) };
+  };
+
+  test('the room\'s interceptor runs and its report replaces the stock line', () => {
+    const { world, room } = TestData.withObject('pebble');
+    room.add({ type: TEST_MARKER_TRAIT });
+    world.registerActionInterceptor(TEST_MARKER_TRAIT, IFActions.LISTENING, {
+      postExecute(_target, w) {
+        w.setStateValue('room.listened', true);
+      },
+      postReport() {
+        return { override: { messageId: 'room.distant_bells' } };
+      },
+    });
+
+    const { validation, events } = driveBare(world);
+
+    expect(validation.valid).toBe(true);
+    expect(world.getStateValue('room.listened')).toBe(true);
+    const listened = events.find(e => e.type === 'if.event.listened')!;
+    expect((listened.data as { messageId?: string }).messageId).toBe('room.distant_bells');
+  });
+
+  test('listening to a thing consults the thing, not the room', () => {
+    const { world, room, object } = TestData.withObject('pebble');
+    room.add({ type: TEST_MARKER_TRAIT });
+    world.registerActionInterceptor(TEST_MARKER_TRAIT, IFActions.LISTENING, {
+      postExecute(_target, w) {
+        w.setStateValue('room.listened', true);
+      },
+    });
+
+    drive(world, object);
+
+    expect(world.getStateValue('room.listened')).toBeUndefined();
+  });
+});

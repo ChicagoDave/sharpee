@@ -61,7 +61,7 @@ end phrase
 
 define action prodding
   grammar
-    prod the thing
+    jab the thing
   refuse without thing: prod-what
   otherwise refuse cant-prod
 
@@ -108,7 +108,7 @@ end trait
 
 define action waving
   grammar
-    wave the thing
+    twirl the thing
   refuse without thing: wave-what
   otherwise refuse cant-wave
   phrase waved

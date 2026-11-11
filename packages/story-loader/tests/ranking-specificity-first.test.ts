@@ -4,8 +4,11 @@
  * (ADR-384 D2), through the REAL compiler, loader and engine. A broad story
  * `take the thing` takes `take lamp` but not `take off hat`, which standard
  * taking-off answers; with `remove from action taking_off` removing
- * `take off the item`, the story line takes `take off hat` too. Assertions
- * are on the hat's worn state and on the rendered text.
+ * `take off the item`, the story line takes `take off hat` too. The story
+ * removes standard taking's `take the item` first, since a story line may
+ * not repeat a standard one (ADR-394 D6); the cross-tier race under test is
+ * the broad story line against the more specific standard `take off`.
+ * Assertions are on the hat's worn state and on the rendered text.
  */
 import { describe, expect, it } from 'vitest';
 import { TraitType, type WearableTrait } from '@sharpee/world-model';
@@ -17,6 +20,9 @@ const story = (extra: string) => `story
     T
   id: hat-rack
   story-version: 0.0.1
+
+remove from action taking
+  take the item
 
 define action grabbing
   grammar

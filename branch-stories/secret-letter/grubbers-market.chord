@@ -44,6 +44,15 @@
 
 create the Alley
   a room
+
+  on the player smelling
+    phrase garbage-ripe-here
+  end on
+
+  on the player listening
+    phrase alley-strain-to-hear when the voices is here
+    phrase market-sound when the voices is not here
+  end on
   aka narrow alley
   southeast to the Northwest Junction
   up to the Outer Market Roof
@@ -82,6 +91,7 @@ create the Alley
 
 create the Northwest Junction
   a room
+  market-scent, market-noise
   in the Market Perimeter
   aka junction, northwest corner
   northwest to the Alley
@@ -129,6 +139,7 @@ create the market gates
 
 create the Grocery Stall
   a room
+  market-scent, market-noise
   in the Market Perimeter
   aka grocer, grocers stall
   southwest to the Northwest Junction
@@ -164,6 +175,11 @@ create the Grocery Stall
 
 create the Fruit Stall
   a room
+  market-noise
+
+  on the player smelling
+    phrase fruit-stall-smell
+  end on
   in the Market Perimeter
   aka fruit
   northwest to the Grocery Stall
@@ -194,6 +210,7 @@ create the Fruit Stall
 
 create the Eastern Junction
   a room
+  market-scent, market-noise
   in the Market Perimeter
   aka eastern edge
   north to the Fruit Stall
@@ -209,6 +226,7 @@ create the Eastern Junction
 
 create the Hat Stall
   a room
+  market-scent, market-noise
   in the Market Perimeter
   aka hats, hatter
   north to the Eastern Junction
@@ -224,6 +242,11 @@ create the Hat Stall
 
 create the Leather Stall
   a room
+  market-noise
+
+  on the player smelling
+    phrase leather-smell
+  end on
   in the Market Perimeter
   aka leather, leather shop, leather goods
   northeast to the Hat Stall
@@ -243,6 +266,7 @@ create the Leather Stall
 
 create the Weaponsmith's Stall
   a room
+  market-scent, market-noise
   in the Market Perimeter
   aka weapons stall, weapons, weaponsmith, smith
   east to the Leather Stall
@@ -261,6 +285,7 @@ create the Weaponsmith's Stall
 
 create the Exotic Gems Stall
   a room
+  market-scent, market-noise
   in the Market Perimeter
   aka gems stall, gems, jewels, jeweler
   north to the Herb Stall
@@ -283,6 +308,7 @@ create the Exotic Gems Stall
 
 create the Herb Stall
   a room
+  market-scent, market-noise
   in the Market Perimeter
   aka herbs, herbalist
   north to the Northwest Junction
@@ -302,6 +328,7 @@ create the Herb Stall
 
 create the Rope Stall
   a room
+  market-scent, market-noise
   in the Open-Air Market
   aka rope, rope dealer, ropemaker
   northwest to the Northwest Junction
@@ -324,6 +351,11 @@ create the Rope Stall
 
 create the Candlemaker's Stall
   a room
+  market-noise
+
+  on the player smelling
+    phrase tallow-fumes-smell
+  end on
   in the Open-Air Market
   aka candle stall, candles, candlemaker, chandler
   north to the Grocery Stall
@@ -347,6 +379,7 @@ create the Candlemaker's Stall
 
 create the Pottery Stall
   a room
+  market-scent, market-noise
   in the Open-Air Market
   aka pottery, potter, urns
   northwest to the Candlemaker's Stall
@@ -370,6 +403,7 @@ create the Pottery Stall
 
 create Outside the Silk Tent
   a room
+  market-scent, market-noise
   in the Open-Air Market
   aka silk stall, outside the tent, teishas stall
   north to Inside the Silk Tent
@@ -392,6 +426,14 @@ create Outside the Silk Tent
 
 create Inside the Silk Tent
   a room
+
+  on the player smelling
+    phrase tent-smell
+  end on
+
+  on the player listening
+    phrase tent-sound
+  end on
   aka silk tent, tent, inside the tent
   south to Outside the Silk Tent
   south is blocked while chase: tent-no-way-back
@@ -406,6 +448,7 @@ create Inside the Silk Tent
 
 create the Base of the Center Post
   a room
+  market-scent, market-noise
   aka center post, centre post, post, base of the post, behind the tent
   south to Inside the Silk Tent
   south is blocked while chase: base-no-way-back
@@ -418,6 +461,14 @@ create the Base of the Center Post
 
 create the Top of the Post
   a room
+
+  on the player smelling
+    phrase top-of-post-smell
+  end on
+
+  on the player listening
+    phrase top-of-post-sound
+  end on
   aka top of the center post, top of the centre post, top
   down to the Base of the Center Post
   down is blocked while chase: top-no-way-down

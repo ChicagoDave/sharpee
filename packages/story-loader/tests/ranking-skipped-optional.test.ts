@@ -2,9 +2,12 @@
  * ranking-skipped-optional.test.ts — a grammar line that skips an optional
  * word ranks as though the word were absent (ADR-384 D1), through the REAL
  * compiler, loader and engine. A story line with a skipped optional outranks
- * the standard line it overrides, and within one action the line that reads
- * the words literally beats the one whose slot would swallow them. Assertions
- * are on the rendered text and on which action's state change happened.
+ * the standard line it competes with, and within one action the line that
+ * reads the words literally beats the one whose slot would swallow them. The
+ * story line names its noun (`push [hard] [the] button`): a story line may
+ * not repeat a standard one's shape (ADR-394 D6), so the cross-tier race is
+ * against the standard `push :target` it overlaps. Assertions are on the
+ * rendered text and on which action's state change happened.
  */
 import { describe, expect, it } from 'vitest';
 import { bootTurns } from './helpers/boot-turns';
@@ -19,14 +22,14 @@ const STORY = `story
 
 define action shoving
   grammar
-    push [hard] the target
+    push [hard] [the] button
   score shoves worth 1
   award shoves
   phrase shoved
 
   phrases en-US
     shoved:
-      You shove {the target}.
+      You shove the button.
 
 define action shooting
   grammar

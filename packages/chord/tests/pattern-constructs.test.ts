@@ -28,16 +28,16 @@ const irAction = (source: string) => {
 
 describe('alternation: `or` (ADR-267 D8)', () => {
   it('adjacent literals joined by `or` become one alt element in the IR', () => {
-    const a = irAction(action('  grammar\n    look in or inside the target\n'));
+    const a = irAction(action('  grammar\n    peer in or inside the target\n'));
     expect(a.patterns[0].parts).toEqual([
-      { kind: 'word', word: 'look' },
+      { kind: 'word', word: 'peer' },
       { kind: 'alt', words: ['in', 'inside'] },
       { kind: 'slot', word: 'target' },
     ]);
   });
 
   it('chains three or more alternates into one element', () => {
-    const a = irAction(action('  grammar\n    put the item in or into or inside the box\n'));
+    const a = irAction(action('  grammar\n    stow the item in or into or inside the box\n'));
     expect(a.patterns[0].parts).toContainEqual({ kind: 'alt', words: ['in', 'into', 'inside'] });
   });
 
@@ -59,9 +59,9 @@ describe('alternation: `or` (ADR-267 D8)', () => {
 
 describe('optional elements: `[word]` (ADR-267 D9)', () => {
   it('a bracketed word is the same element with optional set', () => {
-    const a = irAction(action('  grammar\n    look [carefully] at the target\n'));
+    const a = irAction(action('  grammar\n    peer [carefully] at the target\n'));
     expect(a.patterns[0].parts).toEqual([
-      { kind: 'word', word: 'look' },
+      { kind: 'word', word: 'peer' },
       { kind: 'word', word: 'carefully', optional: true },
       { kind: 'word', word: 'at' },
       { kind: 'slot', word: 'target' },
@@ -69,9 +69,9 @@ describe('optional elements: `[word]` (ADR-267 D9)', () => {
   });
 
   it('brackets compose with alternation and slots', () => {
-    const a = irAction(action('  grammar\n    look [in or inside] [the target]\n'));
+    const a = irAction(action('  grammar\n    peer [in or inside] [the target]\n'));
     expect(a.patterns[0].parts).toEqual([
-      { kind: 'word', word: 'look' },
+      { kind: 'word', word: 'peer' },
       { kind: 'alt', words: ['in', 'inside'], optional: true },
       { kind: 'slot', word: 'target', optional: true },
     ]);
@@ -126,14 +126,14 @@ describe('greedy slot: `takes the rest of the line` (ADR-267 D10)', () => {
 describe('typed slots: `is an instrument` / `is a topic` (ADR-267 D11)', () => {
   it('carries {slot, type} pairs on the IR action', () => {
     const a = irAction(
-      action('  grammar\n    unlock the target with the key\n  the key is an instrument\n'),
+      action('  grammar\n    unbar the target with the key\n  the key is an instrument\n'),
     );
     expect(a.slotTypes).toEqual([{ slot: 'key', type: 'instrument' }]);
   });
 
   it('accepts `is a topic` and is absent when undeclared', () => {
     const a = irAction(
-      action('  grammar\n    consult the sage about the subject\n  the subject is a topic\n'),
+      action('  grammar\n    quiz the sage about the subject\n  the subject is a topic\n'),
     );
     expect(a.slotTypes).toEqual([{ slot: 'subject', type: 'topic' }]);
     const plain = irAction(action('  grammar\n    pet the animal\n'));
@@ -168,7 +168,7 @@ describe('typed slots: `is an instrument` / `is a topic` (ADR-267 D11)', () => {
 describe('semantic defaults: `means <key> <value>` (ADR-267 D12)', () => {
   it('carries per-pattern means entries in the IR, absent when undeclared', () => {
     const a = irAction(
-      action('  grammar\n    hide under the target\n      means position under\n    hide behind the target\n      means position behind\n    hide\n'),
+      action('  grammar\n    huddle under the target\n      means position under\n    huddle behind the target\n      means position behind\n    huddle\n'),
     );
     expect(a.patterns[0].means).toEqual([{ key: 'position', value: 'under' }]);
     expect(a.patterns[1].means).toEqual([{ key: 'position', value: 'behind' }]);

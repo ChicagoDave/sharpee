@@ -87,6 +87,9 @@ define trait hangable
   end on
 end trait
 
+remove from action putting
+  hang the item on the hook
+
 define action hanging
   grammar
     hang the item on or over the target

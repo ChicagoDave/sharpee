@@ -1690,7 +1690,18 @@ define-action  = "define" "action" WORD [ "while" condition ] NL action-line* ;
                                                               block's first statement
                                                               (analysis.refusal-
                                                               misplaced); `otherwise
-                                                              refuse` may stand anywhere *)
+                                                              refuse` may stand anywhere.
+                                                              No reading of a story
+                                                              pattern (alternations and
+                                                              optionals spelled out) may
+                                                              have a standard pattern's
+                                                              shape unless the story
+                                                              removes that shape with
+                                                              `remove from action`
+                                                              (analysis.repeats-standard-
+                                                              grammar); a grammar file
+                                                              and `extend action` are
+                                                              exempt *)
 action-line    = "grammar" NL >>> { pattern-line }
                | "the" WORD "must" "be" WORD NL            (* scope constraint (no colon) *)
                | "the" WORD "takes" "the" "rest" "of" "the" "line" NL

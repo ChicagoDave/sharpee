@@ -761,6 +761,10 @@ end phrase
 
 create the Secret Closet
   a room
+
+  on the player listening
+    phrase harsh-breathing
+  end on
   aka closet, secret closet, dark closet, tiny closet, alcove, hiding place, darkness
   south is blocked while the raid is hidden: barons-men-would-catch-you
   north is blocked: darkness-presses-in

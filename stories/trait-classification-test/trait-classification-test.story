@@ -66,6 +66,14 @@ create the Gallery
 
   A long gallery of odds and ends.
 
+  on the player smelling
+    phrase gallery-air
+  end on
+
+define phrases en-US
+  gallery-air:
+    The gallery smells of old varnish.
+
 create Alex
   a person
   playable

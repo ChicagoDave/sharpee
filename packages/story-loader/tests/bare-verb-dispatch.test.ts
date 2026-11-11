@@ -46,12 +46,12 @@ describe('a define-action registers only its written lines (ADR-384 D5, supersed
     const rules = captureGrammar(story);
 
     expect(rules).toContainEqual({ pattern: 'pet :animal', action: 'chord.action.petting', tier: 'story' });
-    expect(rules).toContainEqual({ pattern: 'pat :animal', action: 'chord.action.petting', tier: 'story' });
+    expect(rules).toContainEqual({ pattern: 'scratch :animal', action: 'chord.action.petting', tier: 'story' });
     expect(rules).toContainEqual({ pattern: 'feed :animal', action: 'chord.action.feeding', tier: 'story' });
 
     // A targetless `pet` fails `pet :animal` with its verb matched, and the
     // parser asks for the missing seat; no bare rule reaches the action.
-    for (const pattern of ['pet', 'pat', 'feed']) {
+    for (const pattern of ['pet', 'scratch', 'feed']) {
       expect(rules.some((r) => r.pattern === pattern)).toBe(false);
     }
   });
@@ -89,7 +89,7 @@ end before
 
 define action waving
   grammar
-    wave the thing
+    twirl the thing
   phrase waved
 
 define phrase waved

@@ -627,6 +627,10 @@ end phrase
 
 create the Foyer
   a room
+
+  on the player listening
+    phrase foyer-music-and-laughter
+  end on
   aka entrance hall, hall, inner keep, castle, keep
   north to the Ballroom
   south is blocked while the preparations is journey: dont-lose-your-nerve

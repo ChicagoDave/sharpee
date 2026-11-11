@@ -99,6 +99,16 @@
       "command": "tap pot",
       "id": "tct00009",
       "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The gallery smells of old varnish."
+        ]
+      },
+      "command": "smell",
+      "id": "tct00010",
+      "type": "turn"
     }
   ],
   "id": "tctroot1"

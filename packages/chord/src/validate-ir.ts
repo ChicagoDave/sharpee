@@ -21,13 +21,15 @@
  * - ADR-270 D2/D3, ADR-382 D6 — alteration targets resolve story-first; removals match by shape.
  * - ADR-394 D2 — a classifier names a kind or a story trait.
  * - ADR-394 D4 — an action does not test its slot for identity with a named thing.
+ * - ADR-394 D6 — a story action does not repeat standard grammar.
  */
 import { KIND_NOUNS, TRAIT_ADJECTIVES } from './catalog.js';
 import { type Diagnostic, DiagnosticBag } from './diagnostics.js';
 import { nearest } from './edit-distance.js';
 import type { IRActionDef, IROnClause, StoryIR } from './ir.js';
 import { manifestForAdjective, manifestForKindNoun, manifestForMovementType } from './manifests/index.js';
-import { lowerParts, renderPattern, samePatternShape } from './patterns.js';
+import type { PatternElement } from '@sharpee/if-domain';
+import { expandReadings, lowerParts, renderPattern, samePatternShape } from './patterns.js';
 import type { Span } from './span.js';
 import { STDLIB_MANIFEST } from './stdlib-manifest.js';
 
@@ -99,6 +101,25 @@ export function validateIR(ir: StoryIR): Diagnostic[] {
           'analysis.unmatched-removal-pattern',
           `\`remove from action ${removal.action}\` — no standard rule matches \`${renderPattern(parts)}\`. The action's standard patterns are: ${shapes.map((s) => `\`${renderPattern(s)}\``).join(', ') || '(none)'}.`,
           removal.span,
+        );
+      }
+    }
+  }
+
+  // ADR-394 D6: a story action does not repeat standard grammar. A grammar
+  // file is the standard grammar itself, and `extend action` blocks are
+  // grammar extensions, not story actions; a reading whose standard shape
+  // the story removes with `remove from action` is the deliberate route to
+  // replacing a standard action.
+  if (ir.grammarFile === undefined) {
+    for (const action of ir.actions) {
+      for (const pattern of action.patterns) {
+        const repeated = repeatedStandardReading(lowerParts(pattern.parts, action.greedy ?? []), ir);
+        if (repeated === null) continue;
+        diagnostics.error(
+          'analysis.repeats-standard-grammar',
+          repeatsStandardGrammarMessage(repeated.reading, repeated.gerund),
+          action.span,
         );
       }
     }
@@ -854,6 +875,49 @@ function objectField(node: object, key: string): object | undefined {
  */
 function isClassifier(word: string, traitDefs: ReadonlyMap<string, object>): boolean {
   return KIND_NOUNS.has(word) || manifestForKindNoun(word) !== null || traitDefs.has(word);
+}
+
+/**
+ * The first reading of a story pattern that repeats a standard action's
+ * grammar, comparing readings (alternations and optionals spelled out), and
+ * skipping a standard shape the story removes from that action.
+ *
+ * @param parts the story pattern's lowered elements
+ * @param ir the IR, for the story's removals
+ * @returns the repeated reading and the standard action's gerund, or null
+ */
+function repeatedStandardReading(
+  parts: readonly PatternElement[],
+  ir: StoryIR,
+): { reading: PatternElement[]; gerund: string } | null {
+  const readings = expandReadings(parts);
+  const shapesById = STDLIB_MANIFEST.locales['en-US'].grammarShapes;
+  for (const [actionId, shapes] of Object.entries(shapesById)) {
+    const gerund = actionId.slice('if.action.'.length);
+    const removed = (ir.grammarRemovals ?? [])
+      .filter((r) => r.action === gerund)
+      .flatMap((r) => r.patterns.map((p) => lowerParts(p.parts)));
+    for (const shape of shapes) {
+      if (removed.some((r) => samePatternShape(r, shape))) continue;
+      for (const standard of expandReadings(shape)) {
+        const reading = readings.find((candidate) => samePatternShape(candidate, standard));
+        if (reading !== undefined) return { reading, gerund };
+      }
+    }
+  }
+  return null;
+}
+
+/**
+ * The fix-it for a repeated standard pattern: answer it on the owner, extend
+ * it for new wording, or remove the standard shape to replace the action.
+ *
+ * @param reading the repeated reading
+ * @param gerund the standard action's gerund
+ * @returns the problem and its remedies, the owner clause first
+ */
+function repeatsStandardGrammarMessage(reading: readonly PatternElement[], gerund: string): string {
+  return `\`${renderPattern(reading)}\` is already the standard \`${gerund}\` grammar, so this action would take that command from it. To give a thing its own response, write \`on the player ${gerund}\` in that thing's block or its trait's. To add new wording, use \`extend action ${gerund}\`. To replace the standard action, first remove its shape with \`remove from action ${gerund}\`.`;
 }
 
 /**

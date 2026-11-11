@@ -253,7 +253,12 @@ const PINNED = {
   // readable one-word values (a trait adjective reads the composition) and
   // the `the match` closure under `analysis.unknown-value`. No production
   // changes.
-  ebnfSha256: '7e1b6bb79df6c10b212e894bbc7ca687518cc5f9dd7adaa19f1537a36a8d2f3b',
+  // Re-pinned 2026-11-11 (session 354c36, ADR-394 D6; chord-ownership-
+  // guards Phase 4): comments only. `define-action`'s note names
+  // `analysis.repeats-standard-grammar` (a story pattern reading with a
+  // standard pattern's shape, unless the story removes it). No production
+  // changes.
+  ebnfSha256: 'ed7a3ee77b61cc633df2bded70e9c4546f01cabc5445096638dabf5cf8e34353',
 };
 
 // Colocated with the version pin it gates (2026-08-14). It previously lived at

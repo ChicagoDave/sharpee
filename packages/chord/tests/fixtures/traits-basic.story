@@ -54,6 +54,9 @@ define trait carrying-limit
   end on
 end trait
 
+remove from action sleeping
+  nap
+
 define action snoozing
   grammar
     snooze

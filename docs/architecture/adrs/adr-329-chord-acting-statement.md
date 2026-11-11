@@ -40,6 +40,8 @@ the plan-shaped acting vocabulary Chord already has, D6 here), [ADR-318](adr-318
 matches against), ADR-270 (story-defined actions the verb may name), ADR-257 (language
 version), `docs/architecture/chord-lessons-learned-timers.md` (lessons 2, 7, 8, 10).
 
+**Amended by**: ADR-394 D6 (2026-11-11): a story action that takes a standard action's name and pattern must first remove the standard shape (`remove from action taking` / `take the thing`). D10's rule is unchanged: such a story action is performed as itself, not folded. `adr-329-d10-perform-step.test.ts` was reworked to carry the removal.
+
 ## Context
 
 ADR-328 built the door and ADR-327 put the names on it. Anyone who acts runs the same

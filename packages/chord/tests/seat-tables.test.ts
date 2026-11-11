@@ -154,7 +154,7 @@ describe('the analyzer refuses what the table cannot seat (ADR-383 D3, D4)', () 
 
   it('an indirect-first story action line seats by name and compiles clean', () => {
     const errors = errorsOf(
-      `${STORY}define action offering\n  grammar\n    offer the gift to the friend\n    present the friend with the gift\n  phrase offered\n\n  phrases en-US\n    offered:\n      Offered.\n`,
+      `${STORY}define action offering\n  grammar\n    proffer the gift to the friend\n    present the friend with the gift\n  phrase offered\n\n  phrases en-US\n    offered:\n      Offered.\n`,
     );
     expect(errors).toEqual([]);
   });
@@ -186,9 +186,9 @@ describe('the analyzer refuses what the table cannot seat (ADR-383 D3, D4)', () 
   });
 
   it('an extension of a story action seats from that action`s own table', () => {
-    const source = `${STORY}define action offering\n  grammar\n    offer the gift to the friend\n  phrase offered\n\n  phrases en-US\n    offered:\n      Offered.\n\nextend action offering\n  grammar\n    present the friend with the gift\n`;
+    const source = `${STORY}define action offering\n  grammar\n    proffer the gift to the friend\n  phrase offered\n\n  phrases en-US\n    offered:\n      Offered.\n\nextend action offering\n  grammar\n    present the friend with the gift\n`;
     expect(errorsOf(source)).toEqual([]);
-    const bad = `${STORY}define action offering\n  grammar\n    offer the gift to the friend\n  phrase offered\n\n  phrases en-US\n    offered:\n      Offered.\n\nextend action offering\n  grammar\n    hand the pal the box\n`;
+    const bad = `${STORY}define action offering\n  grammar\n    proffer the gift to the friend\n  phrase offered\n\n  phrases en-US\n    offered:\n      Offered.\n\nextend action offering\n  grammar\n    hand the pal the box\n`;
     expect(errorsOf(bad).find((e) => e.code === 'analysis.unknown-slot')?.message).toContain('Name at least one of: friend, gift.');
   });
 });

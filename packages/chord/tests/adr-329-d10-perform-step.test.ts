@@ -173,9 +173,11 @@ describe('the standard verbs keep their planning half — the fold (ADR-329 D10)
     expect(oneStep('take the key off')).toMatchObject({ kind: 'perform', action: 'taking_off', slots: { directObject: 'key' } });
   });
 
-  it('a story action of a standard name shadows it and is performed as itself, not folded', () => {
+  // ADR-394 D6: replacing a standard action takes the removal of its shape
+  // first; the story action of the same name is then performed as itself.
+  it('a story action of a standard name replaces it and is performed as itself, not folded', () => {
     const ir = ok(story({
-      top: 'define action taking\n  grammar\n    take the thing\n  the thing must be reachable\n  otherwise refuse conjure-what\n\n',
+      top: 'remove from action taking\n  take the thing\n\ndefine action taking\n  grammar\n    take the thing\n  the thing must be reachable\n  otherwise refuse conjure-what\n\n',
       steps: '    take the key',
     }));
     const wizard = ir.entities.find((e) => e.id === 'wizard')!;

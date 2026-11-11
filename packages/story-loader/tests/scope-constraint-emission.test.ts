@@ -36,13 +36,13 @@ function builtConstraint(rule: { slots: Map<string, { constraints: unknown[] }> 
 
 describe('scope-constraint emission (ADR-271 D2)', () => {
   const story = storyFrom(
-    `${HEADER}define action petting\n  grammar\n    pet the animal\n    pat the animal\n  the animal must be reachable\n  otherwise refuse cant-pet\n\n  phrases en-US\n    cant-pet:\n      No.\n\n${WORLD}`,
+    `${HEADER}define action petting\n  grammar\n    pet the animal\n    scratch the animal\n  the animal must be reachable\n  otherwise refuse cant-pet\n\n  phrases en-US\n    cant-pet:\n      No.\n\n${WORLD}`,
   );
   const rules = captureGrammarRules(story);
 
   it('emits every slotted rule of the action with the constraint attached', () => {
     const slotted = rules.filter((r) => r.pattern.includes(':'));
-    expect(slotted.map((r) => r.pattern).sort()).toEqual(['pat :animal', 'pet :animal']);
+    expect(slotted.map((r) => r.pattern).sort()).toEqual(['pet :animal', 'scratch :animal']);
     for (const rule of slotted) {
       expect(rule.action).toBe('chord.action.petting');
       expect(builtConstraint(rule, 'animal').base).toBe('touchable');
@@ -61,9 +61,9 @@ describe('requirement → predicate mapping (ADR-271 D1 table, loader side)', ()
     ['held', 'carried'],
   ])('`must be %s` builds a `%s`-based scope constraint', (word, base) => {
     const story = storyFrom(
-      `${HEADER}define action poking\n  grammar\n    poke the thing\n  the thing must be ${word}\n  otherwise refuse cant-poke\n\n  phrases en-US\n    cant-poke:\n      No.\n\n${WORLD}`,
+      `${HEADER}define action poking\n  grammar\n    prise the thing\n  the thing must be ${word}\n  otherwise refuse cant-poke\n\n  phrases en-US\n    cant-poke:\n      No.\n\n${WORLD}`,
     );
-    const rule = captureGrammarRules(story).find((r) => r.pattern === 'poke :thing')!;
+    const rule = captureGrammarRules(story).find((r) => r.pattern === 'prise :thing')!;
     expect(builtConstraint(rule, 'thing').base).toBe(base);
   });
 });
@@ -71,15 +71,15 @@ describe('requirement → predicate mapping (ADR-271 D1 table, loader side)', ()
 describe('action-centric emission shape (ADR-271 D3, acceptance 3)', () => {
   it('a multi-pattern action with mixed slots shares one id; constraints land only on carrying lines', () => {
     const story = storyFrom(
-      `${HEADER}define action waving\n  grammar\n    wave the thing\n    wave hands\n  the thing must be visible\n  otherwise refuse cant-wave\n\n  phrases en-US\n    cant-wave:\n      No.\n\n${WORLD}`,
+      `${HEADER}define action waving\n  grammar\n    twirl the thing\n    twirl hands\n  the thing must be visible\n  otherwise refuse cant-wave\n\n  phrases en-US\n    cant-wave:\n      No.\n\n${WORLD}`,
     );
     const rules = captureGrammarRules(story);
     expect(new Set(rules.map((r) => r.action))).toEqual(new Set(['chord.action.waving']));
 
-    const slotted = rules.find((r) => r.pattern === 'wave :thing')!;
+    const slotted = rules.find((r) => r.pattern === 'twirl :thing')!;
     expect(builtConstraint(slotted, 'thing').base).toBe('visible');
 
-    const literal = rules.find((r) => r.pattern === 'wave hands')!;
+    const literal = rules.find((r) => r.pattern === 'twirl hands')!;
     expect(literal.tier).toBe('story');
     expect(literal.slots.has('thing')).toBe(false);
   });

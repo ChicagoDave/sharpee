@@ -28,10 +28,11 @@ import {
 } from '../../lifecycle/index.js';
 
 /**
- * Interceptor surface (ADR-228): the listened-to target is the only
- * consultable entity of a LISTEN command. Listening to the environment
- * ("listen") has no direct object, so the slot resolves to undefined —
- * zero consultations.
+ * Interceptor surface (ADR-228): the listened-to target is the one
+ * consultable entity of `listen to <thing>`. Listening to the environment
+ * ("listen") has no direct object, so the room the actor listens in is
+ * consulted instead, as a bare JUMP consults it (ADR-370 D1): a room answers
+ * a bare LISTEN with a Chord `on the player listening` clause (ADR-394 D6).
  */
 export const listeningLifecycle: ActionLifecycleDescriptor = {
   actionId: IFActions.LISTENING,
@@ -41,7 +42,7 @@ export const listeningLifecycle: ActionLifecycleDescriptor = {
     {
       id: 'target',
       actionIds: [IFActions.LISTENING],
-      resolve: (ctx) => ctx.command.directObject?.entity
+      resolve: (ctx) => ctx.command.directObject?.entity ?? ctx.currentLocation ?? undefined
     }
   ]
 };

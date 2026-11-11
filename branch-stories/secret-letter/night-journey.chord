@@ -406,6 +406,10 @@ end phrase
 
 create the Pasture
   a room
+
+  on the player smelling
+    phrase mostly-cow-pies
+  end on
   aka field, open field, pastures, farmland
   north to the Stream Crossing
   northwest to the Southern Gate
@@ -483,6 +487,10 @@ end phrase
 
 create the Stream Crossing
   a room
+
+  on the player smelling
+    phrase mostly-cow-pies
+  end on
   aka crossing, stream crossing, north end, northern pasture
   north to the Woods
   southwest to the Lord's Road, one-way
@@ -1161,6 +1169,14 @@ end phrase
 
 create the Underneath the Fountain
   a room
+
+  on the player smelling
+    phrase tunnel-smells-sour
+  end on
+
+  on the player listening
+    phrase tunnel-drip
+  end on
   in the Tunnels
   aka tunnel, low tunnel, under the fountain, beneath the fountain
   north to the Tunnel End

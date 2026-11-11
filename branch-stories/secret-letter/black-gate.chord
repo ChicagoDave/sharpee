@@ -205,6 +205,10 @@ extend action climbing
 
 create the Rooftop
   a room
+
+  on the player smelling
+    phrase coal-smoke-smell
+  end on
   aka rooftops, main rooftop, roof, roofs, peaks, peak, valleys, valley, mountain range, landscape
   east to the Rooftop Edge
   down is blocked: rooftop-no-climbing-down
@@ -252,6 +256,10 @@ end phrase
 
 create the Rooftop Edge
   a room
+
+  on the player smelling
+    phrase coal-smoke-smell
+  end on
   aka edge, rooftops, roof, roofs, landscape, end, peaks, valleys, mountain range
   east to the Balcony
   up is blocked: rooftop-as-high-as-it-goes
@@ -345,6 +353,12 @@ define action jumping
   refuse when the player is in the Balcony: balcony-no-jumping-back
   the player must be in the Rooftop Edge: jump-nowhere
   move the player to the Balcony
+
+## A bare JUMP or LEAP is this story's own action, not the standard one.
+
+remove from action jumping
+  jump
+  leap
 
 extend action entering
   grammar
@@ -473,6 +487,14 @@ create the people far below
 
 create the Balcony
   a room
+
+  on the player smelling
+    phrase roses-from-here
+  end on
+
+  on the player listening
+    phrase fountain-trickle-from-here
+  end on
   aka roof of black gate estate, roof, ornate balcony, western edge
   northeast to the Rooftop Garden
   southeast to the Patio
@@ -534,6 +556,14 @@ create the rooftops to the west
 
 create the Patio
   a room
+
+  on the player smelling
+    phrase roses-from-here
+  end on
+
+  on the player listening
+    phrase fountain-no-time-to-listen
+  end on
   aka rooftop patio, paving stones, pavestones, elegant paving
   north to the Rooftop Garden
   northwest to the Balcony
@@ -615,6 +645,14 @@ end phrase
 
 create the Rooftop Garden
   a room
+
+  on the player smelling
+    phrase no-time-to-smell-flowers
+  end on
+
+  on the player listening
+    phrase fountain-trickle-from-here
+  end on
   aka garden, roof garden, greenery
   south to the Patio
   southwest to the Balcony
@@ -1089,6 +1127,10 @@ end phrase
 
 create the Second Floor Landing
   a room
+
+  on the player listening
+    phrase muttering-voices
+  end on
   aka landing, second floor, stairway, main stairway, stairwell
   up to the Third Floor Landing
   south to the Living Room
@@ -1385,13 +1427,13 @@ create the old books
 
 ## The chandelier (`story.ni:9401-9468`): raised, everything is out of reach;
 ## lowered, it can be nudged and searched. `lift` carries the winch hint
-## through a trait (the jail's story action never reaches an entity clause).
+## through a trait answering the standard `raising`.
 ## The find (`story.ni:9445-9447`), on examine or search alike: the letter
 ## comes out of the chandelier into the room, revealed, and the description
 ## ("Nothing else…") follows the line, as the straw's wire does in the jail.
 
 define trait chandelier-lift
-  on the player lifting
+  on the player raising
     refuse when the gaudy chandelier is raised: chandelier-out-of-reach
     refuse chandelier-too-heavy-to-lift
   end on
