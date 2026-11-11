@@ -1,0 +1,32 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "extends": ["//"],
+  "tasks": {
+    "test:ci": {
+      "inputs": [
+        "$TURBO_EXTENDS$",
+        "$TURBO_ROOT$/dist/cli/sharpee.js",
+        "$TURBO_ROOT$/dist/web/dungeo/**",
+        "$TURBO_ROOT$/stories/dungeo/src/**",
+        "$TURBO_ROOT$/stories/dungeo/walkthroughs/wt-01-get-torch-early.transcript",
+        "$TURBO_ROOT$/packages/**/*.ts",
+        "$TURBO_ROOT$/packages/**/*.js",
+        "$TURBO_ROOT$/stories/**/*.ts",
+        "$TURBO_ROOT$/stories/**/*.js",
+        "$TURBO_ROOT$/scripts/**/*.ts",
+        "$TURBO_ROOT$/scripts/**/*.js",
+        "!$TURBO_ROOT$/packages/**/node_modules/**",
+        "!$TURBO_ROOT$/packages/**/dist/**",
+        "!$TURBO_ROOT$/packages/**/dist-esm/**",
+        "!$TURBO_ROOT$/packages/**/coverage/**",
+        "!$TURBO_ROOT$/packages/**/.archived/**",
+        "!$TURBO_ROOT$/stories/**/node_modules/**",
+        "!$TURBO_ROOT$/stories/**/dist/**",
+        "!$TURBO_ROOT$/stories/**/dist-esm/**",
+        "!$TURBO_ROOT$/stories/**/coverage/**",
+        "!$TURBO_ROOT$/stories/**/.archived/**",
+        "!$TURBO_ROOT$/scripts/**/node_modules/**"
+      ]
+    }
+  }
+}

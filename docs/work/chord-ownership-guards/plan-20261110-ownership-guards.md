@@ -271,7 +271,7 @@ Phase 1 comes first for a real reason: Guard 1's fix-it steers authors to trait-
 - **Exit state**: The refused shape and its rewrite are both committed and pinned. Every suite, the three Chord trees and the Dungeo walkthrough chain pass on the finished set.
 - **Demonstration**: `pnpm exec turbo run test:ci` is green, and in it the noun-dispatch fixture reports the full expected code list and the owner-dispatch fixture compiles with zero diagnostics and reaches the asserted world state. `./repokit build dungeo` then `node dist/cli/sharpee.js --test --chain stories/dungeo/walkthroughs/wt-*.transcript` passes in one run; `./sharpee test branch-stories/fernhill`, `./sharpee test branch-stories/ides-of-march` and `./sharpee test branch-stories/secret-letter` report the counts they reported before Phase 1; `./repokit ebnf --check` reports a well-formed grammar.
 - **Demonstrated**: 
-- **Status**: PENDING
+- **Status**: CURRENT (since 2026-11-11)
 
 ## Questions for David
 

@@ -1,0 +1,20 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "extends": ["//"],
+  "tasks": {
+    "test:ci": {
+      "inputs": [
+        "$TURBO_EXTENDS$",
+        "$TURBO_ROOT$/branch-stories/fernhill/**",
+        "$TURBO_ROOT$/branch-stories/upps/**",
+        "!$TURBO_ROOT$/branch-stories/**/dist/**",
+        "!$TURBO_ROOT$/branch-stories/**/node_modules/**",
+        "$TURBO_ROOT$/packages/chord/tests/fixtures/**",
+        "$TURBO_ROOT$/packages/platform-browser/package.json",
+        "$TURBO_ROOT$/packages/platform-browser/src/**",
+        "$TURBO_ROOT$/packages/platform-browser/styles/**",
+        "$TURBO_ROOT$/packages/stdlib/src/actions/standard/version/engine-version.ts"
+      ]
+    }
+  }
+}

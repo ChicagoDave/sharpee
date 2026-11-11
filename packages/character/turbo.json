@@ -1,0 +1,14 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "extends": ["//"],
+  "tasks": {
+    "test:ci": {
+      "inputs": [
+        "$TURBO_EXTENDS$",
+        "$TURBO_ROOT$/stories/thealderman/chord/**",
+        "!$TURBO_ROOT$/stories/thealderman/chord/dist/**",
+        "!$TURBO_ROOT$/stories/thealderman/chord/node_modules/**"
+      ]
+    }
+  }
+}

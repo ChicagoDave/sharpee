@@ -1,0 +1,14 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "extends": ["//"],
+  "tasks": {
+    "test:ci": {
+      "inputs": [
+        "$TURBO_EXTENDS$",
+        "$TURBO_ROOT$/branch-stories/**",
+        "!$TURBO_ROOT$/branch-stories/**/dist/**",
+        "!$TURBO_ROOT$/branch-stories/**/node_modules/**"
+      ]
+    }
+  }
+}

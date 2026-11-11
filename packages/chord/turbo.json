@@ -1,0 +1,20 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "extends": ["//"],
+  "tasks": {
+    "test:ci": {
+      "inputs": [
+        "$TURBO_EXTENDS$",
+        "$TURBO_ROOT$/packages/story-loader/src/**",
+        "$TURBO_ROOT$/branch-stories/**/*.story",
+        "$TURBO_ROOT$/branch-stories/**/*.chord",
+        "$TURBO_ROOT$/stories/**/*.story",
+        "$TURBO_ROOT$/stories/**/*.chord",
+        "!$TURBO_ROOT$/branch-stories/**/node_modules/**",
+        "!$TURBO_ROOT$/branch-stories/**/dist/**",
+        "!$TURBO_ROOT$/stories/**/node_modules/**",
+        "!$TURBO_ROOT$/stories/**/dist/**"
+      ]
+    }
+  }
+}

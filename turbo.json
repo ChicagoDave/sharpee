@@ -13,8 +13,16 @@
     },
     "test:ci": {
       "dependsOn": ["build"],
-      "outputs": ["coverage/**"],
-      "cache": false
+      "inputs": ["$TURBO_DEFAULT$", "$TURBO_ROOT$/vitest.shared.ts"],
+      "env": [
+        "CI",
+        "UPDATE_GOLDEN",
+        "DEVKIT_INTEGRATION",
+        "SHARPEE_DEVKIT_REGISTRY",
+        "SHARPEE_TRANSCRIPT_CORPUS",
+        "WORLD_INDEX_SCALE_TABLE"
+      ],
+      "outputs": ["coverage/**"]
     },
     "clean": {
       "cache": false
