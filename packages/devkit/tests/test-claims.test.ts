@@ -6,9 +6,10 @@
  * alone, and a claims file the command cannot run exits 2 with the reason
  * named. Each case runs the real command function over a real project —
  * the compiled `@sharpee/chord` and `@sharpee/branch-tester` with the engine
- * behind them, no stub. The Fernhill cases are the REAL-PATH test of the
- * end-to-end scenario: the repository's own story, its manifest line, its
- * fragment, at its pinned seed.
+ * behind them, no stub. The ferry cases are the REAL-PATH test of the
+ * end-to-end scenario: a whole story with a forked tree, its manifest line,
+ * its fragment and a lock, at its pinned seed. The story is the test story
+ * `test-stories/ferry` (its test set: OB-22 to OB-26).
  *
  * Owner context: devkit test suite.
  */
@@ -19,7 +20,7 @@ import { afterAll, describe, expect, it, vi } from 'vitest';
 import { runTestCommand } from '../src/commands/test.js';
 
 const FIXTURE = path.resolve(__dirname, 'fixtures', 'claims-tier');
-const FERNHILL = path.resolve(__dirname, '..', '..', '..', 'branch-stories', 'fernhill');
+const FERRY = path.resolve(__dirname, '..', '..', '..', 'test-stories', 'ferry');
 
 const scratch: string[] = [];
 afterAll(() => {
@@ -217,35 +218,36 @@ describe('sharpee test — a claims file the command cannot run exits 2 (ADR-365
   }, 60_000);
 });
 
-const describeFernhill = existsSync(path.join(FERNHILL, 'fernhill.story')) ? describe : describe.skip;
+const describeFerry = existsSync(path.join(FERRY, 'ferry.story')) ? describe : describe.skip;
 
-describeFernhill('REAL-PATH: Fernhill\'s claims through sharpee test (ADR-365 end-to-end scenario)', () => {
+describeFerry('REAL-PATH: the ferry\'s claims through sharpee test (ADR-365 end-to-end scenario)', () => {
   let withClaims: { code: number; stdout: string[] };
 
-  it('reports 9 held and 1 violated from the manifest line, at the tree\'s seed — six held by lines, four walks', async () => {
-    withClaims = await runCapturing([FERNHILL]);
+  it('reports 5 held and 1 violated from the manifest line, at the tree\'s seed — three held by lines, three walks', async () => {
+    withClaims = await runCapturing([FERRY]);
     expect(withClaims.code).toBe(0);
-    const heading = withClaims.stdout.indexOf('Claims: fernhill.claims.chord');
+    const heading = withClaims.stdout.indexOf('Claims: ferry.claims.chord');
     expect(heading).toBeGreaterThan(withClaims.stdout.findIndex((line) => line.startsWith('Rooms entered:')));
-    expect(withClaims.stdout[heading + 1]).toBe('claims: 9 of 10 held, 1 violated (seed 42)');
-    // ADR-367 D5: the lines prove six of the positive claims, so only the two
-    // `never`s and the two claims no line reaches are walked — four walks.
-    expect(withClaims.stdout[heading + 2]).toMatch(/^4 walks, \d+\.\ds in all$/);
+    expect(withClaims.stdout[heading + 1]).toBe('claims: 5 of 6 held, 1 violated (seed 42)');
+    // ADR-367 D5: the lines prove three of the positive claims, so only the two
+    // `never`s and the one claim no line reaches are walked — three walks.
+    expect(withClaims.stdout[heading + 2]).toMatch(/^3 walks, \d+\.\ds in all$/);
     const violated = withClaims.stdout.filter((line) => line.startsWith('VIOLATED'));
     expect(violated).toHaveLength(1);
-    expect(violated[0]).toMatch(/^VIOLATED {2}the deed box leaves the Folly \(never\) — at depth \d+: /);
+    expect(violated[0]).toBe('VIOLATED  the ticket leaves the Ticket Hut (never) — at depth 3: north / take ticket / south');
     const held = withClaims.stdout.filter((line) => line.startsWith('HELD'));
-    expect(held).toHaveLength(9);
-    expect(held.filter((line) => line.includes(' — by line ')).length).toBe(6);
-    expect(withClaims.stdout).toContain('HELD  the deed box is open — by line weefpbmr "opening-iron-gates" at turn 23');
-    expect(withClaims.stdout).toContain('  lock "the deed box is open" at line hpjuaufx "folly · open deed box with locket" at turn 22 — held there');
-  }, 300_000);
+    expect(held).toHaveLength(5);
+    expect(held.filter((line) => line.includes(' — by line ')).length).toBe(3);
+    // The main line reaches the locked claim a turn before the branch's lock card does.
+    expect(withClaims.stdout).toContain('HELD  the lantern is open — by line frymain1 "opening-landing" at turn 6');
+    expect(withClaims.stdout).toContain('  lock "the lantern is open" at line frywait1 "landing · wait" at turn 7 — held there');
+  });
 
   it('exits as the same run exits without the manifest line, and prints the same report up to the claims', async () => {
-    const dir = projectVariant(FERNHILL, 'fernhill', 42, undefined);
+    const dir = projectVariant(FERRY, 'ferry', 42, undefined);
     const without = await runCapturing([dir]);
     expect(without.code).toBe(withClaims.code);
-    const heading = withClaims.stdout.indexOf('Claims: fernhill.claims.chord');
+    const heading = withClaims.stdout.indexOf('Claims: ferry.claims.chord');
     // The first line names the project directory, which differs by construction.
     // The tally differs by exactly the fragment's lock: a held lock is one more
     // passing assertion on its card (ADR-367 D6), and nothing else moves.
@@ -253,9 +255,9 @@ describeFernhill('REAL-PATH: Fernhill\'s claims through sharpee test (ADR-365 en
     const withTally = tallyOf(withClaims.stdout);
     const withoutTally = tallyOf(without.stdout);
     expect(withTally).toBe(withoutTally);
-    expect(withClaims.stdout[withTally]).toBe('86 cards passing, 107 assertions passing');
-    expect(without.stdout[withoutTally]).toBe('86 cards passing, 106 assertions passing');
+    expect(withClaims.stdout[withTally]).toBe('10 cards passing, 12 assertions passing');
+    expect(without.stdout[withoutTally]).toBe('10 cards passing, 11 assertions passing');
     const butTally = (lines: string[], tally: number) => lines.filter((_, index) => index !== tally);
     expect(butTally(withClaims.stdout.slice(1, heading - 1), withTally - 1)).toEqual(butTally(without.stdout.slice(1), withoutTally - 1));
-  }, 300_000);
+  });
 });

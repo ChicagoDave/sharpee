@@ -32,7 +32,7 @@ describe('the lock\'s own output is canonical', () => {
   });
 
   it('the repository\'s fragments pass', () => {
-    for (const file of ['branch-stories/fernhill/fernhill.claims.chord', 'branch-stories/upps/upps.claims.chord', 'test-stories/lodge/lodge.claims.chord', 'test-stories/bazaar/bazaar.claims.chord']) {
+    for (const file of ['branch-stories/fernhill/fernhill.claims.chord', 'branch-stories/upps/upps.claims.chord', 'test-stories/lodge/lodge.claims.chord', 'test-stories/bazaar/bazaar.claims.chord', 'test-stories/ferry/ferry.claims.chord']) {
       const path = resolve(__dirname, '..', '..', '..', file);
       if (!existsSync(path)) continue;
       expect(problemsOf(readFileSync(path, 'utf8')), file).toEqual([]);

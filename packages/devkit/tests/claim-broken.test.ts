@@ -7,8 +7,10 @@
  * exits 0, because a claim's own verdict moves nothing (ADR-365 D9). Each
  * case runs the real command functions over a real scratch project — the
  * compiled `@sharpee/chord` and `@sharpee/branch-tester` with the engine
- * behind them, no stub. The UPPS and Fernhill cases are the REAL-PATH tests
- * on the repository's own stories at their pinned seeds.
+ * behind them, no stub. The ferry cases are the REAL-PATH tests on a whole
+ * story with a forked tree, the test story `test-stories/ferry` at its
+ * pinned seed (its test set: OB-27 to OB-31). The breaking edit's walk
+ * stops on its depth budget, which costs under a second there.
  *
  * Owner context: devkit test suite.
  */
@@ -22,9 +24,7 @@ import { runTestCommand } from '../src/commands/test.js';
 
 const FIXTURE = path.resolve(__dirname, 'fixtures', 'claims-tier');
 const FRAGMENT = 'claims-tier.claims.chord';
-const STORIES = path.resolve(__dirname, '..', '..', '..', 'branch-stories');
-const UPPS = path.join(STORIES, 'upps');
-const FERNHILL = path.join(STORIES, 'fernhill');
+const FERRY = path.resolve(__dirname, '..', '..', '..', 'test-stories', 'ferry');
 
 const scratch: string[] = [];
 afterAll(() => {
@@ -187,37 +187,39 @@ describe('a broken lock fails its card and the run (ADR-367 D6)', () => {
   }, 120_000);
 });
 
-const describeUpps = existsSync(path.join(UPPS, 'upps.story')) ? describe : describe.skip;
-describeUpps('AC-4 on UPPS — the drop lever no longer sends the shuttle', () => {
-  it('`sharpee test` fails the pinned card naming the claim, shows the story\'s output, exits 1, and the claim is not reached by any line', async () => {
-    const dir = copyOf(UPPS, 'sharpee-upps-broken-');
-    edit(path.join(dir, 'upps.story'), '    phrase shuttle-rises when the drop shuttle is at the Kraken Landing\n    start the drop shuttle\n', '    phrase shuttle-rises when the drop shuttle is at the Kraken Landing\n');
+const describeFerry = existsSync(path.join(FERRY, 'ferry.story')) ? describe : describe.skip;
+
+describeFerry('AC-4 on the ferry — the lever no longer docks the ferry', () => {
+  it('`sharpee test` fails an earlier card with the story\'s output, the lock\'s card names the claim, exits 1, and the claim is not reached by any line', async () => {
+    const dir = copyOf(FERRY, 'sharpee-ferry-broken-');
+    edit(path.join(dir, 'ferry.story'), '    change the ferry to docked\n    phrase lever-pulled\n', '    phrase lever-pulled\n');
     const { code, stdout } = await run(() => runTestCommand([dir]));
     expect(code).toBe(1);
-    const cite = stdout.findIndex((row) => row.startsWith('✗ landing-pad · show card to quint — wait: '));
+    const cite = stdout.findIndex((row) => row.startsWith('✗ landing · wait — east: '));
     expect(cite).toBeGreaterThan(-1);
-    // The shuttle never arrives, so the wait card breaks first: the story's words on that turn sit under the
-    // cite, and the lock card that breaks after it is named on its own row.
+    // The ferry never docks, so boarding breaks first: the story's words on that turn sit under the cite, and
+    // the lock card that breaks after it is named on its own row.
     const under = stdout.slice(cite + 1);
     const outputEnd = under.findIndex((row) => !row.startsWith('    '));
     expect(outputEnd).toBeGreaterThan(0);
-    expect(under.slice(0, outputEnd).join('\n')).toContain('Time passes');
-    expect(stdout).toContain('  exit: lock "the player is in the Kraken Landing" not held here: the player is in the Shuttle Gate');
-    expect(stdout.find((row) => row.startsWith('UNPROVEN  the player is in the Kraken Landing — not reached by any line; the walk stopped at'))).toBeDefined();
-    expect(stdout).toContain('  lock "the player is in the Kraken Landing" at line a366titn "landing-pad · show card to quint" at turn 160 — NOT held there: the player is in the Shuttle Gate');
-  }, 600_000);
+    expect(under.slice(0, outputEnd).join('\n')).toContain('The ramp is up and the ferry is out in the stream.');
+    expect(stdout).toContain('  open lantern: lock "the lantern is open" not held here: the lantern is closed');
+    // The lock's set holds the biscuit, a hundred bites deep, so the walk cannot exhaust it and stops on its
+    // depth budget, in under a second.
+    expect(stdout.find((row) => row.startsWith('UNPROVEN  the lantern is open — not reached by any line; the walk stopped at max-depth-reached after 159 states'))).toBeDefined();
+    expect(stdout).toContain('  lock "the lantern is open" at line frywait1 "landing · wait" at turn 7 — NOT held there: the lantern is closed');
+  });
 });
 
-const describeFernhill = existsSync(path.join(FERNHILL, 'fernhill.story')) ? describe : describe.skip;
-describeFernhill('AC-4 on Fernhill — a claim\'s own verdict moves nothing (ADR-365 D9)', () => {
-  it('the auction notice moved out of reach: every card green, the claim UNPROVEN by walk, exit 0', async () => {
-    const dir = copyOf(FERNHILL, 'sharpee-fernhill-unproven-');
-    edit(path.join(dir, 'fernhill.story'), '  a thing, scenery, readable\n  in the Iron Gates\n', '  a thing, scenery, readable\n  in the Folly\n');
+describeFerry('AC-4 on the ferry — a claim\'s own verdict moves nothing (ADR-365 D9)', () => {
+  it('the timetable moved out of reach: every card green, the claim UNPROVEN by walk, exit 0', async () => {
+    const dir = copyOf(FERRY, 'sharpee-ferry-unproven-');
+    edit(path.join(dir, 'ferry.story'), '  a thing, scenery, readable\n  in the Landing\n', '  a thing, scenery, readable\n  in the Far Bank\n');
     const { code, stdout } = await run(() => runTestCommand([dir]));
     expect(code).toBe(0);
     expect(stdout.some((row) => row.startsWith('✗'))).toBe(false);
-    expect(stdout).toContain('claims: 8 of 10 held, 1 violated, 1 unproven (seed 42)');
-    expect(stdout).toContain('UNPROVEN  the auction notice has been read — not reached by any line; no reachable state under its set satisfies it (the set of "the auction notice has been read")');
-    expect(stdout).toContain('  lock "the deed box is open" at line hpjuaufx "folly · open deed box with locket" at turn 22 — held there');
-  }, 600_000);
+    expect(stdout).toContain('claims: 4 of 6 held, 1 violated, 1 unproven (seed 42)');
+    expect(stdout).toContain('UNPROVEN  the timetable has been read — not reached by any line; no reachable state under its set satisfies it (the set of "the timetable has been read")');
+    expect(stdout).toContain('  lock "the lantern is open" at line frywait1 "landing · wait" at turn 7 — held there');
+  });
 });

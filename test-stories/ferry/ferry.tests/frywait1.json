@@ -1,0 +1,40 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "Time passes"
+        ]
+      },
+      "command": "wait",
+      "id": "frybrch1",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The deck of a flat ferry"
+        ]
+      },
+      "command": "east",
+      "id": "frybrch2",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You open the lantern."
+        ]
+      },
+      "command": "open lantern",
+      "id": "frybrch3",
+      "locks": [
+        "the lantern is open"
+      ],
+      "type": "turn"
+    }
+  ],
+  "id": "frywait1",
+  "ordinal": 1,
+  "parent": "frymain1"
+}

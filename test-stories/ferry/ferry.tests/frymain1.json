@@ -1,0 +1,62 @@
+{
+  "cards": [
+    {
+      "assertions": {},
+      "id": "fryopen1",
+      "type": "opening"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "A river landing."
+        ]
+      },
+      "id": "fryboot1",
+      "type": "boot"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "A hut with a ticket window."
+        ]
+      },
+      "command": "north",
+      "id": "fryturn1",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Taken."
+        ]
+      },
+      "command": "take ticket",
+      "id": "fryturn2",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "A river landing."
+        ]
+      },
+      "command": "south",
+      "id": "fryturn3",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "the ferry noses in to the landing"
+        ],
+        "states": [
+          "the ferry is docked"
+        ]
+      },
+      "command": "pull lever",
+      "id": "fryturn4",
+      "type": "turn"
+    }
+  ],
+  "id": "frymain1"
+}

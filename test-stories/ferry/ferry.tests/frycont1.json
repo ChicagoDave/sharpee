@@ -1,0 +1,27 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "The deck of a flat ferry"
+        ]
+      },
+      "command": "east",
+      "id": "fryturn5",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You open the lantern."
+        ]
+      },
+      "command": "open lantern",
+      "id": "fryturn6",
+      "type": "turn"
+    }
+  ],
+  "id": "frycont1",
+  "ordinal": 0,
+  "parent": "frymain1"
+}

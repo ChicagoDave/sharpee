@@ -6,7 +6,8 @@
       "inputs": [
         "$TURBO_EXTENDS$",
         "$TURBO_ROOT$/branch-stories/fernhill/**",
-        "$TURBO_ROOT$/branch-stories/upps/**",
+        "$TURBO_ROOT$/test-stories/ferry/**",
+        "!$TURBO_ROOT$/test-stories/**/dist/**",
         "!$TURBO_ROOT$/branch-stories/**/dist/**",
         "!$TURBO_ROOT$/branch-stories/**/node_modules/**",
         "$TURBO_ROOT$/packages/chord/tests/fixtures/**",
