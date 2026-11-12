@@ -102,8 +102,13 @@ Phase 1 then Phase 2 come first, as David's process orders them. Phases 3 and 4 
 - **Files**: `docs/work/small-test-stories/test-sets.md` (new), `docs/architecture/adrs/adr-395-exploring-tests-run-on-test-stories.md` (new)
 - **Exit state**: David has approved the division and the location, and the plan's later Files lines name the ruled directory. N and T are recorded in this phase's Demonstrated line.
 - **Demonstration**: The OB-n ids extracted with grep from `docs/work/small-test-stories/inventory.md` and from `docs/work/small-test-stories/test-sets.md`, compared with diff, show every in-scope id in exactly one test set; each skeleton's compile probe is recorded with zero error diagnostics.
-- **Demonstrated**: 
-- **Status**: PENDING
+- **Demonstrated**: N is 4 stories (`lodge`, `bazaar`, `ferry`, `orchard`) carrying T of 66 cases (14 in the turbo gate, 8 in the IDE web and lens suites, 44 narrative); David approved the division and accepted ADR-395 ("yes", 2026-11-11). [verified: re-run by the summary writer 2026-11-11 after the last write to `test-sets.md` (18:32:16 CST) and the skeletons (18:30): the inventory's obligation rows against the set table's ranges, expanded by script at 18:34:57, "inventory 45 assigned 45 missing 0 multi 0 not-in-inventory 0"; `node probe.js lodge bazaar ferry orchard` at 18:34:15, "lodge: ok=true rooms=5 errors=0 warnings=1 claims=9", "bazaar: ok=true rooms=3 errors=0 warnings=1 claims=1" (the finding names fig, plum, ribbon, thimble, wick, flint), "ferry: ok=true rooms=4 errors=0 warnings=4 claims=6", "orchard: ok=true rooms=5 errors=0 warnings=0"; the bundle (`chord.cjs`, 12:00:50) post-dates the last `packages/chord/src/validate-ir.ts` edit (event log 18:00:49Z), and `git diff c3823f727 -- packages/chord/src` is empty. The case counts add up: 5+3+2+2+2 = 14, 1+1+2+4 = 8, the ten narrative files 44. David's "yes" is the main session's report]
+  - The OB ids in the inventory's obligation rows against the ranges in `test-sets.md`'s set table, compared by script: "inventory ids 45 assigned 45 missing 0 in more than one set 0 not in inventory 0". OB-D1 is in no set by ruling 5.
+  - Compile probes, one final run each against the current `packages/chord` source bundled with esbuild: `lodge` 5 rooms, 0 errors, 9 claims; `bazaar` 3 rooms, 0 errors, 1 claim, with the `analysis.claim-inert-needs` finding naming all six wares; `ferry` 4 rooms, 0 errors, 6 claims; `orchard` 5 rooms, 0 errors. Reaching zero took four corrections to the skeletons' own Chord, none a compiler defect. No walk was run: the probes prove the skeletons compile, not that each claim settles as designed.
+  - `docs/architecture/adrs/adr-395-exploring-tests-run-on-test-stories.md` is written (`**Kind**: process`, eight decisions) and ACCEPTED.
+  - The location is ruled (`test-stories/`), which the later phases' Files lines already name.
+  - One open point carried to Phase 4, recorded in `test-sets.md`: the cone reports `ferry`'s boarding claim as depending on nothing in its set although the Deck's exit is conditional on the ferry's state.
+- **Status**: DONE
 
 ### Phase 3: The claims runner's real-path tests run on test stories (branch-tester)
 - **Tier**: Large
@@ -189,6 +194,18 @@ Phase 1 then Phase 2 come first, as David's process orders them. Phases 3 and 4 
 - **Demonstration**: The OB-n ids in the inventory's destination column, compared with diff against its in-scope rows, show no row without a destination; the inventory's recorded search, re-run with `git grep -l -i -E`, finds real-story names only in files classified REPLAY, STRUCTURAL or OUT OF SCOPE.
 - **Demonstrated**: 
 - **Status**: PENDING
+
+## Rulings on the questions (David, 2026-11-11, "recommendations": all seven as recommended)
+
+The first four are the questions below; five to seven were posed by Phase 1's inventory.
+
+1. **The derived tier is an exploring test.** The narrative suites and the web surface's derived suites move (Phases 5 and 6 in full). Recorded reading, not David's own words: the gate's narrative suites are held to the test story; the author-narrative objective's own target (the UNDERGROUND port, #671) is untouched and its wording stays David's.
+2. **The stories live in a new top-level `test-stories/<story-id>/`.** ADR-302 D16 takes a dated note for the second directory branch-tester reads.
+3. **ADR-worthy: yes.** A process record, `docs/architecture/adrs/adr-395-exploring-tests-run-on-test-stories.md`, written in Phase 2.
+4. **`CLAUDE.md` gains the line in Phase 7**: the real stories other than Dungeo do not gate.
+5. **OB-D1, the scale check, is kept on Fernhill as an on-demand, non-gating measurement.** Phase 3 keeps the Fernhill walk runnable by hand and out of `test:ci`.
+6. **The replay compare's timing fields are stripped in the scripts' support code during Phase 5** (`scripts/__tests__/support/`). Nothing under `packages/branch-tester/src/` changes for it.
+7. **The lens's fixture-layer failures are left to #583.** Phase 6 re-records only the corpus pin on a test story.
 
 ## Questions for David
 
