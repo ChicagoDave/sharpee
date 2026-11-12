@@ -1,0 +1,207 @@
+# Session Plan: Small test stories carry the exploring tests (GH #684)
+
+**Created**: 2026-11-11
+**Plan Status**: ACTIVE
+**Overall scope**: The real-path tests that explore a story (claims walks, explorer walks, and the derived tier if David rules it in) move off Fernhill, UPPS and Secret Letter onto a few small stories that exist only as test targets, five rooms at most, so the same obligations are proven in seconds. Steps one and two of David's process (list what the tests prove, divide the list into story-sized sets) are phases of their own and come before any story is written.
+**Bounded contexts touched**: N/A — test infrastructure (branch-tester's claims runner, devkit's `sharpee test`, the repo-level narrative suites, the IDE web testing surface, the explorer probe). No story or platform behaviour changes.
+**Key domain language**: N/A — technical plan. Working terms: exploring test, replay test, structural read, obligation (one fact a test proves), test set (the obligations one story carries), test story.
+
+## References consulted
+
+- `CLAUDE.md` — changes under `packages/` are discussed with David first (this plan's approval is that discussion for what it names; anything the inventory adds goes back to him); never auto-retry a failed build or test; never delete a file without confirmation; never modify a real story to serve a platform test; Dungeo is the regression floor up to its own requirements and one chain run suffices.
+- `docs/core-concepts/README.md` — "Testing Patterns": a Chord feature's runtime test belongs in a tree document run by branch-tester, a structural invariant in a package unit test, and a state change is asserted on world state; transcript-tester and branch-tester are split by who authored the story.
+- `docs/context/project-profile.md` — the gates are `pnpm exec turbo run test:ci`, `pnpm test:scripts` and `node --test` over `tools/explorer-probe/tests/`; story trees run through `./sharpee test`. Testing-intelligence assertions pin pinned-seed replay and `states:` values; "did not throw" is insufficient.
+- `docs/context/session-20261111-0210-main.md` — open items: #684 (this plan), #628 (Fernhill claims timing; not commented on), #685 (Chord manual; out of scope, noted), #669 (`plan-archive.sh` cannot archive a `plan-YYYYMMDD-*.md` plan, so this plan archives by hand). Added after plan-review (2026-11-11), from the open-issue record: #587 and #627 (`pnpm test:scripts` has failing narrative suites today: spawn timeouts, a drifted Fernhill fixture, wall-clock seconds in a byte-compared stderr printed by `packages/branch-tester/src/claims/claims-runner.ts`, an unstripped `totalWalkMs` field, missing `wear satchel` cards), #583 (8 of 43 explorer-probe lens tests fail on stale pins; which eight is not recorded), #671 (the author-narrative-testing objective was retargeted to the UNDERGROUND port). Turbo caching (80bfc3b2b) declares each package's out-of-package test reads in its own `turbo.json`.
+- `docs/architecture/adrs/adr-365-claims-under-a-necessary-set.md` — D1's seven predicates and D3's three verdicts are the coverage floor; D7: the manifest selects the claims fragment and the IR never carries a claim; D9: a claim verdict never moves the exit code; D10: the runner lives in branch-tester. AC-1, AC-2 (120 s bound, Fernhill, seed 1209), AC-3, AC-4, AC-6 and AC-9 name the test files this plan retargets: their records gain dated notes, not rewrites.
+- `docs/architecture/adrs/adr-367-a-reached-state-can-be-locked-as-a-claim.md` — D5: every tree line proves every positive claim, and a lock pins its claim to a card; D6: a broken lock fails its card, and the claims tier still never moves the exit. AC-1, AC-3 and AC-4 name the Fernhill and UPPS real-path tests this plan retargets.
+- `docs/architecture/adrs/adr-302-transcript-branches.md` — D16: in-repo stories are separated by top-level directory per harness, and the exact paths are an implementation choice; the transcript harness must never read a tree story.
+- `docs/architecture/adrs/adr-356-the-story-is-the-test-suite.md` — D1 to D3: the derived tier arranges each clause branch's precondition directly and runs one command per branch, with no search, which is what Question 1 turns on; D7: lenses and walks never gate; D8: Dungeo is untouched.
+- `docs/proposals/` — accepted items exist (`docs/proposals/code-documentation-sweep.md`, `docs/proposals/docs-consolidation.md`); none bears on test stories, and this plan implements no proposal item.
+- ADR consultation was by relevance, not exhaustive: 405 records are on disk under `docs/architecture/adrs/`, and the ones above were read in the parts that bear on this plan.
+- Product ADRs not consulted (no Scope intersection): none (no record on disk carries `**Kind**: product`).
+
+## Rulings on record (David, 2026-11-11)
+
+1. **The goal.** A set of small stories that exist purely as test targets, never real or published stories, each five rooms at most, so real-path tests keep full coverage while running in seconds.
+2. **The process.** (1) List everything the real-path tests need to prove. (2) Divide that list into small sets, each one a story's worth. (3) That gives N stories carrying T tests.
+3. **The content grant.** Claude designs and writes everything, story content included. This is an exception to "do not invent story content", and it covers these test stories only.
+4. **Scope first.** The tests that explore a story (claims walks, branch walks), not the tests that replay it. Dungeo stays as the regression floor; its walkthrough chain replays fast. Fernhill, UPPS, Ides of March, Secret Letter and the other real stories stop being test targets for the exploring tests. Regression for the small stories is a test set's pass history: a set that passed before and fails now.
+5. **Regeneration.** A story is regenerated only when its test set changes, or on a deliberate "fresh stories" pass; a normal gate run uses the committed story. Per-run regeneration was rejected for the gate (reproducibility, validation, speed). The fresh-stories pass, kept from the idea as property-based testing, is not built by this plan.
+
+## What was found while planning (read-only, 2026-11-11)
+
+- **`packages/branch-tester/tests/claims-fernhill.test.ts`** (5 cases, 111 s): ten claims, nine distinct sets, nine walks, at seed 1209 under 500,000 states / 120 s / depth 80. The claims, from `packages/branch-tester/tests/fixtures/claims/fernhill.json`: an ending (victory), a placement in the player (the deed), an event (Tobias asked about a topic), a declared state (the diary page is read), a `never` placement notIn a room (the deed box leaves the Folly), a room (the Study), a `never` room (the Study without the sherry), a readable flag (the auction notice), a fired clause (the stopcock's turning), and an openable flag (the deed box, locked from a tree line). Verdicts: held by witness at pinned depths, held by exhaustion (15 states), violated (depth 14). Stop reasons: all-claims-settled, and frontier-exhausted for the exhaustion claim; never a budget. Two witness paths are pinned command for command. AC-9: per-claim inert sets pinned (the sherry bottle and Mrs Kettle for victory and the deed; the garden shears for the Study-without-sherry claim; none elsewhere), each verdict's inert count equals the cone's, and no witness command names an inert thing. The package's test scripts run the file alone after the rest of the suite because of the wall-clock bound.
+- **`packages/devkit/tests/claim-broken.test.ts`** (124 s): three cases on devkit's own two-room fixture (`packages/devkit/tests/fixtures/claims-tier/`), already a dedicated story, plus one case on a scratch UPPS and one on a scratch Fernhill. The UPPS case expects its claim's walk to end "the walk stopped at …", a budget stop, and `sharpee test` walks under a fixed budget (`packages/devkit/src/commands/test-claims.ts#CLAIMS_WALK_BUDGET`: 120 s, 500,000 states, depth 80). A walk that stops on seconds costs the full 120 s, which is the likely reason the file takes 124 s; Phase 1 confirms by measurement. A small story can reach a budget stop in seconds by depth: the report words a depth stop the same way, "the walk stopped at max-depth-reached after N states" (`packages/branch-tester/src/claims/claim-report.ts#claimSentence`).
+- **`packages/devkit/tests/test-claims.test.ts`** also runs Fernhill through the real `sharpee test`, twice (with and without the manifest's `claims` key). The brief did not name it; it is the same kind of test.
+- **`packages/branch-tester/tests/claims-cone-acceptance.test.ts`** reads Secret Letter: AC-9's compile finding on the market claim (26 wares inert, in set order) and one walk of the trimmed set (held by exhaustion, about a second).
+- **`packages/branch-tester/tests/claims-fragment.test.ts`** compiles Fernhill's fragment and compares it with the JSON fixture claims-fernhill walks (AC-6). It walks nothing, but its subject is the walked test's fixture: a companion.
+- **Beyond the turbo gate.** `pnpm test:scripts`' narrative suites (`scripts/__tests__/narrative-*.test.ts`, through `scripts/__tests__/support/fernhill-run.ts`) spawn `sharpee test --json` on Fernhill, and `narrative-names-the-cause` runs UPPS's seeded rooms. The IDE web testing surface's real-path suites (`tools/ide/web/testing-surface/tests/`) run `sharpee test --tree --json` on Fernhill. The explorer probe's examinable lens walks Fernhill to 600 states (`tools/explorer-probe/tests/lens-examinable.test.js`). The IDE's native suites (Swift, C#) read Fernhill as well.
+- **Structural and replay reads, provisionally staying:** chord's hand-listed corpus compiles (`packages/chord/tests/adr-362-corpus-fold.test.ts`, `packages/chord/tests/adr-368-gerund-list.test.ts`), world-index's static derivations (`packages/world-index/tests/corpus.ts`), character's Alderman port (`packages/character/tests/roundtrip/thealderman-port.test.ts`), devkit's browser build of Fernhill (`packages/devkit/src/standalone/browser-core-build.test.ts`), transcript-tester's parse and serialize sweeps (`packages/transcript-tester/tests/corpus.ts`), platform-browser's visual client spec, branch-tester's canonical check of the two real fragments (`packages/branch-tester/tests/claim-fragment-gate.test.ts`), the declared-state lens (static), `narrative-world-tab` (static world-index), and the testing surface's outline test (reads Secret Letter's tree).
+- `sharpee test`'s claims tier on Fernhill now costs about a second (ADR-367 AC-3: lines hold six claims, four walks), so the derived-tier suites are cheap; including them is a scope question, not a speed one.
+- The tree canonical gate is path-agnostic (`scripts/check-test-trees.mjs` gathers every `<story-id>.tests/` directory), so trees under a new directory are gated at commit.
+- Precedent for dedicated small stories: devkit's two-room claims-tier fixture, and `stories/trait-classification-test/`.
+
+## Decisions this plan makes
+
+- **Plain technical framing.** This is test-infrastructure work; no DDD decomposition.
+- **The classification rule.** A test is **EXPLORING** when what it asserts depends on a search of the story's state space (a claims walk, an explorer walk), or, if David rules Question 1 yes, on the derived tier's enumeration of the story's clause branches. **REPLAY** when it asserts on a fixed command list's output. **STRUCTURAL** when it reads source, IR or files without running a turn. A **COMPANION** walks nothing but has an exploring test's fixture as its subject, and moves with that test. **OUT OF SCOPE**: the IDE's native suites (Swift and C#), which are separate gates; they are listed and left untouched.
+- **The coverage floor.** Every obligation a moved test proves is kept exactly. The new tests pin new concrete values (witness paths, depths, state counts, card and assertion tallies) on the test stories. Coverage is not grown: shapes no current test covers (a placement inside a container, an ending by message or cause) are listed in the inventory, not added. One obligation a five-room story cannot carry: ADR-365 AC-2's scale check, that a real-sized story's claims settle inside a wall-clock bound (the check that caught #628's slowdown). Phase 1 lists it as dropped from the gate, and David rules whether it is kept as an on-demand, non-gating measurement on Fernhill or let go.
+- **The test-set format (proposed, ruled at Phase 2).** Beside each story, a `<story-id>.test-set.md` lists the obligations the story carries, by inventory id and in story-independent words. The vitest files are the executable pins. A fresh-stories pass rewrites the story and re-records the pins; the obligations stay.
+- **Renames and deletions.** A test file whose name names a real story is renamed with `git mv` by the phase that retargets it, and each such rename is named in that phase's Files, so approving the plan approves it. No file is deleted. Fixtures and support files left unused are listed in the phase's report and wait for David's go.
+- **Turbo inputs move with the reads.** A phase that moves a test's story updates that package's `turbo.json` inputs in the same phase. An input stays only while some test in the package still reads it.
+- **No platform source changes.** Nothing under a package's `src/` changes. If a test story exposes a platform defect, the phase stops and reports it (a GitHub issue, on David's say). Authoring a new story until it compiles and settles is writing, not a retry; a failing existing test, or a platform behaviour that differs from the record, is reported and waits.
+- **Real stories are read, never written.** No file under `branch-stories/` or `stories/` changes, fragments, trees and seeded rooms included.
+- **No ADR references** in test-story content (`##` comments included), and no ADR in any error message.
+- **Single runs.** Each measurement and each Demonstration is one run; a failure is reported, not retried.
+- **Out of scope, noted only:** #685's Chord manual examples may later double as test stories. #628 is not commented on.
+- **Files lines name the recommended location**, `test-stories/` (Question 2). If David rules otherwise, Phase 2 rewrites those lines to the ruled directory.
+
+## Phases
+
+Phase 1 then Phase 2 come first, as David's process orders them. Phases 3 and 4 are independent unless Phase 2 has devkit read Phase 3's story, in which case 3 comes first. Phases 5 and 6 depend on Question 1's ruling and may run in either order. Phase 7 is last.
+
+### Phase 1: Inventory — every obligation the exploring tests prove
+- **Tier**: Medium
+- **Budget**: 250
+- **Domain focus**: N/A — every test that reads a real story, and what each one proves.
+- **Entry state**: David has approved this plan.
+- **Deliverable**: `docs/work/small-test-stories/inventory.md` (new), committed:
+  - Every test and support file that reads a real story, found by one search recorded in the file (over `packages/`, `scripts/`, `tools/` and `website/`, for `branch-stories`, the id of every story under `branch-stories/` and `stories/`, and the corpus environment variables). Dungeo's readers take one line: replay, staying.
+  - Each file classified EXPLORING, COMPANION, REPLAY, STRUCTURAL or OUT OF SCOPE, with a one-line reason; where Question 1's two answers classify a file differently, both are shown.
+  - For each EXPLORING and COMPANION case, its obligations, one row each with an id (`OB-n`): the predicate kind, the verdict and how it was settled, the stop reason, witness exactness, inert counts, report wording, exit code, wire event shape, tallies. Beside each, what a story must contain to carry it: a person asked about a topic, a readable, a fired clause, a door, an ending, a guarded exit, a line that reaches the claim, a lock, an edit anchor.
+  - The seed and budget each case runs under, and its wall-clock time from one run on the current tree, beside the 2026-11-11 turbo figures (claims-fernhill 111 s, claim-broken 124 s, 306 s of vitest time in all).
+  - The current pass or fail of every in-scope file outside the turbo gate, from one run each of `pnpm test:scripts`, the testing-surface suite and the explorer-probe lens tests. Each failure is named with its cause as #587, #627 and #583 record it, and sorted: cured by a smaller story (timeouts, the drifted Fernhill fixture), or needing a ruling first because the cause is not the story (the wall-clock stderr, the unstripped `totalWalkMs`, any lens pin among #583's eight). These runs are measurements of a known-red suite; nothing is fixed or retried.
+  - ADR-365 AC-2's scale check, listed as the obligation the test stories drop, with the question of keeping it on demand.
+  - The fixtures and support files that become unused if every EXPLORING case moves (for example `packages/branch-tester/tests/fixtures/claims/fernhill.json`), listed and never deleted.
+  - The shapes no current test covers, listed.
+  - The location options and the recommendation (Question 2), and Questions 1, 3 and 4 as posed below.
+- **Files**: `docs/work/small-test-stories/inventory.md` (new)
+- **Exit state**: The inventory is committed. Every file the recorded search finds has a row, every EXPLORING and COMPANION case has at least one obligation, and the four questions are posed to David. Nothing outside `docs/work/small-test-stories/` has changed.
+- **Demonstration**: The inventory's recorded search, re-run with `git grep -l -i -E` and the pattern written in the file, prints no file the inventory lacks; the session states the two counts. Each timing in the file names the command that produced it and comes from one run.
+- **Demonstrated**: `docs/work/small-test-stories/inventory.md` is written: 288 files classified, 45 obligations (OB-1 to OB-45) and one a small story cannot carry (OB-D1), with timings and the red suites sorted. [verified: the recorded search re-run by the summary writer 2026-11-11 18:06:55 CST, after the inventory's last write (18:04:48): content pass 278 files, file-name pass 58, joined 288; `comm -23` against the inventory's backticked paths printed nothing; the joined list is identical to the session's own; table rows per class 21, 5, 1, 15, 121, 125; OB-1 to OB-45 and OB-D1 present. Timings from the session's run output, one run each on a tree with no source or test change since c3823f727: `pnpm test:scripts` started 17:57:51 (event log 2026-11-11T23:57:51Z, "Tests ran (status unverified)"), "Tests 9 failed | 83 passed | 11 skipped (103)", "Duration 124.84s"; the testing surface started 17:59:57, "Tests 255 passed (255)", "Duration 13.10s"; claim-broken started 18:00:25, "Tests 5 passed (5)", the UPPS case 121813ms, the Fernhill case 2003ms; the explorer lens tests "tests 43", "pass 34", "fail 9"; the turbo per-file figures from the writer's own 12:32 run ("claims-fernhill.test.ts (5 tests) 111574ms", "claim-broken.test.ts (5 tests) 124064ms")]
+  - The recorded search (a content pass and a file-name pass, both written in the file), re-run after the file was written: 288 files found, 0 of them missing from the inventory's rows (`comm -23` of the search output against the backticked paths in the file's tables printed nothing). The file-name pass was added during the phase: the content pass alone missed `packages/branch-tester/tests/fixtures/claims/secret-letter-market.claims.chord`.
+  - Classes: EXPLORING 21, COMPANION 5, REPLAY 1, STRUCTURAL 15, OUT OF SCOPE 121, and a sixth label the inventory adds, NAME ONLY 125 (a story is named in a comment, a doc or hand-built data and no story file is read).
+  - Timings, one run each on c3823f727: the turbo gate's per-file figures from the 12:32 full run (claims-fernhill 111,574 ms, claim-broken 124,064 ms, test-claims 3,480 ms, claims-cone-acceptance 1,656 ms, claims-fragment 74 ms); claim-broken per case from one verbose run ("Tests 5 passed (5)", 125.61 s): the UPPS case 121,813 ms, the Fernhill case 2,003 ms, confirming the planning note that the UPPS walk spends its whole 120 s budget; `pnpm test:scripts` "Test Files 6 failed | 11 passed (17)", "Tests 9 failed | 83 passed | 11 skipped (103)", 124.84 s; the testing-surface suite "Test Files 25 passed (25)", "Tests 255 passed (255)", 13.10 s; the explorer lens tests 43 tests, 34 pass, 9 fail.
+  - Corrections to this plan's premises, recorded in the inventory: `tools/ide/web/testing-surface/tests/lock-gesture-real-path.test.ts` reads devkit's own claims-tier fixture, not Fernhill, so Phase 6 has no lock suite to move; the gate's cost is two cases (233 s of 306 s), so Phases 3 and 4 carry the whole saving; the reasons two narrative files skip whole were not captured by the run's output and are stated as unconfirmed.
+  - Questions 1 to 4 are posed in the inventory with what the measurements add, and three more that the red suites and OB-D1 raise (Questions 5 to 7 there).
+  - `git status --porcelain` shows only `docs/work/small-test-stories/` and the plan pointer `docs/context/.current-plan`.
+- **Status**: DONE
+
+### Phase 2: Division — the test sets, the story designs, and where they live
+- **Tier**: Medium
+- **Budget**: 250
+- **Domain focus**: N/A — dividing the obligation list into story-sized test sets.
+- **Entry state**: Phase 1 is DONE. David has ruled Questions 1, 2 and 3, or approved the recommendations.
+- **Deliverable**: `docs/work/small-test-stories/test-sets.md` (new):
+  - N test sets, each a story's worth, each listing the obligation ids it carries. Every in-scope id is carried by exactly one set. An obligation two consumers prove (the claims runner's predicates, and the same predicates through `sharpee test`) is carried by one story both read, not by two copies.
+  - Per story: its id, at most five rooms, its things, people, verbs, endings, claims with their expected verdicts and how each settles, its tree lines (for a story `sharpee test` runs), its seed, the edit anchors the breaking-edit tests need, and a timing target.
+  - A compile probe of each story's skeleton (rooms, exits, the claim-bearing things) against the current `packages/chord`, one run each, results recorded. The probes live in the session scratchpad, not in the tree.
+  - The `<story-id>.test-set.md` format, and the text of the test-story directory's README: five rooms at most; never published; written by Claude under David's grant; no ADR references in content; regenerated only when a test set changes or on a fresh-stories pass; a gate run uses the committed story; regression is a set's pass history; the Chord census a language-gate plan runs includes this directory.
+  - N and T, stated. Provisionally N is four (a claims-runner story, a market-shaped cone story, a `sharpee test` lock story, a narrative story) and T is about fourteen cases in the turbo gate, plus the narrative and IDE web cases Phase 1 counts.
+  - If Question 3 is yes: the process record `docs/architecture/adrs/adr-395-exploring-tests-run-on-test-stories.md` (new), with `**Kind**: process`, stating what gates, where the test stories live, the regeneration rule and the content grant, and naming the ADR-365 and ADR-367 criteria whose pins move. It is reviewed by David before Phase 3 starts.
+- **Files**: `docs/work/small-test-stories/test-sets.md` (new), `docs/architecture/adrs/adr-395-exploring-tests-run-on-test-stories.md` (new)
+- **Exit state**: David has approved the division and the location, and the plan's later Files lines name the ruled directory. N and T are recorded in this phase's Demonstrated line.
+- **Demonstration**: The OB-n ids extracted with grep from `docs/work/small-test-stories/inventory.md` and from `docs/work/small-test-stories/test-sets.md`, compared with diff, show every in-scope id in exactly one test set; each skeleton's compile probe is recorded with zero error diagnostics.
+- **Demonstrated**: 
+- **Status**: PENDING
+
+### Phase 3: The claims runner's real-path tests run on test stories (branch-tester)
+- **Tier**: Large
+- **Budget**: 400
+- **Domain focus**: N/A — branch-tester's claims runner, proven on the stories Phase 2 assigned to it.
+- **Entry state**: Phase 2 is DONE, and the location is ruled.
+- **Deliverable**:
+  - The stories Phase 2 assigned to branch-tester, each with its claims fragment and test-set file, under `test-stories/` (new), and the directory's `test-stories/README.md` (new).
+  - `packages/branch-tester/tests/claims-fernhill.test.ts` renamed with `git mv` to `packages/branch-tester/tests/claims-real-path.test.ts` (new) and retargeted. It keeps every obligation: the ten predicate shapes Fernhill's claims exercise; every verdict (held by witness at a pinned depth, held by exhaustion at a pinned state count, violated with its witness); a walk two claims share; stop reasons all-claims-settled and frontier-exhausted, with no budget stop; exact witness paths; and AC-9's check (some claims with inert things, some without; each verdict's inert count equals the cone's; no witness command names an inert thing). The wall-clock bound is set from the measured run, with the headroom stated.
+  - `packages/branch-tester/tests/claims-fragment.test.ts` retargeted: the test story's manifest names its fragment, the fragment compiles to the claim set the walked test pins, and the IR is byte-identical with and without the fragment and carries no claim.
+  - `packages/branch-tester/tests/claims-cone-acceptance.test.ts` retargeted to Phase 2's market-shaped set: the compile finding names every inert ware in set order, on the `needs things` line, and proposes dropping the line; the trimmed set holds by exhaustion.
+  - `packages/branch-tester/tests/claim-fragment-gate.test.ts` checks the test stories' fragments beside the two real ones.
+  - `packages/branch-tester/vitest.config.ts` declares the test-story directory in the same configured-not-discovered way the corpus is declared, so the cases skip when it is not configured (a published tarball). A new environment variable goes into `turbo.json`'s `env` list beside the corpus variable.
+  - `packages/branch-tester/package.json`: whether the claims file still runs alone after the suite is decided from the measured bound, and recorded.
+  - `packages/branch-tester/turbo.json`: the test-story directory added as an input, and `branch-stories/**` narrowed to what the remaining readers need (claim-fragment-gate's two real fragments).
+  - Dated notes in `docs/architecture/adrs/adr-365-claims-under-a-necessary-set.md` on AC-1, AC-2, AC-4, AC-6 and AC-9: the regression pins now run on the test stories, and the Fernhill and Secret Letter measurements stand as the record of what was measured.
+  - Listed for David, not deleted: `packages/branch-tester/tests/fixtures/claims/fernhill.json`, `packages/branch-tester/tests/fixtures/claims/secret-letter-market.claims.chord`, and anything else this phase leaves unused.
+- **Files**: `test-stories/` (new), `test-stories/README.md` (new), `packages/branch-tester/tests/claims-fernhill.test.ts`, `packages/branch-tester/tests/claims-real-path.test.ts` (new), `packages/branch-tester/tests/claims-fragment.test.ts`, `packages/branch-tester/tests/claims-cone-acceptance.test.ts`, `packages/branch-tester/tests/claim-fragment-gate.test.ts`, `packages/branch-tester/vitest.config.ts`, `packages/branch-tester/package.json`, `packages/branch-tester/turbo.json`, `turbo.json`, `docs/architecture/adrs/adr-365-claims-under-a-necessary-set.md`
+- **Exit state**: No branch-tester test walks a real story. The three retargeted files each run in seconds (target: under 10 s each), and the package's suite is green. Each obligation Phase 2 gave these stories is pinned by a named case.
+- **Demonstration**: `pnpm --filter ./packages/branch-tester test:ci` is green in one run, and its per-file durations for the three retargeted files are recorded against Phase 1's (111 s for the Fernhill file). `git grep -n -E "fernhill.story|secret-letter.story" -- packages/branch-tester/tests` prints nothing. `pnpm exec turbo run test:ci --filter=@sharpee/branch-tester --dry=json` lists the test stories' files among the task's inputs, and no file under `branch-stories/fernhill/` other than its fragment.
+- **Demonstrated**: 
+- **Status**: PENDING
+
+### Phase 4: `sharpee test`'s claims tier runs on a test story (devkit)
+- **Tier**: Medium
+- **Budget**: 250
+- **Domain focus**: N/A — devkit's `sharpee test` command surface: the claims tier after a real tree replay, locks, and the breaking edit.
+- **Entry state**: Phase 2 is DONE (and Phase 3, if Phase 2 has devkit read Phase 3's story).
+- **Deliverable**:
+  - The story Phase 2 assigned to `sharpee test`, with its tree directory (written through branch-tester's canonical writer, so the commit gate passes), its claims fragment, at least one lock written by the real `sharpee claim` command, and its test-set file, under `test-stories/`.
+  - `packages/devkit/tests/test-claims.test.ts`'s Fernhill cases retargeted: the claims ratio at the tree's seed; walks only for the `never` claims and the claims no line reaches; the held-by-line count; a lock held at its card while its claim is reported held by another line; and the run with and without the manifest's `claims` key (same exit, the tally differing by exactly the held lock's assertion, the same report up to the claims).
+  - `packages/devkit/tests/claim-broken.test.ts`'s UPPS and Fernhill cases retargeted. The breaking edit: an earlier card fails with the story's output under its cite; the lock's card fails on its own row with "not held here"; the claim is UNPROVEN, not reached by any line, its walk stopped at a budget, reached by depth so it costs seconds; the lock's row reads NOT held there; the exit is 1. The second edit: every card green, the claim UNPROVEN by exhaustion, another lock held there, exit 0. The three cases on devkit's own fixture are unchanged.
+  - `packages/devkit/turbo.json`: the test-story directory added; `branch-stories/upps/**` removed; `branch-stories/fernhill/**` narrowed to what `packages/devkit/src/standalone/browser-core-build.test.ts` reads (structural, staying).
+  - Dated notes in `docs/architecture/adrs/adr-367-a-reached-state-can-be-locked-as-a-claim.md` (AC-1, AC-3, AC-4) and on ADR-365's AC-3: the CLI pins now run on the test story.
+- **Files**: `test-stories/`, `packages/devkit/tests/test-claims.test.ts`, `packages/devkit/tests/claim-broken.test.ts`, `packages/devkit/turbo.json`, `docs/architecture/adrs/adr-367-a-reached-state-can-be-locked-as-a-claim.md`, `docs/architecture/adrs/adr-365-claims-under-a-necessary-set.md`
+- **Exit state**: No devkit test runs `sharpee test` on a real story. The two files run in seconds (target: under 10 s each), and devkit's suite is green. The turbo gate's total is measured against the 2026-11-11 baseline.
+- **Demonstration**: `pnpm --filter ./packages/devkit test:ci` is green in one run, with per-file durations recorded against Phase 1's (124 s for claim-broken). One `pnpm exec turbo run test:ci --force --continue` run is green, and its vitest time, summed the way the 2026-11-11 measurement was, is recorded beside 306 s.
+- **Demonstrated**: 
+- **Status**: PENDING
+
+### Phase 5: The author-narrative suites run on a test story (scripts)
+- **Tier**: Large
+- **Budget**: 400
+- **Domain focus**: N/A — the repo-level narrative suites, which spawn the built CLIs.
+- **Entry state**: Phases 1 and 2 are DONE, and David has ruled Question 1 yes. If he rules it no, this phase is marked ABANDONED by that ruling, and the inventory's rows say why. The suite is red before this phase (#587, #627): David has ruled on each failure Phase 1 sorted as "not the story" (fix it in this phase, fix it elsewhere first, or leave it failing and out of this phase by name). A fix that reaches a package's `src/` is not this plan's to make.
+- **Deliverable**:
+  - The narrative story Phase 2 designed, under `test-stories/`: rules that yield derived rows (a topic row among them), a rule the fighting-rule edit can break, a negation branch the arrange step SKIPs, endings with one the tree leaves unreached, a tree with a fork, and seeded authoring mistakes for the names-the-cause beat, all within five rooms.
+  - `scripts/__tests__/support/fernhill-run.ts` renamed with `git mv` to `scripts/__tests__/support/story-run.ts` (new) and retargeted. Each `narrative-*` suite that pins Fernhill or UPPS keeps its beat and asserts the test story's numbers. `narrative-holds` defaults to the test story, and `NARRATIVE_STORY` still adds one. A suite Phase 1 classified STRUCTURAL stays on Fernhill.
+  - A dated note in `docs/work/testing-narrative/narrative-20260926-author-testing.md`: the beats' suites now run on the test story.
+- **Files**: `test-stories/`, `scripts/__tests__/`, `scripts/__tests__/support/story-run.ts` (new), `docs/work/testing-narrative/narrative-20260926-author-testing.md`
+- **Exit state**: No narrative suite reads Fernhill or UPPS except the ones classified STRUCTURAL, and the suite is green apart from the failures David ruled out of this phase, each named.
+- **Demonstration**: `./repokit build dungeo`, then one run of `pnpm test:scripts`, with per-file durations recorded: every file passes except the failures ruled out of this phase by name, and each failure Phase 1 sorted as "cured by a smaller story" now passes; `git grep -l -e FERNHILL -e upps -- scripts/__tests__` prints only the STRUCTURAL rows' files.
+- **Demonstrated**: 
+- **Status**: PENDING
+
+### Phase 6: The IDE web real-path suites and the explorer lens pin run on test stories
+- **Tier**: Medium
+- **Budget**: 250
+- **Domain focus**: N/A — the testing surface's web bundle tests and the explorer probe's examinable lens.
+- **Entry state**: Phases 1 and 2 are DONE, and Question 1 is ruled. The claims and lock suites and the lens pin are EXPLORING under either answer; the derived-only suites follow the ruling. If Phase 1 found the examinable lens's Fernhill pin among #583's failing tests, David has ruled whether this phase re-records it on the test story or leaves it.
+- **Deliverable**:
+  - The testing surface's EXPLORING suites retargeted to the test story Phase 2 assigned (likely Phase 4's or Phase 5's): `tools/ide/web/testing-surface/tests/claims-real-path.test.ts`, `tools/ide/web/testing-surface/tests/lock-gesture-real-path.test.ts`, and, under Question 1 yes, `tools/ide/web/testing-surface/tests/derived-real-path.test.ts` and `tools/ide/web/testing-surface/tests/line-verdict.test.ts`, plus any other file Phase 1 classified EXPLORING.
+  - `tools/explorer-probe/tests/lens-examinable.test.js`'s Fernhill pin retargeted to a test story at a stated state budget, its compiled-IR prerequisite stated in its header.
+- **Files**: `test-stories/`, `tools/ide/web/testing-surface/tests/`, `tools/explorer-probe/tests/lens-examinable.test.js`
+- **Exit state**: Neither suite walks a real story, and both are green.
+- **Demonstration**: `./repokit build dungeo`, then the testing-surface suite run once with vitest from `tools/ide/web/testing-surface/` is green, and `node --test tools/explorer-probe/tests/lens-examinable.test.js` is green in one run; per-file durations recorded against Phase 1's.
+- **Demonstrated**: 
+- **Status**: PENDING
+
+### Phase 7: Close-out — what gates now, and what is left over
+- **Tier**: Small
+- **Budget**: 100
+- **Domain focus**: N/A — recording the new floor and handing back the leftovers.
+- **Entry state**: Phases 3 and 4 are DONE; Phases 5 and 6 are DONE or ABANDONED by ruling.
+- **Deliverable**:
+  - On David's go (Question 4): one line in `CLAUDE.md`'s Transcript Testing section saying the real stories other than Dungeo do not gate, and that a plan's Demonstration cites the test-story suites, not `./sharpee test` on a real story, as its floor.
+  - `test-stories/README.md` final.
+  - Each in-scope row of `docs/work/small-test-stories/inventory.md` names where its obligation now lives (file and case).
+  - The complete list of fixtures and support files left unused, posted to David for a delete decision and waiting.
+  - A final timing table across the four gates (turbo, test:scripts, the testing surface, the explorer probe) against Phase 1's.
+- **Files**: `CLAUDE.md`, `test-stories/README.md`, `docs/work/small-test-stories/inventory.md`
+- **Exit state**: Every in-scope obligation is pinned on a test story, and the delete list is with David.
+- **Demonstration**: The OB-n ids in the inventory's destination column, compared with diff against its in-scope rows, show no row without a destination; the inventory's recorded search, re-run with `git grep -l -i -E`, finds real-story names only in files classified REPLAY, STRUCTURAL or OUT OF SCOPE.
+- **Demonstrated**: 
+- **Status**: PENDING
+
+## Questions for David
+
+1. **Is the derived tier an exploring test?** The derived tier ("Branches exercised: 36 / 63") enumerates the story's clause branches and runs one command per branch, arranged directly; it searches nothing, so its cost grows with the rule count, not the state space (ADR-356 D1 to D3). Your note names "anything else that walks a story's branches", which reads as this tier.
+   - **Yes**: the narrative suites and the testing surface's derived suites move (Phases 5 and 6 in full). The cost is that the author narrative's tests stop running on Fernhill, the story the narrative document is written around.
+   - **No**: those suites stay on Fernhill. Phase 5 is abandoned, and Phase 6 covers only the claims and lock suites and the lens pin.
+   - Recommended: yes. Under no, Fernhill keeps gating through the suites that pin its numbers, which is what your ruling retires.
+   - Either way, say which story the narrative's beats are held to: the objective these suites serve was retargeted to the UNDERGROUND port (#671), so it no longer names Fernhill either.
+2. **Where do the stories live?**
+   - (a) A new top-level `test-stories/<story-id>/`. One home that every consumer reads (two packages, the scripts suites, the IDE web suite, the explorer) without one package reaching into another's tests. The name says "never real, never published". A real story's edit stops busting test-story consumers' turbo caches, and the README holds the rules in one place. ADR-302 D16 leaves exact paths an implementation choice, and the transcript harness's `stories/` corpus never sees these tree stories. Cost: a third top-level story directory, which a Chord-census plan must add to its sweep.
+   - (b) `branch-stories/<story-id>-test/`, inside branch-tester's existing corpus. No new directory, but test and real stories sit side by side, and branch-tester's `branch-stories/**` input has to be split by directory.
+   - (c) Per-package fixtures, as devkit's claims-tier project is. Stories that two packages, the scripts and the IDE suite all read become cross-package reads or copies.
+   - (d) `stories/<name>-test/`, as `stories/trait-classification-test/` is. That directory is the transcript harness's corpus (ADR-302 D16), beside Dungeo.
+   - Recommended: (a).
+3. **ADR-worthy?** "Exploring tests run on test stories; the real stories other than Dungeo do not gate; test stories live in X and are regenerated only when a test set changes." This constrains every later plan's Demonstration and moves the pins of ADR-365's and ADR-367's acceptance criteria. Recommended: yes, as a `process` record written in Phase 2, `docs/architecture/adrs/adr-395-exploring-tests-run-on-test-stories.md`.
+4. **CLAUDE.md.** Recent plans used `./sharpee test` on Fernhill, Ides of March and Secret Letter as byte-identical floors. Under your ruling they stop being floors. Add the one line in Phase 7? Recommended: yes.
