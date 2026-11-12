@@ -3,12 +3,12 @@
  *
  * The first two describes pin the mapping from the wire's per-line status to
  * the five verdicts, and the heading roll-up's order. The last runs a REAL
- * `sharpee test --tree --json` over a scratch copy of fernhill with one claim
+ * `sharpee test --tree --json` over a scratch copy of the test story `orchard` with one claim
  * planted to fail (rule 13a — the fold is of the CLI's own stream, nothing
  * hand-written), and checks AC-1: the planted line and its fork heading read
  * fail, every other line reads pass. It also runs a tree the CLI refuses, the
  * case where every line reads "no result" exactly as a never-run tree does,
- * and checks the run column's note is there to say so. The real fernhill is
+ * and checks the run column's note is there to say so. The story itself (OB-34) is
  * read, never written; scratch copies are planted through the narrative
  * suites' edit path (`scripts/__tests__/support/scratch-story.ts`).
  *
@@ -77,16 +77,16 @@ describe('rollUpVerdicts — a heading takes the worst of its lines', () => {
 const testsDir = fileURLToPath(new URL('.', import.meta.url));
 const repoRoot = resolve(testsDir, '../../../../..');
 const devkitCli = join(repoRoot, 'packages/devkit/dist/cli.js');
-const fernhillDir = join(repoRoot, 'branch-stories/fernhill');
-const available = existsSync(devkitCli) && existsSync(join(fernhillDir, 'fernhill.story'));
+const orchardDir = join(repoRoot, 'test-stories/orchard');
+const available = existsSync(devkitCli) && existsSync(join(orchardDir, 'orchard.story'));
 
-/** Text no fernhill turn prints, so a `contains` claim on it must fail. */
-const PLANTED = 'a sentence fernhill never prints, planted to fail';
+/** Text no turn of the story prints, so a `contains` claim on it must fail. */
+const PLANTED = 'a sentence the story never prints, planted to fail';
 
 /** The Testing tab's exact spawn (TestRunner.treeRunArguments), folded the way the tab folds it. */
 async function runAndFold(storyDir: string): Promise<{ state: RunColumnState; status: number | null; events: number }> {
   const run = await spawnCli(
-    [devkitCli, 'test', join(storyDir, 'fernhill.story'), '--tree', '--capture-output', '--capture-world', '--json'],
+    [devkitCli, 'test', join(storyDir, 'orchard.story'), '--tree', '--capture-output', '--capture-world', '--json'],
     storyDir,
   );
   expect(run.error).toBeUndefined();
@@ -103,11 +103,11 @@ function lineIdsOf(outline: Outline): string[] {
   return [outline.root.lineId, ...outline.forks.flatMap((fork) => fork.lines.map((line) => line.lineId))];
 }
 
-describe.skipIf(!available)('AC-1 — the tint from a real fernhill run with one planted failure', () => {
+describe.skipIf(!available)('AC-1 — the tint from a real run of the orchard test story with one planted failure', () => {
   it('reads the planted line and its fork heading as fail, and every other line as pass', async () => {
-    const scratch = copyStoryToScratch(fernhillDir, 'ts-verdict-');
+    const scratch = copyStoryToScratch(orchardDir, 'ts-verdict-');
     try {
-      const treeDir = join(scratch.dir, 'fernhill.tests');
+      const treeDir = join(scratch.dir, 'orchard.tests');
 
       // Plant through the edit path the narrative suites use: load, change the
       // claim in memory, save as the Testing tab saves — so the canonical gate passes.
@@ -144,9 +144,9 @@ describe.skipIf(!available)('AC-1 — the tint from a real fernhill run with one
   }, 300_000);
 
   it('a run the CLI refuses leaves every line untinted and carries the pipeline note', async () => {
-    const scratch = copyStoryToScratch(fernhillDir, 'ts-verdict-refused-');
+    const scratch = copyStoryToScratch(orchardDir, 'ts-verdict-refused-');
     try {
-      const treeDir = join(scratch.dir, 'fernhill.tests');
+      const treeDir = join(scratch.dir, 'orchard.tests');
       // Deliberately outside the edit path: re-indent one segment so it is no
       // longer canonical, which the CLI refuses before running anything.
       const segment = readdirSync(treeDir).find((name) => name.endsWith('.json') && name !== 'manifest.json')!;

@@ -2,9 +2,9 @@
  * spawn-cli.ts — spawn the real devkit CLI from a test WITHOUT blocking the
  * vitest worker's event loop.
  *
- * `spawnSync` holds the worker for the whole run, and a `sharpee test` of
- * fernhill now takes well over a minute (its manifest selects a claims
- * fragment, ADR-365 D10, and the claims walk is the long part), which is
+ * `spawnSync` holds the worker for the whole run, and a `sharpee test` with a
+ * long claims walk (ADR-365 D10) can take over a minute, as Fernhill's did
+ * when these suites ran on it, which is
  * longer than the worker's RPC heartbeat: the run passes and vitest still
  * reports "Timeout calling onTaskUpdate" as an unhandled error. An async
  * spawn keeps the loop turning. The result mirrors the `spawnSync` fields

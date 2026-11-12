@@ -1,7 +1,7 @@
 # Test set: orchard
 
 **Carries**: OB-33 to OB-45
-**Read by**: `scripts/__tests__/narrative-*.test.ts` through `scripts/__tests__/support/story-run.ts`; from Phase 6, the IDE web surface's derived and line-verdict suites and the explorer's examinable lens
+**Read by**: `scripts/__tests__/narrative-*.test.ts` through `scripts/__tests__/support/story-run.ts`; `tools/ide/web/testing-surface/tests/derived-real-path.test.ts` and `line-verdict.test.ts`. OB-35 has no reader yet: the examinable lens is broken (GH #583) and its pin moves here when it is repaired
 **Seed**: 42
 
 ## Obligations

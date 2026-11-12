@@ -4,7 +4,7 @@
  * stubbed), and the run column's report lines pinned to the CLI's own
  * stderr report for the same run (GH #524 Phase 2).
  *
- * The story is the repo's fernhill (`branch-stories/fernhill`), read and
+ * The story is the test story `test-stories/orchard` (OB-33), read and
  * never written: the run consumes its `.story` and `.tests.json` exactly as
  * the Testing tab's Run button does, with the tab's exact arguments. What is
  * asserted: every `derived-branch` line decodes and folds to a row; the one
@@ -26,18 +26,18 @@ import { spawnCli } from './spawn-cli';
 const testsDir = fileURLToPath(new URL('.', import.meta.url));
 const repoRoot = resolve(testsDir, '../../../../..');
 const devkitCli = join(repoRoot, 'packages/devkit/dist/cli.js');
-const fernhillDir = join(repoRoot, 'branch-stories/fernhill');
-const fernhillStory = join(fernhillDir, 'fernhill.story');
+const storyDir = join(repoRoot, 'test-stories/orchard');
+const storyFile = join(storyDir, 'orchard.story');
 
-const available = existsSync(devkitCli) && existsSync(fernhillStory);
+const available = existsSync(devkitCli) && existsSync(storyFile);
 
-describe.skipIf(!available)('the derived tier from a real fernhill run', () => {
+describe.skipIf(!available)('the derived tier from a real run of the orchard test story', () => {
   it('folds every derived-branch and the summary, and the tab\'s report lines are the CLI\'s stderr tail', async () => {
     // The Testing tab's exact spawn (TestRunner.treeRunArguments; the
     // Avalonia head's RunTreeTestsForSurfaceAsync).
     const run = await spawnCli(
-      [devkitCli, 'test', fernhillStory, '--tree', '--capture-output', '--capture-world', '--json'],
-      fernhillDir,
+      [devkitCli, 'test', storyFile, '--tree', '--capture-output', '--capture-world', '--json'],
+      storyDir,
     );
     expect(run.error).toBeUndefined();
 
@@ -72,10 +72,10 @@ describe.skipIf(!available)('the derived tier from a real fernhill run', () => {
     while (stderrLines.length > 0 && stderrLines[stderrLines.length - 1] === '') stderrLines.pop();
     const at = stderrLines.findIndex(line => line.startsWith('Branches exercised:'));
     expect(at).toBeGreaterThan(0);
-    const expected = derivedReportLines(summary, 'fernhill.story');
+    const expected = derivedReportLines(summary, 'orchard.story');
     expect(stderrLines.slice(at - 1, at - 1 + expected.length)).toEqual(expected);
-    // What follows on stderr is the claims tier's report (ADR-365 D10), which
-    // fernhill's manifest selects and the tab does not read yet (GH #555).
-    expect(stderrLines.slice(at - 1 + expected.length, at + 1 + expected.length)).toEqual(['', 'Claims: fernhill.claims.chord']);
+    // The orchard's manifest selects no claims fragment, so the derived
+    // report is the end of stderr: nothing follows it.
+    expect(stderrLines.slice(at - 1 + expected.length)).toEqual([]);
   }, 300_000);
 });

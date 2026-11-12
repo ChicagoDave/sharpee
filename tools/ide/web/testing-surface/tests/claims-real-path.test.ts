@@ -4,7 +4,7 @@
  * stubbed), and the run column's claim lines pinned to the CLI's own stderr
  * report for the same run (ADR-365 D6, ADR-367 D6; GH #555).
  *
- * The story is the repo's fernhill (`branch-stories/fernhill`), read and
+ * The story is the test story `test-stories/ferry` (OB-32), read and
  * never written: the run uses the Testing tab's exact arguments. What is
  * asserted: every `claim-result` line decodes and folds to a row; the one
  * `claims-summary` folds and agrees with the rows; the locked claim's row
@@ -27,16 +27,16 @@ import { spawnCli } from './spawn-cli';
 const testsDir = fileURLToPath(new URL('.', import.meta.url));
 const repoRoot = resolve(testsDir, '../../../../..');
 const devkitCli = join(repoRoot, 'packages/devkit/dist/cli.js');
-const fernhillDir = join(repoRoot, 'branch-stories/fernhill');
-const fernhillStory = join(fernhillDir, 'fernhill.story');
+const storyDir = join(repoRoot, 'test-stories/ferry');
+const storyFile = join(storyDir, 'ferry.story');
 
-const available = existsSync(devkitCli) && existsSync(fernhillStory);
+const available = existsSync(devkitCli) && existsSync(storyFile);
 
-describe.skipIf(!available)('the claims tier from a real fernhill run', () => {
+describe.skipIf(!available)('the claims tier from a real run of the ferry test story', () => {
   it('folds every claim-result and the summary, the lock names its card, and the tab\'s lines are the CLI\'s stderr lines', async () => {
     const run = await spawnCli(
-      [devkitCli, 'test', fernhillStory, '--tree', '--capture-output', '--capture-world', '--json'],
-      fernhillDir,
+      [devkitCli, 'test', storyFile, '--tree', '--capture-output', '--capture-world', '--json'],
+      storyDir,
     );
     expect(run.error).toBeUndefined();
 
@@ -47,21 +47,21 @@ describe.skipIf(!available)('the claims tier from a real fernhill run', () => {
     finishRun(state, run.status === 0);
 
     const claimLines = stdoutLines.filter(line => line.includes('"type":"claim-result"'));
-    expect(claimLines.length).toBe(10);
-    expect(state.claims).toHaveLength(10);
+    expect(claimLines.length).toBe(6);
+    expect(state.claims).toHaveLength(6);
     const summary = state.claimsSummary;
     expect(summary).toBeDefined();
     if (!summary) return;
-    expect(summary.source).toBe('fernhill.claims.chord');
+    expect(summary.source).toBe('ferry.claims.chord');
     expect(summary.declared).toBe(state.claims.length);
     expect(summary.held).toBe(state.claims.filter(row => row.verdict === 'held').length);
     expect(summary.violated).toBe(state.claims.filter(row => row.verdict === 'violated').length);
     expect(summary.floored).toBe(true);
 
-    // The locked claim (Phase 16's lock on fernhill) carries its lock and the card it visits.
-    const locked = state.claims.find(row => row.name === 'the deed box is open');
+    // The locked claim (written by `sharpee claim` on the branch line) carries its lock and the card it visits.
+    const locked = state.claims.find(row => row.name === 'the lantern is open');
     expect(locked?.locks).toHaveLength(1);
-    expect(locked?.locks?.[0]).toMatchObject({ lineId: 'hpjuaufx', turn: 22, outcome: 'held' });
+    expect(locked?.locks?.[0]).toMatchObject({ lineId: 'frywait1', turn: 7, outcome: 'held' });
     expect(locked?.locks?.[0]?.cardId).toBeDefined();
 
     // Claims never gate (ADR-365 D9): the exit code is the tree's.

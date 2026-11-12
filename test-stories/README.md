@@ -18,8 +18,8 @@ These stories exist only as test targets.
 |---|---|---|---|
 | `lodge` | 5 | every kind of claim and every verdict, walked through the real engine | `packages/branch-tester/tests/claims-real-path.test.ts`, `claims-fragment.test.ts` |
 | `bazaar` | 3 | a claim whose set is padded with things that cannot bear on it | `packages/branch-tester/tests/claims-cone-acceptance.test.ts` |
-| `ferry` | 4 | what `sharpee test` prints around a forked tree: the claims tier, a lock, and two one-line edits that break it | `packages/devkit/tests/test-claims.test.ts`, `claim-broken.test.ts` |
-| `orchard` | 5 | the author narrative's beats: derived rule rows, three endings, a three-way fork, seeded authoring mistakes | `scripts/__tests__/narrative-*.test.ts` |
+| `ferry` | 4 | what `sharpee test` prints around a forked tree: the claims tier, a lock, and two one-line edits that break it | `packages/devkit/tests/test-claims.test.ts`, `claim-broken.test.ts`; `tools/ide/web/testing-surface/tests/claims-real-path.test.ts` |
+| `orchard` | 5 | the author narrative's beats: derived rule rows, three endings, a three-way fork, seeded authoring mistakes | `scripts/__tests__/narrative-*.test.ts`; `tools/ide/web/testing-surface/tests/derived-real-path.test.ts`, `line-verdict.test.ts` |
 
 A test finds this directory through its package's test configuration, never by walking up from its own file, so a published package with no test stories skips those tests.
 

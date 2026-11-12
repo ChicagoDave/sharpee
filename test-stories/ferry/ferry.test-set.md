@@ -1,7 +1,7 @@
 # Test set: ferry
 
 **Carries**: OB-22 to OB-32
-**Read by**: `packages/devkit/tests/test-claims.test.ts`, `packages/devkit/tests/claim-broken.test.ts`; from Phase 6, the IDE web surface's claims suite
+**Read by**: `packages/devkit/tests/test-claims.test.ts`, `packages/devkit/tests/claim-broken.test.ts`, `tools/ide/web/testing-surface/tests/claims-real-path.test.ts`
 **Seed**: 42
 
 ## Obligations
