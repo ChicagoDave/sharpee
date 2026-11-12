@@ -1,7 +1,7 @@
 # Session Plan: Small test stories carry the exploring tests (GH #684)
 
 **Created**: 2026-11-11
-**Plan Status**: ACTIVE
+**Plan Status**: DONE
 **Overall scope**: The real-path tests that explore a story (claims walks, explorer walks, and the derived tier if David rules it in) move off Fernhill, UPPS and Secret Letter onto a few small stories that exist only as test targets, five rooms at most, so the same obligations are proven in seconds. Steps one and two of David's process (list what the tests prove, divide the list into story-sized sets) are phases of their own and come before any story is written.
 **Bounded contexts touched**: N/A — test infrastructure (branch-tester's claims runner, devkit's `sharpee test`, the repo-level narrative suites, the IDE web testing surface, the explorer probe). No story or platform behaviour changes.
 **Key domain language**: N/A — technical plan. Working terms: exploring test, replay test, structural read, obligation (one fact a test proves), test set (the obligations one story carries), test story.
