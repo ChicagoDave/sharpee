@@ -1,0 +1,208 @@
+{
+  "story": "lodge",
+  "source": "compiled from lodge.claims.chord; the tenth claim was locked by `sharpee claim ldgmain1 \"the strongbox is open\" --at 6`, its set proposed from the line",
+  "rooms": [
+    "porch",
+    "hall",
+    "pantry",
+    "vault"
+  ],
+  "things": [
+    "valve",
+    "hand-bell",
+    "strongbox",
+    "deed"
+  ],
+  "verbs": [
+    "turn",
+    "open",
+    "take"
+  ],
+  "claims": [
+    {
+      "name": "the story can be won",
+      "ending": {
+        "kind": "victory"
+      }
+    },
+    {
+      "name": "the deed is in hand",
+      "placement": {
+        "thing": "deed",
+        "in": "player"
+      }
+    },
+    {
+      "name": "the warden has been asked about the vault",
+      "needs": {
+        "rooms": [
+          "porch",
+          "hall"
+        ],
+        "things": [
+          "warden"
+        ],
+        "verbs": [
+          "ask"
+        ]
+      },
+      "event": {
+        "type": "if.event.asked",
+        "target": "warden",
+        "topic": "the vault"
+      }
+    },
+    {
+      "name": "the ledger has been studied",
+      "needs": {
+        "rooms": [
+          "porch",
+          "hall",
+          "pantry",
+          "study"
+        ],
+        "things": [
+          "brandy",
+          "warden",
+          "ledger"
+        ],
+        "verbs": [
+          "take",
+          "give",
+          "read"
+        ]
+      },
+      "state": {
+        "entity": "ledger",
+        "value": "studied"
+      }
+    },
+    {
+      "name": "the strongbox leaves the Vault",
+      "never": true,
+      "needs": {
+        "rooms": [
+          "porch",
+          "hall",
+          "pantry",
+          "vault"
+        ],
+        "things": [
+          "valve",
+          "strongbox"
+        ],
+        "verbs": [
+          "turn",
+          "take"
+        ]
+      },
+      "placement": {
+        "thing": "strongbox",
+        "notIn": "vault"
+      }
+    },
+    {
+      "name": "the Study is reached",
+      "needs": {
+        "rooms": [
+          "porch",
+          "hall",
+          "pantry",
+          "study"
+        ],
+        "things": [
+          "brandy",
+          "warden"
+        ],
+        "verbs": [
+          "take",
+          "give"
+        ]
+      },
+      "room": "study"
+    },
+    {
+      "name": "the Study is reached without the brandy",
+      "never": true,
+      "needs": {
+        "rooms": [
+          "porch",
+          "hall",
+          "pantry",
+          "study"
+        ],
+        "things": [
+          "hand-bell",
+          "warden"
+        ],
+        "verbs": [
+          "take",
+          "give"
+        ]
+      },
+      "room": "study"
+    },
+    {
+      "name": "the notice has been read",
+      "needs": {
+        "rooms": [
+          "porch"
+        ],
+        "things": [
+          "notice"
+        ],
+        "verbs": [
+          "read"
+        ]
+      },
+      "flag": {
+        "thing": "notice",
+        "trait": "readable",
+        "field": "hasBeenRead",
+        "value": true
+      }
+    },
+    {
+      "name": "the valve has been turned",
+      "needs": {
+        "rooms": [
+          "porch",
+          "hall",
+          "pantry"
+        ],
+        "things": [
+          "valve"
+        ],
+        "verbs": [
+          "turn"
+        ]
+      },
+      "fired": "valve.turning"
+    },
+    {
+      "name": "the strongbox is open",
+      "needs": {
+        "rooms": [
+          "porch",
+          "hall",
+          "pantry",
+          "vault"
+        ],
+        "things": [
+          "valve",
+          "strongbox"
+        ],
+        "verbs": [
+          "turn",
+          "open"
+        ]
+      },
+      "flag": {
+        "thing": "strongbox",
+        "trait": "openable",
+        "field": "isOpen",
+        "value": true
+      }
+    }
+  ]
+}

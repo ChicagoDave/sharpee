@@ -34,7 +34,7 @@ Dungeo is different in kind. Its walkthrough chain is a replay, 949 steps in abo
 
 **D7: Real stories other than Dungeo do not gate.** No test in a gate walks or derives over Fernhill, UPPS, Ides of March, Secret Letter or any other real story, and a plan's Demonstration does not cite `./sharpee test` on one as a floor. Dungeo's walkthrough chain remains the regression floor, up to its own requirements. Tests that only compile or read a real story's files (corpus compiles, static world-index checks, a browser build) are not exploring tests and stay where they are.
 
-**D8: The scale check is kept on demand.** ADR-365 AC-2 bounds a claims run on a real-sized story, and a five-room story cannot carry that. The Fernhill walk stays runnable by hand as a measurement and leaves the gate.
+**D8: The scale check is let go.** ADR-365 AC-2 bounds a claims run on a real-sized story, and a five-room story cannot carry that. David first ruled the Fernhill walk kept on demand, as a measurement outside the gate. Run once that way on 2026-11-11 it failed its own bound, 121.4 seconds against 120, and he ruled the same day that Fernhill is removed from testing: the on-demand test is deleted and nothing replaces it.
 
 ## Consequences
 
@@ -42,7 +42,7 @@ Dungeo is different in kind. Its walkthrough chain is a replay, 949 steps in abo
 - A real story can be edited without moving a platform test's pins, and a test story is never edited for any reason but its test set.
 - The acceptance criteria of ADR-365 (AC-1, AC-2, AC-3, AC-4, AC-6, AC-9) and ADR-367 (AC-1, AC-3, AC-4) keep their records of what was measured on Fernhill, UPPS and Secret Letter. Their regression pins move to the test stories, and each record takes a dated note when its phase lands.
 - ADR-302 D16 takes a dated note for the second directory.
-- Nothing in the gate watches walk speed at scale. A slowdown like #628's is seen only when someone runs the on-demand measurement.
+- Nothing watches walk speed at scale, in the gate or out of it. A slowdown like #628's would be noticed by an author running `sharpee test` on a large story, not by a test here.
 - Interactions nobody wrote an obligation for are no longer exercised by accident. When a real story turns one up, it becomes a new obligation with a home in a test set.
 - A plan that adds a Chord error compiles `test-stories/` in its census, as it does `stories/` and `branch-stories/`.
 - The author-narrative objective's own target (the UNDERGROUND port) is a separate matter and is not changed by this record.

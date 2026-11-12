@@ -1,0 +1,63 @@
+## The lodge's claims: one of each kind the runner can settle, each under the
+## rooms, things and verbs it needs. The shared set is the winning line. The
+## hand bell is in it on purpose and bears on nothing.
+
+claims
+  needs rooms: the Porch, the Hall, the Pantry, the Vault
+  needs things: the valve, the hand bell, the strongbox, the deed
+  needs verbs: turn, open, take
+
+  claim the story can be won
+    the story ends in victory
+
+  claim the deed is in hand
+    the player has the deed
+
+  claim the warden has been asked about the vault
+    the warden was asked about "the vault"
+    needs rooms: the Porch, the Hall
+    needs things: the warden
+    needs verbs: ask
+
+  claim the ledger has been studied
+    the ledger is studied
+    needs rooms: the Porch, the Hall, the Pantry, the Study
+    needs things: the brandy, the warden, the ledger
+    needs verbs: take, give, read
+
+  never the strongbox leaves the Vault
+    the strongbox is not in the Vault
+    needs rooms: the Porch, the Hall, the Pantry, the Vault
+    needs things: the valve, the strongbox
+    needs verbs: turn, take
+
+  claim the Study is reached
+    the player is in the Study
+    needs rooms: the Porch, the Hall, the Pantry, the Study
+    needs things: the brandy, the warden
+    needs verbs: take, give
+
+  never the Study is reached without the brandy
+    the player is in the Study
+    needs rooms: the Porch, the Hall, the Pantry, the Study
+    needs things: the hand bell, the warden
+    needs verbs: take, give
+
+  claim the notice has been read
+    the notice is read
+    needs rooms: the Porch
+    needs things: the notice
+    needs verbs: read
+
+  claim the valve has been turned
+    the valve has been turned
+    needs rooms: the Porch, the Hall, the Pantry
+    needs things: the valve
+    needs verbs: turn
+
+  claim the strongbox is open
+    the strongbox is open
+    needs rooms: the Porch, the Hall, the Pantry, the Vault
+    needs things: the valve, the strongbox
+    needs verbs: turn, open
+end claims

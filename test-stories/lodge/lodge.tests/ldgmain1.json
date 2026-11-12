@@ -1,0 +1,116 @@
+{
+  "cards": [
+    {
+      "assertions": {},
+      "id": "ldgopen1",
+      "type": "opening"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "A porch under a tin roof."
+        ]
+      },
+      "id": "ldgboot1",
+      "type": "boot"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "A long hall."
+        ]
+      },
+      "command": "north",
+      "id": "ldgturn1",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Shelves of jars."
+        ]
+      },
+      "command": "east",
+      "id": "ldgturn2",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The wheel squeals round."
+        ],
+        "states": [
+          "the valve is running"
+        ]
+      },
+      "command": "turn valve",
+      "id": "ldgturn3",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "A long hall."
+        ]
+      },
+      "command": "west",
+      "id": "ldgturn4",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "A cold stone vault"
+        ]
+      },
+      "command": "north",
+      "id": "ldgturn5",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "In the strongbox you see a deed."
+        ]
+      },
+      "command": "open strongbox",
+      "id": "ldgturn6",
+      "locks": [
+        "the strongbox is open"
+      ],
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You take the deed"
+        ]
+      },
+      "command": "take deed",
+      "id": "ldgturn7",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "A long hall."
+        ]
+      },
+      "command": "south",
+      "id": "ldgturn8",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The deed is yours, and the lodge with it."
+        ]
+      },
+      "command": "south",
+      "ending": "lodge-kept",
+      "id": "ldgturn9",
+      "type": "turn"
+    }
+  ],
+  "id": "ldgmain1"
+}

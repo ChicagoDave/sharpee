@@ -1,0 +1,12 @@
+## The bazaar's one claim, with its set padded on purpose: the claim reads
+## only where the player is, so none of the eight wares can bear on it. That
+## is what the compiler's finding is for.
+
+claims
+  needs rooms: the Arcade, the Lamp Stall, the Back Lane
+  needs things: the fig, the plum, the ribbon, the thimble, the comb, the wick, the flint, the snuffer
+  needs verbs: take, drop
+
+  never the shopper reaches the Back Lane
+    the player is in the Back Lane
+end claims

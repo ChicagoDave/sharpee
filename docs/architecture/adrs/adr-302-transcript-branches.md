@@ -506,6 +506,11 @@ field naming a harness and no CLI dispatch flag. In the repository, the two
 harnesses' stories live under different top-level directories, and each harness
 looks only at its own; the exact paths are an implementation choice.
 
+**Note (2026-11-11, session ece425, ADR-395 D6).** The tree harness now reads two
+top-level directories: `branch-stories/` for real stories and `test-stories/` for
+stories written only to be tested. The reason below is untouched: the transcript
+harness reads `stories/` and neither of those.
+
 **Why separation, stated correctly.** The reason is *not* a test collision. This
 decision was first justified by `header-folding.test.ts` walking the whole
 `stories/` tree and failing the moment a `continues:` file appeared beneath it —

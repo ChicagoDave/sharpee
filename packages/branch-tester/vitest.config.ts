@@ -33,6 +33,10 @@ export default defineConfig({
       // tarball, where the sweeps then skip rather than passing over zero
       // files.
       SHARPEE_TRANSCRIPT_CORPUS: resolve(packageDir, '../../branch-stories'),
+      // The test stories the claims real-path tests walk (five rooms at most,
+      // written to be tested). Declared here for the same reason as the
+      // corpus: outside the repository none is configured and those tests skip.
+      SHARPEE_TEST_STORIES: resolve(packageDir, '../../test-stories'),
     },
   },
 });
