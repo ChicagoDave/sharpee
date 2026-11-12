@@ -1,22 +1,22 @@
 /**
- * fernhill-run.ts — the narrative-walk suite's one door to the author CLI.
+ * story-run.ts — the narrative-walk suite's one door to the author CLI.
  *
  * Purpose: spawn the built devkit CLI (`packages/devkit/dist/cli.js`, what
- *   `./sharpee` execs) against `branch-stories/fernhill` and hand the beats
+ *   `./sharpee` execs) against the test story `test-stories/orchard` and hand the beats
  *   what the process actually produced: the exit status, stdout decoded as
  *   run events through the wire's own guard, stderr as lines. Nothing here is
  *   recorded or fixtured; every value a beat asserts on came out of a process
  *   that ran during the test.
  *
- *   `runFernhillTest` memoizes within the process. Vitest isolates test files
+ *   `runOrchardTest` memoizes within the process. Vitest isolates test files
  *   in their own workers, so the memo is per file, not per suite: each beat
- *   file spawns fernhill's `test --json` once (about half a second) and its
+ *   file spawns the story's `test --json` once (about half a second) and its
  *   cases share that run. A cross-worker disk cache was considered and
  *   rejected — it would trade one second for a staleness risk keyed on
  *   every dist the CLI lazily requires.
  *
- * Public interface: REPO_ROOT, CLI, FERNHILL_DIR, FERNHILL_STORY, FERNHILL_TREE,
- *   spawnCli, runTestJson, decodeTestRun, runFernhillTest, resetFernhillMemo, composeIR,
+ * Public interface: REPO_ROOT, CLI, STORY_DIR, STORY_FILE, STORY_TREE, FERNHILL_STORY,
+ *   spawnCli, runTestJson, decodeTestRun, runOrchardTest, resetOrchardMemo, composeIR,
  *   runWorldIndex, derivedBranches, derivedSummary, lineLabel, commandResults, runEnd,
  *   and the Spawner / SpawnOutcome / TestRun types.
  * Owner context: repo tooling — `scripts/__tests__/` (the real-path suites
@@ -36,10 +36,13 @@ import {
 export const REPO_ROOT = resolve(__dirname, '..', '..', '..');
 /** The devkit engine `./sharpee` execs — the author CLI, not the platform bundle. */
 export const CLI = join(REPO_ROOT, 'packages', 'devkit', 'dist', 'cli.js');
-export const FERNHILL_DIR = join(REPO_ROOT, 'branch-stories', 'fernhill');
-export const FERNHILL_STORY = join(FERNHILL_DIR, 'fernhill.story');
-/** Fernhill's test tree: the `fernhill.tests/` directory of segments (ADR-355). */
-export const FERNHILL_TREE = join(FERNHILL_DIR, 'fernhill.tests');
+/** The story the narrative suites run: a test story, written to be tested (`test-stories/orchard`). */
+export const STORY_DIR = join(REPO_ROOT, 'test-stories', 'orchard');
+export const STORY_FILE = join(STORY_DIR, 'orchard.story');
+/** The story's test tree: the `orchard.tests/` directory of segments (ADR-355). */
+export const STORY_TREE = join(STORY_DIR, 'orchard.tests');
+/** Fernhill's source, read by the one suite that only analyses a real story's files (`narrative-world-tab`). */
+export const FERNHILL_STORY = join(REPO_ROOT, 'branch-stories', 'fernhill', 'fernhill.story');
 
 /** One CLI invocation's raw outcome. */
 export interface SpawnOutcome {
@@ -123,22 +126,22 @@ export function decodeTestRun(projectDir: string, outcome: SpawnOutcome): TestRu
   return { status: outcome.status, events, stderr: outcome.stderr.split('\n') };
 }
 
-let fernhillMemo: TestRun | undefined;
+let orchardMemo: TestRun | undefined;
 
 /**
- * Fernhill's `test --json` run, spawned once per process and shared.
+ * The story's `test --json` run, spawned once per process and shared.
  *
  * @param spawner how to spawn; the real CLI by default
  * @returns the memoized run
  */
-export function runFernhillTest(spawner: Spawner = spawnCli): TestRun {
-  fernhillMemo ??= runTestJson(FERNHILL_DIR, spawner);
-  return fernhillMemo;
+export function runOrchardTest(spawner: Spawner = spawnCli): TestRun {
+  orchardMemo ??= runTestJson(STORY_DIR, spawner);
+  return orchardMemo;
 }
 
-/** Forget the memoized fernhill run — for the support module's own test only. */
-export function resetFernhillMemo(): void {
-  fernhillMemo = undefined;
+/** Forget the memoized run — for the support module's own test only. */
+export function resetOrchardMemo(): void {
+  orchardMemo = undefined;
 }
 
 /**
@@ -197,7 +200,7 @@ export function derivedSummary(run: TestRun): DerivedRunSummaryEvent {
 /**
  * The display label of the line a run event belongs to. In a tree run an
  * event's `file` is the line's id — the id of the segment it begins with —
- * and the derived name (`opening-iron-gates`, `folly · wait`) rides the
+ * and the derived name (`opening-gate`, `hive-yard · wait`) rides the
  * line's `transcript-start` as `label` (ADR-355 D5). Labels can repeat; the
  * id is the key, so match on a label only where the beat is about the name.
  *

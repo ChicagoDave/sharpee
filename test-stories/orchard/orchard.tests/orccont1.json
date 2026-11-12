@@ -1,0 +1,28 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "Rows"
+        ]
+      },
+      "command": "east",
+      "id": "orcturnf",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You carry the apple out through the gate."
+        ]
+      },
+      "command": "south",
+      "ending": "harvest-home",
+      "id": "orcturng",
+      "type": "turn"
+    }
+  ],
+  "id": "orccont1",
+  "ordinal": 0,
+  "parent": "orcmain1"
+}

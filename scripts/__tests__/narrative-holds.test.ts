@@ -1,8 +1,8 @@
 /**
  * narrative-holds.test.ts — the author narrative's beats, as claims about any
- * story rather than measurements of fernhill. The other `narrative-*` suites
- * pin fernhill's own numbers (34 of 63, "Iron Gates", line 636); this one
- * asks whether each beat holds on whatever story it is pointed at: fernhill
+ * story rather than measurements of one story. The other `narrative-*` suites
+ * pin the test story's own numbers (16 of 20, "Gate", line 203); this one
+ * asks whether each beat holds on whatever story it is pointed at: the test story `orchard`
  * always, and the story `NARRATIVE_STORY` names alongside it.
  *
  *   NARRATIVE_STORY=branch-stories/<story> pnpm test:scripts narrative-holds
@@ -14,9 +14,9 @@
  * row fails) are findings about the story when they break — the checkpoint
  * reads them, and the diff names the cards, rooms or rows.
  *
- * Fernhill-only beats stay in their own suites: the planted-rule mutations,
- * the removed END STATE card, the Tobias rows and the exit-2 corruptions are
- * fixtures written against fernhill's source, not claims every story makes.
+ * Beats tied to one story stay in their own suites: the planted-rule mutations,
+ * the removed END STATE card, the keeper's topic rows and the exit-2 corruptions are
+ * fixtures written against orchard's source, not claims every story makes.
  *
  * Owner context: repo tooling — `scripts/__tests__/`.
  */
@@ -38,7 +38,7 @@ import {
   runEnd,
   runWorldIndex,
   type TestRun,
-} from './support/fernhill-run';
+} from './support/story-run';
 import { readTree, readTreeFiles } from './support/scratch-story';
 import { runStoryTest, runTestJsonAsync, storiesUnderTest, type StoryUnderTest } from './support/story-under-test';
 
@@ -160,6 +160,8 @@ describe.each(storiesUnderTest().map((story) => [story.id, story] as const))('%s
           delete copy.elapsedMs;
           delete copy.duration;
           delete copy.totalDuration;
+          // A claims summary carries its walks' wall-clock time (a story with a claims fragment).
+          delete copy.totalWalkMs;
           return copy;
         });
       expect(strip(again.events)).toEqual(strip(run.events));

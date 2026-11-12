@@ -1,0 +1,17 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "The oldest hive, straw gone grey"
+        ]
+      },
+      "command": "examine hive",
+      "id": "orcbrcb1",
+      "type": "turn"
+    }
+  ],
+  "id": "orchive1",
+  "ordinal": 2,
+  "parent": "orcmain1"
+}

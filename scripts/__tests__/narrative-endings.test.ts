@@ -12,7 +12,7 @@
  */
 import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { FERNHILL_DIR, commandResults, derivedSummary, lineLabel, runEnd, runFernhillTest, runTestJson, type TestRun } from './support/fernhill-run';
+import { STORY_DIR, commandResults, derivedSummary, lineLabel, runEnd, runOrchardTest, runTestJson, type TestRun } from './support/story-run';
 import type { TreeCard, TreeDocument } from '../../packages/branch-tester/src/tree-document';
 import { copyStoryToScratch, editTree, type ScratchStory } from './support/scratch-story';
 
@@ -28,21 +28,21 @@ let gapRun: TestRun;
 let failRun: TestRun;
 
 beforeAll(() => {
-  real = runFernhillTest();
+  real = runOrchardTest();
 
-  withoutEndCard = copyStoryToScratch(FERNHILL_DIR, 'narrative-ending-gap-');
-  const removedEnd = editTree<TreeCard>(join(withoutEndCard.dir, 'fernhill.tests'), (document) =>
+  withoutEndCard = copyStoryToScratch(STORY_DIR, 'narrative-ending-gap-');
+  const removedEnd = editTree<TreeCard>(join(withoutEndCard.dir, 'orchard.tests'), (document) =>
     document.cards.splice(terminalCardIndex(document), 1)[0],
   );
-  expect(removedEnd.ending).toBe('fernhill-saved');
+  expect(removedEnd.ending).toBe('harvest-home');
   gapRun = runTestJson(withoutEndCard.dir);
 
-  stopsShort = copyStoryToScratch(FERNHILL_DIR, 'narrative-ending-short-');
-  const removedBefore = editTree<TreeCard>(join(stopsShort.dir, 'fernhill.tests'), (document) =>
+  stopsShort = copyStoryToScratch(STORY_DIR, 'narrative-ending-short-');
+  const removedBefore = editTree<TreeCard>(join(stopsShort.dir, 'orchard.tests'), (document) =>
     document.cards.splice(terminalCardIndex(document) - 1, 1)[0],
   );
   expect(removedBefore.ending).toBeUndefined();
-  expect(removedBefore.command).toBe('south');
+  expect(removedBefore.command).toBe('east');
   failRun = runTestJson(stopsShort.dir);
 }, 180_000);
 
@@ -51,22 +51,22 @@ afterAll(() => {
   stopsShort?.cleanup();
 });
 
-const mainLine = (run: TestRun) => commandResults(run).filter((result) => lineLabel(run, result.file) === 'opening-iron-gates');
+const mainLine = (run: TestRun) => commandResults(run).filter((result) => lineLabel(run, result.file) === 'opening-gate');
 
 describe('END STATE cards prove their endings', () => {
-  it('the main line ends at the gates with fernhill-saved, asserted from the engine\'s ending record', () => {
+  it('the main line ends at the gate with harvest-home, asserted from the engine\'s ending record', () => {
     const victory = commandResults(real).find((result) => result.ending === 'victory')!;
-    expect(lineLabel(real, victory.file)).toBe('opening-iron-gates');
+    expect(lineLabel(real, victory.file)).toBe('opening-gate');
     expect(victory.input).toBe('south');
-    expect(victory.assertionResults).toContainEqual({ description: 'ending fernhill-saved', passed: true });
+    expect(victory.assertionResults).toContainEqual({ description: 'ending harvest-home', passed: true });
     expect(mainLine(real).at(-1)).toBe(victory);
   });
 
-  it('the wait branch at the Folly ends with fuse-blast', () => {
+  it('the wait branch at the Hive Yard ends with stung', () => {
     const defeat = commandResults(real).find((result) => result.ending === 'defeat')!;
-    expect(lineLabel(real, defeat.file)).toBe('folly · wait');
+    expect(lineLabel(real, defeat.file)).toBe('hive-yard · wait');
     expect(defeat.input).toBe('wait');
-    expect(defeat.assertionResults).toContainEqual({ description: 'ending fuse-blast', passed: true });
+    expect(defeat.assertionResults).toContainEqual({ description: 'ending stung', passed: true });
   });
 
   it('together they reach two of the three declared endings', () => {
@@ -79,11 +79,11 @@ describe('a line that stops short of the ending its card declares', () => {
     const failed = mainLine(failRun).filter((result) => !result.passed);
     expect(failed).toHaveLength(1);
     expect(failed[0].input).toBe('south');
-    expect(failed[0].failure).toBe('Ending "fernhill-saved" not reached: the story did not end');
+    expect(failed[0].failure).toBe('Ending "harvest-home" not reached: the story did not end');
     expect(failed[0].assertionResults).toContainEqual({
-      description: 'ending fernhill-saved',
+      description: 'ending harvest-home',
       passed: false,
-      message: 'Ending "fernhill-saved" not reached: the story did not end',
+      message: 'Ending "harvest-home" not reached: the story did not end',
     });
     expect(runEnd(failRun).totalFailed).toBe(1);
     expect(runEnd(failRun).exitCode).toBe(1);
@@ -96,9 +96,9 @@ describe('a line whose END STATE card is removed', () => {
     expect(runEnd(gapRun).totalFailed).toBe(0);
     const { endings } = derivedSummary(gapRun);
     expect(endings).toMatchObject({ declared: 3, reached: 1 });
-    expect(endings.unreached.map((ending) => ending.id)).toEqual(['fernhill-saved', 'dawn-comes']);
-    expect(endings.unreached[0]).toEqual({ id: 'fernhill-saved', statement: 'win', line: 65, file: null });
+    expect(endings.unreached.map((ending) => ending.id)).toEqual(['harvest-home', 'bellyache']);
+    expect(endings.unreached[0]).toEqual({ id: 'harvest-home', statement: 'win', line: 67, file: null });
     expect(gapRun.stderr).toContain('Endings reached: 1 / 3');
-    expect(gapRun.stderr).toContain('  fernhill.story:65 · fernhill-saved (win)');
+    expect(gapRun.stderr).toContain('  orchard.story:67 · harvest-home (win)');
   });
 });

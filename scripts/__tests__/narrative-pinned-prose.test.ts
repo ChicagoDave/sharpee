@@ -3,12 +3,12 @@
  * ("Pinning the prose"): a turn becomes a card whose claims the author never
  * typed, and the CLI evaluates exactly those claims. The test tree is read
  * from its segments as recorded; the verdicts come from a real
- * `sharpee test --json` run of fernhill, matched card to command-result.
+ * `sharpee test --json` run of the test story `orchard`, matched card to command-result.
  *
  * Owner context: repo tooling — `scripts/__tests__/`.
  */
 import { beforeAll, describe, expect, it } from 'vitest';
-import { FERNHILL_TREE, commandResults, lineLabel, runFernhillTest, type TestRun } from './support/fernhill-run';
+import { STORY_TREE, commandResults, lineLabel, runOrchardTest, type TestRun } from './support/story-run';
 import { readTree } from './support/scratch-story';
 
 interface Card { type: 'opening' | 'boot' | 'turn'; command?: string; assertions: { contains?: string[]; channels?: Array<{ id: string; is: string }> } }
@@ -20,22 +20,22 @@ let run: TestRun;
 beforeAll(() => {
   // The beats below read the recorded cards, so an empty tree must fail here
   // rather than let each beat pass vacuously.
-  tree = readTree(FERNHILL_TREE) as unknown as TreeDocument;
+  tree = readTree(STORY_TREE) as unknown as TreeDocument;
   expect(tree.cards.length).toBeGreaterThan(2);
-  run = runFernhillTest();
+  run = runOrchardTest();
 }, 60_000);
 
 /** The main line's command-results, in order — the line the tree's own cards are. */
 function mainLine() {
-  return commandResults(run).filter((result) => lineLabel(run, result.file) === 'opening-iron-gates');
+  return commandResults(run).filter((result) => lineLabel(run, result.file) === 'opening-gate');
 }
 
 describe('the boot card pins the room name and its description', () => {
-  it('the tree\'s boot card carries "Iron Gates" and the opening paragraph, and the CLI passed both', () => {
+  it('the tree\'s boot card carries "Gate" and the opening paragraph, and the CLI passed both', () => {
     const boot = tree.cards[1];
     expect(boot.type).toBe('boot');
-    expect(boot.assertions.contains?.[0]).toBe('Iron Gates');
-    expect(boot.assertions.contains?.[1]).toMatch(/^The cab is already grinding away down the lane/);
+    expect(boot.assertions.contains?.[0]).toBe('Gate');
+    expect(boot.assertions.contains?.[1]).toMatch(/^The orchard gate stands open on the lane/);
 
     const look = mainLine().find((result) => result.turn === 1);
     expect(look?.input).toBe('look');
@@ -48,21 +48,21 @@ describe('the boot card pins the room name and its description', () => {
 });
 
 describe('the first move becomes a card', () => {
-  it('the Gravel Drive card carries the room name the default policy pinned, and the CLI evaluated exactly that', () => {
+  it('the Rows card carries the room name the default policy pinned, and the CLI evaluated exactly that', () => {
     const card = tree.cards[2];
     expect(card.type).toBe('turn');
     expect(card.command).toBe('north');
-    expect(card.assertions.contains).toEqual(['Gravel Drive']);
+    expect(card.assertions.contains).toEqual(['Rows']);
 
     const north = mainLine().find((result) => result.turn === 2);
     expect(north?.input).toBe('north');
     expect(north?.passed).toBe(true);
-    expect(north?.assertionResults).toEqual([{ description: 'contains "Gravel Drive"', passed: true }]);
+    expect(north?.assertionResults).toEqual([{ description: 'contains "Rows"', passed: true }]);
   });
 
   it('the whole main line passes: every card\'s claims, one verdict each', () => {
     const results = mainLine();
-    expect(results.length).toBeGreaterThan(20);
+    expect(results.length).toBeGreaterThan(10);
     expect(results.every((result) => result.passed)).toBe(true);
     const verdicts = results.flatMap((result) => result.assertionResults ?? []);
     expect(verdicts.length).toBeGreaterThan(results.length);

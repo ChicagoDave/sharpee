@@ -2,10 +2,10 @@
  * narrative-support.test.ts — the narrative-walk suite's support modules:
  * `support/scratch-story.ts`'s `editTree` writes a scratch tree the way the
  * Testing tab does (minted ids, changed segments only, stale segments
- * removed, canonical bytes), and `support/fernhill-run.ts` makes one spawn per process for fernhill's run
+ * removed, canonical bytes), and `support/story-run.ts` makes one spawn per process for the test story's run
  * (proved by counting, not assumed), and a malformed or unfinished process
  * rejected by name rather than read as an empty result; and
- * `support/story-under-test.ts` lists fernhill plus the story `NARRATIVE_STORY`
+ * `support/story-under-test.ts` lists the test story plus the story `NARRATIVE_STORY`
  * names, refusing a directory it cannot resolve.
  *
  * Owner context: repo tooling — `scripts/__tests__/`.
@@ -22,17 +22,17 @@ import {
 } from '../../packages/branch-tester/src/tree-document';
 import { editTree, readTree, readTreeFiles } from './support/scratch-story';
 import {
-  FERNHILL_DIR,
-  FERNHILL_STORY,
-  FERNHILL_TREE,
+  STORY_DIR,
+  STORY_FILE,
+  STORY_TREE,
   lineLabel,
-  resetFernhillMemo,
-  runFernhillTest,
+  resetOrchardMemo,
+  runOrchardTest,
   runTestJson,
   runWorldIndex,
   spawnCli,
   type Spawner,
-} from './support/fernhill-run';
+} from './support/story-run';
 import {
   NARRATIVE_STORY_VARIABLE,
   resolveStory,
@@ -110,17 +110,17 @@ describe('editTree writes a scratch tree the way the Testing tab does', () => {
   });
 });
 
-describe('runFernhillTest', () => {
-  beforeAll(() => resetFernhillMemo());
+describe('runOrchardTest', () => {
+  beforeAll(() => resetOrchardMemo());
 
-  it('spawns fernhill\'s test --json once and shares the run', () => {
+  it('spawns the story\'s test --json once and shares the run', () => {
     let spawns = 0;
     const counting: Spawner = (args, cwd) => {
       spawns += 1;
       return spawnCli(args, cwd);
     };
-    const first = runFernhillTest(counting);
-    const second = runFernhillTest(counting);
+    const first = runOrchardTest(counting);
+    const second = runOrchardTest(counting);
     expect(spawns).toBe(1);
     expect(second).toBe(first);
     expect(first.events[0]?.type).toBe('run-start');
@@ -195,11 +195,11 @@ describe('story-under-test resolves the stories the agnostic suite runs', () => 
   afterEach(() => rmSync(scratch, { recursive: true, force: true }));
 
   it('a repo-relative directory resolves to its one .story file and the tree beside it', () => {
-    expect(resolveStory('branch-stories/fernhill')).toEqual({
-      id: 'fernhill',
-      dir: FERNHILL_DIR,
-      storyFile: FERNHILL_STORY,
-      treeDir: FERNHILL_TREE,
+    expect(resolveStory('test-stories/orchard')).toEqual({
+      id: 'orchard',
+      dir: STORY_DIR,
+      storyFile: STORY_FILE,
+      treeDir: STORY_TREE,
     });
   });
 
@@ -210,13 +210,13 @@ describe('story-under-test resolves the stories the agnostic suite runs', () => 
     expect(() => resolveStory(project('untested', ['lone'], false))).toThrow(/has no lone\.tests\/ directory/);
   });
 
-  it('runs fernhill alone by default, fernhill once when it is the one named, and fernhill then the named story otherwise', () => {
-    expect(storiesUnderTest({}).map((story) => story.id)).toEqual(['fernhill']);
-    expect(storiesUnderTest({ [NARRATIVE_STORY_VARIABLE]: '  ' }).map((story) => story.id)).toEqual(['fernhill']);
-    expect(storiesUnderTest({ [NARRATIVE_STORY_VARIABLE]: FERNHILL_DIR }).map((story) => story.id)).toEqual(['fernhill']);
+  it('runs the test story alone by default, once when it is the one named, and then the named story otherwise', () => {
+    expect(storiesUnderTest({}).map((story) => story.id)).toEqual(['orchard']);
+    expect(storiesUnderTest({ [NARRATIVE_STORY_VARIABLE]: '  ' }).map((story) => story.id)).toEqual(['orchard']);
+    expect(storiesUnderTest({ [NARRATIVE_STORY_VARIABLE]: STORY_DIR }).map((story) => story.id)).toEqual(['orchard']);
     const other = project('meadow', ['meadow']);
     const listed = storiesUnderTest({ [NARRATIVE_STORY_VARIABLE]: other });
-    expect(listed.map((story) => story.id)).toEqual(['fernhill', 'meadow']);
+    expect(listed.map((story) => story.id)).toEqual(['orchard', 'meadow']);
     expect(listed[1].treeDir).toBe(join(other, 'meadow.tests'));
   });
 
@@ -240,11 +240,11 @@ describe('story-under-test resolves the stories the agnostic suite runs', () => 
   });
 
   it('spawnCliAsync drives the real CLI without blocking, and the run decodes as the synchronous one does', async () => {
-    const run = await runTestJsonAsync(FERNHILL_DIR);
+    const run = await runTestJsonAsync(STORY_DIR);
     expect(run.status).toBe(0);
     expect(run.events[0]?.type).toBe('run-start');
     expect(run.events.at(-1)?.type).toBe('run-end');
-    expect(run.events.length).toBe(runTestJson(FERNHILL_DIR).events.length);
+    expect(run.events.length).toBe(runTestJson(STORY_DIR).events.length);
   }, 60_000);
 
   it('runTestJsonAsync treats a killed process as a timeout, never as an empty run', async () => {

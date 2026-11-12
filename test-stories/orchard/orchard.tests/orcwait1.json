@@ -1,0 +1,28 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "Time passes"
+        ]
+      },
+      "command": "wait",
+      "id": "orcbrcc1",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You stand too long among the hives."
+        ]
+      },
+      "command": "wait",
+      "ending": "stung",
+      "id": "orcbrcc2",
+      "type": "turn"
+    }
+  ],
+  "id": "orcwait1",
+  "ordinal": 3,
+  "parent": "orcmain1"
+}

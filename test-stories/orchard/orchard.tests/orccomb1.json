@@ -1,0 +1,17 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "Taken."
+        ]
+      },
+      "command": "take honeycomb",
+      "id": "orcbrca1",
+      "type": "turn"
+    }
+  ],
+  "id": "orccomb1",
+  "ordinal": 1,
+  "parent": "orcmain1"
+}

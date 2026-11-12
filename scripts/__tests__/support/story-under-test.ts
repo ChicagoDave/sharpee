@@ -3,13 +3,13 @@
  *
  * Purpose: resolve a story project directory into the paths the beats read
  *   (the `.story` file, the `<story-id>.tests/` tree) and list the stories
- *   under test: fernhill always, plus the one the `NARRATIVE_STORY`
- *   environment variable names. Fernhill stays in the list so the suite is
+ *   under test: the test story `orchard` always, plus the one the `NARRATIVE_STORY`
+ *   environment variable names. The test story stays in the list so the suite is
  *   green-or-red on a known story in every run, and a second story is checked
  *   alongside it rather than instead of it.
  *
  *   `runStoryTest` memoizes `sharpee test --json` per directory within the
- *   process, the same trade `runFernhillTest` makes (per file, not cross-worker).
+ *   process, the same trade `runOrchardTest` makes (per file, not cross-worker).
  *   It spawns asynchronously: a story the size of secret-letter runs for a
  *   minute and a half, and a synchronous spawn that long blocks the vitest
  *   worker's event loop until its RPC to the runner times out.
@@ -22,7 +22,7 @@
 import { spawn } from 'node:child_process';
 import { existsSync, readdirSync, statSync } from 'node:fs';
 import { isAbsolute, join, resolve } from 'node:path';
-import { CLI, FERNHILL_DIR, REPO_ROOT, decodeTestRun, type SpawnOutcome, type TestRun } from './fernhill-run';
+import { CLI, STORY_DIR, REPO_ROOT, decodeTestRun, type SpawnOutcome, type TestRun } from './story-run';
 
 /** The environment variable that names a second story directory to check. */
 export const NARRATIVE_STORY_VARIABLE = 'NARRATIVE_STORY';
@@ -66,18 +66,18 @@ export function resolveStory(dir: string): StoryUnderTest {
 }
 
 /**
- * The stories the agnostic suite runs: fernhill, then the named story if any.
+ * The stories the agnostic suite runs: the test story, then the named story if any.
  *
  * @param environment the variables to read; the process's own by default
- * @returns fernhill first, and the named story when it is a different directory
+ * @returns the test story first, and the named story when it is a different directory
  * @throws when the named directory does not resolve (see {@link resolveStory})
  */
 export function storiesUnderTest(environment: NodeJS.ProcessEnv = process.env): StoryUnderTest[] {
-  const fernhill = resolveStory(FERNHILL_DIR);
+  const base = resolveStory(STORY_DIR);
   const named = environment[NARRATIVE_STORY_VARIABLE]?.trim();
-  if (!named) return [fernhill];
+  if (!named) return [base];
   const story = resolveStory(named);
-  return story.dir === fernhill.dir ? [fernhill] : [fernhill, story];
+  return story.dir === base.dir ? [base] : [base, story];
 }
 
 /** How the agnostic suite spawns the CLI — injectable so a test can count or fake spawns. */

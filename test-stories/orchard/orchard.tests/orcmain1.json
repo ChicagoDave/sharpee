@@ -1,0 +1,170 @@
+{
+  "cards": [
+    {
+      "assertions": {},
+      "id": "orcopen1",
+      "type": "opening"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Gate",
+          "The orchard gate stands open on the lane."
+        ]
+      },
+      "id": "orcboot1",
+      "type": "boot"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Rows"
+        ]
+      },
+      "command": "north",
+      "id": "orcturn1",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Press House",
+          "A cider press fills the middle of the room."
+        ]
+      },
+      "command": "east",
+      "id": "orcturn2",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Taken."
+        ]
+      },
+      "command": "take pole",
+      "id": "orcturn3",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You put on the bee smoker."
+        ]
+      },
+      "command": "wear smoker",
+      "id": "orcturn4",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Water runs along the rows"
+        ],
+        "states": [
+          "the apple tree is laden"
+        ]
+      },
+      "command": "turn valve",
+      "id": "orcturn5",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "\"She wants a handle,\" says the keeper."
+        ]
+      },
+      "command": "ask keeper about press",
+      "id": "orcturn6",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Cellar"
+        ]
+      },
+      "command": "down",
+      "id": "orcturn7",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Taken."
+        ]
+      },
+      "command": "take handle",
+      "id": "orcturn8",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Press House"
+        ]
+      },
+      "command": "up",
+      "id": "orcturn9",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The screw begins to turn."
+        ],
+        "states": [
+          "the cider press is running"
+        ]
+      },
+      "command": "crank press",
+      "id": "orcturna",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Rows"
+        ]
+      },
+      "command": "west",
+      "id": "orcturnb",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "One apple drops and rolls to a stop in the grass."
+        ],
+        "states": [
+          "the apple tree is picked"
+        ]
+      },
+      "command": "shake tree",
+      "id": "orcturnc",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Taken."
+        ]
+      },
+      "command": "take windfall",
+      "id": "orcturnd",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Hive Yard"
+        ]
+      },
+      "command": "west",
+      "id": "orcturne",
+      "type": "turn"
+    }
+  ],
+  "id": "orcmain1"
+}

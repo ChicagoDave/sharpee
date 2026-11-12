@@ -4,18 +4,18 @@
  * A failed card or a failed rule exits 1. A SKIPPED branch never does. A
  * document the tester cannot read runs nothing and exits 2, saying why.
  *
- * Fernhill as written is the exit-0 case: every card and every exercised
+ * The test story `orchard` as written is the exit-0 case: every card and every exercised
  * branch passes. The exit-1 case uses devkit's own failing fixture project — a
  * dedicated test story whose one clause has no vocabulary, so its derived
  * row fails at parse. The SKIPPED case uses devkit's SKIPPED fixture, and the
- * exit-2 cases corrupt a scratch copy's test tree, never fernhill's.
+ * exit-2 cases corrupt a scratch copy's test tree, never the story's own.
  *
  * Owner context: repo tooling — `scripts/__tests__/`.
  */
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { FERNHILL_DIR, REPO_ROOT, derivedBranches, runEnd, runFernhillTest, runTestJson, spawnCli } from './support/fernhill-run';
+import { STORY_DIR, REPO_ROOT, derivedBranches, runEnd, runOrchardTest, runTestJson, spawnCli } from './support/story-run';
 import type { TreeFiles } from '../../packages/branch-tester/src/tree-document';
 import { copyStoryToScratch, readTreeFiles, type ScratchStory } from './support/scratch-story';
 
@@ -23,8 +23,8 @@ const SKIP_FIXTURE = join(REPO_ROOT, 'packages', 'devkit', 'tests', 'fixtures', 
 const FAIL_FIXTURE = join(REPO_ROOT, 'packages', 'devkit', 'tests', 'fixtures', 'derived-fail');
 
 describe('one gesture runs everything, and a clean story exits 0', () => {
-  it('fernhill today: every card passes, every exercised derived row passes, the run exits 0', () => {
-    const run = runFernhillTest();
+  it('the story as written: every card passes, every exercised derived row passes, the run exits 0', () => {
+    const run = runOrchardTest();
     const end = runEnd(run);
     expect(end.totalFailed).toBe(0);
     expect(derivedBranches(run).filter((event) => event.status === 'failed')).toHaveLength(0);
@@ -67,14 +67,14 @@ describe('a tree the tester cannot read runs nothing and exits 2', () => {
   let original: TreeFiles;
 
   beforeAll(() => {
-    scratch = copyStoryToScratch(FERNHILL_DIR, 'narrative-exit-codes-');
-    treeDir = join(scratch.dir, 'fernhill.tests');
+    scratch = copyStoryToScratch(STORY_DIR, 'narrative-exit-codes-');
+    treeDir = join(scratch.dir, 'orchard.tests');
     original = readTreeFiles(treeDir);
     // An empty snapshot would make every case below pass for the wrong reason.
     expect(Object.keys(original).length).toBeGreaterThan(1);
   });
 
-  // Every case starts from fernhill's own tree, so each carries one defect only.
+  // Every case starts from the story's own tree, so each carries one defect only.
   beforeEach(() => {
     rmSync(treeDir, { recursive: true, force: true });
     mkdirSync(treeDir);
@@ -92,21 +92,21 @@ describe('a tree the tester cannot read runs nothing and exits 2', () => {
   }
 
   it('a newer tree version is refused by name, nothing runs, exit 2', () => {
-    writeFileSync(join(treeDir, 'manifest.json'), '{ "seed": 42, "story": "fernhill", "version": 99 }\n', 'utf-8');
+    writeFileSync(join(treeDir, 'manifest.json'), '{ "seed": 42, "story": "orchard", "version": 99 }\n', 'utf-8');
     expect(refusedRun()).toContain(
-      'test: fernhill.tests/: this test tree is version 99; this build reads up to version 3 — update Sharpee to open it',
+      'test: orchard.tests/: this test tree is version 99; this build reads up to version 3 — update Sharpee to open it',
     );
   }, 60_000);
 
   it('a manifest that is not a tree manifest at all is malformed, nothing runs, exit 2', () => {
-    // Seed and story are fernhill's own: the version is the only defect.
-    writeFileSync(join(treeDir, 'manifest.json'), '{ "seed": 42, "story": "fernhill", "version": "two" }\n', 'utf-8');
-    expect(refusedRun()).toContain("test: fernhill.tests/: 'version' must be an integer");
+    // Seed and story are the story's own: the version is the only defect.
+    writeFileSync(join(treeDir, 'manifest.json'), '{ "seed": 42, "story": "orchard", "version": "two" }\n', 'utf-8');
+    expect(refusedRun()).toContain("test: orchard.tests/: 'version' must be an integer");
   }, 60_000);
 
   it('a tree with no manifest is malformed — never run at a default seed, exit 2', () => {
     rmSync(join(treeDir, 'manifest.json'));
-    expect(refusedRun()).toContain('test: fernhill.tests/: the tree has no manifest.json');
+    expect(refusedRun()).toContain('test: orchard.tests/: the tree has no manifest.json');
   }, 60_000);
 
   it('a segment naming a parent that is gone is malformed — the subtree is never silently dropped, exit 2', () => {
@@ -115,7 +115,7 @@ describe('a tree the tester cannot read runs nothing and exits 2', () => {
     segment.parent = 'gone0000';
     writeFileSync(join(treeDir, name), `${JSON.stringify(segment, null, 2)}\n`, 'utf-8');
     expect(refusedRun()).toContain(
-      `test: fernhill.tests/: segment '${segment.id}' names parent 'gone0000', which no segment in the tree carries`,
+      `test: orchard.tests/: segment '${segment.id}' names parent 'gone0000', which no segment in the tree carries`,
     );
   }, 60_000);
 
@@ -123,7 +123,7 @@ describe('a tree the tester cannot read runs nothing and exits 2', () => {
     writeFileSync(join(treeDir, 'manifest.json'), `${JSON.stringify(JSON.parse(original['manifest.json']), null, 1)}\n`, 'utf-8');
     // Exactly the manifest is named: every segment is still canonical.
     expect(refusedRun()).toBe(
-      'test: fernhill.tests/ has files not in canonical form (re-save them from the Testing tab):\n  manifest.json\n',
+      'test: orchard.tests/ has files not in canonical form (re-save them from the Testing tab):\n  manifest.json\n',
     );
   }, 60_000);
 

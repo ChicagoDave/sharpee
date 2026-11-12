@@ -4,7 +4,7 @@
  * Purpose: give a beat that must change a story (delete a rule's effect,
  *   remove an END STATE card, corrupt the test tree) a private copy in a
  *   temp directory outside the repository, so the mutation happens there and
- *   `branch-stories/fernhill` is never written. The copy skips every directory
+ *   the story under `test-stories/` is never written. The copy skips every directory
  *   the root `.gitignore` ignores — build output is rebuilt by the CLI from
  *   source anyway, and copying five megabytes of `dist/` would only slow the
  *   suite down.

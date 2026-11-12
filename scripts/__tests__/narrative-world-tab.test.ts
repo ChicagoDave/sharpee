@@ -18,7 +18,7 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { FERNHILL_STORY, composeIR, runWorldIndex } from './support/fernhill-run';
+import { FERNHILL_STORY, composeIR, runWorldIndex } from './support/story-run';
 
 interface Site { owner: string; key: string }
 interface Candidate { phrase: string; site: Site }
