@@ -535,3 +535,88 @@ Still used after the move, so not on the list: `branch-stories/upps/seeded/` (re
 - The gate's saving comes from two moves: the claims walks (Phase 3) and the UPPS breaking edit (Phase 4). After them the exploring tests in the turbo gate cost seconds.
 - Phase 6 shrinks: the lock-gesture suite is already on a dedicated fixture, and the claims suite is one case.
 - Phases 5 and 6 are about stable pins more than speed, and both start from a red suite.
+
+## Where each obligation lives now (Phase 7, 2026-11-11)
+
+Every row above is as Phase 1 wrote it, with what was true on Fernhill, UPPS and Secret Letter that day. This table is the close-out: the test story, file and case that proves each obligation now.
+
+| Id | Story | File | Case |
+|---|---|---|---|
+| OB-1 | lodge | `packages/branch-tester/tests/claims-real-path.test.ts` | settles all ten claims with the measured verdicts and witness depths |
+| OB-2 | lodge | same | same |
+| OB-3 | lodge | same | same |
+| OB-4 | lodge | same | same |
+| OB-5 | lodge | same | same, and the witnesses are the measured paths |
+| OB-6 | lodge | same | settles all ten claims |
+| OB-7 | lodge | same | settles all ten claims; runs one walk per distinct set (nine states, `frontier-exhausted`) |
+| OB-8 | lodge | same | settles all ten claims |
+| OB-9 | lodge | same | same |
+| OB-10 | lodge | same | same (the claim written by `sharpee claim` at the main line's sixth turn) |
+| OB-11 | lodge | same | same (the tally) |
+| OB-12 | lodge | same | runs one walk per distinct set |
+| OB-13 | lodge | same | same |
+| OB-14 | lodge | same | the whole run finishes inside a 10-second bound |
+| OB-15 | lodge | same | the witnesses are the measured paths |
+| OB-16 | lodge | same | AC-9: nothing a witness touches is reported inert |
+| OB-17 | lodge | `packages/branch-tester/tests/claims-fragment.test.ts` | the manifest names the fragment |
+| OB-18 | lodge | same | the fragment compiles against the story to exactly the claim set the walked test reads |
+| OB-19 | lodge | same | AC-6: the story compiles to the same IR whether or not the fragment is read |
+| OB-20 | bazaar | `packages/branch-tester/tests/claims-cone-acceptance.test.ts` | the finding names all eight wares inert |
+| OB-21 | bazaar | same | the trimmed set holds the claim by exhaustion |
+| OB-22 | ferry | `packages/devkit/tests/test-claims.test.ts` | reports 5 held and 1 violated from the manifest line |
+| OB-23 | ferry | same | same (three held by lines, three walks) |
+| OB-24 | ferry | same | same (the violated `never` and its witness) |
+| OB-25 | ferry | same | same (held by the main line at turn 6; the lock held on the branch at turn 7) |
+| OB-26 | ferry | same | exits as the same run exits without the manifest line |
+| OB-27 | ferry | `packages/devkit/tests/claim-broken.test.ts` | AC-4 on the ferry: the lever no longer docks the ferry |
+| OB-28 | ferry | same | same |
+| OB-29 | ferry | same | same (`max-depth-reached` after 159 states) |
+| OB-30 | ferry | same | same |
+| OB-31 | ferry | same | AC-4 on the ferry: a claim's own verdict moves nothing |
+| OB-32 | ferry | `tools/ide/web/testing-surface/tests/claims-real-path.test.ts` | folds every claim-result and the summary |
+| OB-33 | orchard | `tools/ide/web/testing-surface/tests/derived-real-path.test.ts` | folds every derived-branch and the summary |
+| OB-34 | orchard | `tools/ide/web/testing-surface/tests/line-verdict.test.ts` | AC-1: the tint from a real run with one planted failure (two cases) |
+| OB-35 | none | `tools/explorer-probe/tests/lens-examinable.test.js`, unchanged | **Not moved.** The lens returns nothing on its own fixture (GH #583), so its pin stays on Fernhill, failing, until the lens is repaired; then it is recorded on orchard. David's ruling, 2026-11-11. |
+| OB-36 | orchard | `scripts/__tests__/narrative-coverage-numbers.test.ts` | the Coverage strip (four cases) |
+| OB-37 | orchard | `scripts/__tests__/narrative-endings.test.ts` | all five cases |
+| OB-38 | orchard | `scripts/__tests__/narrative-holds.test.ts` | all fourteen cases |
+| OB-39 | orchard | `scripts/__tests__/narrative-names-the-cause.test.ts` | seeds T, U and Z (four cases) |
+| OB-40 | orchard | `scripts/__tests__/narrative-pinned-prose.test.ts` | all three cases |
+| OB-41 | orchard | `scripts/__tests__/narrative-playing-through.test.ts` | all four cases |
+| OB-42 | orchard | `scripts/__tests__/narrative-rule-tests-itself.test.ts` | all six cases |
+| OB-43 | orchard | `scripts/__tests__/narrative-unexpected-failure.test.ts` | both cases |
+| OB-44 | orchard | `scripts/__tests__/narrative-what-runs-when.test.ts` | the story as written: every card passes |
+| OB-45 | orchard | `scripts/__tests__/narrative-support.test.ts` | spawns the story's test --json once and shares the run |
+
+OB-D1, the scale check on a real-sized story, has no destination: it was let go (ADR-395 D8).
+
+## Final timings (Phase 7)
+
+Each from one run on 2026-11-11, beside Phase 1's figure from the same day.
+
+| Gate | Phase 1 | Now | Command |
+|---|---|---|---|
+| The turbo gate, vitest time summed over packages | 306 s | 72 s | `pnpm exec turbo run test:ci --force --continue` (Phase 4's run; 1m55s wall clock uncached, 73 of 73 tasks) |
+| branch-tester's suite | 117.7 s | 4.0 s | within that run |
+| devkit's suite | 126.8 s | 3.7 s | within that run |
+| `pnpm test:scripts` | 124.8 s, 9 failed, 11 skipped | 3.9 s, 103 of 103 | `pnpm test:scripts --reporter=verbose` (Phase 5) |
+| The IDE web testing surface | 13.1 s, 255 of 255 | 2.8 s, 255 of 255 | `vitest run` from `tools/ide/web/testing-surface/` (Phase 6) |
+| The explorer lens tests | 9 of 43 failing | unchanged, not re-run | left to GH #583 by ruling |
+
+## Which tests still read a real story
+
+After the move, by the recorded search's classes:
+
+- **Exploring**: none in a gate. The examinable lens's Fernhill pin remains in its failing file (GH #583).
+- **Structural, staying**: chord's corpus compiles, world-index's corpus and CLI tests and its UPPS seeds, character's Alderman port, devkit's Fernhill browser build, transcript-tester's parse sweeps, branch-tester's canonical check of the two real fragments, the declared-state lens, `narrative-world-tab`, the web surface's outline test.
+- **Replay, staying**: Dungeo's walkthrough chain and unit transcripts; platform-browser's visual spec.
+- **Out of scope**: the IDE's native suites.
+
+## Files nothing read after the move
+
+Deleted on David's go, 2026-11-11 ("yes to all"):
+
+- `packages/branch-tester/tests/fixtures/claims/fernhill.json`
+- `packages/branch-tester/tests/fixtures/claims/secret-letter-market.claims.chord`
+
+branch-tester's suite after the deletion: 29 files, 384 tests, all passing.

@@ -135,6 +135,10 @@ one at a time. A move that looks like a defect, and any move on an input the dec
 does not touch, is still a regression and still stops for a ruling. The dividing line is
 step 6 of the parser review (ADR-385): records before it keep their per-line clauses.
 
+**Real stories other than Dungeo do not gate** (David, 2026-11-11). Tests that explore a
+story run on the test stories under `test-stories/` (ADR-395); a plan's Demonstration
+cites those suites, not `./sharpee test` on a real story, as its floor.
+
 **IMPORTANT — Don't modify working transcripts:**
 - If a transcript was passing before, don't change its commands. Control-flow directives (`[WHILE:]`, `[RETRY:]`, `[DO]`/`[UNTIL]`, `[IF:]`, `[ENSURES:]`, `[REQUIRES:]`, `[NAVIGATE TO:]`) are removed grammar (ADR-294 D4) — the parser rejects each by name; never add them.
 - Combat sequences are exact pinned-seed counts, not padding. Runs are deterministic at the pinned seed: derive the required command list by probing with `--exec`, or pin a specific outcome with the `forces:`/`point-seed:` header fields (ADR-293 Phase C). Never add surplus attack commands "for safety."
