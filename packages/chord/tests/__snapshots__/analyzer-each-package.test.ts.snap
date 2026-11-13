@@ -610,7 +610,7 @@ exports[`each-compile.story — E1/E2/E3 + must-be-any IR (each package P3) > ma
     "stamp": "9f9ca8ca2499670238a58aa457a54a67d37415a59a036bf3b18ff1888d4ee935",
     "timers": [],
   },
-  "languageVersion": "4.0.1",
+  "languageVersion": "4.0.2",
   "machines": [],
   "messageOverrides": {
     "defaultLocale": "en-US",

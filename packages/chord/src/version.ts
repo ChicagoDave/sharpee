@@ -339,5 +339,17 @@
  * at 4.0.1, so the cut is a PATCH by his ruling. The EBNF hash is unchanged
  * by the bump (the surface re-pinned 2026-11-05 for `servings-line` is the
  * 4.0.1 surface).
+ *
+ * 4.0.2 — 2026-11-13 (session 790254, David: "move to 4.0.2"), cut
+ * alongside Sharpee 5.6.1. The public delta since 4.0.1 is ADR-392's trait
+ * words (`wearable on the <part>`, `opens when`, `closes when`, `smelly`,
+ * `loud`) and ADR-394's ownership guards (a story trait classifies after
+ * `is a`, every `is <word>` has a reader, and the refusals for a slot
+ * identity test, repeated standard grammar and a story action's own `on`
+ * clause). The trait words are additive and the guards refuse stories that
+ * compiled, which ADR-257 D2's ordinary rule makes more than a patch; the
+ * owner set the number at 4.0.2, so the cut is a PATCH by his ruling. The
+ * EBNF hash is unchanged by the bump (the surface as re-pinned for ADR-392
+ * and ADR-394 is the 4.0.2 surface).
  */
-export const CHORD_LANGUAGE_VERSION = '4.0.1';
+export const CHORD_LANGUAGE_VERSION = '4.0.2';

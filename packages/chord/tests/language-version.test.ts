@@ -95,7 +95,11 @@ const PINNED = {
   // persisted identity and the `servings <n>` entity line. The hash is
   // unchanged by the bump — the surface re-pinned 2026-11-05 for
   // `servings-line` (below) is the 4.0.1 surface.
-  languageVersion: '4.0.1',
+  // 4.0.2 — 2026-11-13 (session 790254): PATCH by owner ruling ("move to
+  // 4.0.2"), cut alongside Sharpee 5.6.1. Carries ADR-392's trait words and
+  // ADR-394's ownership guards. The hash is unchanged by the bump — the
+  // surface as re-pinned for those (below) is the 4.0.2 surface.
+  languageVersion: '4.0.2',
   // Re-pinned 2026-08-29 (ADR-330 Phase 1): `define chapters` under `use
   // chapters` — the first additive grammar of the chapters extension,
   // folded into the unpublished 3.5.0 set per ADR-257 D2 as amended.

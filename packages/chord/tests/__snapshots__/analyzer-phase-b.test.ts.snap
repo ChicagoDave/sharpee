@@ -550,7 +550,7 @@ exports[`zoo-actions IR (§3.4 + ownership package) > matches the golden IR snap
     "stamp": "87f0726831a95ea8905b25d48c455d3741799b8de177030ef46928e4c9ae415a",
     "timers": [],
   },
-  "languageVersion": "4.0.1",
+  "languageVersion": "4.0.2",
   "machines": [],
   "messageOverrides": {
     "defaultLocale": "en-US",
