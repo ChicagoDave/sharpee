@@ -13,11 +13,13 @@
  *
  * Owner context: devkit test suite.
  */
-import { cpSync, existsSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import * as path from 'node:path';
 import { afterAll, describe, expect, it, vi } from 'vitest';
 import { runTestCommand } from '../src/commands/test.js';
+import { compileClaimsFragment, runClaimsTests } from '../src/commands/test-claims.js';
 
 const FIXTURE = path.resolve(__dirname, 'fixtures', 'claims-tier');
 const FERRY = path.resolve(__dirname, '..', '..', '..', 'test-stories', 'ferry');
@@ -261,4 +263,62 @@ describeFerry('REAL-PATH: the ferry\'s claims through sharpee test (ADR-365 end-
     const butTally = (lines: string[], tally: number) => lines.filter((_, index) => index !== tally);
     expect(butTally(withClaims.stdout.slice(1, heading - 1), withTally - 1)).toEqual(butTally(without.stdout.slice(1), withoutTally - 1));
   });
+});
+
+describe('sharpee test — a claims walk the engine stops exits 3 with the walk\'s own message (GH #701)', () => {
+  // The claims tier loads `@sharpee/branch-tester` with a lazy `require`, so
+  // the engine class it boots is the compiled one. The same `require` here
+  // reaches that class, and no other.
+  const { GameEngine } = createRequire(__filename)('@sharpee/engine') as typeof import('@sharpee/engine');
+  const seed = (JSON.parse(readFileSync(path.join(FIXTURE, 'claims-tier.tests', 'manifest.json'), 'utf-8')) as { seed: number }).seed;
+
+  /** Run the claims tier alone on the fixture, capturing what it prints. */
+  async function runTier(): Promise<{ code: number; stdout: string[]; stderr: string[] }> {
+    const log = vi.spyOn(console, 'log').mockImplementation(() => {});
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    try {
+      const compiled = compileClaimsFragment(FIXTURE, FRAGMENT);
+      if (typeof compiled === 'number') throw new Error(`fixture: the claims fragment did not compile (exit ${compiled})`);
+      const code = await runClaimsTests({ compiled, seed, json: false, verbose: false });
+      return {
+        code,
+        stdout: log.mock.calls.map((call) => call.join(' ')),
+        stderr: error.mock.calls.map((call) => call.join(' ')),
+      };
+    } finally {
+      log.mockRestore();
+      error.mockRestore();
+    }
+  }
+
+  it('the fixture known to fail: with nothing refused the tier prints its report and exits 0', async () => {
+    const restore = vi.spyOn(GameEngine.prototype, 'restore');
+    try {
+      const { code, stdout, stderr } = await runTier();
+
+      expect(code).toBe(0);
+      expect(stdout.some((line) => line.startsWith('Claims: '))).toBe(true);
+      expect(stderr.filter((line) => line.startsWith('Error running the claims'))).toEqual([]);
+      // The walk restored through the engine class this file reaches.
+      expect(restore).toHaveBeenCalled();
+    } finally {
+      restore.mockRestore();
+    }
+  }, 60_000);
+
+  it('an engine that refuses the walk\'s first restore: exit 3, the walk\'s message on stderr, and no report', async () => {
+    const restore = vi.spyOn(GameEngine.prototype, 'restore').mockResolvedValue(false);
+    try {
+      const { code, stdout, stderr } = await runTier();
+
+      expect(restore).toHaveBeenCalledTimes(1);
+      expect(code).toBe(3);
+      expect(stderr).toEqual([
+        'Error running the claims: claims walk: the engine refused to restore the state at the walk\'s start, so the walk stopped before reading its commands',
+      ]);
+      expect(stdout.filter((line) => line.startsWith('Claims: '))).toEqual([]);
+    } finally {
+      restore.mockRestore();
+    }
+  }, 60_000);
 });
