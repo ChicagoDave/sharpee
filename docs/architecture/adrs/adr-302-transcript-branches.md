@@ -647,6 +647,14 @@ buying a 6% saving on the only story that uses it.
 > representative corpus. The engine fix closes the *other* four callers, which
 > D17 never reached and never claimed to.
 
+> **AMENDED FOR THE TREE WALKER AND THE DERIVED TIER, 2026-11-12 (David, session
+> a64f6a).** A branch line of a tree document now starts from an in-memory
+> restore of the save captured at its fork, not from a replay of its ancestry.
+> D17's second reason (the save format as a correctness dependency) is not
+> disputed; it is answered by an on-demand per-fork equivalence check. Lines
+> whose own cards type `undo` still replay. The text, the measurements and the
+> ADR-348 checklist are in ADR-307 D5's amendment of the same date.
+
 ---
 
 ## Worked scenario

@@ -157,7 +157,7 @@ export async function walkClaims(game: ClaimsGame, ir: StoryIR, group: ClaimGrou
   const rootBits = noteClaims([], [], '', rootSnapshot);
   const rootSave = await captureSave(engine);
   const seen = new Set<string>([`${necessaryIdentity(rootSnapshot, set)}${claims.length ? `|${rootBits}` : ''}`]);
-  let queue: Array<{ save: unknown; path: readonly string[]; depth: number; bits: string }> = [{ save: rootSave, path: [], depth: 0, bits: rootBits }];
+  let queue: Array<{ save: Awaited<ReturnType<typeof captureSave>>; path: readonly string[]; depth: number; bits: string }> = [{ save: rootSave, path: [], depth: 0, bits: rootBits }];
 
   let commandsExecuted = 0;
   let restores = 0;

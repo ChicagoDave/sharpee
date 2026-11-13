@@ -2611,7 +2611,7 @@ export declare function searchOutcome(transcript: Transcript, engine: SearchEngi
  * @param platform the engine to fork
  * @returns the save payload, or null when the engine refused to save
  */
-export declare function captureSave(platform: SaveForkPlatform): Promise<unknown>;
+export declare function captureSave(platform: SaveForkPlatform): Promise<ISaveData | null>;
 /**
  * Restore the engine from an in-memory save payload taken by
  * {@link captureSave}. Entity INSTANCES are replaced by a restore; ids
@@ -2621,7 +2621,7 @@ export declare function captureSave(platform: SaveForkPlatform): Promise<unknown
  * @param payload a payload from `captureSave` on the same engine
  * @returns whether the engine accepted the restore
  */
-export declare function restoreSave(platform: SaveForkPlatform, payload: unknown): Promise<boolean>;
+export declare function restoreSave(platform: SaveForkPlatform, payload: ISaveData | null): Promise<boolean>;
 export {};
 ```
 

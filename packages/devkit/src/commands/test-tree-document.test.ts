@@ -160,9 +160,10 @@ describe('sharpee test --tree over a tree document (ADR-307 Phase 2, REAL-PATH)'
     // the main line and the branch's look = 4 cards; their claims (incl. the
     // north card's contains + channel pair) = 5 assertions.
     expect(out).toContain('4 cards passing, 5 assertions passing');
-    // The branch's replay share is real and visible: the fresh boot replayed
-    // the boot look + examine before the branch's own look.
-    expect(out).toMatch(/\d+ commands \(\d+ authored \+ \d+ replayed\)/);
+    // The branch started from the save at its fork card, on the game the
+    // main line ran on: nothing was replayed, and the report says so
+    // (ADR-307 D5, amended 2026-11-12).
+    expect(out).toContain('4 commands (4 authored + 0 replayed), 1 restored at a fork');
   }, 60_000);
 
   it('a content edit is a seam: that claim fails, surrounding lines still pass (exit 1, D4)', async () => {

@@ -12,10 +12,14 @@
  *
  * **Lines, not files.** The main line is the document's top-level cards; each
  * `branches` entry is its own line, recursively. The main line runs once,
- * continuously, on its boot engine; every branch line gets a fresh boot and a
- * verbatim replay of its full prefix — every command from the root through
- * its fork card — then runs its own cards live (D5: fresh boot +
- * deterministic replay at the pinned seed).
+ * continuously, on its boot engine. A branch line starts from the engine's
+ * save, captured in memory when its fork card ran and restored on the game
+ * its parent ran on, then runs its own cards live (D5 as amended 2026-11-12).
+ * Saves live for one run and are never written. Three kinds of branch line
+ * still get a fresh boot and a verbatim replay of their prefix — every
+ * command from the root through the fork card — as every line once did: a
+ * line whose own cards type `undo` (a save carries no undo history), a fork
+ * before any command, and any line on a game that exposes no save surface.
  *
  * **A line ends where the story ends** (ADR-356 D4). A card that declares an
  * `ending` is an END STATE card: the walker runs it, asserts through the
@@ -78,7 +82,13 @@ import {
   TranscriptResult,
   RunnerOptions,
 } from './types.js';
-import { captureWorldSnapshot, type CommandResult } from '@sharpee/transcript-tester';
+import {
+  captureSave,
+  captureWorldSnapshot,
+  restoreSave,
+  type CommandResult,
+  type SaveForkPlatform,
+} from '@sharpee/transcript-tester';
 import type { CommandCause } from '@sharpee/ide-protocol';
 import { CHORD_IR_ID_ATTRIBUTE } from '@sharpee/story-loader';
 import { runTranscript } from './runner.js';
@@ -126,12 +136,47 @@ export interface TreeWalkerGame {
    */
   capturedChannels?: readonly string[];
   world?: unknown;
+  /**
+   * The engine's save surface, when the game exposes one. With it a branch
+   * line starts from the save captured at its fork card; without it every
+   * branch line boots fresh and replays its prefix. Read at the moment of
+   * each capture and restore, never held: a `restart` card reboots the game
+   * and replaces this engine.
+   */
+  engine?: ForkSaveEngine;
+  /**
+   * Bootstrap's record of the last turn. A fork restore replaces the world
+   * under them, so the walker clears them at the restore (ADR-348 D1: a view
+   * held outside the world is re-derived or emptied, never left describing
+   * another line's turn).
+   */
+  lastOutput?: string;
+  lastEvents?: readonly { type: string }[];
+  lastTurnResult?: object | null;
+  lastChannels?: Record<string, string[]>;
+  lastChannelValues?: Record<string, unknown[]>;
 }
 
 /**
- * Boots one fresh game at the document's pinned seed. Called once per line,
- * and told whether any command of that line — its prefix or its own cards —
- * can ask for undo.
+ * The engine slice a fork save needs: the save fork itself, and a read of the
+ * hooks registered before it, so the walker can put them back.
+ */
+export type ForkSaveEngine = SaveForkPlatform & {
+  getSaveRestoreHooks?(): ForkHooks | undefined;
+};
+
+/** The two hooks a fork save borrows, as the engine hands them back. */
+type ForkHooks = Parameters<SaveForkPlatform['registerSaveRestoreHooks']>[0];
+
+/** The engine's save data, as `captureSave` returns it. */
+type ForkSave = NonNullable<Awaited<ReturnType<typeof captureSave>>>;
+
+/**
+ * Boots one fresh game at the document's pinned seed. Called once for the
+ * main line and once for each line that still replays its prefix, and told
+ * whether any command that game will be given from its boot — the line's
+ * prefix and its own cards — can ask for undo. A line restored onto the game
+ * later never types undo: that is what makes it a restored line.
  */
 export type TreeGameLoader = (request: GameLoadRequest) => Promise<TreeWalkerGame>;
 
@@ -214,8 +259,12 @@ export interface TreeLineOutcome {
 
 /** Watches lines run, for live consumers (the `--json` stream). */
 export interface TreeLineObserver {
-  /** A line is about to run its own cards; its prefix has replayed. */
-  onLineStart?(info: { line: TreeLine; label: string; replayedCommands: number }): void;
+  /**
+   * A line is about to run its own cards. `restored` says how it reached its
+   * starting state: from the save captured at its fork card (then
+   * `replayedCommands` is 0), or from a boot and a replay of its prefix.
+   */
+  onLineStart?(info: { line: TreeLine; label: string; replayedCommands: number; restored: boolean }): void;
   onLineEnd?(info: { line: TreeLine; outcome: TreeLineOutcome }): void;
   /** A line that never ran — an ancestor's execution error blocked it. */
   onLineBlocked?(info: { line: TreeLine; outcome: TreeLineOutcome }): void;
@@ -273,6 +322,8 @@ export interface TreeDocumentRunResult {
   readonly executedCommands: number;
   /** Typed turn cards across all lines — what the author actually played. */
   readonly authoredCommands: number;
+  /** Branch lines that started from the save at their fork card, not a replay. */
+  readonly forkRestores: number;
   /**
    * Every room the player stood in during the run — at boot, after each
    * replayed command, after each card — as IR ids, each once, in first-visit
@@ -381,10 +432,12 @@ export function flattenTreeLines(document: TreeDocument): {
  * Run a tree document against real games (ADR-307 D5/D6).
  *
  * Depth-first over the lines: the main line runs on its own boot; each branch
- * line boots fresh, replays its prefix verbatim (commands only — claims in
- * the prefix already reported on the line that owns them), then runs its own
- * cards through `runTranscript`. Assertion failures never block descendants
- * (D4: seams, not corruption); execution errors do (D13).
+ * line restores the save captured at its fork card, or — when it may not
+ * start from a save (see the header) — boots fresh and replays its prefix
+ * verbatim (commands only — claims in the prefix already reported on the
+ * line that owns them); then it runs its own cards through `runTranscript`.
+ * Assertion failures never block descendants (D4: seams, not corruption);
+ * execution errors do (D13).
  *
  * @param document a valid tree document (the caller has already deserialized;
  *   refusal and malformed handling are the caller's, per AC-4).
@@ -402,7 +455,7 @@ export async function runTreeDocument(
 ): Promise<TreeDocumentRunResult> {
   const { lines, defects } = flattenTreeLines(document);
   if (defects.length > 0) {
-    return { lines: [], defects, executedCommands: 0, authoredCommands: 0, roomsEntered: [], endingsReached: [] };
+    return { lines: [], defects, executedCommands: 0, authoredCommands: 0, forkRestores: 0, roomsEntered: [], endingsReached: [] };
   }
 
   const outcomes: TreeLineOutcome[] = [];
@@ -412,6 +465,11 @@ export async function runTreeDocument(
   const tracked = new Map<string, { outcome: TreeLineOutcome; execErrorIndex?: number }>();
   let executedCommands = 0;
   let authoredCommands = 0;
+  let forkRestores = 0;
+  /** The game each line ran on: a branch line restores on its parent's. */
+  const gameOf = new Map<string, TreeWalkerGame>();
+  /** The save at each fork card, held for this run only and never written. */
+  const forkSaves = new Map<string, ForkSave>();
 
   const record = (
     line: TreeLine,
@@ -444,12 +502,42 @@ export async function runTreeDocument(
       continue;
     }
 
-    // ── Boot (one fresh game per line, at the document's pinned seed) ────
-    const game = await loadGame({ undo: typesUndo([...line.prefix, ...line.cards.map((card) => card.command)]) });
-    // Run time assumes NOTHING (David 2026-08-10: the JSON is the source of
-    // truth) — the policy governs what RECORDING persists, never what a run
-    // invents. Cleared even when declared, through the one code path (D6).
-    game.autoAssertionPolicy = undefined;
+    // ── Start state: the fork's save restored, or a fresh boot ───────────
+    // A branch line starts from the save its parent captured at the fork
+    // card, restored on the game the parent ran on (ADR-307 D5, amended
+    // 2026-11-12). With no such save — the main line, a line that types
+    // `undo`, a fork before any command, a game with no save surface — it
+    // boots fresh at the document's pinned seed and replays its prefix.
+    const forkSave =
+      line.parentId !== undefined && line.forkIndex !== undefined && startsFromForkSave(line)
+        ? forkSaves.get(forkSaveKey(line.parentId, line.forkIndex))
+        : undefined;
+    const parentGame = line.parentId !== undefined ? gameOf.get(line.parentId) : undefined;
+    const restored = forkSave !== undefined && parentGame !== undefined;
+    let game: TreeWalkerGame;
+    if (forkSave !== undefined && parentGame !== undefined) {
+      game = parentGame;
+      if (!(await restoreForkSave(game, forkSave))) {
+        record(line, {
+          id: line.id,
+          label: blockedLabelOf(line),
+          status: 'error',
+          turnCount: countTurns(line.cards),
+          error:
+            `the engine refused the save taken after "${line.prefix[line.prefix.length - 1]}" ` +
+            `— this line starts from that fork and could not start (ADR-307 D5)`,
+        });
+        continue;
+      }
+      forkRestores += 1;
+    } else {
+      game = await loadGame({ undo: typesUndo([...line.prefix, ...line.cards.map((card) => card.command)]) });
+      // Run time assumes NOTHING (David 2026-08-10: the JSON is the source of
+      // truth) — the policy governs what RECORDING persists, never what a run
+      // invents. Cleared even when declared, through the one code path (D6).
+      game.autoAssertionPolicy = undefined;
+    }
+    gameOf.set(line.id, game);
     const noteRoom = (): void => {
       const room = playerRoomIrIdOf(game);
       if (room !== undefined && !roomsEntered.includes(room)) roomsEntered.push(room);
@@ -463,8 +551,9 @@ export async function runTreeDocument(
     // is read off `game.lastError`, which bootstrap sets from the catch; it
     // was matched against the literal `'Error: Engine is not running'` until
     // ADR-345 D1 retired that sentence out from under this check.
+    // A restored line replays nothing: the save IS the prefix's state.
     let replayError: string | undefined;
-    for (const command of line.prefix) {
+    for (const command of restored ? [] : line.prefix) {
       let failure: string | undefined;
       try {
         await game.executeCommand(command);
@@ -501,7 +590,23 @@ export async function runTreeDocument(
 
     // ── Label, then run the line's own cards ─────────────────────────────
     const label = labelOf(line, game);
-    options.lineObserver?.onLineStart?.({ line, label, replayedCommands: line.prefix.length });
+    options.lineObserver?.onLineStart?.({
+      line,
+      label,
+      replayedCommands: restored ? 0 : line.prefix.length,
+      restored,
+    });
+
+    // The cards of this line that a branch line will start from: after each
+    // runs, the engine's save is captured for those branches.
+    const forkCards = new Set<number>();
+    for (const child of lines) {
+      if (child.parentId !== line.id || child.forkIndex === undefined || !startsFromForkSave(child)) continue;
+      // A fork at or after the END STATE card is blocked; it needs no save.
+      if (line.endingIndex !== undefined && child.forkIndex >= line.endingIndex) continue;
+      forkCards.add(child.forkIndex);
+    }
+    let rowAfterCommand = 0;
 
     // The line runs through its END STATE card and no further (D4): the
     // engine is stopped after it, so every later card is one the run never
@@ -514,6 +619,15 @@ export async function runTreeDocument(
     let turn = line.prefixTurns;
     const result = await runTranscript(transcript, game as never, {
       ...options,
+      // Awaited by the runner between commands, so the save is the game
+      // exactly as the fork card left it. Rows arrive in transcript order.
+      afterCommand: async () => {
+        const cardIndex = cardIndexOfCommand[rowAfterCommand];
+        rowAfterCommand += 1;
+        if (cardIndex === undefined || !forkCards.has(cardIndex)) return;
+        const save = await captureForkSave(game);
+        if (save !== undefined) forkSaves.set(forkSaveKey(line.id, cardIndex), save);
+      },
       observer: {
         ...options.observer,
         // The room after each card, read while the game is in hand — the
@@ -581,7 +695,90 @@ export async function runTreeDocument(
     );
   }
 
-  return { lines: outcomes, defects: [], executedCommands, authoredCommands, roomsEntered, endingsReached };
+  return { lines: outcomes, defects: [], executedCommands, authoredCommands, forkRestores, roomsEntered, endingsReached };
+}
+
+// ---------------------------------------------------------------------------
+// Internal: fork saves (ADR-307 D5, amended 2026-11-12).
+// ---------------------------------------------------------------------------
+
+/** A fork save's key: the line that owns the fork card, and the card's index. */
+const forkSaveKey = (lineId: string, cardIndex: number): string => `${lineId}\0${cardIndex}`;
+
+/**
+ * Whether a branch line may start from the save at its fork card.
+ *
+ * Not when its own cards type `undo`: a save carries no undo history (the
+ * engine clears its undo snapshots on every restore), so an `undo` early on
+ * the line could reach back across the fork and find nothing there. And not
+ * when no command precedes the fork: the state to start from is the boot
+ * itself, whose banner and prologue are said on the way to the first command
+ * of a fresh game and would not be said again after a restore.
+ *
+ * @param line a branch line
+ * @returns true when a fork save, if one was captured, is this line's start
+ */
+function startsFromForkSave(line: TreeLine): boolean {
+  if (line.parentId === undefined || line.prefix.length === 0) return false;
+  return !typesUndo(line.cards.map((card) => card.command));
+}
+
+/**
+ * Run one fork-save step with the walker's hooks, then put back the hooks
+ * that were registered before it. `captureSave` and `restoreSave` each
+ * register a save and a restore hook on the engine; left in place they would
+ * answer an author's own `save` or `restore` card later on the line.
+ *
+ * @param engine the engine's save surface
+ * @param step the capture or the restore
+ * @returns what the step returned
+ */
+async function withForkHooks<T>(engine: ForkSaveEngine, step: () => Promise<T>): Promise<T> {
+  const before = engine.getSaveRestoreHooks?.();
+  try {
+    return await step();
+  } finally {
+    // Naming an entry `undefined` removes it (the engine's merge rule).
+    engine.registerSaveRestoreHooks({
+      onSaveRequested: before?.onSaveRequested,
+      onRestoreRequested: before?.onRestoreRequested,
+    });
+  }
+}
+
+/**
+ * Capture the engine's save as the game stands now.
+ *
+ * @param game the game a line is running on
+ * @returns the save, or undefined when the game has no save surface or the
+ *   engine refused; the branch lines of that fork then replay their prefix
+ */
+async function captureForkSave(game: TreeWalkerGame): Promise<ForkSave | undefined> {
+  const engine = game.engine;
+  if (engine === undefined) return undefined;
+  return (await withForkHooks(engine, () => captureSave(engine))) ?? undefined;
+}
+
+/**
+ * Restore a fork save onto the game, and empty the harness's record of the
+ * last turn, which now describes a turn of another line (ADR-348 D1). The
+ * engine re-derives its own phase from the restored world.
+ *
+ * @param game the game the save was captured on
+ * @param save the fork's save
+ * @returns whether the engine accepted the restore; on false nothing is cleared
+ */
+async function restoreForkSave(game: TreeWalkerGame, save: ForkSave): Promise<boolean> {
+  const engine = game.engine;
+  if (engine === undefined) return false;
+  if (!(await withForkHooks(engine, () => restoreSave(engine, save)))) return false;
+  game.lastOutput = '';
+  game.lastEvents = [];
+  game.lastTurnResult = null;
+  game.lastChannels = {};
+  game.lastChannelValues = {};
+  game.lastError = undefined;
+  return true;
 }
 
 /**
@@ -673,10 +870,14 @@ export function formatTreeDocumentRun(run: TreeDocumentRunResult): string[] {
   if (blocked > 0) parts.push(`${blocked} blocked`);
   rows.push(parts.join(', '));
 
+  // The replay share is the prefix commands of the lines that still replay;
+  // a line that started from its fork's save replayed none and counts as one
+  // restore (ADR-307 D5, amended 2026-11-12).
   const replayed = run.executedCommands - run.authoredCommands;
-  if (replayed > 0) {
+  if (replayed > 0 || run.forkRestores > 0) {
     rows.push(
-      `${run.executedCommands} commands (${run.authoredCommands} authored + ${replayed} replayed)`,
+      `${run.executedCommands} commands (${run.authoredCommands} authored + ${replayed} replayed), ` +
+        `${run.forkRestores} restored at a fork`,
     );
   }
   return rows;

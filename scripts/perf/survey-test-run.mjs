@@ -38,6 +38,7 @@ import { readFileSync, writeFileSync, mkdirSync, readdirSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { performance } from 'node:perf_hooks';
+import { gunzipSync, gzipSync } from 'node:zlib';
 
 const require = createRequire(import.meta.url);
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
@@ -338,29 +339,49 @@ function flatten(value, prefix, out) {
   return out;
 }
 
-function worldDifferences(a, b) {
-  const left = flatten(comparableWorld(a), '', new Map());
-  const right = flatten(comparableWorld(b), '', new Map());
+/** A world as a flat map of path to value, the volatile fields left out. */
+const worldSnapshot = (world) => flatten(comparableWorld(world), '', new Map());
+
+function snapshotDifferences(left, right) {
   const out = [];
   for (const key of new Set([...left.keys(), ...right.keys()])) if (left.get(key) !== right.get(key)) out.push(`${key}: replayed ${left.get(key)} / restored ${right.get(key)}`);
   return out;
 }
 
-const eventTrace = (result) => (result?.events ?? []).map((event) => `${event.type}|${event.data?.messageId ?? ''}`).join(',');
+/** A turn's rendered blocks, without the wall-clock `timestamp` a block's facts carry. */
+const blocksOf = (result) => JSON.stringify(result?.blocks ?? null, (key, value) => (key === 'timestamp' ? undefined : value));
 
-async function modeEquivalence(storyDir, turnsAfter = 25) {
+/**
+ * The two games of a fork are played ONE AFTER THE OTHER, never turn by turn
+ * side by side. Some registries are process-wide and the last game booted owns
+ * them (the description-marker gates, for one), so two live games stepped
+ * together read each other's world: the first version of this mode did that and
+ * reported two forks different that were not. Each turn is compared on the
+ * world AND on the rendered blocks; events alone miss a difference in prose.
+ */
+async function modeEquivalence(storyDir, turnsAfter = 25, tamper = (save) => save) {
   const story = readStory(storyDir);
   const byId = new Map(story.lines.map((line) => [line.id, line]));
   const boot = () => authorGame.loadAuthorGame(story.dir, { seed: story.seed });
-  const play = async (game, commands) => { for (const command of commands) { try { await game.engine.executeTurn(command); } catch { /* a refused turn is still a turn */ } } };
+  const turn = async (game, command) => { try { return await game.engine.executeTurn(command); } catch { return undefined; /* a refused turn is still a turn */ } };
+  const play = async (game, commands) => { for (const command of commands) await turn(game, command); };
+  const record = async (game, commands) => {
+    const rows = [];
+    for (const command of commands) { const result = await turn(game, command); rows.push({ blocks: blocksOf(result), world: worldSnapshot(game.world) }); }
+    return rows;
+  };
   const forks = [];
   for (const line of story.lines) {
     if (line.parentId === undefined) continue;
     const parent = byId.get(line.parentId);
-    // Replayed: a fresh boot plays the prefix. Restored: one game plays the
-    // prefix, saves, plays on down the parent line, and is restored.
+    const next = commandsOf(line).slice(0, turnsAfter);
+    // Replayed: a fresh boot plays the prefix, then the branch's next turns.
     const replayed = await boot();
     await play(replayed, line.prefix);
+    const replayedAtFork = worldSnapshot(replayed.world);
+    const replayedRows = await record(replayed, next);
+    // Restored: a second game plays the prefix, saves, plays on down the
+    // parent line, is restored, then plays the same next turns.
     const restored = await boot();
     await play(restored, line.prefix);
     const save = await captureSave(restored.engine);
@@ -369,18 +390,18 @@ async function modeEquivalence(storyDir, turnsAfter = 25) {
     const afterFork = parent.cards.slice((line.forkIndex ?? 0) + 1).map((card) => card.command).filter((command) => typeof command === 'string');
     const onward = [...afterFork, ...commandsOf(line)].slice(0, turnsAfter);
     await play(restored, onward);
-    const ok = await restoreSave(restored.engine, save);
-    const differences = ok ? worldDifferences(replayed.world, restored.world) : ['the restore was refused'];
-    const next = commandsOf(line).slice(0, turnsAfter);
+    const ok = await restoreSave(restored.engine, tamper(save));
+    const differences = ok ? snapshotDifferences(replayedAtFork, worldSnapshot(restored.world)) : ['the restore was refused'];
     let turnsCompared = 0;
-    for (const command of next) {
-      let a; let b;
-      try { a = await replayed.engine.executeTurn(command); } catch { a = undefined; }
-      try { b = await restored.engine.executeTurn(command); } catch { b = undefined; }
-      turnsCompared++;
-      if (eventTrace(a) !== eventTrace(b)) { differences.push(`turn ${turnsCompared} "${command}": events differ`); break; }
+    if (differences.length === 0) {
+      const restoredRows = await record(restored, next);
+      for (let index = 0; index < next.length; index++) {
+        turnsCompared++;
+        if (replayedRows[index].blocks !== restoredRows[index].blocks) differences.push(`turn ${turnsCompared} "${next[index]}": rendered blocks differ`);
+        differences.push(...snapshotDifferences(replayedRows[index].world, restoredRows[index].world).map((difference) => `after ${turnsCompared} turns — ${difference}`));
+        if (differences.length > 0) break;
+      }
     }
-    if (differences.length === 0) differences.push(...worldDifferences(replayed.world, restored.world).map((difference) => `after ${turnsCompared} turns — ${difference}`));
     forks.push({ line: line.id, prefix: line.prefix.length, playedOnBeforeRestore: onward.length, turnsCompared, equivalent: differences.length === 0, differences: differences.slice(0, 8), differenceCount: differences.length });
   }
   return {
@@ -401,8 +422,27 @@ async function modeSelfCheck() {
   authorGame.loadAuthorGame = async function doubled(...args) { await original.apply(this, args); return original.apply(this, args); };
   let doubled;
   try { doubled = await modeCounts(ferry); } finally { authorGame.loadAuthorGame = original; }
-  const detected = boots(doubled) === 2 * boots(honest) && boots(honest) > 0;
-  return { mode: 'self-check', story: 'ferry', honestBoots: boots(honest), doubledLoaderBoots: boots(doubled), detected, exit: detected ? 1 : 2 };
+  const countsDetected = boots(doubled) === 2 * boots(honest) && boots(honest) > 0;
+  // The equivalence mode's own defect: a save with one field removed. The
+  // honest save must compare equivalent and the stripped one must not.
+  let strippedField;
+  const strip = (save) => {
+    // The engine's save carries the world as gzip, base64-encoded.
+    const world = JSON.parse(gunzipSync(Buffer.from(save.engineState.worldSnapshot, 'base64')).toString('utf8'));
+    strippedField = Object.keys(world.state ?? {}).sort()[0];
+    if (strippedField === undefined) throw new Error('self-check: the save holds no world state value to strip');
+    delete world.state[strippedField];
+    return { ...save, engineState: { ...save.engineState, worldSnapshot: gzipSync(Buffer.from(JSON.stringify(world), 'utf8')).toString('base64') } };
+  };
+  const honestForks = await modeEquivalence(ferry);
+  const strippedForks = await modeEquivalence(ferry, 25, strip);
+  const equivalenceDetected = honestForks.forks > 0 && honestForks.different.length === 0 && strippedForks.different.length === strippedForks.forks;
+  const detected = countsDetected && equivalenceDetected;
+  return {
+    mode: 'self-check', story: 'ferry', honestBoots: boots(honest), doubledLoaderBoots: boots(doubled), countsDetected,
+    equivalence: { forks: honestForks.forks, honestDifferent: honestForks.different.length, strippedField: `state/${strippedField}`, strippedDifferent: strippedForks.different.length, strippedReports: strippedForks.different[0]?.differences.slice(0, 2) ?? [] },
+    equivalenceDetected, detected, exit: detected ? 1 : 2,
+  };
 }
 
 // ------------------------------------------------------------------------ main

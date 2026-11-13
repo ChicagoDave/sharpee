@@ -165,7 +165,7 @@ export async function searchOutcome(
 
   // ── Base pass: locate the first DRAWN firing, capturing the engine save
   // just before its turn. Counts as try 1 — the natural draw is an attempt.
-  let preFiringSave: unknown = null;
+  let preFiringSave: ISaveData | null = null;
   let firingCommandIndex = -1;
   for (let index = 0; index < commands.length; index++) {
     const save = await captureSave(platform);
@@ -243,8 +243,8 @@ export async function searchOutcome(
  * @param platform the engine to fork
  * @returns the save payload, or null when the engine refused to save
  */
-export async function captureSave(platform: SaveForkPlatform): Promise<unknown> {
-  let captured: unknown = null;
+export async function captureSave(platform: SaveForkPlatform): Promise<ISaveData | null> {
+  let captured: ISaveData | null = null;
   platform.registerSaveRestoreHooks({
     onSaveRequested: async (data) => { captured = data; },
     onRestoreRequested: async () => null
@@ -264,11 +264,11 @@ export async function captureSave(platform: SaveForkPlatform): Promise<unknown> 
  */
 export async function restoreSave(
   platform: SaveForkPlatform,
-  payload: unknown
+  payload: ISaveData | null
 ): Promise<boolean> {
   platform.registerSaveRestoreHooks({
     onSaveRequested: async () => { /* unused */ },
-    onRestoreRequested: async () => payload as ISaveData | null
+    onRestoreRequested: async () => payload
   });
   return platform.restore();
 }

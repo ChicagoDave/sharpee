@@ -573,7 +573,10 @@ describe('formatTreeDocumentRun — rows, tally, replay share', () => {
     // one claim each; the branch's east fails its one claim.
     expect(rows[3]).toBe('2 cards passing, 2 assertions passing, 1 card failing, 1 assertion failing');
     // 4 executed (look, north, look, north... plus east = 5) — replay share shown.
-    expect(rows[4]).toBe(`${run.executedCommands} commands (${run.authoredCommands} authored + ${run.executedCommands - run.authoredCommands} replayed)`);
+    // The harness's game exposes no save surface, so the branch replayed its
+    // prefix and nothing was restored (ADR-307 D5, amended 2026-11-12).
+    expect(rows[4]).toBe(`${run.executedCommands} commands (${run.authoredCommands} authored + ${run.executedCommands - run.authoredCommands} replayed), 0 restored at a fork`);
+    expect(run.forkRestores).toBe(0);
   });
 
   it('renders defects alone when nothing ran', () => {
@@ -582,6 +585,7 @@ describe('formatTreeDocumentRun — rows, tally, replay share', () => {
       defects: [{ path: 'cards[1]', message: 'x' }],
       executedCommands: 0,
       authoredCommands: 0,
+      forkRestores: 0,
       roomsEntered: [],
       endingsReached: [],
     });

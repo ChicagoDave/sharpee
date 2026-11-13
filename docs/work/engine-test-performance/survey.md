@@ -143,6 +143,37 @@ by that Entry state Phase 4 stops for David's ruling (fix the save, or drop rest
 not yet known which in-memory state is missing; the random stream's live state and the
 prose pipeline's counters are the two places to look first.
 
+### Diagnosed and corrected (2026-11-12, session a64f6a)
+
+The table above is as first measured, and two of its four differences were this mode's
+own artifact. What the four forks were:
+
+- `oq73o01x`, `ozqxlw3l`: a real save gap. A save taken before the story's first random
+  draw carries no `chord.rng`; `drawChance` and `pickIndex` in
+  `packages/story-loader/src/evaluator.ts` reloaded the cursor only when the world held
+  one, so the restored game carried on from the in-memory stream the abandoned turns had
+  moved. Fixed: no stored cursor now means the story seed.
+- `cqigz7ic`, `irrp8zkt`: not a save gap. This mode stepped two live games side by side,
+  and the description-marker gates are one process-wide registry where the last game
+  booted wins (GH #691). The replayed game's gates read the restored game's world one
+  turn behind, and it dropped a gated sentence from a room description. The replayed
+  side was the wrong one.
+
+The mode now plays the two games of a fork one after the other, and compares the rendered
+blocks of every turn as well as the world. The first version compared event types and
+message ids only, which cannot see a difference in prose. A block's `timestamp` is left
+out as a wall-clock reading.
+
+With the fix built, each run once on 2026-11-12:
+
+| Command | Forks | Equivalent | Different |
+|---|---|---|---|
+| `node scripts/perf/survey-test-run.mjs --equivalence branch-stories/secret-letter` | 105 | 105 | 0 |
+| `node scripts/perf/survey-test-run.mjs --equivalence test-stories/orchard` | 3 | 3 | 0 |
+| `node scripts/perf/survey-test-run.mjs --equivalence test-stories/ferry` | 1 | 1 | 0 |
+
+Fernhill was not re-run.
+
 ## The baseline digests
 
 `node scripts/perf/survey-test-run.mjs --run <story> --digest <file>` writes every run
@@ -181,3 +212,39 @@ commands is `undo`, and the player-role lookup reads an index of actors, not eve
   boot for each row (rows 2 and 5), not its turns.
 - The Secret Letter run shared the machine with a read-only review agent for part of its
   time, so its figures are, if anything, high.
+
+## After Phase 4 (2026-11-12, session a64f6a, each run once)
+
+Phase 4 landed one change to the tree tier: a branch line starts from the engine's save,
+captured in memory at its fork card and restored on the game its parent ran on. A line
+whose own cards type `undo`, and a fork before any command, still boot fresh and replay.
+
+`node scripts/perf/survey-test-run.mjs --run branch-stories/secret-letter --digest <file>`:
+
+| | Baseline | After Phase 3 | After Phase 4 |
+|---|---|---|---|
+| secret-letter whole run | 257.3 s | 183.7 s | 138.9 s |
+| secret-letter tree tier | 127.0 s | 58.0 s | 5.5 s |
+| secret-letter derived tier | 130.1 s | 125.5 s | 133.2 s |
+
+`node scripts/perf/survey-test-run.mjs --counts branch-stories/secret-letter`, the tree
+tier:
+
+| | Baseline | After Phase 4 |
+|---|---|---|
+| Boots | 106 | 1 |
+| Compiles | 106 | 1 |
+| Turns | 21,136 | 1,469 |
+| Saves captured | 0 | 54 |
+| Restores | 0 | 105 |
+
+- Secret Letter's verdict digest is byte-identical to the baseline (3,315 lines, `diff`
+  printed nothing), as are lodge's, ferry's and orchard's.
+- 105 restores from 54 saves: one save serves every branch of its fork card. None of
+  Secret Letter's 106 lines types `undo`, so none replays.
+- The derived tier did not change in this phase; its 133.2 s against 125.5 s is the same
+  work on a machine that was also running the branch-tester and devkit test suites.
+- The self-check (`--self-check`) now also hands the equivalence mode a save with one
+  world state value removed, on ferry. It reports the honest save equivalent and the
+  stripped one different, naming the field:
+  `/state/chord.occurrence.clause.lever.on-pulling-by-player: replayed 1 / restored undefined`.

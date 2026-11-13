@@ -190,4 +190,45 @@ describe('zoo-timeline scheduler constructs', () => {
     // And goat-bleats stays retired (all 4 steps fired before the transplant).
     expect(messageIdsOf(paIds)).not.toContain('goat-bleat');
   });
+
+  it('a world restored to before the first draw starts the random stream over', () => {
+    // The save is taken before any draw, so it carries no cursor.
+    expect(world.getStateValue('chord.rng')).toBeUndefined();
+    const saved = world.toJSON();
+
+    const chatterTurns = (byTurn: Map<number, ISemanticEvent[]>) =>
+      [...byTurn.entries()].filter(([, events]) => messageIdsOf(events).includes('parrot-chatter')).map(([turn]) => turn);
+
+    const first = chatterTurns(runTurns(1, 8));
+    const cursorAfterFirst = world.getStateValue('chord.rng');
+    // The turns drew (the parrot's seeded 1-in-2), so the stream has moved.
+    expect(typeof cursorAfterFirst).toBe('number');
+    expect(first.length).toBeGreaterThan(0);
+
+    // Restore, on the same story and so the same in-memory stream.
+    world.loadJSON(saved);
+    expect(world.getStateValue('chord.rng')).toBeUndefined();
+
+    // The same turns draw the same numbers: the stream restarted from the
+    // story seed, it did not carry on from where the first pass left it.
+    const second = chatterTurns(runTurns(1, 8));
+    expect(second).toEqual(first);
+    expect(world.getStateValue('chord.rng')).toBe(cursorAfterFirst);
+  });
+
+  it('a phrase pick after such a restore repeats the first picks', () => {
+    // `pickIndex` (the `randomly` / `sticky` phrase pick) shares the cursor.
+    const saved = world.toJSON();
+    const picks = (): number[] => Array.from({ length: 8 }, () => story.evaluator.pickIndex(12, world));
+
+    const first = picks();
+    const cursorAfterFirst = world.getStateValue('chord.rng');
+    // Eight picks out of twelve are not all one value at this seed.
+    expect(new Set(first).size).toBeGreaterThan(1);
+
+    world.loadJSON(saved);
+    expect(world.getStateValue('chord.rng')).toBeUndefined();
+    expect(picks()).toEqual(first);
+    expect(world.getStateValue('chord.rng')).toBe(cursorAfterFirst);
+  });
 });

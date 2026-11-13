@@ -186,6 +186,40 @@ seed-pinned-at-root carry over.
 
 **Amendment 2026-09-27 (GH #540) — the document's seed is the engine's seed.** "Pinned seed" here always meant the document's `seed` field: `sharpee test --tree` replays at it and at nothing else. The IDE hosts, though, booted the Testing tab's live engine at the IDE's fixed play seed (ADR-305 D1) whatever the loaded document pinned, so a story whose document pinned another seed (secret-letter, 1209) recorded every card at one seed and replayed them at another — two different plays of the same commands for anything chance-dependent, and the document could not say which it recorded. Both hosts (macOS and Avalonia) now read the loaded document's `seed` and boot the engine at it; the fixed play seed is the pin of a fresh tree only. The surface states the invariant where the two values meet: a document pinned at a seed the engine did not boot at is refused by name and write-locked, the treatment a newer-version document already gets (AC-4).
 
+**Amendment 2026-11-12 (David, session a64f6a; engine-test-performance plan, Phase 4) — a branch line starts from a restore, not a replay.** This amends D5's "Fresh boot + deterministic replay" for `sharpee test`, and ADR-302 D17's rule for the tree walker and the derived tier.
+
+*What changes.* `sharpee test` boots one game per run of a tree, not one per line. The main line runs from that boot. As a line runs, the walker captures the engine's save at each card a branch forks from, and a branch line begins by restoring its fork's save on the same engine. The derived tier starts each derived row the same way, from the save at the card it derives from. "Fresh boot + deterministic replay at the pinned seed" now describes the main line and the lines listed under "What still replays".
+
+*What does not change.* The document's seed is still the engine's seed. Saves are held in memory for the length of one run and dropped at its end; none is written to disk, read from disk, or carried to another run. So D4 stands: recorded state is never the truth, because every save a line starts from was produced earlier in the same run, by the current story, from the root. A fork at or after an END STATE card, or after an execution error, is blocked exactly as before. The Testing tab's own live engine is not touched by this amendment; it still replays.
+
+*ADR-302 D17's two reasons, answered.* D17 chose re-execution for two reasons. The first was the hook collision (GH #227): registering save hooks dropped the restart hook. That was closed the same day D17 was written, when `registerSaveRestoreHooks` became a merge. The second was the general one: "restoring made the save format a correctness dependency of the harness: anything a save fails to serialize diverges silently in every child." That reason is still true, and this amendment does not argue with it. It answers it with a guard that did not exist then: the per-fork equivalence mode (`node scripts/perf/survey-test-run.mjs --equivalence <story>`), which at every fork plays one game by replay and another by save, play-on and restore, and compares the world and the rendered blocks of every following turn. On 2026-11-12 it found one real gap of exactly the kind D17 feared (a save taken before a story's first random draw carried no cursor; fixed in `packages/story-loader/src/evaluator.ts`), and after the fix it reported Secret Letter 105 of 105 forks equivalent, orchard 3 of 3, ferry 1 of 1. D17 measured the cost of re-execution at 6.2% on Fernhill. On Secret Letter the survey measured prefix replay at 46% of the run, which is the shape D17 named as the one it would lose to.
+
+*What still replays.* A save does not carry the engine's undo history: undo snapshots are cleared by every restore. A branch line whose own cards type `undo` could reach back across its fork, so that line is not restored. It boots fresh and replays its prefix, as every line did before. The replay driver therefore stays in the walker, for the main line and for these lines.
+
+*The Consequences line* ("what survives intact: the replay driver and its determinism contract"). The determinism contract is kept whole: one seed, one result, run to run. The replay driver is kept and now covers the main line and the lines that type `undo`.
+
+*AC-3 ("edits replay whole").* Still holds. After a tail-cut, a splice or a new branch, every line's path is executed from the root in the same run, once, by the line itself and its ancestors. What changed is that a shared prefix is executed once and not once per descendant.
+
+*The reproducibility error.* The walker's "replay of X failed where the owning line succeeded — the tree is not reproducible at this seed" can no longer occur on a restored line, because nothing is replayed there to disagree. It remains for the lines that still replay. What stands in its place for restored lines is the equivalence mode, run on demand. It gates nothing; a restore the engine refuses is reported on the line as an error naming the fork.
+
+*ADR-348's checklist.* A fork restore replaces the world under a live harness, so each view held outside the world is named here and either re-derived or declared:
+
+| View | Where | After a restore |
+|---|---|---|
+| The engine's phase | `GameEngine` | Re-derived by the engine itself in `loadSaveData` (`derivePhaseFromEnding`). The walker adds nothing. |
+| `lastOutput`, `lastEvents`, `lastTurnResult`, `lastChannels`, `lastChannelValues`, `lastError` | bootstrap's loaded game | Stale: they describe the last turn of the line that ran before. The walker clears them at the restore, so a line's first card cannot read another line's turn. |
+| `capturedChannels`, `bootChannelValues` | bootstrap's loaded game | Facts of the boot, not of the world. One boot serves the run, so they are right as they stand. |
+| `autoAssertionPolicy` | bootstrap's loaded game | Set once per game by the walker (cleared); unchanged by a restore. |
+| The plugin registry's states | bootstrap's loaded game | Carried by the engine's save and restored with it. |
+| The room note and the line label | the walker | Read from the world after the restore, as they are read after a replay. |
+| The turn number passed to `onCard` | the walker | Counted from the document (`prefixTurns`), never from the game. Unchanged. |
+
+*The fork save's type.* `captureSave` returned `unknown`. It returns the engine's save data type, and the walker holds fork saves as that type.
+
+*An author's own save and restore cards.* The walker's fork hooks are registered for the moment of a capture or a restore and removed after it, so a line that types `save` or `restore` later meets the story's own hooks. A test covers it.
+
+*The run report* (David's ruling, same session). The closing line reads `N commands (A authored + R replayed), F restored at a fork`, shown when R or F is above zero. R is the prefix commands of the lines that still replay. The line observer's `onLineStart` keeps `replayedCommands` (0 for a restored line) and gains `restored`; the run result gains `forkRestores`.
+
 ### D6 — The runner consumes the tree
 
 `sharpee test --tree` (branch-tester) deserializes and walks the same JSON

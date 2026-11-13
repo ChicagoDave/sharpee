@@ -12,7 +12,8 @@
  * fails the transcript unconditionally (ADR-294 D5) — `--stop-on-failure`
  * only ever controls whether the RUN continues to other transcripts.
  *
- * Public interface: `runTranscript`, `CHORD_STORY_STATE_KEYS`. Owner
+ * Public interface: `runTranscript`, `TreeRunnerOptions`,
+ * `CHORD_STORY_STATE_KEYS`. Owner
  * context: branch-tester (testing tooling).
  *
  * References: ADR-307 (the tree model), ADR-340 D1/D3 (one assertion core),
@@ -49,6 +50,18 @@ import { synthesizeOpeningAssertions } from './auto-assertion.js';
  * (GH #355), `is gone` and `<timer> has started|expired` claims. The
  * loader's own constants, never respelled.
  */
+/**
+ * Runner options plus the one seam the tree walker needs and the observer
+ * cannot give it: a step the loop WAITS for. `afterCommand` is called once
+ * per executed command, after its result is recorded and before the next
+ * item runs, with the game exactly as that command left it. The observer's
+ * `onCommandResult` is not awaited, so nothing asynchronous (capturing the
+ * engine's save at a fork card) can be done from it.
+ */
+export type TreeRunnerOptions = RunnerOptions & {
+  afterCommand?: (result: CommandResult) => Promise<void>;
+};
+
 export const CHORD_STORY_STATE_KEYS: StoryStateKeys = {
   storyState: CHORD_STORY_STATE_KEY,
   entityStatePrefix: CHORD_STATE_PREFIX,
@@ -67,7 +80,7 @@ export const CHORD_STORY_STATE_KEYS: StoryStateKeys = {
 export async function runTranscript(
   transcript: Transcript,
   engine: GameEngine,
-  options: RunnerOptions = {}
+  options: TreeRunnerOptions = {}
 ): Promise<TranscriptResult> {
   const startTime = Date.now();
 
@@ -205,7 +218,7 @@ function openingResult(
 async function runAssertion(
   transcript: Transcript,
   engine: GameEngine,
-  options: RunnerOptions,
+  options: TreeRunnerOptions,
   startTime: number
 ): Promise<TranscriptResult> {
   const results: CommandResult[] = [];
@@ -294,6 +307,7 @@ async function runAssertion(
     }
 
     record(result);
+    await options.afterCommand?.(result);
 
     if (options.testingExtension?.setCommandContext) {
       options.testingExtension.setCommandContext(result.command.input, result.actualOutput);

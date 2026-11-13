@@ -1035,8 +1035,7 @@ export class Evaluator {
    */
   private drawChance(n: number, world: WorldModel): boolean {
     if (n <= 1) return true;
-    const stored = world.getStateValue(CHORD_RNG_KEY);
-    if (typeof stored === 'number') this.rng.setSeed(stored);
+    this.rng.setSeed(this.cursorOf(world));
     const hit = this.rng.int(1, n) === 1;
     world.setStateValue(CHORD_RNG_KEY, this.rng.getSeed());
     return hit;
@@ -1049,11 +1048,25 @@ export class Evaluator {
    * point of use (ADR-240's live blocked-message resolution).
    */
   pickIndex(n: number, world: WorldModel): number {
-    const stored = world.getStateValue(CHORD_RNG_KEY);
-    if (typeof stored === 'number') this.rng.setSeed(stored);
+    this.rng.setSeed(this.cursorOf(world));
     const pick = this.rng.int(1, n) - 1;
     world.setStateValue(CHORD_RNG_KEY, this.rng.getSeed());
     return pick;
+  }
+
+  /**
+   * The random stream's cursor for this world: the one the world stores, or
+   * the story seed when it stores none. The world is the stream's only
+   * source — a world restored to a point before the story's first draw holds
+   * no cursor, and must start the stream over, not continue from wherever
+   * the turns since abandoned left the in-memory stream.
+   *
+   * @param world the live world
+   * @returns the cursor the next draw starts from
+   */
+  private cursorOf(world: WorldModel): number {
+    const stored = world.getStateValue(CHORD_RNG_KEY);
+    return typeof stored === 'number' ? stored : this.storySeed;
   }
 }
 

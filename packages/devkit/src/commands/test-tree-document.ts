@@ -255,8 +255,9 @@ export async function runTreeDocumentCommand(
           // Never `replayed: true` here: on the wire that flag means "this
           // whole execution is a state rebuild, not a row" (the v1 tree's
           // ancestor re-runs), and consumers drop such rows. A document
-          // line replays its PREFIX inside its own single execution — the
-          // line is a real row; its replay share shows in the human report.
+          // line reaches its start inside its own single execution — by a
+          // restore of its fork's save, or by replaying its PREFIX — so the
+          // line is a real row; the human report shows which, and how much.
           stream.transcriptStart(line.id, executionIndex++, {
             label,
             commandCount: line.cards.length,

@@ -144,6 +144,8 @@
 - **Entry state**: Phase 2's equivalence mode found every fork of every test story, and of Secret Letter, equivalent apart from the declared volatile fields. If any fork differs, that save gap is the finding: the phase stops and David rules (fix the save, or drop restore). David has given his go on two things:
   1. The amendment text. It is a dated amendment to ADR-307 D5 and to ADR-302 D17, or one superseding record, and it answers D17's second reason by naming this plan's equivalence proof as the guard.
   2. What the run report's "N commands (A authored + R replayed)" line and the observer's `replayedCommands` field become.
+- **Ruling on the save gap (David, 2026-11-12, session a64f6a): fix the save.** The four differing forks were two things. Two (`oq73o01x`, `ozqxlw3l`) were a real gap: a save taken before the story's first random draw carries no `chord.rng`, and the evaluator then carried on from its in-memory stream. Fixed in `packages/story-loader/src/evaluator.ts` (`cursorOf`: no stored cursor means the story seed), with a test in `packages/story-loader/tests/scheduler.test.ts` that fails without it. The other two (`cqigz7ic`, `irrp8zkt`) were the survey's own artifact: it stepped two live games side by side, and the description-marker gates are one process-wide registry (GH #691), so the replayed game read the restored game's world. The equivalence mode now plays the two games one after the other and compares rendered blocks as well as the world. After the fix, `node scripts/perf/survey-test-run.mjs --equivalence branch-stories/secret-letter` (2026-11-12): 105 forks, 105 equivalent. The same mode on orchard: 3 of 3; on ferry: 1 of 1.
+- **The two go-aheads (David, 2026-11-12, session a64f6a: "A").** The amendment text is accepted as drafted (`amendment-draft-20261112.md`) and is written into ADR-307 D5 with a note under ADR-302 D17. The report line is option A: `N commands (A authored + R replayed), F restored at a fork`; `onLineStart` keeps `replayedCommands` and gains `restored`; the run result gains `forkRestores`. One rule the draft added that this phase's Deliverable did not name: a line whose own cards type `undo` still boots fresh and replays, because a save carries no undo history.
 - **Deliverable**:
   - The amendment (or superseding record), written and accepted before code. It must cover five things:
     - in-run restore for the derived tier as well, so Phase 5 needs no second record;
@@ -163,8 +165,16 @@
   - On demand, Secret Letter's tree digest diffs empty too, and the survey records its tree-tier time and its counts of boots and executed commands against the baseline.
   - The equivalence mode reports the stripped-field fixture as a difference.
   - The floor is green (branch-tester, devkit, test:scripts, the testing-surface suite, Dungeo's chain).
-- **Demonstrated**: 
-- **Status**: CURRENT (since 2026-11-12)
+- **Demonstrated**: 2026-11-12, session a64f6a, on the bundle built by `./repokit build dungeo` after the last source edit that changes behavior; each command run once. [verified: event log 2026-11-13T00:52:39Z "Tests passed: 25 passed 255 passed" (the testing-surface suite), after the last behavior-changing source edit at 00:48:32Z; branch-tester re-run by the summary writer at 2026-11-12 18:59 CST, "Test Files 33 passed (33)", "Tests 413 passed (413)", after the last test edit, which closes the "not re-run" gap named below; story-loader `scheduler` re-run by the summary writer at 18:59 CST, "9 passed (9)"; every other figure on this line reported by session, unverified]
+  - Digests: `node scripts/perf/survey-test-run.mjs --run test-stories/<story> --digest <file>` then `diff -q` against `docs/work/engine-test-performance/baseline/`: lodge, ferry and orchard identical. The same for `branch-stories/secret-letter`: 3,315 lines, `diff` printed nothing.
+  - Secret Letter's tree tier: 58.0 s after Phase 3, 5.5 s now (127.0 s at the baseline). `--counts`: boots 106 to 1, turns 21,136 to 1,469, 54 saves captured, 105 restores. Recorded in `survey.md`, "After Phase 4".
+  - The equivalence mode's fixture known to fail: `node scripts/perf/survey-test-run.mjs --self-check` reports the honest save equivalent on ferry and the save with one world state value removed different (`equivalenceDetected: true`).
+  - The floor: branch-tester 33 files, 411 tests passing before the mutation check's additions, then `tree-fork-restore` 8 of 8; devkit 210 passing, 1 skipped; `pnpm test:scripts` 103 passing; the testing-surface suite 255 passing; story-loader `scheduler` 9 of 9; Dungeo's chain 949 passed.
+  - The run report on orchard: `21 commands (21 authored + 0 replayed), 3 restored at a fork`.
+  - Decision record: ADR-307 D5's amendment of 2026-11-12, with a note under ADR-302 D17.
+  - Not done as the Deliverable words it, and why: no consumer in `tools/ide/web/testing-surface/src/` changed, because nothing there reads `replayedCommands` and the wire carries neither count. Two rules were added that the Deliverable did not name, both in the amendment or the walker's header: a line whose own cards type `undo` still replays, and so does a fork before any command.
+  - Not verified: a tree with a `restart` card on a line that has branches (a restart reboots the game and replaces its engine; no test story has that shape). The whole branch-tester suite was not re-run after the three test cases the mutation check asked for were added; only that file was.
+- **Status**: DONE
 
 ### Phase 5: The derived and claims tiers stop paying for boots and serializations they do not need
 - **Tier**: Medium
@@ -183,7 +193,7 @@
   - On demand, Secret Letter's derived digest (1,737 rows) diffs empty, and the survey records its derived-tier time against the baseline.
   - The floor is green.
 - **Demonstrated**: 
-- **Status**: PENDING
+- **Status**: CURRENT (since 2026-11-12)
 
 ### Phase 6: Caching across runs — the candidates the survey ranks worth building
 - **Tier**: Medium
