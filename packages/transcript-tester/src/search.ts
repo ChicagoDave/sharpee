@@ -21,8 +21,10 @@
  *   measured per use, never declared on the point.
  * Public interface: `searchOutcome`, `SearchTarget`, `SearchResult`; the
  *   in-memory save fork `captureSave` / `restoreSave` over a
- *   `SaveForkPlatform`, shared with the claims walk in branch-tester
- *   (ADR-340 D3: one owner, never a copy; ADR-365 D10).
+ *   `SaveForkPlatform` (with `SaveForkHooks`), shared with the golden
+ *   runner and with branch-tester's tree walker, derived runner and claims
+ *   walk (ADR-340 D3: one owner, never a copy; ADR-365 D10). A fork leaves
+ *   the engine's save and restore hooks as it found them.
  * Owner context: @sharpee/transcript-tester (testing tooling).
  */
 
@@ -62,16 +64,26 @@ export interface SearchResult {
   reason?: string;
 }
 
+/** The two client hooks a save fork borrows for one step and hands back. */
+export interface SaveForkHooks {
+  onSaveRequested?: (data: ISaveData) => Promise<void>;
+  onRestoreRequested?: () => Promise<ISaveData | null>;
+}
+
 /**
  * The engine slice an in-memory save fork needs: the hook registration the
- * platform routes `save`/`restore` through. The real `GameEngine` satisfies
- * it structurally.
+ * platform routes `save`/`restore` through, and a read of the hooks held
+ * now, so the fork can hand them back. The real `GameEngine` satisfies it
+ * structurally.
  */
 export interface SaveForkPlatform {
-  registerSaveRestoreHooks(hooks: {
-    onSaveRequested?: (data: ISaveData) => Promise<void>;
-    onRestoreRequested?: () => Promise<ISaveData | null>;
-  }): void;
+  /** Merges: a named hook replaces the one of that name; naming it `undefined` removes it. */
+  registerSaveRestoreHooks(hooks: SaveForkHooks): void;
+  /**
+   * The hooks registered now. A platform without this read is taken to hold
+   * none, so a fork on it ends with both hooks removed.
+   */
+  getSaveRestoreHooks?(): SaveForkHooks | undefined;
   save(): Promise<boolean>;
   restore(): Promise<boolean>;
 }
@@ -236,20 +248,55 @@ export async function searchOutcome(
 }
 
 /**
+ * Run one fork step with the fork's own two hooks registered, then register
+ * again the two that were there before it. The save and restore hooks belong
+ * to the game's client (ADR-033); a fork borrows them for the moment of one
+ * capture or restore (ADR-307 D5, amended 2026-11-12), so a `save` or
+ * `restore` typed later in the run is answered by the hooks the game came
+ * with. The hand-back runs whether the step returns, refuses or throws.
+ *
+ * @param platform the engine being forked
+ * @param hooks the fork's own save and restore hooks
+ * @param step the engine call the hooks serve
+ * @returns what the step returned
+ */
+async function withBorrowedHooks<T>(
+  platform: SaveForkPlatform,
+  hooks: Required<SaveForkHooks>,
+  step: () => Promise<T>
+): Promise<T> {
+  const before = platform.getSaveRestoreHooks?.();
+  platform.registerSaveRestoreHooks(hooks);
+  try {
+    return await step();
+  } finally {
+    // Both entries are named, so one the client never registered is removed.
+    platform.registerSaveRestoreHooks({
+      onSaveRequested: before?.onSaveRequested,
+      onRestoreRequested: before?.onRestoreRequested
+    });
+  }
+}
+
+/**
  * Capture the engine's current save payload in memory (the runner's D18
  * pattern). The payload is opaque: it is only ever handed back to
- * {@link restoreSave} on the same engine.
+ * {@link restoreSave} on the same engine. The engine's save and restore
+ * hooks are left as they were found.
  *
  * @param platform the engine to fork
  * @returns the save payload, or null when the engine refused to save
  */
 export async function captureSave(platform: SaveForkPlatform): Promise<ISaveData | null> {
   let captured: ISaveData | null = null;
-  platform.registerSaveRestoreHooks({
-    onSaveRequested: async (data) => { captured = data; },
-    onRestoreRequested: async () => null
-  });
-  const saved = await platform.save();
+  const saved = await withBorrowedHooks(
+    platform,
+    {
+      onSaveRequested: async (data) => { captured = data; },
+      onRestoreRequested: async () => null
+    },
+    () => platform.save()
+  );
   return saved ? captured : null;
 }
 
@@ -257,6 +304,7 @@ export async function captureSave(platform: SaveForkPlatform): Promise<ISaveData
  * Restore the engine from an in-memory save payload taken by
  * {@link captureSave}. Entity INSTANCES are replaced by a restore; ids
  * survive, so a caller holding an entity resolves it through the world again.
+ * The engine's save and restore hooks are left as they were found.
  *
  * @param platform the engine to restore
  * @param payload a payload from `captureSave` on the same engine
@@ -266,9 +314,12 @@ export async function restoreSave(
   platform: SaveForkPlatform,
   payload: ISaveData | null
 ): Promise<boolean> {
-  platform.registerSaveRestoreHooks({
-    onSaveRequested: async () => { /* unused */ },
-    onRestoreRequested: async () => payload
-  });
-  return platform.restore();
+  return withBorrowedHooks(
+    platform,
+    {
+      onSaveRequested: async () => { /* unused */ },
+      onRestoreRequested: async () => payload
+    },
+    () => platform.restore()
+  );
 }

@@ -162,3 +162,77 @@ describe('divergence saves (D18, AC-6)', () => {
     expect(result.commands.at(-1)!.diff).toBeDefined();
   });
 });
+
+describe('a replay\'s pre-turn saves leave the client\'s hooks alone (ADR-033; ADR-307 D5)', () => {
+  const SAVING_SOURCE = 'title: V\nstory: teststory\nseed: 42\n---\n> look\n> save\n> north\n';
+
+  type SaveHook = (data: unknown) => Promise<void>;
+  type RestoreHook = () => Promise<unknown | null>;
+  interface Hooks { onSaveRequested?: SaveHook; onRestoreRequested?: RestoreHook }
+
+  /**
+   * A stub whose hook registration merges, as the real engine's does, with a
+   * client's own save hook registered before the run. A typed `save` goes to
+   * whichever save hook is registered at that moment, and the output says
+   * whether the client's own hook answered it.
+   */
+  function clientEngine(reportsHooks: boolean) {
+    const clientSaves: unknown[] = [];
+    const clientSave: SaveHook = async (data) => { clientSaves.push(data); };
+    let hooks: Hooks = { onSaveRequested: clientSave };
+    let executed = 0;
+    const platform = {
+      registerSaveRestoreHooks(h: Hooks) { hooks = { ...hooks, ...h }; },
+      ...(reportsHooks ? { getSaveRestoreHooks: () => hooks } : {}),
+      async save() {
+        if (!hooks.onSaveRequested) return false;
+        await hooks.onSaveRequested({ version: '3.0.0', executed });
+        return true;
+      },
+      async restore() { return true; },
+      getMasterSeed: () => 42
+    };
+    return {
+      clientSaves,
+      clientSave,
+      hooksNow: () => hooks,
+      executeCommand: async (cmd: string) => {
+        executed++;
+        if (cmd !== 'save') return `You ${cmd}.`;
+        const before = clientSaves.length;
+        const saved = await platform.save();
+        return !saved ? 'No save handler.' : clientSaves.length > before ? 'Saved by the client.' : 'Saved by someone else.';
+      },
+      world: {},
+      engine: platform
+    };
+  }
+
+  it('a typed save in a replay is answered by the client\'s hook, as it was when recorded', async () => {
+    const transcript = fixture(SAVING_SOURCE, 'saving.transcript');
+    const recorded = await runTranscript(transcript, clientEngine(true) as never, { bless: true });
+    expect(recorded.status).toBe('passed');
+    expect(parseGoldenFile(recorded.goldenPath!).turns[1].output).toEqual(['Saved by the client.']);
+
+    const engine = clientEngine(true);
+    const replayed = await runTranscript(transcript, engine as never, {});
+
+    expect(replayed.status).toBe('passed');
+    // Only the typed save reached the client; the three pre-turn captures did not.
+    expect(engine.clientSaves).toHaveLength(1);
+    expect(engine.hooksNow().onSaveRequested).toBe(engine.clientSave);
+    expect(engine.hooksNow().onRestoreRequested).toBeUndefined();
+  });
+
+  it('the fixture known to fail: an engine that cannot report its hooks loses the client\'s, and the replay diverges at the save', async () => {
+    const transcript = fixture(SAVING_SOURCE, 'saving.transcript');
+    await runTranscript(transcript, clientEngine(true) as never, { bless: true });
+
+    const engine = clientEngine(false);
+    const replayed = await runTranscript(transcript, engine as never, {});
+
+    expect(replayed.status).toBe('failed');
+    expect(engine.clientSaves).toHaveLength(0);
+    expect(engine.hooksNow().onSaveRequested).toBeUndefined();
+  });
+});

@@ -218,6 +218,8 @@ seed-pinned-at-root carry over.
 
 *An author's own save and restore cards.* The walker's fork hooks are registered for the moment of a capture or a restore and removed after it, so a line that types `save` or `restore` later meets the story's own hooks. A test covers it.
 
+> **Note (2026-11-13, David, session cbf907; GH #697).** The hand-back is a property of the fork, not of each runner. It lives in the fork's owner, `captureSave` / `restoreSave` in `packages/transcript-tester/src/search.ts`, so every caller gets it: the tree walker, the derived runner, the claims walk, the outcome search and the golden runner's pre-turn capture. A runner never registers or removes fork hooks itself. The engine's save data stays behind the client hooks (ADR-033); the engine gained no public save or load for this.
+
 *The run report* (David's ruling, same session). The closing line reads `N commands (A authored + R replayed), F restored at a fork`, shown when R or F is above zero. R is the prefix commands of the lines that still replay. The line observer's `onLineStart` keeps `replayedCommands` (0 for a restored line) and gains `restored`; the run result gains `forkRestores`.
 
 ### D6 — The runner consumes the tree

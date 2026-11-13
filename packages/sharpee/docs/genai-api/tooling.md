@@ -2522,8 +2522,10 @@ export {};
  *   measured per use, never declared on the point.
  * Public interface: `searchOutcome`, `SearchTarget`, `SearchResult`; the
  *   in-memory save fork `captureSave` / `restoreSave` over a
- *   `SaveForkPlatform`, shared with the claims walk in branch-tester
- *   (ADR-340 D3: one owner, never a copy; ADR-365 D10).
+ *   `SaveForkPlatform` (with `SaveForkHooks`), shared with the golden
+ *   runner and with branch-tester's tree walker, derived runner and claims
+ *   walk (ADR-340 D3: one owner, never a copy; ADR-365 D10). A fork leaves
+ *   the engine's save and restore hooks as it found them.
  * Owner context: @sharpee/transcript-tester (testing tooling).
  */
 import { type ISaveData, type RandomForceSpec } from '@sharpee/core';
@@ -2553,16 +2555,25 @@ export interface SearchResult {
     /** On failure: why — 'budget-exhausted', 'never-fires', or a validation message. */
     reason?: string;
 }
+/** The two client hooks a save fork borrows for one step and hands back. */
+export interface SaveForkHooks {
+    onSaveRequested?: (data: ISaveData) => Promise<void>;
+    onRestoreRequested?: () => Promise<ISaveData | null>;
+}
 /**
  * The engine slice an in-memory save fork needs: the hook registration the
- * platform routes `save`/`restore` through. The real `GameEngine` satisfies
- * it structurally.
+ * platform routes `save`/`restore` through, and a read of the hooks held
+ * now, so the fork can hand them back. The real `GameEngine` satisfies it
+ * structurally.
  */
 export interface SaveForkPlatform {
-    registerSaveRestoreHooks(hooks: {
-        onSaveRequested?: (data: ISaveData) => Promise<void>;
-        onRestoreRequested?: () => Promise<ISaveData | null>;
-    }): void;
+    /** Merges: a named hook replaces the one of that name; naming it `undefined` removes it. */
+    registerSaveRestoreHooks(hooks: SaveForkHooks): void;
+    /**
+     * The hooks registered now. A platform without this read is taken to hold
+     * none, so a fork on it ends with both hooks removed.
+     */
+    getSaveRestoreHooks?(): SaveForkHooks | undefined;
     save(): Promise<boolean>;
     restore(): Promise<boolean>;
 }
@@ -2606,7 +2617,8 @@ export declare function searchOutcome(transcript: Transcript, engine: SearchEngi
 /**
  * Capture the engine's current save payload in memory (the runner's D18
  * pattern). The payload is opaque: it is only ever handed back to
- * {@link restoreSave} on the same engine.
+ * {@link restoreSave} on the same engine. The engine's save and restore
+ * hooks are left as they were found.
  *
  * @param platform the engine to fork
  * @returns the save payload, or null when the engine refused to save
@@ -2616,6 +2628,7 @@ export declare function captureSave(platform: SaveForkPlatform): Promise<ISaveDa
  * Restore the engine from an in-memory save payload taken by
  * {@link captureSave}. Entity INSTANCES are replaced by a restore; ids
  * survive, so a caller holding an entity resolves it through the world again.
+ * The engine's save and restore hooks are left as they were found.
  *
  * @param platform the engine to restore
  * @param payload a payload from `captureSave` on the same engine

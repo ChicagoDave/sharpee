@@ -37,6 +37,7 @@ import {
 import { serializeTranscript } from './serializer.js';
 import { serializeGolden, parseGoldenFile, GoldenFormatError } from './golden.js';
 import { checkAssertion } from './assertion-core.js';
+import { captureSave } from './search.js';
 import {
   configureRandomInstruments,
   unfiredForceError,
@@ -383,13 +384,7 @@ async function captureEngineSave(engine: GameEngine): Promise<unknown | null> {
   const platform = engine.engine;
   if (!platform) return null;
   try {
-    let captured: unknown = null;
-    platform.registerSaveRestoreHooks({
-      onSaveRequested: async (data) => { captured = data; },
-      onRestoreRequested: async () => null
-    });
-    const saved = await platform.save();
-    return saved ? captured : null;
+    return await captureSave(platform);
   } catch {
     return null;
   }
