@@ -147,16 +147,16 @@ export async function walkClaims(game: ClaimsGame, ir: StoryIR, group: ClaimGrou
     return [...bits].sort((a, b) => a - b).join(',');
   };
   const allClaimsSettled = () => claims.length > 0 && claims.every((claim) => witnesses.has(claim.index));
-  const identityOf = (bits: string): string => {
-    const snapshot = readWorldSnapshot(world);
-    return `${necessaryIdentity(snapshot, set)}${claims.length ? `|${bits}` : ''}`;
-  };
+  // The state's identity is built from the snapshot its claims were just
+  // read from: one world read per state reached, never a second.
+  const identityOf = (bits: string, snapshot: WorldSnapshot): string =>
+    `${necessaryIdentity(snapshot, set)}${claims.length ? `|${bits}` : ''}`;
 
   noteRoom();
   const rootSnapshot = readWorldSnapshot(world);
   const rootBits = noteClaims([], [], '', rootSnapshot);
   const rootSave = await captureSave(engine);
-  const seen = new Set<string>([`${necessaryIdentity(rootSnapshot, set)}${claims.length ? `|${rootBits}` : ''}`]);
+  const seen = new Set<string>([identityOf(rootBits, rootSnapshot)]);
   let queue: Array<{ save: Awaited<ReturnType<typeof captureSave>>; path: readonly string[]; depth: number; bits: string }> = [{ save: rootSave, path: [], depth: 0, bits: rootBits }];
 
   let commandsExecuted = 0;
@@ -202,8 +202,9 @@ export async function walkClaims(game: ClaimsGame, ir: StoryIR, group: ClaimGrou
       if (commandsExecuted % YIELD_EVERY === 0) await new Promise<void>((resolve) => setImmediate(resolve));
       const path = [...node.path, command];
       noteRoom();
-      const bits = noteClaims(path, turnEvents, node.bits, readWorldSnapshot(world));
-      const identity = identityOf(bits);
+      const snapshot = readWorldSnapshot(world);
+      const bits = noteClaims(path, turnEvents, node.bits, snapshot);
+      const identity = identityOf(bits, snapshot);
       if (!seen.has(identity)) {
         seen.add(identity);
         const save = await captureSave(engine);

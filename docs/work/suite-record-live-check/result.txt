@@ -1,0 +1,139 @@
+(Second run of this check, same session. The first run, 18:45 CST, did not reuse because another session edited packages/ between steps 1 and 3; this file replaces its result.)
+
+=== HEADER ===
+date and time: Thu Nov 12 19:02:27 CST 2026 (taken just before step 1; result written about 19:05 CST)
+claude --version: 2.1.323 (Claude Code)
+git rev-parse --short HEAD: 3da25f077
+
+=== STEP 1 ===
+command: pnpm exec turbo run test:ci
+duration: 1m2.049s (turbo's own "Time:" line; the Bash call returned no separate duration; the call ran in the foreground and was not moved to the background)
+last 40 lines of output:
+@sharpee/repokit:test:ci: > vitest run
+@sharpee/repokit:test:ci: 
+@sharpee/repokit:test:ci: 
+@sharpee/repokit:test:ci:  RUN  v1.6.1 /Users/david/repos/sharpee/tools/repokit
+@sharpee/repokit:test:ci: 
+@sharpee/repokit:test:ci:  ✓ src/repo.test.ts  (4 tests) 4ms
+@sharpee/repokit:test:ci:  ✓ src/commands/bundle.test.ts  (5 tests) 1ms
+@sharpee/repokit:test:ci:  ✓ src/commands/test-npm.test.ts  (3 tests | 1 skipped) 3ms
+@sharpee/repokit:test:ci:  ✓ src/commands/control-bytes.test.ts  (10 tests) 13ms
+@sharpee/repokit:test:ci:  ✓ src/commands/clean.test.ts  (6 tests) 13ms
+@sharpee/repokit:test:ci:  ✓ src/commands/build.test.ts  (15 tests) 24ms
+@sharpee/repokit:test:ci:  ✓ src/commands/grammar.test.ts  (17 tests) 47ms
+@sharpee/repokit:test:ci:  ✓ src/commands/browser.test.ts  (16 tests) 36ms
+@sharpee/repokit:test:ci:  ✓ src/commands/aliases.test.ts  (7 tests) 21ms
+@sharpee/repokit:test:ci:  ✓ src/commands/ebnf.test.ts  (12 tests) 7ms
+@sharpee/repokit:test:ci:  ✓ src/commands/manifest.test.ts  (8 tests) 122ms
+@sharpee/repokit:test:ci:  ✓ src/proc.test.ts  (10 tests) 291ms
+@sharpee/repokit:test:ci: npm warn Unknown env config "_jsr-registry". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+@sharpee/repokit:test:ci: npm warn Unknown env config "verify-deps-before-run". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+@sharpee/repokit:test:ci: npm warn Unknown env config "_jsr-registry". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+@sharpee/repokit:test:ci: npm warn Unknown env config "verify-deps-before-run". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+@sharpee/repokit:test:ci: npm warn Unknown env config "_jsr-registry". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+@sharpee/repokit:test:ci: npm warn Unknown env config "verify-deps-before-run". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+@sharpee/repokit:test:ci: npm warn Unknown env config "_jsr-registry". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+@sharpee/repokit:test:ci: npm warn Unknown env config "verify-deps-before-run". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+@sharpee/repokit:test:ci: npm warn Unknown env config "_jsr-registry". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+@sharpee/repokit:test:ci: npm warn Unknown env config "verify-deps-before-run". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+@sharpee/repokit:test:ci:  ✓ src/consumer-gen.test.ts  (17 tests) 987ms
+@sharpee/repokit:test:ci:  ✓ src/commands/protocol.test.ts  (14 tests) 9880ms
+@sharpee/repokit:test:ci: 
+@sharpee/repokit:test:ci:  Test Files  14 passed (14)
+@sharpee/repokit:test:ci:       Tests  143 passed | 1 skipped (144)
+@sharpee/repokit:test:ci:    Start at  19:03:21
+@sharpee/repokit:test:ci:    Duration  10.90s (transform 1.24s, setup 0ms, collect 1.86s, tests 11.45s, environment 1ms, prepare 565ms)
+@sharpee/repokit:test:ci: 
+
+ Tasks:    73 successful, 73 total
+Cached:    51 cached, 73 total
+  Time:    1m2.049s 
+
+
+DevArch banner text: none. No DevArch banner came back with the step 1 Bash call's result, and a case-insensitive grep of the saved output for "devarch" and "recorded" counted 0 lines. The output was 185.8KB, so the harness persisted it to a file and returned a 2KB preview; if a hook emitted a banner, it did not reach the session.
+
+=== .git/devarch-test-stamp AFTER STEP 1 ===
+(file mtime Nov 12 19:03:32 2026; read at 19:03:37 CST)
+fingerprint=d3c41d4c273937b5cefc1e84decb989c263f20e7
+suites=369d7f77afbd2b76e50a84918ef0f4aeac1fad96
+exit=0
+at=2026-11-13T01:03:32Z
+
+=== STEP 3: bash /Users/david/.claude/scripts/git-assess.sh (complete output) ===
+=== GIT STATUS ===
+On branch main
+Your branch is up to date with 'origin/main'.
+
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+	modified:   docs/architecture/adrs/adr-302-transcript-branches.md
+	modified:   docs/architecture/adrs/adr-307-testing-tree-model-v2.md
+	modified:   docs/context/session-20261112-0510-main.md
+	modified:   docs/work/engine-test-performance/plan-20261112-engine-test-performance.md
+	modified:   docs/work/engine-test-performance/survey.md
+	modified:   packages/branch-tester/src/claims/claims-walk.ts
+	modified:   packages/branch-tester/src/runner.ts
+	modified:   packages/branch-tester/src/tree-walker.ts
+	modified:   packages/branch-tester/tests/tree-walker.test.ts
+	modified:   packages/devkit/src/commands/test-tree-document.test.ts
+	modified:   packages/devkit/src/commands/test-tree-document.ts
+	modified:   packages/sharpee/docs/genai-api/tooling.md
+	modified:   packages/story-loader/src/evaluator.ts
+	modified:   packages/story-loader/tests/scheduler.test.ts
+	modified:   packages/transcript-tester/src/search.ts
+	modified:   scripts/perf/survey-test-run.mjs
+	modified:   stories/dungeo/src/version.ts
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+	docs/context/session-20261112-1813-main.md
+	docs/work/engine-test-performance/amendment-draft-20261112.md
+	docs/work/secret-letter-port/narrative-spine.docx
+	docs/work/secret-letter-port/narrative-spine.md
+	docs/work/suite-record-live-check/
+	packages/branch-tester/tests/tree-fork-restore.test.ts
+
+no changes added to commit (use "git add" and/or "git commit -a")
+
+=== UNSTAGED DIFF STAT ===
+ .../adrs/adr-302-transcript-branches.md            |   8 +
+ .../adrs/adr-307-testing-tree-model-v2.md          |  34 +++
+ docs/context/session-20261112-0510-main.md         | 101 ++++++++
+ .../plan-20261112-engine-test-performance.md       |  17 +-
+ docs/work/engine-test-performance/survey.md        |  67 ++++++
+ packages/branch-tester/src/claims/claims-walk.ts   |   2 +-
+ packages/branch-tester/src/runner.ts               |  20 +-
+ packages/branch-tester/src/tree-walker.ts          | 253 ++++++++++++++++++---
+ packages/branch-tester/tests/tree-walker.test.ts   |   6 +-
+ .../devkit/src/commands/test-tree-document.test.ts |   7 +-
+ packages/devkit/src/commands/test-tree-document.ts |   5 +-
+ packages/sharpee/docs/genai-api/tooling.md         |   4 +-
+ packages/story-loader/src/evaluator.ts             |  21 +-
+ packages/story-loader/tests/scheduler.test.ts      |  41 ++++
+ packages/transcript-tester/src/search.ts           |  10 +-
+ scripts/perf/survey-test-run.mjs                   |  80 +++++--
+ stories/dungeo/src/version.ts                      |   2 +-
+ 17 files changed, 607 insertions(+), 71 deletions(-)
+
+=== STAGED DIFF STAT ===
+
+=== RECENT COMMITS ===
+3da25f077 feat(engine-test-performance): Phase 3 complete — The engine turn
+160fd54ac docs(plan): engine-test-performance plan approved, on hold; session ece425 research recorded
+b16501938 chore(plan): small-test-stories complete and archived; session ece425 finalized (closes #684)
+0cc506029 docs(plan): small-test-stories Phase 7 — close-out: where each obligation lives, what gates now (ADR-395, #684)
+c8796b035 test(ide-web): the testing surface's real-run suites run on test stories (small-test-stories Phase 6, ADR-395, #684)
+
+=== CURRENT BRANCH ===
+main
+
+=== TEST RUN ===
+SUITES: 1 of 1 reused, none run
+  - project-profile.md test-command line
+REUSED: the passing run of 2026-11-13T01:03:32Z. No file has changed since, outside the ignored paths (docs/context/, docs/work/).
+
+EXIT: 0
+
+=== DIFFERENCES FROM WHAT THE PROMPT DESCRIBES ===
+One: no DevArch banner came back with step 1's result, though the stamp was written (exit=0, 01:03:32Z) and the gate reused it. Everything else went as described: REUSED line naming the step 1 run, "SUITES: 1 of 1 reused, none run", EXIT: 0; the plan file is back to its pre-step-2 checksum (7a415148c3091714db79a8eb41b3608ee6d43de3).

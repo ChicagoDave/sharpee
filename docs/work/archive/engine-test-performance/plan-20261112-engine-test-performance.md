@@ -1,7 +1,7 @@
 # Session Plan: Engine test performance — a measured survey, and branch testing in seconds
 
 **Created**: 2026-11-12
-**Plan Status**: ACTIVE
+**Plan Status**: DONE
 **Overall scope**: Measure where a `sharpee test` run spends its time on the engine side (compile, boot, the turn, save and restore, the three tiers), fix what the measurements rank, and add caching and reuse that make test runs fast, branch testing (tree, derived and claims tiers) start to finish. The plan ends with a measured before and after of a whole `sharpee test` run so David can rule on whether the branch-testing paradigm stays. The browser client and the IDE are out of scope.
 **Bounded contexts touched**: N/A — infrastructure/tooling (test-run performance across `packages/engine`, `packages/world-model`, `packages/bootstrap`, `packages/stdlib`, `packages/transcript-tester`, `packages/branch-tester`, `packages/devkit`)
 **Key domain language**: line, fork card, prefix replay, derived row, walk state identity, necessary set
@@ -181,6 +181,7 @@
 - **Budget**: 250
 - **Domain focus**: The derived tier (`packages/branch-tester/src/derived-runner.ts`) and the claims walk's per-state read (`packages/branch-tester/src/claims/claims-game.ts`).
 - **Entry state**: Phase 4 is DONE, and its record covers in-run restore for derived rows. Phase 2 has explained the 80 ms row. David has given his go on the derived change, and on whether read-only rows share one boot with a state comparison after each.
+- **The go (David, 2026-11-12, session a8ee8f: "a").** Go on the derived change and the claims change as put to him. Every derived row restores, read-only or not: a restore is 3.6 ms on Secret Letter against a 2.1 ms serialization plus a comparison, so sharing would save about 0.2 s over some 146 rows and add a second path whose "read-only" is judged from the verb. A row whose command types `undo` still boots fresh, as Phase 4's walker does. For the claims walk, "one serialization per state" is pinned as one world read per command walked plus the engine's own serialization inside each save of a new state; building the identity from the save payload would be an engine change this plan does not name.
 - **Deliverable**:
   - The derived tier boots once per suite. `packages/branch-tester/src/derived-runner.ts#runDerivedSuite` reads the vocabulary from that boot and captures its save, and `packages/branch-tester/src/derived-runner.ts#runDerivedBranch` restores the save before each row instead of booting. Row code looks every entity up again through the world after each restore (ADR-365's stale-entity lesson).
   - Whatever Phase 2 found in the 80 ms row is fixed, or ruled out with its measurement.
@@ -192,8 +193,14 @@
   - The verdict digests of lodge, bazaar, ferry and orchard diff empty against `docs/work/engine-test-performance/baseline/`.
   - On demand, Secret Letter's derived digest (1,737 rows) diffs empty, and the survey records its derived-tier time against the baseline.
   - The floor is green.
-- **Demonstrated**: 
-- **Status**: CURRENT (since 2026-11-12)
+- **Demonstrated**: 2026-11-12, session a8ee8f, on the bundle built by `./repokit build dungeo` after the last source edit; each command run once. [reported: session a8ee8f] [verified: branch-tester re-run by the summary writer at 2026-11-12 20:08 CST, "Test Files 35 passed (35)", "Tests 424 passed (424)", after the last test edit at 19:56 CST; event log 2026-11-13T01:55:38Z "Tests passed: 25 passed 255 passed" (the testing-surface suite), after the last source edit at 01:51:55Z and the build at 01:54:02Z; every other figure on this line reported by session, unverified]
+  - Digests: `node scripts/perf/survey-test-run.mjs --run test-stories/<story> --digest <file>` then `diff -q` against `docs/work/engine-test-performance/baseline/`: lodge, bazaar, ferry and orchard printed nothing. The same for `branch-stories/secret-letter`: 3,315 lines, `diff` printed nothing.
+  - Secret Letter's derived tier: 133.2 s after Phase 4, 8.9 s now (130.1 s at the baseline), 5.1 ms a row against 74.9; the whole run 138.9 s to 14.4 s. `--counts`, derived tier: boots 1,267 to 1, compiles 1,267 to 1, 1 save, 1,267 restores, 958 turns. Recorded in `survey.md`, "After Phase 5".
+  - The count assertions and their fixtures known to fail: `packages/branch-tester/tests/derived-one-boot.test.ts` (9 cases on orchard through the real engine: one boot for the suite; an engine that refuses to save boots once per row and the count shows it; every restore leaves the world byte-equal to the boot, with a restore that does nothing as its fixture; outcomes equal a boot per row) and `packages/branch-tester/tests/claims-walk-serializations.test.ts` (2 cases on lodge: one read at each start, one per command walked, one inside each save; a loader that keeps undo snapshots as its fixture). With `claims-walk.ts` stashed the count fails, `expected 751 to be 463`.
+  - The floor: branch-tester "Test Files 35 passed (35)", "Tests 424 passed (424)", re-run whole after the last test edit; devkit "32 passed | 1 skipped (33)", "210 passed | 1 skipped (211)"; `pnpm test:scripts` "17 passed (17)", "103 passed (103)"; the testing-surface suite "25 passed (25)", "255 passed (255)"; Dungeo's chain "949 passed".
+  - Not done as the Deliverable words it, and why: `runDerivedBranch` keeps its signature (it takes whatever hands it a game in boot state, and the suite passes a start that restores), so `packages/devkit/src/commands/test-derived.ts` and the testing surface did not change. "One serialization per walk state" is pinned as David ruled it: one world read per command walked, plus the engine's own inside each save of a new state. The fork-save helpers moved out of `tree-walker.ts` into `packages/branch-tester/src/fork-save.ts` (new) so both runners share one copy.
+  - Not verified: a derived row that types `undo` is tested for its own boot and its `undo: true` request, not for a working undo on that game; a derived row that types `save` or `restore` on the shared game (the hook put-back is asserted after the suite, not during such a row); Fernhill's claims tier was not re-measured.
+- **Status**: DONE
 
 ### Phase 6: Caching across runs — the candidates the survey ranks worth building
 - **Tier**: Medium
@@ -219,7 +226,12 @@
   - On demand, the survey records Secret Letter's warm-run time.
   - The floor is green.
 - **Demonstrated**: 
-- **Status**: PENDING
+- **Dropped by ruling (David, 2026-11-12, session a8ee8f: "proceed", on the recommendation to drop Phase 6 and go to Phase 7).** No cache was built. The reason for each candidate:
+  - *Compile once per run*: after Phases 4 and 5 a run compiles a handful of times, not once per boot (Secret Letter: 1,373 compiles at the baseline; the tree and derived tiers now make one each). At 95 ms a compile on Secret Letter the saving is well under a second.
+  - *Compile results cached against the source hash*: the same handful of compiles, and a cross-run cache needs a decision record and a place in the author's project for it.
+  - *Stored witnesses*, and *walk results cached per claim cone*: each changes ADR-365 D2 and ADR-367 ("the walk reads only what is written", "no memory of a previous run"), and the only figure for the cost they would remove, Fernhill's claims tier at 4.5 s of 5.5 s, was taken before Phase 5 cut the walk's world reads. Phase 7 re-measures that tier; David rules on these two from that number.
+  - *Derived rows that read only definitions needing no boot*: moot. A derived run boots once (Phase 5).
+- **Status**: ABANDONED (2026-11-12, dropped by ruling; nothing built)
 
 ### Phase 7: Re-measure the whole `sharpee test` run — before and after, for David's ruling on the paradigm
 - **Tier**: Small
@@ -238,5 +250,7 @@
 - **Files**: `docs/work/engine-test-performance/before-after.md` (new), `docs/work/engine-test-performance/plan-20261112-engine-test-performance.md`, `docs/architecture/adrs/adr-395-exploring-tests-run-on-test-stories.md`
 - **Exit state**: David has ruled on whether branch testing stays, on the measured before and after.
 - **Demonstration**: The survey's whole-run lines for secret-letter and fernhill print the after figures recorded in `docs/work/engine-test-performance/before-after.md`, beside the Phase 2 baseline in `docs/work/engine-test-performance/survey.md`. David's ruling is quoted with its date.
-- **Demonstrated**: 
-- **Status**: PENDING
+- **Demonstrated**: 2026-11-12, session a8ee8f, on the build made at the end of Phase 5; each command run once. [reported: session a8ee8f] [reported by session, unverified]
+  - `node scripts/perf/survey-test-run.mjs --run branch-stories/fernhill`: whole run 3.41 s (5.49 s at the baseline), tree 0.19 s, derived 0.08 s, claims 2.91 s (4.49 s). `--run branch-stories/secret-letter`: whole run 14.4 s (257.3 s), tree 5.3 s, derived 8.9 s; this is the run made for Phase 5's Demonstration on the same build, not a second one. Dungeo's chain: 8.7 s, 949 passed. All recorded in `before-after.md` beside the Phase 2 baseline in `survey.md`.
+  - **David's rulings, 2026-11-12 ("A")**: the branch-testing paradigm stays; `scripts/perf/` stays, and ADR-395's Consequence "Nothing watches walk speed at scale" carries a note of that date saying an on-demand instrument exists and gates nothing; the claims-walk caches wait, filed as GH #695. No timing gate was added.
+- **Status**: DONE

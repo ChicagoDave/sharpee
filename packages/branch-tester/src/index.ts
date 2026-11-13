@@ -116,6 +116,7 @@ export type {
   DerivedEntity,
   DerivedGame,
   DerivedGameLoader,
+  DerivedRowStart,
   DerivedOutcome,
   DerivedPlan,
   DerivedRunOptions,

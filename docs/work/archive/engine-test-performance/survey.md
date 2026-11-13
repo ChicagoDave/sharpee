@@ -248,3 +248,43 @@ tier:
   world state value removed, on ferry. It reports the honest save equivalent and the
   stripped one different, naming the field:
   `/state/chord.occurrence.clause.lever.on-pulling-by-player: replayed 1 / restored undefined`.
+
+## After Phase 5 (2026-11-12, session a8ee8f, each run once)
+
+Phase 5 landed two changes. The derived tier boots one game for the suite, saves it as
+booted, and restores that save before every row; a row whose command types `undo`, and
+every row of a game with no save surface, still boots a game of its own. The claims walk
+reads the world once for each state it reaches, where it read it twice.
+
+`node scripts/perf/survey-test-run.mjs --run branch-stories/secret-letter --digest <file>`:
+
+| | Baseline | After Phase 3 | After Phase 4 | After Phase 5 |
+|---|---|---|---|---|
+| secret-letter whole run | 257.3 s | 183.7 s | 138.9 s | 14.4 s |
+| secret-letter tree tier | 127.0 s | 58.0 s | 5.5 s | 5.3 s |
+| secret-letter derived tier | 130.1 s | 125.5 s | 133.2 s | 8.9 s |
+| secret-letter, ms a derived row | 74.9 | | | 5.1 |
+
+`node scripts/perf/survey-test-run.mjs --counts branch-stories/secret-letter`, the derived
+tier:
+
+| | Baseline | After Phase 5 |
+|---|---|---|
+| Boots | 1,267 | 1 |
+| Compiles | 1,267 | 1 |
+| Saves captured | 0 | 1 |
+| Restores | 0 | 1,267 |
+| Turns | 958 | 958 |
+
+- Secret Letter's verdict digest is byte-identical to the baseline (3,315 lines, `diff`
+  printed nothing), as are lodge's, ferry's, orchard's and bazaar's (`diff -q` printed
+  nothing for each).
+- The 80 ms row is gone with the boots: it was 95 ms of compile and 22 ms of boot for each
+  row that booted (table row 2 and row 5), and one boot now serves all 1,737 rows. Row 2's
+  compile-per-boot still exists in `loadAuthorGame`; after Phases 4 and 5 a Secret Letter
+  run makes it a handful of times, not 1,373.
+- The 1,267 restores cost 3.7 s in the instrumented run, of which 1.6 s is parsing the
+  world back; the 958 turns cost 4.8 s. Those two are what the derived tier is now.
+- The claims walk on lodge, counted by `packages/branch-tester/tests/claims-walk-serializations.test.ts`:
+  463 world serializations across its walks, against 751 with the walk change stashed.
+  Fernhill's claims tier was not re-measured.

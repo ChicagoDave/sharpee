@@ -43,6 +43,7 @@ Dungeo is different in kind. Its walkthrough chain is a replay, 949 steps in abo
 - The acceptance criteria of ADR-365 (AC-1, AC-2, AC-3, AC-4, AC-6, AC-9) and ADR-367 (AC-1, AC-3, AC-4) keep their records of what was measured on Fernhill, UPPS and Secret Letter. Their regression pins move to the test stories, and each record takes a dated note when its phase lands.
 - ADR-302 D16 takes a dated note for the second directory.
 - Nothing watches walk speed at scale, in the gate or out of it. A slowdown like #628's would be noticed by an author running `sharpee test` on a large story, not by a test here.
+  - **Note, 2026-11-12** (David's ruling, engine-test-performance plan, Phase 7): an on-demand instrument now exists, `scripts/perf/survey-test-run.mjs`. It measures a whole `sharpee test` run by tier on any story, real ones included, and counts boots, compiles, turns and serializations. It carries no bound, sits outside `scripts/__tests__/` and every turbo task, and gates nothing, so D7 and D8 stand as written: it is a measurement someone chooses to run, not a watch.
 - Interactions nobody wrote an obligation for are no longer exercised by accident. When a real story turns one up, it becomes a new obligation with a home in a test set.
 - A plan that adds a Chord error compiles `test-stories/` in its census, as it does `stories/` and `branch-stories/`.
 - The author-narrative objective's own target (the UNDERGROUND port) is a separate matter and is not changed by this record.

@@ -82,13 +82,8 @@ import {
   TranscriptResult,
   RunnerOptions,
 } from './types.js';
-import {
-  captureSave,
-  captureWorldSnapshot,
-  restoreSave,
-  type CommandResult,
-  type SaveForkPlatform,
-} from '@sharpee/transcript-tester';
+import { captureWorldSnapshot, type CommandResult } from '@sharpee/transcript-tester';
+import { captureForkSave, restoreForkSave, type ForkSave, type ForkSaveEngine } from './fork-save.js';
 import type { CommandCause } from '@sharpee/ide-protocol';
 import { CHORD_IR_ID_ATTRIBUTE } from '@sharpee/story-loader';
 import { runTranscript } from './runner.js';
@@ -157,19 +152,7 @@ export interface TreeWalkerGame {
   lastChannelValues?: Record<string, unknown[]>;
 }
 
-/**
- * The engine slice a fork save needs: the save fork itself, and a read of the
- * hooks registered before it, so the walker can put them back.
- */
-export type ForkSaveEngine = SaveForkPlatform & {
-  getSaveRestoreHooks?(): ForkHooks | undefined;
-};
-
-/** The two hooks a fork save borrows, as the engine hands them back. */
-type ForkHooks = Parameters<SaveForkPlatform['registerSaveRestoreHooks']>[0];
-
-/** The engine's save data, as `captureSave` returns it. */
-type ForkSave = NonNullable<Awaited<ReturnType<typeof captureSave>>>;
+export type { ForkSaveEngine } from './fork-save.js';
 
 /**
  * Boots one fresh game at the document's pinned seed. Called once for the
@@ -517,7 +500,8 @@ export async function runTreeDocument(
     let game: TreeWalkerGame;
     if (forkSave !== undefined && parentGame !== undefined) {
       game = parentGame;
-      if (!(await restoreForkSave(game, forkSave))) {
+      // The engine is read now, never held: a `restart` card replaces it.
+      if (game.engine === undefined || !(await restoreForkSave(game.engine, game, forkSave))) {
         record(line, {
           id: line.id,
           label: blockedLabelOf(line),
@@ -625,7 +609,8 @@ export async function runTreeDocument(
         const cardIndex = cardIndexOfCommand[rowAfterCommand];
         rowAfterCommand += 1;
         if (cardIndex === undefined || !forkCards.has(cardIndex)) return;
-        const save = await captureForkSave(game);
+        // A game with no save surface captures nothing; its branches replay.
+        const save = game.engine === undefined ? undefined : await captureForkSave(game.engine);
         if (save !== undefined) forkSaves.set(forkSaveKey(line.id, cardIndex), save);
       },
       observer: {
@@ -721,64 +706,6 @@ const forkSaveKey = (lineId: string, cardIndex: number): string => `${lineId}\0$
 function startsFromForkSave(line: TreeLine): boolean {
   if (line.parentId === undefined || line.prefix.length === 0) return false;
   return !typesUndo(line.cards.map((card) => card.command));
-}
-
-/**
- * Run one fork-save step with the walker's hooks, then put back the hooks
- * that were registered before it. `captureSave` and `restoreSave` each
- * register a save and a restore hook on the engine; left in place they would
- * answer an author's own `save` or `restore` card later on the line.
- *
- * @param engine the engine's save surface
- * @param step the capture or the restore
- * @returns what the step returned
- */
-async function withForkHooks<T>(engine: ForkSaveEngine, step: () => Promise<T>): Promise<T> {
-  const before = engine.getSaveRestoreHooks?.();
-  try {
-    return await step();
-  } finally {
-    // Naming an entry `undefined` removes it (the engine's merge rule).
-    engine.registerSaveRestoreHooks({
-      onSaveRequested: before?.onSaveRequested,
-      onRestoreRequested: before?.onRestoreRequested,
-    });
-  }
-}
-
-/**
- * Capture the engine's save as the game stands now.
- *
- * @param game the game a line is running on
- * @returns the save, or undefined when the game has no save surface or the
- *   engine refused; the branch lines of that fork then replay their prefix
- */
-async function captureForkSave(game: TreeWalkerGame): Promise<ForkSave | undefined> {
-  const engine = game.engine;
-  if (engine === undefined) return undefined;
-  return (await withForkHooks(engine, () => captureSave(engine))) ?? undefined;
-}
-
-/**
- * Restore a fork save onto the game, and empty the harness's record of the
- * last turn, which now describes a turn of another line (ADR-348 D1). The
- * engine re-derives its own phase from the restored world.
- *
- * @param game the game the save was captured on
- * @param save the fork's save
- * @returns whether the engine accepted the restore; on false nothing is cleared
- */
-async function restoreForkSave(game: TreeWalkerGame, save: ForkSave): Promise<boolean> {
-  const engine = game.engine;
-  if (engine === undefined) return false;
-  if (!(await withForkHooks(engine, () => restoreSave(engine, save)))) return false;
-  game.lastOutput = '';
-  game.lastEvents = [];
-  game.lastTurnResult = null;
-  game.lastChannels = {};
-  game.lastChannelValues = {};
-  game.lastError = undefined;
-  return true;
 }
 
 /**

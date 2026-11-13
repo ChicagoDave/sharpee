@@ -66,6 +66,15 @@
  * language provider — one vocabulary, the one the parser will read — not a
  * language package imported here. The suite boots once up front to read it.
  *
+ * One boot serves the whole suite (ADR-307 D5, amended 2026-11-12). The
+ * game booted for the vocabulary is saved as booted, in memory, and every
+ * row starts from that save restored on the same game — a restore, not a
+ * boot and not a compile. Two rows still boot a game of their own: a row
+ * whose command types `undo`, because the shared game keeps no undo
+ * snapshots, and every row of a game with no save surface. A restore
+ * replaces entity instances, so a row reads everything through the world
+ * of the game it was handed and holds no entity from an earlier row.
+ *
  * Public interface: `runDerivedSuite`, `runDerivedBranch`, `planBranch`,
  * `derivedBranchLabel`, and the `DerivedPlan`, `DerivedOutcome`,
  * `DerivedSuiteResult`, `DerivedGame`, `DerivedGameLoader` types.
@@ -78,6 +87,7 @@
  */
 
 import { typesUndo, type GameLoadRequest } from './game-load-request.js';
+import { captureForkSave, restoreForkSave, type ForkSave, type ForkSaveEngine } from './fork-save.js';
 import { clauseHeadWordsOf, clauseOrdinalOf, spokenClauseHead, timerKeysFor, type IRCondition, type IRStatement, type IRValue, type Span, type StoryIR } from '@sharpee/chord';
 import { collectClauseBranches, type BranchClause, type BranchPrecondition, type ClauseBranch } from '@sharpee/world-index';
 import { arrange, CHORD_GONE_PREFIX, CHORD_IR_ID_ATTRIBUTE, CHORD_STATE_PREFIX, counterKey, parsePin } from '@sharpee/story-loader';
@@ -270,17 +280,30 @@ export interface DerivedWorld {
 export type DerivedGame = Parameters<typeof runCommand>[1] & { world: DerivedWorld; engine?: DerivedEngine };
 
 /**
- * Boots one fresh game at the pinned seed. Called once per branch, told
- * whether that branch's one command can ask for undo, and once more up front
- * for the vocabulary, where no command runs.
+ * Boots one fresh game at the pinned seed, told whether a command that game
+ * will run can ask for undo. A suite calls it once for the game every row
+ * shares, and once more for each row whose command types `undo`; with a
+ * game that has no save surface it is called once per row, as before.
  */
 export type DerivedGameLoader = (request: GameLoadRequest) => Promise<DerivedGame>;
+
+/**
+ * Hands a row the game it starts on, in the state of a fresh boot at the
+ * pinned seed. `runDerivedSuite` passes one that restores the shared game;
+ * a `DerivedGameLoader` is itself one, booting each time.
+ */
+export type DerivedRowStart = (request: GameLoadRequest) => Promise<DerivedGame>;
 
 /** The language's patterns for a standard action id (`if.action.taking` → `take [something]`, …), or undefined when it has none. */
 export type ActionPatterns = (actionId: string) => string[] | undefined;
 
-/** The engine surface the vocabulary is read from — what bootstrap's `LoadedGame.engine` provides. */
-export interface DerivedEngine {
+/**
+ * The engine surface the runner reads — what bootstrap's `LoadedGame.engine`
+ * provides: the vocabulary, the turn counter, and the save surface a suite
+ * shares one boot through. An engine without the save surface still runs;
+ * each of its rows boots.
+ */
+export interface DerivedEngine extends Partial<ForkSaveEngine> {
   getLanguageProvider(): { getActionPatterns(actionId: string): string[] | undefined };
   /** The engine's turn counter — what a timer start is stamped with. */
   getContext?(): { currentTurn: number };
@@ -1091,8 +1114,9 @@ export function derivedBranchLabel(branch: ClauseBranch, ir: StoryIR): string {
 // ---------------------------------------------------------------------------
 
 /**
- * Run every branch of a story: enumerate, plan, execute. One fresh boot per
- * branch, sequentially — the pinned seed makes the whole run deterministic.
+ * Run every branch of a story: enumerate, plan, execute. One boot for the
+ * suite, restored before each branch, sequentially — the pinned seed makes
+ * the whole run deterministic.
  *
  * @param ir the compiled story
  * @param loadGame boots one fresh game at the pinned seed
@@ -1105,10 +1129,11 @@ export async function runDerivedSuite(
   options: DerivedRunOptions = {}
 ): Promise<DerivedSuiteResult> {
   const branches = collectClauseBranches(ir);
-  const actionPatterns = options.actionPatterns ?? (await vocabularyOf(loadGame));
+  const startRow = restoringRowStart(loadGame);
+  const actionPatterns = options.actionPatterns ?? (await vocabularyOf(startRow));
   const outcomes: DerivedOutcome[] = [];
   for (const branch of branches) {
-    const outcome = await runDerivedBranch(branch, ir, branches, loadGame, actionPatterns);
+    const outcome = await runDerivedBranch(branch, ir, branches, startRow, actionPatterns);
     outcomes.push(outcome);
     options.onOutcome?.(outcome);
   }
@@ -1136,13 +1161,61 @@ function playerRoomIrIdOf(world: DerivedWorld): string | undefined {
   return typeof irId === 'string' ? irId : undefined;
 }
 
+/** The engine's save surface, or undefined when the game has none. */
+function forkEngineOf(game: DerivedGame): ForkSaveEngine | undefined {
+  const engine = game.engine;
+  if (engine === undefined) return undefined;
+  const { registerSaveRestoreHooks, save, restore } = engine;
+  if (registerSaveRestoreHooks === undefined || save === undefined || restore === undefined) return undefined;
+  return engine as ForkSaveEngine;
+}
+
 /**
- * The vocabulary of the game the loader boots: one throwaway boot, read
- * through the engine's own language provider.
+ * A row start that boots once and restores: the first game booted without
+ * undo snapshots is saved as booted, and every later request that cannot
+ * ask for undo gets that same game with the save restored on it.
  *
- * @throws when the loader's game carries no engine to read a language from
+ * A request that can ask for undo gets a fresh boot of its own: the shared
+ * game keeps no undo snapshots, and a save carries no undo history. So does
+ * every request once a booted game has shown no save surface, or its engine
+ * has refused to save.
+ *
+ * @param loadGame boots one fresh game at the pinned seed
+ * @returns the row start `runDerivedSuite` hands each branch
+ * @throws (from the returned function) when the engine refuses the restore
+ *   of its own boot save — `runDerivedBranch` reports that row as an error
  */
-async function vocabularyOf(loadGame: DerivedGameLoader): Promise<ActionPatterns> {
+function restoringRowStart(loadGame: DerivedGameLoader): DerivedRowStart {
+  let shared: { game: DerivedGame; engine: ForkSaveEngine; save: ForkSave } | undefined;
+  let canShare = true;
+  return async (request) => {
+    if (request.undo || !canShare) return loadGame(request);
+    if (shared === undefined) {
+      const game = await loadGame(request);
+      const engine = forkEngineOf(game);
+      const save = engine === undefined ? undefined : await captureForkSave(engine);
+      if (engine === undefined || save === undefined) {
+        canShare = false;
+        return game;
+      }
+      shared = { game, engine, save };
+    }
+    // Restored even straight after the capture, so every shared row starts
+    // from a restore and none from the boot itself.
+    if (!(await restoreForkSave(shared.engine, shared.game, shared.save))) {
+      throw new Error('the engine refused the save taken at boot, so the row could not start (ADR-307 D5)');
+    }
+    return shared.game;
+  };
+}
+
+/**
+ * The vocabulary of the game a row starts on, read through the engine's own
+ * language provider. Under `runDerivedSuite` this is the suite's one boot.
+ *
+ * @throws when the game carries no engine to read a language from
+ */
+async function vocabularyOf(loadGame: DerivedRowStart): Promise<ActionPatterns> {
   const game = await loadGame({ undo: false });
   const provider = game.engine?.getLanguageProvider();
   if (!provider) {
@@ -1157,12 +1230,16 @@ function sameClause(a: ClauseBranch, b: ClauseBranch): boolean {
 }
 
 /**
- * Run one branch: plan it, boot, arrange, run the command, assert.
+ * Run one branch: plan it, take the game it starts on, arrange, run the
+ * command, assert. The game may be one an earlier branch ran on, restored:
+ * everything is read through its world here, and no entity is kept past the
+ * return.
  *
  * @param branch the record under test
  * @param ir the story it came from
  * @param branches every enumerated branch of the story (see `planBranch`)
- * @param loadGame boots one fresh game at the pinned seed
+ * @param loadGame hands over a game in the state of a fresh boot at the
+ *   pinned seed — a loader that boots, or a suite's restoring start
  * @param actionPatterns the vocabulary standard verbs are typed from
  * @returns the outcome, never a throw: an engine error is an `error` outcome
  */
@@ -1170,7 +1247,7 @@ export async function runDerivedBranch(
   branch: ClauseBranch,
   ir: StoryIR,
   branches: ClauseBranch[],
-  loadGame: DerivedGameLoader,
+  loadGame: DerivedRowStart,
   actionPatterns: ActionPatterns
 ): Promise<DerivedOutcome> {
   const label = derivedBranchLabel(branch, ir);
