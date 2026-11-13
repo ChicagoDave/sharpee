@@ -978,7 +978,6 @@ export interface IClimbResult {
     success: boolean;
     blocked?: boolean;
     blockedReason?: string;
-    destination?: string;
     direction?: 'up' | 'down' | 'both';
     successMessage?: string;
 }
@@ -998,10 +997,6 @@ export declare class ClimbableBehavior {
      * Get climb direction for an object
      */
     static getDirection(entity: IFEntity): 'up' | 'down' | 'both' | undefined;
-    /**
-     * Get climb destination for an object
-     */
-    static getDestination(entity: IFEntity): string | undefined;
 }
 ```
 
@@ -3601,6 +3596,10 @@ export declare class LightSourceTrait implements ITrait, IToolGated {
 ```typescript
 /**
  * Trait for objects that can be climbed (ladders, trees, mountains, etc.)
+ *
+ * A climbed thing is a place to be, never a way to another room: a way
+ * between rooms is the room's own exit or passage (ADR-378 D1), so this
+ * trait carries no destination.
  */
 import { ITrait } from '../trait.js';
 /**
@@ -3615,8 +3614,6 @@ export declare class ClimbableTrait implements ITrait {
     blockedMessage?: string;
     /** Direction of climbing (up, down, or both) */
     direction?: 'up' | 'down' | 'both';
-    /** Destination entity ID when climbing (e.g., top of tree, other side of fence) */
-    destination?: string;
     /** Message shown when successfully climbing */
     successMessage?: string;
     constructor(options?: Partial<Omit<ClimbableTrait, 'type'>>);

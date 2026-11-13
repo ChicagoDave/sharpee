@@ -13,7 +13,6 @@ export interface IClimbResult {
   success: boolean;
   blocked?: boolean;
   blockedReason?: string;
-  destination?: string;
   direction?: 'up' | 'down' | 'both';
   successMessage?: string;
 }
@@ -58,7 +57,6 @@ export class ClimbableBehavior {
     
     return {
       success: true,
-      destination: trait.destination,
       direction: trait.direction,
       successMessage: trait.successMessage
     };
@@ -74,17 +72,5 @@ export class ClimbableBehavior {
     
     const trait = entity.get(TraitType.CLIMBABLE) as ClimbableTrait;
     return trait.direction;
-  }
-  
-  /**
-   * Get climb destination for an object
-   */
-  static getDestination(entity: IFEntity): string | undefined {
-    if (!entity.has(TraitType.CLIMBABLE)) {
-      return undefined;
-    }
-    
-    const trait = entity.get(TraitType.CLIMBABLE) as ClimbableTrait;
-    return trait.destination;
   }
 }

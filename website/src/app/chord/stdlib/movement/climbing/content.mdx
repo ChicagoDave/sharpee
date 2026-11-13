@@ -80,7 +80,8 @@ honest footnotes. First, the action also implements directional
 climbing (`climb up` meaning "take the up exit"), but no core grammar
 reaches it today: bare `up`/`down` parse as going, which is usually
 what you want, and a story adding `climb up` as grammar gets room-exit
-climbing for free. Second, the trait's `destination`/`direction` fields
-are unread by the standard action, so climbing never teleports you to a
-destination room; put an `after the player climbing` clause on the cliff if you
-want that (`blockedMessage`/`successMessage` are likewise story data).
+climbing for free. Second, climbing a thing never takes you to
+another room: a climbed thing is a place to be. A climb that arrives
+somewhere else is a way the room owns, so write it as the room's
+`passage` block with `climb the cliff` as its grammar (the trait's
+`direction`/`blockedMessage`/`successMessage` fields are story data).

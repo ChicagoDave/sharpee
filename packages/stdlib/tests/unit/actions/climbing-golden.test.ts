@@ -287,9 +287,13 @@ describe('climbingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(climbingAction, world, command);
 
-      const validation = climbingAction.validate(context);
-      expect(validation.valid).toBe(false);
-      expect(validation.error).toBe('climb_nowhere');
+      // Through the phase runner, so a move would have happened by now.
+      const events = executeWithValidation(climbingAction, context);
+
+      expectEvent(events, 'if.event.climbed', {
+        messageId: 'if.action.climbing.climb_nowhere',
+        reason: 'climb_nowhere'
+      });
       // THE state assertion: the player did not move
       expect(world.getLocation(player.id)).toBe(room.id);
     });
@@ -321,34 +325,41 @@ describe('climbingAction (Golden Pattern)', () => {
       });
     });
 
-    test('should climb a CLIMBABLE with a configured destination to that destination (Phase 4)', () => {
+    test('an object climb never reports a move to another room', () => {
+      // A climbed thing is a place to be, not a way. The trait carries no
+      // destination; one left on an instance (an old save, a story's own
+      // write) is read by nothing, so the only arrival is onto the thing.
       const { world, player, room } = setupBasicWorld();
 
       const treetop = world.createEntity('Treetop', EntityType.ROOM);
       treetop.add(new RoomTrait());
 
-      const tree = world.createEntity('tall tree', EntityType.OBJECT);
-      tree.add(new ClimbableTrait({ canClimb: true, destination: treetop.id }));
-      world.moveEntity(tree.id, room.id);
+      const boulder = world.createEntity('mossy boulder', EntityType.OBJECT);
+      const climbable = new ClimbableTrait({ canClimb: true });
+      Object.assign(climbable, { destination: treetop.id });
+      boulder.add(climbable);
+      boulder.add(new SupporterTrait({ enterable: true }));
+      world.moveEntity(boulder.id, room.id);
 
       const command = createCommand(IFActions.CLIMBING, {
-        entity: tree
+        entity: boulder
       });
       const context = createRealTestContext(climbingAction, world, command);
 
-      // PRECONDITION
-      expect(world.getLocation(player.id)).toBe(room.id);
-
       const events = executeWithValidation(climbingAction, context);
 
-      // POSTCONDITION — the player is at the configured destination
-      expect(world.getLocation(player.id)).toBe(treetop.id);
-
-      expectEvent(events, 'if.event.moved', {
-        fromRoom: room.id,
-        toRoom: treetop.id,
-        method: 'climbing'
+      expect(world.getLocation(player.id)).toBe(boulder.id);
+      expect(world.getContainingRoom(player.id)?.id).toBe(room.id);
+      expectEvent(events, 'if.event.entered', {
+        targetId: boulder.id,
+        method: 'climbing',
+        preposition: 'onto'
       });
+      expect(events.some((event) => event.type === 'if.event.moved')).toBe(false);
+      // The climbed line comes before the entered one.
+      const types = events.map((event) => event.type);
+      expect(types.indexOf('if.event.climbed')).toBeGreaterThanOrEqual(0);
+      expect(types.indexOf('if.event.climbed')).toBeLessThan(types.indexOf('if.event.entered'));
     });
 
     test('should handle direction normalization', () => {

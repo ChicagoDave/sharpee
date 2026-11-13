@@ -9,7 +9,8 @@
  *
  * Uses four-phase pattern:
  * 1. validate: Check if climbing is possible (valid direction/climbable object)
- * 2. execute: Perform world mutation (move player to destination/onto object)
+ * 2. execute: Perform world mutation (move player onto the object; a climb
+ *    up or down is going's move)
  * 3. blocked: Generate events when validation fails
  * 4. report: Generate success events
  *
@@ -170,24 +171,17 @@ export const climbingAction: Action & { metadata: ActionMetadata } = {
       sharedData.targetId = target.id;
       sharedData.targetName = target.name;
 
-      // A configured climb destination (top of tree, far side of fence) wins;
-      // otherwise the player moves onto the target itself.
-      const climbable = target.has(TraitType.CLIMBABLE)
-        ? (target.get(TraitType.CLIMBABLE) as { destination?: string })
-        : undefined;
-      const moveTarget = climbable?.destination ?? target.id;
-      if (climbable?.destination) {
-        sharedData.destinationId = climbable.destination;
-      }
-
-      const moved = context.world.moveEntity(context.actor.id, moveTarget);
+      // The climber moves onto the thing itself. A climbed thing is a place
+      // to be, never a way to another room: that is the room's exit or
+      // passage (ADR-378 D1), reached through going.
+      const moved = context.world.moveEntity(context.actor.id, target.id);
       if (!moved) {
         // Invariant (belt-and-suspenders, same pattern as the loader's door
-        // guard): validate already established the target/destination can
-        // receive the player — a refusal here is a platform bug and must
-        // never become a silent no-op with success narration.
+        // guard): validate already established the target can receive the
+        // player — a refusal here is a platform bug and must never become a
+        // silent no-op with success narration.
         throw new Error(
-          `climbing: moveEntity refused after validation passed (player ${context.actor.id} -> ${moveTarget})`
+          `climbing: moveEntity refused after validation passed (player ${context.actor.id} -> ${target.id})`
         );
       }
     }
@@ -252,22 +246,12 @@ export const climbingAction: Action & { metadata: ActionMetadata } = {
         method: 'onto'
       } as ClimbedEventData & { messageId: string; params: Record<string, any>; targetName?: string }));
 
-      if (sharedData.destinationId) {
-        // Destination climb (configured on the ClimbableTrait): the player
-        // ended up somewhere else — emit moved, matching the directional path
-        events.push(context.event('if.event.moved', {
-          fromRoom: sharedData.fromLocationId,
-          toRoom: sharedData.destinationId,
-          method: 'climbing'
-        }));
-      } else {
-        // Entered event for climbing onto
-        events.push(context.event('if.event.entered', {
-          targetId: sharedData.targetId,
-          method: 'climbing',
-          preposition: 'onto'
-        }));
-      }
+      // Entered event for climbing onto
+      events.push(context.event('if.event.entered', {
+        targetId: sharedData.targetId,
+        method: 'climbing',
+        preposition: 'onto'
+      }));
     }
 
     return events;
@@ -331,19 +315,15 @@ function validateObjectClimbing(
   }
 
   // David's ruling (2026-07-20): a bare `climbable` does NOT imply a place to
-  // be — no auto-composed destination. The target must actually be able to
-  // receive the player: a configured climb destination that exists, or a
-  // shape the world-model's own move authority accepts (supporter, enterable,
+  // be. The target must actually be able to receive the player: a shape the
+  // world-model's own move authority accepts (supporter, enterable,
   // container, …). Consulting canMoveEntity keeps validate and execute on ONE
   // definition of "receivable" — the same predicate execute's mutation uses.
-  if (target.has(TraitType.CLIMBABLE)) {
-    const climbable = target.get(TraitType.CLIMBABLE) as { destination?: string };
-    const destinationExists = climbable.destination
-      ? !!context.world.getEntity(climbable.destination)
-      : false;
-    if (!destinationExists && !context.world.canMoveEntity(context.actor.id, target.id)) {
-      return { valid: false, error: 'climb_nowhere', params: { object: nounPhraseFor(target) } };
-    }
+  // A climb that arrives in another room is not this action's: it is the
+  // room's passage (ADR-378 D1), so the trait carries no destination
+  // (retired 2026-11-13).
+  if (target.has(TraitType.CLIMBABLE) && !context.world.canMoveEntity(context.actor.id, target.id)) {
+    return { valid: false, error: 'climb_nowhere', params: { object: nounPhraseFor(target) } };
   }
 
   return { valid: true };

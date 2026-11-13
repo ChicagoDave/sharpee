@@ -1,5 +1,9 @@
 /**
  * Trait for objects that can be climbed (ladders, trees, mountains, etc.)
+ *
+ * A climbed thing is a place to be, never a way to another room: a way
+ * between rooms is the room's own exit or passage (ADR-378 D1), so this
+ * trait carries no destination.
  */
 
 import { TraitType } from '../trait-types.js';
@@ -21,9 +25,6 @@ export class ClimbableTrait implements ITrait {
   /** Direction of climbing (up, down, or both) */
   direction?: 'up' | 'down' | 'both';
   
-  /** Destination entity ID when climbing (e.g., top of tree, other side of fence) */
-  destination?: string;
-  
   /** Message shown when successfully climbing */
   successMessage?: string;
   
@@ -31,7 +32,6 @@ export class ClimbableTrait implements ITrait {
     this.canClimb = options.canClimb ?? true;
     this.blockedMessage = options.blockedMessage;
     this.direction = options.direction ?? 'both';
-    this.destination = options.destination;
     this.successMessage = options.successMessage;
   }
 }
