@@ -22,6 +22,10 @@
  * runs out after one state with nothing tried. That walk stops as
  * `start-outside-set` and leaves every claim it did not witness unproven.
  *
+ * A save or a restore the engine refuses stops the walk with a thrown error
+ * naming the node: the walk never runs a command on a world it did not
+ * restore, and never treats a state it could not save as walked.
+ *
  * Each verdict also carries how many of the set's things the claim can
  * never depend on under that set — the compiler's cone of influence (D12),
  * computed once before the walk. It is report data for the author who
@@ -53,21 +57,20 @@ export interface ClaimsWalkOptions {
 
 const DEFAULT_OPTIONS = { breadth: 'basic' as CandidateBreadth, maxStates: 5000, maxSeconds: 120, maxDepth: 40 };
 
+/** The engine's save of one walked state, held in memory for the length of the walk. */
+type WalkSave = NonNullable<Awaited<ReturnType<typeof captureSave>>>;
+
+/** One state on the frontier: its save, the path that reached it, and the claim bits that path earned. */
+interface WalkNode {
+  readonly save: WalkSave;
+  readonly path: readonly string[];
+  readonly depth: number;
+  readonly bits: string;
+}
+
 /** Commands between two yields to the event loop. */
 const YIELD_EVERY = 200;
 
-/**
- * Walk one booted game under one claim group's set and settle its claims.
- *
- * The game is consumed: the walk forks it through the engine's save/restore
- * hooks and leaves it in whatever state it last restored.
- *
- * @param game a freshly booted game at the pinned seed
- * @param ir the compiled story, for the declared vocabulary
- * @param group the set to walk under and the claims to settle
- * @param options budgets and breadth; the defaults are the explorer's
- * @returns the walk's report with one verdict per claim
- */
 /** The runner's discriminated predicate as the compiler's flat `IRClaim`, which the cone takes. */
 function irClaimOf(claim: Claim): IRClaim {
   const out: IRClaim = { name: claim.name };
@@ -99,6 +102,20 @@ function irClaimOf(claim: Claim): IRClaim {
   return out;
 }
 
+/**
+ * Walk one booted game under one claim group's set and settle its claims.
+ *
+ * The game is consumed: the walk forks it through the engine's save/restore
+ * hooks and leaves it in whatever state it last restored.
+ *
+ * @param game a freshly booted game at the pinned seed
+ * @param ir the compiled story, for the declared vocabulary
+ * @param group the set to walk under and the claims to settle
+ * @param options budgets and breadth; the defaults are the explorer's
+ * @returns the walk's report with one verdict per claim
+ * @throws when the engine refuses to save a state the walk must continue
+ *   from, or to restore a node's save; the message names the node
+ */
 export async function walkClaims(game: ClaimsGame, ir: StoryIR, group: ClaimGroup, options: ClaimsWalkOptions = {}): Promise<ClaimsWalkReport> {
   const { breadth, maxStates, maxSeconds, maxDepth } = { ...DEFAULT_OPTIONS, ...options };
   const { world, engine } = game;
@@ -152,15 +169,37 @@ export async function walkClaims(game: ClaimsGame, ir: StoryIR, group: ClaimGrou
   const identityOf = (bits: string, snapshot: WorldSnapshot): string =>
     `${necessaryIdentity(snapshot, set)}${claims.length ? `|${bits}` : ''}`;
 
+  let commandsExecuted = 0;
+  let restores = 0;
+
+  // A walk cannot go on past a save or a restore the engine refuses. After a
+  // refused restore the next command would run on the previous node's world
+  // and its result would be credited to the wrong path; a state that could
+  // not be saved is a state never walked from, so the frontier would run out
+  // early and hold a negative claim it had not earned (ADR-365 D3). Both stop
+  // the walk with an error naming the node.
+  const nodeLabel = (path: readonly string[]): string => (path.length === 0 ? 'the walk\'s start' : `"${path.join(' / ')}"`);
+  const saveNode = async (path: readonly string[]): Promise<WalkSave> => {
+    const save = await captureSave(engine);
+    if (save === null) {
+      throw new Error(`claims walk: the engine refused to save the state at ${nodeLabel(path)}, so the walk could not continue from it`);
+    }
+    return save;
+  };
+  const restoreNode = async (node: WalkNode, about: string): Promise<void> => {
+    if (!(await restoreSave(engine, node.save))) {
+      throw new Error(`claims walk: the engine refused to restore the state at ${nodeLabel(node.path)}, so the walk stopped before ${about}`);
+    }
+    restores++;
+  };
+
   noteRoom();
   const rootSnapshot = readWorldSnapshot(world);
   const rootBits = noteClaims([], [], '', rootSnapshot);
-  const rootSave = await captureSave(engine);
+  const rootSave = await saveNode([]);
   const seen = new Set<string>([identityOf(rootBits, rootSnapshot)]);
-  let queue: Array<{ save: Awaited<ReturnType<typeof captureSave>>; path: readonly string[]; depth: number; bits: string }> = [{ save: rootSave, path: [], depth: 0, bits: rootBits }];
+  let queue: WalkNode[] = [{ save: rootSave, path: [], depth: 0, bits: rootBits }];
 
-  let commandsExecuted = 0;
-  let restores = 0;
   let saves = 1;
   let deadEnds = 0;
   const frontierByDepth: Record<number, number> = { 0: 1 };
@@ -176,8 +215,7 @@ export async function walkClaims(game: ClaimsGame, ir: StoryIR, group: ClaimGrou
     const node = queue.shift()!;
     if (node.depth >= maxDepth) { stopReason = 'max-depth-reached'; continue; }
 
-    await restoreSave(engine, node.save);
-    restores++;
+    await restoreNode(node, 'reading its commands');
     const commands = candidateCommands(world, vocabulary, set, nameByIrId, breadth);
     if (commands.length === 0) deadEnds++;
 
@@ -185,8 +223,7 @@ export async function walkClaims(game: ClaimsGame, ir: StoryIR, group: ClaimGrou
       if (seen.size >= maxStates) { stopReason = 'max-states'; break walk; }
       if (elapsedSeconds() >= maxSeconds) { stopReason = 'max-seconds'; break walk; }
 
-      await restoreSave(engine, node.save);
-      restores++;
+      await restoreNode(node, `trying "${command}"`);
       let turnEvents: readonly ClaimsTurnEvent[] = [];
       try {
         const result = await engine.executeTurn(command);
@@ -207,7 +244,7 @@ export async function walkClaims(game: ClaimsGame, ir: StoryIR, group: ClaimGrou
       const identity = identityOf(bits, snapshot);
       if (!seen.has(identity)) {
         seen.add(identity);
-        const save = await captureSave(engine);
+        const save = await saveNode(path);
         saves++;
         const depth = node.depth + 1;
         frontierByDepth[depth] = (frontierByDepth[depth] ?? 0) + 1;
