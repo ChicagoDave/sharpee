@@ -12,6 +12,13 @@ import { ITrait, ITraitConstructor } from '../traits/trait.js';
 import { TraitType } from '../traits/trait-types.js';
 import { Annotation, AnnotationCondition } from '../annotations/types.js';
 /**
+ * The current trait-membership epoch.
+ *
+ * @returns a number that grows whenever a trait is added to, replaced on or
+ *   removed from any entity
+ */
+export declare function traitMembershipEpochNow(): number;
+/**
  * Interactive Fiction Entity with trait-based composition.
  * Implements the core Entity interface and adds trait management capabilities.
  */
@@ -20,7 +27,8 @@ export declare class IFEntity implements IEntity {
     readonly type: string;
     attributes: Record<string, unknown>;
     relationships: Record<string, EntityId[]>;
-    traits: Map<TraitType, ITrait>;
+    /** The entity's traits. The map is never replaced: every write goes through it, which is what keeps the trait-membership epoch true. */
+    readonly traits: Map<TraitType, ITrait>;
     /**
      * Author-controlled disambiguation priorities per action
      * Higher priority = more likely to be selected when ambiguous
@@ -9133,6 +9141,13 @@ export interface IWorldModel {
 }
 export declare class WorldModel implements IWorldModel {
     private entities;
+    /**
+     * The entities that carry the actor trait — a derived view of the entity
+     * map (ADR-348), rebuilt whenever the map was written or any entity's
+     * traits changed since it was built. It holds who is an actor, never who
+     * holds the player role: that flag is read live on every lookup (ADR-390 D1).
+     */
+    private actorIndex;
     /** Pre-removal observers (ADR-213 §1) — registration order, never serialized. */
     private removalObservers;
     private state;
@@ -9341,7 +9356,15 @@ export declare class WorldModel implements IWorldModel {
      * so "exactly one actor holds the role" is kept here and nowhere else.
      */
     private writePlayerRole;
-    /** Every actor whose role flag is set — one in a well-formed world. */
+    /**
+     * Every entity carrying the actor trait, from the index. The index is
+     * rebuilt here when it is stale, so it never misses an actor: one added by
+     * hand after the world was built, one that arrived in a load, or one whose
+     * trait was written past `IFEntity.add`. (Not named `actors`: the queries
+     * package adds a public entry point of that name to this class.)
+     */
+    private actorEntities;
+    /** Every actor whose role flag is set — one in a well-formed world. The flag is read live. */
     private playerRoleHolders;
     /**
      * The ending this story reached (ADR-347 D2a), or `undefined` while play

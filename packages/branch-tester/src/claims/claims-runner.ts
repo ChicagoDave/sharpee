@@ -76,7 +76,7 @@ export async function runClaims(ir: StoryIR, claimSet: ClaimSet, loadGame: Claim
   const walks: ClaimsWalkReport[] = [];
   if (toWalk.length > 0 || claimSet.claims.length === 0) {
     for (const group of groupClaimsBySet({ ...claimSet, claims: toWalk })) {
-      const game = await loadGame();
+      const game = await loadGame({ undo: false });
       walks.push(await walkClaims(game, ir, group, walkOptions));
     }
   }
@@ -97,13 +97,12 @@ export async function runClaims(ir: StoryIR, claimSet: ClaimSet, loadGame: Claim
   };
 }
 
-function seconds(ms: number): string {
-  return `${(ms / 1000).toFixed(1)}s`;
-}
-
 /**
  * The run as an author reads it: the ratio, each walk's cost, and each
- * claim's verdict with its witness or the reason it stayed open.
+ * claim's verdict with its witness or the reason it stayed open. Every line
+ * is the same on every run at one seed: a walk's cost is its states and
+ * commands, never its wall-clock time, which stays on the result
+ * (`walkMs`, `totalWalkMs`) for a caller that wants to show it.
  *
  * @param result a run
  * @returns the report, one line per fact
@@ -111,9 +110,9 @@ function seconds(ms: number): string {
 export function formatClaimsRun(result: ClaimsRunResult): string {
   const lines: string[] = [];
   lines.push(claimsRatioLine(claimsSummaryRowOf(result)));
-  lines.push(`${result.walks.length} walk${result.walks.length === 1 ? '' : 's'}, ${seconds(result.totalWalkMs)} in all`);
+  lines.push(`${result.walks.length} walk${result.walks.length === 1 ? '' : 's'}`);
   for (const walk of result.walks) {
-    lines.push(`  under ${walk.set}: ${walk.necessary.rooms} rooms, ${walk.necessary.things} things, ${walk.necessary.verbs} verbs — ${walk.statesDiscovered} states, ${walk.commandsExecuted} commands, ${seconds(walk.walkMs)}, stopped: ${walk.stopReason}`);
+    lines.push(`  under ${walk.set}: ${walk.necessary.rooms} rooms, ${walk.necessary.things} things, ${walk.necessary.verbs} verbs — ${walk.statesDiscovered} states, ${walk.commandsExecuted} commands, stopped: ${walk.stopReason}`);
   }
   // One vocabulary with the Testing tab (ADR-367 D6): every sentence below is
   // built from the wire's own row, so the tab's claims section reads the same.

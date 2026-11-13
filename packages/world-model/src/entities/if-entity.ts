@@ -13,6 +13,47 @@ import { SwitchableTrait } from '../traits/switchable/switchableTrait.js';
 import { Annotation, AnnotationCondition } from '../annotations/types.js';
 
 /**
+ * How many times any entity's set of traits has changed, in this process.
+ * A reader that caches "which entities carry trait T" (the world's actor
+ * index) compares this with the value it saw when it built its cache. One
+ * counter for every entity and every world: a change anywhere only costs
+ * such a reader one rebuild, and no entity needs to know which world holds it.
+ */
+let traitMembershipEpoch = 0;
+
+/**
+ * The current trait-membership epoch.
+ *
+ * @returns a number that grows whenever a trait is added to, replaced on or
+ *   removed from any entity
+ */
+export function traitMembershipEpochNow(): number {
+  return traitMembershipEpoch;
+}
+
+/**
+ * An entity's traits. Every write moves the trait-membership epoch, whoever
+ * makes it: `add`, `remove`, `clearTraits`, a load from JSON, or code that
+ * reaches the map directly.
+ */
+class TraitMap extends Map<TraitType, ITrait> {
+  set(type: TraitType, trait: ITrait): this {
+    traitMembershipEpoch++;
+    return super.set(type, trait);
+  }
+
+  delete(type: TraitType): boolean {
+    traitMembershipEpoch++;
+    return super.delete(type);
+  }
+
+  clear(): void {
+    traitMembershipEpoch++;
+    super.clear();
+  }
+}
+
+/**
  * Interactive Fiction Entity with trait-based composition.
  * Implements the core Entity interface and adds trait management capabilities.
  */
@@ -21,7 +62,8 @@ export class IFEntity implements IEntity {
   readonly type: string;
   attributes: Record<string, unknown>;
   relationships: Record<string, EntityId[]>;
-  traits: Map<TraitType, ITrait>;
+  /** The entity's traits. The map is never replaced: every write goes through it, which is what keeps the trait-membership epoch true. */
+  readonly traits: Map<TraitType, ITrait>;
 
   /**
    * Author-controlled disambiguation priorities per action
@@ -56,7 +98,7 @@ export class IFEntity implements IEntity {
     this.type = type;
     this.attributes = params?.attributes ? { ...params.attributes } : {};
     this.relationships = params?.relationships || {};
-    this.traits = new Map();
+    this.traits = new TraitMap();
     
     // Store entityType in attributes when created by WorldModel
     // (params?.attributes will contain it when set by WorldModel.createEntity)

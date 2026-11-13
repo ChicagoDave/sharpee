@@ -211,10 +211,13 @@ export async function runTreeDocumentCommand(
   // so every claim a run evaluates is IN the document, including the opening
   // and policy claims recording persisted. Nothing is captured on spec.
   const channels = [...new Set(channelIdsReferencedBy(document))];
-  const loadGame = () =>
+  // A line none of whose commands can ask for undo boots an engine that takes
+  // no undo snapshot: the snapshot is the whole world serialized, every turn.
+  const loadGame = (request: { undo: boolean }) =>
     loadAuthorGame(dir, {
       seed: document.seed,
       channels,
+      ...(request.undo ? {} : { undoSnapshots: 0 }),
     });
   // The cause behind a refused card (UPPS finding F-15), named over the
   // story's IR and Reach findings — the same words the Testing tab shows.

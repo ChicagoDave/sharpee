@@ -408,6 +408,9 @@ export type LoadPhaseReporter = (name: 'compile' | 'load', status: 'started' | '
  * @param opts.channels declared capture channels (ADR-294 D15), forwarded to
  *   the assembler — the tree-document runner derives these from the
  *   document's channel claims (ADR-307 Phase 2)
+ * @param opts.undoSnapshots how many undo snapshots the engine keeps — `0`
+ *   takes none (a test runner's game that cannot be asked to undo); absent is
+ *   the engine's default. A Chord story only: a module project boots as before
  * @param opts.onPhase optional progress reporter — see {@link LoadPhaseReporter}
  * @returns the assembled game (engine + channel packet plumbing)
  * @throws on gate errors, ambiguous `.story` sets, or unresolvable modules
@@ -416,6 +419,7 @@ export declare function loadAuthorGame(target: string, opts?: {
     entry?: string;
     seed?: number;
     channels?: string[];
+    undoSnapshots?: number;
     onPhase?: LoadPhaseReporter;
 }): Promise<LoadedGame>;
 ```

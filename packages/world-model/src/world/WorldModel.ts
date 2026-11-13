@@ -1,6 +1,6 @@
 // WorldModel.ts - Core world model interface and implementation for Sharpee IF Platform
 
-import { IFEntity } from '../entities/if-entity.js';
+import { IFEntity, traitMembershipEpochNow } from '../entities/if-entity.js';
 import { EntityType, isEntityType } from '../entities/entity-types.js';
 import { WallEntity, IWallSpec, IWallsSpec } from '../entities/wall-entity.js';
 import { createWall as createWallImpl, createWalls as createWallsImpl } from './wall-creation.js';
@@ -596,8 +596,41 @@ const TYPE_PREFIXES: Record<string, string> = {
   'object': 'o'  // default
 };
 
+/**
+ * The world's entities by id. It counts its own writes, so a view derived
+ * from "which entities are in the world" can tell when it is stale — whoever
+ * wrote: `createEntity`, a wall, region or scene, `removeEntity`, `clear`, or
+ * the serializer filling the map on a load.
+ */
+class EntityMap extends Map<string, IFEntity> {
+  /** Grows on every `set`, `delete` and `clear`. */
+  writes = 0;
+
+  set(id: string, entity: IFEntity): this {
+    this.writes++;
+    return super.set(id, entity);
+  }
+
+  delete(id: string): boolean {
+    this.writes++;
+    return super.delete(id);
+  }
+
+  clear(): void {
+    this.writes++;
+    super.clear();
+  }
+}
+
 export class WorldModel implements IWorldModel {
-  private entities: Map<string, IFEntity> = new Map();
+  private entities: EntityMap = new EntityMap();
+  /**
+   * The entities that carry the actor trait — a derived view of the entity
+   * map (ADR-348), rebuilt whenever the map was written or any entity's
+   * traits changed since it was built. It holds who is an actor, never who
+   * holds the player role: that flag is read live on every lookup (ADR-390 D1).
+   */
+  private actorIndex: { readonly entityWrites: number; readonly traitEpoch: number; readonly actors: readonly IFEntity[] } | undefined;
   /** Pre-removal observers (ADR-213 §1) — registration order, never serialized. */
   private removalObservers: EntityRemovalObserver[] = [];
   private state: WorldState = {};
@@ -1616,11 +1649,31 @@ export class WorldModel implements IWorldModel {
     return entity;
   }
 
-  /** Every actor whose role flag is set — one in a well-formed world. */
+  /**
+   * Every entity carrying the actor trait, from the index. The index is
+   * rebuilt here when it is stale, so it never misses an actor: one added by
+   * hand after the world was built, one that arrived in a load, or one whose
+   * trait was written past `IFEntity.add`. (Not named `actors`: the queries
+   * package adds a public entry point of that name to this class.)
+   */
+  private actorEntities(): readonly IFEntity[] {
+    const entityWrites = this.entities.writes;
+    const traitEpoch = traitMembershipEpochNow();
+    const index = this.actorIndex;
+    if (index !== undefined && index.entityWrites === entityWrites && index.traitEpoch === traitEpoch) return index.actors;
+    const actors: IFEntity[] = [];
+    for (const entity of this.entities.values()) {
+      if (entity.has(TraitType.ACTOR)) actors.push(entity);
+    }
+    this.actorIndex = { entityWrites, traitEpoch, actors };
+    return actors;
+  }
+
+  /** Every actor whose role flag is set — one in a well-formed world. The flag is read live. */
   private playerRoleHolders(): IFEntity[] {
     const holders: IFEntity[] = [];
-    for (const entity of this.entities.values()) {
-      if (entity.has(TraitType.ACTOR) && (entity.get(TraitType.ACTOR) as ActorTrait).isPlayer) holders.push(entity);
+    for (const entity of this.actorEntities()) {
+      if ((entity.get(TraitType.ACTOR) as ActorTrait).isPlayer) holders.push(entity);
     }
     return holders;
   }

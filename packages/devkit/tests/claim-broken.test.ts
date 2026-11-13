@@ -206,7 +206,7 @@ describeFerry('AC-4 on the ferry — the lever no longer docks the ferry', () =>
     expect(stdout).toContain('  open lantern: lock "the lantern is open" not held here: the lantern is closed');
     // The lock's set holds the biscuit, a hundred bites deep, so the walk cannot exhaust it and stops on its
     // depth budget, in under a second.
-    expect(stdout.find((row) => row.startsWith('UNPROVEN  the lantern is open — not reached by any line; the walk stopped at max-depth-reached after 159 states'))).toBeDefined();
+    expect(stdout.find((row) => row.startsWith('UNPROVEN  the lantern is open — not reached by any line; the walk stopped at max-depth-reached after 473 states'))).toBeDefined();
     expect(stdout).toContain('  lock "the lantern is open" at line frywait1 "landing · wait" at turn 7 — NOT held there: the lantern is closed');
   });
 });

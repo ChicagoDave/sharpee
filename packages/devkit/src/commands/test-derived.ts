@@ -120,7 +120,7 @@ export async function runDerivedTests(options: DerivedTestOptions): Promise<numb
   try {
     // Each branch reaches the wire as it completes (GH #524) — the seam
     // already fires per branch, so this is wiring, not new concurrency.
-    run = await runDerivedSuite(ir, () => loadAuthorGame(storyFile, { seed }), {
+    run = await runDerivedSuite(ir, (request) => loadAuthorGame(storyFile, { seed, ...(request.undo ? {} : { undoSnapshots: 0 }) }), {
       onOutcome: (outcome) => stream?.derivedBranch(streamableDerivedOutcome(outcome)),
     });
   } catch (error) {

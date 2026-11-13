@@ -91,8 +91,10 @@ describeWithCorpus("AC-9 — the bazaar's claim, its set padded with wares that 
     const [claim] = result.claims;
     expect([claim.verdict, claim.settledBy, claim.thingsInSet, claim.inertInSet]).toEqual(['held', 'exhaustion', 0, 0]);
     expect(result.walks[0].stopReason).toBe('frontier-exhausted');
-    // Two rooms are reachable and the chained gate is tried from one of them.
-    expect(result.walks[0].statesDiscovered).toBe(2);
+    // Two rooms are reachable and the chained gate is tried from one of them. The walk sees four states,
+    // not two: arriving in a room for the first time is state the identity counts (2 before 2026-11-12,
+    // when the identity was an include list that left the visited marks out).
+    expect(result.walks[0].statesDiscovered).toBe(4);
     expect(result.totalWalkMs).toBeLessThan(10_000);
   });
 });

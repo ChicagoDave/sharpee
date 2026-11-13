@@ -99,8 +99,9 @@ describeWithStories('REAL-PATH — the lodge\'s claims through the real engine (
       ['the set of "the valve has been turned"', 'all-claims-settled'],
       ['the set of "the strongbox is open"', 'all-claims-settled'],
     ]);
-    // The negative claim held by exhaustion: nine states, every one tried.
-    expect(result.walks[5].statesDiscovered).toBe(9);
+    // The negative claim held by exhaustion: nineteen states, every one tried (nine before 2026-11-12,
+    // under the include-list identity, which left the rooms' visited marks out).
+    expect(result.walks[5].statesDiscovered).toBe(19);
   });
 
   it('the whole run finishes inside a 10-second bound', async () => {

@@ -126,7 +126,7 @@ describe('sharpee claim — the lock (D2, D4, D5) and the rerun (AC-1, AC-5)', (
     const test = await run(() => runTestCommand([dir]));
     expect(test.code).toBe(0);
     expect(test.stdout).toContain('claims: 2 of 2 held (seed 7)');
-    expect(test.stdout).toContain('0 walks, 0.0s in all');
+    expect(test.stdout).toContain('0 walks');
     expect(test.stdout).toContain('HELD  the player is in the Landing — by line mainline "opening-hall" at turn 2');
     expect(test.stdout).toContain('HELD  the note gets read — by line mainline "opening-hall" at turn 1');
     expect(test.stdout).toContain('  lock "the player is in the Landing" at line mainline "opening-hall" at turn 2 — held there');

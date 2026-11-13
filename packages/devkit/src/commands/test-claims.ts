@@ -176,7 +176,7 @@ export async function runClaimsTests(options: ClaimsTestOptions): Promise<number
 
   let result: Awaited<ReturnType<typeof runClaims>>;
   try {
-    result = await runClaims(ir, claimSet, () => loadAuthorGame(storyFile, { seed }), {
+    result = await runClaims(ir, claimSet, (request) => loadAuthorGame(storyFile, { seed, ...(request.undo ? {} : { undoSnapshots: 0 }) }), {
       seed,
       ...CLAIMS_WALK_BUDGET,
       ...(floor !== undefined ? { floor } : {}),
@@ -196,5 +196,8 @@ export async function runClaimsTests(options: ClaimsTestOptions): Promise<number
   out('');
   out(`Claims: ${claimsFile}`);
   for (const line of formatClaimsRun(result).split('\n')) out(line);
+  // Wall-clock time is not part of the report, which reads the same on every
+  // run at one seed; `--verbose` shows it on its own line.
+  if (verbose) out(`Claims walk time: ${(result.totalWalkMs / 1000).toFixed(1)}s in all`);
   return 0;
 }

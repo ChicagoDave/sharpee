@@ -57,8 +57,9 @@ describe('the unproven line and the inert count', () => {
     const result = await runClaims(IR, CLAIMS, loadGame, { seed: SEED, maxStates: 5000, maxSeconds: 30, maxDepth: 40 });
     const claim = result.claims[0];
     expect([claim.verdict, claim.settledBy, claim.inertInSet]).toEqual(['held', 'exhaustion', 1]);
-    // hall / landing, each with the pebble on the floor or in hand.
-    expect(result.walks[0].statesDiscovered).toBe(4);
+    // hall / landing, each with the pebble on the floor or in hand, times the rooms' visited marks, which
+    // the identity counts (4 before 2026-11-12, under the include-list identity).
+    expect(result.walks[0].statesDiscovered).toBe(16);
     expect(formatClaimsRun(result).split('\n').at(-1)).toBe('HELD  the note leaves the Hall (never) — every reachable state under its set was tried (the declared set)');
   }, 60_000);
 });

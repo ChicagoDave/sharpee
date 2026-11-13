@@ -4,11 +4,13 @@
  * assembled by `@sharpee/bootstrap`, forked through the real engine's
  * save/restore hooks (ADR-365 D3, D4, D5; AC-3, AC-4, AC-5).
  *
- * The fixture's note is readable scenery, so reading it changes nothing the
- * necessary-set identity hashes. Without claims the walk sees two states
- * (hall, landing). With a flag claim on the note, "read note" earns its own
- * state and so does "read note / north" — the claim bit is the only thing
- * keeping those paths apart (AC-5). The negative claim can only be held by
+ * Examining the fixture's note changes nothing in the world, so nothing in
+ * the identity moves. Without claims the walk under `examine` sees four
+ * states (the two rooms, before and after each is first arrived in). With an
+ * event claim on examining the note, "examine note" earns its own state and
+ * so does "examine note / north" — the claim bit is the only thing keeping
+ * those paths apart (AC-5). Reading the note is no longer that vehicle: the
+ * identity counts the readable trait's flag since 2026-11-12. The negative claim can only be held by
  * exhausting the frontier; a budget stop leaves it unproven (AC-4). A claim
  * whose set omits the note is unproven under that set, and held once the
  * note is added (AC-3).
@@ -73,15 +75,24 @@ describe('the claims walk on the claim-bits fixture', () => {
     expect([run.declared, run.held, run.violated, run.unproven]).toEqual([2, 2, 0, 0]);
   }, 30_000);
 
-  it('AC-5: a satisfied claim keeps its path apart — four states where the baseline has two', async () => {
-    const baseline = await runClaims(IR, claimsFrom('no-claims.json'), loadGame, OPTIONS);
-    expect(baseline.walks[0].statesDiscovered).toBe(2);
-    expect(baseline.walks[0].frontierByDepth).toEqual({ 0: 1, 1: 1 });
+  it('AC-5: a satisfied claim keeps its path apart — six states where the baseline has four', async () => {
+    const underExamine = { rooms: ['hall', 'landing'], things: ['note'], verbs: ['examine'] };
+    const baseline = await runClaims(IR, normalizeClaimSet({ ...underExamine, claims: [] }, 'examine, no claims'), loadGame, OPTIONS);
+    expect(baseline.walks[0].statesDiscovered).toBe(4);
+    expect(baseline.walks[0].frontierByDepth).toEqual({ 0: 1, 1: 1, 2: 1, 3: 1 });
     expect(baseline.walks[0].roomsReached).toEqual(['hall', 'landing']);
 
-    const withClaims = await runClaims(IR, claimsFrom('claims.json'), loadGame, OPTIONS);
-    expect(withClaims.walks[0].statesDiscovered).toBe(4);
-    expect(withClaims.walks[0].frontierByDepth).toEqual({ 0: 1, 1: 2, 2: 1 });
+    const examined = normalizeClaimSet({
+      ...underExamine,
+      claims: [
+        { name: 'the note has been examined', event: { type: 'if.event.examined', target: 'note' } },
+        { name: 'the note leaves the Hall', never: true, placement: { thing: 'note', notIn: 'hall' } },
+      ],
+    }, 'examine, with an event claim');
+    const withClaims = await runClaims(IR, examined, loadGame, OPTIONS);
+    expect(withClaims.walks[0].statesDiscovered).toBe(6);
+    expect(withClaims.walks[0].frontierByDepth).toEqual({ 0: 1, 1: 2, 2: 2, 3: 1 });
+    expect(withClaims.claims[0].witness).toEqual(['examine note']);
   }, 30_000);
 
   it('AC-5: the first path to the positive claim is the witness', async () => {

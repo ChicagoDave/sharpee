@@ -134,8 +134,8 @@ export function claimHeadline(row: Pick<ClaimResultRow, 'verdict' | 'name' | 'ne
 
 /**
  * The verdict's sentence — what follows the head after ` — `: the line and
- * turn that reached it, the walk's witness, the exhaustion, or the budget
- * and the set's cost (ADR-365 D11). Under a floor a walked positive claim is
+ * turn that reached it, the walk's witness, the exhaustion, the budget and
+ * the set's cost (ADR-365 D11), or a walk that never entered its set. Under a floor a walked positive claim is
  * one no line reached, and a claim held by a line names any of its locks
  * that did not hold (ADR-367 D6).
  *
@@ -157,6 +157,9 @@ export function claimSentence(row: ClaimResultRow): string {
     case 'exhaustion':
       return `${unreached}${row.never ? 'every reachable state under its set was tried' : 'no reachable state under its set satisfies it'} (${row.set})`;
     case 'budget': {
+      if (row.stopped?.reason === 'start-outside-set') {
+        return `${unreached}the walk never entered its set: the player starts in a room the set does not name, and no command the set allows leads into one it does (${row.set})`;
+      }
       const stopped = row.stopped ? `${row.stopped.reason} after ${row.stopped.states} states` : 'a budget';
       const cost =
         row.inertInSet > 0

@@ -139,13 +139,16 @@ export type LoadPhaseReporter = (
  * @param opts.channels declared capture channels (ADR-294 D15), forwarded to
  *   the assembler — the tree-document runner derives these from the
  *   document's channel claims (ADR-307 Phase 2)
+ * @param opts.undoSnapshots how many undo snapshots the engine keeps — `0`
+ *   takes none (a test runner's game that cannot be asked to undo); absent is
+ *   the engine's default. A Chord story only: a module project boots as before
  * @param opts.onPhase optional progress reporter — see {@link LoadPhaseReporter}
  * @returns the assembled game (engine + channel packet plumbing)
  * @throws on gate errors, ambiguous `.story` sets, or unresolvable modules
  */
 export async function loadAuthorGame(
   target: string,
-  opts?: { entry?: string; seed?: number; channels?: string[]; onPhase?: LoadPhaseReporter },
+  opts?: { entry?: string; seed?: number; channels?: string[]; undoSnapshots?: number; onPhase?: LoadPhaseReporter },
 ): Promise<LoadedGame> {
   const bootstrap = require('@sharpee/bootstrap') as typeof import('@sharpee/bootstrap');
   const chordGame = (storyFile: string): LoadedGame => {
@@ -164,6 +167,7 @@ export async function loadAuthorGame(
       freshStory: () => loadChordStory(storyFile, masterSeed),
       seed: masterSeed,
       ...(opts?.channels !== undefined ? { channels: opts.channels } : {}),
+      ...(opts?.undoSnapshots !== undefined ? { undoSnapshots: opts.undoSnapshots } : {}),
     });
     opts?.onPhase?.('load', 'finished', name);
     return game;

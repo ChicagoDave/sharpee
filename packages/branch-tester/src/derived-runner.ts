@@ -77,6 +77,7 @@
  * not re-walk the IR); ADR-293 D12 (real path only).
  */
 
+import { typesUndo, type GameLoadRequest } from './game-load-request.js';
 import { clauseHeadWordsOf, clauseOrdinalOf, spokenClauseHead, timerKeysFor, type IRCondition, type IRStatement, type IRValue, type Span, type StoryIR } from '@sharpee/chord';
 import { collectClauseBranches, type BranchClause, type BranchPrecondition, type ClauseBranch } from '@sharpee/world-index';
 import { arrange, CHORD_GONE_PREFIX, CHORD_IR_ID_ATTRIBUTE, CHORD_STATE_PREFIX, counterKey, parsePin } from '@sharpee/story-loader';
@@ -268,8 +269,12 @@ export interface DerivedWorld {
 /** A booted game: the world for arranging and reading, the engine for its vocabulary, plus the runner seam `runCommand` drives. */
 export type DerivedGame = Parameters<typeof runCommand>[1] & { world: DerivedWorld; engine?: DerivedEngine };
 
-/** Boots one fresh game at the pinned seed. Called once per branch, and once more up front for the vocabulary. */
-export type DerivedGameLoader = () => Promise<DerivedGame>;
+/**
+ * Boots one fresh game at the pinned seed. Called once per branch, told
+ * whether that branch's one command can ask for undo, and once more up front
+ * for the vocabulary, where no command runs.
+ */
+export type DerivedGameLoader = (request: GameLoadRequest) => Promise<DerivedGame>;
 
 /** The language's patterns for a standard action id (`if.action.taking` → `take [something]`, …), or undefined when it has none. */
 export type ActionPatterns = (actionId: string) => string[] | undefined;
@@ -1138,7 +1143,7 @@ function playerRoomIrIdOf(world: DerivedWorld): string | undefined {
  * @throws when the loader's game carries no engine to read a language from
  */
 async function vocabularyOf(loadGame: DerivedGameLoader): Promise<ActionPatterns> {
-  const game = await loadGame();
+  const game = await loadGame({ undo: false });
   const provider = game.engine?.getLanguageProvider();
   if (!provider) {
     throw new Error('derived runner: the booted game exposes no engine language provider and no actionPatterns option was given');
@@ -1176,7 +1181,7 @@ export async function runDerivedBranch(
 
   let game: DerivedGame;
   try {
-    game = await loadGame();
+    game = await loadGame({ undo: typesUndo([plan.command.kind === 'typed' ? plan.command.input : undefined]) });
   } catch (error) {
     return { ...base, status: 'error', detail: `boot failed: ${error instanceof Error ? error.message : String(error)}` };
   }

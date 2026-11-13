@@ -1,8 +1,8 @@
 ## Fixture for the claims walk's identity: two rooms and one readable note
-## that never moves. Reading the note changes nothing the necessary-set
-## identity hashes (the readable trait's flag is not a stateful trait), so
-## the only thing that keeps "read note / north" apart from "north" is the
-## claim bit a satisfied claim folds into the state's identity. Compile with
+## that never moves. Examining the note changes nothing in the world, so
+## the only thing that keeps "examine note / north" apart from "north" is
+## the claim bit a satisfied claim folds into the state's identity. (Reading
+## the note sets the readable trait's flag, which the identity counts.) Compile with
 ##   ./sharpee compose tools/explorer-probe/fixtures/claim-bits-fixture/claim-bits-fixture.story -o tools/explorer-probe/fixtures/claim-bits-fixture/dist/claim-bits-fixture.ir.json
 ## before walking it; the test does this itself.
 

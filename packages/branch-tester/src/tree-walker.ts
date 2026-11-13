@@ -68,6 +68,7 @@
  * harness (transcript-tester's text world is untouched).
  */
 
+import { typesUndo, type GameLoadRequest } from './game-load-request.js';
 import {
   Assertion,
   AutoAssertionPolicy,
@@ -127,8 +128,12 @@ export interface TreeWalkerGame {
   world?: unknown;
 }
 
-/** Boots one fresh game at the document's pinned seed. Called once per line. */
-export type TreeGameLoader = () => Promise<TreeWalkerGame>;
+/**
+ * Boots one fresh game at the document's pinned seed. Called once per line,
+ * and told whether any command of that line — its prefix or its own cards —
+ * can ask for undo.
+ */
+export type TreeGameLoader = (request: GameLoadRequest) => Promise<TreeWalkerGame>;
 
 /**
  * One line of the tree: the main line, or one branch alternative. The unit a
@@ -440,7 +445,7 @@ export async function runTreeDocument(
     }
 
     // ── Boot (one fresh game per line, at the document's pinned seed) ────
-    const game = await loadGame();
+    const game = await loadGame({ undo: typesUndo([...line.prefix, ...line.cards.map((card) => card.command)]) });
     // Run time assumes NOTHING (David 2026-08-10: the JSON is the source of
     // truth) — the policy governs what RECORDING persists, never what a run
     // invents. Cleared even when declared, through the one code path (D6).

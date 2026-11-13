@@ -95,8 +95,9 @@ describe('sharpee test — the claims tier runs when the manifest names a file (
     expect(heading).toBeGreaterThan(rooms);
     expect(stdout[heading - 1]).toBe('');
     expect(stdout[heading + 1]).toBe('claims: 2 of 2 held (seed 7)');
-    expect(stdout[heading + 2]).toMatch(/^1 walk, \d+\.\ds in all$/);
-    expect(stdout[heading + 3]).toMatch(/^ {2}under the declared set: 2 rooms, 1 things, 1 verbs — \d+ states, \d+ commands, \d+\.\ds, stopped: frontier-exhausted$/);
+    // No line of the report carries wall-clock time: it reads the same on every run at one seed.
+    expect(stdout[heading + 2]).toBe('1 walk');
+    expect(stdout[heading + 3]).toMatch(/^ {2}under the declared set: 2 rooms, 1 things, 1 verbs — \d+ states, \d+ commands, stopped: frontier-exhausted$/);
     // The fixture's tree has no typed turn, so no line reached the claim: the walk did (ADR-367 D5's floor says so).
     expect(stdout).toContain('HELD  the note has been read — not reached by any line; by walk at depth 1: read note');
     expect(stdout).toContain('HELD  the note leaves the Hall (never) — every reachable state under its set was tried (the declared set)');
@@ -231,7 +232,7 @@ describeFerry('REAL-PATH: the ferry\'s claims through sharpee test (ADR-365 end-
     expect(withClaims.stdout[heading + 1]).toBe('claims: 5 of 6 held, 1 violated (seed 42)');
     // ADR-367 D5: the lines prove three of the positive claims, so only the two
     // `never`s and the one claim no line reaches are walked — three walks.
-    expect(withClaims.stdout[heading + 2]).toMatch(/^3 walks, \d+\.\ds in all$/);
+    expect(withClaims.stdout[heading + 2]).toBe('3 walks');
     const violated = withClaims.stdout.filter((line) => line.startsWith('VIOLATED'));
     expect(violated).toHaveLength(1);
     expect(violated[0]).toBe('VIOLATED  the ticket leaves the Ticket Hut (never) — at depth 3: north / take ticket / south');

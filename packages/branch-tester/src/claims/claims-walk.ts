@@ -4,10 +4,10 @@
  *
  * Purpose: fork the real engine through its save/restore hooks and walk the
  * reachable states breadth-first, trying from each state the commands the
- * set allows. Two states are one state when they agree on the player's
- * place, the placement and state of every necessary thing, the story's own
- * state, the score, the stateful trait flags of necessary things — and on
- * which positive claims the path has satisfied (D5): a path that read the
+ * set allows. Two states are one state when their identities are equal —
+ * the world's snapshot cut to the set, minus a written ignore list
+ * (`claim-identity`) — and they agree on which positive claims the path has
+ * satisfied (D5): a path that read the
  * diary and one that did not must never merge, or the first to a later
  * claim is lost. The walk keeps the first path to each claim as its witness
  * and stops when every claim is settled (D4) or the frontier or a budget
@@ -16,21 +16,23 @@
  * A positive claim is held by its first witness and unproven otherwise. A
  * negative claim is violated by its first witness, held when the frontier
  * is exhausted without one, and unproven when a budget stopped the walk
- * first (D3) — a budget stop can never hold a negative claim.
+ * first (D3) — a budget stop can never hold a negative claim. Neither can a
+ * walk that never entered its set: when the player starts in a room the set
+ * does not name and no allowed command leads into one it does, the frontier
+ * runs out after one state with nothing tried. That walk stops as
+ * `start-outside-set` and leaves every claim it did not witness unproven.
  *
  * Each verdict also carries how many of the set's things the claim can
  * never depend on under that set — the compiler's cone of influence (D12),
  * computed once before the walk. It is report data for the author who
  * trims the set; the walk, the identity, and the candidates never read it.
  *
- * Public interface: `walkClaims`, `necessaryIdentity`, `ClaimsWalkOptions`.
+ * Public interface: `walkClaims`, `ClaimsWalkOptions`.
  *   The walk reports in `claim-results`' shapes (`ClaimsWalkReport`,
  *   `ClaimVerdict`).
  * Owner context: @sharpee/branch-tester — the claims runner (ADR-365 D10).
  */
 
-import { createHash } from 'node:crypto';
-import { CHORD_IR_ID_ATTRIBUTE, CHORD_STATE_PREFIX, CHORD_STORY_STATE_KEY } from '@sharpee/story-loader';
 import { captureSave, restoreSave } from '@sharpee/transcript-tester';
 import { claimCone, type IRClaim, type StoryIR } from '@sharpee/chord';
 import type { Claim, ClaimGroup, NecessarySet } from './claim-set.js';
@@ -39,6 +41,7 @@ import { candidateCommands, deriveCommandVocabulary } from './claim-candidates.j
 import type { CandidateBreadth, ClaimVerdict, ClaimsWalkReport, WalkStopReason } from './claim-results.js';
 import type { ClaimsGame, ClaimsTurnEvent, WorldSnapshot } from './claims-game.js';
 import { irIdOf, readWorldSnapshot } from './claims-game.js';
+import { necessaryIdentity } from './claim-identity.js';
 
 /** The budgets and breadth of one walk. */
 export interface ClaimsWalkOptions {
@@ -52,78 +55,6 @@ const DEFAULT_OPTIONS = { breadth: 'basic' as CandidateBreadth, maxStates: 5000,
 
 /** Commands between two yields to the event loop. */
 const YIELD_EVERY = 200;
-
-/**
- * Traits whose data is game state a player can change. Everything else on
- * an entity (identity prose, scenery marking, a room's visited flag) is
- * immutable or presentation. `readable` is deliberately absent: reading
- * changes nothing a rule reads, which is why a claim about it needs its own
- * bit in the identity.
- */
-const STATEFUL_TRAITS = new Set([
-  'openable', 'lockable', 'switchable', 'wearable', 'edible', 'health',
-  'container', 'supporter', 'lightSource', 'equipped', 'combatant',
-]);
-
-function sha1(text: string): string {
-  return createHash('sha1').update(text).digest('hex');
-}
-
-/**
- * Hash a world as one state under a necessary set: the player's containment,
- * the containment and Chord state of every necessary thing, the story's own
- * state, the score ledger, and the stateful trait flags of necessary
- * things. Nothing outside the set can tell two worlds apart.
- *
- * @param snapshot the parsed world snapshot
- * @param set the necessary set
- * @returns a hex digest
- */
-export function necessaryIdentity(snapshot: WorldSnapshot, set: NecessarySet): string {
-  const things = new Set(set.things);
-  const irById = new Map<string, string>();
-  for (const row of snapshot.entities ?? []) {
-    const irId = row.entity?.attributes?.[CHORD_IR_ID_ATTRIBUTE];
-    if (typeof irId === 'string') irById.set(row.id, irId);
-  }
-
-  const pairs: string[] = [];
-  for (const row of snapshot.spatialIndex?.parentToChildren ?? []) {
-    for (const child of row.children ?? []) {
-      if (child === snapshot.playerId) { pairs.push(`${row.parent}>${child}`); continue; }
-      const irId = irById.get(child);
-      if (irId !== undefined && things.has(irId)) pairs.push(`${row.parent}>${child}`);
-    }
-  }
-  pairs.sort();
-
-  const kept: Array<[string, unknown]> = [];
-  for (const [key, value] of Object.entries(snapshot.state ?? {})) {
-    if (key === CHORD_STORY_STATE_KEY) { kept.push([key, value]); continue; }
-    if (!key.startsWith(CHORD_STATE_PREFIX)) continue;
-    if (things.has(key.slice(CHORD_STATE_PREFIX.length))) kept.push([key, value]);
-  }
-  kept.sort((a, b) => (a[0] < b[0] ? -1 : 1));
-
-  const flags: string[] = [];
-  for (const row of snapshot.entities ?? []) {
-    const irId = irById.get(row.id);
-    if (irId === undefined || !things.has(irId)) continue;
-    const keep: string[] = [];
-    for (const trait of row.entity?.traits ?? []) {
-      if (typeof trait.type === 'string' && STATEFUL_TRAITS.has(trait.type)) keep.push(JSON.stringify(trait));
-    }
-    if (keep.length) flags.push(`${row.id}=${keep.sort().join(',')}`);
-  }
-  flags.sort();
-
-  return sha1([
-    `loc:${pairs.join(',')}`,
-    `state:${JSON.stringify(kept)}`,
-    `score:${JSON.stringify(snapshot.scoreLedger ?? null)}`,
-    `flags:${flags.join(';')}`,
-  ].join('|'));
-}
 
 /**
  * Walk one booted game under one claim group's set and settle its claims.
@@ -286,6 +217,11 @@ export async function walkClaims(game: ClaimsGame, ir: StoryIR, group: ClaimGrou
   }
 
   const walkMs = Date.now() - walkStart;
+  // A frontier that ran out with the player never in a room of the set is
+  // not an exhausted set: nothing under the set was tried.
+  const setRooms = new Set(set.rooms);
+  const enteredSet = [...roomsSeen].some((room) => setRooms.has(room));
+  if (stopReason === 'frontier-exhausted' && !enteredSet) stopReason = 'start-outside-set';
   const exhausted = stopReason === 'frontier-exhausted' || stopReason === 'all-claims-settled';
   const verdicts: ClaimVerdict[] = claims.map((claim) => {
     const witness = witnesses.get(claim.index);

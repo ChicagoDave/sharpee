@@ -266,6 +266,15 @@ export function assembleGame(
      */
     channels?: string[];
     /**
+     * How many undo snapshots the engine keeps, forwarded to
+     * `EngineConfig.maxUndoSnapshots`. The engine serializes the whole world
+     * before every undoable turn to have one; `0` takes none, and `undo` then
+     * answers that there is nothing to undo. Absent → the engine's default,
+     * which is what play uses. A test runner passes `0` for a game none of
+     * whose commands can ask for undo.
+     */
+    undoSnapshots?: number;
+    /**
      * How presence-tagged prose is presented in `lastOutput` (ADR-328 D3).
      * Absent = the platform default (an `absent` entry is hidden — what a
      * player sees, what goldens mean). `'omniscient'` shows every actor
@@ -356,7 +365,12 @@ export function assembleGame(
       parser,
       language,
       perceptionService,
-      ...(opts?.seed !== undefined ? { config: { seed: opts.seed } } : {})
+      ...(opts?.seed !== undefined || opts?.undoSnapshots !== undefined
+        ? { config: {
+            ...(opts?.seed !== undefined ? { seed: opts.seed } : {}),
+            ...(opts?.undoSnapshots !== undefined ? { maxUndoSnapshots: opts.undoSnapshots } : {}),
+          } }
+        : {})
     });
     engine.installStory(s);
 

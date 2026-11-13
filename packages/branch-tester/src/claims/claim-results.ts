@@ -45,8 +45,13 @@ export interface ClaimVerdict {
   readonly inertInSet: number;
 }
 
-/** Why a walk stopped. Only the first two exhaust the frontier. */
-export type WalkStopReason = 'frontier-exhausted' | 'all-claims-settled' | 'max-states' | 'max-seconds' | 'max-depth-reached';
+/**
+ * Why a walk stopped. Only the first two exhaust the frontier.
+ * `start-outside-set` is a frontier that ran out with the player never in a
+ * room the set names: the walk tried nothing under its set, so it settles
+ * no claim and can never hold a negative one.
+ */
+export type WalkStopReason = 'frontier-exhausted' | 'all-claims-settled' | 'max-states' | 'max-seconds' | 'max-depth-reached' | 'start-outside-set';
 
 /** `basic` — one verb per affordance; `full` — adds put-in / put-on over the carried set. */
 export type CandidateBreadth = 'basic' | 'full';
