@@ -15,9 +15,19 @@
  *
  * Hide signal: `null` value clears the `<img>` for that layer
  * (ADR-163 §6).
+ *
+ * Slot visibility and size (GH #718): the media slot is shown while it
+ * holds a layer and concealed again when the last one goes, if it
+ * started hidden. Layers are absolutely positioned, so the slot's height
+ * comes from the stylesheet: `base.css` gives `#sharpee-media` a default
+ * that an author overrides.
  */
 
 import type { ChannelRenderer } from '@sharpee/channel-service';
+import { concealSlotWhenEmpty, revealSlot } from './slot-visibility.js';
+
+/** Matches an image layer inside the media slot. */
+const LAYER_SELECTOR = '.image-layer';
 
 const LAYER_Z_INDEX: Record<string, number> = {
   background: 10,
@@ -71,6 +81,7 @@ export function createImageChannelRenderer(
       const existing = doc.getElementById(elementId);
       if (value === null) {
         if (existing) existing.parentNode?.removeChild(existing);
+        concealSlotWhenEmpty(slot, LAYER_SELECTOR);
         return;
       }
       if (!value || typeof value !== 'object') return;
@@ -87,6 +98,7 @@ export function createImageChannelRenderer(
         wrapper.style.inset = '0';
         wrapper.style.zIndex = String(z);
         slot.appendChild(wrapper);
+        revealSlot(slot);
       } else {
         // Reset wrapper for new content
         while (wrapper.firstChild) wrapper.removeChild(wrapper.firstChild);

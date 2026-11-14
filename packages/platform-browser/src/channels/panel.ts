@@ -15,7 +15,14 @@
  *  - `append` mode appends rows;
  *  - `event` mode shows the latest value;
  *  - a `null` value (replace-mode hide signal, ADR-163 §6) removes
- *    the box.
+ *    the box;
+ *  - the slot is shown while it holds a box and concealed again when the
+ *    last box goes, if it started hidden (GH #718).
+ *
+ * Render-by-DOM-name (ADR-253 D2): a primitive value goes to the author's
+ * `#<channelId>` element when the page has one. A `replace` or `event`
+ * channel writes it as the element's text; an `append` channel adds one
+ * child per value, so the element keeps the list the mode promises.
  *
  * Public interface: `createGenericPanelRenderer(slot, channelId)` —
  * consumed by `registerDefaultBrowserRenderers` as the match-all
@@ -24,6 +31,16 @@
  */
 
 import type { ChannelRenderer, ChannelDefinition } from '@sharpee/channel-service';
+import { concealSlotWhenEmpty, revealSlot } from './slot-visibility.js';
+
+/** Matches a panel box inside its slot. */
+const PANEL_SELECTOR = '.sharpee-channel-panel';
+
+/** Class on each value an `append` channel adds to an author's named element. */
+const NAMED_ENTRY_CLASS = 'sharpee-channel-entry';
+
+/** Whether a value has a single-element text form (ADR-253 D2). */
+const isPrimitive = (value: unknown): boolean => value !== null && typeof value !== 'object';
 
 /** DOM id for a channel's panel box. */
 const panelId = (channelId: string): string => `channel-panel-${channelId.replace(/[^a-z0-9_-]/gi, '-')}`;
@@ -68,6 +85,7 @@ export function createGenericPanelRenderer(slot: HTMLElement, channelId: string)
 
   const removeBox = (): void => {
     doc.getElementById(panelId(channelId))?.remove();
+    concealSlotWhenEmpty(slot, PANEL_SELECTOR);
   };
 
   const ensureBox = (): HTMLElement => {
@@ -84,6 +102,7 @@ export function createGenericPanelRenderer(slot: HTMLElement, channelId: string)
       rows.className = 'sharpee-channel-panel-rows';
       box.append(title, rows);
       slot.appendChild(box);
+      revealSlot(slot);
     }
     return box.querySelector('.sharpee-channel-panel-rows') as HTMLElement;
   };
@@ -93,11 +112,30 @@ export function createGenericPanelRenderer(slot: HTMLElement, channelId: string)
   // it never matches here. Absent → the generic panel below is the fallback.
   const namedElement = (): HTMLElement | null => doc.getElementById(channelId);
 
+  // An `append` channel adds to the author's element rather than replacing
+  // its text: a list item in a list, a classed span anywhere else.
+  const appendToNamed = (named: HTMLElement, entries: unknown[]): void => {
+    const tag = named.tagName === 'UL' || named.tagName === 'OL' ? 'li' : 'span';
+    for (const entry of entries) {
+      const child = doc.createElement(tag);
+      child.className = NAMED_ENTRY_CLASS;
+      child.textContent = String(entry);
+      named.appendChild(child);
+    }
+  };
+
   return {
     onValue(value: unknown, channel: ChannelDefinition): void {
+      const named = namedElement();
+      if (named && channel.mode === 'append' && value !== null && value !== undefined) {
+        const entries = Array.isArray(value) ? value : [value];
+        if (entries.every(isPrimitive)) {
+          appendToNamed(named, entries);
+          return;
+        }
+      }
       // Render-by-DOM-name (ADR-253 D2): a string/primitive value lands as
       // textContent in the author's `#<channelId>` element when it exists.
-      const named = namedElement();
       if (named && (value === null || typeof value !== 'object')) {
         if (value === null) named.textContent = '';
         else if (value !== undefined) named.textContent = String(value);

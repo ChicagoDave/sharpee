@@ -188,6 +188,29 @@ body {
 }
 
 /* ============================================================
+   Sidebar
+   ============================================================ */
+
+#sharpee-sidebar {
+  background: var(--theme-bg);
+  color: var(--theme-text);
+  border-top: 1px solid var(--theme-border);
+}
+
+.sharpee-body > #sharpee-sidebar {
+  border-top: none;
+  border-left: 1px solid var(--theme-border);
+}
+
+.sharpee-channel-panel-title {
+  color: var(--theme-accent);
+}
+
+.sharpee-channel-panel-key {
+  color: var(--theme-text-muted);
+}
+
+/* ============================================================
    Input bar
    ============================================================ */
 

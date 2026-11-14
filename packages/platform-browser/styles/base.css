@@ -159,6 +159,54 @@ ul, ol, menu {
   padding-bottom: 1em;
 }
 
+/* ----- Media slot and sidebar ----- */
+/* Both start `hidden`; a renderer reveals each while it holds content. Every
+   rule here is scoped to `:not([hidden])` so it never overrides that. */
+
+/* Image layers are absolutely positioned, so the slot has no height of its
+   own. This is the default; override it in your story's stylesheet. */
+#sharpee-media:not([hidden]) {
+  position: relative;
+  flex-shrink: 0;
+  height: min(40vh, 320px);
+}
+
+/* The default page puts the prose pane and the sidebar side by side. */
+.sharpee-body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+#sharpee-sidebar:not([hidden]) {
+  flex-shrink: 0;
+  max-height: 30vh;
+  overflow-y: auto;
+  padding: 8px;
+}
+
+.sharpee-body > #sharpee-sidebar:not([hidden]) {
+  width: 24ch;
+  max-height: none;
+}
+
+.sharpee-channel-panel + .sharpee-channel-panel {
+  margin-top: 1em;
+}
+
+.sharpee-channel-panel-title {
+  font-weight: bold;
+}
+
+.sharpee-channel-panel-key {
+  margin-right: 1ch;
+}
+
+/* One value of an appending channel, in an author's named element. */
+span.sharpee-channel-entry {
+  display: block;
+}
+
 .sharpee-prose-overlay {
   position: absolute;
   inset: 0;

@@ -249,6 +249,14 @@ export function registerDefaultBrowserRenderers(
   );
   renderer.registerRendererFactory('', (id) => createGenericPanelRenderer(layout.sidebar, id));
 
+  // ── Channels with no surface of their own ────────────────────────
+  // `audibility` (ADR-172) carries what the player heard as structured
+  // records. The engine's prose pipeline already narrates each one, so
+  // the browser draws nothing for the channel itself; without this
+  // exact-id renderer the match-all factory above would list the raw
+  // records in a panel the story never declared (GH #718).
+  renderer.registerRenderer('audibility', { onValue(): void {} });
+
   // ── Animation / transition / layout / clear ──────────────────────
   renderer.registerRenderer('animation', createAnimationChannelRenderer(layout.media));
   renderer.registerRenderer('animate', createAnimateChannelRenderer(layout.media));

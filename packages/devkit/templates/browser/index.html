@@ -70,9 +70,19 @@
       <span id="score-turns">Score: 0 | Turns: 0</span>
     </div>
 
-    <div id="main-window" class="sharpee-prose-pane">
-      <div id="text-content"></div>
-      <div class="sharpee-prose-overlay" aria-hidden="true"></div>
+    <!-- Where `show image` puts its picture. Hidden until a story shows one.
+         Its height comes from the stylesheet (#sharpee-media in base.css);
+         set your own in browser/{{STORY_ID}}.css. -->
+    <div id="sharpee-media" hidden></div>
+
+    <div class="sharpee-body">
+      <div id="main-window" class="sharpee-prose-pane">
+        <div id="text-content"></div>
+        <div class="sharpee-prose-overlay" aria-hidden="true"></div>
+      </div>
+      <!-- Where a channel with no element of its own shows its panel.
+           Hidden until a channel has a value. -->
+      <aside id="sharpee-sidebar" hidden></aside>
     </div>
 
     <div id="input-area" class="sharpee-input-bar">

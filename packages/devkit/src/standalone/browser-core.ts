@@ -307,7 +307,7 @@ function validateCustomPage(
     if (!placed) {
       warn(
         `  ⚠ channel '${ch.name}' has no #${ch.name} element in browser/index.html — ` +
-          'it will render in the generic sidebar panel (ADR-253 D2 fallback).',
+          'it shows in the sidebar panel instead.',
       );
     }
   }

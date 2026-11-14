@@ -470,15 +470,34 @@ export class BrowserClient implements BrowserClientInterface {
       return el;
     };
 
+    // The root is the window shell when the page has one: the default page
+    // wraps the prose pane and the sidebar in a row, and transition, layout
+    // and clear signals belong on the shell, not on that row.
     const root =
-      els.mainWindow?.parentElement ?? els.textContent?.parentElement ?? doc.body;
+      (els.mainWindow?.closest('.sharpee-window') as HTMLElement | null) ??
+      els.mainWindow?.parentElement ??
+      els.textContent?.parentElement ??
+      doc.body;
     const mainWindow = els.mainWindow ?? doc.body;
     const main = els.textContent ?? ensureHidden('sharpee-main', mainWindow);
     const status = els.statusLocation?.parentElement ?? ensureHidden('sharpee-status', mainWindow);
     const statusLocation = els.statusLocation ?? ensureHidden('sharpee-status-location', status, 'span');
     const statusScore = els.statusScore ?? ensureHidden('sharpee-status-score', status, 'span');
     const statusTurn = ensureHidden('sharpee-status-turn', status, 'span');
-    const sidebar = ensureHidden('sharpee-sidebar', mainWindow, 'aside');
+    // The sidebar and media slots are siblings of the prose pane, not children
+    // of it: a renderer reveals them when they hold content (GH #718), and
+    // inside the scrolling pane they would scroll away with the prose.
+    const beside = (id: string, tag: string, where: 'beforebegin' | 'afterend'): HTMLElement => {
+      const existing = doc.getElementById(id);
+      if (existing) return existing;
+      if (!els.mainWindow?.parentElement) return ensureHidden(id, mainWindow, tag);
+      const el = doc.createElement(tag);
+      el.id = id;
+      el.hidden = true;
+      els.mainWindow.insertAdjacentElement(where, el);
+      return el;
+    };
+    const sidebar = beside('sharpee-sidebar', 'aside', 'afterend');
     const inputContainer = els.commandInput?.parentElement ?? ensureHidden('sharpee-input', mainWindow);
     // Host pages commonly include a static `<span class="prompt">>` /
     // similar visible prompt label in the input row. Adopt it as the
@@ -499,7 +518,7 @@ export class BrowserClient implements BrowserClientInterface {
       inputContainer.appendChild(i);
       return i;
     })()) as HTMLInputElement;
-    const media = ensureHidden('sharpee-media', mainWindow);
+    const media = beside('sharpee-media', 'div', 'beforebegin');
     if (!media.style.position) media.style.position = 'relative';
     const notify = ensureHidden('sharpee-notify', mainWindow);
     const meta = ensureHidden('sharpee-meta', mainWindow);

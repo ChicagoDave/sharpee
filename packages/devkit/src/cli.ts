@@ -32,7 +32,7 @@ import { runTestCommand } from './commands/test.js';
 import { runPlayCommand } from './commands/play.js';
 import { runClaimCommand } from './commands/claim.js';
 import { runWorldIndex } from './commands/world-index.js';
-import { lookupStory } from './registry.js';
+import { projectDirectoryFor } from './build-target.js';
 
 const USAGE = `sharpee — Interactive Fiction authoring CLI (ADR-180, ADR-187)
 
@@ -124,14 +124,7 @@ async function main(argv: string[]): Promise<number> {
           dir = resolved.dir; // decoupled in-repo project → build project-relative
         }
       }
-      if (!dir && positional) {
-        dir = lookupStory(positional) ?? undefined; // throws if registered-but-stale
-        if (!dir) {
-          throw new Error(
-            `'${positional}' is not a registered story — run \`sharpee register <location>\`, or run \`sharpee build\` from the project directory`,
-          );
-        }
-      }
+      if (!dir && positional) dir = projectDirectoryFor(positional);
       // ADR-252 D1: a project DIRECTORY holding a `.story` (and no src/index.ts) is
       // a Chord project → browser build by default. A TS project keeps --browser opt-in.
       const projectDir = dir ?? process.cwd();
