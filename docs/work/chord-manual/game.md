@@ -205,6 +205,58 @@ was played from it too.
 - The walk spends about 44 of the day's 80 turns. Part V's conversations will need the dusk turn
   moved or the walk will not fit.
 
+Part V compiles at Chord 4.0.2 and was played on 2026-11-13 and 14 (session d16329). The game can be
+won from the committed snapshot: 44 commands, 50 points of 50, rank Lamplighter. The cracked-lens
+ending was played from it too (the same walk without the mend).
+
+- The pages have their people. Hobb keeps the hush page and hands it over when asked about the
+  bell; Tamsin Vey carries the unbind page and gives it for a promise. The mend page stays in the
+  cistern, so the growth table's "bargaining for the mend page" is a bargain for the unbind page.
+  The candles keep their score and lose their page.
+- Chapter 31's scene is in the game. When the waking timer expires the role moves to Hobb
+  (`change the player to Hobb` in the header's `when waking expires`), who is `playable` and has
+  his own `states: dozing, roused, settled`. Examining the newspapers as Hobb puts the hush page in
+  his hand and moves the role back. Ansel is where the player left them, Hobb is listed in the
+  Lodge again, and the score carries across. As Hobb, `inventory` is empty and the wisp stays with
+  Ansel.
+- There is no condition that asks who the player is. The newspapers' clause is gated on Hobb's
+  state (`when Hobb is roused`), which is the working form and worth teaching as such.
+- The dusk turn moved: the warning is at turn 70 and night at 110. The walk still takes 44.
+- `follower` on a person with no settings follows the player from room to room and prints "The
+  wisp follows you." The wisp starts with no placement and arrives by `move the wisp here` in the
+  hand lamp's `after the player lighting`.
+- A `goal` with `active when the tower bell is tolling` walked Tamsin from the Refectory to the
+  Bell Stair one room a turn, then ran its `say` and `act` steps on the two turns after, each
+  printed plainly when the player was in the room.
+- The acting statement works in a topic row and an exchange row: `Hobb gives the hush page to
+  Ansel when Hobb has the hush page` prints "Hobb gives the hush page to Ansel." after the phrase.
+  `move the hush page to Hobb` puts a thing in a person's hands.
+- Ansel needed `proper`; without it the giving line read "to the Ansel".
+- Topic matching drops the article: `"the bell", "bell"` in one row is `analysis.duplicate-topic`.
+  One spelling per topic, and both `ask hobb about bell` and `about the bell` reach it.
+- `never` takes the third-person form (`never breaks a promise`); the grammar's comment lists the
+  bare verbs. `feels wary of Tamsin Vey` and `feels trusts toward Ansel` both compile with a bare
+  proper name.
+- `it` is refused in a `define manner` row (`analysis.it-removed`); the row names the person.
+- Manner beats never printed. They are carried on the event data and no play surface was found
+  that reads them. Issue #710. Chapter 27 cannot show a manner block doing anything until then.
+- A conversation runs one beat per ask of any of its `about` topics. Once its last beat has opened
+  an exchange and the exchange is answered, the thread is concluded and its topics answer "I don't
+  know anything about that". So a bargain that can be refused needs a second way in: Tamsin's
+  topic table has `about "the price"`, gated on `the-bargain is concluded`, which opens the same
+  exchange again with `then asks`.
+- A `conclusion:` phrase printed as overheard speech (`You hear: "…"`), and `on parting:` printed
+  two turns late in another room. Issue #711. The snapshot's conclusion is a `change mood` and it
+  has no parting row.
+- Inside an open exchange, an unmatched `say` prints the platform's "waits for an answer" line and
+  the exchange stays open. `on silence:` did not fire on `wait`; when it does fire was not found.
+- Greetings print on `talk to`. A person with no greetings block answers "doesn't respond".
+- The inner-life and principle lines (`mood`, `feels`, `knows … witnessed, certain`, `burdened by`,
+  `protects`, `temperament`, `never`, `answers honestly`, personality words) compile and load, and
+  nothing in this game's play shows them acting. `change feeling toward Ansel to likes` runs in the
+  exchange's yes row without complaint. Chapters 29 and 30 need a short standalone example whose
+  outcome a reader can see, or a place in this game where a feeling gates a response.
+
 ## Open points in the design
 
 - Every mechanic above is a reading of the grammar. Each is proven, or changed, when its snapshot
