@@ -1,9 +1,12 @@
 <p><code>define action &lt;name&gt; … end</code> (dedent-terminated) declares a brand-new action: its grammar, its requirements, its refusals, and its body. This one action shows the whole surface:</p>
-<pre><code class="language-chord">define action petting
+<pre><code class="language-chord">define trait snake
+end trait
+
+define action petting
   grammar
     pet the animal
-    pat the animal
-    stroke the animal
+    scratch the animal
+    cuddle the animal
   the animal must be reachable
   score gentle-hands worth 5
   refuse without animal: pet-what
@@ -22,7 +25,7 @@
     petted:
       You give a good long scritch.</code></pre>
 <p>Reading it line by line:</p>
-<ul><li><strong><code>grammar</code></strong> lists the surface patterns. <code>the &lt;word&gt;</code> marks a slot, and the slot name <em>is</em> the value name used everywhere else in the action. Because the pattern says <code>the animal</code>, the requirements and phrases all refer to <code>the animal</code>. <code>→</code> cardinality on a pattern is reserved: it is refused at compile time until it is implemented.</li><li><strong><code>the animal must be reachable</code></strong> is a scope constraint (no colon): a precondition on a slot the parser enforces during resolution. Reachable means what it does in play: the animal is in the same place or in an open container — a closed glass case blocks reach even though you can see through it (that is why the example's refusal settles for the glass), another creature's possessions are out of reach, and reaching requires seeing, so darkness refuses too.</li><li><strong><code>score</code></strong> attaches an action-owned score.</li><li><strong><code>refuse without &lt;slot&gt;: &lt;key&gt;</code></strong> refuses when the slot was not filled at all (nothing to pet); <strong><code>refuse when &lt;condition&gt;: &lt;key&gt;</code></strong> refuses on a condition; <strong><code>otherwise refuse &lt;key&gt;</code></strong> is the last-resort refusal when no trait claimed the action on this target.</li><li>The remaining lines are the ordinary body: statements (<code>award</code>, <code>phrase</code>) that run when the action proceeds.</li><li><strong><code>phrases</code></strong> is the action's locale block.</li></ul>
+<ul><li><strong><code>grammar</code></strong> lists the surface patterns. <code>the &lt;word&gt;</code> marks a slot, and the slot name <em>is</em> the value name used everywhere else in the action. Because the pattern says <code>the animal</code>, the requirements and phrases all refer to <code>the animal</code>. <code>→</code> cardinality on a pattern is reserved: it is refused at compile time until it is implemented.</li><li><strong><code>the animal must be reachable</code></strong> is a scope constraint (no colon): a precondition on a slot the parser enforces during resolution. Reachable means what it does in play: the animal is in the same place or in an open container — a closed glass case blocks reach even though you can see through it (that is why the example's refusal settles for the glass), another creature's possessions are out of reach, and reaching requires seeing, so darkness refuses too.</li><li><strong><code>score</code></strong> attaches an action-owned score.</li><li><strong><code>refuse without &lt;slot&gt;: &lt;key&gt;</code></strong> refuses when the slot was not filled at all (nothing to pet); <strong><code>refuse when &lt;condition&gt;: &lt;key&gt;</code></strong> refuses on a condition. <code>the animal is a snake</code> asks what sort of thing the animal is: <code>snake</code> is a trait the story declares (the <code>define trait snake</code> line above the action) and composes on each snake it creates; <strong><code>otherwise refuse &lt;key&gt;</code></strong> is the last-resort refusal when no trait claimed the action on this target.</li><li>The remaining lines are the ordinary body: statements (<code>award</code>, <code>phrase</code>) that run when the action proceeds.</li><li><strong><code>phrases</code></strong> is the action's locale block.</li></ul>
 <h2 id="everything-a-pattern-can-say">Everything a pattern can say</h2>
 <p>Pattern lines read exactly like the commands a player types. Beyond words and slots, three shapes cover the rest.</p>
 <p><strong>Alternation</strong> — <code>or</code> between single words makes them alternates of one pattern; <strong>optional words</strong> go in square brackets:</p>
@@ -71,8 +74,25 @@
     aft</code></pre>
 <p><code>sail port</code>, <code>sail sb</code>, and a bare <code>starboard</code> all reach <code>sailing</code>, each carrying its canonical direction.</p>
 <h2 id="which-pattern-wins">Which pattern wins</h2>
-<p>When two patterns could match the same command, the more specific one — the one that spells out more of what was typed — wins. Between equally specific patterns, the one listed first wins, so the order of grammar lines (and of <code>define action</code> blocks) is meaningful. A story's grammar always outranks the standard library's, which is what makes <a href="/chord/guide/vocabulary/extend-action">extend action</a> and <a href="/chord/guide/vocabulary/remove-from-action">remove from action</a> work.</p>
+<p>When more than one pattern could read a command, one ordering decides, in four steps:</p>
+<p>1. <strong>The reading whose nouns name things.</strong> Every way a line can read the input is tried, and a reading that fills a slot with words naming nothing in the world loses to one whose words all name something. So <code>give the old man the sword</code> reads the old man and the sword, whatever the line order, and <code>put jack in the box in chest</code> reads the toy and the chest. 2. <strong>The more specific line</strong> — the one that spells out more of what was typed — wins whatever its tier. A story's <code>take the thing</code> takes <code>take lamp</code> and leaves <code>take off hat</code> to the standard <code>taking off</code>, because that line spells out two words to the story's one. 3. <strong>At equal specificity, the story's line</strong> beats the standard library's. This is what makes <a href="/chord/guide/vocabulary/extend-action">extend action</a> settle a contest: restate the standard line under your action and yours wins. 4. <strong>Between equally specific lines of one tier, the one listed first</strong>, so the order of grammar lines (and of <code>define action</code> blocks) is meaningful.</p>
+<p>A broad story line does not capture a standard verb's more specific phrasings. To take a standard phrasing away from its action, say so with <a href="/chord/guide/vocabulary/remove-from-action">remove from action</a>; nothing is implied by writing a shorter line. There is no numeric priority and no ordering construct.</p>
 <p>That ranking holds for the whole game, not just where the action makes sense. A story action whose grammar carries <code>wear dress</code> takes every <code>wear dress</code> a player ever types, in every room and chapter, away from the standard <code>wearing</code> action — so a second dress the player is holding later can never be worn by that phrase. To react to a standard action on one thing, put an <code>on</code> clause on the thing (<code>on the player wearing</code>) and leave the phrase to the standard action; reserve a story action's grammar for phrases that are the story's own.</p>
+<h2 id="how-a-command-is-read">How a command is read</h2>
+<p>Every entity slot has a <strong>seat</strong>: it is the command's direct object or its indirect object, and the action reads it by seat, never by position. The first entity slot in a line is the direct object and the second the indirect, unless the action's earlier lines already seated that name: a slot name keeps one seat across every line of an action. Giving's first line, <code>give the item to the recipient</code>, seats the item direct and the recipient indirect, so <code>hand the recipient the item</code> seats them the same way and <code>give the old man the sword</code> hands over the sword. <code>is an instrument</code> and <code>is a topic</code> take no seat; they are the command's instrument and topic. Two names in one seat is a compile error (<code>analysis.seat-conflict</code>).</p>
+<p>When the player stops short, the question asks by seat and by the verb they used:</p>
+<pre><code class="language-transcript">&gt; give
+What do you want to give?
+
+&gt; unlock door with
+Unlock it where?</code></pre>
+<p>A slot's <code>must be held</code>, <code>must be reachable</code> or <code>must be visible</code> is checked while the command is read, by the same noun matcher the rest of the engine uses to decide which thing a phrase names. When the words name something the player can see but the slot's requirement excludes it, the refusal names the thing and the reason:</p>
+<pre><code class="language-transcript">&gt; wind lantern
+You aren't holding the brass lantern.
+
+&gt; wind the widget
+You can't see any widget here.</code></pre>
+<p><code>and</code> and a comma are list readings, never hard splits. <code>take knife and lamp</code> names two things as a list and nothing as one item, so it is a list; <code>take salt and pepper shaker</code> names one thing as a single item, so it is that item, taken once. Articles are optional in both directions: <code>climb rope</code> matches a line written <code>climb the rope</code>, and <code>take the lamp off</code> matches <code>take lamp off</code>.</p>
 <h2 id="claiming-a-verb-only-where-it-makes-sense">Claiming a verb only where it makes sense</h2>
 <p>When a story action should exist only somewhere, or only sometimes, the head takes <code>while &lt;condition&gt;</code>. The action's grammar is a rule only while the condition holds; elsewhere the input parses as though the action did not exist, so a shadowed standard verb reaches its own grammar and its own clarifications:</p>
 <pre><code class="language-chord">define action releasing while the player is in the Yard

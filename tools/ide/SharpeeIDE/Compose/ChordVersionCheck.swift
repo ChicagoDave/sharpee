@@ -63,7 +63,23 @@ enum ChordVersionCheck {
     /// ADR-327 corpus migration had already re-pinned them on 2026-09-01);
     /// `ChordLexerGoldenTests` green with `ChordLexer.swift` untouched. The
     /// highlighter's keyword set gained the two new `define` block nouns.
-    static let supportedLanguageVersion = "3.6.0"
+    ///
+    /// 4.0.2 (2026-11-13): everything since the 3.6.0 pin — the 4.0 surface
+    /// and the 4.0.2 trait words. The region surface and the folds were
+    /// already in the corpus (`regions-surface.story`, `folds-surface.story`);
+    /// two NEW corpus files carry the rest: `chord-4-surface.story` (the
+    /// `landmarks`, `sailing`, `position`, `passage` and `pushing` blocks, a
+    /// vehicle, `servings`, ADR-392's `wearable on the`, `opens when
+    /// unlocked`, `closes when switched off`, `smelly` and `loud`, a story
+    /// trait read after `is a`, and a name carrying `&`), gate-clean under
+    /// `sharpee compose --check` at 4.0.2, and `chord-4-claims.chord` (the
+    /// `claims` block, which is never part of a story). The golden was
+    /// regenerated over them with the seven existing streams unchanged. This
+    /// time `ChordLexer.swift` DID move: `&` became a word token, as
+    /// `lexer.ts` has emitted it since GH #361 — the golden had never carried
+    /// the character, so the port's divergence went unseen (GH #656). The
+    /// highlighter's keyword set gained the six 4.0 block openers.
+    static let supportedLanguageVersion = "4.0.2"
 
     /// Extracts the Chord version from `sharpee --version` output
     /// ("Sharpee 4.1.1 · Chord 2.1.0" → "2.1.0"). Nil when the shape is foreign.

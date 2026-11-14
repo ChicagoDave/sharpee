@@ -1,5 +1,5 @@
-<p><strong>eat</strong> (<code>eating</code>): verbs <code>eat/consume/devour X</code>, plus <code>munch</code> and <code>nibble [on] X</code>, gated on the <code>edible</code> trait (<code>not_edible</code>). Liquids refuse <code>is_drink</code> (&quot;You should drink that, not eat it&quot;) and solids refuse drinking with <code>not_drinkable</code>; there is no cross-routing. Food is implicitly taken first. Multi-serving food counts down (<code>eaten_some</code>, then <code>eaten_all</code>; once exhausted, <code>already_consumed</code>), and the message honors the trait's data: <code>taste</code> (<code>delicious</code>/<code>tasty</code>/<code>bland</code>/<code>awful</code>), a <code>poison</code> effect (message-only: &quot;It tastes strange…&quot;, no mechanical harm today), <code>satisfiesHunger</code> (<code>filling</code> / <code>still_hungry</code>). Event: <code>eaten</code>.</p>
-<p><strong>drink</strong> (<code>drinking</code>): verbs <code>drink/sip/quaff/swallow/ imbibe X</code>, plus <code>drink from X</code> and <code>sip from X</code>. Two things are drinkable. The first is an edible marked liquid: in a <code>.story</code>, the <code>drinkable</code> adjective, which composes the edible trait with the liquid flag set, order-independent with <code>edible</code> (ratchet G1). The second is a <strong>container of liquid</strong> (<code>containsLiquid</code>, TypeScript territory), open if openable. Container drinking decrements <code>liquidAmount</code> and reports <code>from_container</code> / <code>empty_now</code>. Verb flavor: <code>sipped</code>, <code>quaffed</code>. Event: <code>drunk</code>.</p>
+<p><strong>eat</strong> (<code>eating</code>): verbs <code>eat/consume/devour X</code>, plus <code>munch</code> and <code>nibble [on] X</code>, gated on the <code>edible</code> trait (<code>not_edible</code>). Liquids refuse <code>is_drink</code> (&quot;You should drink that, not eat it&quot;) and solids refuse drinking with <code>not_drinkable</code>; there is no cross-routing. Food is implicitly taken first. A thing has one serving unless its block says <code>servings &lt;n&gt;</code>. Multi-serving food counts down (<code>eaten_some</code>, then <code>eaten_all</code>), and <strong>the last serving takes the thing out of the world</strong>: it is gone from the inventory, the room, and the parser's reach. The message honors the trait's data: <code>taste</code> (<code>delicious</code>/<code>tasty</code>/<code>bland</code>/<code>awful</code>), a <code>poison</code> effect (message-only: &quot;It tastes strange…&quot;, no mechanical harm today), <code>satisfiesHunger</code> (<code>filling</code> / <code>still_hungry</code>). Event: <code>eaten</code>.</p>
+<p><strong>drink</strong> (<code>drinking</code>): verbs <code>drink/sip/quaff/swallow/ imbibe X</code>, plus <code>drink from X</code> and <code>sip from X</code>. Two things are drinkable. The first is an edible marked liquid: in a <code>.story</code>, the <code>drinkable</code> adjective, which composes the edible trait with the liquid flag set, order-independent with <code>edible</code> (ratchet G1). It follows the rule for food: one serving unless its block says <code>servings &lt;n&gt;</code>, and <strong>the last serving takes the drink out of the world</strong>. The second is a <strong>container of liquid</strong> (<code>containsLiquid</code>, TypeScript territory), open if openable. Container drinking decrements <code>liquidAmount</code> and reports <code>from_container</code> / <code>empty_now</code>, and the container is never removed, however empty. Verb flavor: <code>sipped</code>, <code>quaffed</code>. Event: <code>drunk</code>.</p>
 <p>The author writes:</p>
 <pre><code class="language-chord">create the Pantry
   a room
@@ -23,13 +23,23 @@ create the elderflower cordial
 create the ship's biscuit
   aka biscuit
   a thing, edible
+  servings 2
+  states: whole, gnawed
   in the Pantry
 
   Dense enough to drive nails.
 
-  after the player eating
-    remove the ship's biscuit
-  end after
+  phrase detail while the ship's biscuit is gnawed:
+    One corner is missing.
+
+  on the player eating
+    refuse when the ship's biscuit is gnawed: biscuit-enough
+    change the ship's biscuit to gnawed
+  end on
+
+define phrase biscuit-enough
+  One corner was plenty.
+end phrase
 
 create Alex
   a person
@@ -54,26 +64,33 @@ Taken.
 You eat the bramley apple.
 
 &gt; eat the apple
-There's nothing left of the bramley apple to eat.
+You can't see any such thing.
 
 &gt; eat the biscuit
 (first taking the ship's biscuit)
 
 Taken.
 
-You eat the ship's biscuit.
+You eat some of the ship's biscuit.
+
+&gt; eat the biscuit
+One corner was plenty.
+
+&gt; examine the biscuit
+Dense enough to drive nails. One corner is missing.
 
 &gt; inventory
 You are carrying:
 
-a bramley apple
+a ship's biscuit
 
 &gt; drink the cordial
 You drink the elderflower cordial.
 
 &gt; sip the cordial
-There's nothing left to drink.</code></pre>
-<p>The transcript shows the cross-refusals and the implicit take. The honest caveat comes as a pair of a problem and its fix: <strong>eating never removes the item</strong> (the fully eaten apple stays in inventory at zero servings), and the biscuit's <code>after the player eating</code> clause with a <code>remove it</code> body is the one-line remedy.</p>
+You can't see any such thing.</code></pre>
+<p>The transcript shows the cross-refusals, the implicit take, and the two ways a meal can end. The apple is the default: one serving, so eating it removes it, and the second <code>eat the apple</code> finds nothing to name. The cordial goes the same way: one drink finishes it, and the sip that follows finds nothing either. The biscuit is a story that wants something else. <code>servings 2</code> means the first bite leaves it in hand, and its own <code>on the player eating</code> clause refuses the second, so the last serving is never eaten and the biscuit stays for the rest of the story, gnawed. Anything more elaborate is built the same way: a <code>servings</code> count for how long the thing lasts, and a clause on the thing for what each bite does.</p>
+<p>One thing to plan for: once a thing has been eaten or drunk away it no longer exists, and a later rule that names it fails. Give a thing the story means to mention again a serving that is never taken, as the biscuit has.</p>
 <table><thead><tr><th></th><th>eat (<code>eating-*</code>)</th><th>drink (<code>drinking-*</code>)</th></tr></thead><tbody><tr><td>Refusals</td><td><code>no_item</code> · <code>not_edible</code> · <code>is_drink</code> · <code>already_consumed</code></td><td><code>no_item</code> · <code>not_drinkable</code> · <code>already_consumed</code> · <code>container_closed</code></td></tr><tr><td>Success</td><td><code>eaten</code> · <code>eaten_some</code> / <code>eaten_all</code> · taste flavor (<code>delicious</code>/<code>tasty</code>/<code>bland</code>/<code>awful</code>) · <code>filling</code> / <code>still_hungry</code> · <code>poisonous</code></td><td><code>drunk</code> · <code>sipped</code> / <code>quaffed</code> · <code>from_container</code> / <code>empty_now</code></td></tr><tr><td>Events</td><td><code>eaten</code></td><td><code>drunk</code></td></tr></tbody></table>
 <p>Interceptors: <code>on the player eating</code> / <code>after the player eating</code> and <code>on the player drinking</code> / <code>after the player drinking</code> on the item, as above.</p>
 <p>An emptied <code>containsLiquid</code> vessel stays nominally drinkable and keeps saying <code>empty_now</code> (caveat, flagged). Neither shipped story exercises eat/drink; the zoo's feeding is its own <code>feedable</code> trait.</p>

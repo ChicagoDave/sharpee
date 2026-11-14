@@ -2,9 +2,9 @@
 <pre><code class="language-chord">extend action taking
   grammar
     snag the item</code></pre>
-<p><code>snag the lamp</code> now works exactly as <code>take the lamp</code> does. Slot names refer to the slots the action already resolves — <code>taking</code> calls its object <code>the item</code>, so the extension does too (the standard names are listed on <a href="/chord/guide/vocabulary/define-action">define action</a>).</p>
+<p><code>snag the lamp</code> now works exactly as <code>take the lamp</code> does. Slot names refer to the slots the action already resolves — <code>taking</code> calls its object <code>the item</code>, so the extension does too (the standard names are listed on <a href="/chord/guide/vocabulary/define-action">define action</a>). An extension line inherits the action's seats by those names, so a line with two entity slots must carry at least one name the action already has (<code>hang the item on the peg</code> under <code>putting</code> seats the peg as the indirect object); two new names at once is <code>analysis.unknown-slot</code>, since their seats would be a guess.</p>
 <h2 id="making-a-different-action-win">Making a different action win</h2>
-<p>Extensions also settle contests. A story's grammar always outranks the standard library's, so restating a pattern under a different action flips which one wins:</p>
+<p>Extensions also settle contests. At equal specificity a story's line outranks the standard library's, so restating a pattern word for word under a different action flips which one wins:</p>
 <pre><code class="language-chord">extend action examining
   grammar
     read the target</code></pre>

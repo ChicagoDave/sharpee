@@ -42,6 +42,11 @@ final class SyntaxHighlighterTests: XCTestCase {
         XCTAssertEqual(SyntaxHighlighter.color(for: token(.word, "chapters")), Theme.tokenKeyword)
         XCTAssertNil(SyntaxHighlighter.color(for: token(.word, "interrupt")),
                      "timer verbs are statement verbs, never colored")
+        // Chord 4.0 block openers, each closed by `end <word>`.
+        for opener in ["claims", "landmarks", "passage", "position", "pushing", "sailing"] {
+            XCTAssertEqual(SyntaxHighlighter.color(for: token(.word, opener)), Theme.tokenKeyword,
+                           "`\(opener)` opens a Chord 4.0 block")
+        }
         XCTAssertNil(SyntaxHighlighter.color(for: token(.word, "lighthouse")),
                      "non-keyword words stay at base foreground")
         XCTAssertNil(SyntaxHighlighter.color(for: token(.punct, "—")))

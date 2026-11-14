@@ -1,0 +1,20 @@
+## Chord 4.0.2 lexer-golden corpus — the `claims` block (ADR-367), written
+## over the rooms and things of `chord-4-surface.story`. A claims block lives
+## in a fragment of its own and is never part of the story, so this file is
+## a `.chord` fragment and not a story. Every spelling is lifted from the
+## sharpee.net claims guide. Edit only alongside the golden file.
+
+claims
+  needs rooms: the Hall, the Cellar
+  needs things: the iron key, the cellar door
+  needs verbs: take, unlock, open
+
+  claim the key is in hand
+    the player has the iron key
+
+  never the iron key leaves the Hall
+    the iron key is not in the Hall
+    needs rooms: the Hall
+    needs things: the iron key
+    needs verbs: take
+end claims

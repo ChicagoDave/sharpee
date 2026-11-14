@@ -1092,6 +1092,9 @@
       case "exhaustion":
         return `${unreached}${row.never ? "every reachable state under its set was tried" : "no reachable state under its set satisfies it"} (${row.set})`;
       case "budget": {
+        if (row.stopped?.reason === "start-outside-set") {
+          return `${unreached}the walk never entered its set: the player starts in a room the set does not name, and no command the set allows leads into one it does (${row.set})`;
+        }
         const stopped = row.stopped ? `${row.stopped.reason} after ${row.stopped.states} states` : "a budget";
         const cost = row.inertInSet > 0 ? `its set carries ${row.thingsInSet} things, ${row.inertInSet} of which the claim's rules never reach; each independent thing doubles the states to exhaust` : `its set carries ${row.thingsInSet} things, and each independent thing doubles the states to exhaust`;
         return `${unreached}the walk stopped at ${stopped}; ${cost}`;

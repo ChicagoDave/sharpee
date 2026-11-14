@@ -11,3 +11,4 @@
     phrase fountain-stopped when the fountain is still
   end on</code></pre>
 <p>State order is a promise. Without <code>, reversible</code>, a <code>change</code> back to an earlier state is a load error (<code>analysis.irreversible-state</code>): a marrow declared <code>states: entire, sliced</code> can never be un-sliced, and the compiler holds you to it. Add <code>, reversible</code> only when the story really does move both ways, as the fountain does.</p>
+<p>One name is reserved. <code>dark</code> is the platform's word for a room without light, so a <code>states:</code> line on anything but a room may not declare a state called <code>dark</code> (<code>analysis.dark-state-reserved</code>): <code>the lantern is dark</code> would read the room's light, never the lantern's state. A thing that gives light composes <code>light-source</code> (with <code>switchable</code> to turn it on and off) instead of declaring a dark state.</p>

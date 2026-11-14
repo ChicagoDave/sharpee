@@ -1,0 +1,94 @@
+<p>Sailing is wind, bearings and canvas on top of an open vehicle. It is the <code>use sailing</code> extension, and it builds on <code>use expanses</code>: both lines go in the story header, and neither turns on the other. Every word on this page applies to a <code>movement: open</code> <a href="/chord/guide/world/vehicles">vehicle</a> in an <a href="/chord/guide/world/expanses">expanse</a>; on any other vehicle, or a room carrying <code>wind:</code>, it is a compile error.</p>
+<pre><code class="language-chord">story
+  title: The Sargasso
+  authors:
+    ref
+  id: sargasso
+  story-version: 0.0.1
+  use expanses
+  use sailing</code></pre>
+<h2 id="bearings">Bearings</h2>
+<p>Under <code>use sailing</code> a heading is a bearing in whole degrees, 0 north, clockwise. A compass word still names its bearing (<code>northeast</code> is 45), so the base <code>compass</code> set, <code>start &lt;vehicle&gt; heading &lt;direction&gt;</code> and <code>is heading &lt;direction&gt;</code> keep working, and each also takes <code>&lt;n&gt; degrees</code>.</p>
+<p>The <code>naval</code> command set turns the ship from where it points: <code>port 15</code> and <code>starboard 15 degrees</code> (the word is optional), <code>hard to port</code> and <code>hard to starboard</code> for 90 degrees, <code>come about</code> to tack through the wind. No turn starts the ship: <code>ahead</code> puts it under way on its bearing and <code>heave to</code> takes it out. A bare <code>port</code> asks how far, so no turn size is ever invented for the author. A ship may list both sets, answering &quot;starboard 15&quot; and &quot;steer north&quot; alike.</p>
+<h2 id="wind">Wind</h2>
+<p>Wind is the author's choice. With no <code>wind:</code> line the vehicle writes the base <code>pace:</code> and the wind is never read. With one, the expanse carries it — <code>wind: from &lt;direction or bearing&gt;</code> or <code>wind: calm</code> — the story changes it with <code>set the &lt;expanse&gt;'s wind to &lt;direction, bearing or calm&gt;</code>, and the vehicle writes a <code>sailing</code> block in place of <code>pace:</code>.</p>
+<p>The <code>sailing</code> block gives the pace by the angle between the heading and where the wind comes from: 0 is dead into it, 180 dead before it. Each row is a band, <code>&lt;a&gt; to &lt;b&gt; degrees: &lt;n&gt; turns</code> or <code>stopped</code>, plus one <code>calm:</code> row. After every step the band the ship is in sets the pace of the next, so a tailwind is faster and a headwind slower at exactly the paces written. In a <code>stopped</code> band the ship keeps her heading and stays under way but does not move: she is <em>in irons</em>, said once, and <code>&lt;vehicle&gt; is in irons</code> holds until she is turned out of it.</p>
+<h2 id="sails">Sails</h2>
+<p>Sails are optional, author-named settings on the vehicle, declared from least to most canvas with a start: <code>sails: furled, reefed, full</code> and <code>sails start: furled</code>. With sails, each band row gives a pace per setting, naming every setting once; the <code>calm:</code> row keeps one value. The <code>naval</code> set gains <code>make sail</code>, <code>shorten sail</code> and <code>furl sails</code>, understood only aboard a vehicle with <code>sails:</code>; the story writes <code>set the &lt;vehicle&gt;'s sails to &lt;setting&gt;</code> and reads <code>&lt;vehicle&gt;'s sails are &lt;setting&gt;</code>. Irons is the wind's, not the canvas's: it applies when the band is <code>stopped</code> under the fullest setting.</p>
+<pre><code class="language-chord">create the Sargasso
+  an expanse
+  size: 40 by 40
+  wind: from northeast
+  aka sea, weed
+
+  Weed-choked water under a sky the colour of pewter.
+
+  landmarks
+    Port Royal: 3, 4
+    the Reef: 12, 30
+  end landmarks
+
+create Port Royal
+  a room
+  seen from afar: a smudge of smoke over a low green shore
+
+  The quay at Port Royal, the Marigold warped alongside.
+
+create the Reef
+  a room
+  seen from afar: a line of white where the swell breaks
+
+  Coral under a foot of water, and the wreck it made.
+
+create the Marigold
+  a vehicle
+  in the Sargasso at 20, 20
+  movement: open
+  carries: in
+  drive: player
+  commands: naval, compass
+  stride: 1 unit
+  sight: 8
+  seen from afar: three masts leaning to the wind
+  sails: furled, reefed, full
+  sails start: furled
+  aka ship, barque
+
+  A barque, three masts, a wheel aft.
+
+  sailing
+    0 to 44 degrees: furled stopped, reefed stopped, full stopped
+    45 to 74 degrees: furled stopped, reefed 6 turns, full 4 turns
+    75 to 119 degrees: furled stopped, reefed 3 turns, full 2 turns
+    120 to 180 degrees: furled 6 turns, reefed 2 turns, full 1 turn
+    calm: stopped
+  end sailing
+
+create the capstan
+  a thing, pushable
+  in the Marigold
+
+  The capstan. Turning it sets every stitch of canvas at once.
+
+  on the player pushing
+    set the Marigold's sails to full
+    phrase all-sail
+  end on
+
+define phrase all-sail
+  The capstan clanks round and every sail fills.
+end phrase</code></pre>
+<pre><code class="language-transcript">&gt; starboard
+How many degrees?
+
+&gt; starboard 90 degrees
+You bring the Marigold to starboard, to 90 degrees.
+
+&gt; ahead
+The Marigold gathers way on 90 degrees.
+
+&gt; push capstan
+The capstan clanks round and every sail fills.</code></pre>
+<p>With the wind from 45 and the ship on 90, she is 45 degrees off it: under furled sails that band is <code>stopped</code>, and under full it is four turns a step, so the capstan is what gets her moving. Turn her to 180 and she runs before the wind at one turn a step.</p>
+<h2 id="edges-under-sail">Edges under sail</h2>
+<p>An edge of the expanse with no blocked-exit line of its own is weather under <code>use sailing</code>: a sailing vehicle that reaches it is driven back with the stock line &quot;Wind and sea drive you back.&quot; A written edge line, or <code>override message</code>, still wins.</p>

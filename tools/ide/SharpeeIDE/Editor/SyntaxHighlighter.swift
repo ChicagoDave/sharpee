@@ -44,6 +44,12 @@ final class SyntaxHighlighter {
         // `move` and `change` have never been colored, and `before`/`after`
         // are ordinary prose words far more often than chapter predicates.
         "timer", "chapters",
+        // Chord 4.0: the six block openers that close with `end <word>` —
+        // `claims` (ADR-367), `landmarks` (ADR-376), `passage` and `pushing`
+        // (ADR-378), `position` (ADR-366) and `sailing` (ADR-375). `position`
+        // and `passage` are ordinary prose words too; colored anyway, on the
+        // tradeoff already accepted for `state`, `score` and `beat`.
+        "claims", "landmarks", "passage", "position", "pushing", "sailing",
     ]
 
     /// Property keys — a `name:` field rather than a structural keyword.

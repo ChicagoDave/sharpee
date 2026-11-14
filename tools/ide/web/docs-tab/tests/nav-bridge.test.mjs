@@ -12,7 +12,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs';
+import { readdirSync, statSync, existsSync } from 'node:fs';
 import { join, dirname, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import * as esbuild from 'esbuild';
@@ -205,9 +205,19 @@ function findContentFiles(dir, acc = []) {
   return acc;
 }
 
+// Bundled, as build.mjs's loadNav bundles it, and for the same reason: nav.ts
+// imports ./versions.json, and a data URL has no directory to resolve a relative
+// specifier against, so a bare transform fails to import (GH #502).
 async function loadRealNav() {
-  const source = readFileSync(resolve(repoRoot, 'website/src/lib/nav.ts'), 'utf8');
-  const { code } = await esbuild.transform(source, { loader: 'ts', format: 'esm' });
+  const { outputFiles } = await esbuild.build({
+    entryPoints: [resolve(repoRoot, 'website/src/lib/nav.ts')],
+    bundle: true,
+    write: false,
+    format: 'esm',
+    platform: 'node',
+    logLevel: 'silent',
+  });
+  const code = outputFiles[0].text;
   const module = await import(`data:text/javascript;base64,${Buffer.from(code).toString('base64')}`);
   return module.NAV;
 }

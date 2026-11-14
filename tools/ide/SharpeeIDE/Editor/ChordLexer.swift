@@ -197,6 +197,17 @@ enum ChordLexer {
                 continue
             }
 
+            // GH #361: `&` is a name word (`the Sandler & Sons`) — nothing
+            // else in Chord reads the character, so it is a word token of its
+            // own, exactly as lexer.ts emits it.
+            if ch == 0x26 { // `&`
+                tokens.append(ChordToken(kind: .word,
+                                         text: text(units, pos..<(pos + 1)),
+                                         span: span(lineNo, column)))
+                pos += 1
+                continue
+            }
+
             let single: ChordTokenKind
             switch ch {
             case 0x3A: single = .colon

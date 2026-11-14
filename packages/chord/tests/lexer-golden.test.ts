@@ -13,7 +13,14 @@
  * (ADR-360: a `rooms` group, `in the <region>` membership, the plain and
  * one-way exit tables) in `regions-surface.story` and the ADR-362 folds (a
  * kind on the `create` head, `exits:` and `exits, one-way:` lines) in
- * `folds-surface.story`; the golden file
+ * `folds-surface.story`, plus the rest of the 4.0 surface and the 4.0.2
+ * trait words (the `landmarks`, `sailing`, `position`, `passage` and
+ * `pushing` blocks, a vehicle, `servings`, ADR-392's `wearable on the`,
+ * `opens when unlocked`, `closes when switched off`, `smelly` and `loud`, a
+ * story trait read after `is a`, and a name carrying `&`) in
+ * `chord-4-surface.story`, with the `claims` block in `chord-4-claims.chord`
+ * (a claims block is never part of a story, so that one corpus file is a
+ * `.chord` fragment); the golden file
  * (`lexer-golden.json`) records `lex()`'s exact `Line[]` output per corpus
  * file. A `lexer.ts` change that alters the stream turns this test red in
  * the CI that exists today — REGENERATE THE GOLDEN deliberately
@@ -32,10 +39,13 @@ import { DiagnosticBag } from '../src/diagnostics.js';
 const FIXTURE_DIR = join(__dirname, 'fixtures', 'lexer-golden');
 const GOLDEN_PATH = join(FIXTURE_DIR, 'lexer-golden.json');
 
-/** Corpus files, sorted for a deterministic golden layout. */
+/**
+ * Corpus files, sorted for a deterministic golden layout: every story, and
+ * every `.chord` fragment (a claims block cannot be written in a story).
+ */
 function corpusFiles(): string[] {
   return readdirSync(FIXTURE_DIR)
-    .filter((f) => f.endsWith('.story'))
+    .filter((f) => f.endsWith('.story') || f.endsWith('.chord'))
     .sort();
 }
 
@@ -158,6 +168,36 @@ describe('ADR-258 D7 — lexer golden conformance pin', () => {
       'folded create head': /^create .+, an? \w+/m,
       'exits line': /^ {2}exits: \w+ to /m,
       'exits line, one-way': /^ {2}exits, one-way: \w+ to /m,
+      // The rest of the 4.0 surface and the 4.0.2 trait words — the corpus
+      // the IDE's Chord 4.0.2 pin cites as its honesty condition. Same drift
+      // guard: the six block openers both editors color, and the words the
+      // Swift lexer port has to carry.
+      'use expanses': /^ {2}use expanses$/m,
+      'use sailing': /^ {2}use sailing$/m,
+      'landmarks block': /^ {2}landmarks$[\s\S]+?^ {2}end landmarks$/m,
+      'landmark row': /^ {4}.+: \d+, \d+$/m,
+      'sailing block': /^ {2}sailing$[\s\S]+?^ {2}end sailing$/m,
+      'sailing row': /^ {4}\d+ to \d+ degrees: /m,
+      'a vehicle': /^ {2}a vehicle$/m,
+      'position block': /^ {2}position$[\s\S]+?^ {2}end position$/m,
+      'position row': /^ {4}when .+ holds .+: the /m,
+      'passage block': /^ {2}passage to .+$[\s\S]+?^ {2}end passage$/m,
+      'pushing block': /^ {2}pushing$[\s\S]+?^ {2}end pushing$/m,
+      'pushing row': /^ {4}between .+ and .+$/m,
+      'admits pushing': / admits pushing$/m,
+      servings: /^ {2}servings \d+$/m,
+      'wearable on the <part>': /, wearable on the \w+/,
+      'wearable on a two-word part': /, wearable on the \w+ \w+$/m,
+      'opens when unlocked': /^ {2}opens when unlocked$/m,
+      'closes when switched off': /^ {2}closes when switched off$/m,
+      smelly: /^ {2}a thing, .*\bsmelly\b/m,
+      loud: /^ {2}a thing, .*\bloud\b/m,
+      'story trait read after is a': /^ {2}refuse when .+ is a snake: /m,
+      'a name carrying &': /^create the \w+ & \w+$/m,
+      'claims block': /^claims$[\s\S]+?^end claims$/m,
+      'claims needs line': /^ {2}needs (rooms|things|verbs): /m,
+      'claim head': /^ {2}claim .+$/m,
+      'never head': /^ {2}never .+$/m,
     };
     for (const [construct, pattern] of Object.entries(constructs)) {
       expect(pattern.test(all), `corpus no longer exercises: ${construct}`).toBe(true);

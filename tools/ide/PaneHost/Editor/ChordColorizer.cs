@@ -23,8 +23,11 @@ internal readonly record struct StyledRun(int Column, int EndColumn, IBrush Brus
 /// <summary>A line transformer driven by a token index the host rebuilds after every change.</summary>
 public sealed class ChordColorizer : DocumentColorizingTransformer
 {
-    /// <summary>Structural keywords colored as keywords when they appear as word tokens.</summary>
-    private static readonly HashSet<string> Keywords = new(StringComparer.OrdinalIgnoreCase)
+    /// <summary>
+    /// Structural keywords colored as keywords when they appear as word tokens. Internal so
+    /// ChordColorizerTests can hold this hand copy equal to SyntaxHighlighter.swift's set.
+    /// </summary>
+    internal static readonly HashSet<string> Keywords = new(StringComparer.OrdinalIgnoreCase)
     {
         "story", "grammar", "create", "define", "extend", "remove",
         "action", "actions", "use", "means", "directions",
@@ -35,10 +38,14 @@ public sealed class ChordColorizer : DocumentColorizingTransformer
         "manner", "greetings", "exchange", "initiative", "conversation",
         "beat", "conclusion",
         "timer", "chapters",
+        "claims", "landmarks", "passage", "position", "pushing", "sailing",
     };
 
-    /// <summary>Header property keys — a `name:` field rather than a structural keyword.</summary>
-    private static readonly HashSet<string> Properties = new(StringComparer.OrdinalIgnoreCase)
+    /// <summary>
+    /// Header property keys — a `name:` field rather than a structural keyword. Internal for
+    /// the same parity test as Keywords.
+    /// </summary>
+    internal static readonly HashSet<string> Properties = new(StringComparer.OrdinalIgnoreCase)
     {
         "title", "authors", "testers", "ifid", "id", "story-version",
         "prologue", "description", "client", "theme", "template",

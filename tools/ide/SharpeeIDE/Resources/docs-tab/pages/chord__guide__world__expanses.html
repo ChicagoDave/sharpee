@@ -1,0 +1,130 @@
+<p>An expanse is a bounded space with coordinates: a sea, an asteroid belt, a desert — anywhere a vessel is <em>between</em> places rather than in one. It is the <code>use expanses</code> extension; write the line in the story header, and the <code>expanse</code> kind, <code>movement: open</code> and the <code>coordinates</code> command set become available. An expanse lowers to a room, so the room heading, <code>look</code> and scope read it as they read any room, and its own prose describes it.</p>
+<pre><code class="language-chord">story
+  title: The Belt
+  authors:
+    ref
+  id: belt
+  story-version: 0.0.1
+  use expanses</code></pre>
+<p>The expanse writes <code>size: &lt;w&gt; by &lt;h&gt;</code> and a <code>landmarks</code> block whose rows place rooms in it at coordinates. A landmark is an ordinary room; a vehicle that reaches its cell arrives in it. <code>seen from afar:</code> on a room or a vehicle is the line a looker sees when it is in sight but not here.</p>
+<pre><code class="language-chord">create the Belt
+  an expanse
+  size: 20 by 8
+  drift: 1 unit every 50 turns
+  north is blocked: ice-fields
+  aka belt, void
+
+  Black, and the slow tumble of rock against it.
+
+  landmarks
+    the Mining Platform: 3, 3
+    the Derelict: 14, 6
+  end landmarks
+
+define phrase ice-fields
+  Ice closes the way north; the skiff will not answer that heading.
+end phrase
+
+create the Mining Platform
+  a room
+  seen from afar: a cluster of lights on a lopsided rock
+  sight: 4
+
+  A platform bolted to a rock, its lights the only warm thing for miles.
+
+create the Derelict
+  a room
+  seen from afar: a long dead hull, turning slowly end over end
+
+  The inside of a hull that has not held air in a hundred years.</code></pre>
+<h2 id="an-open-vehicle">An open vehicle</h2>
+<p><code>movement: open</code> is a <a href="/chord/guide/world/vehicles">vehicle</a> with a position in an expanse rather than a room. It starts <code>in &lt;expanse&gt; at &lt;x&gt;, &lt;y&gt;</code> or in a landmark, and writes three lines the type needs: <code>pace:</code> (turns per step), <code>stride:</code> (units per step) and <code>sight:</code> (how far one sees from it, in units). Speed is entirely the author's: a long voyage is long by the numbers written here, and no command changes them.</p>
+<pre><code class="language-chord">create the skiff
+  a vehicle
+  in the Belt at 3, 3
+  movement: open
+  carries: in
+  drive: player
+  commands: compass, coordinates
+  pace: 1 turn
+  stride: 1 unit
+  sight: 6
+  seen from afar: a glint of hull against the dark
+  aka craft
+
+  A skiff: one seat, one console, a hull you can see through.
+
+create the telescope
+  a thing
+  in the skiff
+  sight: 12
+  aka scope
+
+  A brass telescope, older than the skiff.</code></pre>
+<p>Two command sets drive it. <code>compass</code> is the base set — <code>steer north</code>, <code>go north</code> from inside, <code>heave to</code> — and under <code>use expanses</code> a heading is held across the open until something stops it. <code>coordinates</code> adds <code>set course for &lt;x&gt;, &lt;y&gt;</code> and <code>set course for &lt;landmark&gt;</code>. Under <code>drive: control</code> the story writes <code>start &lt;vehicle&gt; heading &lt;direction&gt;</code> or <code>send &lt;vehicle&gt; to &lt;landmark or coordinates&gt;</code> instead.</p>
+<pre><code class="language-transcript">&gt; set course for the Derelict
+You set course for the Derelict.
+
+&gt; wait
+Time passes...
+
+&gt; wait
+Time passes...
+
+&gt; wait
+Time passes...
+
+&gt; wait
+Time passes...
+
+&gt; wait
+Time passes...
+
+The lookout cries: the Derelict is in sight.</code></pre>
+<h2 id="sight">Sight</h2>
+<p>Whoever looks sees in bands, and out of sight is out of scope. From the skiff, anything within its <code>sight:</code> is reported — <em>close by</em>, <em>in the distance</em>, or <em>on the horizon</em>, with its direction — and a thing carrying <code>sight:</code> of its own is an instrument: <code>look through the telescope</code> looks once with its reach instead.</p>
+<pre><code class="language-transcript">&gt; look
+Mining Platform
+A platform bolted to a rock, its lights the only warm thing for miles.
+
+You can see a skiff here.
+
+In the skiff you see a telescope and an Alex.
+
+The cask, in the distance, to the east.
+
+&gt; look through telescope
+You look through the telescope.
+
+The cask, on the horizon, to the west.
+
+The Mining Platform, on the horizon, to the west.</code></pre>
+<p>The same bands are conditions — <code>&lt;thing&gt; is in sight</code>, <code>is close by</code>, <code>is in the distance</code>, <code>is on the horizon</code> — and <code>when &lt;thing&gt; comes into sight</code> is an anchor a sequence or an <code>after</code> clause can wait on, which is how the lookout above cries out:</p>
+<pre><code class="language-chord">define phrase land-ho
+  The lookout cries: the Derelict is in sight.
+end phrase
+
+define sequence landfall
+  when the Derelict comes into sight
+    phrase land-ho
+end sequence</code></pre>
+<p><code>&lt;vehicle&gt; is within &lt;n&gt; of &lt;landmark&gt;</code> reads distance; <code>&lt;vehicle&gt; is in &lt;expanse&gt;</code>, <code>is at &lt;landmark&gt;</code>, <code>is heading &lt;direction&gt;</code> and <code>is under way</code> read where it is. An expanse's description varies by position with the ordinary per-entity override, <code>phrase description while &lt;condition&gt;:</code>, gated on any of these. A voyage of a hundred turns is as eventful as the author makes it.</p>
+<h2 id="edges">Edges</h2>
+<p>Each side of an expanse may carry a blocked-exit line, <code>north is blocked: &lt;phrase&gt;</code>, for <code>north</code>, <code>south</code>, <code>east</code> and <code>west</code>. A step that would pass an edge ends at it, stops the vehicle, and says the phrase once; a vehicle never crosses one. An edge with no line of its own gets the stock line.</p>
+<pre><code class="language-transcript">&gt; steer north
+You steer the skiff north.
+
+&gt; wait
+Time passes...
+
+Ice closes the way north; the skiff will not answer that heading.</code></pre>
+<h2 id="floating-things">Floating things</h2>
+<p>A thing marked <code>floats</code> may sit in the expanse with coordinates of its own, and drifts: the expanse's <code>drift: 1 unit every &lt;n&gt; turns</code> moves every floating thing one unit in a random direction, on the story's seed. When the vehicle is alongside — in the same cell — <code>retrieve the cask</code> brings it aboard; a floating thing that drifts into a landmark's cell washes up in that room.</p>
+<pre><code class="language-chord">create the cask
+  a thing, floats
+  in the Belt at 5, 3
+  aka barrel
+
+  A tarred cask, riding low.</code></pre>
+<p>Anything else dropped or thrown overboard is lost: it goes offstage and the stock line says it drifts away, which a thing's own <code>phrase lost-overboard</code> can replace. The player may leave the vehicle in the open; they stay in its cell, can go nowhere on their own, and <code>enter</code> or <code>board</code> any open vehicle alongside.</p>
+<p>Wind, bearings in degrees and sails are a further extension on top of this one: <a href="/chord/guide/world/sailing">Sailing</a>.</p>
