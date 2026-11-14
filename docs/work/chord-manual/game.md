@@ -166,6 +166,45 @@ lens cracked and once whole.
 - Each candle is not yet its own thing, so `each` is not in the game yet. It arrives with kindle in
   Part IV, where one casting lights every unlit candle.
 
+Part IV compiles at Chord 4.0.2 and was played on 2026-11-13 (session 5eae2b). The game can be won
+from the committed snapshot: 44 commands, 50 points of 50, rank Lamplighter. The cracked-lens ending
+was played from it too.
+
+- Mend, hush and unbind are `define action` blocks, and `mendable`, `hushable` and `ward` are the
+  traits that answer them. An action carries what must be true of the player (`the mend page must
+  be learned`) and its miss (`otherwise refuse`); the trait carries what happens to the thing.
+- Kindle is not a story action. `change it to lit` compiles and lights nothing: it stores a story
+  state named `lit` that conditions then read in place of the real one. Issue #707. A story action
+  therefore cannot light, open, lock, switch or un-break anything. Kindle is the standard
+  `lighting` action with a verb added (`extend action lighting`), and its words are four
+  `override message` blocks. This changes the growth table: chapter 25 gives kindle, and chapters
+  23 and 24 are built on the other three workings.
+- For the same reason the lens is no longer `breakable, starts broken`. It has its own states,
+  `cracked` and `sound`, which `change` can write. Chapter 9 needs another breakable thing.
+- A trait's `on the player lighting` silently switched off the own `on` and `after` clauses of
+  every thing that composed it: the Lantern lit with no lens and no ending ran. Issue #708. There
+  is no `wick` trait; the lamp, the candles and the Lantern each repeat one requirement line.
+- A trait with one carrier is normal, not a smell: a thing may not answer a story action in its own
+  `on` clause, so the grille's answer to unbind has to be a trait even though nothing else has it.
+- `states: still, tolling, reversible` compiles, as three states. The form is `states, reversible:
+  still, tolling`, and the runtime error's hint reads like the wrong one. Issue #709.
+- The candles are one thing, not three, and `each` is still not in the game. Lighting several
+  things in one casting needs `change the match to lit` to mean something (#707). When it does,
+  the three candles and `each` come back.
+- `sit on chair` works through `extend action entering`. Leaving the chair is `exit`; `out` and
+  `stand` are not understood there. Chapter 7.
+- `override message going-too-dark` replaces the grue line, which is what a dark room prints on
+  arrival as well as on trying to leave it.
+- A per-thing `phrase detail while the hand lamp is lit:` adds its sentence to the lamp's
+  description when the lamp really is lit, and not when only the story state says so.
+- A `define phrase <key>, cycling` with three variants serves all three workings' "you have not
+  read that" refusal, and the cycle is shared across them.
+- Provisional homes, until Part V gives them to people: the hush page is on a shelf in Stack 3, and
+  the unbind page shows itself under a pricket when the candles are lit. The grille will not lift
+  while the bell tolls, so hush comes before unbind.
+- The walk spends about 44 of the day's 80 turns. Part V's conversations will need the dusk turn
+  moved or the walk will not fit.
+
 ## Open points in the design
 
 - Every mechanic above is a reading of the grammar. Each is proven, or changed, when its snapshot
