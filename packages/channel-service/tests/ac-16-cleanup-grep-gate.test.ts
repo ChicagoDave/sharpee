@@ -92,10 +92,17 @@ const ALLOW_LIST_PREFIXES = [
  * (perception, not a media cue) — they cite `media.sound.play` only
  * to disambiguate the codebase's "audio" vs "sound" vs "audibility"
  * vocabulary in their header docs.
+ *
+ * The transcript-tester claim test is the one entry that is not a
+ * citation: it hands `evaluateEmittedClaim` a captured event of a
+ * dotted media type to prove a claim in Chord spelling matches it
+ * (GH #714). It reads an event; it emits none. Only this file is
+ * listed, so the gate still covers the package's source.
  */
 const ALLOW_LIST_FILES = [
   'packages/text-service/src/handlers/audibility.ts',
   'packages/engine/src/prose-pipeline/handlers/audibility.ts',
+  'packages/transcript-tester/tests/claim-kinds.test.ts',
 ];
 
 /**

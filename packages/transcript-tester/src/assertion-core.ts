@@ -349,8 +349,10 @@ export function evaluateEmittedClaim(
   const named = (candidate: unknown): boolean =>
     typeof candidate === 'string' && (candidate === messageId || candidate.endsWith(`.${messageId}`));
   // A platform event is claimed in its Chord spelling (`media-ambient-play`)
-  // and emitted under its dotted type (`media.ambient.play`): the claim is an
-  // event seam like the loader's own, so it translates the same way (GH #714).
+  // and emitted under its dotted platform type: the claim is an event seam
+  // like the loader's own, so it translates the same way (GH #714). The dotted
+  // spelling is not written here; the channel-service AC-16 grep gate reads it
+  // as an emission.
   const platformType = translateEventId(messageId);
   const matches = events.some((event) => named(event.type) || event.type === platformType || named(event.data?.messageId));
   if (matches) return { matches: true };
