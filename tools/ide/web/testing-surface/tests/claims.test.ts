@@ -17,7 +17,6 @@ import { claimLockText, claimLockVisit, claimRowOf, claimWhyText, claimsCountsOf
 const envelope = { schemaVersion: 2 as const, seq: 3, elapsedMs: 40 };
 const row: ClaimResultRow = {
   name: 'the Landing is reached',
-  never: false,
   kind: 'room',
   verdict: 'held',
   settledBy: 'line',
@@ -35,7 +34,7 @@ const row: ClaimResultRow = {
 describe('claimRowOf / claimsSummaryOf', () => {
   it('keep the payload and drop the envelope', () => {
     expect(claimRowOf({ ...envelope, type: 'claim-result', ...row })).toEqual(row);
-    const summary = { source: 'x.claims.chord', declared: 2, held: 1, violated: 0, unproven: 1, walks: 1, totalWalkMs: 12, seed: 7, floored: true };
+    const summary = { source: 'x.claims.chord', declared: 2, held: 1, unproven: 1, walks: 1, totalWalkMs: 12, seed: 7, floored: true };
     expect(claimsSummaryOf({ ...envelope, type: 'claims-summary', ...summary })).toEqual(summary);
   });
 });
@@ -50,24 +49,24 @@ describe('the words are the report\'s', () => {
     expect(claimLockText(row, row.locks![1])).toBe('lock "the Landing is reached" at line branch01 "hall · north" at turn 3 — NOT held there: the player is in the Hall');
   });
 
-  it('a budget stop names the walk and the set\'s cost; an exhaustion names the set; a never claim says tried', () => {
+  it('a budget stop names the walk and the set\'s cost; an exhaustion names the set', () => {
     const budget: ClaimResultRow = { ...row, verdict: 'unproven', settledBy: 'budget', line: undefined, locks: undefined, thingsInSet: 38, inertInSet: 2, stopped: { reason: 'max-seconds', states: 1200 } };
     expect(claimWhyText(budget)).toBe('not reached by any line; the walk stopped at max-seconds after 1200 states; its set carries 38 things, 2 of which the claim\'s rules never reach; each independent thing doubles the states to exhaust');
-    const never: ClaimResultRow = { ...row, name: 'the note leaves the Hall', never: true, settledBy: 'exhaustion', line: undefined, locks: undefined };
-    expect(claimWhyText(never)).toBe('every reachable state under its set was tried (the declared set)');
-    expect(claimHeadline(never)).toBe('HELD  the note leaves the Hall (never)');
+    const exhausted: ClaimResultRow = { ...row, name: 'the note leaves the Hall', verdict: 'unproven', settledBy: 'exhaustion', line: undefined, locks: undefined };
+    expect(claimWhyText(exhausted)).toBe('not reached by any line; no reachable state under its set satisfies it (the declared set)');
+    expect(claimHeadline(exhausted)).toBe('UNPROVEN  the note leaves the Hall');
   });
 
   it('the header is the report\'s ratio line once the summary has arrived, else the count so far', () => {
-    const summary = { source: 'x', declared: 10, held: 9, violated: 1, unproven: 0, walks: 4, totalWalkMs: 1, floored: true };
+    const summary = { source: 'x', declared: 10, held: 9, unproven: 1, walks: 4, totalWalkMs: 1, floored: true };
     expect(claimsHeaderText(summary, [row])).toBe(claimsRatioLine(summary));
-    expect(claimsHeaderText(summary, [row])).toBe('claims: 9 of 10 held, 1 violated');
+    expect(claimsHeaderText(summary, [row])).toBe('claims: 9 of 10 held, 1 unproven');
     expect(claimsHeaderText(undefined, [row, row])).toBe('claims: 2 so far');
   });
 
   it('the counts are the summary\'s once it has arrived, the rows\' before it', () => {
-    const summary = { source: 'x', declared: 10, held: 9, violated: 1, unproven: 0, walks: 4, totalWalkMs: 1, floored: true };
-    expect(claimsCountsOf(summary, [row]).map((count) => count.text)).toEqual(['9 held', '1 violated']);
+    const summary = { source: 'x', declared: 10, held: 9, unproven: 1, walks: 4, totalWalkMs: 1, floored: true };
+    expect(claimsCountsOf(summary, [row]).map((count) => count.text)).toEqual(['9 held', '1 unproven']);
     expect(claimsCountsOf(undefined, [row, row]).map((count) => count.text)).toEqual([`2 ${row.verdict}`]);
   });
 

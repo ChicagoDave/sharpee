@@ -90,7 +90,7 @@ describe('REAL-PATH — a claims walk and an engine that refuses', () => {
     const { recorded, loadGame } = refusingLoader();
     const run = await runClaims(compileFixture(), claimSet(), loadGame, OPTIONS);
 
-    expect([run.declared, run.held, run.violated, run.unproven]).toEqual([2, 2, 0, 0]);
+    expect([run.declared, run.held, run.unproven]).toEqual([2, 1, 1]);
     expect(recorded.restores.length).toBeGreaterThan(2);
     expect(recorded.restores.every((accepted) => accepted)).toBe(true);
     expect(run.walks[0].restores).toBe(recorded.restores.length);

@@ -119,7 +119,7 @@ and say so.
 | 34 | The epilogue: sailing the Mere to the beacon. |
 | 35 | Standalone examples only. The game has no combat and no hunger, and should not grow them to fill a chapter. |
 | 36–37 | The bell, the kindling sound, a picture of the lit Lantern; a panel listing the workings Ansel has learned; the browser theme. |
-| 38–39 | The full walk-through recorded as a test tree; claims that the story can be won, and that the Lantern is never lit over a cracked lens without ending the story. |
+| 38–39 | The full walk-through recorded as a test tree; a claim that the story can be won. |
 | 40 | The game published. |
 
 ## What the snapshots have shown so far
@@ -389,6 +389,8 @@ CLI (`node packages/devkit/dist/cli.js`), not the published one.
   walk also cannot type a conversation's `about` topics, an exchange's answers, or `wait`, so it
   cannot reach the bargain at all. Issue #717. The snapshot has no `never` claim; chapter 39's
   `never` needs a standalone example with no clock in it.
+  2026-11-14: `never` is removed from the claims language (ADR-397), so chapter 39 now shows
+  positive claims and locks only, and needs no such example.
 - Writing the `never` found a hole in the story all the same. From the first turn the bargain
   could be struck in the Refectory, the fourth page read, and the grille unbound before the bell
   had ever rung: ten commands to the roof, with hush never needed. The tower bell is now `states:

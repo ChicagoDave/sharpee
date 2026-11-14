@@ -48,7 +48,6 @@ export function claimResultRowOf(claim: ClaimVerdict, result: Pick<ClaimsRunResu
   const walk = result.walks.find((candidate) => candidate.set === claim.set);
   return {
     name: claim.name,
-    never: claim.never,
     kind: claim.kind,
     verdict: claim.verdict,
     settledBy: claim.settledBy,
@@ -75,7 +74,6 @@ export function claimsSummaryRowOf(result: ClaimsRunResult): ClaimsSummaryRow {
     source: result.source,
     declared: result.declared,
     held: result.held,
-    violated: result.violated,
     unproven: result.unproven,
     walks: result.walks.length,
     totalWalkMs: result.totalWalkMs,
@@ -103,17 +101,18 @@ export function lockRowOf(lock: ClaimLockResult): ClaimLock {
 }
 
 /**
- * The claim as the report names it: `the deed box leaves the Folly (never)`.
+ * The claim as the report names it: `the deed is in hand`. The one place
+ * the CLI report and the Testing tab take a claim's display name from.
  *
  * @param row the claim
- * @returns the name, marked when the claim is negative
+ * @returns the name
  */
-export function claimTitle(row: Pick<ClaimResultRow, 'name' | 'never'>): string {
-  return `${row.name}${row.never ? ' (never)' : ''}`;
+export function claimTitle(row: Pick<ClaimResultRow, 'name'>): string {
+  return row.name;
 }
 
 /**
- * The verdict as the report shows it: `HELD`, `VIOLATED`, `UNPROVEN`.
+ * The verdict as the report shows it: `HELD`, `UNPROVEN`.
  *
  * @param row the claim
  * @returns the word
@@ -123,19 +122,19 @@ export function claimVerdictWord(row: Pick<ClaimResultRow, 'verdict'>): string {
 }
 
 /**
- * The verdict's head: `HELD  the deed is in hand`, `VIOLATED  the deed box leaves the Folly (never)`.
+ * The verdict's head: `HELD  the deed is in hand`, `UNPROVEN  the note leaves the Hall`.
  *
  * @param row the claim
  * @returns the head
  */
-export function claimHeadline(row: Pick<ClaimResultRow, 'verdict' | 'name' | 'never'>): string {
+export function claimHeadline(row: Pick<ClaimResultRow, 'verdict' | 'name'>): string {
   return `${claimVerdictWord(row)}  ${claimTitle(row)}`;
 }
 
 /**
  * The verdict's sentence — what follows the head after ` — `: the line and
  * turn that reached it, the walk's witness, the exhaustion, the budget and
- * the set's cost (ADR-365 D11), or a walk that never entered its set. Under a floor a walked positive claim is
+ * the set's cost (ADR-365 D11), or a walk that never entered its set. Under a floor a walked claim is
  * one no line reached, and a claim held by a line names any of its locks
  * that did not hold (ADR-367 D6).
  *
@@ -143,7 +142,7 @@ export function claimHeadline(row: Pick<ClaimResultRow, 'verdict' | 'name' | 'ne
  * @returns one sentence, never empty
  */
 export function claimSentence(row: ClaimResultRow): string {
-  const unreached = row.floored && !row.never ? 'not reached by any line; ' : '';
+  const unreached = row.floored ? 'not reached by any line; ' : '';
   switch (row.settledBy) {
     case 'line': {
       const broken = (row.locks ?? [])
@@ -153,9 +152,9 @@ export function claimSentence(row: ClaimResultRow): string {
       return `by line ${row.line?.id} "${row.line?.label}" at turn ${row.line?.turn}${broken}`;
     }
     case 'witness':
-      return `${unreached}${row.floored && !row.never ? 'by walk ' : ''}at depth ${row.depth}: ${row.witness?.join(' / ')}`;
+      return `${unreached}${row.floored ? 'by walk ' : ''}at depth ${row.depth}: ${row.witness?.join(' / ')}`;
     case 'exhaustion':
-      return `${unreached}${row.never ? 'every reachable state under its set was tried' : 'no reachable state under its set satisfies it'} (${row.set})`;
+      return `${unreached}no reachable state under its set satisfies it (${row.set})`;
     case 'budget': {
       if (row.stopped?.reason === 'start-outside-set') {
         return `${unreached}the walk never entered its set: the player starts in a room the set does not name, and no command the set allows leads into one it does (${row.set})`;
@@ -186,13 +185,13 @@ export function claimLockLine(name: string, lock: ClaimLock): string {
 }
 
 /**
- * The ratio line: `claims: 9 of 10 held, 1 violated (seed 42)`.
+ * The ratio line: `claims: 2 of 3 held, 1 unproven (seed 7)`.
  *
  * @param summary the run's summary
  * @returns the line
  */
 export function claimsRatioLine(summary: ClaimsSummaryRow): string {
-  return `claims: ${summary.held} of ${summary.declared} held${summary.violated ? `, ${summary.violated} violated` : ''}${summary.unproven ? `, ${summary.unproven} unproven` : ''}${summary.seed !== undefined ? ` (seed ${summary.seed})` : ''}`;
+  return `claims: ${summary.held} of ${summary.declared} held${summary.unproven ? `, ${summary.unproven} unproven` : ''}${summary.seed !== undefined ? ` (seed ${summary.seed})` : ''}`;
 }
 
 /**
@@ -206,7 +205,7 @@ export function claimsPendingLine(arrived: number): string {
 }
 
 /**
- * The count of each verdict reached, in the order held, violated, unproven,
+ * The count of each verdict reached, in the order held, unproven,
  * omitting a verdict no claim reached. The run's summary is the count once it
  * has arrived; before it, the verdicts that have arrived are counted.
  *
@@ -217,7 +216,7 @@ export function claimsPendingLine(arrived: number): string {
 export function claimCounts(summary: ClaimsSummaryRow | undefined, rows: ReadonlyArray<Pick<ClaimResultRow, 'verdict'>>): ClaimCount[] {
   const countOf = (verdict: ClaimVerdictStatus): number =>
     summary !== undefined ? summary[verdict] : rows.filter((row) => row.verdict === verdict).length;
-  return (['held', 'violated', 'unproven'] as const)
+  return (['held', 'unproven'] as const)
     .map((verdict) => ({ verdict, count: countOf(verdict), text: `${countOf(verdict)} ${verdict}` }))
     .filter((entry) => entry.count > 0);
 }

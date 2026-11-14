@@ -196,8 +196,8 @@ records); `emit` with a payload. `client-config-field`, `define-channel`, `emit-
 **38. Test trees.** Recording a play-through as a tree of cards, forks, and what a card asserts.
 To check: the tree-authoring path a reader has from the published CLI alone.
 
-**39. Claims.** The claims file: `claims … end claims`, `needs rooms | things | verbs`, `claim`
-and `never`, and the predicates a claim may state. `claims-file`, `claim-predicate`.
+**39. Claims.** The claims file: `claims … end claims`, `needs rooms | things | verbs`, `claim`,
+and the predicates a claim may state. `claims-file`, `claim-predicate`.
 
 **40. Publishing.** `ifid`, the story's version, the browser build, what ships.
 

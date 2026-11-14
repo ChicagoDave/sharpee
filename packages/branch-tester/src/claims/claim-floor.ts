@@ -1,15 +1,13 @@
 /**
- * claim-floor.ts — every tree line is a proof for every positive claim, and
- * a locked claim is checked at the card it was locked on (ADR-367 D5).
+ * claim-floor.ts — every tree line is a proof for every claim, and a locked
+ * claim is checked at the card it was locked on (ADR-367 D5).
  *
  * Purpose: the tree run already replays every played line at the pinned
  * seed and has the world in hand after each card. The floor reads it there:
- * at every card it evaluates each positive claim no line has reached yet
- * and records the first line and turn that reaches it, so the claims tier
- * walks only what no line proves. At a card carrying `locks` it evaluates
- * each named claim there, the lock's own proof, and records whether it
- * held. A `never` claim is untouched — exhaustion proves it, never a line
- * (ADR-365 D3).
+ * at every card it evaluates each claim no line has reached yet and records
+ * the first line and turn that reaches it, so the claims tier walks only
+ * what no line proves. At a card carrying `locks` it evaluates each named
+ * claim there, the lock's own proof, and records whether it held.
  *
  * The floor never writes. Its reading is report data the runner folds into
  * its verdicts (`held, by line …`) and its report; and `onCard` hands the
@@ -72,7 +70,6 @@ export function createClaimFloor(ir: StoryIR, claimSet: ClaimSet): ClaimFloor {
   const clauseKeysByFired = clauseKeysByFiredOf(ir);
   const names = claimNamesOf(ir);
   const byName = new Map(claimSet.claims.map((claim) => [claim.name, claim]));
-  const positive = claimSet.claims.filter((claim) => !claim.never);
   const reached = new Map<number, ClaimFloorReach>();
   const lockResults: ClaimLockResult[] = [];
   // The boot-time id map, per booted game: a line boots fresh, and ids are
@@ -93,7 +90,7 @@ export function createClaimFloor(ir: StoryIR, claimSet: ClaimSet): ClaimFloor {
   const onCard = (info: { line: TreeLine; label: string; card: TreeCard; turn: number; game: TreeWalkerGame }): CardLockVerdict[] => {
     const { line, label, card, turn } = info;
     const locks = card.locks ?? [];
-    const pending = positive.filter((claim) => !reached.has(claim.index));
+    const pending = claimSet.claims.filter((claim) => !reached.has(claim.index));
     if (pending.length === 0 && locks.length === 0) return [];
     const ctx = contextOf(info.game as FloorGame);
     if (!ctx) return [];

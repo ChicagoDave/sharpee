@@ -1075,22 +1075,22 @@
 
   // packages/branch-tester/src/claims/claim-report.ts
   function claimTitle(row) {
-    return `${row.name}${row.never ? " (never)" : ""}`;
+    return row.name;
   }
   function claimVerdictWord(row) {
     return row.verdict.toUpperCase();
   }
   function claimSentence(row) {
-    const unreached = row.floored && !row.never ? "not reached by any line; " : "";
+    const unreached = row.floored ? "not reached by any line; " : "";
     switch (row.settledBy) {
       case "line": {
         const broken = (row.locks ?? []).filter((lock) => lock.outcome !== "held").map((lock) => `; its lock at line ${lock.lineId} "${lock.label}" turn ${lock.turn} is NOT held there`).join("");
         return `by line ${row.line?.id} "${row.line?.label}" at turn ${row.line?.turn}${broken}`;
       }
       case "witness":
-        return `${unreached}${row.floored && !row.never ? "by walk " : ""}at depth ${row.depth}: ${row.witness?.join(" / ")}`;
+        return `${unreached}${row.floored ? "by walk " : ""}at depth ${row.depth}: ${row.witness?.join(" / ")}`;
       case "exhaustion":
-        return `${unreached}${row.never ? "every reachable state under its set was tried" : "no reachable state under its set satisfies it"} (${row.set})`;
+        return `${unreached}no reachable state under its set satisfies it (${row.set})`;
       case "budget": {
         if (row.stopped?.reason === "start-outside-set") {
           return `${unreached}the walk never entered its set: the player starts in a room the set does not name, and no command the set allows leads into one it does (${row.set})`;
@@ -1108,14 +1108,14 @@
     return `  lock "${name}" at ${where} \u2014 lock-unknown-claim: the fragment declares no claim of that name`;
   }
   function claimsRatioLine(summary) {
-    return `claims: ${summary.held} of ${summary.declared} held${summary.violated ? `, ${summary.violated} violated` : ""}${summary.unproven ? `, ${summary.unproven} unproven` : ""}${summary.seed !== void 0 ? ` (seed ${summary.seed})` : ""}`;
+    return `claims: ${summary.held} of ${summary.declared} held${summary.unproven ? `, ${summary.unproven} unproven` : ""}${summary.seed !== void 0 ? ` (seed ${summary.seed})` : ""}`;
   }
   function claimsPendingLine(arrived) {
     return `claims: ${arrived} so far`;
   }
   function claimCounts(summary, rows) {
     const countOf = (verdict) => summary !== void 0 ? summary[verdict] : rows.filter((row) => row.verdict === verdict).length;
-    return ["held", "violated", "unproven"].map((verdict) => ({ verdict, count: countOf(verdict), text: `${countOf(verdict)} ${verdict}` })).filter((entry) => entry.count > 0);
+    return ["held", "unproven"].map((verdict) => ({ verdict, count: countOf(verdict), text: `${countOf(verdict)} ${verdict}` })).filter((entry) => entry.count > 0);
   }
 
   // tools/ide/web/testing-surface/src/claims.ts
@@ -1250,11 +1250,11 @@
     if (!isObject(value)) return false;
     const line = value.line;
     const stopped = value.stopped;
-    return hasEnvelopeAndType(value, "claim-result") && typeof value.name === "string" && typeof value.never === "boolean" && typeof value.kind === "string" && (value.verdict === "held" || value.verdict === "violated" || value.verdict === "unproven") && (value.settledBy === "line" || value.settledBy === "witness" || value.settledBy === "exhaustion" || value.settledBy === "budget") && typeof value.set === "string" && typeof value.thingsInSet === "number" && typeof value.inertInSet === "number" && (line === void 0 || isObject(line) && typeof line.id === "string" && typeof line.label === "string" && typeof line.turn === "number") && (value.witness === void 0 || isStringArray(value.witness)) && (value.depth === void 0 || typeof value.depth === "number") && (stopped === void 0 || isObject(stopped) && typeof stopped.reason === "string" && typeof stopped.states === "number") && typeof value.floored === "boolean" && (value.locks === void 0 || Array.isArray(value.locks) && value.locks.every(isClaimLock));
+    return hasEnvelopeAndType(value, "claim-result") && typeof value.name === "string" && typeof value.kind === "string" && (value.verdict === "held" || value.verdict === "unproven") && (value.settledBy === "line" || value.settledBy === "witness" || value.settledBy === "exhaustion" || value.settledBy === "budget") && typeof value.set === "string" && typeof value.thingsInSet === "number" && typeof value.inertInSet === "number" && (line === void 0 || isObject(line) && typeof line.id === "string" && typeof line.label === "string" && typeof line.turn === "number") && (value.witness === void 0 || isStringArray(value.witness)) && (value.depth === void 0 || typeof value.depth === "number") && (stopped === void 0 || isObject(stopped) && typeof stopped.reason === "string" && typeof stopped.states === "number") && typeof value.floored === "boolean" && (value.locks === void 0 || Array.isArray(value.locks) && value.locks.every(isClaimLock));
   }
   function isClaimsSummaryEvent(value) {
     if (!isObject(value)) return false;
-    return hasEnvelopeAndType(value, "claims-summary") && typeof value.source === "string" && typeof value.declared === "number" && typeof value.held === "number" && typeof value.violated === "number" && typeof value.unproven === "number" && typeof value.walks === "number" && typeof value.totalWalkMs === "number" && (value.seed === void 0 || typeof value.seed === "number") && typeof value.floored === "boolean";
+    return hasEnvelopeAndType(value, "claims-summary") && typeof value.source === "string" && typeof value.declared === "number" && typeof value.held === "number" && typeof value.unproven === "number" && typeof value.walks === "number" && typeof value.totalWalkMs === "number" && (value.seed === void 0 || typeof value.seed === "number") && typeof value.floored === "boolean";
   }
   function isRunEndEvent(value) {
     if (!isObject(value)) return false;
@@ -2531,7 +2531,7 @@
      * (D9), so nothing here touches the tally.
      */
     renderClaimsRows(results, rows, summary) {
-      const countClass = { held: "ts-count-pass", violated: "ts-count-fail", unproven: "ts-count-skip" };
+      const countClass = { held: "ts-count-pass", unproven: "ts-count-skip" };
       const counts = claimsCountsOf(summary, rows).map((entry) => [entry.text, countClass[entry.verdict]]);
       results.appendChild(this.sectionHeader(claimsHeaderText(summary, rows), counts));
       for (const [index, claim] of rows.entries()) {
@@ -2545,7 +2545,7 @@
         name.className = "ts-name";
         name.textContent = claimNameText(claim);
         const badge = document.createElement("span");
-        badge.className = `ts-badge ${claim.verdict === "held" ? "ts-pass" : claim.verdict === "violated" ? "ts-fail" : "ts-open"}`;
+        badge.className = `ts-badge ${claim.verdict === "held" ? "ts-pass" : "ts-open"}`;
         badge.textContent = claimBadgeText(claim);
         head.append(name, badge);
         rowEl.appendChild(head);

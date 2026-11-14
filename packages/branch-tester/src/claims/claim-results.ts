@@ -25,7 +25,6 @@ export interface ClaimVerdict {
   readonly set: string;
   readonly index: number;
   readonly name: string;
-  readonly never: boolean;
   readonly kind: ClaimKind;
   readonly verdict: ClaimVerdictStatus;
   /**
@@ -49,7 +48,7 @@ export interface ClaimVerdict {
  * Why a walk stopped. Only the first two exhaust the frontier.
  * `start-outside-set` is a frontier that ran out with the player never in a
  * room the set names: the walk tried nothing under its set, so it settles
- * no claim and can never hold a negative one.
+ * no claim.
  */
 export type WalkStopReason = 'frontier-exhausted' | 'all-claims-settled' | 'max-states' | 'max-seconds' | 'max-depth-reached' | 'start-outside-set';
 
@@ -96,7 +95,6 @@ export interface ClaimsRunResult {
   readonly claims: readonly ClaimVerdict[];
   readonly declared: number;
   readonly held: number;
-  readonly violated: number;
   readonly unproven: number;
   readonly totalWalkMs: number;
   /** Whether a tree run's floor stood under this run — the report's vocabulary depends on it. */

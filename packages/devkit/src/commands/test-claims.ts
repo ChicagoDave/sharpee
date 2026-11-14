@@ -8,8 +8,8 @@
  * runner's report: the held-over-declared ratio (D6), each walk's cost, and
  * each claim's verdict with its witness or the reason it stayed open.
  *
- * Verdicts never change the exit code (D9): a violated or unproven claim is
- * the author's test-first list going red, and the report is the burndown.
+ * Verdicts never change the exit code (D9): an unproven claim leaves it
+ * alone. It is the author's test-first list, and the report is the burndown.
  * What does fail the run is a claims file the command cannot run — a path
  * the manifest names that does not exist, a fragment not in the lock's
  * canonical shape (ADR-367 D4, AC-5), a fragment that does not compile, a
@@ -25,7 +25,7 @@
  * so the Testing tab shows the same claims section the report prints.
  *
  * The fragment is compiled BEFORE the tree runs (`compileClaimsFragment`),
- * because the tree run's floor (ADR-367 D5) evaluates every positive claim
+ * because the tree run's floor (ADR-367 D5) evaluates every claim
  * at every card it replays: a claim a line reached is held by that line and
  * never walked, and a card's `locks` are checked where they were taken.
  * The floor's reading is handed to `runClaimsTests` with the compiled set.

@@ -1396,7 +1396,7 @@ export class CardsView {
    * (D9), so nothing here touches the tally.
    */
   private renderClaimsRows(results: HTMLElement, rows: ClaimRow[], summary: ClaimsSummary | undefined): void {
-    const countClass = { held: 'ts-count-pass', violated: 'ts-count-fail', unproven: 'ts-count-skip' } as const;
+    const countClass = { held: 'ts-count-pass', unproven: 'ts-count-skip' } as const;
     const counts = claimsCountsOf(summary, rows).map((entry): [string, string] => [entry.text, countClass[entry.verdict]]);
     results.appendChild(this.sectionHeader(claimsHeaderText(summary, rows), counts));
 
@@ -1411,7 +1411,7 @@ export class CardsView {
       name.className = 'ts-name';
       name.textContent = claimNameText(claim);
       const badge = document.createElement('span');
-      badge.className = `ts-badge ${claim.verdict === 'held' ? 'ts-pass' : claim.verdict === 'violated' ? 'ts-fail' : 'ts-open'}`;
+      badge.className = `ts-badge ${claim.verdict === 'held' ? 'ts-pass' : 'ts-open'}`;
       badge.textContent = claimBadgeText(claim);
       head.append(name, badge);
       rowEl.appendChild(head);

@@ -159,13 +159,13 @@ describe('REAL-PATH — a walk whose only moving part is a Chord counter', () =>
   };
   const OPTIONS: ClaimsRunOptions = { seed: SEED, maxStates: 5000, maxSeconds: 30, maxDepth: 40 };
 
-  it('reaches the state three readings deep, and reports the claim the story breaks as violated', async () => {
+  it('reaches the state three readings deep, and holds the claim by that witness', async () => {
     const claims = normalizeClaimSet({
       rooms: ['belfry', 'crypt'], things: ['plaque'], verbs: ['read'],
-      claims: [{ name: 'the Crypt is reached', never: true, room: 'crypt' }],
+      claims: [{ name: 'the Crypt is reached', room: 'crypt' }],
     }, 'the plaque');
     const run = await runClaims(compileFixture(), claims, loadGame, OPTIONS);
-    expect(run.claims[0].verdict).toBe('violated');
+    expect(run.claims[0].verdict).toBe('held');
     expect(run.claims[0].witness).toEqual(['read plaque', 'read plaque', 'read plaque']);
     expect(run.walks[0].statesDiscovered).toBe(4);
     expect(run.walks[0].roomsReached).toEqual(['belfry', 'crypt']);

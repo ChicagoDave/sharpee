@@ -1,9 +1,9 @@
 /**
  * claim-set.ts — the claims model and its load-time gate (ADR-365 D1, D2).
  *
- * Purpose: an author's claims about a story — what it can reach and what it
- * can never reach — each under a necessary set: the rooms, things and verbs
- * the author says are load-bearing on the way. A declaration arrives from a
+ * Purpose: an author's claims about a story — what it can reach — each
+ * under a necessary set: the rooms, things and verbs the author says are
+ * load-bearing on the way. A declaration arrives from a
  * Chord `claims` block or a test fixture and is normalized here, where
  * everything malformed is refused by name before any engine boots: a claim
  * with no name, no predicate or two predicates, or a need that is not a
@@ -75,8 +75,6 @@ export interface NecessarySetDeclaration {
 /** One claim as declared. */
 export interface ClaimDeclaration extends ClaimPredicates {
   name: string;
-  /** Negative: violated by the first state that satisfies it, held only by exhaustion. */
-  never?: boolean;
   needs?: NecessarySetDeclaration;
 }
 
@@ -108,12 +106,11 @@ export type ClaimPredicate =
   | { readonly kind: 'fired'; readonly fired: string }
   | { readonly kind: 'event'; readonly event: EventClaim };
 
-/** A normalized claim: its predicate, its polarity and its effective set. */
+/** A normalized claim: its predicate and its effective set. */
 export interface Claim {
   /** Position in the declaration — the claim's identity inside a walk. */
   readonly index: number;
   readonly name: string;
-  readonly never: boolean;
   readonly predicate: ClaimPredicate;
   /** The set this claim is walked under, after inheritance. */
   readonly set: NecessarySet;
@@ -240,7 +237,6 @@ export function normalizeClaimSet(declaration: unknown, source: string): ClaimSe
     const where = `${prefix} claim "${raw.name}"`;
     const kinds = CLAIM_KINDS.filter((kind) => raw[kind] !== undefined);
     if (kinds.length !== 1) throw new Error(`${where} needs exactly one of ${CLAIM_KINDS.join(', ')}`);
-    if (raw.never !== undefined && typeof raw.never !== 'boolean') throw new Error(`${where} "never" must be true or false`);
     const needs = raw.needs;
     if (needs !== undefined && !isRecord(needs)) throw new Error(`${where} needs must be an object`);
     const set: Record<(typeof SET_KEYS)[number], string[]> = { rooms: declared.rooms, things: declared.things, verbs: declared.verbs };
@@ -250,7 +246,6 @@ export function normalizeClaimSet(declaration: unknown, source: string): ClaimSe
     return {
       index,
       name: raw.name,
-      never: raw.never === true,
       predicate: predicateOf(kinds[0], raw[kinds[0]], where),
       set: { rooms: set.rooms, things: set.things, verbs: set.verbs },
       ownSet: needs !== undefined,

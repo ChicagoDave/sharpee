@@ -247,7 +247,7 @@ export async function runClaimCommand(rest: string[]): Promise<number> {
   // never half on disk: the card must carry an id, and the fragment must not
   // already declare the name (a duplicate would be two claims with one name).
   if (proposal.cardId === undefined) return refuse('the card carries no id, so the lock cannot be recorded on it (re-save the tree from the Testing tab)', 2);
-  const declared = existing === undefined ? undefined : existing.split('\n').map((l) => l.trim()).find((l) => l === `claim ${proposal.name}` || l === `never ${proposal.name}`);
+  const declared = existing === undefined ? undefined : existing.split('\n').map((l) => l.trim()).find((l) => l === `claim ${proposal.name}`);
   if (declared !== undefined) {
     return refuse(`${claimsFile} already declares \`${declared}\` — give this lock another name with --name, or lock a different fact; nothing written`, 2);
   }

@@ -617,12 +617,12 @@ describe('runRowVisitTarget — the run-column click (ADR-357 D8 step 2, AC-4)',
 
 const claim = (name: string, extra: Record<string, unknown> = {}): string =>
   line({
-    type: 'claim-result', name, never: false, kind: 'room', verdict: 'held', settledBy: 'line',
+    type: 'claim-result', name, kind: 'room', verdict: 'held', settledBy: 'line',
     set: 'the declared set', thingsInSet: 3, inertInSet: 0,
     line: { id: 'mainline', label: 'opening-hall', turn: 2 }, floored: true, ...extra,
   });
 const claimsSummary = (extra: Record<string, unknown> = {}): string =>
-  line({ type: 'claims-summary', source: 'x.claims.chord', declared: 2, held: 1, violated: 0, unproven: 1, walks: 1, totalWalkMs: 12, seed: 7, floored: true, ...extra });
+  line({ type: 'claims-summary', source: 'x.claims.chord', declared: 2, held: 1, unproven: 1, walks: 1, totalWalkMs: 12, seed: 7, floored: true, ...extra });
 
 describe('foldRunLine — claim rows and the summary', () => {
   it('keeps one row per claim-result in arrival order with its locks, keeps the latest summary, and never touches the tally', () => {
@@ -646,7 +646,7 @@ describe('foldRunLine — claim rows and the summary', () => {
     expect(state.claims[0]?.locks?.[0]?.cardId).toBe('card0003');
     expect(state.claims[1]?.locks?.[0]).toEqual({ lineId: 'branch01', label: 'hall · north', turn: 2, cardId: 'card0010', outcome: 'not-held', message: 'the note is in the Hall' });
     expect(state.claims[1]?.line).toBeUndefined();
-    expect(state.claimsSummary).toEqual({ source: 'x.claims.chord', declared: 2, held: 1, violated: 0, unproven: 1, walks: 1, totalWalkMs: 12, seed: 7, floored: true });
+    expect(state.claimsSummary).toEqual({ source: 'x.claims.chord', declared: 2, held: 1, unproven: 1, walks: 1, totalWalkMs: 12, seed: 7, floored: true });
     // Claims never gate (ADR-365 D9): the tally is the tree's alone.
     expect(state.tally).toEqual({ cardsPassed: 1, cardsFailed: 0, assertionsPassed: 0, assertionsFailed: 0, errors: 0, unreached: 0 });
   });

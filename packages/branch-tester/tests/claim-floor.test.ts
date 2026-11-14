@@ -4,7 +4,7 @@
  * tree run: `runTreeDocument` replays the lines through the real engine and
  * the floor reads the world after each card. Then the claims runner folds
  * the reading in: a claim a line reached is held by that line with no walk,
- * a `never` is walked as always, and the report says which.
+ * a claim no line reached is walked, and the report says which.
  *
  * Owner context: branch-tester test suite (tooling).
  */
@@ -44,7 +44,7 @@ const CLAIMS = normalizeClaimSet(
     claims: [
       { name: 'the note has been read', flag: { thing: 'note', trait: 'readable', field: 'hasBeenRead' } },
       { name: 'the Landing is reached', room: 'landing' },
-      { name: 'the note leaves the Hall', never: true, placement: { thing: 'note', notIn: 'hall' } },
+      { name: 'the note leaves the Hall', placement: { thing: 'note', notIn: 'hall' } },
       { name: 'the note is in the Landing', placement: { thing: 'note', in: 'landing' } },
     ],
   },
@@ -71,7 +71,7 @@ function tree(locks?: Partial<Record<'mainNorth' | 'branchRead', string[]>>): Tr
 }
 
 describe('the floor over a real tree run (D5)', () => {
-  it('records the first line and turn that reaches each positive claim, and never a `never`', async () => {
+  it('records the first line and turn that reaches each claim, and nothing for a claim no line reaches', async () => {
     const floor = createClaimFloor(IR, CLAIMS);
     const run = await runTreeDocument(tree(), loadGame, { lineObserver: { onCard: floor.onCard } });
     expect(run.lines.map((line) => line.status)).toEqual(['passed', 'passed']);
@@ -98,7 +98,7 @@ describe('the floor over a real tree run (D5)', () => {
 });
 
 describe('the runner under a floor', () => {
-  it('a reached claim is held by its line with no walk; the rest are walked, the `never` always', async () => {
+  it('a reached claim is held by its line with no walk; the rest are walked', async () => {
     const floor = createClaimFloor(IR, CLAIMS);
     await runTreeDocument(tree({ mainNorth: ['the Landing is reached'] }), loadGame, { lineObserver: { onCard: floor.onCard } });
     const result = await runClaims(IR, CLAIMS, loadGame, { seed: SEED, floor: floor.reading(), maxStates: 500, maxSeconds: 30, maxDepth: 20 });
@@ -106,11 +106,11 @@ describe('the runner under a floor', () => {
     expect(result.claims.map((claim) => [claim.name, claim.verdict, claim.settledBy])).toEqual([
       ['the note has been read', 'held', 'line'],
       ['the Landing is reached', 'held', 'line'],
-      ['the note leaves the Hall', 'held', 'exhaustion'],
+      ['the note leaves the Hall', 'unproven', 'exhaustion'],
       ['the note is in the Landing', 'unproven', 'exhaustion'],
     ]);
     expect(result.claims[0].line).toEqual({ id: 'branch01', label: 'landing · south', turn: 3 });
-    expect(result.held).toBe(3);
+    expect([result.held, result.unproven]).toEqual([2, 2]);
     // One walk, for the two claims no line reached, under the declared set.
     expect(result.walks).toHaveLength(1);
     expect(result.walks[0].claims.map((claim) => claim.name)).toEqual(['the note leaves the Hall', 'the note is in the Landing']);
@@ -119,7 +119,7 @@ describe('the runner under a floor', () => {
     expect(report).toContain('HELD  the note has been read — by line branch01 "landing · south" at turn 3');
     expect(report).toContain('HELD  the Landing is reached — by line mainline "opening-hall" at turn 1');
     expect(report).toContain('UNPROVEN  the note is in the Landing — not reached by any line; no reachable state under its set satisfies it');
-    expect(report).toContain('HELD  the note leaves the Hall (never) — every reachable state');
+    expect(report).toContain('UNPROVEN  the note leaves the Hall — not reached by any line; no reachable state under its set satisfies it');
     expect(report).toContain('  lock "the Landing is reached" at line mainline "opening-hall" at turn 1 — held there');
   }, 60_000);
 

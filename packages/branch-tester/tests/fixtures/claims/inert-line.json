@@ -5,6 +5,6 @@
   "things": ["note", "pebble"],
   "verbs": ["read", "take"],
   "claims": [
-    { "name": "the note leaves the Hall", "never": true, "placement": { "thing": "note", "notIn": "hall" } }
+    { "name": "the note leaves the Hall","placement": { "thing": "note", "notIn": "hall" } }
   ]
 }

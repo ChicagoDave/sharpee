@@ -79,7 +79,7 @@ describeWithStories('REAL-PATH — the lodge\'s claims through the real engine (
       // Locked from the tree's main line by `sharpee claim`; walked here, held by line under `sharpee test`.
       ['the strongbox is open', 'held', 6], // an openable flag
     ]);
-    expect([result.declared, result.held, result.violated, result.unproven]).toEqual([8, 8, 0, 0]);
+    expect([result.declared, result.held, result.unproven]).toEqual([8, 8, 0]);
   });
 
   it('runs one walk per distinct set; every walk is settled by its claims, never by a budget', async () => {

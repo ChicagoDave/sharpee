@@ -71,13 +71,18 @@ describe('D2 — claims and their sets', () => {
 
   it('the predicate is kept by kind, never defaulting', () => {
     const claimSet = normalizeClaimSet(declare([
-      { name: 'ends', ending: { kind: 'victory' }, never: true },
+      { name: 'ends', ending: { kind: 'victory' } },
       { name: 'fired', fired: 'stopcock.turning' },
     ]), 'fixture');
     expect(claimSet.claims[0].predicate).toEqual({ kind: 'ending', ending: { kind: 'victory', messageId: undefined, cause: undefined } });
-    expect(claimSet.claims[0].never).toBe(true);
     expect(claimSet.claims[1].predicate).toEqual({ kind: 'fired', fired: 'stopcock.turning' });
-    expect(claimSet.claims[1].never).toBe(false);
+  });
+
+  it('a stale "never" key in a JSON declaration is an unknown key: the claim is normalized without it', () => {
+    const claimSet = normalizeClaimSet(declare([{ name: 'ends', ending: { kind: 'victory' }, never: true }]), 'fixture');
+    expect(claimSet.claims).toHaveLength(1);
+    expect(claimSet.claims[0]).not.toHaveProperty('never');
+    expect(Object.keys(claimSet.claims[0]).sort()).toEqual(['index', 'name', 'ownSet', 'predicate', 'set']);
   });
 
   it('claims with the same effective set share one group, in first-declared order', () => {

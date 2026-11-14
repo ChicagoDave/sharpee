@@ -500,8 +500,8 @@ export interface DerivedRunSummaryEvent extends RunEventEnvelope {
   };
 }
 
-/** A claim's verdict (ADR-365 D6): held, violated (a `never` was reached), or unproven (left open). */
-export type ClaimVerdictStatus = 'held' | 'violated' | 'unproven';
+/** A claim's verdict (ADR-365 D6, ADR-397 D2): held, or unproven (left open). */
+export type ClaimVerdictStatus = 'held' | 'unproven';
 
 /**
  * How a claim's verdict was reached (ADR-367 D5): a played line reached the
@@ -532,8 +532,6 @@ export interface ClaimLock {
 export interface ClaimResultEvent extends RunEventEnvelope {
   type: 'claim-result';
   name: string;
-  /** A negative claim: violated by the first state that satisfies it. */
-  never: boolean;
   /** The predicate kind (`room`, `flag`, …). */
   kind: string;
   verdict: ClaimVerdictStatus;
@@ -562,7 +560,6 @@ export interface ClaimsSummaryEvent extends RunEventEnvelope {
   source: string;
   declared: number;
   held: number;
-  violated: number;
   unproven: number;
   walks: number;
   totalWalkMs: number;
@@ -913,9 +910,8 @@ export function isClaimResultEvent(value: unknown): value is ClaimResultEvent {
   return (
     hasEnvelopeAndType(value, 'claim-result') &&
     typeof value.name === 'string' &&
-    typeof value.never === 'boolean' &&
     typeof value.kind === 'string' &&
-    (value.verdict === 'held' || value.verdict === 'violated' || value.verdict === 'unproven') &&
+    (value.verdict === 'held' || value.verdict === 'unproven') &&
     (value.settledBy === 'line' || value.settledBy === 'witness' || value.settledBy === 'exhaustion' || value.settledBy === 'budget') &&
     typeof value.set === 'string' &&
     typeof value.thingsInSet === 'number' &&
@@ -937,7 +933,6 @@ export function isClaimsSummaryEvent(value: unknown): value is ClaimsSummaryEven
     typeof value.source === 'string' &&
     typeof value.declared === 'number' &&
     typeof value.held === 'number' &&
-    typeof value.violated === 'number' &&
     typeof value.unproven === 'number' &&
     typeof value.walks === 'number' &&
     typeof value.totalWalkMs === 'number' &&

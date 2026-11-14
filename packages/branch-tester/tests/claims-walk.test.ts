@@ -2,7 +2,7 @@
  * claims-walk.test.ts — the claims walk on the claim-bits fixture, against
  * a REAL game: compiled by `@sharpee/chord`, loaded by `@sharpee/story-loader`,
  * assembled by `@sharpee/bootstrap`, forked through the real engine's
- * save/restore hooks (ADR-365 D3, D4, D5; AC-3, AC-4, AC-5).
+ * save/restore hooks (ADR-365 D3, D4, D5; AC-3, AC-5).
  *
  * Examining the fixture's note changes nothing in the world, so nothing in
  * the identity moves. Without claims the walk under `examine` sees four
@@ -10,10 +10,10 @@
  * event claim on examining the note, "examine note" earns its own state and
  * so does "examine note / north" — the claim bit is the only thing keeping
  * those paths apart (AC-5). Reading the note is no longer that vehicle: the
- * identity counts the readable trait's flag since 2026-11-12. The negative claim can only be held by
- * exhausting the frontier; a budget stop leaves it unproven (AC-4). A claim
- * whose set omits the note is unproven under that set, and held once the
- * note is added (AC-3).
+ * identity counts the readable trait's flag since 2026-11-12. A claim no
+ * state satisfies is unproven: by exhaustion when the frontier ran out, by
+ * budget when a budget stopped the walk first. A claim whose set omits the
+ * note is unproven under that set, and held once the note is added (AC-3).
  *
  * Owner context: branch-tester test suite (tooling).
  */
@@ -72,7 +72,8 @@ describe('the claims walk on the claim-bits fixture', () => {
     const run = await runClaims(IR, claimsFrom('claims.json'), loadGame, OPTIONS);
     expect(run.walks.map((walk) => walk.set)).toEqual(['the declared set']);
     expect(run.claims.map((claim) => claim.name)).toEqual(['the note has been read', 'the note leaves the Hall']);
-    expect([run.declared, run.held, run.violated, run.unproven]).toEqual([2, 2, 0, 0]);
+    expect([run.declared, run.held, run.unproven]).toEqual([2, 1, 1]);
+    expect(run).not.toHaveProperty('violated');
   }, 30_000);
 
   it('AC-5: a satisfied claim keeps its path apart — six states where the baseline has four', async () => {
@@ -86,7 +87,7 @@ describe('the claims walk on the claim-bits fixture', () => {
       ...underExamine,
       claims: [
         { name: 'the note has been examined', event: { type: 'if.event.examined', target: 'note' } },
-        { name: 'the note leaves the Hall', never: true, placement: { thing: 'note', notIn: 'hall' } },
+        { name: 'the note leaves the Hall', placement: { thing: 'note', notIn: 'hall' } },
       ],
     }, 'examine, with an event claim');
     const withClaims = await runClaims(IR, examined, loadGame, OPTIONS);
@@ -95,7 +96,7 @@ describe('the claims walk on the claim-bits fixture', () => {
     expect(withClaims.claims[0].witness).toEqual(['examine note']);
   }, 30_000);
 
-  it('AC-5: the first path to the positive claim is the witness', async () => {
+  it('AC-5: the first path to a claim is its witness', async () => {
     const run = await runClaims(IR, claimsFrom('claims.json'), loadGame, OPTIONS);
     const read = run.claims.find((claim) => claim.name === 'the note has been read')!;
     expect(read.verdict).toBe('held');
@@ -104,42 +105,28 @@ describe('the claims walk on the claim-bits fixture', () => {
     expect(read.depth).toBe(1);
   }, 30_000);
 
-  it('AC-4: the negative claim is held by exhaustion, with no witness', async () => {
+  it('a claim no state satisfies is unproven by exhaustion, and no verdict carries a never flag', async () => {
     const run = await runClaims(IR, claimsFrom('claims.json'), loadGame, OPTIONS);
     expect(run.walks[0].stopReason).toBe('frontier-exhausted');
-    const never = run.claims.find((claim) => claim.name === 'the note leaves the Hall')!;
-    expect(never.never).toBe(true);
-    expect(never.verdict).toBe('held');
-    expect(never.settledBy).toBe('exhaustion');
-    expect(never.witness).toBeUndefined();
+    const leaves = run.claims.find((claim) => claim.name === 'the note leaves the Hall')!;
+    expect(leaves.verdict).toBe('unproven');
+    expect(leaves.settledBy).toBe('exhaustion');
+    expect(leaves.witness).toBeUndefined();
+    for (const claim of run.claims) expect(claim).not.toHaveProperty('never');
     const report = formatClaimsRun(run);
-    expect(report).toContain('claims: 2 of 2 held (seed 1209)');
+    expect(report).toContain('claims: 1 of 2 held, 1 unproven (seed 1209)');
     expect(report).toContain('HELD  the note has been read — at depth 1: read note');
-    expect(report).toContain('HELD  the note leaves the Hall (never) — every reachable state under its set was tried (the declared set)');
+    expect(report).toContain('UNPROVEN  the note leaves the Hall — no reachable state under its set satisfies it (the declared set)');
   }, 30_000);
 
-  it('AC-4: a budget stop leaves the same negative claim unproven, and the report names the cost', async () => {
+  it('a budget stop leaves the same claim unproven by budget, and the report names the cost', async () => {
     const run = await runClaims(IR, claimsFrom('claims.json'), loadGame, { ...OPTIONS, maxStates: 1 });
     expect(run.walks[0].stopReason).toBe('max-states');
-    const never = run.claims.find((claim) => claim.name === 'the note leaves the Hall')!;
-    expect(never.verdict).toBe('unproven');
-    expect(never.settledBy).toBe('budget');
-    expect(never.thingsInSet).toBe(1);
-    expect(formatClaimsRun(run)).toContain('UNPROVEN  the note leaves the Hall (never) — the walk stopped at max-states after 1 states; its set carries 1 things, and each independent thing doubles the states to exhaust');
-  }, 30_000);
-
-  it('AC-4: a negative claim the story breaks is violated by its first witness, and the walk stops there', async () => {
-    const run = await runClaims(IR, claimsFrom('violated.json'), loadGame, OPTIONS);
-    expect(run.walks[0].stopReason).toBe('all-claims-settled');
-    const never = run.claims.find((claim) => claim.name === 'the note is read')!;
-    expect(never.never).toBe(true);
-    expect(never.verdict).toBe('violated');
-    expect(never.settledBy).toBe('witness');
-    expect(never.witness).toEqual(['read note']);
-    expect([run.held, run.violated]).toEqual([0, 1]);
-    const report = formatClaimsRun(run);
-    expect(report).toContain('claims: 0 of 1 held, 1 violated (seed 1209)');
-    expect(report).toContain('VIOLATED  the note is read (never) — at depth 1: read note');
+    const leaves = run.claims.find((claim) => claim.name === 'the note leaves the Hall')!;
+    expect(leaves.verdict).toBe('unproven');
+    expect(leaves.settledBy).toBe('budget');
+    expect(leaves.thingsInSet).toBe(1);
+    expect(formatClaimsRun(run)).toContain('UNPROVEN  the note leaves the Hall — the walk stopped at max-states after 1 states; its set carries 1 things, and each independent thing doubles the states to exhaust');
   }, 30_000);
 
   it('AC-3: a claim whose set omits the note is unproven under that set; adding the note holds it', async () => {

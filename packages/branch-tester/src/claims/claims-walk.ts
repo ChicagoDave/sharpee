@@ -6,21 +6,21 @@
  * reachable states breadth-first, trying from each state the commands the
  * set allows. Two states are one state when their identities are equal —
  * the world's snapshot cut to the set, minus a written ignore list
- * (`claim-identity`) — and they agree on which positive claims the path has
+ * (`claim-identity`) — and they agree on which claims the path has
  * satisfied (D5): a path that read the
  * diary and one that did not must never merge, or the first to a later
  * claim is lost. The walk keeps the first path to each claim as its witness
  * and stops when every claim is settled (D4) or the frontier or a budget
  * runs out.
  *
- * A positive claim is held by its first witness and unproven otherwise. A
- * negative claim is violated by its first witness, held when the frontier
- * is exhausted without one, and unproven when a budget stopped the walk
- * first (D3) — a budget stop can never hold a negative claim. Neither can a
- * walk that never entered its set: when the player starts in a room the set
- * does not name and no allowed command leads into one it does, the frontier
- * runs out after one state with nothing tried. That walk stops as
- * `start-outside-set` and leaves every claim it did not witness unproven.
+ * A claim is held by its first witness and unproven otherwise (D3): by
+ * exhaustion when the frontier ran out without one, by budget when a
+ * budget stopped the walk first. A walk that never entered its set
+ * exhausts nothing: when the player starts in a room the set does not name
+ * and no allowed command leads into one it does, the frontier runs out
+ * after one state with nothing tried. That walk stops as
+ * `start-outside-set` and leaves every claim it did not witness unproven
+ * by budget.
  *
  * A save or a restore the engine refuses stops the walk with a thrown error
  * naming the node: the walk never runs a command on a world it did not
@@ -151,14 +151,15 @@ export async function walkClaims(game: ClaimsGame, ir: StoryIR, group: ClaimGrou
     if (claims.length === 0) return '';
     const bits = new Set(inherited ? inherited.split(',').map(Number) : []);
     for (const claim of claims) {
+      // A bit is only ever added with its witness, so a claim without a
+      // witness has no bit on any path.
       if (witnesses.has(claim.index)) {
-        if (!claim.never) bits.add(claim.index);
+        bits.add(claim.index);
         continue;
       }
-      if (!claim.never && bits.has(claim.index)) continue;
       if (!claimHolds(claim, { world, snapshot, events, entityIdByIr, clauseKeysByFired })) continue;
       witnesses.set(claim.index, path);
-      if (!claim.never) bits.add(claim.index);
+      bits.add(claim.index);
     }
     return [...bits].sort((a, b) => a - b).join(',');
   };
@@ -175,7 +176,7 @@ export async function walkClaims(game: ClaimsGame, ir: StoryIR, group: ClaimGrou
   // refused restore the next command would run on the previous node's world
   // and its result would be credited to the wrong path; a state that could
   // not be saved is a state never walked from, so the frontier would run out
-  // early and hold a negative claim it had not earned (ADR-365 D3). Both stop
+  // early and report a set exhausted that was not (ADR-365 D3). Both stop
   // the walk with an error naming the node.
   const nodeLabel = (path: readonly string[]): string => (path.length === 0 ? 'the walk\'s start' : `"${path.join(' / ')}"`);
   const saveNode = async (path: readonly string[]): Promise<WalkSave> => {
@@ -262,11 +263,10 @@ export async function walkClaims(game: ClaimsGame, ir: StoryIR, group: ClaimGrou
   const exhausted = stopReason === 'frontier-exhausted' || stopReason === 'all-claims-settled';
   const verdicts: ClaimVerdict[] = claims.map((claim) => {
     const witness = witnesses.get(claim.index);
-    const base = { set: group.label, index: claim.index, name: claim.name, never: claim.never, kind: claim.predicate.kind, thingsInSet: set.things.length, inertInSet: inertByIndex.get(claim.index) ?? 0 };
+    const base = { set: group.label, index: claim.index, name: claim.name, kind: claim.predicate.kind, thingsInSet: set.things.length, inertInSet: inertByIndex.get(claim.index) ?? 0 };
     if (witness !== undefined) {
-      return { ...base, verdict: claim.never ? 'violated' : 'held', settledBy: 'witness', witness, depth: witness.length };
+      return { ...base, verdict: 'held', settledBy: 'witness', witness, depth: witness.length };
     }
-    if (claim.never && exhausted) return { ...base, verdict: 'held', settledBy: 'exhaustion' };
     return { ...base, verdict: 'unproven', settledBy: exhausted ? 'exhaustion' : 'budget' };
   });
 

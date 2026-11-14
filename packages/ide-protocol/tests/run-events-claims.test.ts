@@ -2,9 +2,11 @@
  * Guard tests for the claims tier's two run events (ADR-365 D6 and ADR-367
  * D6 on the wire; GH #555): `claim-result` and `claims-summary`.
  *
- * The property these hold is D9's: a verdict is one of three words and a
- * lock's outcome one of three, so a consumer cannot read UNPROVEN as failed
- * or a held lock as broken. Shape checks beside the closed sets.
+ * The property these hold is D9's: a verdict is one of two words, held or
+ * unproven, and a lock's outcome one of three, so a consumer cannot read
+ * UNPROVEN as failed or a held lock as broken. `violated` is refused: the
+ * claims language has no claim that can be violated. Shape checks beside
+ * the closed sets.
  */
 
 import { describe, it, expect } from 'vitest';
@@ -24,7 +26,6 @@ describe('claim-result', () => {
     ...envelope,
     type: 'claim-result',
     name: 'the deed box is open',
-    never: false,
     kind: 'flag',
     verdict: 'held',
     settledBy: 'line',
@@ -39,7 +40,6 @@ describe('claim-result', () => {
     ...envelope,
     type: 'claim-result',
     name: 'the player is in the Kraken Landing',
-    never: false,
     kind: 'room',
     verdict: 'unproven',
     settledBy: 'budget',
@@ -52,7 +52,7 @@ describe('claim-result', () => {
   };
 
   it('accepts every verdict, every settledBy, and every lock outcome in their closed sets', () => {
-    for (const verdict of ['held', 'violated', 'unproven'] as const) expect(isClaimResultEvent({ ...byLine, verdict })).toBe(true);
+    for (const verdict of ['held', 'unproven'] as const) expect(isClaimResultEvent({ ...byLine, verdict })).toBe(true);
     for (const settledBy of ['line', 'witness', 'exhaustion', 'budget'] as const) expect(isClaimResultEvent({ ...byLine, settledBy })).toBe(true);
     for (const outcome of ['held', 'not-held', 'unknown-claim'] as const) {
       expect(isClaimResultEvent({ ...byLine, locks: [{ ...byLine.locks![0], outcome }] })).toBe(true);
@@ -64,6 +64,8 @@ describe('claim-result', () => {
 
   it('rejects a verdict, a settledBy, or a lock outcome outside the set, and a lock without its line', () => {
     expect(isClaimResultEvent({ ...byLine, verdict: 'failed' })).toBe(false);
+    expect(isClaimResultEvent({ ...byLine, verdict: 'violated' })).toBe(false);
+    expect(isRunEvent({ ...byLine, verdict: 'violated' })).toBe(false);
     expect(isClaimResultEvent({ ...byLine, verdict: true })).toBe(false);
     expect(isClaimResultEvent({ ...byLine, settledBy: 'walk' })).toBe(false);
     expect(isClaimResultEvent({ ...byLine, locks: [{ ...byLine.locks![0], outcome: 'broken' }] })).toBe(false);
@@ -93,16 +95,18 @@ describe('claims-summary', () => {
     source: 'fernhill.claims.chord',
     declared: 10,
     held: 9,
-    violated: 1,
-    unproven: 0,
+    unproven: 1,
     walks: 4,
     totalWalkMs: 1012,
     seed: 42,
     floored: true,
   };
 
-  it('accepts the ratio with or without a seed, and rejects a missing count', () => {
+  it('accepts the ratio with or without a seed and with no violated count, and rejects a missing count', () => {
+    expect(summary).not.toHaveProperty('violated');
     expect(isClaimsSummaryEvent(summary)).toBe(true);
+    const { unproven: _u, ...noUnproven } = summary;
+    expect(isClaimsSummaryEvent(noUnproven)).toBe(false);
     const { seed: _s, ...noSeed } = summary;
     expect(isClaimsSummaryEvent(noSeed)).toBe(true);
     expect(isRunEvent(summary)).toBe(true);

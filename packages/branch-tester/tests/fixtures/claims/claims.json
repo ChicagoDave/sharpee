@@ -1,11 +1,11 @@
 {
   "story": "claim-bits-fixture",
-  "source": "the whole fixture: both rooms, the note, and reading. One positive claim whose satisfaction leaves no trace in the identity except its claim bit, and one negative claim that can only be held by exhausting the frontier",
+  "source": "the whole fixture: both rooms, the note, and reading. One claim whose satisfaction leaves no trace in the identity except its claim bit, and one claim no state under the set satisfies, so the walk exhausts the frontier and leaves it unproven",
   "rooms": ["hall", "landing"],
   "things": ["note"],
   "verbs": ["read"],
   "claims": [
     { "name": "the note has been read", "flag": { "thing": "note", "trait": "readable", "field": "hasBeenRead" } },
-    { "name": "the note leaves the Hall", "never": true, "placement": { "thing": "note", "notIn": "hall" } }
+    { "name": "the note leaves the Hall","placement": { "thing": "note", "notIn": "hall" } }
   ]
 }

@@ -51,4 +51,6 @@ The `never` line of a character's principles and of `define code` (ADR-318) is a
 
 ## Session
 
+**Landed 2026-11-14** by `docs/work/archive/adr-397-remove-never-claims/plan.md`: Phase 1 (session 4c0c20, `c3e006d41`) took `never` out of the grammar and deleted the written claims; Phase 2 (session 5db097) took `violated` and the `never` flag out of the runner, the run-event wire and the Testing tab, and rewrote the guide.
+
 Session 4c0c20, 2026-11-14, on `main`. The ADR-396 plan was marked ABANDONED and archived to `docs/work/archive/adr-396-never-claims/` in the same session, before this record was written.

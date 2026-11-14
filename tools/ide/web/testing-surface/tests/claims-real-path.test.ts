@@ -55,7 +55,9 @@ describe.skipIf(!available)('the claims tier from a real run of the ferry test s
     expect(summary.source).toBe('ferry.claims.chord');
     expect(summary.declared).toBe(state.claims.length);
     expect(summary.held).toBe(state.claims.filter(row => row.verdict === 'held').length);
-    expect(summary.violated).toBe(state.claims.filter(row => row.verdict === 'violated').length);
+    expect(summary.unproven).toBe(state.claims.filter(row => row.verdict === 'unproven').length);
+    expect(summary).not.toHaveProperty('violated');
+    for (const row of state.claims) expect(row).not.toHaveProperty('never');
     expect(summary.floored).toBe(true);
 
     // The locked claim (written by `sharpee claim` on the branch line) carries its lock and the card it visits.

@@ -7,12 +7,13 @@
  * normalized claim set, groups its claims by effective set, boots one fresh
  * game per group through the caller's loader, walks it, and returns every
  * verdict beside the ratio of claims held over claims declared. Claims
- * never gate (D9): a violated or unproven claim is reported, not thrown.
+ * never gate (D9): an unproven claim is reported, not thrown.
  *
- * The cost of a negative claim is the cost of exhausting its set, and the
- * states to exhaust double with every independent thing the set carries
- * (D11, measured on Secret Letter's market). So an unproven negative claim
- * is reported with the number of things its set carried, how many of them
+ * The cost of a claim no walk reaches is the cost of exhausting its set,
+ * and the states to exhaust double with every independent thing the set
+ * carries (D11, measured on Secret Letter's market). So a claim a budget
+ * left unproven is reported with the number of things its set carried, how
+ * many of them
  * the claim can never depend on (D12, the compiler's cone of influence),
  * and the budget that stopped the walk, which is what the author tightens.
  *
@@ -34,7 +35,7 @@ export interface ClaimsRunOptions extends ClaimsWalkOptions {
   /** The seed the loader boots at — recorded, not applied; the loader owns the boot. */
   readonly seed?: number;
   /**
-   * What the tree run's floor saw (ADR-367 D5): a positive claim some line
+   * What the tree run's floor saw (ADR-367 D5): a claim some line
    * reached is held by that line and not walked; a lock's check at its card
    * rides the report. Absent when no tree ran before the claims.
    */
@@ -53,17 +54,16 @@ export interface ClaimsRunOptions extends ClaimsWalkOptions {
  */
 export async function runClaims(ir: StoryIR, claimSet: ClaimSet, loadGame: ClaimsGameLoader, options: ClaimsRunOptions = {}): Promise<ClaimsRunResult> {
   const { seed, floor, ...walkOptions } = options;
-  // The floor (ADR-367 D5): a positive claim a line reached is held by that
-  // line, and only the rest are walked. Verdict indices are the declaration's.
+  // The floor (ADR-367 D5): a claim a line reached is held by that line,
+  // and only the rest are walked. Verdict indices are the declaration's.
   const byLine: ClaimVerdict[] = [];
   const toWalk = claimSet.claims.filter((claim) => {
     const reach = floor?.reached.get(claim.index);
-    if (claim.never || reach === undefined) return true;
+    if (reach === undefined) return true;
     byLine.push({
       set: claim.ownSet ? `the set of "${claim.name}"` : 'the declared set',
       index: claim.index,
       name: claim.name,
-      never: false,
       kind: claim.predicate.kind,
       verdict: 'held',
       settledBy: 'line',
@@ -89,7 +89,6 @@ export async function runClaims(ir: StoryIR, claimSet: ClaimSet, loadGame: Claim
     claims,
     declared: claims.length,
     held: count('held'),
-    violated: count('violated'),
     unproven: count('unproven'),
     totalWalkMs: walks.reduce((total, walk) => total + walk.walkMs, 0),
     floored: floor !== undefined,

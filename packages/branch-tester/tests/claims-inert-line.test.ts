@@ -5,11 +5,11 @@
  *
  * The fixture's set lists the note and a pebble; the claim is about where
  * the note is, and nothing in the story reads the pebble. A budget of one
- * state leaves the negative claim unproven, and its line says one of the two
- * things is never reached. A budget the fixture never meets holds the claim
- * by exhaustion, and the walk still visits four states — the pebble in hand
- * or on the floor doubles them — because the set runs as written: the count
- * is report data and never trims the walk (D2, D3).
+ * state leaves the claim unproven, and its line says one of the two things
+ * is never reached. A budget the fixture never meets exhausts the set with
+ * the claim still unproven, and the walk still visits every state — the
+ * pebble in hand or on the floor doubles them — because the set runs as
+ * written: the count is report data and never trims the walk (D2, D3).
  *
  * Owner context: branch-tester test suite (tooling).
  */
@@ -49,17 +49,17 @@ describe('the unproven line and the inert count', () => {
     expect([claim.verdict, claim.settledBy, claim.thingsInSet, claim.inertInSet]).toEqual(['unproven', 'budget', 2, 1]);
     const walk = result.walks[0];
     expect(formatClaimsRun(result).split('\n').at(-1)).toBe(
-      `UNPROVEN  the note leaves the Hall (never) — the walk stopped at ${walk.stopReason} after ${walk.statesDiscovered} states; its set carries 2 things, 1 of which the claim's rules never reach; each independent thing doubles the states to exhaust`,
+      `UNPROVEN  the note leaves the Hall — the walk stopped at ${walk.stopReason} after ${walk.statesDiscovered} states; its set carries 2 things, 1 of which the claim's rules never reach; each independent thing doubles the states to exhaust`,
     );
   }, 60_000);
 
-  it('the count never trims the walk: the set runs as written, the pebble doubles the states, and a held line carries no count', async () => {
+  it('the count never trims the walk: the set runs as written, the pebble doubles the states, and an exhausted set\'s line carries no count', async () => {
     const result = await runClaims(IR, CLAIMS, loadGame, { seed: SEED, maxStates: 5000, maxSeconds: 30, maxDepth: 40 });
     const claim = result.claims[0];
-    expect([claim.verdict, claim.settledBy, claim.inertInSet]).toEqual(['held', 'exhaustion', 1]);
+    expect([claim.verdict, claim.settledBy, claim.inertInSet]).toEqual(['unproven', 'exhaustion', 1]);
     // hall / landing, each with the pebble on the floor or in hand, times the rooms' visited marks, which
     // the identity counts (4 before 2026-11-12, under the include-list identity).
     expect(result.walks[0].statesDiscovered).toBe(16);
-    expect(formatClaimsRun(result).split('\n').at(-1)).toBe('HELD  the note leaves the Hall (never) — every reachable state under its set was tried (the declared set)');
+    expect(formatClaimsRun(result).split('\n').at(-1)).toBe('UNPROVEN  the note leaves the Hall — no reachable state under its set satisfies it (the declared set)');
   }, 60_000);
 });

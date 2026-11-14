@@ -64,7 +64,7 @@ export function claimsSummaryOf(event: ClaimsSummaryEvent): ClaimsSummary {
 
 /**
  * The section's title: the CLI report's ratio line once the summary has
- * arrived (`claims: 9 of 10 held, 1 violated (seed 42)`), and the pending
+ * arrived (`claims: 2 of 3 held, 1 unproven (seed 7)`), and the pending
  * line before it.
  *
  * @param summary the ratio, or undefined before it arrives
@@ -91,7 +91,7 @@ export function claimsCountsOf(summary: ClaimsSummary | undefined, rows: readonl
  * A claim's name as the row shows it — the CLI report's own words.
  *
  * @param row the claim
- * @returns the name, marked when the claim is negative
+ * @returns the name
  */
 export function claimNameText(row: ClaimRow): string {
   return claimTitle(row);

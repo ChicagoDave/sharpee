@@ -18,14 +18,13 @@ import {
   type ClaimsSummaryRow,
 } from '../src/claims/claim-report.js';
 
-const SUMMARY: ClaimsSummaryRow = { source: 'fixture', declared: 4, held: 2, violated: 1, unproven: 1, walks: 1, totalWalkMs: 10, seed: 7, floored: true };
+const SUMMARY: ClaimsSummaryRow = { source: 'fixture', declared: 3, held: 2, unproven: 1, walks: 1, totalWalkMs: 10, seed: 7, floored: true };
 
 describe('the verdict counts', () => {
   it('read the summary once it has arrived, even when fewer rows are in hand', () => {
     const counts = claimCounts(SUMMARY, [{ verdict: 'held' }]);
     expect(counts).toEqual([
       { verdict: 'held', count: 2, text: '2 held' },
-      { verdict: 'violated', count: 1, text: '1 violated' },
       { verdict: 'unproven', count: 1, text: '1 unproven' },
     ]);
   });
@@ -44,16 +43,28 @@ describe('the verdict counts', () => {
 });
 
 describe('the words around a claim', () => {
-  it('the ratio line and the pending line', () => {
-    expect(claimsRatioLine(SUMMARY)).toBe('claims: 2 of 4 held, 1 violated, 1 unproven (seed 7)');
+  // The first line is the one the IDE's real-path test
+  // (TestingSurfaceRealPathTests.swift) expects byte for byte; pinned here so
+  // a change to it shows without xcodebuild.
+  it('the ratio line with an unproven count, without one, and without a seed; and the pending line', () => {
+    expect(claimsRatioLine(SUMMARY)).toBe('claims: 2 of 3 held, 1 unproven (seed 7)');
+    expect(claimsRatioLine({ ...SUMMARY, declared: 2, unproven: 0 })).toBe('claims: 2 of 2 held (seed 7)');
+    const { seed: _seed, ...unseeded } = SUMMARY;
+    expect(claimsRatioLine(unseeded)).toBe('claims: 2 of 3 held, 1 unproven');
     expect(claimsPendingLine(3)).toBe('claims: 3 so far');
   });
 
-  it('a negative claim is marked in its title; the headline is the verdict word and the title', () => {
-    expect(claimTitle({ name: 'the box leaves', never: true })).toBe('the box leaves (never)');
-    expect(claimTitle({ name: 'the deed is in hand', never: false })).toBe('the deed is in hand');
+  it('a stale violated count on the row is not printed', () => {
+    const stale = { ...SUMMARY, violated: 4 } as ClaimsSummaryRow;
+    expect(claimsRatioLine(stale)).toBe('claims: 2 of 3 held, 1 unproven (seed 7)');
+    expect(claimCounts(stale, []).map((entry) => entry.verdict)).toEqual(['held', 'unproven']);
+  });
+
+  it('the title is the name; the headline is the verdict word and the title', () => {
+    expect(claimTitle({ name: 'the deed is in hand' })).toBe('the deed is in hand');
     expect(claimVerdictWord({ verdict: 'unproven' })).toBe('UNPROVEN');
-    expect(claimHeadline({ verdict: 'violated', name: 'the box leaves', never: true })).toBe('VIOLATED  the box leaves (never)');
+    expect(claimVerdictWord({ verdict: 'held' })).toBe('HELD');
+    expect(claimHeadline({ verdict: 'unproven', name: 'the box leaves' })).toBe('UNPROVEN  the box leaves');
   });
 });
 

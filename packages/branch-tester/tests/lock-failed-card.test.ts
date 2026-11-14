@@ -179,7 +179,7 @@ describe('a broken lock is a failed card (D6)', () => {
     expect(report).toContain('  lock "the Landing is reached" at line branch01 "hall · north" at turn 3 — NOT held there: the player is in the Hall');
     expect(report).toContain('  lock "the note is in the Landing" at line branch01 "hall · north" at turn 5 — NOT held there: the note is in the Hall');
     // Verdicts never gate (ADR-365 D9): the broken pins change no verdict count.
-    expect([result.held, result.violated, result.unproven]).toEqual([2, 0, 1]);
+    expect([result.held, result.unproven]).toEqual([2, 1]);
 
     // The wire's rows (D6): each claim with every lock the run checked on it, and the report reads them back.
     const rows = result.claims.map((claim) => claimResultRowOf(claim, result));
@@ -218,7 +218,7 @@ describe('what a miss is called, per predicate kind (D6)', () => {
           { name: 'flag', flag: { thing: 'note', trait: 'readable', field: 'hasBeenRead' } },
           { name: 'in', placement: { thing: 'note', in: 'landing' } },
           { name: 'carried', placement: { thing: 'note', in: 'player' } },
-          { name: 'notIn', never: true, placement: { thing: 'note', notIn: 'hall' } },
+          { name: 'notIn', placement: { thing: 'note', notIn: 'hall' } },
           { name: 'ending', ending: {} },
           { name: 'fired', fired: 'note.reading' },
           { name: 'event', event: { type: 'if.event.read' } },

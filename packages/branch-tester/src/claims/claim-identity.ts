@@ -3,8 +3,8 @@
  * (ADR-365 D2, D5; the 2026-11-12 note on D2).
  *
  * Purpose: the walk merges two worlds when their identities are equal, and
- * a `never` claim is held once the merged frontier runs out. So a field the
- * identity leaves out can hold a claim wrongly. The identity is therefore
+ * a merged world is walked from once. So a field the identity leaves out
+ * can hide the path to a claim. The identity is therefore
  * built by exclusion: it hashes the world's whole snapshot, minus the parts
  * `IDENTITY_IGNORES` names, each with its reason. A field the platform or
  * the language adds later counts until someone lists it here — a forgotten
