@@ -1421,6 +1421,7 @@ export declare function checkEndingAssertion(assertion: Assertion, world?: World
  * phrase an entity defines for itself is emitted owner-qualified
  * (`solicitor's-letter.summons-text`) while the story names it bare
  * (`summons-text`), so a bare id matches the last segment of a qualified one.
+ * A platform event written in its Chord spelling matches its dotted type.
  *
  * @param messageId the phrase key or event id a claim wrote
  * @param events the turn's captured events

@@ -411,7 +411,7 @@ export function planBranch(
   if ('intercepted' in intercepting) {
     return { kind: 'skip', shape: 'intercepted', detail: `\`${intercepting.intercepted}\` refuses every ${branch.clause.kind === 'on' ? branch.clause.action : 'firing'} of ${branch.subject ?? 'the story'} before the reaction` };
   }
-  for (const precondition of [...intercepting.guards, ...branch.precondition]) {
+  for (const precondition of [...answeredActionGuards(branch, branches), ...intercepting.guards, ...branch.precondition]) {
     const mapped = preconditionTerms(precondition, { ir, subject: branch.subject, reading: false, expanding: [], clause: branch.clause });
     if ('shape' in mapped) return { kind: 'skip', shape: mapped.shape, detail: mapped.detail };
     terms.push(...mapped.terms);
@@ -566,6 +566,30 @@ function interceptingGuards(branch: ClauseBranch, branches: ClauseBranch[]): { g
     if (refusal && refusal.kind === 'refuse') return { intercepted: refusal.phraseKey };
   }
   return { guards };
+}
+
+/**
+ * For an `on` or `after` clause answering a story action, what that
+ * `define action` needs in order to reach the clause at all: the loader runs
+ * the action's `refuse when` ladder and its `must` lines before any clause
+ * answers, so the guard of each of the action's refused leaves — its last
+ * precondition — is flipped so it does NOT fire (GH #714's sibling, #715).
+ * A `without` refusal is absent: it fires on the command's shape, which the
+ * typed command already settles. A standard action has no enumerated
+ * branches of its own, so it contributes nothing here; its flag
+ * preconditions are `STANDARD_PRECONDITIONS`' business.
+ */
+function answeredActionGuards(branch: ClauseBranch, branches: ClauseBranch[]): BranchPrecondition[] {
+  if (branch.clause.kind !== 'on') return [];
+  const action = branch.clause.action;
+  const guards: BranchPrecondition[] = [];
+  for (const candidate of branches) {
+    if (candidate.clause.kind !== 'action' || candidate.clause.action !== action) continue;
+    if (candidate.leaf.kind !== 'refused' || candidate.leaf.guard === 'without') continue;
+    const own = candidate.precondition[candidate.precondition.length - 1];
+    if (own?.kind === 'condition') guards.push({ kind: 'condition', condition: own.condition, holds: !own.holds });
+  }
+  return guards;
 }
 
 /** What a condition is mapped within: the story, the clause subject `it` binds to, and how the terms will be used. */

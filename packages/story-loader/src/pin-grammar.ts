@@ -53,7 +53,14 @@
  * off the world, `emitted` off the turn's events), written by nothing —
  * `arrange` names them as it names the non-floor shapes.
  *
- * Public interface: parsePin(), ParsedPin, PinClauseHead, PinOperator, PinShape.
+ * An `emitted` id is written in the Chord spelling (`media-ambient-play`)
+ * while the platform emits its dotted type (`media.ambient.play`), so this
+ * subpath also re-exports `translateEventId` — `./event-id-map.ts`, as pure
+ * as this file — for the assertion core to read an `emitted` claim with
+ * (GH #714). It is the one relative import here.
+ *
+ * Public interface: parsePin(), ParsedPin, PinClauseHead, PinOperator,
+ * PinShape; translateEventId() (re-exported).
  * Owner context: @sharpee/story-loader — the loader owns the state this
  * grammar addresses, so it owns the grammar.
  *
@@ -62,6 +69,8 @@
  * evaluator); GH #355 (the Chord-spelled state claim); recurrence #425
  * (hand-duplicated parsers of one grammar — the reason this file exists).
  */
+
+export { translateEventId } from './event-id-map.js';
 
 /** The equality operators the dotted forms take. */
 export type PinOperator = '=' | '!=';

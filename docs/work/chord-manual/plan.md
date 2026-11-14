@@ -6,7 +6,21 @@
 **Bounded contexts touched**: N/A (documentation and book tooling; no domain modeling)
 **Key domain language**: N/A. Working vocabulary: edition, edition pin, running example, companion snapshot (the compiling `.story` at the end of a chapter), tree document, naive-reader run.
 
-Paths below use the recommended answer to D-7. Phase 1 rewrites them if David rules otherwise.
+Edition paths below use D-7 as ruled on 2026-11-14: `docs/book/chord-v4.0.2/`. The `tutorials/familyzoo/chord-v4/` companion path is stale (the zoo is not the example) and the snapshots' home is not yet ruled.
+
+## Ruled 2026-11-14 (session 298893, David)
+
+David's words: "D3 a, D4 a, D5 a, D6 a, D7 b, D10 a".
+
+- **D-3 (a):** the pin is Sharpee 5.6.1 / Chord 4.0.2.
+- **D-4 (a):** a surface-neutral body; each "Build and try it" step gives both the Chord Writer action and the `sharpee` command.
+- **D-5 (a):** asides name the platform concept a Chord line becomes, from published outputs; no TypeScript source, no ADRs.
+- **D-6 (a):** PDF and EPUB downloads plus a chunked web build linked from sharpee.net; the site pages stay as they are. The "adapts that material" half was already void.
+- **D-7 (b):** the edition lives at `docs/book/chord-v4.0.2/`, with the pin in the name.
+- **D-10 (a):** the manual's examples and the #684 test stories stay separate.
+- **Defects.** David, same session: "any defects in the way of writing a clean manual must be mitigated". No chapter is written around a defect that blocks it; the defect is dealt with first. Ruled the same session ("yes, fixed in the platform, start with 714 and 715"): mitigated means fixed in `packages/`, and the D-3 pin and the D-7 directory name move to the release that carries the fixes. Each fix's design goes to David before `packages/` is touched. Order: #714, #715, then the rest.
+- D-8 (title) and D-9 (audience and length) are not ruled.
+- Not covered by D-7 (b): where the eight Relighting snapshots live once they leave `docs/work/chord-manual/snapshots/`.
 
 ## Ruled 2026-11-13 (session 625c8d, David)
 
@@ -205,21 +219,21 @@ Appendices (generated): A, the Chord grammar from `packages/chord/chord.ebnf`; B
 - **Tier**: Medium
 - **Budget**: 250
 - **Domain focus**: The Chord 4.0.2 surface, editorial structure, and book tooling.
-- **Entry state**: No `docs/book/chord-v4/` exists. `scripts/build-book.sh` builds only Sharpee editions under their Sharpee file name. The edition-skeleton deliverables below wait on David's rulings on D-3 to D-10; the first three deliverables do not.
+- **Entry state**: No `docs/book/chord-v4.0.2/` exists. `scripts/build-book.sh` builds only Sharpee editions under their Sharpee file name. The edition-skeleton deliverables below wait on David's rulings on D-3 to D-10; the first three deliverables do not.
 - **Deliverable**:
   - Read `packages/chord/chord.ebnf` and the vocabulary catalogs in full and sort every construct into loose chapters: `docs/work/chord-manual/chapters.md` (written 2026-11-13, awaiting David's review).
   - Design the game the chapters build, with a chapter-by-chapter growth table: `docs/work/chord-manual/game.md` (written 2026-11-13, awaiting David's review).
   - Once David accepts the chapter organization, re-cut Phases 2 to 5 (chapter ranges, Part names, companion path) against it.
   - Record each remaining ruling in this plan's Open decisions section, dated, and rewrite any path the rulings change.
-  - Create the edition skeleton: `docs/book/chord-v4/book.yaml` (new) and `docs/book/chord-v4/frontmatter.yaml` (new); `docs/book/chord-v4/frontmatter/` (new) with a title page and a copyright page stating the pin; one stub per outline chapter under `docs/book/chord-v4/parts/` (new); appendix stubs under `docs/book/chord-v4/backmatter/` (new); `docs/book/chord-v4/styles/` (new), copied from `docs/book/v2.0.0/styles/`; and a `.gitignore` for build output.
+  - Create the edition skeleton: `docs/book/chord-v4.0.2/book.yaml` (new) and `docs/book/chord-v4.0.2/frontmatter.yaml` (new); `docs/book/chord-v4.0.2/frontmatter/` (new) with a title page and a copyright page stating the pin; one stub per outline chapter under `docs/book/chord-v4.0.2/parts/` (new); appendix stubs under `docs/book/chord-v4.0.2/backmatter/` (new); `docs/book/chord-v4.0.2/styles/` (new), copied from `docs/book/v2.0.0/styles/`; and a `.gitignore` for build output.
   - Make `scripts/build-book.sh` take the output file name from the edition, so the Chord edition is not named `the-sharpee-book-*`. Make it skip the dead `site/` copy for an edition that has no site target.
   - Add `chord` and `shell` fences to the extraction map in `scripts/extract-book-snippets.cjs`.
   - Add a Chord-edition section to `docs/book/CLAUDE.md` naming its em-dash check path.
   - Install the published `@sharpee/devkit@5.6.1` in the scratchpad and confirm it reports the pin.
   - Establish, using the published CLI alone, how a reader creates and extends a `<story-id>.tests/` tree, and record the answer here. If the only path is Chord Writer's Testing tab, stop and take it to David: a CLI path would be a `packages/devkit` change, and both chapter 28 and the headless naive gate depend on it.
-- **Files**: `docs/book/chord-v4/` (new), `docs/book/chord-v4/frontmatter/` (new), `docs/book/chord-v4/parts/` (new), `docs/book/chord-v4/backmatter/` (new), `docs/book/chord-v4/styles/` (new), `scripts/build-book.sh`, `scripts/extract-book-snippets.cjs`, `docs/book/CLAUDE.md`, `docs/work/chord-manual/plan.md`
+- **Files**: `docs/book/chord-v4.0.2/` (new), `docs/book/chord-v4.0.2/frontmatter/` (new), `docs/book/chord-v4.0.2/parts/` (new), `docs/book/chord-v4.0.2/backmatter/` (new), `docs/book/chord-v4.0.2/styles/` (new), `scripts/build-book.sh`, `scripts/extract-book-snippets.cjs`, `docs/book/CLAUDE.md`, `docs/work/chord-manual/plan.md`
 - **Exit state**: The rulings and the final outline are in this plan. The empty edition renders to HTML under its own name, with every outline chapter in the table of contents. The Sharpee edition still builds, and its extracted snippets are unchanged. The CLI tree-authoring path is known, or it is with David as a platform question.
-- **Demonstration**: `scripts/build-book.sh chord-v4 html` exits 0, and the HTML it writes lists every outline chapter. `scripts/build-book.sh v2.0.0 html` exits 0. Re-running the snippet extractor from `docs/book/v2.0.0/` leaves `git status --porcelain docs/book/v2.0.0/code-snippets` empty. The published devkit, run through npx at 5.6.1 with the version flag, prints "Sharpee 5.6.1 · Chord 4.0.2".
+- **Demonstration**: `scripts/build-book.sh chord-v4.0.2 html` exits 0, and the HTML it writes lists every outline chapter. `scripts/build-book.sh v2.0.0 html` exits 0. Re-running the snippet extractor from `docs/book/v2.0.0/` leaves `git status --porcelain docs/book/v2.0.0/code-snippets` empty. The published devkit, run through npx at 5.6.1 with the version flag, prints "Sharpee 5.6.1 · Chord 4.0.2".
 - **Demonstrated**: 
 - **Status**: CURRENT (since 2026-11-13)
 
@@ -232,11 +246,11 @@ Appendices (generated): A, the Chord grammar from `packages/chord/chord.ebnf`; B
   - Draft chapters 1–9 in full under the voice rules (or integrate David's drafts, if D-2 is (b)), adapting each [have] source against the pin.
   - Write the "Build and try it" steps according to D-4, and the Under-the-Hood asides according to D-5.
   - For each chapter that grows the example, add a companion snapshot under `tutorials/familyzoo/chord-v4/` (new) with a tree pinning every "Try it" output.
-  - Re-run the snippet extractor so that `docs/book/chord-v4/code-snippets/` (new) is in sync.
+  - Re-run the snippet extractor so that `docs/book/chord-v4.0.2/code-snippets/` (new) is in sync.
   - File every language gap the chapters expose as a GitHub issue, and list the issue numbers in the phase's work summary. Phases 3 to 5 do the same.
-- **Files**: `docs/book/chord-v4/parts/`, `docs/book/chord-v4/code-snippets/` (new), `tutorials/familyzoo/chord-v4/` (new)
+- **Files**: `docs/book/chord-v4.0.2/parts/`, `docs/book/chord-v4.0.2/code-snippets/` (new), `tutorials/familyzoo/chord-v4/` (new)
 - **Exit state**: Chapters 1–9 are drafted with no stubs left. Every quoted output matches what the published 5.6.1 CLI prints. The Chord Writer half of chapter 1 is marked pending under D-3 if no paired Chord Writer release exists yet.
-- **Demonstration**: `scripts/build-book.sh chord-v4 html` exits 0. `grep -rn "—" docs/book/chord-v4/frontmatter/ docs/book/chord-v4/parts/` returns only the permitted heading forms. For each companion snapshot this phase adds, the published CLI's build and test commands (run through npx at 5.6.1) exit 0, and the session lists each snapshot with its passing card count.
+- **Demonstration**: `scripts/build-book.sh chord-v4.0.2 html` exits 0. `grep -rn "—" docs/book/chord-v4.0.2/frontmatter/ docs/book/chord-v4.0.2/parts/` returns only the permitted heading forms. For each companion snapshot this phase adds, the published CLI's build and test commands (run through npx at 5.6.1) exit 0, and the session lists each snapshot with its passing card count.
 - **Demonstrated**: 
 - **Status**: PENDING
 
@@ -246,9 +260,9 @@ Appendices (generated): A, the Chord grammar from `packages/chord/chord.ebnf`; B
 - **Domain focus**: Chapter writing: standard actions, readable and switchable things, states and conditions, event clauses, statements and refusals, selection and sequencing, custom traits and actions.
 - **Entry state**: Phase 2's exit state holds, and the chapter 9 snapshot is the starting point.
 - **Deliverable**: Chapters 10–16 under the same conventions, with companion snapshots, trees and re-extracted snippets. Under-the-Hood asides in chapter 10 name the standard actions only by the identifiers the published outputs show.
-- **Files**: `docs/book/chord-v4/parts/`, `docs/book/chord-v4/code-snippets/`, `tutorials/familyzoo/chord-v4/`
+- **Files**: `docs/book/chord-v4.0.2/parts/`, `docs/book/chord-v4.0.2/code-snippets/`, `tutorials/familyzoo/chord-v4/`
 - **Exit state**: Chapters 10–16 are drafted. Every snapshot compiles, and every tree passes on the published CLI.
-- **Demonstration**: `scripts/build-book.sh chord-v4 html` exits 0. The em-dash check over `docs/book/chord-v4/parts/` returns only permitted hits. The published CLI's build and test commands exit 0 for each snapshot this phase adds, with card counts listed.
+- **Demonstration**: `scripts/build-book.sh chord-v4.0.2 html` exits 0. The em-dash check over `docs/book/chord-v4.0.2/parts/` returns only permitted hits. The published CLI's build and test commands exit 0 for each snapshot this phase adds, with card counts listed.
 - **Demonstrated**: 
 - **Status**: PENDING
 
@@ -258,9 +272,9 @@ Appendices (generated): A, the Chord grammar from `packages/chord/chord.ebnf`; B
 - **Domain focus**: Chapter writing: prose and markers, phrases and strategies, phrasebooks and overrides, people and conversation, time, scoring and endings, opt-in systems.
 - **Entry state**: Phase 3's exit state holds.
 - **Deliverable**: Chapters 17–23 under the same conventions, with companion snapshots, trees and re-extracted snippets. Chapter 19 points to Appendix D for the full alias list instead of reproducing it.
-- **Files**: `docs/book/chord-v4/parts/`, `docs/book/chord-v4/code-snippets/`, `tutorials/familyzoo/chord-v4/`
+- **Files**: `docs/book/chord-v4.0.2/parts/`, `docs/book/chord-v4.0.2/code-snippets/`, `tutorials/familyzoo/chord-v4/`
 - **Exit state**: Chapters 17–23 are drafted. Every snapshot compiles, and every tree passes on the published CLI.
-- **Demonstration**: `scripts/build-book.sh chord-v4 html` exits 0. The em-dash check returns only permitted hits. The published CLI's build and test commands exit 0 for each snapshot this phase adds, with card counts listed.
+- **Demonstration**: `scripts/build-book.sh chord-v4.0.2 html` exits 0. The em-dash check returns only permitted hits. The published CLI's build and test commands exit 0 for each snapshot this phase adds, with card counts listed.
 - **Demonstrated**: 
 - **Status**: PENDING
 
@@ -273,9 +287,9 @@ Appendices (generated): A, the Chord grammar from `packages/chord/chord.ebnf`; B
   - Chapters 24–30 under the same conventions. Volume VII's browser claims are checked by Playwright against the built web output.
   - Chapter 28 teaches the CLI tree path Phase 1 established.
   - Write the preface and How to read this book in full.
-- **Files**: `docs/book/chord-v4/parts/`, `docs/book/chord-v4/frontmatter/`, `docs/book/chord-v4/code-snippets/`, `tutorials/familyzoo/chord-v4/`
+- **Files**: `docs/book/chord-v4.0.2/parts/`, `docs/book/chord-v4.0.2/frontmatter/`, `docs/book/chord-v4.0.2/code-snippets/`, `tutorials/familyzoo/chord-v4/`
 - **Exit state**: Every chapter and all front matter are drafted. The whole book renders to HTML, EPUB and PDF.
-- **Demonstration**: `scripts/build-book.sh chord-v4 all` exits 0 and writes all three formats. The em-dash check returns only permitted hits. The published CLI's build and test commands exit 0 for every companion snapshot in the edition. Each Volume VII Playwright check passes.
+- **Demonstration**: `scripts/build-book.sh chord-v4.0.2 all` exits 0 and writes all three formats. The em-dash check returns only permitted hits. The published CLI's build and test commands exit 0 for every companion snapshot in the edition. Each Volume VII Playwright check passes.
 - **Demonstrated**: 
 - **Status**: PENDING
 
@@ -288,9 +302,9 @@ Appendices (generated): A, the Chord grammar from `packages/chord/chord.ebnf`; B
   - Write `scripts/generate-chord-appendices.cjs` (new), with a header comment. It writes Appendix A from `packages/chord/chord.ebnf`, Appendix B from `packages/parser-en-us/grammar/standard-en-us.story`, Appendix C from the published `@sharpee/chord` vocabulary exports, and Appendix D from the published `sharpee messages` output.
   - Appendix E (diagnostic codes) only if a repo-side scan of `packages/chord/src` can produce it. Anything that needs a registry in `packages/` stops for David's ruling.
   - Group headings carry `{.unnumbered .unlisted}`, as in the Sharpee manual's Appendix D.
-- **Files**: `scripts/generate-chord-appendices.cjs` (new), `docs/book/chord-v4/backmatter/`
+- **Files**: `scripts/generate-chord-appendices.cjs` (new), `docs/book/chord-v4.0.2/backmatter/`
 - **Exit state**: Each appendix's entry count matches its source: Appendix B has one entry per `define action` block in the standard grammar, and Appendix D has one entry per alias `sharpee messages` emits. Regenerating produces no diff.
-- **Demonstration**: `node scripts/generate-chord-appendices.cjs` exits 0. A second run leaves `git status --porcelain docs/book/chord-v4/backmatter/` empty. The session prints each appendix's count beside its source count. `scripts/build-book.sh chord-v4 html` exits 0 with the appendix headings kept out of the table of contents.
+- **Demonstration**: `node scripts/generate-chord-appendices.cjs` exits 0. A second run leaves `git status --porcelain docs/book/chord-v4.0.2/backmatter/` empty. The session prints each appendix's count beside its source count. `scripts/build-book.sh chord-v4.0.2 html` exits 0 with the appendix headings kept out of the table of contents.
 - **Demonstrated**: 
 - **Status**: PENDING
 
@@ -305,9 +319,9 @@ Appendices (generated): A, the Chord grammar from `packages/chord/chord.ebnf`; B
   - The script prints a per-chapter table.
   - Add a committed fixture the checker is known to fail on (a broken `chord` fence), with `scripts/__tests__/check-chord-snippets.test.ts` (new) asserting that it is reported.
   - Fix book-side failures. File platform defects as GitHub issues for David.
-- **Files**: `scripts/check-chord-snippets.cjs` (new), `scripts/__tests__/check-chord-snippets.test.ts` (new), `docs/book/chord-v4/parts/`
+- **Files**: `scripts/check-chord-snippets.cjs` (new), `scripts/__tests__/check-chord-snippets.test.ts` (new), `docs/book/chord-v4.0.2/parts/`
 - **Exit state**: Every fence in the manual compiles and loads against Sharpee 5.6.1 / Chord 4.0.2, or is listed as a filed platform issue awaiting David. The checker fails on its fixture.
-- **Demonstration**: `node scripts/check-chord-snippets.cjs docs/book/chord-v4/` exits 0 and prints the per-chapter table with zero failures. The fixture test fails the broken fence and passes.
+- **Demonstration**: `node scripts/check-chord-snippets.cjs docs/book/chord-v4.0.2/` exits 0 and prints the per-chapter table with zero failures. The fixture test fails the broken fence and passes.
 - **Demonstrated**: 
 - **Status**: PENDING
 
@@ -320,7 +334,7 @@ Appendices (generated): A, the Chord grammar from `packages/chord/chord.ebnf`; B
   - Write `docs/work/chord-manual/naive-prompt.txt` (new) and `docs/work/chord-manual/accepted-limitations.md` (new), modeled on the Sharpee brief. They cover amnesia, execute as-is, no R&D, per-chapter logging, a stale-artifact check on the title page, the npm versions the run must get, Playwright for Volume VII, and how Chord Writer steps are handled under D-4.
   - Each run happens in a container with only the PDF and the published CLI, launched by David or as he directs. Its log lands under `docs/work/chord-manual/naive-runs/` (new).
   - Triage each log, fix book defects, re-render, and run again.
-- **Files**: `docs/work/chord-manual/naive-prompt.txt` (new), `docs/work/chord-manual/accepted-limitations.md` (new), `docs/work/chord-manual/naive-runs/` (new), `docs/book/chord-v4/`, `tutorials/familyzoo/chord-v4/`
+- **Files**: `docs/work/chord-manual/naive-prompt.txt` (new), `docs/work/chord-manual/accepted-limitations.md` (new), `docs/work/chord-manual/naive-runs/` (new), `docs/book/chord-v4.0.2/`, `tutorials/familyzoo/chord-v4/`
 - **Exit state**: The latest run is clean: every chapter PASS, zero BLOCKED, zero deviations, and every reported issue on the accepted list.
 - **Demonstration**: The newest execution log under `docs/work/chord-manual/naive-runs/` shows every chapter with STATUS PASS, no BLOCKED or DEVIATION entries, and only accepted-list issues. The Demonstrated line names that log file and quotes its per-status counts.
 - **Demonstrated**: 

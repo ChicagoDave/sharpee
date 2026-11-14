@@ -126,6 +126,15 @@ describe('emitted <message-id>', () => {
     expect(evaluateEmittedClaim('vine-fruits', events)).toEqual({ matches: true });
   });
 
+  it('matches a platform event written in its Chord spelling against its dotted type (GH #714)', () => {
+    const ambient: TestEventInfo[] = [{ type: 'media.ambient.play', data: { src: 'audio/lapping.mp3' } }];
+    expect(evaluateEmittedClaim('media-ambient-play', ambient)).toEqual({ matches: true });
+    expect(evaluateEmittedClaim('media.ambient.play', ambient)).toEqual({ matches: true });
+    // The translation is the table's, not a dash-for-dot guess: a sibling event does not match.
+    expect(evaluateEmittedClaim('media-ambient-stop', ambient).matches).toBe(false);
+    expect(evaluateEmittedClaim('media-ambient-play', events).matches).toBe(false);
+  });
+
   it('matches a bare phrase key against its owner-qualified emission', () => {
     const qualified: TestEventInfo[] = [{ type: 'if.event.read', data: { messageId: "solicitor's-letter.summons-text" } }];
     expect(evaluateEmittedClaim('summons-text', qualified)).toEqual({ matches: true });

@@ -44,7 +44,7 @@ import { checkChannelAssertion } from './channel-assert.js';
 // loader's `arrange()` writes one, and neither carries a regex of its own.
 // The subpath is pure and dependency-free, so the browser bundle stays
 // runtime-free (the barrel would drag the whole loader in).
-import { parsePin } from '@sharpee/story-loader/pin-grammar';
+import { parsePin, translateEventId } from '@sharpee/story-loader/pin-grammar';
 // The clause key's one composer (ADR-388 D2), by its pure subpath for the
 // same reason: the `@sharpee/chord` barrel would drag the compiler in.
 import { clauseHeadId, spokenClauseHead } from '@sharpee/chord/clause-ids';
@@ -336,6 +336,7 @@ export function checkEndingAssertion(assertion: Assertion, world?: WorldModel): 
  * phrase an entity defines for itself is emitted owner-qualified
  * (`solicitor's-letter.summons-text`) while the story names it bare
  * (`summons-text`), so a bare id matches the last segment of a qualified one.
+ * A platform event written in its Chord spelling matches its dotted type.
  *
  * @param messageId the phrase key or event id a claim wrote
  * @param events the turn's captured events
@@ -347,7 +348,11 @@ export function evaluateEmittedClaim(
 ): { matches: boolean; details?: string } {
   const named = (candidate: unknown): boolean =>
     typeof candidate === 'string' && (candidate === messageId || candidate.endsWith(`.${messageId}`));
-  const matches = events.some((event) => named(event.type) || named(event.data?.messageId));
+  // A platform event is claimed in its Chord spelling (`media-ambient-play`)
+  // and emitted under its dotted type (`media.ambient.play`): the claim is an
+  // event seam like the loader's own, so it translates the same way (GH #714).
+  const platformType = translateEventId(messageId);
+  const matches = events.some((event) => named(event.type) || event.type === platformType || named(event.data?.messageId));
   if (matches) return { matches: true };
   const emitted = events
     .map((event) => (typeof event.data?.messageId === 'string' ? `${event.type} (${event.data.messageId})` : event.type))

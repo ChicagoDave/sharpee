@@ -542,6 +542,36 @@ describe('selecting state — intercepting guards, guard order, two-valued negat
     expect(through.claims).toEqual([{ claim: 'emitted the-bath', passed: true }]);
   }, 30_000);
 
+  it('a trait clause answering a story action is arranged past the action\'s own must and refuse-when lines (GH #715)', async () => {
+    const { run } = await runFixture('action-guards');
+    expect(run.failed).toBe(0);
+    expect(run.errored).toBe(0);
+
+    // The through leaf: the action's refusal guard is written to fail and
+    // its requirement written to hold — in the loader's order, the ladder
+    // before the musts — and then the clause's own guard.
+    const hushed = run.outcomes.find((o) => o.label === 'bell · on hushing')!;
+    expect(hushed.status).toBe('passed');
+    expect(hushed.arranged.slice(0, 3)).toEqual(['wind is calm', 'hush-page is learned', 'bell is tolling']);
+    expect(hushed.claims).toContainEqual({ claim: 'bell is still', passed: true });
+    expect(hushed.claims).toContainEqual({ claim: 'emitted bell-hushed', passed: true });
+
+    // The clause's refused leaf is reached too: the action lets the command through first.
+    const quiet = outcome(run, 'bell · on hushing · refused already-quiet');
+    expect(quiet.status).toBe('passed');
+    expect(quiet.arranged).toContain('hush-page is learned');
+    expect(quiet.claims).toEqual([
+      { claim: 'emitted already-quiet', passed: true },
+      { claim: "unchanged: bell's state", passed: true },
+    ]);
+  }, 30_000);
+
+  it('an unconditional `play ambient` is claimed in the Chord spelling and matched against the platform event (GH #714)', async () => {
+    const { run } = await runFixture('action-guards');
+    const hushed = run.outcomes.find((o) => o.label === 'bell · on hushing')!;
+    expect(hushed.claims).toContainEqual({ claim: 'emitted media-ambient-play', passed: true });
+  }, 30_000);
+
   it('a mutating on body behind a standard refusal stays red, and the line names the refusal', async () => {
     const { run } = await runFixture('refused-body');
     const dishes = outcome(run, 'dishes · on taking');
