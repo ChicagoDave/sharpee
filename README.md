@@ -2,220 +2,162 @@
 
 [![npm](https://img.shields.io/npm/v/@sharpee/sharpee/latest?label=npm&color=orange)](https://www.npmjs.com/package/@sharpee/sharpee)
 
-A parser-based Interactive Fiction authoring platform built in TypeScript.
+Sharpee is a platform for writing parser-based interactive fiction. It has three parts:
 
-## Quick Start
+- **Chord**, the story language. An author writes a `.story` file in plain, indented prose-like text.
+- **Chord Writer**, the desktop app for writing, building, playing and testing Chord stories.
+- **The platform**, a set of TypeScript packages (engine, world model, standard actions, parser, English text) that runs every story. Stories can also be written directly in TypeScript against these packages.
 
-The `sharpee` CLI ships in `@sharpee/devkit` — install it globally:
+Documentation, downloads and playable stories are at [sharpee.net](https://sharpee.net).
+
+## What a story looks like
+
+This is part of [Cloak of Darkness](./stories/cloak-of-darkness/cloak.story), the standard IF demonstration, in Chord:
+
+```
+create the Foyer Bar
+  a room, dark while the player has the velvet cloak
+  aka bar
+
+  The bar, much rougher than you'd have guessed after the opulence of
+  the foyer to the north, is completely empty. There seems to be some
+  sort of message scrawled in the sawdust on the floor.
+
+  after the player entering while in-darkness
+    phrase stumble
+    first time
+      change the message to trampled
+    third time
+      change the message to obliterated
+  end after
+
+create the velvet cloak
+  aka cloak
+  a thing, wearable
+
+  A handsome cloak, of velvet trimmed with satin, and slightly
+  splattered with raindrops. Its blackness is so deep that it almost
+  seems to suck light from the room.
+
+create the brass hook
+  aka hook, peg
+  a supporter, scenery
+  holds 1
+  in the Cloakroom
+
+  It's just a small brass hook, screwed to the wall.
+```
+
+The whole game is 107 lines. The [Chord guide](https://sharpee.net/chord) covers the language from the first room onward.
+
+## Quick start
+
+### With Chord Writer (macOS)
+
+[Download Chord Writer](https://sharpee.net/chord-writer/download). It bundles the whole toolchain, so there is nothing else to install. [Your first story](https://sharpee.net/chord-writer/your-first-story) walks through it.
+
+### With the command line
+
+The `sharpee` CLI ships in `@sharpee/devkit` and needs Node 18 or later:
 
 ```bash
 npm install -g @sharpee/devkit
-```
 
-Scaffold a project, then build and play:
-
-```bash
 sharpee init my-adventure
 cd my-adventure
 npm install
-sharpee build
-open dist/web/index.html
+sharpee build     # story + playable web client in dist/web/<id>/
+sharpee play      # play in the terminal
 ```
+
+`sharpee init` scaffolds a Chord project: one `my-adventure.story` file with a room, a lantern and a player. Edit it and rebuild.
 
 | Command | What it does |
 |---------|-------------|
-| `sharpee init <name>` | Create a new story project |
-| `sharpee init-browser` | Add browser client to existing project |
-| `sharpee build` | Build `.sharpee` bundle + browser client |
-| `sharpee build-browser` | Build browser client only |
+| `sharpee init <name>` | Scaffold a new story project (Chord by default; `--ts` for TypeScript) |
+| `sharpee build` | Build the story and its browser client |
+| `sharpee play` | Play the story in the terminal |
+| `sharpee test` | Run the story's tests |
+| `sharpee claim` | Lock a fact reached in a played line as a claim the tests keep proving |
+| `sharpee compose <file>.story` | Compile a Chord story to Story IR; `--check` runs only the load-time gates |
+| `sharpee publish` | Build and zip a distributable browser app |
+| `sharpee messages` | List every overridable platform message |
 | `sharpee ifid` | Generate or validate an IFID |
+| `sharpee --version` | Print the platform and Chord language versions |
 
-## What's Included
+Run `sharpee --help` for the full list.
 
-`@sharpee/sharpee` is the umbrella package — it re-exports the **story runtime baseline** (ADR-178), the imports a story author needs. It deliberately does *not* re-export every symbol; for advanced use, import a sub-package directly. All 28 packages below are published individually on npm under the `@sharpee` scope.
+### Writing a story in TypeScript
 
-| Package | Description |
-|---------|-------------|
-| `@sharpee/sharpee` | Umbrella package — re-exports the story runtime baseline (ADR-178) |
-| `@sharpee/core` | Event system, types, utilities |
-| `@sharpee/engine` | Game engine, turn cycle, command execution |
-| `@sharpee/event-processor` | Applies semantic events to the world model |
-| `@sharpee/world-model` | Entity system with traits and behaviors |
-| `@sharpee/if-domain` | Core domain model and contracts |
-| `@sharpee/if-services` | Runtime service interfaces (perception) |
-| `@sharpee/stdlib` | 51 standard IF actions (take, drop, open, lock, etc.) |
-| `@sharpee/lang-en-us` | English language output |
-| `@sharpee/parser-en-us` | English natural language parser |
-| `@sharpee/helpers` | Fluent entity builders (`createHelpers(world)`) |
-| `@sharpee/queries` | LINQ-style fluent entity query API |
-| `@sharpee/character` | NPC behavior chain: character model, conversation, goals, influence, propagation |
-| `@sharpee/plugins` | Plugin contracts for engine turn-cycle extensibility |
-| `@sharpee/plugin-scheduler` | Daemons and fuses (timed events) |
-| `@sharpee/plugin-state-machine` | Declarative puzzle and narrative orchestration |
-| `@sharpee/media` | Audio event types, AudioRegistry, and capability negotiation |
-| `@sharpee/text-blocks` | Structured text output interfaces (`ITextBlock`, `IDecoration`) |
-| `@sharpee/channel-service` | Universal channel-I/O wire producer (ADR-163) |
-| `@sharpee/platform-browser` | Framework-free browser client infrastructure |
-| `@sharpee/ext-basic-combat` | Generic skill-based combat extension |
-| `@sharpee/ext-testing` | Debug and testing tools (`/debug`, `/trace`, `$teleport`) |
-| `@sharpee/bootstrap` | Story loader — assembles a `.sharpee` story into a runnable game |
-| `@sharpee/devkit` | The `sharpee` CLI — build/test/verify/scaffold orchestration (ADR-180) |
-| `@sharpee/story-runtime-baseline` | Manifest of the canonical baseline packages a bundle may import (ADR-178) |
-| `@sharpee/ide-protocol` | Wire types for the IDE project-introspection manifest (ADR-184) |
-| `@sharpee/transcript-tester` | Transcript-based testing framework |
+`sharpee init my-adventure --ts` scaffolds a TypeScript story project that imports the platform packages directly. *The Sharpee Author and Developer Manual* ([`docs/book/`](./docs/book/)) teaches this path, and the [platform pages](https://sharpee.net/sharpee) on the site describe the packages.
 
-## Features
-
-- **Event-Driven Architecture** — Immutable semantic events for all state changes
-- **Natural Language Parser** — Complex player commands with slot constraints
-- **Rich World Model** — Entities with traits, behaviors, and relationships
-- **51 Standard Actions** — take, drop, open, close, lock, unlock, wear, eat, drink, attack, and more
-- **Four-Phase Action Pattern** — Consistent validate/execute/report/blocked flow
-- **Capability Dispatch** — Entity-specific handling for generic verbs
-- **Entity Helpers** — Fluent builder API for rooms, objects, containers, doors, actors
-- **NPC Behavior Chain** — Character model with psychology, constraint-based conversation, goal pursuit, information propagation, and NPC-to-NPC influence
-- **Direction Vocabularies** — Location-relative directions (compass, naval, minimal, or custom)
-- **Audio System** — Typed audio events, AudioRegistry, procedural sound, atmosphere builder
-- **Daemons & Fuses** — Timed events and background processes
-- **Perception System** — Darkness, blindness, and sensory restrictions
-- **Language Layer Separation** — All text output goes through localizable message IDs
-- **Channel-Based UI** — Story→UI signals flow over channels (ADR-163); the same story runs in the CLI and in a framework-free browser client
-- **Full TypeScript** — Strict typing throughout
-
-## Creating a Story
-
-```typescript
-import { Story, StoryConfig } from '@sharpee/engine';
-import { WorldModel, IFEntity, Direction } from '@sharpee/world-model';
-import { createHelpers } from '@sharpee/helpers';
-
-export const config: StoryConfig = {
-  id: 'my-adventure',
-  title: 'My Adventure',
-  author: 'Your Name',
-  version: '1.0.0',
-};
-
-export class MyStory implements Story {
-  config = config;
-
-  initializeWorld(world: WorldModel): void {
-    const { room, object } = createHelpers(world);
-
-    const start = room('Starting Room')
-      .description('A simple room with a lamp on the floor.')
-      .build();
-
-    object('brass lamp')
-      .description('A well-polished brass lamp.')
-      .in(start)
-      .build();
-
-    const player = world.getPlayer();
-    world.moveEntity(player!.id, start.id);
-  }
-
-  createPlayer(world: WorldModel): IFEntity {
-    const { actor } = createHelpers(world);
-
-    return actor('yourself')
-      .description('As good-looking as ever.')
-      .aliases('self', 'me')
-      .properName()
-      .inventory({ maxItems: 10 })
-      .build();
-  }
-}
-
-export const story = new MyStory();
-export default story;
-```
-
-See the [Getting Started](https://sharpee.net/docs/getting-started/installation/) guide for a complete walkthrough.
-
-## Entity Helpers
-
-`createHelpers(world)` returns fluent builders for common entity types:
-
-```typescript
-import { createHelpers } from '@sharpee/helpers';
-
-const { room, object, container, actor, door } = createHelpers(world);
-
-// Rooms
-const cave = room('Dark Cave').description('A damp cave.').dark().build();
-
-// Objects with custom traits
-const note = object('crumpled note')
-  .description('A crumpled piece of paper.')
-  .addTrait(new ReadableTrait({ text: 'The code is 4-7-2.' }))
-  .in(cave)
-  .build();
-
-// Containers
-const chest = container('wooden chest')
-  .openable({ isOpen: false })
-  .lockable({ isLocked: true, keyId: key.id })
-  .in(cave)
-  .build();
-
-// Items in closed containers (bypasses validation)
-object('gold coin').skipValidation().in(chest).build();
-
-// Doors between rooms
-door('iron door')
-  .between(cave, hallway, Direction.NORTH)
-  .openable({ isOpen: false })
-  .build();
-```
-
-## Architecture
+## How it fits together
 
 ```
+  my-adventure.story            src/index.ts
+        |  Chord compiler            |  (TypeScript story)
+        v                            |
+     Story IR                        |
+        |  story-loader              |
+        v                            v
 +-----------------------------------------------+
-|              Your Story                       |
+|                    Story                      |
 +--------------------+--------------------------+
 | stdlib (actions)   | lang-en-us (messages)    |
-| plugins (npc,      | parser-en-us (grammar)   |
-|  scheduler, state) |                          |
+| plugins (scheduler,| parser-en-us (grammar)   |
+|  state machines)   |                          |
 +--------------------+--------------------------+
-| engine | world-model | helpers | channels     |
+| engine | world-model | channel-service        |
 +-----------------------------------------------+
-| if-domain | if-services | event-processor     |
-+-----------------------------------------------+
-| core (events, types) | media (audio types)   |
+| core | if-domain | if-services | text-blocks  |
 +-----------------------------------------------+
 ```
 
-Rendering is the engine's prose pipeline producing `ITextBlock[]`, carried to the
-UI by channels (ADR-163/174) — there is no separate text service.
+A Chord story compiles to a Story IR, which `@sharpee/story-loader` turns into the same kind of story a TypeScript author writes by hand. From there one runtime serves both.
 
-### Key Principles
+A few principles hold across the platform:
 
-1. **Actions emit semantic events, not text** — The language layer converts message IDs to prose
-2. **Behaviors own mutations** — Actions coordinate, behaviors perform state changes
-3. **Traits compose entity capabilities** — Add container, lockable, wearable, etc.
-4. **Parser scope is permissive** — Actions decide if visibility is truly required
+1. **Actions emit events, not text.** An action records what happened with a message id; the language layer turns it into prose at the end of the turn.
+2. **Actions run in four phases**: validate, execute, report, and blocked.
+3. **Behaviors own mutations.** Actions coordinate; behaviors change the world.
+4. **Traits compose what an entity can do**: container, openable, lockable, wearable and so on.
+5. **Output travels over channels.** Prose, status, media and layout reach the client the same way, so one story runs in the terminal, the browser and Chord Writer.
 
-## Standard Actions
+[`docs/core-concepts/README.md`](./docs/core-concepts/README.md) is the full reference.
 
-**Movement**: going, entering, exiting, climbing
-**Manipulation**: taking, dropping, putting, inserting, removing, giving, throwing
-**Containers/Doors**: opening, closing, locking, unlocking
-**Examination**: looking, examining, searching, reading
-**Interaction**: talking, showing, attacking
-**Devices**: switching on/off, pushing, pulling, raising, lowering
-**Wearables**: wearing, taking off
-**Consumables**: eating, drinking
-**Senses**: touching, smelling, listening
-**Meta**: inventory, score, help, save, restore, restart, quit, undo, again, wait, about, version, sleep
+## Packages
 
-## Repository Development
+All of these are published on npm under the `@sharpee` scope. `@sharpee/sharpee` is the umbrella package; it re-exports the story runtime baseline, not every symbol.
 
-Prerequisites — Node, pnpm at the exact declared version, and the platform-specific
-extras — are listed with their checks in
-[`docs/core-concepts/prerequisites.md`](./docs/core-concepts/prerequisites.md). Worth two
-minutes before the first build on a new machine.
+| Area | Packages |
+|------|----------|
+| Contracts and types | `core`, `if-domain`, `if-services`, `text-blocks`, `media`, `ide-protocol`, `story-runtime-baseline` |
+| World and engine | `world-model`, `engine`, `event-processor`, `stdlib`, `plugins`, `plugin-scheduler`, `plugin-state-machine` |
+| Language | `parser-en-us`, `lang-en-us` |
+| Chord | `chord` (the compiler), `story-loader` (the Story IR interpreter) |
+| Authoring conveniences (TypeScript) | `helpers`, `queries`, `character` |
+| Channels and clients | `channel-service`, `platform-browser` |
+| Extensions | `ext-scoring`, `ext-chapters`, `ext-hunger`, `ext-basic-combat`, `ext-testing` |
+| Build, test and tooling | `devkit` (the `sharpee` CLI), `bootstrap`, `transcript-tester`, `branch-tester`, `world-index` |
+
+Each is described in [the core concepts](./docs/core-concepts/README.md#the-packages). `packages/map-editor` is an Electron application, not a library, and is not part of a release.
+
+## Stories in this repository
+
+| Story | Location | What it is |
+|-------|----------|------------|
+| Cloak of Darkness | `stories/cloak-of-darkness` | The standard three-room demonstration, in Chord |
+| The Folly at Fernhill | `branch-stories/fernhill` | A complete Chord game with a recorded test tree; the site's [Fernhill tutorial](https://sharpee.net/learn/fernhill) walks through it |
+| The Ides of March | `branch-stories/ides-of-march` | A complete Chord game with a recorded test tree |
+| Family Zoo (Chord) | `branch-stories/familyzoo`, `familyzoo-v01` to `familyzoo-v16` | John Googol's sixteen-step Chord tutorial, mirrored here |
+| Family Zoo (TypeScript) | `tutorials/familyzoo/v1.5.0`, `tutorials/familyzoo/v2.0.0` | The manual's chapter-by-chapter snapshots, built against the published packages |
+| Dungeo | `stories/dungeo` | A TypeScript implementation of mainframe Zork, and the platform's regression suite |
+
+`test-stories/` holds small stories that exist only to test the platform. They are never published and are not samples.
+
+## Working on Sharpee itself
+
+Prerequisites (Node, pnpm at the exact declared version, and the platform-specific extras) are listed with their checks in [`docs/core-concepts/prerequisites.md`](./docs/core-concepts/prerequisites.md). Read it before the first build on a new machine.
 
 ```bash
 git clone https://github.com/ChicagoDave/sharpee.git
@@ -223,79 +165,39 @@ cd sharpee
 corepack enable        # pins pnpm to the version package.json declares
 pnpm install
 
-# FRESH CLONE ONLY (needed once): tsf compiles the platform packages, then
-# repokit itself is built — tsf does not build it, so ./repokit won't exist yet.
+# Fresh clone only, once: tsf compiles the platform packages, then repokit
+# itself is built. tsf does not build it, so ./repokit does not exist yet.
 npx tsf build
 pnpm --filter @sharpee/repokit build
 
-# Build everything (repokit; ADR-187)
+# Build the platform, the CLI bundle and Dungeo
 ./repokit build dungeo
 
-# Run tests
-pnpm test
-
-# Run specific package tests
+# Run one package's tests
 pnpm --filter '@sharpee/stdlib' test
 
-# Run story transcript tests
-node dist/cli/sharpee.js --test stories/dungeo/tests/transcripts/*.transcript
+# Run Dungeo's walkthrough chain against the bundle
+node dist/cli/sharpee.js --test --chain stories/dungeo/walkthroughs/wt-*.transcript
 ```
 
-## Example Stories
+Three commands carry the name, and they do different jobs:
 
-| Story | Location | Description |
-|-------|----------|-------------|
-| `dungeo` | `stories/dungeo` | Mainframe Zork implementation (~191 rooms, 650 points + 100 endgame) |
-| `familyzoo` | `tutorials/familyzoo/v1.5.0`, `tutorials/familyzoo/v2.0.0` | The book's Family Zoo — chapter-by-chapter tutorial snapshots, built against the published npm packages. Split into two editions: `v1.5.0` (the frozen 1.x line, pins `^1.5`) and `v2.0.0` (the Phrase Algebra line, pins `^2.0`) |
-| `entropy` | `stories/entropy` | Original sci-fi story with audio system (in progress) |
+- `./repokit` builds the platform and the in-repo stories. Use it for all work in this repository; `pnpm build` is not a substitute.
+- `./sharpee` is the author tool (`@sharpee/devkit`) run from the repository.
+- `dist/cli/sharpee.js` is the bundle `./repokit build` produces. It runs transcript tests and interactive play.
 
-## Roadmap
-
-Sharpee is actively developed. These are the open [Architecture Decision Records](./docs/architecture/adrs/) representing planned future work.
-
-### Recently Implemented
-
-- **NPC Behavior Chain** (ADR-141, 142, 144, 145, 146) — Character psychology, conversation, goal pursuit, information propagation, NPC influence
-- **Direction Vocabularies** (ADR-143) — Location-relative directions (compass, naval, minimal, custom)
-- **Audio System** (ADR-138) — SFX, music, ambient, procedural audio, AudioRegistry
-- **Entity Helpers** (ADR-140) — Fluent builder API for story setup
-- **Action Interceptors** (ADR-118) — Story-level hooks on standard actions
-
-### Accepted (Implementation Planned)
-
-- **Screen Reader Accessibility** (ADR-100) — ARIA support for the browser client
-- **Speech Accessibility** (ADR-139) — TTS/STT for blind and motor-impaired players
-- **Equivalent Objects** (ADR-147) — Identical object groups, numeric commands, trade/sell/barter
-
-### Proposed
-
-| Area | ADR | Description |
-|------|-----|-------------|
-| Story Paradigms | ADR-083 | Spirit PC — Non-physical player character support |
-| Story Paradigms | ADR-102 | Dialogue Extension — NPC conversation systems (ASK/TELL, menus) |
-| Story Paradigms | ADR-103 | Choice-Based Stories — CYOA-style with parser hybrid |
-| World Model | ADR-020 | Clothing and Pockets — Container hierarchy for wearable items |
-| Clients | ADR-098 | Terminal Client — CLI-based game client |
-| Clients | ADR-099 | GLK Client — Standard IF interpreter protocol |
-| Clients | ADR-122 | Rich Media and Story Styling — Embedded media in output |
-| Zifmia (retired) | ADR-125 | Panel and Windowing System — Multi-panel desktop client |
-| Zifmia (retired) | ADR-128 | Walkthrough Panel — In-client walkthrough display |
-| Zifmia (retired) | ADR-130 | Story Installers — Split runner from author packaging tool |
-| Author Tools | ADR-115 | Map Export CLI — Export story maps from code |
-| Author Tools | ADR-116 | Prompt-to-Playable — AI-assisted story development |
-| Author Tools | ADR-131 | Automated World Explorer — Regression test generator |
-| Engine | ADR-127 | Location-Scoped Interceptors — Room-tied action interceptors |
-
-See the full [ADR index](./docs/architecture/adrs/README.md) for the complete set of architecture decisions.
+Chord Writer's source is in [`tools/ide/`](./tools/ide/README.md). Design decisions are recorded as ADRs in [`docs/architecture/adrs/`](./docs/architecture/adrs/); they record what was decided at the time, so read the code before taking one as a description of how something works now. See [CONTRIBUTING.md](./CONTRIBUTING.md) before opening a pull request.
 
 ## License
 
-MIT License — Copyright 2025-2026 David Cornelson
+MIT License. Copyright 2025-2026 David Cornelson.
 
 ## Links
 
-- [Website](https://sharpee.net)
-- [npm Package](https://www.npmjs.com/package/@sharpee/sharpee)
-- [Documentation](https://sharpee.net/docs/)
-- [Downloads (Chord Writer)](https://sharpee.net/chord-writer/download)
-- [Issue Tracker](https://github.com/ChicagoDave/sharpee/issues)
+- [Website and documentation](https://sharpee.net)
+- [Chord guide](https://sharpee.net/chord)
+- [Chord Writer download](https://sharpee.net/chord-writer/download)
+- [Play stories in the browser](https://sharpee.net/play)
+- [Releases](https://sharpee.net/releases) and [roadmap](https://sharpee.net/roadmap)
+- [npm package](https://www.npmjs.com/package/@sharpee/sharpee)
+- [Issue tracker](https://github.com/ChicagoDave/sharpee/issues)

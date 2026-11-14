@@ -2,7 +2,6 @@
 
 **Created**: 2026-11-13
 **Plan Status**: ACTIVE
-**Superseded by**: docs/work/adr-397-remove-never-claims/plan.md
 **Overall scope**: Write and publish a version-pinned manual that teaches Chord (`.story` files, built and tested with Chord Writer or the `sharpee` CLI) the way *The Sharpee Author and Developer Manual* teaches TypeScript authoring: one canonical markdown source rendered to HTML, EPUB and PDF, one running example carried through every chapter, generated appendices, a snippet check against the published toolchain, and a naive-reader acceptance gate.
 **Bounded contexts touched**: N/A (documentation and book tooling; no domain modeling)
 **Key domain language**: N/A. Working vocabulary: edition, edition pin, running example, companion snapshot (the compiling `.story` at the end of a chapter), tree document, naive-reader run.

@@ -296,6 +296,9 @@ importers:
       '@sharpee/lang-en-us':
         specifier: workspace:*
         version: link:../lang-en-us
+      '@sharpee/stdlib':
+        specifier: workspace:*
+        version: link:../stdlib
       '@sharpee/story-loader':
         specifier: workspace:*
         version: link:../story-loader
