@@ -2408,6 +2408,17 @@ unary        = "not" unary
                                                               state ref, only when a
                                                               connective or end-of-condition
                                                               follows *)
+             | "the" "story" "is" [ "not" ] WORD           (* the story object's state,
+                                                              the read that matches
+                                                              `change the story to`; the
+                                                              same test as the bare
+                                                              state word (analysis.
+                                                              undeclared-state). Any
+                                                              other predicate on `the
+                                                              story` is analysis.story-
+                                                              predicate, except a topic
+                                                              or thread read of a topic
+                                                              called `story` *)
              | value-expr predicate ;
 predicate    = "is" [ "not" ] ( ( "a" | "an" ) WORD { WORD }   (* is-a: the classifier is a
                                                                   kind noun (catalog or a

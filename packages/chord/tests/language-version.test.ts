@@ -99,7 +99,10 @@ const PINNED = {
   // 4.0.2"), cut alongside Sharpee 5.6.1. Carries ADR-392's trait words and
   // ADR-394's ownership guards. The hash is unchanged by the bump — the
   // surface as re-pinned for those (below) is the 4.0.2 surface.
-  languageVersion: '4.0.2',
+  // 4.0.3 — 2026-11-14 (session 79cefa): PATCH by owner ruling ("4.0.3 - we
+  // already published 4.0.2"). Carries ADR-397's removal of `never` from the
+  // claims language and GH #705's `the story is [not] <state>` condition.
+  languageVersion: '4.0.3',
   // Re-pinned 2026-08-29 (ADR-330 Phase 1): `define chapters` under `use
   // chapters` — the first additive grammar of the chapters extension,
   // folded into the unpublished 3.5.0 set per ADR-257 D2 as amended.
@@ -271,7 +274,10 @@ const PINNED = {
   // its `never` alternative, and a line headed `never` inside `claims` is
   // `parse.claims-never`. A REMOVAL, on the claims fragment only; the
   // version stays 4.0.2 (the number moves at publish).
-  ebnfSha256: '93a8f0c71d3bf3aff0013b4c5aa5b12df94a12fa46cf43086d248afc767e8dfd',
+  // Re-pinned 2026-11-14 (session 79cefa, GH #705): `unary` gains `"the"
+  // "story" "is" [ "not" ] WORD`, the story object's state read in a
+  // condition. Additive; cut as 4.0.3 the same day.
+  ebnfSha256: '4c2a1c8b33cf33b53cffb0aebfb10f7d06c6f84f6f0404c9b3c00537a8999277',
 };
 
 // Colocated with the version pin it gates (2026-08-14). It previously lived at

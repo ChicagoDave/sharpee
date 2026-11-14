@@ -516,6 +516,11 @@ function nameIsIt(ref: NameRef): boolean {
   return ref.words.length === 1 && ref.words[0].toLowerCase() === 'it';
 }
 
+/** Whether a condition's subject is the story object, `the story` (GH #705). */
+function isStorySubject(subject: ValueExpr): boolean {
+  return subject.kind === 'ref' && subject.ref.words.length === 1 && subject.ref.words[0].toLowerCase() === STORY_KEYWORD;
+}
+
 /**
  * The first `client has <capability>` written in a condition, through its
  * `and` / `or` / `not`, or undefined. A named condition it refers to is not
@@ -8122,6 +8127,13 @@ export class Analyzer {
         this.requireDialogueScope(`asked ${cond.word}`, scope, cond.span);
         return { kind: 'asked', word: cond.word };
       case 'predicate': {
+        // GH #705: `the story is [not] <state>` reads the story object's
+        // state — the read that matches `change the story to <state>`. The
+        // story is not an entity, so it is taken here, before resolution.
+        if (isStorySubject(cond.subject)) {
+          const storyRead = this.resolveStoryPredicate(cond.predicate);
+          if (storyRead !== null) return storyRead;
+        }
         // GH #366: an entity's OWN declared state wins a colliding platform
         // word — the rule resolveIsObject already applies to mood words. A
         // recency word (`fresh`) or `concluded` read against a subject that
@@ -8523,6 +8535,56 @@ export class Analyzer {
       `\`${name}\` is not a declared condition${this.suggestText(name, [...this.conditionNames])}.`,
       span,
     );
+  }
+
+  /**
+   * A predicate whose subject is `the story` (GH #705). The story object has
+   * one readable thing, its state, so `is [not] <state>` lowers to the same
+   * `story-state` node the bare state word does, and every other predicate
+   * is refused by name instead of failing entity resolution.
+   *
+   * A recency word, `concluded` or `was discussed` keeps its topic or thread
+   * reading (a topic may be called `story`) unless the story declares the
+   * word as a state; those return null and the caller carries on.
+   *
+   * @param predicate the predicate after the subject `the story`
+   * @returns the lowered condition, an empty condition after an error, or
+   *   null when the predicate is not a read of the story object
+   */
+  private resolveStoryPredicate(predicate: Predicate): IRCondition | null {
+    const read = (state: string, negated: boolean): IRCondition => {
+      const node: IRCondition = { kind: 'story-state', state };
+      return negated ? { kind: 'not', operand: node } : node;
+    };
+    if (predicate.kind === 'recency') {
+      return this.storyStates.includes(predicate.word) ? read(predicate.word, predicate.negated) : null;
+    }
+    if (predicate.kind === 'concluded') {
+      return this.storyStates.includes('concluded') ? read('concluded', predicate.negated) : null;
+    }
+    if (predicate.kind === 'was-discussed') return null;
+    if (predicate.kind === 'is') {
+      const value = predicate.value;
+      const words = value.kind === 'ref' ? value.ref.words : value.kind === 'bare' ? value.words : null;
+      if (words && words.length === 1) {
+        const word = words[0];
+        if (this.storyStates.includes(word)) return read(word, predicate.negated);
+        this.diagnostics.error(
+          'analysis.undeclared-state',
+          this.storyStates.length === 0
+            ? `\`${word}\` is not a state of the story — the story declares no states. Add a \`states:\` line to the story header.`
+            : `\`${word}\` is not a declared state of the story${this.suggestText(word, this.storyStates)}.`,
+          predicate.span,
+        );
+        return { kind: 'condition', name: '' };
+      }
+    }
+    this.diagnostics.error(
+      'analysis.story-predicate',
+      'The story has only a state to read — write `the story is <state>` or `the story is not <state>`.',
+      predicate.span,
+    );
+    return { kind: 'condition', name: '' };
   }
 
   /**

@@ -361,5 +361,18 @@
  * no longer compiles; the error names the line; delete the claim." The
  * `never` line of a character's principles and of `define code` is a
  * different construct and is unchanged.
+ *
+ * 4.0.3 — 2026-11-14 (session 79cefa, David: "4.0.3 - we already published
+ * 4.0.2"). The public delta since 4.0.2 is the pending entry above (ADR-397,
+ * `never` removed from the claims language) and GH #705: a condition may
+ * say `the story is [not] <state>`, the read that matches `change the story
+ * to <state>`, lowering to the same test as the bare state word; any other
+ * predicate on `the story` is `analysis.story-predicate`. The condition form
+ * is additive and the claims removal refuses fragments that compiled, which
+ * ADR-257 D2's ordinary rule makes more than a patch; the owner set the
+ * number at 4.0.3, so it is a PATCH by his ruling. The EBNF hash is
+ * re-recorded for the condition form. 4.0.3 is the working number, not a
+ * publish: 4.0.2 is published, and the owner publishes next after the
+ * manual is written and tested, so changes landing before then join 4.0.3.
  */
-export const CHORD_LANGUAGE_VERSION = '4.0.2';
+export const CHORD_LANGUAGE_VERSION = '4.0.3';
