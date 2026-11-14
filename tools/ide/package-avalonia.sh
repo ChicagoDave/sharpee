@@ -104,6 +104,7 @@ esac
 
 # --- Preconditions -------------------------------------------------
 command -v dotnet >/dev/null || die "dotnet is not on PATH."
+command -v node >/dev/null || die "node is not on PATH (it builds the editor's lexer bridge)."
 [ -x "$VPK" ] || die "vpk not found at $VPK (dotnet tool install -g vpk)."
 [ -d "$ICONSET_SRC" ] || die "no app icon source at $ICONSET_SRC."
 command -v iconutil >/dev/null || die "iconutil is not available (Xcode command line tools)."
@@ -161,10 +162,19 @@ for asset in testing-surface docs-tab; do
   cp -a "$SWIFT_RESOURCES/$asset" "$PUBLISH/$asset"
 done
 
+# BUILT HERE, EVERY RUN — never taken from disk. dist/ is gitignored and nothing
+# else rebuilds it, so the copy lying there is whatever lexer the workspace had
+# the last time someone ran build.mjs by hand: on 2026-11-13 it dated from
+# 2026-09-16, four language releases back. The bridge bundles packages/chord/src
+# from source, so building it now is what makes the shipped editor's lexer the
+# workspace's own. The old copy is removed first so a build that fails cannot
+# leave it behind looking like the result.
 readonly LEXER_SRC="$IDE_DIR/editor-bridge/dist/lexer-server.js"
-[ -f "$LEXER_SRC" ] || die "the editor's lexer bridge is not built.
-  Run: node $IDE_DIR/editor-bridge/build.mjs
+rm -f "$LEXER_SRC"
+node "$IDE_DIR/editor-bridge/build.mjs" \
+  || die "the editor's lexer bridge failed to build ($IDE_DIR/editor-bridge/build.mjs).
   Shipping without it would give the editor no syntax highlighting."
+[ -s "$LEXER_SRC" ] || die "the bridge build reported success but wrote no $LEXER_SRC."
 mkdir -p "$PUBLISH/editor-bridge"
 cp "$LEXER_SRC" "$PUBLISH/editor-bridge/lexer-server.js"
 echo "    testing-surface, docs-tab, editor-bridge/lexer-server.js"
@@ -241,6 +251,43 @@ VPK_ARGS=(
 )
 [ "$DO_SIGN" = 1 ] && VPK_ARGS+=(--signAppIdentity "$SIGN_IDENTITY")
 DOTNET_ROOT="$DOTNET_ROOT_FOR_VPK" "$VPK" "${VPK_ARGS[@]}"
+
+# --- 7. Prove the bundled toolchain --------------------------------
+# The last step, and the one whose absence let Chord Writer 1.4.0 ship unable to
+# build any story: every gate above checks that the bundle is well-formed, and
+# none checks that the toolchain inside it works. Two assertions, both against
+# the bundle that was just packed:
+#
+#   1. EXACT PAIRING (ADR-279 D4). The bundled CLI must report the workspace's
+#      own versions. vendor-toolchain.sh only checks that packages/*/dist EXISTS,
+#      so a stale dist vendors silently; this is where that surfaces.
+#   2. REAL PATH. toolchain-realpath-test.sh scaffolds and builds a story with
+#      the bundled toolchain in a scrubbed environment outside the repository.
+#
+# Either failure stops the script: a bundle that cannot build a story is not a
+# package. package.sh carries the same two assertions for the Swift head — the
+# two scripts share no code by design (see the header), so the check is stated
+# in each rather than factored between them.
+step "Proving the bundled toolchain"
+readonly BUNDLED_SHARPEE="$APP/Contents/Resources/toolchain/bin/sharpee"
+[ -x "$BUNDLED_SHARPEE" ] || die "the packed bundle has no toolchain shim at $BUNDLED_SHARPEE."
+DEVKIT_VERSION="$(sed -n 's/^ *"version": *"\([0-9][0-9.]*\)".*/\1/p' "$REPO_ROOT/packages/devkit/package.json" | head -1)"
+CHORD_VERSION="$(sed -n "s/^export const CHORD_LANGUAGE_VERSION = '\([0-9][0-9.]*\)'.*/\1/p" "$REPO_ROOT/packages/chord/src/version.ts" | head -1)"
+[ -n "$DEVKIT_VERSION" ] || die "could not read the version from packages/devkit/package.json."
+[ -n "$CHORD_VERSION" ] || die "could not read CHORD_LANGUAGE_VERSION from packages/chord/src/version.ts."
+readonly EXPECTED_VERSION_LINE="Sharpee $DEVKIT_VERSION · Chord $CHORD_VERSION"
+BUNDLED_VERSION_LINE="$("$BUNDLED_SHARPEE" --version 2>&1)" \
+  || die "the bundled 'sharpee --version' exited non-zero:
+$BUNDLED_VERSION_LINE"
+[ "$BUNDLED_VERSION_LINE" = "$EXPECTED_VERSION_LINE" ] || die "toolchain version mismatch.
+  the workspace is:   $EXPECTED_VERSION_LINE
+  the bundle reports: $BUNDLED_VERSION_LINE
+  The bundle carries a toolchain other than the one this checkout describes —
+  usually a stale packages/*/dist. Run ./repokit build, then package again."
+echo "    bundled toolchain is the workspace's own: $BUNDLED_VERSION_LINE"
+bash "$IDE_DIR/toolchain-realpath-test.sh" "$APP" \
+  || die "the bundled toolchain failed the real-path test (output above).
+  This bundle cannot build a story outside the repository and must not ship."
 
 echo
 echo "package-avalonia: OK ($ARCH) — $OUT/Releases"

@@ -1541,6 +1541,19 @@ public partial class ShellWindow : Window
                       + $"door open={_door.IsOpen}");
         }
 
+        // The story's test tree as it stands before this driver touches the panes. The pane
+        // run below types a command of its own to prove the round trip, and the surface
+        // saves it as a card like any typed command — on a story whose line ends, a card
+        // after the ending that can never run, which failed Run Tests on a tree the author
+        // never wrote (2026-11-13, lodge). The write path stays exercised; the tree is put
+        // back before it is judged, the same way step 4 puts the source back.
+        //
+        // Taken AFTER open and build on purpose: whatever the surface writes by itself on
+        // load is the app's own behaviour, which an author gets too, and stays in what Run
+        // Tests judges. Only the driver's probing is undone.
+        var treeDirectory = project.TestsTreeTarget;
+        var treeBeforeProbing = TestingSurfacePosts.SnapshotTree(treeDirectory);
+
         // 3. The panes, on this story's own bundle.
         if (_door.IsOpen)
         {
@@ -1617,6 +1630,7 @@ public partial class ShellWindow : Window
         // 5. Check and test, through the toolchain again.
         await ComposeAsync();
         _log.Line($"  check: pill={BuildPill.Text}");
+        _log.Line($"  test tree: {RestoreTree(treeDirectory, treeBeforeProbing)}");
         await RunTestsAsync();
         _log.Line($"  tests: status={StatusText.Text}");
 
@@ -1742,7 +1756,21 @@ public partial class ShellWindow : Window
                       + (caretLine == wanted ? "(revealed)" : $"(NOT revealed — wanted {wanted})"));
         }
 
+        // Once more on the way out: the panes stayed live through every step above and may
+        // have written again, and the run leaves no card of its own in the story's tree.
+        _log.Line($"  test tree at exit: {RestoreTree(treeDirectory, treeBeforeProbing)}");
         _log.Line("app exit state: done");
+    }
+
+    /// <summary>Restores the tree to a snapshot and words the outcome for the shell log.</summary>
+    /// <param name="directory">The story's tree directory.</param>
+    /// <param name="snapshot">The tree before the driver's probing, from <see cref="TestingSurfacePosts.SnapshotTree"/>.</param>
+    /// <returns>One log line: the files restored to, and how many were rewritten and removed.</returns>
+    private static string RestoreTree(string directory, IReadOnlyDictionary<string, byte[]> snapshot)
+    {
+        var restore = TestingSurfacePosts.RestoreTree(directory, snapshot);
+        return $"restored to the {snapshot.Count} file(s) it held before the driver's probing "
+               + $"({restore.Rewritten} rewritten, {restore.Removed} removed)";
     }
 
     /// <summary>

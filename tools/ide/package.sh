@@ -578,6 +578,55 @@ assert_signing_team() {
   matters more than it looks."
 }
 
+# assert_toolchain_works <app> <label> — the bundled toolchain is the workspace's
+# own, and it can build a story on a machine that has nothing else.
+#
+# Every assertion above asks whether the bundle is WELL-FORMED: sealed, signed,
+# hardened, the right architecture. None asks whether the toolchain inside it
+# works, and Chord Writer 1.4.0 shipped through all of them unable to build any
+# story. toolchain-realpath-test.sh existed the whole time; nothing called it.
+#
+#   1. EXACT PAIRING (ADR-279 D4). The bundled CLI must report the workspace's
+#      own `Sharpee <devkit version> · Chord <CHORD_LANGUAGE_VERSION>`.
+#      vendor-toolchain.sh only checks that packages/*/dist EXISTS, so a stale
+#      dist — --skip-platform-build, or an app archived another day and handed
+#      to --dmg-from — vendors silently. This is where that surfaces.
+#   2. REAL PATH. The bundled toolchain scaffolds and builds a story in a
+#      scrubbed environment outside the repository.
+#
+# Runs on the STAGED app, after signature verification and before anything is
+# submitted to Apple, and re-verifies the seal afterwards: a check that altered
+# the bundle it was checking would invalidate the signature it had just passed.
+# package-avalonia.sh carries the same two assertions for the Avalonia head.
+assert_toolchain_works() {
+  local app="$1" label="$2" shim devkit_version chord_version expected reported
+  shim="$app/Contents/Resources/toolchain/bin/sharpee"
+  [ -x "$shim" ] || die "$label has no toolchain shim at Contents/Resources/toolchain/bin/sharpee."
+
+  devkit_version="$(sed -n 's/^ *"version": *"\([0-9][0-9.]*\)".*/\1/p' "$REPO_ROOT/packages/devkit/package.json" | head -1)"
+  chord_version="$(sed -n "s/^export const CHORD_LANGUAGE_VERSION = '\([0-9][0-9.]*\)'.*/\1/p" "$REPO_ROOT/packages/chord/src/version.ts" | head -1)"
+  [ -n "$devkit_version" ] || die "could not read the version from packages/devkit/package.json."
+  [ -n "$chord_version" ] || die "could not read CHORD_LANGUAGE_VERSION from packages/chord/src/version.ts."
+  expected="Sharpee $devkit_version · Chord $chord_version"
+
+  reported="$("$shim" --version 2>&1)" || die "the bundled 'sharpee --version' in $label exited non-zero:
+$reported"
+  [ "$reported" = "$expected" ] || die "toolchain version mismatch in $label.
+  the workspace is:   $expected
+  the bundle reports: $reported
+  The bundle carries a toolchain other than the one this checkout describes —
+  a stale packages/*/dist, or an app built from a different commit. Run
+  ./repokit build and package again; do not ship this bundle."
+  ok "bundled toolchain is the workspace's own: $reported"
+
+  bash "$IDE_DIR/toolchain-realpath-test.sh" "$app" 2>&1 | sed 's/^/  /' \
+    || die "the bundled toolchain in $label failed the real-path test (output above).
+  This bundle cannot build a story outside the repository and must not ship."
+  codesign --verify --deep --strict "$app" \
+    || die "$label no longer verifies after the real-path test — the test wrote into the bundle."
+  ok "bundled toolchain builds a story outside the repository; the seal is intact"
+}
+
 # =====================================================================
 # 1. Preflight — tools, then credentials
 # =====================================================================
@@ -797,6 +846,13 @@ if [ -n "$DMG_FROM" ]; then
     xcrun stapler validate "$STAGED_APP" >/dev/null 2>&1 \
       || die "the staged copy has no stapled ticket — the copy dropped it."
     ok "staged at $STAGED_APP (signature and ticket re-verified after the copy)"
+  fi
+
+  # A --no-toolchain bundle has no toolchain to prove (and was refused above if
+  # it carried one). Every other adopted app is exactly the case the version
+  # half of this check exists for: built on another day, from another commit.
+  if [ "$NO_TOOLCHAIN" -eq 0 ]; then
+    assert_toolchain_works "$STAGED_APP" "the supplied app"
   fi
 
   # The app half of the ledger describes a submission this mode did not make and
@@ -1104,6 +1160,12 @@ ditto "$APP" "$STAGED_APP" || die "failed to stage the signed app into $ARCH_REL
 codesign --verify --deep --strict "$STAGED_APP" \
   || die "the staged copy does not verify — the copy damaged the signature."
 ok "staged at $STAGED_APP (signature re-verified after the copy)"
+
+# Last gate before the app can reach Apple, on the bytes that would be submitted.
+# Not repeated on a resume: the staged app is unchanged since the pass that ran
+# this, and a resumed --no-toolchain adoption has no toolchain to prove.
+step "Proving the bundled toolchain"
+assert_toolchain_works "$STAGED_APP" "the built app"
 
 fi  # end: build-and-sign (skipped when resuming)
 

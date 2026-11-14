@@ -192,4 +192,69 @@ public sealed class TestingSurfacePostsTests
             if (Directory.Exists(parent)) Directory.Delete(parent, recursive: true);
         }
     }
+
+    [Fact]
+    public void RestoringATreePutsBackChangedFilesAndRemovesTheOnesAWriteAdded()
+    {
+        // The exit-state driver's case: the surface rewrites a segment with the driver's
+        // own typed card and adds a file; the tree must come back byte for byte.
+        var parent = Path.Combine(Path.GetTempPath(), "tree-restore-" + Guid.NewGuid().ToString("N"));
+        var directory = Path.Combine(parent, "mini.tests");
+        try
+        {
+            Directory.CreateDirectory(directory);
+            File.WriteAllText(Path.Combine(directory, "manifest.json"), "{\"seed\": 42}\n");
+            File.WriteAllText(Path.Combine(directory, "main0001.json"), "eleven cards\n");
+            File.WriteAllText(Path.Combine(directory, "gone0001.json"), "authored\n");
+            File.WriteAllText(Path.Combine(directory, "notes.txt"), "not a tree file\n");
+            var snapshot = TestingSurfacePosts.SnapshotTree(directory);
+            Assert.Equal(new[] { "gone0001.json", "main0001.json", "manifest.json" }, snapshot.Keys.Order());
+
+            TestingSurfacePosts.ApplyTreeWrite(directory, new TreeWrite(
+                new Dictionary<string, string> { ["main0001.json"] = "twelve cards\n", ["new00001.json"] = "added\n" },
+                new[] { "gone0001.json" }));
+            File.WriteAllText(Path.Combine(directory, "notes.txt"), "edited meanwhile\n");
+            Assert.Equal("twelve cards\n", File.ReadAllText(Path.Combine(directory, "main0001.json")));
+
+            var restore = TestingSurfacePosts.RestoreTree(directory, snapshot);
+
+            Assert.Equal(new TreeRestore(Rewritten: 2, Removed: 1), restore);
+            Assert.Equal("eleven cards\n", File.ReadAllText(Path.Combine(directory, "main0001.json")));
+            Assert.Equal("authored\n", File.ReadAllText(Path.Combine(directory, "gone0001.json")));
+            Assert.Equal("{\"seed\": 42}\n", File.ReadAllText(Path.Combine(directory, "manifest.json")));
+            Assert.False(File.Exists(Path.Combine(directory, "new00001.json")));
+            // Not a tree file: neither snapshotted nor put back.
+            Assert.Equal("edited meanwhile\n", File.ReadAllText(Path.Combine(directory, "notes.txt")));
+
+            // Nothing left to do the second time.
+            Assert.Equal(new TreeRestore(0, 0), TestingSurfacePosts.RestoreTree(directory, snapshot));
+        }
+        finally
+        {
+            Directory.Delete(parent, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void RestoringAStoryThatArrivedWithNoTreeRemovesWhatTheRunWrote()
+    {
+        var parent = Path.Combine(Path.GetTempPath(), "tree-restore-" + Guid.NewGuid().ToString("N"));
+        var directory = Path.Combine(parent, "fresh.tests");
+        try
+        {
+            var snapshot = TestingSurfacePosts.SnapshotTree(directory);
+            Assert.Empty(snapshot);
+
+            TestingSurfacePosts.ApplyTreeWrite(directory, new TreeWrite(
+                new Dictionary<string, string> { ["manifest.json"] = "{}\n" }, Array.Empty<string>()));
+            Assert.True(File.Exists(Path.Combine(directory, "manifest.json")));
+
+            Assert.Equal(new TreeRestore(0, 1), TestingSurfacePosts.RestoreTree(directory, snapshot));
+            Assert.False(File.Exists(Path.Combine(directory, "manifest.json")));
+        }
+        finally
+        {
+            if (Directory.Exists(parent)) Directory.Delete(parent, recursive: true);
+        }
+    }
 }

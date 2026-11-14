@@ -15,7 +15,8 @@
 //
 // Public interface: TestingSurfacePosts.ReadOpenSource, TestingSurfacePosts.ReadTreeWrite,
 // TestingSurfacePosts.ReadLock, TestingSurfacePosts.IsTreeFileName,
-// TestingSurfacePosts.ApplyTreeWrite, OpenSourceRequest, TreeWrite.
+// TestingSurfacePosts.ApplyTreeWrite, TestingSurfacePosts.SnapshotTree,
+// TestingSurfacePosts.RestoreTree, OpenSourceRequest, TreeWrite, TreeRestore.
 // Owner context: tools/ide — the Avalonia desktop head's shell.
 
 using System.Text;
@@ -32,6 +33,11 @@ internal readonly record struct OpenSourceRequest(string? File, int Line);
 /// <param name="Written">File name → contents, each a canonical segment file or the manifest.</param>
 /// <param name="Removed">File names to delete from the tree directory.</param>
 internal sealed record TreeWrite(IReadOnlyDictionary<string, string> Written, IReadOnlyList<string> Removed);
+
+/// <summary>What restoring a tree directory to a snapshot changed.</summary>
+/// <param name="Rewritten">Files written back because they differed or were missing.</param>
+/// <param name="Removed">Tree files deleted because the snapshot did not hold them.</param>
+internal readonly record struct TreeRestore(int Rewritten, int Removed);
 
 /// <summary>Readers for the surface's keyed posts.</summary>
 internal static class TestingSurfacePosts
@@ -131,6 +137,60 @@ internal static class TestingSurfacePosts
             var path = Path.Combine(directory, name);
             if (IsTreeFileName(name) && File.Exists(path)) File.Delete(path);
         }
+    }
+
+    /// <summary>
+    /// The tree files in a tree directory, by name, as exact bytes: the files
+    /// <see cref="IsTreeFileName"/> lets the surface write, and no others. A driver takes
+    /// this before it types into the surface, so it can put the author's tree back
+    /// (<see cref="RestoreTree"/>). Empty when the directory does not exist.
+    /// </summary>
+    /// <param name="directory">The `&lt;story-id&gt;.tests/` directory.</param>
+    /// <returns>Each tree file's name and contents.</returns>
+    public static IReadOnlyDictionary<string, byte[]> SnapshotTree(string directory)
+    {
+        var files = new Dictionary<string, byte[]>(StringComparer.Ordinal);
+        if (!Directory.Exists(directory)) return files;
+        foreach (var path in Directory.GetFiles(directory))
+        {
+            var name = Path.GetFileName(path);
+            if (IsTreeFileName(name)) files[name] = File.ReadAllBytes(path);
+        }
+        return files;
+    }
+
+    /// <summary>
+    /// Puts a tree directory back to a <see cref="SnapshotTree"/> reading: each recorded
+    /// file rewritten when its bytes differ or it is missing, and each tree file the
+    /// snapshot does not hold deleted. Touches tree files only — the same set
+    /// <see cref="ApplyTreeWrite"/> may touch — so nothing else in the directory moves.
+    /// </summary>
+    /// <param name="directory">The `&lt;story-id&gt;.tests/` directory.</param>
+    /// <param name="snapshot">The reading to restore.</param>
+    /// <returns>How many files were rewritten and how many removed.</returns>
+    public static TreeRestore RestoreTree(string directory, IReadOnlyDictionary<string, byte[]> snapshot)
+    {
+        var rewritten = 0;
+        var removed = 0;
+        if (Directory.Exists(directory))
+        {
+            foreach (var path in Directory.GetFiles(directory))
+            {
+                var name = Path.GetFileName(path);
+                if (!IsTreeFileName(name) || snapshot.ContainsKey(name)) continue;
+                File.Delete(path);
+                removed++;
+            }
+        }
+        foreach (var (name, bytes) in snapshot)
+        {
+            var path = Path.Combine(directory, name);
+            if (File.Exists(path) && File.ReadAllBytes(path).AsSpan().SequenceEqual(bytes)) continue;
+            Directory.CreateDirectory(directory);
+            File.WriteAllBytes(path, bytes);
+            rewritten++;
+        }
+        return new TreeRestore(rewritten, removed);
     }
 
     /// <summary>
