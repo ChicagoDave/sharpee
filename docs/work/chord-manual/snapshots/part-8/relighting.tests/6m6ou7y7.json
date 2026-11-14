@@ -1,0 +1,79 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "In the oak press you see a library key."
+        ]
+      },
+      "command": "open press",
+      "id": "massfuzo",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You take the library key from the oak press."
+        ]
+      },
+      "command": "take key",
+      "id": "sf90xu7t",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Gate Court",
+          "It was larger then."
+        ]
+      },
+      "command": "n",
+      "id": "wsgm5xyt",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Cloister"
+        ]
+      },
+      "command": "n",
+      "id": "nszy7wx1",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You unlock the library door with the library key."
+        ]
+      },
+      "command": "unlock library door with key",
+      "id": "m576frke",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You open the library door."
+        ]
+      },
+      "command": "open library door",
+      "id": "5r0hrsr6",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Library",
+          "a kindle page"
+        ]
+      },
+      "command": "w",
+      "id": "rr0pxpp6",
+      "type": "turn"
+    }
+  ],
+  "id": "6m6ou7y7",
+  "ordinal": 0,
+  "parent": "oxyimcfi"
+}

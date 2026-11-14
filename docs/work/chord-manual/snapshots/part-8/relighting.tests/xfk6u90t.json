@@ -1,0 +1,63 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "Yes or no?"
+        ]
+      },
+      "command": "ask tamsin about the grille",
+      "id": "ioyagjoe",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "\"Then I have a page and you have a grille.\""
+        ],
+        "states": [
+          "Tamsin Vey is free"
+        ]
+      },
+      "command": "say no",
+      "id": "kj5s8yf2",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Your word on it. Yes or no?"
+        ]
+      },
+      "command": "ask tamsin about the price",
+      "id": "sey251v4",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Tamsin Vey gives the unbind page to Ansel."
+        ],
+        "states": [
+          "Tamsin Vey is bound"
+        ]
+      },
+      "command": "say yes",
+      "id": "otcgb9x1",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "\"We have dealt, you and I. I don't sell a thing twice.\""
+        ]
+      },
+      "command": "ask tamsin about the price",
+      "id": "aqxcle85",
+      "type": "turn"
+    }
+  ],
+  "id": "xfk6u90t",
+  "ordinal": 1,
+  "parent": "9bmpedvw"
+}

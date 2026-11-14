@@ -1,0 +1,30 @@
+## The Relighting's claims: what the finished story can reach, each under
+## the rooms, things and verbs that are load-bearing on the way. The test
+## tree's manifest names this file; the story never imports it. The shared
+## set is the way to the roof; a claim that needs more or less declares
+## its own.
+
+claims
+  needs rooms: the Lodge, the Gate Court, the Cloister, the Library, the Undercroft, the Refectory, the Bell Stair, the Lantern Gallery
+  needs things: the hand lamp, the oak press, the library key, the library door, the kindle page, the cistern, the mend page, the crate, the lens, the book hoist, Hobb, the newspapers, the hush page, Tamsin Vey, the unbind page, the tower bell, the iron grille, the Great Lantern, the shutter crank, the shutter
+  needs verbs: take, open, unlock, read, kindle, z, x, mend, put, ask, say, hush, unbind, turn
+
+  claim the story can be won
+    the story ends in victory
+    needs rooms: the Lodge, the Gate Court, the Cloister, the Library, the Undercroft, the Refectory, the Bell Stair, the Lantern Gallery, the Water Stair, the Beacon Isle
+    needs things: the hand lamp, the oak press, the library key, the library door, the kindle page, the cistern, the mend page, the crate, the lens, the book hoist, Hobb, the newspapers, the hush page, Tamsin Vey, the unbind page, the tower bell, the iron grille, the Great Lantern, the shutter crank, the shutter, the Heron, the beacon
+    needs verbs: take, open, unlock, read, kindle, z, x, mend, put, ask, say, hush, unbind, turn, enter, steer east, make sail, exit
+
+  claim the Hall can be woken
+    the story is awake
+
+  claim a cracked lens ends the story
+    the story ends in defeat
+    needs verbs: take, open, unlock, read, kindle, z, x, put, ask, say, hush, unbind, turn
+
+  claim the ward on the stair can be lifted
+    the iron grille is lifted
+    needs rooms: the Lodge, the Gate Court, the Cloister, the Library, the Undercroft, the Bell Stair
+    needs things: the hand lamp, the oak press, the library key, the library door, the kindle page, Hobb, the newspapers, the hush page, Tamsin Vey, the unbind page, the tower bell, the iron grille
+    needs verbs: take, open, unlock, read, kindle, z, x, ask, say, hush, unbind
+end claims

@@ -1,0 +1,28 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "there is a seat for a lens with no lens in it"
+        ]
+      },
+      "command": "kindle lantern",
+      "id": "x32o78uf",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The court comes up to meet you."
+        ]
+      },
+      "command": "e",
+      "ending": "over-the-parapet",
+      "id": "8qasv6hr",
+      "type": "turn"
+    }
+  ],
+  "id": "iwr2qwti",
+  "ordinal": 1,
+  "parent": "d6bdguip"
+}

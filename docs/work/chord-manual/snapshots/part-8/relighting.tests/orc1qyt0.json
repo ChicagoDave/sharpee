@@ -1,0 +1,129 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "Gate Court"
+        ]
+      },
+      "command": "n",
+      "id": "lzhkbmkt",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Cloister"
+        ]
+      },
+      "command": "n",
+      "id": "hayvk1oi",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Refectory",
+          "Tamsin Vey"
+        ]
+      },
+      "command": "e",
+      "id": "0200fesg",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "It was blank on Tuesday too."
+        ]
+      },
+      "command": "ask tamsin about the grille",
+      "id": "cfg77xj6",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Yes or no?"
+        ]
+      },
+      "command": "ask tamsin about the grille",
+      "id": "5jembivy",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Tamsin Vey gives the unbind page to Ansel."
+        ]
+      },
+      "command": "say yes",
+      "id": "htwuxa5n",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The fourth working reads like a knot seen from the wrong end."
+        ],
+        "states": [
+          "the unbind page is learned"
+        ]
+      },
+      "command": "read fourth page",
+      "id": "dcllv12h",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Cloister"
+        ]
+      },
+      "command": "w",
+      "id": "fmo54jyh",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Bell Stair",
+          "iron grille"
+        ]
+      },
+      "command": "n",
+      "id": "g2i26f4z",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Whatever holds the grille has not been woken yet"
+        ],
+        "notContains": [
+          "the stair goes up"
+        ],
+        "states": [
+          "the iron grille is standing",
+          "the tower bell is unrung"
+        ]
+      },
+      "command": "unbind grille",
+      "id": "x3odmd2h",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The grille stands across the stair, and there is no way round it."
+        ]
+      },
+      "command": "u",
+      "id": "gnabx17f",
+      "type": "turn"
+    }
+  ],
+  "id": "orc1qyt0",
+  "ordinal": 2,
+  "parent": "oxyimcfi"
+}

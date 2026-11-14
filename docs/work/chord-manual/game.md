@@ -340,6 +340,100 @@ Prose was checked with `sharpee play`; what the page would be sent was read from
   `transition`, `clear`, `client has <capability>`, `gated by`, `template`, and channel records.
   Chapters 36 and 37 need a short standalone example for each, or the game needs a reason for one.
 
+Part VIII compiles at Chord 4.0.2 and was tested, built and opened in a browser on 2026-11-14
+(session a180a5). `snapshots/part-8/` holds the story (`story-version: 0.8.0`), its test tree
+(`relighting.tests/`), its claims (`relighting.claims.chord`), its assets (`assets/`), its own page
+(`browser/`) and the `relighting.config.json` the build wrote. Everything was run with the in-repo
+CLI (`node packages/devkit/dist/cli.js`), not the published one.
+
+- The tree is 109 cards on 7 lines at seed 42, all passing, with 171 assertions. The main line is
+  the winning walk, 57 commands, ending on a card that carries `"ending": "beacon-lit"`. Six
+  branches: the word not yet read and the dark stair; the bargain struck before the bell has rung;
+  the three stacks; the cracked lens to its ending (`lens-shatters`); the bargain refused and
+  reopened through `ask tamsin about the price`; the empty Lantern and the parapet
+  (`over-the-parapet`). The run reports 13 of 13 rooms and 2 of 3 endings; `night-falls` needs 110
+  turns of waiting and is left unreached on purpose, so the report has something to show.
+- The path a reader has from the CLI alone is to write the tree's JSON by hand. A segment is a
+  file named for its 8-character id holding `cards`; a card is `type`, `command`, `id` and
+  `assertions`, or `"skip": true`. To learn what a turn prints, write it as a skip card and run
+  `sharpee test <dir> --json --capture-output`: each `command-result` record carries
+  `actualOutput`. A card with neither assertions nor `skip` fails the line. There is no CLI
+  command that records a play-through; the Testing tab is the recorder. Chapter 38 has to choose
+  between teaching the JSON and teaching the tab.
+- A card's assertions used here: `contains`, `notContains`, `states` in the Chord spelling (`the
+  lens is sound`, `Tamsin Vey is bound`, `the story is awake`), and `channels` (`{"id":
+  "workings", "contains": ["kindle: wakes a flame"]}`; the opening card reads `info.title`).
+- `sharpee test` also derives a test from every clause in the story (84 of them here) and exits 1
+  when one fails. Six fail on this story, and none is the story's fault. Two expect the event
+  `media-ambient-play` / `media-ambient-stop` where the engine sends `media.ambient.play` /
+  `media.ambient.stop`. Four are the `hushable` and `ward` traits: the derived test types `hush
+  tower bell` without first arranging the action's own `the hush page must be learned`, so the
+  action refuses before the trait is reached. The same requirement written inside a thing's own
+  `on` clause (the lamp, the candles, the Lantern) is arranged, and those pass. Issues #714 and
+  #715. Until they are settled the snapshot's `sharpee test` exits 1 with every card passing.
+- Claims are written by `sharpee claim <line> "<fact>" --at <turn> --name "<name>"`. Without a
+  fact it lists what is true at that card and was not at boot. With one it writes the claim into
+  the fragment, the `claims` key into the manifest, and `locks` onto the card. Four are held, each
+  by its line and with no walk: the story can be won, the Hall can be woken, a cracked lens ends
+  the story, the ward on the stair can be lifted.
+- The sets `sharpee claim` proposed were not usable as written. It listed the Mere under `needs
+  rooms`, which the fragment refuses (`Mere is not a room`), so the winning claim needed `--rooms`
+  by hand. It trimmed the lens, the Lantern and the mend page from "the Hall can be woken", and
+  the hush page, the unbind page and Tamsin Vey from the grille claim, as things "the claim cannot
+  depend on". It proposed `z`, `x`, `say`, `steer east` and `make sail` as verbs, none of which
+  the walk can type. The snapshot's sets are written by hand. Issue #716.
+- No `never` claim can be held in this story. `never the kettle leaves the Lodge`, under 2 rooms,
+  2 things and 1 verb, came back UNPROVEN: "stopped: max-depth-reached after 318 states". Under 5
+  rooms, 4 things and 4 verbs a walk ran the full 120 seconds (28,410 states) and stopped at
+  max-seconds. The story counts turns (`define sequence the day`), so no state ever repeats. The
+  walk also cannot type a conversation's `about` topics, an exchange's answers, or `wait`, so it
+  cannot reach the bargain at all. Issue #717. The snapshot has no `never` claim; chapter 39's
+  `never` needs a standalone example with no clock in it.
+- Writing the `never` found a hole in the story all the same. From the first turn the bargain
+  could be struck in the Refectory, the fourth page read, and the grille unbound before the bell
+  had ever rung: ten commands to the roof, with hush never needed. The tower bell is now `states:
+  unrung, tolling, still` and the ward refuses twice, `when the tower bell is unrung:
+  ward-asleep` and `when the tower bell is tolling: ward-in-the-bell`. The second branch of the
+  tree walks the old shortcut and pins the refusal. The bell is no longer `reversible`, so chapter
+  13 needs another reversible thing.
+- In the refused-bargain probe, `ask tamsin about the price` before the bargain was struck printed
+  its refusal and then the conversation's next beat as overheard speech (`You hear: ""Here is my
+  price…""`). Added to #711. The tree's branch takes the route that does not do this.
+- The assets exist: `assets/audio/toll.mp3`, `assets/audio/lapping.mp3` (synthesised with ffmpeg)
+  and `assets/img/lantern-lit.png` (drawn with ImageMagick). They are placeholders made by
+  machine and are David's to replace. The story's `from` paths are relative to `assets/`. They are
+  MP3 because this machine's ffmpeg has no Vorbis encoder.
+- `sharpee build relighting.story` works inside the repository: it adopts the header's `ifid` into
+  `relighting.config.json`, writes `dist/relighting.ir.json` and `dist/web/relighting/`, wires the
+  two themes and copies `assets/`. Given the directory instead of the file it answers "not a
+  registered story". `sharpee publish relighting.story` adds `dist/relighting.zip` (0.7 MB, 11
+  files: the page, three engine stylesheets, two themes, the story's stylesheet, `game.js` and the
+  three assets). `dist/` is ignored by git.
+- On the page the build generates, the workings panel and the picture are never seen. The client
+  makes its own `#sharpee-sidebar` and `#sharpee-media` with `hidden` set and nothing unsets it;
+  the panel's rows and the `<img>` are in the document and invisible. Issue #718. The answer in
+  the snapshot is the documented one: copy the default page to `browser/index.html`, give it an
+  `<aside id="sharpee-sidebar">` and a `<div id="sharpee-media">` of its own, and style them in
+  `browser/relighting.css`. The build then says "Used browser/index.html (custom layout)".
+- Three more things the page showed, all in #718. The picture is mounted in a layer that fills its
+  slot, so the slot needs a height or the picture is zero pixels tall. Once the sidebar is
+  visible, a platform channel named `audibility` lists raw fields in it (`sourceRoomId`,
+  `_transactionId`); the story's stylesheet hides that panel. A channel given its own element by
+  name (`id="workings"`) receives the latest value as text, so `mode append` only appends in the
+  generic panel.
+- In real Chromium, on the built page, the winning walk was typed from boot to the ending and
+  these held: the title, prologue and Lodge at boot under the paper theme; "kindle: wakes a flame"
+  in the panel after the first page and all four workings at the end; `audio/toll.mp3` fetched by
+  the bell's first stroke; `img/lantern-lit.png` mounted, loaded and visible when the Lantern
+  lights; `audio/lapping.mp3` fetched on entering the Heron; the winning text and the Lamplighter
+  rank. No request was refused and the page logged no error. The sounds were fetched, not heard.
+- `emit media-sound-play with src "audio/toll.mp3"` compiles and sends the platform's
+  `media.sound.play`, with no "You hear" line. The hyphenated name is the spelling; Part VII's
+  note that `emit` cannot reach a platform event was wrong, and #713 is corrected. This is a way
+  to give the per-turn toll and the lamp's catch a sound. Not yet used in the game.
+- `template:` in the header is accepted and ignored with a warning ("template packages are not yet
+  supported"). The story's own page is `browser/index.html`, not a header field. Chapter 37.
+
 ## Open points in the design
 
 - Every mechanic above is a reading of the grammar. Each is proven, or changed, when its snapshot

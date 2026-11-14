@@ -1,0 +1,48 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "Stack 1",
+          "Every spine is blank."
+        ]
+      },
+      "command": "n",
+      "id": "hyfk1cib",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Stack 2"
+        ]
+      },
+      "command": "n",
+      "id": "mqfg33sf",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Stack 3"
+        ]
+      },
+      "command": "n",
+      "id": "iweucfix",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You can't go that way."
+        ]
+      },
+      "command": "n",
+      "id": "eocuoswu",
+      "type": "turn"
+    }
+  ],
+  "id": "3po7mx5g",
+  "ordinal": 1,
+  "parent": "6m6ou7y7"
+}

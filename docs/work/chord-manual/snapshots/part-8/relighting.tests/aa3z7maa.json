@@ -1,0 +1,214 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "(first taking the lens)",
+          "The lens drops into its seat with a sound like a coin on a counter."
+        ]
+      },
+      "command": "put lens in lantern",
+      "id": "i9dvv9oy",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The brass leaves part by a hand's breadth and stick."
+        ]
+      },
+      "command": "turn crank",
+      "id": "9n53sz71",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The Lantern stands open to the valley."
+        ],
+        "states": [
+          "the shutter is drawn"
+        ]
+      },
+      "command": "turn crank",
+      "id": "5gy7u158",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The crank spins under your hand with nothing on the end of it."
+        ]
+      },
+      "command": "turn crank",
+      "id": "yd8mo9ky",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "sends it out over the valley in one white bar",
+          "There was always a second light."
+        ],
+        "states": [
+          "the story is awake"
+        ]
+      },
+      "command": "kindle lantern",
+      "id": "0upq9v6a",
+      "locks": [
+        "the Hall can be woken"
+      ],
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Bell Stair"
+        ]
+      },
+      "command": "d",
+      "id": "tp0z8q4v",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Cloister"
+        ]
+      },
+      "command": "s",
+      "id": "d5olwkko",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Undercroft"
+        ]
+      },
+      "command": "d",
+      "id": "mdy7ogiq",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Water Stair",
+          "Heron"
+        ]
+      },
+      "command": "n",
+      "id": "scj4fxg6",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You get into Heron."
+        ]
+      },
+      "command": "enter heron",
+      "id": "7rhidhws",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You steer Heron east."
+        ]
+      },
+      "command": "steer east",
+      "id": "wridkzab",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You make sail."
+        ]
+      },
+      "command": "make sail",
+      "id": "23xzodx3",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes"
+        ]
+      },
+      "command": "z",
+      "id": "vt90ir1e",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes"
+        ]
+      },
+      "command": "z",
+      "id": "eovm7zd2",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes"
+        ]
+      },
+      "command": "z",
+      "id": "sptur0da",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes"
+        ]
+      },
+      "command": "z",
+      "id": "a1cmo8gf",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The Heron arrives at the Beacon Isle."
+        ]
+      },
+      "command": "z",
+      "id": "4il25eb9",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You get out of Heron."
+        ]
+      },
+      "command": "exit",
+      "id": "qsd9wfrx",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "the two lights are looking at each other",
+          "You have risen to the rank of a Lamplighter."
+        ]
+      },
+      "command": "kindle beacon",
+      "ending": "beacon-lit",
+      "id": "6t38opde",
+      "locks": [
+        "the story can be won"
+      ],
+      "type": "turn"
+    }
+  ],
+  "id": "aa3z7maa",
+  "ordinal": 0,
+  "parent": "d6bdguip"
+}

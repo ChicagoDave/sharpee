@@ -1,0 +1,63 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "You reach for the word and find only the place where it was."
+        ],
+        "states": [
+          "the kindle page is legible"
+        ]
+      },
+      "command": "kindle lamp",
+      "id": "57nje8c5",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "\"That's mine,\" he says."
+        ]
+      },
+      "command": "take kettle",
+      "id": "mj32s9w1",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Gate Court"
+        ]
+      },
+      "command": "n",
+      "id": "ikg8uw56",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Cloister"
+        ]
+      },
+      "command": "n",
+      "id": "mtjw7s6e",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "It is too dark to go feeling for a way."
+        ],
+        "notContains": [
+          "grue"
+        ]
+      },
+      "command": "d",
+      "id": "68owpasv",
+      "type": "turn"
+    }
+  ],
+  "id": "eyygdvpf",
+  "ordinal": 1,
+  "parent": "oxyimcfi"
+}

@@ -1,0 +1,135 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "channels": [
+          {
+            "contains": [
+              "kindle: wakes a flame"
+            ],
+            "id": "workings"
+          }
+        ],
+        "contains": [
+          "The word for waking a flame settles into the place it left thirty years ago"
+        ],
+        "states": [
+          "the kindle page is learned"
+        ]
+      },
+      "command": "read kindle page",
+      "id": "yj1eg8of",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "A flame stands up on the wick",
+          "Something small and blue comes loose from the flame"
+        ]
+      },
+      "command": "kindle lamp",
+      "id": "slvmgdd9",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Cloister",
+          "The wisp follows you."
+        ]
+      },
+      "command": "e",
+      "id": "lk9usp64",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Undercroft",
+          "The tower bell strikes once"
+        ]
+      },
+      "command": "d",
+      "id": "hfiioun0",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "In the lodge, an old man who was not asleep opens his eyes.",
+          "The tower bell tolls."
+        ],
+        "notContains": [
+          "You hear"
+        ]
+      },
+      "command": "z",
+      "id": "lki2d2s0",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You keep it in your hand for whoever comes asking."
+        ],
+        "states": [
+          "Hobb is settled"
+        ]
+      },
+      "command": "x newspapers",
+      "id": "1x5x7ltr",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Taken."
+        ]
+      },
+      "command": "take second page",
+      "id": "4ir5686s",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "It is the word for making a broken thing whole",
+          "You have risen to the rank of a Second-Year."
+        ],
+        "states": [
+          "the mend page is learned"
+        ]
+      },
+      "command": "read second page",
+      "id": "n7zi54hs",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "In the crate you see a lens."
+        ]
+      },
+      "command": "open crate",
+      "id": "zccx6swy",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You take the lens from the crate."
+        ],
+        "states": [
+          "the lens is cracked"
+        ]
+      },
+      "command": "take lens",
+      "id": "bjafl2i1",
+      "type": "turn"
+    }
+  ],
+  "id": "e7hw1kkq",
+  "ordinal": 0,
+  "parent": "6m6ou7y7"
+}

@@ -1,0 +1,78 @@
+/* The Relighting: the author's own styles, loaded after the engine and the
+   themes. They place the picture above the story and the workings panel
+   beside it; colours come from the theme. */
+
+.relighting-stage {
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.relighting-story {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+}
+
+.relighting-story .sharpee-prose-pane {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+/* The platform mounts a picture in a layer that fills its slot, so the
+   slot needs a height of its own, and only while a picture is showing. */
+.relighting-picture {
+  flex: 0 0 auto;
+  height: 0;
+}
+
+.relighting-picture:has(img) {
+  height: 14rem;
+}
+
+.relighting-picture img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.relighting-panels {
+  flex: 0 0 15rem;
+  padding: 0.75rem 1rem;
+  border-left: 1px solid currentColor;
+  overflow-y: auto;
+}
+
+.relighting-panels:empty {
+  display: none;
+}
+
+.relighting-panels .sharpee-channel-panel-title {
+  font-variant: small-caps;
+  letter-spacing: 0.06em;
+  margin-bottom: 0.5rem;
+}
+
+.relighting-panels .sharpee-channel-panel-row {
+  margin-bottom: 0.4rem;
+}
+
+@media (max-width: 700px) {
+  .relighting-stage {
+    flex-direction: column;
+  }
+
+  .relighting-panels {
+    flex: 0 0 auto;
+    border-left: 0;
+    border-top: 1px solid currentColor;
+  }
+}
+
+/* The platform's own audibility channel has no place on this page. */
+#channel-panel-audibility {
+  display: none;
+}

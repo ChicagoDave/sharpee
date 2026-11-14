@@ -1,0 +1,260 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "The book hoist pulls away."
+        ]
+      },
+      "command": "put lens in hoist",
+      "id": "g4kp4xwx",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Cloister"
+        ]
+      },
+      "command": "u",
+      "id": "1xcjudco",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Refectory"
+        ]
+      },
+      "command": "e",
+      "id": "6x4x49lt",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "every cold wick takes it"
+        ]
+      },
+      "command": "kindle candles",
+      "id": "irb2sq3s",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Cloister"
+        ]
+      },
+      "command": "w",
+      "id": "sz52f52v",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Gate Court"
+        ]
+      },
+      "command": "s",
+      "id": "igx3x4yn",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Lodge",
+          "Hobb"
+        ]
+      },
+      "command": "s",
+      "id": "87lj6cf9",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Hobb gives the hush page to Ansel."
+        ]
+      },
+      "command": "ask hobb about the bell",
+      "id": "tnjzqmha",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The third working is hardly a word at all."
+        ]
+      },
+      "command": "read third page",
+      "id": "c2nuubab",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Gate Court"
+        ]
+      },
+      "command": "n",
+      "id": "ittacnvu",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Cloister"
+        ]
+      },
+      "command": "n",
+      "id": "f0pag76m",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Bell Stair",
+          "Tamsin Vey"
+        ]
+      },
+      "command": "n",
+      "id": "40h16jej",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "It was blank on Tuesday too."
+        ]
+      },
+      "command": "ask tamsin about the grille",
+      "id": "w1dq0mbs",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Yes or no?"
+        ]
+      },
+      "command": "ask tamsin about the grille",
+      "id": "e5ukodzt",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Tamsin Vey gives the unbind page to Ansel."
+        ]
+      },
+      "command": "say yes",
+      "id": "qt7rbznn",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The fourth working reads like a knot seen from the wrong end."
+        ]
+      },
+      "command": "read fourth page",
+      "id": "mh5jupf1",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "hangs still"
+        ],
+        "states": [
+          "the tower bell is still"
+        ]
+      },
+      "command": "hush bell",
+      "id": "w6953xik",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "the stair goes up"
+        ],
+        "states": [
+          "the iron grille is lifted"
+        ]
+      },
+      "command": "unbind grille",
+      "id": "4go7vk9p",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Lantern Gallery",
+          "In the book hoist you see a lens."
+        ]
+      },
+      "command": "u",
+      "id": "o1mvire2",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The lens drops into its seat"
+        ],
+        "states": [
+          "the lens is cracked"
+        ]
+      },
+      "command": "put lens in lantern",
+      "id": "ujpzbuzw",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The brass leaves part by a hand's breadth and stick."
+        ]
+      },
+      "command": "turn crank",
+      "id": "thhy20a5",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The Lantern stands open to the valley."
+        ],
+        "states": [
+          "the shutter is drawn"
+        ]
+      },
+      "command": "turn crank",
+      "id": "v9mba6ux",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "For one breath the cracked lens throws two beams",
+          "the Lantern goes dark for the last time."
+        ],
+        "notContains": [
+          "every blank page begins to fill"
+        ]
+      },
+      "command": "kindle lantern",
+      "ending": "lens-shatters",
+      "id": "4glhd2rf",
+      "locks": [
+        "a cracked lens ends the story"
+      ],
+      "type": "turn"
+    }
+  ],
+  "id": "gx6cxwgu",
+  "ordinal": 1,
+  "parent": "e7hw1kkq"
+}

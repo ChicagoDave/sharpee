@@ -1,0 +1,89 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "the brass in the closed wings stays mine to take",
+          "Yes or no?"
+        ]
+      },
+      "command": "ask tamsin about the grille",
+      "id": "xw68wfpm",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "\"Done is done. I have never gone back on one yet.\"",
+          "Tamsin Vey gives the unbind page to Ansel."
+        ],
+        "states": [
+          "Tamsin Vey is bound"
+        ]
+      },
+      "command": "say yes",
+      "id": "6prg0bmb",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The fourth working reads like a knot seen from the wrong end."
+        ],
+        "states": [
+          "the unbind page is learned"
+        ]
+      },
+      "command": "read fourth page",
+      "id": "h0uj6rod",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The bell swings twice more without a sound, and hangs still.",
+          "You have risen to the rank of a Journeyman."
+        ],
+        "states": [
+          "the tower bell is still"
+        ]
+      },
+      "command": "hush bell",
+      "id": "uw6y7kut",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The grille is not there"
+        ],
+        "notContains": [
+          "tolls"
+        ],
+        "states": [
+          "the iron grille is lifted"
+        ]
+      },
+      "command": "unbind grille",
+      "id": "kbrb7cs9",
+      "locks": [
+        "the ward on the stair can be lifted"
+      ],
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Lantern Gallery",
+          "In the book hoist you see a lens."
+        ]
+      },
+      "command": "u",
+      "id": "jt8nbic7",
+      "type": "turn"
+    }
+  ],
+  "id": "d6bdguip",
+  "ordinal": 0,
+  "parent": "9bmpedvw"
+}

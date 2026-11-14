@@ -1,0 +1,164 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "The crack closes from both edges at once"
+        ],
+        "states": [
+          "the lens is sound"
+        ]
+      },
+      "command": "mend lens",
+      "id": "yu5k5rd4",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The book hoist pulls away."
+        ]
+      },
+      "command": "put lens in hoist",
+      "id": "3p8d66z2",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Cloister"
+        ]
+      },
+      "command": "u",
+      "id": "74kh6kvs",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Refectory"
+        ]
+      },
+      "command": "e",
+      "id": "8zh29ltk",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "every cold wick takes it"
+        ]
+      },
+      "command": "kindle candles",
+      "id": "ww7dzrep",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Cloister"
+        ]
+      },
+      "command": "w",
+      "id": "942sm49e",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Gate Court"
+        ]
+      },
+      "command": "s",
+      "id": "eselzg9h",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Lodge",
+          "Hobb"
+        ]
+      },
+      "command": "s",
+      "id": "ll5upm2p",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "\"There's a word for the telling. I kept it by, in case.\"",
+          "Hobb gives the hush page to Ansel."
+        ]
+      },
+      "command": "ask hobb about the bell",
+      "id": "yb7wth77",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "channels": [
+          {
+            "contains": [
+              "hush: quiets a thing"
+            ],
+            "id": "workings"
+          }
+        ],
+        "contains": [
+          "The third working is hardly a word at all."
+        ],
+        "states": [
+          "the hush page is learned"
+        ]
+      },
+      "command": "read third page",
+      "id": "5cg2xqvg",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Gate Court"
+        ]
+      },
+      "command": "n",
+      "id": "gm512gib",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Cloister"
+        ]
+      },
+      "command": "n",
+      "id": "wiy2v71h",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Bell Stair",
+          "You can see an iron grille and Tamsin Vey here."
+        ]
+      },
+      "command": "n",
+      "id": "y40ielp2",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "It was blank on Tuesday too. It is not blank now."
+        ]
+      },
+      "command": "ask tamsin about the grille",
+      "id": "mr9jn7av",
+      "type": "turn"
+    }
+  ],
+  "id": "9bmpedvw",
+  "ordinal": 0,
+  "parent": "e7hw1kkq"
+}
