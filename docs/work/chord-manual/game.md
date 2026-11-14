@@ -257,6 +257,48 @@ ending was played from it too (the same walk without the mend).
   exchange's yes row without complaint. Chapters 29 and 30 need a short standalone example whose
   outcome a reader can see, or a place in this game where a feeling gates a response.
 
+Part VI compiles at Chord 4.0.2 and was played on 2026-11-14 (session d16329). The game can be won
+from the snapshot: 57 commands and a `score`, 50 points of 50, rank Lamplighter. The cracked-lens ending
+was played from it too. Chapter 35's systems (combat, hunger) are not in the game, as planned.
+
+- The ending moved. Lighting the Lantern over a sound lens no longer wins: it makes the story
+  `awake`, opens the water gate in the Undercroft, and says there is a second light. The win is
+  kindling the beacon on the far side of the Mere. `relit` is worth 10 and the beacon's `answered`
+  5, so the total is still 50. Night no longer falls once the Lantern is lit (the `lose … when not
+  awake` line), so the crossing has no clock.
+- The shutter is a `define machine` with one role (the crank) and three states. `when turning the
+  crank: half` moves it, `on enter` bodies print and `change the shutter to drawn`, and the Lantern
+  asks `the shutter must be drawn`. A machine's state is not readable from a condition; the machine
+  writes a thing's state and clauses read that.
+- A machine's `when turning the crank` fired on a turn the turning action refused ("isn't
+  something you can turn", then the machine's prose). Issue #712. The crank has its own `on the
+  player turning` clause, which is its answer to the verb and also where the third turn is refused.
+- The book hoist is `a vehicle`, `movement: line`, `drive: state`, with three stops and a
+  `position` block read after each turn: it is in the Gallery when it holds the lens and the grille
+  is lifted, in the Library when it holds the lens, otherwise in the Undercroft. It moves the turn
+  the lens goes in or comes out ("The book hoist pulls away.").
+- Two `up is blocked while …` lines on one room compile and each speaks its own phrase: the grille,
+  and `while Ansel has the lens` (the lens is too wide for the stair). The hoist is therefore the
+  only way the lens goes up, and it will not go to the Gallery until the grille is lifted, so it is
+  not a way round the ward.
+- `put lens in lantern` takes the lens out of the hoist by itself ("first taking the lens").
+- Aboard the hoist or the boat, `look` prints the room outside and lists "In the book hoist you
+  see … Ansel". Worth one sentence in chapter 33.
+- The Mere is `an expanse`, 8 by 6, `wind: from west`, with the Water Stair at 0, 2 and the Beacon
+  Isle at 6, 2 as landmarks. Each landmark room needs `seen from afar:`. The Water Stair is reached
+  by an ordinary exit from the Undercroft, `blocked while not awake`.
+- The Heron is `movement: open`, `drive: player`, `commands: naval, compass`, with `sails: furled,
+  full` and a `sailing` block. `enter heron`, `steer east`, `make sail`, then five waits: "The
+  Heron arrives at the Beacon Isle." Mid-water, `look` names the expanse and gives both landmarks
+  with a band and a bearing ("The Beacon Isle, in the distance, to the east.").
+- `exit` on open water put Ansel out of the boat into the Mere without complaint. Not followed up.
+- A vehicle's name: without `proper` the room lists "a Heron"; with it the article goes entirely
+  ("You get into Heron") though the arrival line says "The Heron arrives". There was no way found
+  to say "the Heron" throughout.
+- The wisp follows to the Water Stair and not onto the water.
+- `use expanses` and `use sailing` are header lines beside `use scoring` and `use chapters`. A
+  fourth chapter, `crossing`, begins `when the story becomes awake`.
+
 ## Open points in the design
 
 - Every mechanic above is a reading of the grammar. Each is proven, or changed, when its snapshot
