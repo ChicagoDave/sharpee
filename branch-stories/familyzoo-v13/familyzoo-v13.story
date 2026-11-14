@@ -455,7 +455,6 @@ define trait pettable
       You pet the animal. It seems pleased.
 
   on the player petting
-    emit petted
     phrase petted
   end on
 end trait
@@ -477,7 +476,6 @@ define trait feedable
     the actor must have its food: no-feed
     it must be hungry: already-fed
     change it to content
-    emit fed
     phrase fed
   end on
 end trait
@@ -498,6 +496,9 @@ define trait restless
     phrase bleating
   end on
 end trait
+
+remove from action touching
+  stroke the thing
 
 define action petting
   grammar
