@@ -7,8 +7,11 @@
  *   in that order, each at most once, and one blank line between blocks.
  *   A hand edit that keeps the shape passes; one that reorders, re-indents
  *   or doubles a line is named by block, so the next lock never fights a
- *   second formatting and the fragment is one writer's text. Not a
- *   reformatter: it reports, it does not rewrite. Top-level comments
+ *   second formatting and the fragment is one writer's text. The gate is
+ *   about shape, not meaning: the claims language has no `never` head, but
+ *   `sharpee test` runs this gate before it compiles, so a `never` block
+ *   still passes here and reaches the compiler, whose error names the line
+ *   and says why. Not a reformatter: it reports, it does not rewrite. Top-level comments
  *   (`##`) and blank lines around them are free (ADR-249); a shared set at
  *   two spaces before the first block is free. Browser-safe.
  *

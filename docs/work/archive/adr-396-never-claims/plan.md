@@ -1,7 +1,7 @@
 # Session Plan: Build ADR-396 — a `never` claim is watched and searched, and is never called held
 
 **Created**: 2026-11-14
-**Plan Status**: ACTIVE
+**Plan Status**: ABANDONED (David, 2026-11-14, session 4c0c20: "Our attempt to make 'never' work is going nowhere. We can't measure it and we can't enforce it." No phase ran and no code changed. `never` is taken out of the claims language instead, under a superseding ADR and its own plan.)
 **Overall scope**: Build every decision of ADR-396 (GH #723, and GH #717 through D4 and D5): a `never` gets only VIOLATED or NOT VIOLATED, every `never` is watched on every played line and every claims walk, needs on a `never` only bound a search, a necessity names what it does without and is checked against its twin, predicates join with `and`, the walk forgets the clock and can talk and wait, and the existing `never` claims are rewritten before the watch can fail a card. Every phase changes `packages/`; this plan is the discussion CLAUDE.md requires, and each phase opens by confirming its design with David.
 **Bounded contexts touched**: N/A — testing tooling (the Chord claims fragment, the claims runner, the run-event wire, the Testing tab)
 **Key domain language**: `never` claim, watch, search, exclusion (`excluding things:`), positive twin, NOT VIOLATED
@@ -120,7 +120,7 @@ Real dependencies: Phase 4 needs Phases 1 and 3; Phase 5 needs Phase 4; Phase 6 
 - **Exit state**: No code path gives a `never` the verdict `'held'`; the wire carries `'not-violated'` and the split summary; a story with a `never` prints two ratios, and a story without one prints the line it prints today, byte for byte; AC-1, AC-12 and AC-13's not-violated half are tests that pass.
 - **Demonstration**: `node packages/devkit/dist/cli.js test test-stories/lodge` prints "claims: 8 of 8 held; never: 1 of 2 not violated, 1 violated (seed 42)" and a NOT VIOLATED line for "the Study is reached without the brandy (never)" that names its states and its set, with no HELD on any never line; `node packages/devkit/dist/cli.js test test-stories/ferry` prints "claims: 4 of 4 held; never: 1 of 2 not violated, 1 violated (seed 42)" and exits 0; `pnpm --filter=@sharpee/ide-protocol test`, `pnpm --filter=@sharpee/branch-tester test`, `pnpm --filter=@sharpee/devkit test` and `pnpm exec vitest run --root tools/ide/web/testing-surface` pass.
 - **Demonstrated**: 
-- **Status**: CURRENT (since 2026-11-14)
+- **Status**: ABANDONED
 
 ### Phase 2: The walker types a conversation, an answer and a wait, and leaves the clock out of a state's identity
 - **Tier**: Medium
@@ -132,7 +132,7 @@ Real dependencies: Phase 4 needs Phases 1 and 3; Phase 5 needs Phase 4; Phase 6 
 - **Exit state**: A walk on a story whose character tick runs closes; the walk can reach what is behind a conversation, an exchange answer or a wait; every pin on the three existing test stories is unchanged.
 - **Demonstration**: `node docs/work/adr-396-never-claims/probes/snapshot-diff.cjs test-stories/parlour/parlour.story "wait" "wait"` prints only ".state.character.turn" changes; the recorded before-run of the parlour never names max-depth-reached and the after-run names frontier-exhausted; `pnpm --filter=@sharpee/branch-tester test` passes, with `packages/branch-tester/tests/claims-conversation.test.ts` among the files run.
 - **Demonstrated**: 
-- **Status**: PENDING
+- **Status**: ABANDONED
 
 ### Phase 3: The claims language — `excluding things:` and predicates joined with `and`
 - **Tier**: Large
@@ -144,7 +144,7 @@ Real dependencies: Phase 4 needs Phases 1 and 3; Phase 5 needs Phase 4; Phase 6 
 - **Exit state**: Every form in "Chord, as this plan builds it" compiles to the stored shape, and every refusal there is refused with its code naming the claim; every existing fragment compiles to the same claims it did, now in the list shape; the walk's behaviour on the existing test stories is unchanged.
 - **Demonstration**: `pnpm --filter=@sharpee/chord test`, `pnpm --filter=@sharpee/branch-tester test` and `pnpm --filter=@sharpee/devkit test` pass with the AC-6, AC-7 and AC-9 cases among them; `./repokit build` passes its grammar gate; `node packages/devkit/dist/cli.js test test-stories/lodge` prints the same claims block it printed at Phase 1's end, line for line; the census run is recorded inline in the Demonstrated line with its command and result.
 - **Demonstrated**: 
-- **Status**: PENDING
+- **Status**: ABANDONED
 
 ### Phase 4: Every `never` is watched on every walk, needs bound a search, a necessity checks its twin, and the necessities are rewritten
 - **Tier**: Large
@@ -156,7 +156,7 @@ Real dependencies: Phase 4 needs Phases 1 and 3; Phase 5 needs Phase 4; Phase 6 
 - **Exit state**: Every `never` is evaluated at every state of every claims walk, by the D2 walk rule; a `never` with no needs runs no walk and is reported settled by the watch; a necessity's line says when no twin shows the goal is reachable; no committed necessity is reported violated by its own twin's walk; the walk-side halves of AC-4 and AC-13, and AC-5 and AC-8, are tests that pass.
 - **Demonstration**: `node packages/devkit/dist/cli.js test test-stories/lodge` still prints "claims: 8 of 8 held; never: 1 of 2 not violated, 1 violated (seed 42)", and the necessity's line names the walks that watched it and carries no twin wording; `node packages/devkit/dist/cli.js test test-stories/ferry` exits 0 with its Phase 1 ratio; `pnpm --filter=@sharpee/chord test`, `pnpm --filter=@sharpee/ide-protocol test`, `pnpm --filter=@sharpee/branch-tester test`, `pnpm --filter=@sharpee/devkit test` and `pnpm exec vitest run --root tools/ide/web/testing-surface` pass, with `packages/branch-tester/tests/claims-watch-walk.test.ts` among the files run.
 - **Demonstrated**: 
-- **Status**: PENDING
+- **Status**: ABANDONED
 
 ### Phase 5: A `never` broken on a played line fails its card
 - **Tier**: Medium
@@ -168,7 +168,7 @@ Real dependencies: Phase 4 needs Phases 1 and 3; Phase 5 needs Phase 4; Phase 6 
 - **Exit state**: A `never` broken on a played line fails that card and `sharpee test` exits 1; a violation only a walk finds leaves the exit at 0; derived tests are not watched; no committed test story fails a card it passed at Phase 4's end; AC-2, AC-3, AC-4 and AC-14 are tests that pass.
 - **Demonstration**: `node packages/devkit/dist/cli.js test test-stories/ferry` exits 0 with the same card tally as at Phase 4's end, its biscuit claim VIOLATED by walk at depth 3 ("north / take biscuit / south"), and its Far Bank claim NOT VIOLATED, watched on three lines; `node packages/devkit/dist/cli.js test test-stories/lodge` exits 0 with its Phase 4 card tally; `pnpm --filter=@sharpee/branch-tester test`, `pnpm --filter=@sharpee/devkit test` and `pnpm exec vitest run --root tools/ide/web/testing-surface` pass, with `packages/devkit/tests/claim-watch-line.test.ts` (AC-2's scratch ferry exiting 1) among the files run.
 - **Demonstrated**: 
-- **Status**: PENDING
+- **Status**: ABANDONED
 
 ### Phase 6: The guide, the docs tab, and the landing notes
 - **Tier**: Small
@@ -180,7 +180,7 @@ Real dependencies: Phase 4 needs Phases 1 and 3; Phase 5 needs Phase 4; Phase 6 
 - **Exit state**: An author reading the guide or the Testing tab's docs learns the shipped behaviour and never sees a never called held; the decision record says what landed and where.
 - **Demonstration**: `tools/ide/build-docs-tab.sh` completes; `grep -c "NOT VIOLATED" tools/ide/SharpeeIDE/Resources/docs-tab/pages/chord__guide__tooling__claims.html` prints a count above zero; `grep -c "held only when" website/src/app/chord/guide/tooling/claims/content.mdx` prints 0.
 - **Demonstrated**: 
-- **Status**: PENDING
+- **Status**: ABANDONED
 
 ## Open questions for David
 

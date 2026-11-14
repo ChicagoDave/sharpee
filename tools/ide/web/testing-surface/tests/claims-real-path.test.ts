@@ -47,8 +47,8 @@ describe.skipIf(!available)('the claims tier from a real run of the ferry test s
     finishRun(state, run.status === 0);
 
     const claimLines = stdoutLines.filter(line => line.includes('"type":"claim-result"'));
-    expect(claimLines.length).toBe(6);
-    expect(state.claims).toHaveLength(6);
+    expect(claimLines.length).toBe(4);
+    expect(state.claims).toHaveLength(4);
     const summary = state.claimsSummary;
     expect(summary).toBeDefined();
     if (!summary) return;

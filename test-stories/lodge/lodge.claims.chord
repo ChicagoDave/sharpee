@@ -25,22 +25,10 @@ claims
     needs things: the brandy, the warden, the ledger
     needs verbs: take, give, read
 
-  never the strongbox leaves the Vault
-    the strongbox is not in the Vault
-    needs rooms: the Porch, the Hall, the Pantry, the Vault
-    needs things: the valve, the strongbox
-    needs verbs: turn, take
-
   claim the Study is reached
     the player is in the Study
     needs rooms: the Porch, the Hall, the Pantry, the Study
     needs things: the brandy, the warden
-    needs verbs: take, give
-
-  never the Study is reached without the brandy
-    the player is in the Study
-    needs rooms: the Porch, the Hall, the Pantry, the Study
-    needs things: the hand bell, the warden
     needs verbs: take, give
 
   claim the notice has been read

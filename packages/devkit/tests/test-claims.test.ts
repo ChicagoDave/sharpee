@@ -2,9 +2,8 @@
  * test-claims.test.ts — `sharpee test`'s claims tier (ADR-365 D6, D9, D10)
  * at the command surface: the manifest's `claims` file runs after the
  * derived tier at the tree's seed, the report carries the held-over-declared
- * ratio and every verdict, a violated or unproven claim leaves the exit code
- * alone, and a claims file the command cannot run exits 2 with the reason
- * named. Each case runs the real command function over a real project —
+ * ratio and every verdict, an unproven claim leaves the exit code alone,
+ * and a claims file the command cannot run exits 2 with the reason named. Each case runs the real command function over a real project —
  * the compiled `@sharpee/chord` and `@sharpee/branch-tester` with the engine
  * behind them, no stub. The ferry cases are the REAL-PATH test of the
  * end-to-end scenario: a whole story with a forked tree, its manifest line,
@@ -96,13 +95,13 @@ describe('sharpee test — the claims tier runs when the manifest names a file (
     expect(rooms).toBeGreaterThan(0);
     expect(heading).toBeGreaterThan(rooms);
     expect(stdout[heading - 1]).toBe('');
-    expect(stdout[heading + 1]).toBe('claims: 2 of 2 held (seed 7)');
+    expect(stdout[heading + 1]).toBe('claims: 1 of 1 held (seed 7)');
     // No line of the report carries wall-clock time: it reads the same on every run at one seed.
     expect(stdout[heading + 2]).toBe('1 walk');
-    expect(stdout[heading + 3]).toMatch(/^ {2}under the declared set: 2 rooms, 1 things, 1 verbs — \d+ states, \d+ commands, stopped: frontier-exhausted$/);
+    expect(stdout[heading + 3]).toMatch(/^ {2}under the declared set: 2 rooms, 1 things, 1 verbs — \d+ states, \d+ commands, stopped: all-claims-settled$/);
     // The fixture's tree has no typed turn, so no line reached the claim: the walk did (ADR-367 D5's floor says so).
     expect(stdout).toContain('HELD  the note has been read — not reached by any line; by walk at depth 1: read note');
-    expect(stdout).toContain('HELD  the note leaves the Hall (never) — every reachable state under its set was tried (the declared set)');
+    expect(stdout.some((line) => line.includes('(never)'))).toBe(false);
   }, 60_000);
 
   it('a manifest without the key runs no claims and prints no claims section', async () => {
@@ -116,7 +115,7 @@ describe('sharpee test — the claims tier runs when the manifest names a file (
     const { code, stdoutChunks, stderr } = await runStreaming([FIXTURE]);
     expect(code).toBe(0);
     expect(stderr).toContain(`Claims: ${FRAGMENT}`);
-    expect(stderr).toContain('claims: 2 of 2 held (seed 7)');
+    expect(stderr).toContain('claims: 1 of 1 held (seed 7)');
     const events = stdoutChunks.join('').split('\n').filter((line) => line.trim().length > 0).map((line) => JSON.parse(line) as Record<string, unknown>);
     const types = events.map((event) => event.type);
     const derivedAt = types.lastIndexOf('derived-summary');
@@ -129,11 +128,10 @@ describe('sharpee test — the claims tier runs when the manifest names a file (
     const claims = events.filter((event) => event.type === 'claim-result');
     expect(claims.map((event) => [event.name, event.verdict, event.settledBy])).toEqual([
       ['the note has been read', 'held', 'witness'],
-      ['the note leaves the Hall', 'held', 'exhaustion'],
     ]);
     expect(claims[0].witness).toEqual(['read note']);
     expect(claims[0].floored).toBe(true);
-    expect(events[ratioAt]).toMatchObject({ source: FRAGMENT, declared: 2, held: 2, violated: 0, unproven: 0, walks: 1, seed: 7, floored: true });
+    expect(events[ratioAt]).toMatchObject({ source: FRAGMENT, declared: 1, held: 1, unproven: 0, walks: 1, seed: 7, floored: true });
   }, 60_000);
 });
 
@@ -149,39 +147,14 @@ describe('sharpee test — a claim never gates the build (ADR-365 D9, AC-3)', ()
         '',
         '  claim the note has been read',
         '    the note is read',
-        '',
-        '  never the note leaves the Hall',
-        '    the note is not in the Hall',
         'end claims',
         '',
       ].join('\n'),
     });
     const { code, stdout } = await runCapturing([dir]);
     expect(code).toBe(0);
-    expect(stdout).toContain('claims: 1 of 2 held, 1 unproven (seed 7)');
+    expect(stdout).toContain('claims: 0 of 1 held, 1 unproven (seed 7)');
     expect(stdout).toContain('UNPROVEN  the note has been read — not reached by any line; no reachable state under its set satisfies it (the declared set)');
-    expect(stdout).toContain('HELD  the note leaves the Hall (never) — every reachable state under its set was tried (the declared set)');
-  }, 60_000);
-
-  it('a violated never prints its witness and exits 0', async () => {
-    const dir = projectVariant(FIXTURE, 'claims-tier', 7, FRAGMENT, {
-      name: FRAGMENT,
-      text: [
-        'claims',
-        '  needs rooms: the Hall',
-        '  needs things: the note',
-        '  needs verbs: read',
-        '',
-        '  never the note is read',
-        '    the note is read',
-        'end claims',
-        '',
-      ].join('\n'),
-    });
-    const { code, stdout } = await runCapturing([dir]);
-    expect(code).toBe(0);
-    expect(stdout).toContain('claims: 0 of 1 held, 1 violated (seed 7)');
-    expect(stdout).toContain('VIOLATED  the note is read (never) — at depth 1: read note');
   }, 60_000);
 });
 
@@ -219,6 +192,33 @@ describe('sharpee test — a claims file the command cannot run exits 2 (ADR-365
     expect(stderr.join('\n')).toMatch(new RegExp(`^ {2}${FRAGMENT.replace('.', '\\.')}:7:\\d+ \\[claims\\.unknown-entity\\] `, 'm'));
     expect(stdout.some((line) => line.startsWith('Claims:'))).toBe(false);
   }, 60_000);
+
+  it('a fragment with a `never` head: the error names the head\'s line, and no tree, walk or ratio runs', async () => {
+    const dir = projectVariant(FIXTURE, 'claims-tier', 7, FRAGMENT, {
+      name: FRAGMENT,
+      text: [
+        'claims',
+        '  needs rooms: the Hall, the Landing',
+        '  needs things: the note',
+        '  needs verbs: read',
+        '',
+        '  claim the note has been read',
+        '    the note is read',
+        '',
+        '  never the note leaves the Hall',
+        '    the note is not in the Hall',
+        'end claims',
+        '',
+      ].join('\n'),
+    });
+    const { code, stderr, stdout } = await runCapturing([dir]);
+    expect(code).toBe(2);
+    expect(stderr.some((line) => line.startsWith(`test: claims file '${FRAGMENT}' does not compile (1 error(s)):`))).toBe(true);
+    expect(stderr.join('\n')).toMatch(new RegExp(`^ {2}${FRAGMENT.replace('.', '\\.')}:9:\\d+ \\[parse\\.claims-never\\] `, 'm'));
+    expect(stderr.join('\n')).toContain('`never` is not part of the claims language: a claim states something the story can reach. Remove `never the note leaves the Hall` and the lines under it.');
+    expect(stdout.some((line) => line.startsWith('Rooms entered:'))).toBe(false);
+    expect(stdout.some((line) => line.startsWith('Claims:') || line.startsWith('claims:'))).toBe(false);
+  }, 60_000);
 });
 
 const describeFerry = existsSync(path.join(FERRY, 'ferry.story')) ? describe : describe.skip;
@@ -226,20 +226,19 @@ const describeFerry = existsSync(path.join(FERRY, 'ferry.story')) ? describe : d
 describeFerry('REAL-PATH: the ferry\'s claims through sharpee test (ADR-365 end-to-end scenario)', () => {
   let withClaims: { code: number; stdout: string[] };
 
-  it('reports 5 held and 1 violated from the manifest line, at the tree\'s seed — three held by lines, three walks', async () => {
+  it('reports 4 of 4 held from the manifest line, at the tree\'s seed — three held by lines, one walk', async () => {
     withClaims = await runCapturing([FERRY]);
     expect(withClaims.code).toBe(0);
     const heading = withClaims.stdout.indexOf('Claims: ferry.claims.chord');
     expect(heading).toBeGreaterThan(withClaims.stdout.findIndex((line) => line.startsWith('Rooms entered:')));
-    expect(withClaims.stdout[heading + 1]).toBe('claims: 5 of 6 held, 1 violated (seed 42)');
-    // ADR-367 D5: the lines prove three of the positive claims, so only the two
-    // `never`s and the one claim no line reaches are walked — three walks.
-    expect(withClaims.stdout[heading + 2]).toBe('3 walks');
-    const violated = withClaims.stdout.filter((line) => line.startsWith('VIOLATED'));
-    expect(violated).toHaveLength(1);
-    expect(violated[0]).toBe('VIOLATED  the ticket leaves the Ticket Hut (never) — at depth 3: north / take ticket / south');
+    expect(withClaims.stdout[heading + 1]).toBe('claims: 4 of 4 held (seed 42)');
+    // ADR-367 D5: the lines prove three of the claims, so only the one claim
+    // no line reaches is walked — one walk.
+    expect(withClaims.stdout[heading + 2]).toBe('1 walk');
+    expect(withClaims.stdout.filter((line) => line.startsWith('VIOLATED'))).toEqual([]);
+    expect(withClaims.stdout.some((line) => line.includes('(never)'))).toBe(false);
     const held = withClaims.stdout.filter((line) => line.startsWith('HELD'));
-    expect(held).toHaveLength(5);
+    expect(held).toHaveLength(4);
     expect(held.filter((line) => line.includes(' — by line ')).length).toBe(3);
     // The main line reaches the locked claim a turn before the branch's lock card does.
     expect(withClaims.stdout).toContain('HELD  the lantern is open — by line frymain1 "opening-landing" at turn 6');

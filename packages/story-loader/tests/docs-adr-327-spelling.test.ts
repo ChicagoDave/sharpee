@@ -123,6 +123,9 @@ const PARSE_BLOCKED_FENCES: ReadonlySet<string> = new Set([
   'chord/guide/flow/select-with-a-strategy/content.mdx#2',
   'chord/guide/flow/timers/content.mdx#2',
   'chord/guide/flow/timers/content.mdx#3',
+  // Its `never` claim stops at the parser since ADR-397 Phase 1 (2026-11-14).
+  // Pinned at David's direction until Phase 2 rewrites the page; remove then.
+  'chord/guide/tooling/claims/content.mdx#1',
   'chord/guide/tooling/migrating-from-removed-constructs/content.mdx#1',
   'chord/guide/vocabulary/comments/content.mdx#3',
   'chord/guide/vocabulary/define-condition/content.mdx#2',

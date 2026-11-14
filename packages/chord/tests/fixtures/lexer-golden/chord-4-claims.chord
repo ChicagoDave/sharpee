@@ -12,7 +12,7 @@ claims
   claim the key is in hand
     the player has the iron key
 
-  never the iron key leaves the Hall
+  claim the iron key leaves the Hall
     the iron key is not in the Hall
     needs rooms: the Hall
     needs things: the iron key

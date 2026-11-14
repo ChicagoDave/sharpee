@@ -218,7 +218,7 @@ describeFerry('AC-4 on the ferry — a claim\'s own verdict moves nothing (ADR-3
     const { code, stdout } = await run(() => runTestCommand([dir]));
     expect(code).toBe(0);
     expect(stdout.some((row) => row.startsWith('✗'))).toBe(false);
-    expect(stdout).toContain('claims: 4 of 6 held, 1 violated, 1 unproven (seed 42)');
+    expect(stdout).toContain('claims: 3 of 4 held, 1 unproven (seed 42)');
     expect(stdout).toContain('UNPROVEN  the timetable has been read — not reached by any line; no reachable state under its set satisfies it (the set of "the timetable has been read")');
     expect(stdout).toContain('  lock "the lantern is open" at line frywait1 "landing · wait" at turn 7 — held there');
   });

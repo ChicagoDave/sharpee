@@ -351,5 +351,15 @@
  * owner set the number at 4.0.2, so the cut is a PATCH by his ruling. The
  * EBNF hash is unchanged by the bump (the surface as re-pinned for ADR-392
  * and ADR-394 is the 4.0.2 surface).
+ *
+ * **Pending publish — ADR-397, 2026-11-14 (session 4c0c20): `never` is
+ * removed from the claims language.** A claims block holds `claim` heads
+ * only; a line headed `never` inside `claims` is `parse.claims-never`. A
+ * removed construct, which ADR-257 D2's ordinary rule makes a MAJOR; the
+ * owner sets the number when the next version is cut, not here. The EBNF
+ * hash is re-recorded. Release note: "A claims fragment with a `never` claim
+ * no longer compiles; the error names the line; delete the claim." The
+ * `never` line of a character's principles and of `define code` is a
+ * different construct and is unchanged.
  */
 export const CHORD_LANGUAGE_VERSION = '4.0.2';

@@ -493,11 +493,10 @@ export type ClaimPredicateNode =
   /** `<thing> has been <participle>` — an `on` clause of the thing has fired. */
   | { kind: 'has-been'; thing: NameRef; participle: string; span: Span };
 
-/** `claim <name>` / `never <name>` with its predicate line and its own `needs`. */
+/** `claim <name>` with its predicate line and its own `needs`. */
 export interface ClaimDecl {
   kind: 'claim';
   name: string;
-  never: boolean;
   /** Null only after a parse error that already reported the missing line. */
   predicate: ClaimPredicateNode | null;
   needs: ClaimNeedsLine[];

@@ -31,31 +31,11 @@
       }
     },
     {
-      "name": "the deed box leaves the Folly",
-      "never": true,
-      "placement": { "thing": "deed-box", "notIn": "folly" },
-      "needs": {
-        "rooms": ["iron-gates", "gravel-drive", "fountain-court", "boiler-shed", "greenhouse", "folly-hill", "folly"],
-        "things": ["tobias", "stopcock", "primer-plunger", "boiler", "folly-door", "deed-box"],
-        "verbs": ["ask", "turn", "push", "turn on", "open", "take"]
-      }
-    },
-    {
       "name": "the Study is reached",
       "room": "study",
       "needs": {
         "rooms": ["iron-gates", "gravel-drive", "fountain-court", "entrance-hall", "kitchen", "study"],
         "things": ["sherry-bottle", "mrs-kettle"],
-        "verbs": ["take", "give"]
-      }
-    },
-    {
-      "name": "the Study is reached without the sherry",
-      "never": true,
-      "room": "study",
-      "needs": {
-        "rooms": ["iron-gates", "gravel-drive", "fountain-court", "entrance-hall", "kitchen", "study"],
-        "things": ["garden-shears", "mrs-kettle"],
         "verbs": ["take", "give"]
       }
     },

@@ -13,7 +13,7 @@ import { checkCanonicalFragment } from '../src/claims/claim-fragment-gate.js';
 import { claimsFragmentWith, spliceClaimIntoFragment } from '@sharpee/chord';
 
 const BLOCK = '  claim the deed box is open\n    the deed box is open\n    needs rooms: the Folly\n    needs things: the deed box\n    needs verbs: open\n';
-const SECOND = '  never the deed box leaves the Folly\n    the deed box is not in the Folly\n    needs rooms: the Folly\n';
+const SECOND = '  claim the deed box leaves the Folly\n    the deed box is not in the Folly\n    needs rooms: the Folly\n';
 
 const problemsOf = (text: string) => {
   const check = checkCanonicalFragment(text);
@@ -56,7 +56,7 @@ describe('departures are named by block and line', () => {
     expect(problemsOf(`claims\n${BLOCK}${SECOND}end claims\n`))
       .toEqual(['claim the deed box is open:7: the next block follows without a blank line']);
     expect(problemsOf(`claims\n${BLOCK}\n\n${SECOND}end claims\n`))
-      .toEqual(['never the deed box leaves the Folly:9: 2 blank lines before the block; the lock writes exactly one']);
+      .toEqual(['claim the deed box leaves the Folly:9: 2 blank lines before the block; the lock writes exactly one']);
   });
 
   it('indentation, tabs, trailing whitespace, a missing newline, a missing end', () => {

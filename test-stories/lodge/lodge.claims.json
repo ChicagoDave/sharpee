@@ -1,6 +1,6 @@
 {
   "story": "lodge",
-  "source": "compiled from lodge.claims.chord; the tenth claim was locked by `sharpee claim ldgmain1 \"the strongbox is open\" --at 6`, its set proposed from the line",
+  "source": "compiled from lodge.claims.chord; the last claim was locked by `sharpee claim ldgmain1 \"the strongbox is open\" --at 6`, its set proposed from the line",
   "rooms": [
     "porch",
     "hall",
@@ -78,30 +78,6 @@
       }
     },
     {
-      "name": "the strongbox leaves the Vault",
-      "never": true,
-      "needs": {
-        "rooms": [
-          "porch",
-          "hall",
-          "pantry",
-          "vault"
-        ],
-        "things": [
-          "valve",
-          "strongbox"
-        ],
-        "verbs": [
-          "turn",
-          "take"
-        ]
-      },
-      "placement": {
-        "thing": "strongbox",
-        "notIn": "vault"
-      }
-    },
-    {
       "name": "the Study is reached",
       "needs": {
         "rooms": [
@@ -112,27 +88,6 @@
         ],
         "things": [
           "brandy",
-          "warden"
-        ],
-        "verbs": [
-          "take",
-          "give"
-        ]
-      },
-      "room": "study"
-    },
-    {
-      "name": "the Study is reached without the brandy",
-      "never": true,
-      "needs": {
-        "rooms": [
-          "porch",
-          "hall",
-          "pantry",
-          "study"
-        ],
-        "things": [
-          "hand-bell",
           "warden"
         ],
         "verbs": [

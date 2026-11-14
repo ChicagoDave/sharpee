@@ -118,7 +118,7 @@ claims
   claim the Landing is reached
     the player is in the Landing
 
-  never the note leaves the Hall
+  claim the note leaves the Hall
     the note is not in the Hall
 
   claim the note is boxed
@@ -158,7 +158,7 @@ describe('compileClaims — the Fernhill-shaped fragment', () => {
       { name: 'the box stands open', flag: { thing: 'box', trait: 'openable', field: 'isOpen', value: true } },
       { name: 'the evening comes', state: { entity: 'story', value: 'evening' } },
       { name: 'the Landing is reached', room: 'landing' },
-      { name: 'the note leaves the Hall', never: true, placement: { thing: 'note', notIn: 'hall' } },
+      { name: 'the note leaves the Hall', placement: { thing: 'note', notIn: 'hall' } },
       { name: 'the note is boxed', placement: { thing: 'note', in: 'box' } },
       { name: 'the note answered reading', fired: 'note.reading' },
     ]);
@@ -255,6 +255,42 @@ describe('parse errors, each by code', () => {
     expect(codes(`claims\n${NEEDS}\n  claim c\n    the note is read\n`)).toEqual(['parse.claims-end']);
   });
 
+  describe('a `never` head is refused', () => {
+    const POSITIVE = '  claim the note is read\n    the note is read\n';
+    const NEVER = '  never the note leaves the Hall\n    the note is not in the Hall\n    needs verbs: take\n';
+
+    it('with exactly one error on the head line, its message pinned, and no claim set returned', () => {
+      const result = compileClaims(STORY, `claims\n${NEEDS}\n${POSITIVE}\n${NEVER}end claims\n`);
+      const errors = result.diagnostics.filter((d) => d.severity === 'error');
+      expect(errors.map((d) => d.code)).toEqual(['parse.claims-never']);
+      // Lines: claims, three needs, blank, two of the positive claim, blank, then the head.
+      expect(errors[0].span.line).toBe(9);
+      expect(errors[0].span.endLine).toBe(9);
+      expect(errors[0].message).toBe(
+        '`never` is not part of the claims language: a claim states something the story can reach. Remove `never the note leaves the Hall` and the lines under it.',
+      );
+      expect(result.ok).toBe(false);
+      expect(result.claims).toBeNull();
+    });
+
+    it('a block whose only head is a `never` reports that code alone, not an empty block as well', () => {
+      expect(codes(`claims\n${NEEDS}\n${NEVER}end claims\n`)).toEqual(['parse.claims-never']);
+    });
+
+    it('the lines under a refused head report nothing of their own, however malformed', () => {
+      expect(codes(`claims\n${NEEDS}\n${POSITIVE}\n  never the note leaves the Hall\n    wants the Hall\n    needs doors: the Hall\nend claims\n`)).toEqual(['parse.claims-never']);
+    });
+
+    it('two `never` heads are two errors, one per head', () => {
+      expect(codes(`claims\n${NEEDS}\n${NEVER}\n  never the kettle boils\n    the kettle is hot\nend claims\n`)).toEqual(['parse.claims-never', 'parse.claims-never']);
+    });
+
+    it('the message carries no decision-record reference', () => {
+      const result = compileClaims(STORY, `claims\n${NEEDS}\n${NEVER}end claims\n`);
+      expect(result.diagnostics[0].message).not.toMatch(/ADR|D\d/);
+    });
+  });
+
   it('the claim-only forms refuse their malformed spellings', () => {
     expect(codes(`claims\n${NEEDS}\n  claim c\n    the story ends\nend claims\n`)).toEqual(['parse.claim-ending']);
     expect(codes(`claims\n${NEEDS}\n  claim c\n    Mo was asked about the weather\nend claims\n`)).toEqual(['parse.claim-asked']);
@@ -319,11 +355,11 @@ describe('writing a claim — the fragment syntax Chord writes beside its parser
     ]);
   });
 
-  it('a negative claim is written `never`, and an empty list writes no `needs` line', () => {
-    const block = renderClaimBlock({ name: 'the box leaves the Hall', never: true, predicate: 'the box is not in the Hall', needs: { rooms: [], things: ['the box'] } });
-    expect(block).toBe('  never the box leaves the Hall\n    the box is not in the Hall\n    needs things: the box\n');
+  it('an empty list writes no `needs` line, and the head is always `claim`', () => {
+    const block = renderClaimBlock({ name: 'the box leaves the Hall', predicate: 'the box is not in the Hall', needs: { rooms: [], things: ['the box'] } });
+    expect(block).toBe('  claim the box leaves the Hall\n    the box is not in the Hall\n    needs things: the box\n');
     const result = compileClaims(STORY, `claims\n${block}end claims\n`);
-    expect(result.claims?.claims[0]).toMatchObject({ name: 'the box leaves the Hall', never: true, placement: { thing: 'box', notIn: 'hall' } });
+    expect(result.claims?.claims[0]).toEqual({ name: 'the box leaves the Hall', needs: { things: ['box'] }, placement: { thing: 'box', notIn: 'hall' } });
   });
 
   it('a second claim spliced before `end claims` compiles beside the first', () => {

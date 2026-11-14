@@ -197,7 +197,7 @@ describe('ADR-258 D7 — lexer golden conformance pin', () => {
       'claims block': /^claims$[\s\S]+?^end claims$/m,
       'claims needs line': /^ {2}needs (rooms|things|verbs): /m,
       'claim head': /^ {2}claim .+$/m,
-      'never head': /^ {2}never .+$/m,
+      'claim with needs of its own': /^ {2}claim .+\n {4}.+\n {4}needs rooms: /m,
     };
     for (const [construct, pattern] of Object.entries(constructs)) {
       expect(pattern.test(all), `corpus no longer exercises: ${construct}`).toBe(true);

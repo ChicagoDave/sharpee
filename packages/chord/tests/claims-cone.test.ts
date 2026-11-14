@@ -161,7 +161,7 @@ ${PHRASES}`;
 }
 
 const THINGS = ['pebble', 'apple', 'bell', 'banana', 'loaf', 'brass-key', 'box', 'coin'];
-const GATE_CLAIM = { name: 'the player reaches the Gate', never: true as const, room: 'gate' };
+const GATE_CLAIM = { name: 'the player reaches the Gate', room: 'gate' };
 const CALM_SET = { rooms: ['square', 'lane', 'gate'], things: THINGS, verbs: ['take', 'drop', 'open', 'unlock'] };
 
 function irOf(source: string) {
@@ -175,7 +175,7 @@ const lineOf = (source: string, text: string) => source.split('\n').findIndex((l
 /** 1-based line of the first source line equal to `text`. */
 const exactLineOf = (source: string, text: string) => source.split('\n').findIndex((line) => line === text) + 1;
 
-describe('claimCone — what a never-reaches-the-Gate claim can depend on', () => {
+describe('claimCone — what a reaches-the-Gate claim can depend on', () => {
   it('under a set that keeps the story calm, only the thing whose rule moves the player is kept', () => {
     const source = story();
     const cone = claimCone(irOf(source), GATE_CLAIM, CALM_SET);
@@ -243,7 +243,7 @@ claims
   needs things: the pebble, the apple, the bell, the banana, the loaf, the brass key, the box, the coin
   needs verbs: take, drop, open, unlock
 
-  never the player reaches the Gate
+  claim the player reaches the Gate
     the player is in the Gate
 
   claim the coin is in hand
@@ -282,13 +282,13 @@ end claims
     expect(tight).toEqual([]);
     expect(result.diagnostics.filter((d) => d.severity === 'error')).toEqual([]);
     expect(result.claims?.things).toEqual(['pebble', 'apple', 'bell', 'banana', 'loaf', 'brass-key', 'box', 'coin']);
-    expect(result.claims?.claims[0]).toEqual({ name: 'the player reaches the Gate', never: true, room: 'gate' });
+    expect(result.claims?.claims[0]).toEqual({ name: 'the player reaches the Gate', room: 'gate' });
     expect(result.ir).toEqual(compile(story()).ir);
   });
 
   it('AC-9 shape 3 — a ware whose state guards an exit is kept with the guard line named; a decorative ware beside it is reported inert on the needs things line', () => {
     const source = story({ laneExtra: '  east is blocked while the loaf is shelved: loaf-guard\n' });
-    const fragment = 'claims\n  needs rooms: the Square, the Lane, the Gate\n  needs things: the loaf, the pebble\n  needs verbs: take\n\n  never the player reaches the Gate\n    the player is in the Gate\nend claims\n';
+    const fragment = 'claims\n  needs rooms: the Square, the Lane, the Gate\n  needs things: the loaf, the pebble\n  needs verbs: take\n\n  claim the player reaches the Gate\n    the player is in the Gate\nend claims\n';
     const result = compileClaims(source, fragment, { claimsFile: 'guard.claims.chord' });
     expect(result.ok).toBe(true);
     const finding = result.diagnostics.find((d) => d.code === 'analysis.claim-inert-needs')!;
@@ -302,7 +302,7 @@ end claims
   });
 
   it('when every thing is inert the finding says the line can go', () => {
-    const fragment = 'claims\n  needs rooms: the Square, the Lane, the Gate\n  needs things: the pebble, the loaf\n  needs verbs: take\n\n  never the player reaches the Gate\n    the player is in the Gate\nend claims\n';
+    const fragment = 'claims\n  needs rooms: the Square, the Lane, the Gate\n  needs things: the pebble, the loaf\n  needs verbs: take\n\n  claim the player reaches the Gate\n    the player is in the Gate\nend claims\n';
     const result = compileClaims(story(), fragment);
     const finding = result.diagnostics.find((d) => d.code === 'analysis.claim-inert-needs')!;
     expect(finding.message).toBe('`the player reaches the Gate` depends on none of the 2 things in its set — under this set nothing it depends on reads pebble, loaf. The walk still runs the set as written; the line can go.');

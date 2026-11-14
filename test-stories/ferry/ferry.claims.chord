@@ -1,6 +1,5 @@
 ## The ferry's claims. The tree's lines reach the first three; the timetable
-## is read by no line, so only a walk proves it; the two `never` claims are
-## always walked.
+## is read by no line, so only a walk proves it.
 
 claims
   needs rooms: the Landing, the Ticket Hut, the Deck
@@ -18,18 +17,6 @@ claims
     needs rooms: the Landing
     needs things: the timetable
     needs verbs: read
-
-  never the ticket leaves the Ticket Hut
-    the ticket is not in the Ticket Hut
-    needs rooms: the Landing, the Ticket Hut
-    needs things: the ticket
-    needs verbs: take
-
-  never the Far Bank is reached
-    the player is in the Far Bank
-    needs rooms: the Landing, the Ticket Hut, the Deck, the Far Bank
-    needs things: the lever, the ferry
-    needs verbs: pull
 
   claim the lantern is open
     the lantern is open

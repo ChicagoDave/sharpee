@@ -74,7 +74,6 @@ const YIELD_EVERY = 200;
 /** The runner's discriminated predicate as the compiler's flat `IRClaim`, which the cone takes. */
 function irClaimOf(claim: Claim): IRClaim {
   const out: IRClaim = { name: claim.name };
-  if (claim.never) out.never = true;
   const predicate = claim.predicate;
   switch (predicate.kind) {
     case 'ending':

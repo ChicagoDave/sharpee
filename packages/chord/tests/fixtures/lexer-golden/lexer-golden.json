@@ -4332,11 +4332,11 @@
     {
       "lineNo": 15,
       "indent": 2,
-      "raw": "  never the iron key leaves the Hall",
+      "raw": "  claim the iron key leaves the Hall",
       "tokens": [
         {
           "kind": "word",
-          "text": "never",
+          "text": "claim",
           "span": {
             "line": 15,
             "column": 3,

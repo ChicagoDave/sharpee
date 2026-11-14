@@ -267,7 +267,11 @@ const PINNED = {
   // `analysis.story-action-on-clause` and `analysis.story-action-bare-head`
   // (a thing's own `on` clause or a bare head naming a story action, which
   // never runs). No production changes.
-  ebnfSha256: '42a891c8ed09cf6b521fd83e6189833f0bdbf674ebda9c86f5f7e304073e2454',
+  // Re-pinned 2026-11-14 (session 4c0c20, ADR-397 D1): `claim-decl` loses
+  // its `never` alternative, and a line headed `never` inside `claims` is
+  // `parse.claims-never`. A REMOVAL, on the claims fragment only; the
+  // version stays 4.0.2 (the number moves at publish).
+  ebnfSha256: '93a8f0c71d3bf3aff0013b4c5aa5b12df94a12fa46cf43086d248afc767e8dfd',
 };
 
 // Colocated with the version pin it gates (2026-08-14). It previously lived at

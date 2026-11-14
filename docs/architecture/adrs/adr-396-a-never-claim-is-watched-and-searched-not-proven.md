@@ -1,6 +1,6 @@
 # ADR-396: A `never` claim is watched and searched, and is never called held
 
-**Status**: **ACCEPTED** (David, 2026-11-14, session 9c75a4: "yes", after the interview and a clean review. Written the same session at his direction, "C then B": measure first, then one record for the redesign. Nothing here is built. Its first eight open questions were answered by David in the same session's interview, and each answer is recorded in the decision it settled. A review the same session found three more, which he answered the same way. No question is open.)
+**Status**: **SUPERSEDED by ADR-397** (2026-11-14, session 4c0c20. Never built: David ended the build at its first design checkpoint, and `never` is removed from the claims language instead. This record stands as what was measured and decided before that.) Previously **ACCEPTED** (David, 2026-11-14, session 9c75a4: "yes", after the interview and a clean review. Written the same session at his direction, "C then B": measure first, then one record for the redesign. Nothing here is built. Its first eight open questions were answered by David in the same session's interview, and each answer is recorded in the decision it settled. A review the same session found three more, which he answered the same way. No question is open.)
 
 ## Date: 2026-11-14
 

@@ -1,6 +1,6 @@
 /**
- * claims-cone-acceptance.test.ts — ADR-365 AC-9: a negative claim whose set
- * is padded with things that cannot bear on it.
+ * claims-cone-acceptance.test.ts — ADR-365 AC-9: a claim whose set is
+ * padded with things that cannot bear on it.
  *
  * ADR-365 AC-8 measured the case on a real story: a claim over a market's
  * rooms and twenty-six wares did not finish in 600 seconds, because every
@@ -9,8 +9,8 @@
  * finding names them all and proposes dropping the line. This test pins the
  * same finding on the test story `test-stories/bazaar` (three rooms, eight
  * wares; its test set: OB-20, OB-21), and then walks the trimmed set, the
- * rooms alone, which holds by exhaustion on the real engine. The padded set
- * is never walked. Skipped when the test stories are not configured.
+ * rooms alone, which holds the claim by its one-command witness on the real
+ * engine. The padded set is never walked. Skipped when the test stories are not configured.
  *
  * Owner context: branch-tester test suite (tooling).
  */
@@ -71,11 +71,11 @@ describeWithCorpus("AC-9 — the bazaar's claim, its set padded with wares that 
     expect(finding.span.line).toBe(fragment.split('\n').findIndex((line) => line.includes('needs things:')) + 1);
     const named = /nothing it depends on reads (.*)\. The walk still runs/.exec(finding.message)?.[1].split(', ');
     expect(named).toEqual(WARES);
-    expect(finding.message).toContain('`the shopper reaches the Back Lane` depends on none of the 8 things in its set');
+    expect(finding.message).toContain('`the shopper reaches the Lamp Stall` depends on none of the 8 things in its set');
     expect(finding.message).toMatch(/the line can go\.$/);
   });
 
-  it('the trimmed set — the rooms alone — holds the claim by exhaustion on the real engine', async () => {
+  it('the trimmed set — the rooms alone — holds the claim on the real engine, by its one-command witness', async () => {
     const claimSet = normalizeClaimSet(
       {
         story: 'bazaar',
@@ -83,18 +83,15 @@ describeWithCorpus("AC-9 — the bazaar's claim, its set padded with wares that 
         rooms: ROOMS,
         things: [],
         verbs: ['take', 'drop'],
-        claims: [{ name: 'the shopper reaches the Back Lane', never: true, room: 'back-lane' }],
+        claims: [{ name: 'the shopper reaches the Lamp Stall', room: 'lamp-stall' }],
       },
       'bazaar (trimmed)',
     );
     const result = await runClaims(compileStory(STORY!), claimSet, loaderFor(STORY!), { seed: SEED, maxStates: 300_000, maxSeconds: 60, maxDepth: 60 });
     const [claim] = result.claims;
-    expect([claim.verdict, claim.settledBy, claim.thingsInSet, claim.inertInSet]).toEqual(['held', 'exhaustion', 0, 0]);
-    expect(result.walks[0].stopReason).toBe('frontier-exhausted');
-    // Two rooms are reachable and the chained gate is tried from one of them. The walk sees four states,
-    // not two: arriving in a room for the first time is state the identity counts (2 before 2026-11-12,
-    // when the identity was an include list that left the visited marks out).
-    expect(result.walks[0].statesDiscovered).toBe(4);
+    expect([claim.verdict, claim.settledBy, claim.thingsInSet, claim.inertInSet]).toEqual(['held', 'witness', 0, 0]);
+    expect(claim.witness).toEqual(['east']);
+    expect(result.walks[0].stopReason).toBe('all-claims-settled');
     expect(result.totalWalkMs).toBeLessThan(10_000);
   });
 });

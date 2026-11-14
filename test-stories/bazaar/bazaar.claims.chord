@@ -7,6 +7,6 @@ claims
   needs things: the fig, the plum, the ribbon, the thimble, the comb, the wick, the flint, the snuffer
   needs verbs: take, drop
 
-  never the shopper reaches the Back Lane
-    the player is in the Back Lane
+  claim the shopper reaches the Lamp Stall
+    the player is in the Lamp Stall
 end claims

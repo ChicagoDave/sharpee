@@ -123,7 +123,9 @@ claims-block = "claims" NL                        (* parse.claims-head: nothing 
                  >>> { needs-line } claim-decl { claim-decl }
                "end" "claims" NL ;                (* parse.claims-empty: no claim;
                                                      parse.claims-line: a line the block
-                                                     does not know *)
+                                                     does not know; a line headed `never`
+                                                     is parse.claims-never — a claim
+                                                     states what the story can reach *)
 needs-line   = "needs" ( "rooms" | "things" ) ":" name { "," [ "and" ] name } NL
              | "needs" "verbs" ":" verb-phrase { "," verb-phrase } NL ;
                                                   (* ADR-365 D2: one key of the necessary
@@ -139,13 +141,9 @@ needs-line   = "needs" ( "rooms" | "things" ) ":" name { "," [ "and" ] name } NL
                                                      Empty or ill-formed: parse.claim-needs *)
 verb-phrase  = WORD { WORD } ;                     (* a command prefix the walk may type:
                                                      `turn on` *)
-claim-decl   = ( "claim" | "never" ) rest-of-line NL
+claim-decl   = "claim" rest-of-line NL
                                                   (* the name is the sentence the report
-                                                     prints (parse.claim-name when absent);
-                                                     `never` heads the negative claim —
-                                                     violated by its first witness, held
-                                                     only when the walk exhausts its set
-                                                     (ADR-365 D3) *)
+                                                     prints (parse.claim-name when absent) *)
                  >>> claim-predicate { needs-line } ;
                                                   (* exactly one predicate line:
                                                      parse.claim-no-predicate /
@@ -175,7 +173,7 @@ claim-predicate = "the" "story" "ends" "in" WORD NL  (* `victory` | `defeat`
                                                      is in <room>`; `the player has
                                                      <thing>`; `the story is <state>`.
                                                      `is not <state>` is claims.predicate-
-                                                     negated (head the claim `never`);
+                                                     negated;
                                                      anything else is claims.predicate-
                                                      unsupported. parse.claim-predicate:
                                                      words after the condition *)

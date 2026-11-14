@@ -52,7 +52,6 @@ export interface IRClaimNeeds {
 /** One claim, with exactly one of the seven predicate keys. */
 export interface IRClaim {
   name: string;
-  never?: true;
   needs?: IRClaimNeeds;
   ending?: { kind?: string };
   room?: string;
@@ -262,7 +261,6 @@ class ClaimsLowering {
 
   private lowerClaim(claim: ClaimDecl): IRClaim {
     const out: IRClaim = { name: claim.name };
-    if (claim.never) out.never = true;
     if (claim.needs.length) out.needs = this.needsOf(claim.needs);
     if (claim.predicate) Object.assign(out, this.lowerPredicate(claim.predicate, claim));
     return out;
@@ -315,7 +313,7 @@ class ClaimsLowering {
 
     if (predicate.kind === 'is') {
       if (predicate.negated) {
-        this.error('claims.predicate-negated', `\`${claim.name}\`: a claim says what holds — for what never holds, head it with \`never\` instead of \`is not\`.`, predicate.span);
+        this.error('claims.predicate-negated', `\`${claim.name}\`: a claim states what holds — name the state \`${subjectRef.words.join(' ')}\` is in, not one it is not in.`, predicate.span);
         return {};
       }
       const value = valueWord(predicate.value);
@@ -348,7 +346,7 @@ class ClaimsLowering {
       if (!subject || !place) return {};
       if (subject.id === 'player') {
         if (predicate.negated) {
-          this.error('claims.predicate-negated', `\`${claim.name}\`: claim the room the player reaches; for a room the player never reaches, head the claim with \`never\`.`, predicate.span);
+          this.error('claims.predicate-negated', `\`${claim.name}\`: a claim states what holds — claim the room the player reaches.`, predicate.span);
           return {};
         }
         if (!place.isRoom) {
@@ -449,8 +447,6 @@ function stemsOf(word: string): Set<string> {
 /** One claim to write: its name, its one predicate sentence, and its own needs, names as the fragment spells them. */
 export interface ClaimBlockSource {
   readonly name: string;
-  /** A negative claim: written `never <name>`. */
-  readonly never?: boolean;
   readonly predicate: string;
   readonly needs?: { readonly rooms?: readonly string[]; readonly things?: readonly string[]; readonly verbs?: readonly string[] };
 }
@@ -468,7 +464,7 @@ export interface ClaimBlockSource {
 export function renderClaimBlock(claim: ClaimBlockSource): string {
   if (claim.name.trim() === '') throw new Error('a claim needs a name');
   if (claim.predicate.trim() === '') throw new Error(`the claim "${claim.name}" needs a predicate`);
-  const lines = [`  ${claim.never ? 'never' : 'claim'} ${claim.name}`, `    ${claim.predicate}`];
+  const lines = [`  claim ${claim.name}`, `    ${claim.predicate}`];
   for (const key of ['rooms', 'things', 'verbs'] as const) {
     const names = claim.needs?.[key] ?? [];
     if (names.length > 0) lines.push(`    needs ${key}: ${names.join(', ')}`);

@@ -5350,9 +5350,11 @@ class Parser {
 
   /**
    * `claims … end claims` (ADR-365 D7): `needs` lines for the shared
-   * necessary set at the block's indent, and `claim <name>` / `never <name>`
-   * heads each followed by a deeper-indented body — one predicate line and
-   * any `needs` lines of its own.
+   * necessary set at the block's indent, and `claim <name>` heads each
+   * followed by a deeper-indented body — one predicate line and any `needs`
+   * lines of its own. A head written `never` is refused once, on its own
+   * line, and the lines under it are consumed without a second diagnostic:
+   * a claim states something the story can reach (ADR-397 D1).
    */
   private parseClaims(): ClaimsDecl {
     const headLine = this.lines[this.pos++];
@@ -5362,6 +5364,9 @@ class Parser {
       this.diagnostics.error('parse.claims-head', `A claims block opens with \`claims\` alone — \`${restText(hc)}\` does not belong on this line.`, hc.restSpan());
     }
     const decl: ClaimsDecl = { kind: 'claims', needs: [], claims: [], span: lineSpan(headLine) };
+    // A refused `never` head is its own error; an otherwise empty block does
+    // not report `parse.claims-empty` on top of it.
+    let refusedNeverHead = false;
     while (this.pos < this.lines.length) {
       const line = this.lines[this.pos];
       const word = firstWord(line);
@@ -5369,8 +5374,8 @@ class Parser {
       if (word === 'end' && lc.isWord('claims', 1)) {
         this.pos++;
         decl.span = mergeSpans(decl.span, lineSpan(line));
-        if (decl.claims.length === 0) {
-          this.diagnostics.error('parse.claims-empty', 'This `claims` block declares no claims — add `claim <name>` or `never <name>` heads, or remove the block.', decl.span);
+        if (decl.claims.length === 0 && !refusedNeverHead) {
+          this.diagnostics.error('parse.claims-empty', 'This `claims` block declares no claims — add `claim <name>` heads, or remove the block.', decl.span);
         }
         return decl;
       }
@@ -5386,13 +5391,28 @@ class Parser {
         this.pos++;
         continue;
       }
-      if (word === 'claim' || word === 'never') {
+      if (word === 'claim') {
         decl.claims.push(this.parseClaim(line));
+        continue;
+      }
+      if (word === 'never') {
+        this.diagnostics.error(
+          'parse.claims-never',
+          `\`never\` is not part of the claims language: a claim states something the story can reach. Remove \`${line.raw.trim()}\` and the lines under it.`,
+          lineSpan(line),
+        );
+        refusedNeverHead = true;
+        this.pos++;
+        // The refused head's body: every deeper-indented line, consumed unread.
+        while (this.pos < this.lines.length && this.lines[this.pos].indent > line.indent) {
+          decl.span = mergeSpans(decl.span, lineSpan(this.lines[this.pos]));
+          this.pos++;
+        }
         continue;
       }
       this.diagnostics.error(
         'parse.claims-line',
-        `Unrecognized line in \`claims\`: \`${line.raw.trim()}\` — expected \`needs rooms|things|verbs: …\`, \`claim <name>\`, \`never <name>\` or \`end claims\`.`,
+        `Unrecognized line in \`claims\`: \`${line.raw.trim()}\` — expected \`needs rooms|things|verbs: …\`, \`claim <name>\` or \`end claims\`.`,
         lineSpan(line),
       );
       this.pos++;
@@ -5442,19 +5462,19 @@ class Parser {
   }
 
   /**
-   * `claim <name>` / `never <name>` and its body: exactly one predicate line,
-   * plus `needs` lines that replace the keys they name in the shared set.
+   * `claim <name>` and its body: exactly one predicate line, plus `needs`
+   * lines that replace the keys they name in the shared set.
    */
   private parseClaim(headLine: Line): ClaimDecl {
     this.pos++;
     const hc = new Cursor(headLine.tokens, headLine);
-    const keyword = hc.next()!; // claim | never
+    const keyword = hc.next()!; // claim
     const nameWords: string[] = [];
     while (!hc.atEnd()) nameWords.push(hc.next()!.text);
     if (nameWords.length === 0) {
       this.diagnostics.error('parse.claim-name', `A claim needs a name after \`${keyword.text}\` — the sentence the report prints, such as \`claim the story can be won\`.`, lineSpan(headLine));
     }
-    const decl: ClaimDecl = { kind: 'claim', name: nameWords.join(' '), never: keyword.text === 'never', predicate: null, needs: [], span: lineSpan(headLine) };
+    const decl: ClaimDecl = { kind: 'claim', name: nameWords.join(' '), predicate: null, needs: [], span: lineSpan(headLine) };
     while (this.pos < this.lines.length) {
       const line = this.lines[this.pos];
       if (looksLikeComment(line)) {
