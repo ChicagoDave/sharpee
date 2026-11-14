@@ -299,6 +299,47 @@ was played from it too. Chapter 35's systems (combat, hunger) are not in the gam
 - `use expanses` and `use sailing` are header lines beside `use scoring` and `use chapters`. A
   fourth chapter, `crossing`, begins `when the story becomes awake`.
 
+Part VII compiles at Chord 4.0.2 and was played on 2026-11-14 (session d16329). The walk is Part
+VI's, unchanged: 57 commands and a `score`, 50 of 50, Lamplighter; the cracked-lens ending plays.
+Prose was checked with `sharpee play`; what the page would be sent was read from the event stream
+(`node dist/cli/sharpee.js --story <file> --exec "…" --debug`), since `play` shows prose only.
+
+- The assets are `define sound tolling from "audio/toll.ogg"`, `define sound lapping from …` and
+  `define image lantern-lit-picture from "img/lantern-lit.png"`. None of the files exists yet; the
+  compile gate and `play` do not ask for them. They have to be made before chapter 40's build.
+- Across the walk the stream carried, in order: `media.sound.play` at the bell's first stroke,
+  `media.image.show` when the Lantern lights, `media.ambient.play` (channel `main`) on entering the
+  Heron, and `media.ambient.stop` and `media.image.hide` when the beacon lights.
+- A played sound is also a sound in the world, and a player in earshot is told "You hear
+  <name>." in the sound's own name, with no message a story can override. `play sound toll` on
+  every turn printed "You hear toll." beside the game's own toll prose. Issue #713. The game plays
+  one sound, once: `play sound tolling` in the header's `when waking expires`. Fired there, on the
+  turn the role moves to Hobb, it printed no "You hear" line. The lamp's catch and the per-turn
+  toll have no sound until #713 is settled.
+- `listener` on the wisp and `after hearing the tolling, once` work: the wisp's flinch printed on
+  that turn. Its prose is written from outside ("Somewhere in the Hall a small blue light …")
+  because the player is Hobb when it prints.
+- `emit` cannot reach a platform event. `emit media.sound.play …` is `parse.dotted-key`; `emit
+  media sound play …` compiles and sends an event named with the spaces in. Also #713. `emit` is
+  for the story's own events, which is what the panel uses.
+- The panel is `define channel workings`, `mode append`, `return "(working): (gloss)" from
+  relighting-working-learned`. Each page's first reading runs `emit relighting-working-learned with
+  working "kindle" and gloss "wakes a flame"`; the four events appeared with their payloads on the
+  turns the pages were read. How the panel looks on the page is not yet seen: that needs the
+  browser build.
+- The header's client fields are `client: browser`, `theme: paper`, `themes: paper, modern-dark`,
+  `default-theme: paper`, `storage-prefix: relighting`. The built-in themes are modern-dark,
+  retro-terminal, paper and system-6. An unknown theme name passes `compose --check` and fails
+  only at `sharpee build` (in #713).
+- `sharpee build relighting.story` was tried in a scratch directory outside the repository. It
+  validated the story, wrote the IR, accepted the themes, minted an `ifid` into a new
+  `relighting.config.json` beside the story, and then failed at bundling because the platform
+  packages do not resolve from outside the workspace. The build is chapter 40's; it gets run
+  inside the repository in Part VIII. Chapter 2 or 40 has to say where the `ifid` goes.
+- Not in the game: `define music`, `define ambient` and `define layer` (named beds and layers),
+  `transition`, `clear`, `client has <capability>`, `gated by`, `template`, and channel records.
+  Chapters 36 and 37 need a short standalone example for each, or the game needs a reason for one.
+
 ## Open points in the design
 
 - Every mechanic above is a reading of the grammar. Each is proven, or changed, when its snapshot
