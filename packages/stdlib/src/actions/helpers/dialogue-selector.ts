@@ -32,7 +32,8 @@
  *
  * Public interface: consultDialogueSelector, exchangeGrips, threadGrips,
  *   resolveImplicitThreadPartner, resolveOpenExchangeSpeaker,
- *   runConversationScene, closeConversationScene, resolveSceneIntrusion,
+ *   runConversationScene, placeMannerBeats, MANNER_BEAT_EVENT,
+ *   closeConversationScene, resolveSceneIntrusion,
  *   isExchangeGripped, markExchangeGripped, isThreadGripped,
  *   markThreadGripped.
  * Owner context: stdlib / actions / helpers
@@ -243,6 +244,57 @@ function toSceneEvent(context: ActionContext, wire: SceneWireEvent): ISemanticEv
   return context.event(`character.scene.${wire.kind}`, { ...wire });
 }
 
+/** The event type of a manner beat's prose event (GH #710). */
+export const MANNER_BEAT_EVENT = 'character.manner.beat';
+
+/**
+ * Print the manner beats a firing's report carries (ADR-320 D5; GH #710).
+ * A `character.scene.utterance` or `character.scene.rendered-silence`
+ * event is wire data the prose pipeline never renders, so each beat key on
+ * one becomes a `character.manner.beat` event whose `messageId` is the
+ * beat's phrase key: the same split `thread-parting` uses. A beat prints
+ * only when its wire event is in the report, so the two cannot disagree.
+ *
+ * The beat events are inserted AHEAD of the action's answer event: a beat
+ * is stage business that leads into the line it colors. The conversation
+ * actions call this last, after the interceptor hooks, because a topic
+ * table answers through an interceptor and its utterance joins the report
+ * only then.
+ *
+ * @param context - The action context (stamps the events)
+ * @param events - The action's finished report; mutated in place
+ * @param answerEventType - The action's answer event (`if.event.asked` and its kin)
+ */
+export function placeMannerBeats(
+  context: ActionContext,
+  events: ISemanticEvent[],
+  answerEventType: string,
+): void {
+  const beats: ISemanticEvent[] = [];
+  for (const event of events) {
+    if (
+      event.type !== 'character.scene.utterance' &&
+      event.type !== 'character.scene.rendered-silence'
+    ) {
+      continue;
+    }
+    const wire = event.data as Extract<SceneWireEvent, { kind: 'utterance' | 'rendered-silence' }>;
+    for (const beatKey of wire.beats) {
+      beats.push(
+        context.event(MANNER_BEAT_EVENT, {
+          messageId: beatKey,
+          params: {},
+          sceneId: wire.sceneId,
+          speakerId: wire.speakerId,
+        }),
+      );
+    }
+  }
+  if (beats.length === 0) return;
+  const answerAt = events.findIndex((event) => event.type === answerEventType);
+  events.splice(answerAt < 0 ? 0 : answerAt, 0, ...beats);
+}
+
 /**
  * Wire → semantic events for a batch (ADR-320 D12): every kind as data,
  * plus the `character.thread.parting` prose event for a `thread-parting`
@@ -355,6 +407,14 @@ export function runConversationScene(
     // Foreign scene still live (a `blocks` outcome upstream): no scene
     // bookkeeping for this firing.
     return events;
+  }
+
+  // A delivery spoken on the firing that opened the scene (a greeting)
+  // could not name its scene when it was selected; it does now (GH #710).
+  if (selection?.openingUtterance) {
+    events.push(
+      toSceneEvent(context, { kind: 'utterance', sceneId: scene.id, ...selection.openingUtterance }),
+    );
   }
 
   for (const wire of selection?.wireEvents ?? []) {

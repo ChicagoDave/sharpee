@@ -13,7 +13,7 @@
  * References:
  * - ADR-335 D1 — one module per runtime section over a shared core.
  */
-import { activeThreadFor, advanceThreadBeat, arbitrateConfidedReveal, type ConversationMemoryAccess, createTraitMemoryAccess, dialogueTurn, drainPressure, markConversationTurn, openThread, parkThread, pinAllowsClaim, readyThreadMove, recordAsked, recordClaimDelivery, resumeThread, revealConfidedTopic, stampThreadContinuability, threadContinuabilityFor, threadStateFor, witnessActs } from '@sharpee/character';
+import { activeThreadFor, advanceThreadBeat, arbitrateConfidedReveal, type ConversationMemoryAccess, createTraitMemoryAccess, dialogueTurn, drainPressure, markConversationTurn, openThread, parkThread, pinAllowsClaim, readyThreadMove, recordAsked, recordClaimDelivery, resumeThread, revealConfidedTopic, selectMannerBeat, stampThreadContinuability, threadContinuabilityFor, threadStateFor, witnessActs } from '@sharpee/character';
 import { conditionRequiresSelfBreaking, type IRCondition, type IRConversation, type IREntity, type IRStatement, type IRTopicRow, normalizeTopic } from '@sharpee/chord';
 import type { ISemanticEvent } from '@sharpee/core';
 import { hasTraversableExit } from '@sharpee/stdlib';
@@ -1000,6 +1000,26 @@ export class ConversationThreadsSection {
         }
 
         if (speaker && result.override) {
+          // A served row is an utterance in the pair's scene, colored by
+          // the owner's manner like every other delivery (ADR-320 D5;
+          // GH #710). The consulting action opened the scene before this
+          // hook ran, and prints the beat ahead of the answer.
+          const scene = sceneWith(world, speaker.worldId);
+          if (scene?.participantIds.includes(actorId)) {
+            const beat = selectMannerBeat(world, speaker.worldId, entity.manner ?? [], (mannerRow) =>
+              runtime.core.evaluator.evalCondition(mannerRow.condition, { world, it: entity.id, ...frameOf(row, actorId) }),
+            );
+            const utterance: SceneWireEvent = {
+              kind: 'utterance',
+              sceneId: scene.id,
+              speakerId: speaker.worldId,
+              addresseeId: actorId,
+              messageId: result.override.messageId,
+              beats: beat ? [beat.beatKey] : [],
+            };
+            for (const event of runtime.wireToEvents([utterance])) emit.push(toEffect(event));
+          }
+
           // The mint rule (D9): a delivered claims-tagged line contradicting
           // the speaker's held belief mints a pinned ledger entry; every
           // pinned delivery deposits conscience pressure.

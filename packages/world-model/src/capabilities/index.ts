@@ -123,6 +123,7 @@ export type {
 // response affordances, carried as channel data.
 export type {
   SceneWireEvent,
+  SceneOpeningUtterance,
   AffordanceTopic,
   ResponseAffordance,
   ExchangeAffordances,

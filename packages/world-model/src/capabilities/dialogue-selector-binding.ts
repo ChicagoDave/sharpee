@@ -27,7 +27,7 @@ import type {
   ExchangeState,
   SceneBoundaryKind,
 } from '../traits/character-model/conversation-scene.js';
-import type { SceneWireEvent } from './scene-wire.js';
+import type { SceneWireEvent, SceneOpeningUtterance } from './scene-wire.js';
 
 /**
  * What the player is doing conversationally (the four D15 verbs).
@@ -115,6 +115,13 @@ export interface DialogueSelectionResult {
    * only — never player prose (ADR-310 D12).
    */
   wireEvents?: SceneWireEvent[];
+  /**
+   * The delivery this selection speaks when no scene exists yet (GH #710):
+   * a greeting on the firing that opens the scene. The consulting action
+   * opens the scene, stamps its id, and emits this as the `utterance` wire
+   * event. Never set alongside a scene the selector was handed.
+   */
+  openingUtterance?: SceneOpeningUtterance;
 }
 
 /**

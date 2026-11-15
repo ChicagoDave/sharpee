@@ -17,7 +17,7 @@ import { absenceWordFor, askedWordFor, authoredInitiativeFor, boundaryKindOnOpen
 import { type IRCondition, type IREntity, type IRExchange, type IRGreetingRow, type IRStatement, normalizeTopic } from '@sharpee/chord';
 import type { ISemanticEvent } from '@sharpee/core';
 import { hasTraversableExit } from '@sharpee/stdlib';
-import { CharacterModelTrait, type ConversationIntent, type ConversationSceneState, type DialogueSelectionResult, type DialogueSelectorRegistration, type ExchangeState, IFEntity, type InitiativeSeizure, type ResponseAffordance, type SceneDirective, type SceneOccasion, type SceneWireEvent, sceneWith, TraitType, WorldModel } from '@sharpee/world-model';
+import { CharacterModelTrait, type ConversationIntent, type ConversationSceneState, type DialogueSelectionResult, type DialogueSelectorRegistration, type ExchangeState, IFEntity, type InitiativeSeizure, type ResponseAffordance, type SceneDirective, type SceneOccasion, type SceneOpeningUtterance, type SceneWireEvent, sceneWith, TraitType, WorldModel } from '@sharpee/world-model';
 import { LoadError } from '../errors.js';
 import { worldIdOf } from '../identity.js';
 import { CHORD_OCCURRENCE_PREFIX } from '../state-keys.js';
@@ -387,18 +387,22 @@ export class DialogueSection {
     // A served delivery is a conversation in progress (ADR-310 D16).
     if (speakerTrait) markConversationTurn(speakerTrait, actorId, this.core.dialogueTurn(world));
 
-    // Manner coloring on the wire (D5; rendering is Phase 9's).
+    // Manner coloring on the wire (D5). A delivery with no scene yet (a
+    // greeting on the firing that opens it) is handed to the consulting
+    // action as `openingUtterance`, which stamps the scene it opens
+    // (GH #710); the action prints the beat ahead of the line.
     const wireEvents: SceneWireEvent[] = [];
-    if (scene && override) {
+    let openingUtterance: SceneOpeningUtterance | undefined;
+    if (override) {
       const beat = selectMannerBeat(world, npc.id, owner.manner ?? [], mannerCondition);
-      wireEvents.push({
-        kind: 'utterance',
-        sceneId: scene.id,
+      const utterance: SceneOpeningUtterance = {
         speakerId: npc.id,
         addresseeId: actorId,
         messageId: override.messageId,
         beats: beat ? [beat.beatKey] : [],
-      });
+      };
+      if (scene) wireEvents.push({ kind: 'utterance', sceneId: scene.id, ...utterance });
+      else openingUtterance = utterance;
     }
 
     if (args.canonicalTopic !== undefined && override) {
@@ -411,6 +415,7 @@ export class DialogueSection {
       ...(authorEvents.length ? { authorEvents } : {}),
       ...(directives.length ? { sceneDirectives: directives } : {}),
       ...(wireEvents.length ? { wireEvents } : {}),
+      ...(openingUtterance ? { openingUtterance } : {}),
     };
   }
 

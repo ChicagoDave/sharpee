@@ -240,8 +240,11 @@ ending was played from it too (the same walk without the mend).
   bare verbs. `feels wary of Tamsin Vey` and `feels trusts toward Ansel` both compile with a bare
   proper name.
 - `it` is refused in a `define manner` row (`analysis.it-removed`); the row names the person.
-- Manner beats never printed. They are carried on the event data and no play surface was found
-  that reads them. Issue #710. Chapter 27 cannot show a manner block doing anything until then.
+- Manner beats never printed. Only an exchange answer selected one, and nothing rendered it.
+  Issue #710, fixed 2026-11-15: a greeting, a table answer, an exchange answer and a thread line
+  each take the next beat of the matching row, printed as its own paragraph before the line. A
+  row with two beats alternates on every line the character speaks, so Hobb's two are a lot of
+  kettle; chapter 27 should say so, and the game may want a third beat or a narrower condition.
 - A conversation runs one beat per ask of any of its `about` topics. Once its last beat has opened
   an exchange and the exchange is answered, the thread is concluded and its topics answer "I don't
   know anything about that". So a bargain that can be refused needs a second way in: Tamsin's

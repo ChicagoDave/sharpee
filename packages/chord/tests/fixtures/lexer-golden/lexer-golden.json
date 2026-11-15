@@ -18913,7 +18913,7 @@
     {
       "lineNo": 49,
       "indent": 2,
-      "raw": "  when it is cheerful:",
+      "raw": "  when Will Kemp is cheerful:",
       "tokens": [
         {
           "kind": "word",
@@ -18927,12 +18927,22 @@
         },
         {
           "kind": "word",
-          "text": "it",
+          "text": "Will",
           "span": {
             "line": 49,
             "column": 8,
             "endLine": 49,
-            "endColumn": 10
+            "endColumn": 12
+          }
+        },
+        {
+          "kind": "word",
+          "text": "Kemp",
+          "span": {
+            "line": 49,
+            "column": 13,
+            "endLine": 49,
+            "endColumn": 17
           }
         },
         {
@@ -18940,9 +18950,9 @@
           "text": "is",
           "span": {
             "line": 49,
-            "column": 11,
+            "column": 18,
             "endLine": 49,
-            "endColumn": 13
+            "endColumn": 20
           }
         },
         {
@@ -18950,9 +18960,9 @@
           "text": "cheerful",
           "span": {
             "line": 49,
-            "column": 14,
+            "column": 21,
             "endLine": 49,
-            "endColumn": 22
+            "endColumn": 29
           }
         },
         {
@@ -18960,9 +18970,9 @@
           "text": ":",
           "span": {
             "line": 49,
-            "column": 22,
+            "column": 29,
             "endLine": 49,
-            "endColumn": 23
+            "endColumn": 30
           }
         }
       ],
@@ -19030,7 +19040,7 @@
     {
       "lineNo": 52,
       "indent": 2,
-      "raw": "  when it is stung:",
+      "raw": "  when Will Kemp is stung:",
       "tokens": [
         {
           "kind": "word",
@@ -19044,12 +19054,22 @@
         },
         {
           "kind": "word",
-          "text": "it",
+          "text": "Will",
           "span": {
             "line": 52,
             "column": 8,
             "endLine": 52,
-            "endColumn": 10
+            "endColumn": 12
+          }
+        },
+        {
+          "kind": "word",
+          "text": "Kemp",
+          "span": {
+            "line": 52,
+            "column": 13,
+            "endLine": 52,
+            "endColumn": 17
           }
         },
         {
@@ -19057,9 +19077,9 @@
           "text": "is",
           "span": {
             "line": 52,
-            "column": 11,
+            "column": 18,
             "endLine": 52,
-            "endColumn": 13
+            "endColumn": 20
           }
         },
         {
@@ -19067,9 +19087,9 @@
           "text": "stung",
           "span": {
             "line": 52,
-            "column": 14,
+            "column": 21,
             "endLine": 52,
-            "endColumn": 19
+            "endColumn": 26
           }
         },
         {
@@ -19077,9 +19097,9 @@
           "text": ":",
           "span": {
             "line": 52,
-            "column": 19,
+            "column": 26,
             "endLine": 52,
-            "endColumn": 20
+            "endColumn": 27
           }
         }
       ],
@@ -20577,7 +20597,7 @@
     {
       "lineNo": 88,
       "indent": 2,
-      "raw": "  on an open floor, when it is cheerful:",
+      "raw": "  on an open floor, when Will Kemp is cheerful:",
       "tokens": [
         {
           "kind": "word",
@@ -20641,12 +20661,22 @@
         },
         {
           "kind": "word",
-          "text": "it",
+          "text": "Will",
           "span": {
             "line": 88,
             "column": 26,
             "endLine": 88,
-            "endColumn": 28
+            "endColumn": 30
+          }
+        },
+        {
+          "kind": "word",
+          "text": "Kemp",
+          "span": {
+            "line": 88,
+            "column": 31,
+            "endLine": 88,
+            "endColumn": 35
           }
         },
         {
@@ -20654,9 +20684,9 @@
           "text": "is",
           "span": {
             "line": 88,
-            "column": 29,
+            "column": 36,
             "endLine": 88,
-            "endColumn": 31
+            "endColumn": 38
           }
         },
         {
@@ -20664,9 +20694,9 @@
           "text": "cheerful",
           "span": {
             "line": 88,
-            "column": 32,
+            "column": 39,
             "endLine": 88,
-            "endColumn": 40
+            "endColumn": 47
           }
         },
         {
@@ -20674,9 +20704,9 @@
           "text": ":",
           "span": {
             "line": 88,
-            "column": 40,
+            "column": 47,
             "endLine": 88,
-            "endColumn": 41
+            "endColumn": 48
           }
         }
       ],
@@ -20715,7 +20745,7 @@
     {
       "lineNo": 90,
       "indent": 2,
-      "raw": "  on an open floor, when it is stung:",
+      "raw": "  on an open floor, when Will Kemp is stung:",
       "tokens": [
         {
           "kind": "word",
@@ -20779,12 +20809,22 @@
         },
         {
           "kind": "word",
-          "text": "it",
+          "text": "Will",
           "span": {
             "line": 90,
             "column": 26,
             "endLine": 90,
-            "endColumn": 28
+            "endColumn": 30
+          }
+        },
+        {
+          "kind": "word",
+          "text": "Kemp",
+          "span": {
+            "line": 90,
+            "column": 31,
+            "endLine": 90,
+            "endColumn": 35
           }
         },
         {
@@ -20792,9 +20832,9 @@
           "text": "is",
           "span": {
             "line": 90,
-            "column": 29,
+            "column": 36,
             "endLine": 90,
-            "endColumn": 31
+            "endColumn": 38
           }
         },
         {
@@ -20802,9 +20842,9 @@
           "text": "stung",
           "span": {
             "line": 90,
-            "column": 32,
+            "column": 39,
             "endLine": 90,
-            "endColumn": 37
+            "endColumn": 44
           }
         },
         {
@@ -20812,9 +20852,9 @@
           "text": ":",
           "span": {
             "line": 90,
-            "column": 37,
+            "column": 44,
             "endLine": 90,
-            "endColumn": 38
+            "endColumn": 45
           }
         }
       ],

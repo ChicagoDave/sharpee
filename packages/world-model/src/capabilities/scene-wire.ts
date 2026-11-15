@@ -14,7 +14,7 @@
  * platform-browser/devkit without duplication (the co-located wire-type
  * rule). Every shape is platform-internal (contracts.md §7).
  *
- * Public interface: SceneWireEvent, AffordanceTopic, ResponseAffordance,
+ * Public interface: SceneWireEvent, SceneOpeningUtterance, AffordanceTopic, ResponseAffordance,
  * ExchangeAffordances, ThreadContinuability.
  * Owner context: world-model (per-world wiring surface)
  */
@@ -75,6 +75,18 @@ export type SceneWireEvent =
     }
   | { kind: 'thread-resumed'; sceneId: string; ownerId: EntityId; threadKey: string; beatCursor: number }
   | { kind: 'thread-concluded'; sceneId: string; ownerId: EntityId; threadKey: string };
+
+/**
+ * A delivery spoken on the firing that opens its scene (GH #710): the
+ * `utterance` a selector could not build, because the scene it belongs to
+ * does not exist until the consulting action opens it. The action stamps
+ * the opened scene's id and puts it on the wire as an ordinary utterance,
+ * so a greeting carries its manner beat like any later line.
+ */
+export type SceneOpeningUtterance = Omit<
+  Extract<SceneWireEvent, { kind: 'utterance' }>,
+  'kind' | 'sceneId'
+>;
 
 /**
  * What input a verbal exchange row matches (ADR-320 D12): an entity

@@ -46,10 +46,10 @@ create Alex
   You.
 
 define manner for Will Kemp
-  when it is cheerful:
+  when Will Kemp is cheerful:
     beat "He sketches half a jig step on the spot, done before it began."
     beat "He snaps his fingers at a passing thought and grins."
-  when it is stung:
+  when Will Kemp is stung:
     voice flat
 end manner
 
@@ -85,9 +85,9 @@ define topics for Will Kemp
 end topics
 
 define initiative for Will Kemp
-  on an open floor, when it is cheerful:
+  on an open floor, when Will Kemp is cheerful:
     phrase kemp-interjects
-  on an open floor, when it is stung:
+  on an open floor, when Will Kemp is stung:
     hold their tongue
   when the subject changes:
     deflect to "the offer"

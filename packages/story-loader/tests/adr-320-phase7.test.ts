@@ -209,7 +209,10 @@ const ask = (l: Loaded, npcIrId: string, text: string) =>
 const talk = (l: Loaded, npcIrId: string) =>
   run(l, talkingAction, { directObject: { entity: entity(l, npcIrId) } });
 
-const messageId = (r: { events: ISemanticEvent[] }) => (r.events[0]?.data as any)?.messageId;
+/** The answer event's message: a manner beat's own event leads the report (GH #710). */
+const ANSWER_EVENTS = ['if.event.asked', 'if.event.talked'];
+const messageId = (r: { events: ISemanticEvent[] }) =>
+  (r.events.find((e) => ANSWER_EVENTS.includes(e.type))?.data as any)?.messageId;
 const eventsOfType = (r: { events: ISemanticEvent[] }, type: string) =>
   r.events.filter((e) => e.type === type);
 
@@ -434,18 +437,25 @@ describe('per-pair memory recording (design §5)', () => {
 });
 
 describe('manner beats on the wire (AC3 — carriage half)', () => {
-  it('served exchange answers carry a beat and rotate without back-to-back repeats', () => {
+  it('every served line carries a beat and consecutive deliveries never repeat one', () => {
     const l = load();
-    ask(l, 'kemp', 'the tour');
-    const first = eventsOfType(ask(l, 'kemp', 'yes'), 'character.scene.utterance');
-    expect(first).toHaveLength(1);
-    const firstBeats = (first[0].data as any).beats as string[];
-    expect(firstBeats).toHaveLength(1);
-
-    ask(l, 'kemp', 'the tour');
-    const second = eventsOfType(ask(l, 'kemp', 'yes'), 'character.scene.utterance');
-    const secondBeats = (second[0].data as any).beats as string[];
-    expect(secondBeats).toHaveLength(1);
-    expect(secondBeats[0]).not.toBe(firstBeats[0]);
+    // A table answer takes its turn in the rotation with an exchange
+    // answer (GH #710), so the pairs compared are consecutive deliveries.
+    const beatsOf = (r: { events: ISemanticEvent[] }): string[] => {
+      const utterances = eventsOfType(r, 'character.scene.utterance');
+      expect(utterances).toHaveLength(1);
+      const beats = (utterances[0].data as any).beats as string[];
+      expect(beats).toHaveLength(1);
+      return beats;
+    };
+    const delivered = [
+      beatsOf(ask(l, 'kemp', 'the tour'))[0],
+      beatsOf(ask(l, 'kemp', 'yes'))[0],
+      beatsOf(ask(l, 'kemp', 'the tour'))[0],
+      beatsOf(ask(l, 'kemp', 'yes'))[0],
+    ];
+    for (let i = 1; i < delivered.length; i++) {
+      expect(delivered[i]).not.toBe(delivered[i - 1]);
+    }
   });
 });

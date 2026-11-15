@@ -30,6 +30,7 @@ import {
   markThreadGripped,
   threadGrips,
   runConversationScene,
+  placeMannerBeats,
   resolveSceneIntrusion
 } from '../../helpers/dialogue-selector.js';
 import {
@@ -189,6 +190,8 @@ export const tellingAction: Action & { metadata: ActionMetadata } = {
 
     const state = getLifecycleState(context);
     if (state && !isExchangeGripped(context) && !isThreadGripped(context)) runPostReport(context, state, events, 'if.event.told');
+    // A manner beat leads into the answer it colors (GH #710).
+    placeMannerBeats(context, events, 'if.event.told');
     return events;
   }
 };

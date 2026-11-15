@@ -24,7 +24,8 @@ import {
   isExchangeGripped,
   markExchangeGripped,
   resolveOpenExchangeSpeaker,
-  runConversationScene
+  runConversationScene,
+  placeMannerBeats
 } from '../../helpers/dialogue-selector.js';
 import {
   ActionLifecycleDescriptor,
@@ -153,6 +154,8 @@ export const answeringAction: Action & { metadata: ActionMetadata } = {
 
     const state = getLifecycleState(context);
     if (state && !isExchangeGripped(context)) runPostReport(context, state, events, 'if.event.answered');
+    // A manner beat leads into the answer it colors (GH #710).
+    placeMannerBeats(context, events, 'if.event.answered');
     return events;
   }
 };

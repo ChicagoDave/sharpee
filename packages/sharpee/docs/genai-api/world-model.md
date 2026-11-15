@@ -11870,7 +11870,7 @@ import type { EntityId, ISemanticEvent } from '@sharpee/core';
 import type { IFEntity } from '../entities/if-entity.js';
 import type { WorldModel } from '../world/WorldModel.js';
 import type { ConversationSceneState, ExchangeState, SceneBoundaryKind } from '../traits/character-model/conversation-scene.js';
-import type { SceneWireEvent } from './scene-wire.js';
+import type { SceneWireEvent, SceneOpeningUtterance } from './scene-wire.js';
 /**
  * What the player is doing conversationally (the four D15 verbs).
  * `text` is the raw topic/speech text (ADR-231 D4's first-class topic);
@@ -11958,6 +11958,13 @@ export interface DialogueSelectionResult {
      * only — never player prose (ADR-310 D12).
      */
     wireEvents?: SceneWireEvent[];
+    /**
+     * The delivery this selection speaks when no scene exists yet (GH #710):
+     * a greeting on the firing that opens the scene. The consulting action
+     * opens the scene, stamps its id, and emits this as the `utterance` wire
+     * event. Never set alongside a scene the selector was handed.
+     */
+    openingUtterance?: SceneOpeningUtterance;
 }
 /**
  * The world's dialogue selector (ADR-310 D15 — built by the character
@@ -12269,7 +12276,7 @@ export interface SceneRuntimeBinding {
  * platform-browser/devkit without duplication (the co-located wire-type
  * rule). Every shape is platform-internal (contracts.md §7).
  *
- * Public interface: SceneWireEvent, AffordanceTopic, ResponseAffordance,
+ * Public interface: SceneWireEvent, SceneOpeningUtterance, AffordanceTopic, ResponseAffordance,
  * ExchangeAffordances, ThreadContinuability.
  * Owner context: world-model (per-world wiring surface)
  */
@@ -12349,6 +12356,16 @@ export type SceneWireEvent = {
     ownerId: EntityId;
     threadKey: string;
 };
+/**
+ * A delivery spoken on the firing that opens its scene (GH #710): the
+ * `utterance` a selector could not build, because the scene it belongs to
+ * does not exist until the consulting action opens it. The action stamps
+ * the opened scene's id and puts it on the wire as an ordinary utterance,
+ * so a greeting carries its manner beat like any later line.
+ */
+export type SceneOpeningUtterance = Omit<Extract<SceneWireEvent, {
+    kind: 'utterance';
+}>, 'kind' | 'sceneId'>;
 /**
  * What input a verbal exchange row matches (ADR-320 D12): an entity
  * reference, or a text phrase with its aliases. Mirrors the compiled

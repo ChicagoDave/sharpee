@@ -32,6 +32,7 @@ import {
   resolveImplicitThreadPartner,
   threadGrips,
   runConversationScene,
+  placeMannerBeats,
   resolveSceneIntrusion
 } from '../../helpers/dialogue-selector.js';
 import {
@@ -345,6 +346,8 @@ export const talkingAction: Action & { metadata: ActionMetadata } = {
 
     const state = getLifecycleState(context);
     if (state && !isExchangeGripped(context) && !isThreadGripped(context)) runPostReport(context, state, events, 'if.event.talked');
+    // A manner beat leads into the greeting it colors (GH #710).
+    placeMannerBeats(context, events, 'if.event.talked');
 
     return events;
   },
