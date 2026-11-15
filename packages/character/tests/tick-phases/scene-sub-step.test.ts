@@ -403,7 +403,13 @@ describe('Phase 8 — the scenes sub-step (D10: propagation made visible)', () =
       expect(scenes[0].participantIds).toContain(player.id);
       const utterance = events.find((e) => e.type === 'character.scene.utterance');
       expect((utterance!.data as { messageId?: string }).messageId).toBe('alice-condemns');
-      expect(sounds.some((s) => s.content?.messageId === 'alice-condemns')).toBe(true);
+      // Said to the player, so it prints as the phrase and makes no sound (GH #711).
+      expect(
+        events.some(
+          (e) => e.type === 'character.line.spoken' && (e.data as { messageId?: string }).messageId === 'alice-condemns',
+        ),
+      ).toBe(true);
+      expect(sounds.some((s) => s.content?.messageId === 'alice-condemns')).toBe(false);
     });
 
     it('no forcing row means no seizure — disposition alone never seizes', () => {

@@ -137,12 +137,14 @@ interface Loaded {
   player: IFEntity;
   phase: ActorTurnPlugin;
   sounds: ISound[];
+  /** Phrases of the lines the ticks spoke to the player, in order (GH #711). */
+  spoken: string[];
 }
 
 function load(source: string): Loaded {
   // A REAL engine; its actor phase is what the test ticks (ADR-328 D5).
   const { story, world, player, phase } = bootEngine(source, 7);
-  return { story, world, player, phase, sounds: [] };
+  return { story, world, player, phase, sounds: [], spoken: [] };
 }
 
 const entity = (l: Loaded, irId: string): IFEntity => l.world.getEntity(irId)!;
@@ -153,7 +155,7 @@ const threadState = (l: Loaded) =>
 
 /** One NPC turn through the engine's actor phase (the engine's own call shape). */
 function tick(l: Loaded, turn: number, actionEvents: ISemanticEvent[] = []): ISemanticEvent[] {
-  return l.phase.onAfterAction({
+  const events = l.phase.onAfterAction({
     world: l.world,
     turn,
     playerId: l.player.id,
@@ -162,6 +164,12 @@ function tick(l: Loaded, turn: number, actionEvents: ISemanticEvent[] = []): ISe
     actionEvents,
     emitSound: (s) => l.sounds.push(s),
   });
+  for (const event of events) {
+    if (event.type === 'character.line.spoken') {
+      l.spoken.push((event.data as { messageId: string }).messageId);
+    }
+  }
+  return events;
 }
 
 /** Four-phase context over the LIVE world (the Phase 7 harness model). */
@@ -344,22 +352,24 @@ describe("AC14 — the owner's own floor turns (the tick path)", () => {
 
     tick(l, 1); // same cycle — the dispatch advance stands, the tick stands down
     expect(threadState(l)).toMatchObject({ status: 'active', beatCursor: 1 });
-    expect(l.sounds.some((s) => s.content?.messageId === 'beat-two')).toBe(false);
+    expect(l.spoken.includes('beat-two')).toBe(false);
 
     tick(l, 2); // the owner's own floor turn serves beat 2
     expect(threadState(l)).toMatchObject({ status: 'active', beatCursor: 2 });
-    expect(l.sounds.some((s) => s.content?.messageId === 'beat-two')).toBe(true);
+    expect(l.spoken.includes('beat-two')).toBe(true);
 
     tick(l, 3); // and the conclusion
     expect(threadState(l)).toMatchObject({ status: 'concluded' });
-    expect(l.sounds.some((s) => s.content?.messageId === 'conclusion-line')).toBe(true);
+    expect(l.spoken.includes('conclusion-line')).toBe(true);
     // Conclusion cleared the affordance snapshot.
     expect(sceneWith(l.world, entity(l, 'kemp').id)?.threadContinuability).toBeUndefined();
 
     // Nothing left to say: a further tick serves no thread line.
-    const before = l.sounds.length;
+    const before = l.spoken.length;
     tick(l, 4);
-    expect(l.sounds.length).toBe(before);
+    expect(l.spoken.length).toBe(before);
+    // A line said to the player makes no sound (GH #711).
+    expect(l.sounds).toHaveLength(0);
   });
 
   it('a gated tick delivery speaks the winning phrase only; the surplus rides the author channel', () => {
@@ -373,9 +383,9 @@ describe("AC14 — the owner's own floor turns (the tick path)", () => {
     const conclusionEvents = tick(l, 3); // the conclusion — Kemp is cheerful, so BOTH phrases pass
     expect(threadState(l)).toMatchObject({ status: 'concluded' });
 
-    // The winner is the spoken line; the loser never reaches the sounds.
-    expect(l.sounds.some((s) => s.content?.messageId === 'conclusion-line')).toBe(true);
-    expect(l.sounds.some((s) => s.content?.messageId === 'parting-line')).toBe(false);
+    // The winner is the spoken line; the loser is never spoken.
+    expect(l.spoken.includes('conclusion-line')).toBe(true);
+    expect(l.spoken.includes('parting-line')).toBe(false);
 
     // The surplus rides the author channel, re-typed with no top-level
     // messageId (a bare `data.messageId` re-enters prose via ADR-097).
@@ -399,11 +409,11 @@ describe("AC14 — the owner's own floor turns (the tick path)", () => {
 
     tick(l, 1); // same cycle: the owner stands down
     expect(threadState(l)).toMatchObject({ status: 'active', beatCursor: 1 });
-    expect(l.sounds.some((s) => s.content?.messageId === 'beat-two')).toBe(false);
+    expect(l.spoken.includes('beat-two')).toBe(false);
 
     tick(l, 2); // next cycle: the owner serves beat 2
     expect(threadState(l)).toMatchObject({ status: 'active', beatCursor: 2 });
-    expect(l.sounds.some((s) => s.content?.messageId === 'beat-two')).toBe(true);
+    expect(l.spoken.includes('beat-two')).toBe(true);
   });
 
   it('an `opens when` thread opens its own scene and speaks beat 1 unprompted', () => {
@@ -415,7 +425,7 @@ describe("AC14 — the owner's own floor turns (the tick path)", () => {
     const scene = sceneWith(l.world, entity(l, 'kemp').id);
     expect(scene).toBeDefined();
     expect(scene!.participantIds).toContain(l.player.id);
-    expect(l.sounds.some((s) => s.content?.messageId === 'beat-one')).toBe(true);
+    expect(l.spoken.includes('beat-one')).toBe(true);
     expect(events.some((e) => e.type === 'character.scene.thread-opened')).toBe(true);
     // The continuability affordance is live on real scene state (D12).
     expect(scene!.threadContinuability).toMatchObject({
@@ -442,7 +452,7 @@ describe("AC14 — the owner's own floor turns (the tick path)", () => {
     const scene = sceneWith(l.world, entity(l, 'kemp').id);
     expect(scene?.openExchange).toMatchObject({ exchangeId: 'kemp.the-offer' });
     expect(events.some((e) => e.type === 'character.exchange.opened')).toBe(true);
-    expect(l.sounds.some((s) => s.content?.messageId === 'beat-one')).toBe(true);
+    expect(l.spoken.includes('beat-one')).toBe(true);
   });
 
   it('an `opens when` thread parked mid-story resumes on the owner turn via `on resuming:`', () => {
@@ -458,12 +468,12 @@ describe("AC14 — the owner's own floor turns (the tick path)", () => {
     // line, cursor held; the beat follows on the next turn.
     tick(l, 2);
     expect(threadState(l)).toMatchObject({ status: 'active', beatCursor: 1 });
-    expect(l.sounds.some((s) => s.content?.messageId === 'resuming-line')).toBe(true);
+    expect(l.spoken.includes('resuming-line')).toBe(true);
     expect(l.world.getStateValue('chord.occurrence.thread.kemp.the-defection.resuming')).toBe(1);
 
     tick(l, 3);
     expect(threadState(l)).toMatchObject({ status: 'active', beatCursor: 2 });
-    expect(l.sounds.some((s) => s.content?.messageId === 'beat-two')).toBe(true);
+    expect(l.spoken.includes('beat-two')).toBe(true);
   });
 
   it('a held next beat holds the thread; the scene decays and the close parks it', () => {
@@ -477,7 +487,7 @@ describe("AC14 — the owner's own floor turns (the tick path)", () => {
     for (const t of [1, 2, 3, 4, 5]) tick(l, t);
     expect(Object.values(readSceneStore(l.world).scenes)).toHaveLength(0);
     expect(threadState(l)).toMatchObject({ status: 'parked', beatCursor: 1 });
-    expect(l.sounds.some((s) => s.content?.messageId === 'beat-two')).toBe(false);
+    expect(l.spoken.includes('beat-two')).toBe(false);
   });
 });
 

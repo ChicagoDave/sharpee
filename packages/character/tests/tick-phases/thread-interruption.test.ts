@@ -48,6 +48,12 @@ function actorIn(world: WorldModel, name: string, at: IFEntity, opts?: { player?
   return e;
 }
 
+/** The phrases the tick's events carry as lines spoken to the player (GH #711). */
+const spokenIds = (events: ISemanticEvent[]): string[] =>
+  events
+    .filter((e) => e.type === 'character.line.spoken')
+    .map((e) => (e.data as { messageId: string }).messageId);
+
 describe('step 4a — an opens-when thread interrupts the player\'s scene (D10a)', () => {
   let world: WorldModel;
   let ballroom: IFEntity;
@@ -150,8 +156,9 @@ describe('step 4a — an opens-when thread interrupts the player\'s scene (D10a)
     // The prose event for the parting line, with the id the pipeline renders by.
     const parting = events.find((e) => e.type === 'character.thread.parting');
     expect(parting?.data).toMatchObject({ ownerId: jacobs.id, partnerId: player.id, messageId: `parting.${jacobs.id}-hand` });
-    // The Princess's beat is voiced through the sound path, as every floor turn is.
-    expect(sounds.map((s) => (s.content as { messageId: string }).messageId)).toContain(`beat.${princess.id}-hand`);
+    // The Princess's beat is said to the player: it prints as the phrase and makes no sound (GH #711).
+    expect(spokenIds(events)).toContain(`beat.${princess.id}-hand`);
+    expect(sounds).toHaveLength(0);
   });
 
   it('a blocking thread holds: nothing changes, the Princess is skipped this turn and tried again next', () => {
@@ -215,7 +222,8 @@ describe('step 4a — an opens-when thread interrupts the player\'s scene (D10a)
     // Only the Princess took a floor turn; the player is seated with her.
     expect(served).toEqual([princess.id]);
     expect(seatedIds()).toEqual(new Set([princess.id, player.id]));
-    expect(sounds.map((s) => (s.content as { messageId: string }).messageId)).not.toContain(`beat.${jacobs.id}-hand`);
+    expect(spokenIds(events)).not.toContain(`beat.${jacobs.id}-hand`);
+    expect(spokenIds(events)).toContain(`beat.${princess.id}-hand`);
     // The wire: the park and its parting precede the new scene and the Princess's beat.
     const kinds = events.filter((e) => e.type.startsWith('character.scene.')).map((e) => e.type);
     expect(kinds.indexOf('character.scene.thread-parting')).toBeLessThan(kinds.indexOf('character.scene.scene-opened'));

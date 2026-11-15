@@ -217,6 +217,28 @@ export function closeConversationScene(
 }
 
 /**
+ * Close the scene an actor has just walked out of (GH #711): when the
+ * actor is seated in a scene and no longer shares a room with every other
+ * participant, the scene closes on the `exit` boundary with the actor as
+ * leaver, and a parked thread's `on parting` line is in the returned
+ * events. An actor with no scene, or one whose partners came along, closes
+ * nothing.
+ *
+ * @param context - The action context; the actor has already moved
+ * @param leaverId - The actor who moved
+ * @returns Semantic events for the close, or none when nothing closed
+ */
+export function closeSceneLeftBehind(context: ActionContext, leaverId: string): ISemanticEvent[] {
+  const scene = sceneWith(context.world, leaverId);
+  if (!scene) return [];
+  const roomOf = (id: string): string | undefined =>
+    context.world.getContainingRoom(id)?.id ?? context.world.getLocation(id);
+  const leaverRoom = roomOf(leaverId);
+  if (scene.participantIds.every((p) => roomOf(p) === leaverRoom)) return [];
+  return closeConversationScene(context, scene.id, leaverId);
+}
+
+/**
  * Consult the world's dialogue selector for a conversation act.
  *
  * @param context - The action context (provides world and player)

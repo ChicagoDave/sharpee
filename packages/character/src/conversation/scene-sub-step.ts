@@ -3,10 +3,11 @@
  * seize their moments, goal says and propagation transfers open and continue
  * scenes, thread floor turns are served after every challenge resolves, a
  * participant who moved away closes on exit, and unattended scenes decay on
- * silence. Observable text rides the sound pipeline only; every mutation
- * lands regardless.
+ * silence. A line between NPCs rides the sound pipeline only; a line in a
+ * scene the player is seated in prints as its authored phrase (GH #711).
+ * Every mutation lands regardless.
  *
- * Public interface: runSceneSubStep.
+ * Public interface: runSceneSubStep, SCENE_LINE_SPOKEN_EVENT.
  * Owner context: @sharpee/character — conversation.
  *
  * References:
@@ -48,6 +49,13 @@ import type { CharacterPhaseRegistry } from '../tick-phases.js';
 // Scenes sub-step (ADR-320 D10; Phase 8 — NPC↔NPC scenes as propagation
 // made visible, one machinery with two faces)
 // ---------------------------------------------------------------------------
+
+/**
+ * The prose event of a line spoken to the player on the speaker's own turn
+ * (GH #711). Its `messageId` is the authored phrase, which the prose
+ * pipeline renders as written.
+ */
+export const SCENE_LINE_SPOKEN_EVENT = 'character.line.spoken';
 
 /** The runtime-owned coloring→volume curve (Phase 8 design §3a). */
 function volumeFromColoring(coloring?: PropagationColoring): VolumeTier {
@@ -146,6 +154,28 @@ export function runSceneSubStep(
           beats: [],
         },
       ]);
+      // A line spoken in a scene the player is seated in is said TO the
+      // player, not overheard (GH #711): it prints as the authored phrase,
+      // through its own prose event — the wire/prose split `thread-parting`
+      // uses — and never through the sound path, whose templates wrap the
+      // line as heard speech.
+      if (scene?.participantIds.includes(ctx.playerId)) {
+        events.push(
+          createEvent(
+            SCENE_LINE_SPOKEN_EVENT,
+            {
+              sceneId,
+              speakerId,
+              ...(addresseeId !== undefined ? { addresseeId } : {}),
+              messageId,
+              params: params ?? {},
+            },
+            speakerId,
+            roomOf(speakerId),
+          ),
+        );
+        return;
+      }
       // Kind `speech` — the shipped ADR-172 content-bearing family:
       // full/muffled embed the line, fragments/presence degrade it, and
       // lang-en-us already carries the per-tier defaults (untouched).
@@ -158,6 +188,11 @@ export function runSceneSubStep(
       });
     }
   };
+
+  /** The room an entity stands in, through whatever holds it. */
+  function roomOf(entityId: string): string | undefined {
+    return world.getContainingRoom(entityId)?.id ?? world.getLocation(entityId);
+  }
 
   /**
    * The live scene a pair's move lands in: their co-seated scene, or a
@@ -384,11 +419,24 @@ export function runSceneSubStep(
   // move in the goal sub-step).
   for (const scene of Object.values(readSceneStore(world).scenes)) {
     const mover = [...scene.participantIds].filter((p) => surface.movedNpcIds.has(p)).sort((a, b) => (a < b ? -1 : a > b ? 1 : 0))[0];
-    if (!mover) continue;
-    const rooms = new Set(scene.participantIds.map((p) => world.getLocation(p)));
-    if (rooms.size <= 1) continue;
+    if (mover) {
+      const rooms = new Set(scene.participantIds.map((p) => world.getLocation(p)));
+      if (rooms.size <= 1) continue;
+      pushWire(
+        applySceneDirectives(world, scene.id, [{ kind: 'close-scene', boundary: 'exit', leaverId: mover }], memory),
+      );
+      continue;
+    }
+    // GH #711: the player's scene closes on the turn the player is no
+    // longer in the room with it, however they left. `going` closes it
+    // itself and speaks the parting line on the way out; this is every
+    // other way of leaving, where the speaker is already out of earshot
+    // and the thread parks with nothing said.
+    if (!scene.participantIds.includes(ctx.playerId)) continue;
+    const playerRoom = roomOf(ctx.playerId);
+    if (scene.participantIds.every((p) => roomOf(p) === playerRoom)) continue;
     pushWire(
-      applySceneDirectives(world, scene.id, [{ kind: 'close-scene', boundary: 'exit', leaverId: mover }], memory),
+      applySceneDirectives(world, scene.id, [{ kind: 'close-scene', boundary: 'exit', leaverId: ctx.playerId }], memory),
     );
   }
 

@@ -259,7 +259,13 @@ describe('Phase 8 initiative runner — a forcing `on <act>` row seizes a witnes
     const utterance = events.find((e) => e.type === 'character.scene.utterance');
     expect(utterance).toBeDefined();
     expect((utterance!.data as { messageId?: string }).messageId).toBe('bram-condemns');
-    expect(l.sounds.some((s) => s.content?.messageId === 'bram-condemns')).toBe(true);
+    // Said to the player, so it prints as the phrase and makes no sound (GH #711).
+    expect(
+      events.some(
+        (e) => e.type === 'character.line.spoken' && (e.data as { messageId?: string }).messageId === 'bram-condemns',
+      ),
+    ).toBe(true);
+    expect(l.sounds.some((s) => s.content?.messageId === 'bram-condemns')).toBe(false);
     expect(l.world.getStateValue('chord.occurrence.initiative.bram.0')).toBe(1);
   });
 
@@ -316,7 +322,13 @@ describe('#273 — an initiative-row `then asks` opens its exchange in a player 
     const opened = events.find((e) => e.type === 'character.exchange.opened');
     expect(opened).toBeDefined();
     expect(opened!.data).toMatchObject({ exchangeId: 'bram.bram-question', word: 'asks' });
-    expect(l.sounds.some((s) => s.content?.messageId === 'bram-condemns')).toBe(true);
+    // Said to the player, so it prints as the phrase and makes no sound (GH #711).
+    expect(
+      events.some(
+        (e) => e.type === 'character.line.spoken' && (e.data as { messageId?: string }).messageId === 'bram-condemns',
+      ),
+    ).toBe(true);
+    expect(l.sounds.some((s) => s.content?.messageId === 'bram-condemns')).toBe(false);
 
     // The engine is not wedged — the next turn ticks clean.
     expect(() => tick(l, 2)).not.toThrow();
@@ -399,7 +411,13 @@ describe('GH #349 — `leave` served on the speaker’s own turn (publish-readin
     };
     const events = tick(l, 1, [attack]);
 
-    expect(l.sounds.some((s) => s.content?.messageId === 'bram-condemns')).toBe(true);
+    // Said to the player, so it prints as the phrase and makes no sound (GH #711).
+    expect(
+      events.some(
+        (e) => e.type === 'character.line.spoken' && (e.data as { messageId?: string }).messageId === 'bram-condemns',
+      ),
+    ).toBe(true);
+    expect(l.sounds.some((s) => s.content?.messageId === 'bram-condemns')).toBe(false);
     expect(events.some((e) => e.type === 'command.failed')).toBe(false);
     // Bram's scene with the player opened, he spoke, and the `leave` closed it
     // on the exit boundary — the floor-turn counterpart of the reply path.

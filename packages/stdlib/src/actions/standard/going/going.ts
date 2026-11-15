@@ -44,6 +44,7 @@ import { ScopeLevel } from '../../../scope/types.js';
 import { captureEntitySnapshot, captureRoomSnapshot, captureEntitySnapshots } from '../../base/snapshot-utils.js';
 import { buildEventData } from '../../data-builder-types.js';
 import { GoingMessages } from './going-messages.js';
+import { closeSceneLeftBehind } from '../../helpers/dialogue-selector.js';
 import { nounPhraseFor } from '../../../utils/index.js';
 import { collectContainedListings } from '../looking/looking-data.js';
 import { containedListingEvents } from '../looking/looking.js';
@@ -601,6 +602,13 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
     if (!isProtagonist) {
       return events;
     }
+
+    // Walking out of a conversation ends it (GH #711): the scene closes
+    // now, and a parked thread's `on parting` line is spoken at the
+    // leaver's back, ahead of everything the arrival prints. A report-phase
+    // runtime directive, as in saying-goodbye. An NPC's own departure is
+    // closed by the scenes sub-step of its turn.
+    events.unshift(...closeSceneLeftBehind(context, context.actor.id));
 
     // Resolver narration (ADR-295 D4/D5): forwarded verbatim, ahead of the
     // arrival description. Rendered order is subject to GH #208.

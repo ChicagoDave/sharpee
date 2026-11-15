@@ -251,8 +251,10 @@ ending was played from it too (the same walk without the mend).
   topic table has `about "the price"`, gated on `the-bargain is concluded`, which opens the same
   exchange again with `then asks`.
 - A `conclusion:` phrase printed as overheard speech (`You hear: "…"`), and `on parting:` printed
-  two turns late in another room. Issue #711. The snapshot's conclusion is a `change mood` and it
-  has no parting row.
+  two turns late in another room. Issue #711, fixed 2026-11-15: a line spoken to the player on the
+  speaker's own turn prints as written, and walking out closes the conversation that turn, the
+  parting line ahead of the new room. The snapshot's conclusion is still a `change mood` and it
+  still has no parting row; both can now be authored as prose.
 - Inside an open exchange, an unmatched `say` prints the platform's "waits for an answer" line and
   the exchange stays open. `on silence:` did not fire on `wait`; when it does fire was not found.
 - Greetings print on `talk to`. A person with no greetings block answers "doesn't respond".
