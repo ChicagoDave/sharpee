@@ -36,7 +36,7 @@ import {
   runMultiObjectReport
 } from '../../../src/actions/lifecycle';
 import { Action, ActionContext } from '../../../src/actions/enhanced-types';
-import { setupBasicWorld, createRealTestContext, createCommand, addTestMarker, TEST_MARKER_TRAIT } from '../../test-utils';
+import { setupBasicWorld, createRealTestContext, createCommand, addTestMarker, TEST_MARKER_TRAIT, SECOND_TEST_MARKER_TRAIT } from '../../test-utils';
 
 const TEST_ACTION = 'test.action.frobbing';
 const SECOND_ID = 'test.action.frobbing_specific';
@@ -166,6 +166,124 @@ describe('resolveLifecycle (D3 resolution)', () => {
     const state = resolveLifecycle(context, seeded);
 
     expect(state.consultations[0].data.containerId).toBe(box.id);
+  });
+});
+
+describe('every binding on one entity is consulted (ADR-118 Amendment 1)', () => {
+  /** An item carrying two marker traits, each bound for the test action. */
+  function twoBindings() {
+    const { world, player, item } = setup();
+    addTestMarker(item, TEST_MARKER_TRAIT);
+    addTestMarker(item, SECOND_TEST_MARKER_TRAIT);
+    return { world, player, item };
+  }
+  const itemOnly: ActionLifecycleDescriptor = {
+    actionId: TEST_ACTION,
+    reportEventType: 'if.event.tested',
+    blockedEventType: 'if.event.test_blocked',
+    slots: [{
+      id: 'item',
+      actionIds: [TEST_ACTION],
+      resolve: (ctx) => ctx.command.directObject?.entity,
+      seedData: () => ({ seeded: true })
+    }]
+  };
+
+  test('one consultation per binding, in trait order, each with its own seeded data, and every postExecute runs', () => {
+    const { world, item } = twoBindings();
+    world.registerActionInterceptor(TEST_MARKER_TRAIT, TEST_ACTION, {
+      postExecute(_e, w, _a, data) {
+        data.mine = 'first';
+        w.setStateValue('ran.first', true);
+      }
+    });
+    world.registerActionInterceptor(SECOND_TEST_MARKER_TRAIT, TEST_ACTION, {
+      postExecute(_e, w, _a, data) {
+        data.mine = 'second';
+        w.setStateValue('ran.second', true);
+      }
+    });
+
+    const context = makeContext(world, item);
+    const state = resolveLifecycle(context, itemOnly);
+
+    expect(state.consultations.map(c => c.slotId)).toEqual(['item', 'item']);
+    expect(state.consultations[0].data).not.toBe(state.consultations[1].data);
+    expect(state.consultations.map(c => c.data.seeded)).toEqual([true, true]);
+    expect(world.getStateValue('ran.first')).toBeUndefined();
+    expect(world.getStateValue('ran.second')).toBeUndefined();
+    runPostExecute(context, state);
+    expect(world.getStateValue('ran.first')).toBe(true);
+    expect(world.getStateValue('ran.second')).toBe(true);
+    expect(state.consultations.map(c => c.data.mine)).toEqual(['first', 'second']);
+  });
+
+  test('a higher priority is consulted first, and its veto stops the second binding from being asked', () => {
+    const { world, item } = twoBindings();
+    const asked: string[] = [];
+    world.registerActionInterceptor(TEST_MARKER_TRAIT, TEST_ACTION, {
+      preValidate() {
+        asked.push('low');
+        return { valid: false, error: 'test.low' };
+      }
+    });
+    world.registerActionInterceptor(SECOND_TEST_MARKER_TRAIT, TEST_ACTION, {
+      preValidate() {
+        asked.push('high');
+        return { valid: false, error: 'test.high' };
+      }
+    }, { priority: 5 });
+
+    const context = makeContext(world, item);
+    const veto = runPreValidate(context, resolveLifecycle(context, itemOnly));
+
+    expect(veto?.error).toBe('test.high');
+    expect(asked).toEqual(['high']);
+  });
+
+  test('a first binding that does not object leaves the second to refuse', () => {
+    const { world, item } = twoBindings();
+    world.registerActionInterceptor(TEST_MARKER_TRAIT, TEST_ACTION, { preValidate: () => null });
+    world.registerActionInterceptor(SECOND_TEST_MARKER_TRAIT, TEST_ACTION, {
+      preValidate: () => ({ valid: false, error: 'test.second' })
+    });
+
+    const context = makeContext(world, item);
+    expect(runPreValidate(context, resolveLifecycle(context, itemOnly))?.error).toBe('test.second');
+  });
+
+  test('two bindings under the actor key are both consulted, after the slots', () => {
+    const { world, player, item } = setup();
+    addTestMarker(player, TEST_MARKER_TRAIT);
+    addTestMarker(player, SECOND_TEST_MARKER_TRAIT);
+    const key = actorConsultationId(TEST_ACTION);
+    world.registerActionInterceptor(TEST_MARKER_TRAIT, key, {
+      postExecute(_e, w) { w.setStateValue('actor.first', true); }
+    });
+    world.registerActionInterceptor(SECOND_TEST_MARKER_TRAIT, key, {
+      postExecute(_e, w) { w.setStateValue('actor.second', true); }
+    });
+
+    const context = makeContext(world, item);
+    const state = resolveLifecycle(context, itemOnly);
+
+    expect(state.consultations.map(c => c.slotId)).toEqual([ACTOR_SLOT_ID, ACTOR_SLOT_ID]);
+    runPostExecute(context, state);
+    expect(world.getStateValue('actor.first')).toBe(true);
+    expect(world.getStateValue('actor.second')).toBe(true);
+  });
+
+  test('a per-item lifecycle consults both bindings on each item', () => {
+    const { world, item } = twoBindings();
+    world.registerActionInterceptor(TEST_MARKER_TRAIT, TEST_ACTION, { postExecute() {} });
+    world.registerActionInterceptor(SECOND_TEST_MARKER_TRAIT, TEST_ACTION, { postExecute() {} });
+
+    const context = makeContext(world, item);
+    const state = resolveLifecycle(context, itemOnly, { slotOverride: { slotId: 'item', entity: item } });
+
+    expect(state.consultations.map(c => c.entity.id)).toEqual([item.id, item.id]);
+    // A per-item state is the multi-object helper's, never the command's.
+    expect(getLifecycleState(context)).toBeUndefined();
   });
 });
 

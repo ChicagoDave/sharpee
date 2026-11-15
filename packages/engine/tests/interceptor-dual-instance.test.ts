@@ -75,10 +75,10 @@ describe('dual-instance interceptor dispatch (ADR-208 AC-8)', () => {
     // Reader-side lookup (typed against the statically imported copy A)
     // resolves the binding because it reads the same world instance, not a
     // per-module map — this is the exact call shape the 11 stdlib actions
-    // use via context.world.getInterceptorForAction.
+    // use via context.world.getInterceptorsForAction.
     const entity = createMockEntity('axe', 'bloody axe', [new GuardedItemTrait()]);
     const readerWorld = sharedWorld as unknown as IWorldModel;
-    const result = readerWorld.getInterceptorForAction(entity, 'if.action.taking');
+    const result = readerWorld.getInterceptorsForAction(entity, 'if.action.taking')[0];
 
     expect(result).toBeDefined();
     expect(result!.interceptor).toBe(guardedTakingInterceptor);

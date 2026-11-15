@@ -43,9 +43,10 @@ import {
  * @returns true when an interceptor owns the action's outcome for the target
  */
 export function hasInterceptorImplementation(world: ActionContext['world'], target: IFEntity, actionId: string): boolean {
-  const found = world.getInterceptorForAction(target, actionId);
-  if (!found) return false;
-  return found.interceptor.claims ? found.interceptor.claims(target) : true;
+  // Any binding counts (ADR-118 Amendment 1): every one is consulted.
+  return world
+    .getInterceptorsForAction(target, actionId)
+    .some((found) => (found.interceptor.claims ? found.interceptor.claims(target) : true));
 }
 
 /** What one implementation-dispatching verb says about itself. */

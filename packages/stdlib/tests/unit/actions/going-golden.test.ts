@@ -20,7 +20,8 @@ import {
   executeWithValidation,
   TestData,
   createCommand,
-  TEST_MARKER_TRAIT
+  TEST_MARKER_TRAIT,
+  SECOND_TEST_MARKER_TRAIT
 } from '../../test-utils';
 import { runValidatePhase, runExecutePhase, runReportPhase } from '../../../src/actions/lifecycle/phase-runner';
 
@@ -233,6 +234,45 @@ describe('goingAction (Golden Pattern)', () => {
       expect(validation.valid).toBe(false);
       expect(validation.error).toBe('test.door.jammed');
       expect(validation.errorQualified).toBe(true);
+      expect(world.getLocation(player.id)).toBe(room1.id);
+      expect(door.get(OpenableTrait)!.isOpen).toBe(false);
+    });
+
+    test('a closed door with two opening bindings: the second binding\'s refusal is spoken when the first has none', () => {
+      const { world, player } = setupBasicWorld();
+      const door = world.createEntity('warped door', 'object');
+      door.add(new OpenableTrait({ isOpen: false }));
+      door.add({ type: TEST_MARKER_TRAIT } as any);
+      door.add({ type: SECOND_TEST_MARKER_TRAIT } as any);
+      const asked: string[] = [];
+      world.registerActionInterceptor(TEST_MARKER_TRAIT, IFActions.OPENING, {
+        preValidate() {
+          asked.push('first');
+          return null;
+        }
+      });
+      world.registerActionInterceptor(SECOND_TEST_MARKER_TRAIT, IFActions.OPENING, {
+        postValidate() {
+          asked.push('second');
+          return { valid: false, error: 'test.door.jammed' };
+        }
+      });
+
+      const room1 = world.createEntity('First Room', 'object');
+      const room2 = world.createEntity('Second Room', 'object');
+      room2.add(new RoomTrait());
+      room1.add(new RoomTrait({ exits: { [Direction.NORTH]: { destination: room2.id, via: door.id } } }));
+      world.moveEntity(player.id, room1.id);
+
+      const command = createCommand(IFActions.GOING);
+      command.parsed.extras = { direction: Direction.NORTH };
+      const context = createRealTestContext(goingAction, world, command);
+
+      const validation = runValidatePhase(goingAction, context);
+
+      expect(asked).toEqual(['first', 'second']);
+      expect(validation.valid).toBe(false);
+      expect(validation.error).toBe('test.door.jammed');
       expect(world.getLocation(player.id)).toBe(room1.id);
       expect(door.get(OpenableTrait)!.isOpen).toBe(false);
     });

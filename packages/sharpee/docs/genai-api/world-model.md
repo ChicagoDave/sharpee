@@ -8885,21 +8885,25 @@ export interface IWorldModel {
      */
     registerActionInterceptor(traitType: string, actionId: string, interceptor: ActionInterceptor, options?: InterceptorRegistrationOptions): void;
     /**
-     * Resolve the interceptor for an entity + action on this world.
+     * Resolve every interceptor for an entity + action on this world, in
+     * consultation order (ADR-118 Amendment 1).
      *
      * Scans the entity's traits for interceptor bindings registered for the
-     * action and returns the highest-priority match (ADR-118 resolution).
+     * action and returns all of them: higher priority first, and among equal
+     * priorities in the order the entity's traits were added. No binding is
+     * dropped — a caller that consults only the first has reintroduced the
+     * defect this replaced (one trait's hook silencing another's).
      *
      * @param entity - The entity whose traits are checked
      * @param actionId - The action ID to resolve
-     * @returns The interceptor, its declaring trait, and the binding — or
-     *   `undefined` if this world has no binding for any of the entity's
-     *   traits + action (the standard action proceeds unintercepted — never
-     *   throws for a missing binding).
+     * @returns One result per bound trait (interceptor, declaring trait,
+     *   binding), or an empty array if this world has no binding for any of
+     *   the entity's traits + action (the standard action proceeds
+     *   unintercepted — never throws for a missing binding).
      */
-    getInterceptorForAction(entity: {
+    getInterceptorsForAction(entity: {
         traits: Map<string, ITrait>;
-    }, actionId: string): InterceptorLookupResult | undefined;
+    }, actionId: string): InterceptorLookupResult[];
     /**
      * Resolve the full binding (interceptor + priority) for a
      * (traitType, actionId) pair on this world.
@@ -9168,9 +9172,9 @@ export declare class WorldModel implements IWorldModel {
     getAllCapabilityBindings(): ReadonlyMap<string, TraitBehaviorBinding>;
     getBehaviorForCapability(trait: ITrait, capability: string): CapabilityBehavior | undefined;
     registerActionInterceptor(traitType: string, actionId: string, interceptor: ActionInterceptor, options?: InterceptorRegistrationOptions): void;
-    getInterceptorForAction(entity: {
+    getInterceptorsForAction(entity: {
         traits: Map<string, ITrait>;
-    }, actionId: string): InterceptorLookupResult | undefined;
+    }, actionId: string): InterceptorLookupResult[];
     getInterceptorBinding(traitType: string, actionId: string): TraitInterceptorBinding | undefined;
     getAllActionInterceptors(): ReadonlyMap<string, TraitInterceptorBinding>;
     registerExitResolver(traitType: string, resolver: ExitResolver): void;

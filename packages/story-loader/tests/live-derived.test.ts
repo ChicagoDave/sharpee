@@ -76,7 +76,7 @@ function load() {
 /** Run the sundial's real registered interceptor (mutation phase). */
 function pushSundial({ story, world, player }: ReturnType<typeof load>): void {
   const sundial = world.getEntity('sundial')!;
-  const lookup = world.getInterceptorForAction(sundial, 'if.action.pushing')!;
+  const lookup = world.getInterceptorsForAction(sundial, 'if.action.pushing')[0]!;
   const data = {};
   lookup.interceptor.postValidate!(sundial, world, player.id, data);
   lookup.interceptor.postExecute!(sundial, world, player.id, data);

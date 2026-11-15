@@ -117,7 +117,7 @@ end before
 
 /** Drive one consultation through the four hooks the way the lifecycle engine does. */
 function consult(b: Booted, target: IFEntity, actionId: string, actorId: string) {
-  const lookup = b.world.getInterceptorForAction(target, actionId);
+  const lookup = b.world.getInterceptorsForAction(target, actionId)[0];
   expect(lookup, `interceptor bound on ${target.name} under ${actionId}`).toBeDefined();
   const data: InterceptorSharedData = {};
   const veto = lookup!.interceptor.preValidate?.(target, b.world, actorId, data) ?? null;
@@ -173,7 +173,7 @@ describe('explicit heads on the interceptor path — the head names who acts', (
   it('an actor the engine never names (no actorId) fires no explicit head', () => {
     const b = boot(SOURCE(SWORD));
     const sword = b.entity('sword');
-    const lookup = b.world.getInterceptorForAction(sword, 'if.action.taking')!;
+    const lookup = b.world.getInterceptorsForAction(sword, 'if.action.taking')[0]!;
     expect(lookup.interceptor.preValidate!(sword, b.world, undefined as unknown as string, {})).toBeNull();
   });
 });
@@ -200,8 +200,8 @@ describe('bare heads ride the actor consultation (D1 own-block exception, Q1 any
   it("Jack's block registers on Jack under the actor key, not under the action's own id", () => {
     const b = boot(SOURCE('', JACK));
     const jack = b.entity('jack');
-    expect(b.world.getInterceptorForAction(jack, actorConsultationId('if.action.taking'))).toBeDefined();
-    expect(b.world.getInterceptorForAction(jack, 'if.action.taking')).toBeUndefined();
+    expect(b.world.getInterceptorsForAction(jack, actorConsultationId('if.action.taking'))).toHaveLength(1);
+    expect(b.world.getInterceptorsForAction(jack, 'if.action.taking')).toEqual([]);
   });
 
   it('fires when Jack is the actor — whatever the target — and mutates Jack', () => {

@@ -109,7 +109,7 @@ function load() {
 /** Drive the named scenery's real registered pushing interceptor (mutation phase). */
 function push(cw: ReturnType<typeof load>, name: string): void {
   const entity = cw.world.getEntity(name)!;
-  const lookup = cw.world.getInterceptorForAction(entity, 'if.action.pushing')!;
+  const lookup = cw.world.getInterceptorsForAction(entity, 'if.action.pushing')[0]!;
   const data = {};
   lookup.interceptor.postValidate!(entity, cw.world, cw.player.id, data);
   lookup.interceptor.postExecute!(entity, cw.world, cw.player.id, data);

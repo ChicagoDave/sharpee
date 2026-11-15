@@ -4,7 +4,8 @@
  * Entity `on`/`after` clauses and topic-table arms as action interceptors.
  * The interceptor registry is keyed (trait type, action), so the bind step
  * groups every owner's clauses by action and registers one dispatching
- * interceptor per action that routes by the consulted entity; each arm is
+ * interceptor per action that routes by the consulted entity, in front of
+ * the owner's composed traits' bindings (../clause-order.ts); each arm is
  * the clause's validate/execute/report partition over the shared evaluator,
  * with its select decisions ledgered so the report pass replays what the
  * mutations pass decided.
@@ -23,6 +24,7 @@ import { LoadError } from '../errors.js';
 import { EVENT_TRIGGERS, REGION_EVENT_TRIGGERS } from '../event-contract.js';
 import { worldIdOf } from '../identity.js';
 import { clauseOccurrenceKey } from '../state-keys.js';
+import { ChordLateBehaviorTrait, LATE_OWN_CLAUSE_PRIORITY, OWN_CLAUSE_PRIORITY, assertOrderingTrait, refuseUnplacedOrdering } from '../clause-order.js';
 import { ExecContext, ChordBehaviorTrait, TOPIC_GERUNDS, topicGerundServes, toEffect, type RuntimeCore } from './core.js';
 
 /** A typed setting value in the state register: lowercased, spaces as hyphens (ADR-371 D3). */
@@ -44,10 +46,22 @@ export class OnClausesSection {
     // ADR-327 D1 bare heads — consulted through the lifecycle engine's actor
     // slot, under `actorConsultationId(...)`, never under the action's own id.
     const byActorAction = new Map<string, Array<{ entity: IREntity; clause: IROnClause | null }>>();
+    // Own clauses that say `, after <trait>`: consulted behind every trait
+    // the owner composes, under their own marker and priority. Every other
+    // own clause stands in front of the traits (the specific before the
+    // shared), so `, before <trait>` asks for where the clause already is.
+    const byLateAction = new Map<string, Array<{ entity: IREntity; clause: IROnClause | null }>>();
     for (const entity of this.core.ir.entities) {
       entity.onClauses.forEach((clause, clauseIndex) => {
+        // A stated order names a story trait, whatever the clause is; a
+        // clause that is bound outside the consultation order (each early
+        // return below) may not state one.
+        assertOrderingTrait(this.core.ir, clause);
         // Entity every-turn clauses are scheduler daemons, not interceptors.
-        if (clause.binding === 'every-turn') return;
+        if (clause.binding === 'every-turn') {
+          refuseUnplacedOrdering(clause);
+          return;
+        }
         // Event clauses (`after entering it`) bind to the event stream per
         // the selector contract — the ownership package's replacement for
         // floating `when` rules. A REGION owner re-homes the verb onto the
@@ -55,6 +69,7 @@ export class OnClausesSection {
         // → region_exited.
         const trigger = this.core.eventClauses.eventTriggerFor(entity, clause);
         if (trigger) {
+          refuseUnplacedOrdering(clause);
           this.core.eventClauses.bindEventClause(world, entity, clause, clauseIndex, trigger);
           return;
         }
@@ -84,7 +99,10 @@ export class OnClausesSection {
             // Dispatch reactions fire via fireAfterClauses (the runtime owns
             // those actions — interceptors never fire on the dispatch path),
             // so `after` is live without any registration here…
-            if (clause.clauseKind === 'after') return;
+            if (clause.clauseKind === 'after') {
+              refuseUnplacedOrdering(clause);
+              return;
+            }
             // …but an entity `on` clause has no dispatch surface at all.
             throw new LoadError(
               `\`on the player ${clause.action}\` — \`${clause.action}\` is a Chord dispatch action, and entity \`on\` clauses never fire on the dispatch path. Move the clause into a trait (\`define trait … on the player ${clause.action}\`) and compose the trait, or react with \`after the player ${clause.action}\`.`,
@@ -93,11 +111,25 @@ export class OnClausesSection {
           }
           throw this.core.binding.deadGerundError(clause);
         }
+        // No trait clause is consulted under the actor key, so a bare head
+        // has no trait to stand before or behind.
+        if (clause.binding === 'self') refuseUnplacedOrdering(clause);
         this.prepareOnClauseTarget(world, entity, clause);
         // Bare heads register under the actor-consultation key (the owner
         // is consulted as the actor); explicit heads under the action's own
         // id (the owner is consulted as the target).
-        const table = clause.binding === 'self' ? byActorAction : byAction;
+        const late = clause.ordering?.relation === 'after';
+        // A table owner's own clause for a topic gerund is the table's
+        // catch-all (ADR-239 D5): it fires only on a miss, inside the
+        // table's arm, and cannot be moved behind the traits without it.
+        if (late && (TOPIC_GERUNDS as readonly string[]).includes(clause.action) && (entity.topics ?? []).length && topicGerundServes(clause.action, entity)) {
+          throw new LoadError(
+            `\`, after ${clause.ordering!.trait}\` cannot move \`${entity.name}\`'s \`${clause.action}\` clause: it answers what the topic table does not, and the table answers in front of the traits. Remove the order.`,
+            clause.span,
+          );
+        }
+        if (late) this.markLateOwner(world, entity, clause);
+        const table = clause.binding === 'self' ? byActorAction : late ? byLateAction : byAction;
         const list = table.get(clause.action) ?? [];
         list.push({ entity, clause });
         table.set(clause.action, list);
@@ -119,13 +151,31 @@ export class OnClausesSection {
       }
     }
 
+    // The world consults every binding an entity carries for an action,
+    // higher priority first: own clauses, then composed traits in the order
+    // written, then own clauses ordered `, after <trait>`.
     for (const [action, clauses] of byAction) {
       const interceptor = this.buildDispatchingInterceptor(action, clauses);
-      world.registerActionInterceptor(ChordBehaviorTrait.type, `if.action.${action}`, interceptor);
+      world.registerActionInterceptor(ChordBehaviorTrait.type, `if.action.${action}`, interceptor, { priority: OWN_CLAUSE_PRIORITY });
     }
     for (const [action, clauses] of byActorAction) {
       const interceptor = this.buildDispatchingInterceptor(action, clauses);
-      world.registerActionInterceptor(ChordBehaviorTrait.type, actorConsultationId(`if.action.${action}`), interceptor);
+      world.registerActionInterceptor(ChordBehaviorTrait.type, actorConsultationId(`if.action.${action}`), interceptor, { priority: OWN_CLAUSE_PRIORITY });
+    }
+    for (const [action, clauses] of byLateAction) {
+      // The owner's topic table is served once, by its front binding above:
+      // a second topic arm here would answer, count and stamp a hit twice.
+      const interceptor = this.buildDispatchingInterceptor(action, clauses, false);
+      world.registerActionInterceptor(ChordLateBehaviorTrait.type, `if.action.${action}`, interceptor, { priority: LATE_OWN_CLAUSE_PRIORITY });
+    }
+  }
+
+  /** Mark the owner of an own clause ordered `, after <trait>` so the late binding finds it. */
+  private markLateOwner(world: WorldModel, entity: IREntity, clause: IROnClause): void {
+    const target = world.getEntity(entity.id);
+    if (!target) throw new LoadError(`Entity \`${entity.id}\` vanished before binding.`, clause.span);
+    if (!target.has(ChordLateBehaviorTrait.type)) {
+      target.add(new ChordLateBehaviorTrait());
     }
   }
 
@@ -221,10 +271,17 @@ export class OnClausesSection {
    * (asking/telling, ADR-239) a table owner's arm consults its declared
    * topic table first; the merged clause composite serves as the
    * catch-all, firing only on a table miss (D5).
+   *
+   * @param servesTopics false for the late binding, whose arms are clauses
+   *   only: the owner's table belongs to its front binding
    */
-  private buildDispatchingInterceptor(action: string, clauses: Array<{ entity: IREntity; clause: IROnClause | null }>): ActionInterceptor {
+  private buildDispatchingInterceptor(
+    action: string,
+    clauses: Array<{ entity: IREntity; clause: IROnClause | null }>,
+    servesTopics = true,
+  ): ActionInterceptor {
     const runtime = this;
-    const isTopicAction = (TOPIC_GERUNDS as readonly string[]).includes(action);
+    const isTopicAction = servesTopics && (TOPIC_GERUNDS as readonly string[]).includes(action);
     const byEntity = new Map<string, { entity: IREntity; entityClauses: IROnClause[] }>();
     for (const { entity, clause } of clauses) {
       const group = byEntity.get(entity.id) ?? { entity, entityClauses: [] };

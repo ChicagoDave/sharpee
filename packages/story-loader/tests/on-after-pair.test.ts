@@ -98,7 +98,7 @@ function load(source: string) {
 /** Drive a target's REAL registered interceptor through all four hooks. */
 function fire(cw: ReturnType<typeof load>, irId: string, actionId: string) {
   const target = cw.world.getEntity(irId)!;
-  const lookup = cw.world.getInterceptorForAction(target, actionId)!;
+  const lookup = cw.world.getInterceptorsForAction(target, actionId)[0]!;
   const data = {};
   const veto = lookup.interceptor.preValidate?.(target, cw.world, cw.player.id, data) ?? null;
   lookup.interceptor.postValidate?.(target, cw.world, cw.player.id, data);

@@ -49,10 +49,11 @@ describe('WorldModel action-interceptor bindings (ADR-208)', () => {
       const entity = new IFEntity('test-1', 'object');
       entity.add(new GuardedTrait());
 
-      const result = world.getInterceptorForAction(entity, 'if.action.taking');
-      expect(result?.interceptor).toBe(blockingInterceptor);
-      expect(result?.trait.type).toBe(GuardedTrait.type);
-      expect(result?.binding.actionId).toBe('if.action.taking');
+      const results = world.getInterceptorsForAction(entity, 'if.action.taking');
+      expect(results).toHaveLength(1);
+      expect(results[0].interceptor).toBe(blockingInterceptor);
+      expect(results[0].trait.type).toBe(GuardedTrait.type);
+      expect(results[0].binding.actionId).toBe('if.action.taking');
     });
 
     it('should overwrite on re-registration, not throw (AC-4: idempotent, last-wins)', () => {
@@ -80,13 +81,13 @@ describe('WorldModel action-interceptor bindings (ADR-208)', () => {
     });
   });
 
-  describe('getInterceptorForAction / getInterceptorBinding', () => {
-    it('should return undefined for an entity with no bound interceptor (AC-10)', () => {
+  describe('getInterceptorsForAction / getInterceptorBinding', () => {
+    it('should return an empty array for an entity with no bound interceptor (AC-10)', () => {
       const world = new WorldModel();
       const entity = new IFEntity('test-1', 'object');
       entity.add(new GuardedTrait());
 
-      expect(world.getInterceptorForAction(entity, 'if.action.taking')).toBeUndefined();
+      expect(world.getInterceptorsForAction(entity, 'if.action.taking')).toEqual([]);
       expect(world.getInterceptorBinding(GuardedTrait.type, 'if.action.taking')).toBeUndefined();
     });
 
@@ -94,11 +95,11 @@ describe('WorldModel action-interceptor bindings (ADR-208)', () => {
       const world = new WorldModel();
       const entity = new IFEntity('test-1', 'object');
 
-      expect(() => world.getInterceptorForAction(entity, 'if.action.taking')).not.toThrow();
+      expect(() => world.getInterceptorsForAction(entity, 'if.action.taking')).not.toThrow();
       expect(() => world.getInterceptorBinding('no.such.trait', 'if.action.taking')).not.toThrow();
     });
 
-    it('should pick the highest-priority binding across the entity traits (ADR-118 resolution)', () => {
+    it('should return every binding on the entity, higher priority first (ADR-118 Amendment 1)', () => {
       const world = new WorldModel();
       world.registerActionInterceptor(GuardedTrait.type, 'if.action.taking', lowPriorityInterceptor, {
         priority: 1
@@ -111,10 +112,45 @@ describe('WorldModel action-interceptor bindings (ADR-208)', () => {
       entity.add(new GuardedTrait());
       entity.add(new OtherTrait());
 
-      const result = world.getInterceptorForAction(entity, 'if.action.taking');
-      expect(result?.interceptor).toBe(blockingInterceptor);
-      expect(result?.trait.type).toBe(OtherTrait.type);
-      expect(result?.binding.priority).toBe(50);
+      const results = world.getInterceptorsForAction(entity, 'if.action.taking');
+      expect(results.map((r) => r.interceptor)).toEqual([blockingInterceptor, lowPriorityInterceptor]);
+      expect(results.map((r) => r.trait.type)).toEqual([OtherTrait.type, GuardedTrait.type]);
+      expect(results.map((r) => r.binding.priority)).toEqual([50, 1]);
+    });
+
+    it('should keep the order the traits were added among equal priorities', () => {
+      const world = new WorldModel();
+      // Registered in the opposite order to the one the traits are added in:
+      // the entity's trait order decides, not registration order.
+      world.registerActionInterceptor(GuardedTrait.type, 'if.action.taking', blockingInterceptor);
+      world.registerActionInterceptor(OtherTrait.type, 'if.action.taking', secondInterceptor);
+
+      const otherFirst = new IFEntity('test-1', 'object');
+      otherFirst.add(new OtherTrait());
+      otherFirst.add(new GuardedTrait());
+      expect(
+        world.getInterceptorsForAction(otherFirst, 'if.action.taking').map((r) => r.interceptor)
+      ).toEqual([secondInterceptor, blockingInterceptor]);
+
+      const guardedFirst = new IFEntity('test-2', 'object');
+      guardedFirst.add(new GuardedTrait());
+      guardedFirst.add(new OtherTrait());
+      expect(
+        world.getInterceptorsForAction(guardedFirst, 'if.action.taking').map((r) => r.interceptor)
+      ).toEqual([blockingInterceptor, secondInterceptor]);
+    });
+
+    it('should leave out a trait the entity does not carry', () => {
+      const world = new WorldModel();
+      world.registerActionInterceptor(GuardedTrait.type, 'if.action.taking', blockingInterceptor);
+      world.registerActionInterceptor(OtherTrait.type, 'if.action.taking', secondInterceptor);
+
+      const entity = new IFEntity('test-1', 'object');
+      entity.add(new GuardedTrait());
+
+      expect(
+        world.getInterceptorsForAction(entity, 'if.action.taking').map((r) => r.interceptor)
+      ).toEqual([blockingInterceptor]);
     });
 
     it('should only match bindings for the requested action', () => {
@@ -124,7 +160,7 @@ describe('WorldModel action-interceptor bindings (ADR-208)', () => {
       const entity = new IFEntity('test-1', 'object');
       entity.add(new GuardedTrait());
 
-      expect(world.getInterceptorForAction(entity, 'if.action.opening')).toBeUndefined();
+      expect(world.getInterceptorsForAction(entity, 'if.action.opening')).toEqual([]);
     });
   });
 
@@ -139,10 +175,10 @@ describe('WorldModel action-interceptor bindings (ADR-208)', () => {
       const entity = new IFEntity('test-1', 'object');
       entity.add(new GuardedTrait());
 
-      expect(worldA.getInterceptorForAction(entity, 'if.action.taking')?.interceptor).toBe(
+      expect(worldA.getInterceptorsForAction(entity, 'if.action.taking')[0]?.interceptor).toBe(
         blockingInterceptor
       );
-      expect(worldB.getInterceptorForAction(entity, 'if.action.taking')?.interceptor).toBe(
+      expect(worldB.getInterceptorsForAction(entity, 'if.action.taking')[0]?.interceptor).toBe(
         secondInterceptor
       );
     });
@@ -153,7 +189,7 @@ describe('WorldModel action-interceptor bindings (ADR-208)', () => {
 
       const firstLoad = new WorldModel();
       firstLoad.registerActionInterceptor(GuardedTrait.type, 'if.action.taking', blockingInterceptor);
-      expect(firstLoad.getInterceptorForAction(entity, 'if.action.taking')?.interceptor).toBe(
+      expect(firstLoad.getInterceptorsForAction(entity, 'if.action.taking')[0]?.interceptor).toBe(
         blockingInterceptor
       );
 
@@ -161,7 +197,7 @@ describe('WorldModel action-interceptor bindings (ADR-208)', () => {
       // must neither throw (unlike the old globalThis registry) nor see the
       // first load's binding.
       const secondLoad = new WorldModel();
-      expect(secondLoad.getInterceptorForAction(entity, 'if.action.taking')).toBeUndefined();
+      expect(secondLoad.getInterceptorsForAction(entity, 'if.action.taking')).toEqual([]);
       expect(() => {
         secondLoad.registerActionInterceptor(GuardedTrait.type, 'if.action.taking', blockingInterceptor);
       }).not.toThrow();
@@ -198,7 +234,7 @@ describe('WorldModel action-interceptor bindings (ADR-208)', () => {
 
       const entity = new IFEntity('test-1', 'object');
       entity.add(new GuardedTrait());
-      expect(author.getInterceptorForAction(entity, 'if.action.taking')?.interceptor).toBe(
+      expect(author.getInterceptorsForAction(entity, 'if.action.taking')[0]?.interceptor).toBe(
         blockingInterceptor
       );
       expect(author.getInterceptorBinding(GuardedTrait.type, 'if.action.taking')?.interceptor).toBe(
@@ -221,10 +257,10 @@ describe('WorldModel action-interceptor bindings (ADR-208)', () => {
       restored.setState(state);
       const entity = new IFEntity('test-1', 'object');
       entity.add(new GuardedTrait());
-      expect(restored.getInterceptorForAction(entity, 'if.action.taking')).toBeUndefined();
+      expect(restored.getInterceptorsForAction(entity, 'if.action.taking')).toEqual([]);
 
       restored.registerActionInterceptor(GuardedTrait.type, 'if.action.taking', blockingInterceptor);
-      expect(restored.getInterceptorForAction(entity, 'if.action.taking')?.interceptor).toBe(
+      expect(restored.getInterceptorsForAction(entity, 'if.action.taking')[0]?.interceptor).toBe(
         blockingInterceptor
       );
     });

@@ -115,7 +115,7 @@ describe('the `to <value>` tail at fire time (ADR-371 D4)', () => {
     const { world, selector } = load();
     // The lookup returns the registration ({ interceptor, trait, binding });
     // initializeWorld alone assigns no player (the engine's install does).
-    const interceptor = world.getInterceptorForAction(selector, 'if.action.setting')!.interceptor;
+    const interceptor = world.getInterceptorsForAction(selector, 'if.action.setting')[0]!.interceptor;
     expect(interceptor).toBeDefined();
     const player = world.getAllEntities().find((e) => e.name === 'Pilot')!;
     player.add(new ActorTrait({ isPlayable: true }));
@@ -158,8 +158,8 @@ define phrase kepler-last`,
     const couch = world.getAllEntities().find((e) => e.name === 'flight couch')!;
     // Both carry the shared marker trait, so the lookup finds the one
     // setting interceptor for each; only the selector has a setting arm.
-    const forCouch = world.getInterceptorForAction(couch, 'if.action.setting');
-    const forSelector = world.getInterceptorForAction(selector, 'if.action.setting');
+    const forCouch = world.getInterceptorsForAction(couch, 'if.action.setting')[0];
+    const forSelector = world.getInterceptorsForAction(selector, 'if.action.setting')[0];
     expect(forCouch).toBeDefined();
     expect(forCouch!.interceptor.claims?.(couch)).toBe(false);
     expect(forSelector!.interceptor.claims?.(selector)).toBe(true);

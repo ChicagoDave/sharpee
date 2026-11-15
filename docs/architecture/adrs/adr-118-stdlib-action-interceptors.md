@@ -434,7 +434,9 @@ Continue using `registerEventHandler` pattern.
 
 ## Amendment 1 — composed-clause consultation order (2026-09-03)
 
-**Status**: DRAFT — awaiting David's acceptance (one open question below, rule 11a). Gates `docs/proposals/publish-readiness-defects.md` P-11 (GH #332, GH #350). Refined by ADR-228 (the lifecycle engine); this amendment changes the registry lookup ADR-228 D3-B consults, not the hook contract.
+**Status**: ACCEPTED — David, 2026-11-14 (session ff7996), ruling "A" on GH #708's three designs: this amendment as drafted, own clauses first, plus an explicit-ordering override (A6 below). Built 2026-11-15. Gates `docs/proposals/publish-readiness-defects.md` P-11 (GH #332, GH #350). Refined by ADR-228 (the lifecycle engine); this amendment changes the registry lookup ADR-228 D3-B consults, not the hook contract.
+
+**Corrected at acceptance (2026-11-15).** The Context below cites the code as it stood on 2026-09-03. The loader's runtime has since been split into sections: `define trait` clauses register in `packages/story-loader/src/runtime/dispatch-verbs.ts` (`bindTraitClauses`), `create`-block clauses and topic tables in `packages/story-loader/src/runtime/on-clauses.ts` (`bindOnClauses`, `mergeArms`). A1's "three `hasInterceptor` sites" are now one function, `hasInterceptorImplementation` in `packages/stdlib/src/actions/standard/dispatch-shared.ts`, and a fourth single-lookup reader existed that the draft did not list: `doorOpeningVeto` in `packages/stdlib/src/actions/standard/going/going.ts`.
 
 ### Context
 
@@ -450,18 +452,23 @@ Continue using `registerEventHandler` pattern.
 - **A3 — A gated-out clause falls through.** A clause whose `while` guard or `, once` sits it out returns null in validate and `{}` in report and consumes nothing: the next binding is consulted in every phase. A false guard therefore never shadows a topic table (GH #350). ADR-239 D5's catch-all rule is unchanged *inside* the owner's arm (table hit owns the response; the unfiltered clause serves misses).
 - **A4 — Refusals are validate-phase; rows are report-phase.** A trait's guarded `asking` refusal fires in `preValidate`, before the owner's table serves in `postReport`: guard true, the refusal vetoes; guard false, the table serves. That is GH #350's story need ("you cannot speak to a partner who is not your hand" across six ballgoers) without repeating the refusal on every row.
 - **A5 — No diagnostic.** Composition is legal and nothing is dead once A1 lands, so the analyzer adds no collision warning. The loader's existing refusal of two clauses for one *dispatch* action in one trait stands — the capability registry (ADR-090) is one behavior per (trait, action) and is outside this amendment.
+- **A6 — A stated order overrides A2 (added at acceptance).** `, before <trait>` and `, after <trait>` on a clause head were parsed and carried in the IR (`IROnClause.ordering`) and read by nothing. They now place the clause:
+  - On a thing's **own clause**, `, after <trait>` moves that clause behind every trait the thing composes; `, before <trait>` asks for where an own clause already stands.
+  - On a **trait's clause**, the word places that trait's whole binding for the action ahead of, or behind, the named trait's. One trait's clauses for one action are consulted together, so they take one place. Both traits a stated order names leave the written order: the earlier stands before, and the later after, every trait no order touches. Every consistent set of stated orders is honored, the same order stated from both sides included.
+  - The order is carried by A2's `priority` and nothing else, so world-model gains no new surface: own clauses register at 1000; a trait's at the number of stated orders that run behind it less the number that run ahead of it, zero when none touches it; and an own clause marked `, after` at −1000 under a second marker trait (`chord.behavior.late`). The numbers live in `packages/story-loader/src/clause-order.ts`.
+  - An order that cannot be honored refuses to load: a name that is no `define trait`; traits that order one another in a circle; an order on a clause nothing consults in an order (an every-turn clause, an event reaction, a clause on a story-defined action, a bare head); and `, after <trait>` on a topic table owner's own clause for a topic gerund, which is the table's catch-all (ADR-239 D5) and answers inside the table's arm.
+- **A7 — Attacking's combat contract over several bindings (added at acceptance).** Attacking took "the" target consultation as the combat resolution (ADR-228 D7.3). With every binding consulted, every target consultation is seeded with the swing, and the one whose `postExecute` leaves an `attackResult` is the resolution; a second binding beside it reacts and resolves nothing.
 
 ### Consequences
 
 - A world-model registry API change: the single-lookup form goes; `resolveLifecycle` and the three `hasInterceptor` sites follow in the same landing. ADR-228 D3-B's "each action resolves an interceptor per command entity" now reads "resolves every interceptor per command entity".
 - Trait placement on a `create` block becomes semantic for same-action clauses (composition order), the way definition order is semantic for grammar (ADR-268). The trait page documents it.
-- Secret Letter's GH #332 workaround (the second refusal folded into the shared keeper trait with a `when` naming the stall) reverts to two traits.
-- Open question 1 decides whether A2's order is own-block-first or traits-first; nothing else in the amendment depends on it.
+- Secret Letter's GH #332 workaround (the second refusal folded into the shared keeper trait with a `when` naming the stall) can revert to two traits; the 2026-11-15 landing does not touch the story, which is on hold.
+- A6's three refusals are load errors, not analyzer diagnostics: a story that states an impossible order compiles gate-clean and fails when it is loaded.
+### Ruled
 
-### Open Questions
-
-1. **Own block first (A2 as written) or composed traits first?** Recommended: own block first — specific over generic, the I7 precedent, and the topic table (own block) then serves after a trait's guard-false fall-through under the one rule. Traits-first would let a shared trait's phrase override beat an entity's own authored line.
+1. **Own block first (A2 as written) or composed traits first?** Own block first — David, 2026-11-14, choosing it over traits-first and over an analyzer refusal of the combination. Specific over generic: the topic table (own block) serves after a trait's guard-false fall-through under the one rule, and an author who wants the trait asked first writes `, after <trait>` on the own clause (A6).
 
 ### Session
 
-effb6f, 2026-09-03 — drafted in publish-readiness plan Phase 1 (`docs/work/publish-readiness/plan.md`).
+effb6f, 2026-09-03 — drafted in publish-readiness plan Phase 1 (`docs/work/publish-readiness/plan.md`). ff7996, 2026-11-14/15 — accepted and built for GH #708, with A6.

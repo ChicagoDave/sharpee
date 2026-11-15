@@ -129,8 +129,10 @@ binding map, idempotent last-wins; no already-registered guard needed):
 world.registerActionInterceptor(TrollAxeTrait.type, 'if.action.taking', TrollAxeTakingInterceptor);
 ```
 
-Stdlib actions resolve interceptors via `context.world.getInterceptorForAction(entity,
+Stdlib actions resolve interceptors via `context.world.getInterceptorsForAction(entity,
 actionId)` — never a module-level registry (the old free-function registry is deleted).
+It returns every binding the entity carries for the action, higher priority first and
+then in the order the traits were added, and every one is consulted (ADR-118 Amendment 1).
 
 **Lifecycle engine (ADR-228) and its one call site (ADR-337 D1)**: actions never
 hand-roll hook plumbing, and they never call the hooks. Each action exports an

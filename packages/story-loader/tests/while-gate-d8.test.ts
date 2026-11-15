@@ -220,7 +220,7 @@ type Loaded = ReturnType<typeof load>;
 /** Drive one full interceptor firing the way a stdlib action does. */
 function fireInterceptor(loaded: Loaded, irId: string, actionId = 'if.action.taking') {
   const entity = loaded.world.getEntity(irId)!;
-  const lookup = loaded.world.getInterceptorForAction(entity, actionId);
+  const lookup = loaded.world.getInterceptorsForAction(entity, actionId)[0];
   expect(lookup, `interceptor bound for ${actionId} on ${irId}`).toBeDefined();
   const data: Record<string, unknown> = {};
   const pre = lookup!.interceptor.preValidate?.(entity, loaded.world, loaded.playerId, data) ?? null;

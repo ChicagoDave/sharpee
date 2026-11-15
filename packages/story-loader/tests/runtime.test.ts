@@ -112,7 +112,7 @@ describe('the stumble clause (the Foyer Bar\'s `after the player entering while 
 describe('the on-reading interceptor (ActionInterceptor slice of §5.4)', () => {
   function readMessage(cw: CloakWorld) {
     const message = cw.world.getEntity('message-in-the-sawdust')!;
-    const lookup = cw.world.getInterceptorForAction(message, 'if.action.reading');
+    const lookup = cw.world.getInterceptorsForAction(message, 'if.action.reading')[0];
     expect(lookup, 'interceptor bound for reading').toBeDefined();
     const data = {};
     expect(lookup!.interceptor.preValidate!(message, cw.world, cw.playerId, data)).toBeNull();
@@ -250,7 +250,7 @@ define phrases en-US
     const player = story.createPlayer(world);
     world.setPlayer(player.id);
     const box = world.getEntity('box')!;
-    const lookup = world.getInterceptorForAction(box, 'if.action.reading')!;
+    const lookup = world.getInterceptorsForAction(box, 'if.action.reading')[0]!;
 
     const first = {};
     lookup.interceptor.postValidate!(box, world, player.id, first);

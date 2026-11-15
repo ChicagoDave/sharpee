@@ -20,6 +20,7 @@ import type { Choice } from '@sharpee/if-domain';
 import { type ActionInterceptor, type CapabilityBehavior, type CapabilityEffect, type CapabilitySharedData, type CapabilityValidationResult, Direction, IFEntity, type InterceptorReportResult, type InterceptorResult, type InterceptorSharedData, WorldModel } from '@sharpee/world-model';
 import { LoadError } from '../errors.js';
 import { ChordDataTrait } from '../chord-data-trait.js';
+import { assertOrderingTrait, refuseUnplacedOrdering, traitClausePriority } from '../clause-order.js';
 import { CHORD_TRAIT_PREFIX, clauseOccurrenceKey } from '../state-keys.js';
 import { ExecContext, toEffect, type RuntimeCore } from './core.js';
 
@@ -36,6 +37,10 @@ export class DispatchVerbsSection {
       const interceptorClauses = new Map<string, IROnClause[]>();
       const capabilityActions = new Set<string>();
       for (const clause of trait.onClauses) {
+        // A stated order names a story trait, and only an interceptor
+        // clause is consulted in an order.
+        assertOrderingTrait(this.core.ir, clause);
+        if (clause.binding === 'every-turn' || clause.routing === 'capability') refuseUnplacedOrdering(clause);
         if (clause.binding === 'every-turn') continue; // scheduler phase (plan phase 5)
         if (clause.binding === 'role') {
           throw new LoadError(
@@ -71,7 +76,10 @@ export class DispatchVerbsSection {
       }
       // One MERGED interceptor per (trait, action) — the D3 `on`/`after`
       // pair both fire (the idempotent registry would otherwise keep only
-      // the last-registered clause, silently).
+      // the last-registered clause, silently). The world consults every
+      // binding a carrier has for the action; the priority places this
+      // trait's among them — zero keeps the order the traits were written
+      // in, and a stated `, before`/`, after` moves it.
       for (const [action, actionClauses] of interceptorClauses) {
         world.registerActionInterceptor(
           traitType,
@@ -79,6 +87,7 @@ export class DispatchVerbsSection {
           this.core.onClauses.mergeArms(actionClauses.map((clause, index) =>
             this.buildTraitInterceptor(trait, clause, `${trait.name}.${action}.${clause.clauseKind}.${index}`),
           )),
+          { priority: traitClausePriority(this.core.ir, trait.name, action) },
         );
       }
     }

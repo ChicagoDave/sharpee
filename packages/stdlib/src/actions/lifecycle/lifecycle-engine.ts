@@ -14,7 +14,8 @@
  * - D2 — structured onBlocked: `{ override?, emit? }` applied against the
  *   standard blocked event, which always survives.
  * - D3 — all command entities consulted in the descriptor's published
- *   slot order, each consultation with its own sharedData; first veto
+ *   slot order, every binding on each entity in the registry's order
+ *   (ADR-118 Amendment 1), each consultation with its own sharedData; first veto
  *   stops the validate chain; postExecute/postReport run for every
  *   consultation once the action proceeds.
  * - Override arbitration: at most one consultation may return an
@@ -70,10 +71,11 @@ export function actorConsultationId(actionId: string): string {
 }
 
 /**
- * One resolved (entity, actionId) interceptor consultation.
+ * One resolved (entity, actionId, binding) interceptor consultation.
  *
- * A slot that consults two action ids (D6 both-ids) yields up to two
- * consultations; each has its own `data` (D3 sharedData isolation).
+ * A slot yields one consultation per action id it consults (D6 both-ids)
+ * and per binding the entity carries for that id (ADR-118 Amendment 1);
+ * each has its own `data` (D3 sharedData isolation).
  */
 export interface ResolvedConsultation {
   /** The descriptor slot this consultation came from. */
@@ -142,26 +144,27 @@ export function resolveLifecycle(
     if (!entity) continue;
 
     for (const actionId of slot.actionIds) {
-      const lookup = context.world.getInterceptorForAction(entity, actionId);
-      if (!lookup) continue;
-
-      // In a per-item resolution (D4), non-item slots' seedData receives
-      // the current item so shared entities (e.g. the container) can seed
-      // per-item context like the item id.
-      const multiObjectItem = !isOverrideSlot ? options?.slotOverride?.entity : undefined;
-      const data: InterceptorSharedData = slot.seedData
-        ? { ...slot.seedData(context, entity, multiObjectItem) }
-        : {};
-      // ADR-372 D1: the other noun's id, for a counterpart-tailed hook.
-      const counterpart = slot.counterpart?.(context, multiObjectItem);
-      if (counterpart) data.counterpartId = counterpart.id;
-      consultations.push({
-        slotId: slot.id,
-        actionId,
-        entity,
-        interceptor: lookup.interceptor,
-        data
-      });
+      // ADR-118 Amendment 1 A1: one consultation per binding on the entity,
+      // in the registry's order — never only the first.
+      for (const lookup of context.world.getInterceptorsForAction(entity, actionId)) {
+        // In a per-item resolution (D4), non-item slots' seedData receives
+        // the current item so shared entities (e.g. the container) can seed
+        // per-item context like the item id.
+        const multiObjectItem = !isOverrideSlot ? options?.slotOverride?.entity : undefined;
+        const data: InterceptorSharedData = slot.seedData
+          ? { ...slot.seedData(context, entity, multiObjectItem) }
+          : {};
+        // ADR-372 D1: the other noun's id, for a counterpart-tailed hook.
+        const counterpart = slot.counterpart?.(context, multiObjectItem);
+        if (counterpart) data.counterpartId = counterpart.id;
+        consultations.push({
+          slotId: slot.id,
+          actionId,
+          entity,
+          interceptor: lookup.interceptor,
+          data
+        });
+      }
     }
   }
 
@@ -175,8 +178,7 @@ export function resolveLifecycle(
   const actor = context.actor;
   if (actor) {
     const actorActionId = actorConsultationId(descriptor.actionId);
-    const lookup = context.world.getInterceptorForAction(actor, actorActionId);
-    if (lookup) {
+    for (const lookup of context.world.getInterceptorsForAction(actor, actorActionId)) {
       consultations.push({
         slotId: ACTOR_SLOT_ID,
         actionId: actorActionId,

@@ -89,6 +89,44 @@ describe('Attacking interceptor surface (ADR-228)', () => {
     expect((attacked.data as any).messageId).toBe('test.combat.solid_hit');
   });
 
+  test('combatant with two bindings: the one that leaves an attackResult resolves combat, whichever is consulted first', () => {
+    const { world, room } = setupBasicWorld();
+    const troll = world.createEntity('nasty troll', 'actor');
+    troll.add(new ActorTrait());
+    troll.add(new CombatantTrait());
+    troll.add({ type: TEST_MARKER_TRAIT } as any);
+    troll.add({ type: SECOND_TEST_MARKER_TRAIT } as any);
+    world.moveEntity(troll.id, room.id);
+
+    // The combat system, at the default priority.
+    world.registerActionInterceptor(TEST_MARKER_TRAIT, IFActions.ATTACKING, {
+      postExecute(entity, w, _actor, data) {
+        // Seeded although this binding is consulted second.
+        expect(data.targetId).toBe(entity.id);
+        data.attackResult = { success: true, type: 'hit', damage: 4, remainingHitPoints: 6, targetDestroyed: false };
+        data.customMessage = 'test.combat.solid_hit';
+        w.setStateValue('combat.resolved', true);
+      },
+    });
+    // A reaction consulted FIRST (the shape of a thing's own `after` clause
+    // beside the combat trait): it resolves nothing.
+    world.registerActionInterceptor(SECOND_TEST_MARKER_TRAIT, IFActions.ATTACKING, {
+      postExecute(_entity, w) {
+        w.setStateValue('reaction.ran', true);
+      },
+    }, { priority: 1000 });
+
+    const context = createRealTestContext(attackingAction, world, createCommand(IFActions.ATTACKING, { entity: troll }));
+    expect(runValidatePhase(attackingAction, context).valid).toBe(true);
+    runExecutePhase(attackingAction, context);
+
+    expect(world.getStateValue('reaction.ran')).toBe(true);
+    expect(world.getStateValue('combat.resolved')).toBe(true);
+    expect((context.sharedData.attackResult as any).type).toBe('hit');
+    expect((context.sharedData.attackResult as any).damage).toBe(4);
+    expect(context.sharedData.customMessage).toBe('test.combat.solid_hit');
+  });
+
   test('combatant with NO interceptor blocks with violence_not_the_answer', () => {
     const { world, room } = setupBasicWorld();
     const troll = world.createEntity('meek troll', 'actor');

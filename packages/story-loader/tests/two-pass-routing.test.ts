@@ -198,7 +198,7 @@ type Loaded = ReturnType<typeof load>;
  */
 function fire(cw: Loaded, irId: string, actionId: string) {
   const target = cw.world.getEntity(irId)!;
-  const lookup = cw.world.getInterceptorForAction(target, actionId)!;
+  const lookup = cw.world.getInterceptorsForAction(target, actionId)[0]!;
   const data = {};
   lookup.interceptor.preValidate?.(target, cw.world, cw.player.id, data);
   lookup.interceptor.postValidate?.(target, cw.world, cw.player.id, data);

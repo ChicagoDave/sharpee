@@ -342,22 +342,26 @@ export interface IWorldModel {
     options?: InterceptorRegistrationOptions
   ): void;
   /**
-   * Resolve the interceptor for an entity + action on this world.
+   * Resolve every interceptor for an entity + action on this world, in
+   * consultation order (ADR-118 Amendment 1).
    *
    * Scans the entity's traits for interceptor bindings registered for the
-   * action and returns the highest-priority match (ADR-118 resolution).
+   * action and returns all of them: higher priority first, and among equal
+   * priorities in the order the entity's traits were added. No binding is
+   * dropped — a caller that consults only the first has reintroduced the
+   * defect this replaced (one trait's hook silencing another's).
    *
    * @param entity - The entity whose traits are checked
    * @param actionId - The action ID to resolve
-   * @returns The interceptor, its declaring trait, and the binding — or
-   *   `undefined` if this world has no binding for any of the entity's
-   *   traits + action (the standard action proceeds unintercepted — never
-   *   throws for a missing binding).
+   * @returns One result per bound trait (interceptor, declaring trait,
+   *   binding), or an empty array if this world has no binding for any of
+   *   the entity's traits + action (the standard action proceeds
+   *   unintercepted — never throws for a missing binding).
    */
-  getInterceptorForAction(
+  getInterceptorsForAction(
     entity: { traits: Map<string, ITrait> },
     actionId: string
-  ): InterceptorLookupResult | undefined;
+  ): InterceptorLookupResult[];
   /**
    * Resolve the full binding (interceptor + priority) for a
    * (traitType, actionId) pair on this world.
@@ -948,39 +952,31 @@ export class WorldModel implements IWorldModel {
     });
   }
 
-  getInterceptorForAction(
+  getInterceptorsForAction(
     entity: { traits: Map<string, ITrait> },
     actionId: string
-  ): InterceptorLookupResult | undefined {
+  ): InterceptorLookupResult[] {
     // Find all traits on the entity that have an interceptor bound for this
     // action on this world (lookup by trait type string — more reliable than
-    // a static constructor property across module copies).
-    const candidates: Array<{ trait: ITrait; binding: TraitInterceptorBinding }> = [];
+    // a static constructor property across module copies). The trait map
+    // iterates in insertion order, so candidates start in `add()` order.
+    const candidates: InterceptorLookupResult[] = [];
 
     for (const trait of entity.traits.values()) {
       const binding = this.interceptorBindings.get(
         interceptorBindingKey(trait.type, actionId)
       );
       if (binding) {
-        candidates.push({ trait, binding });
+        candidates.push({ interceptor: binding.interceptor, trait, binding });
       }
     }
 
-    // No binding on this world for any of the entity's traits — the standard
-    // action proceeds unintercepted (AC-10). Never throw for a missing binding.
-    if (candidates.length === 0) {
-      return undefined;
-    }
-
-    // Highest priority wins (ADR-118 resolution semantics, unchanged).
-    candidates.sort((a, b) => b.binding.priority - a.binding.priority);
-
-    const { trait, binding } = candidates[0];
-    return {
-      interceptor: binding.interceptor,
-      trait,
-      binding
-    };
+    // Every binding is consulted (ADR-118 Amendment 1 A1): higher priority
+    // first, and `Array.prototype.sort` is stable, so equal priorities keep
+    // the entity's trait order (A2). No binding on this world for any of the
+    // entity's traits is the empty array — the standard action proceeds
+    // unintercepted (AC-10). Never throw for a missing binding.
+    return candidates.sort((a, b) => b.binding.priority - a.binding.priority);
   }
 
   getInterceptorBinding(traitType: string, actionId: string): TraitInterceptorBinding | undefined {

@@ -80,7 +80,7 @@ function load() {
 
 function readTarget(story: ChordStory, world: WorldModel, playerId: string, irId: string) {
   const target = world.getEntity(irId)!;
-  const lookup = world.getInterceptorForAction(target, 'if.action.reading');
+  const lookup = world.getInterceptorsForAction(target, 'if.action.reading')[0];
   expect(lookup, `interceptor bound for ${irId}`).toBeDefined();
   const data = {};
   lookup!.interceptor.preValidate!(target, world, playerId, data);

@@ -266,7 +266,7 @@ describe('polishing: `it must be any penned-crate` (satisfies through the must l
 describe('each through the standard-action interceptor paths (§5.4 two-phase)', () => {
   function drivePhases(l: Loaded, targetIrId: string) {
     const target = worldEntity(l, targetIrId);
-    const lookup = l.world.getInterceptorForAction(target, 'if.action.reading');
+    const lookup = l.world.getInterceptorsForAction(target, 'if.action.reading')[0];
     expect(lookup, `interceptor bound for reading on ${targetIrId}`).toBeDefined();
     const data = {};
     expect(lookup!.interceptor.preValidate!(target, l.world, l.player.id, data)).toBeNull();

@@ -1427,7 +1427,8 @@ export interface ActionLifecycleDescriptor {
  * - D2 — structured onBlocked: `{ override?, emit? }` applied against the
  *   standard blocked event, which always survives.
  * - D3 — all command entities consulted in the descriptor's published
- *   slot order, each consultation with its own sharedData; first veto
+ *   slot order, every binding on each entity in the registry's order
+ *   (ADR-118 Amendment 1), each consultation with its own sharedData; first veto
  *   stops the validate chain; postExecute/postReport run for every
  *   consultation once the action proceeds.
  * - Override arbitration: at most one consultation may return an
@@ -1465,10 +1466,11 @@ export declare const ACTOR_SLOT_ID = "actor";
  */
 export declare function actorConsultationId(actionId: string): string;
 /**
- * One resolved (entity, actionId) interceptor consultation.
+ * One resolved (entity, actionId, binding) interceptor consultation.
  *
- * A slot that consults two action ids (D6 both-ids) yields up to two
- * consultations; each has its own `data` (D3 sharedData isolation).
+ * A slot yields one consultation per action id it consults (D6 both-ids)
+ * and per binding the entity carries for that id (ADR-118 Amendment 1);
+ * each has its own `data` (D3 sharedData isolation).
  */
 export interface ResolvedConsultation {
     /** The descriptor slot this consultation came from. */

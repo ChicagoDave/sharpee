@@ -84,7 +84,7 @@ function load(source = SOURCE) {
 /** Flip the story to midnight through the bell's REAL registered interceptor. */
 function ringBell({ story, world, player }: ReturnType<typeof load>): void {
   const bell = world.getEntity('bell')!;
-  const lookup = world.getInterceptorForAction(bell, 'if.action.pushing')!;
+  const lookup = world.getInterceptorsForAction(bell, 'if.action.pushing')[0]!;
   const data = {};
   lookup.interceptor.postValidate!(bell, world, player.id, data);
   lookup.interceptor.postExecute!(bell, world, player.id, data);

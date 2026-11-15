@@ -28,7 +28,8 @@ import {
   AttackBehavior,
   type IAttackResult,
   HealthTrait,
-  HealthBehavior
+  HealthBehavior,
+  type InterceptorSharedData
 } from '@sharpee/world-model';
 import { IFActions } from '../../constants.js';
 import { runBreakingLifecycle } from '../breaking/breaking.js';
@@ -91,9 +92,16 @@ function getAttackingSharedData(context: ActionContext): AttackingSharedData {
   return context.sharedData as AttackingSharedData;
 }
 
-/** The target slot's consultation, which owns the combat special contract. */
-function targetConsultation(state: LifecycleState | undefined): ResolvedConsultation | undefined {
-  return state?.consultations.find(c => c.slotId === 'target');
+/**
+ * The target slot's consultations, one per interceptor binding the target
+ * carries for attacking (ADR-118 Amendment 1). Together they own the combat
+ * special contract: every one is seeded with the swing, and the one whose
+ * postExecute leaves an `attackResult` is the combat resolution — a second
+ * binding beside it (a thing's own `after` clause) reacts and resolves
+ * nothing.
+ */
+function targetConsultations(state: LifecycleState | undefined): ResolvedConsultation[] {
+  return state?.consultations.filter(c => c.slotId === 'target') ?? [];
 }
 
 export const attackingAction: Action & { metadata: ActionMetadata } = {
@@ -185,7 +193,7 @@ export const attackingAction: Action & { metadata: ActionMetadata } = {
       // response. The executor resolved the lifecycle before this phase
       // (ADR-337 D1), so the consultations are readable here.
       const state = getLifecycleState(context);
-      if (!state || !targetConsultation(state)) {
+      if (!state || targetConsultations(state).length === 0) {
         return { valid: false, error: 'violence_not_the_answer', params: { target: nounPhraseFor(target) } };
       }
     }
@@ -227,12 +235,13 @@ export const attackingAction: Action & { metadata: ActionMetadata } = {
     }
 
     const state = getLifecycleState(context);
-    const targetC = targetConsultation(state);
+    const targetCs = targetConsultations(state);
 
-    // Seed combat context onto the target consultation's sharedData so the
-    // combat interceptor knows what's swinging (weapon may be inferred here
-    // in execute, after the descriptor's resolve-time seeding).
-    if (targetC) {
+    // Seed combat context onto every target consultation's sharedData so the
+    // combat interceptor knows what's swinging, whichever binding it is
+    // (weapon may be inferred here in execute, after the descriptor's
+    // resolve-time seeding).
+    for (const targetC of targetCs) {
       Object.assign(targetC.data, {
         weaponId: weapon?.id,
         weaponName: weapon?.name,
@@ -245,7 +254,7 @@ export const attackingAction: Action & { metadata: ActionMetadata } = {
 
     // Check if target is a combatant (NPC combat)
     if (target.has(TraitType.COMBATANT)) {
-      if (targetC?.interceptor.postExecute) {
+      if (targetCs.some(c => c.interceptor.postExecute)) {
         // === SPECIAL CONTRACT: postExecuteReplacesCore (ADR-228 D7.3) ===
         // The target consultation's postExecute IS the combat resolution
         // (declared on attackingLifecycle.contracts, not a comment). It
@@ -258,8 +267,12 @@ export const attackingAction: Action & { metadata: ActionMetadata } = {
         // too — the audit's dead second-entity surface).
         if (state) runPostExecute(context, state);
 
-        // Copy interceptor's result data to sharedData
-        const attackResult = targetC.data.attackResult as AttackResult;
+        // Copy the resolving interceptor's result data to sharedData: the
+        // first target consultation that left an attackResult. With none,
+        // no binding resolved combat and the swing reads as a miss.
+        const resolved = targetCs.find(c => c.data.attackResult !== undefined);
+        const resolvedData: InterceptorSharedData = resolved?.data ?? {};
+        const attackResult = resolvedData.attackResult as AttackResult;
         Object.assign(context.sharedData, {
           attackResult: attackResult || {
             success: true,
@@ -270,9 +283,9 @@ export const attackingAction: Action & { metadata: ActionMetadata } = {
           },
           weaponUsed: weapon?.id,
           weaponInferred,
-          customMessage: targetC.data.customMessage as string | undefined,
-          combatResult: targetC.data.combatResult as unknown,
-          usedCombatService: (targetC.data.usedCombatService as boolean | undefined) ?? false,
+          customMessage: resolvedData.customMessage as string | undefined,
+          combatResult: resolvedData.combatResult as unknown,
+          usedCombatService: (resolvedData.usedCombatService as boolean | undefined) ?? false,
         } satisfies Partial<AttackingSharedData>);
       } else {
         // Should not reach here — validate blocks if no interceptor.

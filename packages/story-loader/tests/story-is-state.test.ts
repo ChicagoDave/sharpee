@@ -78,7 +78,7 @@ describe('`the story is <state>` follows the story state at run time (GH #705)',
 
     // `change the story to night`, through the sundial's registered interceptor.
     const sundial = world.getEntity('sundial')!;
-    const lookup = world.getInterceptorForAction(sundial, 'if.action.pushing')!;
+    const lookup = world.getInterceptorsForAction(sundial, 'if.action.pushing')[0]!;
     const data = {};
     lookup.interceptor.postValidate!(sundial, world, player.id, data);
     lookup.interceptor.postExecute!(sundial, world, player.id, data);

@@ -197,22 +197,32 @@ function resolveSourceRoom(context: ActionContext): IFEntity | undefined {
 
 /**
  * The door's authored opening refusal, if any (GH #245 defect 5): runs the
- * door's `if.action.opening` interceptor's preValidate/postValidate hooks
- * with the seed opening's lifecycle gives them and returns the first veto
+ * preValidate/postValidate hooks of every `if.action.opening` interceptor
+ * the door carries, with the seed opening's lifecycle gives them, and returns the first veto
  * — so `north` at a jammed door reads the story's hint, not "is closed".
  * No hook, no veto → null (the stock refusal stands). Nothing is opened.
  */
 function doorOpeningVeto(context: ActionContext, door: IFEntity): ValidationResult | null {
-  const interceptor = context.world.getInterceptorForAction(door, IFActions.OPENING)?.interceptor;
-  if (!interceptor) return null;
-  const data: Record<string, unknown> = { targetId: door.id, targetName: door.name };
-  const pre = interceptor.preValidate
-    ? vetoOf(interceptor.preValidate(door, context.world, context.actor.id, data, context.random))
-    : null;
-  if (pre) return pre;
-  return interceptor.postValidate
-    ? vetoOf(interceptor.postValidate(door, context.world, context.actor.id, data, context.random))
-    : null;
+  // Every binding on the door is asked, in the registry's order, as opening
+  // itself asks them (ADR-118 Amendment 1): all preValidate hooks, then all
+  // postValidate hooks, each binding with its own data.
+  const consulted = context.world.getInterceptorsForAction(door, IFActions.OPENING).map(({ interceptor }) => ({
+    interceptor,
+    data: { targetId: door.id, targetName: door.name } as Record<string, unknown>,
+  }));
+  for (const { interceptor, data } of consulted) {
+    const pre = interceptor.preValidate
+      ? vetoOf(interceptor.preValidate(door, context.world, context.actor.id, data, context.random))
+      : null;
+    if (pre) return pre;
+  }
+  for (const { interceptor, data } of consulted) {
+    const post = interceptor.postValidate
+      ? vetoOf(interceptor.postValidate(door, context.world, context.actor.id, data, context.random))
+      : null;
+    if (post) return post;
+  }
+  return null;
 }
 
 /**

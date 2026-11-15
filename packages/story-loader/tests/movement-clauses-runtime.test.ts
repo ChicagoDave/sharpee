@@ -101,8 +101,8 @@ function goFrom(b: Booted, roomIrId: string) {
   const room = b.world.getEntity(roomIrId)!;
   const player = b.world.getEntity(b.playerId)!;
   const consultations = [
-    { target: room, lookup: b.world.getInterceptorForAction(room, 'if.action.going') },
-    { target: player, lookup: b.world.getInterceptorForAction(player, actorConsultationId('if.action.going')) },
+    { target: room, lookup: b.world.getInterceptorsForAction(room, 'if.action.going')[0] },
+    { target: player, lookup: b.world.getInterceptorsForAction(player, actorConsultationId('if.action.going'))[0] },
   ].filter((c) => c.lookup !== undefined).map((c) => ({ ...c, data: {} }));
   expect(consultations.length, 'a going interceptor bound on the room or the player').toBeGreaterThan(0);
   for (const c of consultations) {
@@ -129,10 +129,10 @@ describe("the player's own going (D3h)", () => {
     const b = boot(SOURCE('', PLAYER));
     const yard = b.world.getEntity('yard')!;
     expect(yard.has(TraitType.ROOM)).toBe(true);
-    expect(b.world.getInterceptorForAction(yard, 'if.action.going')).toBeUndefined();
+    expect(b.world.getInterceptorsForAction(yard, 'if.action.going')).toEqual([]);
     const player = b.world.getEntity(b.playerId)!;
-    expect(b.world.getInterceptorForAction(player, actorConsultationId('if.action.going'))).toBeDefined();
-    expect(b.world.getInterceptorForAction(player, 'if.action.going')).toBeUndefined();
+    expect(b.world.getInterceptorsForAction(player, actorConsultationId('if.action.going'))).toHaveLength(1);
+    expect(b.world.getInterceptorsForAction(player, 'if.action.going')).toEqual([]);
   });
 
   it('`on going while …` refuses the move when the gate holds, from any room', () => {
@@ -198,7 +198,7 @@ end before
     const b = boot(src);
     expect(goFrom(b, 'yard').veto).toMatchObject({ error: 'merc-held' });
     const gate = b.world.getEntity('gate')!;
-    expect(b.world.getInterceptorForAction(gate, 'if.action.going')).toBeUndefined();
+    expect(b.world.getInterceptorsForAction(gate, 'if.action.going')).toEqual([]);
   });
 });
 

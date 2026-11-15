@@ -33,6 +33,7 @@ import {
   setupBasicWorld,
   expectEvent,
   TEST_MARKER_TRAIT,
+  SECOND_TEST_MARKER_TRAIT,
 } from '../../test-utils';
 
 /** A command with a typed topic (`set x to <value>`), as the parser's topic slot delivers it. */
@@ -119,6 +120,42 @@ for (const c of dispatching) {
     });
   });
 }
+
+describe('any binding on the target can be the implementation (ADR-118 Amendment 1)', () => {
+  test('the first binding does not claim the target and a second does: the second implements it', () => {
+    const { world, room } = setupBasicWorld();
+    const ramp = world.createEntity('ramp', 'object');
+    ramp.add({ type: TEST_MARKER_TRAIT } as any);
+    ramp.add({ type: SECOND_TEST_MARKER_TRAIT } as any);
+    world.moveEntity(ramp.id, room.id);
+    world.registerActionInterceptor(TEST_MARKER_TRAIT, IFActions.LOWERING, {
+      claims: () => false,
+    });
+    world.registerActionInterceptor(SECOND_TEST_MARKER_TRAIT, IFActions.LOWERING, {
+      claims: (target) => target.id === ramp.id,
+      postExecute(_target, w) {
+        w.setStateValue('ramp.lowered', true);
+      },
+    });
+    expect(world.getStateValue('ramp.lowered')).toBeUndefined();
+    const { validation } = drive(loweringAction, world, createCommand(IFActions.LOWERING, { entity: ramp }));
+    expect(validation.valid).toBe(true);
+    expect(world.getStateValue('ramp.lowered')).toBe(true);
+  });
+
+  test('two bindings and neither claims the target: it has no implementation', () => {
+    const { world, room } = setupBasicWorld();
+    const crates = world.createEntity('mail crates', 'object');
+    crates.add({ type: TEST_MARKER_TRAIT } as any);
+    crates.add({ type: SECOND_TEST_MARKER_TRAIT } as any);
+    world.moveEntity(crates.id, room.id);
+    world.registerActionInterceptor(TEST_MARKER_TRAIT, IFActions.LOWERING, { claims: () => false });
+    world.registerActionInterceptor(SECOND_TEST_MARKER_TRAIT, IFActions.LOWERING, { claims: () => false });
+    const { validation } = drive(loweringAction, world, createCommand(IFActions.LOWERING, { entity: crates }));
+    expect(validation.valid).toBe(false);
+    expect(validation.error).toBe('cant_lower_that');
+  });
+});
 
 describe('an interceptor counts only for the things it claims (ADR-371 D1a)', () => {
   test('claims false: the target has no implementation, refuses cant_lower_that, and no hook mutates', () => {
