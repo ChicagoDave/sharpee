@@ -102,7 +102,7 @@ define trait hushable
 
   on the player hushing
     refuse when it is not tolling: already-quiet
-    change it to still
+    change it to silent
     award quieted
     phrase bell-hushed
   end on
@@ -721,7 +721,7 @@ create the tower bell
   aka bell
   a thing, scenery, hushable
   in the Bell Stair
-  states, reversible: still, tolling
+  states, reversible: silent, tolling
 
   You cannot see the bell from here, only the dark it hangs in.
 

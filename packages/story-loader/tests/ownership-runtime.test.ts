@@ -124,6 +124,20 @@ describe('D4 forward-march at runtime (non-reversible sets)', () => {
     expect(world.getStateValue(CHORD_STATE_PREFIX + 'plum')).toBe('rotten'); // unwritten
   });
 
+  it('the refusal spells the whole corrected `states` line, not a word to add to it (GH #709)', () => {
+    const { story, world, playerId } = load(MARCH_STORY);
+    world.setStateValue(CHORD_STATE_PREFIX + 'plum', 'rotten');
+    let message = '';
+    try {
+      enterRoom(story, world, playerId, 'orchard');
+    } catch (error) {
+      message = (error as Error).message;
+    }
+    expect(message).toContain('`states, reversible: green, ripe, rotten`');
+    expect(message).not.toContain('add `, reversible`');
+    expect(message).not.toContain('(D4)');
+  });
+
   it('the story set marches forward too', () => {
     const { story, world, playerId } = load(MARCH_STORY);
     world.setStateValue(CHORD_STORY_STATE_KEY, 'dusk');

@@ -186,8 +186,10 @@ was played from it too.
   is no `wick` trait; the lamp, the candles and the Lantern each repeat one requirement line.
 - A trait with one carrier is normal, not a smell: a thing may not answer a story action in its own
   `on` clause, so the grille's answer to unbind has to be a trait even though nothing else has it.
-- `states: still, tolling, reversible` compiles, as three states. The form is `states, reversible:
-  still, tolling`, and the runtime error's hint reads like the wrong one. Issue #709.
+- `states: still, tolling, reversible` compiled, as three states. The form is `states, reversible:
+  still, tolling`, and the runtime error's hint read like the wrong one. Issue #709, fixed
+  2026-11-15: the list form is refused and both errors spell the whole line. The bell's first
+  state was renamed `silent` the same day, in every snapshot.
 - The candles are one thing, not three, and `each` is still not in the game. Lighting several
   things in one casting needs `change the match to lit` to mean something (#707). When it does,
   the three candles and `each` come back.
@@ -394,7 +396,7 @@ CLI (`node packages/devkit/dist/cli.js`), not the published one.
 - Writing the `never` found a hole in the story all the same. From the first turn the bargain
   could be struck in the Refectory, the fourth page read, and the grille unbound before the bell
   had ever rung: ten commands to the roof, with hush never needed. The tower bell is now `states:
-  unrung, tolling, still` and the ward refuses twice, `when the tower bell is unrung:
+  unrung, tolling, silent` and the ward refuses twice, `when the tower bell is unrung:
   ward-asleep` and `when the tower bell is tolling: ward-in-the-bell`. The second branch of the
   tree walks the old shortcut and pins the refusal. The bell is no longer `reversible`, so chapter
   13 needs another reversible thing.

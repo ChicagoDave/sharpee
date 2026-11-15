@@ -282,6 +282,8 @@ const IMPLIED_IMAGE_LAYERS = new Set(['background', 'main', 'overlay']);
 
 /** Ring 1 of the boolean-state gate (D9): literal booleans as state names. */
 const BOOLEAN_STATE_WORDS = new Set(['true', 'false', 'yes', 'no']);
+/** The word of `states, reversible:`. It modifies a set and never names a state in one. */
+const STATES_MODIFIER_WORD = 'reversible';
 
 
 /**
@@ -4213,6 +4215,17 @@ export class Analyzer {
   private checkStateSet(states: StateName[], ownerDesc: string): void {
     const names = states.map((s) => s.name);
     for (const s of states) {
+      if (s.name.toLowerCase() === STATES_MODIFIER_WORD) {
+        // `states: still, tolling, reversible` is the modifier written in
+        // the list, where it would be a third state (GH #709).
+        const others = names.filter((n) => n.toLowerCase() !== STATES_MODIFIER_WORD);
+        const corrected = others.length ? others.join(', ') : '<first>, <second>';
+        this.diagnostics.error(
+          'analysis.reversible-state',
+          `\`${STATES_MODIFIER_WORD}\` is the word that permits back-transitions, not a state of ${ownerDesc} — it goes before the colon: \`states, ${STATES_MODIFIER_WORD}: ${corrected}\`.`,
+          s.span,
+        );
+      }
       if (BOOLEAN_STATE_WORDS.has(s.name)) {
         this.diagnostics.error(
           'analysis.boolean-state',
@@ -4272,15 +4285,28 @@ export class Analyzer {
    * D4 forward-march, statically provable half: a `change` targeting the
    * INITIAL state of a non-reversible set can never be a forward move.
    * (The runtime enforces full ordering; this is the load-time gate.)
+   * Reports `analysis.irreversible-state`, spelling the whole corrected
+   * `states` line: "add `, reversible`" read literally declares a state
+   * named `reversible` (GH #709).
+   *
+   * @param info the set the state belongs to, or null when undeterminable
+   * @param on the composer the set is on, when a trait body's `it` reached it
+   * @returns whether the change was refused
    */
-  private checkChangeLegality(info: StateSetInfo | null, state: string, span: Span): void {
-    if (info && !info.reversible && info.states.length > 0 && info.states[0] === state) {
-      this.diagnostics.error(
-        'analysis.irreversible-state',
-        `\`${state}\` is the initial state of a forward-only set — \`change\` cannot go back. Add \`, reversible\` to the \`states:\` line to permit back-transitions (D4).`,
-        span,
-      );
-    }
+  private checkChangeLegality(
+    info: StateSetInfo | null,
+    state: string,
+    span: Span,
+    on?: { name: string; viaTrait: string | undefined },
+  ): boolean {
+    if (!info || info.reversible || info.states.length === 0 || info.states[0] !== state) return false;
+    const where = on ? ` on ${on.name}${on.viaTrait ? ` (it composes \`${on.viaTrait}\`)` : ''}` : '';
+    this.diagnostics.error(
+      'analysis.irreversible-state',
+      `\`${state}\` is the initial state of a forward-only set${where} — \`change\` cannot go back. Declare the set as \`states, reversible: ${info.states.join(', ')}\` to permit back-transitions.`,
+      span,
+    );
+    return true;
   }
 
   /**
@@ -6295,6 +6321,30 @@ export class Analyzer {
           // A platform state word a thing did not declare as a state writes
           // the paired trait, so that thing must carry it (GH #707).
           this.checkChangePairing(undeclaredOn, sym ? undefined : scope.traitName, stmt.state, pairedTrait, stmt.span);
+        } else if (!sym && reached.length) {
+          // A trait body's `it` is each composer in turn, so the statement
+          // must hold on every one of them: the state declared there, and
+          // not the initial state of a forward-only set there (GH #709).
+          // The union of the composers' states would pass a composer that
+          // lacks the state, and the trait's own sets say nothing about a
+          // set a composer declares.
+          const viaTrait = scope.traitName;
+          const lacking = undeclaredOn[0];
+          if (lacking) {
+            this.diagnostics.error(
+              'analysis.undeclared-state',
+              `\`${stmt.state}\` is not a declared state of ${lacking.nameLower} (it composes \`${viaTrait}\`)${this.suggestText(stmt.state, lacking.states)}.`,
+              stmt.span,
+            );
+          } else {
+            for (const composer of reached) {
+              const refused = this.checkChangeLegality(this.stateSetOf(composer, stmt.state), stmt.state, stmt.span, {
+                name: composer.nameLower,
+                viaTrait,
+              });
+              if (refused) break;
+            }
+          }
         } else if (validStates && !validStates.includes(stmt.state)) {
           this.diagnostics.error(
             'analysis.undeclared-state',
@@ -6303,6 +6353,19 @@ export class Analyzer {
           );
         } else if (validStates) {
           this.checkChangeLegality(this.stateSetOf(sym ?? null, stmt.state), stmt.state, stmt.span);
+        } else if (entity.kind !== 'unresolved' && pairedTrait === undefined) {
+          // `the match`, a slot, or an `it` nothing composes: which thing it
+          // is is known only in play, where the loader refuses one that
+          // lacks the state. What is provable here is that the word is a
+          // state of something; a word nothing declares is a misspelling.
+          const declared = this.declaredStateUnion();
+          if (!declared.includes(stmt.state)) {
+            this.diagnostics.error(
+              'analysis.undeclared-state',
+              `\`${stmt.state}\` is not a state any thing or trait in the story declares${this.suggestText(stmt.state, declared)}.`,
+              stmt.span,
+            );
+          }
         }
         return { kind: 'change', entity, state: stmt.state, stmtWhen: this.resolveStmtWhen(stmt.stmtWhen, scope), span: stmt.span };
       }

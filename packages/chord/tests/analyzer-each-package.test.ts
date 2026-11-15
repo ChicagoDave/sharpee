@@ -40,11 +40,12 @@ describe('each-compile.story — E1/E2/E3 + must-be-any IR (each package P3)', (
   const barn = ir.entities.find((e) => e.id === 'trophy-barn')!;
   const sequence = ir.sequences[0];
 
-  it('classifies all three named conditions as open', () => {
+  it('classifies all four named conditions as open', () => {
     expect(ir.conditions.map((c) => [c.name, c.open])).toEqual([
       ['stray-treasure', true],
       ['alarm-trigger', true],
       ['barn-occupant', true],
+      ['calm-occupant', true],
     ]);
   });
 
@@ -80,7 +81,9 @@ describe('each-compile.story — E1/E2/E3 + must-be-any IR (each package P3)', (
   it('compiles each blocks in trait clause bodies and action bodies with match targets', () => {
     expect(trait.onClauses[0].body[2]).toMatchObject({
       kind: 'each',
-      condition: 'barn-occupant',
+      // Only what is calm declares `spooked`: the loader refuses a match
+      // that does not declare the state it is changed to (GH #709).
+      condition: 'calm-occupant',
       body: [{ kind: 'change', entity: { kind: 'match' }, state: 'spooked' }],
     });
     expect(action.body[0]).toMatchObject({
@@ -126,7 +129,7 @@ describe('each-compile.story — E1/E2/E3 + must-be-any IR (each package P3)', (
         object: { kind: 'symbol', name: 'spooked' },
       },
     });
-    expect(sequence.steps[0].body[1]).toMatchObject({ kind: 'each', condition: 'barn-occupant' });
+    expect(sequence.steps[0].body[1]).toMatchObject({ kind: 'each', condition: 'calm-occupant' });
   });
 
   it('matches the golden IR snapshot', () => {

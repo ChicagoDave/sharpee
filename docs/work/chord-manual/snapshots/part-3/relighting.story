@@ -379,7 +379,7 @@ create the tower bell
   aka bell
   a thing, scenery
   in the Bell Stair
-  states: still, tolling
+  states: silent, tolling
 
   You cannot see the bell from here, only the dark it hangs in.
 

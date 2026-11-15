@@ -468,6 +468,7 @@ Continue using `registerEventHandler` pattern.
 ### Ruled
 
 1. **Own block first (A2 as written) or composed traits first?** Own block first — David, 2026-11-14, choosing it over traits-first and over an analyzer refusal of the combination. Specific over generic: the topic table (own block) serves after a trait's guard-false fall-through under the one rule, and an author who wants the trait asked first writes `, after <trait>` on the own clause (A6).
+2. **Do A7 and the mechanism of A6 stand as built?** Both stand — David, 2026-11-15 (session 1bd246), on GH #745. They were added at acceptance and built before he ruled on them; he confirmed each as built, with no amendment.
 
 ### Session
 

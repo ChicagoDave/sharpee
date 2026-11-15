@@ -9,6 +9,7 @@ story
 define condition stray-treasure: it is a treasure and it is not in the Trophy Barn
 define condition alarm-trigger: it is a treasure and the player holds it
 define condition barn-occupant: it is in the Trophy Barn
+define condition calm-occupant: it is calm and it is in the Trophy Barn
 
 define trait skittish
   states: calm, spooked
@@ -22,7 +23,7 @@ define trait skittish
   on the player prodding while any alarm-trigger
     it must be any barn-occupant: all-clear
     refuse when no stray-treasure: all-clear
-    each barn-occupant
+    each calm-occupant
       change the match to spooked
     end each
     phrase scatter
@@ -78,7 +79,7 @@ create the pygmy goat
 define sequence closing sweep
   at turn 3
     phrase sweep-note when no smoking sign is spooked
-    each barn-occupant
+    each calm-occupant
       change the match to spooked
     end each
 end sequence

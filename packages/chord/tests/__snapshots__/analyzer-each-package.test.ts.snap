@@ -19,8 +19,8 @@ exports[`each-compile.story — E1/E2/E3 + must-be-any IR (each package P3) > ma
               "span": {
                 "column": 5,
                 "endColumn": 38,
-                "endLine": 44,
-                "line": 44,
+                "endLine": 45,
+                "line": 45,
               },
               "stmtWhen": null,
             },
@@ -30,8 +30,8 @@ exports[`each-compile.story — E1/E2/E3 + must-be-any IR (each package P3) > ma
           "span": {
             "column": 3,
             "endColumn": 11,
-            "endLine": 45,
-            "line": 43,
+            "endLine": 46,
+            "line": 44,
           },
         },
         {
@@ -41,8 +41,8 @@ exports[`each-compile.story — E1/E2/E3 + must-be-any IR (each package P3) > ma
           "span": {
             "column": 3,
             "endColumn": 44,
-            "endLine": 46,
-            "line": 46,
+            "endLine": 47,
+            "line": 47,
           },
           "stmtWhen": {
             "condition": "stray-treasure",
@@ -64,8 +64,8 @@ exports[`each-compile.story — E1/E2/E3 + must-be-any IR (each package P3) > ma
           "span": {
             "column": 3,
             "endColumn": 49,
-            "endLine": 35,
-            "line": 35,
+            "endLine": 36,
+            "line": 36,
           },
         },
       ],
@@ -87,8 +87,8 @@ exports[`each-compile.story — E1/E2/E3 + must-be-any IR (each package P3) > ma
       "span": {
         "column": 1,
         "endColumn": 44,
-        "endLine": 46,
-        "line": 32,
+        "endLine": 47,
+        "line": 33,
       },
     },
   ],
@@ -194,6 +194,45 @@ exports[`each-compile.story — E1/E2/E3 + must-be-any IR (each package P3) > ma
         "line": 11,
       },
     },
+    {
+      "condition": {
+        "kind": "and",
+        "operands": [
+          {
+            "kind": "predicate",
+            "negated": false,
+            "object": {
+              "kind": "symbol",
+              "name": "calm",
+            },
+            "pred": "is",
+            "subject": {
+              "kind": "it",
+            },
+          },
+          {
+            "kind": "predicate",
+            "negated": false,
+            "object": {
+              "id": "trophy-barn",
+              "kind": "entity",
+            },
+            "pred": "is-in",
+            "subject": {
+              "kind": "it",
+            },
+          },
+        ],
+      },
+      "name": "calm-occupant",
+      "open": true,
+      "span": {
+        "column": 1,
+        "endColumn": 72,
+        "endLine": 12,
+        "line": 12,
+      },
+    },
   ],
   "counters": [],
   "entities": [
@@ -211,8 +250,8 @@ exports[`each-compile.story — E1/E2/E3 + must-be-any IR (each package P3) > ma
           "span": {
             "column": 3,
             "endColumn": 54,
-            "endLine": 50,
-            "line": 50,
+            "endLine": 51,
+            "line": 51,
           },
         },
       ],
@@ -237,8 +276,8 @@ exports[`each-compile.story — E1/E2/E3 + must-be-any IR (each package P3) > ma
           "span": {
             "column": 3,
             "endColumn": 9,
-            "endLine": 49,
-            "line": 49,
+            "endLine": 50,
+            "line": 50,
           },
         },
       ],
@@ -251,8 +290,8 @@ exports[`each-compile.story — E1/E2/E3 + must-be-any IR (each package P3) > ma
       "span": {
         "column": 1,
         "endColumn": 44,
-        "endLine": 52,
-        "line": 48,
+        "endLine": 53,
+        "line": 49,
       },
       "startsStates": [],
       "states": [],
@@ -283,8 +322,8 @@ exports[`each-compile.story — E1/E2/E3 + must-be-any IR (each package P3) > ma
           "span": {
             "column": 3,
             "endColumn": 11,
-            "endLine": 55,
-            "line": 55,
+            "endLine": 56,
+            "line": 56,
           },
         },
       ],
@@ -296,15 +335,15 @@ exports[`each-compile.story — E1/E2/E3 + must-be-any IR (each package P3) > ma
         "span": {
           "column": 3,
           "endColumn": 28,
-          "endLine": 57,
-          "line": 57,
+          "endLine": 58,
+          "line": 58,
         },
       },
       "span": {
         "column": 1,
         "endColumn": 28,
-        "endLine": 57,
-        "line": 54,
+        "endLine": 58,
+        "line": 55,
       },
       "startsStates": [],
       "states": [],
@@ -335,8 +374,8 @@ exports[`each-compile.story — E1/E2/E3 + must-be-any IR (each package P3) > ma
           "span": {
             "column": 3,
             "endColumn": 10,
-            "endLine": 60,
-            "line": 60,
+            "endLine": 61,
+            "line": 61,
           },
         },
       ],
@@ -348,15 +387,15 @@ exports[`each-compile.story — E1/E2/E3 + must-be-any IR (each package P3) > ma
         "span": {
           "column": 3,
           "endColumn": 21,
-          "endLine": 61,
-          "line": 61,
+          "endLine": 62,
+          "line": 62,
         },
       },
       "span": {
         "column": 1,
         "endColumn": 21,
-        "endLine": 61,
-        "line": 59,
+        "endLine": 62,
+        "line": 60,
       },
       "startsStates": [],
       "states": [
@@ -373,8 +412,8 @@ exports[`each-compile.story — E1/E2/E3 + must-be-any IR (each package P3) > ma
           "span": {
             "column": 12,
             "endColumn": 20,
-            "endLine": 60,
-            "line": 60,
+            "endLine": 61,
+            "line": 61,
           },
         },
       ],
@@ -402,8 +441,8 @@ exports[`each-compile.story — E1/E2/E3 + must-be-any IR (each package P3) > ma
           "span": {
             "column": 3,
             "endColumn": 10,
-            "endLine": 64,
-            "line": 64,
+            "endLine": 65,
+            "line": 65,
           },
         },
       ],
@@ -414,8 +453,8 @@ exports[`each-compile.story — E1/E2/E3 + must-be-any IR (each package P3) > ma
           "actionSpan": {
             "column": 20,
             "endColumn": 27,
-            "endLine": 68,
-            "line": 68,
+            "endLine": 69,
+            "line": 69,
           },
           "actor": {
             "kind": "player",
@@ -432,8 +471,8 @@ exports[`each-compile.story — E1/E2/E3 + must-be-any IR (each package P3) > ma
                       "span": {
                         "column": 28,
                         "endColumn": 46,
-                        "endLine": 70,
-                        "line": 70,
+                        "endLine": 71,
+                        "line": 71,
                       },
                       "value": {
                         "kind": "match",
@@ -444,8 +483,8 @@ exports[`each-compile.story — E1/E2/E3 + must-be-any IR (each package P3) > ma
                   "span": {
                     "column": 7,
                     "endColumn": 46,
-                    "endLine": 70,
-                    "line": 70,
+                    "endLine": 71,
+                    "line": 71,
                   },
                   "stmtWhen": null,
                 },
@@ -456,8 +495,8 @@ exports[`each-compile.story — E1/E2/E3 + must-be-any IR (each package P3) > ma
                   "span": {
                     "column": 7,
                     "endColumn": 50,
-                    "endLine": 71,
-                    "line": 71,
+                    "endLine": 72,
+                    "line": 72,
                   },
                   "stmtWhen": {
                     "kind": "predicate",
@@ -486,8 +525,8 @@ exports[`each-compile.story — E1/E2/E3 + must-be-any IR (each package P3) > ma
                       "span": {
                         "column": 9,
                         "endColumn": 42,
-                        "endLine": 73,
-                        "line": 73,
+                        "endLine": 74,
+                        "line": 74,
                       },
                       "stmtWhen": null,
                     },
@@ -497,8 +536,8 @@ exports[`each-compile.story — E1/E2/E3 + must-be-any IR (each package P3) > ma
                   "span": {
                     "column": 7,
                     "endColumn": 15,
-                    "endLine": 74,
-                    "line": 72,
+                    "endLine": 75,
+                    "line": 73,
                   },
                 },
               ],
@@ -507,8 +546,8 @@ exports[`each-compile.story — E1/E2/E3 + must-be-any IR (each package P3) > ma
               "span": {
                 "column": 5,
                 "endColumn": 13,
-                "endLine": 75,
-                "line": 69,
+                "endLine": 76,
+                "line": 70,
               },
             },
           ],
@@ -526,8 +565,8 @@ exports[`each-compile.story — E1/E2/E3 + must-be-any IR (each package P3) > ma
           "span": {
             "column": 3,
             "endColumn": 12,
-            "endLine": 76,
-            "line": 68,
+            "endLine": 77,
+            "line": 69,
           },
         },
       ],
@@ -537,15 +576,15 @@ exports[`each-compile.story — E1/E2/E3 + must-be-any IR (each package P3) > ma
         "span": {
           "column": 3,
           "endColumn": 21,
-          "endLine": 65,
-          "line": 65,
+          "endLine": 66,
+          "line": 66,
         },
       },
       "span": {
         "column": 1,
         "endColumn": 50,
-        "endLine": 68,
-        "line": 63,
+        "endLine": 69,
+        "line": 64,
       },
       "startsStates": [],
       "states": [
@@ -641,8 +680,8 @@ exports[`each-compile.story — E1/E2/E3 + must-be-any IR (each package P3) > ma
           "span": {
             "column": 5,
             "endColumn": 21,
-            "endLine": 18,
-            "line": 17,
+            "endLine": 19,
+            "line": 18,
           },
           "strategy": null,
           "variants": [
@@ -656,8 +695,8 @@ exports[`each-compile.story — E1/E2/E3 + must-be-any IR (each package P3) > ma
           "span": {
             "column": 3,
             "endColumn": 27,
-            "endLine": 90,
-            "line": 89,
+            "endLine": 91,
+            "line": 90,
           },
           "strategy": null,
           "variants": [
@@ -671,8 +710,8 @@ exports[`each-compile.story — E1/E2/E3 + must-be-any IR (each package P3) > ma
           "span": {
             "column": 3,
             "endColumn": 19,
-            "endLine": 92,
-            "line": 91,
+            "endLine": 93,
+            "line": 92,
           },
           "strategy": null,
           "variants": [
@@ -686,8 +725,8 @@ exports[`each-compile.story — E1/E2/E3 + must-be-any IR (each package P3) > ma
           "span": {
             "column": 5,
             "endColumn": 31,
-            "endLine": 39,
-            "line": 38,
+            "endLine": 40,
+            "line": 39,
           },
           "strategy": null,
           "variants": [
@@ -701,8 +740,8 @@ exports[`each-compile.story — E1/E2/E3 + must-be-any IR (each package P3) > ma
           "span": {
             "column": 5,
             "endColumn": 27,
-            "endLine": 20,
-            "line": 19,
+            "endLine": 21,
+            "line": 20,
           },
           "strategy": null,
           "variants": [
@@ -716,8 +755,8 @@ exports[`each-compile.story — E1/E2/E3 + must-be-any IR (each package P3) > ma
           "span": {
             "column": 3,
             "endColumn": 47,
-            "endLine": 88,
-            "line": 87,
+            "endLine": 89,
+            "line": 88,
           },
           "strategy": null,
           "variants": [
@@ -731,8 +770,8 @@ exports[`each-compile.story — E1/E2/E3 + must-be-any IR (each package P3) > ma
           "span": {
             "column": 3,
             "endColumn": 32,
-            "endLine": 94,
-            "line": 93,
+            "endLine": 95,
+            "line": 94,
           },
           "strategy": null,
           "variants": [
@@ -746,8 +785,8 @@ exports[`each-compile.story — E1/E2/E3 + must-be-any IR (each package P3) > ma
           "span": {
             "column": 5,
             "endColumn": 31,
-            "endLine": 41,
-            "line": 40,
+            "endLine": 42,
+            "line": 41,
           },
           "strategy": null,
           "variants": [
@@ -761,8 +800,8 @@ exports[`each-compile.story — E1/E2/E3 + must-be-any IR (each package P3) > ma
           "span": {
             "column": 3,
             "endColumn": 44,
-            "endLine": 52,
-            "line": 52,
+            "endLine": 53,
+            "line": 53,
           },
           "strategy": null,
           "variants": [
@@ -785,8 +824,8 @@ exports[`each-compile.story — E1/E2/E3 + must-be-any IR (each package P3) > ma
       "span": {
         "column": 1,
         "endColumn": 13,
-        "endLine": 84,
-        "line": 78,
+        "endLine": 85,
+        "line": 79,
       },
       "steps": [
         {
@@ -799,8 +838,8 @@ exports[`each-compile.story — E1/E2/E3 + must-be-any IR (each package P3) > ma
               "span": {
                 "column": 5,
                 "endColumn": 54,
-                "endLine": 80,
-                "line": 80,
+                "endLine": 81,
+                "line": 81,
               },
               "stmtWhen": {
                 "kind": "predicate",
@@ -826,28 +865,28 @@ exports[`each-compile.story — E1/E2/E3 + must-be-any IR (each package P3) > ma
                   "span": {
                     "column": 7,
                     "endColumn": 34,
-                    "endLine": 82,
-                    "line": 82,
+                    "endLine": 83,
+                    "line": 83,
                   },
                   "state": "spooked",
                   "stmtWhen": null,
                 },
               ],
-              "condition": "barn-occupant",
+              "condition": "calm-occupant",
               "kind": "each",
               "span": {
                 "column": 5,
                 "endColumn": 13,
-                "endLine": 83,
-                "line": 81,
+                "endLine": 84,
+                "line": 82,
               },
             },
           ],
           "span": {
             "column": 3,
             "endColumn": 12,
-            "endLine": 79,
-            "line": 79,
+            "endLine": 80,
+            "line": 80,
           },
           "timing": "at-turn",
           "turns": 3,
@@ -866,8 +905,8 @@ exports[`each-compile.story — E1/E2/E3 + must-be-any IR (each package P3) > ma
         "span": {
           "column": 3,
           "endColumn": 28,
-          "endLine": 97,
-          "line": 97,
+          "endLine": 98,
+          "line": 98,
         },
         "stmtWhen": null,
       },
@@ -875,8 +914,8 @@ exports[`each-compile.story — E1/E2/E3 + must-be-any IR (each package P3) > ma
     "span": {
       "column": 1,
       "endColumn": 11,
-      "endLine": 98,
-      "line": 96,
+      "endLine": 99,
+      "line": 97,
     },
   },
   "story": {
@@ -895,8 +934,8 @@ exports[`each-compile.story — E1/E2/E3 + must-be-any IR (each package P3) > ma
           "actionSpan": {
             "column": 17,
             "endColumn": 25,
-            "endLine": 22,
-            "line": 22,
+            "endLine": 23,
+            "line": 23,
           },
           "actor": {
             "kind": "player",
@@ -916,8 +955,8 @@ exports[`each-compile.story — E1/E2/E3 + must-be-any IR (each package P3) > ma
               "span": {
                 "column": 5,
                 "endColumn": 44,
-                "endLine": 23,
-                "line": 23,
+                "endLine": 24,
+                "line": 24,
               },
             },
             {
@@ -930,8 +969,8 @@ exports[`each-compile.story — E1/E2/E3 + must-be-any IR (each package P3) > ma
               "span": {
                 "column": 5,
                 "endColumn": 45,
-                "endLine": 24,
-                "line": 24,
+                "endLine": 25,
+                "line": 25,
               },
             },
             {
@@ -944,20 +983,20 @@ exports[`each-compile.story — E1/E2/E3 + must-be-any IR (each package P3) > ma
                   "span": {
                     "column": 7,
                     "endColumn": 34,
-                    "endLine": 26,
-                    "line": 26,
+                    "endLine": 27,
+                    "line": 27,
                   },
                   "state": "spooked",
                   "stmtWhen": null,
                 },
               ],
-              "condition": "barn-occupant",
+              "condition": "calm-occupant",
               "kind": "each",
               "span": {
                 "column": 5,
                 "endColumn": 13,
-                "endLine": 27,
-                "line": 25,
+                "endLine": 28,
+                "line": 26,
               },
             },
             {
@@ -967,8 +1006,8 @@ exports[`each-compile.story — E1/E2/E3 + must-be-any IR (each package P3) > ma
               "span": {
                 "column": 5,
                 "endColumn": 19,
-                "endLine": 28,
-                "line": 28,
+                "endLine": 29,
+                "line": 29,
               },
               "stmtWhen": null,
             },
@@ -987,8 +1026,8 @@ exports[`each-compile.story — E1/E2/E3 + must-be-any IR (each package P3) > ma
           "span": {
             "column": 3,
             "endColumn": 9,
-            "endLine": 29,
-            "line": 22,
+            "endLine": 30,
+            "line": 23,
           },
         },
       ],
@@ -996,8 +1035,8 @@ exports[`each-compile.story — E1/E2/E3 + must-be-any IR (each package P3) > ma
       "span": {
         "column": 1,
         "endColumn": 10,
-        "endLine": 30,
-        "line": 13,
+        "endLine": 31,
+        "line": 14,
       },
       "states": [
         "calm",
@@ -1013,8 +1052,8 @@ exports[`each-compile.story — E1/E2/E3 + must-be-any IR (each package P3) > ma
       "span": {
         "column": 1,
         "endColumn": 10,
-        "endLine": 101,
-        "line": 100,
+        "endLine": 102,
+        "line": 101,
       },
       "states": [],
       "statesReversible": false,

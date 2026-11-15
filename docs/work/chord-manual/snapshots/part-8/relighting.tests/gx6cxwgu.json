@@ -168,7 +168,7 @@
           "hangs still"
         ],
         "states": [
-          "the tower bell is still"
+          "the tower bell is silent"
         ]
       },
       "command": "hush bell",

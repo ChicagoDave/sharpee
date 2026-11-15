@@ -45,7 +45,7 @@
           "You have risen to the rank of a Journeyman."
         ],
         "states": [
-          "the tower bell is still"
+          "the tower bell is silent"
         ]
       },
       "command": "hush bell",

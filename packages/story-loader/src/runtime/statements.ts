@@ -183,6 +183,15 @@ export class StatementsSection {
               const platformWrite = set ? undefined : PLATFORM_STATE_WRITES.get(stmt.state);
               if (platformWrite) {
                 this.writePlatformState(ctx.world, irId, stmt.state, platformWrite, stmt.span);
+              } else if (!set) {
+                // The analyzer proves this for a named thing and for a
+                // trait's composers. `the match` and a slot are only known
+                // here, and storing the word would leave the thing in a
+                // state it never declared, answering `is <word>` (GH #709).
+                throw new LoadError(
+                  `\`change\` to \`${stmt.state}\` needs \`${stmt.state}\` declared on ${ctx.world.getEntity(irId)?.name ?? irId}: it is on neither its \`states:\` line nor a trait it composes.`,
+                  stmt.span,
+                );
               } else {
                 ctx.world.setStateValue(CHORD_STATE_PREFIX + irId, stmt.state);
               }
@@ -893,7 +902,7 @@ export class StatementsSection {
     const to = states.indexOf(target);
     if (from >= 0 && to >= 0 && to < from) {
       throw new LoadError(
-        `\`change\` to \`${target}\` moves ${ownerDesc} backward in a forward-only set (currently \`${current}\`) — add \`, reversible\` to the \`states:\` line to permit back-transitions (D4).`,
+        `\`change\` to \`${target}\` moves ${ownerDesc} backward in a forward-only set (currently \`${current}\`) — declare the set as \`states, reversible: ${states.join(', ')}\` to permit back-transitions.`,
         span,
       );
     }
