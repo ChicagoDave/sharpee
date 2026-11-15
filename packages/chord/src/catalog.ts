@@ -8,7 +8,7 @@
  * only so the compiler stays platform-free.
  *
  * Public interface: KIND_NOUNS, TRAIT_ADJECTIVES, STATE_ADJECTIVES,
- * PLATFORM_STATE_PAIRS, STARTS_STATE_PAIRINGS, EVENT_VERBS,
+ * PLATFORM_STATE_PAIRS, STARTS_STATE_PAIRINGS, CHANGE_STATE_PAIRINGS, EVENT_VERBS,
  * PRONOUN_WORDS, PRONOUN_CASES.
  * Owner context: @sharpee/chord (language frontend; browser-safe).
  * Growing any of these sets is a grammar change — owner approval via
@@ -139,6 +139,20 @@ export const STARTS_STATE_PAIRINGS: ReadonlyMap<string, string> = new Map([
   ['broken', 'breakable'], // ADR-373 D7
   ['lit', 'light-source'], // ADR-374 D9 — a flame light can begin lit or not
   ['unlit', 'light-source'],
+]);
+
+/**
+ * `change <thing> to <state>` platform words (GH #707): every `starts` word,
+ * plus `whole`, which no initializer needs because a breakable thing begins
+ * whole. On a thing that declares no state of that name, the word writes the
+ * paired trait's field and so needs that trait composed
+ * (`analysis.change-state-pairing`). A declared state of the same name wins
+ * the word. `worn` and `attached` are absent: each needs a second thing.
+ * The field writes live in @sharpee/story-loader (PLATFORM_STATE_WRITES).
+ */
+export const CHANGE_STATE_PAIRINGS: ReadonlyMap<string, string> = new Map([
+  ...STARTS_STATE_PAIRINGS,
+  ['whole', 'breakable'],
 ]);
 
 /**

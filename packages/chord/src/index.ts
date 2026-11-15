@@ -30,7 +30,7 @@ export { sha256Hex } from './sha256.js';
 // The compass words' bearings: Chord's side of a table world-model also
 // keeps (Chord depends on nothing), pinned equal by a story-loader test.
 export { COMPASS_BEARINGS } from './analyzer/sailing.js';
-export { KIND_NOUNS, TRAIT_ADJECTIVES, STATE_ADJECTIVES, PLATFORM_STATE_PAIRS, STARTS_STATE_PAIRINGS, EVENT_VERBS, CLIENT_CAPABILITY_FLAGS, capabilityKeyOf, PRONOUN_WORDS, PRONOUN_CASES, MESSAGE_OVERRIDE_ALIASES, SCOPE_REQUIREMENT_PREDICATES } from './catalog.js';
+export { KIND_NOUNS, TRAIT_ADJECTIVES, STATE_ADJECTIVES, PLATFORM_STATE_PAIRS, STARTS_STATE_PAIRINGS, CHANGE_STATE_PAIRINGS, EVENT_VERBS, CLIENT_CAPABILITY_FLAGS, capabilityKeyOf, PRONOUN_WORDS, PRONOUN_CASES, MESSAGE_OVERRIDE_ALIASES, SCOPE_REQUIREMENT_PREDICATES } from './catalog.js';
 export type { ScopeRequirementWord } from './catalog.js';
 export { STDLIB_MANIFEST } from './stdlib-manifest.js';
 export type { StdlibManifest, StdlibLocaleFacts, ActSlotType } from './stdlib-manifest.js';

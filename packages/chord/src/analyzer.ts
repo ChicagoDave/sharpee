@@ -93,7 +93,7 @@ import {
   CoordinatesExpr,
   TopicRow,
 } from './ast.js';
-import { capabilityKeyOf, CLIENT_CAPABILITY_FLAGS, EVENT_VERBS, TAILED_EVENT_VERBS, MESSAGE_OVERRIDE_ALIASES, PLATFORM_STATE_PAIRS, PRONOUN_CASES, PRONOUN_WORDS, SCOPE_REQUIREMENT_PREDICATES, STARTS_STATE_PAIRINGS, STATE_ADJECTIVES, TRAIT_ADJECTIVES } from './catalog.js';
+import { capabilityKeyOf, CHANGE_STATE_PAIRINGS, CLIENT_CAPABILITY_FLAGS, EVENT_VERBS, TAILED_EVENT_VERBS, MESSAGE_OVERRIDE_ALIASES, PLATFORM_STATE_PAIRS, PRONOUN_CASES, PRONOUN_WORDS, SCOPE_REQUIREMENT_PREDICATES, STARTS_STATE_PAIRINGS, STATE_ADJECTIVES, TRAIT_ADJECTIVES } from './catalog.js';
 import { STDLIB_MANIFEST } from './stdlib-manifest.js';
 import { expandReadings, lowerParts, renderPattern, samePatternShape, seatTable, type LowerableAction, type SeatProblem, type SeatTable } from './patterns.js';
 import type { PatternElement } from '@sharpee/if-domain';
@@ -426,6 +426,8 @@ export interface Scope {
   slots: Set<string> | null;
   /** Trait-declared states visible on `it` in trait scope (ratchet D8). */
   ownStates: string[] | null;
+  /** The `define trait` whose body this is, so a statement on `it` can ask what its composers carry. */
+  traitName?: string;
   /**
    * ADR-327 D2/D8: `it`/`its` are a carrier word here — the block has no
    * name for its subject. True inside a `define trait` body (the carrying
@@ -3089,6 +3091,7 @@ export class Analyzer {
       fields,
       slots: null,
       ownStates: visible.length ? visible : null,
+      traitName: decl.name,
       scoreOwner: `trait.${decl.name}`,
       inEach: false,
       carrierIt: true,
@@ -3887,6 +3890,25 @@ export class Analyzer {
       }
     }
 
+    // A thing that composes a platform state trait may not also declare one
+    // of that trait's words as a state, its own or a composed trait's: the
+    // declared state would answer `is <word>` in place of the trait, and
+    // `change` to the pair's other word would leave the two disagreeing
+    // (GH #707; the one-word case of ratchet D9 ring 2).
+    for (const e of this.entities) {
+      for (const { pair, trait } of PLATFORM_STATE_PAIRS) {
+        if (!this.carriesPlatformTrait(e, trait)) continue;
+        const word = pair.find((w) => e.states.includes(w));
+        if (word === undefined) continue;
+        const at = e.decl.states.find((st) => st.name === word)?.span ?? e.decl.name.span;
+        this.diagnostics.error(
+          'analysis.shadow-state',
+          `\`${word}\` is a word of \`${trait}\`, which ${e.nameLower} carries — a state of that name would answer \`is ${word}\` in place of the trait. Rename the state, or read and change the trait's own (\`is ${word}\`, \`change … to ${word}\`).`,
+          at,
+        );
+      }
+    }
+
     // Cross-trait visibility (D8): inside a trait's clauses, `it` may
     // reference any state on any composer's full merged set — `restless`
     // reads feedable's `hungry` without declaring it.
@@ -4259,6 +4281,38 @@ export class Analyzer {
         span,
       );
     }
+  }
+
+  /**
+   * Whether a thing carries a platform state trait: composed by word, or
+   * `openable` by being a door, which is openable by construction.
+   */
+  private carriesPlatformTrait(e: EntitySymbol, trait: string): boolean {
+    return hasAdjectiveDecl(e.decl, trait) || (trait === 'openable' && isKindDecl(e.decl, 'door'));
+  }
+
+  /** Every thing that composes the story trait `traitName`. */
+  private composersOf(traitName: string): EntitySymbol[] {
+    return this.entities.filter((e) => hasAdjectiveDecl(e.decl, traitName));
+  }
+
+  /**
+   * `change <thing> to <platform state word>` writes the paired trait's
+   * field, so each thing it writes on must carry that trait.
+   * Reports `analysis.change-state-pairing` for the first that does not.
+   *
+   * @param targets the things that do not declare the word as a state
+   * @param viaTrait the story trait whose body says `it`, when that is how they are reached
+   */
+  private checkChangePairing(targets: EntitySymbol[], viaTrait: string | undefined, state: string, pairedTrait: string, span: Span): void {
+    const missing = targets.find((e) => !this.carriesPlatformTrait(e, pairedTrait));
+    if (!missing) return;
+    const via = viaTrait ? ` (it composes \`${viaTrait}\`)` : '';
+    this.diagnostics.error(
+      'analysis.change-state-pairing',
+      `\`change\` to \`${state}\` requires \`${pairedTrait}\` composed on ${missing.nameLower}${via}, or \`${state}\` on its \`states:\` line.`,
+      span,
+    );
   }
 
   private collectEntity(decl: CreateDecl): void {
@@ -6229,7 +6283,19 @@ export class Analyzer {
         const entity = this.resolveEntityValue(stmt.entity, scope);
         const sym = entity.kind === 'entity' ? this.byId.get(entity.id) : entity.kind === 'it' ? scope.owner : null;
         const validStates = sym ? sym.states : entity.kind === 'it' ? scope.ownStates : null;
-        if (validStates && !validStates.includes(stmt.state)) {
+        const pairedTrait = CHANGE_STATE_PAIRINGS.get(stmt.state);
+        // The things this statement can reach: the named one, or every
+        // composer of the trait whose body says `it`. `the match` and a slot
+        // name no thing here; the runtime checks those.
+        const reached = sym ? [sym] : entity.kind === 'it' && scope.traitName ? this.composersOf(scope.traitName) : [];
+        const undeclaredOn = reached.filter((e) => !e.states.includes(stmt.state));
+        const writesTrait =
+          pairedTrait !== undefined && (reached.length ? undeclaredOn.length > 0 : !validStates?.includes(stmt.state));
+        if (pairedTrait !== undefined && writesTrait) {
+          // A platform state word a thing did not declare as a state writes
+          // the paired trait, so that thing must carry it (GH #707).
+          this.checkChangePairing(undeclaredOn, sym ? undefined : scope.traitName, stmt.state, pairedTrait, stmt.span);
+        } else if (validStates && !validStates.includes(stmt.state)) {
           this.diagnostics.error(
             'analysis.undeclared-state',
             `\`${stmt.state}\` is not a declared state of ${sym?.nameLower ?? 'it'}${this.suggestText(stmt.state, validStates)}.`,

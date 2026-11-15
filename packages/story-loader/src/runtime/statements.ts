@@ -25,6 +25,7 @@ import { DecisionLedger } from '../decisions.js';
 import { LoadError } from '../errors.js';
 import { EVENT_TRIGGERS } from '../event-contract.js';
 import { translateEventId } from '../event-id-map.js';
+import { PLATFORM_STATE_WRITES, type PlatformStateWrite } from '../platform-state-writes.js';
 import { CHORD_GONE_PREFIX, CHORD_STATE_PREFIX, CHORD_STORY_STATE_KEY, CHORD_VISITED_PREFIX, counterKey, selectOccurrenceKey } from '../state-keys.js';
 import { ExecContext, RefusalVeto, MOVE_ARRIVAL_DEPTH_CAP, type RuntimeCore } from './core.js';
 
@@ -176,7 +177,15 @@ export class StatementsSection {
                   stmt.span,
                 );
               }
-              ctx.world.setStateValue(CHORD_STATE_PREFIX + irId, stmt.state);
+              // A declared state wins the word. Otherwise a platform state
+              // word is the paired trait's field, never a stored story state
+              // that would answer `is <word>` for a trait nothing wrote.
+              const platformWrite = set ? undefined : PLATFORM_STATE_WRITES.get(stmt.state);
+              if (platformWrite) {
+                this.writePlatformState(ctx.world, irId, stmt.state, platformWrite, stmt.span);
+              } else {
+                ctx.world.setStateValue(CHORD_STATE_PREFIX + irId, stmt.state);
+              }
             }
           }
           break;
@@ -838,6 +847,30 @@ export class StatementsSection {
     }
     const own = irEntity.states.filter((s) => !traitStates.has(s));
     return own.includes(state) ? { states: own, reversible: irEntity.statesReversible } : null;
+  }
+
+  /**
+   * `change <thing> to <platform state word>` on a thing that declares no
+   * state of that name: write the paired trait's field. The analyzer refuses
+   * the statement where it can see the thing lacks the trait; `the match` and
+   * a slot are only known here.
+   *
+   * @param world the world the thing lives in
+   * @param irId the thing's id (its IR id is its world id)
+   * @param state the platform state word
+   * @param write the word's row of PLATFORM_STATE_WRITES
+   * @param span the statement's span, for the error
+   * @throws LoadError when the thing does not carry the paired trait
+   */
+  private writePlatformState(world: WorldModel, irId: string, state: string, write: PlatformStateWrite, span?: Span): void {
+    const entity = world.getEntity(irId);
+    if (!entity || !entity.has(write.traitType)) {
+      throw new LoadError(
+        `\`change\` to \`${state}\` needs \`${write.traitName}\` composed on ${entity?.name ?? irId}, or \`${state}\` on its \`states:\` line.`,
+        span,
+      );
+    }
+    write.set(entity);
   }
 
   /**

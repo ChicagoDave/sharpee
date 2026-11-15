@@ -33,25 +33,22 @@
 import type { IREntity } from '@sharpee/chord';
 import {
   ActorTrait,
-  BreakableTrait,
   ContainerTrait,
   EdibleTrait,
   EnterableTrait,
   IdentityTrait,
   IFEntity,
   LandmarkTrait,
-  LightSourceTrait,
-  LockableTrait,
   OpenableTrait,
   RoomTrait,
   SceneryTrait,
   SightTrait,
   SupporterTrait,
-  SwitchableTrait,
   TraitType,
   WorldModel,
 } from '@sharpee/world-model';
 import { LoadError } from '../errors.js';
+import { PLATFORM_STATE_WRITES } from '../platform-state-writes.js';
 import { CHORD_IR_ID_ATTRIBUTE } from '../state-keys.js';
 import { applyTraitAdjectives } from './adjectives.js';
 import type { BuildContext } from './context.js';
@@ -309,7 +306,7 @@ export function isLandmarkRoom(story: BuildContext, irId: string): boolean {
  */
 export function applyStartsStates(entity: IFEntity, irEntity: IREntity): void {
   for (const state of irEntity.startsStates ?? []) {
-    const mapping = STARTS_STATE_TRAIT_FIELDS.get(state);
+    const mapping = PLATFORM_STATE_WRITES.get(state);
     if (!mapping) {
       throw new LoadError(
         `\`${irEntity.name}\`: \`starts ${state}\` has no trait-field mapping — the compiler and loader tables are out of step.`,
@@ -325,25 +322,3 @@ export function applyStartsStates(entity: IFEntity, irEntity: IREntity): void {
     mapping.set(entity);
   }
 }
-
-/**
- * ADR-231 D5a platform mapping: `starts <state>` word → the paired trait's
- * initial-value field and the boolean it sets. The language-side pairing
- * table (which trait must be composed) is @sharpee/chord's
- * STARTS_STATE_PAIRINGS; this is the loader's platform half — future
- * stateful traits extend both tables, not the code.
- */
-const STARTS_STATE_TRAIT_FIELDS: ReadonlyMap<
-  string,
-  { traitType: TraitType; traitName: string; set: (entity: IFEntity) => void }
-> = new Map([
-  ['locked', { traitType: TraitType.LOCKABLE, traitName: 'lockable', set: (entity) => { (entity.get(TraitType.LOCKABLE) as LockableTrait).isLocked = true; } }],
-  ['unlocked', { traitType: TraitType.LOCKABLE, traitName: 'lockable', set: (entity) => { (entity.get(TraitType.LOCKABLE) as LockableTrait).isLocked = false; } }],
-  ['closed', { traitType: TraitType.OPENABLE, traitName: 'openable', set: (entity) => { (entity.get(TraitType.OPENABLE) as OpenableTrait).isOpen = false; } }],
-  ['open', { traitType: TraitType.OPENABLE, traitName: 'openable', set: (entity) => { (entity.get(TraitType.OPENABLE) as OpenableTrait).isOpen = true; } }],
-  ['off', { traitType: TraitType.SWITCHABLE, traitName: 'switchable', set: (entity) => { (entity.get(TraitType.SWITCHABLE) as SwitchableTrait).isOn = false; } }],
-  ['on', { traitType: TraitType.SWITCHABLE, traitName: 'switchable', set: (entity) => { (entity.get(TraitType.SWITCHABLE) as SwitchableTrait).isOn = true; } }],
-  ['broken', { traitType: TraitType.BREAKABLE, traitName: 'breakable', set: (entity) => { (entity.get(TraitType.BREAKABLE) as BreakableTrait).broken = true; } }], // ADR-373 D7
-  ['lit', { traitType: TraitType.LIGHT_SOURCE, traitName: 'light-source', set: (entity) => { (entity.get(TraitType.LIGHT_SOURCE) as LightSourceTrait).isLit = true; } }], // ADR-374 D9
-  ['unlit', { traitType: TraitType.LIGHT_SOURCE, traitName: 'light-source', set: (entity) => { (entity.get(TraitType.LIGHT_SOURCE) as LightSourceTrait).isLit = false; } }],
-]);

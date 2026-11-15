@@ -287,6 +287,10 @@ owner-gated: this ruling IS the owner approval; a
 `chord-grammar-changes.md` ratchet entry, EBNF alignment, and
 chord-language.md spec text land with delivery.
 
+*(Amended by ADR-399, 2026-11-14: `change <thing> to <state>` is a second
+place a story sets a state trait's value, on the same table, with `whole`
+added. The adjective is still never stored story state.)*
+
 **D5b — closed wins.** The world-model trait's default (`startsOpen ??
 false`) is authoritative everywhere; the loader's `builder.openable()`
 pre-add is removed (the lockable Phase 9a pattern) and the helpers
