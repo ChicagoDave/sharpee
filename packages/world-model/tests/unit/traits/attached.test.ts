@@ -116,11 +116,8 @@ describe('AttachedTrait', () => {
     it('should work with pullable trait', () => {
       const entity = world.createEntity('Posted Notice', 'object');
       
-      entity.add(new PullableTrait({
-        pullType: 'attached',
-        detachesOnPull: true
-      }));
-      
+      entity.add(new PullableTrait());
+
       entity.add(new AttachedTrait({
         attachedTo: 'bulletin-board',
         attachmentType: 'nailed',
@@ -131,11 +128,8 @@ describe('AttachedTrait', () => {
       expect(entity.hasTrait(TraitType.PULLABLE)).toBe(true);
       expect(entity.hasTrait(TraitType.ATTACHED)).toBe(true);
       
-      const pullable = entity.getTrait(TraitType.PULLABLE) as PullableTrait;
       const attached = entity.getTrait(TraitType.ATTACHED) as AttachedTrait;
-      
-      expect(pullable.pullType).toBe('attached');
-      expect(pullable.detachesOnPull).toBe(true);
+
       expect(attached.detachable).toBe(true);
     });
 

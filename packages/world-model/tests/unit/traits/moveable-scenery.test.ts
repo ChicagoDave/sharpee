@@ -190,10 +190,7 @@ describe('MoveableSceneryTrait', () => {
       
       entity.add(new PushableTrait());
 
-      entity.add(new PullableTrait({
-        pullType: 'heavy',
-        requiresStrength: 20
-      }));
+      entity.add(new PullableTrait());
       
       expect(entity.hasTrait(TraitType.MOVEABLE_SCENERY)).toBe(true);
       expect(entity.hasTrait(TraitType.PUSHABLE)).toBe(true);
@@ -341,10 +338,7 @@ describe('MoveableSceneryTrait', () => {
       
       entity.add(new PushableTrait());
       
-      entity.add(new PullableTrait({
-        pullType: 'heavy',
-        requiresStrength: 10
-      }));
+      entity.add(new PullableTrait());
       
       const moveableTrait = entity.getTrait(TraitType.MOVEABLE_SCENERY) as MoveableSceneryTrait;
       

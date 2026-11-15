@@ -13,14 +13,16 @@
 import { describe, test, expect } from 'vitest';
 import { pushingAction } from '../../../src/actions/standard/pushing';
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType, SceneryTrait, WearableTrait, PushableTrait, ButtonTrait, SwitchableTrait } from '@sharpee/world-model';
+import { TraitType, SceneryTrait, WearableTrait, PushableTrait, ButtonTrait, SwitchableTrait, type IFEntity, type WorldModel } from '@sharpee/world-model';
 import {
   createRealTestContext,
   setupBasicWorld,
   expectEvent,
   executeWithValidation,
   expectTraitValue,
-  createCommand
+  createCommand,
+  addTestMarker,
+  TEST_MARKER_TRAIT
 } from '../../test-utils';
 
 describe('pushingAction (Golden Pattern)', () => {
@@ -252,6 +254,92 @@ describe('pushingAction (Golden Pattern)', () => {
       expect(validation.valid).toBe(false);
 
       expect(painting.get(TraitType.SWITCHABLE)).toBeUndefined();
+    });
+  });
+
+  describe('The press on an interceptor\'s say (GH #706)', () => {
+    /** A sundial with no marker (scenery unless told otherwise), and an interceptor counting the hooks it reaches. */
+    const sundialWithInterceptor = (claims: boolean, scenery = true) => {
+      const { world, room } = setupBasicWorld();
+      const sundial = world.createEntity('brass sundial', 'object');
+      if (scenery) sundial.add(new SceneryTrait());
+      addTestMarker(sundial);
+      world.moveEntity(sundial.id, room.id);
+      world.registerActionInterceptor(TEST_MARKER_TRAIT, IFActions.PUSHING, {
+        claims: () => claims,
+        postValidate(_target, w) {
+          w.setStateValue('sundial.validated', ((w.getStateValue('sundial.validated') as number | undefined) ?? 0) + 1);
+          return null;
+        },
+        postExecute(_target, w) {
+          w.setStateValue('sundial.presses', ((w.getStateValue('sundial.presses') as number | undefined) ?? 0) + 1);
+        }
+      });
+      return { world, sundial };
+    };
+
+    const press = (world: WorldModel, target: IFEntity, direction?: string) => {
+      const command = createCommand(IFActions.PUSHING, { entity: target });
+      if (direction) command.parsed.extras = { direction };
+      return executeWithValidation(pushingAction, createRealTestContext(pushingAction, world, command));
+    };
+
+    test('a thing with no marker is pressed when an interceptor claims the push, every time', () => {
+      const { world, sundial } = sundialWithInterceptor(true);
+
+      for (let attempt = 1; attempt <= 2; attempt++) {
+        const events = press(world, sundial);
+        expectEvent(events, 'if.event.pushed', {
+          target: sundial.id,
+          messageId: 'if.action.pushing.button_pushed'
+        });
+        expect(events[0].data).not.toHaveProperty('blocked');
+        expect(world.getStateValue('sundial.validated')).toBe(attempt);
+        expect(world.getStateValue('sundial.presses')).toBe(attempt);
+      }
+      expect(sundial.has(TraitType.PUSHABLE)).toBe(false);
+    });
+
+    test('an interceptor that does not claim the thing leaves scenery fixed in place', () => {
+      const { world, sundial } = sundialWithInterceptor(false);
+
+      const events = press(world, sundial);
+
+      expectEvent(events, 'if.event.pushed', { blocked: true, reason: 'fixed_in_place' });
+      expect(world.getStateValue('sundial.validated')).toBeUndefined();
+      expect(world.getStateValue('sundial.presses')).toBeUndefined();
+    });
+
+    test('an interceptor that does not claim the thing leaves a loose thing unpushable', () => {
+      const { world, sundial } = sundialWithInterceptor(false, false);
+
+      const events = press(world, sundial);
+
+      expectEvent(events, 'if.event.pushed', { blocked: true, reason: 'pushing_does_nothing' });
+      expect(world.getStateValue('sundial.validated')).toBeUndefined();
+      expect(world.getStateValue('sundial.presses')).toBeUndefined();
+    });
+
+    test('a push with a direction still needs the marker', () => {
+      const { world, sundial } = sundialWithInterceptor(true);
+      const before = world.getLocation(sundial.id);
+
+      const events = press(world, sundial, 'north');
+
+      expectEvent(events, 'if.event.pushed', { blocked: true, reason: 'fixed_in_place' });
+      expect(world.getStateValue('sundial.presses')).toBeUndefined();
+      expect(world.getLocation(sundial.id)).toBe(before);
+    });
+
+    test('a switchable thing pressed on an interceptor\'s say alone is not toggled', () => {
+      const { world, sundial } = sundialWithInterceptor(true);
+      sundial.add(new SwitchableTrait({ isOn: false }));
+
+      const events = press(world, sundial);
+
+      expectEvent(events, 'if.event.pushed', { target: sundial.id, messageId: 'if.action.pushing.button_pushed' });
+      expectTraitValue(sundial, TraitType.SWITCHABLE, 'isOn', false);
+      expect(world.getStateValue('sundial.presses')).toBe(1);
     });
   });
 });

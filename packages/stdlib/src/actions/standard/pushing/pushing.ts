@@ -5,7 +5,10 @@
  * The thing says it can be pushed (`PushableTrait`, a marker); the way says
  * whether a push moves it (`admits pushing` on the exit line or the room,
  * read through traversal's home, ADR-378 D6). With no direction the push is
- * a press: a switchable thing is toggled, and the stock line prints. With a
+ * a press: a switchable thing is toggled, and the stock line prints. A press
+ * is also open to a thing without the marker when an interceptor claims the
+ * push for it — a Chord `on the player pushing` clause is one — since the
+ * press means only what the thing says it means (GH #706, ADR-371 D1a). With a
  * direction the actor's own traversal is `going`'s, delegated (ADR-228
  * D6-B): every refusal going knows — no exit, a hidden way, the blocked
  * phrase, a closed or locked door, a vehicle the actor rides — is the push's
@@ -14,8 +17,8 @@
  * — a computed way's drawn room included — refuses `cannot_push_that_way`.
  *
  * Uses four-phase pattern:
- * 1. validate: target, reach, the marker; with a direction, the way and
- *    the delegated going
+ * 1. validate: target, reach, the marker (or, for a press, a claiming
+ *    interceptor); with a direction, the way and the delegated going
  * 2. execute: the press's toggle, or going's move then the thing's
  * 3. blocked: the refusal event
  * 4. report: the pushed event, then going's arrival events
@@ -43,6 +46,7 @@ import { getPushingSharedData } from './pushing-types.js';
 import { nounPhraseFor } from '../../../utils/index.js';
 import { goingAction, goingLifecycle, getGoingSharedData, PUSHED_THING_EXTRA } from '../going/going.js';
 import { delegateValidate, delegateExecute, delegateReport, inDelegateWords } from '../delegation-shared.js';
+import { hasInterceptorImplementation } from '../dispatch-shared.js';
 import {
   ActionLifecycleDescriptor,
   blockedMessageId
@@ -149,8 +153,17 @@ export const pushingAction: Action & { metadata: ActionMetadata } = {
       }
     }
 
+    const direction = context.command.parsed.extras?.direction as string | undefined;
+
+    // The press has no standard meaning beyond toggling a switch, so a
+    // thing that says what a push does — an interceptor that claims it, as
+    // the implementation-dispatching verbs read it (ADR-371 D1a) — can be
+    // pressed without the marker (GH #706). A push with a direction moves
+    // the thing, and only the marker says it may be moved (ADR-378 D6).
+    const pressable = !direction && hasInterceptorImplementation(context.world, target, IFActions.PUSHING);
+
     // Check if object is pushable
-    if (!target.has(TraitType.PUSHABLE)) {
+    if (!target.has(TraitType.PUSHABLE) && !pressable) {
       // Not pushable - check if it's fixed scenery
       if (target.has(TraitType.SCENERY)) {
         return {
@@ -165,7 +178,6 @@ export const pushingAction: Action & { metadata: ActionMetadata } = {
       };
     }
 
-    const direction = context.command.parsed.extras?.direction as string | undefined;
     if (!direction) return { valid: true };
 
     // A push with a direction (ADR-378 D6): the thing stands in the actor's
@@ -223,9 +235,11 @@ export const pushingAction: Action & { metadata: ActionMetadata } = {
       return;
     }
 
-    // The press: a switchable thing is toggled; anything else just takes
-    // the push and lets its interceptors say what happened.
-    if (target.has(TraitType.SWITCHABLE)) {
+    // The press: a pushable switchable thing is toggled; anything else just
+    // takes the push and lets its interceptors say what happened. A thing
+    // pressed on its interceptor's say alone is not toggled: the marker is
+    // what says a press works its switch.
+    if (target.has(TraitType.PUSHABLE) && target.has(TraitType.SWITCHABLE)) {
       const switchable = target.get(TraitType.SWITCHABLE) as SwitchableTrait;
       sharedData.willToggle = true;
       sharedData.currentState = switchable.isOn;

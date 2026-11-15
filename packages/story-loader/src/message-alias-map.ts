@@ -519,13 +519,11 @@ export const MESSAGE_ALIAS_TO_ACTION_ID: Readonly<Record<string, string>> = {
   'opening-tool-not-held': 'if.action.opening.tool_not_held',
   'opening-wrong-tool': 'if.action.opening.wrong_tool',
   // if.action.pulling
-  'pulling-already-pulled': 'if.action.pulling.already_pulled',
   'pulling-cant-pull-that': 'if.action.pulling.cant_pull_that',
   'pulling-detached': 'if.action.pulling.detached',
   'pulling-no-target': 'if.action.pulling.no_target',
   'pulling-not-reachable': 'if.action.pulling.not_reachable',
   'pulling-not-visible': 'if.action.pulling.not_visible',
-  'pulling-nothing-happens': 'if.action.pulling.nothing_happens',
   'pulling-pulled': 'if.action.pulling.pulled',
   'pulling-worn': 'if.action.pulling.worn',
   'pulling-wont-budge': 'if.action.pulling.wont_budge',

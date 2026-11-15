@@ -15,7 +15,7 @@
  * Public interface: MESSAGE_OVERRIDE_ALIASES.
  * Owner context: @sharpee/chord (language frontend; browser-safe; generated artifact).
  *
- * 887 aliases across 78 actions.
+ * 885 aliases across 78 actions.
  *
  * References:
  * - ADR-255 D2 — one hand-maintained table; Interface Contract 3 — names
@@ -528,13 +528,11 @@ export const MESSAGE_OVERRIDE_ALIASES: ReadonlySet<string> = new Set([
   'opening-tool-not-held',
   'opening-wrong-tool',
   // if.action.pulling
-  'pulling-already-pulled',
   'pulling-cant-pull-that',
   'pulling-detached',
   'pulling-no-target',
   'pulling-not-reachable',
   'pulling-not-visible',
-  'pulling-nothing-happens',
   'pulling-pulled',
   'pulling-worn',
   'pulling-wont-budge',

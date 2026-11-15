@@ -4991,84 +4991,30 @@ export declare class MoveableSceneryTrait implements ITrait, IMoveableSceneryDat
 
 ```typescript
 /**
- * Pullable trait implementation
+ * PullableTrait — the marker for a thing that can be pulled.
+ *
+ * The thing says it can be pulled; what a pull does is the thing's own
+ * clause or interceptor to say, and a pull succeeds every time it is tried.
+ * The trait itself carries no fields, as `PushableTrait` and `SceneryTrait`
+ * do not: every field the old shape carried was read by nothing outside the
+ * pulling action (`pullType`, `activates`, `linkedTo`, `pullSound`,
+ * `requiresStrength`, `repeatable`, `maxPulls`, `detachesOnPull`,
+ * `effects`), and the two the action wrote (`state`, `pullCount`) made a
+ * pullable thing pullable exactly once, with nothing to reset it. A story
+ * that needs a fire-once guard keeps it on its own trait or says `, once`
+ * on its clause; a thing fixed to another is `AttachedTrait`'s.
+ *
+ * Public interface: PullableTrait.
+ * Owner context: world-model — traits.
+ *
+ * References:
+ * - ADR-378 D6a — the same reduction for `PushableTrait`.
+ * - GH #706 — the latch that let only the first pull through.
  */
 import { ITrait } from '../trait.js';
-export interface IPullableData {
-    /**
-     * Type of pullable object - determines behavior
-     */
-    pullType?: 'lever' | 'cord' | 'attached' | 'heavy';
-    /**
-     * Entity ID that this activates when pulled
-     */
-    activates?: string;
-    /**
-     * Entity ID that this is linked to (for levers)
-     */
-    linkedTo?: string;
-    /**
-     * Sound made when pulled
-     */
-    pullSound?: string;
-    /**
-     * Minimum strength required to pull (for heavy objects)
-     */
-    requiresStrength?: number;
-    /**
-     * Whether this can be pulled multiple times
-     */
-    repeatable?: boolean;
-    /**
-     * Current state for toggleable pullables
-     */
-    state?: 'default' | 'pulled' | 'activated';
-    /**
-     * Number of times this has been pulled
-     */
-    pullCount?: number;
-    /**
-     * Maximum number of pulls allowed
-     */
-    maxPulls?: number;
-    /**
-     * Whether pulling detaches this object
-     */
-    detachesOnPull?: boolean;
-    /**
-     * Custom effects when pulled
-     */
-    effects?: {
-        onPull?: string;
-        onMaxPulls?: string;
-        onDetach?: string;
-    };
-}
-/**
- * Pullable trait for objects that can be pulled
- *
- * This trait contains only data - all logic for pulling
- * is handled by the pulling action.
- */
-export declare class PullableTrait implements ITrait, IPullableData {
+export declare class PullableTrait implements ITrait {
     static readonly type: "pullable";
     readonly type: "pullable";
-    pullType: 'lever' | 'cord' | 'attached' | 'heavy';
-    activates?: string;
-    linkedTo?: string;
-    pullSound?: string;
-    requiresStrength?: number;
-    repeatable: boolean;
-    state: 'default' | 'pulled' | 'activated';
-    pullCount: number;
-    maxPulls?: number;
-    detachesOnPull: boolean;
-    effects?: {
-        onPull?: string;
-        onMaxPulls?: string;
-        onDetach?: string;
-    };
-    constructor(data?: IPullableData);
 }
 ```
 

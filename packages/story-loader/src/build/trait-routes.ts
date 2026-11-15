@@ -239,7 +239,7 @@ export const CORE_TRAIT_ROUTES: ReadonlyMap<string, TraitRoute> = new Map<string
   ],
   // Markers: the way says whether a push or pull moves the thing.
   ['pushable', addOnce(TraitType.PUSHABLE, () => new PushableTrait())],
-  ['pullable', addOnce(TraitType.PULLABLE, () => new PullableTrait({}))],
+  ['pullable', addOnce(TraitType.PULLABLE, () => new PullableTrait())],
   // What this holder carries is reachable by others, not merely visible.
   // `carries` alone stays placement (the IF convention: you can see the
   // thief's knife, not grab it).

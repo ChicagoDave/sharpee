@@ -1,14 +1,24 @@
 /**
- * Pulling action - pull objects that have the PULLABLE trait
+ * Pulling action — pull a thing that says it can be pulled, or pull an
+ * attached thing free.
  *
- * This is a minimal action that validates pulling is possible
- * and emits an event. Story authors handle specific pulling logic.
+ * Pulling has no standard meaning: what a pull does is the thing's own
+ * interceptor to say. So a thing can be pulled when it carries the marker
+ * (`PullableTrait`) or when an interceptor claims the pull for it, as
+ * turning and the other implementation-dispatching verbs read it (ADR-371
+ * D1a); a Chord `on the player pulling` clause is such an interceptor. A
+ * pull succeeds every time it is tried (GH #706: the action once latched
+ * the trait to `pulled` and refused every pull after the first, and
+ * refused a thing whose only say was its clause). An attached thing
+ * comes free if it is detachable and otherwise won't budge, pullable or
+ * not (ADR-373 D1).
  *
  * Uses four-phase pattern:
- * 1. validate: Check if target is pullable and not already pulled
- * 2. execute: Update pullable state, store data in sharedData
- * 3. blocked: Generate events when validation fails
- * 4. report: Generate success events
+ * 1. validate: target, reach, attachment, the marker or a claiming
+ *    interceptor, not worn
+ * 2. execute: detach an attached thing; a plain pull mutates nothing
+ * 3. blocked: the refusal event
+ * 4. report: the pulled event, or the detached event
  *
  * Interceptor consultation (ADR-118) runs through the shared lifecycle
  * engine (ADR-228) via `pullingLifecycle` — no hand-rolled hook plumbing.
@@ -16,12 +26,13 @@
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types.js';
 import { type ISemanticEvent } from '@sharpee/core';
-import { TraitType, PullableTrait, WearableTrait, AttachedBehavior } from '@sharpee/world-model';
+import { TraitType, WearableTrait, AttachedBehavior } from '@sharpee/world-model';
 import { IFActions } from '../../constants.js';
 import { PulledEventData } from './pulling-events.js';
 import { ActionMetadata } from '../../../validation/index.js';
 import { ScopeLevel } from '../../../scope/types.js';
 import { nounPhraseFor } from '../../../utils/index.js';
+import { hasInterceptorImplementation } from '../dispatch-shared.js';
 import {
   ActionLifecycleDescriptor,
   blockedMessageId
@@ -50,8 +61,6 @@ export const pullingLifecycle: ActionLifecycleDescriptor = {
 interface PullingSharedData {
   targetId: string;
   targetName: string;
-  pullCount: number;
-  pullType?: 'lever' | 'cord' | 'attached' | 'heavy';
   /** Set when the pull freed an attached thing (ADR-373 D1) */
   detachedFrom?: string;
 }
@@ -83,8 +92,6 @@ export const pullingAction: Action & { metadata: ActionMetadata } = {
     'cant_pull_that',
     'worn',
     'pulled',
-    'nothing_happens',
-    'already_pulled',
     'detached',
     'wont_budge'
   ],
@@ -112,8 +119,10 @@ export const pullingAction: Action & { metadata: ActionMetadata } = {
       return { valid: true };
     }
 
-    // Check if object is pullable
-    if (!target.has(TraitType.PULLABLE)) {
+    // A thing can be pulled when it says so (the marker) or when it says
+    // what a pull does: an interceptor that claims it, as for the verbs
+    // with no standard meaning (ADR-371 D1a).
+    if (!target.has(TraitType.PULLABLE) && !hasInterceptorImplementation(context.world, target, IFActions.PULLING)) {
       return { valid: false, error: 'cant_pull_that', params: { target: nounPhraseFor(target) } };
     }
 
@@ -125,18 +134,13 @@ export const pullingAction: Action & { metadata: ActionMetadata } = {
       }
     }
 
-    // Check state of pullable
-    const pullable = target.get(TraitType.PULLABLE) as PullableTrait;
-    if (pullable.state === 'pulled') {
-      return { valid: false, error: 'already_pulled', params: { target: nounPhraseFor(target) } };
-    }
-
     return { valid: true };
   },
 
   /**
-   * Execute the pull action - performs mutations only
-   * Assumes validation has already passed
+   * Execute the pull: an attached thing is detached; a plain pull changes
+   * nothing itself and leaves the outcome to the thing's interceptors.
+   * Assumes validation has already passed.
    */
   execute(context: ActionContext): void {
     const target = context.command.directObject!.entity!;
@@ -150,18 +154,8 @@ export const pullingAction: Action & { metadata: ActionMetadata } = {
       return;
     }
 
-    const pullable = target.get(TraitType.PULLABLE) as PullableTrait;
-
-    // Store data for report phase (before mutation)
     sharedData.targetId = target.id;
     sharedData.targetName = target.name;
-    sharedData.pullCount = pullable.pullCount || 0;
-    sharedData.pullType = pullable.pullType;
-
-    // Perform the mutation
-    pullable.state = 'pulled';
-    pullable.pullCount = (pullable.pullCount || 0) + 1;
-
   },
 
   /**
@@ -213,9 +207,7 @@ export const pullingAction: Action & { metadata: ActionMetadata } = {
       // params carry EntityInfo for the formatter chain (ADR-158)
       params: { target: target ? nounPhraseFor(target) : { name: sharedData.targetName } },
       target: sharedData.targetId,
-      targetName: sharedData.targetName,
-      pullCount: sharedData.pullCount,
-      pullType: sharedData.pullType
+      targetName: sharedData.targetName
     }));
 
     return events;

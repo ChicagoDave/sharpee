@@ -380,7 +380,7 @@ export function setupWorld(world: WorldModel): void {
     }),
   );
   lever.add(new SceneryTrait());
-  lever.add(new PullableTrait({ pullType: 'lever', repeatable: true }));
+  lever.add(new PullableTrait());
   world.moveEntity(lever.id, supplyCloset.id);
 
   // ---- BUTTON (wall button) ----

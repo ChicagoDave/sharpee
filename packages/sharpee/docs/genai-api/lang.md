@@ -620,19 +620,14 @@ export declare const standardActionLanguage: ({
     actionId: string;
     patterns: string[];
     messages: {
+        no_target: string;
         not_visible: string;
-        silence: string;
-        ambient_sounds: string;
-        active_devices: string;
-        sounds_nearby: string;
-        no_sound: string;
-        device_running: string;
-        device_off: string;
-        container_sounds: string;
-        liquid_sounds: string;
-        sounds_from_target: string;
-        listened_to: string;
-        listened_environment: string;
+        not_reachable: string;
+        cant_pull_that: string;
+        worn: string;
+        wont_budge: string;
+        pulled: string;
+        detached: string;
     };
     help: {
         description: string;
@@ -1130,6 +1125,29 @@ export declare const standardActionLanguage: ({
     patterns: string[];
     messages: {
         not_visible: string;
+        silence: string;
+        ambient_sounds: string;
+        active_devices: string;
+        sounds_nearby: string;
+        no_sound: string;
+        device_running: string;
+        device_off: string;
+        container_sounds: string;
+        liquid_sounds: string;
+        sounds_from_target: string;
+        listened_to: string;
+        listened_environment: string;
+    };
+    help: {
+        description: string;
+        examples: string;
+        summary: string;
+    };
+} | {
+    actionId: string;
+    patterns: string[];
+    messages: {
+        not_visible: string;
         too_far: string;
         no_scent: string;
         room_scents: string;
@@ -1264,26 +1282,6 @@ export declare const standardActionLanguage: ({
         wont_budge: string;
         pushing_does_nothing: string;
         fixed_in_place: string;
-    };
-    help: {
-        description: string;
-        examples: string;
-        summary: string;
-    };
-} | {
-    actionId: string;
-    patterns: string[];
-    messages: {
-        no_target: string;
-        not_visible: string;
-        not_reachable: string;
-        cant_pull_that: string;
-        worn: string;
-        already_pulled: string;
-        wont_budge: string;
-        pulled: string;
-        nothing_happens: string;
-        detached: string;
     };
     help: {
         description: string;
