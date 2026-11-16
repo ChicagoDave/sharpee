@@ -3,7 +3,8 @@ const fs = require('fs'), path = require('path');
 const ROOT = process.cwd();
 const OUT = path.join(ROOT, 'code-snippets');
 const AREAS = ['frontmatter','parts','backmatter','appendices'];
-const INCLUDE = { typescript:'ts', bash:'sh', css:'css', jsonc:'jsonc' };
+// `chord` and `shell` fences are the Chord manual's (docs/book/chord-v4.0.2/).
+const INCLUDE = { typescript:'ts', bash:'sh', css:'css', jsonc:'jsonc', chord:'story', shell:'sh' };
 
 const glob = (dir) => fs.readdirSync(dir,{withFileTypes:true}).flatMap(d=>{
   const p=path.join(dir,d.name);

@@ -11,7 +11,15 @@ The premise is a world that lost its magic and is getting it back. The game take
 nothing else. It is an original world with its own places, people and spells: no names, characters,
 spells, objects or places from Infocom's games appear in it, and it does not claim to be their
 sequel. A reader who knows where that trilogy ended will recognise the morning after; a reader who
-does not loses nothing. If David wants it tied closer than that, that is his call to make.
+does not loses nothing.
+
+**Ruled by David, 2026-11-15 (session 176e1b):** "I think it's fine to leave the land of Zork BUT
+we should hint that this is a DIFFERENT land on the same planet. I would do it with one sort of
+myth, that the word 'gnusto' meant something." So the game stays in its own land, and carries
+exactly one thread back: the word *gnusto*. It is the single exception to the no-names rule above.
+He then went a step further the same session: the local people use it as a mantra about sunlight,
+with several sayings around it.
+How the thread is used is in "The one myth" below, and is the session's design, not David's wording.
 
 ## The Relighting (working title)
 
@@ -51,6 +59,33 @@ answer a working carries a story trait that says how.
 - **mend**: makes a broken thing whole. The cracked lens, the snapped bell rope.
 - **hush**: quiets a thing that is making noise. The tower bell, the shrieking weathercock.
 - **unbind**: releases a ward. The sealed stair door, the chained book.
+
+**The one myth.** David, 2026-11-15, going a step further: "the local people use gnusto as mantra
+about sunlight and probably have several sayings around it." So *gnusto* is not a forgotten word
+here. It is an everyday one. In this country it is what people say of sunlight: a blessing, a habit
+of speech, something murmured when the shutters are opened. Nobody thinks of it as magic, and it is
+not one of Lanternhall's four workings. The myth is the other half: the scholars of the Hall always
+held that the word came over the sea with travellers from a far country, where it was a working of
+great use to people who kept their spells in books, and that it only *became* a word about sunlight
+after it landed. Nobody can say what it did there.
+- The sayings (the session's writing, cheap to change):
+  - "Gnusto on the sill." Said when opening the shutters, and as a good-morning.
+  - "Gnusto keeps what the dark forgets." The proverb; since the Dimming it is said with more
+    weight, because sunlight was the one light that did not fail.
+  - "No gnusto, no harvest." The farmers' version.
+  - "All lamp and no gnusto." Of someone clever and cold. Tamsin has had it said of her.
+  - "Gnusto go with you." A parting.
+- It stays a myth. Gnusto has no page and is not a working, and the player is never told what it
+  meant across the water. A reader who knows will smile at a word for writing things into books
+  turning up on the morning the ink comes back; the game does not point at it.
+- Where it surfaces: Hobb and Tamsin use the sayings in ordinary talk; the motto over the gate
+  can be read as one; a faded margin note in the Library gives the scholars' view ("gnusto: came
+  over the water as a working, they say. Meaning lost."); Hobb, when asked, says it "meant
+  something, somewhere else", among people from a land with a great underground; and typing the
+  word gets a reply of its own, since a player who knows it will try it.
+- Nothing else from that land is named: no places, people, spells or objects. The hint is that
+  this is another country on the same world, and one word, worn smooth by use, is enough to carry
+  it.
 
 **The place.** Eight rooms in the main game: the Porter's Lodge, the Gate Court, the Cloister, the
 Refectory, the Library, the Undercroft (dark), the Bell Stair, and the Lantern Gallery on the roof.
@@ -107,11 +142,14 @@ and say so.
 | 16–17 | Named conditions (the lantern is ready), every candle in the refectory at once, the bell's toll written three ways. |
 | 18 | The score, the ranks, and all three endings. |
 | 19 | Dusk as a timer with named turns; the bell on every turn; the day told in three chapters, Morning, Afternoon and Dusk. |
+| 20 | (also) Hobb's gnusto sayings as one phrase with several variants, the chapter's first worked example of a strategy. |
 | 20–22 | The prose pass: varied responses, each thing's own words, and a phrasebook that changes the standard messages once the Hall is awake. |
+| 9 | (also) The margin note about gnusto, on a readable book in the Library. |
+| 23–24 | `gnusto` as a fifth verb that only answers: an action with a reply and no effect, beside the four that do something. |
 | 23–24 | The four workings as actions, and the traits (kindles, mends, hushes, unbinds) that let a thing answer one. The centre of the game and of the manual. |
 | 25 | `light` and `fix` as plain synonyms; the standard `burn` taken away from the candles so kindle is the only way. |
 | 26 | The wisp follows the lamp. Tamsin goes about her salvage on her own turns. |
-| 27–28 | Asking Hobb about the Dimming, the Lantern and Tamsin. Bargaining with Tamsin for the mend page as a shaped conversation. |
+| 27–28 | Asking Hobb about the Dimming, the Lantern, Tamsin and the word gnusto. Bargaining with Tamsin for the mend page as a shaped conversation. |
 | 29–30 | Hobb is cautious and fond of Ansel. Tamsin never breaks a bargain, and that is the lever the player has on her. |
 | 31 | One scene played as Hobb, alone in the Lodge when the bell starts. |
 | 32 | The Lantern's shutter mechanism as a machine. |
@@ -353,7 +391,7 @@ Prose was checked with `sharpee play`; what the page would be sent was read from
   Chapters 36 and 37 need a short standalone example for each, or the game needs a reason for one.
 
 Part VIII compiles at Chord 4.0.2 and was tested, built and opened in a browser on 2026-11-14
-(session a180a5). `snapshots/part-8/` holds the story (`story-version: 0.8.0`), its test tree
+(session a180a5). `snapshots/part-8/` (moved 2026-11-15 to `tutorials/relighting/chord-v4.0.2/part-8/`) holds the story (`story-version: 0.8.0`), its test tree
 (`relighting.tests/`), its claims (`relighting.claims.chord`), its assets (`assets/`), its own page
 (`browser/`) and the `relighting.config.json` the build wrote. Everything was run with the in-repo
 CLI (`node packages/devkit/dist/cli.js`), not the published one.

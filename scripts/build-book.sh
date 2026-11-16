@@ -10,7 +10,10 @@
 # Usage:
 #   scripts/build-book.sh <version>          # render all formats for one edition
 #   scripts/build-book.sh <version> html     # render one format (html | epub | pdf)
-#   version = v1.5.0 | v2.0.0  (subdirectories of docs/book/)
+#   version = v1.5.0 | v2.0.0 | chord-v4.0.2  (subdirectories of docs/book/)
+#
+# Output files are named the-sharpee-book-<version>.*, unless the edition has a
+# one-line `output-name` file, which names them instead.
 #
 # Requires: pandoc, weasyprint (PDF engine). See the book plan, Phase 1.
 
@@ -34,7 +37,16 @@ BOOK_DIR="$SCRIPT_DIR/../docs/book/$VERSION"
 cd "$BOOK_DIR"
 
 OUT="build"
+# An edition names its own output files with a one-line `output-name` file (the
+# Chord manual does, so it is not named the-sharpee-book-*). An edition without
+# one is a Sharpee edition and keeps the original name.
 NAME="the-sharpee-book-$VERSION"
+if [ -f output-name ]; then
+  NAME="$(head -n 1 output-name)"
+  case "$NAME" in
+    ""|*[!A-Za-z0-9._-]*) echo "error: docs/book/$VERSION/output-name must be one line of letters, digits, '.', '_' or '-'"; exit 2 ;;
+  esac
+fi
 mkdir -p "$OUT"
 
 command -v pandoc >/dev/null || { echo "error: pandoc not found (brew install pandoc)"; exit 1; }
@@ -159,8 +171,14 @@ build_web() {
 # so `build-book.sh snippets` alone still regenerates the page (downloads may 404 until
 # a full build publishes them).
 build_snippets() {
-  echo "→ SNIPPETS + book downloads → site/"
   local SITE="$SCRIPT_DIR/../site"
+  # The site/ target is gone from this repository. With no site/ directory there
+  # is nowhere to publish to, so the step is skipped and says so.
+  if [ ! -d "$SITE" ]; then
+    echo "→ SNIPPETS skipped: no site/ directory to publish into"
+    return 0
+  fi
+  echo "→ SNIPPETS + book downloads → site/"
   if command -v node >/dev/null; then
     node "$SCRIPT_DIR/build-snippet-page.cjs" "$VERSION"
   else

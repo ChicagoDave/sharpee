@@ -1,0 +1,13 @@
+# frontmatter.yaml — the title page and copyright page, layered ahead of the body.
+#
+# Purpose: these two pages must come before the table of contents. EPUB renders
+#          `--defaults=frontmatter.yaml --defaults=book.yaml`; HTML and PDF render
+#          this file to a fragment passed through `--include-before-body`.
+#          (See scripts/build-book.sh.)
+# Owner:   docs/book authoring toolchain; the Chord manual plan.
+
+from: markdown+fenced_divs+smart
+
+input-files:
+  - frontmatter/00-title-page.md
+  - frontmatter/00b-copyright.md

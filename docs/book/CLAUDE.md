@@ -53,3 +53,31 @@ Every hit must be one of the permitted cases above.
 ```
 
 A content edit is not done until the build is clean.
+
+## The Chord edition (`docs/book/chord-v4.0.2/`)
+
+Every rule above applies to the Chord manual, with these differences:
+
+- Its part headings read "Part N. Title" and its appendix headings "Appendix A.
+  Title", so no em-dash is permitted in a heading. The only permitted em-dash is
+  inside a verbatim quote of platform output.
+- Its examples are Chord, in `chord` fences, and its commands are in `shell`
+  fences. Both are extracted. Every example is written from `packages/chord` at
+  the edition's pin; no existing Chord material is a source.
+- Its output files take their name from the edition's one-line `output-name`
+  file, not from `the-sharpee-book-*`.
+
+Verification after any prose edit:
+
+```bash
+grep -rn "—" docs/book/chord-v4.0.2/frontmatter docs/book/chord-v4.0.2/parts
+```
+
+Every hit must be a verbatim quote of platform output.
+
+```bash
+./scripts/build-book.sh chord-v4.0.2 html   # fast check while editing
+```
+
+After editing fenced code, re-run `node scripts/extract-book-snippets.cjs` from
+`docs/book/chord-v4.0.2/`.

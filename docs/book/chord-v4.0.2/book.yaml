@@ -1,0 +1,88 @@
+# book.yaml — Pandoc defaults file for the Chord manual (edition pinned to Chord 4.0.2)
+#
+# Purpose: single source of truth for chapter order and shared render metadata.
+#          `scripts/build-book.sh` loads this with `pandoc --defaults` and adds
+#          per-format flags (output target, CSS, PDF engine).
+# Owner:   docs/book authoring toolchain; the Chord manual plan
+#          (docs/work/chord-manual/plan.md).
+#
+# Chapter order follows docs/work/chord-manual/chapters.md: Parts I to VIII,
+# chapters 1 to 40, then appendices A to G. The title page and copyright page are
+# not listed here; they live in frontmatter.yaml and are layered ahead of this
+# body so they precede the table of contents.
+#
+# The title is David's ruling of 2026-11-15 (the plan's D-8).
+
+from: markdown+fenced_divs+smart
+standalone: true
+toc: true
+toc-depth: 2
+number-sections: true
+
+# Suppress pandoc's auto-generated EPUB title page; the authored
+# frontmatter/00-title-page.md is the single title page for all three formats.
+epub-title-page: false
+
+metadata:
+  title: "The Chord Manual"
+  subtitle: "Writing Interactive Fiction in Chord (Chord 4.0.2, Sharpee 5.6.1)"
+  author: "David Cornelson"
+  lang: en-US
+
+input-files:
+  # Part I. A first story
+  - parts/part-1/01-the-shape-of-a-story-file.md
+  - parts/part-1/02-the-story-header.md
+  - parts/part-1/03-the-player-and-the-start.md
+  - parts/part-1/04-build-play-read-an-error.md
+  # Part II. The world
+  - parts/part-2/05-rooms-and-exits.md
+  - parts/part-2/06-things.md
+  - parts/part-2/07-containers-and-supporters.md
+  - parts/part-2/08-doors-locks-and-keys.md
+  - parts/part-2/09-what-things-can-do-the-trait-words.md
+  - parts/part-2/10-light-dark-and-the-other-senses.md
+  - parts/part-2/11-regions.md
+  - parts/part-2/12-ways-that-are-closed-hidden-or-strange.md
+  # Part III. Making things happen
+  - parts/part-3/13-states.md
+  - parts/part-3/14-reacting-to-the-player-on-and-after.md
+  - parts/part-3/15-what-a-clause-can-say-and-do.md
+  - parts/part-3/16-conditions.md
+  - parts/part-3/17-choosing-between-outcomes.md
+  - parts/part-3/18-counting-scoring-and-ending.md
+  - parts/part-3/19-time.md
+  # Part IV. Words
+  - parts/part-4/20-phrases.md
+  - parts/part-4/21-a-things-own-words.md
+  - parts/part-4/22-changing-the-standard-messages.md
+  - parts/part-4/23-new-verbs.md
+  - parts/part-4/24-new-kinds-of-thing.md
+  - parts/part-4/25-bending-the-standard-grammar.md
+  # Part V. People
+  - parts/part-5/26-people-who-act.md
+  - parts/part-5/27-asking-and-telling.md
+  - parts/part-5/28-conversations-with-a-shape.md
+  - parts/part-5/29-inner-lives.md
+  - parts/part-5/30-principles.md
+  - parts/part-5/31-more-than-one-protagonist.md
+  # Part VI. Larger machinery
+  - parts/part-6/32-machines.md
+  - parts/part-6/33-vehicles.md
+  - parts/part-6/34-open-water-and-open-ground.md
+  - parts/part-6/35-the-opt-in-systems.md
+  # Part VII. Presentation
+  - parts/part-7/36-sound-music-and-pictures.md
+  - parts/part-7/37-the-page-the-player-sees.md
+  # Part VIII. Proving and shipping
+  - parts/part-8/38-test-trees.md
+  - parts/part-8/39-claims.md
+  - parts/part-8/40-publishing.md
+  # Back matter: generated appendices
+  - backmatter/appendix-a-the-grammar.md
+  - backmatter/appendix-b-kinds-trait-words-and-state-words.md
+  - backmatter/appendix-c-the-standard-actions-and-their-gerunds.md
+  - backmatter/appendix-d-statements-and-conditions.md
+  - backmatter/appendix-e-character-vocabulary.md
+  - backmatter/appendix-f-message-aliases.md
+  - backmatter/appendix-g-removed-forms-and-their-replacements.md
