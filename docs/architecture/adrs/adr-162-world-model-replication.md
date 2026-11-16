@@ -1,5 +1,8 @@
 # ADR-162: World-Model Replication for Multiuser Renderers
 
+**Planning**: ABANDONED
+**Summary**: The multi-user sandbox would push the whole world (`world.toJSON()`) on every turn so server and clients could hold read-only `WorldModel` mirrors for renderers to query. Replaced 2026-04-28 by channel I/O (ADR-163, ADR-164), where renderers consume typed channel values instead of a world mirror.
+
 ## Status: REPLACED
 
 > **RETIRED 2026-08-13 (session 756ff6).** The zifmia product line is retired —

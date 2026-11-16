@@ -1,5 +1,8 @@
 # ADR-224: Conditional / Hazard Death — a First-Class Player-Death Model
 
+**Planning**: IMPLEMENTED
+**Summary**: Player death is one platform primitive: `killPlayer` sets a terminal state with a cause on the player's `HealthTrait` and the engine emits the one canonical event, `if.event.player.died`, for combat and non-combat deaths alike. A story's state machine gets first refusal (reincarnation, penalties) before the engine routes to `game.lost`, and probabilistic death uses seeded randomness. Chord reaches it with `kill` and a `deadly` room. Trigger patterns are ADR-227's.
+
 ## Status: ACCEPTED (2026-07-15 — all five open questions resolved via interview, accepted by David; adr-review clean)
 
 > Child of ADR-214 (parity). A **SHARPEE-GAP** surfaced by the 2026-07-15 Dungeo

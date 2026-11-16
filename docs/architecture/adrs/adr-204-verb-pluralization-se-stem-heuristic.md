@@ -1,5 +1,8 @@
 # ADR-204: Verb Pluralization — `-se`/`-ze` Stem Heuristic Fix
 
+**Planning**: IMPLEMENTED
+**Summary**: `regularPluralVerb` strips `-es` only after a doubled sibilant, `x`, `ch` or `sh`, so `uses` becomes "use" and `refuses` "refuse"; the closed `-ie` set (die, lie, tie, vie) is in `IRREGULAR_VERBS`. A rare single-`s` stem (focus, bus, gas) needs its own `IRREGULAR_VERBS` entry when first used. Amends ADR-199. In `packages/lang-en-us/src/assembler/english-assembler.ts`.
+
 ## Status: ACCEPTED
 
 > Accepted 2026-06-30 by David. **Amends** ADR-199 (Verb Atom & Subject Agreement) —

@@ -1,5 +1,8 @@
 # ADR-202: The Structural Realization Mandate
 
+**Planning**: IMPLEMENTED
+**Summary**: The Assembler may inspect one node's own text to apply that node's rule, and may never pattern-match or re-parse the assembled output to recover structure (sentence boundaries, quote nesting, clause membership, leftover punctuation). A cross-fragment effect is carried as `Run` edge metadata and resolved in the single reconciliation pass. Regex and `String.replace` in `english-assembler.ts` are confined to a named allowlist of token-local and whitespace helpers. Binds every phrase atom, past and future.
+
 ## Status: ACCEPTED
 
 > Extracted from ADR-201 §1 on 2026-06-30. Dialogue (ADR-201) is what *forced* this

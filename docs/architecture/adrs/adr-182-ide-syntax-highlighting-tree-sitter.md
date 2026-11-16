@@ -1,5 +1,8 @@
 # ADR-182: IDE syntax highlighting via tree-sitter
 
+**Planning**: ABANDONED
+**Summary**: The IDE highlighted TypeScript with tree-sitter (`swift-tree-sitter` plus the TypeScript grammar) layered over its `NSTextView`, using a curated in-code query split into independent groups. The dependency left the IDE with the TypeScript author path under ADR-258 D7 (noted in `tools/ide/project.yml`); nothing in `tools/ide` imports tree-sitter now.
+
 ## Status: ACCEPTED
 
 ## Date: 2026-06-19

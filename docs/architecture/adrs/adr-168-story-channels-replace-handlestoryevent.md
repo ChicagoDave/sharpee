@@ -1,5 +1,8 @@
 # ADR-168: Story-Defined Channels Replace `handleStoryEvent`
 
+**Planning**: IMPLEMENTED
+**Summary**: A story surfaces a custom UI signal by defining its own `IOChannel` in `Story.registerChannels` and registering a renderer per consumer, one channel per signal. The `handleStoryEvent` callback is deleted, and `BrowserClient` subscribes only to `channel:manifest` and `channel:packet`, held by the AC-17 test in `packages/channel-service/tests`.
+
 ## Status: ACCEPTED
 
 ## Date: 2026-05-04

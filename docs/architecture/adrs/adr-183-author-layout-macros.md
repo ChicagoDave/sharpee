@@ -1,5 +1,8 @@
 # ADR-183: Author layout macros (parameterized decorations)
 
+**Planning**: IMPLEMENTED
+**Summary**: Decorations gain an optional parameter (`[center=50:text]`, carried as `value` on `IDecoration` and `data-value` on the span) and the platform void macros `[br]` and `[p]`, with `indent`, `center` and `right` added to the vocabulary; every decoration still renders as one `<span>` and block layout lives only in CSS. Built in the engine's `prose-pipeline/decorations`. The global whitespace collapse it describes is deferred (issue 132), so source newlines and spaces still pass through.
+
 ## Status: ACCEPTED
 
 ## Date: 2026-06-19

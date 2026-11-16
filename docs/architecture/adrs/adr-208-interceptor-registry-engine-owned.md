@@ -1,5 +1,8 @@
 # ADR-208: Action-Interceptor Registry is World-Owned, not Process-Global
 
+**Planning**: IMPLEMENTED
+**Summary**: Action-interceptor bindings belong to the `WorldModel` instance, the same treatment ADR-207 gave capability behaviors: `world.registerActionInterceptor(traitType, actionId, interceptor)` is idempotent and guard-free, stdlib actions read `context.world.getInterceptorForAction`, and bindings are rebuilt on load and never serialized. The process-global registry and its free functions are deleted. In `packages/world-model/src/capabilities/interceptor-binding.ts`. ADR-118's hook contract is unchanged.
+
 ## Status: ACCEPTED
 
 > Accepted 2026-07-02 by David (adr-review 13/13, READY — two review corrections

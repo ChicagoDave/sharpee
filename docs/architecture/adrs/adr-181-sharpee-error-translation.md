@@ -1,5 +1,8 @@
 # ADR-181: Sharpee Error Translation (author-facing runtime errors)
 
+**Planning**: IMPLEMENTED
+**Summary**: The IDE translates a raw runtime error from the Play pane into an author-facing title and fix through a curated, unit-tested rule table (`SharpeeErrorTranslator` in `tools/ide/SharpeeIDE/Play`), always keeping the original message and falling back to it for an unknown error. Engine-thrown domain errors are a separate, deferred platform decision this layer does not depend on.
+
 ## Status: ACCEPTED
 
 ## Date: 2026-06-18

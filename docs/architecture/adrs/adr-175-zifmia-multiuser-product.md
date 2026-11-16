@@ -1,5 +1,8 @@
 # ADR-175: Zifmia — Multi-User Product Surface and Rebuild
 
+**Planning**: ABANDONED
+**Summary**: Zifmia as the multi-user web product: a single Docker image at `tools/zifmia/`, admin-uploaded stories, flat rooms, named saves over per-turn blobs, a 1000-turn transcript window, and HTTP for commands with WebSocket only for chat and the typing lock. Superseded by ADR-177 on 2026-05-12 and retired with the product line 2026-08-13.
+
 ## Status: ACCEPTED
 
 > **RETIRED 2026-08-13 (session 756ff6).** The zifmia product line is retired —

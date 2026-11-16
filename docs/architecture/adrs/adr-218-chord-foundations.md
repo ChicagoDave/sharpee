@@ -1,5 +1,8 @@
 # ADR-218: Chord Foundations — Catalog Adjectives, Door Loading, and Capability-Dispatch Fallback
 
+**Planning**: IMPLEMENTED
+**Summary**: Three Chord foundations: the `enterable`, `climbable` and `drinkable` trait adjectives (`enterable` always explicit; `edible` plus `drinkable` is a load error); a door placed with `between the Hall (east) and the Study (west)`, mapping to `DoorTrait` and two reciprocal exits; and an entity's `on <verb> it` clause as the target of a capability-dispatch verb, with a registered TypeScript behavior winning. The `liquid` adjective and the `LiquidTrait` it specified were not built: no `LiquidTrait` is in `packages/world-model`.
+
 ## Status: ACCEPTED (2026-07-14 — foundations design for ADR-214 roadmap steps 1–3; all open questions resolved via interview, three spawned dedicated ADRs 219/220/221)
 
 > Child of ADR-214 (Chord ⇄ Sharpee parity). ADR-214 §8 sequences the parity

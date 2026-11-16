@@ -1,5 +1,8 @@
 # ADR-185: The IDE is a standalone authoring tool (npm platform, no platform build)
 
+**Planning**: IMPLEMENTED
+**Summary**: The IDE serves authors working outside the monorepo and never builds the Sharpee platform: one project is one story, built and introspected by the project's own `sharpee` CLI, with the scaffold shipped inside `@sharpee/devkit` and no monorepo mode. Built (devkit `introspect`, the devkit-owned template). ADR-258, its child, then replaced the npm TypeScript project with a bare `.story` and withdrew decision 3's automatic housekeeping; the standalone, no-platform-build rule is what still holds.
+
 ## Status: ACCEPTED
 
 ## Date: 2026-06-20

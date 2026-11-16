@@ -1,5 +1,8 @@
 # ADR-193: Phrase Algebra — State-Derived Adjectives
 
+**Planning**: IMPLEMENTED
+**Summary**: Live trait state reaches a noun phrase's adjectives through an open contributor registry in world-model (`registerAdjectiveContributor`, with `open` and `locked` as defaults), and only when a producer opts in with `nounPhraseFor(entity, ctx, { stateAdjectives: true })`; state adjectives go before static ones and the article re-agrees by itself. The default is off, so existing output does not change. In `packages/world-model/src/state-adjectives.ts`.
+
 ## Status: ACCEPTED
 
 > Accepted 2026-06-27 by David. Continues the ADR-192 atom roadmap. Unlike the

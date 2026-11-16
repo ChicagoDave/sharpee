@@ -1,5 +1,8 @@
 # ADR-214: Chord Authoring Parity with the Sharpee Platform (100% Sharpee == 100% Chord)
 
+**Planning**: IMPLEMENTED
+**Summary**: A standing obligation: every capability the platform offers has a Chord authoring surface, in core vocabulary or through a platform extension enabled with `use <extension>`, and a new platform capability is not done until it has one or an ADR says why not. Parity runs both ways between two first-class surfaces, and every capability is classed CAN, CHORD-GAP, SHARPEE-GAP or HATCH against the capability matrix in `docs/work/schism`. The surfaces themselves are specified in the child ADRs (215, 216, 217) and ratchet entries.
+
 ## Status: ACCEPTED (2026-07-14 — all six open questions resolved via interview; accepted by David) · AMENDED 2026-07-15 (§1a: bidirectional two-Ways parity + CAN/CHORD-GAP/SHARPEE-GAP/HATCH taxonomy; capability matrix supersedes ADR-222's DZ backlog)
 
 > Drafted 2026-07-14 from the standard-library reference work (session

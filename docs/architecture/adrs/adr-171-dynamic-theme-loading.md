@@ -1,5 +1,8 @@
 # ADR-171: Dynamic Per-Theme CSS Loading and Story-Shippable Themes
 
+**Planning**: OPEN
+**Summary**: Each theme would be its own CSS file, loaded at selection by an async `applyTheme` that swaps `<link>` tags on the `load` event, with a required `cssPath` and an inline head script to prevent a flash on first paint. Per-theme files exist under `packages/platform-browser/styles/themes`, but `ThemeManager.applyTheme` is still a synchronous `data-theme` flip and no link swap was built; ADR-188 delivers themes another way without naming this record replaced.
+
 ## Status: PROPOSED
 
 ## Date: 2026-05-08

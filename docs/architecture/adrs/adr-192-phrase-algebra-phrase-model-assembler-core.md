@@ -1,5 +1,8 @@
 # ADR-192: Phrase Algebra — Phrase Model & Assembler Core
 
+**Planning**: IMPLEMENTED
+**Summary**: Message text is a tree of language-neutral `Phrase` values (a closed union in `@sharpee/if-domain`, extended one kind per later ADR) that one per-locale Assembler realizes at end of turn, alone owning article, agreement, punctuation, whitespace, reference and case. Templates parse through `parsePhraseTemplate` (`{the item}`, `{kind:param}`); the `:`-formatter chain, `parsePlaceholder` and `EntityInfo` are deleted and legacy syntax is rejected at parse time. No locale logic in if-domain; the English Assembler is in `packages/lang-en-us/src/assembler`.
+
 ## Status: ACCEPTED
 
 > Accepted 2026-06-26 by David. Phase 1 (`@sharpee/if-domain` Phrase contracts)

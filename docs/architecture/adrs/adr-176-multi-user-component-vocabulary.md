@@ -1,5 +1,8 @@
 # ADR-176: Multi-User Component Vocabulary (Addendum to ADR-170)
 
+**Planning**: ABANDONED
+**Summary**: Fourteen more `.sharpee-*` classes, six state modifiers and three decoration slots for the multi-user surfaces (presence, chat, lock banner, lobby, named saves, identity form), added to ADR-170's 22 without changing them. The client that used them was retired with the multi-user product 2026-08-13; structural rules for the classes are still in `packages/platform-browser/styles/base.css`, and the record carries no retirement note.
+
 ## Status: ACCEPTED
 
 ## Date

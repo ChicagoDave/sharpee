@@ -1,5 +1,8 @@
 # ADR-155: Install-Time Story Compilation Pipeline
 
+**Planning**: ABANDONED
+**Summary**: The multi-user server re-bundled each installed `.sharpee` story with in-process esbuild into a self-contained Deno-runnable artifact, cached by mtime, with a boot-time compile probe and a hand-maintained plugin list. Built in `tools/server`, which ADR-164 removed along with the Deno sandbox it fed; none of it is in the live tree.
+
 ## Status: PROPOSAL
 
 ## Date: 2026-04-24

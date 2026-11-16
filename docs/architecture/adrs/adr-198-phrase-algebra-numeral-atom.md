@@ -1,5 +1,8 @@
 # ADR-198: Phrase Algebra — Numeral Atom
 
+**Planning**: IMPLEMENTED
+**Summary**: `{number:param}` renders a bound number as digits, `{number:param words}` as a spelled cardinal and `{number:param ordinal}` as a numeric ordinal ("3rd"); an unbound param fails at parse time. The spelling lives in `packages/lang-en-us/src/number-words.ts`, apart from the one-to-ten speller that list grouping uses.
+
 ## Status: ACCEPTED
 
 > Accepted 2026-06-27 by David. Continues the ADR-192 phrase-algebra atom roadmap;

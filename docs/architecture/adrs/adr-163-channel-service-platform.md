@@ -1,5 +1,8 @@
 # ADR-163: Channel-Service Platform — Universal Wire and Author-Controlled Media
 
+**Planning**: IMPLEMENTED
+**Summary**: Channel I/O is the one wire every surface consumes: `hello`, `cmgt`, `turn` and `command` packets produced by `@sharpee/channel-service`. A channel is an `IOChannel` (types in `@sharpee/if-domain`) with a mode, an emit policy, optional capability gating and a pure `produce` closure; standard channels sit in stdlib's registry and stories add or override through `Story.registerChannels`, with registration order as manifest order. The wire is data-only, UI gestures come back as synthesized commands, and a wire change needs an ADR. Replaces ADR-101.
+
 ## Status: ACCEPTED (rewritten 2026-05-02)
 
 ## Date: 2026-04-28 (original) — 2026-05-02 (rewritten: closure-per-channel)

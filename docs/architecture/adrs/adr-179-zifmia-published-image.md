@@ -1,5 +1,8 @@
 # ADR-179: Zifmia — Published Container Image
 
+**Planning**: ABANDONED
+**Summary**: Publishing the multi-user server as a multi-arch image on GitHub Container Registry, minted by a `zifmia-v*` tag workflow with conditional floating tags and a baseline-version label. Proposed and never accepted; retired with the multi-user product line 2026-08-13.
+
 ## Status: PROPOSED
 
 > **RETIRED 2026-08-13 (session 756ff6).** The zifmia product line is retired —

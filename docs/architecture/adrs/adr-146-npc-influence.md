@@ -1,5 +1,8 @@
 # ADR-146: NPC Influence
 
+**Planning**: IMPLEMENTED
+**Summary**: An NPC exerts author-named influences (passive or active; proximity, targeted or room range) that change a target's character state unless the target resists that influence by name; evaluation is binary, effects last while present, for a moment or lingering, and an influence can be a goal-pursuit step. Built in `packages/character` (`.influence()`, `.resistsInfluence()`, the influence tick sub-step).
+
 ## Status: DRAFT
 
 ## Date: 2026-04-05

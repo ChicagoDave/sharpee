@@ -1,5 +1,8 @@
 # ADR-166: Lifecycle Channel Lives in Stdlib
 
+**Planning**: IMPLEMENTED
+**Summary**: The `lifecycle` channel, which projects save-failed, restore-failed and restore-completed platform events (read from `event.payload.error`), is defined in stdlib's standard channels and rendered by a callback-driven factory in platform-browser. The rule it sets: a channel two or more surfaces could render belongs in stdlib, a single-surface channel in the consuming package.
+
 ## Status: ACCEPTED
 
 ## Date: 2026-05-04

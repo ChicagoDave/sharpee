@@ -1,5 +1,8 @@
 # ADR-153a: Multiuser Server — Phase-4 Amendments
 
+**Planning**: ABANDONED
+**Summary**: An addendum to ADR-153 naming the Deno permission surface, the server-enforced turn timeout, log-before-broadcast, the JSON-clean save shape and the real-sandbox testing rule. Replaced with ADR-153 on 2026-04-28 (ADR-164); the subprocess lifecycle it constrains no longer exists.
+
 ## Status: REPLACED
 
 > **RETIRED 2026-08-13 (session 756ff6).** The zifmia product line is retired —

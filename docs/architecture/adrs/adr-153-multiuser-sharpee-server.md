@@ -1,5 +1,8 @@
 # ADR-153: Multiuser Sharpee Server
 
+**Planning**: ABANDONED
+**Summary**: The multi-user server as a long-running per-room Deno subprocess, with rooms as the primitive, per-room session tokens, a four-tier role hierarchy, lock-on-typing input and an append-only session event log. Replaced 2026-04-28 by the stateless server (ADR-164); the product was retired 2026-08-13 and its source is archived at `tools/_archive/zifmia`.
+
 ## Status: REPLACED
 
 > **RETIRED 2026-08-13 (session 756ff6).** The zifmia product line is retired —

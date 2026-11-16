@@ -1,5 +1,8 @@
 # ADR-180: Build/Test devkit and `@sharpee/bootstrap`
 
+**Planning**: IMPLEMENTED
+**Summary**: `@sharpee/bootstrap` is the one story loader (entry-aware module resolution plus game assembly) that transcript-tester, the CLI bundle and devkit all call; `@sharpee/devkit` is the published `sharpee` CLI, installed apart from the `@sharpee/sharpee` library, and `build.sh` is gone. New build, test and run capability goes in a tool and not a bash script; a story is a location with no committed registry. ADR-187 reversed the one-command clause: devkit is author-only and `repokit` builds the repo.
+
 ## Status: ACCEPTED (amended — see Amendment 1)
 
 ## Date: 2026-06-18 (accepted 2026-06-18, session 90c6c2)

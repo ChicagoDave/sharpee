@@ -1,5 +1,8 @@
 # ADR-190: Natural-language list rendering in the language layer
 
+**Planning**: IMPLEMENTED
+**Summary**: A list of entities renders as natural English in the language layer: an article per element, identical items grouped and pluralized with counts spelled out to ten, an `IdentityTrait.plural` override, "nothing" for an empty list, and a story-configurable serial comma that defaults on. The grammar contract is in force; its `{list:items}` formatter and `EntityInfo[]` input were replaced by the phrase algebra's list authority (ADR-192), which carries the same rules.
+
 ## Status: ACCEPTED (2026-06-24)
 
 ## Date: 2026-06-24

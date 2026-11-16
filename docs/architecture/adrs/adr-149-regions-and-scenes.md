@@ -1,5 +1,8 @@
 # ADR-149: Regions and Scenes
 
+**Planning**: IMPLEMENTED
+**Summary**: Regions and scenes are entities. `RegionTrait` groups rooms (nestable through a parent region) with `createRegion`, `assignRoom`, `isInRegion` and `getRegionCrossings` on WorldModel and region_entered/region_exited events on movement; `SceneTrait` carries begin and end conditions evaluated once per turn by the engine's scene-evaluation plugin, with scene_began/scene_ended events, and condition closures are re-registered by the story after restore.
+
 ## Status: ACCEPTED (corrected 2026-07-18, David — both halves shipped since 2026-04: RegionTrait/`createRegion`/`assignRoom`/`isInRegion`/crossing events, SceneTrait/`createScene` + ADR-186 reactions; made load-bearing by ADR-236 Chord regions. The DRAFT marking was stale, not a reflection of open questions.)
 
 ## Date: 2026-04-14

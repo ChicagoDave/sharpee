@@ -1,5 +1,8 @@
 # ADR-169: Web Audio API for AudioManager — Fade-In/Out and Cross-Fade
 
+**Planning**: IMPLEMENTED
+**Summary**: The browser `AudioManager` plays ambient and music through a Web Audio graph (one lazy `AudioContext` it alone owns, a `GainNode` per stream) with default fades, per-event `fadeIn`/`fadeOut` overrides, automatic cross-fade and an async `unlock()`; sound effects stay bare `HTMLAudioElement`. New audio processing inserts nodes into that graph. In `packages/platform-browser/src/audio/AudioManager.ts`.
+
 ## Status: ACCEPTED
 
 ## Date: 2026-05-06

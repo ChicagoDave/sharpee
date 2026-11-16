@@ -1,5 +1,8 @@
 # ADR-196: Phrase Algebra — Optional / Choice Atoms & the Text-State Store
 
+**Planning**: IMPLEMENTED
+**Summary**: Conditional and varying text are phrases built in code and bound to a template param, never in-string control flow: `Optional` carries a boolean its producer resolved, and `Choice` picks one alternative by selector (cycling, stopping, sticky, random, firstTime) keyed to `(entityId, messageKey)`. `Choice` is the one realize-time write: a counter in the `textState` world capability, which saves and restores with the world, seeded with no clock and no `Math.random`. Two `Choice` nodes sharing a key in one turn advance it twice.
+
 ## Status: ACCEPTED
 
 > Accepted 2026-06-29 by David (after `/adr-review` → READY FOR IMPLEMENTATION, 15/15;

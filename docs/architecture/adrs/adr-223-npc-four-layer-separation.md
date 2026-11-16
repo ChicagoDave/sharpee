@@ -1,5 +1,8 @@
 # ADR-223: The Four-Layer NPC Separation — Agent / Daemon / Health / Personhood
 
+**Planning**: OPEN
+**Summary**: `NpcTrait` is to be split into four composable layers: agent (`ActorTrait`), daemon (behavior over time, merging the NPC service with the scheduler), health (one `HealthTrait`) and personhood (`CharacterModelTrait`, with hostility as disposition), each with a Chord surface and Dungeo as regression only. Child A is built (`HealthTrait`, ADR-226). `NpcTrait` still carries `isHostile`, `knowledge`, `goals` and `conversationState`, so the split is not finished; the NPC turn phase has since moved into the engine (ADR-328).
+
 ## Status: ACCEPTED (2026-07-15 — umbrella model + approach + child roadmap; all five open questions resolved via interview, accepted by David; adr-review clean). Each child (A–D) graduates to its own ADR + plan under the platform-change gate.
 
 > Child of ADR-214 (Chord ⇄ Sharpee parity) and graduation of ADR-222 seam

@@ -1,5 +1,8 @@
 # ADR-212: Slot Contributions as Data — a Declarative Entry Registry Behind `{slot:here}`
 
+**Planning**: IMPLEMENTED
+**Summary**: `engine.registerSlotEntry` takes a declarative record (slot key, owner entity, content phrase, order, gate) that one platform-owned contributor evaluates each turn; the default gate is the owner sharing the player's room, with a predicate gate as the escape. Entries key on `(slotKey, owner)` with last write winning, are never serialized and are re-registered at load. Chord's `phrase present:` compiles to one, and `registerSlotContributor` remains for computed contributions.
+
 ## Status: ACCEPTED (2026-07-13 — all open questions resolved via interview: Q1 seam now, Q2 engine, Q3 zoo migrates in-package, Q4 any slot key)
 
 > Drafted 2026-07-13 from the chord-zoo-surfaces package planning

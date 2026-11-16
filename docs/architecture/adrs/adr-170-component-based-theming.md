@@ -1,5 +1,8 @@
 # ADR-170: Component-Based Theming for the Browser Client
 
+**Planning**: IMPLEMENTED
+**Summary**: The browser client's DOM commits to a stable vocabulary of 22 `.sharpee-*` component classes, five state modifiers and two decoration slots, with native `<dialog>` and `<menu>` and a structural `base.css`; a theme is scoped under `[data-theme]` and may not depend on DOM structure beyond the classes. Renaming or removing a class is a breaking change. How a theme is built and delivered was later changed by ADR-188.
+
 ## Status: PROPOSED
 
 ## Date: 2026-05-07

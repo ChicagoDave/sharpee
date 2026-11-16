@@ -1,5 +1,8 @@
 # ADR-199: Phrase Algebra — Verb Atom & Subject Agreement
 
+**Planning**: IMPLEMENTED
+**Summary**: `{verb:lemma subject}` agrees a verb with the realized subject's number and person: the author writes the third-singular form, a plural, list or first/second-person subject takes the plural form, a mass subject the singular, and a subject with no number defaults to singular. The irregular table and the regular `-s` rule (refined by ADR-204) are in the lang-en-us Assembler; legacy `{is:x}` is rejected at parse time and an unbound subject is a parse error.
+
 ## Status: ACCEPTED
 
 > Accepted 2026-06-27 by David, resolving the ADR-192 §7.1 verb-agreement BLOCKER (option B).

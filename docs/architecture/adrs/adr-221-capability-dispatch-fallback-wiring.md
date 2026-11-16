@@ -1,5 +1,8 @@
 # ADR-221: Capability-Dispatch Fallback Wiring (implementation)
 
+**Planning**: IMPLEMENTED
+**Summary**: How a Chord `on <verb> it` clause becomes the behavior of a dispatch verb: the loader synthesizes a `CapabilityBehavior` that runs the clause through the same interpreter as every other on-clause, failure is the clause's own `refuse`, an entity with no handler gets the action's default blocked message, a registered TypeScript behavior overrides it, and a clause may bind the verb's extra operands by name. In `packages/story-loader/src/runtime/dispatch-verbs.ts`; the dispatching action itself was later reshaped by ADR-371.
+
 ## Status: ACCEPTED — implementation-level (2026-07-14; deferred from ADR-218 §3, then designed via interview the same session; all three open questions resolved)
 
 > Created 2026-07-14 during the ADR-218 (Chord Foundations) interview. ADR-218 §3

@@ -1,5 +1,8 @@
 # ADR-156: Multiuser Browser Client
 
+**Planning**: ABANDONED
+**Summary**: The multi-user browser client: a React app at `tools/server/client/` sharing wire types by direct import, a four-phase hydration state machine, a public listing of active rooms with join still code-gated, and a required room title. Replaced 2026-04-28 by ADR-164; the product line was retired 2026-08-13.
+
 ## Status: REPLACED
 
 > **RETIRED 2026-08-13 (session 756ff6).** The zifmia product line is retired —

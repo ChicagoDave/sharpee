@@ -1,5 +1,8 @@
 # ADR-215: Chord Extension-Use Surface & Combat
 
+**Planning**: IMPLEMENTED
+**Summary**: A `.story` opts into a platform-bundled extension with a top-level `use <extension>` line, resolved only against a registry compiled into the runtime (an unknown name is a load error). Each extension ships a static vocabulary manifest the analyzer merges as data, so the compiler never runs extension code; contributed trait adjectives carry typed `with` fields (`combatant with health 20`). NPC behaviors are core vocabulary with no `use`. Combat is gated; state machines became core under ADR-377. Third-party extensions are deferred. In `packages/story-loader/src/extensions` and `packages/chord/src/manifests`.
+
 ## Status: ACCEPTED (2026-07-14 — direction fixed by ADR-214 §5/OQ2/OQ6; designed via interview the same session; all six open questions resolved; third-party extensions deferred to a later ADR). **Superseded in part by ADR-377** (2026-10-17, session 32f84f, at David's "fix and accept"): state machines are core, as NPCs are; `use state-machines` is `analysis.extension-core`. Combat stays gated; everything else here stands.
 
 > Child of ADR-214 (parity). ADR-214 §5 audited the plugin/extension system;

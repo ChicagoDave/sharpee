@@ -1,5 +1,8 @@
 # ADR-157: ActionInterceptor.postReport Returns InterceptorReportResult
 
+**Planning**: IMPLEMENTED
+**Summary**: An interceptor's `postReport` returns `InterceptorReportResult`, naming its intent: `override` replaces the primary event's messageId, params or text, and `emit` adds events alongside. One helper, `applyInterceptorReportResult`, applies it, and every action that calls an interceptor must use it with its primary event type. In `packages/world-model/src/capabilities`.
+
 ## Status: PROPOSAL
 
 ## Date: 2026-04-24

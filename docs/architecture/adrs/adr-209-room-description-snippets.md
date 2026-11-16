@@ -1,5 +1,8 @@
 # ADR-209: Room-Description Snippets — Author-Written Text Spliced at Explicit Markers
 
+**Planning**: IMPLEMENTED
+**Summary**: A room description may carry `{snippet:name}` markers resolved from `RoomTrait.snippets`, plain serializable data: every rendered character is author-written, a list entry cycles through the seeded Choice counters keyed `(roomId, marker)`, an unbound marker fails at story load and degrades at render, and a room with no snippet map is untouched. The machinery stands; ADR-211 replaced the authoring surface (bare fragments, `mentions` as a compile target, one selector vocabulary).
+
 ## Status: ACCEPTED — IMPLEMENTED (commits `354547a7`, `b56a1827`, 2026-07-07/08). Superseded in part by ADR-211 (authoring surface: verbatim splice, author-facing `mentions`, the selector dialect); machinery decisions remain in force.
 
 > Accepted 2026-07-03 by David. Proposed the same day from a design

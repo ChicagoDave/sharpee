@@ -1,5 +1,8 @@
 # ADR-154: Sharpee IDE — Purpose-Built Authoring Environment
 
+**Planning**: OPEN
+**Summary**: A dedicated desktop IDE for writer-first authors: three project types (Story, Extension, Plugin), a bundled runtime, no general-editor features, and plain TypeScript files on disk with no DSL. The IDE that shipped (`tools/ide`, `tools/winide`) is native (closed by ADR-341) and edits Chord; the three project types and the TypeScript editor were not built, and no record supersedes this one.
+
 ## Status: PROPOSAL
 
 ## Date: 2026-04-20

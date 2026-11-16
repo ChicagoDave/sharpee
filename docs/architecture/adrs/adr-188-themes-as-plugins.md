@@ -1,5 +1,8 @@
 # ADR-188: Themes are plugins; platform-browser owns the theme engine
 
+**Planning**: IMPLEMENTED
+**Summary**: `@sharpee/platform-browser` owns one un-scoped theme engine (`styles/engine.css`) that maps sixteen `--theme-*` tokens onto the `.sharpee-*` components, with the `classic` palette as the `:root` default; a theme is a `[data-theme]` token block plus optional flourishes, loaded after the engine. Built-in themes ship with platform-browser under `styles/themes` and are selected by id in `sharpee.themes`; neither browser build ships theme CSS of its own. Extends ADR-170; extended by ADR-252 and ADR-253.
+
 ## Status: ACCEPTED (delivery model revised 2026-06-23 — see Revision below)
 
 > **Extended by ADR-252 + ADR-253 (2026-07-22).** ADR-252 D3 adds Chord-native

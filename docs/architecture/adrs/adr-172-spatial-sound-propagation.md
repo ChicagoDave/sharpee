@@ -1,5 +1,8 @@
 # ADR-172: Spatial Sound Propagation Model
 
+**Planning**: IMPLEMENTED
+**Summary**: Sound is a platform primitive: an action calls `context.emitSound` with a volume tier, the engine finds the lowest-cost path through exits, declared walls and their obstructors, and each `ListenerTrait` holder receives an `AudibilityEvent` at one of four audibility tiers on the `audibility` channel. Every sound feature uses this primitive, sound crosses a wall only where one is declared (ADR-173), and the `AudibilityEvent` shape is a stable contract. Built across if-domain, world-model `traits/acoustic`, engine `sound` and stdlib `channels/sound-events.ts`.
+
 ## Status: ACCEPTED
 
 ## Date: 2026-05-08 (Proposed), 2026-05-09 (Accepted — L1 Phases 1–6 implemented)

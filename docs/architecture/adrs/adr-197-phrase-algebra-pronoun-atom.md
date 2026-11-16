@@ -1,5 +1,8 @@
 # ADR-197: Phrase Algebra — Pronoun Atom & Last-Mentioned Reference
 
+**Planning**: IMPLEMENTED
+**Summary**: `{pronoun:case}` renders a pronoun agreeing in case, number and gender with the last-mentioned noun phrase, which the Assembler notes on the per-turn `reference` seam as `{ referableId, number, pronounSet }`. With no antecedent it renders the neuter singular without throwing; an unknown case fails at parse time. The he/she/it/they tables live only in lang-en-us.
+
 ## Status: ACCEPTED
 
 > Accepted 2026-06-27 by David. Continues the ADR-192 atom roadmap; realizes the

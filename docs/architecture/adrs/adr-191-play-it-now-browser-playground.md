@@ -1,5 +1,8 @@
 # ADR-191: "Play It Now" — an in-browser Sharpee playground on the website
 
+**Planning**: IMPLEMENTED
+**Summary**: The website carries a playground that compiles a single `.story` in the browser (chord compiler plus story-loader, no backend, no wasm) and runs it in a sandboxed iframe on `@sharpee/platform-browser`, against a version-pinned platform bundle that `repokit build --playground` emits to `website/public/playground/v<X.Y.Z>/` as a deliberate release step. The Chord mode is built; the TypeScript tab (esbuild-wasm) it keeps as a later phase is not.
+
 ## Status: ACCEPTED (2026-07-19, David, session b381db — all four open questions ruled via interview: Q-1 browser-clean compile path closed on shipped G2 evidence; Q-2 lazy-load on intent; Q-3 CodeMirror 6 first, Monaco at Mode B; Q-4 repokit `--playground` emit → `website/public/playground/v<X.Y.Z>/`. Site-reality amendment recorded same session: playground lands on the Next.js site as website-content plan Phase 5.)
 
 ## Date: 2026-06-25 (amended 2026-07-17)

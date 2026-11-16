@@ -1,5 +1,8 @@
 # ADR-189: Entity types declare their default traits via a registry
 
+**Planning**: IMPLEMENTED
+**Summary**: `createEntity` adds the default traits its entity type implies from a registry in world-model; the only mapping is `SCENERY` to `SceneryTrait`, and `{ defaultTraits: false }` opts out. `IFEntity.add()` is replace-on-same-type and silent, so a trait added later overwrites the default. Any further type-to-trait mapping is its own decision. In `packages/world-model/src/world/default-trait-registry.ts`.
+
 ## Status: ACCEPTED (2026-06-24)
 
 ## Date: 2026-06-24

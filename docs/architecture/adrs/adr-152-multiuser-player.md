@@ -1,5 +1,8 @@
 # ADR-152: Zifmia Server Runtime Host Interface and Pluggable Isolation Backends
 
+**Planning**: ABANDONED
+**Summary**: A Runtime Host Interface with pluggable isolation backends (Worker thread, child process, microVM) for a multi-user story server. Abandoned 2026-04-19 before any build in favour of ADR-153's single Deno sandbox; the multi-user product line itself was retired 2026-08-13.
+
 ## Status
 
 > **RETIRED 2026-08-13 (session 756ff6).** The zifmia product line is retired —

@@ -1,5 +1,8 @@
 # ADR-159: Persistent User Identity for Multi-User Rooms
 
+**Planning**: ABANDONED
+**Summary**: A persistent multi-user identity as a `(username, identity_id, secret)` triple with paste-to-reclaim on a new device and admin-only deletion. Replaced in full by ADR-161 on 2026-04-26.
+
 ## Status: PROPOSAL
 
 ## Date: 2026-04-25

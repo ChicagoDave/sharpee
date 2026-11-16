@@ -1,5 +1,8 @@
 # ADR-207: Capability Registry is Engine-Owned, not Process-Global
 
+**Planning**: IMPLEMENTED
+**Summary**: Capability-behavior bindings belong to the `WorldModel` instance and nothing is kept on `globalThis`: a story calls `world.registerCapabilityBehavior(...)` in `initializeWorld`, registration is idempotent with last write winning and needs no guard, dispatch resolves through the world in scope, and bindings are never serialized but rebuilt on every load. Behavior definitions stay shared and stateless. In `packages/world-model/src/capabilities/capability-binding.ts`. Refines ADR-090.
+
 ## Status: ACCEPTED
 
 > Accepted 2026-07-02 by David (adr-review 14/14, READY). Captures a **v2 regression +

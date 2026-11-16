@@ -1,5 +1,8 @@
 # ADR-167: Audio Event Translation Boundary — Story-Side, Long-Term Stdlib
 
+**Planning**: IMPLEMENTED
+**Summary**: A story translates room entry into canonical `media.*` events itself (Dungeo's `stories/dungeo/src/audio/audio-setup.ts`, allow-listed in the AC-16 grep gate); the `media.*` to `audio.*` step in platform-browser's channel renderers is permanent; `audio.effect` is dropped until a consumer needs it. The planned stdlib helper that would replace the story-side step (`registerAudioFromAtmosphere`) was never built.
+
 ## Status: ACCEPTED (Phase 3 ships story-side; long-term move to stdlib is a future session)
 
 ## Date: 2026-05-04

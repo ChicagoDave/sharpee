@@ -1,5 +1,8 @@
 # ADR-148: Concealment Action (HIDE/DUCK BEHIND/UNDER/ON)
 
+**Planning**: IMPLEMENTED
+**Summary**: HIDE/DUCK BEHIND, UNDER, ON or INSIDE puts an actor in a concealed state: `ConcealmentTrait` marks hiding spots, `ConcealedStateTrait` on the actor blocks `canSee()` through the `if.scope.visible` capability, a pre-action hook reveals on any action outside a silent allowlist, and NPC detection is a story-level capability override. Built in world-model `traits/concealment`, stdlib `actions/standard/hiding`, and character's `resolvePlayerPresence`.
+
 ## Status: DRAFT
 
 ## Date: 2026-04-09

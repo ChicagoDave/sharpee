@@ -1,5 +1,8 @@
 # ADR-161: Identity Model — `(Id, Handle, passcode)` with Download/Upload Portability
 
+**Planning**: ABANDONED
+**Summary**: Multi-user identity as an `(Id, Handle, passcode)` triple: a Crockford-base32 Id, a unique public Handle, an argon2id-hashed word-pair passcode, CSV download and upload for portability, user-driven hard-delete erase, and `(handle, passcode)` on every identity-bearing request. Built for the multi-user server and retired with it 2026-08-13; the code survives only under `tools/_archive/`.
+
 ## Status: ACCEPTED
 
 ## Date: 2026-04-26

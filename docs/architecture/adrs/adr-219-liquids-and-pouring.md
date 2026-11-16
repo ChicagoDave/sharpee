@@ -1,5 +1,8 @@
 # ADR-219: Liquids & Pouring
 
+**Planning**: OPEN
+**Summary**: A liquids subsystem: pour, fill, empty and mix as standard actions, the container as the one holder of a liquid's amount (`liquidType`, `liquidAmount`), `LiquidTrait` as a substance's identity, `drinkable` implying liquid, and reactions declared by `define reaction: a + b -> c` or an `on mixing with` clause. Not built: no `LiquidTrait`, pouring or mixing action, or `define reaction` exists; only an `emptying` action directory is in stdlib.
+
 ## Status: ACCEPTED (2026-07-14 — spun out of ADR-218 §1b, then designed via interview the same session; all four open questions resolved)
 
 > Created 2026-07-14 during the ADR-218 (Chord Foundations) interview. Resolving

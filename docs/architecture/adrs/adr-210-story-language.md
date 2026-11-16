@@ -1,5 +1,8 @@
 # ADR-210: Chord — The Sharpee Story Language, External Author Syntax Compiled to Platform Registries
 
+**Planning**: IMPLEMENTED
+**Summary**: Chord (`.story`) is the author-facing language: `@sharpee/chord` compiles it to a versioned Story IR and `@sharpee/story-loader` interprets the IR through the existing `Story` lifecycle hooks, with atomic load. The grammar is closed and grows only by owner-approved entries in `docs/architecture/chord-grammar-changes.md`; chord stays browser-safe, nothing in the platform runtime depends on the language packages, and platform-shipped text comes from `lang-{locale}`. The `eject` emitter and `extract-messages` were never built, and hatches are the subject of ADR-361.
+
 ## Status: ACCEPTED
 
 > **Accepted 2026-07-10 by David.** All open questions resolved same day (name:

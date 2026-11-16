@@ -1,5 +1,8 @@
 # ADR-217: Chord Timer & Scheduler Controls
 
+**Planning**: OPEN
+**Summary**: Chord would reach the whole scheduler: first-class fuses (`in N turns:`, `after N turns as <name>:`), `cancel`, `reschedule … by`, `pause` and `resume` on a lexically scoped handle, `on every N turns`, value-expression delays, entity-bound timers with cleanup, `early`/`normal`/`late` priority bands, and the loader building the real `Daemon`. The Chord IR today carries `timer`, `timer-expires` and `timer-has` kinds, but no `reschedule`, `cancel sequence` or `on every N turns` form is in `packages/chord`; no record says which replaced which.
+
 ## Status: ACCEPTED (2026-07-14 — direction fixed by ADR-214 §4/OQ4; designed via interview the same session; all five open questions resolved)
 
 > Child of ADR-214 (parity). ADR-214 §4 audited the scheduler and OQ4 resolved

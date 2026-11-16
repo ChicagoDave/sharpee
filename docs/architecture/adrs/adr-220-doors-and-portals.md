@@ -1,5 +1,8 @@
 # ADR-220: Doors & Portals
 
+**Planning**: OPEN
+**Summary**: The exit data model does not grow: a direct exit stays `direction → destination`, and richer doors (conditional, concealed, two on one wall, dynamic destination) are logic on the exit through two optional `IExitInfo` fields, `when` and a computed `destination`, that `going` consults. `between` stays the direct-door spelling, and this is the one conditional-exit model (ADR-115's schema is closed). `IExitInfo` today has neither field; an exit-resolver binding exists in `packages/world-model/src/capabilities`, and no record ties it to this one.
+
 ## Status: ACCEPTED (2026-07-14 — designed via interview the same session; principle, mechanism, and `between`-retention all resolved)
 
 > Child of ADR-214 (parity). Created as a vision stub during the ADR-218

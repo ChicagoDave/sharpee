@@ -1,5 +1,8 @@
 # ADR-150: Entity Query API (LINQ-Style)
 
+**Planning**: IMPLEMENTED
+**Summary**: `@sharpee/queries` adds an eager, immutable, LINQ-style `EntityQuery` wrapper and entry points (`w.rooms`, `w.contents()`, `w.scenes`, `inRegion`) by augmenting WorldModel when the package is imported; the query object holds no world reference, and the existing `getContents`/`findByTrait` methods stay. Built in `packages/queries`.
+
 ## Status: DRAFT
 
 ## Date: 2026-04-13

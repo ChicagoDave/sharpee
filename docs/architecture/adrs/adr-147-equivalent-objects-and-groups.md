@@ -1,5 +1,8 @@
 # ADR-147: Equivalent Objects and Groups
 
+**Planning**: OPEN
+**Summary**: Identical objects (coins, arrows) would share an `equivalenceGroup` on `IdentityTrait` so the parser picks one without disambiguation, listings group them with a count, numeric noun phrases (`take 3 coins`) and a COUNT action work on the group, and every transfer moves real entities. None of it exists in `packages/` (no `equivalenceGroup`, `pluralName` or counting action).
+
 ## Status: DRAFT
 
 ## Date: 2026-04-09

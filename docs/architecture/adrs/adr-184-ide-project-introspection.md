@@ -1,5 +1,8 @@
 # ADR-184: IDE project introspection via runtime world model
 
+**Planning**: IMPLEMENTED
+**Summary**: The IDE learns what a story defines by running it: `buildManifest` in `@sharpee/bootstrap` projects the live world into a `ProjectManifest` whose wire types live once in `@sharpee/ide-protocol`, emitted by `--introspect` on the CLI bundle and decoded by the Swift side. A manifest shape change is a wire-contract change. ADR-258 superseded the mechanism for the IDE's own project tree, which is now sourced from Chord IR, so this path serves compiled TypeScript stories only; the tree-sitter name index it planned was never the tree's source and is gone.
+
 ## Status: ACCEPTED
 
 ## Date: 2026-06-19

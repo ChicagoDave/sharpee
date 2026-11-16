@@ -1,5 +1,8 @@
 # ADR-194: Phrase Algebra — Contents Atom & the Entity→NounPhrase Bridge
 
+**Planning**: IMPLEMENTED
+**Summary**: `{contents:box}` renders a container's direct contents as a grouped list read from the live world at realize time, "nothing" when empty. It rests on an optional `RenderWorld.nounPhraseFor` bridge the engine wires to stdlib, so the Assembler in lang-en-us can turn an entity into a `NounPhrase` without depending on stdlib; later world-reading atoms reuse that bridge.
+
 ## Status: ACCEPTED
 
 > Accepted 2026-06-27 by David. Continues the ADR-192 atom roadmap; realizes the

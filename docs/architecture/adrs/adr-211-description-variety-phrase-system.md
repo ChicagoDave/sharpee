@@ -1,5 +1,8 @@
 # ADR-211: Description Variety Rides the Phrase System — Bare Fragments, Platform-Owned Joining, Condition-Gated Snippets
 
+**Planning**: IMPLEMENTED
+**Summary**: A description fragment is written bare and the platform supplies the separator from the marker's site in the authored prose (comma mid-sentence, space after `.?!;:`), through a `Spliced` phrase the lang-en-us Assembler realizes. A presence `while` gate compiles to `mentions` data and any other condition registers on a per-`(roomId, marker)` gate seam, so `RoomTrait.snippets` stays serializable. Chord strategy adverbs mirror the Choice selectors one to one (`cycling`, `stopping`, `randomly`, `sticky`, `first-time`). Supersedes ADR-209's authoring surface.
+
 ## Status: ACCEPTED (2026-07-12 — Q1–Q7 resolved by David; each resolution recorded inline in §Open questions)
 
 > Drafted 2026-07-12 from the zoo-surfaces Z2 discussion (David: "the

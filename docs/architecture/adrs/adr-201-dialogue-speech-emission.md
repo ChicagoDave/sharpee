@@ -1,5 +1,8 @@
 # ADR-201: Dialogue & Speech Emission, and the Structural Realization Mandate
 
+**Planning**: IMPLEMENTED
+**Summary**: Speech is composed from existing atoms plus two phrase kinds: `Sentence` (owns the leading capital and terminal mark) and `Quote` (`{quote:utterance}`, owning quote glyphs, the first-word capital and punctuation inside the closing quote). Runs carry edge metadata resolved in one reconciliation pass, `RenderContext` gains position state, and a sentence-initial pronoun capitalizes by itself. The stdlib talking catalogs attribute with `{verb:says target}`. A `{say:…}` shorthand is deferred. Bound by ADR-202.
+
 ## Status: ACCEPTED
 
 > Drafted 2026-06-30 by Claude for David's review. Continues the ADR-192 phrase-algebra

@@ -1,5 +1,8 @@
 # ADR-164: Stateless Multi-User Server — Channel I/O on a Per-Turn Worker
 
+**Planning**: ABANDONED
+**Summary**: A stateless multi-user server on the channel wire: no engine state in memory between turns, each command loads the room's save blob, runs in-process, snapshots and emits; the transcript is a world capability replayed to a joining client, and three server channels (`chat`, `presence`, `command_echo`) are merged in after the platform packet. Retired with the multi-user product line 2026-08-13; source archived under `tools/_archive/`.
+
 ## Status: ACCEPTED (revised 2026-04-29)
 
 > **RETIRED 2026-08-13 (session 756ff6).** The zifmia product line is retired —

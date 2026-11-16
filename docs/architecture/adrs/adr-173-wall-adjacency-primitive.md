@@ -1,5 +1,8 @@
 # ADR-173: Wall Adjacency Primitive
 
+**Planning**: IMPLEMENTED
+**Summary**: A wall is an author-declared entity between exactly two rooms (`world.createWall`), never inferred, with whole-wall traits for intrinsic properties and per-side data (a required adjective unique per room, a description, `obstructedBy`). An obstructor's own capability traits decide its effect and are read from its current location. Every wall feature goes through this primitive. Built in world-model (`wall-creation.ts`, `obstructor-protocol.ts`), with per-side resolution in stdlib's command validator.
+
 ## Status: ACCEPTED
 
 ## Date: 2026-05-08 (Proposed), 2026-05-09 (Accepted — L0 Phases 1–5 implemented)

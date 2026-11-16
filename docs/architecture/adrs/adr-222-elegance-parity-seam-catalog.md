@@ -1,5 +1,8 @@
 # ADR-222: Elegance Parity — Chord as the Elegance Oracle for the Sharpee API
 
+**Planning**: IMPLEMENTED
+**Summary**: A standing principle: the TypeScript API and Chord must express the same intended behavior with equal cleanliness. Where Chord is cleaner, the TypeScript API has a seam to close by promoting a first-class primitive; where TypeScript can and Chord cannot, Chord has a gap; canon is the story's intended behavior and never the crude code; neither surface is made cruder to match; and every confirmed seam graduates to its own ADR. It authorizes no code. The friendly-zoo seam table lives here; its Dungeo backlog table is superseded by the capability matrix.
+
 ## Status: ACCEPTED (2026-07-15 — principle + seam taxonomy + friendly-zoo catalog; all open questions resolved via interview, accepted by David) · AMENDED 2026-07-15 (DZ-1…11 Dungeo backlog table superseded by the capability matrix; §Decision 1–4 unchanged and authoritative)
 
 > Child/companion of ADR-214 (Chord ⇄ Sharpee parity). ADR-214 set the north

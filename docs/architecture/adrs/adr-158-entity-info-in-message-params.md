@@ -1,5 +1,8 @@
 # ADR-158: Entity-Valued Message Params Carry `EntityInfo`, Not Bare Names
 
+**Planning**: ABANDONED
+**Summary**: Entity-valued message params carried `EntityInfo` built by `entityInfoFrom`, never a bare name, so the `{the:item}` formatter chain could pick an article. Superseded 2026-06-27 by the phrase algebra (ADR-192, 199, 200): `EntityInfo` and the formatter chain are deleted, and the same rule now holds as `NounPhrase` built by `nounPhraseFor` in `packages/stdlib/src/utils/noun-phrase.ts`.
+
 ## Status: ACCEPTED — SUPERSEDED on v2 by ADR-192/199/200
 
 > **Superseded (2026-06-27, branch `v2_phase34`, ADR-192 phrase-algebra cutover).**

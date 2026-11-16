@@ -1,5 +1,8 @@
 # ADR-186: Turn-cycle lifecycle transitions are first-class typed callbacks
 
+**Planning**: IMPLEMENTED
+**Summary**: A turn-cycle lifecycle transition is a typed callback owned by its subsystem and invoked by the owning plugin, never a generic event on the bus: `createScene` takes `onBegin`/`onEnd` returning `SceneReaction`s that the scene-evaluation plugin turns into visible `game.message` events. `scene_began`/`scene_ended` stay as observable facts, and plugin-emitted events are deliberately not dispatched to `registerEventHandler` or `chainEvent`. In `packages/world-model/src/world/WorldModel.ts` and `packages/engine/src/plugins/scene-evaluation-plugin.ts`.
+
 ## Status: ACCEPTED
 
 ## Date: 2026-06-22

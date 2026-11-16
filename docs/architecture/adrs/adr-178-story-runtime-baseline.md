@@ -1,5 +1,8 @@
 # ADR-178: Story Runtime Baseline — Platform-Declared Peer Set
 
+**Planning**: IMPLEMENTED
+**Summary**: A story bundle may import only the packages named in the one manifest, `@sharpee/story-runtime-baseline` (`STORY_RUNTIME_BASELINE`, now `BASELINE_VERSION` 2 with `@sharpee/helpers`); the baseline only grows, and adding a package is an amendment to this ADR. The build-time check is `scripts/validate-bundle-baseline.js`. The boot-time check and API field it specified lived in the multi-user server and went with it.
+
 ## Status: ACCEPTED
 
 ## Date: 2026-05-13 (accepted 2026-05-13)

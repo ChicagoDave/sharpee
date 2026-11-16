@@ -1,5 +1,8 @@
 # ADR-151: Unity Integration
 
+**Planning**: IGNORE
+**Summary**: A survey of five ways to drive Unity from Sharpee (bridge process, embedded JavaScript runtime, WebAssembly, C# port, C# facade over a bridge) with a sketched command and response contract. It recommends no approach and decides nothing; nothing was built.
+
 ## Status: PROPOSAL
 
 ## Date: 2026-04-14

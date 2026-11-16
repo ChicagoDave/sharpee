@@ -1,5 +1,8 @@
 # ADR-213: Removed-from-Play — a Witnessed Removal Signal at the `removeEntity` Choke Point
 
+**Planning**: IMPLEMENTED
+**Summary**: `WorldModel.onEntityRemoved` registers observers that `removeEntity` calls once, before deletion, with the live entity and its last room; they cannot veto, nothing reaches the event bus, and orphaning with `moveEntity(id, null)` signals nothing. Chord's `phrase disappeared:` channel and its `remove <entity>` statement ride the seam. ADR-328 D3 later replaced the witnessed-only rule: the row fires on every removal and is tagged by presence.
+
 ## Status: ACCEPTED (2026-07-13 — all open questions resolved via interview: Q1 pre-deletion live entity, Q2 seam only, Q3 mint `remove` now, Q4 orphaning unsignaled)
 
 > Drafted 2026-07-13 from the chord-zoo-surfaces package planning

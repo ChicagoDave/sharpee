@@ -1,5 +1,8 @@
 # ADR-165: Renderer Architecture — Consumer-Side Channel I/O
 
+**Planning**: IMPLEMENTED
+**Summary**: The consumer side of channel I/O: a `Renderer` owns the channel state store and dispatches each turn packet, synchronously and in manifest order, to `ChannelRenderer`s registered per channel id (last write wins, no deregistration, a JSON-tree fallback for an unrendered channel). Layout is a named-slot lookup a story may replace, and renderer-local UI state never enters the store or the wire. Built in `packages/channel-service/src/renderer`, with the browser defaults in `packages/platform-browser`.
+
 ## Status: ACCEPTED
 
 ## Date: 2026-05-01

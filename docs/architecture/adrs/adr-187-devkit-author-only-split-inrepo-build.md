@@ -1,5 +1,8 @@
 # ADR-187: devkit is author-only; the in-repo platform build is a separate process
 
+**Planning**: IMPLEMENTED
+**Summary**: Two build tools split by audience, with no shared command modules and no cross-dependency: `@sharpee/devkit` (`sharpee`, `./sharpee`) builds an author's own project and bundles its `assets/`; `repokit` (`tools/repokit`, `./repokit`, unpublished) builds the platform packages, the CLI bundle, `verify`, `test:npm` and the workspace stories. Each command is one class in one file so a feature is proven in repokit and ported to devkit by hand. Reverses ADR-180 Amendment 1's one-command clause.
+
 ## Status: ACCEPTED
 
 ## Date: 2026-06-22

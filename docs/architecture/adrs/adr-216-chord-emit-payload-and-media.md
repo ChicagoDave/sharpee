@@ -1,5 +1,8 @@
 # ADR-216: Chord Emit Payload & Media Channels
 
+**Planning**: IMPLEMENTED
+**Summary**: Chord's `emit <type> with <field> <value>, …` carries a nested data payload in the same `with` grammar as `create`; typed media statements (`play sound`, `play music`, `show image`, `play ambient`) sit over it; assets are declared once with `define sound|image|music … from "<file>"` as data; a story may declare a custom channel as a projection; and `client has <capability>` lets it branch on the client. Amended by ADR-253 (`define channel` uses `return … from`) and ADR-374 (`play sound` is its own IR statement and may not be gated on the client).
+
 ## Status: ACCEPTED (2026-07-14 — direction fixed by ADR-214 §6/OQ3; designed via interview the same session; all six open questions resolved)
 
 **Amended 2026-10-15 by ADR-374 D6** (session 39d4c7): `play sound` is no longer compile-time sugar for a `media-sound-play` emit. A sound is also heard in the world, so `play sound` lowers to its own IR statement, `play-sound`, which the loader carries out as this ADR's cue (when the sound has a file) and as an ADR-172 world sound. `define sound <name>` may omit `from` for a sound heard in the world only. The other media forms are unchanged.

@@ -1,5 +1,8 @@
 # ADR-205: Catalog-Wide Subject-Verb Agreement
 
+**Planning**: ABANDONED
+**Summary**: A proposed migration of about 120 action-catalog templates to `{verb:… subject}` agreement, rejected 2026-06-30 on an incidence count: no real story has a plural or collective action subject. The standing answer is on demand: migrate only the templates a plural entity hits, pass `nounPhraseFor(subject)` from the emitting action, and add a real-path test.
+
 ## Status: REJECTED
 
 > Rejected 2026-06-30 by David — **evidence-based**. Proposed as the extension of ADR-201 §6 /

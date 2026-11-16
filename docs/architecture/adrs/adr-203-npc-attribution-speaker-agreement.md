@@ -1,5 +1,8 @@
 # ADR-203: NPC Attribution Speaker Agreement — Promoting the NPC Speaker Param
 
+**Planning**: IMPLEMENTED
+**Summary**: An NPC attribution message binds its actor as a `speaker` `NounPhrase` from `nounPhraseFor(npc)` at emit time, replacing the bare `npcName` string, so `{verb:says speaker}` agrees with a plural or collective NPC. The article is the template's choice, with no first-mention tracking. Core param, every emitter and the `npc` and `conversation` templates in lang-en-us change together.
+
 ## Status: ACCEPTED
 
 > Accepted 2026-06-30 by David. The deferred "later slice" named in ADR-201 §6 (hardcoded

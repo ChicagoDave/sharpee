@@ -1,5 +1,8 @@
 # ADR-174: Decoration Architecture and Engine-Internal Prose Pipeline
 
+**Planning**: IMPLEMENTED
+**Summary**: Turn-end events become `ITextBlock[]` in the engine-internal prose pipeline (`packages/engine/src/prose-pipeline`); `@sharpee/text-service` is deleted. Decoration has one mechanism: `[name:content]` in a template becomes a span with one class, `sharpee-{name}` for the closed platform vocabulary and the bare name for an author class, carried on the wire as `IDecoration { className, content }` and never as HTML. `renderToString` lives in `@sharpee/channel-service`. Supersedes ADR-029, ADR-091's markup and ADR-096.
+
 ## Status: ACCEPTED — IMPLEMENTED (Phases 1–3 complete; `@sharpee/text-service` deleted)
 
 Supersedes ADR-096 and ADR-029 (Text Service). Turn-end rendering is the

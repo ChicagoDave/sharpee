@@ -1,5 +1,8 @@
 # ADR-195: Phrase Algebra — Slot Atom & the Contribution Channel
 
+**Planning**: IMPLEMENTED
+**Summary**: `{slot:key}` is an open append target that independent contributors fill with bare phrases during a turn; the slot alone owns the joining grammar (sentence or clause mode), realizes to nothing with no contributions, and orders by `order` then insertion. Contributions go to a turn-scoped store, never serialized, staged by functions registered with `engine.registerSlotContributor` and run at the top of `processTurn`. Contributing mid-turn without a `RenderContext` (daemons, behaviors) is deferred.
+
 ## Status: ACCEPTED
 
 > Accepted 2026-06-28 by David (after `/devarch:adr-review` → READY FOR IMPLEMENTATION, 15/15;

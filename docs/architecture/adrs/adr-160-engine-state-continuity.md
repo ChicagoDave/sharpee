@@ -1,5 +1,8 @@
 # ADR-160: Engine-State Continuity for Multi-User Rooms
 
+**Planning**: ABANDONED
+**Summary**: The multi-user server would auto-save a room's engine state after every turn and auto-restore the latest of three retained saves when its sandbox respawned, guarded by a save-format-version handshake. It amends ADR-153's per-room sandbox, which ADR-164 replaced with a server that restores on every turn; no record names this one replaced, and `tools/server` is gone.
+
 ## Status: PROPOSAL
 
 ## Date: 2026-04-25

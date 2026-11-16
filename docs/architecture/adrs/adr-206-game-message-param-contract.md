@@ -1,5 +1,8 @@
 # ADR-206: `game.message` Render-Param Contract (`params` nesting)
 
+**Planning**: IMPLEMENTED
+**Summary**: A `game.message` event carries the params its template references under `params`, while fields a handler reads stay at the top level of the event data. Since the 2026-07-02 amendment the engine's domain-message path binds `data.params ?? data`, so a flat emit still renders, but nesting stays the authoring rule. In `packages/engine/src/prose-pipeline/handlers`.
+
 ## Status: ACCEPTED
 
 > Accepted 2026-06-30 by David. Fixes a **v2 phrase-migration regression**: a subset of dungeo

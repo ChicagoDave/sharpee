@@ -1,5 +1,8 @@
 # ADR-177: Multi-User Web Product — Corrected Architecture
 
+**Planning**: ABANDONED
+**Summary**: The corrected multi-user build: ADR-164's stateless per-turn engine with ADR-153's room governance restored (primary host, four tiers, succession, mute, join codes, a session event log), handle-only identity, directory-scanned stories, HTTP as the process and WebSocket for chat and turn broadcast. Supersedes ADR-175. Retired with the multi-user product line 2026-08-13; source archived under `tools/_archive/`.
+
 ## Status: ACCEPTED
 
 > **RETIRED 2026-08-13 (session 756ff6).** The zifmia product line is retired —

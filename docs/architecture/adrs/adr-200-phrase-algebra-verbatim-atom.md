@@ -1,5 +1,8 @@
 # ADR-200: Phrase Algebra — Verbatim Atom
 
+**Planning**: IMPLEMENTED
+**Summary**: `{verbatim:x}` renders a non-entity scalar (a name, a direction, free text, a banner) as opaque text exempt from whitespace collapse, so a bare `{x}` keeps meaning an entity noun phrase with an article. An unbound param fails at parse time.
+
 ## Status: ACCEPTED
 
 > Accepted 2026-06-27 by David, continuing the ADR-192 phrase-algebra cutover
