@@ -277,7 +277,13 @@ const PINNED = {
   // Re-pinned 2026-11-14 (session 79cefa, GH #705): `unary` gains `"the"
   // "story" "is" [ "not" ] WORD`, the story object's state read in a
   // condition. Additive; cut as 4.0.3 the same day.
-  ebnfSha256: '4c2a1c8b33cf33b53cffb0aebfb10f7d06c6f84f6f0404c9b3c00537a8999277',
+  // Re-pinned 2026-11-15 (session 58d051, GH #713): `define-asset` gains the
+  // sound block (`define sound … end sound`) with `sound-line`, `heard:` and
+  // `heard from afar:`. Additive. `emit` takes one `phrase-key` where it
+  // took one or more: a REMOVAL of a form that named an event with spaces
+  // in it, now `parse.emit-name`. Both on the unpublished 4.0.3 surface; no
+  // bump.
+  ebnfSha256: '098dc617f03f8363de1bc3aff0f8b1c10a92431f5be83770930c76cc84d94230',
 };
 
 // Colocated with the version pin it gates (2026-08-14). It previously lived at

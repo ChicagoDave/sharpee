@@ -287,6 +287,16 @@ export class ChordStory implements Story {
       const template = templateFor(phrase);
       registry.addMessage(key, descriptionKeys.has(key) ? rewriteSnippetMarkers(template, isMarker) : template);
     }
+    // A sound says what its declaration wrote and nothing else. Each tier the
+    // engine can deliver gets the sound's own line, registered empty where
+    // the sound states none, so the platform's default line, which prints
+    // the sound's name as prose, never stands in for the author.
+    for (const sound of this.ir.sounds ?? []) {
+      for (const tier of HEARD_TIERS) {
+        const text = tier === 'full' ? sound.heard : sound.heardFromAfar;
+        registry.addMessage(`sound.heard.${sound.name}.${tier}`, text === undefined ? '' : withLineBreaks(text));
+      }
+    }
     // ADR-242 D7: declared pronoun sets ride the same seam — the same
     // structural probe, throwing a legible error only when a story
     // actually declares sets the provider cannot take.
@@ -520,6 +530,13 @@ export class ChordStory implements Story {
     }
   }
 }
+
+/**
+ * The audibility tiers a heard line is registered under: `full` is the
+ * sound in the player's own room (`heard:`), the rest are the sound
+ * reaching them from elsewhere (`heard from afar:`).
+ */
+const HEARD_TIERS = ['full', 'muffled', 'fragments', 'presence-only'] as const;
 
 /**
  * The Language Provider template for an IR phrase. Single-variant phrases

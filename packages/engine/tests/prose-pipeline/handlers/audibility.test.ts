@@ -158,4 +158,26 @@ describe('handleAudibilityHeard', () => {
 
     expect(blocks).toEqual([]);
   });
+
+  it('a kind whose own template is registered empty gets no block and no default line', () => {
+    const templates: Record<string, string> = {
+      'sound.heard.catch.full': '',
+      'sound.heard.default.full': 'You hear {kind}.',
+    };
+    const provider = { ...makeProvider(templates), getTemplate: (id: string) => templates[id] };
+    const heard = (kind: string) =>
+      makeEvent('sound.audibility.heard', {
+        sourceRoomId: 'r1',
+        targetRoomId: 'r1',
+        sourceEntityId: 'e1',
+        kind,
+        volumeTier: 'normal',
+        audibilityTier: 'full',
+        timestamp: 7,
+      });
+
+    // The same provider still gives an unregistered kind the default line.
+    expect(handleAudibilityHeard(heard('thud'), makeContext(provider))[0].content).toEqual(['You hear thud.']);
+    expect(handleAudibilityHeard(heard('catch'), makeContext(provider))).toEqual([]);
+  });
 });

@@ -1768,6 +1768,10 @@ export interface DefineAsset {
   name: string;
   /** The file. Optional for a sound only: one with none is heard in the world and played to no speaker (ADR-374 D6). */
   path: string | null;
+  /** A sound block's `heard: <text>`: what the player reads when the sound is made in the room they are in. */
+  heard?: { text: string; span: Span };
+  /** A sound block's `heard from afar: <text>`: what the player reads when the sound reaches them from elsewhere. */
+  heardFromAfar?: { text: string; span: Span };
   span: Span;
 }
 

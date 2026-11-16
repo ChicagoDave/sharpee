@@ -278,8 +278,10 @@ was played from it too. Chapter 35's systems (combat, hunger) are not in the gam
   asks `the shutter must be drawn`. A machine's state is not readable from a condition; the machine
   writes a thing's state and clauses read that.
 - A machine's `when turning the crank` fired on a turn the turning action refused ("isn't
-  something you can turn", then the machine's prose). Issue #712. The crank has its own `on the
-  player turning` clause, which is its answer to the verb and also where the third turn is refused.
+  something you can turn", then the machine's prose). Issue #712, fixed 2026-11-15 in the working
+  tree: a machine's `when turning the crank` is now the crank's answer to the verb ("You turn the
+  shutter crank.", then the machine's prose), and a refused turn never moves a machine. The crank
+  keeps its own `on the player turning` clause, which is where the third turn is refused.
 - The book hoist is `a vehicle`, `movement: line`, `drive: state`, with three stops and a
   `position` block read after each turn: it is in the Gallery when it holds the lens and the grille
   is lifted, in the Library when it holds the lens, otherwise in the Undercroft. It moves the turn
@@ -322,7 +324,10 @@ Prose was checked with `sharpee play`; what the page would be sent was read from
   every turn printed "You hear toll." beside the game's own toll prose. Issue #713. The game plays
   one sound, once: `play sound tolling` in the header's `when waking expires`. Fired there, on the
   turn the role moves to Hobb, it printed no "You hear" line. The lamp's catch and the per-turn
-  toll have no sound until #713 is settled.
+  toll have no sound until #713 is settled. Settled 2026-11-15 in the working tree: a sound prints
+  only what its declaration says (`define sound … heard: … heard from afar: … end sound`), and a
+  sound with no line prints nothing, so the catch and the per-turn toll can now be played. The
+  snapshot does not use this yet.
 - `listener` on the wisp and `after hearing the tolling, once` work: the wisp's flinch printed on
   that turn. Its prose is written from outside ("Somewhere in the Hall a small blue light …")
   because the player is Hobb when it prints.

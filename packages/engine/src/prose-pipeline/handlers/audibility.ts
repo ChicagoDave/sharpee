@@ -47,8 +47,8 @@ const AUDIBILITY_TEMPLATE_PREFIX = 'sound.heard';
  * Resolves `sound.heard.<kind>.<tier>` from the language provider,
  * falling back to `sound.heard.default.<tier>` when the kind-specific
  * template is not registered. Returns one `ITextBlock` per event, or
- * `[]` when the event is malformed, the tier is `silent`, or no
- * template resolves.
+ * `[]` when the event is malformed, the tier is `silent`, the kind's own
+ * template is registered empty, or no template resolves.
  */
 export function handleAudibilityHeard(
   event: ISemanticEvent,
@@ -80,6 +80,11 @@ export function handleAudibilityHeard(
 
   const kindId = `${AUDIBILITY_TEMPLATE_PREFIX}.${data.kind}.${data.audibilityTier}`;
   const fallbackId = `${AUDIBILITY_TEMPLATE_PREFIX}.default.${data.audibilityTier}`;
+
+  // A kind whose own line is registered empty is silent in prose: the sound
+  // was heard, and its author wrote nothing for it. It gets no block, and it
+  // does not fall back to the default line, which would print the kind.
+  if (provider.getTemplate?.(kindId) === '') return [];
 
   // Phrase path (ADR-192): render the inner content message to text, embed it as
   // the `content` scalar, then realize the `sound.heard.*` template.

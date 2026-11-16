@@ -1400,7 +1400,18 @@ export class Analyzer {
           ir.counters.push(this.buildCounterDef(decl));
           break;
         case 'define-asset':
-          break; // collected in pass 1 — data references, nothing to emit
+          // Collected in pass 1 as data references. A sound also goes to the
+          // IR with its heard lines, so the loader can register what the
+          // player reads on hearing it. The span guard keeps an errored
+          // duplicate from producing a second entry.
+          if (decl.assetKind === 'sound' && this.assets.get(decl.name)?.span === decl.span) {
+            (ir.sounds ??= []).push({
+              name: decl.name,
+              ...(decl.heard ? { heard: decl.heard.text } : {}),
+              ...(decl.heardFromAfar ? { heardFromAfar: decl.heardFromAfar.text } : {}),
+            });
+          }
+          break;
         case 'define-family-channel':
           // ADR-241 D2/D4: the declaration joins the channel manifest.
           // The pass-1 span guard keeps an errored duplicate from

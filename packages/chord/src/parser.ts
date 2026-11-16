@@ -8542,7 +8542,7 @@ class Parser {
     if (!c.matchWord('from')) {
       // ADR-374 D6: a sound may be a sound in the world only, with no file.
       if (assetKind === 'sound' && c.atEnd()) {
-        return { kind: 'define-asset', assetKind, name: nameTok.text, path: null, span: lineSpan(line) };
+        return this.parseSoundBody({ kind: 'define-asset', assetKind, name: nameTok.text, path: null, span: lineSpan(line) });
       }
       this.diagnostics.error('parse.asset-from', `Expected \`from "<file>"\` in the ${assetKind} declaration.`, c.restSpan());
       return null;
@@ -8552,7 +8552,68 @@ class Parser {
       this.diagnostics.error('parse.asset-path', 'Expected a quoted file path after `from`.', c.restSpan());
       return null;
     }
-    return { kind: 'define-asset', assetKind, name: nameTok.text, path: pathTok.text, span: lineSpan(line) };
+    const decl: DefineAsset = { kind: 'define-asset', assetKind, name: nameTok.text, path: pathTok.text, span: lineSpan(line) };
+    return assetKind === 'sound' ? this.parseSoundBody(decl) : decl;
+  }
+
+  /**
+   * The optional body of a `define sound`: `heard: <text>` and `heard from
+   * afar: <text>`, closed by `end sound`. A sound with no indented line
+   * after its head is the one-line form and is returned as it came.
+   *
+   * @param decl the sound, parsed from its head line; `this.pos` is the line after it
+   * @returns the same declaration, with the heard lines its body states
+   */
+  private parseSoundBody(decl: DefineAsset): DefineAsset {
+    const first = this.lines[this.pos];
+    if (!first || first.indent === 0) return decl;
+
+    while (this.pos < this.lines.length) {
+      const line = this.lines[this.pos];
+      const word = firstWord(line);
+      const lc = new Cursor(line.tokens, line);
+      if (word === 'end' && lc.isWord('sound', 1)) {
+        this.pos++;
+        decl.span = mergeSpans(decl.span, lineSpan(line));
+        return decl;
+      }
+      if (looksLikeComment(line)) {
+        this.skipCommentInsideBlock(line);
+        continue;
+      }
+      if (line.indent === 0) break;
+      decl.span = mergeSpans(decl.span, lineSpan(line));
+      this.pos++;
+      if (word === 'heard') {
+        lc.next(); // heard
+        const afar = lc.isWord('from') && lc.isWord('afar', 1);
+        if (afar) {
+          lc.next(); // from
+          lc.next(); // afar
+        }
+        const form = afar ? 'heard from afar: <text>' : 'heard: <text>';
+        const colon = lc.next();
+        const text = colon?.kind === 'colon' ? restText(lc) : '';
+        if (text === '') {
+          this.diagnostics.error('parse.sound-heard', `Expected \`${form}\` in the sound block.`, lineSpan(line));
+          continue;
+        }
+        const slot = afar ? 'heardFromAfar' : 'heard';
+        if (decl[slot] !== undefined) {
+          this.diagnostics.error('parse.sound-heard-repeated', `\`${decl.name}\` already has a \`${afar ? 'heard from afar' : 'heard'}:\` line. A sound has one of each.`, lineSpan(line));
+          continue;
+        }
+        decl[slot] = { text, span: lineSpan(line) };
+        continue;
+      }
+      this.diagnostics.error(
+        'parse.sound-body',
+        `Unrecognized line in \`define sound\`: \`${line.raw.trim()}\`. Expected \`heard: <text>\`, \`heard from afar: <text>\`, or \`end sound\`.`,
+        lineSpan(line),
+      );
+    }
+    this.diagnostics.error('parse.sound-end', 'Expected `end sound` to close the block.', decl.span);
+    return decl;
   }
 
   /**
@@ -8994,6 +9055,17 @@ class Parser {
         if (event.length === 0) {
           this.diagnostics.error('parse.emit', 'Expected an event name after `emit`.', lineSpan(line));
           return null;
+        }
+        // An event name is one word. Several words would name an event with
+        // spaces in it, which nothing in the platform is called.
+        if (event.length > 1) {
+          const joined = event.join('-');
+          this.diagnostics.error(
+            'parse.emit-name',
+            `An event name is one word; "${event.join(' ')}" is ${event.length}. Join them with hyphens: \`emit ${joined}\`.`,
+            lineSpan(line),
+          );
+          event.splice(0, event.length, joined);
         }
         // ADR-216 payload: `with <field> <value> [and …]` — the create-data
         // grammar; bracketed/braced structures inside separate with commas.

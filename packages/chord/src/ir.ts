@@ -206,6 +206,14 @@ export interface StoryIR {
    */
   pronounSets: IRPronounSetDef[];
   /**
+   * Every `define sound`, with the heard lines its block states. The loader
+   * registers each sound's lines with the language provider, and a line the
+   * sound does not state is registered empty: a sound prints nothing the
+   * story did not write. Additive and optional, absent when the story
+   * declares no sound.
+   */
+  sounds?: IRSoundDef[];
+  /**
    * `define fact` declarations (ADR-310 D14) — closed value sets the
    * compiler checked `thinks` lines against and the loader re-checks at
    * load; act detection reads them at runtime (a claim's value lives in a
@@ -1758,6 +1766,16 @@ export interface IRSequenceStep {
   anchor?: { owner: string; state: string } | null;
   body: IRStatement[];
   span: Span;
+}
+
+/** One `define sound`: its name and what the player reads on hearing it. */
+export interface IRSoundDef {
+  /** The declared name, which is the sound's kind in the world. */
+  name: string;
+  /** `heard:` — the line when the sound is made in the player's room. */
+  heard?: string;
+  /** `heard from afar:` — the line when the sound reaches the player from elsewhere. */
+  heardFromAfar?: string;
 }
 
 /**

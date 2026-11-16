@@ -1803,11 +1803,22 @@ define-asset   = "define" ( "sound" | "image" | "music" )
                  WORD "from" STRING NL                     (* a DATA reference, not code —
                                                               kept when the hatches were
                                                               removed (ADR-361 D1) *)
-               | "define" "sound" WORD NL ;                (* ADR-374 D6: a sound in the
+               | "define" "sound" WORD NL                  (* ADR-374 D6: a sound in the
                                                               world only, played to no
                                                               speaker; an ambient bed
                                                               still needs a file
                                                               (analysis.asset-no-file) *)
+               | "define" "sound" WORD [ "from" STRING ] NL
+                 >>> { sound-line } "end" "sound" NL ;     (* a sound that says what it
+                                                              sounds like; one of each
+                                                              line at most (parse.sound-
+                                                              heard-repeated) *)
+sound-line     = "heard" ":" rest-of-line NL               (* read when the sound is made
+                                                              in the player's room *)
+               | "heard" "from" "afar" ":" rest-of-line NL ; (* read when it reaches the
+                                                              player from elsewhere. A
+                                                              line the sound does not
+                                                              state prints nothing *)
 
 define-family-channel                                      (* ADR-241: a named ambient
                                                               bed / image layer; words
@@ -2120,13 +2131,17 @@ statement    = "refuse" phrase-key { param } NL            (* not in `after` bod
              | "refuse" "when" condition ":" phrase-key NL (* prohibition; not in `after` *)
              | must-line                                   (* not in `after` *)
              | "phrase" phrase-key { param } [ stmt-when ] NL [ inline-prose ]
-             | "emit" phrase-key { phrase-key }
+             | "emit" phrase-key
                [ "with" emit-field { "and" emit-field } ]
                [ stmt-when ] NL                            (* ADR-216 payloaded emit:
-                                                              event segments are dotted
-                                                              keys (media.sound.play);
-                                                              keys pass verbatim into
-                                                              event.data *)
+                                                              the event name is one
+                                                              hyphenated word (media-
+                                                              sound-play), translated to
+                                                              the platform's dotted id at
+                                                              load; a dot is parse.dotted-
+                                                              key, a second word parse.
+                                                              emit-name; field keys pass
+                                                              verbatim into event.data *)
              | media-statement                             (* ADR-216 sugar, below *)
              | "set" value-expr "to" value-expr [ stmt-when ] NL
                                                            (* ADR-375 D4, D7, under `use

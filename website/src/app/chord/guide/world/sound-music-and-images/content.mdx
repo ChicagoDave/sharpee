@@ -56,6 +56,26 @@ written `when client has sound` is a sound the world hears only on clients
 that play audio, so leave that condition off a sound something in the story
 must hear.
 
+### What the player reads
+
+A sound prints only what its declaration says. Give a sound a block, and
+`heard:` is the line the player reads when the sound is made in the room
+they are in; `heard from afar:` is the line when it reaches them from
+somewhere else. A sound may state either line, both, or neither.
+
+```chord
+define sound depot-klaxon from "audio/klaxon.wav"
+  heard: The klaxon blares, flat and enormous.
+  heard from afar: A klaxon is sounding somewhere in the depot.
+end sound
+
+define sound latch-click from "audio/click.wav"
+```
+
+A line the sound does not state prints nothing. `play sound latch-click`
+plays its file and is heard by every listener in reach, and the prose for
+it is whatever the clause that plays it says with `phrase`.
+
 ## Playing and showing
 
 ```chord
