@@ -486,6 +486,45 @@ CLI (`node packages/devkit/dist/cli.js`), not the published one.
 - `template:` in the header is accepted and ignored with a warning ("template packages are not yet
   supported"). The story's own page is `browser/index.html`, not a header field. Chapter 37.
 
+Chapters 13 to 25 were rebuilt on the in-repo CLI ("Sharpee 5.6.1 · Chord 4.0.3") on 2026-11-16
+(session 1910bb), one snapshot a chapter, in `tutorials/relighting/chord-v4.0.2/chapter-13` to
+`chapter-25`. They replace the Part III and Part IV snapshots as the game's record for those
+chapters; `part-3/` and `part-4/` predate the fixes to #705 to #709 and no longer match. The game
+can be won from `chapter-24` on: 50 of 50, Lamplighter.
+
+- Kindle is a story action. `define trait wick` answers it with `change it to lit`, which lights a
+  real lamp since #707. The standard `light the target` is removed from lighting and given to
+  kindling in chapter 25, and the wick's `on the player lighting` clause guards `light lamp with
+  taper`.
+- A thing's own `on` clause cannot answer a story action, so the Lantern's "no lens" requirement is
+  a trait with one carrier, `lens-seat`. Two traits answering one action run in kind-line order:
+  `lens-seat, wick` refuses the empty Lantern; `wick, lens-seat` lights it. Issue #773.
+- `mendable` owns `states: cracked, sound`. Hobb's spectacles carry it as well as the lens; the
+  trait's `score` is paid once whichever is mended first, and the lens overrides the trait's
+  `mended` phrase in its own block.
+- The hush, mend and unbind pages start `faded` and cannot be read. `define condition faded-page:
+  it is faded` with an `each` block in the kindle page's reading clause makes all three legible at
+  once. Only the hush page (Stack 3) can be met while faded.
+- A refusal may not stand in a `select` arm (`analysis.refusal-misplaced`); it goes above the block.
+- A rank above the story's maximum is `analysis.rank-above-max`, so the ladder is 0/10/25 in
+  chapter 18, 0/10/20/35 in chapter 19 and 0/10/30/50 from chapter 24.
+- The bell is still `unrung` on the turn the waking timer speaks its last named turn, and `tolling`
+  from the turn after. Once tolling it tolls every turn until hushed, which chapters 19 to 23
+  cannot do.
+- `define phrase … while` gates a `{key}` marker in a room description and not a `phrase`
+  statement (#769). The Bell Stair's grille sentence is such a marker. Hobb's sayings are a
+  `cycling` phrase printed by the Lodge's `after the player entering`.
+- A parameter marker needs a formatter form: `{verbatim:count}`, `{the thing}`. A bare `{count}`
+  is read as a phrase key.
+- `phrase present:` adds a sentence to the room and leaves the thing in the list; one per thing.
+  `unlisted` on a person did not take Hobb out of the list.
+- Phrasebooks arbitrate in file order, so the gated book stands first. A key in a book must not
+  also be in `define phrases`. A book entry keyed by a message alias does nothing (#774).
+- `import "synonyms"` reads `synonyms.chord`; a fragment may hold `extend action` blocks.
+- Not in the game, standalone only: a reversible thing (a sluice), `settable` (a dial), `kill the
+  player` (a vial), a timer owned by a thing (a squib), trait data fields (a brazier; #771),
+  `define action … while` (its derived test fails; #772), a rest-of-line slot.
+
 ## Open points in the design
 
 - Every mechanic above is a reading of the grammar. Each is proven, or changed, when its snapshot

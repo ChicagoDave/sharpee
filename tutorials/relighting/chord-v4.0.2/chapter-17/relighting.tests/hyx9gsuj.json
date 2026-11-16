@@ -1,0 +1,347 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "channels": [
+          {
+            "id": "info.title",
+            "is": "The Relighting"
+          }
+        ]
+      },
+      "id": "9wt2nz5o",
+      "type": "opening"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The Porter's Lodge"
+        ]
+      },
+      "id": "7n1exy54",
+      "type": "boot"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Taken."
+        ]
+      },
+      "command": "take lamp",
+      "id": "1jbvq22f",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "In the oak press you see a library key."
+        ]
+      },
+      "command": "open press",
+      "id": "e88a8m4s",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You take the library key from the oak press."
+        ]
+      },
+      "command": "take key",
+      "id": "w6k3blad",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Gate Court"
+        ]
+      },
+      "command": "north",
+      "id": "lo3158c9",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Cloister"
+        ]
+      },
+      "command": "north",
+      "id": "usi35ca2",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Bell Stair"
+        ]
+      },
+      "command": "north",
+      "id": "kjdn2dee",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "It was not built. It was put there.",
+          "There was no grille here in your day."
+        ]
+      },
+      "command": "examine grille",
+      "id": "fjmy993a",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The iron is colder than the morning accounts for."
+        ]
+      },
+      "command": "examine grille",
+      "id": "bzkxzhlu",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "It has not changed its mind."
+        ]
+      },
+      "command": "examine grille",
+      "id": "7mfxz7nc",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "It was not built. It was put there."
+        ],
+        "notContains": [
+          "It has not changed its mind."
+        ]
+      },
+      "command": "examine grille",
+      "id": "kvfglk3g",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Nothing answers."
+        ]
+      },
+      "command": "pull rope",
+      "id": "fgfyffo6",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "A little dust comes down the well, and that is all."
+        ]
+      },
+      "command": "pull rope",
+      "id": "372qm8ao",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Somewhere above, the bell goes on not ringing."
+        ]
+      },
+      "command": "pull rope",
+      "id": "6o55h3fy",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Nothing answers."
+        ]
+      },
+      "command": "pull rope",
+      "id": "i6qfzxsk",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Cloister"
+        ]
+      },
+      "command": "south",
+      "id": "svdfuscd",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You unlock the library door with the library key."
+        ]
+      },
+      "command": "unlock library door with key",
+      "id": "9t0arozy",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You open the library door."
+        ]
+      },
+      "command": "open library door",
+      "id": "dqzhtc4k",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Library"
+        ]
+      },
+      "command": "west",
+      "id": "pgcq777n",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Stack 1"
+        ]
+      },
+      "command": "north",
+      "id": "n3x54ne3",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Stack 2"
+        ]
+      },
+      "command": "north",
+      "id": "mrlmdfsf",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Stack 3"
+        ]
+      },
+      "command": "north",
+      "id": "75hp1l8q",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The leaf is blank on both sides."
+        ]
+      },
+      "command": "read hush page",
+      "id": "3bq4msjc",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Stack 2"
+        ]
+      },
+      "command": "south",
+      "id": "mzptl7j1",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Stack 1"
+        ]
+      },
+      "command": "south",
+      "id": "le66aitc",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Library"
+        ]
+      },
+      "command": "south",
+      "id": "ggx0k37a",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The word for waking a flame settles into the place it left thirty years ago"
+        ],
+        "states": [
+          "the kindle page is learned",
+          "the story is waking"
+        ]
+      },
+      "command": "read kindle page",
+      "id": "f2z3aybr",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You know it. You are not likely to lose it twice."
+        ]
+      },
+      "command": "read kindle page",
+      "id": "9zfzvsvc",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You light the hand lamp."
+        ]
+      },
+      "command": "light lamp",
+      "id": "dffka676",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Cloister"
+        ]
+      },
+      "command": "east",
+      "id": "sf6nzxv7",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Undercroft"
+        ]
+      },
+      "command": "down",
+      "id": "93dmw6m4",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "It is a block of grey ice to its brim."
+        ],
+        "states": [
+          "the cistern is frozen"
+        ]
+      },
+      "command": "examine cistern",
+      "id": "75o0ptv1",
+      "type": "turn"
+    }
+  ],
+  "id": "hyx9gsuj"
+}

@@ -1,0 +1,165 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "channels": [
+          {
+            "id": "info.title",
+            "is": "The Relighting"
+          }
+        ]
+      },
+      "id": "9wt2nz5o",
+      "type": "opening"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The Porter's Lodge"
+        ]
+      },
+      "id": "7n1exy54",
+      "type": "boot"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Taken."
+        ]
+      },
+      "command": "take lamp",
+      "id": "1jbvq22f",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "In the oak press you see a library key."
+        ]
+      },
+      "command": "open press",
+      "id": "e88a8m4s",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You take the library key from the oak press."
+        ],
+        "states": [
+          "the library door is locked"
+        ]
+      },
+      "command": "take key",
+      "id": "2kz2cjtd",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Gate Court"
+        ]
+      },
+      "command": "north",
+      "id": "lo3158c9",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Cloister"
+        ]
+      },
+      "command": "north",
+      "id": "usi35ca2",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Bell Stair"
+        ],
+        "states": [
+          "the iron grille is standing",
+          "the tower bell is unrung"
+        ]
+      },
+      "command": "north",
+      "id": "s6l7b2cf",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The grille stands across the stair, and there is no way round it."
+        ]
+      },
+      "command": "up",
+      "id": "qzxdpgvo",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Cloister"
+        ]
+      },
+      "command": "south",
+      "id": "g5j15brd",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You unlock the library door with the library key."
+        ],
+        "states": [
+          "the library door is unlocked"
+        ]
+      },
+      "command": "unlock library door with key",
+      "id": "hs9k0ljx",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You open the library door."
+        ],
+        "states": [
+          "the library door is open"
+        ]
+      },
+      "command": "open library door",
+      "id": "6mvjt8gj",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Library",
+          "a kindle page"
+        ]
+      },
+      "command": "west",
+      "id": "ipib9w4e",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The kindle page reads:",
+          "it will not stay in your head."
+        ],
+        "states": [
+          "the kindle page is legible",
+          "the story is asleep"
+        ]
+      },
+      "command": "read page",
+      "id": "icz6nt6n",
+      "type": "turn"
+    }
+  ],
+  "id": "hyx9gsuj"
+}

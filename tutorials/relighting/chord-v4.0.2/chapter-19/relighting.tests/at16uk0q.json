@@ -1,0 +1,36 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "channels": [
+          {
+            "id": "info.title",
+            "is": "The Relighting"
+          }
+        ]
+      },
+      "id": "7ycfyx6b",
+      "type": "opening"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The Porter's Lodge"
+        ]
+      },
+      "id": "158ku53s",
+      "type": "boot"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "It is early yet. The flame has the whole day to make up its mind."
+        ]
+      },
+      "command": "examine blue flame",
+      "id": "rpnd1fte",
+      "type": "turn"
+    }
+  ],
+  "id": "at16uk0q"
+}

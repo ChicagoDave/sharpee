@@ -1,0 +1,317 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "channels": [
+          {
+            "id": "info.title",
+            "is": "The Relighting"
+          }
+        ]
+      },
+      "id": "9wt2nz5o",
+      "type": "opening"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The Porter's Lodge"
+        ]
+      },
+      "id": "7n1exy54",
+      "type": "boot"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Hidden here, you discover: spectacles."
+        ]
+      },
+      "command": "search",
+      "id": "e37tloei",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Taken."
+        ]
+      },
+      "command": "take spectacles",
+      "id": "oh54r7to",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You give the spectacles to Hobb.",
+          "\"You were always late.\""
+        ]
+      },
+      "command": "give spectacles to hobb",
+      "id": "e22180a7",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You take the seed cake from the chair."
+        ]
+      },
+      "command": "take cake",
+      "id": "7jgkutxu",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You find you cannot."
+        ]
+      },
+      "command": "eat cake",
+      "id": "fth8uvx1",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Taken."
+        ]
+      },
+      "command": "take lamp",
+      "id": "jecalvly",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You reach for the word and find only the place where it was."
+        ]
+      },
+      "command": "light lamp",
+      "id": "ei0amogi",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "In the oak press you see a library key."
+        ]
+      },
+      "command": "open press",
+      "id": "eb8yi9xz",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You take the library key from the oak press."
+        ]
+      },
+      "command": "take key",
+      "id": "draauv0b",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Gate Court"
+        ]
+      },
+      "command": "north",
+      "id": "npb823l8",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You eat some of the seed cake.",
+          "It tastes of caraway, and of being nineteen."
+        ]
+      },
+      "command": "eat cake",
+      "id": "ika97ida",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Cloister"
+        ]
+      },
+      "command": "north",
+      "id": "tf8eg39e",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Refectory"
+        ]
+      },
+      "command": "east",
+      "id": "73z2d0yk",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You reach for the word and find only the place where it was."
+        ]
+      },
+      "command": "light candles",
+      "id": "bblsio5c",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Cloister"
+        ]
+      },
+      "command": "west",
+      "id": "7rav9nev",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You unlock the library door with the library key."
+        ]
+      },
+      "command": "unlock library door with key",
+      "id": "9t0arozy",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You open the library door."
+        ]
+      },
+      "command": "open library door",
+      "id": "dqzhtc4k",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Library"
+        ]
+      },
+      "command": "west",
+      "id": "pgcq777n",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The word for waking a flame settles into the place it left thirty years ago"
+        ],
+        "states": [
+          "the kindle page is learned",
+          "the story is waking"
+        ]
+      },
+      "command": "read page",
+      "id": "1vvjt958",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You know it. You are not likely to lose it twice."
+        ],
+        "notContains": [
+          "settles into the place"
+        ]
+      },
+      "command": "read page",
+      "id": "fgkdrxg2",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You light the hand lamp."
+        ]
+      },
+      "command": "light lamp",
+      "id": "anpfirlx",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Cloister"
+        ]
+      },
+      "command": "east",
+      "id": "p7obffzr",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Refectory"
+        ]
+      },
+      "command": "east",
+      "id": "5gsl2dzk",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You light the candles.",
+          "there is a leaf of paper under the middle pricket"
+        ]
+      },
+      "command": "light candles",
+      "id": "1gzhbvma",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You can see an unbind page here."
+        ]
+      },
+      "command": "look",
+      "id": "k3a9pvkb",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "It reads like a knot seen from the wrong end."
+        ]
+      },
+      "command": "read unbind page",
+      "id": "rrypu6ni",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Cloister"
+        ]
+      },
+      "command": "west",
+      "id": "tkgmf1qt",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Undercroft",
+          "You can see a crate here."
+        ]
+      },
+      "command": "down",
+      "id": "1rp84b3i",
+      "type": "turn"
+    }
+  ],
+  "id": "hyx9gsuj"
+}

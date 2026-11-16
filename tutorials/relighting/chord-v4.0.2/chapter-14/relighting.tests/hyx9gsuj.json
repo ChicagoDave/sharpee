@@ -1,0 +1,281 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "channels": [
+          {
+            "id": "info.title",
+            "is": "The Relighting"
+          }
+        ]
+      },
+      "id": "9wt2nz5o",
+      "type": "opening"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The Porter's Lodge"
+        ]
+      },
+      "id": "7n1exy54",
+      "type": "boot"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Hobb does not look round. \"That's mine,\" he says."
+        ]
+      },
+      "command": "take kettle",
+      "id": "os644k5f",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Hidden here, you discover: spectacles."
+        ]
+      },
+      "command": "search",
+      "id": "raoaghnf",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Taken."
+        ]
+      },
+      "command": "take spectacles",
+      "id": "pfwilxrt",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You give the spectacles to Hobb.",
+          "\"You were always late.\""
+        ]
+      },
+      "command": "give spectacles to hobb",
+      "id": "bl8726zu",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You take the seed cake from the chair."
+        ]
+      },
+      "command": "take cake",
+      "id": "tiijw6ag",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You eat some of the seed cake.",
+          "It tastes of caraway, and of being nineteen."
+        ]
+      },
+      "command": "eat cake",
+      "id": "tc9zot3s",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Taken."
+        ]
+      },
+      "command": "take lamp",
+      "id": "fixeynza",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "In the oak press you see a library key."
+        ]
+      },
+      "command": "open press",
+      "id": "eb8yi9xz",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You take the library key from the oak press."
+        ]
+      },
+      "command": "take key",
+      "id": "draauv0b",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Gate Court"
+        ]
+      },
+      "command": "north",
+      "id": "npb823l8",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Cloister"
+        ]
+      },
+      "command": "north",
+      "id": "iubunw9l",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Bell Stair"
+        ]
+      },
+      "command": "north",
+      "id": "3a5runbl",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "It does not so much as rattle."
+        ]
+      },
+      "command": "take grille",
+      "id": "6wyqvw7q",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "It does not so much as rattle."
+        ]
+      },
+      "command": "push grille",
+      "id": "1szjfnmq",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "It does not so much as rattle."
+        ]
+      },
+      "command": "pull grille",
+      "id": "dfoecj60",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You pull the bell rope.",
+          "Nothing answers."
+        ]
+      },
+      "command": "pull rope",
+      "id": "1msr7vjk",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You pull the bell rope.",
+          "Nothing answers."
+        ]
+      },
+      "command": "pull rope",
+      "id": "qfwcdtsl",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Cloister"
+        ]
+      },
+      "command": "south",
+      "id": "2mfg99ff",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You unlock the library door with the library key."
+        ]
+      },
+      "command": "unlock library door with key",
+      "id": "ej6feob4",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You open the library door."
+        ]
+      },
+      "command": "open library door",
+      "id": "rx6yf6d9",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Library",
+          "It is wet ink."
+        ]
+      },
+      "command": "west",
+      "id": "9dmcdnr0",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "(first taking the kindle page)",
+          "The word for waking a flame settles into the place it left thirty years ago"
+        ],
+        "notContains": [
+          "The kindle page reads:"
+        ],
+        "states": [
+          "the kindle page is learned"
+        ]
+      },
+      "command": "read page",
+      "id": "4uh09jsg",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Cloister"
+        ]
+      },
+      "command": "east",
+      "id": "1v9cvr4u",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Library"
+        ],
+        "notContains": [
+          "It is wet ink."
+        ]
+      },
+      "command": "west",
+      "id": "owuev5gk",
+      "type": "turn"
+    }
+  ],
+  "id": "hyx9gsuj"
+}

@@ -1,0 +1,108 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "The crack closes from both edges at once, like a mouth deciding not to speak."
+        ],
+        "notContains": [
+          "has no memory of having been otherwise"
+        ],
+        "states": [
+          "the lens is sound"
+        ]
+      },
+      "command": "repair lens",
+      "id": "smjctzi7",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "There is no flaw in it anywhere, and you looked."
+        ]
+      },
+      "command": "examine lens",
+      "id": "e06d34ic",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "It is sound. The word looks it over and finds nothing to do."
+        ]
+      },
+      "command": "mend lens",
+      "id": "1frwf9q9",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Cloister"
+        ]
+      },
+      "command": "up",
+      "id": "gpp2ojzq",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Bell Stair"
+        ]
+      },
+      "command": "north",
+      "id": "sv8f8e20",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Lantern Gallery"
+        ]
+      },
+      "command": "up",
+      "id": "lgoq0vvn",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "there is a seat for a lens with no lens in it."
+        ]
+      },
+      "command": "kindle lantern",
+      "id": "ecuaaei4",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The lens drops into its seat with a sound like a coin on a counter."
+        ]
+      },
+      "command": "put lens in lantern",
+      "id": "l1s14h3e",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "sends it out over the valley in one white bar.",
+          "You have risen to the rank of a Lamplighter."
+        ],
+        "states": [
+          "the story is awake"
+        ]
+      },
+      "command": "kindle lantern",
+      "ending": "lantern-lit",
+      "id": "rswc0biu",
+      "type": "turn"
+    }
+  ],
+  "id": "altq54hx",
+  "ordinal": 0,
+  "parent": "at16uk0q"
+}

@@ -1,0 +1,301 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "channels": [
+          {
+            "id": "info.title",
+            "is": "The Relighting"
+          }
+        ]
+      },
+      "id": "9wt2nz5o",
+      "type": "opening"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The Porter's Lodge"
+        ]
+      },
+      "id": "7n1exy54",
+      "type": "boot"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Hobb does not look round. \"That's mine,\" he says."
+        ]
+      },
+      "command": "take kettle",
+      "id": "os644k5f",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You take it."
+        ],
+        "notContains": [
+          "Taken."
+        ]
+      },
+      "command": "take lamp",
+      "id": "9xk9ssq0",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You wait. The Hall has had thirty years of practice and is better at it than you are."
+        ]
+      },
+      "command": "wait",
+      "id": "3k6hv0mx",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You wait. Somewhere a shutter knocks, twice, and thinks better of it."
+        ]
+      },
+      "command": "wait",
+      "id": "hx5l0zh1",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You wait."
+        ],
+        "notContains": [
+          "Time passes"
+        ]
+      },
+      "command": "wait",
+      "id": "29brmc0w",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "In the oak press you see a library key."
+        ]
+      },
+      "command": "open press",
+      "id": "iy6fbpwg",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You take the library key from the oak press."
+        ]
+      },
+      "command": "take key",
+      "id": "tgaewfjw",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Gate Court"
+        ]
+      },
+      "command": "north",
+      "id": "op6b8hsq",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Cloister"
+        ]
+      },
+      "command": "north",
+      "id": "8vlvn30z",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You are at the foot of the steps, in the dark, and that is all you can say for certain."
+        ],
+        "notContains": [
+          "grue"
+        ]
+      },
+      "command": "down",
+      "id": "tgz31f8c",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "It is dark, and the dark here is old and has no interest in you."
+        ]
+      },
+      "command": "look",
+      "id": "f4uql1ly",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Cloister"
+        ]
+      },
+      "command": "up",
+      "id": "geo3x772",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Bell Stair"
+        ]
+      },
+      "command": "north",
+      "id": "33ej847q",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "It does not so much as rattle."
+        ]
+      },
+      "command": "push grille",
+      "id": "1szjfnmq",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Cloister"
+        ]
+      },
+      "command": "south",
+      "id": "svdfuscd",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You unlock the library door with the library key."
+        ]
+      },
+      "command": "unlock library door with key",
+      "id": "9t0arozy",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You open the library door."
+        ]
+      },
+      "command": "open library door",
+      "id": "dqzhtc4k",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Library"
+        ]
+      },
+      "command": "west",
+      "id": "pgcq777n",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The word for waking a flame settles into the place it left thirty years ago"
+        ],
+        "states": [
+          "the story is waking"
+        ]
+      },
+      "command": "read kindle page",
+      "id": "fzjk5vi8",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Cloister"
+        ]
+      },
+      "command": "east",
+      "id": "ikdsw95k",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Bell Stair"
+        ]
+      },
+      "command": "north",
+      "id": "5k95r9tq",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "It hums under your hand, very faintly, like a rail with a train a long way off."
+        ],
+        "notContains": [
+          "rattle"
+        ]
+      },
+      "command": "push grille",
+      "id": "p9g8lk0r",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Cloister"
+        ]
+      },
+      "command": "south",
+      "id": "4d7ncgaq",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Gate Court"
+        ]
+      },
+      "command": "south",
+      "id": "1a8qqkt6",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The Porter's Lodge"
+        ]
+      },
+      "command": "south",
+      "id": "dmuk6uvy",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "\"Still mine,\" says Hobb, with his eye on the ceiling."
+        ]
+      },
+      "command": "take kettle",
+      "id": "pm0q445m",
+      "type": "turn"
+    }
+  ],
+  "id": "hyx9gsuj"
+}

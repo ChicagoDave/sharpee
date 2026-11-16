@@ -1,0 +1,481 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "channels": [
+          {
+            "id": "info.title",
+            "is": "The Relighting"
+          }
+        ]
+      },
+      "id": "7ycfyx6b",
+      "type": "opening"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The Porter's Lodge"
+        ]
+      },
+      "id": "158ku53s",
+      "type": "boot"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You get into the chair."
+        ]
+      },
+      "command": "sit on chair",
+      "id": "lvjhm2qt",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You get out of the chair."
+        ]
+      },
+      "command": "exit",
+      "id": "iizt6eb7",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Hidden here, you discover: spectacles."
+        ]
+      },
+      "command": "search",
+      "id": "elnvg4rv",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You take it."
+        ]
+      },
+      "command": "take spectacles",
+      "id": "l4goq24l",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "One arm has come away, and is held on with a turn of thread."
+        ],
+        "states": [
+          "the spectacles is cracked"
+        ]
+      },
+      "command": "examine spectacles",
+      "id": "8zxjqmdv",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You take it."
+        ]
+      },
+      "command": "take lamp",
+      "id": "5et3sjer",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "In the oak press you see a library key."
+        ]
+      },
+      "command": "open press",
+      "id": "4668bdje",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You take the library key from the oak press."
+        ]
+      },
+      "command": "take key",
+      "id": "eakdoy33",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Gate Court"
+        ]
+      },
+      "command": "north",
+      "id": "nkble7za",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Cloister"
+        ]
+      },
+      "command": "north",
+      "id": "gqwtue2d",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You unlock the library door with the library key."
+        ]
+      },
+      "command": "unlock library door with key",
+      "id": "giux36en",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You open the library door."
+        ]
+      },
+      "command": "open library door",
+      "id": "hg3q8vuj",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Library"
+        ]
+      },
+      "command": "west",
+      "id": "ledo6hjg",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The word for waking a flame settles into the place it left thirty years ago"
+        ]
+      },
+      "command": "read kindle page",
+      "id": "derdkprm",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You say the word. A flame stands up on the wick, blue at first"
+        ],
+        "notContains": [
+          "You light the hand lamp."
+        ]
+      },
+      "command": "light lamp",
+      "id": "g0gtpmw2",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "It is burning already, and the word slides off it."
+        ]
+      },
+      "command": "kindle lamp",
+      "id": "ngffg8db",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "There is a word for this."
+        ]
+      },
+      "command": "light lamp with taper",
+      "id": "bxdjpak6",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Stack 1"
+        ]
+      },
+      "command": "north",
+      "id": "8d77bb75",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Stack 2"
+        ]
+      },
+      "command": "north",
+      "id": "ciboav9r",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Stack 3"
+        ]
+      },
+      "command": "north",
+      "id": "4m4ljc4f",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "It is the breath you take before one."
+        ]
+      },
+      "command": "read hush page",
+      "id": "stsqih57",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Stack 2"
+        ]
+      },
+      "command": "south",
+      "id": "k7dgk71x",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Stack 1"
+        ]
+      },
+      "command": "south",
+      "id": "rt57txnb",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Library"
+        ]
+      },
+      "command": "south",
+      "id": "nx9s5d2k",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Cloister"
+        ]
+      },
+      "command": "east",
+      "id": "4ijn269p",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Refectory"
+        ]
+      },
+      "command": "east",
+      "id": "2tu9433f",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You say the word.",
+          "there is a leaf of paper under the middle pricket",
+          "You have risen to the rank of a Second-Year."
+        ]
+      },
+      "command": "kindle candles",
+      "id": "s8jrnf86",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You follow it round until it comes apart in your head."
+        ]
+      },
+      "command": "read unbind page",
+      "id": "4jz1e6yx",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Cloister"
+        ]
+      },
+      "command": "west",
+      "id": "5yserdkc",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Bell Stair",
+          "An iron grille stands across its third step."
+        ]
+      },
+      "command": "north",
+      "id": "cb58l8zd",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Whatever holds the grille is being rung into it."
+        ],
+        "states": [
+          "the iron grille is standing"
+        ]
+      },
+      "command": "unbind grille",
+      "id": "s57wn497",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The bell swings twice more without a sound, and hangs still."
+        ],
+        "states": [
+          "the tower bell is silent"
+        ]
+      },
+      "command": "quiet bell",
+      "id": "oojs1dw8",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "It is making no sound. There is nothing in it to hush."
+        ]
+      },
+      "command": "hush bell",
+      "id": "3sspzy3j",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The grille is not there, in the manner of a thing that was never there"
+        ],
+        "states": [
+          "the iron grille is lifted"
+        ]
+      },
+      "command": "unbind grille",
+      "id": "hf4x51t2",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The cloister is south."
+        ],
+        "notContains": [
+          "An iron grille stands across its third step."
+        ]
+      },
+      "command": "look",
+      "id": "a55zexld",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Cloister"
+        ]
+      },
+      "command": "south",
+      "id": "elxnmkhu",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Undercroft",
+          "the ice in the cistern begins to sweat."
+        ]
+      },
+      "command": "down",
+      "id": "pcz41ruk",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "A leaf of paper rides up on the meltwater"
+        ]
+      },
+      "command": "wait",
+      "id": "eaps0bq2",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "It is the word for making a broken thing whole"
+        ]
+      },
+      "command": "read mend page",
+      "id": "pmktyckw",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "What was broken is whole, and has no memory of having been otherwise."
+        ],
+        "states": [
+          "the spectacles is sound"
+        ]
+      },
+      "command": "fix spectacles",
+      "id": "3zs7yl56",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Both arms are sound."
+        ]
+      },
+      "command": "examine spectacles",
+      "id": "ovu48clz",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "In the crate you see a lens."
+        ]
+      },
+      "command": "open crate",
+      "id": "nr9kzc5a",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You take the lens from the crate."
+        ]
+      },
+      "command": "take lens",
+      "id": "c8w9nukq",
+      "type": "turn"
+    }
+  ],
+  "id": "at16uk0q"
+}

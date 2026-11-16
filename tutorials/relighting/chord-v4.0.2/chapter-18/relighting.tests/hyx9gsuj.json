@@ -1,0 +1,294 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "channels": [
+          {
+            "id": "info.title",
+            "is": "The Relighting"
+          }
+        ]
+      },
+      "id": "9wt2nz5o",
+      "type": "opening"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The Porter's Lodge"
+        ]
+      },
+      "id": "7n1exy54",
+      "type": "boot"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You have scored 0 out of 25, earning you the rank of a Latecomer."
+        ]
+      },
+      "command": "score",
+      "id": "p4nxapnp",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Taken."
+        ]
+      },
+      "command": "take lamp",
+      "id": "85586udo",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "In the oak press you see a library key."
+        ]
+      },
+      "command": "open press",
+      "id": "88831laj",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You take the library key from the oak press."
+        ]
+      },
+      "command": "take key",
+      "id": "30uqgtvs",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Gate Court"
+        ]
+      },
+      "command": "north",
+      "id": "tcemu1i0",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Cloister"
+        ]
+      },
+      "command": "north",
+      "id": "bkvtc3aw",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Bell Stair"
+        ]
+      },
+      "command": "north",
+      "id": "lnuhrsed",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Nothing answers."
+        ],
+        "notContains": [
+          "Your palms have begun to object."
+        ]
+      },
+      "command": "pull rope",
+      "id": "o1uy6pul",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "A little dust comes down the well, and that is all."
+        ]
+      },
+      "command": "pull rope",
+      "id": "jbrkqeq6",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Somewhere above, the bell goes on not ringing."
+        ]
+      },
+      "command": "pull rope",
+      "id": "kzsxgp8d",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Your palms have begun to object.",
+          "Nothing answers."
+        ]
+      },
+      "command": "pull rope",
+      "id": "hpjqa1g5",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Cloister"
+        ]
+      },
+      "command": "south",
+      "id": "fvtsl889",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You unlock the library door with the library key."
+        ]
+      },
+      "command": "unlock library door with key",
+      "id": "69motadp",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You open the library door."
+        ]
+      },
+      "command": "open library door",
+      "id": "oif00hpd",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Library"
+        ]
+      },
+      "command": "west",
+      "id": "toeaq04c",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The word for waking a flame settles into the place it left thirty years ago"
+        ]
+      },
+      "command": "read kindle page",
+      "id": "avb7hjjs",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You have scored 5 out of 25, earning you the rank of a Latecomer."
+        ]
+      },
+      "command": "score",
+      "id": "d0qgryma",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You light the hand lamp."
+        ]
+      },
+      "command": "light lamp",
+      "id": "gohnltq2",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Cloister"
+        ]
+      },
+      "command": "east",
+      "id": "awyezv40",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Refectory"
+        ]
+      },
+      "command": "east",
+      "id": "srw66wqd",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You light the candles.",
+          "You have risen to the rank of a Second-Year."
+        ]
+      },
+      "command": "light candles",
+      "id": "dlujdkjy",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You have scored 10 out of 25, earning you the rank of a Second-Year."
+        ]
+      },
+      "command": "score",
+      "id": "exjnsz3l",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You follow it round until it comes apart in your head."
+        ],
+        "states": [
+          "the unbind page is learned"
+        ]
+      },
+      "command": "read unbind page",
+      "id": "oy05fwuf",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Cloister"
+        ]
+      },
+      "command": "west",
+      "id": "suf1ak1s",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Library"
+        ]
+      },
+      "command": "west",
+      "id": "gj9d69yv",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "It is more than you had this morning, and less than the Lantern will want."
+        ]
+      },
+      "command": "examine grimoire",
+      "id": "sluexma3",
+      "type": "turn"
+    }
+  ],
+  "id": "hyx9gsuj"
+}

@@ -1,0 +1,48 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "Cloister"
+        ]
+      },
+      "command": "up",
+      "id": "2565dczk",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Bell Stair"
+        ]
+      },
+      "command": "north",
+      "id": "gg4l6w5d",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Lantern Gallery"
+        ]
+      },
+      "command": "up",
+      "id": "id1y9kvj",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The court comes up to meet you."
+        ]
+      },
+      "command": "east",
+      "ending": "over-the-parapet",
+      "id": "1nazoeb3",
+      "type": "turn"
+    }
+  ],
+  "id": "cb4pi31n",
+  "ordinal": 2,
+  "parent": "at16uk0q"
+}

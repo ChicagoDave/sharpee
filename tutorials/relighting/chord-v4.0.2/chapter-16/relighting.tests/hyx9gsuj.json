@@ -1,0 +1,273 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "channels": [
+          {
+            "id": "info.title",
+            "is": "The Relighting"
+          }
+        ]
+      },
+      "id": "9wt2nz5o",
+      "type": "opening"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The Porter's Lodge"
+        ]
+      },
+      "id": "7n1exy54",
+      "type": "boot"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Taken."
+        ]
+      },
+      "command": "take lamp",
+      "id": "1jbvq22f",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "In the oak press you see a library key."
+        ]
+      },
+      "command": "open press",
+      "id": "e88a8m4s",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You take the library key from the oak press."
+        ]
+      },
+      "command": "take key",
+      "id": "w6k3blad",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Gate Court"
+        ]
+      },
+      "command": "north",
+      "id": "lo3158c9",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Cloister"
+        ]
+      },
+      "command": "north",
+      "id": "usi35ca2",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You unlock the library door with the library key."
+        ]
+      },
+      "command": "unlock library door with key",
+      "id": "72moeivj",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You open the library door."
+        ]
+      },
+      "command": "open library door",
+      "id": "emubz17a",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Library"
+        ]
+      },
+      "command": "west",
+      "id": "fjyz1itm",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Someone has written in one margin.",
+          "you have the feeling they are still as blank as these."
+        ]
+      },
+      "command": "examine grimoire",
+      "id": "fta1kxzv",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Stack 1"
+        ]
+      },
+      "command": "north",
+      "id": "m1d1yon9",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Stack 2"
+        ]
+      },
+      "command": "north",
+      "id": "chp2fg19",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Stack 3",
+          "You can see a hush page here."
+        ],
+        "states": [
+          "the hush page is faded"
+        ]
+      },
+      "command": "north",
+      "id": "di2w02vw",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The leaf is blank on both sides."
+        ]
+      },
+      "command": "read hush page",
+      "id": "e77r6ekv",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Stack 2"
+        ]
+      },
+      "command": "south",
+      "id": "gjlp1xmu",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Stack 1"
+        ]
+      },
+      "command": "south",
+      "id": "fjjkmtp0",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Library"
+        ]
+      },
+      "command": "south",
+      "id": "ts8x2z22",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The word for waking a flame settles into the place it left thirty years ago"
+        ],
+        "states": [
+          "the kindle page is learned",
+          "the hush page is legible",
+          "the unbind page is legible"
+        ]
+      },
+      "command": "read kindle page",
+      "id": "he1qaxpi",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Wherever its loose leaves have got to, the ink is on them now."
+        ],
+        "notContains": [
+          "still as blank as these"
+        ]
+      },
+      "command": "examine grimoire",
+      "id": "e78xqeat",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Stack 1"
+        ]
+      },
+      "command": "north",
+      "id": "n3x54ne3",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Stack 2"
+        ]
+      },
+      "command": "north",
+      "id": "mrlmdfsf",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Stack 3"
+        ]
+      },
+      "command": "north",
+      "id": "75hp1l8q",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "(first taking the hush page)",
+          "It is the breath you take before one."
+        ],
+        "states": [
+          "the hush page is learned"
+        ]
+      },
+      "command": "read hush page",
+      "id": "klxkwezs",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You have it. It was the easiest to keep."
+        ]
+      },
+      "command": "read hush page",
+      "id": "etjj274p",
+      "type": "turn"
+    }
+  ],
+  "id": "hyx9gsuj"
+}

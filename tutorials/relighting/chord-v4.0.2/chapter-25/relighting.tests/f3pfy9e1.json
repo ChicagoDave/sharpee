@@ -1,0 +1,62 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "Cloister"
+        ]
+      },
+      "command": "up",
+      "id": "4am21qmd",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Bell Stair"
+        ]
+      },
+      "command": "north",
+      "id": "48n2nhrs",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Lantern Gallery"
+        ]
+      },
+      "command": "up",
+      "id": "krhf61av",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The lens drops into its seat with a sound like a coin on a counter."
+        ]
+      },
+      "command": "put lens in lantern",
+      "id": "5dnf8ptw",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "For one breath the cracked lens throws two beams",
+          "the Lantern goes dark for the last time."
+        ],
+        "notContains": [
+          "every blank page begins to fill"
+        ]
+      },
+      "command": "kindle lantern",
+      "ending": "lens-shatters",
+      "id": "hi2ui7nt",
+      "type": "turn"
+    }
+  ],
+  "id": "f3pfy9e1",
+  "ordinal": 1,
+  "parent": "at16uk0q"
+}

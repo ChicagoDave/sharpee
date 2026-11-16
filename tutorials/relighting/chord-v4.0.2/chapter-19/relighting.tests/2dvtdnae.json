@@ -1,0 +1,246 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "Taken."
+        ]
+      },
+      "command": "take lamp",
+      "id": "g4k3lst4",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "In the oak press you see a library key."
+        ]
+      },
+      "command": "open press",
+      "id": "da1bznmk",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You take the library key from the oak press."
+        ]
+      },
+      "command": "take key",
+      "id": "8u3me46v",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Gate Court"
+        ]
+      },
+      "command": "north",
+      "id": "4lvvy0is",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Cloister"
+        ]
+      },
+      "command": "north",
+      "id": "sjnlwp6h",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You unlock the library door with the library key."
+        ]
+      },
+      "command": "unlock library door with key",
+      "id": "gd2k6gy6",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You open the library door."
+        ]
+      },
+      "command": "open library door",
+      "id": "dlf7nek2",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Library"
+        ]
+      },
+      "command": "west",
+      "id": "onjdnyi2",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The word for waking a flame settles into the place it left thirty years ago"
+        ],
+        "notContains": [
+          "old timber"
+        ],
+        "states": [
+          "the story is waking"
+        ]
+      },
+      "command": "read kindle page",
+      "id": "fjbgn5l3",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You light the hand lamp.",
+          "Somewhere above you, old timber takes a weight it had forgotten."
+        ]
+      },
+      "command": "light lamp",
+      "id": "3emaggc7",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Cloister",
+          "A slow draught moves through the Hall, one way and then the other."
+        ]
+      },
+      "command": "east",
+      "id": "pqkdt4t4",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Undercroft",
+          "The tower bell strikes once",
+          "the ice in the cistern begins to sweat."
+        ],
+        "states": [
+          "the cistern is thawing",
+          "the tower bell is unrung"
+        ]
+      },
+      "command": "down",
+      "id": "cg1kyn20",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "stands a finger's width clear of the stone all round.",
+          "A leaf of paper rides up on the meltwater",
+          "The tower bell tolls.",
+          "You have risen to the rank of a Second-Year."
+        ],
+        "states": [
+          "the cistern is running",
+          "the tower bell is tolling"
+        ]
+      },
+      "command": "examine cistern",
+      "id": "ntz2dsr1",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The bell tolls again, and the rooks go up off the roof."
+        ]
+      },
+      "command": "wait",
+      "id": "9u9rzc3k",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You can see a mend page and a crate here.",
+          "The bell tolls. You have stopped counting."
+        ]
+      },
+      "command": "look",
+      "id": "ezwn88vn",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "It is the word for making a broken thing whole",
+          "The tower bell tolls."
+        ],
+        "states": [
+          "the mend page is learned"
+        ]
+      },
+      "command": "read mend page",
+      "id": "ev9lmxgn",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You have scored 15 out of 35, earning you the rank of a Second-Year."
+        ]
+      },
+      "command": "score",
+      "id": "3dx5p3i3",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Cloister"
+        ]
+      },
+      "command": "up",
+      "id": "7ki56hcp",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Gate Court"
+        ]
+      },
+      "command": "south",
+      "id": "2fibw36f",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The Porter's Lodge"
+        ]
+      },
+      "command": "south",
+      "id": "7x96dsl3",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "It is taller than it was this morning, and it leans toward the Hall."
+        ],
+        "notContains": [
+          "It is early yet."
+        ]
+      },
+      "command": "examine blue flame",
+      "id": "3jq8l1az",
+      "type": "turn"
+    }
+  ],
+  "id": "2dvtdnae",
+  "ordinal": 0,
+  "parent": "at16uk0q"
+}

@@ -1,0 +1,277 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "channels": [
+          {
+            "id": "info.title",
+            "is": "The Relighting"
+          }
+        ]
+      },
+      "id": "9wt2nz5o",
+      "type": "opening"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The Porter's Lodge"
+        ]
+      },
+      "id": "7n1exy54",
+      "type": "boot"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "\"Gnusto,\" you say, as everybody does",
+          "could never say what it did."
+        ]
+      },
+      "command": "gnusto",
+      "id": "3e5qnna0",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "\"Gnusto,\" you say, as everybody does"
+        ]
+      },
+      "command": "say gnusto",
+      "id": "3l5kk0z7",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "every lamp in the Hall went out at once"
+        ]
+      },
+      "command": "remember dimming",
+      "id": "oqk4oj6r",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "every lamp in the Hall went out at once"
+        ]
+      },
+      "command": "remember the dimming",
+      "id": "3wf1o107",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "He confiscated a kettle from you in your second week."
+        ]
+      },
+      "command": "recall hobb",
+      "id": "nb2exu2e",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Your mother said it when she opened the shutters."
+        ]
+      },
+      "command": "remember gnusto",
+      "id": "ih1nt4nm",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Nothing comes. Thirty years is a long time."
+        ]
+      },
+      "command": "remember breakfast",
+      "id": "kmy4acd4",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "A working is said to something."
+        ]
+      },
+      "command": "kindle",
+      "id": "ioqibc7v",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You reach for the word and find only the place where it was."
+        ]
+      },
+      "command": "kindle lamp",
+      "id": "1vqpu3tm",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You take it."
+        ]
+      },
+      "command": "take lamp",
+      "id": "98j2ezni",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The shape of it is there, as a name is on the tip of the tongue."
+        ]
+      },
+      "command": "mend lamp",
+      "id": "akqj818q",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "In the oak press you see a library key."
+        ]
+      },
+      "command": "open press",
+      "id": "h1zg7hwr",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You take the library key from the oak press."
+        ]
+      },
+      "command": "take key",
+      "id": "i39wzp3r",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Gate Court"
+        ]
+      },
+      "command": "north",
+      "id": "1iocwhq2",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Cloister"
+        ]
+      },
+      "command": "north",
+      "id": "ckgzq0hx",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You unlock the library door with the library key."
+        ]
+      },
+      "command": "unlock library door with key",
+      "id": "9t0arozy",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You open the library door."
+        ]
+      },
+      "command": "open library door",
+      "id": "dqzhtc4k",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Library"
+        ]
+      },
+      "command": "west",
+      "id": "pgcq777n",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The word for waking a flame settles into the place it left thirty years ago"
+        ]
+      },
+      "command": "read kindle page",
+      "id": "h9v3coa8",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "There is nothing in that for a flame to stand on."
+        ]
+      },
+      "command": "kindle lamp",
+      "id": "6ke6npkc",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "There is nothing in that for a flame to stand on."
+        ]
+      },
+      "command": "kindle grimoire",
+      "id": "fazoicll",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You light the hand lamp."
+        ]
+      },
+      "command": "light lamp",
+      "id": "9ob9m5ln",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You can't see any bell here."
+        ]
+      },
+      "command": "hush bell",
+      "id": "l8i1id7q",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You wait."
+        ]
+      },
+      "command": "wait",
+      "id": "30mu6hfn",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You say it, and the bell says something louder."
+        ]
+      },
+      "command": "gnusto",
+      "id": "bncr16c6",
+      "type": "turn"
+    }
+  ],
+  "id": "hyx9gsuj"
+}

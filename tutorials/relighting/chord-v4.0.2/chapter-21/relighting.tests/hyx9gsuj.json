@@ -1,0 +1,249 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "channels": [
+          {
+            "id": "info.title",
+            "is": "The Relighting"
+          }
+        ]
+      },
+      "id": "9wt2nz5o",
+      "type": "opening"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The Porter's Lodge",
+          "Hobb is in the doorway with his back to you"
+        ]
+      },
+      "id": "hseyama2",
+      "type": "boot"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "which is Hobb all over."
+        ],
+        "notContains": [
+          "It is burning with a small flame"
+        ]
+      },
+      "command": "examine lamp",
+      "id": "2mzh2wgk",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Taken."
+        ]
+      },
+      "command": "take lamp",
+      "id": "85586udo",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "In the oak press you see a library key."
+        ]
+      },
+      "command": "open press",
+      "id": "88831laj",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You take the library key from the oak press."
+        ]
+      },
+      "command": "take key",
+      "id": "30uqgtvs",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Gate Court"
+        ]
+      },
+      "command": "north",
+      "id": "tcemu1i0",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Cloister"
+        ]
+      },
+      "command": "north",
+      "id": "bkvtc3aw",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You unlock the library door with the library key."
+        ]
+      },
+      "command": "unlock library door with key",
+      "id": "tun3e3xf",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You open the library door."
+        ]
+      },
+      "command": "open library door",
+      "id": "7l3tcqbb",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Library"
+        ]
+      },
+      "command": "west",
+      "id": "cvuf2fai",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The word for waking a flame settles into the place it left thirty years ago"
+        ]
+      },
+      "command": "read kindle page",
+      "id": "q13ajg84",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You light the hand lamp."
+        ]
+      },
+      "command": "light lamp",
+      "id": "njighvyu",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "which is Hobb all over. It is burning with a small flame, and the flame is blue."
+        ]
+      },
+      "command": "examine lamp",
+      "id": "c5o3gtjj",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Cloister"
+        ]
+      },
+      "command": "east",
+      "id": "1ah8t7qn",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Refectory"
+        ]
+      },
+      "command": "east",
+      "id": "aqt7wm21",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Nobody has put a flame to them since the last supper of the last term."
+        ],
+        "notContains": [
+          "They are all alight"
+        ]
+      },
+      "command": "examine candles",
+      "id": "gglswgyh",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You light the candles."
+        ]
+      },
+      "command": "light candles",
+      "id": "1auohrj5",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "They are all alight, every one, and the flames stand very straight."
+        ],
+        "notContains": [
+          "Nobody has put a flame to them"
+        ]
+      },
+      "command": "examine candles",
+      "id": "xder0gxu",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Cloister"
+        ]
+      },
+      "command": "west",
+      "id": "kr3225uo",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Undercroft"
+        ]
+      },
+      "command": "down",
+      "id": "r2wfq140",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "In the crate you see a lens."
+        ]
+      },
+      "command": "open crate",
+      "id": "fw5qgebj",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "ground in rings. A crack runs across it from edge to edge."
+        ],
+        "notContains": [
+          "There is no flaw in it"
+        ]
+      },
+      "command": "examine lens",
+      "id": "pj95xcz9",
+      "type": "turn"
+    }
+  ],
+  "id": "hyx9gsuj"
+}

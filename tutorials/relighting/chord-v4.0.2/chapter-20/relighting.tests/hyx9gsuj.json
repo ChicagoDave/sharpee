@@ -1,0 +1,358 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "channels": [
+          {
+            "id": "info.title",
+            "is": "The Relighting"
+          }
+        ]
+      },
+      "id": "9wt2nz5o",
+      "type": "opening"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The Porter's Lodge"
+        ]
+      },
+      "id": "7n1exy54",
+      "type": "boot"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "There is a line of cut letters over the arch.",
+          "THE CRAFT",
+          "NEEDS A LIGHT",
+          "TO COME HOME TO"
+        ]
+      },
+      "command": "examine gate",
+      "id": "t1ir6ezf",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Taken."
+        ]
+      },
+      "command": "take lamp",
+      "id": "85586udo",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You reach for the word and find only the place where it was."
+        ]
+      },
+      "command": "light lamp",
+      "id": "2i2tlllz",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The shape of it is there, as a name is on the tip of the tongue."
+        ]
+      },
+      "command": "light lamp",
+      "id": "sla9yvhn",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Nothing comes. You would need to read it first."
+        ]
+      },
+      "command": "light lamp",
+      "id": "9xbinlqm",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You reach for the word and find only the place where it was."
+        ]
+      },
+      "command": "light lamp",
+      "id": "4ut7zia6",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Gate Court"
+        ]
+      },
+      "command": "north",
+      "id": "rp3llytc",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The Porter's Lodge",
+          "\"Gnusto on the sill,\" says Hobb"
+        ]
+      },
+      "command": "south",
+      "id": "qlih5ybj",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Gate Court"
+        ]
+      },
+      "command": "north",
+      "id": "mg6vigy0",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "\"Gnusto keeps what the dark forgets,\" Hobb remarks, to the kettle."
+        ]
+      },
+      "command": "south",
+      "id": "erhixz62",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Gate Court"
+        ]
+      },
+      "command": "north",
+      "id": "3kw5ple4",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "\"All lamp and no gnusto, some people,\" says Hobb."
+        ]
+      },
+      "command": "south",
+      "id": "63gyfyjx",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "In the oak press you see a library key."
+        ]
+      },
+      "command": "open press",
+      "id": "8k5u24mq",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You take the library key from the oak press."
+        ]
+      },
+      "command": "take key",
+      "id": "5spndjpd",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Gate Court"
+        ]
+      },
+      "command": "north",
+      "id": "i3o6ruw6",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Cloister"
+        ]
+      },
+      "command": "north",
+      "id": "am6j5quh",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Bell Stair",
+          "The cloister is south. An iron grille stands across its third step."
+        ]
+      },
+      "command": "north",
+      "id": "edhgt3xn",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Cloister"
+        ]
+      },
+      "command": "south",
+      "id": "2mfg99ff",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You unlock the library door with the library key."
+        ]
+      },
+      "command": "unlock library door with key",
+      "id": "ej6feob4",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You open the library door."
+        ]
+      },
+      "command": "open library door",
+      "id": "rx6yf6d9",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Library"
+        ]
+      },
+      "command": "west",
+      "id": "kg4w4rff",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The word for waking a flame settles into the place it left thirty years ago"
+        ]
+      },
+      "command": "read kindle page",
+      "id": "hnkdcltj",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Cloister",
+          "old timber"
+        ]
+      },
+      "command": "east",
+      "id": "3aoemn1x",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Bell Stair",
+          "A slow draught"
+        ]
+      },
+      "command": "north",
+      "id": "nwlj95gd",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The tower bell strikes once"
+        ]
+      },
+      "command": "wait",
+      "id": "jgzg1b2f",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The tower bell tolls."
+        ]
+      },
+      "command": "wait",
+      "id": "51aezoc6",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "By your count that makes 1, and it is not tired.",
+          "The bell tolls again"
+        ]
+      },
+      "command": "examine bell",
+      "id": "468gewhu",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You have stopped counting."
+        ]
+      },
+      "command": "wait",
+      "id": "ag42awg9",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "By your count that makes 3, and it is not tired."
+        ]
+      },
+      "command": "examine bell",
+      "id": "f5zaj1v2",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Cloister"
+        ]
+      },
+      "command": "south",
+      "id": "ircsny9c",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Gate Court"
+        ]
+      },
+      "command": "south",
+      "id": "hqtzmc96",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The Porter's Lodge",
+          "Hobb has his hands over his ears."
+        ],
+        "notContains": [
+          "Gnusto"
+        ]
+      },
+      "command": "south",
+      "id": "6z46erlz",
+      "type": "turn"
+    }
+  ],
+  "id": "hyx9gsuj"
+}

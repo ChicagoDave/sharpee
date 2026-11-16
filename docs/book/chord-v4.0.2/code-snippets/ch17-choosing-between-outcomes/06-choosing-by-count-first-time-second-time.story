@@ -1,0 +1,21 @@
+create the iron grille
+  aka grille
+  a thing, scenery
+  in the Bell Stair
+  states: standing, lifted
+
+  Wrought iron, floor to vault, with no lock, no latch and no hinges.
+  It was not built. It was put there.
+
+  on the player taking, pushing, pulling
+    refuse grille-fixed
+  end on
+
+  after the player examining
+    first time
+      phrase grille-memory
+    second time
+      phrase grille-cold
+    third time
+      phrase grille-enough
+  end after

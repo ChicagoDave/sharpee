@@ -1,0 +1,484 @@
+{
+  "cards": [
+    {
+      "command": "wait",
+      "id": "kymy779r",
+      "skip": true,
+      "type": "turn"
+    },
+    {
+      "command": "wait",
+      "id": "2zsld6fh",
+      "skip": true,
+      "type": "turn"
+    },
+    {
+      "command": "wait",
+      "id": "9rtgx503",
+      "skip": true,
+      "type": "turn"
+    },
+    {
+      "command": "wait",
+      "id": "o40riymh",
+      "skip": true,
+      "type": "turn"
+    },
+    {
+      "command": "wait",
+      "id": "t5sstd1s",
+      "skip": true,
+      "type": "turn"
+    },
+    {
+      "command": "wait",
+      "id": "gusnpqnv",
+      "skip": true,
+      "type": "turn"
+    },
+    {
+      "command": "wait",
+      "id": "odl0vrpw",
+      "skip": true,
+      "type": "turn"
+    },
+    {
+      "command": "wait",
+      "id": "faozm45u",
+      "skip": true,
+      "type": "turn"
+    },
+    {
+      "command": "wait",
+      "id": "kf9qz5n3",
+      "skip": true,
+      "type": "turn"
+    },
+    {
+      "command": "wait",
+      "id": "17m7hzq4",
+      "skip": true,
+      "type": "turn"
+    },
+    {
+      "command": "wait",
+      "id": "8sk5u3so",
+      "skip": true,
+      "type": "turn"
+    },
+    {
+      "command": "wait",
+      "id": "bwy57dq2",
+      "skip": true,
+      "type": "turn"
+    },
+    {
+      "command": "wait",
+      "id": "kodxx7vq",
+      "skip": true,
+      "type": "turn"
+    },
+    {
+      "command": "wait",
+      "id": "p46iehi3",
+      "skip": true,
+      "type": "turn"
+    },
+    {
+      "command": "wait",
+      "id": "aiwedrn6",
+      "skip": true,
+      "type": "turn"
+    },
+    {
+      "command": "wait",
+      "id": "ccsbd9ya",
+      "skip": true,
+      "type": "turn"
+    },
+    {
+      "command": "wait",
+      "id": "8v8kxe0t",
+      "skip": true,
+      "type": "turn"
+    },
+    {
+      "command": "wait",
+      "id": "hswah9nr",
+      "skip": true,
+      "type": "turn"
+    },
+    {
+      "command": "wait",
+      "id": "an2purfc",
+      "skip": true,
+      "type": "turn"
+    },
+    {
+      "command": "wait",
+      "id": "s4524puy",
+      "skip": true,
+      "type": "turn"
+    },
+    {
+      "command": "wait",
+      "id": "6qroe05c",
+      "skip": true,
+      "type": "turn"
+    },
+    {
+      "command": "wait",
+      "id": "nppduwgs",
+      "skip": true,
+      "type": "turn"
+    },
+    {
+      "command": "wait",
+      "id": "kk74kg8g",
+      "skip": true,
+      "type": "turn"
+    },
+    {
+      "command": "wait",
+      "id": "ohhfbxef",
+      "skip": true,
+      "type": "turn"
+    },
+    {
+      "command": "wait",
+      "id": "h31wbxs8",
+      "skip": true,
+      "type": "turn"
+    },
+    {
+      "command": "wait",
+      "id": "bosrhx8a",
+      "skip": true,
+      "type": "turn"
+    },
+    {
+      "command": "wait",
+      "id": "ilp0jqgj",
+      "skip": true,
+      "type": "turn"
+    },
+    {
+      "command": "wait",
+      "id": "d3bqlkl4",
+      "skip": true,
+      "type": "turn"
+    },
+    {
+      "command": "wait",
+      "id": "j1sosmwr",
+      "skip": true,
+      "type": "turn"
+    },
+    {
+      "command": "wait",
+      "id": "8nzvjg40",
+      "skip": true,
+      "type": "turn"
+    },
+    {
+      "command": "wait",
+      "id": "qzyg89su",
+      "skip": true,
+      "type": "turn"
+    },
+    {
+      "command": "wait",
+      "id": "xjaq06j5",
+      "skip": true,
+      "type": "turn"
+    },
+    {
+      "command": "wait",
+      "id": "em3jf4pi",
+      "skip": true,
+      "type": "turn"
+    },
+    {
+      "command": "wait",
+      "id": "nhrff5uy",
+      "skip": true,
+      "type": "turn"
+    },
+    {
+      "command": "wait",
+      "id": "ovechn1h",
+      "skip": true,
+      "type": "turn"
+    },
+    {
+      "command": "wait",
+      "id": "gv4muens",
+      "skip": true,
+      "type": "turn"
+    },
+    {
+      "command": "wait",
+      "id": "3k9dqfvs",
+      "skip": true,
+      "type": "turn"
+    },
+    {
+      "command": "wait",
+      "id": "dkua7ccv",
+      "skip": true,
+      "type": "turn"
+    },
+    {
+      "command": "wait",
+      "id": "gke73brw",
+      "skip": true,
+      "type": "turn"
+    },
+    {
+      "command": "wait",
+      "id": "sn79vy2k",
+      "skip": true,
+      "type": "turn"
+    },
+    {
+      "command": "wait",
+      "id": "aqmbdqtw",
+      "skip": true,
+      "type": "turn"
+    },
+    {
+      "command": "wait",
+      "id": "njel78jn",
+      "skip": true,
+      "type": "turn"
+    },
+    {
+      "command": "wait",
+      "id": "kz1ctiw5",
+      "skip": true,
+      "type": "turn"
+    },
+    {
+      "command": "wait",
+      "id": "787qo3ad",
+      "skip": true,
+      "type": "turn"
+    },
+    {
+      "command": "wait",
+      "id": "ohw92fh7",
+      "skip": true,
+      "type": "turn"
+    },
+    {
+      "command": "wait",
+      "id": "756r5vrh",
+      "skip": true,
+      "type": "turn"
+    },
+    {
+      "command": "wait",
+      "id": "99cvvmcj",
+      "skip": true,
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The light has turned. The shadows in the Hall have begun to lean east."
+        ]
+      },
+      "command": "wait",
+      "id": "sl0fekvv",
+      "type": "turn"
+    },
+    {
+      "command": "wait",
+      "id": "1bc8mpsx",
+      "skip": true,
+      "type": "turn"
+    },
+    {
+      "command": "wait",
+      "id": "li9xxk1f",
+      "skip": true,
+      "type": "turn"
+    },
+    {
+      "command": "wait",
+      "id": "ivwx037t",
+      "skip": true,
+      "type": "turn"
+    },
+    {
+      "command": "wait",
+      "id": "k2yw32a0",
+      "skip": true,
+      "type": "turn"
+    },
+    {
+      "command": "wait",
+      "id": "x988c18q",
+      "skip": true,
+      "type": "turn"
+    },
+    {
+      "command": "wait",
+      "id": "dvfqii0a",
+      "skip": true,
+      "type": "turn"
+    },
+    {
+      "command": "wait",
+      "id": "r07fnsac",
+      "skip": true,
+      "type": "turn"
+    },
+    {
+      "command": "wait",
+      "id": "7pnkxo65",
+      "skip": true,
+      "type": "turn"
+    },
+    {
+      "command": "wait",
+      "id": "1a5e5mm7",
+      "skip": true,
+      "type": "turn"
+    },
+    {
+      "command": "wait",
+      "id": "6ygbbgjj",
+      "skip": true,
+      "type": "turn"
+    },
+    {
+      "command": "wait",
+      "id": "d7cel6ro",
+      "skip": true,
+      "type": "turn"
+    },
+    {
+      "command": "wait",
+      "id": "emmac3h2",
+      "skip": true,
+      "type": "turn"
+    },
+    {
+      "command": "wait",
+      "id": "ppsyijp0",
+      "skip": true,
+      "type": "turn"
+    },
+    {
+      "command": "wait",
+      "id": "he2s2o43",
+      "skip": true,
+      "type": "turn"
+    },
+    {
+      "command": "wait",
+      "id": "dxqmrwn3",
+      "skip": true,
+      "type": "turn"
+    },
+    {
+      "command": "wait",
+      "id": "diw3ktqj",
+      "skip": true,
+      "type": "turn"
+    },
+    {
+      "command": "wait",
+      "id": "1xza18se",
+      "skip": true,
+      "type": "turn"
+    },
+    {
+      "command": "wait",
+      "id": "6okpg7ny",
+      "skip": true,
+      "type": "turn"
+    },
+    {
+      "command": "wait",
+      "id": "p2zanx24",
+      "skip": true,
+      "type": "turn"
+    },
+    {
+      "command": "wait",
+      "id": "lqhpn3pd",
+      "skip": true,
+      "type": "turn"
+    },
+    {
+      "command": "wait",
+      "id": "ceeas5v7",
+      "skip": true,
+      "type": "turn"
+    },
+    {
+      "command": "wait",
+      "id": "1cpqropk",
+      "skip": true,
+      "type": "turn"
+    },
+    {
+      "command": "wait",
+      "id": "bup47ii5",
+      "skip": true,
+      "type": "turn"
+    },
+    {
+      "command": "wait",
+      "id": "nx4b7pv9",
+      "skip": true,
+      "type": "turn"
+    },
+    {
+      "command": "wait",
+      "id": "fmjt8x6b",
+      "skip": true,
+      "type": "turn"
+    },
+    {
+      "command": "wait",
+      "id": "apetajj7",
+      "skip": true,
+      "type": "turn"
+    },
+    {
+      "command": "wait",
+      "id": "c67fw4ym",
+      "skip": true,
+      "type": "turn"
+    },
+    {
+      "command": "wait",
+      "id": "9samlxaq",
+      "skip": true,
+      "type": "turn"
+    },
+    {
+      "command": "wait",
+      "id": "sgszypi9",
+      "skip": true,
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Dusk comes down on Lanternhall and finds the Lantern dark."
+        ]
+      },
+      "command": "wait",
+      "ending": "night-falls",
+      "id": "87o7mll5",
+      "type": "turn"
+    }
+  ],
+  "id": "2nwk7mjg",
+  "ordinal": 1,
+  "parent": "at16uk0q"
+}
