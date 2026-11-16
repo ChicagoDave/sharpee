@@ -1,5 +1,8 @@
 # ADR-127: Location-Scoped Interceptors
 
+**Planning**: OPEN
+**Summary**: Deferred: a room intercepting any action performed inside it (Inform's `Before [action] in [Room]`). Not built in general: the lifecycle engine has an implicit actor slot and no implicit room slot, though an intransitive verb such as sleeping consults the actor's room.
+
 ## Status: PROPOSED (not yet needed)
 
 ## Date: 2026-02-09

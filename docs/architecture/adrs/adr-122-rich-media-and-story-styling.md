@@ -1,5 +1,8 @@
 # ADR-122: Rich Media and Story Styling
 
+**Planning**: OPEN
+**Summary**: Proposes inline illustrations rendered as floated images, a story `preferredTheme`, and a scoped `theme.css` inside the `.sharpee` bundle, with player preferences winning. Its `IllustrationTrait` was replaced by ADR-124 annotations. The devkit bundles `theme.css` and `preferredTheme`, but `packages/platform-browser` renders no illustrations and reads neither.
+
 ## Status: PROPOSED
 
 ## Date: 2026-01-28

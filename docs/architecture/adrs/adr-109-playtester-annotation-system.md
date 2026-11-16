@@ -1,5 +1,7 @@
 # ADR-109: Play-Tester Annotation System
 
+**Planning**: IMPLEMENTED
+**Summary**: Playtester annotations in `@sharpee/ext-testing`: `#` comment lines and `$bug`, `$note`, `$confusing`, `$expected`, `$bookmark`, `$session`, `$review` and `$export`, each stored with room, turn, score and last-command context (`packages/extensions/testing/src/annotations`). Privacy modes and tracker integrations are unbuilt.
 **Status**: Accepted (Implemented)
 **Date**: 2026-01-22
 **Implemented**: 2026-01-23

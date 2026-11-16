@@ -1,5 +1,8 @@
 # ADR-089: Pronoun and Identity System
 
+**Planning**: IMPLEMENTED
+**Summary**: Pronouns and narrative person: `PronounSet` on `ActorTrait` (`PRONOUNS`), `grammaticalNumber` on `IdentityTrait`, story-level `NarrativeSettings` (1st, 2nd or 3rd person), `{You}` and `{take}` placeholders in `lang-en-us`, and pronoun resolution only in the parser's `PronounContextManager`. Per-actor voice is amended by ADR-328 D4.
+
 ## Status
 ACCEPTED (Phases A-D implemented 2026-01-05, Part 4 corrected 2026-01-16)
 

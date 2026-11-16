@@ -1,5 +1,8 @@
 # ADR-141: Character Model
 
+**Planning**: IMPLEMENTED
+**Summary**: NPC depth lives in an opt-in `CharacterModelTrait` (personality, disposition, mood, threat, cognitive profile, knowledge, beliefs, goals), authored in words through the `@sharpee/character` builder, with named predicates over that state; one model drives conversation and every other behavior. Built in `world-model/src/traits/character-model` and `packages/character`.
+
 ## Status: DRAFT
 
 ## Date: 2026-04-03

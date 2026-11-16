@@ -1,5 +1,7 @@
 # ADR-083: Spirit PC Paradigm - Non-Physical Player Character
 
+**Planning**: OPEN
+**Summary**: Proposes a spirit player character for the story "Aspect of God": physical verbs blocked, spirit verbs (COMFORT, EVOKE, APPARATE), a `spiritualAvailability` trait, emotion and memory state on NPCs, and a `considering X, do Y` grammar. None of it is in `packages/` or `stories/`.
 **Status:** Proposed
 **Date:** 2026-01-01
 **Story:** Aspect of God

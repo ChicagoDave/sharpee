@@ -1,5 +1,7 @@
 # ADR-131: Automated World Explorer (Regression Test Generator)
 
+**Planning**: ABANDONED
+**Summary**: A breadth-first bot that visits every room, probes every entity and description noun, and diffs the output against a golden baseline (`--explore`). Unbuilt, and superseded in part by ADR-321, whose static Map, Reach and Incomplete views are `packages/world-index`; reachability work is ADR-322. Its own header says not to build from it as written.
 **Status:** **SUPERSEDED IN PART** by
 [ADR-321](adr-321-world-index.md) (2026-08-19, session 317706) — and still **unbuilt**:
 nothing in `packages/` or `repokit` implements it.

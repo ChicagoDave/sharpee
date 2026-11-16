@@ -1,5 +1,8 @@
 # ADR-126: Destination Interceptors for Room Entry Conditions
 
+**Planning**: IMPLEMENTED
+**Summary**: The going action consults interceptors on the destination room under `if.action.entering_room` as well as on the source room under `if.action.going`, so a room can refuse or react to entry (Dungeo's Gas Room). It covers the going action only: story code that moves the player with `world.moveEntity()` handles its own entry conditions.
+
 ## Status: IMPLEMENTED
 
 ## Date: 2026-02-09

@@ -1,5 +1,8 @@
 # ADR-103: Choice-Based Story Architecture
 
+**Planning**: OPEN
+**Summary**: Proposes choice-based stories: a typed passage and choice model (`defineNarrativeStory`), a simulation mode over the world model, `.narrative-test` files, and static-analysis and reachability commands. None of it exists in `packages/`, `stories/` or `tools/`.
+
 ## Status
 
 Proposed

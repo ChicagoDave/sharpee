@@ -1,5 +1,8 @@
 # ADR-096: Text Service Architecture
 
+**Planning**: ABANDONED
+**Summary**: A single `@sharpee/text-service` turning a turn's events into `ITextBlock[]`, with prose sorting and a CLI renderer; the package is removed and the record is superseded by ADR-174. Turn-end rendering is the engine's prose pipeline; `@sharpee/text-blocks` and the `ITextBlock` shape survive.
+
 ## Status: SUPERSEDED by ADR-174
 
 The `@sharpee/text-service` package described here has been **removed**. Turn-end

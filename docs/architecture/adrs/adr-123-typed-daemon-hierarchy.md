@@ -1,5 +1,8 @@
 # ADR-123: Typed Daemon Hierarchy
 
+**Planning**: IMPLEMENTED
+**Summary**: Daemons persist internal state across save and restore through optional `getRunnerState()` and `restoreRunnerState()` hooks on the `Daemon` interface (`packages/plugin-scheduler`). The `DaemonRunner` class hierarchy (watchdog, location, ambience, countdown) was built, reverted and rejected: daemons stay factory functions.
+
 ## Status: PARTIALLY ACCEPTED (Serialization adopted, class hierarchy rejected)
 
 ## Implementation Notes (2026-01-29)

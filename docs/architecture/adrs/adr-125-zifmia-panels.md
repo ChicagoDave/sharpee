@@ -1,5 +1,8 @@
 # ADR-125: Zifmia Panel and Windowing System
 
+**Planning**: ABANDONED
+**Summary**: A panel and windowing model for the Zifmia client: stories declare named panels (transcript, grid, image, status) arranged by CSS Grid, with annotations routing content to them. Never built, and the Zifmia product line was retired 2026-08-13; no `initializeUI` or panel declaration exists in `packages/`.
+
 ## Status: PROPOSED
 
 > **RETIRED 2026-08-13 (session 756ff6).** The zifmia product line is retired —

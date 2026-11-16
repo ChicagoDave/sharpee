@@ -1,5 +1,8 @@
 # ADR-100: Screen Reader Accessibility
 
+**Planning**: OPEN
+**Summary**: The standard web client is to be screen-reader accessible by default, with no separate mode: a `role="log"` live transcript, a labelled command input, a `role="status"` status line, semantic layout and focus-trapped dialogs. Written against the Zifmia client, since retired; `packages/platform-browser` sets `aria-live` only on its notify region.
+
 ## Status: ACCEPTED
 
 ## Date: 2026-01-13 (identified), 2026-02-18 (accepted with implementation plan)

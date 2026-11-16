@@ -1,5 +1,8 @@
 # ADR-115: Map Export CLI
 
+**Planning**: ABANDONED
+**Summary**: A `sharpee map-export` CLI (JSON, Trizbort, DOT, YAML) with declarative `ConnectionMetadata` on exits; closed 2026-07-14 and not built. Map tooling belongs to the IDE (ADR-154), and conditional exits are ADR-220's `when` guard and computed `destination`.
+
 ## Status: CLOSED (2026-07-14) — map tooling moves into SharpeeIDE (ADR-154); exit-condition metadata subsumed by ADR-220
 
 ## Supersedes: ADR-113 (Map Position Hints)

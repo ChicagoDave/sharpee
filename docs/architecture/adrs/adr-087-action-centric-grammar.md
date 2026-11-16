@@ -1,5 +1,8 @@
 # ADR-087: Action-Centric Grammar with Verb Aliases
 
+**Planning**: ABANDONED
+**Summary**: An action-centric grammar builder (`forAction().verbs().pattern()`, `.directions()`) that generated one pattern per verb alias; built, then retired by ADR-382 D2. The standard grammar is Chord source registered through `GrammarBuilder.rule(spec)`, and no `forAction` remains in `packages/`.
+
 ## Status
 ACCEPTED (Implemented)
 

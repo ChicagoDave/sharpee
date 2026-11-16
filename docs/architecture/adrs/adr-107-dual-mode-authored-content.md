@@ -1,5 +1,8 @@
 # ADR-107: Dual-Mode Authored Content
 
+**Planning**: IMPLEMENTED
+**Summary**: Authored text is either literal or a message id resolved at render time, with the id taking precedence: `nameId` and `descriptionId` on `IdentityTrait`, `initialDescriptionId` on `RoomTrait`. World-model stores ids and never depends on the language provider.
+
 ## Status: ACCEPTED — IMPLEMENTED
 
 > Status amended 2026-07-09: this ADR sat at PROPOSED long after its surface

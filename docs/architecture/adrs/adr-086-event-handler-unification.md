@@ -1,5 +1,8 @@
 # ADR-086: Event Handler Unification
 
+**Planning**: IMPLEMENTED
+**Summary**: Handlers registered with `world.registerEventHandler()` run because the engine wires the world's handlers into the event processor (`world.connectEventProcessor`, called at `game-engine.ts:469`; the record calls it `wireHandlersToEventProcessor`). Stories register on the world, not on the processor.
+
 ## Status
 
 Proposed

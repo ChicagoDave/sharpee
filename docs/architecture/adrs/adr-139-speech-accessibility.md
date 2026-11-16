@@ -1,5 +1,8 @@
 # ADR-139: Speech Accessibility (Text-to-Speech and Voice Input)
 
+**Planning**: OPEN
+**Summary**: Proposes client-side speech: text-to-speech that reads output by block type and coordinates with screen readers, and voice input that submits transcribed commands through the normal parser path, with no story changes. Not built: there is no `SpeechManager` and no use of the Web Speech API in `packages/`.
+
 ## Status: PROPOSED
 
 ## Date: 2026-04-01

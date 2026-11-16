@@ -1,5 +1,8 @@
 # ADR-105: JavaScript Browser Client
 
+**Planning**: ABANDONED
+**Summary**: A per-story browser entry point and bundle script (`browser-entry.ts`, `scripts/bundle-browser.sh`); superseded by ADR-114's shared `@sharpee/platform-browser` package.
+
 ## Status: SUPERSEDED by [ADR-114](adr-114-browser-platform-package.md)
 
 ## Date: 2026-01-16

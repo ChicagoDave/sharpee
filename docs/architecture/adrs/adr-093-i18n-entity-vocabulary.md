@@ -1,5 +1,8 @@
 # ADR-093: Entity Vocabulary and Adjective Disambiguation
 
+**Planning**: IMPLEMENTED
+**Summary**: Entities may declare `IdentityTrait.adjectives` for disambiguation (`press yellow button`). The field stays supported but is redundant: name and alias words already count as modifiers in world-model's noun matcher (`vocabularyOf`, ADR-385). The language-agnostic vocabulary redesign (Phase 2) is deferred and unbuilt.
+
 ## Status: IMPLEMENTED (Phase 1) / DEFERRED (Phase 2) — Phase 1 SUPERSEDED IN PRACTICE
 
 ## Date: 2026-01-12

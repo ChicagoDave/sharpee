@@ -1,5 +1,8 @@
 # ADR-090: Entity-Centric Action Dispatch via Trait Capabilities
 
+**Planning**: IMPLEMENTED
+**Summary**: Capability dispatch: a trait declares `static capabilities` (action ids), a `CapabilityBehavior` supplies validate, execute, report and blocked, and verbs with no standard semantics (lowering, raising and the like) dispatch to it, with one grammar pattern per verb. Lives in `packages/world-model/src/capabilities`; registration is per world since ADR-207.
+
 ## Status: ACCEPTED
 
 ## Date: 2026-01-05

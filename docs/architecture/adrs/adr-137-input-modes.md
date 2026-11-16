@@ -1,5 +1,8 @@
 # ADR-137: Input Modes
 
+**Planning**: IMPLEMENTED
+**Summary**: While an alternate input mode is active, the engine hands the raw line to a handler registered by mode id and lets it decide whether the turn advances (`engine/src/turn/input-mode.ts`). The prompt is world state (`world.getPrompt()` / `setPrompt()`, `GamePrompt` in `if-domain`) emitted as a prompt block each turn. The `InputMode` interface and its push/pop mode stack are deferred and unbuilt.
+
 ## Status
 
 Accepted (partial implementation — GamePrompt and platform consumption complete; full InputMode interface deferred)

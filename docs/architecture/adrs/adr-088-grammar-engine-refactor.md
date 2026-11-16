@@ -1,5 +1,8 @@
 # ADR-088: Grammar Engine Refactoring
 
+**Planning**: IMPLEMENTED
+**Summary**: Slot consumption is a strategy registry: one consumer per slot family under `packages/parser-en-us/src/slot-consumers/` (entity, text, typed, vocabulary), dispatched from `english-grammar-engine.ts`. A new slot type registers a consumer instead of growing the engine.
+
 ## Status
 ACCEPTED (Partially Implemented)
 

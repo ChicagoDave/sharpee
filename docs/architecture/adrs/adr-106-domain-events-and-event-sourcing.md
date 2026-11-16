@@ -1,5 +1,8 @@
 # ADR-106: Domain Events and Event Sourcing
 
+**Planning**: IMPLEMENTED
+**Summary**: `if.event.*` domain events are past-tense records of completed actions, written to one of three event sources (game, debug, platform) and read at turn end for rendering; event handlers are a separate, optional way to react. A terminology and mental-model rule with no code of its own; its `game.message` override path is narrowed by ADR-296 D4.
+
 ## Status
 Accepted (January 2026)
 

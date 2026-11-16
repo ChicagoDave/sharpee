@@ -1,5 +1,8 @@
 # ADR-128: Walkthrough Panel for Zifmia
 
+**Planning**: ABANDONED
+**Summary**: A walkthrough panel for the Zifmia client: step, rewind, fast-forward and branch through a `.transcript`, with world snapshots and visible assertions. Never built, and the Zifmia product line was retired 2026-08-13.
+
 ## Status: PROPOSED
 
 > **RETIRED 2026-08-13 (session 756ff6).** The zifmia product line is retired —

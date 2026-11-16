@@ -1,5 +1,7 @@
 # ADR-082: Context-Aware Vocabulary and Extended Grammar Slots
 
+**Planning**: IMPLEMENTED
+**Summary**: Grammar slots beyond entity and text: NUMBER, ORDINAL, TIME, DIRECTION, MANNER, QUOTED_TEXT, TOPIC, and story-defined vocabulary categories with a context predicate (`.fromVocabulary()`, `world.getGrammarVocabularyProvider()`). Built in `if-domain` and `world-model`; no story calls `.fromVocabulary()`.
 **Status:** Revised (incorporating context-aware design)
 **Date:** 2026-01-01 (revised)
 **Deciders:** ChicagoDave, Claude

@@ -1,5 +1,8 @@
 # ADR-145: NPC Goal Pursuit
 
+**Planning**: IMPLEMENTED
+**Summary**: An NPC's goal activates on the rising edge of a character-state condition and runs an authored step sequence (seek, acquire, waitFor, moveTo, act, say, give, drop), one step per turn, with interruption, priority and author-defined movement knowledge; nothing is planned by the engine. Built in `packages/character/src/goals`.
+
 ## Status: DRAFT
 
 ## Date: 2026-04-05

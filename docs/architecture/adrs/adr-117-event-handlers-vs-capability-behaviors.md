@@ -1,5 +1,8 @@
 # ADR-117: Eliminate Broad Use of Event Handlers
 
+**Planning**: IMPLEMENTED
+**Summary**: Entity-specific reactions belong in capability behaviors or interceptors, time-based ones in daemons and fuses, NPC reactions in the actor phase; new code adds no `registerEventHandler` handlers, though the API stays. The read-only `Extension` observer interface and registry it drafts were not built, and Dungeo still has 28 files under `handlers/` and 12 `registerEventHandler` calls.
+
 ## Status: ACCEPTED
 
 ## Date: 2026-01-26

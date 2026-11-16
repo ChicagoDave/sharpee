@@ -1,5 +1,8 @@
 # ADR-104: Implicit Inference and Implicit Actions
 
+**Planning**: IMPLEMENTED
+**Summary**: When a pronoun resolves to a target that fails an action's `targetRequirements`, the one in-scope entity that meets them is inferred (`stdlib/src/inference`); actions needing a held object call `context.requireCarriedOrImplicitTake()` themselves. Both can be turned off per story (`StoryConfig.implicitActions`), per action, or by `SceneryTrait`.
+
 ## Status
 ACCEPTED (All phases implemented)
 

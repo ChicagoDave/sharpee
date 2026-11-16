@@ -1,5 +1,8 @@
 # ADR-111: Extension Ecosystem
 
+**Planning**: OPEN
+**Summary**: Drafts a public extension ecosystem: npm distribution with a sharpee.net catalog, `@sharpee/ext-*` and `sharpee-ext-*` naming, a `sharpee` manifest block declaring capabilities, four verification tiers, and `init-extension`, `verify` and `register` CLI commands. None of the tooling or the manifest exists in `packages/` or `tools/`.
+
 ## Status: Draft
 
 ## Context

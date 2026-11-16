@@ -1,5 +1,7 @@
 # ADR-134: Generic IF Transcript Tester
 
+**Planning**: IGNORE
+**Summary**: An exploratory note on extracting the transcript tester into an engine-agnostic tool with adapters for Inform and TADS interpreters. It records that no implementation is planned and decides nothing; the control-flow directives it sells were since removed (ADR-294 D4).
 **Status:** Exploratory
 **Date:** 2026-03-05
 **Context:** Could Sharpee's transcript tester be extracted into a standalone tool for any IF engine?

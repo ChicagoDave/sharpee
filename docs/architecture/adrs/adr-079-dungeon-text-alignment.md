@@ -1,5 +1,8 @@
 # ADR-079: Dungeon Text Alignment
 
+**Planning**: IMPLEMENTED
+**Summary**: Dungeo's room, object, action and puzzle text follows the original game's wording, with the source cited in comments; `stories/dungeo/src` cites both the FORTRAN and the MDL source. The gitignored `docs/dungeon-ref/` reference files it names are not in the repository.
+
 ## Status
 Accepted
 

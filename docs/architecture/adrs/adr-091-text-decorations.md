@@ -1,5 +1,8 @@
 # ADR-091: Text Decorations in Message Templates
 
+**Planning**: ABANDONED
+**Summary**: Template decoration markup, `[type:content]` plus `*emphasis*` and `**strong**`, producing an `IDecoration { type, content }` tree; superseded by ADR-174. The bracket form survives in `engine/src/prose-pipeline/decorations`, but it resolves to a CSS `className` (`sharpee-` prefix) instead of a `type`, and the parser has no asterisk emphasis.
+
 ## Status: ACCEPTED
 
 ## Date: 2026-01-06 (Proposed), 2026-01-13 (Accepted)

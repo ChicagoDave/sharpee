@@ -1,5 +1,8 @@
 # ADR-092: Smart Transcript Directives
 
+**Planning**: ABANDONED
+**Summary**: Control-flow directives for adaptive transcripts (`[REQUIRES]`, `[ENSURES]`, `[IF]`, `[WHILE]`, `[NAVIGATE TO]`, inside `[GOAL]` segments); built, then removed by ADR-294 D4. The transcript parser rejects each removed form by name, and transcripts are fixed command lists at a pinned seed.
+
 ## Status
 Accepted
 

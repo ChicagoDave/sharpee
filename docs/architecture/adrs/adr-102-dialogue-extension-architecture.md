@@ -1,5 +1,8 @@
 # ADR-102: Dialogue Extension Architecture
 
+**Planning**: OPEN
+**Summary**: Proposes that stdlib's ASK, TELL, SAY and TALK TO be thin shells delegating to one story-registered `DialogueExtension`. `world.registerDialogueExtension` was never built: those actions consult the dialogue selector for character-modeled NPCs (ADR-310 D15, ADR-320), and the `DialogueExtension` type survives only in `packages/character`.
+
 ## Status
 
 Proposed

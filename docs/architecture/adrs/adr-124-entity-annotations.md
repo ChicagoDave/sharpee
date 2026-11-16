@@ -1,5 +1,8 @@
 # ADR-124: Entity Annotations
 
+**Planning**: IMPLEMENTED
+**Summary**: Presentation metadata lives in entity annotations, not traits: `entity.annotate(kind, data, condition?)` and `getActiveAnnotations()` in world-model, several per kind, with pure-data conditions. Looking and examining emit `if.event.illustrated` through `stdlib/src/actions/helpers/emit-illustrations.ts`. Only `illustration` is built, and no current client renders the event.
+
 ## Status: PROPOSED
 
 ## Date: 2026-01-30

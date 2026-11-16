@@ -1,5 +1,8 @@
 # ADR-136: Context-Driven Action Menus
 
+**Planning**: OPEN
+**Summary**: The engine computes each turn's available commands from grammar rules, scope and traits and sends them to the client as `ContextAction`s, with `action-hint` and `action-suppress` annotations for author overrides. Deferred: built on the remote branch `adr-136-context-actions`, with none of it in `packages/` on main.
+
 ## Status
 
 Deferred

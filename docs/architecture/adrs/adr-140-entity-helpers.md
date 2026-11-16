@@ -1,5 +1,8 @@
 # ADR-140: Entity Helper Builders
 
+**Planning**: IMPLEMENTED
+**Summary**: `@sharpee/helpers` gives authors fluent room, object, container, actor and door builders through `createHelpers(world)`, the only entry form since Amendment 1 removed the `world.helpers()` prototype patch; `AuthorModel` implements `IWorldModel` so `.skipValidation()` can swap it in. Author-facing only: no platform package may depend on it (ADR-237 D1).
+
 ## Status: ACCEPTED
 
 ## Date: 2026-04-03

@@ -1,5 +1,8 @@
 # ADR-121: Story Runner Architecture
 
+**Planning**: IMPLEMENTED
+**Summary**: A story ships as a `.sharpee` zip (`story.js`, `meta.json`, optional `theme.css` and `assets/`) holding story code only, with the platform supplied by the host; built by `packages/devkit/src/standalone/build.ts`. The Tauri desktop runner it proposed is archived (`packages/_archive/interpreter`).
+
 ## Status: PROPOSED
 
 ## Date: 2026-01-28

@@ -1,5 +1,8 @@
 # ADR-095: Message Templates with Formatters
 
+**Planning**: ABANDONED
+**Summary**: Modifier-prefix formatters in message templates (`{a:items:list}`, `{the:item}`, `registerFormatter`); built, then removed by ADR-192, where article, list and verb realization moved into the phrase pipeline. `getMessage` now does plain `{key}` substitution only. The `nounType` field it added to `IdentityTrait` remains.
+
 ## Status: ACCEPTED
 
 ## Date: 2026-01-12 (Draft), 2026-01-13 (Accepted)

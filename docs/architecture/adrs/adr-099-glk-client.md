@@ -1,5 +1,8 @@
 # ADR-099: GLK Client
 
+**Planning**: IGNORE
+**Summary**: Names GLK support (Gargoyle, Lectrote, GlkOte) as a future goal and lists open questions; it says it does not design the implementation, and it decides nothing. No GLK code exists in `packages/`.
+
 ## Status: IDENTIFIED
 
 ## Date: 2026-01-13

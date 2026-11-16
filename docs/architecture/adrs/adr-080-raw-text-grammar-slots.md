@@ -1,5 +1,7 @@
 # ADR-080: Grammar Enhancements for Classic IF Patterns
 
+**Planning**: IMPLEMENTED
+**Summary**: Grammar supports raw-text slots (`.text()`, `:slot...`), `all`, `all but` and `and` lists, period-and-comma command chaining (`EnglishParser.parseChain`), and `.instrument()` slots; reaches the `if-domain` grammar builder, `parser-en-us` and `IParsedCommand`.
 **Status**: Complete
 **Date**: 2025-12-31
 **Context**: Dungeo implementation revealing gaps in grammar coverage

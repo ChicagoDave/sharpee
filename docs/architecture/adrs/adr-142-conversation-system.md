@@ -1,5 +1,8 @@
 # ADR-142: Conversation System
 
+**Planning**: ABANDONED
+**Summary**: Constraint-based response selection over character state, topic resolution, conversation lifecycle with intent and strength, confrontation and history tracking; superseded by ADR-320, which keeps its two principles (conversation as a projection of character state; nothing the author did not write) and replaces its pre-Chord builder mechanisms.
+
 ## Status: SUPERSEDED by ADR-320 (2026-08-16)
 
 ADR-320 (conversation and complex dialogue) absorbs this ADR: its two principles —

@@ -1,5 +1,7 @@
 # ADR-081: npm Release Strategy
 
+**Planning**: IMPLEMENTED
+**Summary**: Packages publish to npm under the `@sharpee` scope at one synchronized version, with `@sharpee/sharpee` as the umbrella; that holds. The changesets, per-package esbuild bundles and tag-triggered workflow it describes were not built: releases run through `tsf` and `.github/workflows/publish-npm.yml`.
 **Status:** Proposed
 **Date:** 2025-12-31
 **Builds on:** ADR-077 (Release Build System)

@@ -1,5 +1,7 @@
 # ADR-082: Typed Event System
 
+**Planning**: IMPLEMENTED
+**Summary**: Event payloads are typed through `EventDataRegistry` in `packages/core/src/events`, extended by declaration merging from stdlib and stories, with `createTypedEvent`, `isEventType` and `getEventData`; a new event type needs a registry entry.
 **Status:** Accepted
 **Date:** 2026-01-01
 **Implemented:** 2026-01-01

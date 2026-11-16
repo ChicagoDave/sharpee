@@ -1,5 +1,7 @@
 # ADR-077: Release Build System
 
+**Planning**: IGNORE
+**Summary**: Research notes on a release build (bundler options, package layouts, versioning, distribution channels) with open questions and no decision; the build that shipped is `./repokit build` and the `Publish to npm` workflow.
 **Status:** Research
 **Date:** 2025-12-30
 

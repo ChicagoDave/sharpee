@@ -1,5 +1,8 @@
 # ADR-097: React Client Architecture
 
+**Planning**: ABANDONED
+**Summary**: A `@sharpee/client-react` package rendering `ITextBlock[]` with React components (`<Game>`, `<StatusBar>`, `<Transcript>`, `<CommandInput>`); no such package exists. The React client was Zifmia, now archived under `tools/_archive/zifmia`, and the live web client is the framework-free `packages/platform-browser`.
+
 ## Status: ACCEPTED
 
 ## Date: 2026-01-13

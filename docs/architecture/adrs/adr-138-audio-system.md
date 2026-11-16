@@ -1,5 +1,8 @@
 # ADR-138: Audio System
 
+**Planning**: IMPLEMENTED
+**Summary**: Audio is story-emitted `audio.*` events (sfx, music, ambient, procedural, effect) typed in `@sharpee/media`, with all sound design registered in one `AudioRegistry`; the client renders them (`platform-browser/src/audio/AudioManager.ts`) and owns mixing, player preferences and autoplay. The `speech/` and `visual/` type folders it reserves in `@sharpee/media` do not exist.
+
 ## Status: PROPOSED
 
 ## Date: 2026-04-01

@@ -1,5 +1,8 @@
 # ADR-116: Prompt-to-Playable (Conversational Story Development)
 
+**Planning**: OPEN
+**Summary**: Proposes `sharpee spec`: an AI-guided conversation that builds a structured Markdown story spec (the AI never writes player-facing prose), versioned and branchable, compiled to Sharpee TypeScript and playable at once. None of it is built: `packages/devkit` has no `spec` command, and `docs/templates/story-spec-template.md` is absent.
+
 ## Status: Proposed
 
 ## Context

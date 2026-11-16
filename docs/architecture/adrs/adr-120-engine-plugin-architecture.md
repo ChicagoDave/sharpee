@@ -1,5 +1,8 @@
 # ADR-120: Engine Plugin Architecture
 
+**Planning**: IMPLEMENTED
+**Summary**: After each successful action the engine runs registered `TurnPlugin`s (`@sharpee/plugins`: `TurnPlugin`, `PluginRegistry`, `TurnPluginContext`) and saves their state by id; the scheduler and state machines are plugins. The NPC plugin dissolved into an engine-owned actor phase (ADR-328), and priorities are named bands (`packages/plugins/src/turn-bands.ts`, ADR-332).
+
 ## Status: PROPOSED
 
 ## Date: 2026-01-27

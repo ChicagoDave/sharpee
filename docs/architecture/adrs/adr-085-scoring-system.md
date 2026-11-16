@@ -1,5 +1,8 @@
 # ADR-085: Event-Based Scoring System
 
+**Planning**: ABANDONED
+**Summary**: Event-based scoring through a stdlib `ScoringService`, a `scoring` capability and `if.event.score_gained` / `score_lost`; built, then replaced by ADR-129, where `world.awardScore()` and the world model's `ScoreLedger` hold scoring. Only the two event-name constants remain, in `if-domain`.
+
 ## Status
 
 Accepted (Implemented 2026-01-04)

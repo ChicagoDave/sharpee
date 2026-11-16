@@ -1,5 +1,8 @@
 # ADR-118: Stdlib Action Interceptors
 
+**Planning**: IMPLEMENTED
+**Summary**: Standard actions consult entity interceptors (`preValidate`, `postValidate`, `postExecute`, `postReport`, `onBlocked`) registered per trait and action on the world (`registerActionInterceptor`). Amendment 1: every binding on an entity is consulted (`getInterceptorsForAction`), own clauses before composed traits, with `priority` and Chord's `, before` / `, after` overriding. Refined by ADR-228's lifecycle engine.
+
 ## Status: ACCEPTED
 
 ## Date: 2026-01-26

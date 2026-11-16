@@ -1,5 +1,8 @@
 # ADR-133: Structured Text Output
 
+**Planning**: IMPLEMENTED
+**Summary**: The engine delivers `ITextBlock[]` with keys intact and never flattens a turn to a string: `text:output` carries blocks, and `renderToString` no longer exists in `packages/engine` or `packages/text-blocks`. Clients now receive those blocks inside channel packets (ADR-163).
+
 ## Status
 Proposed
 

@@ -1,5 +1,8 @@
 # ADR-108: Player Character System
 
+**Planning**: ABANDONED
+**Summary**: Proposed a `PlayerTrait`, a `createDefaultPlayer` factory and `world.setCurrentPlayer()` so a story can switch protagonists, with inactive ones running as NPCs. None of those names exist: the player is a role flag on an actor (`isPlayer`, `isPlayable`), set with `world.setPlayer()` and moved with `world.changePlayer()` (ADR-344, ADR-390).
+
 ## Status: PROPOSED
 
 ## Date: 2026-01-21

@@ -1,5 +1,8 @@
 # ADR-130: Zifmia vs Story Installers — Two Separate Products
 
+**Planning**: ABANDONED
+**Summary**: Two Tauri products: Zifmia as a generic `.sharpee` runner, and per-story branded installers built by `sharpee build --installer`. Neither exists: Zifmia and the Tauri runner were retired 2026-08-13, and devkit has no `--installer`.
+
 ## Status: PROPOSED
 
 > **RETIRED 2026-08-13 (session 756ff6).** The zifmia product line is retired —

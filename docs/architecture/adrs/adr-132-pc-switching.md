@@ -1,5 +1,8 @@
 # ADR-132: Player Character Switching
 
+**Planning**: IMPLEMENTED
+**Summary**: `engine.switchPlayer(entityId)` moves the player role to another playable actor between turns, re-syncs the engine's derived player state and emits a pc-switched event; story code positions the new character first. The role write itself is `world.changePlayer()` since ADR-390, which retired the three unsynchronized layers this record describes.
+
 ## Status
 Accepted
 

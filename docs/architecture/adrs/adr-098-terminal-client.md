@@ -1,5 +1,8 @@
 # ADR-098: Terminal Client Architecture
 
+**Planning**: OPEN
+**Summary**: Proposes `@sharpee/client-terminal`, a neo-blessed terminal UI (status bar, scrolling transcript, input line, history, meta commands) consuming `ITextBlock[]`. Not built: there is no such package and no blessed dependency. Terminal play today is `dist/cli/sharpee.js --play`.
+
 ## Status: PROPOSED
 
 ## Date: 2026-01-14

@@ -1,5 +1,8 @@
 # ADR-101: Graphical Client Architecture
 
+**Planning**: ABANDONED
+**Summary**: Author-controlled media through standalone `media.*` events with client capability negotiation; never implemented. Superseded by channel I/O: the record names ADR-164, whose "Channel I/O Everywhere" content was absorbed into ADR-163 (section 9), which keeps the principle (the author decides, the client renders) and delivers media as channel emissions.
+
 ## Status
 
 SUPERSEDED

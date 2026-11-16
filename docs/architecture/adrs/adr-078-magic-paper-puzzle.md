@@ -1,5 +1,8 @@
 # ADR-078: Magic Paper Puzzle (Thief's Painting)
 
+**Planning**: IMPLEMENTED
+**Summary**: Dungeo's ghost-ritual puzzle: killing the thief spawns an empty frame and raises the max score from 616 to 650; burning incense, praying and dropping the frame piece in the Basin Room puts the canvas in the Gallery. Built in `stories/dungeo/src` (ghost-ritual interceptor, `BasinRoomTrait`); the "Master of Secrets" rank is not in the source.
+
 ## Status
 
 Draft

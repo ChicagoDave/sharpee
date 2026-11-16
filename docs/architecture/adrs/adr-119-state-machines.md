@@ -1,5 +1,8 @@
 # ADR-119: State Machines for Puzzles and Narratives
 
+**Planning**: IMPLEMENTED
+**Summary**: Declarative state machines for puzzles and narrative arcs: states, action, event and condition triggers, guards, effects, `$role` bindings and per-instance save and restore, run by `@sharpee/plugin-state-machine` after each successful action. States are flat; hierarchical states and cross-machine arbitration are future work. The Chord surface is ADR-215.
+
 ## Status: IMPLEMENTED (core) — 2026-07-14 (corrected from stale `PROPOSED`)
 
 > **Status corrected 2026-07-14 (David).** The header read `PROPOSED` long after

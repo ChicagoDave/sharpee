@@ -1,5 +1,8 @@
 # ADR-129: Transactional Score Ledger and Treasure Scoring Split
 
+**Planning**: IMPLEMENTED
+**Summary**: Scoring is a ledger on the world model: `world.awardScore(id, points, description)` deduplicated by id, with `revokeScore`, `hasScore`, `getScore` and `setMaxScore`. The taking action awards `IdentityTrait.points`; `TreasureTrait` and trophy-case scoring are Dungeo story code. The stdlib `ScoringService` and the platform `TreasureTrait` are gone.
+
 ## Status: ACCEPTED (implemented; status corrected 2026-07-14)
 
 > Status-line correction, 2026-07-14 (story-ts proposal review): this ADR

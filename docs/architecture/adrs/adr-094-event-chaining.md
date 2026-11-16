@@ -1,5 +1,8 @@
 # ADR-094: Event Chaining
 
+**Planning**: IMPLEMENTED
+**Summary**: `world.chainEvent(trigger, handler, options)` lets a handler return follow-on events, processed after their trigger, with cascade, override and keyed registration; it is the runtime substrate for Chord event responses. Ordering is positional plus a declared narrative slot (ADR-296); the `chainDepth` prose sort this record specified was retired.
+
 ## Status: Accepted — **Amended A1** (2026-08-02, session f081ec): implementation reality recorded fourteen months on — the chaining mechanism and its positional ordering rule are load-bearing and unchanged; the metadata-based *re-ordering* layer (§Event Metadata's `transactionId` grouping and the prose-side `chainDepth` sort) was never completed and never carried the ordering, and its retirement is proposed by ADR-296 (DRAFT). See Amendment A1 at the end of this document.
 
 ## Context

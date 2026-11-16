@@ -1,5 +1,8 @@
 # ADR-110: Debug & Testing Tools Extension
 
+**Planning**: IMPLEMENTED
+**Summary**: `@sharpee/ext-testing` (`packages/extensions/testing`) supplies GDT-style debug commands with a `$` test syntax (teleport, take, move, remove, kill, immortal, display commands), wired into transcript-tester. `$save` and `$restore` are transcript-tester directives over the engine's save seam; the extension's checkpoint store is deleted, and `.walkthrough` files, walkthrough directives and `$assert` were never built.
+
 Date: 2026-01-22
 Implemented: 2026-01-23
 

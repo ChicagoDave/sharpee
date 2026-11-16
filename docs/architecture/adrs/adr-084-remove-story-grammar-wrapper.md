@@ -1,5 +1,8 @@
 # ADR-084: Remove StoryGrammarImpl Wrapper
 
+**Planning**: IMPLEMENTED
+**Summary**: `parser.getStoryGrammar()` returns the real `GrammarBuilder`, so story grammar has every `PatternBuilder` method core grammar has; the `StoryGrammarImpl` wrapper and the `StoryGrammar` interfaces are deleted and are not to be reintroduced.
+
 ## Status
 
 Accepted (2026-01-02)

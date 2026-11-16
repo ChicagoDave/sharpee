@@ -1,5 +1,8 @@
 # ADR-112: Client Security Model
 
+**Planning**: OPEN
+**Summary**: Stories and extensions run as native JavaScript with the host's full permissions outside the browser. The decision is deferred pending research; the leading candidate is a sharpee.net build server that signs CLI and Electron story builds, with clients refusing unsigned ones. No signature verification exists in `packages/`.
+
 ## Status: Draft (Research Needed)
 
 ## Context

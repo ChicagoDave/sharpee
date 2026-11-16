@@ -1,5 +1,8 @@
 # ADR-113: Map Position Hints
 
+**Planning**: ABANDONED
+**Summary**: Author-supplied map position hints for a client auto-mapper, plus a visual map region editor; superseded by ADR-115, itself closed in favour of the IDE (ADR-154). Leftovers: the optional `mapHint` on a room exit (`roomTrait.ts`), which the going action still copies into its event data, and the `packages/map-editor` Electron app; no client reads the hints.
+
 ## Status: Superseded by ADR-115
 
 ADR-115 (Map Export CLI) takes a different approach: export rich map data to established tools like Trizbort rather than building a competing visual editor.

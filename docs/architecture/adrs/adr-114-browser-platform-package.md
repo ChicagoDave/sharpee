@@ -1,5 +1,8 @@
 # ADR-114: Browser Platform Package
 
+**Planning**: IMPLEMENTED
+**Summary**: One shared `@sharpee/platform-browser` package holds the browser runtime (`BrowserClient` and the menu, theme, save, dialog and input managers), so a story's browser entry is a few lines and no story copies UI code. Built in `packages/platform-browser`, framework-free; output now arrives through channel renderers (`src/channels`).
+
 ## Status: PROPOSED
 
 ## Date: 2026-01-24

@@ -1,5 +1,8 @@
 # ADR-143: Location-Relative Direction Vocabularies
 
+**Planning**: ABANDONED
+**Summary**: Per-region direction vocabularies (compass, naval, minimal, custom) that rename and restrict the twelve fixed directions, with the parser swapping words as the player moves; partly built, then reverted 2026-04-09 for putting English words in world-model. No `DirectionVocabularyRegistry` or vocabulary switching remains in `packages/`.
+
 ## Status: WITHDRAWN
 
 > **Reverted 2026-04-09.** Partially implemented, then removed. The implementation violated language layer separation (English strings in world-model) and no story consumed the feature. Will re-implement from scratch with proper language layer separation when a story needs it.

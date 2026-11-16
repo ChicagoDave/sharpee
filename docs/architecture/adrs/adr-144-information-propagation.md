@@ -1,5 +1,8 @@
 # ADR-144: Information Propagation
 
+**Planning**: IMPLEMENTED
+**Summary**: NPCs pass facts to one another under an authored propagation profile (tendency, audience, exclusions, pace, schedule, coloring), evaluated in the NPC turn phase, with provenance kept on every fact and visibility depending on whether the player is absent, present or concealed. Built in `packages/character/src/propagation`.
+
 ## Status: DRAFT
 
 ## Date: 2026-04-05

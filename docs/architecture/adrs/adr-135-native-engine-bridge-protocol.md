@@ -1,5 +1,8 @@
 # ADR-135: Native Engine Bridge Protocol
 
+**Planning**: ABANDONED
+**Summary**: A newline-delimited JSON protocol over stdin and stdout between a native host and the engine in a Node subprocess (`@sharpee/bridge`); retired by ADR-393 together with `@sharpee/runtime`, both archived under `packages/_archive`. A future out-of-process host is a thin transport over `@sharpee/bootstrap`.
+
 ## Status
 Accepted (implemented in `packages/bridge/`)
 
