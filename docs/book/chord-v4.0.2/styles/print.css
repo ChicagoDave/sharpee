@@ -83,7 +83,7 @@ h1:first-of-type { break-before: avoid; }
 }
 
 /* Keep boxes and code blocks from splitting awkwardly across pages. */
-.under-the-hood, pre { break-inside: avoid; }
+.under-the-hood, .from-another-system, pre { break-inside: avoid; }
 
 /* Code must never clip at the page edge (overflow-x can't scroll on paper).
    Wrap long lines, breaking inside an unbreakable token as a last resort —

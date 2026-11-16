@@ -66,6 +66,12 @@ Every rule above applies to the Chord manual, with these differences:
   the edition's pin; no existing Chord material is a source.
 - Its output files take their name from the edition's one-line `output-name`
   file, not from `the-sharpee-book-*`.
+- It has two kinds of aside. `::: under-the-hood` names the platform concept a
+  Chord line becomes, from published outputs only (no TypeScript source, no
+  ADRs). `::: from-another-system`, captioned "From another system: <subject>",
+  is the second reading track: it compares Chord with Inform 10 and TADS 3, and
+  names no other system (David, 2026-11-15). A statement about either system is
+  checked against that system's documentation, never written from memory.
 
 Verification after any prose edit:
 

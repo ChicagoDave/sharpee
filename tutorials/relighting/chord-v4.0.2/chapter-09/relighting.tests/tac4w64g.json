@@ -1,0 +1,261 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "channels": [
+          {
+            "id": "info.title",
+            "is": "The Relighting"
+          }
+        ]
+      },
+      "id": "4j3ylw92",
+      "type": "opening"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The Porter's Lodge",
+          "On the chair you see a seed cake and a cup."
+        ]
+      },
+      "id": "a9lfmw9i",
+      "type": "boot"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "a wax taper",
+          "a travelling coat (worn)"
+        ]
+      },
+      "command": "inventory",
+      "id": "ciwfghdq",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You take off the travelling coat."
+        ]
+      },
+      "command": "take off coat",
+      "id": "7e6m4ywg",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You put on the travelling coat."
+        ]
+      },
+      "command": "wear coat",
+      "id": "oaxq0qk8",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "(first taking the seed cake)",
+          "You eat some of the seed cake."
+        ]
+      },
+      "command": "eat cake",
+      "id": "9o8aqstd",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You eat the seed cake."
+        ]
+      },
+      "command": "eat cake",
+      "id": "51hj1va2",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You take the cup from the chair."
+        ]
+      },
+      "command": "take cup",
+      "id": "pl4ogcby",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The cup hits the floor and breaks."
+        ]
+      },
+      "command": "drop cup",
+      "id": "tc7ep9ml",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "In the oak press you see a library key."
+        ]
+      },
+      "command": "open press",
+      "id": "fkwvyl0z",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You take the library key from the oak press."
+        ]
+      },
+      "command": "take key",
+      "id": "jzqxz10d",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Gate Court"
+        ]
+      },
+      "command": "north",
+      "id": "28icf7mw",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Cloister"
+        ]
+      },
+      "command": "north",
+      "id": "dcwtfucm",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Refectory",
+          "each with its row of candles"
+        ]
+      },
+      "command": "east",
+      "id": "fpvfd31j",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Stubs of tallow in iron prickets"
+        ]
+      },
+      "command": "examine candles",
+      "id": "4whca6pi",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Cloister"
+        ]
+      },
+      "command": "west",
+      "id": "urhm558l",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Bell Stair"
+        ]
+      },
+      "command": "north",
+      "id": "8ckz5sae",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You pull the bell rope."
+        ]
+      },
+      "command": "pull rope",
+      "id": "ilmo4vr8",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The bell rope is fixed in place."
+        ]
+      },
+      "command": "take rope",
+      "id": "aiav8mkh",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Cloister"
+        ]
+      },
+      "command": "south",
+      "id": "wihdrbny",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You unlock the library door with the library key."
+        ]
+      },
+      "command": "unlock door with key",
+      "id": "jxkv7blq",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You open the library door."
+        ]
+      },
+      "command": "open door",
+      "id": "wwzb9aw5",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Library"
+        ]
+      },
+      "command": "west",
+      "id": "emk21ns5",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The grimoire reads:",
+          "gnusto. Came over the water as a working, they say. Meaning lost."
+        ]
+      },
+      "command": "read book",
+      "id": "cz2vcncw",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Someone has written in one margin."
+        ]
+      },
+      "command": "examine book",
+      "id": "i15zbwyv",
+      "type": "turn"
+    }
+  ],
+  "id": "tac4w64g"
+}

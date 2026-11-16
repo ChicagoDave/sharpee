@@ -1,0 +1,229 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "channels": [
+          {
+            "id": "info.title",
+            "is": "The Relighting"
+          }
+        ]
+      },
+      "id": "gfeqfbto",
+      "type": "opening"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The Porter's Lodge"
+        ]
+      },
+      "id": "2mpfx1rm",
+      "type": "boot"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The tower of Lanternhall stands over everything"
+        ]
+      },
+      "command": "examine tower",
+      "id": "8yyabqnc",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "In the oak press you see a library key."
+        ]
+      },
+      "command": "open press",
+      "id": "dc887ue1",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You take the library key from the oak press."
+        ]
+      },
+      "command": "take key",
+      "id": "iixiubzc",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Gate Court"
+        ]
+      },
+      "command": "north",
+      "id": "tp2ewajq",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The tower of Lanternhall stands over everything"
+        ]
+      },
+      "command": "examine tower",
+      "id": "tfp8p6bp",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Cloister"
+        ]
+      },
+      "command": "north",
+      "id": "m0xas2qb",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You can't see any such thing."
+        ]
+      },
+      "command": "examine tower",
+      "id": "7bty1ujy",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You unlock the library door with the library key."
+        ]
+      },
+      "command": "unlock door with key",
+      "id": "yc6rkfvi",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You open the library door."
+        ]
+      },
+      "command": "open door",
+      "id": "zycc2bps",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Library"
+        ]
+      },
+      "command": "west",
+      "id": "uos6o5o2",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Thousands of books, shelved by a system nobody alive remembers."
+        ]
+      },
+      "command": "examine shelves",
+      "id": "4ju249yd",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Stack 1",
+          "Every spine is blank."
+        ]
+      },
+      "command": "north",
+      "id": "5liqqwoj",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Thousands of books"
+        ]
+      },
+      "command": "examine books",
+      "id": "i7bqp5gk",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Stack 2",
+          "Every spine is blank."
+        ]
+      },
+      "command": "north",
+      "id": "juipolab",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Stack 3",
+          "Every spine is blank."
+        ]
+      },
+      "command": "north",
+      "id": "gy8l7x92",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You can't go that way."
+        ]
+      },
+      "command": "north",
+      "id": "e5kkr1ku",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The shelves are fixed in place."
+        ]
+      },
+      "command": "take shelves",
+      "id": "vzy30vz1",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Stack 2"
+        ]
+      },
+      "command": "south",
+      "id": "rdz41dcl",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Stack 1"
+        ]
+      },
+      "command": "south",
+      "id": "svcf3ytb",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Library"
+        ]
+      },
+      "command": "south",
+      "id": "89ig9xgr",
+      "type": "turn"
+    }
+  ],
+  "id": "8z5fn9sv"
+}

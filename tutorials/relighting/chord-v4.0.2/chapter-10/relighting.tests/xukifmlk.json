@@ -1,0 +1,241 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "channels": [
+          {
+            "id": "info.title",
+            "is": "The Relighting"
+          }
+        ]
+      },
+      "id": "igyi4xu1",
+      "type": "opening"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The Porter's Lodge"
+        ]
+      },
+      "id": "5kudg335",
+      "type": "boot"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Gate Court"
+        ]
+      },
+      "command": "north",
+      "id": "qgv65454",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Cloister",
+          "down into the dark under the hall"
+        ]
+      },
+      "command": "north",
+      "id": "trhxyybs",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "It is pitch dark."
+        ]
+      },
+      "command": "down",
+      "id": "7ydaz69u",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "It's pitch dark, and you can't see a thing."
+        ]
+      },
+      "command": "look",
+      "id": "erjj9wxv",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You can't see any such thing."
+        ]
+      },
+      "command": "examine crate",
+      "id": "ixxmupwh",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Cloister"
+        ]
+      },
+      "command": "up",
+      "id": "46f8wi2b",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Gate Court"
+        ]
+      },
+      "command": "south",
+      "id": "eqmcd9ia",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The Porter's Lodge"
+        ]
+      },
+      "command": "south",
+      "id": "kyw32d29",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Taken."
+        ]
+      },
+      "command": "take lamp",
+      "id": "6nhatzux",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The wax taper isn't something you can light."
+        ]
+      },
+      "command": "light taper",
+      "id": "0yr272fb",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You light the hand lamp."
+        ]
+      },
+      "command": "light lamp",
+      "id": "6oew47yo",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Gate Court"
+        ]
+      },
+      "command": "north",
+      "id": "3suxhmko",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Cloister"
+        ]
+      },
+      "command": "north",
+      "id": "xv1s2jcz",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Undercroft",
+          "The air is cold and smells of stone.",
+          "You can see a crate here."
+        ]
+      },
+      "command": "down",
+      "id": "sockujxd",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "In the crate you see a lens."
+        ]
+      },
+      "command": "open crate",
+      "id": "8lo8nbx7",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You put out the hand lamp, and darkness closes in."
+        ]
+      },
+      "command": "extinguish lamp",
+      "id": "opa7bdob",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "It's pitch dark, and you can't see a thing."
+        ]
+      },
+      "command": "look",
+      "id": "zkb35buq",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You light the hand lamp, and the darkness draws back.",
+          "Undercroft"
+        ]
+      },
+      "command": "light lamp",
+      "id": "epwq4etg",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Dropped."
+        ]
+      },
+      "command": "drop lamp",
+      "id": "agga5k5n",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Cloister"
+        ]
+      },
+      "command": "up",
+      "id": "nvbu5qn5",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Undercroft",
+          "You can see a crate and a hand lamp here."
+        ]
+      },
+      "command": "down",
+      "id": "7fevef1q",
+      "type": "turn"
+    }
+  ],
+  "id": "xukifmlk"
+}

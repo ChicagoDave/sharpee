@@ -92,6 +92,28 @@ blockquote {
   border: 1px solid #d6e2ef;
 }
 
+/* ---- The "From another system" box: the second reading track, for authors
+        who already know another interactive-fiction system ---- */
+
+.from-another-system {
+  background: #fbf7ee;
+  border: 1px solid #b5852c;
+  border-left-width: 5px;
+  border-radius: 5px;
+  padding: 0.4em 1.1em 0.9em;
+  margin: 1.6em 0;
+}
+
+.from-another-system > p:first-child {
+  font-family: "Helvetica Neue", Arial, sans-serif;
+  font-weight: 700;
+  font-size: 0.82rem;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: #7e5a1d;
+  margin-bottom: 0.4em;
+}
+
 /* Part divider title pages (`::: part-page` wrapping a sword, h1.part + blurb) */
 .part-page {
   text-align: center;

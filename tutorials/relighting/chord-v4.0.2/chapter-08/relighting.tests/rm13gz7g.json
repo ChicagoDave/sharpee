@@ -1,0 +1,219 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "channels": [
+          {
+            "id": "info.title",
+            "is": "The Relighting"
+          }
+        ]
+      },
+      "id": "47xvruzk",
+      "type": "opening"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The Porter's Lodge"
+        ]
+      },
+      "id": "cor6j99s",
+      "type": "boot"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Gate Court"
+        ]
+      },
+      "command": "north",
+      "id": "wyig14t8",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Cloister",
+          "the library door west"
+        ]
+      },
+      "command": "north",
+      "id": "1pxvu7pb",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "carved with an open book whose pages have been left smooth"
+        ]
+      },
+      "command": "examine door",
+      "id": "g2s7l4r3",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The library door is locked."
+        ]
+      },
+      "command": "west",
+      "id": "4nzadp9j",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The library door is locked."
+        ]
+      },
+      "command": "open door",
+      "id": "k11696dw",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Gate Court"
+        ]
+      },
+      "command": "south",
+      "id": "qizni1gn",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The Porter's Lodge"
+        ]
+      },
+      "command": "south",
+      "id": "dlv80k6p",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You open the oak press.",
+          "In the oak press you see a library key."
+        ]
+      },
+      "command": "open press",
+      "id": "vh61bbci",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You take the library key from the oak press."
+        ]
+      },
+      "command": "take key",
+      "id": "gdtmwef1",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Gate Court"
+        ]
+      },
+      "command": "north",
+      "id": "6liq36fc",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Cloister"
+        ]
+      },
+      "command": "north",
+      "id": "0bb522z4",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The wax taper doesn't fit the library door."
+        ]
+      },
+      "command": "unlock door with taper",
+      "id": "4fh6ofk7",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You unlock the library door with the library key."
+        ]
+      },
+      "command": "unlock door with key",
+      "id": "gm0qeaz7",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The library door is closed."
+        ]
+      },
+      "command": "west",
+      "id": "d9cd62p3",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You open the library door."
+        ]
+      },
+      "command": "open door",
+      "id": "gogoyyat",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Library",
+          "On the reading desk you see a grimoire."
+        ]
+      },
+      "command": "west",
+      "id": "451ftrky",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You close the library door."
+        ]
+      },
+      "command": "close door",
+      "id": "hpi1xaw0",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You lock the library door with the library key."
+        ]
+      },
+      "command": "lock door with key",
+      "id": "odbb44xt",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The library door is locked."
+        ]
+      },
+      "command": "east",
+      "id": "t3v0321y",
+      "type": "turn"
+    }
+  ],
+  "id": "rm13gz7g"
+}

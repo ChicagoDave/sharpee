@@ -1,0 +1,288 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "channels": [
+          {
+            "id": "info.title",
+            "is": "The Relighting"
+          }
+        ]
+      },
+      "id": "ikcpb599",
+      "type": "opening"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The Porter's Lodge",
+          "You can see a kettle, a hand lamp, and Hobb here."
+        ]
+      },
+      "id": "l3zmpr4b",
+      "type": "boot"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You are carrying:",
+          "a wax taper"
+        ]
+      },
+      "command": "inventory",
+      "id": "uuaps0zk",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "its flame leaned toward your hand like a cat"
+        ]
+      },
+      "command": "examine taper",
+      "id": "sm3i1msb",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "A tin hand lamp with a wire handle."
+        ]
+      },
+      "command": "examine lamp",
+      "id": "6jqextxv",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Taken."
+        ]
+      },
+      "command": "take lamp",
+      "id": "dxgtlzrf",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The chair is fixed in place."
+        ]
+      },
+      "command": "take chair",
+      "id": "3yyqwvtb",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The bottom one reports the Dimming"
+        ]
+      },
+      "command": "examine papers",
+      "id": "bddcxrp1",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The porter of Lanternhall"
+        ]
+      },
+      "command": "examine hobb",
+      "id": "qgln8dl7",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You can't take Hobb."
+        ]
+      },
+      "command": "take hobb",
+      "id": "shlmcpwx",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You can't see any such thing."
+        ]
+      },
+      "command": "examine spectacles",
+      "id": "ghajsvmf",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Hidden here, you discover: spectacles."
+        ]
+      },
+      "command": "search",
+      "id": "fzzega57",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Taken."
+        ]
+      },
+      "command": "take glasses",
+      "id": "sxpf3vrf",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The flame is blue this morning, and does not flicker."
+        ]
+      },
+      "command": "examine flame",
+      "id": "k42diiyk",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "the craft needs a light to come home to"
+        ]
+      },
+      "command": "examine motto",
+      "id": "oq92cq5z",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Gate Court"
+        ]
+      },
+      "command": "north",
+      "id": "ed0imd5s",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The great gate of Lanternhall"
+        ]
+      },
+      "command": "examine gate",
+      "id": "l04pz3t5",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The gate is fixed in place."
+        ]
+      },
+      "command": "take gate",
+      "id": "dvspf71i",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Dropped."
+        ]
+      },
+      "command": "drop lamp",
+      "id": "psrj0n4x",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You can see a hand lamp here."
+        ]
+      },
+      "command": "look",
+      "id": "wbeubu3a",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Taken."
+        ]
+      },
+      "command": "take lamp",
+      "id": "9ypfegzz",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Cloister"
+        ]
+      },
+      "command": "north",
+      "id": "3ns7eou7",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Refectory"
+        ]
+      },
+      "command": "east",
+      "id": "v7ybpczg",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "There is a hand's breadth of darkness down one side."
+        ]
+      },
+      "command": "examine hearth",
+      "id": "n9h7n5lw",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Cloister"
+        ]
+      },
+      "command": "west",
+      "id": "7owrvz1t",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Bell Stair"
+        ]
+      },
+      "command": "north",
+      "id": "6b3tkvxz",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Lantern Gallery"
+        ]
+      },
+      "command": "up",
+      "id": "0wdxpjsr",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Nothing has burned in it for thirty years."
+        ]
+      },
+      "command": "examine lantern",
+      "id": "fofzgxgn",
+      "type": "turn"
+    }
+  ],
+  "id": "4q0f3bhq"
+}

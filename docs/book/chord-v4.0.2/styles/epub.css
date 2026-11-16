@@ -44,6 +44,25 @@ pre {
   border: 1px solid #d6e2ef;
 }
 
+/* ---- The "From another system" box (second reading track) ---- */
+
+.from-another-system {
+  background: #fbf7ee;
+  border: 1px solid #b5852c;
+  border-left-width: 5px;
+  border-radius: 5px;
+  padding: 0.3em 0.9em 0.7em;
+  margin: 1.4em 0;
+}
+
+.from-another-system > p:first-child {
+  font-weight: bold;
+  font-size: 0.85em;
+  text-transform: uppercase;
+  color: #7e5a1d;
+  margin-bottom: 0.3em;
+}
+
 /* ---- Part title pages (reflowable: center text, no fixed page geometry) ---- */
 
 .part-page { text-align: center; }

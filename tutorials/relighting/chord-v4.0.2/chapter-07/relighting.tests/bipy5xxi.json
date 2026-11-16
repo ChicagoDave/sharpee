@@ -1,0 +1,324 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "channels": [
+          {
+            "id": "info.title",
+            "is": "The Relighting"
+          }
+        ]
+      },
+      "id": "ig2mmynh",
+      "type": "opening"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The Porter's Lodge",
+          "an oak press hangs on the wall beside it",
+          "You can see a kettle, a hand lamp, and Hobb here."
+        ]
+      },
+      "id": "toi83rs2",
+      "type": "boot"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "A shallow cupboard on the wall with a row of hooks inside"
+        ]
+      },
+      "command": "examine press",
+      "id": "w8sexr5o",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You open the oak press, which is empty."
+        ]
+      },
+      "command": "open press",
+      "id": "kd92tw9a",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You put the wax taper in the oak press."
+        ]
+      },
+      "command": "put taper in press",
+      "id": "ok22cfh2",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You close the oak press."
+        ]
+      },
+      "command": "close press",
+      "id": "9jt8vjzc",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You can't see any such thing."
+        ]
+      },
+      "command": "take taper",
+      "id": "du7lvpje",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You open the oak press.",
+          "In the oak press you see a wax taper."
+        ]
+      },
+      "command": "open press",
+      "id": "4is73bs1",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You take the wax taper from the oak press."
+        ]
+      },
+      "command": "take taper",
+      "id": "retkrraw",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You get into the chair."
+        ]
+      },
+      "command": "enter chair",
+      "id": "5kmacndh",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You're not in a place where you can go anywhere."
+        ]
+      },
+      "command": "north",
+      "id": "79n3hh5t",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You get out of the chair."
+        ]
+      },
+      "command": "exit",
+      "id": "r0atdtoi",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "(first taking the kettle)",
+          "You put the kettle on the chair."
+        ]
+      },
+      "command": "put kettle on chair",
+      "id": "h5xuc6xx",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You can see a hand lamp and Hobb here.",
+          "On the chair you see a kettle."
+        ]
+      },
+      "command": "look",
+      "id": "xk0ldyed",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Gate Court"
+        ]
+      },
+      "command": "north",
+      "id": "m9cwqqtw",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Cloister"
+        ]
+      },
+      "command": "north",
+      "id": "kv8zc8ol",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Library",
+          "On the reading desk you see a grimoire."
+        ]
+      },
+      "command": "west",
+      "id": "3l6jyuqc",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You take the grimoire from the reading desk."
+        ]
+      },
+      "command": "take book",
+      "id": "19er69g2",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You put the grimoire on the reading desk."
+        ]
+      },
+      "command": "put book on desk",
+      "id": "i8niv9tv",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Cloister"
+        ]
+      },
+      "command": "east",
+      "id": "aaxcpb3m",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Undercroft",
+          "You can see a crate here."
+        ]
+      },
+      "command": "down",
+      "id": "xy68ahde",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You can't see any such thing."
+        ]
+      },
+      "command": "take lens",
+      "id": "hnk72ccj",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You open the crate.",
+          "In the crate you see a lens."
+        ]
+      },
+      "command": "open crate",
+      "id": "osokw97h",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "There's no room in the crate."
+        ]
+      },
+      "command": "put taper in crate",
+      "id": "bix5ptr9",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You take the lens from the crate."
+        ]
+      },
+      "command": "take lens",
+      "id": "t7hmi23i",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You put the wax taper in the crate."
+        ]
+      },
+      "command": "put taper in crate",
+      "id": "yd18ojnj",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Cloister"
+        ]
+      },
+      "command": "up",
+      "id": "xzbq92w9",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Bell Stair"
+        ]
+      },
+      "command": "north",
+      "id": "zfqez4os",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Lantern Gallery"
+        ]
+      },
+      "command": "up",
+      "id": "eqck1fr6",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You put the lens in the Great Lantern."
+        ]
+      },
+      "command": "put lens in lantern",
+      "id": "10v7ld6j",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "In the Great Lantern you see a lens."
+        ]
+      },
+      "command": "examine lantern",
+      "id": "efnwtt1k",
+      "type": "turn"
+    }
+  ],
+  "id": "bipy5xxi"
+}

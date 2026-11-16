@@ -1,0 +1,248 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "channels": [
+          {
+            "id": "info.title",
+            "is": "The Relighting"
+          }
+        ]
+      },
+      "id": "f2dv7lvt",
+      "type": "opening"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The Porter's Lodge"
+        ]
+      },
+      "id": "mrzkcd5r",
+      "type": "boot"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Gate Court"
+        ]
+      },
+      "command": "north",
+      "id": "rzv7hjrg",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Cloister"
+        ]
+      },
+      "command": "north",
+      "id": "g5q56y7s",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Bell Stair",
+          "an iron grille stands across its third step"
+        ]
+      },
+      "command": "north",
+      "id": "avbbap2y",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "It was not built. It was put there."
+        ]
+      },
+      "command": "examine grille",
+      "id": "fsnbf3ec",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The grille stands across the stair, and there is no way round it."
+        ]
+      },
+      "command": "up",
+      "id": "tqds8u8m",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Cloister"
+        ]
+      },
+      "command": "south",
+      "id": "dwf5ox4h",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Refectory"
+        ]
+      },
+      "command": "east",
+      "id": "xcty5bcu",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "There is a hand's breadth of darkness down one side."
+        ]
+      },
+      "command": "examine hearth",
+      "id": "rjf05klh",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "It is pitch dark."
+        ]
+      },
+      "command": "squeeze behind hearth",
+      "id": "y0hjh6dk",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "I don't understand that."
+        ]
+      },
+      "command": "squeeze behind hearth",
+      "id": "xvtdcy0r",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Cloister"
+        ]
+      },
+      "command": "up",
+      "id": "d8n2mg79",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Refectory"
+        ]
+      },
+      "command": "east",
+      "id": "38bxtjps",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "It is pitch dark."
+        ]
+      },
+      "command": "crawl behind the hearth",
+      "id": "7p1qx3f4",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Cloister"
+        ]
+      },
+      "command": "up",
+      "id": "6njx654z",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Gate Court"
+        ]
+      },
+      "command": "south",
+      "id": "x5ayr0ce",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The Porter's Lodge"
+        ]
+      },
+      "command": "south",
+      "id": "scahk3fo",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Taken."
+        ]
+      },
+      "command": "take lamp",
+      "id": "d8duofy4",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You light the hand lamp."
+        ]
+      },
+      "command": "light lamp",
+      "id": "yn4c61ko",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Gate Court"
+        ]
+      },
+      "command": "north",
+      "id": "2ngpg3nd",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Cloister"
+        ]
+      },
+      "command": "north",
+      "id": "tgb31vca",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Refectory"
+        ]
+      },
+      "command": "east",
+      "id": "dm439kta",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Undercroft",
+          "You can see a crate here."
+        ]
+      },
+      "command": "squeeze behind hearth",
+      "id": "tty95aun",
+      "type": "turn"
+    }
+  ],
+  "id": "a5os6q8a"
+}

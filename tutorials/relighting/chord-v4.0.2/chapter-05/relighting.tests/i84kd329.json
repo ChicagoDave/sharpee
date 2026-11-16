@@ -1,0 +1,186 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "channels": [
+          {
+            "id": "info.title",
+            "is": "The Relighting"
+          }
+        ]
+      },
+      "id": "ky16lcda",
+      "type": "opening"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The Porter's Lodge",
+          "The door to the court is north."
+        ]
+      },
+      "id": "0e8c502n",
+      "type": "boot"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Gate Court",
+          "You crossed this court every morning for a term, late, with your books under your arm. It was larger then."
+        ]
+      },
+      "command": "north",
+      "id": "ccpzl0cs",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Gate Court",
+          "A square of worn flagstones between the gate and the cloister arch."
+        ]
+      },
+      "command": "look",
+      "id": "a3fjwcsw",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The Porter's Lodge"
+        ]
+      },
+      "command": "south",
+      "id": "l9my566a",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Gate Court",
+          "A square of worn flagstones between the gate and the cloister arch."
+        ]
+      },
+      "command": "north",
+      "id": "gmhkzewb",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Cloister",
+          "A covered walk around a garth gone to nettles."
+        ]
+      },
+      "command": "north",
+      "id": "z94klptx",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Library",
+          "The reading room of Lanternhall"
+        ]
+      },
+      "command": "west",
+      "id": "akie396w",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Cloister"
+        ]
+      },
+      "command": "east",
+      "id": "ymsdauzv",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Undercroft",
+          "The air is cold and smells of stone."
+        ]
+      },
+      "command": "down",
+      "id": "bzplj0ss",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Cloister"
+        ]
+      },
+      "command": "up",
+      "id": "omodab9w",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Refectory",
+          "a hearth you could stable a horse in"
+        ]
+      },
+      "command": "east",
+      "id": "4uepkzi7",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Cloister"
+        ]
+      },
+      "command": "west",
+      "id": "lh6lqsbj",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Bell Stair",
+          "The foot of the tower."
+        ]
+      },
+      "command": "north",
+      "id": "t3udx6oc",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Lantern Gallery",
+          "The Great Lantern stands in the middle of it on a stone drum"
+        ]
+      },
+      "command": "up",
+      "id": "lcueom5x",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Bell Stair"
+        ]
+      },
+      "command": "down",
+      "id": "8sumr2ta",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You can't go that way."
+        ]
+      },
+      "command": "east",
+      "id": "lj73zn3s",
+      "type": "turn"
+    }
+  ],
+  "id": "i84kd329"
+}

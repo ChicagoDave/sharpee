@@ -1,0 +1,102 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "channels": [
+          {
+            "id": "info.title",
+            "is": "The Relighting"
+          },
+          {
+            "contains": [
+              "Then last week a candle leaned toward your hand, and you started walking."
+            ],
+            "id": "prologue"
+          },
+          {
+            "contains": [
+              "By The Sharpee Project"
+            ],
+            "id": "banner"
+          }
+        ]
+      },
+      "id": "m6qbmupm",
+      "type": "opening"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Lodge",
+          "On the sill a lamp is burning with a steady blue flame."
+        ]
+      },
+      "id": "bhqfish7",
+      "type": "boot"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You were a student here once, for a term. You have the same hands and not much else."
+        ]
+      },
+      "command": "examine me",
+      "id": "3w6icxgj",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You can't see any such thing."
+        ]
+      },
+      "command": "examine lamp",
+      "id": "cbzdah5d",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "There are no obvious exits."
+        ]
+      },
+      "command": "north",
+      "id": "6c00tgux",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes..."
+        ]
+      },
+      "command": "wait",
+      "id": "4hsa475o",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "I don't understand that."
+        ]
+      },
+      "command": "xyzzy",
+      "id": "p5ofe8t7",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The Relighting",
+          "Version 0.1.0",
+          "By The Sharpee Project",
+          "Thirty years after the magic went out of the world, a lamp burns blue."
+        ]
+      },
+      "command": "about",
+      "id": "g2qu4lsv",
+      "type": "turn"
+    }
+  ],
+  "id": "8wr04y43"
+}
