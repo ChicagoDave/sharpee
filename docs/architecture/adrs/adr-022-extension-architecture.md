@@ -1,5 +1,7 @@
 # ADR-022: Extension Architecture
 
+**Planning**: IMPLEMENTED
+**Summary**: Extensions are separate packages that register actions, vocabulary and messages through registries, with capability data kept in its own world namespace; score, save and help stay in stdlib. Reaches `packages/extensions/`.
 Date: 2025-07-12
 
 ## Status

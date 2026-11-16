@@ -1,5 +1,8 @@
 # ADR-052: Event Handlers and Custom Logic
 
+**Planning**: IMPLEMENTED
+**Summary**: Story logic reacts to domain events through handlers at two levels, an entity's `on` map and story-level `world.registerEventHandler`; a handler adds consequences and can never prevent the event.
+
 ## Status
 **Implemented** (Phase 1: Entity Handlers) - Supersedes ADR-051 (ActionBehaviors)
 

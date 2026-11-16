@@ -1,5 +1,8 @@
 # ADR-063: Sub-Actions Pattern for Related Action Families
 
+**Planning**: ABANDONED
+**Summary**: Proposed grouping paired actions into family folders with a base class and semantic variants (activate, deactivate); not adopted, and paired actions still share code through `*-shared.ts` files beside them.
+
 ## Status
 Proposed
 

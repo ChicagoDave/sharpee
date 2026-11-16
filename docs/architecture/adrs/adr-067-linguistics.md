@@ -1,5 +1,8 @@
 # ADR-067: Language-Specific Linguistics Architecture
 
+**Planning**: ABANDONED
+**Summary**: Proposed `linguistics-core` and per-language `linguistics-*` packages (pronouns, articles, conjugation) injected into text snippets; never built, and output-side language work lives in `lang-en-us`.
+
 ## Status
 Proposed
 

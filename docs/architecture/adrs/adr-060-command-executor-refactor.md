@@ -1,5 +1,8 @@
 # ADR-060: Refactor CommandExecutor to Thin Orchestrator
 
+**Planning**: IMPLEMENTED
+**Summary**: `CommandExecutor` only orchestrates parse, validate and the action phases; it creates no events itself, and parser, validator and actions each own the events for their own failures.
+
 ## Status
 Proposed
 

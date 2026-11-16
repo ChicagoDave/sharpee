@@ -1,5 +1,8 @@
 # ADR-076: Scoring System Architecture
 
+**Planning**: ABANDONED
+**Summary**: Proposed a stdlib `ScoringService` class that stories subclass, with treasure metadata set on entities; not built. Scoring is the world model's `ScoreLedger` (ADR-129, ADR-260).
+
 ## Status
 
 Proposed

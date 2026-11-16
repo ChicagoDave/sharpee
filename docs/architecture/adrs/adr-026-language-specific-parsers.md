@@ -1,5 +1,7 @@
 # ADR-026: Language-Specific Parser Architecture
 
+**Planning**: IMPLEMENTED
+**Summary**: Language-specific parsing lives in a parser class per language behind the generic `Parser` interface, created through a registering factory; English is `EnglishParser`.
 Date: 2025-07-12
 
 ## Status

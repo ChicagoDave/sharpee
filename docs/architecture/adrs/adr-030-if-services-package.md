@@ -1,5 +1,7 @@
 # ADR-030: Introduction of if-services Package
 
+**Planning**: IMPLEMENTED
+**Summary**: Runtime service interfaces that need the world model live in `@sharpee/if-services`, keeping `if-domain` to pure domain contracts; today it holds `IPerceptionService`.
 Date: 2025-01-15
 
 ## Status

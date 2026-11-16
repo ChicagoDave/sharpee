@@ -1,5 +1,7 @@
 # ADR-006: Debug Events as System Events
 
+**Planning**: IMPLEMENTED
+**Summary**: Debug and monitoring events are system events delivered by callback, never semantic events; story events stay pure domain records.
 **Date:** 2025-06-29  
 **Status:** Accepted
 **Context:** Debug event architecture redesign

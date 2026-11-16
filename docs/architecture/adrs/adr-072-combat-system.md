@@ -1,5 +1,8 @@
 # ADR-072: Combat System
 
+**Planning**: IMPLEMENTED
+**Summary**: Combat is skill-based and seeded-random: `CombatantTrait` and `WeaponTrait` in world-model, and a `CombatService` that resolves an attack into hit, damage, knockout or death. The service ships as the `basic-combat` extension, not in stdlib.
+
 ## Status
 
 Proposed

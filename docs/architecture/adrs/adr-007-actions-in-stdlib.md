@@ -1,5 +1,7 @@
 # ADR-007: Actions in Standard Library
 
+**Planning**: IMPLEMENTED
+**Summary**: Standard actions live in `@sharpee/stdlib` under `src/actions/`; there is no separate actions package.
 **Date:** 2025-06-29
 **Status:** Accepted  
 **Context:** Resolving circular dependencies between actions and stdlib packages

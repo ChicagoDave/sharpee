@@ -1,5 +1,8 @@
 # ADR-050: Meta-Commands Implementation
 
+**Planning**: IMPLEMENTED
+**Summary**: Out-of-world commands extend `MetaAction` or register with `MetaCommandRegistry`, and the engine checks the registry so they take no turn, run no NPCs or daemons, and stay out of AGAIN history.
+
 ## Status
 Proposed
 

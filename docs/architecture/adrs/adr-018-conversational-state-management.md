@@ -1,5 +1,8 @@
 # ADR-018: Conversational State Management
 
+**Planning**: IMPLEMENTED
+**Summary**: One query manager holds any pending question to the player (confirmation, disambiguation, free text) and routes the next input to its handler; `core/src/query/` plus stdlib's quit and restart handlers.
+
 ## Status
 Partially Implemented
 

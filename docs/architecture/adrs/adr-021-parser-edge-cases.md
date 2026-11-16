@@ -1,5 +1,7 @@
 # ADR-021: Parser Edge Cases and Complex Command Support
 
+**Planning**: IMPLEMENTED
+**Summary**: The parser keeps articles, ordinals, `all` and exceptions as structured metadata on the parsed command and leaves resolution to the validator; reaches `parser-en-us` and `parsed-command.ts`.
 Date: 2024-07-09
 Status: Proposed
 

@@ -1,5 +1,8 @@
 # ADR-006: Use Const Objects Instead of Enums
 
+**Planning**: IMPLEMENTED
+**Summary**: Use `as const` objects with a derived union type instead of TypeScript enums, in all packages; a few enums predate the rule.
+
 ## Status
 Accepted
 

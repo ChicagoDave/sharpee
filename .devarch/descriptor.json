@@ -6,5 +6,6 @@
   ],
   "initializedAt": "2026-05-10T03:21:49Z",
   "documentationStandard": "always",
-  "adrLocationCheck": "declined"
+  "adrLocationCheck": "declined",
+  "adrRecords": {"dirs": ["docs/architecture/adrs"], "glob": "adr-*.md"}
 }

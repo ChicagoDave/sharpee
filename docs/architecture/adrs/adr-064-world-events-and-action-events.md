@@ -1,5 +1,8 @@
 # ADR-064: World Events and Action Events
 
+**Planning**: IMPLEMENTED
+**Summary**: Data passes between an action's phases only through `context.sharedData`, captured before the mutation; `(context as any)._x` is forbidden. The `world.entity.*` world-event layer it also describes is not in the code.
+
 ## Status
 Accepted (December 2025)
 

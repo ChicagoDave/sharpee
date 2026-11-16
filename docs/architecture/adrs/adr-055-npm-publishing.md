@@ -1,5 +1,8 @@
 # ADR-055: NPM Publishing Strategy
 
+**Planning**: ABANDONED
+**Summary**: An early publishing plan: an umbrella `@sharpee/sharpee` bundling a default client and text service, released with `pnpm -r publish` or Lerna; those packages do not exist and releases now go through the `Publish to npm` workflow.
+
 ## Status
 Proposed
 

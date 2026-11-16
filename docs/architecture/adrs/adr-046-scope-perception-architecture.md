@@ -1,5 +1,7 @@
 # ADR-046: Scope and Perception Architecture
 
+**Planning**: IMPLEMENTED
+**Summary**: Two scope systems stay separate: parser scope in world-model (what can be named) and perception scope in stdlib (what can be seen, heard or reached, and who witnesses); `getInScope` and `getVisible` answer different questions.
 Date: 2025-08-04
 Status: Proposed
 Supersedes: Clarifies ADR-045

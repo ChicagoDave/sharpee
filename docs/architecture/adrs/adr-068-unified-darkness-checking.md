@@ -1,5 +1,8 @@
 # ADR-068: Unified Darkness Checking
 
+**Planning**: IMPLEMENTED
+**Summary**: `VisibilityBehavior.isDark(room, world)` is the single source of truth for darkness, covering nested, worn and switchable light sources; no action computes darkness itself.
+
 ## Status
 Accepted
 

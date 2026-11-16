@@ -1,5 +1,8 @@
 # ADR-032: Capability Refactoring and Command History Implementation
 
+**Planning**: IMPLEMENTED
+**Summary**: Each stdlib capability schema has its own file, and a command-history capability, written by the engine after each successful turn, backs the AGAIN action.
+
 ## Status
 Implemented
 

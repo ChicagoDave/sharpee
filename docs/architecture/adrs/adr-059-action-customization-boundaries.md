@@ -1,5 +1,8 @@
 # ADR-059: Action Customization Boundaries
 
+**Planning**: IMPLEMENTED
+**Summary**: An action's event data comes from a per-action builder function (`*-data.ts`); a story may replace a whole action but never a single phase. The story `dataExtensions` hook and the rules tier it describes were not built.
+
 ## Status
 Proposed
 

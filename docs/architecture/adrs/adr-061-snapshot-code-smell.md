@@ -1,5 +1,8 @@
 # ADR-061: Entity Snapshot Code Smell
 
+**Planning**: OPEN
+**Summary**: Records the repeated `captureEntitySnapshot(entity, world, flag)` calls in every action's report as debt and prefers a declarative `snapshotRequirements` on the action; deferred, and actions still call the helper directly.
+
 ## Status
 Proposed
 

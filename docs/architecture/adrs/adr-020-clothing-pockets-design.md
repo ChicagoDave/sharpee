@@ -1,5 +1,7 @@
 # ADR-20: Clothing and Pockets Design
 
+**Planning**: ABANDONED
+**Summary**: Proposed a `ClothingTrait` over `WearableTrait` with pockets as scenery container entities; `ClothingTrait` was later deleted (ADR-247), leaving plain wearables and containers.
 **Status:** Proposed  
 **Date:** 2025-07-08  
 **Decision:** Use composition of existing traits for clothing with pockets

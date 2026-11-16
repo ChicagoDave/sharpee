@@ -1,5 +1,7 @@
 # ADR-045: Scope Management System
 
+**Planning**: IMPLEMENTED
+**Summary**: Which entities a command may reference is decided by registered scope rules keyed by location and action (`world.addScopeRule`, `evaluateScope`), always in entity ids; lives in `world-model/src/scope/`.
 Date: 2024-08-02
 Status: Proposed
 

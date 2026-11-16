@@ -1,3 +1,6 @@
+**Planning**: IGNORE
+**Summary**: Draft of a forum post asking for opinions on the author-model question that ADR-014 decides; it holds no decision.
+
 During unit testing, something funny shook out. One of the things rarely thought about in IF platforms is the object-oriented concept of encapsulation. The author can set any property on any object at any time and if there are negative consequences, so be it. Some hackery will ensue to make it all work “right”.
 
 I designed Sharpee to adhere to some basic principles, specifically being loosely-coupled. In Sharpee, data is stored in an event source and a spatial index. These are only accessible through world model interfaces, like world.moveEntity(from, to). The moveEntity() function will validate what it’s doing before acting and fail if rules are broken.

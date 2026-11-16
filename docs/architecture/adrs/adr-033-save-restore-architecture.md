@@ -1,5 +1,8 @@
 # ADR-033: Save/Restore Architecture
 
+**Planning**: IMPLEMENTED
+**Summary**: The engine serializes complete game state to a JSON `ISaveData` snapshot and hands it to client-provided hooks; the client owns storage, the engine owns the format.
+
 ## Status
 Implemented
 

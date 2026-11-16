@@ -1,5 +1,7 @@
 # ADR-00X: Action Event Emission Pattern
 
+**Planning**: ABANDONED
+**Summary**: Proposed events with no `messageId` or params, built by per-action factory classes; the code does the opposite (events carry `messageId` and params).
 Status: **Research** (Under Discussion)
 
 ## Context

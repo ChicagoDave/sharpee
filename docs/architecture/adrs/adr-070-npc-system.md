@@ -1,5 +1,8 @@
 # ADR-070: NPC System Architecture
 
+**Planning**: IMPLEMENTED
+**Summary**: NPCs are entities with an `NpcTrait` and a registered `NpcBehavior` strategy that decides their turn; the behavior pattern and trait stand, while NPC action execution and `npc.*` events were superseded by ADR-328's actor pipeline.
+
 ## Status
 
 Implemented

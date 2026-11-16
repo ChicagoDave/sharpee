@@ -1,5 +1,7 @@
 # ADR-044: Parser and Vocabulary System Gaps
 
+**Planning**: IMPLEMENTED
+**Summary**: Parsing runs on a declarative grammar rules engine (`grammar.define('put :item in :container').where(...).mapsTo(...)`) instead of hardcoded patterns, and stories can register their own rules.
 Date: 2025-08-02
 Status: Proposed
 

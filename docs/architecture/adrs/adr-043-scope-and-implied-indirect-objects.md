@@ -1,5 +1,7 @@
 # ADR-043: Scope Resolution and Implied Indirect Objects
 
+**Planning**: OPEN
+**Summary**: Proposes that the command validator add an implicit indirect object (the container or supporter the player is in) to DROP, PUT, LOOK and SEARCH; not built that way, since actions such as dropping resolve the player's immediate location themselves.
 **Status:** Proposed  
 **Date:** 2025-08-02  
 **Deciders:** Development Team

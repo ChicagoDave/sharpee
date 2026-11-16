@@ -1,5 +1,8 @@
 # ADR-075: Event Handler Consolidation
 
+**Planning**: IMPLEMENTED
+**Summary**: Event handlers take a read-only `WorldQuery` and return `Effect[]`; the `EffectProcessor` validates all effects, then applies them atomically, and `EventProcessor` is the only dispatcher. Lives in `event-processor/src/effects/`.
+
 ## Status
 
 IMPLEMENTED (2025-12-30)

@@ -1,5 +1,8 @@
 # ADR-066: Text Snippets Library
 
+**Planning**: ABANDONED
+**Summary**: Proposed a `@sharpee/text-snippets` package of default text-building functions for text services; never built, and text services themselves were later removed. Unrelated to the room-description snippets in `if-domain/src/snippets.ts`.
+
 ## Status
 Proposed
 

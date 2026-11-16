@@ -1,5 +1,8 @@
 # ADR-051: Action Behaviors for Complex Action Handling
 
+**Planning**: ABANDONED
+**Summary**: Proposed stdlib `ActionBehavior` classes per action and trait combination, found through a registry; superseded by ADR-052's event handlers.
+
 ## Status
 Superseded by ADR-052 (Event Handlers for Custom Game Logic)
 

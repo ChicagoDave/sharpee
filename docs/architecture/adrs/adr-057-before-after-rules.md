@@ -1,5 +1,8 @@
 # ADR-057: Rulebook System for Story Logic
 
+**Planning**: OPEN
+**Summary**: On hold: story-level before, after and every-turn rules held in a rulebook injected into the command executor, where before rules can prevent or redirect an action; no rulebook exists in `packages/`.
+
 ## Status
 On Hold
 

@@ -1,5 +1,7 @@
 # ADR-025: Parser Information Preservation
 
+**Planning**: IMPLEMENTED
+**Summary**: `ParsedCommand` preserves every token with its position and part of speech, and groups them into verb and noun phrases without filtering; the parser classifies and never interprets.
 Date: 2025-07-12
 
 ## Status

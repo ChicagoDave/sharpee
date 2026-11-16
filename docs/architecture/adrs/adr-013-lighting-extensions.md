@@ -1,5 +1,8 @@
 # ADR-008: Lighting as Extension System
 
+**Planning**: ABANDONED
+**Summary**: Proposed lighting as pluggable extension packages with no darkness in core; darkness was built into world-model instead (`VisibilityBehavior.isDark`).
+
 ## Status
 Proposed
 

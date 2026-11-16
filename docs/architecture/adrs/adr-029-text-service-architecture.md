@@ -1,5 +1,8 @@
 # ADR-029: Simple Query-Based Text Service Architecture
 
+**Planning**: ABANDONED
+**Summary**: A query-based `TextService` interface for turn-end output; superseded by ADR-174, which removed the text service in favor of the engine's prose pipeline and channels.
+
 ## Status
 Superseded by ADR-174 — the text service has been removed; turn-end rendering is now
 the engine-internal prose pipeline, with channel-IO (ADR-163) as the universal UI

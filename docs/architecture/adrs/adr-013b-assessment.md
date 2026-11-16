@@ -1,5 +1,8 @@
 # ADR-014 Assessment: Unrestricted World Model Access
 
+**Planning**: IGNORE
+**Summary**: A review essay endorsing ADR-014's WorldModel and AuthorModel split; it holds no decision of its own.
+
 ## Executive Summary
 
 The decision to separate WorldModel and AuthorModel represents a mature architectural choice that aligns with established patterns in interactive fiction engine design. This assessment examines the decision through multiple lenses: technical architecture, author experience, maintainability, and ecosystem implications.

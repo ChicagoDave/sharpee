@@ -1,5 +1,8 @@
 # ADR-062: Direction Language Coupling in Going Action
 
+**Planning**: IMPLEMENTED
+**Summary**: Directions are language-neutral constants (`Direction`, `DirectionOpposites` in `world-model/src/constants/directions.ts`); abbreviations and direction words are the parser's job, never an action's.
+
 ## Status
 Implemented
 

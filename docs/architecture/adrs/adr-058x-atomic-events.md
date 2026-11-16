@@ -1,5 +1,8 @@
 # ADR-058: Atomic Events Implementation
 
+**Planning**: IMPLEMENTED
+**Summary**: Events are self-contained: they carry entity snapshots taken at report time (`captureEntitySnapshot` in `stdlib/src/actions/base/snapshot-utils.ts`), so rendering needs no later world query.
+
 ## Status
 IMPLEMENTED - August 24, 2025
 

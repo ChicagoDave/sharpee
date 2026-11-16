@@ -1,5 +1,8 @@
 # ADR-071: Daemons and Fuses (Timed Events)
 
+**Planning**: IMPLEMENTED
+**Summary**: Timed behavior runs through one scheduler: daemons tick every turn and fuses count down, after NPCs, with pause, cancel and serialized state; events carry message ids. Now in `packages/plugin-scheduler`.
+
 ## Status
 
 Implemented

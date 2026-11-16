@@ -1,5 +1,7 @@
 # ADR-001: Parser Debug Events Architecture
 
+**Planning**: IMPLEMENTED
+**Summary**: Parser, validator and executor emit structured debug events through an injected emitter, collected only when debugging is on; reaches `parser-en-us` and stdlib validation.
 **Date:** 2025-06-11
 **Status:** Accepted
 **Context:** Parser troubleshooting and development

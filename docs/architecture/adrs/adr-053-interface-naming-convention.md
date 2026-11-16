@@ -1,5 +1,8 @@
 # ADR-053: Adopt I-Prefix Convention for All TypeScript Interfaces
 
+**Planning**: IMPLEMENTED
+**Summary**: Interfaces carry an `I` prefix (`IEntity`, `IWorldModel`, `ISemanticEvent`); classes, type aliases and enums do not. Reverses ADR-010.
+
 ## Status
 Proposed
 

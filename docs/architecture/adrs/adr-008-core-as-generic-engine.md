@@ -1,5 +1,7 @@
 # ADR-008: Core Package as Generic Event System (Proposed)
 
+**Planning**: IMPLEMENTED
+**Summary**: `@sharpee/core` holds only generic event and entity types; command and parser types live outside it, in `world-model/src/commands/` and `if-domain`.
 **Date:** 2025-06-29
 **Status:** Proposed
 **Context:** Core package contains IF-specific types that limit reusability

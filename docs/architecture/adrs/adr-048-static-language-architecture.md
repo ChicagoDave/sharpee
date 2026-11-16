@@ -1,5 +1,8 @@
 # ADR-048: Static Language, Parser, and Text Service Architecture
 
+**Planning**: IMPLEMENTED
+**Summary**: No dynamic loading of language or parser: `GameEngine` receives its dependencies through the constructor, and a story customizes them through `extendParser` and `extendLanguage`.
+
 ## Status
 Proposed
 

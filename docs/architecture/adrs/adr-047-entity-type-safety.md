@@ -1,5 +1,8 @@
 # ADR-047: Entity Type Safety and Validation
 
+**Planning**: IMPLEMENTED
+**Summary**: Entity types are a fixed `EntityType` const set and `createEntity` throws on an unknown type; per-type default traits came later through the default-trait registry, not `createEntityWithTraits`.
+
 ## Status
 Date: 2025-08-04
 Status: Proposed

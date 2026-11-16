@@ -1,5 +1,7 @@
 # ADR-024: Score Data Storage
 
+**Planning**: IMPLEMENTED
+**Summary**: Capability data lives in named namespaces on the world model (`registerCapability`, `updateCapability`), not on entities; scoring itself has since moved to `ScoreLedger`.
 Date: 2025-07-12
 
 ## Status

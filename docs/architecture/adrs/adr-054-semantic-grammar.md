@@ -1,5 +1,8 @@
 # ADR-054: Semantic Grammar for Command Processing
 
+**Planning**: IMPLEMENTED
+**Summary**: Grammar rules carry semantic mappings (manner, spatial relation, direction, implicit preposition), so actions read `command.semantics` and never inspect parser structures or verb text.
+
 ## Status
 Accepted (Implemented)
 

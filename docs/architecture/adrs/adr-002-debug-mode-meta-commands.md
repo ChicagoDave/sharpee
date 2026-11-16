@@ -1,5 +1,7 @@
 # ADR-002: Debug Mode Meta Commands
 
+**Planning**: IMPLEMENTED
+**Summary**: An in-game meta-command toggles debug event output per subsystem without a restart; built as `trace on/off` (`stdlib/src/actions/author/trace.ts`), not `DEBUG ON/OFF`.
 **Date:** 2025-06-11
 **Status:** Proposed
 **Context:** In-game debugging and troubleshooting

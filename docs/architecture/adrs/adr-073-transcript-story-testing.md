@@ -1,5 +1,7 @@
 # ADR-073: Transcript-Based Story Testing
 
+**Planning**: IMPLEMENTED
+**Summary**: Stories are tested with `.transcript` files: `> command` lines followed by assertion tags (`[OK: contains "X"]`, `[FAIL]`, `[SKIP]`), run by `packages/transcript-tester`.
 **Status:** Accepted
 **Date:** 2025-12-27
 **Replaces:** ADR-056

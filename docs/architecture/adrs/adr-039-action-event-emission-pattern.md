@@ -1,5 +1,7 @@
 # ADR-039: Action Event Emission Pattern
 
+**Planning**: ABANDONED
+**Summary**: Proposed an append-only event store on the action context with actions returning void and no message ids in events; replaced by ADR-041's single `context.event()`.
 Status: **Replaced** by ADR-041
 
 ## Context

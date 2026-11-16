@@ -1,5 +1,7 @@
 # ADR-027: Parser Package Architecture
 
+**Planning**: IMPLEMENTED
+**Summary**: Each language parser is its own package (`@sharpee/parser-en-us`); the parser contracts and `ParserFactory` live outside it, now in `if-domain/src/parser-contracts/`.
 Date: 2025-07-12
 
 ## Status

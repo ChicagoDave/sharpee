@@ -1,5 +1,7 @@
 # ADR-056: Story Testing Framework
 
+**Planning**: ABANDONED
+**Summary**: Proposed declarative TypeScript test stories with scenarios and expectations in a `test-stories` package; replaced by ADR-073's transcript testing.
 **Status:** Replaced by ADR-073
 **Date:** 2025-08-19
 **Replaced:** 2025-12-27

@@ -1,5 +1,7 @@
 # ADR-005: Entity ID System Design
 
+**Planning**: IMPLEMENTED
+**Summary**: Entity ids are auto-generated as a type prefix plus a base-36 counter (`r01`, `i02`), separate from display names; `WorldModel.createEntity` owns generation.
 Date: 2024-01-06
 Status: Implemented (2025-07-06)
 Implementation: Complete

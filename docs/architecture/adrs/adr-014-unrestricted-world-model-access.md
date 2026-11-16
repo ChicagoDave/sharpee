@@ -1,5 +1,8 @@
 # ADR-014: Unrestricted World Model Access
 
+**Planning**: IMPLEMENTED
+**Summary**: World building goes through `AuthorModel`, which shares the world's data but skips game rules and emits no events; `WorldModel` enforces rules during play.
+
 ## Status
 Proposed
 

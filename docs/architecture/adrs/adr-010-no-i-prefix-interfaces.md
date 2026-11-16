@@ -1,5 +1,7 @@
 # ADR-005: No I-Prefix for Interfaces
 
+**Planning**: ABANDONED
+**Summary**: Dropped the `I` prefix from interface names; later reversed, and interfaces now carry the prefix (`ISemanticEvent`, `IWorldModel`, `IParser`).
 **Date:** 2025-06-29
 **Status:** Accepted
 **Context:** Interface naming convention standardization

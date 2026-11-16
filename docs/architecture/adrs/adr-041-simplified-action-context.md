@@ -1,5 +1,7 @@
 # ADR-041: Simplified Action Context Interface
 
+**Planning**: IMPLEMENTED
+**Summary**: `ActionContext` has exactly one way to create an event, `event(type, data)`; no `emit`, `emitSuccess`, `emitError` or parallel event-creation path may be added.
 Status: **Accepted** (amended 2026-07-30 — see Amendment 1). The decision below
 holds; the interface name it uses does not. Read every `EnhancedActionContext` in
 this document as `ActionContext`.

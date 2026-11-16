@@ -1,5 +1,8 @@
 # ADR-005: Action Interface Location and ValidatedCommand Design
 
+**Planning**: IMPLEMENTED
+**Summary**: `ValidatedCommand` carries an action id, never a handler; the `Action` interface lives in stdlib only and the executor looks actions up in the registry.
+
 ## Status
 Accepted
 

@@ -1,5 +1,7 @@
 # ADR-004: Parser-Validation-Execution Separation
 
+**Planning**: IMPLEMENTED
+**Summary**: Command processing is three phases (parse, validate, execute), each blind to the later ones; the parser never sees the world model.
 **Date:** 2025-06-28
 **Status:** Accepted
 **Context:** Parser architecture refactor to resolve circular dependencies

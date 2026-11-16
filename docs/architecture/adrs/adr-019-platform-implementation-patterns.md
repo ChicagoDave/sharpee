@@ -1,5 +1,8 @@
 # ADR-019: Platform Implementation Patterns for Conversational UI
 
+**Planning**: ABANDONED
+**Summary**: Proposed per-platform UI adapters (CLI, web, Electron) for presenting queries; never built, and clients now receive everything over channels with per-client renderers.
+
 ## Status
 Proposed
 

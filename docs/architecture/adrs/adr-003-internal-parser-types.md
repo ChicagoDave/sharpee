@@ -1,5 +1,7 @@
 # ADR-003: Internal Parser Types
 
+**Planning**: IMPLEMENTED
+**Summary**: The parser's public API returns only `ParsedCommand`; `CandidateCommand` and candidate scoring are internal types in `parser-internals.ts`.
 **Date:** 2025-06-11
 **Status:** Accepted
 **Context:** Parser API design and encapsulation

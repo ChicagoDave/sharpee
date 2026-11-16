@@ -1,5 +1,8 @@
 # ADR-069: Perception-Based Event Filtering
 
+**Planning**: IMPLEMENTED
+**Summary**: A `PerceptionService` (interface in `if-services`, implementation in stdlib) filters turn events by what the player can perceive: visual events become `perception.blocked` in the dark, witnessable events pick a per-sense rendering, and absent events pass through.
+
 ## Status
 
 Accepted

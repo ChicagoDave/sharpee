@@ -1,5 +1,7 @@
 # ADR-040: Turn-Based Time Progression
 
+**Planning**: OPEN
+**Summary**: Proposes a game clock on the world model that advances by minutes per turn, per-action time costs, a time service and time events; not built (no `TimeService` or clock in `packages/`).
 Status: **Proposed**
 
 ## Context

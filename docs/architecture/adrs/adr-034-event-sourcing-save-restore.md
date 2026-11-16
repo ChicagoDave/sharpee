@@ -1,5 +1,8 @@
 # ADR-034: Event Sourcing for Save/Restore (Future Enhancement)
 
+**Planning**: OPEN
+**Summary**: Deferred idea: save by storing the event stream and restore by replaying it, instead of the state snapshot ADR-033 built; not implemented.
+
 ## Status
 Proposed (Future)
 

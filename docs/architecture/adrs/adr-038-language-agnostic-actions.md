@@ -1,5 +1,7 @@
 # ADR-038: Language-Agnostic Action Implementation
 
+**Planning**: IMPLEMENTED
+**Summary**: Actions never infer behavior from an entity's name or description text; an object declares what it can do through explicit traits (`PULLABLE`, `PUSHABLE` and the like).
 Date: 2025-07-22
 Status: Proposed
 Author: Development Team

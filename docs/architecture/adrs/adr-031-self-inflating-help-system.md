@@ -1,5 +1,8 @@
 # ADR-031: Self-Inflating Help System
 
+**Planning**: IMPLEMENTED
+**Summary**: Help text lives in each action's language file beside its patterns and messages, and `LanguageProvider.getActionHelp(actionId)` derives the verb list from the patterns; the help action only emits a request event.
+
 ## Status
 Accepted
 

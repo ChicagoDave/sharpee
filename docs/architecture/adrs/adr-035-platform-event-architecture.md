@@ -1,5 +1,8 @@
 # ADR-035: Platform Event Architecture
 
+**Planning**: IMPLEMENTED
+**Summary**: Save, restore, quit and restart are requested by actions as `platform.*` events, queued by the engine, and run after the turn completes through client hooks, with completion events for reporting.
+
 ## Status
 Implemented
 

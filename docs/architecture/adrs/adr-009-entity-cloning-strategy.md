@@ -1,5 +1,7 @@
 # ADR-009: Deep Cloning Strategy for Entity Copies
 
+**Planning**: IMPLEMENTED
+**Summary**: `IFEntity.clone()` deep-copies attributes, relationships and traits by JSON round-trip, so trait data must be serializable.
 **Date:** 2025-07-04
 **Status:** Accepted
 **Context:** Entity cloning implementation caused shared reference bugs

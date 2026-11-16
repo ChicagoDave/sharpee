@@ -1,5 +1,7 @@
 # ADR-065: Grammatical to Semantic Translation Framework
 
+**Planning**: ABANDONED
+**Summary**: Rejected as over-engineering: a formal framework mapping direct and indirect objects to semantic roles. Each action keeps naming its own roles (`target`, `container`, `recipient`).
 Status: **Foolish/Not Implemented**
 
 ## Context

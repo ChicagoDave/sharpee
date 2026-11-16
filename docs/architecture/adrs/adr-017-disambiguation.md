@@ -1,5 +1,8 @@
 # ADR-017: Disambiguation Strategy for Entity References
 
+**Planning**: IMPLEMENTED
+**Summary**: Ambiguous noun references are narrowed by scoring rules (held, proximity, action context) and the player is asked only on a true tie; lives in stdlib's command validator, not a parser service.
+
 ## Status
 Proposed
 

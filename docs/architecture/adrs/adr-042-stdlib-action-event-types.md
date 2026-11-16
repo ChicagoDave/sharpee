@@ -1,5 +1,7 @@
 # ADR-042: Stdlib Action Event Type Migration
 
+**Planning**: IMPLEMENTED
+**Summary**: Each standard action is a folder under `stdlib/src/actions/standard/` with its event data interfaces in a `*-events.ts` file beside the implementation.
 Status: **Proposed**
 
 ## Context

@@ -1,5 +1,8 @@
 # ADR-058: Action Report Function for Atomic Event Generation
 
+**Planning**: IMPLEMENTED
+**Summary**: Actions separate mutation from reporting: `execute()` only mutates and returns void, and `report()` creates the events from the final state; the pattern has since grown a fourth phase, `blocked()`.
+
 ## Status
 Proposed
 

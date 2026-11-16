@@ -1,5 +1,7 @@
 # ADR-074: IFID Requirements
 
+**Planning**: IMPLEMENTED
+**Summary**: Every story declares a Treaty of Babel IFID (8 to 63 uppercase characters, UUID recommended) that identifies the work across versions; generation and validation live in `core/src/ifid/`. For Chord stories a missing IFID is a compile warning, not a build failure (ADR-298).
 **Status:** Accepted
 **Date:** 2025-12-27
 **References:** [Treaty of Babel](https://babel.ifarchive.org/babel.html)

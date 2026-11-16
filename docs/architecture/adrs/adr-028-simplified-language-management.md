@@ -1,5 +1,7 @@
 # ADR-028: Simplified Story Language Management
 
+**Planning**: ABANDONED
+**Summary**: Had the engine load the parser and language packages by name through `engine.setLanguage(code)`; that method is gone, and `GameEngine` is now handed its parser and language at construction.
 Date: 2025-07-13
 
 ## Status

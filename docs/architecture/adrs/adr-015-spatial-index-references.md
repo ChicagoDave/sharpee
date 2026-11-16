@@ -1,5 +1,8 @@
 # ADR-015: SpatialIndex Pattern References
 
+**Planning**: IGNORE
+**Summary**: Reading list and prior art for the bidirectional parent and child index behind `SpatialIndex`; informational, no decision.
+
 ## Status
 Informational
 

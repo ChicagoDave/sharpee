@@ -1,5 +1,8 @@
 # ADR-016: Author Recorded Event Metadata
 
+**Planning**: OPEN
+**Summary**: Deferred idea: let `AuthorModel` operations record events with rich metadata (source location, tags, phase); not built, and `AuthorModel` emits no events today.
+
 ## Status
 Future Enhancement (Not Implemented)
 

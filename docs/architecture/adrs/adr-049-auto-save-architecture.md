@@ -1,5 +1,8 @@
 # ADR-049: Auto-Save Architecture
 
+**Planning**: OPEN
+**Summary**: Proposes an optional engine-level auto-save, configured by the client with a strategy (every turn, interval, smart, level-based), riding the platform-event save path; the engine has no auto-save configuration today.
+
 ## Status
 Proposed
 

@@ -1,5 +1,7 @@
 # ADR 036: Parser Contracts in if-domain
 
+**Planning**: IMPLEMENTED
+**Summary**: Parser types, vocabulary contracts, the vocabulary registry and the parser factory live in `@sharpee/if-domain`, so language parsers never depend on stdlib.
 **Status:** Accepted
 
 **Date:** 2025-01-20

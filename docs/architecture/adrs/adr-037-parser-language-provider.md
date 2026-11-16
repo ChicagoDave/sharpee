@@ -1,5 +1,7 @@
 # Parser Language Provider Interface Addition
 
+**Planning**: IMPLEMENTED
+**Summary**: A parser takes a `ParserLanguageProvider`, which extends `LanguageProvider` with vocabulary and grammar methods; every language package implements both.
 **Date:** 2025-01-21
 
 **Context:** During unit testing of `parser-en-us`, we discovered that the `EnglishParser` was calling methods on its language provider that weren't part of the base `LanguageProvider` interface. The parser was typed to accept `LanguageProvider` but was actually using parser-specific methods like `getVerbs()`, `getDirections()`, etc.

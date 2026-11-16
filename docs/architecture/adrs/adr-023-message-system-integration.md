@@ -1,5 +1,7 @@
 # ADR-023: Message System Integration
 
+**Planning**: IMPLEMENTED
+**Summary**: All player-facing text goes through message ids in the language provider, layered core, then extension, then story, with later layers overriding; no ad-hoc strings in actions.
 Date: 2025-07-12
 
 ## Status
