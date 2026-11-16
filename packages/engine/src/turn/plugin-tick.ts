@@ -4,10 +4,11 @@
  * and route its events through the enrichment funnel.
  *
  * The tick's view of the action reports GENUINE success: the executor's
- * flag only checks for `action.error` events, but modern `blocked()`
- * paths reuse the primary event type with `blocked: true` / `failed:
- * true`, and a refused action would otherwise advance state-machine
- * transitions it never earned. Sounds a plugin emits land in the same
+ * `success` flag only checks for `action.error` events, so the tick also
+ * reads the executor's `refused` flag (the action's `validate()` said no)
+ * and the `blocked: true` / `failed: true` an event can carry. A refused
+ * action would otherwise advance state-machine transitions it never
+ * earned. Sounds a plugin emits land in the same
  * per-turn buffer the action's sounds use.
  *
  * Public interface: `pluginTickStage`, `wasRefused`.
@@ -100,7 +101,10 @@ export const pluginTickStage: TurnStage = {
         random: engine.randomService,
         actionResult: {
           actionId: result.actionId || '',
-          success: result.success && !actionRefused,
+          // The executor's own record of a refusal comes first: a blocked
+          // event of its own type (`if.event.turn_blocked`) carries neither
+          // flag `wasRefused` looks for.
+          success: result.success && !result.refused && !actionRefused,
           targetId: result.validatedCommand?.directObject?.entity?.id
         },
         actionEvents: semanticEvents,

@@ -1,7 +1,8 @@
 /**
  * on-clauses.ts — the runtime's on clauses section.
  *
- * Entity `on`/`after` clauses and topic-table arms as action interceptors.
+ * Entity `on`/`after` clauses, topic-table arms and the clause-less arms of
+ * a machine's action triggers, as action interceptors.
  * The interceptor registry is keyed (trait type, action), so the bind step
  * groups every owner's clauses by action and registers one dispatching
  * interceptor per action that routes by the consulted entity, in front of
@@ -144,10 +145,24 @@ export class OnClausesSection {
         if (!(entity.topics ?? []).length || !topicGerundServes(gerund, entity)) continue;
         const list = byAction.get(gerund) ?? [];
         if (!list.some((c) => c.entity.id === entity.id)) {
-          this.prepareTopicTarget(world, entity);
+          this.markArmOwner(world, entity);
           list.push({ entity, clause: null });
           byAction.set(gerund, list);
         }
+      }
+    }
+    // A machine's `when <gerund> the <role>` is the role's thing answering
+    // that verb. The thing gets an arm with no clause, so an action that
+    // asks whether its target implements it (turning, pulling, lowering and
+    // the like) finds an answer, runs, and the machine advances on the
+    // success. A thing with its own clause for the gerund already has an arm.
+    for (const { entity, action } of this.machineTriggerTargets()) {
+      if (!this.core.binding.isConsultedGerund(action)) continue;
+      const list = byAction.get(action) ?? [];
+      if (!list.some((c) => c.entity.id === entity.id)) {
+        this.markArmOwner(world, entity);
+        list.push({ entity, clause: null });
+        byAction.set(action, list);
       }
     }
 
@@ -198,8 +213,33 @@ export class OnClausesSection {
     }
   }
 
-  /** Mark a topic-table owner so interceptor resolution finds it (no clause needed). */
-  private prepareTopicTarget(world: WorldModel, entity: IREntity): void {
+  /**
+   * Every thing a machine's action trigger names, with the trigger's gerund:
+   * a `$<role>` target resolved through the machine's roles, an entity id
+   * taken as written. A trigger with no target names no thing.
+   */
+  private machineTriggerTargets(): Array<{ entity: IREntity; action: string }> {
+    const found: Array<{ entity: IREntity; action: string }> = [];
+    for (const machine of this.core.ir.machines ?? []) {
+      for (const state of machine.states) {
+        for (const transition of state.transitions) {
+          const trigger = transition.trigger;
+          if (trigger.kind !== 'action' || trigger.target === null) continue;
+          const irId = trigger.target.startsWith('$')
+            ? machine.roles.find((role) => `$${role.name}` === trigger.target)?.entity
+            : trigger.target;
+          // An entity that was never built is refused by name at engine-ready
+          // (state-machines.ts); there is nothing to mark here.
+          const entity = this.core.ir.entities.find((e) => e.id === irId);
+          if (entity) found.push({ entity, action: trigger.action });
+        }
+      }
+    }
+    return found;
+  }
+
+  /** Mark the owner of a clause-less arm (a topic table, a machine trigger) so interceptor resolution finds it. */
+  private markArmOwner(world: WorldModel, entity: IREntity): void {
     const target = world.getEntity(entity.id);
     if (!target) throw new LoadError(`Entity \`${entity.id}\` vanished before binding.`, entity.span);
     if (!target.has(ChordBehaviorTrait.type)) {
