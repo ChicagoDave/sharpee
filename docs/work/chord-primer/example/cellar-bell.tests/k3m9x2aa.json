@@ -1,0 +1,137 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "Kitchen"
+        ]
+      },
+      "id": "c0000001",
+      "type": "boot"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "an iron key and a rag"
+        ]
+      },
+      "command": "open dresser",
+      "id": "c0000002",
+      "type": "turn"
+    },
+    {
+      "command": "take all from dresser",
+      "id": "c0000003",
+      "skip": true,
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You light the candle."
+        ]
+      },
+      "command": "light candle",
+      "id": "c0000004",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Taken."
+        ]
+      },
+      "command": "take candle",
+      "id": "c0000005",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "the cellar door is unlocked"
+        ]
+      },
+      "command": "unlock door with key",
+      "id": "c0000006",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "the cellar door is open"
+        ]
+      },
+      "command": "open door",
+      "id": "c0000007",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Cellar"
+        ]
+      },
+      "command": "down",
+      "id": "c0000008",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "flat clank"
+        ],
+        "notContains": [
+          "clear as a struck glass"
+        ]
+      },
+      "command": "ring bell",
+      "id": "c0000009",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "heavier than it looks"
+        ]
+      },
+      "command": "take bell",
+      "id": "c0000010",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "the brass bell is polished"
+        ]
+      },
+      "command": "polish bell",
+      "id": "c0000011",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "swings once"
+        ]
+      },
+      "command": "put bell on hook",
+      "id": "c0000012",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "clear as a struck glass"
+        ],
+        "states": [
+          "the story is rung"
+        ]
+      },
+      "command": "ring bell",
+      "ending": "bell-rung",
+      "id": "c0000013",
+      "type": "turn"
+    }
+  ],
+  "id": "k3m9x2aa"
+}
