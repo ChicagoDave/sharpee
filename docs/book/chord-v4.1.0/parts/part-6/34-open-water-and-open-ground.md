@@ -167,7 +167,10 @@ create the raft
 ## Looking across water
 
 On an expanse, `look` gives the expanse's own description and then
-everything in sight, each with a distance and a bearing.
+everything in sight, each with a distance and a bearing. While the skiff
+lies at the foot of the steps it is in the Water Stair, and `look` there
+describes that room. This is the view one unit out, once the commands of
+the next section have put the skiff under sail.
 
 ```text
 > look
@@ -250,9 +253,18 @@ adds `steer <direction>` and the sail commands: `make sail`, `shorten
 sail` and `furl the sails`.
 
 Steering alone moved nothing, because the sail was furled. Under sail the
-skiff runs east a unit a turn.
+skiff runs east a unit a turn, and the isle is six units off. Every command
+is a turn, `look` among them. A `look` typed now gives the view of the last
+section, with the stair close by. Two turns after it the view has changed,
+and the turn after that brings the skiff in.
 
 ```text
+> wait
+You wait. The Hall has had thirty years of practice and is better at it than you are.
+
+> wait
+You wait. Somewhere a shutter knocks, twice, and thinks better of it.
+
 > look
 Mere
 Grey water, wider than it looked from the roof, with a short chop on it.
@@ -347,7 +359,13 @@ You say the word. A flame stands up on the wick, blue at first, as if it had bee
 You say the word across six feet of air, and the pitch-pine takes it. Behind you, over the water, the white bar of the Lantern swings round and stops, pointing here. The two lights hold one another. Somewhere between them the Mere is full of small blue sparks, coming home.
 
 You have risen to the rank of a Lamplighter.
+
+[The story has ended. RESTART, RESTORE or UNDO]
 ```
+
+The line about rank appears when this award takes the score to fifty. A
+player who left an award behind on the way, the refectory candles for
+instance, wins without it.
 
 ## Build and try it
 

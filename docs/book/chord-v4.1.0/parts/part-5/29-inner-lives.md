@@ -90,6 +90,8 @@ He takes one hand off one ear to hear you, and puts it back.
 "It'll go on till it's told," Hobb shouts. "There's a word for the telling. I kept it by, in a newspaper, in case."
 
 Hobb gives the hush page to Ansel.
+
+The bell tolls again, and the rooks go up off the roof.
 ```
 
 A mood does not stay changed. Left alone, a person settles back to the
@@ -155,6 +157,8 @@ statement stands in. Unlike a mood, a feeling stays where it is put.
 
 ```text
 > give spectacles to hobb
+You give the spectacles to Hobb.
+
 Hobb hooks them over his ears and looks at you properly for the first time. "Ansel," he says, after a while. "You were always late."
 
 > talk to hobb
@@ -296,8 +300,12 @@ sharpee compose relighting.story --check
 sharpee play .
 ```
 
-Ask Hobb about the Dimming and then about last night. Then play on until
-you have mended his spectacles, give them to him, and ask again.
+Ask Hobb about the Dimming and then about last night. Then find his
+spectacles, give them to him as they are, and ask again. Do this before you
+read the kindle page. Hobb trusts whoever puts the spectacles on his nose,
+mended or not, and while the Hall is quiet he answers as the blocks above
+show. Once the bell has begun he is rattled, and he answers the same
+questions with one hand over an ear.
 
 ::: under-the-hood
 **Under the Hood: the character model** · Story IR `character`

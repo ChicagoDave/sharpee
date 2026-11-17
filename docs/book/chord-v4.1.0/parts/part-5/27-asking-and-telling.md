@@ -140,6 +140,8 @@ He takes one hand off one ear to hear you, and puts it back.
 "It'll go on till it's told," Hobb shouts. "There's a word for the telling. I kept it by, in a newspaper, in case."
 
 Hobb gives the hush page to Ansel.
+
+The bell tolls again, and the rooks go up off the roof.
 ```
 
 The last line of the row is the acting statement of chapter 26, with a
@@ -333,6 +335,8 @@ about the bell.
 ```text
 > read hush page
 The third working is hardly a word at all. It is the breath you take before one.
+
+The bell tolls. You have stopped counting.
 ```
 
 ::: under-the-hood

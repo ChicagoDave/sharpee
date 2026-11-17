@@ -117,6 +117,10 @@ what it says.
 A book as long as your forearm, chained to nothing any more. Its pages are blank, or were. Here and there a line of ink has come back, as frost comes onto a window. Someone has written in one margin.
 
 > read book
+(first taking the grimoire)
+
+You take the grimoire from the reading desk.
+
 The grimoire reads:
 In the margin, in a small brown hand: gnusto. Came over the water as a working, they say. Meaning lost.
 ```
@@ -341,7 +345,7 @@ know what your player will read.
 
 ```text
 > read coat
-There's nothing written on the coat.
+There's nothing written on the travelling coat.
 
 > eat coat
 That's not something you can eat.

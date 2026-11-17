@@ -284,7 +284,7 @@ sharpee play .
 **Under the Hood: a branch is a test** · `sharpee test`
 
 The derived tests of chapter 15 follow the branches. Run `sharpee test .`
-and you will see one line for each arm: "kindle page · on reading · when
+inside the companion folder `chapter-17` and you will see one line for each arm: "kindle page · on reading · when
 legible", "kindle page · on reading · when learned", "iron grille · after
 examining · the third time". For a `select on` the runner puts the thing in
 the arm's state before it types the command, which is something it can do

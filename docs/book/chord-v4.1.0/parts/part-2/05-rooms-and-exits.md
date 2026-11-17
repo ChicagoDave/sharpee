@@ -274,7 +274,8 @@ Lantern Gallery
 The roof of the tower, open on every side. The Great Lantern stands in the middle of it on a stone drum, taller than you are, its glass thirty years dirty. The stair goes back down.
 ```
 
-Then try a direction that has no exit, in a room that has others.
+Then try a direction that has no exit. On the roof, where the only way is
+down, try `east`.
 
 ```text
 > east

@@ -121,7 +121,8 @@ changes that.
   publish-source: yes
 ```
 
-With the line, the `.story` file is copied into the published folder
+The line goes in the story header with the other fields, and its place
+among them does not matter. With the line, the `.story` file is copied into the published folder
 under its own name, and the fragments it imports go with it. The
 Relighting is a teaching story and it takes the line. For your own
 story the choice is yours, and leaving the line out is a perfectly
@@ -256,7 +257,7 @@ it for the same story, and the version tells the two releases apart.
 Set `story-version:` to `1.0.0` in your own copy. Decide whether your
 source goes along, and write `publish-source: yes` if it does. Run the
 tree. Then publish, unzip `dist/relighting.zip` into an empty folder,
-serve that folder, and play the story you wrote from the lodge to the
+serve that folder with `npx serve .` from inside it, and play the story you wrote from the lodge to the
 beacon, as a stranger will.
 
 ```shell

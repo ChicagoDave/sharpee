@@ -60,6 +60,8 @@ Low vaults on squat pillars, running off under the whole of the hall. The air is
 
 You can see a crate here.
 
+The tower bell strikes once, and the sound goes through the stones under your feet.
+
 Where the lamplight falls on it, the ice in the cistern begins to sweat.
 
 > examine cistern
@@ -68,11 +70,22 @@ A stone cistern sunk in the floor, fed by a lead pipe from somewhere above.
 The ice has gone dark and wet, and stands a finger's width clear of the stone all round.
 
 The ice in the cistern breaks up all at once. A leaf of paper rides up on the meltwater and slides out onto the flags.
+
+The tower bell tolls.
+
+You have risen to the rank of a Second-Year.
 ```
 
 The second turn shows the order of events inside a turn. The player's
 command is answered first, and the cistern is still `thawing` when it is
 examined. Then the every-turn clause runs and the ice goes.
+
+Three lines in that block are not the cistern's. The lamp will not light
+until the kindle page has been read, and reading the page sets the bell
+going, so by the time lamplight reaches the Undercroft the bell is striking
+and tolling. The next section is about that. The last line is chapter 18's
+rank, earned by `award thaw`. If you lit the candles on the way, you had
+that rank already and the line does not appear.
 
 The leaf of paper is the mend page, which has been offstage until now. It is
 declared like the other pages, with the states `faded, legible, learned`, a
@@ -178,6 +191,14 @@ The bell tolls again, and the rooks go up off the roof.
 Nothing in the story can stop it yet. That is what the third working is for,
 and it arrives in chapter 24. Until then Lanternhall is a noisy place to
 test in, which is some encouragement to get there.
+
+It also means that from here to the end of the book, any reply quoted from
+a game in which the kindle page has been read ends with one more line. It
+is one of the timer's three on the first three turns after the reading, and
+one of the bell's three after that, until the bell is hushed. The blocks in
+this book print the line that came when the block was recorded. Yours will
+have a line in the same place, and which line it is depends on how many
+turns you have taken since you read the page.
 
 ## More about timers
 

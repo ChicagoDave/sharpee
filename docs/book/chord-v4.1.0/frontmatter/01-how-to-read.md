@@ -99,7 +99,9 @@ adding `.zip` to its name, as in
 <https://sharpee.net/chord-manual/4.1.0/relighting/chapter-05.zip>. A
 folder holds the story file and a test tree, which chapter 38 explains,
 and from Part VII on it holds the story's sounds, picture and stylesheet
-as well.
+as well. Beside them are eight folders named `part-1` to `part-8`, each
+holding the story as it stands at the end of that part. No step in this
+book uses those.
 
 You need the folders to follow the book. A chapter prints the lines it
 teaches. It does not print every line of the story, because a page of

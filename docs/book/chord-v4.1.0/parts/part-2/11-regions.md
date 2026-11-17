@@ -198,7 +198,11 @@ read what the compiler says.
 
 ```text
 relighting.story:142:3 error [analysis.thing-in-region] `kettle` is placed in the region `Grounds` — a region holds rooms, not objects. Which of its rooms is `kettle` in? Name that room instead.
+compose: relighting.story failed the load-time gates (1 error(s))
 ```
+
+Put the kettle back in the Lodge, and check that the story is gate-clean
+again.
 
 ::: under-the-hood
 **Under the Hood: a region is an entity too** · `sharpee compose`

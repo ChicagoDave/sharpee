@@ -242,7 +242,9 @@ stair, and nothing in the story can lift the grille until chapter 24. No
 player can reach either ending yet.
 
 The start block trick from chapter 13 is made for this. In a copy of the
-file, set the world up as it will be late in the game.
+file, set the world up as it will be late in the game. Keep the copy in a
+folder of its own, since a project holds one story, and check and play it
+there.
 
 ```chord
 before the game starts

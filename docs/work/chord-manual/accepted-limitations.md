@@ -43,6 +43,12 @@ was rewritten after run 1, on the two rulings it quotes.
 6. **Text that varies on purpose.** Where a chapter teaches a choice that
    cycles, is random, or changes after the first time (chapters 17 and 20, and
    every clause built on them afterwards), the wording differs between turns.
+   Three more cases the book states: after the kindle page is read, every
+   turn ends with one line from the waking timer or the bell, and which line
+   depends on the turn (chapter 19); a fight under `use combat` is rolled
+   afresh by each `sharpee play` (chapter 35); and an empty inventory is
+   reported in one of three sentences (chapter 31). Report a line that is
+   missing or added, not which of the stated variants came up.
    Report only output that contradicts what the chapter says the choice does.
 7. **Reference material is read, not run.** The appendices are not executed.
    The boxes headed "From another system" quote Inform 10 and TADS 3 and are

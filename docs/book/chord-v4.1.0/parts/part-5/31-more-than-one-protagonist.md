@@ -94,7 +94,13 @@ The bell tolls again, and the rooks go up off the roof.
 
 > inventory
 Your hands are empty.
+
+The bell tolls. You have stopped counting.
 ```
+
+The platform has three ways of saying that an inventory is empty and picks
+one each time, so yours may speak of pockets, or of carrying nothing at
+all.
 
 Each person keeps what is theirs. Hobb is in the Lodge because that is
 where Hobb was. His hands are empty because Ansel has the lamp, the key
@@ -131,6 +137,8 @@ end on
 ```text
 > take kettle
 You take it.
+
+The bell tolls again, and the rooks go up off the roof.
 ```
 
 There is no condition that asks who the player is. The working form is the
@@ -178,6 +186,8 @@ create the Lodge, a room
 ```text
 > north
 Not with that going on. And not until you have found the thing.
+
+The tower bell tolls.
 ```
 
 This is the blocked exit of chapter 12, gated on the same state. Ansel
@@ -226,6 +236,8 @@ The reading room of Lanternhall, with its desks in rows and its galleries of she
 You can see a wisp here.
 
 On the reading desk you see a grimoire.
+
+The tower bell tolls.
 ```
 
 The hush page is no longer something Hobb carries from the start. It was
@@ -269,7 +281,9 @@ sharpee compose relighting.story --check
 sharpee play .
 ```
 
-Read the kindle page and play three more turns. When you are Hobb, try the
+Read the kindle page and play four more turns. The timer speaks on the
+first three, and it expires on the fourth, when the bell begins to toll.
+When you are Hobb, try the
 door, take the kettle because you can, and then look through the
 newspapers.
 

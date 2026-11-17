@@ -121,7 +121,7 @@ On the reading desk you see a grimoire.
 
 Every one of those replies is the platform's. You declared a door, a lock and
 a key, and the refusals, the unlocking and the opening all followed. The same
-is true of the wrong key:
+is true of the wrong key, tried while the door is still locked:
 
 ```text
 > unlock door with taper

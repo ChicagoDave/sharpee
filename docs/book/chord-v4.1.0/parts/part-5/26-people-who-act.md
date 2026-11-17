@@ -145,9 +145,13 @@ You say the word. A flame stands up on the wick, blue at first, as if it had bee
 
 Something small and blue comes loose from the flame and hangs in the air beside it, undecided. Then it decides.
 
+Somewhere above you, old timber takes a weight it had forgotten.
+
 > east
 Cloister
 A covered walk around a garth gone to nettles. The refectory is east, the library door west, and the foot of the bell stair north. Worn steps go down into the dark under the hall.
+
+A slow draught moves through the Hall, one way and then the other.
 
 The wisp follows you.
 ```

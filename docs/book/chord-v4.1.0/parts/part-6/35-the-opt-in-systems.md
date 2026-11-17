@@ -73,6 +73,10 @@ story
   authors:
     Nobody
 
+create the Cellar, a room
+
+  A low brick cellar that smells of coal and damp.
+
 create the rat
   a person, combatant with health 3 and skill 20 and base-damage 1
   in the Cellar
@@ -84,9 +88,21 @@ create the poker
   in the Cellar
 
   An iron poker.
+
+create Ansel
+  a person
+  playable
+  starts in the Cellar
+
+  You came down for coal.
+
+before the game starts
+  change the player to Ansel
+end before
 ```
 
-Both words take settings, written with `with` and `and` as the behaviour
+That is a whole story, with a room, a player and a start block as Part I
+taught them. Both words take settings, written with `with` and `and` as the behaviour
 words of chapter 26 do. `health` is how much damage a combatant can take.
 `skill` is how likely its blows are to land, and `base-damage` is what a
 blow does bare-handed. A weapon's `damage` is what it adds.
@@ -107,8 +123,11 @@ You have slain the rat!
 ```
 
 An attack may also miss: "You swing at the rat but miss!" Whether it does
-is a roll against skill, and the roll comes from the story's seeded random
-numbers, so a test tree that pins a fight sees the same fight every time.
+is a roll against skill. `sharpee play` rolls afresh each time it starts,
+so your fight will not go blow for blow as this one did, and the rat may
+take more attacks or fewer. A test tree is different. It carries a seed, as
+chapter 38 describes, and the rolls come from that seed, so a tree that
+pins a fight sees the same fight every time.
 
 All of these lines are standard messages. A story with combat in it will
 want its own, and chapter 22's `override message` is how.
@@ -134,6 +153,21 @@ story
   authors:
     Nobody
 
+create the Yard, a room
+
+  A cobbled yard with a pump in the middle of it.
+
+create Ansel
+  a person
+  playable
+  starts in the Yard
+
+  You have not eaten since yesterday.
+
+before the game starts
+  change the player to Ansel
+end before
+
 define phrases en-US
   hunger-peckish:
     You could eat.
@@ -147,10 +181,11 @@ the meter with a name of your choosing. A rung may end with `says` and a
 phrase, and the phrase is printed once, when the meter first reaches the
 rung. `fatal at <n>` is the level at which the player dies.
 
-```text
-> wait
-Time passes...
+The meter starts at nothing, and the opening of a story is a turn like any
+other, so the meter stands at one before the player has typed a word. The
+first `wait` takes it to two.
 
+```text
 > wait
 Time passes...
 
@@ -165,13 +200,15 @@ Time passes...
 You are hungry now, and thinking about the loaf.
 ```
 
-Left alone, the meter reaches nine.
+Left alone, the meter reaches nine on the eighth `wait`.
 
 ```text
 > wait
 Time passes...
 
 You have starved to death.
+
+[The story has ended. RESTART, RESTORE or UNDO]
 ```
 
 This is the form of chapter 18's rank ladder, turned upside down. A rank
@@ -212,13 +249,26 @@ one desert can write it in ten lines and own every word.
 ## Build and try it
 
 There is no companion snapshot for this chapter. The two examples above
-are complete stories once each has a room and a player, and you can build
-them as you built the first story in Part I.
+are complete stories, and you can build them as you built the first story
+in Part I. Each needs a folder of its own, because a folder holds one
+story. Make a folder called `cellar`, type the first example into a file
+called `cellar.story` inside it, and run these two commands there.
 
 ```shell
 sharpee compose cellar.story --check
 sharpee play .
 ```
+
+Attack the rat, take the poker, and attack again until the rat is dead.
+Then make a folder called `yard`, type the second example into
+`yard.story` inside it, and do the same.
+
+```shell
+sharpee compose yard.story --check
+sharpee play .
+```
+
+Type `wait` until the story ends, and count the turns between the lines.
 
 ::: under-the-hood
 **Under the Hood: a manifest for each system** · Story IR `uses`, `announceModes`

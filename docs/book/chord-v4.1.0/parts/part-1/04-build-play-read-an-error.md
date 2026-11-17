@@ -9,7 +9,9 @@ There are two ways to work with a Chord story. Chord Writer is an application
 with an editor, a play pane and a testing pane in one window. The `sharpee`
 command does the same work from a terminal. This book gives both wherever a
 step is something you do rather than something you write, under the heading
-"Build and try it". The story file is the same either way.
+"Build and try it". The story file is the same either way. This chapter is
+steps from beginning to end, so it has no such heading. From chapter 5 on,
+each chapter has one near its end.
 
 <!-- PENDING (plan D-3): the Chord Writer half of this chapter. No published
      Chord Writer pairs with this edition's pin yet (issues 653 and 729), so
@@ -25,7 +27,11 @@ it, install it from nodejs.org first. Then install the command itself:
 npm install -g @sharpee/devkit
 ```
 
-Check that it is there by asking for its version:
+A recent npm may end the install with a warning that one package had its
+install script blocked. The command works without that script, and you can
+leave the warning alone.
+
+Check that the command is there by asking for its version:
 
 ```shell
 sharpee --version
@@ -76,6 +82,8 @@ sharpee play .
 ```
 
 ```text
+Loading story from: /home/ansel/relighting
+
 --- Play Mode ---  (/quit or /q to exit)
 
 You were here for one term, thirty years ago, and you would have said you remembered none of it. Then last week a candle leaned toward your hand, and you started walking.
@@ -91,7 +99,9 @@ The porter's lodge is one small room built into the thickness of the gate arch. 
 >
 ```
 
-That is your prologue, then your header, then your room. The `>` is the
+The first line names the folder the story was loaded from, and yours will
+name your own. After it come your prologue, then your header, then your
+room. The `>` is the
 prompt, where the player types. Try a few commands.
 
 ```text
@@ -179,17 +189,19 @@ Some diagnostics go further than a remedy and offer a guess. Change
 
 ```text
 relighting.story:25:13 error [analysis.unknown-entity] No entity named `Loge` — did you mean `lodge`?.
+compose: relighting.story failed the load-time gates (1 error(s))
 ```
 
 An **entity** is the compiler's word for anything you make with `create`. The
 guess is printed in lower case because the compiler compares names without
 regard to capitals. You may write `the Lodge` or `the lodge` in your own
-lines, and they are the same room.
+lines, and they are the same room. Put the letter back before you go on.
 
 ## Warnings
 
 A warning is a diagnostic that does not stop the story. Delete the Lodge's
-description, leaving the header line with nothing under it, and check.
+description, both the paragraph and the blank line above it, so that the
+header line has nothing under it, and check.
 
 ```text
 relighting.story:16:8 warning [analysis.room-no-description] `the Lodge` has no description, so LOOK there shows only its name.

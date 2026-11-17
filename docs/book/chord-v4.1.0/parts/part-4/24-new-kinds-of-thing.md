@@ -58,8 +58,12 @@ page, is gone. The kindling action carries that requirement now.
 > kindle lamp
 You say the word. A flame stands up on the wick, blue at first, as if it had been waiting there with its coat on.
 
+Somewhere above you, old timber takes a weight it had forgotten.
+
 > kindle lamp
 It is burning already, and the word slides off it.
+
+A slow draught moves through the Hall, one way and then the other.
 ```
 
 Follow the command through, because this is the centre of the language. The
@@ -112,6 +116,8 @@ You say the word. A flame stands up on the wick, blue at first, as if it had bee
 
 The flame runs down the length of the table, and every cold wick takes it. In the candlelight there is a leaf of paper under the middle pricket that the daylight did not show.
 
+The tower bell tolls.
+
 You have risen to the rank of a Second-Year.
 ```
 
@@ -139,6 +145,8 @@ end trait
 ```text
 > light lamp
 You have no match, and you did not walk here for three days to use one. There is a word for this.
+
+The tower bell strikes once, and the sound goes through the stones under your feet.
 ```
 
 A trait may hold clauses for any actions, standard or your own, and several
@@ -268,6 +276,10 @@ create the spectacles
 
 One word on the kind line, and the mend working mends them.
 
+The replies in this section were recorded with the bell already hushed,
+which the next section does. Mend anything while it is still tolling and
+the reply ends with the bell.
+
 ```text
 > mend spectacles
 You say the word and mean it. What was broken is whole, and has no memory of having been otherwise.
@@ -351,14 +363,22 @@ be hushed first, and hushing needs the third page.
 > unbind grille
 The word goes into the iron and comes back out on the next stroke of the bell. Whatever holds the grille is being rung into it.
 
+The bell tolls. You have stopped counting.
+
 > hush bell
 You say the word up into the dark of the tower. The bell swings twice more without a sound, and hangs still.
 
 > unbind grille
 You say the word. The grille is not there, in the manner of a thing that was never there, and the stair goes up.
+
+You have risen to the rank of a Journeyman.
 ```
 
 The bell has stopped at last. Every turn since chapter 19 has ended with it.
+The line about rank comes on whichever of these awards takes the score to
+thirty. Here that was the grille, because the lamp, the candles and the
+other pages had been seen to first and nothing had been mended yet. In
+another order it follows the bell, or a mend.
 
 The grille is moved offstage, the Bell Stair's `{grille-across}` marker
 falls silent because its condition is no longer true, and the way up is no

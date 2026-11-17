@@ -66,6 +66,13 @@ the order written. A beat may be held back with a condition, written
 `beat, when <condition>:`, and the thread then waits at that beat until the
 condition holds.
 
+The thread is Tamsin's as much as the player's. If the player stays with
+her and lets a turn pass without a word, she takes the next beat herself.
+After the reply above, a `wait` is answered with her price, exactly as a
+second question about the page would be. A player who wanders off the
+subject and comes back may find that a beat was spent while they were
+quiet.
+
 ### Leaving a thread and coming back
 
 The topic table is still there while a thread is under way. If the player
@@ -195,7 +202,13 @@ buy. Afterwards it states the price again and opens the same exchange.
 ```text
 > ask tamsin about the price
 "A price for what? You haven't said what you want."
+
+Tamsin Vey turns over a heap of door furniture on the end of a table, and puts two hinges in her apron.
 ```
+
+A refusal does not begin a conversation, so nothing holds Tamsin, and
+chapter 26's `rounds` takes its next step on the same turn. On the turn
+after that she walks out, as she did before this chapter.
 
 ```text
 > ask tamsin about the price
@@ -311,9 +324,16 @@ end initiative
 
 A row begins with an occasion. `on silence` is the occasion when a
 conversation is open and the player has let a turn or two go by without
-saying anything.
+saying anything. A thread comes first. While the bargain has a beat to
+give, a silent turn gets the beat, as the section on threads said. The
+silence row speaks in a conversation that has no thread under way, such as
+the one a question about brass opens.
 
 ```text
+> ask tamsin about brass
+"Door furniture, mostly. Lamp brackets. Nobody was using them."
+
+> wait
 > wait
 You wait. The Hall has had thirty years of practice and is better at it than you are.
 

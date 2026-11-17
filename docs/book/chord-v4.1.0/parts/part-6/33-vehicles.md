@@ -138,7 +138,9 @@ from the state of the story, say so, and let the platform move it.
 
 ### Riding
 
-The player can get into the hoist as well.
+The player can get into the hoist as well. These replies were recorded
+with the bell hushed. Ride while it is still tolling and each ends with the
+bell.
 
 ```text
 > enter hoist

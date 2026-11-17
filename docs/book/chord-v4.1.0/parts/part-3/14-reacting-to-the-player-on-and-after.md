@@ -311,6 +311,10 @@ Hobb's cake.
 
 ```text
 > eat cake
+(first taking the seed cake)
+
+You take the seed cake from the chair.
+
 You eat some of the seed cake.
 
 It tastes of caraway, and of being nineteen.
@@ -355,7 +359,11 @@ consulted at the start, before the check, which is why it can refuse and why
 a phrase it prints stands in for the report. An `after` clause runs when the
 report is already written. `sharpee test` lists every clause it found by
 owner and gerund, such as "kettle · on taking", and that list is a quick way
-to see what your story has attached to which action.
+to see what your story has attached to which action. The command needs a
+test tree beside the story, which chapter 38 teaches you to write, and your
+own folder has none yet. The companion folder `chapter-14` has one. Go into
+that folder and run `sharpee test .` to see the list, under the heading
+that begins "Derived rule tests".
 :::
 
 ::: from-another-system

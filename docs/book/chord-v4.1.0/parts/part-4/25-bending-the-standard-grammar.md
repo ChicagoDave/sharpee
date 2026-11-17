@@ -42,7 +42,8 @@ when the action is not yours to edit.
 ## Extending a standard action
 
 Hobb's chair has been `enterable` since chapter 7, and chapter 7 had to
-admit that the command for sitting in it was `enter chair`.
+admit that the command for sitting in it was `enter chair`. In the story as
+chapter 24 left it, the plainer command gets this reply:
 
 ```text
 > sit on chair
@@ -58,6 +59,8 @@ extend action entering
     sit on or in the portal
     sit down on or in the portal
 ```
+
+With that in the story, which is how this chapter's companion file has it:
 
 ```text
 > sit on chair
@@ -130,6 +133,8 @@ command. Removing the pattern first leaves no doubt about which you mean.
 ```text
 > light lamp
 You say the word. A flame stands up on the wick, blue at first, as if it had been waiting there with its coat on.
+
+Somewhere above you, old timber takes a weight it had forgotten.
 ```
 
 And before the page has been read, `light lamp` is refused by the kindling
@@ -146,6 +151,8 @@ the one pattern the lighting action has left.
 ```text
 > light lamp with taper
 You have no match, and you did not walk here for three days to use one. There is a word for this.
+
+A slow draught moves through the Hall, one way and then the other.
 ```
 
 This is the right order in which to think about any standard verb that your
@@ -239,6 +246,10 @@ bell`, `fix spectacles`, `repair lens`.
 > quiet bell
 You say the word up into the dark of the tower. The bell swings twice more without a sound, and hangs still.
 ```
+
+One of the replies on this walk ends with the line about the rank of a
+Journeyman. It is whichever takes the score to thirty, and in the order
+given here that is `fix spectacles`.
 
 ::: under-the-hood
 **Under the Hood: two lists** · Story IR `grammarRemovals`, `grammarExtensions`

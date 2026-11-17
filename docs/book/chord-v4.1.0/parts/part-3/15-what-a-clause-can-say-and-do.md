@@ -304,8 +304,10 @@ You can see a crate here.
 ::: under-the-hood
 **Under the Hood: what the test runner derives** · `sharpee test`
 
-Run `sharpee test .` on this chapter's folder and read the list under
-"Derived rule tests". The runner has turned each refusal into a test of its
+Run `sharpee test .` inside the companion folder `chapter-15`, which has a
+test tree where your own folder has none, and read the list under the
+heading that begins "Derived rule tests". The report has other parts above
+and below that list, and chapter 38 explains them. The runner has turned each refusal into a test of its
 own: "hand lamp · on lighting · refused no-such-word", "seed cake · on
 eating · refused cake-watched". It arranges the world so that the refusal
 should fire, types the command, and checks that the phrase came out. A

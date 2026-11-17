@@ -1,5 +1,5 @@
 ## The Relighting, as it stands at the end of chapter 13: the story and
-## six of its things now have states. Nothing changes a state yet, and
+## five of its things now have states. Nothing changes a state yet, and
 ## the stair is sealed for as long as the grille is standing.
 
 story

@@ -160,8 +160,12 @@ the four workings. So once the page has been read, every one of them misses.
 > kindle lamp
 There is nothing in that for a flame to stand on.
 
+Somewhere above you, old timber takes a weight it had forgotten.
+
 > kindle grimoire
 There is nothing in that for a flame to stand on.
+
+A slow draught moves through the Hall, one way and then the other.
 ```
 
 The first of those is plainly wrong, and it is wrong in an instructive way.

@@ -108,9 +108,14 @@ cannot be closed.
 
 The line `holds`, followed by a number, limits how many things a container or
 a supporter can have in it or on it at once. The crate holds one, and that one
-is the lens.
+is the lens. In a new game, before the lens has been taken out:
 
 ```text
+> open crate
+You open the crate.
+
+In the crate you see a lens.
+
 > put taper in crate
 There's no room in the crate.
 ```

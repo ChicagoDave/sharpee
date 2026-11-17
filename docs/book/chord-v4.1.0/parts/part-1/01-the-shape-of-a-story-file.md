@@ -77,7 +77,8 @@ The compiler does not run your file. It reads the file and writes a description
 of the story called the Story IR, which is a JSON document, and the Sharpee
 platform builds the world from that description. The command
 `sharpee compose relighting.story -o relighting.ir.json` writes it where you
-can read it.
+can read it. You do not have the `sharpee` command yet. Chapter 4 installs
+it, and runs this command at its end.
 :::
 
 ## One line, one thing
@@ -221,7 +222,8 @@ sentence for the player.
 
 You have not built anything yet, and that is deliberate. Type the story at the
 top of this chapter into a file called `relighting.story`, with spaces for
-indentation, and keep it. Chapter 2 explains its first block, chapter 3
+indentation, and keep it. Make a new folder called `relighting` for it, with
+nothing else inside. Chapter 2 explains its first block, chapter 3
 explains Ansel and the block that ends the file, and chapter 4 builds the story
 and plays it. The Lodge waits for chapter 5, though it is already doing its
 work as the one place the story has.

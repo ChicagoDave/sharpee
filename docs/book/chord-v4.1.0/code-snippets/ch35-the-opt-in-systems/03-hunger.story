@@ -9,6 +9,21 @@ story
   authors:
     Nobody
 
+create the Yard, a room
+
+  A cobbled yard with a pump in the middle of it.
+
+create Ansel
+  a person
+  playable
+  starts in the Yard
+
+  You have not eaten since yesterday.
+
+before the game starts
+  change the player to Ansel
+end before
+
 define phrases en-US
   hunger-peckish:
     You could eat.

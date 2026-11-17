@@ -13,7 +13,7 @@ is a fact the story could act on.
 
 A **state** is such a fact. It is a word that says what condition a thing is
 in, chosen from a short list that you write. This chapter gives states to the
-story and to six of its things. The next chapter makes them change.
+story and to five of its things. The next chapter makes them change.
 
 ## Declaring states
 
@@ -319,7 +319,7 @@ is declared in that owner's block.
 
 ## What you have so far
 
-The story and six of its things can now be in one condition or another, and
+The story and five of its things can now be in one condition or another, and
 one exit already depends on which. What is missing is anything that changes
 a state during play. For that a thing has to notice what the player does to
 it, and that is the next chapter.

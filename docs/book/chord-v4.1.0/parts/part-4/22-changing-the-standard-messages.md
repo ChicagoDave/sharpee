@@ -218,6 +218,8 @@ After the kindle page has been read:
 ```text
 > push grille
 It hums under your hand, very faintly, like a rail with a train a long way off. It does not move.
+
+The tower bell strikes once, and the sound goes through the stones under your feet.
 ```
 
 The grille's clause still says `refuse grille-fixed`, as it has since

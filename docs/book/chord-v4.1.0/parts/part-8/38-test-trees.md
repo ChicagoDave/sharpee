@@ -227,13 +227,17 @@ sharpee test .
 ```
 
 ```text
+Loading story from: /home/ansel/relighting
 Test tree: relighting.tests/ (seed 42, 1 line(s))
 
 ✓ opening-lodge
 3 cards passing, 4 assertions passing
 ```
 
-The boot card is still a skip card, and a skipped card is not counted.
+The first line names the folder the story was loaded from, as `play` does,
+and yours will name your own. Every report begins with it, and the reports
+quoted from here on start at the line after it. The boot card is still a
+skip card, and a skipped card is not counted.
 
 The command exits with 0 when everything passes and 1 when anything
 fails. Here is the same tree after the `take lamp` card was made to
@@ -426,8 +430,10 @@ in alphabetical order and two spaces of indentation for each level. Run
 again when the other two are. The second and third segments go in
 together, because a segment that continues a line is refused until a
 branch leaves the card it continues from. Then break something on
-purpose: in the story, change the phrase the seed cake's refusal prints,
-run the tree, and read the failure.
+purpose. In the story, find the phrase `cake-watched`, which the seed
+cake's refusal prints, and change its last sentence from "You find you
+cannot." to "You decide against it." Run the tree and read the failure.
+Then put the sentence back and run the tree again.
 
 When you have seen a failure and mended it, replace your folder with the
 one from `chapter-38` and run the full tree.

@@ -277,8 +277,10 @@ You can see a hand lamp here.
 Then examine everything a description mentions, in every room. Where the
 answer is "You can't see any such thing", you have found a promise the story
 is not yet keeping. Some of those are deliberate, because the Library's desks
-and the bell rope have chapters of their own coming. The rest are yours
-to fix.
+and the bell rope have chapters of their own coming. Others stay unkept in
+The Relighting, which makes scenery only of what the game uses. Nothing in
+this step needs fixing. In a story of your own, each of them is a line to
+write.
 
 ::: under-the-hood
 **Under the Hood: traits** · `sharpee compose`

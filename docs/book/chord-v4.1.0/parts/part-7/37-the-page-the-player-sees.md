@@ -76,7 +76,9 @@ sharpee build relighting.story
 
 The command compiles the story, as `compose` does, and then writes a
 complete web page to a folder under `dist/web/`, named for the story's
-`id`.
+`id`. There is no need to run it yet. "Build and try it" runs it at the end
+of the chapter, on the story with everything this chapter adds, and this is
+what it prints then.
 
 ```text
 🔨 Building browser bundle
@@ -109,7 +111,9 @@ To test locally:
 ```
 
 The line about `relighting.css` appears once the stylesheet later in this
-chapter exists, and the line about an `ifid` is chapter 40's subject.
+chapter exists, and the line about themes once the header names them. The
+line about an `ifid` is chapter 40's subject. It is printed by the first
+build of a story that has no identifier yet.
 
 The folder holds `index.html`, one script called `game.js` with the whole
 story inside it, the stylesheets, and a copy of the `assets` folder from
@@ -123,7 +127,8 @@ npx serve dist/web/relighting
 
 The page opens on the story's title and prologue, in the paper theme. The
 Settings menu has a Theme entry that lists Classic, Paper and Modern Dark.
-Turn the sound on before you kindle the lamp. The first build also writes
+The page has no sound control of its own, so see that your machine's sound
+is up before you kindle the lamp. The first build also writes
 a small file beside the story, `relighting.config.json`, which chapter 40
 explains.
 

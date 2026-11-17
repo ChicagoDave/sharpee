@@ -255,6 +255,8 @@ Take the lit lamp down to the Undercroft and open the crate.
 ```text
 > examine lens
 A disc of glass as wide as a cartwheel, ground in rings. A crack runs across it from edge to edge.
+
+The bell tolls again, and the rooks go up off the roof.
 ```
 
 ::: under-the-hood

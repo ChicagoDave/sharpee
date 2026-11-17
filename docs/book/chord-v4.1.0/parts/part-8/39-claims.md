@@ -336,11 +336,15 @@ does. A claim's name is indented by two spaces and its lines by four.
 The fact comes first, then `needs rooms`, `needs things` and `needs
 verbs` in that order, and exactly one blank line separates two claims.
 A file laid out another way is refused, and the refusal names the line.
+This is the refusal for a file in which a second claim follows this one
+with no blank line between them.
 
 ```text
 test: claims file 'relighting.claims.chord' is not in the lock's canonical form (fix the lines named, or re-lock):
   relighting.claims.chord:17 · claim the story can be won — the next block follows without a blank line
 ```
+
+With the file laid out as the runner wants it, the report has both claims.
 
 ```text
 claims: 2 of 2 held (seed 42)
@@ -499,12 +503,14 @@ the sentences you would use to tell someone what the game is.
 Work in your own project, which now holds what the companion folder
 `chapter-38` holds: the story of chapter 37 and the full tree. List the
 facts at turn 82 of the main line, and lock `the iron grille is lifted`
-under a name of your own. Run the tree and find the claim and its lock
-in the report.
+under the name this chapter gave it, `the ward on the stair can be
+lifted`, so that your reports read as the chapter's do. Run the tree and
+find the claim and its lock in the report. Add the claim that the story
+can be won, and its lock, as the chapter did.
 
 Then add the second cake claim by hand, and run the tree again to see
 the witness. Change its `needs rooms` line to the Lodge alone, and see
-it come back unproven.
+it come back unproven. Put the Gate Court back on the line afterwards.
 
 Last, break the story as this chapter did, by taking `change it to
 lifted` out of the `ward` trait, and read the lock's line. Put it back.
