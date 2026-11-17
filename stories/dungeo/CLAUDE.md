@@ -6,7 +6,6 @@ This is a port of the 1981 version of mainframe Zork (aka Dungeon aka DUNGEO) wi
 
 - We implemented GDT (Game Debugging Tool), but some commands are specifically for the FORTRAN/MDL implementations (bit flags) and are not relevant to this port.
 - We are adhering to all timers, counters, and randomization logic unless it's not feasible.
-- The `docs/work/dungeo/map-connections.md` is the canonical source of truth for map connections.
 
 ## MDL Source Reference
 
@@ -17,7 +16,7 @@ The authoritative MDL source is at `docs/references/dungeon-81/patched_confusion
 
 ### Verifying Against MDL
 
-**Always verify room connections against the MDL source**, not just the map-connections.md file. Past bugs found by checking MDL:
+**Always verify room connections against the MDL source**: it is the source of truth for map connections. Past bugs found by checking MDL:
 - Well Bottom was missing `WEST → Pearl Room` exit (MDL `BWELL` has `"WEST" "MPEAR"`)
 - Round Room carousel incorrectly excluded the intended destination (MDL `CAROUSEL-OUT` picks any random exit)
 
@@ -66,11 +65,6 @@ them live together under `regions/{region}/`, so a room and its objects are edit
 side by side. NPCs get a directory each under `npcs/{npc}/` splitting entity,
 behavior, and messages. `actions/`, `handlers/`, and `scheduler/` hold the
 story-specific action implementations, daemons/event handlers, and timed events.
-
-## Key References
-
-- `docs/work/dungeo/implementation-plan.md` - Progress tracking, room/treasure/puzzle checklists
-- `docs/work/dungeo/dungeon-catalog.md` - Complete inventory of rooms, objects, NPCs, puzzles
 
 ## Implementation Patterns
 

@@ -271,5 +271,3 @@ give/show recipient).
 - `expectLocationChanged(world, entityId, from, to)` — Assert location changed
 - `expectTraitValue(entity, traitType, prop, value)` — Assert trait property
 - `captureEntityState(world, entityId)` — Snapshot for debugging
-
-**See**: `docs/work/test-review/plan-20260406-testing-mitigation.md` for full details.
