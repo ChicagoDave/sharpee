@@ -496,9 +496,11 @@ the sentences you would use to tell someone what the game is.
 
 ## Build and try it
 
-Start from the folder `chapter-38`. List the facts at turn 82 of the
-main line, and lock `the iron grille is lifted` under a name of your
-own. Run the tree and find the claim and its lock in the report.
+Work in your own project, which now holds what the companion folder
+`chapter-38` holds: the story of chapter 37 and the full tree. List the
+facts at turn 82 of the main line, and lock `the iron grille is lifted`
+under a name of your own. Run the tree and find the claim and its lock
+in the report.
 
 Then add the second cake claim by hand, and run the tree again to see
 the witness. Change its `needs rooms` line to the Lodge alone, and see

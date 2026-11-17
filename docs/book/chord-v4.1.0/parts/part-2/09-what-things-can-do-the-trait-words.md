@@ -322,10 +322,13 @@ themselves, and Appendix B lists every trait word with its settings.
 
 ## Build and try it
 
-Add the coat, the seed cake, the cup, the candles and the bell rope to your
-story. Make the grimoire readable, give Ansel the `wears` line, and mention
-the candles in the Refectory's description. The complete file is in the
-companion folder `chapter-09`.
+Copy `relighting.story` from the companion folder `chapter-09` over your own
+file. It is the story with this chapter's changes made, and it holds the
+lines the chapter did not print in full. To make the changes by hand instead,
+work from this list and take the rest from that file: add the coat, the seed
+cake, the cup, the candles and the bell rope, make the grimoire readable,
+give Ansel the `wears` line, and mention the candles in the Refectory's
+description.
 
 ```shell
 sharpee compose relighting.story --check

@@ -102,14 +102,14 @@ and from Part VII on it holds the story's sounds, picture and stylesheet
 as well.
 
 You need the folders to follow the book. A chapter prints the lines it
-teaches. It does not print every sentence the story says, because a page
-of prose teaches nothing about Chord. Those sentences are the story's
-phrases, which chapter 12 introduces, and each chapter's "Build and try
-it" says which to copy from that chapter's folder. Everything else that
-goes into your story is printed in the chapter.
-
-The folders are also there for the day your story and the book's
-disagree, and you want to know which of you mistyped.
+teaches. It does not print every line of the story, because a page of
+descriptions teaches nothing about Chord. Part I's story is short, and
+you type all of it. From chapter 5 on, each chapter's "Build and try it"
+begins by copying that chapter's `relighting.story` from its folder over
+your own, so that your story is the book's at the end of every chapter.
+The same section lists what changed, for the reader who would sooner
+make the changes by hand and take only the unprinted lines from the
+file.
 
 ## When something is missing
 

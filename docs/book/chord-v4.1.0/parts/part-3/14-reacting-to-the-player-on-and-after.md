@@ -323,10 +323,13 @@ where people act by themselves.
 
 ## Build and try it
 
-Add the clauses to the kettle, the spectacles, the Library, the kindle page,
-the bell rope, the grille, the lens and Ansel, and add their eight phrases.
-Remove `with text` and its string from the kindle page. The complete file is
-in the companion folder `chapter-14`.
+Copy `relighting.story` from the companion folder `chapter-14` over your own
+file. It is the story with this chapter's changes made, and it holds the
+phrases, which the chapter did not print in full. To make the changes by hand
+instead, work from this list and take the phrases from that file: add the
+clauses to the kettle, the spectacles, the Library, the kindle page, the bell
+rope, the grille, the lens and Ansel, add their eight phrases, and remove
+`with text` and its string from the kindle page.
 
 ```shell
 sharpee compose relighting.story --check

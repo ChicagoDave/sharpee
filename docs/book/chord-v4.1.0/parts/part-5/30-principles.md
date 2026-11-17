@@ -214,11 +214,13 @@ has moved with it.
 
 ## Build and try it
 
-Change Hobb's `knows` line and add the two lines beneath it. Take the
-`refuse` line out of his row about the last night and give the row the
-spelling `night`. Add a row about his spectacles, so that the player has
-something to go on. The whole story is in the companion folder
-`chapter-30`.
+Copy `relighting.story` from the companion folder `chapter-30` over your own
+file. It is the story with this chapter's changes made, and it holds the row
+about Hobb's spectacles, which the chapter did not print. To make the changes
+by hand instead, work from this list and take the rest from that file. Change
+Hobb's `knows` line and add the two lines beneath it. Take the `refuse` line
+out of his row about the last night and give the row the spelling `night`.
+Add a row about his spectacles, so that the player has something to go on.
 
 ```shell
 sharpee compose relighting.story --check

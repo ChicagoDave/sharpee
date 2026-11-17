@@ -310,13 +310,16 @@ of their phrases needs to mention the kettle.
 
 ## Build and try it
 
-Add `carries the hush page` and `mood calm` to Hobb, and take the hush
-page's `in the Stack 3` line away. Add the greetings, the manner and the
-three topic tables near the people, the one line to `override messages`,
-and the new phrases to the phrases block. The story's day is also longer
-from this chapter on, since conversation takes turns: the sequence's first
-step is `at turn 70` and its second `40 turns later`. The whole story is in
-the companion folder `chapter-27`.
+Copy `relighting.story` from the companion folder `chapter-27` over your own
+file. It is the story with this chapter's changes made, and it holds the
+topic tables, the greetings and the phrases that the chapter did not print in
+full. To make the changes by hand instead, work from this list and take the
+rest from that file. Add `carries the hush page` and `mood calm` to Hobb, and
+take the hush page's `in the Stack 3` line away. Add the greetings, the
+manner and the three topic tables near the people, the one line to `override
+messages`, and the new phrases to the phrases block. The story's day is also
+longer from this chapter on, since conversation takes turns: the sequence's
+first step is `at turn 70` and its second `40 turns later`.
 
 ```shell
 sharpee compose relighting.story --check

@@ -359,10 +359,13 @@ goes.
 
 ## Build and try it
 
-Add the second blocked line to the Bell Stair, the book hoist to the
-Undercroft, and one phrase. The whole story is in the companion folder
-`chapter-33`. The day's sequence is longer again, `at turn 100` and `60
-turns later`, to leave room for the extra trip.
+Copy `relighting.story` from the companion folder `chapter-33` over your own
+file. It is the story with this chapter's changes made, and it holds the one
+new phrase, which the chapter did not print. To make the changes by hand
+instead, work from this list and take the rest from that file: add the second
+blocked line to the Bell Stair, the book hoist to the Undercroft, and one
+phrase. The day's sequence is longer again, `at turn 100` and `60 turns
+later`, to leave room for the extra trip.
 
 ```shell
 sharpee compose relighting.story --check

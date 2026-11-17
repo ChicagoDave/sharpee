@@ -251,8 +251,10 @@ You slip behind the curtain.
 
 ## Build and try it
 
-Add the things in this chapter to your story. The complete file is in the
-companion folder `chapter-06`. Check it and play it.
+Copy `relighting.story` from the companion folder `chapter-06` over your own
+file. It is the story with this chapter's changes made, and it holds the
+things and descriptions the chapter did not print in full, the hand lamp, the
+blue flame, the hearth and the Great Lantern among them. Check it and play it.
 
 ```shell
 sharpee compose relighting.story --check

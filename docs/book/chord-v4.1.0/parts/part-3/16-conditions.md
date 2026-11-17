@@ -239,11 +239,14 @@ some clause has to set it.
 
 ## Build and try it
 
-Add the two `define condition` lines near the top of the file, after the
-header. Add the hush page, give the unbind page its states and its clause in
-place of `with text`, and add the `each` block to the kindle page and the
-`after` clause to the grimoire. There are seven new phrases. The complete
-file is in the companion folder `chapter-16`.
+Copy `relighting.story` from the companion folder `chapter-16` over your own
+file. It is the story with this chapter's changes made, and it holds the
+phrases and the unbind page's clause, which the chapter did not print. To
+make the changes by hand instead, work from this list and take the rest from
+that file: add the two `define condition` lines near the top of the file,
+after the header, add the hush page, give the unbind page its states and its
+clause in place of `with text`, and add the `each` block to the kindle page
+and the `after` clause to the grimoire. There are seven new phrases.
 
 ```shell
 sharpee compose relighting.story --check

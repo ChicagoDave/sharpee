@@ -273,10 +273,12 @@ file, and you will meet a second use for one in chapter 25.
 
 ## Build and try it
 
-Add the override for `going-too-dark`, the override for
-`waiting-time-passes`, the `override messages` block and the two
-phrasebooks. Remove `kettle-is-hobbs` and `grille-fixed` from the `define
-phrases` block. The complete file is in the companion folder `chapter-22`.
+Copy `relighting.story` from the companion folder `chapter-22` over your own
+file. It is the story with this chapter's changes made. To make the changes
+by hand instead, work from this list and take the rest from that file: add
+the override for `going-too-dark`, the override for `waiting-time-passes`,
+the `override messages` block and the two phrasebooks, and remove
+`kettle-is-hobbs` and `grille-fixed` from the `define phrases` block.
 
 ```shell
 sharpee compose relighting.story --check

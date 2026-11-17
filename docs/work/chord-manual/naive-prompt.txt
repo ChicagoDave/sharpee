@@ -4,6 +4,28 @@ PDF is in ~/repos/book-test; its title page should read "Chord 4.1.0, Sharpee
 author of interactive fiction who has never seen Chord or Sharpee. These rules
 override everything else:
 
+SETUP. Before you open the book, prepare this box. None of this is the book's
+business: do it, note it once at the top of the log under "Setup", and report
+nothing here as a book issue unless a step fails.
+  1. Global npm installs must not need root. Run
+       npm config get prefix
+     and if it does not print a folder under your home directory, run
+       npm config set prefix "$HOME/.local"
+       mkdir -p "$HOME/.local/lib/node_modules" "$HOME/.local/bin"
+     and check that $HOME/.local/bin is on your PATH. Do not install the
+     `sharpee` command now: chapter 4 does that.
+  2. Install Playwright and its Chromium outside any project folder:
+       mkdir -p ~/tools/playwright && cd ~/tools/playwright
+       npm init -y && npm install playwright
+       npx playwright install chromium
+       sudo npx playwright install-deps chromium
+     The last line installs the system libraries Chromium needs; on this box
+     it does not start without them. Check it with a three-line script that
+     launches Chromium and closes it. Run your Playwright scripts from that
+     folder.
+  3. Check that the book and the companion folders are where this brief says:
+     ~/repos/book-test holds one PDF and a folder called `companion`.
+
 AMNESIA. Treat the book as your ONLY source of truth about Chord and Sharpee.
 Ignore anything you think you already know about either, or about the
 `sharpee` command. Do not read platform source, node_modules, README files
@@ -12,12 +34,15 @@ folders are on this box; see COMPANION below. Do not run --help on any tool unle
 to. If the book doesn't teach it, you don't know it.
 
 EXECUTE AS-IS. Work through the book front to back, chapter by chapter, in one
-project folder, exactly as the text instructs: run the commands it shows, type
-the Chord it shows, place each block only where the chapter's prose says it
-goes. Type the story from the chapters by hand; never invent lines, rename
-things, or "improve" anything. Where a chapter breaks the story on purpose and
-then says to put it back, do both. Chapter 35's two examples are separate
-stories, each in a folder of its own, as that chapter says.
+project folder, exactly as the text instructs: run the commands it shows and
+do each step of each "Build and try it". In Part I, type the story from the
+chapters by hand. From chapter 5 on, each "Build and try it" begins by
+copying that chapter's story from its companion folder over your own: do
+that, and do not also make the listed changes by hand, which the book offers
+only as an alternative. Never invent lines, rename things, or "improve"
+anything. Where a chapter breaks the story on purpose and then says to put
+it back, do both. Chapter 35's two examples are separate stories, each in a
+folder of its own, as that chapter says.
 
 COMPANION. The book says its companion folders are on sharpee.net and prints
 their address in "How to read this book". For this run they are already on
@@ -25,12 +50,12 @@ this box, in ~/repos/book-test/companion, one folder to a chapter (`chapter-05`,
 `chapter-06`, and so on). Wherever the book tells you to download or copy
 something from a companion folder, take it from there and do not go to the
 website. Use a companion folder only when a chapter's own step tells you to,
-and take from it only what that step names (for example the phrases a chapter
-says to copy, the `assets` folder in chapter 36, the test tree in chapter 38).
-Never open a companion folder to settle a disagreement between your story and
-the book, to find a line no step told you to copy, or to see what a later
-chapter does. If your story fails where the book says it works, that is the
-finding: log it.
+and take from it only what that step names (for example the chapter's
+`relighting.story`, the `assets` folder in chapter 36, the test tree in
+chapter 38). Never open a later chapter's folder, and never use a folder to
+settle a disagreement between what the story prints and what the book says
+it prints. If the copied story does not do what the chapter says, that is
+the finding: log it.
 
 NO R&D. You are testing the book, not solving problems. When something fails
 or the text is ambiguous or incomplete (a name that was never created, a block
@@ -82,12 +107,13 @@ book fails a literal reader.
    step is done with the `sharpee` command the book gives. Report only a step
    that the book says can be done and for which it gives no command.
 2. **The companion folders are part of the book.** The chapters do not print
-   every line of the story: a chapter's "Build and try it" says what to copy
-   from its companion folder, and the book gives a sharpee.net address for
-   them. In this run the folders are in ~/repos/book-test/companion and the
-   website is not used. Do not report that a step needs a companion folder, or
-   that the address differs. Report a step that needs a line and names no
-   place to copy it from. Chapter 35 has no companion folder, as it says.
+   every line of the story: from chapter 5 on, a chapter's "Build and try it"
+   copies that chapter's story from its companion folder, and the book gives
+   a sharpee.net address for the folders. In this run they are in
+   ~/repos/book-test/companion and the website is not used. Do not report
+   that a step needs a companion folder, that the address differs, or that a
+   chapter leaves lines of the story unprinted. Chapter 35 has no companion
+   folder, as it says.
 3. **Values that belong to the run.** The IFID a build mints, build timings and
    file sizes, the address `npx serve` prints, and absolute paths in messages
    differ from the book's. Report only when a line's wording or shape differs.

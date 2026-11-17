@@ -476,10 +476,14 @@ none of it is a clause on a thing. A goal belongs to the person who has it.
 
 ## Build and try it
 
-Add `pronouns he` to Hobb. Add the `on every turn` clause to the oak press
-and the `after the player kindling, once` clause to the hand lamp. Create
-Tamsin Vey and the wisp near Hobb, and add their six phrases to the
-phrases block. The whole story is in the companion folder `chapter-26`.
+Copy `relighting.story` from the companion folder `chapter-26` over your own
+file. It is the story with this chapter's changes made, and it holds the
+phrases, which the chapter did not print in full. This is the first chapter
+of Part V, and the copy's `story-version` is `0.5.0`. To make the changes by
+hand instead, work from this list and take the rest from that file: add
+`pronouns he` to Hobb, add the `on every turn` clause to the oak press and
+the `after the player kindling, once` clause to the hand lamp, create Tamsin
+Vey and the wisp near Hobb, and add their six phrases to the phrases block.
 
 ```shell
 sharpee compose relighting.story --check

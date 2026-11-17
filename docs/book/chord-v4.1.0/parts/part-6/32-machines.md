@@ -223,9 +223,13 @@ shutters are drawn the crank turns freely and nothing more happens.
 
 ## Build and try it
 
-Add the shutter and the crank to the Lantern Gallery, the machine near the
-top of the story, the second `must` line to the `lens-seat` trait, and
-four phrases. The whole story is in the companion folder `chapter-32`.
+Copy `relighting.story` from the companion folder `chapter-32` over your own
+file. It is the story with this chapter's changes made, and it holds the
+phrases, which the chapter did not print. This is the first chapter of Part
+VI, and the copy's `story-version` is `0.6.0`. To make the changes by hand
+instead, work from this list and take the rest from that file: add the
+shutter and the crank to the Lantern Gallery, the machine near the top of the
+story, the second `must` line to the `lens-seat` trait, and four phrases.
 
 ```shell
 sharpee compose relighting.story --check

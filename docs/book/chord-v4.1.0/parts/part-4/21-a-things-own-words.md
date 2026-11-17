@@ -237,10 +237,13 @@ it lives with whatever it describes.
 
 ## Build and try it
 
-Add the `detail` phrases to the hand lamp, the candles and the lens, and cut
-the candles' and the lens's descriptions back to what is always true. Add
+Copy `relighting.story` from the companion folder `chapter-21` over your own
+file. It is the story with this chapter's changes made. To make the changes
+by hand instead, work from this list and take the rest from that file: add
+the `detail` phrases to the hand lamp, the candles and the lens, cut the
+candles' and the lens's descriptions back to what is always true, and add
 the `present` phrase to Hobb. No new entries go in the `define phrases`
-block. The complete file is in the companion folder `chapter-21`.
+block.
 
 ```shell
 sharpee compose relighting.story --check

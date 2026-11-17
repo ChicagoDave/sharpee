@@ -325,11 +325,14 @@ something, and everything chapter 12 said about fairness applies.
 
 ## Build and try it
 
-Add `use scoring` and its ranks to the header, `define counter workings`
-near the top, the three `score` lines and their `award` lines, the `raise
-workings` line in each page's first arm, the counter on the bell rope, and
-the `after` clause on the Great Lantern. There are four new phrases. The
-complete file is in the companion folder `chapter-18`.
+Copy `relighting.story` from the companion folder `chapter-18` over your own
+file. It is the story with this chapter's changes made, and it holds the
+phrases, which the chapter did not print. To make the changes by hand
+instead, work from this list and take the rest from that file: add `use
+scoring` and its ranks to the header, `define counter workings` near the
+top, the three `score` lines and their `award` lines, the `raise workings`
+line in each page's first arm, the counter on the bell rope, and the `after`
+clause on the Great Lantern. There are four new phrases.
 
 ```shell
 sharpee compose relighting.story --check

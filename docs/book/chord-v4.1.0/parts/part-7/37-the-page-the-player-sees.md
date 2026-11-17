@@ -334,11 +334,17 @@ will not pick up improvements to the default one.
 
 ## Build and try it
 
-Add the four client fields to the header, the `define channel` block near
-the top of the story, and one `emit` line to each of the four pages'
-`on the player reading` clauses. Make the folder `browser` and put
-`relighting.css` in it. The whole story is in the companion folder
-`chapter-37`.
+Copy `relighting.story`, `relighting.config.json` and the `browser` folder
+from the companion folder `chapter-37` into your project, the story over
+your own file and the other two beside it. The story is yours with this
+chapter's changes made, and its `story-version` is `0.7.0`. The copied story
+already carries its identifier, in the header and in the config file, so
+your build does not print the line about minting one that the build earlier
+in this chapter shows. To make the changes by hand instead, work from this
+list and take the rest from that file: add the four client fields to the
+header, the `define channel` block near the top of the story, and one `emit`
+line to each of the four pages' `on the player reading` clauses, and make
+the folder `browser` and put `relighting.css` in it.
 
 ```shell
 sharpee compose relighting.story --check

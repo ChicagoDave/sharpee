@@ -272,11 +272,14 @@ in chapter 24, in the one place where the thing has no name to use.
 
 ## Build and try it
 
-Add the clauses to the hand lamp, the seed cake, the Great Lantern and the
-candles. Give the Lantern and the candles `light-source, starts unlit`, and
-the spectacles `wearable`. Rewrite the kindle page's clause, add the unbind
-page, and add the five new phrases. The complete file is in the companion
-folder `chapter-15`.
+Copy `relighting.story` from the companion folder `chapter-15` over your own
+file. It is the story with this chapter's changes made, and it holds the
+phrases, which the chapter did not print. To make the changes by hand
+instead, work from this list and take the rest from that file: add the
+clauses to the hand lamp, the seed cake, the Great Lantern and the candles,
+give the Lantern and the candles `light-source, starts unlit` and the
+spectacles `wearable`, rewrite the kindle page's clause, add the unbind page,
+and add the five new phrases.
 
 ```shell
 sharpee compose relighting.story --check

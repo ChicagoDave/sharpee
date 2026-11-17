@@ -349,14 +349,17 @@ sense.
 
 ## Build and try it
 
-This is the largest change so far. Add to the header: `use chapters`, the
-`on every turn` clause and the `when waking expires` clause, and lengthen
-the rank ladder to four ranks ending at 35. At the top level add `define
-counter tolls`, the timer, the sequence, the chapters and the
+This is the largest change so far. Copy `relighting.story` from the companion
+folder `chapter-19` over your own file. It is the story with this chapter's
+changes made, and it holds the mend page, the fourth rank and the phrases,
+which the chapter did not print. To make the changes by hand instead, work
+from this list and take the rest from that file. Add to the header: `use
+chapters`, the `on every turn` clause and the `when waking expires` clause,
+and lengthen the rank ladder to four ranks ending at 35. At the top level add
+`define counter tolls`, the timer, the sequence, the chapters and the
 `lamplight-here` condition. Add the mend page, the cistern's score and two
 clauses, the `start waking` line, and the clause on the blue flame. There
-are eleven new phrases. The complete file is in the companion folder
-`chapter-19`.
+are eleven new phrases.
 
 ```shell
 sharpee compose relighting.story --check

@@ -266,11 +266,13 @@ The dial goes to low or high.
 
 ## Build and try it
 
-Add the `states` line to the header and to the grille and the lens. Add the
-cistern, the tower bell and the kindle page. Put the `while` condition on the
+Copy `relighting.story` from the companion folder `chapter-13` over your own
+file. It is the story with this chapter's changes made. To make the changes
+by hand instead, work from this list and take the rest from that file: add
+the `states` line to the header and to the grille and the lens, add the
+cistern, the tower bell and the kindle page, put the `while` condition on the
 Bell Stair's blocked line, and raise `story-version` to `0.3.0`, because this
-is the first chapter of Part III. The complete file is in the companion
-folder `chapter-13`.
+is the first chapter of Part III.
 
 ```shell
 sharpee compose relighting.story --check

@@ -180,10 +180,12 @@ and a list when it does not.
 
 ## Build and try it
 
-Add the two regions, put each room in one, and add the stacks, the tower and
-the shelves. This book places the regions at the top of the file, after the
-header, so that the plan of the place is the first thing you read. The
-complete file is in the companion folder `chapter-11`.
+Copy `relighting.story` from the companion folder `chapter-11` over your own
+file. It is the story with this chapter's changes made. To make the changes
+by hand instead, work from this list and take the rest from that file: add
+the two regions, put each room in one, and add the stacks, the tower and the
+shelves. This book places the regions at the top of the file, after the
+header, so that the plan of the place is the first thing you read.
 
 ```shell
 sharpee compose relighting.story --check

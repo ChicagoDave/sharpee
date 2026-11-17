@@ -219,10 +219,13 @@ say.
 
 ## Build and try it
 
-Add the `remove from action` block, the `extend action kindling` block and
-the `import` line near the workings. Create `synonyms.chord` beside the
-story with the three blocks above. Both files are in the companion folder
-`chapter-25`.
+Copy `relighting.story` and `synonyms.chord` from the companion folder
+`chapter-25` into your project, the first over your own file and the second
+beside it. They are the story with this chapter's changes made. To make the
+changes by hand instead, work from this list: add the `remove from action`
+block, the `extend action kindling` block and the `import` line near the
+workings, and create `synonyms.chord` beside the story with the three blocks
+above.
 
 ```shell
 sharpee compose relighting.story --check

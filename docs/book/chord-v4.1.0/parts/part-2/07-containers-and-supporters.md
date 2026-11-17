@@ -247,10 +247,13 @@ you would hope.
 
 ## Build and try it
 
-Add the press, the desk, the grimoire, the crate and the lens. Change the
-chair and the Great Lantern to their new kinds, and add the clause about the
-press to the Lodge's description. The complete file is in the companion folder
-`chapter-07`. Check it and play it.
+Copy `relighting.story` from the companion folder `chapter-07` over your own
+file. It is the story with this chapter's changes made, and it holds the
+lines the chapter did not print in full. To make the changes by hand instead,
+work from this list and take the rest from that file: add the press, the
+desk, the grimoire, the crate and the lens, change the chair and the Great
+Lantern to their new kinds, and add the clause about the press to the Lodge's
+description. Check it and play it.
 
 ```shell
 sharpee compose relighting.story --check

@@ -17,16 +17,18 @@ was rewritten after run 1, on the two rulings it quotes.
    step is done with the `sharpee` command the book gives. Report only a step
    that the book says can be done and for which it gives no command.
 2. **The companion folders are part of the book.** The chapters do not print
-   every line of the story: a chapter's "Build and try it" says what to copy
-   from its companion folder, and the book gives a sharpee.net address for
-   them (David, 2026-11-17, on run 1: "b and the companion folder would be at
-   sharpee.net from the website"). For a naive run the folders are put in the
+   every line of the story: from chapter 5 on, a chapter's "Build and try it"
+   copies that chapter's whole story file from its companion folder (David,
+   2026-11-17, asked how much the reader takes: "a", the whole file), and the
+   book gives a sharpee.net address for the folders (David, same day, on run
+   1: "b and the companion folder would be at sharpee.net from the
+   website"). For a naive run the folders are put in the
    container, at ~/repos/book-test/companion, and the brief says to look there
    and not at the website (David, same day: "we can provide the companion
    folder directly and have a simple qualifier to look there and not the
-   website"). A run does not report that a step needs a companion folder, or
-   that the address differs. It reports a step that needs a line and names no
-   place to copy it from. Chapter 35 has no companion folder, as it says.
+   website"). A run does not report that a step needs a companion folder,
+   that the address differs, or that a chapter leaves lines of the story
+   unprinted. Chapter 35 has no companion folder, as it says.
 3. **Values that belong to the run.** The IFID a build mints, build timings and
    file sizes, the address `npx serve` prints, and absolute paths in messages
    differ from the book's. Report only when a line's wording or shape differs.

@@ -351,11 +351,13 @@ You have risen to the rank of a Lamplighter.
 
 ## Build and try it
 
-Add the two `use` lines and the fourth chapter. Create the Mere, its two
-landmark rooms, the skiff and the beacon. Give the Undercroft its north
-exit and blocked line, change the Lantern's `win` to a `phrase`, and
-adjust the two scores. The whole story is in the companion folder
-`chapter-34`.
+Copy `relighting.story` from the companion folder `chapter-34` over your own
+file. It is the story with this chapter's changes made, and it holds the
+phrases, which the chapter did not print in full. To make the changes by hand
+instead, work from this list and take the rest from that file. Add the two
+`use` lines and the fourth chapter. Create the Mere, its two landmark rooms,
+the skiff and the beacon. Give the Undercroft its north exit and blocked
+line, change the Lantern's `win` to a `phrase`, and adjust the two scores.
 
 ```shell
 sharpee compose relighting.story --check

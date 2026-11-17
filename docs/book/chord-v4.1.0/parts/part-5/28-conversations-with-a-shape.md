@@ -332,11 +332,13 @@ middle of a bargain is worth more than a paragraph of description.
 
 ## Build and try it
 
-Give Tamsin Vey the `carries` and `states` lines, and take the `move the
-unbind page here` line out of the candles. Add her greetings, the
-conversation, the exchange and the initiative block, and the new rows in
-both topic tables. The whole story is in the companion folder
-`chapter-28`.
+Copy `relighting.story` from the companion folder `chapter-28` over your own
+file. It is the story with this chapter's changes made, and it holds the
+phrases, which the chapter did not print in full. To make the changes by hand
+instead, work from this list and take the rest from that file: give Tamsin
+Vey the `carries` and `states` lines, take the `move the unbind page here`
+line out of the candles, and add her greetings, the conversation, the
+exchange and the initiative block, and the new rows in both topic tables.
 
 ```shell
 sharpee compose relighting.story --check

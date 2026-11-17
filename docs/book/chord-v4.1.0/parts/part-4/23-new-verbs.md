@@ -377,9 +377,12 @@ to do, and the next chapter does it.
 
 ## Build and try it
 
-Add the four working actions, the `blessing` action and the `remembering`
-action near the top of the file, and add their eleven phrases. The complete
-file is in the companion folder `chapter-23`.
+Copy `relighting.story` from the companion folder `chapter-23` over your own
+file. It is the story with this chapter's changes made, and it holds the
+phrases, which the chapter did not print in full. To make the changes by hand
+instead, work from this list and take the rest from that file: add the four
+working actions, the `blessing` action and the `remembering` action near the
+top of the file, and add their eleven phrases.
 
 ```shell
 sharpee compose relighting.story --check

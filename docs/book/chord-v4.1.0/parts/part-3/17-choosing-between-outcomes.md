@@ -265,11 +265,15 @@ for. That is a number the story should keep, and it is the next chapter.
 
 ## Build and try it
 
-Rewrite the reading clauses of the kindle, hush and unbind pages with
-`select on`. Move the frozen sentence out of the cistern's description and
-give the cistern its clause. Put the `select cycling` block in the bell
-rope's clause and the three counted blocks on the grille. There are eight
-new phrases. The complete file is in the companion folder `chapter-17`.
+Copy `relighting.story` from the companion folder `chapter-17` over your own
+file. It is the story with this chapter's changes made, and it holds the
+phrases and the unbind page's clause, which the chapter did not print. To
+make the changes by hand instead, work from this list and take the rest from
+that file: rewrite the reading clauses of the kindle, hush and unbind pages
+with `select on`, move the frozen sentence out of the cistern's description
+and give the cistern its clause, and put the `select cycling` block in the
+bell rope's clause and the three counted blocks on the grille. There are
+eight new phrases.
 
 ```shell
 sharpee compose relighting.story --check

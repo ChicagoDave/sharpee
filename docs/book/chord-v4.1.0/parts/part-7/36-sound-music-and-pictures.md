@@ -393,12 +393,15 @@ the cue, and that is all.
 
 ## Build and try it
 
-Copy the `assets` folder from the companion folder `chapter-36` beside
-your story, or make three short recordings and a picture of your own with
-the same names. Add the five declarations at the top of the story, `play
-sound catch` to the `wick` trait, `play sound tolling` to the header's
-block, the clause to the grille, `listener` and its clause to the wisp,
-the two clauses to the skiff, and the `show image` and `hide image` lines.
+Copy `relighting.story` and the `assets` folder from the companion folder
+`chapter-36` into your project, the story over your own file and the folder
+beside it. The story is yours with this chapter's changes made, and the
+folder holds three short recordings and a picture. To make the changes by
+hand instead, work from this list and take the rest from that file: add the
+five declarations at the top of the story, `play sound catch` to the `wick`
+trait, `play sound tolling` to the header's block, the clause to the grille,
+`listener` and its clause to the wisp, the two clauses to the skiff, and the
+`show image` and `hide image` lines.
 
 ```shell
 sharpee compose relighting.story --check

@@ -206,9 +206,11 @@ taught in chapter 36.
 
 ## Build and try it
 
-Add `dark` to the Undercroft, make the hand lamp a light source, and let the
-Cloister's description warn of the dark at the bottom of the steps. The
-complete file is in the companion folder `chapter-10`.
+Copy `relighting.story` from the companion folder `chapter-10` over your own
+file. It is the story with this chapter's changes made. To make the changes
+by hand instead, work from this list and take the rest from that file: add
+`dark` to the Undercroft, make the hand lamp a light source, and let the
+Cloister's description warn of the dark at the bottom of the steps.
 
 ```shell
 sharpee compose relighting.story --check

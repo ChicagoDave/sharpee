@@ -255,11 +255,14 @@ habit the moment a second person is `playable`.
 
 ## Build and try it
 
-Give Hobb `playable` and his three states, and take away his `carries` line
-and his `phrase present`. Add the three statements to the header's `when
-waking expires`, the blocked line and the marker to the Lodge, the gated
-phrase, the clause on the newspapers, and the second half of the kettle's
-condition. The whole story is in the companion folder `chapter-31`.
+Copy `relighting.story` from the companion folder `chapter-31` over your own
+file. It is the story with this chapter's changes made, and it holds the
+phrases, which the chapter did not print in full. To make the changes by hand
+instead, work from this list and take the rest from that file. Give Hobb
+`playable` and his three states, and take away his `carries` line and his
+`phrase present`. Add the three statements to the header's `when waking
+expires`, the blocked line and the marker to the Lodge, the gated phrase, the
+clause on the newspapers, and the second half of the kettle's condition.
 
 ```shell
 sharpee compose relighting.story --check

@@ -316,13 +316,15 @@ middle leaves its two spaces behind when the phrase is absent.
 
 ## Build and try it
 
-This is the first chapter of Part IV, so raise `story-version` to `0.4.0`.
-Add the four `define phrase` blocks near the top of the file and remove
+Copy `relighting.story` from the companion folder `chapter-20` over your own
+file. It is the story with this chapter's changes made. To make the changes
+by hand instead, work from this list and take the rest from that file. This
+is the first chapter of Part IV, so raise `story-version` to `0.4.0`. Add
+the four `define phrase` blocks near the top of the file and remove
 `no-such-word` from the `define phrases` block. Add the clauses to the
 Lodge, the gate and the tower bell, change the gate's description, put the
 marker in the Bell Stair's description, and add the two new entries
-`bell-count` and `hobb-deafened`. The complete file is in the companion
-folder `chapter-20`.
+`bell-count` and `hobb-deafened`.
 
 ```shell
 sharpee compose relighting.story --check

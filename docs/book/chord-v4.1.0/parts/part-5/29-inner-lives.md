@@ -282,11 +282,14 @@ people there will say to the player changes as it arrives.
 
 ## Build and try it
 
-Add the `define mood` line at the top of the story. Give Hobb his `feels`
-and `knows` lines and the two `on every turn` clauses, and change his
-manner rows to read his mood. Give Tamsin Vey her `mood` and `feels` lines,
-add the `change feeling` line to her exchange, and split her row about
-magic in two. The whole story is in the companion folder `chapter-29`.
+Copy `relighting.story` from the companion folder `chapter-29` over your own
+file. It is the story with this chapter's changes made, and it holds the
+phrases, which the chapter did not print in full. To make the changes by hand
+instead, work from this list and take the rest from that file. Add the
+`define mood` line at the top of the story. Give Hobb his `feels` and `knows`
+lines and the two `on every turn` clauses, and change his manner rows to read
+his mood. Give Tamsin Vey her `mood` and `feels` lines, add the `change
+feeling` line to her exchange, and split her row about magic in two.
 
 ```shell
 sharpee compose relighting.story --check

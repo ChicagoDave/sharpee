@@ -433,6 +433,11 @@ already has. You may not call a trait `container` or `openable`.
 
 ## Build and try it
 
+Copy `relighting.story` from the companion folder `chapter-24` over your own
+file. It is the story with this chapter's changes made, and it holds the
+phrases, which the chapter did not print in full. To make the changes by hand
+instead, work from this list and take the rest from that file.
+
 Add the five traits above the actions. Give `wick` to the lamp, the candles
 and the Lantern, with `lens-seat` before it on the Lantern. Give `mendable`
 to the lens and the spectacles, `hushable` to the bell and `ward` to the
@@ -440,7 +445,7 @@ grille. Remove the three `on the player lighting` clauses from the lamp, the
 candles and the Lantern, and change the candles' and the Lantern's `after`
 clauses to `kindling`. Remove the lens's `states` line. Lengthen the rank
 ladder to its final form: Journeyman at 30, Lamplighter at 50. There are
-nine new phrases. The complete file is in the companion folder `chapter-24`.
+nine new phrases.
 
 ```shell
 sharpee compose relighting.story --check

@@ -246,10 +246,15 @@ which is why the other rooms read "Gate Court" and "Cloister".
 
 ## Build and try it
 
-Add the seven new rooms and the changes to the Lodge to your
-`relighting.story`, and raise `story-version:` to `0.2.0`, since this is the
-first chapter of Part II. The complete file for this chapter is in the book's
-companion files, in the folder `chapter-05`. Check the story, then play it.
+From this chapter on, the story is too long to type from the page, and the
+chapters do not print every line of it. Copy `relighting.story` from the
+companion folder `chapter-05` over your own file. It is the story with this
+chapter's changes made, and it holds the descriptions the chapter did not
+print in full. "How to read this book" says where the companion folders are.
+To make the changes by hand instead, work from this list and take the rest
+from that file: add the seven new rooms and the changes to the Lodge, and
+raise `story-version:` to `0.2.0`, since this is the first chapter of Part II.
+Check the story, then play it.
 
 ```shell
 sharpee compose relighting.story --check

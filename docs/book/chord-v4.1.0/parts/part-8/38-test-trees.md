@@ -420,10 +420,14 @@ an ending in that list is an ending no test has ever seen.
 ## Build and try it
 
 Make the folder `relighting.tests` beside your story, and write the
-manifest and the three segments of this chapter into it, laid out
-exactly as they are printed here. Run `sharpee test .` after each one.
-Then break something on purpose: in the story, change the phrase the
-seed cake's refusal prints, run the tree, and read the failure.
+manifest and the three segments of this chapter into it, with their keys
+in alphabetical order and two spaces of indentation for each level. Run
+`sharpee test .` when the manifest and the first segment are written, and
+again when the other two are. The second and third segments go in
+together, because a segment that continues a line is refused until a
+branch leaves the card it continues from. Then break something on
+purpose: in the story, change the phrase the seed cake's refusal prints,
+run the tree, and read the failure.
 
 When you have seen a failure and mended it, replace your folder with the
 one from `chapter-38` and run the full tree.

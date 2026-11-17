@@ -176,9 +176,11 @@ be asked.
 
 ## Build and try it
 
-Add the door and the key, put the door on the Cloister's west exit, and change
+Copy `relighting.story` from the companion folder `chapter-08` over your own
+file. It is the story with this chapter's changes made. To make the changes
+by hand instead, work from this list and take the rest from that file: add
+the door and the key, put the door on the Cloister's west exit, and change
 "the library west" to "the library door west" in the Cloister's description.
-The complete file is in the companion folder `chapter-08`.
 
 ```shell
 sharpee compose relighting.story --check

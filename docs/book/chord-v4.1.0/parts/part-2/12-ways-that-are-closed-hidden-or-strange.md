@@ -209,11 +209,13 @@ key as before.
 
 ## Build and try it
 
-Add the two lines to the Bell Stair and the Lantern Gallery, the passage to
-the Refectory, the grille, and the `define phrases` block. Put the phrases
-after the last `create` block and before the start block. Raise nothing in the
-header: this is still version `0.2.0`, and it is the end of Part II. The
-complete file is in the companion folder `chapter-12`.
+Copy `relighting.story` from the companion folder `chapter-12` over your own
+file. It is the story with this chapter's changes made. To make the changes
+by hand instead, work from this list and take the rest from that file: add
+the two lines to the Bell Stair and the Lantern Gallery, the passage to the
+Refectory, the grille, and the `define phrases` block. The phrases go after
+the last `create` block and before the start block. Nothing is raised in the
+header: this is still version `0.2.0`, and it is the end of Part II.
 
 ```shell
 sharpee compose relighting.story --check
