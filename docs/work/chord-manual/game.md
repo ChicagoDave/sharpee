@@ -497,8 +497,11 @@ can be won from `chapter-24` on: 50 of 50, Lamplighter.
   kindling in chapter 25, and the wick's `on the player lighting` clause guards `light lamp with
   taper`.
 - A thing's own `on` clause cannot answer a story action, so the Lantern's "no lens" requirement is
-  a trait with one carrier, `lens-seat`. Two traits answering one action run in kind-line order:
-  `lens-seat, wick` refuses the empty Lantern; `wick, lens-seat` lights it. Issue #773.
+  a trait with one carrier, `lens-seat`. Two traits answering one action both run, in kind-line order: every clause's
+  refusals are settled first, then every body runs, so the empty Lantern is refused in either
+  order and the seated one prints the wick's `kindled` before the Lantern's own ending text. This
+  is the in-repo behaviour since the #773 fix of 2026-11-16; published 4.0.2 runs only the first
+  trait's clause.
 - `mendable` owns `states: cracked, sound`. Hobb's spectacles carry it as well as the lens; the
   trait's `score` is paid once whichever is mended first, and the lens overrides the trait's
   `mended` phrase in its own block.

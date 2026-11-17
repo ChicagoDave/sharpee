@@ -15,6 +15,11 @@
       "types": "./dist/pin-grammar.d.ts",
       "import": "./dist-esm/pin-grammar.js",
       "require": "./dist/pin-grammar.js"
+    },
+    "./platform-state-reads": {
+      "types": "./dist/platform-state-reads.d.ts",
+      "import": "./dist-esm/platform-state-reads.js",
+      "require": "./dist/platform-state-reads.js"
     }
   },
   "scripts": {
@@ -85,6 +90,9 @@
     "*": {
       "pin-grammar": [
         "./dist/pin-grammar.d.ts"
+      ],
+      "platform-state-reads": [
+        "./dist/platform-state-reads.d.ts"
       ]
     }
   }

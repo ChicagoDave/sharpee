@@ -37,6 +37,9 @@ const assertionCore = resolve(repoRoot, 'packages/transcript-tester/src/assertio
 // The pin grammar's one parser (ADR-356 D2), which the assertion core reads
 // claims with — pure, dependency-free, and from source for the same reason.
 const pinGrammar = resolve(repoRoot, 'packages/story-loader/src/pin-grammar.ts');
+// The platform state words as trait fields, which the assertion core reads
+// a `<thing> is <word>` claim with — pure, and from source for the same reason.
+const platformStateReads = resolve(repoRoot, 'packages/story-loader/src/platform-state-reads.ts');
 // The clause key's one composer (ADR-388 D2), which the assertion core names
 // a clause with — pure, and from source for the same reason. The
 // `@sharpee/chord` barrel would bring the whole compiler with it (GH #659).
@@ -92,6 +95,7 @@ const options = {
     '@sharpee/ide-protocol/claim-output': claimOutput,
     '@sharpee/transcript-tester/assertion-core': assertionCore,
     '@sharpee/story-loader/pin-grammar': pinGrammar,
+    '@sharpee/story-loader/platform-state-reads': platformStateReads,
     '@sharpee/chord/clause-ids': clauseIds,
     '@sharpee/ide-protocol/run-events': runEvents,
     '@sharpee/platform-browser/host-bridge': hostBridge,

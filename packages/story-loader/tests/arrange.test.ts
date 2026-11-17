@@ -13,7 +13,7 @@
  * Owner context: story-loader test suite.
  */
 import { beforeEach, describe, expect, it } from 'vitest';
-import { LockableTrait, OpenableTrait, SwitchableTrait, TraitType, type IFEntity, type WorldModel } from '@sharpee/world-model';
+import { BreakableTrait, LightSourceTrait, LockableTrait, OpenableTrait, SwitchableTrait, TraitType, type IFEntity, type WorldModel } from '@sharpee/world-model';
 import { arrange } from '../src/arrange';
 import { CHORD_GONE_PREFIX, CHORD_IR_ID_ATTRIBUTE, CHORD_STATE_PREFIX, CHORD_STORY_STATE_KEY, clauseOccurrenceKey, timerKey } from '../src/state-keys';
 import { bootEngine } from './helpers/boot-engine';
@@ -454,6 +454,106 @@ end before
   it('an adjective of a trait the entity lacks is a declared state as before', () => {
     expect(arrange(stoveWorld, 'the lantern is locked')).toEqual({ arranged: true });
     expect(stoveWorld.getStateValue(CHORD_STATE_PREFIX + 'lantern')).toBe('locked');
+  });
+});
+
+describe('arrange — every platform state word is the trait field `change` writes (GH #735, GH #772)', () => {
+  const LAMP_STORY = `story
+  title: Arrange Lamps
+  authors:
+    Sharpee
+  id: arrange-lamps
+  story-version: 0.0.1
+
+create the Lamp Room
+  a room
+
+  A lamp room.
+
+create the hand lamp
+  a thing, light-source, starts unlit
+  in the Lamp Room
+  states: dusty, polished
+
+  A lamp.
+
+create the torch
+  a thing, light-source, switchable
+  in the Lamp Room
+
+  A torch.
+
+create the cracked lens
+  a thing, breakable, starts broken
+  in the Lamp Room
+
+  A lens.
+
+create the pebble
+  a thing
+  in the Lamp Room
+
+  A pebble.
+
+create Alex
+  a person, proper
+  playable
+  starts in the Lamp Room
+
+before the game starts
+  change the player to Alex
+end before
+`;
+  let lampWorld: WorldModel;
+  const lampById = (irId: string): IFEntity => {
+    const hit = lampWorld.getAllEntities().find((e) => e.attributes[CHORD_IR_ID_ATTRIBUTE] === irId);
+    if (!hit) throw new Error(`no entity stamped ${irId}`);
+    return hit;
+  };
+  // A light source nothing has lit carries no `isLit` at all, which reads as unlit.
+  const isLit = (irId: string): boolean => (lampById(irId).get(TraitType.LIGHT_SOURCE) as LightSourceTrait).isLit === true;
+  const isBroken = (irId: string): boolean => (lampById(irId).get(TraitType.BREAKABLE) as BreakableTrait).broken;
+  beforeEach(() => {
+    ({ world: lampWorld } = bootEngine(LAMP_STORY, 7));
+  });
+
+  it('`is lit` / `is unlit` write the flame and leave the declared state where it was', () => {
+    expect(isLit('hand-lamp')).toBe(false);
+    expect(arrange(lampWorld, 'the hand lamp is lit')).toEqual({ arranged: true });
+    expect(isLit('hand-lamp')).toBe(true);
+    expect(lampWorld.getStateValue(CHORD_STATE_PREFIX + 'hand-lamp')).toBe('dusty');
+    expect(arrange(lampWorld, 'the hand lamp is unlit')).toEqual({ arranged: true });
+    expect(isLit('hand-lamp')).toBe(false);
+    expect(lampWorld.getStateValue(CHORD_STATE_PREFIX + 'hand-lamp')).toBe('dusty');
+  });
+
+  it('`is whole` / `is broken` write the breakable field', () => {
+    expect(isBroken('cracked-lens')).toBe(true);
+    expect(arrange(lampWorld, 'the cracked lens is whole')).toEqual({ arranged: true });
+    expect(isBroken('cracked-lens')).toBe(false);
+    expect(arrange(lampWorld, 'the cracked lens is broken')).toEqual({ arranged: true });
+    expect(isBroken('cracked-lens')).toBe(true);
+  });
+
+  it('a switchable light\'s switch and flame move together, as `change` moves them', () => {
+    const isOn = (): boolean => (lampById('torch').get(TraitType.SWITCHABLE) as SwitchableTrait).isOn === true;
+    expect([isOn(), isLit('torch')]).toEqual([false, false]);
+    expect(arrange(lampWorld, 'the torch is lit')).toEqual({ arranged: true });
+    expect([isOn(), isLit('torch')]).toEqual([true, true]);
+    expect(arrange(lampWorld, 'the torch is off')).toEqual({ arranged: true });
+    expect([isOn(), isLit('torch')]).toEqual([false, false]);
+  });
+
+  it('refuses a platform word on a thing with neither the trait nor any states, and writes nothing', () => {
+    for (const word of ['lit', 'unlit', 'broken', 'whole']) {
+      expect(arrange(lampWorld, `the pebble is ${word}`), word).toEqual({
+        arranged: false,
+        shape: 'unrecognized',
+        detail: '"pebble" declares no states',
+      });
+    }
+    expect(lampWorld.getStateValue(CHORD_STATE_PREFIX + 'pebble')).toBeUndefined();
+    expect(lampById('pebble').has(TraitType.LIGHT_SOURCE)).toBe(false);
   });
 });
 

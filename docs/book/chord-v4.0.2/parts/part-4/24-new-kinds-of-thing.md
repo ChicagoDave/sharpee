@@ -187,12 +187,17 @@ A trait with a single carrier is ordinary in Chord and nothing to be tidied
 away. It is how a thing answers one of your verbs in a way no other thing
 does.
 
-The Lantern has two traits that answer kindling. Their clauses are taken in
-the order the trait words stand on the kind line. `lens-seat` is written
-before `wick`, so its requirement is checked first, and an empty Lantern is
-refused before any flame is lit. The order is not a detail. With `wick`
-written first, the wick's clause lights the empty Lantern and the
-requirement is never asked.
+The Lantern has two traits that answer kindling, and both of them answer.
+Their clauses are taken in the order the trait words stand on the kind line,
+in two passes. First every clause's refusals and requirements are settled.
+Only when none of them refuses does any clause's body run. So an empty
+Lantern is refused before any flame is lit, and that is true whichever trait
+is written first.
+
+What the order decides is what the player reads. If two traits would both
+refuse, the refusal of the one written first is the one that is spoken. When
+the command goes through, the bodies run in the same order, and so do their
+phrases.
 
 ```text
 > kindle lantern
@@ -449,6 +454,8 @@ seat it.
 
 ```text
 > kindle lantern
+You say the word. A flame stands up on the wick, blue at first, as if it had been waiting there with its coat on.
+
 The lens gathers the flame and sends it out over the valley in one white bar. Down in the Hall, every blank page begins to fill.
 
 You have risen to the rank of a Lamplighter.
@@ -464,8 +471,8 @@ Then play it again and leave the lens cracked.
 Find `wick` under `traits` in the compiled IR and look at its kindling
 clause. One of its fields reads `"routing": "capability"`. That is the
 platform's name for what this chapter has been doing. A trait declares that
-it is capable of answering an action, and the action asks the thing's traits
-in the order they are written. The standard traits answer the standard
+it is capable of answering an action, and the action asks every trait of the
+thing that answers it, in the order they are written. The standard traits answer the standard
 actions through the same door. Your
 `wick` and the platform's `openable` are the same kind of object, which is
 why they sit side by side on a kind line.

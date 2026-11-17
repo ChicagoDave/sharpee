@@ -43,6 +43,10 @@ export default defineConfig({
         __dirname,
         '../../../../packages/story-loader/src/pin-grammar.ts',
       ),
+      '@sharpee/story-loader/platform-state-reads': resolve(
+        __dirname,
+        '../../../../packages/story-loader/src/platform-state-reads.ts',
+      ),
       '@sharpee/chord/clause-ids': resolve(
         __dirname,
         '../../../../packages/chord/src/clause-ids.ts',

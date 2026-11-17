@@ -88,9 +88,9 @@
 
 import { typesUndo, type GameLoadRequest } from './game-load-request.js';
 import { captureForkSave, restoreForkSave, type ForkSave, type ForkSaveEngine } from './fork-save.js';
-import { clauseHeadWordsOf, clauseOrdinalOf, spokenClauseHead, timerKeysFor, type IRCondition, type IRStatement, type IRValue, type Span, type StoryIR } from '@sharpee/chord';
+import { clauseHeadWordsOf, clauseOrdinalOf, expandReadings, lowerParts, samePatternShape, spokenClauseHead, timerKeysFor, type IRCondition, type IRStatement, type IRValue, type Span, type StoryIR } from '@sharpee/chord';
 import { collectClauseBranches, type BranchClause, type BranchPrecondition, type ClauseBranch } from '@sharpee/world-index';
-import { arrange, CHORD_GONE_PREFIX, CHORD_IR_ID_ATTRIBUTE, CHORD_STATE_PREFIX, counterKey, parsePin } from '@sharpee/story-loader';
+import { arrange, CHORD_GONE_PREFIX, CHORD_IR_ID_ATTRIBUTE, CHORD_STATE_PREFIX, counterKey, parsePin, PLATFORM_STATE_READS } from '@sharpee/story-loader';
 import { evaluateStateExpression, runCommand, type AssertionResult, type TestEventInfo, type TranscriptCommand } from '@sharpee/transcript-tester';
 import { lifecycleDescriptorFor, SOUND_EVENT_TYPES } from '@sharpee/stdlib';
 import type { ToolRequirement } from '@sharpee/world-model';
@@ -362,20 +362,11 @@ function typedActionId(action: string): string {
   return lifecycleDescriptorFor(actionId)?.contracts?.firedAsConsequence?.causes[0] ?? actionId;
 }
 
-/**
- * The state adjectives the floor writes as trait flags, each with the trait
- * that carries it and its complement. A negated adjective is two-valued, so
- * it is written as its complement rather than checked (the floor's
- * never-write-a-negation policy is about states with more than two values).
- */
-const STATE_ADJECTIVES: Record<string, { trait: string; complement: string }> = {
-  open: { trait: 'openable', complement: 'closed' },
-  closed: { trait: 'openable', complement: 'open' },
-  locked: { trait: 'lockable', complement: 'unlocked' },
-  unlocked: { trait: 'lockable', complement: 'locked' },
-  on: { trait: 'switchable', complement: 'off' },
-  off: { trait: 'switchable', complement: 'on' },
-};
+// The platform state words the floor writes as trait fields come from the
+// loader's PLATFORM_STATE_READS: each with the trait that carries it and its
+// complement. A negated word is two-valued, so it is written as its
+// complement rather than checked (the floor's never-write-a-negation policy
+// is about states with more than two values).
 
 /** Effects that mutate the world — the ones a refusal's negative space reads. */
 const MUTATING_EFFECTS = new Set(['change', 'move', 'remove', 'change-player', 'award', 'raise', 'lower']);
@@ -389,7 +380,10 @@ const MUTATING_EFFECTS = new Set(['change', 'move', 'remove', 'change-player', '
  * the `on` clauses intercepting the same action on the same subject are
  * its preconditions too: each refused leaf of those clauses is a guard that
  * must HOLD for the reaction to fire. The enumerator records each clause on
- * its own terms (D1); the runner is where the two meet.
+ * its own terms (D1); the runner is where the two meet. An `on` clause
+ * meets its sibling `on` clauses the same way (two traits on one thing
+ * answering one action), and a story action's `while` is a precondition of
+ * typing its verb at all.
  *
  * @param branch the enumerated record
  * @param ir the story it came from (entity names, action grammars, score worths)
@@ -411,7 +405,19 @@ export function planBranch(
   if ('intercepted' in intercepting) {
     return { kind: 'skip', shape: 'intercepted', detail: `\`${intercepting.intercepted}\` refuses every ${branch.clause.kind === 'on' ? branch.clause.action : 'firing'} of ${branch.subject ?? 'the story'} before the reaction` };
   }
-  for (const precondition of [...answeredActionGuards(branch, branches), ...intercepting.guards, ...branch.precondition]) {
+  // A story action's own `while` gates every rule it registers: where the
+  // condition is false the parser does not know the verb at all. So the
+  // condition is a precondition of typing it, arranged like any other.
+  // The gate is read against the world alone, so `it` names nothing in it.
+  const gate = storyActionGate(branch, ir);
+  if (gate) {
+    const mapped = conditionTerms(gate.condition, true, { ir, subject: null, reading: false, expanding: [] });
+    if ('shape' in mapped) {
+      return { kind: 'skip', shape: mapped.shape, detail: `the \`while\` of \`define action ${gate.action}\`: ${mapped.detail}` };
+    }
+    terms.push(...mapped.terms);
+  }
+  for (const precondition of [...answeredActionGuards(branch, branches), ...intercepting.guards, ...siblingClauseGuards(branch, branches), ...branch.precondition]) {
     const mapped = preconditionTerms(precondition, { ir, subject: branch.subject, reading: false, expanding: [], clause: branch.clause });
     if ('shape' in mapped) return { kind: 'skip', shape: mapped.shape, detail: mapped.detail };
     terms.push(...mapped.terms);
@@ -505,8 +511,10 @@ export function planBranch(
       for (const term of terms) {
         if (term.kind !== 'pin') continue;
         const pin = parsePin(term.expression);
-        if (pin.kind !== 'declared-state' || pin.name !== reachTarget || !(pin.state in STATE_ADJECTIVES)) continue;
-        keep.push(term.mustHold !== pin.negated ? pin.state : STATE_ADJECTIVES[pin.state].complement);
+        if (pin.kind !== 'declared-state' || pin.name !== reachTarget) continue;
+        const read = PLATFORM_STATE_READS.get(pin.state);
+        if (!read) continue;
+        keep.push(term.mustHold !== pin.negated ? pin.state : read.complement);
       }
       terms.push({ kind: 'action-preconditions', action: branch.command.action, subject: reachTarget, keep });
     }
@@ -569,6 +577,42 @@ function interceptingGuards(branch: ClauseBranch, branches: ClauseBranch[]): { g
 }
 
 /**
+ * For an `on` clause, what every OTHER `on` clause answering the same
+ * action on the same subject needs in order to let the action through: a
+ * thing that composes two traits answering one action (a lantern that is
+ * both a `wick` and a `lens-seat`) runs both clauses, and a refusal in
+ * either stops the command. The guard of each refused leaf of those
+ * clauses — its last precondition — is flipped so it does NOT fire, as
+ * `interceptingGuards` flips them for an `after` clause.
+ *
+ * The branch's own clause is excluded: its guards are the branch's own
+ * precondition. A sibling that refuses unconditionally contributes nothing
+ * here; whether it or the branch's clause answers first is the loader's
+ * ordering, which the run itself shows.
+ *
+ * @param branch the branch being planned
+ * @param branches every branch of the story
+ * @returns the guards that must not fire, in enumeration order
+ */
+function siblingClauseGuards(branch: ClauseBranch, branches: ClauseBranch[]): BranchPrecondition[] {
+  if (branch.clause.kind !== 'on' || branch.clause.clauseKind !== 'on') return [];
+  const action = branch.clause.action;
+  const guards: BranchPrecondition[] = [];
+  for (const candidate of branches) {
+    if (candidate.subject !== branch.subject || sameClause(candidate, branch)) continue;
+    if (candidate.clause.kind !== 'on' || candidate.clause.clauseKind !== 'on' || candidate.clause.action !== action) continue;
+    // A tailed refusal answers only its own value or counterpart (ADR-371
+    // D4, ADR-372 D1), as in `interceptingGuards`.
+    if (candidate.clause.valueTail !== undefined && candidate.clause.valueTail !== branch.clause.valueTail) continue;
+    if (candidate.clause.counterpart !== undefined && candidate.clause.counterpart !== branch.clause.counterpart) continue;
+    if (candidate.leaf.kind !== 'refused') continue;
+    const own = candidate.precondition[candidate.precondition.length - 1];
+    if (own?.kind === 'condition') guards.push({ kind: 'condition', condition: own.condition, holds: !own.holds });
+  }
+  return guards;
+}
+
+/**
  * For an `on` or `after` clause answering a story action, what that
  * `define action` needs in order to reach the clause at all: the loader runs
  * the action's `refuse when` ladder and its `must` lines before any clause
@@ -590,6 +634,68 @@ function answeredActionGuards(branch: ClauseBranch, branches: ClauseBranch[]): B
     if (own?.kind === 'condition') guards.push({ kind: 'condition', condition: own.condition, holds: !own.holds });
   }
   return guards;
+}
+
+/**
+ * The `while` condition of the story action a branch's command types, when
+ * that action has one (`define action shouting while the bell is tolling`).
+ * The loader attaches it to every rule the action's own grammar registers,
+ * and the command is typed from the first of those.
+ *
+ * @param branch the branch being planned
+ * @param ir the story
+ * @returns the action's name and condition, or null when the command types
+ *   no story action or the action is ungated
+ */
+function storyActionGate(branch: ClauseBranch, ir: StoryIR): { action: string; condition: IRCondition } | null {
+  if (branch.command.kind !== 'action') return null;
+  const name = branch.command.action;
+  const condition = ir.actions.find((action) => action.name === name)?.condition;
+  return condition ? { action: name, condition } : null;
+}
+
+/**
+ * A language pattern (`light [something] with [something]`) as pattern
+ * elements: a bracketed token is a slot, any other token a word.
+ *
+ * @param pattern one pattern of the language provider's
+ * @returns its elements, in order
+ */
+function languagePatternParts(pattern: string): ReturnType<typeof lowerParts> {
+  return lowerParts(
+    pattern
+      .trim()
+      .split(/\s+/)
+      .map((token) =>
+        token.startsWith('[') && token.endsWith(']')
+          ? { kind: 'slot' as const, word: token.slice(1, -1) }
+          : { kind: 'word' as const, word: token },
+      ),
+  );
+}
+
+/**
+ * A standard action's language patterns less the ones the story removed
+ * (`remove from action lighting` / `light the target`). The parser no
+ * longer reads a removed pattern as this action, so a command typed from it
+ * would reach whatever the story put in its place. Compared by shape, as
+ * the loader removes: slot names ignored, words lowercased, and a removal
+ * written with an optional word or an alternation removes each reading.
+ *
+ * @param patterns the action's language patterns
+ * @param ir the story, for its removals
+ * @param actionId the standard action's id (`if.action.lighting`)
+ * @returns the patterns still standing, in the order given
+ */
+function standingPatterns(patterns: string[], ir: StoryIR, actionId: string): string[] {
+  const removed = (ir.grammarRemovals ?? [])
+    .filter((removal) => `if.action.${removal.action}` === actionId)
+    .flatMap((removal) => removal.patterns.flatMap((pattern) => expandReadings(lowerParts(pattern.parts))));
+  if (removed.length === 0) return patterns;
+  return patterns.filter((pattern) => {
+    const parts = languagePatternParts(pattern);
+    return !removed.some((reading) => samePatternShape(reading, parts));
+  });
 }
 
 /** What a condition is mapped within: the story, the clause subject `it` binds to, and how the terms will be used. */
@@ -864,9 +970,14 @@ function commandPlan(
         return { kind: 'typed', input: words.join(' ') };
       }
       const actionId = typedActionId(command.action);
-      const patterns = actionPatterns(actionId);
-      if (!patterns || patterns.length === 0) {
+      const languagePatterns = actionPatterns(actionId);
+      if (!languagePatterns || languagePatterns.length === 0) {
         return { kind: 'no-vocabulary', detail: `no language pattern for ${actionId}` };
+      }
+      // A pattern the story removed from the action no longer reaches it.
+      const patterns = standingPatterns(languagePatterns, ir, actionId);
+      if (patterns.length === 0) {
+        return { kind: 'skip', shape: 'command-removed', detail: `the story removed every pattern of ${actionId}` };
       }
       const slotsOf = (pattern: string): string[] => pattern.match(SLOT_TOKEN) ?? [];
       if (objectName === null || command.object === null) {
@@ -1692,9 +1803,9 @@ function pinComplement(expression: string, world: DerivedWorld, ir: StoryIR): st
     return other === undefined ? undefined : `story.state = ${other}`;
   }
   if (pin.kind !== 'declared-state' || pin.negated || pin.name === 'story') return undefined;
-  const adjective = STATE_ADJECTIVES[pin.state];
+  const adjective = PLATFORM_STATE_READS.get(pin.state);
   const entityId = worldIdOf(world, pin.name);
-  if (adjective && entityId && world.getEntity(entityId)?.get(adjective.trait) !== undefined) {
+  if (adjective && entityId && world.getEntity(entityId)?.get(adjective.traitType) !== undefined) {
     return `${pin.name} is ${adjective.complement}`;
   }
   const declared = ir.entities.find((entity) => entity.id === pin.name)?.states ?? [];

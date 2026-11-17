@@ -24,6 +24,12 @@ import { assertOrderingTrait, refuseUnplacedOrdering, traitClausePriority } from
 import { CHORD_TRAIT_PREFIX, clauseOccurrenceKey } from '../state-keys.js';
 import { ExecContext, toEffect, type RuntimeCore } from './core.js';
 
+/** One trait's clause answering a story action on a thing: the behavior, and the data its own phases share. */
+interface ClaimingBehavior {
+  behavior: CapabilityBehavior;
+  shared: CapabilitySharedData;
+}
+
 export class DispatchVerbsSection {
   constructor(private readonly core: RuntimeCore) {}
 
@@ -108,9 +114,10 @@ export class DispatchVerbsSection {
 
   /**
    * A `define trait` clause on a dispatch verb → CapabilityBehavior
-   * (§5.4's second half): refusal scan in validate (with the occurrence
-   * bump and decision snapshot stashed in sharedData), mutations in
-   * execute, phrase/emit/win/lose in report.
+   * (§5.4's second half): refusal scan in validate (with the proposed
+   * occurrence and decision snapshot stashed in sharedData — the dispatch
+   * action records the firing once the whole command has passed),
+   * mutations in execute, phrase/emit/win/lose in report.
    */
   private buildCapabilityBehavior(trait: IRTraitDef, clause: IROnClause): CapabilityBehavior {
     const runtime = this;
@@ -165,9 +172,12 @@ export class DispatchVerbsSection {
         // Key only — this path's own blocked() re-renders via phraseEvent,
         // which stages the Choice itself; the staged params are not read.
         if (refusal) return { valid: false, error: refusal.error };
-        world.setStateValue(key, occurrence);
-        ctx.occurrence = occurrence;
+        // The firing is only proposed here. The dispatch action records it
+        // once every answering clause and the action's own body have
+        // passed, so a command another trait refuses spends no firing — a
+        // `, once` clause is not used up by a command that never ran.
         data.chordOccurrence = occurrence;
+        data.chordOccurrenceKey = key;
         return { valid: true };
       },
       execute(entity, world, actorId, data): void {
@@ -280,7 +290,8 @@ export class DispatchVerbsSection {
   /**
    * `define action` → a four-phase dispatch action (structurally typed —
    * `Story.getCustomActions()` is untyped by design): the refusal ladder
-   * runs in validate, the matched CapabilityBehavior carries the phases,
+   * runs in validate, every trait behavior that answers on the target
+   * carries the phases in the order the thing composes them,
    * `otherwise refuse` is the dispatch-miss, and `when <player> <verbs>`
    * rules fire in report.
    */
@@ -505,8 +516,14 @@ export class DispatchVerbsSection {
           topicRow = topicRows[index];
         }
 
-        // Dispatch: the first trait on the target with a behavior bound for
-        // this action claims it (per-world binding map, ADR-090/207).
+        // Dispatch: every trait on the target with a behavior bound for
+        // this action answers it, in the order the thing composes them
+        // (per-world binding map, ADR-090/207). A thing that is both a
+        // `wick` and a `lens-seat` asks for its lens AND lights (GH #773).
+        // Every answering clause is validated here, before any runs, so a
+        // refusal or a `must` in any of them stops the command with no
+        // trait's effects applied: refusals are decided before any body
+        // runs, across traits as within one clause.
         // Instance-type lookup: ChordDataTrait types are per-instance, so
         // the constructor-static path (getBehaviorForCapability) can't see
         // them.
@@ -514,12 +531,11 @@ export class DispatchVerbsSection {
         // ADR-229 R5: a gated-out behavior does NOT claim the dispatch.
         // A candidate whose validate returns valid with `chordSkip` set
         // (false `while` gate, or consumed `, once` — both side-effect-free
-        // probes) is treated as if its clause were never declared: selection
-        // falls through to the next trait's behavior, the action body, or
-        // the `otherwise refuse` miss. A real refusal (valid: false) still
-        // claims immediately, exactly as before.
-        let behavior: CapabilityBehavior | undefined;
-        let capShared: CapabilitySharedData = { chordSlots: slots };
+        // probes) is treated as if its clause were never declared: it
+        // answers nothing, and if no trait answers the command falls to the
+        // action body or the `otherwise refuse` miss. A real refusal
+        // (valid: false) refuses at once.
+        const claims: ClaimingBehavior[] = [];
         if (entity) {
           for (const trait of entity.traits.values()) {
             const candidate = context.world.getBehaviorBinding(trait.type, actionId)?.behavior;
@@ -528,16 +544,14 @@ export class DispatchVerbsSection {
             const result = candidate.validate(entity, context.world, (context.actor ?? context.player).id, candidateShared);
             if (!result.valid) return { valid: false, error: result.error };
             if (candidateShared.chordSkip === true) continue; // gated out — not claiming
-            behavior = candidate;
-            capShared = candidateShared;
-            break;
+            claims.push({ behavior: candidate, shared: candidateShared });
           }
         }
         // A behavior host is optional when the action carries its own body
         // (§5.4: the body IS the action's semantics — photographing has no
         // per-trait behavior by design). No claiming behavior AND no body =
         // the dispatch miss.
-        if (!behavior && !hasOwnSemantics) return { valid: false, error: def.otherwise ?? 'cant' };
+        if (claims.length === 0 && !hasOwnSemantics) return { valid: false, error: def.otherwise ?? 'cant' };
         // The body's own validate partition (leading refusals/musts), then
         // the matched row's: the body runs first, then the row, in every
         // phase. Routing is decided by the mutations pass, not here
@@ -548,10 +562,14 @@ export class DispatchVerbsSection {
           const refusal = runtime.core.statements.findRefusal(statements, bodyCtx);
           if (refusal) return { valid: false, ...refusal };
         }
+        // Nothing refused: record each answering clause's firing. This is
+        // the one write validate makes, and it is made last.
+        for (const claim of claims) {
+          context.world.setStateValue(claim.shared.chordOccurrenceKey as string, claim.shared.chordOccurrence as number);
+        }
         context.sharedData.chordTopicRow = topicRow;
         context.sharedData.capEntity = entity;
-        context.sharedData.capBehavior = behavior;
-        context.sharedData.capShared = capShared;
+        context.sharedData.capClaims = claims;
         // ADR-275: one binding source — validate's map (entity ids +
         // semantic words), set on entry, carries to execute/report/blocked
         // via sharedData.
@@ -559,9 +577,11 @@ export class DispatchVerbsSection {
       },
       execute(context: DispatchContext): void {
         const entity = context.sharedData.capEntity as IFEntity | undefined;
-        const behavior = context.sharedData.capBehavior as CapabilityBehavior | undefined;
-        if (entity && behavior) {
-          behavior.execute(entity, context.world, (context.actor ?? context.player).id, context.sharedData.capShared as CapabilitySharedData);
+        const claims = (context.sharedData.capClaims as ClaimingBehavior[] | undefined) ?? [];
+        if (entity) {
+          for (const claim of claims) {
+            claim.behavior.execute(entity, context.world, (context.actor ?? context.player).id, claim.shared);
+          }
         }
         if (def.body.length) {
           runtime.core.statements.execStatements(def.body, runtime.actionBodyCtxFromSlots(context, 'mutations'), 'mutations');
@@ -573,17 +593,19 @@ export class DispatchVerbsSection {
       },
       report(context: DispatchContext): ISemanticEvent[] {
         const entity = context.sharedData.capEntity as IFEntity | undefined;
-        const behavior = context.sharedData.capBehavior as CapabilityBehavior | undefined;
+        const claims = (context.sharedData.capClaims as ClaimingBehavior[] | undefined) ?? [];
         const events: ISemanticEvent[] = [];
-        if (entity && behavior) {
-          const effects = behavior.report(entity, context.world, (context.actor ?? context.player).id, context.sharedData.capShared as CapabilitySharedData);
-          // The same D9 attribution override as the engine's
-          // effectsToEvents: context.event stamps the acting player,
-          // which is wrong for NPC-originated effects.
-          events.push(...effects.map((e) => {
-            const event = context.event(e.type, e.payload);
-            return e.actor !== undefined ? { ...event, entities: { ...event.entities, actor: e.actor } } : event;
-          }));
+        if (entity) {
+          for (const claim of claims) {
+            const effects = claim.behavior.report(entity, context.world, (context.actor ?? context.player).id, claim.shared);
+            // The same D9 attribution override as the engine's
+            // effectsToEvents: context.event stamps the acting player,
+            // which is wrong for NPC-originated effects.
+            events.push(...effects.map((e) => {
+              const event = context.event(e.type, e.payload);
+              return e.actor !== undefined ? { ...event, entities: { ...event.entities, actor: e.actor } } : event;
+            }));
+          }
         }
         if (def.body.length) {
           events.push(...runtime.core.statements.execStatements(def.body, runtime.actionBodyCtxFromSlots(context, 'reports'), 'reports'));

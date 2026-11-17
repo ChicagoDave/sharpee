@@ -9,8 +9,9 @@
  * other half of "what a claim means".
  *
  * Browser-safe by construction: no Node import, no package barrel — the
- * IDE's testing surface bundles this file from source. Its two cross-package
- * imports are `@sharpee/story-loader/pin-grammar` and
+ * IDE's testing surface bundles this file from source. Its three
+ * cross-package imports are `@sharpee/story-loader/pin-grammar`,
+ * `@sharpee/story-loader/platform-state-reads` and
  * `@sharpee/chord/clause-ids`, pure subpaths the surface aliases to source
  * beside this file. Per-command execution,
  * directives, and session instruments are Node-bound and live in
@@ -45,6 +46,9 @@ import { checkChannelAssertion } from './channel-assert.js';
 // The subpath is pure and dependency-free, so the browser bundle stays
 // runtime-free (the barrel would drag the whole loader in).
 import { parsePin, translateEventId } from '@sharpee/story-loader/pin-grammar';
+// The platform state words as trait fields, by the loader's one table of
+// them and its pure subpath, for the same reason.
+import { spelledPlatformState, type PlatformStateFields } from '@sharpee/story-loader/platform-state-reads';
 // The clause key's one composer (ADR-388 D2), by its pure subpath for the
 // same reason: the `@sharpee/chord` barrel would drag the compiler in.
 import { clauseHeadId, spokenClauseHead } from '@sharpee/chord/clause-ids';
@@ -676,9 +680,10 @@ function evaluateChordStateClaim(
       return { matches: false, details: `${label}: not a Chord entity (no IR id), so it has no states` };
     }
     actual = world.getStateValue?.(keys.entityStatePrefix + irId);
-    // A state adjective (open/closed, locked/unlocked, on/off) is read off
-    // the trait, as the story's own evaluator reads it, unless the declared
-    // state itself is that word. The actual then names the flag's word.
+    // A platform state word (open/closed, locked/unlocked, on/off,
+    // lit/unlit, broken/whole) is read off the trait's field, where the
+    // story's `change` writes it, unless the declared state itself is that
+    // word. The actual then names the field's word.
     const adjective = actual === expected ? undefined : stateAdjective(entity, expected);
     if (adjective !== undefined) actual = adjective;
     if (actual === undefined) {
@@ -693,31 +698,16 @@ function evaluateChordStateClaim(
 }
 
 /**
- * The word a trait's flag currently spells, when `word` is a state
- * adjective of a trait the entity carries: `open`/`closed` off the openable
- * flag, `locked`/`unlocked` off the lockable, `on`/`off` off the
- * switchable. Undefined when `word` is no such adjective or the entity
- * lacks the trait.
+ * The word a trait's field currently spells, when `word` is a platform
+ * state word of a trait the entity carries: `open`/`closed` off the
+ * openable, `locked`/`unlocked` off the lockable, `on`/`off` off the
+ * switchable, `lit`/`unlit` off the light source, `broken`/`whole` off the
+ * breakable — the loader's own table of them, so a word `change` can write
+ * is a word a claim can read. Undefined when `word` is no such word or the
+ * entity lacks the trait.
  */
 function stateAdjective(entity: { get?(traitType: string): unknown }, word: string): string | undefined {
-  const read = (traitType: string, flag: string, whenTrue: string, whenFalse: string): string | undefined => {
-    const trait = entity.get?.(traitType) as Record<string, unknown> | undefined;
-    if (!trait) return undefined;
-    return trait[flag] === true ? whenTrue : whenFalse;
-  };
-  switch (word) {
-    case 'open':
-    case 'closed':
-      return read('openable', 'isOpen', 'open', 'closed');
-    case 'locked':
-    case 'unlocked':
-      return read('lockable', 'isLocked', 'locked', 'unlocked');
-    case 'on':
-    case 'off':
-      return read('switchable', 'isOn', 'on', 'off');
-    default:
-      return undefined;
-  }
+  return spelledPlatformState(word, (traitType) => entity.get?.(traitType) as PlatformStateFields | undefined);
 }
 
 /**

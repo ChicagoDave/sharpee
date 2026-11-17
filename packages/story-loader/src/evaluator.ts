@@ -22,21 +22,18 @@ import { createSeededRandom, type RandomService, type SeededRandom } from '@shar
 import type { ClientCapabilities } from '@sharpee/if-domain';
 import { exitBlockedKey } from '@sharpee/stdlib';
 import { classifiesAs, composesAdjective } from './kind-classification.js';
-import { isWordReader } from './is-word-readers.js';
+import { isWordReader, STATE_ADJECTIVE_READS } from './is-word-readers.js';
+import { PLATFORM_STATE_READS, platformStateHolds, type PlatformStateFields } from './platform-state-reads.js';
 import {
   AttachedBehavior,
-  BreakableBehavior,
   CharacterModelTrait,
   LightSourceBehavior,
   LockableBehavior,
-  LockableTrait,
   PresenceBehavior,
   RoomBehavior,
   type DirectionType,
   MOOD_AXES,
-  OpenableTrait,
   PRESSURE_BANDS,
-  SwitchableTrait,
   THREAT_LEVELS,
   TraitType,
   VisibilityBehavior,
@@ -586,30 +583,13 @@ export class Evaluator {
 
   /**
    * State adjectives (ratchet D1): `open`/`closed`, `locked`/`unlocked`,
-   * `on`/`off`, `worn`, `lit`, `broken`, `attached` — pure reads of world trait state. Null when
+   * `on`/`off`, `worn`, `lit`, `broken`, `attached` — pure reads of world trait state. `worn`,
+   * `lit` and `attached` ask a behavior; the rest read one field through PLATFORM_STATE_READS. Null when
    * `symbol` is not a state adjective (or the trait is absent, so the
    * adjective cannot hold either way).
    */
   private stateAdjectiveHolds(entity: NonNullable<ReturnType<WorldModel['getEntity']>>, symbol: string, world: WorldModel): boolean | null {
     switch (symbol) {
-      case 'open':
-      case 'closed': {
-        const openable = entity.get(TraitType.OPENABLE) as OpenableTrait | undefined;
-        if (!openable) return null;
-        return symbol === 'open' ? openable.isOpen === true : openable.isOpen !== true;
-      }
-      case 'locked':
-      case 'unlocked': {
-        const lockable = entity.get(TraitType.LOCKABLE) as LockableTrait | undefined;
-        if (!lockable) return null;
-        return symbol === 'locked' ? lockable.isLocked === true : lockable.isLocked !== true;
-      }
-      case 'on':
-      case 'off': {
-        const switchable = entity.get(TraitType.SWITCHABLE) as SwitchableTrait | undefined;
-        if (!switchable) return null;
-        return symbol === 'on' ? switchable.isOn === true : switchable.isOn !== true;
-      }
       case 'worn': {
         const wearable = entity.get(TraitType.WEARABLE) as WearableTrait | undefined;
         if (!wearable) return null;
@@ -620,19 +600,20 @@ export class Evaluator {
         // and powered — that the room's light check uses.
         if (!entity.has(TraitType.LIGHT_SOURCE)) return null;
         return LightSourceBehavior.givesLight(entity, world);
-      case 'broken': {
-        // ADR-373 D2: the behavior's reading of what attacking, dropping and
-        // throwing write.
-        if (!entity.has(TraitType.BREAKABLE)) return null;
-        return BreakableBehavior.isBroken(entity);
-      }
       case 'attached':
         // ADR-373 D1: one reading of "attached", shared with taking and pulling.
         if (!entity.has(TraitType.ATTACHED)) return null;
         return AttachedBehavior.isAttached(entity);
-      default:
-        return null;
     }
+    // Every other state adjective is one field of its paired trait
+    // (`open`, `locked`, `on`, `broken` and their written opposites), read
+    // through the table the testing side reads the same words with. The
+    // table also carries `unlit` and `whole`, which `change` writes and no
+    // condition spells, so the language's own set gates the read.
+    const read = STATE_ADJECTIVE_READS.has(symbol) ? PLATFORM_STATE_READS.get(symbol) : undefined;
+    if (!read) return null;
+    const fields = entity.get(read.traitType) as PlatformStateFields | undefined;
+    return fields ? platformStateHolds(read, fields) : null;
   }
 
   // ---------------------------------------------------------------- values

@@ -13,10 +13,12 @@
  * The floor, and exactly the floor:
  *   story.state = <phase>                     → the story-phase key
  *   [the] <name> is <state>                   → the entity's declared-state key — or the
- *                                               trait flag, when <state> is open/closed,
- *                                               locked/unlocked, on/off and the entity has
- *                                               the trait (the evaluator reads those words
- *                                               off the trait, so the write goes there too)
+ *                                               trait's field, when <state> is a platform
+ *                                               state word (open/closed, locked/unlocked,
+ *                                               on/off, lit/unlit, broken/whole) and the
+ *                                               entity has the trait (those words are read
+ *                                               off the trait, so the write goes there too,
+ *                                               as `change` writes it)
  *   the story is <state>                      → the story-phase key
  *   <entity>.location = <place>               → a placement — into the place, or, when
  *                                               the place is a region, into the first
@@ -95,6 +97,7 @@ import {
 } from '@sharpee/world-model';
 import { clauseHeadId } from '@sharpee/chord';
 import { parsePin, type ParsedPin } from './pin-grammar.js';
+import { PLATFORM_STATE_WRITES } from './platform-state-writes.js';
 import {
   CHORD_GONE_PREFIX,
   CHORD_IR_ID_ATTRIBUTE,
@@ -214,30 +217,25 @@ function arrangeStoryState(world: WorldModel, state: string): ArrangeResult {
 }
 
 /**
- * The state adjectives the evaluator reads off a trait, never off the
- * declared-state key (ratchet D1): each as the flag it is and the value
- * that makes it hold. Arranging one writes that flag, so the declared
- * state beside it — a furnace's `hot` next to its `closed` — survives.
- */
-const STATE_ADJECTIVES: Record<string, { flag: keyof typeof FLAG_WRITERS; value: boolean }> = {
-  open: { flag: 'isOpen', value: true },
-  closed: { flag: 'isOpen', value: false },
-  locked: { flag: 'isLocked', value: true },
-  unlocked: { flag: 'isLocked', value: false },
-  on: { flag: 'isOn', value: true },
-  off: { flag: 'isOn', value: false },
-};
-
-/**
- * `[the] <name> is <state>` — the trait flag when the word is a state
- * adjective of a trait the entity carries, else the declared-state key of
+ * `[the] <name> is <state>` — the trait's field when the word is a platform
+ * state word of a trait the entity carries, else the declared-state key of
  * a Chord entity that declares states.
+ *
+ * A platform state word is never stored as story state (ratchet D1), so
+ * arranging one writes the trait, and the declared state beside it — a
+ * furnace's `hot` next to its `closed` — survives. The write is the
+ * `change` statement's own row of PLATFORM_STATE_WRITES, so an arranged
+ * `lit` is the `lit` a story's clause would have written: the switch and
+ * the flame of a switchable light move together.
  */
 function arrangeDeclaredState(world: WorldModel, name: string, state: string): ArrangeResult {
   const entity = resolveEntity(world, name);
   if (!entity) return unrecognized(`entity "${name}" not found`);
-  const adjective = STATE_ADJECTIVES[state];
-  if (adjective && FLAG_WRITERS[adjective.flag](entity, adjective.value)) return { arranged: true };
+  const platformWrite = PLATFORM_STATE_WRITES.get(state);
+  if (platformWrite && entity.has(platformWrite.traitType)) {
+    platformWrite.set(entity);
+    return { arranged: true };
+  }
   const irId = entity.attributes[CHORD_IR_ID_ATTRIBUTE];
   if (typeof irId !== 'string') {
     return unrecognized(`"${name}" is not a Chord entity (no IR id), so it has no states`);

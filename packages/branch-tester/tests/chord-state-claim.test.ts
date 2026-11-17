@@ -13,7 +13,7 @@
  * Owner context: branch-tester test suite (tooling).
  */
 import { describe, expect, it } from 'vitest';
-import { IdentityTrait, WorldModel } from '@sharpee/world-model';
+import { BreakableTrait, IdentityTrait, LightSourceTrait, WorldModel } from '@sharpee/world-model';
 import { CHORD_IR_ID_ATTRIBUTE, CHORD_STATE_PREFIX, CHORD_STORY_STATE_KEY } from '@sharpee/story-loader';
 import { evaluateStateExpression as evaluateCore } from '@sharpee/transcript-tester';
 import { CHORD_STORY_STATE_KEYS } from '../src/runner.js';
@@ -100,6 +100,67 @@ describe('Chord-spelled state claims — `the <name> is <state>`', () => {
     const result = evaluateStateExpression('the stranger is calm', ballroom());
     expect(result.matches).toBe(false);
     expect(result.details).toBe('the stranger: not a Chord entity (no IR id), so it has no states');
+  });
+});
+
+describe('Chord-spelled state claims — a platform state word reads the trait field (GH #735, GH #772)', () => {
+  /** A stamped lamp and lens that declare no states, as `a thing, light-source` and `a thing, breakable` load. */
+  function lampRoom(): { world: WorldModel; flame: LightSourceTrait; glass: BreakableTrait } {
+    const world = new WorldModel();
+    const lamp = world.createEntity('hand lamp', 'item');
+    lamp.add(new IdentityTrait({ name: 'hand lamp', aliases: ['lamp'] }));
+    const flame = new LightSourceTrait({ isLit: false });
+    lamp.add(flame);
+    lamp.attributes[CHORD_IR_ID_ATTRIBUTE] = 'hand-lamp';
+
+    const lens = world.createEntity('cracked lens', 'item');
+    lens.add(new IdentityTrait({ name: 'cracked lens', aliases: ['lens'] }));
+    const glass = new BreakableTrait({ broken: true });
+    lens.add(glass);
+    lens.attributes[CHORD_IR_ID_ATTRIBUTE] = 'cracked-lens';
+
+    const pebble = world.createEntity('pebble', 'item');
+    pebble.add(new IdentityTrait({ name: 'pebble' }));
+    pebble.attributes[CHORD_IR_ID_ATTRIBUTE] = 'pebble';
+    return { world, flame, glass };
+  }
+
+  it('reads `lit` and `unlit` off the light source, and follows the flame as it changes', () => {
+    const { world, flame } = lampRoom();
+    expect(evaluateStateExpression('the hand lamp is unlit', world).matches).toBe(true);
+    const cold = evaluateStateExpression('the hand lamp is lit', world);
+    expect(cold.matches).toBe(false);
+    expect(cold.details).toBe('the hand lamp is "unlit", expected "lit"');
+
+    flame.isLit = true;
+
+    expect(evaluateStateExpression('the hand lamp is lit', world).matches).toBe(true);
+    expect(evaluateStateExpression('hand-lamp is lit', world).matches).toBe(true);
+    expect(evaluateStateExpression('the hand lamp is unlit', world).matches).toBe(false);
+    expect(evaluateStateExpression('the hand lamp is not unlit', world).matches).toBe(true);
+    expect(evaluateStateExpression('the hand lamp is not lit', world).matches).toBe(false);
+  });
+
+  it('reads `broken` and `whole` off the breakable, and follows the mend', () => {
+    const { world, glass } = lampRoom();
+    expect(evaluateStateExpression('the cracked lens is broken', world).matches).toBe(true);
+    const cracked = evaluateStateExpression('the cracked lens is whole', world);
+    expect(cracked.matches).toBe(false);
+    expect(cracked.details).toBe('the cracked lens is "broken", expected "whole"');
+
+    glass.broken = false;
+
+    expect(evaluateStateExpression('the cracked lens is whole', world).matches).toBe(true);
+    expect(evaluateStateExpression('the cracked lens is not broken', world).matches).toBe(true);
+  });
+
+  it('still fails by name for a platform word on a thing without the trait', () => {
+    const { world } = lampRoom();
+    for (const word of ['lit', 'unlit', 'broken', 'whole']) {
+      const result = evaluateStateExpression(`the pebble is ${word}`, world);
+      expect(result.matches, word).toBe(false);
+      expect(result.details, word).toBe('the pebble: declares no states');
+    }
   });
 });
 

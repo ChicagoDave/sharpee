@@ -10,7 +10,9 @@
  * CHORD_STATE_PREFIX; arrange() and parsePin() (ADR-356 D2 — the pin
  * grammar's one parser and the arrange primitive that performs it; the
  * parser is also published on its own subpath, `./pin-grammar`, for the
- * browser-bundled assertion core).
+ * browser-bundled assertion core); PLATFORM_STATE_READS and its two readers
+ * (the platform state words as trait fields, on `./platform-state-reads`
+ * for the same reason).
  *
  * Owner context: Chord runtime consumer. Language-neutral by design — it
  * consumes IR and never sees Chord syntax. Depends on the platform
@@ -23,6 +25,8 @@ export { arrange } from './arrange.js';
 export type { ArrangeContext, ArrangeResult, ArrangeShape } from './arrange.js';
 export { parsePin } from './pin-grammar.js';
 export type { ParsedPin, PinOperator, PinShape } from './pin-grammar.js';
+export { PLATFORM_STATE_READS, platformStateHolds, spelledPlatformState } from './platform-state-reads.js';
+export type { PlatformStateFields, PlatformStateRead } from './platform-state-reads.js';
 export { HIDING_POSITIONS, SETTING_SCHEMA } from './setting-schema.js';
 export type { SettingSpec, SettingValueType } from './setting-schema.js';
 export { EVENT_TRIGGERS, EVENT_PAYLOAD_FIELDS, REGION_EVENT_TRIGGERS, LISTENER_EVENT_TRIGGERS } from './event-contract.js';
