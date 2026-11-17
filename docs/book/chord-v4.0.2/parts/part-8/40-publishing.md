@@ -189,7 +189,7 @@ publish never will, because publishing is the one moment when inventing
 a second identifier for an existing story would do real harm.
 
 ```text
-publish: relighting.story has no identity — no story config and no `ifid:` header (ADR-074, ADR-309). If this story ever had one, restore its `<story-name>.config.json` from version control; otherwise run `sharpee build` once (or open the story in Chord Writer) to mint it.
+publish: relighting.story has no identity — no story config and no `ifid:` header. If this story ever had one, restore its `<story-name>.config.json` from version control; otherwise run `sharpee build` once (or open the story in Chord Writer) to mint it.
 ```
 
 And it writes the zip.

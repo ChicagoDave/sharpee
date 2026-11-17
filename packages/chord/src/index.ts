@@ -44,6 +44,8 @@ export type { CharacterManifest } from './character-manifest.js';
 export { EXTENSION_MANIFESTS, CHAPTERS_MANIFEST, COMBAT_MANIFEST, EXPANSES_MANIFEST, NPC_MANIFEST, manifestForAdjective, manifestForKindNoun, manifestForMovementType } from './manifests/index.js';
 export type { ExtensionManifest, ManifestAdjective, ManifestField } from './manifests/index.js';
 export { PHRASEBOOK_REGISTRY } from './phrasebooks.js';
+export { REMOVED_FORMS, removedFormMessage } from './removed-forms.js';
+export type { RemovedForm, RemovedFormCode } from './removed-forms.js';
 export type { PhrasebookManifest } from './phrasebooks.js';
 export { Diagnostic, DiagnosticSeverity, DiagnosticBag } from './diagnostics.js';
 export { Span, spanOf, mergeSpans } from './span.js';

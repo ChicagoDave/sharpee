@@ -52,7 +52,7 @@ export const sailingBuilder: EntityLineBuilder = {
       } else {
         context.diagnostics.error(
           'analysis.expanse-line-owner',
-          `\`wind:\` is an expanse's line — \`${name}\` is not \`an expanse\`. A sea where the wind matters is an expanse (ADR-375 D1).`,
+          `\`wind:\` is an expanse's line — \`${name}\` is not \`an expanse\`. A sea where the wind matters is an expanse.`, // ADR-375 D1
           windLine.span,
         );
       }

@@ -197,6 +197,7 @@ import {
 } from './ast.js';
 import { PRONOUN_CASES, STARTS_STATE_PAIRINGS, TAILED_EVENT_VERBS } from './catalog.js';
 import { DiagnosticBag } from './diagnostics.js';
+import { removedFormMessage } from './removed-forms.js';
 import { levenshtein } from './edit-distance.js';
 import { lex, Line, Token } from './lexer.js';
 import { mergeSpans, Span, spanOf } from './span.js';
@@ -594,7 +595,7 @@ class Parser {
       switch (word) {
         case 'story':
           if (grammarHeader) {
-            this.diagnostics.error('parse.mixed-headers', 'A file carries either a `story` header or a `grammar` header, never both — this file is a grammar file (ADR-269).', lineSpan(line));
+            this.diagnostics.error('parse.mixed-headers', 'A file carries either a `story` header or a `grammar` header, never both — this file is a grammar file.' /* ADR-269 */, lineSpan(line));
             this.recoverToTopLevel(true);
           } else if (header) {
             this.diagnostics.error('parse.duplicate-story-header', 'Duplicate story header — only one `story` line is allowed.', lineSpan(line));
@@ -675,7 +676,7 @@ class Parser {
         case 'when':
           this.diagnostics.error(
             'parse.removed-when',
-            'Top-level `when` rules were removed (ownership package, 2026-07-11) — attach the rule to its owner: `after the player <verb>` on the entity or room it is about.',
+            removedFormMessage('parse.removed-when'),
             lineSpan(line),
           );
           this.recoverToTopLevel(true);
@@ -683,7 +684,7 @@ class Parser {
         case 'once':
           this.diagnostics.error(
             'parse.removed-once',
-            'Top-level `once <condition>` rules were removed (ownership package, 2026-07-11) — use a `, once` clause modifier on the owner: `on every turn while <condition>, once`.',
+            removedFormMessage('parse.removed-once'),
             lineSpan(line),
           );
           this.recoverToTopLevel(true);
@@ -691,7 +692,7 @@ class Parser {
         case 'every':
           this.diagnostics.error(
             'parse.removed-every',
-            'Top-level `every N turns` rules were removed (ownership package, 2026-07-11) — use a story-owned `define sequence`, or an every-turn clause on the owner.',
+            removedFormMessage('parse.removed-every'),
             lineSpan(line),
           );
           this.recoverToTopLevel(true);
@@ -809,7 +810,7 @@ class Parser {
     if (!c.atEnd()) {
       this.diagnostics.error(
         'parse.removed-story-header',
-        '`story "Title" by "Author"` was removed (ADR-298) — use the fielded form: a bare `story` line, then indented `title: <title>` and an `authors:` list (one name per indented line).',
+        removedFormMessage('parse.removed-story-header'),
         c.restSpan(),
       );
       while (!c.atEnd()) c.next();
@@ -943,7 +944,7 @@ class Parser {
           // parseOnClauses — don't stack a second diagnostic on it.)
           this.diagnostics.error(
             'parse.story-clause',
-            'The story header hosts only `on every turn` clauses (ADR-236 D7) — action and event clauses belong to the entity they are about.',
+            'The story header hosts only `on every turn` clauses — action and event clauses belong to the entity they are about.', // ADR-236 D7
             clause.span,
           );
         }
@@ -1147,7 +1148,7 @@ class Parser {
           const replacement = key === 'version' ? 'story-version' : key === 'blurb' ? 'description' : 'authors';
           this.diagnostics.error(
             'parse.header-unknown-field',
-            `\`${key}:\` was removed from the story header (ADR-298) — use \`${replacement}:\` instead.`,
+            removedFormMessage('parse.header-unknown-field', key, replacement),
             lineSpan(fieldLine),
           );
           break;
@@ -1502,7 +1503,7 @@ class Parser {
     }
     if (prose.length > 0) row.description = prose.join(' ');
     if (!row.trigger) {
-      this.diagnostics.error('parse.chapter-no-trigger', `Chapter \`${row.name}\` has no \`begins when <event>\` line — every chapter says when it begins (ADR-330 D2).`, row.span);
+      this.diagnostics.error('parse.chapter-no-trigger', `Chapter \`${row.name}\` has no \`begins when <event>\` line — every chapter says when it begins.` /* ADR-330 D2 */, row.span);
     }
     return row;
   }
@@ -1537,7 +1538,8 @@ class Parser {
     if (words.includes('moves')) {
       this.diagnostics.error(
         'parse.chapter-trigger',
-        '`<entity> moves` is not a chapter trigger (ADR-330 D2) — a chapter begins when the game starts, when the player visits a room for the first time, when a timer expires, or when something becomes a state.',
+        // ADR-330 D2
+        '`<entity> moves` is not a chapter trigger — a chapter begins when the game starts, when the player visits a room for the first time, when a timer expires, or when something becomes a state.',
         c.restSpan(),
       );
       return null;
@@ -1972,7 +1974,7 @@ class Parser {
         // ADR-380 D3: a flight's trip time is its pace; `passage` names only the passage block.
         this.diagnostics.error(
           'parse.passage-is-pace',
-          '`passage:` is retired — a flight vehicle\'s trip time is `pace: <n> turns`, the line every moving vehicle uses.',
+          removedFormMessage('parse.passage-is-pace'),
           span,
         );
         return null;
@@ -2391,7 +2393,7 @@ class Parser {
     if (name.words.length === 1 && name.words[0].toLowerCase() === 'player') {
       this.diagnostics.error(
         'parse.removed-create-player',
-        '`create the player` was removed — name the character, mark it `playable`, and assign the role in a `before the game starts` block.',
+        removedFormMessage('parse.removed-create-player'),
         lineSpan(headLine),
       );
     }
@@ -2669,7 +2671,7 @@ class Parser {
         this.pos++;
         this.diagnostics.error(
           'parse.removed-containing',
-          '`containing` was removed — a region declares identical rooms with `rooms <name> <first> to <last>`, and any other room joins it with an `in the <region>` line in its own block.',
+          removedFormMessage('parse.removed-containing'),
           lineSpan(line),
         );
       } else if (word === 'landing') {
@@ -3007,8 +3009,7 @@ class Parser {
     if (!c.isWord('to')) {
       this.diagnostics.error(
         'parse.passage-line-form',
-        'A passage is a block: `passage to <room>`, then `grammar` with one command per line under it, and `end passage`. ' +
-          'For example:\n  passage to the Loft\n    grammar\n      climb the rope\n  end passage',
+        removedFormMessage('parse.passage-line-form'),
         lineSpan(head),
       );
       return;
@@ -4541,10 +4542,9 @@ class Parser {
     const key = first ? first.key.join(' ') : '';
     if (REMOVED_CAPACITY_SETTINGS.has(key)) {
       const count = /^\d+$/.test(first.value) ? first.value : '<n>';
-      const weight = key === 'max weight' ? ' Weight is not a Chord concept; `holds` counts things.' : '';
       this.diagnostics.error(
         'parse.removed-capacity-setting',
-        `\`with ${key}\` was removed — write the capacity as its own line: \`holds ${count}\`.${weight}`,
+        removedFormMessage('parse.removed-capacity-setting', key, count),
         span,
       );
       return;
@@ -4619,7 +4619,7 @@ class Parser {
         if (key.length === 1 && (key[0] === 'key' || key[0] === 'tool')) {
           this.diagnostics.error(
             'parse.removed-config-keyword',
-            `\`with ${key[0]} the …\` was removed (ratchet R3) — write the entity directly: \`with the ${nameWords.join(' ')}\`.`,
+            removedFormMessage('parse.removed-config-keyword', key[0], nameWords.join(' ')),
             startTok ? mergeSpans(startTok.span, lastTok.span) : lastTok.span,
           );
           if (!c.matchWord('and')) break;
@@ -4722,7 +4722,7 @@ class Parser {
       } else if (s && s.kind === 'word' && RETIRED_STRATEGIES[s.text]) {
         this.diagnostics.error(
           'parse.phrase-strategy-retired',
-          `\`${s.text}\` is no longer a strategy adverb — use \`${RETIRED_STRATEGIES[s.text]}\` (ADR-211 Decision 4).`,
+          removedFormMessage('parse.phrase-strategy-retired', s.text, RETIRED_STRATEGIES[s.text]),
           s.span,
         );
       } else {
@@ -4781,7 +4781,7 @@ class Parser {
   private reportSameLineText(span: Span): void {
     this.diagnostics.error(
       'parse.phrase-text-form',
-      'Phrase text goes in an indented prose block — the same-line form was removed (grammar log 2026-07-10).',
+      removedFormMessage('parse.phrase-text-form'),
       span,
     );
   }
@@ -4968,7 +4968,7 @@ class Parser {
         // model subsumes it generally (Chord 3.0.0).
         this.diagnostics.error(
           'parse.removed-define-verb',
-          '`define verb` was removed (ADR-270) — add the verb onto the action directly: `extend action <name>` with a `grammar` pattern line (e.g. `extend action putting` → `hook the item on the hook`).',
+          removedFormMessage('parse.removed-define-verb'),
           lineSpan(line),
         );
         this.recoverToTopLevel(true);
@@ -4978,7 +4978,7 @@ class Parser {
         // so varying text is a phrase with a strategy, written in Chord.
         this.diagnostics.error(
           'parse.removed-text-hatch',
-          '`define text … from` was removed — a story\'s text is written in Chord. Write it as a `define phrase`, with a strategy (`cycling`, `first-time`, `randomly`, `sticky`, `stopping`) if it varies.',
+          removedFormMessage('parse.removed-text-hatch'),
           lineSpan(line),
         );
         this.pos++;
@@ -4987,7 +4987,7 @@ class Parser {
         // Removed — given 8 (ratchet 2026-07-11).
         this.diagnostics.error(
           'parse.removed-flag',
-          '`define flag` was removed (given 8: no global booleans) — model the fact as `states:` on its owner, or derive it with a condition over world state.',
+          removedFormMessage('parse.removed-flag'),
           lineSpan(line),
         );
         this.recoverToTopLevel(true);
@@ -5002,7 +5002,7 @@ class Parser {
         // behavior needs support in the language rather than offering a form.
         this.diagnostics.error(
           'parse.removed-chain-hatch',
-          '`define chain … from` was removed — a story cannot replace a standard event chain with its own code. Chord has no form for this yet; the behavior needs support in the language.',
+          removedFormMessage('parse.removed-chain-hatch'),
           lineSpan(line),
         );
         this.pos++;
@@ -5014,7 +5014,7 @@ class Parser {
         // action hatch, which went too.
         this.diagnostics.error(
           'parse.removed-behavior-hatch',
-          '`define behavior … from` was removed — it had no binding key and could never fire. Author the behavior in Chord: `define trait <name>` with `on the player <verb>` clauses, composed on the entity.',
+          removedFormMessage('parse.removed-behavior-hatch'),
           lineSpan(this.lines[this.pos]),
         );
         this.pos++;
@@ -5023,7 +5023,7 @@ class Parser {
         // Removed — ratchet D12/CP5 (2026-07-11).
         this.diagnostics.error(
           'parse.removed-score',
-          '`define score` was removed (ownership package) — attach the score to its earning owner: `score <name> worth N` in the owner\'s create/trait/action block or the story header.',
+          removedFormMessage('parse.removed-score'),
           lineSpan(line),
         );
         this.recoverToTopLevel(true);
@@ -5170,7 +5170,7 @@ class Parser {
         // Z5 / AC-13: retired adverbs are load errors that name their replacement.
         this.diagnostics.error(
           'parse.phrase-strategy-retired',
-          `\`${s.text}\` is no longer a strategy adverb — use \`${RETIRED_STRATEGIES[s.text]}\` (ADR-211 Decision 4).`,
+          removedFormMessage('parse.phrase-strategy-retired', s.text, RETIRED_STRATEGIES[s.text]),
           s.span,
         );
       } else if (s && s.kind === 'word' && s.text === 'verbatim') {
@@ -5180,7 +5180,7 @@ class Parser {
         // story phrase (never on an ACL override). Fact and value resolve
         // against `define fact` in the analyzer.
         if (claims !== null) {
-          this.diagnostics.error('parse.phrase-claims', 'This phrase already carries a `claims` tag — one assertion per line (ADR-318 D9).', s.span);
+          this.diagnostics.error('parse.phrase-claims', 'This phrase already carries a `claims` tag — one assertion per line.', s.span);
         }
         const fact = this.parseNameRef(c, (t) => t.kind === 'word' && t.text === 'is');
         if (fact.words.length === 0 || !c.matchWord('is')) {
@@ -5778,7 +5778,7 @@ class Parser {
           // Removed — given 8 / ratchet D8 (2026-07-11).
           this.diagnostics.error(
             'parse.removed-flag-field',
-            'The `flag` field type was removed (given 8: no booleans at any scope) — declare `states[, reversible]: …` on the trait and name what the thing IS in each state.',
+            removedFormMessage('parse.removed-flag-field'),
             typeTok.span,
           );
           continue;
@@ -5830,7 +5830,7 @@ class Parser {
       // form below is untouched, and `from` after the name tells them apart.
       this.diagnostics.error(
         'parse.removed-action-hatch',
-        `\`define action ${nameTok.text} from …\` was removed — an action is written in Chord. Write it as a \`define action ${nameTok.text}\` block with an indented body.`,
+        removedFormMessage('parse.removed-action-hatch', nameTok.text),
         lineSpan(headLine),
       );
       this.pos++;
@@ -6197,7 +6197,7 @@ class Parser {
       const name = slot && slot.kind === 'word' ? slot.text : 'name';
       this.diagnostics.error(
         'parse.removed-slot-spelling',
-        `The \`(${name})\` slot spelling was removed (ADR-267 D15) — write \`the ${name}\`.`,
+        removedFormMessage('parse.removed-slot-spelling', `(${name})`, name),
         t.span,
       );
       return null;
@@ -6207,7 +6207,7 @@ class Parser {
       const name = slot && slot.kind === 'word' ? slot.text : 'name';
       this.diagnostics.error(
         'parse.removed-slot-spelling',
-        `The \`:${name}\` slot spelling was removed (ADR-267 D15) — write \`the ${name}\`.`,
+        removedFormMessage('parse.removed-slot-spelling', `:${name}`, name),
         t.span,
       );
       if (slot && slot.kind === 'word') c.next();
@@ -7565,7 +7565,7 @@ class Parser {
           const gerund = actorToks[actorToks.length - 1].text;
           this.diagnostics.error(
             'parse.removed-head-it',
-            `\`${spelled}\` is no longer a form — name who acts: \`${clauseKind} the player ${gerund}\` (or the actor's name).`,
+            removedFormMessage('parse.removed-head-it', spelled, clauseKind, gerund),
             mergeSpans(headWords[0].span, gerundTok.span),
           );
           gerundTok = actorToks[actorToks.length - 1];
@@ -7917,7 +7917,7 @@ class Parser {
       if (word === 'from' && lc.isWord('event', 1)) {
         this.diagnostics.error(
           'parse.channel-from-removed',
-          '`from event` was removed (ADR-253) — the event rides the `return … from <event>` clause: `return <construct> from <event>`.',
+          removedFormMessage('parse.channel-from-removed'),
           lineSpan(line),
         );
         continue;
@@ -7925,7 +7925,7 @@ class Parser {
       if (word === 'take') {
         this.diagnostics.error(
           'parse.channel-take-removed',
-          '`take` was removed (ADR-253) — a channel `return`s a construct: `return <field> from <event>`, `return "text (slot)" from <event>`, or `return phrase <key> from <event>`.',
+          removedFormMessage('parse.channel-take-removed'),
           lineSpan(line),
         );
         continue;
@@ -9526,7 +9526,7 @@ class Parser {
         // Removed — given 4 amended (ratchet 2026-07-11).
         this.diagnostics.error(
           'parse.removed-if',
-          '`if` was removed (given 4 amended) — use a `must` requirement for guards (`it must be hungry: already-fed`), a statement `when` suffix for conditionals (`award X when <condition>`), or `select` for branching.',
+          removedFormMessage('parse.removed-if'),
           lineSpan(line),
         );
         this.pos++;
@@ -9827,7 +9827,7 @@ class Parser {
       if (strategyTok && strategyTok.kind === 'word' && RETIRED_STRATEGIES[strategyTok.text]) {
         this.diagnostics.error(
           'parse.select-strategy-retired',
-          `\`${strategyTok.text}\` is no longer a strategy adverb — use \`${RETIRED_STRATEGIES[strategyTok.text]}\` (ADR-211 Decision 4).`,
+          removedFormMessage('parse.select-strategy-retired', strategyTok.text, RETIRED_STRATEGIES[strategyTok.text]),
           strategyTok.span,
         );
       } else {
@@ -9956,7 +9956,7 @@ class Parser {
     if (!exact) {
       this.diagnostics.error(
         'parse.adjacent-room-spelling',
-        'The adjacent-room place is spelled `a random adjacent room` — the randomness is in the noun (ADR-326).',
+        'The adjacent-room place is spelled `a random adjacent room` — the randomness is in the noun.', // ADR-326
         span,
       );
     }
@@ -9969,7 +9969,7 @@ class Parser {
       c.next();
       this.diagnostics.error(
         'parse.adjacent-room-strategy',
-        `\`a random adjacent room\` takes no strategy word — drop \`${next.text}\`; the candidate set is drawn afresh each time, so \`random\` already says how (ADR-326).`,
+        `\`a random adjacent room\` takes no strategy word — drop \`${next.text}\`; the candidate set is drawn afresh each time, so \`random\` already says how.` /* ADR-326 */,
         strategySpan,
       );
     }

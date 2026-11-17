@@ -1,0 +1,22 @@
+// Fixture for tests/removed-forms.test.ts: source the wording scan must fail on.
+// It is text, not compiled. Three defects, one per call:
+//   1. a message that cites a decision record;
+//   2. a removed-form code reported with its own text instead of the registry's;
+//   3. a template whose static text cites a design record.
+class Fixture {
+  report(span: Span, name: string): void {
+    this.diagnostics.error(
+      'parse.fixture-cites',
+      'The fixture form is not legal here (ADR-999 D2) — write it on its owner.',
+      span,
+    );
+    this.diagnostics.error('parse.removed-if', '`if` was removed — write something else.', span);
+    this.diagnostics.warning(
+      'analysis.fixture-template',
+      `\`${name}\` is not a state (given 8). Name what ${name /* ADR-1 in a comment is fine */} IS.`,
+      span,
+    );
+    // A clean call: the scan must not flag it. ADR-2 in this comment is fine.
+    this.diagnostics.error('parse.fixture-clean', 'A clean message; nothing to cite.', span);
+  }
+}

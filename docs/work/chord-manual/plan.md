@@ -375,14 +375,30 @@ Appendices (generated): A, the Chord grammar from `packages/chord/chord.ebnf`; B
 - **Domain focus**: Book tooling: appendices derived from the shipped sources at the pin.
 - **Entry state**: Phase 1's exit state holds. This phase may run at any point before Phase 7.
 - **Deliverable**:
-  - Write `scripts/generate-chord-appendices.cjs` (new), with a header comment. It writes Appendix A from `packages/chord/chord.ebnf`, Appendix B from `packages/parser-en-us/grammar/standard-en-us.story`, Appendix C from the published `@sharpee/chord` vocabulary exports, and Appendix D from the published `sharpee messages` output.
-  - Appendix E (diagnostic codes) only if a repo-side scan of `packages/chord/src` can produce it. Anything that needs a registry in `packages/` stops for David's ruling.
+  - Re-cut 2026-11-17 (session 7e6a1d) to the seven appendices of `chapters.md`, which David accepted on 2026-11-15 and which the edition's stubs and `book.yaml` already carry (#754). The planner's A to E list is superseded; its conditional diagnostic-codes appendix is not in the accepted list and is not built.
+  - Write `scripts/generate-chord-appendices.cjs` (new), with a header comment. It writes Appendix A (the grammar) from `packages/chord/chord.ebnf` with the file's comments dropped, since they cite ADRs; Appendix B (kinds, trait words, state words and their pairings) from the `@sharpee/chord` catalog and manifest exports; Appendix C (the standard actions and their gerunds) from `packages/parser-en-us/grammar/standard-en-us.story`; Appendix D (statements and conditions, one line each) from the grammar's `statement`, `unary` and `predicate` rules; Appendix E (character vocabulary) from `CHARACTER_MANIFEST`; and Appendix F (message aliases) from the `sharpee messages` output.
+  - Appendix G (removed forms and their replacements) only if a source can produce it. Anything that needs a registry in `packages/` stops for David's ruling.
   - Group headings carry `{.unnumbered .unlisted}`, as in the Sharpee manual's Appendix D.
-- **Files**: `scripts/generate-chord-appendices.cjs` (new), `docs/book/chord-v4.0.2/backmatter/`
-- **Exit state**: Each appendix's entry count matches its source: Appendix B has one entry per `define action` block in the standard grammar, and Appendix D has one entry per alias `sharpee messages` emits. Regenerating produces no diff.
-- **Demonstration**: `node scripts/generate-chord-appendices.cjs` exits 0. A second run leaves `git status --porcelain docs/book/chord-v4.0.2/backmatter/` empty. The session prints each appendix's count beside its source count. `scripts/build-book.sh chord-v4.0.2 html` exits 0 with the appendix headings kept out of the table of contents.
-- **Demonstrated**: 
-- **Status**: CURRENT (since 2026-11-17)
+- **Files**: `scripts/generate-chord-appendices.cjs` (new), `scripts/__tests__/generate-chord-appendices.test.ts` (new), `docs/book/chord-v4.0.2/backmatter/`
+- **Exit state**: Each appendix's entry count matches its source: Appendix C has one entry per `define action` block in the standard grammar, and Appendix F has one entry per alias `sharpee messages` emits. Regenerating produces no diff.
+- **Demonstration**: `node scripts/generate-chord-appendices.cjs` exits 0. A second run leaves every file under `docs/book/chord-v4.0.2/backmatter/` byte-identical. The session prints each appendix's count beside its source count. `scripts/build-book.sh chord-v4.0.2 html` exits 0 with the appendix headings kept out of the table of contents.
+- **Progress 2026-11-17 (session 7e6a1d)**: Appendices A to F are generated; Appendix G is still its stub and waits on David's ruling (#784).
+  - `node scripts/generate-chord-appendices.cjs` exited 0 on "Sharpee 5.6.1 · Chord 4.0.3" (the in-repo build, as for Phases 2 to 5; the published half waits on #755) and printed: A 213 rules against 213 rule terminators in `chord.ebnf`; B 87 rows against 87 catalog and manifest entries; C 77 actions against 77 `define action` lines; D 73 lines (38 statements, 11 conditions, 24 predicates); E 31 rows against 31 manifest lists, dimensions and presets; F 885 aliases against 885 in `MESSAGE_OVERRIDE_ALIASES`.
+  - A second run left `shasum` over `backmatter/*` unchanged.
+  - `scripts/build-book.sh chord-v4.0.2 html` exited 0; the table of contents lists the seven appendices and none of the 193 group headings.
+  - `pnpm exec vitest run --config scripts/vitest.config.ts scripts/__tests__/generate-chord-appendices.test.ts`: 10 passing, 0 failures.
+  - Appendix G was not generated. The compiler keeps no registry of removed forms: 24 diagnostic codes carry `removed` or `retired` in their names, other removed spellings carry codes that do not, and the fix-it text of most cites an ADR number or a design-record name. Filed as #784.
+  - Three standard actions have no typed command in the standard grammar: `breaking`, `entering_room`, `tasting`. Appendix C lists them as such; not checked further.
+- **Progress 2026-11-17 (session 7e6a1d), Appendix G**: David ruled on #784 the same session. Asked how Appendix G should be produced, he answered "a" (fix the platform first), and shown the design he answered "c": a registry of removed forms in `packages/chord`, every compiler message that cites an internal record cleaned, and the `sharpee publish` message chapter 40 quotes.
+  - `packages/chord/src/removed-forms.ts` (new) holds 28 removed forms (the 24 codes named `removed` or `retired`, plus `parse.header-unknown-field`, `parse.passage-is-pace`, `parse.phrase-text-form` and `parse.passage-line-form`), each with its code, form, replacement, a triggering example and its message. The 30 sites in `parser.ts` and `analyzer.ts` (28 codes, two of them reported from two sites each) take their text from it; no code, span or recovery path changed, and `chord.ebnf` is untouched.
+  - 18 other messages lost their citation (an ADR number, "given 8" or "ratchet E3"): 17 at call sites and one held in a constant, `RESERVED_MATCH_MESSAGE`, which the session's first scan missed and `mutation-verification` found. Each citation is now a code comment at its site. `packages/chord/tests/removed-forms.test.ts` holds the rule over every string literal in `packages/chord/src`, read through the TypeScript parser; run against the pre-change `parser.ts` and `analyzer.ts` it reports 26 and 10 citing literals.
+  - `mutation-verification` also found that Appendix D's count compared a number with itself. The generator now says D has no second count, and its test pins known lines instead; the test also checks B and E word by word and has a fixture the no-ADR check refuses.
+  - `parse.header-unknown-field` is the one registry code a second fact also reports (a header key that never existed), so the structural test allows it one site with its own text. Giving the removed fields a code of their own would remove the exception; not done, since the design kept codes unchanged.
+  - `packages/devkit/src/standalone/publish.ts`: the `publish.missing-ifid` message no longer ends "(ADR-074, ADR-309)", and chapter 40's quote of it is corrected. Other devkit output that cites ADRs (the `publish` help text, for one) was outside the ruling and is untouched.
+  - Two existing assertions pinned the removed wording (`toContain('given 8')`, `toContain('ADR-298')`) and were flipped to assert it is gone.
+  - Not run: the Dungeo walkthrough chain (no Dungeo input reaches the Chord compiler's messages), and the published CLI (#755).
+- **Demonstrated**: 2026-11-17, session 7e6a1d, after `./repokit build dungeo` exited 0 on the changed tree. `node scripts/generate-chord-appendices.cjs` exited 0 on "Sharpee 5.6.1 · Chord 4.0.3" and printed A 213 rules against 213, B 87 rows against 87, C 77 actions against 77 `define action` lines, D 73 lines (no second count), E 31 rows against 31, F 885 aliases against 885, G 28 forms against 28 registry entries, each example raising its code. A second run left `shasum` over `backmatter/*` unchanged. `scripts/build-book.sh chord-v4.0.2 html` exited 0; its table of contents lists the seven appendices and none of the 221 group headings. Tests, all re-run after the last source edit: `scripts/__tests__/generate-chord-appendices.test.ts` 11 passing; `@sharpee/chord` 1927 passing; `@sharpee/story-loader` 1687 passing, 1 skipped; `@sharpee/devkit` 220 passing, 1 skipped; 0 failures. [reported by session]
+- **Status**: DONE
 
 ### Phase 7: The snippet check against the published toolchain
 - **Tier**: Medium
@@ -399,7 +415,7 @@ Appendices (generated): A, the Chord grammar from `packages/chord/chord.ebnf`; B
 - **Exit state**: Every fence in the manual compiles and loads against Sharpee 5.6.1 / Chord 4.0.2, or is listed as a filed platform issue awaiting David. The checker fails on its fixture.
 - **Demonstration**: `node scripts/check-chord-snippets.cjs docs/book/chord-v4.0.2/` exits 0 and prints the per-chapter table with zero failures. The fixture test fails the broken fence and passes.
 - **Demonstrated**: 
-- **Status**: PENDING
+- **Status**: CURRENT (since 2026-11-17)
 
 ### Phase 8: Naive-reader acceptance runs
 - **Tier**: Large

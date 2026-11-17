@@ -85,6 +85,8 @@ describe('checkPublishable', () => {
       // The remedy points at the config and the minting hosts — not at the
       // retired hand-fix instructions (ADR-309 D4).
       expect((error as PublishError).message).toContain('config.json');
+      // An author reads this text: it names no decision record.
+      expect((error as PublishError).message).not.toMatch(/ADR-\d/);
     }
 
     expect(fs.existsSync(path.join(tmp, 'dist'))).toBe(false);

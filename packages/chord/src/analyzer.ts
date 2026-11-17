@@ -99,6 +99,7 @@ import { expandReadings, lowerParts, renderPattern, samePatternShape, seatTable,
 import type { PatternElement } from '@sharpee/if-domain';
 import { CHARACTER_MANIFEST } from './character-manifest.js';
 import { nearest } from './edit-distance.js';
+import { removedFormMessage } from './removed-forms.js';
 import { assignClauseIds } from './clause-ids.js';
 import { normalizeTopic } from './analyzer/topic.js';
 import { requiresOrderViolations, type OrderViolation } from './analyzer/requires.js';
@@ -261,9 +262,9 @@ function inlineKillKey(stmt: KillStmt): string {
 
 const PLAYER_WORDS = new Set(['player', 'you', 'yourself']);
 
-/** Reserved-name gate text (David, 2026-07-12 — each package P3). */
+/** Reserved-name gate text (David, 2026-07-12 — each package P3; ratchet E3). */
 const RESERVED_MATCH_MESSAGE =
-  '`match` is reserved for the `each`-block binder `the match` (ratchet E3) — pick another name.';
+  '`match` is reserved for the `each`-block binder `the match` — pick another name.';
 
 /**
  * Z3/Z3b reserved channel keys — entity-owned, platform-PULLED phrase
@@ -3309,7 +3310,7 @@ export class Analyzer {
     const offend = (what: string, span: Span) =>
       this.diagnostics.error(
         'analysis.alteration-behavior',
-        `\`extend action\` alters grammar only — ${what} belongs to the action's implementation, not an alteration block (ADR-270).`,
+        `\`extend action\` alters grammar only — ${what} belongs to the action's implementation, not an alteration block.`, // ADR-270
         span,
       );
     if (decl.musts.length > 0) offend('a `must` requirement', decl.musts[0].span);
@@ -3597,7 +3598,7 @@ export class Analyzer {
         const offend = (what: string, span: Span) =>
           this.diagnostics.error(
             'analysis.grammar-file-behavior',
-            `A grammar file carries grammar only — ${what} belongs to the action's implementation, not this file (ADR-269).`,
+            `A grammar file carries grammar only — ${what} belongs to the action's implementation, not this file.`, // ADR-269
             span,
           );
         // ADR-378 D5: the gate is a story-tier instrument; the standard
@@ -3613,7 +3614,7 @@ export class Analyzer {
       } else if (decl.kind !== 'import') {
         this.diagnostics.error(
           'analysis.grammar-file-declaration',
-          `\`${decl.kind}\` is not legal in a grammar file — a grammar file carries only \`define action\` grammar (ADR-269).`,
+          `\`${decl.kind}\` is not legal in a grammar file — a grammar file carries only \`define action\` grammar.`, // ADR-269
           decl.span,
         );
       }
@@ -4240,7 +4241,7 @@ export class Analyzer {
       if (BOOLEAN_STATE_WORDS.has(s.name)) {
         this.diagnostics.error(
           'analysis.boolean-state',
-          `\`${s.name}\` is a boolean literal, not a state — booleans are not part of Chord at any scope (given 8). Name what ${ownerDesc} IS in that condition.`,
+          `\`${s.name}\` is a boolean literal, not a state — booleans are not part of Chord at any scope. Name what ${ownerDesc} IS in that condition.`, // given 8
           s.span,
         );
       }
@@ -5089,7 +5090,7 @@ export class Analyzer {
       if (match.category !== 'harm' && match.category !== 'abandon') {
         this.diagnostics.error(
           'analysis.principle-scope',
-          `\`${this.categorySurface(match.category)}\` takes no scope — only \`harms\` and \`abandons\` are scoped (ADR-318 D4).`,
+          `\`${this.categorySurface(match.category)}\` takes no scope — only \`harms\` and \`abandons\` are scoped.`, // ADR-318 D4
           rest[0].span,
         );
         return null;
@@ -6454,7 +6455,7 @@ export class Analyzer {
         ) {
           this.diagnostics.error(
             'analysis.remove-player',
-            '`remove the player` is not a thing — the platform defines no post-removal player semantics (ADR-213).',
+            '`remove the player` is not a thing — the platform defines no post-removal player semantics.', // ADR-213
             stmt.span,
           );
         }
@@ -7669,7 +7670,7 @@ export class Analyzer {
     const fix = owner ? `name the owner: \`${field ? `${owner}'s ${field}` : owner}\`` : 'name the entity you mean';
     this.diagnostics.error(
       'analysis.it-removed',
-      `\`${spelled}\` is no longer a form outside \`define trait\` — ${fix}.`,
+      removedFormMessage('analysis.it-removed', spelled, fix),
       ref.span,
     );
   }
@@ -7831,7 +7832,7 @@ export class Analyzer {
     if (openers.length === 0) {
       this.diagnostics.error(
         'analysis.chapter-no-opening',
-        'A story with `use chapters` opens a chapter when the game starts — give the first row `begins when the game starts` (ADR-330 D2).',
+        'A story with `use chapters` opens a chapter when the game starts — give the first row `begins when the game starts`.', // ADR-330 D2
         decl.span,
       );
     } else if (openers.length > 1) {
@@ -7843,7 +7844,7 @@ export class Analyzer {
     } else if (openers[0] !== 0) {
       this.diagnostics.error(
         'analysis.chapter-opening-not-first',
-        'The chapter that begins when the game starts must be the first row — chapters are in declaration order, and nothing can begin before the opening (ADR-330 D1/D3).',
+        'The chapter that begins when the game starts must be the first row — chapters are in declaration order, and nothing can begin before the opening.', // ADR-330 D1/D3
         decl.rows[openers[0]].span,
       );
     }
@@ -8986,7 +8987,7 @@ export class Analyzer {
                 reportedBare.add(site.marker);
                 this.diagnostics.error(
                   'analysis.fragment-not-bare',
-                  `A variant of \`${site.marker}\` begins with punctuation/whitespace — write the fragment bare; the separator is platform-owned (ADR-211).`,
+                  `A variant of \`${site.marker}\` begins with punctuation/whitespace — write the fragment bare; the separator is platform-owned.`, // ADR-211
                   target.span,
                 );
               }

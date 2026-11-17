@@ -214,7 +214,7 @@ describe('removed positional form (AC-2)', () => {
     const result = parse('story "Cloak of Darkness" by "Roger Firth"\n  id: cloak\n');
     const removed = result.diagnostics.find((d) => d.code === 'parse.removed-story-header');
     expect(removed).toBeDefined();
-    expect(removed?.message).toContain('ADR-298');
+    expect(removed?.message).not.toMatch(/ADR-\d/);
     expect(removed?.message).toContain('title:');
     expect(removed?.message).toContain('authors:');
   });

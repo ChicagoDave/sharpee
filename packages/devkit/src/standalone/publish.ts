@@ -115,11 +115,12 @@ export function checkPublishable(storyFile: string): PublishTarget {
     // whenever any exists, so reaching here means the story has NO identity
     // anywhere — no config, no header line. Publication never invents one
     // (a clone missing its committed config must refuse, not silently fork),
-    // so the remedy is a host that mints at a creation moment.
+    // so the remedy is a host that mints at a creation moment. The identifier
+    // itself is ADR-074's; the message names neither record.
     throw new PublishError(
       'publish.missing-ifid',
       `${path.basename(resolved)} has no identity — no story config and no \`ifid:\` ` +
-        `header (ADR-074, ADR-309). If this story ever had one, restore its ` +
+        `header. If this story ever had one, restore its ` +
         `\`<story-name>.config.json\` from version control; otherwise run ` +
         `\`sharpee build\` once (or open the story in Chord Writer) to mint it.`,
     );

@@ -30,7 +30,8 @@ describe('three-ring boolean-state gate (D9)', () => {
     expect(errors).toHaveLength(1);
     expect(errors[0].code).toBe('analysis.boolean-state');
     expect(errors[0].span.line).toBe(10);
-    expect(errors[0].message).toContain('given 8');
+    expect(errors[0].message).toContain('booleans are not part of Chord');
+    expect(errors[0].message).not.toContain('given 8');
   });
 
   it('ring 2: a set reproducing a platform-owned pair, naming the trait to compose', () => {
