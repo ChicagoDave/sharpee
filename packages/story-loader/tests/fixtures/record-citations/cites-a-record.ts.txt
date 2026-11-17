@@ -1,0 +1,14 @@
+// Fixture for tests/record-citations.test.ts: source the literal scan must fail on.
+// It is text, not compiled. Two defects and two things the scan must leave alone:
+//   1. a message that cites a decision record;
+//   2. a template whose static text cites a design record;
+//   3. a clean message;
+//   4. citations inside comments, which are where they belong.
+function fixture(name: string): string[] {
+  return [
+    'The fixture story is refused (ADR-999 D2) — fix its config.',
+    `\`${name}\` is not loaded (given 8). Name what ${name /* ADR-1 in a comment is fine */} is.`,
+    // A clean message: the scan must not flag it. ADR-2 in this comment is fine.
+    'A clean message; nothing to cite.',
+  ];
+}

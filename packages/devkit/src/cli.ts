@@ -34,7 +34,12 @@ import { runClaimCommand } from './commands/claim.js';
 import { runWorldIndex } from './commands/world-index.js';
 import { projectDirectoryFor } from './build-target.js';
 
-const USAGE = `sharpee — Interactive Fiction authoring CLI (ADR-180, ADR-187)
+// The usage text is read by authors, so it names no decision record. The
+// records behind each line: devkit as the author-only CLI, ADR-180 and ADR-187;
+// publish, ADR-284; compose, ADR-210; introspect, ADR-184 and ADR-185;
+// world-index, ADR-321; test --tree, ADR-302; claim, ADR-367; a Chord build's
+// metadata coming from the Story IR with no package.json, ADR-252.
+const USAGE = `sharpee — Interactive Fiction authoring CLI
 
 Usage:
   sharpee build [<file>.story | dir]     Build a Chord story to a browser app (no flag — browser is the default client)
@@ -42,11 +47,11 @@ Usage:
   sharpee build-browser [options]        Build the browser client for the current project
   sharpee init <name>                    Scaffold a new story project
   sharpee init-browser                   Add a browser client to the current project
-  sharpee publish [<file>.story | dir]   Build + zip a distributable browser app (ADR-284)
-  sharpee compose <file.story> [opts]    Compile a Chord story to Story IR (ADR-210)
-  sharpee introspect [dir]               Emit the IDE project manifest (ADR-184/185) as JSON
+  sharpee publish [<file>.story | dir]   Build + zip a distributable browser app
+  sharpee compose <file.story> [opts]    Compile a Chord story to Story IR
+  sharpee introspect [dir]               Emit the IDE project manifest as JSON
   sharpee messages                       Emit the overridable platform messages (alias + template) as JSON
-  sharpee world-index <file>.ir.json     Derive the story's map, reach, and vocabulary gaps as JSON (ADR-321)
+  sharpee world-index <file>.ir.json     Derive the story's map, reach, and vocabulary gaps as JSON
   sharpee ifid                           IFID utilities (generate, validate)
   sharpee register <location> [--name]   Register a name→path mapping in ~/.sharpee/devkit
   sharpee list                           List registered stories
@@ -55,16 +60,16 @@ Usage:
                                          Run the project's transcript tests
                                          --tree: transcripts name parents with
                                          continues:; runs every root-to-leaf
-                                         path (ADR-302)
+                                         path
   sharpee play [name|path]               Play the project interactively (REPL)
   sharpee claim <line> ["<fact>"] [--at <turn>] [--name "<n>"] [--propose] [name|path]
                                          Lock a fact true at a card of a played
                                          line as a claim; its needs are proposed
-                                         from the line (ADR-367). No fact: list
+                                         from the line. No fact: list
                                          the facts the line reached
 
 build (Chord .story): compiles the story, derives all metadata from the Story IR
-  (ADR-252 — no package.json), and emits a self-contained browser app to
+  (no package.json), and emits a self-contained browser app to
   dist/web/<id>/. Client config (theme/themes/storage-prefix) rides the .story
   header. A non-browser client is named by the header 'client:' field.
 build (TypeScript project): compiles src/ + emits the .sharpee bundle; --browser also

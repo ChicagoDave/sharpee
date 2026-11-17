@@ -44,7 +44,9 @@ export class SchedulerConstructsSection {
     if (this.core.timerDefs.size > 0) {
       daemons.push({
         id: 'chord.timers',
-        name: 'ADR-325 timers',
+        // The name is shown wherever daemons are listed, so it names what the
+        // daemon is rather than the record that designed it (ADR-325).
+        name: 'Chord timers',
         run: (ctx) => this.core.timers.stepTimers(ctx),
       });
     }

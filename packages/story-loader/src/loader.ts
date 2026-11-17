@@ -224,8 +224,9 @@ export class ChordStory implements Story {
    */
   createPlayer(world: WorldModel): IFEntity {
     if (!this.build.worldBuilt) {
+      // The role is claimed from the built world, never ahead of it (ADR-327 D10).
       throw new LoadError(
-        'The world must be built before the player role is claimed — call `initializeWorld` first (ADR-327 D10).',
+        'The world must be built before the player role is claimed — call `initializeWorld` first.',
       );
     }
     if (!world.hasPlayerCharacter) {

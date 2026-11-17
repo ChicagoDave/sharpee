@@ -118,8 +118,9 @@ function* walk(body: IRStatement[]): Generator<IRStatement> {
 export function assertClauseIds(ir: StoryIR): void {
   for (const [owner, clause] of onClauses(ir)) {
     if (typeof clause.id === 'string' && clause.id.length > 0) continue;
+    // The analyzer's id pass covers every clause (ADR-388 D2).
     throw new LoadError(
-      `An \`${clause.clauseKind} ${clause.action}\` clause on ${owner} carries no compiler-assigned id — the analyzer assigns one to every clause (ADR-388 D2). This IR is stale or hand-built; recompile the story.`,
+      `An \`${clause.clauseKind} ${clause.action}\` clause on ${owner} carries no compiler-assigned id — the analyzer assigns one to every clause. This IR is stale or hand-built; recompile the story.`,
       clause.span,
     );
   }
@@ -139,8 +140,9 @@ export function assertSelectIds(ir: StoryIR): void {
     for (const stmt of walk(body)) {
       if (stmt.kind !== 'select-strategy') continue;
       if (typeof stmt.id === 'string' && stmt.id.length > 0) continue;
+      // The analyzer's id pass covers every select block (ADR-289 D2).
       throw new LoadError(
-        `A \`select ${stmt.strategy}\` block carries no compiler-assigned id — the analyzer assigns one to every select block (ADR-289 D2). This IR is stale or hand-built; recompile the story.`,
+        `A \`select ${stmt.strategy}\` block carries no compiler-assigned id — the analyzer assigns one to every select block. This IR is stale or hand-built; recompile the story.`,
         stmt.span,
       );
     }
@@ -161,7 +163,8 @@ export function assertIdentity(ir: StoryIR): void {
   const identity: unknown = ir.identity;
   const present = typeof identity === 'object' && identity !== null && typeof (identity as { stamp?: unknown }).stamp === 'string';
   if (present && (identity as { stamp: string }).stamp.length > 0) return;
+  // The analyzer's last pass emits the manifest and its stamp (ADR-388 D4).
   throw new LoadError(
-    'This story carries no identity manifest — the analyzer emits one with its content stamp on every compile (ADR-388 D4). This IR is stale or hand-built; recompile the story.',
+    'This story carries no identity manifest — the analyzer emits one with its content stamp on every compile. This IR is stale or hand-built; recompile the story.',
   );
 }

@@ -57,12 +57,16 @@ export async function runTestCommand(rest: string[]): Promise<number> {
       // happens. Accepted so `sharpee test story.story --tree` (the IDE's
       // spawn and the documented spelling) keeps working.
     } else if (arg === '--chain' || arg === '-c') {
+      // Refused, not ignored: a tree document runs a shared prefix once, so
+      // there is no chain to ask for (ADR-302 D10; retired at the ADR-307 cutover).
       console.error(
-        `test: --chain is retired — the tree document has no chain (a shared prefix already runs once; ADR-302 D10, ADR-307 cutover)\n${USAGE}`,
+        `test: --chain is retired — the tree document has no chain (a shared prefix already runs once)\n${USAGE}`,
       );
       return 2;
     } else if (arg === '--coverage') {
-      console.error(`test: --coverage is retired with the transcript grammar (ADR-307 cutover)\n${USAGE}`);
+      // Refused: coverage belonged to the transcript grammar, which the tree
+      // document replaced (the ADR-307 cutover).
+      console.error(`test: --coverage is retired with the transcript grammar\n${USAGE}`);
       return 2;
     } else if (arg === '--stop-on-failure' || arg === '-s') stopOnFailure = true;
     else if (arg === '--verbose' || arg === '-v') verbose = true;

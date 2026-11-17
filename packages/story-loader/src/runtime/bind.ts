@@ -56,7 +56,9 @@ export class BindSection {
       }
       for (const key of dataKeys) {
         if (key.includes('.')) {
-          throw new LoadError(`Phrasebook \`${book.name}\`: \`${key}\` is a dotted platform ID — books voice story keys only (ADR-250 D1).`);
+          // A phrasebook voices the story's own keys; platform message ids are
+          // overridden elsewhere (ADR-250 D1).
+          throw new LoadError(`Phrasebook \`${book.name}\`: \`${key}\` is a dotted platform ID — books voice story keys only.`);
         }
       }
       return { name: book.name, condition: book.condition ?? null, entries: data.entries };

@@ -26,6 +26,15 @@ create the loader robot
     phrase robot-fetches-sack
   end after</code></pre>
 <p>How far a sound carries, through open exits and past walls, is the platform's to work out; a story only says who listens. <code>hearing</code> takes no <code>on</code> form, since a sound cannot be refused after it was made. A <code>play sound</code> written <code>when client has sound</code> is a sound the world hears only on clients that play audio, so leave that condition off a sound something in the story must hear.</p>
+<h3 id="what-the-player-reads">What the player reads</h3>
+<p>A sound prints only what its declaration says. Give a sound a block, and <code>heard:</code> is the line the player reads when the sound is made in the room they are in; <code>heard from afar:</code> is the line when it reaches them from somewhere else. A sound may state either line, both, or neither.</p>
+<pre><code class="language-chord">define sound depot-klaxon from &quot;audio/klaxon.wav&quot;
+  heard: The klaxon blares, flat and enormous.
+  heard from afar: A klaxon is sounding somewhere in the depot.
+end sound
+
+define sound latch-click from &quot;audio/click.wav&quot;</code></pre>
+<p>A line the sound does not state prints nothing. <code>play sound latch-click</code> plays its file and is heard by every listener in reach, and the prose for it is whatever the clause that plays it says with <code>phrase</code>.</p>
 <h2 id="playing-and-showing">Playing and showing</h2>
 <pre><code class="language-chord">create the primer plunger
   aka plunger

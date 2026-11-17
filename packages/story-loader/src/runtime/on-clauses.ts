@@ -79,8 +79,9 @@ export class OnClausesSection {
           // any other owner it would silently never fire. Refuse at load.
           // `entering` is exempt: on a THING it is the entering action's
           // interceptor (GH #341), bound below like any other gerund.
+          // Region crossing reactions are ADR-236's.
           throw new LoadError(
-            `\`${clause.clauseKind} the player ${clause.action}\` — \`${clause.action}\` is a region crossing reaction (ADR-236), and \`${entity.name}\` is not a region. Put the clause on the region block whose boundary it reacts to.`,
+            `\`${clause.clauseKind} the player ${clause.action}\` — \`${clause.action}\` is a region crossing reaction, and \`${entity.name}\` is not a region. Put the clause on the region block whose boundary it reacts to.`,
             clause.actionSpan ?? clause.span,
           );
         }

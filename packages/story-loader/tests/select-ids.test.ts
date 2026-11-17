@@ -186,8 +186,8 @@ describe('ADR-388 AC-8 — rogue-IR backstops (ADR-276 two-layer)', () => {
       err = e;
     }
     expect(err).toBeInstanceOf(LoadError);
-    expect(String(err)).toMatch(/no compiler-assigned id/);
-    expect(String(err)).toMatch(/ADR-289 D2/);
+    expect(String(err)).toMatch(/A `select \w+` block carries no compiler-assigned id — the analyzer assigns one to every select block\./);
+    expect(String(err)).not.toMatch(/ADR-\d+/);
   });
 
   it('an id-less clause raises a LoadError naming the compiler gate', () => {
@@ -203,7 +203,8 @@ describe('ADR-388 AC-8 — rogue-IR backstops (ADR-276 two-layer)', () => {
     }
     expect(err).toBeInstanceOf(LoadError);
     expect(String(err)).toMatch(/on pushing.*trait chimed.*no compiler-assigned id/);
-    expect(String(err)).toMatch(/ADR-388 D2/);
+    expect(String(err)).toMatch(/the analyzer assigns one to every clause\./);
+    expect(String(err)).not.toMatch(/ADR-\d+/);
   });
 
   it('createStory refuses an id-less select on the real load path', () => {

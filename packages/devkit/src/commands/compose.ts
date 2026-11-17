@@ -75,7 +75,9 @@ export function runComposeGates(file: string): ComposeGatesResult {
       ? [{
           severity: 'error' as const,
           code: 'story-config.broken',
-          message: `${path.basename(configPath)} is broken — ${configRead.message}. The story config is the canonical home of the story's IFID (ADR-309); fix or restore it, never re-mint.`,
+          // The config, not the story header, holds the IFID, so a broken one is
+          // repaired and never replaced (ADR-309).
+          message: `${path.basename(configPath)} is broken — ${configRead.message}. The story config is the canonical home of the story's IFID; fix or restore it, never re-mint.`,
           file: configPath,
           line: 1,
         }]

@@ -268,6 +268,9 @@ function templatesDir(): string {
   return fs.existsSync(near) ? near : path.join(__dirname, '..', '..', 'templates', 'browser');
 }
 
+// The help text is read by authors, so it names no decision record. The
+// records behind it: publication needing a Treaty of Babel identifier, ADR-074
+// and ADR-284; what --no-menu strips from the page, ADR-290 D6.
 const USAGE = `
 sharpee publish [<file>.story | dir] [options]
 
@@ -275,11 +278,11 @@ sharpee publish [<file>.story | dir] [options]
   and open index.html — or upload the zip to itch.io's HTML-project flow.
 
   A story with no \`ifid:\` is REFUSED before anything is built: publication
-  requires a Treaty of Babel identifier (ADR-074/ADR-284).
+  requires a Treaty of Babel identifier.
 
 Options:
   --out <path>    Where to write the zip (default: dist/<story-id>.zip)
   --no-minify     Leave the bundle unminified
   --no-menu       Strip the in-page menu bar. The page then has NO Save / Restore /
-                  Restart / Quit unless your own page supplies them (ADR-290 D6).
+                  Restart / Quit unless your own page supplies them.
 `;

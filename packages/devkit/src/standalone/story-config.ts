@@ -43,9 +43,11 @@ export class StoryConfigError extends Error {
     readonly configPath: string,
     detail: string,
   ) {
+    // The config, not the story header, holds the IFID, so a broken one is
+    // repaired and never replaced (ADR-309).
     super(
       `${path.basename(configPath)} is broken — ${detail}. The story config is the ` +
-        `canonical home of the story's IFID (ADR-309); fix or restore it (it is ` +
+        `canonical home of the story's IFID; fix or restore it (it is ` +
         `committed — check version control), never re-mint over it.`,
     );
     this.name = 'StoryConfigError';

@@ -509,7 +509,7 @@ export function buildBrowser(
   // (ADR-253) do not exist yet, so a declared `template:` cannot be resolved and
   // channel-cross-check is a no-op until they do. Guarded so it never blocks.
   if (config.template) {
-    warn(`  ⚠ template package '${config.template}' declared but template packages are not yet supported (ADR-253) — ignored.`);
+    warn(`  ⚠ template package '${config.template}' declared but template packages are not yet supported — ignored.`);
   }
 
   log(`  Story: ${meta.storyTitle} (${meta.storyId})`);
@@ -616,8 +616,10 @@ export function buildBrowser(
   if (usingCustomPage) validateCustomPage(html, result.ir.channels, warn);
   if (opts.menu === false) html = stripClientMenu(html);
   fs.writeFileSync(path.join(outDir, 'index.html'), html);
-  log(usingCustomPage ? '  ✓ Used browser/index.html (custom layout, ADR-253 D3)' : '  ✓ Copied index.html');
-  if (opts.menu === false) log('  ✓ Menu-less page: no in-page Save / Restore / Restart / Quit (ADR-290 D6)');
+  // A story's own browser/index.html replaces the bundled page (ADR-253 D3).
+  log(usingCustomPage ? '  ✓ Used browser/index.html (custom layout)' : '  ✓ Copied index.html');
+  // --no-menu strips the in-page menu bar and says what the page loses (ADR-290 D6).
+  if (opts.menu === false) log('  ✓ Menu-less page: no in-page Save / Restore / Restart / Quit');
 
   // The TESTING page (ADR-306 Phase 2): a second rendering of the same
   // bundle for the IDE's testing play surface — no chrome, no theme links,

@@ -93,8 +93,8 @@ describe('ADR-388 AC-8 — rogue IR without a manifest is refused on the real `c
       err = e;
     }
     expect(err).toBeInstanceOf(LoadError);
-    expect(String(err)).toMatch(/no identity manifest/);
-    expect(String(err)).toMatch(/ADR-388 D4/);
+    expect(String(err)).toMatch(/no identity manifest — the analyzer emits one with its content stamp on every compile\./);
+    expect(String(err)).not.toMatch(/ADR-\d+/);
   });
 
   it('IR whose stamp is empty is refused the same way', () => {
