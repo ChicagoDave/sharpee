@@ -528,6 +528,43 @@ can be won from `chapter-24` on: 50 of 50, Lamplighter.
   player` (a vial), a timer owned by a thing (a squib), trait data fields (a brazier; #771),
   `define action … while` (its derived test fails; #772), a rest-of-line slot.
 
+The chapter snapshots of Parts VII and VIII (`tutorials/relighting/chord-v4.0.2/chapter-36` to
+`chapter-40`) were written on 2026-11-16 and 2026-11-17 (sessions 5c622f and faa0bd), on the
+in-repo CLI ("Sharpee 5.6.1 · Chord 4.0.3"). They replace what the Part VII and Part VIII notes
+above say of the old `part-7` and `part-8` snapshots where the two differ.
+
+- The story plays four sounds: `tolling` on every toll, `catch` when the lamp is kindled (a new
+  `catch.mp3`), `prising` from the grille's `after Tamsin Vey pushing` (no file, two `heard`
+  lines), and the `lapping` bed in the skiff. The lamp's catch and the per-turn toll have their
+  sounds, which closes #752. The wisp is a `listener`.
+- The story has no `theme:` line and no page of its own. The default page shows the panel and the
+  picture (#718), so the snapshot carries `browser/relighting.css` only.
+- The tree is 183 cards on seven lines, its segments named with readable ids (`thelodge`,
+  `winning1`, `fromafar`). A line is named by the segment it starts in: the main line is
+  `thelodge`, and `sharpee claim winning1` is refused with the list of lines.
+- The claims file holds three claims, not the four of the old `part-8`: "the ward on the stair
+  can be lifted" (locked by `sharpee claim thelodge "the iron grille is lifted" --at 82`), "the
+  story can be won" (written and locked by hand at turn 138, because of #782), and "the cake can
+  be eaten" (no line reaches it; the walk's witness is `take seed cake / north / eat seed cake`).
+  The same fact under `needs rooms: the Lodge` alone is UNPROVEN at max-depth after 161 states,
+  and chapter 39 uses it as the example and leaves it out of the snapshot.
+- A lock that is not held fails its card and the run exits 1. An unproven claim fails nothing.
+- With `change it to lifted` removed from the `ward` trait, 35 cards fail, the lock reports "NOT
+  held there: the iron grille is standing", and the walk under the claim's twenty things runs its
+  whole 120 seconds.
+- `the seed cake is open` compiles as a claim though the cake is not openable: a platform state
+  word is accepted on any thing. Not filed.
+- `chapter-40` is `chapter-39` at `story-version: 1.0.0` with `publish-source: yes`. `sharpee
+  publish relighting.story` writes `dist/relighting.zip`, 0.7 MB, 14 files (12 without the source
+  line): the story's source travels as `relighting.story` and `imports.json`. The tree and the
+  claims file are not in the zip.
+- The config file is the identifier's home. A header `ifid:` line that differs from it is
+  rewritten from the config by the next build, silently. `publish` on a story with neither is
+  refused ("has no identity"). `sharpee ifid validate nonsense` answers "Valid after
+  normalization", so chapter 40 does not teach `validate`.
+- `sharpee build` and `sharpee publish` run only from a folder inside the repository on the
+  in-repo CLI: elsewhere they stop at "Cannot find module '@sharpee/platform-browser'".
+
 ## Open points in the design
 
 - Every mechanic above is a reading of the grammar. Each is proven, or changed, when its snapshot

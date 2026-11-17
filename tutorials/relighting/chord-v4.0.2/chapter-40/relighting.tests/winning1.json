@@ -1,0 +1,485 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "The crack closes from both edges at once, like a mouth deciding not to speak."
+        ],
+        "notContains": [
+          "has no memory of having been otherwise"
+        ],
+        "states": [
+          "the lens is sound"
+        ]
+      },
+      "command": "repair lens",
+      "id": "b50esiah",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "There is no flaw in it anywhere, and you looked."
+        ]
+      },
+      "command": "examine lens",
+      "id": "i2qff6hj",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "It is sound. The word looks it over and finds nothing to do."
+        ]
+      },
+      "command": "mend lens",
+      "id": "j3abup3h",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Cloister"
+        ]
+      },
+      "command": "up",
+      "id": "e18593cc",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Bell Stair"
+        ]
+      },
+      "command": "north",
+      "id": "eztnmjho",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "One of you is not going up this way."
+        ]
+      },
+      "command": "up",
+      "id": "ib0hix3p",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Cloister"
+        ]
+      },
+      "command": "south",
+      "id": "3gl9l8uf",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Undercroft",
+          "You can see a book hoist and a crate here."
+        ]
+      },
+      "command": "down",
+      "id": "2f7sdwkk",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You put the lens in the book hoist.",
+          "The book hoist pulls away."
+        ]
+      },
+      "command": "put lens in hoist",
+      "id": "c313uspl",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You can see a crate and a wisp here."
+        ],
+        "notContains": [
+          "book hoist"
+        ]
+      },
+      "command": "look",
+      "id": "o5ehqxse",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Cloister"
+        ]
+      },
+      "command": "up",
+      "id": "e7bwaq2w",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Bell Stair"
+        ]
+      },
+      "command": "north",
+      "id": "g9e1z3mp",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Lantern Gallery"
+        ]
+      },
+      "command": "up",
+      "id": "gve0pbcp",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You can see a book hoist and a wisp here.",
+          "In the book hoist you see a lens."
+        ]
+      },
+      "command": "look",
+      "id": "4hqmems9",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The leaves are shut, and green where they overlap."
+        ],
+        "states": [
+          "the shutter is closed-round"
+        ]
+      },
+      "command": "examine shutter",
+      "id": "pfqhtgt3",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "there is a seat for a lens with no lens in it."
+        ]
+      },
+      "command": "kindle lantern",
+      "id": "baf9fynm",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You turn the shutter crank.",
+          "The leaves of the shutter part by a hand's breadth all the way round, and stop."
+        ]
+      },
+      "command": "turn crank",
+      "id": "fe0hy4xz",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You turn the shutter crank."
+        ],
+        "notContains": [
+          "The crank runs free"
+        ]
+      },
+      "command": "turn crank",
+      "id": "7bazvpwa",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You push the shutter crank.",
+          "The pawl ticks over one tooth."
+        ]
+      },
+      "command": "push crank",
+      "id": "1258buas",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The leaves of the shutter part by a hand's breadth all the way round, and stop."
+        ]
+      },
+      "command": "turn crank",
+      "id": "94axtowc",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "(first taking the lens)",
+          "The lens drops into its seat with a sound like a coin on a counter.",
+          "The book hoist pulls away."
+        ]
+      },
+      "command": "put lens in lantern",
+      "id": "lsbh78kj",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "In the Great Lantern you see a lens."
+        ],
+        "notContains": [
+          "book hoist"
+        ]
+      },
+      "command": "look",
+      "id": "mbcywgdj",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The shutters are closed round it."
+        ]
+      },
+      "command": "kindle lantern",
+      "id": "26eeggj2",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The pawl ticks over one tooth.",
+          "The crank runs free, and the shutters fold back all the way round"
+        ],
+        "states": [
+          "the shutter is drawn"
+        ]
+      },
+      "command": "turn crank",
+      "id": "o7b7v9bv",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You turn the shutter crank."
+        ],
+        "notContains": [
+          "The crank runs free"
+        ]
+      },
+      "command": "turn crank",
+      "id": "c48h66r5",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The leaves are folded back all the way round."
+        ]
+      },
+      "command": "examine shutter",
+      "id": "lob5eb82",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "sends it out over the valley in one white bar.",
+          "There was always a second light."
+        ],
+        "events": [
+          "media.image.show"
+        ],
+        "states": [
+          "the story is awake"
+        ]
+      },
+      "command": "kindle lantern",
+      "id": "1k32y2rk",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Bell Stair"
+        ]
+      },
+      "command": "down",
+      "id": "c7eg2j09",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Cloister"
+        ]
+      },
+      "command": "south",
+      "id": "fu2xos10",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Undercroft"
+        ]
+      },
+      "command": "down",
+      "id": "dlgc4jy3",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Water Stair",
+          "You can see a skiff here."
+        ]
+      },
+      "command": "north",
+      "id": "rroruno4",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You get into the skiff."
+        ],
+        "events": [
+          "media.ambient.play"
+        ]
+      },
+      "command": "enter skiff",
+      "id": "3an2sdu1",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You steer the skiff east."
+        ]
+      },
+      "command": "steer east",
+      "id": "igy480ik",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You wait."
+        ]
+      },
+      "command": "wait",
+      "id": "drke2mm2",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You make sail."
+        ]
+      },
+      "command": "make sail",
+      "id": "qi3hzng2",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Mere",
+          "The Water Stair, close by, to the west.",
+          "The Beacon Isle, on the horizon, to the east."
+        ]
+      },
+      "command": "look",
+      "id": "d9k1hpyu",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You wait."
+        ]
+      },
+      "command": "wait",
+      "id": "ku461nf5",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You wait."
+        ]
+      },
+      "command": "wait",
+      "id": "jcq0evu4",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The Beacon Isle, in the distance, to the east.",
+          "The Water Stair, on the horizon, to the west.",
+          "The rock comes up out of the dusk ahead"
+        ]
+      },
+      "command": "look",
+      "id": "3u4eu19x",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The skiff arrives at the Beacon Isle."
+        ]
+      },
+      "command": "wait",
+      "id": "cm2wljsd",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You get out of the skiff."
+        ],
+        "events": [
+          "media.ambient.stop"
+        ]
+      },
+      "command": "exit",
+      "id": "7icljbi2",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The two lights hold one another.",
+          "You have risen to the rank of a Lamplighter."
+        ],
+        "events": [
+          "media.image.hide"
+        ]
+      },
+      "command": "kindle beacon",
+      "ending": "beacon-lit",
+      "id": "bjhmo3xt",
+      "locks": [
+        "the story can be won"
+      ],
+      "type": "turn"
+    }
+  ],
+  "id": "winning1",
+  "ordinal": 0,
+  "parent": "thebell1"
+}

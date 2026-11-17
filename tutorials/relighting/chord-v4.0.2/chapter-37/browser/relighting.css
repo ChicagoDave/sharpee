@@ -1,0 +1,12 @@
+/* The Relighting: the author's own styles, loaded after the engine and the
+   themes, so a rule here wins. Colours come from the theme in use. */
+
+/* The panel that lists the workings Ansel has learned. */
+#channel-panel-workings .sharpee-channel-panel-title {
+  font-variant: small-caps;
+  letter-spacing: 0.06em;
+}
+
+#channel-panel-workings .sharpee-channel-panel-row {
+  margin-bottom: 0.4rem;
+}

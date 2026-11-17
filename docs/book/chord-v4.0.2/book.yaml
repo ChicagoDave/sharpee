@@ -7,8 +7,8 @@
 #          (docs/work/chord-manual/plan.md).
 #
 # Chapter order follows docs/work/chord-manual/chapters.md: Parts I to VIII,
-# chapters 1 to 40, then appendices A to G. The title page and copyright page are
-# not listed here; they live in frontmatter.yaml and are layered ahead of this
+# the preface and How to read this book, chapters 1 to 40, then appendices A to
+# G. The title page and copyright page are not listed here; they live in frontmatter.yaml and are layered ahead of this
 # body so they precede the table of contents.
 #
 # The title is David's ruling of 2026-11-15 (the plan's D-8).
@@ -30,6 +30,9 @@ metadata:
   lang: en-US
 
 input-files:
+  # Front matter after the table of contents
+  - frontmatter/00-preface.md
+  - frontmatter/01-how-to-read.md
   # Part I. A first story
   - parts/part-1/01-the-shape-of-a-story-file.md
   - parts/part-1/02-the-story-header.md

@@ -1,0 +1,89 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "The tower bell strikes once"
+        ]
+      },
+      "command": "wait",
+      "id": "4p81qjg2",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You are Hobb, and that is the bell."
+        ]
+      },
+      "command": "wait",
+      "id": "bk91jjmj",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You are Ansel, and wherever you are standing, the bell is louder there."
+        ]
+      },
+      "command": "examine newspapers",
+      "id": "szi10w5r",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The bell tolls."
+        ],
+        "notContains": [
+          "iron complains about iron"
+        ]
+      },
+      "command": "wait",
+      "id": "9wvyyty0",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The tower bell tolls."
+        ],
+        "notContains": [
+          "iron complains about iron"
+        ]
+      },
+      "command": "wait",
+      "id": "hhkfvkjr",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Somewhere in the Hall, iron complains about iron."
+        ],
+        "notContains": [
+          "Iron shrieks on iron"
+        ]
+      },
+      "command": "wait",
+      "id": "q463p07v",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The bell tolls."
+        ],
+        "notContains": [
+          "iron complains about iron"
+        ]
+      },
+      "command": "wait",
+      "id": "8pik9eq9",
+      "type": "turn"
+    }
+  ],
+  "id": "fromafar",
+  "ordinal": 2,
+  "parent": "bargain1"
+}

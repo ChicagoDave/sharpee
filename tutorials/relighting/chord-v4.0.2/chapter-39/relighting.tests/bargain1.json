@@ -1,0 +1,201 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "Tamsin Vey waits for an answer to the question."
+        ]
+      },
+      "command": "say maybe",
+      "id": "nq21wght",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "\"Done is done. I have never gone back on one yet.\"",
+          "Tamsin Vey gives the unbind page to Ansel.",
+          "\"That is the page dealt with,\""
+        ],
+        "states": [
+          "Tamsin Vey is bound"
+        ]
+      },
+      "command": "yes",
+      "id": "t3xocbrm",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "\"We have dealt, you and I. I don't sell a thing twice.\""
+        ]
+      },
+      "command": "ask tamsin about the price",
+      "id": "k8rdtkzf",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "\"Light your lamp. I would like to see if she was right.\""
+        ],
+        "notContains": [
+          "She is not, particularly."
+        ]
+      },
+      "command": "ask tamsin about magic",
+      "id": "4k70lfz2",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Tamsin Vey gives that some thought, and gives it back."
+        ]
+      },
+      "command": "ask tamsin about the page",
+      "id": "tjlmajcx",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "notContains": [
+          "sorts hinges"
+        ]
+      },
+      "command": "wait",
+      "id": "fa965ieh",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "notContains": [
+          "sorts hinges"
+        ]
+      },
+      "command": "wait",
+      "id": "n1fb227d",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You say goodbye to Tamsin Vey."
+        ]
+      },
+      "command": "goodbye",
+      "id": "6a95blpn",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Cloister"
+        ]
+      },
+      "command": "west",
+      "id": "a4tgt1fu",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You unlock the library door with the library key."
+        ]
+      },
+      "command": "unlock library door with key",
+      "id": "lc1l46v8",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You open the library door."
+        ]
+      },
+      "command": "open library door",
+      "id": "pjoskgne",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Library"
+        ]
+      },
+      "command": "west",
+      "id": "to4jlqcu",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Whoever wrote it underlined \"lost\" twice."
+        ]
+      },
+      "command": "consult grimoire about gnusto",
+      "id": "29xyuqfm",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You find nothing about that in the grimoire."
+        ]
+      },
+      "command": "look up cheese in grimoire",
+      "id": "153ew6ta",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "channels": [
+          {
+            "contains": [
+              "kindle: wakes a flame"
+            ],
+            "id": "workings"
+          }
+        ],
+        "contains": [
+          "The word for waking a flame settles into the place it left thirty years ago"
+        ]
+      },
+      "command": "read kindle page",
+      "id": "g6lomqi7",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You say the word. A flame stands up on the wick, blue at first",
+          "Something small and blue comes loose from the flame",
+          "The wick takes with a small dry sound, like a page turned."
+        ],
+        "events": [
+          "media.sound.play"
+        ],
+        "notContains": [
+          "You light the hand lamp."
+        ]
+      },
+      "command": "light lamp",
+      "id": "1r973mby",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "It keeps a little behind your shoulder, where a dog would."
+        ]
+      },
+      "command": "examine wisp",
+      "id": "rgxn3emh",
+      "type": "turn"
+    }
+  ],
+  "id": "bargain1",
+  "ordinal": 0,
+  "parent": "thelodge"
+}

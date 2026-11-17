@@ -2,7 +2,7 @@
 
 Every code and config snippet from *The Sharpee Author and Developer Manual*, extracted verbatim and organized by chapter in reading order.
 
-- **312 snippets** across 35 chapters (311 author, 1 reference).
+- **355 snippets** across 41 chapters (354 author, 1 reference).
 - Game-session transcripts (the `> look` ... output examples) are **not** included; they are example play sessions, not code.
 - **author** snippets are the story code/config a reader writes (assembled in reading order into `src/index.ts` and project files).
 - **reference** snippets are "Under the Hood" excerpts of the platform's own source (interfaces/classes you *import*, not code you write); their filenames carry a `.reference.` infix and are named for the symbol they document.
@@ -11,6 +11,14 @@ Every code and config snippet from *The Sharpee Author and Developer Manual*, ex
 Regenerate with `node scripts/extract-book-snippets.cjs` (from `docs/book/`).
 
 ---
+
+## How to read this book
+
+`frontmatter-01-how-to-read/` &nbsp;·&nbsp; source: `docs/book/frontmatter/01-how-to-read.md`
+
+| # | File | Section | Lang | Kind | Src line |
+|---|------|---------|------|------|----------|
+| 01 | `01-conventions.story` | Conventions | chord | author | 65 |
 
 # Part I. A first story
 
@@ -580,4 +588,85 @@ Regenerate with `node scripts/extract-book-snippets.cjs` (from `docs/book/`).
 | 03 | `03-hunger.story` | Hunger | chord | author | 125 |
 | 04 | `04-announcing.story` | Announcing | chord | author | 187 |
 | 05 | `05-build-and-try-it.sh` | Build and try it | shell | author | 218 |
+
+# Part VII. Presentation
+
+## Sound, music and pictures
+
+`ch36-sound-music-and-pictures/` &nbsp;·&nbsp; source: `docs/book/parts/part-7/36-sound-music-and-pictures.md`
+
+| # | File | Section | Lang | Kind | Src line |
+|---|------|---------|------|------|----------|
+| 01 | `01-declaring-an-asset.story` | Declaring an asset | chord | author | 31 |
+| 02 | `02-playing-a-sound.story` | Playing a sound | chord | author | 53 |
+| 03 | `03-a-sound-is-also-a-sound-in-the-world.story` | A sound is also a sound in the world | chord | author | 88 |
+| 04 | `04-what-a-sound-sounds-like.story` | What a sound sounds like | chord | author | 132 |
+| 05 | `05-what-a-sound-sounds-like.story` | What a sound sounds like | chord | author | 144 |
+| 06 | `06-from-afar-and-with-no-file.story` | From afar, and with no file | chord | author | 176 |
+| 07 | `07-from-afar-and-with-no-file.story` | From afar, and with no file | chord | author | 187 |
+| 08 | `08-a-bed-of-sound.story` | A bed of sound | chord | author | 243 |
+| 09 | `09-showing-a-picture.story` | Showing a picture | chord | author | 265 |
+| 10 | `10-showing-a-picture.story` | Showing a picture | chord | author | 280 |
+| 11 | `11-music-named-beds-and-layers.story` | Music, named beds and layers | chord | author | 296 |
+| 12 | `12-music-named-beds-and-layers.story` | Music, named beds and layers | chord | author | 337 |
+| 13 | `13-asking-what-the-client-can-do.story` | Asking what the client can do | chord | author | 366 |
+| 14 | `14-build-and-try-it.sh` | Build and try it | shell | author | 403 |
+
+## The page the player sees
+
+`ch37-the-page-the-player-sees/` &nbsp;·&nbsp; source: `docs/book/parts/part-7/37-the-page-the-player-sees.md`
+
+| # | File | Section | Lang | Kind | Src line |
+|---|------|---------|------|------|----------|
+| 01 | `01-the-client-fields.story` | The client fields | chord | author | 28 |
+| 02 | `02-building-the-page.sh` | Building the page | shell | author | 73 |
+| 03 | `03-building-the-page.sh` | Building the page | shell | author | 120 |
+| 04 | `04-a-channel.story` | A channel | chord | author | 137 |
+| 05 | `05-raising-an-event.story` | Raising an event | chord | author | 166 |
+| 06 | `06-what-a-channel-may-return.story` | What a channel may return | chord | author | 222 |
+| 07 | `07-what-a-channel-may-return.story` | What a channel may return | chord | author | 252 |
+| 08 | `08-a-reference-in-a-field.story` | A reference in a field | chord | author | 279 |
+| 09 | `09-the-stylesheet.css` | The stylesheet | css | author | 294 |
+| 10 | `10-build-and-try-it.sh` | Build and try it | shell | author | 343 |
+
+# Part VIII. Proving and shipping
+
+## Test trees
+
+`ch38-test-trees/` &nbsp;·&nbsp; source: `docs/book/parts/part-8/38-test-trees.md`
+
+| # | File | Section | Lang | Kind | Src line |
+|---|------|---------|------|------|----------|
+| 01 | `01-reading-what-the-story-says.sh` | Reading what the story says | shell | author | 130 |
+| 02 | `02-running-the-tree.sh` | Running the tree | shell | author | 225 |
+| 03 | `03-build-and-try-it.sh` | Build and try it | shell | author | 431 |
+
+## Claims
+
+`ch39-claims/` &nbsp;·&nbsp; source: `docs/book/parts/part-8/39-claims.md`
+
+| # | File | Section | Lang | Kind | Src line |
+|---|------|---------|------|------|----------|
+| 01 | `01-a-fact-worth-keeping.sh` | A fact worth keeping | shell | author | 48 |
+| 02 | `02-locking-it.sh` | Locking it | shell | author | 83 |
+| 03 | `03-the-claims-file.story` | The claims file | chord | author | 145 |
+| 04 | `04-the-report.sh` | The report | shell | author | 215 |
+| 05 | `05-a-claim-written-by-hand.story` | A claim written by hand | chord | author | 309 |
+| 06 | `06-a-claim-no-line-reaches.story` | A claim no line reaches | chord | author | 366 |
+| 07 | `07-the-needs-lines.story` | The needs lines | chord | author | 457 |
+| 08 | `08-build-and-try-it.sh` | Build and try it | shell | author | 512 |
+
+## Publishing
+
+`ch40-publishing/` &nbsp;·&nbsp; source: `docs/book/parts/part-8/40-publishing.md`
+
+| # | File | Section | Lang | Kind | Src line |
+|---|------|---------|------|------|----------|
+| 01 | `01-the-identifier.story` | The identifier | chord | author | 48 |
+| 02 | `02-the-identifier.sh` | The identifier | shell | author | 76 |
+| 03 | `03-the-version.story` | The version | chord | author | 101 |
+| 04 | `04-whether-the-source-goes-too.story` | Whether the source goes too | chord | author | 120 |
+| 05 | `05-publish.sh` | Publish | shell | author | 136 |
+| 06 | `06-publish.sh` | Publish | shell | author | 146 |
+| 07 | `07-build-and-try-it.sh` | Build and try it | shell | author | 262 |
 

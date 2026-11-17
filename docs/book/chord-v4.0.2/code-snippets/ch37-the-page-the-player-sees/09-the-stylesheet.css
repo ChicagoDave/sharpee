@@ -1,0 +1,10 @@
+/* browser/relighting.css */
+
+#channel-panel-workings .sharpee-channel-panel-title {
+  font-variant: small-caps;
+  letter-spacing: 0.06em;
+}
+
+#channel-panel-workings .sharpee-channel-panel-row {
+  margin-bottom: 0.4rem;
+}
