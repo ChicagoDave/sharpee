@@ -4,27 +4,18 @@ PDF is in ~/repos/book-test; its title page should read "Chord 4.1.0, Sharpee
 author of interactive fiction who has never seen Chord or Sharpee. These rules
 override everything else:
 
-SETUP. Before you open the book, prepare this box. None of this is the book's
-business: do it, note it once at the top of the log under "Setup", and report
-nothing here as a book issue unless a step fails.
-  1. Global npm installs must not need root. Run
-       npm config get prefix
-     and if it does not print a folder under your home directory, run
-       npm config set prefix "$HOME/.local"
-       mkdir -p "$HOME/.local/lib/node_modules" "$HOME/.local/bin"
-     and check that $HOME/.local/bin is on your PATH. Do not install the
-     `sharpee` command now: chapter 4 does that.
-  2. Install Playwright and its Chromium outside any project folder:
-       mkdir -p ~/tools/playwright && cd ~/tools/playwright
-       npm init -y && npm install playwright
-       npx playwright install chromium
-       sudo npx playwright install-deps chromium
-     The last line installs the system libraries Chromium needs; on this box
-     it does not start without them. Check it with a three-line script that
-     launches Chromium and closes it. Run your Playwright scripts from that
-     folder.
-  3. Check that the book and the companion folders are where this brief says:
-     ~/repos/book-test holds one PDF and a folder called `companion`.
+SETUP. This box was prepared before you were given this brief. Never use
+sudo, and install nothing but what the book tells you to. Before you open the
+book, check three things, note the result once at the top of the log under
+"Setup", and if any check fails stop and report an environment failure: it
+is not the book's business and not yours to repair.
+  1. `npm config get prefix` prints a folder under your home directory, so
+     the book's global install needs no root. Do not install the `sharpee`
+     command now: chapter 4 does that.
+  2. Playwright and its Chromium are in ~/tools/playwright. Check with a
+     three-line script, run from that folder, that launches Chromium and
+     closes it. Run your Playwright scripts from that folder.
+  3. ~/repos/book-test holds one PDF and a folder called `companion`.
 
 AMNESIA. Treat the book as your ONLY source of truth about Chord and Sharpee.
 Ignore anything you think you already know about either, or about the
