@@ -171,6 +171,10 @@ website/public/web/
 # Version-pinned static assets + current.json; built on deploy, not committed.
 website/public/playground/
 
+# The Chord Manual's companion folders (regenerated from tutorials/relighting/
+# by website/scripts/sync-chord-manual-companion.mjs on every site build).
+website/public/chord-manual/
+
 # Zifmia installer binaries (distributed separately)
 website/public/downloads/Zifmia_*
 

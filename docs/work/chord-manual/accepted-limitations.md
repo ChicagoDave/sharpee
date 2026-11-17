@@ -6,7 +6,8 @@ book already states, not a defect a run should report: a run that reports none
 of them and no new issues is a clean run.
 
 Items 1, 2 and 5 were proposed by the session that wrote this file (cd304d,
-2026-11-17) and accepted as written by David the same session ("a").
+2026-11-17) and accepted as written by David the same session ("a"). Item 2
+was rewritten after run 1, on the two rulings it quotes.
 
 ## Accepted by design: do not report
 
@@ -15,13 +16,17 @@ Items 1, 2 and 5 were proposed by the session that wrote this file (cd304d,
    prints no Chord Writer steps and the container has no Chord Writer. Every
    step is done with the `sharpee` command the book gives. Report only a step
    that the book says can be done and for which it gives no command.
-2. **The companion repository is needed in places.** Chapter 36 copies an
-   `assets` folder from the companion folder `chapter-36`, chapter 38 replaces
-   the hand-built tree with the one in `chapter-38`, and chapter 39 starts from
-   `chapter-38`. The reader fetches those from the address the book prints in
-   "How to read this book". A fully offline reader cannot do these steps, and
-   that is the accepted trade-off. Chapter 35 has no companion folder, as it
-   says.
+2. **The companion folders are part of the book.** The chapters do not print
+   every line of the story: a chapter's "Build and try it" says what to copy
+   from its companion folder, and the book gives a sharpee.net address for
+   them (David, 2026-11-17, on run 1: "b and the companion folder would be at
+   sharpee.net from the website"). For a naive run the folders are put in the
+   container, at ~/repos/book-test/companion, and the brief says to look there
+   and not at the website (David, same day: "we can provide the companion
+   folder directly and have a simple qualifier to look there and not the
+   website"). A run does not report that a step needs a companion folder, or
+   that the address differs. It reports a step that needs a line and names no
+   place to copy it from. Chapter 35 has no companion folder, as it says.
 3. **Values that belong to the run.** The IFID a build mints, build timings and
    file sizes, the address `npx serve` prints, and absolute paths in messages
    differ from the book's. Report only when a line's wording or shape differs.

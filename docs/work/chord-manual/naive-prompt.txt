@@ -7,8 +7,8 @@ override everything else:
 AMNESIA. Treat the book as your ONLY source of truth about Chord and Sharpee.
 Ignore anything you think you already know about either, or about the
 `sharpee` command. Do not read platform source, node_modules, README files
-inside installed packages, or anything on the web, with the one exception
-under COMPANION below. Do not run --help on any tool unless the book tells you
+inside installed packages, or anything on the web. The book's companion
+folders are on this box; see COMPANION below. Do not run --help on any tool unless the book tells you
 to. If the book doesn't teach it, you don't know it.
 
 EXECUTE AS-IS. Work through the book front to back, chapter by chapter, in one
@@ -19,14 +19,18 @@ things, or "improve" anything. Where a chapter breaks the story on purpose and
 then says to put it back, do both. Chapter 35's two examples are separate
 stories, each in a folder of its own, as that chapter says.
 
-COMPANION. The book names a companion repository and prints its address in
-"How to read this book". You may fetch from that address, and only that
-address, and only when a chapter's own step tells you to copy or start from a
-companion folder (for example the `assets` folder in chapter 36 and the test
-tree in chapter 38). Never open a companion folder to settle a disagreement
-between your story and the book, to find a line the chapter did not print, or
-to see what a later chapter does. If your typed story fails where the book
-says it works, that is the finding: log it.
+COMPANION. The book says its companion folders are on sharpee.net and prints
+their address in "How to read this book". For this run they are already on
+this box, in ~/repos/book-test/companion, one folder to a chapter (`chapter-05`,
+`chapter-06`, and so on). Wherever the book tells you to download or copy
+something from a companion folder, take it from there and do not go to the
+website. Use a companion folder only when a chapter's own step tells you to,
+and take from it only what that step names (for example the phrases a chapter
+says to copy, the `assets` folder in chapter 36, the test tree in chapter 38).
+Never open a companion folder to settle a disagreement between your story and
+the book, to find a line no step told you to copy, or to see what a later
+chapter does. If your story fails where the book says it works, that is the
+finding: log it.
 
 NO R&D. You are testing the book, not solving problems. When something fails
 or the text is ambiguous or incomplete (a name that was never created, a block
@@ -77,12 +81,13 @@ book fails a literal reader.
    prints no Chord Writer steps and the container has no Chord Writer. Every
    step is done with the `sharpee` command the book gives. Report only a step
    that the book says can be done and for which it gives no command.
-2. **The companion repository is needed in places.** Chapter 36 copies an
-   `assets` folder from the companion folder `chapter-36`, chapter 38 replaces
-   the hand-built tree with the one in `chapter-38`, and chapter 39 starts from
-   `chapter-38`. Fetch those from the address the book prints. A fully offline
-   reader cannot do these steps, and that is the accepted trade-off. Chapter 35
-   has no companion folder, as it says.
+2. **The companion folders are part of the book.** The chapters do not print
+   every line of the story: a chapter's "Build and try it" says what to copy
+   from its companion folder, and the book gives a sharpee.net address for
+   them. In this run the folders are in ~/repos/book-test/companion and the
+   website is not used. Do not report that a step needs a companion folder, or
+   that the address differs. Report a step that needs a line and names no
+   place to copy it from. Chapter 35 has no companion folder, as it says.
 3. **Values that belong to the run.** The IFID a build mints, build timings and
    file sizes, the address `npx serve` prints, and absolute paths in messages
    differ from the book's. Report only when a line's wording or shape differs.

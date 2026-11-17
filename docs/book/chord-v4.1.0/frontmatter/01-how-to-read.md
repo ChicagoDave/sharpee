@@ -90,15 +90,26 @@ introduces the two.
 
 ## The companion folders
 
-The Relighting as it stands at the end of each chapter is in the book's
-companion repository, under `tutorials/relighting/chord-v4.1.0/`, in a
-folder named for the chapter: `chapter-05`, `chapter-06`, and so on.
-Browse it at
-<https://github.com/ChicagoDave/sharpee/tree/main/tutorials/relighting/chord-v4.1.0>.
-Each folder holds the story file and a test tree, which chapter 38
-explains. You do not need the folders to follow the book. They are there
-for the day your story and the book's disagree, and you want to know
-which of you mistyped.
+The Relighting as it stands at the end of each chapter is on the book's
+website, in a folder named for the chapter: `chapter-05`, `chapter-06`,
+and so on. The folders are at
+<https://sharpee.net/chord-manual/4.1.0/relighting/>. Each one can be
+read in a browser, file by file, and each can be downloaded whole by
+adding `.zip` to its name, as in
+<https://sharpee.net/chord-manual/4.1.0/relighting/chapter-05.zip>. A
+folder holds the story file and a test tree, which chapter 38 explains,
+and from Part VII on it holds the story's sounds, picture and stylesheet
+as well.
+
+You need the folders to follow the book. A chapter prints the lines it
+teaches. It does not print every sentence the story says, because a page
+of prose teaches nothing about Chord. Those sentences are the story's
+phrases, which chapter 12 introduces, and each chapter's "Build and try
+it" says which to copy from that chapter's folder. Everything else that
+goes into your story is printed in the chapter.
+
+The folders are also there for the day your story and the book's
+disagree, and you want to know which of you mistyped.
 
 ## When something is missing
 
