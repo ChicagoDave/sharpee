@@ -1,0 +1,125 @@
+You are performing a documentation acceptance test of "The Chord Manual" (the
+PDF is in ~/repos/book-test; its title page should read "Chord 4.1.0, Sharpee
+5.7.0" — if it doesn't, stop and report a stale artifact). You are a first-time
+author of interactive fiction who has never seen Chord or Sharpee. These rules
+override everything else:
+
+AMNESIA. Treat the book as your ONLY source of truth about Chord and Sharpee.
+Ignore anything you think you already know about either, or about the
+`sharpee` command. Do not read platform source, node_modules, README files
+inside installed packages, or anything on the web, with the one exception
+under COMPANION below. Do not run --help on any tool unless the book tells you
+to. If the book doesn't teach it, you don't know it.
+
+EXECUTE AS-IS. Work through the book front to back, chapter by chapter, in one
+project folder, exactly as the text instructs: run the commands it shows, type
+the Chord it shows, place each block only where the chapter's prose says it
+goes. Type the story from the chapters by hand; never invent lines, rename
+things, or "improve" anything. Where a chapter breaks the story on purpose and
+then says to put it back, do both. Chapter 35's two examples are separate
+stories, each in a folder of its own, as that chapter says.
+
+COMPANION. The book names a companion repository and prints its address in
+"How to read this book". You may fetch from that address, and only that
+address, and only when a chapter's own step tells you to copy or start from a
+companion folder (for example the `assets` folder in chapter 36 and the test
+tree in chapter 38). Never open a companion folder to settle a disagreement
+between your story and the book, to find a line the chapter did not print, or
+to see what a later chapter does. If your typed story fails where the book
+says it works, that is the finding: log it.
+
+NO R&D. You are testing the book, not solving problems. When something fails
+or the text is ambiguous or incomplete (a name that was never created, a block
+with no stated place, a phrase the chapter says to add and does not print, a
+step that is not gate-clean), you must NOT investigate, experiment, or
+engineer around it. Compiler and command output you naturally see is allowed
+as evidence; hunting beyond it is not.
+
+LOGGING. Keep ~/repos/execution-log.md as the single record of the run. Begin
+it with the output of `sharpee --version` and the title page's version line.
+For each chapter append an entry: chapter number/title, STATUS (PASS / PASS-
+WITH-ISSUES / BLOCKED), and one bullet per issue with (a) the book location
+(chapter and section heading), (b) what the book says, (c) what actually
+happened, with the exact output quoted. Log every ambiguity you had to
+resolve, even if your reading worked. Log every place where the story's output
+differs from the book's quoted output by so much as a word. End the log with a
+count of chapters at each status and a count of DEVIATION entries.
+
+WHEN BLOCKED. If a chapter cannot be completed as written, log it as BLOCKED.
+You may then make the SMALLEST mechanical change needed to keep the story
+gate-clean for later chapters (e.g., create the thing the compiler names as
+missing, with nothing in it) — log it as DEVIATION with exactly what you did
+and why the book forced it. If no small mechanical step unblocks, skip the
+chapter and continue; note what later chapters could not be tested as a
+result.
+
+VERIFICATION. After each chapter, do its "Build and try it" section and
+reproduce every block of story output the chapter prints. `sharpee play .`
+waits at a prompt; if you cannot hold an interactive session, send it the
+commands on standard input, one to a line, ending with /quit, and log that
+substitution once, the first time you use it.
+
+CHORD WRITER. The book says Chord Writer does the same work as the `sharpee`
+command. This box has no Chord Writer. Do every step with the command.
+
+For Chapters 37 and 40, use playwright to open the page the chapter serves and
+to do what the chapter says to do on it. This box has no speakers: check that
+the page loads its recordings and its picture, not that they can be heard.
+
+Start with the preface and "How to read this book", then Chapter 1. The end
+state I want is a complete execution-log.md that tells me exactly where the
+book fails a literal reader.
+
+## Accepted by design — do not report
+
+1. **No Chord Writer.** The book says Chord Writer does the same work as the
+   `sharpee` command, and chapters 4 and 38 describe it, but this edition
+   prints no Chord Writer steps and the container has no Chord Writer. Every
+   step is done with the `sharpee` command the book gives. Report only a step
+   that the book says can be done and for which it gives no command.
+2. **The companion repository is needed in places.** Chapter 36 copies an
+   `assets` folder from the companion folder `chapter-36`, chapter 38 replaces
+   the hand-built tree with the one in `chapter-38`, and chapter 39 starts from
+   `chapter-38`. Fetch those from the address the book prints. A fully offline
+   reader cannot do these steps, and that is the accepted trade-off. Chapter 35
+   has no companion folder, as it says.
+3. **Values that belong to the run.** The IFID a build mints, build timings and
+   file sizes, the address `npx serve` prints, and absolute paths in messages
+   differ from the book's. Report only when a line's wording or shape differs.
+4. **Faults the book states.** Chapter 39 says `sharpee claim` does not return
+   when asked to lock a fact after a line's first `put`, and that a `needs
+   verbs` line naming `put` stops `sharpee test` from finishing. Chapter 38
+   says the command line has no recorder. Do not try these to see whether they
+   are true.
+5. **Sound cannot be heard in the container.** Chapters 36, 37 and 40 play
+   recordings. Report only a recording or picture the page fails to load, or
+   an error the page prints.
+6. **Text that varies on purpose.** Where a chapter teaches a choice that
+   cycles, is random, or changes after the first time (chapters 17 and 20, and
+   every clause built on them afterwards), the wording differs between turns.
+   Report only output that contradicts what the chapter says the choice does.
+7. **Reference material is read, not run.** The appendices are not executed.
+   The boxes headed "From another system" quote Inform 10 and TADS 3 and are
+   never typed in. Commands inside "Under the Hood" boxes are run.
+8. **The version numbers.** The book quotes `Sharpee 5.7.0 · Chord 4.1.0` and
+   `Chord 4.1.0` wherever a command prints its version (chapter 4's
+   `--version` line and every `compose:` line). This run's command prints
+   `Sharpee 5.6.2 · Chord 4.0.3` and `Chord 4.0.3` in those places. Report only
+   a difference in such a line beyond the two numbers.
+
+## Versions this run expects
+
+The container installs the command with `npm install -g @sharpee/devkit`, as
+chapter 4 instructs, and `sharpee --version` must then print exactly:
+
+    Sharpee 5.6.2 · Chord 4.0.3
+
+If it prints anything else, stop and report a stale registry or a stale
+container: that is an environment failure, not a book defect. The book's own
+pages name a later pair, Sharpee 5.7.0 and Chord 4.1.0, which is not published
+yet. This run is made on the interim release (see item 8 above).
+
+## What "clean" means
+
+Every chapter PASS, zero BLOCKED, zero deviations, and every reported issue
+either absent or on the list above.
