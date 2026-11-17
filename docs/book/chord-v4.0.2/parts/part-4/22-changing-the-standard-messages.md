@@ -305,7 +305,7 @@ entries.
 ::: from-another-system
 **From another system: library messages**
 
-Inform 10 keeps its standard replies as numbered "responses" attached to
+Inform 10 keeps its standard replies as lettered "responses" attached to
 rules, and you change one with a sentence such as: The can't take yourself
 rule response (A) is "...". TADS 3 keeps them in message objects,
 `playerActionMessages` and its relatives, which you modify. Chord's aliases

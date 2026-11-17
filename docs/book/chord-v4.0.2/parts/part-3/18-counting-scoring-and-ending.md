@@ -361,8 +361,8 @@ Inform 10 keeps a `score` variable that you add to, a `maximum score` that
 you set by hand, and a table of rankings, and it ends the game with "end the
 story" or "end the story finally". TADS 3 awards points through `Achievement`
 objects and ends with `finishGameMsg`. Chord's `score` lines are nearest to
-the TADS approach, in that each award is a named thing that can be given
-once. The maximum is computed for you, and an ending is one of three plain
+the TADS approach, in that each award is a named thing, and TADS can be told
+to give it only once (`awardPointsOnce`). The maximum is computed for you, and an ending is one of three plain
 statements.
 :::
 

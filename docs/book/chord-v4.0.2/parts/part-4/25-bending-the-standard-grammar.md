@@ -256,8 +256,8 @@ your story has bent it.
 In Inform 10 the same three jobs are done by "Understand" sentences:
 "Understand 'fix [something]' as mending" adds a pattern, and "Understand
 the command 'light' as something new" clears a verb so that you can assign
-it again. In TADS 3 you add a `VerbRule` for the new wording, or use
-`modify VerbRule` to change an existing one. Chord's two blocks correspond
+it again. In TADS 3 you add a `VerbRule` for the new wording. Chord's two
+blocks correspond
 closely to the two Inform forms. The difference is that Chord removes one
 pattern at a time, where Inform's "as something new" clears every use of the
 word.

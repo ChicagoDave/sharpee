@@ -271,8 +271,8 @@ room.
 Inform 10 handles the same needs with an "initial appearance" for a thing
 not yet handled, and with "writing a paragraph about" rules. TADS 3 gives
 objects `specialDesc` for a sentence in the room description and
-`initSpecialDesc` for the first sighting. Chord's `present` is close to
-`specialDesc`, with the difference that it is a phrase with an optional
+`initSpecialDesc` for a thing that has not been moved yet. Chord's `present`
+is close to `specialDesc`, with the difference that it is a phrase with an optional
 condition and no code, and `detail` has no direct equal in either system:
 both would do it with a conditional inside the description text.
 :::
