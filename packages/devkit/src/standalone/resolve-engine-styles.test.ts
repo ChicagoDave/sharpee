@@ -9,7 +9,7 @@
  * fixtures, so the published (flat) path is covered without an actual publish.
  */
 import { describe, it, expect, afterEach } from 'vitest';
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync, realpathSync } from 'node:fs';
+import { existsSync, mkdtempSync, mkdirSync, writeFileSync, rmSync, realpathSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { resolveEngineStylesDir } from './build-browser.js';
@@ -63,6 +63,21 @@ describe('resolveEngineStylesDir', () => {
   it('finds styles/ in the in-repo NESTED layout (dist/index.js, styles/ at parent)', () => {
     tmp = mkdtempSync(join(tmpdir(), 'pb-nested-'));
     const stylesDir = makePlatformBrowser(tmp, 'nested');
+    expect(resolveEngineStylesDir(tmp)).toBe(realpathSync(stylesDir));
+  });
+
+  it('falls back to devkit\'s own install when the project has no node_modules', () => {
+    // A Chord project: one folder, nothing installed in it.
+    tmp = mkdtempSync(join(tmpdir(), 'pb-bare-'));
+    const stylesDir = resolveEngineStylesDir(tmp);
+    expect(stylesDir.startsWith(realpathSync(tmp))).toBe(false);
+    expect(existsSync(join(stylesDir, 'engine.css'))).toBe(true);
+    expect(existsSync(join(stylesDir, 'themes', 'manifest.json'))).toBe(true);
+  });
+
+  it('prefers the project\'s copy over devkit\'s', () => {
+    tmp = mkdtempSync(join(tmpdir(), 'pb-prefer-'));
+    const stylesDir = makePlatformBrowser(tmp, 'flat');
     expect(resolveEngineStylesDir(tmp)).toBe(realpathSync(stylesDir));
   });
 

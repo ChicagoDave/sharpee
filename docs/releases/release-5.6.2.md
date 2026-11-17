@@ -3,7 +3,7 @@
 **Status**: PUBLISHED
 **Published**: 2026-11-17
 **Chord language**: 4.0.3
-**Traces to**: ADR-397 · ADR-398 · ADR-399 · [#704](https://github.com/ChicagoDave/sharpee/issues/704) · [#705](https://github.com/ChicagoDave/sharpee/issues/705) · [#706](https://github.com/ChicagoDave/sharpee/issues/706) · [#707](https://github.com/ChicagoDave/sharpee/issues/707) · [#708](https://github.com/ChicagoDave/sharpee/issues/708) · [#709](https://github.com/ChicagoDave/sharpee/issues/709) · [#710](https://github.com/ChicagoDave/sharpee/issues/710) · [#711](https://github.com/ChicagoDave/sharpee/issues/711) · [#712](https://github.com/ChicagoDave/sharpee/issues/712) · [#713](https://github.com/ChicagoDave/sharpee/issues/713) · [#772](https://github.com/ChicagoDave/sharpee/issues/772)
+**Traces to**: ADR-397 · ADR-398 · ADR-399 · [#704](https://github.com/ChicagoDave/sharpee/issues/704) · [#705](https://github.com/ChicagoDave/sharpee/issues/705) · [#706](https://github.com/ChicagoDave/sharpee/issues/706) · [#707](https://github.com/ChicagoDave/sharpee/issues/707) · [#708](https://github.com/ChicagoDave/sharpee/issues/708) · [#709](https://github.com/ChicagoDave/sharpee/issues/709) · [#710](https://github.com/ChicagoDave/sharpee/issues/710) · [#711](https://github.com/ChicagoDave/sharpee/issues/711) · [#712](https://github.com/ChicagoDave/sharpee/issues/712) · [#713](https://github.com/ChicagoDave/sharpee/issues/713) · [#759](https://github.com/ChicagoDave/sharpee/issues/759) · [#772](https://github.com/ChicagoDave/sharpee/issues/772)
 
 ## What shipped
 
@@ -38,6 +38,9 @@ pinned to the release after it.
   (#772).
 - A claim is held or unproven. `violated` and the `never` flag are gone from the claims language,
   the runner and the wire (ADR-397).
+- `sharpee build` and `sharpee publish` work on a Chord project that is one folder with no
+  `package.json`, from `npm install -g @sharpee/devkit` alone. The command now carries the
+  browser runtime itself and uses it when the project installs none (#759).
 - A story's channel panel and shown image are visible on the stock browser page.
 - Messages from `sharpee` and from the story loader no longer cite internal decision records.
 

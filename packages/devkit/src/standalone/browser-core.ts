@@ -23,6 +23,7 @@ import { execFileSync } from 'node:child_process';
 import type { IRMeta, StoryIR } from '@sharpee/chord';
 import { makeFsImportResolver } from './author-game.js';
 import { resolveEsbuild } from './esbuild-bin.js';
+import { esbuildEnv } from './runtime-packages.js';
 
 // --------------------------------------------------------------------------
 // Metadata + client config from the compiled Story IR (ADR-252 D2/D3)
@@ -596,6 +597,7 @@ export function buildBrowser(
     const esbuild = resolveEsbuild();
     execFileSync(esbuild.command, [...esbuild.prefixArgs, ...esbuildArgs], {
       cwd: env.esbuildCwd,
+      env: esbuildEnv(),
       stdio: opts.quiet ? 'pipe' : 'inherit',
     });
   } catch (error: unknown) {
@@ -811,6 +813,7 @@ export function buildPlaygroundBundle(
     const esbuild = resolveEsbuild();
     execFileSync(esbuild.command, [...esbuild.prefixArgs, ...esbuildArgs], {
       cwd: env.esbuildCwd,
+      env: esbuildEnv(),
       stdio: opts.quiet ? 'pipe' : 'inherit',
     });
   } catch (error: unknown) {

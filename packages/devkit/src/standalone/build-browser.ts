@@ -16,6 +16,7 @@ import * as path from 'path';
 import { execFileSync } from 'child_process';
 import { stampVersion } from './version-stamp.js';
 import { resolveEsbuild } from './esbuild-bin.js';
+import { esbuildEnv, runtimeResolveBases } from './runtime-packages.js';
 import { findStoryFile } from './author-game.js';
 import { StoryConfigError, configPathFor, reconcileHeader } from './story-config.js';
 import {
@@ -93,10 +94,14 @@ function processTemplate(content: string, info: ProjectInfo): string {
  * the dir that holds `styles/engine.css`, which works for both the published flat
  * layout (`index.js` + `styles/` at the package root) and the in-repo layout
  * (`dist/index.js`, with `styles/` at the parent).
- * @throws if platform-browser (or its styles/) is not resolvable from the project.
+ *
+ * The package is looked for in the project first and in devkit's own install
+ * second: a Chord project has no node_modules, and devkit depends on
+ * platform-browser so that such a project can still be built.
+ * @throws if platform-browser (or its styles/) is resolvable from neither.
  */
 export function resolveEngineStylesDir(projectDir: string): string {
-  const entry = require.resolve('@sharpee/platform-browser', { paths: [projectDir] });
+  const entry = require.resolve('@sharpee/platform-browser', { paths: runtimeResolveBases(projectDir) });
   let dir = path.dirname(entry);
   for (let i = 0; i < 8; i++) {
     const styles = path.join(dir, 'styles');
@@ -107,7 +112,7 @@ export function resolveEngineStylesDir(projectDir: string): string {
   }
   throw new Error(
     'Could not locate @sharpee/platform-browser styles/ (engine CSS) from ' +
-      `${projectDir}. Is @sharpee/platform-browser installed?`,
+      `${projectDir} or from the sharpee command's own install. Reinstall @sharpee/devkit.`,
   );
 }
 
@@ -252,6 +257,7 @@ export async function runBuildBrowserCommand(args: string[], targetArg?: string)
     const esbuild = resolveEsbuild();
     execFileSync(esbuild.command, [...esbuild.prefixArgs, ...esbuildArgs], {
       cwd: projectDir,
+      env: esbuildEnv(),
       stdio: 'pipe',
     });
     console.log('  ✓ Built game.js');

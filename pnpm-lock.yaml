@@ -296,6 +296,12 @@ importers:
       '@sharpee/lang-en-us':
         specifier: workspace:*
         version: link:../lang-en-us
+      '@sharpee/parser-en-us':
+        specifier: workspace:*
+        version: link:../parser-en-us
+      '@sharpee/platform-browser':
+        specifier: workspace:*
+        version: link:../platform-browser
       '@sharpee/stdlib':
         specifier: workspace:*
         version: link:../stdlib

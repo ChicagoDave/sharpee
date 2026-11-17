@@ -6,7 +6,7 @@
       "status": "PUBLISHED",
       "published": "2026-11-17",
       "chord": "4.0.3",
-      "tracesTo": "ADR-397 · ADR-398 · ADR-399 · #704 · #705 · #706 · #707 · #708 · #709 · #710 · #711 · #712 · #713 · #772",
+      "tracesTo": "ADR-397 · ADR-398 · ADR-399 · #704 · #705 · #706 · #707 · #708 · #709 · #710 · #711 · #712 · #713 · #759 · #772",
       "summary": "Writing a manual for Chord meant running every construct the language has, and the ones that did not behave as written were fixed in the platform. This release carries those fixes. sharpee play now prints a story's prologue and banner, several Chord forms do what their words say, and a claim is either held or unproven. Chord moves to 4.0.3. It is an interim release: the manual's edition is pinned to the release after it.",
       "notes": [
         "sharpee play shows a story's prologue and banner, and an ended story says so instead of printing an engine error (#704).",
@@ -21,6 +21,7 @@
         "A sound prints only the heard: and heard from afar: lines its define sound block states, and an emit event name is one word (#713).",
         "Every trait that answers a story action now runs, and a refused command spends no firing. Derived tests read every platform state word, arrange a gated action and skip removed grammar (#772).",
         "A claim is held or unproven. violated and the never flag are gone from the claims language, the runner and the wire (ADR-397).",
+        "sharpee build and sharpee publish work on a Chord project that is one folder with no package.json, from npm install -g @sharpee/devkit alone. The command now carries the browser runtime itself and uses it when the project installs none (#759).",
         "A story's channel panel and shown image are visible on the stock browser page.",
         "Messages from sharpee and from the story loader no longer cite internal decision records."
       ]
