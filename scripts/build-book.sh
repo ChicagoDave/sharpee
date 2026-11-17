@@ -10,7 +10,7 @@
 # Usage:
 #   scripts/build-book.sh <version>          # render all formats for one edition
 #   scripts/build-book.sh <version> html     # render one format (html | epub | pdf)
-#   version = v1.5.0 | v2.0.0 | chord-v4.0.2  (subdirectories of docs/book/)
+#   version = v1.5.0 | v2.0.0 | chord-v4.1.0  (subdirectories of docs/book/)
 #
 # Output files are named the-sharpee-book-<version>.*, unless the edition has a
 # one-line `output-name` file, which names them instead.

@@ -91,10 +91,10 @@ introduces the two.
 ## The companion folders
 
 The Relighting as it stands at the end of each chapter is in the book's
-companion repository, under `tutorials/relighting/chord-v4.0.2/`, in a
+companion repository, under `tutorials/relighting/chord-v4.1.0/`, in a
 folder named for the chapter: `chapter-05`, `chapter-06`, and so on.
 Browse it at
-<https://github.com/ChicagoDave/sharpee/tree/main/tutorials/relighting/chord-v4.0.2>.
+<https://github.com/ChicagoDave/sharpee/tree/main/tutorials/relighting/chord-v4.1.0>.
 Each folder holds the story file and a test tree, which chapter 38
 explains. You do not need the folders to follow the book. They are there
 for the day your story and the book's disagree, and you want to know

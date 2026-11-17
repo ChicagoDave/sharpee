@@ -34,7 +34,7 @@ describes what the language did when it was asked.
 
 ## The edition
 
-This edition is pinned to Chord 4.0.2, as shipped in Sharpee 5.6.1. The
+This edition is pinned to Chord 4.1.0, as shipped in Sharpee 5.7.0. The
 language will go on changing, and a later edition will follow it. If your
 copy of the tools reports a later version, most of this book will still
 hold, and the release notes will tell you what does not.

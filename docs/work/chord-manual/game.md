@@ -391,7 +391,7 @@ Prose was checked with `sharpee play`; what the page would be sent was read from
   Chapters 36 and 37 need a short standalone example for each, or the game needs a reason for one.
 
 Part VIII compiles at Chord 4.0.2 and was tested, built and opened in a browser on 2026-11-14
-(session a180a5). `snapshots/part-8/` (moved 2026-11-15 to `tutorials/relighting/chord-v4.0.2/part-8/`) holds the story (`story-version: 0.8.0`), its test tree
+(session a180a5). `snapshots/part-8/` (moved 2026-11-15 to `tutorials/relighting/chord-v4.1.0/part-8/`) holds the story (`story-version: 0.8.0`), its test tree
 (`relighting.tests/`), its claims (`relighting.claims.chord`), its assets (`assets/`), its own page
 (`browser/`) and the `relighting.config.json` the build wrote. Everything was run with the in-repo
 CLI (`node packages/devkit/dist/cli.js`), not the published one.
@@ -487,7 +487,7 @@ CLI (`node packages/devkit/dist/cli.js`), not the published one.
   supported"). The story's own page is `browser/index.html`, not a header field. Chapter 37.
 
 Chapters 13 to 25 were rebuilt on the in-repo CLI ("Sharpee 5.6.1 · Chord 4.0.3") on 2026-11-16
-(session 1910bb), one snapshot a chapter, in `tutorials/relighting/chord-v4.0.2/chapter-13` to
+(session 1910bb), one snapshot a chapter, in `tutorials/relighting/chord-v4.1.0/chapter-13` to
 `chapter-25`. They replace the Part III and Part IV snapshots as the game's record for those
 chapters; `part-3/` and `part-4/` predate the fixes to #705 to #709 and no longer match. The game
 can be won from `chapter-24` on: 50 of 50, Lamplighter.
@@ -528,7 +528,7 @@ can be won from `chapter-24` on: 50 of 50, Lamplighter.
   player` (a vial), a timer owned by a thing (a squib), trait data fields (a brazier; #771),
   `define action … while` (its derived test fails; #772), a rest-of-line slot.
 
-The chapter snapshots of Parts VII and VIII (`tutorials/relighting/chord-v4.0.2/chapter-36` to
+The chapter snapshots of Parts VII and VIII (`tutorials/relighting/chord-v4.1.0/chapter-36` to
 `chapter-40`) were written on 2026-11-16 and 2026-11-17 (sessions 5c622f and faa0bd), on the
 in-repo CLI ("Sharpee 5.6.1 · Chord 4.0.3"). They replace what the Part VII and Part VIII notes
 above say of the old `part-7` and `part-8` snapshots where the two differ.

@@ -1,0 +1,7 @@
+## A fragment beside the harness world, so that a fence's `import "books"`
+## finds a file. Chapter 22 describes what such a file holds.
+
+define phrasebook harness-book
+  harness-line:
+    Harness text.
+end phrasebook

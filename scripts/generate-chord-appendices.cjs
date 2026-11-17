@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * generate-chord-appendices.cjs — regenerate the Chord manual's generated
- * appendices (docs/book/chord-v4.0.2/backmatter/) from the shipped sources.
+ * appendices (docs/book/chord-v4.1.0/backmatter/) from the shipped sources.
  *
  * Purpose: one script owns Appendices A to G of *The Chord Manual*, so no
  * appendix is ever hand-edited.
@@ -44,7 +44,7 @@ const { execFileSync } = require('child_process');
 const ROOT = path.resolve(__dirname, '..');
 const EBNF = path.join(ROOT, 'packages/chord/chord.ebnf');
 const STANDARD_GRAMMAR = path.join(ROOT, 'packages/parser-en-us/grammar/standard-en-us.story');
-const DEFAULT_OUT = path.join(ROOT, 'docs/book/chord-v4.0.2/backmatter');
+const DEFAULT_OUT = path.join(ROOT, 'docs/book/chord-v4.1.0/backmatter');
 const DEFAULT_CHORD = path.join(ROOT, 'packages/chord/dist');
 const DEFAULT_CLI = path.join(ROOT, 'packages/devkit/dist/cli.js');
 const SELF = 'scripts/generate-chord-appendices.cjs';

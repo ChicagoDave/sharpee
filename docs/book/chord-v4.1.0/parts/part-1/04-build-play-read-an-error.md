@@ -32,7 +32,7 @@ sharpee --version
 ```
 
 ```text
-Sharpee 5.6.1 · Chord 4.0.3
+Sharpee 5.7.0 · Chord 4.1.0
 ```
 
 The first number is the version of the Sharpee platform, which runs your
@@ -55,7 +55,7 @@ sharpee compose relighting.story --check
 ```
 
 ```text
-compose: Chord 4.0.3 — relighting.story is gate-clean (--check: IR not emitted)
+compose: Chord 4.1.0 — relighting.story is gate-clean (--check: IR not emitted)
 ```
 
 The word to look for is **gate-clean**. The compiler puts a story through a
@@ -193,7 +193,7 @@ description, leaving the header line with nothing under it, and check.
 
 ```text
 relighting.story:16:8 warning [analysis.room-no-description] `the Lodge` has no description, so LOOK there shows only its name.
-compose: Chord 4.0.3 — relighting.story is gate-clean (--check: IR not emitted)
+compose: Chord 4.1.0 — relighting.story is gate-clean (--check: IR not emitted)
 ```
 
 The story is still gate-clean and it will still play. The warning is the
@@ -236,7 +236,7 @@ sharpee compose relighting.story -o relighting.ir.json
 ```
 
 ```text
-compose: Chord 4.0.3 — relighting.story loaded — 2 entities, 0 trait(s), 0 action(s)
+compose: Chord 4.1.0 — relighting.story loaded — 2 entities, 0 trait(s), 0 action(s)
 compose: IR written to relighting.ir.json
 ```
 

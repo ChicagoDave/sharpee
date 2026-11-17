@@ -1,4 +1,4 @@
-# book.yaml — Pandoc defaults file for the Chord manual (edition pinned to Chord 4.0.2)
+# book.yaml — Pandoc defaults file for the Chord manual (edition pinned to Chord 4.1.0)
 #
 # Purpose: single source of truth for chapter order and shared render metadata.
 #          `scripts/build-book.sh` loads this with `pandoc --defaults` and adds
@@ -25,7 +25,7 @@ epub-title-page: false
 
 metadata:
   title: "The Chord Manual"
-  subtitle: "Writing Interactive Fiction in Chord (Chord 4.0.2, Sharpee 5.6.1)"
+  subtitle: "Writing Interactive Fiction in Chord (Chord 4.1.0, Sharpee 5.7.0)"
   author: "David Cornelson"
   lang: en-US
 

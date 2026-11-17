@@ -3,7 +3,7 @@
 
 [Writing Interactive Fiction in Chord]{.book-subtitle}
 
-[Chord 4.0.2, Sharpee 5.6.1]{.book-version}
+[Chord 4.1.0, Sharpee 5.7.0]{.book-version}
 
 [David Cornelson]{.book-author}
 :::

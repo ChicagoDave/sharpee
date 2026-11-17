@@ -54,7 +54,7 @@ Every hit must be one of the permitted cases above.
 
 A content edit is not done until the build is clean.
 
-## The Chord edition (`docs/book/chord-v4.0.2/`)
+## The Chord edition (`docs/book/chord-v4.1.0/`)
 
 Every rule above applies to the Chord manual, with these differences:
 
@@ -78,14 +78,14 @@ Every rule above applies to the Chord manual, with these differences:
 Verification after any prose edit:
 
 ```bash
-grep -rn "—" docs/book/chord-v4.0.2/frontmatter docs/book/chord-v4.0.2/parts
+grep -rn "—" docs/book/chord-v4.1.0/frontmatter docs/book/chord-v4.1.0/parts
 ```
 
 Every hit must be a verbatim quote of platform output.
 
 ```bash
-./scripts/build-book.sh chord-v4.0.2 html   # fast check while editing
+./scripts/build-book.sh chord-v4.1.0 html   # fast check while editing
 ```
 
 After editing fenced code, re-run `node scripts/extract-book-snippets.cjs` from
-`docs/book/chord-v4.0.2/`.
+`docs/book/chord-v4.1.0/`.

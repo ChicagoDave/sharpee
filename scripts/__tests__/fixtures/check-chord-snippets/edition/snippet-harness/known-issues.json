@@ -1,0 +1,8 @@
+[
+  {
+    "file": "parts/part-1/01-fixture.md",
+    "fence": 7,
+    "issue": 0,
+    "reason": "The fixture's waiting fence. No issue is filed; 0 stands in for the number."
+  }
+]

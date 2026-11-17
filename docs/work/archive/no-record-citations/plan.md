@@ -1,7 +1,7 @@
 # Session Plan: Finish #784 — no author-facing message cites an internal record
 
 **Created**: 2026-11-17
-**Plan Status**: ACTIVE
+**Plan Status**: DONE
 **Overall scope**: Carry the rule "no author-facing message cites an internal record (an ADR number, a design-record name, a ratchet or 'given N' label); the citation lives in a code comment at the site instead" from `packages/chord` (done in 97b7ceb51) into `packages/devkit` and `packages/story-loader`, each held by a structural test with a fixture it fails on. Everything beyond those two packages waits on David's rulings below.
 **Bounded contexts touched**: N/A (tooling and message wording; no domain modeling)
 **Key domain language**: N/A. Working vocabulary: citation (a reference an author cannot follow), citing literal (a string or template literal whose text carries one), the CITATION pattern (the regex in `packages/chord/tests/removed-forms.test.ts`).
@@ -38,6 +38,8 @@ A scratch scan read every string and template literal in non-test source through
 ## Open decisions (David)
 
 None of these is decided by this plan. Phase 1 does not depend on any of them.
+
+**Rulings (David, 2026-11-17, session d571d6)**: asked D-1 (1a keep the shared code / 1b a code of their own) and D-2 (2a nowhere / 2b the two testing tools / 2c everything measured), David answered "both are 'a'". D-1: the removed header fields keep `parse.header-unknown-field` and the exception at `packages/chord/tests/removed-forms.test.ts:35` stays. D-2: the rule is not carried beyond devkit and story-loader; the 74 literals stay as they are. Under Phase 2's Entry state that abandons Phase 2 and closes the plan. D-3 was not ruled and stays out of scope as worded. D-4 was not ruled and is filed as #788.
 
 - **D-1. Removed header fields: a code of their own?** Today `version:`, `blurb:` and `by:` report `parse.header-unknown-field`, the code a key that never existed also reports, so `packages/chord/tests/removed-forms.test.ts:35` carries a one-site exception. (a) Keep the shared code and the exception. (b) Give the removed fields their own code in the registry and delete the exception. This changes a diagnostic code, which is the one thing this plan otherwise leaves alone. Appendix G is regenerated, and test-stories/, stories/ and branch-stories/ are compiled in a census (ADR-395). Chapter 2's quoted error is for `genre:`, a key that never existed, so it keeps the shared code under either answer.
 - **D-2. Carry the rule beyond devkit and story-loader?** These literals were measured but are not in scope, counted the same way as above:
@@ -86,5 +88,5 @@ None of these is decided by this plan. Phase 1 does not depend on any of them.
 - **Deliverable**: For each package David names under D-2, the Phase 1 pattern: a record-citations test over its non-test src literals, with a fixture it fails on and a literal-count floor, and every citing literal rewritten with its citation moved to a comment. Where a test pins a citation, the test is rewritten; one is known, `packages/devkit/tests/test-derived.test.ts:39`, pinning the branch-tester line from `packages/branch-tester/src/coverage.ts:197`. If D-1 is ruled (b): a new registry entry for the removed header fields in `packages/chord/src/removed-forms.ts`, their parser sites moved to it, and the shared-codes exception at `packages/chord/tests/removed-forms.test.ts:35` deleted. Appendix G is regenerated with `node scripts/generate-chord-appendices.cjs`, never hand-edited. A census compiles test-stories/, stories/ and branch-stories/ (ADR-395), and the manual and the sharpee.net guide are searched for the old code on those fields and corrected where they quote it. The Files line is written when the rulings are in.
 - **Exit state**: Every package David named has a passing record-citations test that fails on its fixture, and no citing literal is left in its non-test source. Under D-1 (b), the removed header fields raise their own code, the exception is gone, Appendix G lists one more form, and the census shows no story that compiled before fails now. #784 is closed with a comment giving the final counts.
 - **Demonstration**: For each named package, its suite run with its record-citations test passing, fixture case included (for example `pnpm -C packages/branch-tester test:ci record-citations`). Under D-1 (b): `pnpm -C packages/chord test:ci removed-forms` passes, and the shared-codes exception no longer appears in the test file; `node scripts/generate-chord-appendices.cjs` rewrites Appendix G with the new code's section, and its form count matches the registry.
-- **Demonstrated**: 
-- **Status**: CURRENT (since 2026-11-17)
+- **Demonstrated**: N/A — abandoned before any work, on David's rulings (both "a").
+- **Status**: ABANDONED (2026-11-17, David's rulings on D-1 and D-2: both "a")
