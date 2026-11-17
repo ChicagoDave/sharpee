@@ -1,0 +1,1 @@
+use hunger, announce silent

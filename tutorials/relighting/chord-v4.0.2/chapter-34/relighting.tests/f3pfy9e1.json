@@ -1,0 +1,92 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "The book hoist pulls away."
+        ]
+      },
+      "command": "put lens in hoist",
+      "id": "k77mbw7k",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Cloister"
+        ]
+      },
+      "command": "up",
+      "id": "plzj02ap",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Bell Stair"
+        ]
+      },
+      "command": "north",
+      "id": "coqlfjc2",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Lantern Gallery"
+        ]
+      },
+      "command": "up",
+      "id": "fk0hgidm",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The lens drops into its seat with a sound like a coin on a counter."
+        ]
+      },
+      "command": "put lens in lantern",
+      "id": "5sv6r33t",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "part by a hand's breadth"
+        ]
+      },
+      "command": "turn crank",
+      "id": "ov5llqjv",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The crank runs free"
+        ]
+      },
+      "command": "turn crank",
+      "id": "bn7yit15",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "For one breath the cracked lens throws two beams",
+          "the Lantern goes dark for the last time."
+        ],
+        "notContains": [
+          "every blank page begins to fill"
+        ]
+      },
+      "command": "kindle lantern",
+      "ending": "lens-shatters",
+      "id": "3c475lc4",
+      "type": "turn"
+    }
+  ],
+  "id": "f3pfy9e1",
+  "ordinal": 1,
+  "parent": "2dvtdnae"
+}

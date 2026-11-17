@@ -1,0 +1,67 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "Cloister"
+        ]
+      },
+      "command": "up",
+      "id": "4l9c3lg3",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Gate Court"
+        ]
+      },
+      "command": "south",
+      "id": "m2wbxy7l",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The Porter's Lodge"
+        ]
+      },
+      "command": "south",
+      "id": "ho7y64zn",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "\"Ansel,\" he says, after a while. \"You were always late.\""
+        ]
+      },
+      "command": "give spectacles to hobb",
+      "id": "clp246vf",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "\"Still here,\" says Hobb, of one of you."
+        ]
+      },
+      "command": "talk to hobb",
+      "id": "baeqmdf6",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "\"Somebody had to put the Lantern out,\""
+        ]
+      },
+      "command": "ask hobb about last night",
+      "id": "3dfmh3no",
+      "type": "turn"
+    }
+  ],
+  "id": "4fra46om",
+  "ordinal": 3,
+  "parent": "2dvtdnae"
+}

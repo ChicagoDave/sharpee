@@ -1,0 +1,260 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "channels": [
+          {
+            "id": "info.title",
+            "is": "The Relighting"
+          }
+        ]
+      },
+      "id": "7ycfyx6b",
+      "type": "opening"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The Porter's Lodge"
+        ]
+      },
+      "id": "158ku53s",
+      "type": "boot"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Hobb doesn't respond."
+        ]
+      },
+      "command": "talk to hobb",
+      "id": "ifw990sk",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You get into the chair."
+        ]
+      },
+      "command": "sit on chair",
+      "id": "qwvo1m2p",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You get out of the chair."
+        ]
+      },
+      "command": "exit",
+      "id": "fwi5fo2i",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Hidden here, you discover: spectacles."
+        ]
+      },
+      "command": "search",
+      "id": "mp6355wh",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You take it."
+        ]
+      },
+      "command": "take spectacles",
+      "id": "hwe6iq7h",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "One arm has come away, and is held on with a turn of thread."
+        ],
+        "states": [
+          "the spectacles is cracked"
+        ]
+      },
+      "command": "examine spectacles",
+      "id": "moeaagjv",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You take it."
+        ]
+      },
+      "command": "take lamp",
+      "id": "rmbkcakm",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "In the oak press you see a library key."
+        ]
+      },
+      "command": "open press",
+      "id": "7hbiorre",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You take the library key from the oak press.",
+          "Hobb closes the oak press."
+        ]
+      },
+      "command": "take key",
+      "id": "qjvzptmu",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You open the oak press, which is empty.",
+          "Hobb closes the oak press."
+        ]
+      },
+      "command": "open press",
+      "id": "i7kasv6g",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Gate Court"
+        ]
+      },
+      "command": "north",
+      "id": "n9ck976q",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Cloister"
+        ]
+      },
+      "command": "north",
+      "id": "p9log9hs",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Refectory",
+          "You can see Tamsin Vey here."
+        ]
+      },
+      "command": "east",
+      "id": "9cqs3brr",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Tamsin Vey does not stop for you. She has her own day to get through.",
+          "puts two hinges in her apron."
+        ]
+      },
+      "command": "examine tamsin",
+      "id": "2ith9cg6",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Tamsin Vey leaves to the west."
+        ]
+      },
+      "command": "wait",
+      "id": "1jb45owj",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Cloister",
+          "You can see Tamsin Vey here."
+        ]
+      },
+      "command": "west",
+      "id": "mfnrdl9e",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You unlock the library door with the library key.",
+          "moves her lips."
+        ]
+      },
+      "command": "unlock library door with key",
+      "id": "fpyxwh1u",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You open the library door.",
+          "Tamsin Vey leaves to the east."
+        ]
+      },
+      "command": "open library door",
+      "id": "sy1g8nq1",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Library"
+        ]
+      },
+      "command": "west",
+      "id": "tjsh9sx3",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The word for waking a flame settles into the place it left thirty years ago"
+        ]
+      },
+      "command": "read kindle page",
+      "id": "3k9oldvd",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You say the word. A flame stands up on the wick, blue at first",
+          "Something small and blue comes loose from the flame"
+        ],
+        "notContains": [
+          "You light the hand lamp."
+        ]
+      },
+      "command": "light lamp",
+      "id": "kxixq1eo",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "It keeps a little behind your shoulder, where a dog would."
+        ]
+      },
+      "command": "examine wisp",
+      "id": "nr2pb72c",
+      "type": "turn"
+    }
+  ],
+  "id": "at16uk0q"
+}

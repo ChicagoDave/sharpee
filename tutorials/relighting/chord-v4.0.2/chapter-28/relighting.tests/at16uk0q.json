@@ -1,0 +1,399 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "channels": [
+          {
+            "id": "info.title",
+            "is": "The Relighting"
+          }
+        ]
+      },
+      "id": "7ycfyx6b",
+      "type": "opening"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The Porter's Lodge"
+        ]
+      },
+      "id": "158ku53s",
+      "type": "boot"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "He turns the kettle a quarter round on its hook, to no purpose.",
+          "\"It's you,\" says Hobb. He does not say which you."
+        ]
+      },
+      "command": "talk to hobb",
+      "id": "kiqamnvv",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Hobb gives that some thought, and gives it back."
+        ]
+      },
+      "command": "ask hobb about last night",
+      "id": "4pdg2oeo",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "He looks at the blue flame on the sill before he answers.",
+          "\"Went out like a pipe,\" says Hobb."
+        ]
+      },
+      "command": "ask hobb about the dimming",
+      "id": "5134vzxl",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "\"Somebody had to put the Lantern out,\""
+        ]
+      },
+      "command": "ask hobb about last night",
+      "id": "2ocgcdzt",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "\"Her word's good. It's all of her that is.\""
+        ]
+      },
+      "command": "ask hobb about tamsin",
+      "id": "cwaucokf",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "\"Mine,\" says Hobb."
+        ]
+      },
+      "command": "ask hobb about the kettle",
+      "id": "tw7xja6m",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "a country that kept half of itself underground"
+        ]
+      },
+      "command": "tell hobb about gnusto",
+      "id": "bp2kx2u4",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "\"Bell hasn't rung in thirty years,\" says Hobb."
+        ],
+        "notContains": [
+          "He turns the kettle"
+        ]
+      },
+      "command": "ask hobb about the bell",
+      "id": "m3qgm9hx",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Hobb gives that some thought, and gives it back."
+        ]
+      },
+      "command": "ask hobb about lanterns",
+      "id": "1rd9lmmr",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Hobb gives that some thought, and gives it back."
+        ]
+      },
+      "command": "ask hobb about the weather",
+      "id": "jkbbtwtu",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Hobb doesn't seem inclined to hand over the kettle."
+        ]
+      },
+      "command": "ask hobb for the kettle",
+      "id": "2xakuvhs",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You say goodbye to Hobb."
+        ]
+      },
+      "command": "goodbye",
+      "id": "ce300m8z",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "\"Still here,\" says Hobb, of one of you."
+        ]
+      },
+      "command": "talk to hobb",
+      "id": "8su853cp",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You get into the chair."
+        ]
+      },
+      "command": "sit on chair",
+      "id": "7cgpiuts",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You get out of the chair."
+        ]
+      },
+      "command": "exit",
+      "id": "rhwamjq8",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Hidden here, you discover: spectacles."
+        ]
+      },
+      "command": "search",
+      "id": "jaw64d6i",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You take it."
+        ]
+      },
+      "command": "take spectacles",
+      "id": "ft6rq6d1",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "One arm has come away, and is held on with a turn of thread."
+        ],
+        "states": [
+          "the spectacles is cracked"
+        ]
+      },
+      "command": "examine spectacles",
+      "id": "7biaycy7",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You take it."
+        ]
+      },
+      "command": "take lamp",
+      "id": "58lx00b8",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "In the oak press you see a library key."
+        ]
+      },
+      "command": "open press",
+      "id": "2p1t42dn",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You take the library key from the oak press.",
+          "Hobb closes the oak press."
+        ]
+      },
+      "command": "take key",
+      "id": "hszw4dyb",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You open the oak press, which is empty.",
+          "Hobb closes the oak press."
+        ]
+      },
+      "command": "open press",
+      "id": "9fas5cv6",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Gate Court"
+        ]
+      },
+      "command": "north",
+      "id": "nn8c9ea0",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Cloister"
+        ]
+      },
+      "command": "north",
+      "id": "f2s7ae3u",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Refectory",
+          "You can see Tamsin Vey here."
+        ]
+      },
+      "command": "east",
+      "id": "oxaxq6wa",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "\"You'll be the one the old man let in,\" says Tamsin Vey."
+        ]
+      },
+      "command": "talk to tamsin",
+      "id": "n38qdiur",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "\"Door furniture, mostly. Lamp brackets. Nobody was using them.\""
+        ]
+      },
+      "command": "ask tamsin about brass",
+      "id": "aq207av2",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "\"Brass. It is yellow and it sells. I said.\""
+        ]
+      },
+      "command": "ask tamsin about brass",
+      "id": "rhzlw2hn",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "\"Brass. It is yellow and it sells. I said.\""
+        ]
+      },
+      "command": "ask tamsin about brackets",
+      "id": "s1oj0i97",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "\"A price for what? You haven't said what you want.\""
+        ]
+      },
+      "command": "ask tamsin about the price",
+      "id": "s9cb4ep5",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "\"I have a page that came out of a wall with a bracket,\""
+        ]
+      },
+      "command": "ask tamsin about the page",
+      "id": "aujljumh",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "\"He pretends not to see me and I pretend to be quiet.",
+          "\"The page will keep,\" says Tamsin Vey. \"So will I.\""
+        ]
+      },
+      "command": "ask tamsin about the porter",
+      "id": "s4xarl5w",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "notContains": [
+          "sorts hinges"
+        ]
+      },
+      "command": "wait",
+      "id": "et3pgvph",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Tamsin Vey sorts hinges into sizes while she waits for you to say something."
+        ]
+      },
+      "command": "wait",
+      "id": "oerlnaly",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "\"The page. Yes. I thought we would come back to it.\""
+        ]
+      },
+      "command": "ask tamsin about the stair",
+      "id": "8sfpql5g",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "\"Here is my price.",
+          "Yes or no?"
+        ]
+      },
+      "command": "ask tamsin about the page",
+      "id": "mxokotpa",
+      "type": "turn"
+    }
+  ],
+  "id": "at16uk0q"
+}

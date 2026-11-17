@@ -2,7 +2,7 @@
 
 Every code and config snippet from *The Sharpee Author and Developer Manual*, extracted verbatim and organized by chapter in reading order.
 
-- **214 snippets** across 25 chapters (213 author, 1 reference).
+- **312 snippets** across 35 chapters (311 author, 1 reference).
 - Game-session transcripts (the `> look` ... output examples) are **not** included; they are example play sessions, not code.
 - **author** snippets are the story code/config a reader writes (assembled in reading order into `src/index.ts` and project files).
 - **reference** snippets are "Under the Hood" excerpts of the platform's own source (interfaces/classes you *import*, not code you write); their filenames carry a `.reference.` infix and are named for the symbol they document.
@@ -385,15 +385,15 @@ Regenerate with `node scripts/extract-book-snippets.cjs` (from `docs/book/`).
 | 04 | `04-a-trait-may-answer-standard-actions-too.story` | A trait may answer standard actions too | chord | author | 125 |
 | 05 | `05-a-trait-with-one-thing.story` | A trait with one thing | chord | author | 158 |
 | 06 | `06-a-trait-with-one-thing.story` | A trait with one thing | chord | author | 166 |
-| 07 | `07-a-trait-with-states-and-a-score.story` | A trait with states and a score | chord | author | 208 |
-| 08 | `08-a-trait-with-states-and-a-score.story` | A trait with states and a score | chord | author | 233 |
-| 09 | `09-a-thing-s-own-words-again.story` | A thing's own words, again | chord | author | 249 |
-| 10 | `10-a-thing-s-own-words-again.story` | A thing's own words, again | chord | author | 276 |
-| 11 | `11-the-bell-and-the-grille.story` | The bell and the grille | chord | author | 308 |
-| 12 | `12-data-on-a-trait.story` | Data on a trait | chord | author | 368 |
-| 13 | `13-data-on-a-trait.story` | Data on a trait | chord | author | 393 |
-| 14 | `14-is-it-a-wick.story` | Is it a wick? | chord | author | 418 |
-| 15 | `15-build-and-try-it.sh` | Build and try it | shell | author | 440 |
+| 07 | `07-a-trait-with-states-and-a-score.story` | A trait with states and a score | chord | author | 213 |
+| 08 | `08-a-trait-with-states-and-a-score.story` | A trait with states and a score | chord | author | 238 |
+| 09 | `09-a-thing-s-own-words-again.story` | A thing's own words, again | chord | author | 254 |
+| 10 | `10-a-thing-s-own-words-again.story` | A thing's own words, again | chord | author | 281 |
+| 11 | `11-the-bell-and-the-grille.story` | The bell and the grille | chord | author | 313 |
+| 12 | `12-data-on-a-trait.story` | Data on a trait | chord | author | 373 |
+| 13 | `13-data-on-a-trait.story` | Data on a trait | chord | author | 398 |
+| 14 | `14-is-it-a-wick.story` | Is it a wick? | chord | author | 423 |
+| 15 | `15-build-and-try-it.sh` | Build and try it | shell | author | 445 |
 
 ## Bending the standard grammar
 
@@ -408,4 +408,176 @@ Regenerate with `node scripts/extract-book-snippets.cjs` (from `docs/book/`).
 | 05 | `05-a-file-for-the-grammar.story` | A file for the grammar | chord | author | 185 |
 | 06 | `06-a-file-for-the-grammar.story` | A file for the grammar | chord | author | 192 |
 | 07 | `07-build-and-try-it.sh` | Build and try it | shell | author | 227 |
+
+# Part V. People
+
+## People who act
+
+`ch26-people-who-act/` &nbsp;·&nbsp; source: `docs/book/parts/part-5/26-people-who-act.md`
+
+| # | File | Section | Lang | Kind | Src line |
+|---|------|---------|------|------|----------|
+| 01 | `01-pronouns.story` | Pronouns | chord | author | 25 |
+| 02 | `02-pronouns.story` | Pronouns | chord | author | 40 |
+| 03 | `03-pronouns.story` | Pronouns | chord | author | 50 |
+| 04 | `04-a-set-of-your-own.story` | A set of your own | chord | author | 83 |
+| 05 | `05-the-stock-behaviours.story` | The stock behaviours | chord | author | 121 |
+| 06 | `06-the-stock-behaviours.story` | The stock behaviours | chord | author | 135 |
+| 07 | `07-the-five-words.story` | The five words | chord | author | 175 |
+| 08 | `08-having-a-person-do-something.story` | Having a person do something | chord | author | 228 |
+| 09 | `09-goals.story` | Goals | chord | author | 289 |
+| 10 | `10-the-steps.story` | The steps | chord | author | 362 |
+| 11 | `11-when-a-goal-is-active.story` | When a goal is active | chord | author | 425 |
+| 12 | `12-build-and-try-it.sh` | Build and try it | shell | author | 484 |
+
+## Asking and telling
+
+`ch27-asking-and-telling/` &nbsp;·&nbsp; source: `docs/book/parts/part-5/27-asking-and-telling.md`
+
+| # | File | Section | Lang | Kind | Src line |
+|---|------|---------|------|------|----------|
+| 01 | `01-a-table-of-topics.story` | A table of topics | chord | author | 17 |
+| 02 | `02-a-thing-as-a-subject.story` | A thing as a subject | chord | author | 72 |
+| 03 | `03-what-a-row-can-do.story` | What a row can do | chord | author | 107 |
+| 04 | `04-what-a-row-can-do.story` | What a row can do | chord | author | 118 |
+| 05 | `05-a-subject-nobody-has.story` | A subject nobody has | chord | author | 162 |
+| 06 | `06-looking-things-up.story` | Looking things up | chord | author | 185 |
+| 07 | `07-greetings.story` | Greetings | chord | author | 213 |
+| 08 | `08-the-line-a-greeting-needs.story` | The line a greeting needs | chord | author | 264 |
+| 09 | `09-manner.story` | Manner | chord | author | 282 |
+| 10 | `10-build-and-try-it.sh` | Build and try it | shell | author | 321 |
+
+## Conversations with a shape
+
+`ch28-conversations-with-a-shape/` &nbsp;·&nbsp; source: `docs/book/parts/part-5/28-conversations-with-a-shape.md`
+
+| # | File | Section | Lang | Kind | Src line |
+|---|------|---------|------|------|----------|
+| 01 | `01-conversations-with-a-shape.story` | Conversations with a shape | chord | author | 19 |
+| 02 | `02-a-thread.story` | A thread | chord | author | 34 |
+| 03 | `03-a-question.story` | A question | chord | author | 102 |
+| 04 | `04-a-way-back.story` | A way back | chord | author | 181 |
+| 05 | `05-how-many-times.story` | How many times | chord | author | 230 |
+| 06 | `06-what-has-been-discussed.story` | What has been discussed | chord | author | 257 |
+| 07 | `07-sending-a-subject-elsewhere.story` | Sending a subject elsewhere | chord | author | 291 |
+| 08 | `08-speaking-first.story` | Speaking first | chord | author | 305 |
+| 09 | `09-build-and-try-it.sh` | Build and try it | shell | author | 341 |
+
+## Inner lives
+
+`ch29-inner-lives/` &nbsp;·&nbsp; source: `docs/book/parts/part-5/29-inner-lives.md`
+
+| # | File | Section | Lang | Kind | Src line |
+|---|------|---------|------|------|----------|
+| 01 | `01-mood.story` | Mood | chord | author | 27 |
+| 02 | `02-mood.story` | Mood | chord | author | 43 |
+| 03 | `03-a-mood-of-your-own.story` | A mood of your own | chord | author | 63 |
+| 04 | `04-changing-a-mood.story` | Changing a mood | chord | author | 74 |
+| 05 | `05-feelings.story` | Feelings | chord | author | 110 |
+| 06 | `06-feelings.story` | Feelings | chord | author | 124 |
+| 07 | `07-changing-a-feeling.story` | Changing a feeling | chord | author | 144 |
+| 08 | `08-changing-a-feeling.story` | Changing a feeling | chord | author | 173 |
+| 09 | `09-changing-a-feeling.story` | Changing a feeling | chord | author | 184 |
+| 10 | `10-what-a-person-knows.story` | What a person knows | chord | author | 213 |
+| 11 | `11-what-a-person-knows.story` | What a person knows | chord | author | 228 |
+| 12 | `12-telling-one-another.story` | Telling one another | chord | author | 241 |
+| 13 | `13-build-and-try-it.sh` | Build and try it | shell | author | 291 |
+
+## Principles
+
+`ch30-principles/` &nbsp;·&nbsp; source: `docs/book/parts/part-5/30-principles.md`
+
+| # | File | Section | Lang | Kind | Src line |
+|---|------|---------|------|------|----------|
+| 01 | `01-principles.story` | Principles | chord | author | 14 |
+| 02 | `02-something-told-in-confidence.story` | Something told in confidence | chord | author | 36 |
+| 03 | `03-something-told-in-confidence.story` | Something told in confidence | chord | author | 48 |
+| 04 | `04-a-thing-a-person-will-not-do.story` | A thing a person will not do | chord | author | 59 |
+| 05 | `05-a-thing-a-person-will-not-do.story` | A thing a person will not do | chord | author | 84 |
+| 06 | `06-what-decides-between-principles.story` | What decides between principles | chord | author | 103 |
+| 07 | `07-what-decides-between-principles.story` | What decides between principles | chord | author | 112 |
+| 08 | `08-honesty.story` | Honesty | chord | author | 155 |
+| 09 | `09-honesty.story` | Honesty | chord | author | 168 |
+| 10 | `10-build-and-try-it.sh` | Build and try it | shell | author | 223 |
+
+## More than one protagonist
+
+`ch31-more-than-one-protagonist/` &nbsp;·&nbsp; source: `docs/book/parts/part-5/31-more-than-one-protagonist.md`
+
+| # | File | Section | Lang | Kind | Src line |
+|---|------|---------|------|------|----------|
+| 01 | `01-two-people-who-can-be-played.story` | Two people who can be played | chord | author | 15 |
+| 02 | `02-two-people-who-can-be-played.story` | Two people who can be played | chord | author | 31 |
+| 03 | `03-handing-the-role-over.story` | Handing the role over | chord | author | 52 |
+| 04 | `04-the-player-is-whoever-has-the-role.story` | The player is whoever has the role | chord | author | 115 |
+| 05 | `05-the-player-is-whoever-has-the-role.story` | The player is whoever has the role | chord | author | 125 |
+| 06 | `06-what-a-room-says-about-someone.story` | What a room says about someone | chord | author | 150 |
+| 07 | `07-keeping-a-scene-where-it-belongs.story` | Keeping a scene where it belongs | chord | author | 171 |
+| 08 | `08-handing-it-back.story` | Handing it back | chord | author | 190 |
+| 09 | `09-build-and-try-it.sh` | Build and try it | shell | author | 264 |
+
+# Part VI. Larger machinery
+
+## Machines
+
+`ch32-machines/` &nbsp;·&nbsp; source: `docs/book/parts/part-6/32-machines.md`
+
+| # | File | Section | Lang | Kind | Src line |
+|---|------|---------|------|------|----------|
+| 01 | `01-the-parts.story` | The parts | chord | author | 29 |
+| 02 | `02-the-machine.story` | The machine | chord | author | 60 |
+| 03 | `03-moving-between-states.story` | Moving between states | chord | author | 107 |
+| 04 | `04-moving-between-states.story` | Moving between states | chord | author | 128 |
+| 05 | `05-moving-between-states.story` | Moving between states | chord | author | 142 |
+| 06 | `06-telling-the-world.story` | Telling the world | chord | author | 191 |
+| 07 | `07-telling-the-world.story` | Telling the world | chord | author | 203 |
+| 08 | `08-build-and-try-it.sh` | Build and try it | shell | author | 230 |
+
+## Vehicles
+
+`ch33-vehicles/` &nbsp;·&nbsp; source: `docs/book/parts/part-6/33-vehicles.md`
+
+| # | File | Section | Lang | Kind | Src line |
+|---|------|---------|------|------|----------|
+| 01 | `01-a-problem-for-a-vehicle.story` | A problem for a vehicle | chord | author | 24 |
+| 02 | `02-the-book-hoist.story` | The book hoist | chord | author | 45 |
+| 03 | `03-a-vehicle-that-is-driven.story` | A vehicle that is driven | chord | author | 165 |
+| 04 | `04-flight.story` | Flight | chord | author | 222 |
+| 05 | `05-a-vehicle-the-player-steers.story` | A vehicle the player steers | chord | author | 267 |
+| 06 | `06-a-vehicle-the-player-steers.story` | A vehicle the player steers | chord | author | 301 |
+| 07 | `07-a-vehicle-with-rooms-inside.story` | A vehicle with rooms inside | chord | author | 315 |
+| 08 | `08-build-and-try-it.sh` | Build and try it | shell | author | 367 |
+
+## Open water and open ground
+
+`ch34-open-water-and-open-ground/` &nbsp;·&nbsp; source: `docs/book/parts/part-6/34-open-water-and-open-ground.md`
+
+| # | File | Section | Lang | Kind | Src line |
+|---|------|---------|------|------|----------|
+| 01 | `01-turning-the-system-on.story` | Turning the system on | chord | author | 24 |
+| 02 | `02-an-expanse.story` | An expanse | chord | author | 41 |
+| 03 | `03-an-expanse.story` | An expanse | chord | author | 69 |
+| 04 | `04-rooms-seen-from-the-water.story` | Rooms seen from the water | chord | author | 79 |
+| 05 | `05-rooms-seen-from-the-water.story` | Rooms seen from the water | chord | author | 102 |
+| 06 | `06-a-vehicle-on-open-water.story` | A vehicle on open water | chord | author | 111 |
+| 07 | `07-a-vehicle-on-open-water.story` | A vehicle on open water | chord | author | 151 |
+| 08 | `08-looking-across-water.story` | Looking across water | chord | author | 193 |
+| 09 | `09-looking-across-water.story` | Looking across water | chord | author | 202 |
+| 10 | `10-things-adrift.story` | Things adrift | chord | author | 284 |
+| 11 | `11-the-new-ending.story` | The new ending | chord | author | 302 |
+| 12 | `12-the-new-ending.story` | The new ending | chord | author | 316 |
+| 13 | `13-the-new-ending.story` | The new ending | chord | author | 323 |
+| 14 | `14-build-and-try-it.sh` | Build and try it | shell | author | 360 |
+
+## The opt-in systems
+
+`ch35-the-opt-in-systems/` &nbsp;·&nbsp; source: `docs/book/parts/part-6/35-the-opt-in-systems.md`
+
+| # | File | Section | Lang | Kind | Src line |
+|---|------|---------|------|------|----------|
+| 01 | `01-the-opt-in-systems.story` | The opt-in systems | chord | author | 10 |
+| 02 | `02-combat.story` | Combat | chord | author | 68 |
+| 03 | `03-hunger.story` | Hunger | chord | author | 125 |
+| 04 | `04-announcing.story` | Announcing | chord | author | 187 |
+| 05 | `05-build-and-try-it.sh` | Build and try it | shell | author | 218 |
 

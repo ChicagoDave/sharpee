@@ -1,0 +1,213 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "The crack closes from both edges at once, like a mouth deciding not to speak."
+        ],
+        "notContains": [
+          "has no memory of having been otherwise"
+        ],
+        "states": [
+          "the lens is sound"
+        ]
+      },
+      "command": "repair lens",
+      "id": "smjctzi7",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "There is no flaw in it anywhere, and you looked."
+        ]
+      },
+      "command": "examine lens",
+      "id": "e06d34ic",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "It is sound. The word looks it over and finds nothing to do."
+        ]
+      },
+      "command": "mend lens",
+      "id": "1frwf9q9",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Cloister"
+        ]
+      },
+      "command": "up",
+      "id": "gpp2ojzq",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Bell Stair"
+        ]
+      },
+      "command": "north",
+      "id": "sv8f8e20",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Lantern Gallery"
+        ]
+      },
+      "command": "up",
+      "id": "lgoq0vvn",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The leaves are shut, and green where they overlap."
+        ],
+        "states": [
+          "the shutter is closed-round"
+        ]
+      },
+      "command": "examine shutter",
+      "id": "lpdiny4v",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "there is a seat for a lens with no lens in it."
+        ]
+      },
+      "command": "kindle lantern",
+      "id": "26gb3k6i",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You turn the shutter crank.",
+          "The leaves of the shutter part by a hand's breadth all the way round, and stop."
+        ]
+      },
+      "command": "turn crank",
+      "id": "b6hsg8ma",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You turn the shutter crank."
+        ],
+        "notContains": [
+          "The crank runs free"
+        ]
+      },
+      "command": "turn crank",
+      "id": "823ss759",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You push the shutter crank.",
+          "The pawl ticks over one tooth."
+        ]
+      },
+      "command": "push crank",
+      "id": "bbh1j93q",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The leaves of the shutter part by a hand's breadth all the way round, and stop."
+        ]
+      },
+      "command": "turn crank",
+      "id": "284229pj",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The lens drops into its seat with a sound like a coin on a counter."
+        ]
+      },
+      "command": "put lens in lantern",
+      "id": "49ljiycq",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The shutters are closed round it."
+        ]
+      },
+      "command": "kindle lantern",
+      "id": "feddgerl",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The pawl ticks over one tooth.",
+          "The crank runs free, and the shutters fold back all the way round"
+        ],
+        "states": [
+          "the shutter is drawn"
+        ]
+      },
+      "command": "turn crank",
+      "id": "sz2j7yal",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You turn the shutter crank."
+        ],
+        "notContains": [
+          "The crank runs free"
+        ]
+      },
+      "command": "turn crank",
+      "id": "3t1beia4",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The leaves are folded back all the way round."
+        ]
+      },
+      "command": "examine shutter",
+      "id": "8o43l4us",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "sends it out over the valley in one white bar.",
+          "You have risen to the rank of a Lamplighter."
+        ],
+        "states": [
+          "the story is awake"
+        ]
+      },
+      "command": "kindle lantern",
+      "ending": "lantern-lit",
+      "id": "mahdm0ib",
+      "type": "turn"
+    }
+  ],
+  "id": "altq54hx",
+  "ordinal": 0,
+  "parent": "2dvtdnae"
+}

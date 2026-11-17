@@ -1,0 +1,52 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "\"Then I have a page and you have a grille.\"",
+          "\"That is the page dealt with,\""
+        ]
+      },
+      "command": "no",
+      "id": "jpy43ifj",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Tamsin Vey gives that some thought, and gives it back."
+        ]
+      },
+      "command": "ask tamsin about the page",
+      "id": "atbsytql",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "\"Here is my price.",
+          "Yes or no?"
+        ]
+      },
+      "command": "ask tamsin about the price",
+      "id": "259iajeq",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Tamsin Vey gives the unbind page to Ansel."
+        ],
+        "states": [
+          "Tamsin Vey is bound"
+        ]
+      },
+      "command": "agreed",
+      "id": "rtaviq90",
+      "type": "turn"
+    }
+  ],
+  "id": "cqav4w2w",
+  "ordinal": 1,
+  "parent": "at16uk0q"
+}

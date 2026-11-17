@@ -1,0 +1,394 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "channels": [
+          {
+            "id": "info.title",
+            "is": "The Relighting"
+          }
+        ]
+      },
+      "id": "7ycfyx6b",
+      "type": "opening"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The Porter's Lodge"
+        ]
+      },
+      "id": "158ku53s",
+      "type": "boot"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "He turns the kettle a quarter round on its hook, to no purpose.",
+          "\"It's you,\" says Hobb. He does not say which you."
+        ]
+      },
+      "command": "talk to hobb",
+      "id": "kiqamnvv",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "He looks at the blue flame on the sill before he answers.",
+          "\"Went out like a pipe,\" says Hobb."
+        ]
+      },
+      "command": "ask hobb about the dimming",
+      "id": "2dxvn5qx",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "\"Her word's good. It's all of her that is.\""
+        ]
+      },
+      "command": "ask hobb about tamsin",
+      "id": "94o3kjph",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "\"Mine,\" says Hobb."
+        ]
+      },
+      "command": "ask hobb about the kettle",
+      "id": "6rztgg66",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "a country that kept half of itself underground"
+        ]
+      },
+      "command": "tell hobb about gnusto",
+      "id": "7vurgnnj",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "\"Bell hasn't rung in thirty years,\" says Hobb."
+        ],
+        "notContains": [
+          "He turns the kettle"
+        ]
+      },
+      "command": "ask hobb about the bell",
+      "id": "mx7e6jo2",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Hobb gives that some thought, and gives it back."
+        ]
+      },
+      "command": "ask hobb about lanterns",
+      "id": "ou9djal1",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Hobb gives that some thought, and gives it back."
+        ]
+      },
+      "command": "ask hobb about the weather",
+      "id": "dvc1k14q",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Hobb doesn't seem inclined to hand over the kettle."
+        ]
+      },
+      "command": "ask hobb for the kettle",
+      "id": "aoh9du5a",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You say goodbye to Hobb."
+        ]
+      },
+      "command": "goodbye",
+      "id": "4lp5fmva",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "\"Still here,\" says Hobb, of one of you."
+        ]
+      },
+      "command": "talk to hobb",
+      "id": "7tkwxpnm",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You get into the chair."
+        ]
+      },
+      "command": "sit on chair",
+      "id": "5xor75mh",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You get out of the chair."
+        ]
+      },
+      "command": "exit",
+      "id": "dmpx7d7l",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Hidden here, you discover: spectacles."
+        ]
+      },
+      "command": "search",
+      "id": "gsfianqt",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You take it."
+        ]
+      },
+      "command": "take spectacles",
+      "id": "bzwmf75p",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "One arm has come away, and is held on with a turn of thread."
+        ],
+        "states": [
+          "the spectacles is cracked"
+        ]
+      },
+      "command": "examine spectacles",
+      "id": "499f1q8a",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You take it."
+        ]
+      },
+      "command": "take lamp",
+      "id": "ndlqeynl",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "In the oak press you see a library key."
+        ]
+      },
+      "command": "open press",
+      "id": "lc62185l",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You take the library key from the oak press.",
+          "Hobb closes the oak press."
+        ]
+      },
+      "command": "take key",
+      "id": "m3lhm61u",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You open the oak press, which is empty.",
+          "Hobb closes the oak press."
+        ]
+      },
+      "command": "open press",
+      "id": "4mcaanyu",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Gate Court"
+        ]
+      },
+      "command": "north",
+      "id": "9baox4nh",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Cloister"
+        ]
+      },
+      "command": "north",
+      "id": "fg7o5yiw",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Refectory",
+          "You can see Tamsin Vey here."
+        ]
+      },
+      "command": "east",
+      "id": "2p8sobp0",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "\"Door furniture, mostly. Lamp brackets. Nobody was using them.\""
+        ],
+        "notContains": [
+          "puts two hinges in her apron."
+        ]
+      },
+      "command": "ask tamsin about brass",
+      "id": "b0w4oz8z",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "\"He pretends not to see me and I pretend to be quiet."
+        ]
+      },
+      "command": "ask tamsin about the porter",
+      "id": "7vss8vaf",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You say goodbye to Tamsin Vey."
+        ]
+      },
+      "command": "goodbye",
+      "id": "2d3d9ffc",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Cloister"
+        ]
+      },
+      "command": "west",
+      "id": "3xhbbrr7",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You unlock the library door with the library key."
+        ]
+      },
+      "command": "unlock library door with key",
+      "id": "3vmcosr4",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You open the library door."
+        ]
+      },
+      "command": "open library door",
+      "id": "9319wzkw",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Library"
+        ]
+      },
+      "command": "west",
+      "id": "pdmxoqtn",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Whoever wrote it underlined \"lost\" twice."
+        ]
+      },
+      "command": "consult grimoire about gnusto",
+      "id": "gdd0bzn1",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You find nothing about that in the grimoire."
+        ]
+      },
+      "command": "look up cheese in grimoire",
+      "id": "e4jrpmon",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The word for waking a flame settles into the place it left thirty years ago"
+        ]
+      },
+      "command": "read kindle page",
+      "id": "48xxcnu4",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You say the word. A flame stands up on the wick, blue at first",
+          "Something small and blue comes loose from the flame"
+        ],
+        "notContains": [
+          "You light the hand lamp."
+        ]
+      },
+      "command": "light lamp",
+      "id": "fmg635f9",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "It keeps a little behind your shoulder, where a dog would."
+        ]
+      },
+      "command": "examine wisp",
+      "id": "57mfijsy",
+      "type": "turn"
+    }
+  ],
+  "id": "at16uk0q"
+}

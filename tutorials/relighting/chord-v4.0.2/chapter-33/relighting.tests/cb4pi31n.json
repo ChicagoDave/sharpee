@@ -1,0 +1,58 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "Dropped."
+        ]
+      },
+      "command": "drop lens",
+      "id": "gueo2ilz",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Cloister"
+        ]
+      },
+      "command": "up",
+      "id": "o04jrm11",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Bell Stair"
+        ]
+      },
+      "command": "north",
+      "id": "k2c7o3j4",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Lantern Gallery"
+        ]
+      },
+      "command": "up",
+      "id": "1ro28pzf",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The court comes up to meet you."
+        ]
+      },
+      "command": "east",
+      "ending": "over-the-parapet",
+      "id": "82tfyusa",
+      "type": "turn"
+    }
+  ],
+  "id": "cb4pi31n",
+  "ordinal": 2,
+  "parent": "2dvtdnae"
+}

@@ -1,0 +1,140 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "Cloister",
+          "The wisp follows you."
+        ]
+      },
+      "command": "east",
+      "id": "6ygzz1sz",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You are Hobb, and that is the bell."
+        ]
+      },
+      "command": "wait",
+      "id": "mgrnrulb",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You are Ansel, and wherever you are standing, the bell is louder there."
+        ]
+      },
+      "command": "examine newspapers",
+      "id": "np4excq7",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Cloister"
+        ]
+      },
+      "command": "look",
+      "id": "e6exk7tx",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The tower bell tolls."
+        ]
+      },
+      "command": "wait",
+      "id": "dos9dbuj",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Bell Stair",
+          "You can see Tamsin Vey here.",
+          "Tamsin Vey pushes the iron grille."
+        ]
+      },
+      "command": "north",
+      "id": "iah3s7p5",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The bar bends. The grille does not notice."
+        ]
+      },
+      "command": "wait",
+      "id": "bwlpwq6c",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You can see Tamsin Vey and a wisp here."
+        ]
+      },
+      "command": "look",
+      "id": "i3rhkcd1",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Cloister"
+        ]
+      },
+      "command": "south",
+      "id": "je620dro",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Library"
+        ]
+      },
+      "command": "west",
+      "id": "jy35h7vt",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Stack 1"
+        ]
+      },
+      "command": "north",
+      "id": "j1we55yv",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Stack 2"
+        ]
+      },
+      "command": "north",
+      "id": "30qw6hwn",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Stack 3"
+        ]
+      },
+      "command": "north",
+      "id": "f4iaogkp",
+      "type": "turn"
+    }
+  ],
+  "id": "mdmzupch",
+  "ordinal": 1,
+  "parent": "95ypeb5g"
+}
