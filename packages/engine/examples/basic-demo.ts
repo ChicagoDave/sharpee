@@ -101,9 +101,9 @@ function displayResult(result: TurnResult) {
 // Run some example commands
 async function runDemo() {
   try {
-    // Look around
-    console.log('\n--- Looking Around ---');
-    let result = await engine.executeTurn('look');
+    // The story's opening: the engine runs the first look, outside any turn
+    console.log('\n--- The Opening ---');
+    let result = await engine.runOpening();
     displayResult(result);
 
     // Take the sword

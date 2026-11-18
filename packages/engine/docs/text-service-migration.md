@@ -65,14 +65,14 @@ Update all imports to use the new packages as shown above.
 **Before:**
 ```typescript
 // Text was handled internally by engine
-const result = await engine.executeTurn('look');
+const result = await engine.executeTurn('inventory');
 // Text was written to channels automatically
 ```
 
 **After:**
 ```typescript
 // Execute turn
-const result = await engine.executeTurn('look');
+const result = await engine.executeTurn('inventory');
 
 // Get the generated text
 const text = engine.getTextOutput();

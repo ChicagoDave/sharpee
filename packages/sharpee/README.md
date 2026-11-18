@@ -55,8 +55,12 @@ const engine = new GameEngine({ world, parser, language });
 engine.installStory(story);
 engine.start();
 
+// A new game opens with the story's opening: its prologue, its banner and
+// its first look, sent as channel packets. It is not a turn.
+await engine.runOpening();
+
 // Process player commands
-const result = await engine.executeTurn('look');
+const result = await engine.executeTurn('take lamp');
 ```
 
 > Rendering is no longer a separate text service (ADR-174). The engine's prose

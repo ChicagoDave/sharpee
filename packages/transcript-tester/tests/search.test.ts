@@ -296,3 +296,45 @@ describe('searchOutcome (D12)', () => {
     expect(classAtSeed(result.pointSeed!)).toBe('RARE');
   });
 });
+
+describe('searchOutcome opens a new game (ADR-404)', () => {
+  /** The stub engine with an opening that logs itself when run. */
+  function pendingEngine(fail = false) {
+    const game = Object.assign(searchEngine(), {
+      openingPending: true,
+      async runOpening(): Promise<string> {
+        if (fail) throw new Error('the opening blew up');
+        game.log.push('opening');
+        game.openingPending = false;
+        return '';
+      }
+    });
+    return game;
+  }
+
+  it("runs the opening once, before the driver's first command", async () => {
+    const naturalClass = classAtSeed(deriveStreamSeed(MASTER, 'tt-search.outcome'));
+    const game = pendingEngine();
+
+    const result = await searchOutcome(TRIGGER_DRIVER, game as never, {
+      point: 'tt-search.outcome',
+      cls: naturalClass
+    });
+
+    expect(result.found).toBe(true);
+    expect(game.log).toEqual(['opening', 'noop@1', 'trigger@2']);
+  });
+
+  it('fails by naming the opening when it throws, and runs no command', async () => {
+    const game = pendingEngine(true);
+
+    const result = await searchOutcome(TRIGGER_DRIVER, game as never, {
+      point: 'tt-search.outcome',
+      cls: 'RARE'
+    });
+
+    expect(result.found).toBe(false);
+    expect(result.reason).toBe("the story's opening failed: the opening blew up");
+    expect(game.log).toEqual([]);
+  });
+});

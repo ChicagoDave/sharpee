@@ -496,7 +496,7 @@ async function explore(storyPath, opts) {
   const platform = game.engine;
   const loadMs = Date.now() - started;
 
-  await game.executeCommand('look');
+  await game.runOpening();
 
   const roomsSeen = new Set();
   const endings = new Set();

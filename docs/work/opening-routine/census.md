@@ -222,3 +222,62 @@ Taken 2026-11-18, session 6d715d, on `main` at f8a2a9e4b with the Phase 3 change
 | trees | `./sharpee test test-stories/ferry`, `lodge`, `orchard` | exit 0 each |
 | every package | `pnpm exec turbo run test:ci` | 73 tasks successful of 73 |
 | verify | `./repokit verify` | FAILED at its third step, the entropy gate, with 8 issues, none in a file this phase touched: `tools/repokit/entropy-allowlist.txt` has drifted since 2026-09-09 (GH #803; the id idiom behind it is GH #804). `grammar --check` passed, the step that reads `chord.ebnf`. The control-byte step failed first, on 3 raw control bytes in `packages/character/src/conversation/conversation-memory.ts:48` and `:50` (U+0000, last changed 2026-08-17 in 4131ae5d7) and `docs/work/archive/history-retrospective/output/build-genai-index.mjs:22` (U+0001); each was written as an escape on David's "a" and the step then passed, with the character suite at 641 passed, 0 failures. `tsf build --npm` and the publish dry run did not run. David ruled the phase closes with verify recorded this way ("b"). The protocol check, which verify also runs behind the failure, passed on its own (`./repokit protocol --check`). |
+
+## 11. Phase 4 as built: the headless and command-line heads
+
+Taken 2026-11-18, session 70211a, on `main` at 59e8fbcbe with the Phase 4 changes uncommitted, after `./repokit build dungeo` (exit 0, bundle 5397548 bytes on the final build).
+
+**The handle.** `LoadedGame` (`packages/bootstrap/src/index.ts`) gains `runOpening()`, `openingPackets` and `openingPending`. `runOpening()` calls the engine's routine and records each packet as it arrives: its composed prose, and the flattened lines and structured values of each captured channel it carried. The opening's captures become `bootChannelValues`. `assembleGame` does not call it, so the tree walker and the claims walk are as they were (Phase 5).
+
+| Head | File | What it does now |
+|---|---|---|
+| the transcript runner | `packages/transcript-tester/src/runner.ts`, `command-core.ts` (`openNewGame`) | opens a game it finds pending, once, before the first command; a chain's later members find it open |
+| the outcome search | `packages/transcript-tester/src/search.ts` | the same call, before the driver's first command |
+| the tester's interactive CLI | `packages/transcript-tester/src/cli.ts` | `runOpening()`, then the packets in arrival order |
+| the bundle's `--play` | `scripts/bundle-entry.js` | `runOpening()` and the packets in order; with `--restore`, no opening |
+| the bundle's `--exec` | `scripts/bundle-entry.js` | the opening before the first command's echo; with `--restore`, no opening |
+| the bundle's `--test` and `--chain` | through the runner | |
+| `sharpee play` | `packages/devkit/src/commands/play.ts` | `runOpening()` and the packets in order, with its own banner layout as before |
+| fast-cli | `scripts/fast-cli.js` | the line reads `engine.runOpening()`; the script cannot run (below) |
+| the explorer probe | `tools/explorer-probe/explore.js`, `plan.js` | `game.runOpening()` |
+
+**What the phase found.**
+
+- **A RESTART's opening is a new opening, not part of the restart command.** On a handle that was opened with `runOpening()`, the reboot runs the new engine's opening; its packets replace `openingPackets`, its captures replace `bootChannelValues`, and the restart command's own `lastOutput` stays the acknowledgement. A head that prints the opening tells a reboot by the array's identity changing, and the three interactive heads print the new opening after the acknowledgement. A handle that was never opened reboots as before.
+- **The `(opening)` row reads the opening's own captures.** It read the first command's captures, because that was the turn the banner and the prologue rode. It now reads `bootChannelValues` and is checked before the first command runs. A game with no `runOpening` (a test stub) that is asked an opening claim fails the claim.
+- **The banner's layout is each head's own, and stayed so.** The bundle prints title, story version, platform version, subtitle, credits; `sharpee play` prints title, subtitle, credits, story version; the tester's CLI prints the record's flattened line. Only the order of prologue, banner and look is the story's.
+- **Parts are separated by one blank line**, which for the default opening is byte for byte what `--play` printed before (`pnpm test:scripts opening-baseline`, 1 passed).
+- **The Dungeo census found no line that differs** (`dungeo-census.md`): the chain is 949 of 949 with every golden matched, and the unit transcripts give identical output with and without the runner's call. No seeded draw shifted, which closes the question section 9 carried.
+- **`scripts/fast-cli.js` cannot run today.** It loads `dist/sharpee.js`, constructs `GameEngine` with positional arguments and imports a `TextService` the platform no longer has. Its opening line was changed so the search of AC-5 is clean; nothing else in it was touched.
+- **The two design scripts under `docs/architecture/diagrams/design/` were left.** `test-command-history.js` and `.mjs` run `look` as the command whose history entry they inspect, not as an opening.
+- **`packages/engine/docs/text-service-migration.md`** used `look` as its sample command twice; it now uses `inventory`, so it no longer reads as an opening.
+- **The plan's AC-8 command names a save that does not exist**, `wt-13a`. `wt-13` was used: `node dist/cli/sharpee.js --exec "look" --story stories/dungeo --restore wt-13` prints the seed line, `> look` and the Living Room, with no banner and no first room ahead of them.
+- **The bundle's `--play` loses piped lines after the first** (its `question()` loop, the defect `sharpee play` fixed as GH #240), so AC-2's second `wait` was run through `--exec "wait/wait"` instead of the piped command the plan gives. This is as it was before the phase.
+- **`node --test tools/explorer-probe/tests/*.test.js` fails 9 of 43, and failed the same 9 before the phase**: with `explore.js` put back to its typed `look` the count is the same, 34 passed and 9 failed. The failures are pins that no longer match (`91 !== 41` dimensions; a walk that ends `frontier-exhausted` where the pin says `max-states`). The phase's Demonstration names this suite as passing; it does not pass, for a cause outside the phase.
+
+**What `mutation-verification` found, and what was done.** Nine warnings; eight fixed before the counts below were taken, one left as reported. (1) Only stubs reached `openNewGame`, so a renamed handle member would have skipped the opening with every suite passing; `opening-run.test.ts` now runs the runner on a real `assembleGame` handle with an `(opening)` row. (2) Nothing would have noticed commands' packets joining `openingPackets`; the length is now asserted after a command and after a restart. (3) `runOpening()` left the boot captures as the live buffer until the first command, so a packet arriving in between would have joined them; the buffers now start fresh after the opening, a test sends such a packet, and the handle's last-run fields are asserted. The `lastError` assignment, which could not be observed, is gone. (4) No test sent RESTART through a head; `opening-heads.test.ts` and devkit's `play.test.ts` now do, and assert the new opening follows the acknowledgement. (5) One `play.test.ts` assertion passed on the old code; it now claims only the blank line between parts. (6) The `(opening)` row's move ahead of the first command was not pinned; a first command that spoils the boot captures now pins it. (7) A reboot whose opening threw left `openingPackets` and `bootChannelValues` describing different games; both are now the new game's, as far as its opening got, pinned with a story whose opening plugin throws. (8) Nothing ran `--play --restore`; `cli-restore.test.ts` now does. (9) Left: `fast-cli.js` cannot run, and `explore()` and `verifyPlan()` have no tests of their own. The tester's interactive CLI (`cli.ts`) has no test either; its reprint is the same four lines as the bundle's.
+
+**The acceptance runs.**
+
+| Criterion | Command | Result |
+|---|---|---|
+| AC-1 | `yes wait \| head -81 \| ./sharpee play tutorials/relighting/chord-v4.1.0/chapter-19` | "The light has turned" in the reply to command 50, "Dusk comes down" in the reply to command 80 |
+| AC-2 | `node dist/cli/sharpee.js --exec "wait/wait" --story stories/hunger-demo/hunger-demo.story --seed 42` | neither hunger line in the opening; "A hollow ache settles behind your ribs." after the first `wait`; "Your stomach knots and will not let go." after the second |
+| AC-3, command line | `pnpm test:scripts opening-baseline` | 1 passed, 0 failures |
+| AC-4, command line | `pnpm test:scripts` (its `opening-heads` file) | the reordered copy prints the room before the banner; the no-look, no-banner, no-prologue and empty copies print only what their block names |
+| AC-8, headless | `node dist/cli/sharpee.js --exec "look" --story stories/dungeo --restore wt-13`; `pnpm --filter '@sharpee/bootstrap' test assemble-opening` | no opening on the restored session; the restart reboot runs the new game's opening |
+| AC-11 | see `dungeo-census.md` | no line differs |
+
+**Gates on the final build.**
+
+| Gate | Command | Result |
+|---|---|---|
+| bootstrap | `pnpm --filter '@sharpee/bootstrap' test` | 68 passed, 0 failures (7 files); 57 before this phase's 11 |
+| transcript-tester | `pnpm --filter '@sharpee/transcript-tester' test` | 385 passed, 0 failures (29 files); 374 before this phase's 11 |
+| `sharpee play` | `pnpm --filter '@sharpee/devkit' test play` | 8 passed, 0 failures; 5 before |
+| scripts | `pnpm test:scripts` | 146 passed, 0 failures (21 files) |
+| Dungeo chain | `node dist/cli/sharpee.js --test --chain stories/dungeo/walkthroughs/wt-*.transcript` | 949 passed, 0 failures, "All tests passed!" |
+| trees | `./sharpee test test-stories/ferry`, `lodge`, `orchard` | exit 0 each |
+| every package | `pnpm exec turbo run test:ci` | 73 tasks successful of 73 |
+| explorer probe | `node --test tools/explorer-probe/tests/*.test.js` | 34 passed, 9 failed, the same 9 as before the phase |
+| the search | `git grep -n -E "execute(Turn\|Command)\(['\"]look['\"]\)" -- packages scripts tools`, tests and archives left out | `packages/platform-browser/src/BrowserClient.ts:677` and `:688` (Phase 6) and `packages/branch-tester/src/claims/claims-walk.ts:129` (Phase 5) |

@@ -98,8 +98,8 @@ async function play(storyPath) {
   console.log(`Loaded in ${Date.now() - startTime}ms`);
   console.log('Type commands to play. Type "quit" or Ctrl+C to exit.\n');
 
-  // Show initial room
-  const result = await engine.executeTurn('look');
+  // The story's opening: the engine runs it, and it is not a turn (ADR-404).
+  const result = await engine.runOpening();
   console.log(result.output || '');
   console.log();
 

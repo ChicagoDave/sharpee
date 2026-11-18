@@ -620,7 +620,7 @@ function plan(model, limit = 200000) {
 async function verifyPlan(storyPath, commands) {
   const { loadAuthorGame } = require(path.join(REPO, 'packages/devkit/dist/standalone/author-game.js'));
   const game = await loadAuthorGame(storyPath, { seed: 42 });
-  await game.executeCommand('look');
+  await game.runOpening();
   for (const c of commands) {
     await game.executeCommand(c);
   }

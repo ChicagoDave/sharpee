@@ -11,7 +11,7 @@
  * files, so this module is reached through the package barrel, never from
  * the browser.
  *
- * Public interface: `runCommand`, `executeDirective`,
+ * Public interface: `openNewGame`, `runCommand`, `executeDirective`,
  * `configureRandomInstruments`, `unfiredForceError`, `forcesFailResult`,
  * `directiveFailResult`, `errorResult`, `endingFrom`, `worldEntityRef`,
  * `captureWorldSnapshot`; the `GameEngine` and `PlatformRandomService`
@@ -55,10 +55,45 @@ import {
 } from './assertion-core.js';
 
 /**
+ * Run a new game's opening before its first command (ADR-404 decision 4:
+ * no head types an opening `look`; the runner is a head).
+ *
+ * A game is opened once: a chain's later members, and a game whose commands
+ * have begun, are found not pending and left alone. A game wrapper with no
+ * `runOpening` (a test stub) is left alone too.
+ *
+ * @param engine the game the runner was handed
+ * @returns an error message when the opening threw, otherwise undefined
+ */
+export async function openNewGame(
+  engine: Pick<GameEngine, 'openingPending' | 'runOpening'>
+): Promise<string | undefined> {
+  if (engine.openingPending !== true || engine.runOpening === undefined) return undefined;
+  try {
+    await engine.runOpening();
+    return undefined;
+  } catch (e) {
+    return `the story's opening failed: ${e instanceof Error ? e.message : String(e)}`;
+  }
+}
+
+/**
  * Interface for the game engine wrapper the CLIs hand the runner.
  */
 export interface GameEngine {
   executeCommand(input: string): Promise<string> | string;
+  /**
+   * Whether the game's opening can still be run — bootstrap's
+   * `LoadedGame.openingPending`: true on a new game until its opening or its
+   * first command. The runner opens a game it finds pending (ADR-404).
+   */
+  openingPending?: boolean;
+  /**
+   * Run the story's opening (prologue, banner, first look) outside the turn
+   * cycle — bootstrap's `LoadedGame.runOpening`. Its captures land in
+   * `bootChannelValues`, which the `(opening)` row asserts against.
+   */
+  runOpening?(): Promise<string>;
   getOutput?(): string;
   lastEvents?: Array<{ type: string; data?: any }>;
   /**

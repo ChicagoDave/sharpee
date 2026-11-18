@@ -45,6 +45,7 @@ import {
   executeDirective,
   directiveFailResult,
   errorResult,
+  openNewGame,
   runCommand,
   type GameEngine,
 } from './command-core.js';
@@ -124,6 +125,13 @@ export async function runTranscript(
   const instrumentError = configureRandomInstruments(transcript, engine);
   if (instrumentError) {
     return errorResult(transcript, startTime, instrumentError);
+  }
+
+  // A new game opens before its first command (ADR-404): once per game, so
+  // a chain's first member opens it and the members after find it open.
+  const openingError = await openNewGame(engine);
+  if (openingError) {
+    return errorResult(transcript, startTime, openingError);
   }
 
   // A seeds: matrix records per-seed siblings (D8); the session's live seed
@@ -449,8 +457,10 @@ function openingResult(
     ...(openingCardId !== undefined ? { cardId: openingCardId } : {})
   };
 
+  // The opening's captures: what the opening routine sent, kept by the game
+  // as its boot captures and untouched by any command's reset.
   const assertionResults = opening.map((assertion) =>
-    checkAssertion(assertion, '', '', [], engine.world, engine.lastChannelValues ?? engine.lastChannels)
+    checkAssertion(assertion, '', '', [], engine.world, engine.bootChannelValues ?? {})
   );
 
   return {
@@ -598,7 +608,7 @@ async function runAssertion(
     results.push(result);
     options.observer?.onCommandResult?.(result);
   };
-  /** Opening assertions run once, after the first command flushes the opening. */
+  /** Opening assertions run once, against the opening, ahead of the first command. */
   let openingChecked = (transcript.opening?.length ?? 0) === 0;
   /** Any command's assertions were policy-written this run → rewrite the file. */
   let policyWroteAssertions = false;
@@ -647,17 +657,16 @@ async function runAssertion(
       break;
     }
 
-    const result = await runCommand(command, engine, options, synthesize);
-    if (result.autoAsserted) policyWroteAssertions = true;
-    options.coverage?.collectFrom(engine.lastEvents);
-
-    // The banner and the prologue are said on the way to the first command, so
-    // that is the turn whose capture carries them. Checked once, and reported
-    // ahead of the command that flushed them because that is where they read.
+    // The opening was run before any command, so its row is checked and
+    // reported ahead of the first one, which is where it reads.
     if (!openingChecked) {
       openingChecked = true;
       record(openingResult(transcript.opening!, engine, transcript.openingCardId));
     }
+
+    const result = await runCommand(command, engine, options, synthesize);
+    if (result.autoAsserted) policyWroteAssertions = true;
+    options.coverage?.collectFrom(engine.lastEvents);
 
     record(result);
 

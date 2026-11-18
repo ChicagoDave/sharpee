@@ -83,6 +83,34 @@ describe('--exec --restore through the real save format', () => {
     expect(result.status).toBe(0);
     // The save was taken after `north` from West of House.
     expect(result.stdout).toContain('North of House');
+    // A restored session prints no opening: no banner and no first room.
+    expect(result.stdout).not.toContain('DUNGEON');
+    expect(result.stdout).not.toContain('West of House');
+  });
+
+  it('--play --restore prints no opening either, and plays on from the save', () => {
+    const result = spawnSync(
+      'node',
+      [BUNDLE, '--play', '--story', STORY_DIR, '--restore', FIXTURE_SAVE, '--seed', '4242'],
+      { cwd: REPO_ROOT, encoding: 'utf-8', input: 'look\n', timeout: 60_000 }
+    );
+    expect(result.status).toBe(0);
+    const stdout = result.stdout ?? '';
+    expect(stdout).toContain(`Restored: ${FIXTURE_SAVE}`);
+    expect(stdout).not.toContain('DUNGEON');
+    expect(stdout).not.toContain('West of House');
+    expect(stdout).toContain('North of House');
+  });
+
+  it('a new game, by contrast, prints its opening before the first command', () => {
+    const result = runCli(['--exec', 'inventory', '--story', STORY_DIR, '--seed', '4242']);
+    expect(result.status).toBe(0);
+    const banner = result.stdout.indexOf('DUNGEON');
+    const room = result.stdout.indexOf('West of House');
+    const command = result.stdout.indexOf('> inventory');
+    expect(banner).toBeGreaterThan(-1);
+    expect(room).toBeGreaterThan(banner);
+    expect(command).toBeGreaterThan(room);
   });
 
   it('rejects a legacy snapshot with a named error and exit 1', () => {

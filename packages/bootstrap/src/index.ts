@@ -65,6 +65,20 @@ export interface ChannelIdSource {
  */
 type CapabilityProfile = { -readonly [K in keyof ClientCapabilities]: ClientCapabilities[K] };
 
+/**
+ * One packet of a game's opening, as the engine sent it (ADR-404): the
+ * prologue, the banner, or the first look. A head prints the packets in the
+ * order they arrived, which is the order the story's opening states.
+ */
+export interface OpeningPacket {
+  /** The packet's composed prose; empty for a packet that carries none (the prologue, the banner). */
+  output: string;
+  /** Flattened lines of each captured channel the packet carried. */
+  channels: Record<string, string[]>;
+  /** The same channels as their structured values. */
+  channelValues: Record<string, unknown[]>;
+}
+
 /** A loaded, started, runnable game with text-output capture. */
 export interface LoadedGame {
   engine: GameEngine;
@@ -114,6 +128,31 @@ export interface LoadedGame {
    * empty until the first command executes.
    */
   bootChannelValues: Record<string, unknown[]>;
+  /**
+   * The packets of the game's opening, in arrival order (ADR-404). Empty
+   * until `runOpening()` is called; a RESTART's reboot replaces the array
+   * with the new game's opening, so a head that prints the opening can tell
+   * a reboot by the array's identity changing.
+   */
+  openingPackets: OpeningPacket[];
+  /**
+   * Whether the opening can still be run: true from assembly until
+   * `runOpening()` or the first `executeCommand`.
+   */
+  openingPending: boolean;
+  /**
+   * Run the story's opening on a new game (ADR-404): the engine's
+   * `runOpening()`, with each packet recorded in `openingPackets` and the
+   * opening's captures in `bootChannelValues`. A head calls this once, before
+   * the first command, and does not call it on a restored session. Once
+   * called, a RESTART's reboot runs the new engine's opening the same way.
+   *
+   * @returns the opening's composed prose (the first look's text; empty when
+   *   the opening has no first look)
+   * @throws when called twice or after a command, and whatever the engine's
+   *   `runOpening()` throws
+   */
+  runOpening(): Promise<string>;
   /**
    * The message of the error the last command's turn threw, or `undefined`
    * when it completed. The canonical answer to "did this command execute at
@@ -292,6 +331,10 @@ export function assembleGame(
   /** True once the boot's channel captures were snapshotted (first command). */
   let bootCapturesSaved = false;
   let pendingReboot = false;
+  /** The packets of the opening being run right now; null outside one. */
+  let openingCapture: OpeningPacket[] | null = null;
+  /** True once a head ran the opening through this handle, so a reboot runs it too. */
+  let openingRequested = false;
 
   // ADR-294 D15: the story's channels must be registered BEFORE capability
   // derivation — a story-registered gated channel declared in `channels`
@@ -417,15 +460,23 @@ export function assembleGame(
     engine.on('channel:packet', (packet: TurnPacket) => {
       const out = packetProseText(packet.payload, presentation);
       if (out) outputBuffer.push(out);
+      const openingPacket: OpeningPacket | null =
+        openingCapture !== null ? { output: out, channels: {}, channelValues: {} } : null;
       // ADR-294 D15: capture each declared channel's payload as
       // deterministic lines. Absent payload = the channel emitted nothing
       // this turn (sparse) — meaningful, recorded as absence.
       for (const id of capturedChannels) {
         const value = packet.payload[id];
         if (value === undefined) continue;
-        (channelBuffers[id] ??= []).push(...flattenChannelValue(value));
+        const lines = flattenChannelValue(value);
+        (channelBuffers[id] ??= []).push(...lines);
         (channelValueBuffers[id] ??= []).push(value);
+        if (openingPacket !== null) {
+          openingPacket.channels[id] = lines;
+          openingPacket.channelValues[id] = [value];
+        }
       }
+      if (openingPacket !== null) openingCapture!.push(openingPacket);
     });
 
     engine.on('event', (event: ISemanticEvent) => {
@@ -434,6 +485,22 @@ export function assembleGame(
   }
 
   boot(story);
+
+  /**
+   * Run the current engine's opening, recording its packets in arrival
+   * order on the game handle. The channel and output buffers fill as they do
+   * for a command; the caller decides what they become.
+   */
+  async function captureOpening(): Promise<TurnResult> {
+    const packets: OpeningPacket[] = [];
+    openingCapture = packets;
+    try {
+      return await engine.runOpening();
+    } finally {
+      openingCapture = null;
+      game.openingPackets = packets;
+    }
+  }
 
   const game: LoadedGame = {
     // Live accessors: a restart reboot replaces the engine/world, and
@@ -453,12 +520,43 @@ export function assembleGame(
     capturedChannels,
     lastChannelValues: {},
     bootChannelValues: {},
+    openingPackets: [],
+    openingPending: true,
 
     getPluginRegistry() {
       return engine.getPluginRegistry();
     },
 
+    async runOpening(): Promise<string> {
+      if (openingRequested) {
+        throw new Error('Cannot runOpening(): the opening has already run on this game.');
+      }
+      if (!game.openingPending) {
+        throw new Error('Cannot runOpening(): a command has already been executed, and the opening can only come before the first one.');
+      }
+      game.openingPending = false;
+      openingRequested = true;
+      const result = await captureOpening();
+      // The opening's captures are the boot captures an `(opening)` row
+      // reads. The first command's reset must not replace them, and nothing
+      // that arrives between the opening and that command (a restore's
+      // packet) may join them, so the live buffers start fresh here.
+      bootCapturesSaved = true;
+      game.bootChannelValues = channelValueBuffers;
+      game.lastOutput = outputBuffer.join('\n');
+      game.lastEvents = eventBuffer;
+      game.lastTurnResult = result;
+      game.lastChannels = channelBuffers;
+      game.lastChannelValues = channelValueBuffers;
+      outputBuffer = [];
+      eventBuffer = [];
+      channelBuffers = {};
+      channelValueBuffers = {};
+      return game.lastOutput;
+    },
+
     async executeCommand(input: string): Promise<string> {
+      game.openingPending = false;
       // The boot's captures (banner, prologue — flushed by engine start,
       // before any command) are snapshotted once, just before the first
       // per-command reset would silently discard them. Flag-guarded: an
@@ -483,9 +581,12 @@ export function assembleGame(
         outputBuffer.push(`Error: ${message}`);
       }
 
-      // ADR-248: confirmed restart — reboot in place. The new boot's
-      // engine.start() emits the fresh opening banner into this same
-      // command's output, so the transcript sees ack + banner together.
+      // ADR-248: confirmed restart — reboot in place. When the head opened
+      // this game with `runOpening()`, the rebooted engine's opening runs
+      // here too (ADR-404 decision 11). It is a new opening, not part of the
+      // restart command: its packets replace `openingPackets` and its
+      // captures replace `bootChannelValues`, and the command's own output
+      // stays the acknowledgement.
       if (pendingReboot) {
         pendingReboot = false;
         try {
@@ -493,6 +594,22 @@ export function assembleGame(
             throw new Error('restart is not supported here: no freshStory provider (ADR-248)');
           }
           boot(opts.freshStory());
+          if (openingRequested) {
+            const command = { outputBuffer, eventBuffer, channelBuffers, channelValueBuffers };
+            outputBuffer = [];
+            eventBuffer = [];
+            channelBuffers = {};
+            channelValueBuffers = {};
+            try {
+              await captureOpening();
+            } finally {
+              // Set whether or not the opening threw: `openingPackets` and
+              // the boot captures always describe the same game, the new
+              // one, as far as its opening got.
+              game.bootChannelValues = channelValueBuffers;
+              ({ outputBuffer, eventBuffer, channelBuffers, channelValueBuffers } = command);
+            }
+          }
         } catch (error) {
           const message = error instanceof Error ? error.message : String(error);
           outputBuffer.push(`Restart failed: ${message}`);

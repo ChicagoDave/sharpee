@@ -333,28 +333,19 @@ Examples:
   const OPENING_CHANNELS = ['prologue', 'banner'];
 
   /**
-   * Print the opening captured on the way to the first command.
+   * The lines of a banner record.
    *
-   * The banner arrives as properties rather than prose, so the order the lines
-   * appear in is this surface's choice — a different client is free to lay the
-   * same pieces out differently.
+   * The banner arrives as properties rather than prose, so the order its
+   * lines appear in is this surface's choice — a different client is free to
+   * lay the same pieces out differently.
    */
-  function printOpening(game) {
-    const channels = game.lastChannels || {};
-
-    const prologue = channels.prologue;
-    if (prologue && prologue.length > 0) {
-      console.log(prologue.join('\n'));
-      console.log('');
-    }
-
-    const raw = channels.banner;
-    if (!raw || raw.length === 0) return;
+  function bannerLines(raw) {
+    if (!raw || raw.length === 0) return [];
     let banner;
     try {
       banner = JSON.parse(raw[raw.length - 1]);
     } catch {
-      return;
+      return [];
     }
 
     const lines = [];
@@ -367,10 +358,28 @@ Examples:
       lines.push('');
       for (const line of banner.tail) lines.push(line);
     }
-    if (lines.length > 0) {
-      console.log(lines.join('\n'));
-      console.log('');
+    return lines;
+  }
+
+  /**
+   * Print the game's opening, packet by packet in arrival order, with a
+   * blank line between parts (ADR-404). The order of the prologue, the banner
+   * and the first look is the story's; only the banner's own layout is this
+   * surface's choice.
+   *
+   * @returns whether anything was printed (an empty opening prints nothing)
+   */
+  function printOpening(game) {
+    const parts = [];
+    for (const packet of game.openingPackets) {
+      const prologue = packet.channels.prologue;
+      if (prologue && prologue.length > 0) parts.push(prologue.join('\n'));
+      const banner = bannerLines(packet.channels.banner);
+      if (banner.length > 0) parts.push(banner.join('\n'));
+      if (packet.output) parts.push(packet.output);
     }
+    if (parts.length > 0) console.log(parts.join('\n\n'));
+    return parts.length > 0;
   }
 
   function loadStoryAndCreateGame(storyPath, entry, seed, channels, presence) {
@@ -405,7 +414,14 @@ Examples:
     return bootstrap.assembleGame(freshStory(), { freshStory, ...seedOption, ...channelsOption });
   }
 
-  async function runInteractiveMode(game) {
+  /**
+   * The interactive REPL.
+   *
+   * @param game the loaded game
+   * @param restored whether the game was restored from a save before play;
+   *   a restored session prints no opening (ADR-404 decision 11)
+   */
+  async function runInteractiveMode(game, restored) {
     const rl = readline.createInterface({
       input: process.stdin,
       output: process.stdout
@@ -426,9 +442,12 @@ Examples:
     console.log('  /inv, /i     - Shortcut for "inventory"');
     console.log('');
 
-    const initialOutput = await game.executeCommand('look');
-    printOpening(game);
-    console.log(initialOutput);
+    // A new game opens with the story's opening, in the story's order.
+    if (!restored) {
+      await game.runOpening();
+      printOpening(game);
+    }
+    let openingShown = game.openingPackets;
 
     const prompt = () => {
       rl.question('\n> ', async (input) => {
@@ -509,6 +528,12 @@ Examples:
         try {
           const output = await game.executeCommand(command);
           console.log(output);
+          // A RESTART rebooted the game, and the new game's opening follows.
+          if (game.openingPackets !== openingShown) {
+            openingShown = game.openingPackets;
+            console.log('');
+            printOpening(game);
+          }
 
           if (debugMode) {
             if (game.lastTurnResult) {
@@ -684,17 +709,26 @@ Examples:
         process.env.PARSER_DEBUG = 'true';
       }
 
+      // A new game opens with the story's opening; a restored one prints
+      // none (ADR-404 decision 11).
+      if (!options.restore) {
+        await game.runOpening();
+        if (printOpening(game)) console.log('');
+      }
+      let openingShown = game.openingPackets;
+
       const commands = options.exec.split('/').map(c => c.trim()).filter(c => c);
-      let openingPrinted = false;
       for (const command of commands) {
         console.log(`> ${command}`);
         try {
           const output = await game.executeCommand(command);
-          if (!openingPrinted) {
-            openingPrinted = true;
+          console.log(output);
+          // A RESTART rebooted the game, and the new game's opening follows.
+          if (game.openingPackets !== openingShown) {
+            openingShown = game.openingPackets;
+            console.log('');
             printOpening(game);
           }
-          console.log(output);
 
           if (options.debug) {
             if (game.lastTurnResult) {
@@ -863,7 +897,7 @@ Examples:
         console.log(`Restored: ${options.restore} (${savePath})`);
       }
 
-      await runInteractiveMode(game);
+      await runInteractiveMode(game, Boolean(options.restore));
       return;
     }
 

@@ -36,6 +36,7 @@ import {
   type RandomForceSpec
 } from '@sharpee/core';
 import type { Transcript } from './types.js';
+import { openNewGame } from './command-core.js';
 
 /** The searched-for outcome: a declared point and one of its declared classes. */
 export interface SearchTarget {
@@ -91,6 +92,10 @@ export interface SaveForkPlatform {
 /** The engine-wrapper slice the search drives (same shape the runner uses). */
 interface SearchEngine {
   executeCommand(input: string): Promise<string> | string;
+  /** See `GameEngine.openingPending` (command-core). */
+  openingPending?: boolean;
+  /** See `GameEngine.runOpening` (command-core). */
+  runOpening?(): Promise<string>;
   lastEvents?: Array<{ type: string; data?: unknown }>;
   engine?: SaveForkPlatform & {
     getMasterSeed?(): number;
@@ -174,6 +179,13 @@ export async function searchOutcome(
       .filter((e) => e.type === 'system.draw')
       .map((e) => e.data as IRandomTraceData)
       .filter((d) => d && d.point === target.point);
+
+  // The search starts a game, so it opens it as every runner entry does
+  // (ADR-404): the driver's commands then walk the world a test run walks.
+  const openingError = await openNewGame(engine);
+  if (openingError) {
+    return fail(openingError);
+  }
 
   // ── Base pass: locate the first DRAWN firing, capturing the engine save
   // just before its turn. Counts as try 1 — the natural draw is an attempt.

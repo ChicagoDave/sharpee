@@ -25,8 +25,13 @@ import { loadStory, assembleGame, resolveStoryModulePath } from '@sharpee/bootst
 // Load a story directory (entry-aware) into a started, runnable game
 const game = await loadStory('/path/to/story', { entry: 'main' });
 
-// Execute a turn; returns the captured `main`-channel text
-const text = await game.executeCommand('look');
+// Run the story's opening (prologue, banner, first look). It is not a turn;
+// its packets are in `game.openingPackets`, in the order the story states
+const firstLook = await game.runOpening();
+console.log(firstLook);
+
+// Execute a turn; returns the turn's composed prose
+const text = await game.executeCommand('take lamp');
 console.log(text);
 
 // Or assemble from an already-loaded story instance
@@ -35,7 +40,9 @@ const game2 = assembleGame(storyInstance);
 
 A `LoadedGame` exposes `engine`, `world`, `testingExtension`, the last turn's
 `lastOutput` / `lastEvents` / `lastTurnResult`, `getPluginRegistry()` (save/restore
-plugin state), and `executeCommand(input)`.
+plugin state), `runOpening()` with `openingPackets` and `openingPending`, and
+`executeCommand(input)`. A head calls `runOpening()` once on a new game and not on
+a restored one; after that, a RESTART's reboot runs the new game's opening too.
 
 ## Exports
 

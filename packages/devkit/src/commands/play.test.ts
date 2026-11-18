@@ -157,6 +157,28 @@ describe('sharpee play: the opening and the ending (GH #704)', () => {
     expect(out).not.toContain('{');
   }, 60_000);
 
+  it('prints one blank line between the parts of the opening', async () => {
+    const out = await play(['look\n']);
+
+    const opening = out.slice(out.indexOf('It was late'), out.indexOf('> look'));
+    expect(opening).toContain('It was late, and the house had gone quiet.\n\nThe Short Night');
+    expect(opening).toContain('Story v0.0.1\n\nStudy');
+  }, 60_000);
+
+  it('prints the new game\'s opening after a RESTART', async () => {
+    const out = await play(['restart\n']);
+
+    const afterRestart = out.slice(out.indexOf('> restart'));
+    const ack = afterRestart.indexOf('The story restarts.');
+    const prologue = afterRestart.indexOf('It was late, and the house had gone quiet.');
+    const title = afterRestart.indexOf('The Short Night');
+    const room = afterRestart.indexOf('A narrow study.');
+    expect(ack).toBeGreaterThan(-1);
+    expect(prologue).toBeGreaterThan(ack);
+    expect(title).toBeGreaterThan(prologue);
+    expect(room).toBeGreaterThan(title);
+  }, 60_000);
+
   it('says the story has ended, once, on the turn it ends', async () => {
     const out = await play(['read note\n']);
 
@@ -170,5 +192,40 @@ describe('sharpee play: the opening and the ending (GH #704)', () => {
     expect(afterLook).toContain('The story has ended');
     expect(out).not.toContain('executeTurn');
     expect(out).not.toContain("'stopped'");
+  }, 60_000);
+});
+
+describe("sharpee play: the opening in the story's order", () => {
+  let reorderedDir: string;
+  beforeAll(() => {
+    reorderedDir = mkdtempSync(join(tmpdir(), 'devkit-play-reordered-'));
+    writeFileSync(
+      join(reorderedDir, 'short-night.story'),
+      `${OPENING_STORY}\nwhen the game starts\n  show-prologue\n  do-first-look\n  show-banner\nend when\n`,
+    );
+  });
+  afterAll(() => rmSync(reorderedDir, { recursive: true, force: true }));
+
+  it('prints the room before the banner when the block says so', async () => {
+    const log = vi.spyOn(console, 'log').mockImplementation(() => {});
+    let out: string;
+    try {
+      const code = await runPlayCommand([reorderedDir], {
+        input: Readable.from([]),
+        output: new PassThrough(),
+        isTTY: false,
+      });
+      expect(code).toBe(0);
+      out = log.mock.calls.map((c) => c.join(' ')).join('\n');
+    } finally {
+      log.mockRestore();
+    }
+
+    const prologue = out.indexOf('It was late, and the house had gone quiet.');
+    const room = out.indexOf('A narrow study.');
+    const title = out.indexOf('The Short Night');
+    expect(prologue).toBeGreaterThan(-1);
+    expect(room).toBeGreaterThan(prologue);
+    expect(title).toBeGreaterThan(room);
   }, 60_000);
 });

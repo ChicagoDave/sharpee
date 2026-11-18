@@ -80,9 +80,9 @@ async function loadFixture(rel) {
   }
   const story = createStory(result.ir, { seed: 1 });
   const game = assembleGame(story);
-  // Absorb the story banner + opening room description (the CLI's --play does
-  // the same priming look before its REPL) so transcripts start at a prompt.
-  await game.executeCommand('look');
+  // Run the story's opening (banner and first room), as the CLI's --play
+  // does, so transcripts start at a prompt.
+  await game.runOpening();
   return game;
 }
 

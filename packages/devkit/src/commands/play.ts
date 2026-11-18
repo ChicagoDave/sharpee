@@ -12,8 +12,8 @@
  * exits at EOF — the old `question()` loop re-armed only after each turn's
  * await and lost every queued line to the close event.
  *
- * The opening (GH #704): the prologue and the banner travel on their own
- * channels, so the REPL prints them itself, before the first room. Once the
+ * The opening (GH #704, ADR-404): the engine runs it, and the REPL prints its
+ * packets in the order they arrive, which is the story's order. Once the
  * story has an ending the prompt is the language layer's ended line, and a
  * command the stopped engine refuses prints that line, not the engine's error.
  *
@@ -41,32 +41,36 @@ function isBannerData(value: LoadedGame['lastChannelValues'][string][number]): v
 }
 
 /**
- * The lines of the story's opening, read after the first command: the
- * prologue, then the banner (title, subtitle, credits, story version, and
- * any closing lines the story added), each followed by a blank line.
+ * The story's opening as text, packet by packet in arrival order, with a
+ * blank line between parts: the prologue, the banner (title, subtitle,
+ * credits, story version, and any closing lines the story added) and the
+ * first look, in the order the story's opening states them (ADR-404).
  *
- * @param game the loaded game, after its first `executeCommand`
- * @returns the lines to print before the first room; empty when the story
- *   said nothing on either channel
+ * @param game the loaded game, after `runOpening()` or a RESTART's reboot
+ * @returns the text to print; empty when the opening said nothing
  */
-function openingLines(game: LoadedGame): string[] {
-  const lines: string[] = [];
-  const prologue = game.lastChannels['prologue'] ?? [];
-  if (prologue.length > 0) lines.push(...prologue, '');
+function openingText(game: LoadedGame): string {
+  const parts: string[] = [];
+  for (const packet of game.openingPackets) {
+    const prologue = packet.channels['prologue'] ?? [];
+    if (prologue.length > 0) parts.push(prologue.join('\n'));
 
-  // `banner` is a replace-mode channel: the last value is the banner.
-  const banner = (game.lastChannelValues['banner'] ?? []).filter(isBannerData).at(-1);
-  if (banner) {
-    const bannerLines = [
-      banner.title,
-      banner.subtitle,
-      ...(banner.credits ?? []),
-      banner.storyVersion,
-      ...(banner.tail ?? []),
-    ].filter((line): line is string => typeof line === 'string' && line.length > 0);
-    if (bannerLines.length > 0) lines.push(...bannerLines, '');
+    // `banner` is a replace-mode channel: the last value is the banner.
+    const banner = (packet.channelValues['banner'] ?? []).filter(isBannerData).at(-1);
+    if (banner) {
+      const bannerLines = [
+        banner.title,
+        banner.subtitle,
+        ...(banner.credits ?? []),
+        banner.storyVersion,
+        ...(banner.tail ?? []),
+      ].filter((line): line is string => typeof line === 'string' && line.length > 0);
+      if (bannerLines.length > 0) parts.push(bannerLines.join('\n'));
+    }
+
+    if (packet.output) parts.push(packet.output);
   }
-  return lines;
+  return parts.join('\n\n');
 }
 
 /** The ended-story line, as the language layer words it, without its trailing space. */
@@ -124,11 +128,13 @@ export async function runPlayCommand(
   }
 
   console.log("\n--- Play Mode ---  (/quit or /q to exit)\n");
-  // The opening rides its own channels and is captured by the first command,
-  // so it is read after `look` and printed before it: prologue, banner, room.
-  const firstRoom = await game.executeCommand('look');
-  for (const line of openingLines(game)) console.log(line);
-  console.log(firstRoom);
+  // The story's opening, run by the engine and printed in the order its
+  // packets arrive. It is not a turn: nothing has ticked when the first
+  // command is typed.
+  await game.runOpening();
+  const opening = openingText(game);
+  if (opening) console.log(opening);
+  let openingShown = game.openingPackets;
 
   // A TTY gets the prompt echoed by readline; a pipe gets the command echoed
   // (`> north`) so the transcript reads as a play session.
@@ -165,6 +171,11 @@ export async function runPlayCommand(
         } else {
           console.log(output);
           if (endedNow && !ended && !io.isTTY) console.log(`\n${endedLine(game)}`);
+        }
+        // A RESTART rebooted the game, and the new game's opening follows.
+        if (game.openingPackets !== openingShown) {
+          openingShown = game.openingPackets;
+          console.log(`\n${openingText(game)}`);
         }
         ended = endedNow;
       } catch (error) {

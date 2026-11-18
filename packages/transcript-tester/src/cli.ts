@@ -172,11 +172,10 @@ async function runInteractiveMode(game: TestableGame): Promise<void> {
   console.log('  /inv, /i     - Shortcut for "inventory"');
   console.log('');
 
-  // Show the opening, then the initial room description. The prologue precedes
-  // the banner, which precedes the first response — the order a reader expects.
-  const initialOutput = await game.executeCommand('look');
+  // The story's opening, in the order the story states it (ADR-404).
+  await game.runOpening();
   printOpening(game);
-  console.log(initialOutput);
+  let openingShown = game.openingPackets;
 
   const prompt = (): void => {
     rl.question('\n> ', async (input) => {
@@ -244,6 +243,12 @@ async function runInteractiveMode(game: TestableGame): Promise<void> {
       try {
         const output = await game.executeCommand(command);
         console.log(output);
+        // A RESTART rebooted the game, and the new game's opening follows.
+        if (game.openingPackets !== openingShown) {
+          openingShown = game.openingPackets;
+          console.log('');
+          printOpening(game);
+        }
 
         // Show events in debug mode
         if (debugMode && game.lastEvents && game.lastEvents.length > 0) {
@@ -279,19 +284,23 @@ async function runInteractiveMode(game: TestableGame): Promise<void> {
 const OPENING_CHANNELS = ['prologue', 'banner'];
 
 /**
- * Print the prologue and banner captured on the way to the first command.
+ * Print the game's opening, packet by packet in arrival order, with a blank
+ * line between parts: the order is the story's, not this surface's.
  *
- * They arrive on their own channels, so anything showing the game to a person
- * has to render them; nothing else prints them.
+ * The prologue and the banner arrive on their own channels, so anything
+ * showing the game to a person has to render them; the first look arrives as
+ * composed prose.
  */
 function printOpening(game: TestableGame): void {
-  for (const id of ['prologue', 'banner']) {
-    const lines = game.lastChannels?.[id];
-    if (lines && lines.length > 0) {
-      console.log(lines.join('\n'));
-      console.log('');
+  const parts: string[] = [];
+  for (const packet of game.openingPackets) {
+    for (const id of OPENING_CHANNELS) {
+      const lines = packet.channels[id];
+      if (lines && lines.length > 0) parts.push(lines.join('\n'));
     }
+    if (packet.output) parts.push(packet.output);
   }
+  if (parts.length > 0) console.log(parts.join('\n\n'));
 }
 
 async function main(): Promise<void> {
