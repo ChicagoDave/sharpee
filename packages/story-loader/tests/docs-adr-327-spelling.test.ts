@@ -127,7 +127,8 @@ const PARSE_BLOCKED_FENCES: ReadonlySet<string> = new Set([
   'chord/guide/vocabulary/comments/content.mdx#3',
   'chord/guide/vocabulary/define-condition/content.mdx#2',
   'chord/guide/world/the-story-header/content.mdx#2',
-  'chord/reference/grammar/content.mdx#2',
+  // Was #2 until the opening block's example joined the page ahead of it.
+  'chord/reference/grammar/content.mdx#3',
   'learn/fernhill/browser/content.mdx#2',
   'learn/fernhill/browser/content.mdx#4',
   'learn/fernhill/browser/content.mdx#5',

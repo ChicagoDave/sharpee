@@ -37,7 +37,26 @@ The header holds `key: value` facts, story-wide `states:`, `use`
 lines admitting platform extensions (`combat`,
 `scoring`, `hunger`, `chapters`), and
 the story-owned daemon (`on every turn … end on`). Everything after it
-is declarations: `create` blocks and `define` forms.
+is declarations: `create` blocks, `define` forms, and the two blocks
+about the game's start.
+
+`before the game starts … end before` runs while the world is built and
+gives a character the player role (`change the player to the keeper`).
+`when the game starts … end when` is the opening: the routines run once
+when a new game begins, before the first command and outside any turn.
+It holds only these three lines, in the order you want them printed:
+
+```chord
+when the game starts
+  show-prologue
+  show-banner
+  do-first-look
+end when
+```
+
+That order is what a story with no such block gets. A routine left out
+is not run, and each may appear once. `show-prologue` needs a
+`prologue:` field in the header.
 
 ## Inside a create block
 

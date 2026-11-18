@@ -169,3 +169,56 @@ Left out, beyond the three ADR-404 names (`plugin-tick`, `advance-turn`, `comman
 | play baseline | `pnpm test:scripts opening-baseline` | 1 passed, 0 failures |
 | trees | `./sharpee test test-stories/ferry`, `lodge`, `orchard` | exit 0 each |
 | every package | `pnpm exec turbo run test:ci` | 73 tasks successful of 73 |
+
+## 10. Phase 3 as built: the Chord block, and the corpus compiled
+
+Taken 2026-11-18, session 6d715d, on `main` at f8a2a9e4b with the Phase 3 changes uncommitted, after `./repokit build dungeo` (exit 0, bundle 5393747 bytes).
+
+**The block.** `when the game starts … end when` is a top-level declaration (`OpeningBlockDecl`, `packages/chord/src/ast.ts`), parsed by `parseOpeningBlock` (`packages/chord/src/parser.ts`), lowered by the `buildOpening` pass (`packages/chord/src/analyzer.ts`) to `StoryIR.opening` (`packages/chord/src/ir.ts`), and set on the story as `ChordStory.opening` (`packages/story-loader/src/loader.ts`). The body is not a statement body: each line at the body's indent is a routine name alone, or it is refused.
+
+| Refusal | Code | Reported on |
+|---|---|---|
+| a routine named twice | `analysis.opening-routine-repeated` | the second line |
+| `show-prologue` with no header `prologue:` | `analysis.opening-no-prologue` | the line |
+| any other line in the block, a line indented under a routine among them | `parse.opening-statement` | the line; lines under a refused line report nothing more |
+| a routine name outside the block: at the top level, in a statement body, or among a `create` block's lines | `parse.opening-routine-outside` | the line |
+| a second block | `analysis.duplicate-opening-block` | the second block |
+| hand-built IR: an unknown name, a repeat, a prologue-less `show-prologue` | `analysis.opening-unknown-routine` and the two analysis codes above, from `validateIR` | the loader throws `LoadError` on the first |
+
+**What the phase found.**
+
+- **`IR_FORMAT` did not move.** The field is `opening: IROpeningRoutine[] | null`, null for no block (David, 2026-11-18: "a", on whether to emit null or leave the field out). IR written before the field existed has no such key, and both `validateIR` and the loader read that as no block, so a published page's embedded IR still loads.
+- **Four golden IR snapshots moved by one line each**, `"opening": null`: `analyzer`, `analyzer-phase-b`, `analyzer-each-package` and `zoo-phase-c-parse` under `packages/chord/tests/__snapshots__/`. Re-recorded on David's "a".
+- **A refused line is left out of the IR's list**, so a compile reports each defect once, on its line, and `validateIR`'s rule over the finished IR adds nothing. Its rule carries no span of its own and reports at line 1; only IR that reached a loader without a compile can draw it.
+- **A routine name is refused in three places outside the block**: at the top level, in every statement body, and among a `create` block's lines ahead of its prose, where it would otherwise read as a composition line and draw `analysis.trait-not-declared` with advice to define a trait of that name. In a block's prose the words are prose.
+- **`./repokit protocol --check` is clean**: the IDE projection decodes no `opening` field.
+- **The website's `chord.ebnf` was already behind the package's**, missing the `define sound` block and the one-key `emit` of GH #713. Copying the file brought both in with this phase's production.
+- **A pin moved in `packages/story-loader/tests/docs-adr-327-spelling.test.ts`**: the grammar reference's parse-blocked fence is now the page's third `chord` fence, since the opening block's example joined the page ahead of it.
+- **`mutation-verification` reported three warnings, all fixed.** (1) A line indented under an accepted routine was dropped with no report; it is now `parse.opening-statement`, pinned by a test. (2) and (3) No test loaded hand-built IR; `opening-block.test.ts` in story-loader now loads IR without the field, with a hand-written list, and with each of the three invalid lists, asserting the `LoadError` and its message.
+- **The clock copy shows the three clocks at rest through the opening.** In `seeded/quay-clock.story` the tide's timer record is equal before and after `runOpening()`, the hunger severity is 0 and the engine's counter is 1; the first `wait` prints the tide's first line and the first hunger rung and reads severity 3 and `turn` 1, the second prints the tide's second line, and the third prints the sequence's `at turn 3` step with `turn` 3.
+
+**The corpus compiled (ADR-395).** `./sharpee compose <file> --out <tmp>` on every `.story` under `stories/`, `branch-stories/`, `test-stories/` and `tutorials/relighting/chord-v4.1.0/`: 241 stories, 192 compiled clean, 49 did not. No story's output names an opening code or `parse.removed-when`, and those are the only diagnostics this phase can add, so the phase added none.
+
+| Corpus | Stories | Clean | Not clean |
+|---|---|---|---|
+| `stories/` | 20 | 20 | 0 |
+| `branch-stories/` outside `upps/seeded/` | 23 | 23 | 0 |
+| `branch-stories/upps/seeded/` | 141 | 92 | 49: the seeded authoring mistakes, each failing on its own planted line (`TEST-001-A` to `-P`, and the lettered copies of rooms 02 to 06) |
+| `test-stories/` | 14 | 14 | 0, the six new `quay` copies among them |
+| `tutorials/relighting/chord-v4.1.0/` | 43 | 43 | 0 |
+
+**Gates on the final build.**
+
+| Gate | Command | Result |
+|---|---|---|
+| chord | `pnpm --filter '@sharpee/chord' test` | 1959 passed, 0 failures (125 files); 1927 before this phase's 32 |
+| the block, compiler | `pnpm --filter '@sharpee/chord' test opening-block` | 32 passed, 0 failures |
+| story-loader | `pnpm --filter '@sharpee/story-loader' test` | 1712 passed, 0 failures, 1 skipped (212 files) |
+| the block, real engine | `pnpm --filter '@sharpee/story-loader' test opening-block` | 16 passed, 0 failures |
+| Dungeo chain | `node dist/cli/sharpee.js --test --chain stories/dungeo/walkthroughs/wt-*.transcript` | 949 passed, 0 failures, "All tests passed!", the Phase 1 count |
+| quay | `./sharpee compose test-stories/quay/quay.story --check` | "gate-clean" |
+| protocol | `./repokit protocol --check` | "generated protocol types match the TypeScript wire contract" |
+| play baseline | `pnpm test:scripts opening-baseline` | 1 passed, 0 failures |
+| trees | `./sharpee test test-stories/ferry`, `lodge`, `orchard` | exit 0 each |
+| every package | `pnpm exec turbo run test:ci` | 73 tasks successful of 73 |
+| verify | `./repokit verify` | FAILED at its third step, the entropy gate, with 8 issues, none in a file this phase touched: `tools/repokit/entropy-allowlist.txt` has drifted since 2026-09-09 (GH #803; the id idiom behind it is GH #804). `grammar --check` passed, the step that reads `chord.ebnf`. The control-byte step failed first, on 3 raw control bytes in `packages/character/src/conversation/conversation-memory.ts:48` and `:50` (U+0000, last changed 2026-08-17 in 4131ae5d7) and `docs/work/archive/history-retrospective/output/build-genai-index.mjs:22` (U+0001); each was written as an escape on David's "a" and the step then passed, with the character suite at 641 passed, 0 failures. `tsf build --npm` and the publish dry run did not run. David ruled the phase closes with verify recorded this way ("b"). The protocol check, which verify also runs behind the failure, passed on its own (`./repokit protocol --check`). |

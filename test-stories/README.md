@@ -20,7 +20,7 @@ These stories exist only as test targets.
 | `bazaar` | 3 | a claim whose set is padded with things that cannot bear on it | `packages/branch-tester/tests/claims-cone-acceptance.test.ts` |
 | `ferry` | 4 | what `sharpee test` prints around a forked tree: the claims tier, a lock, and two one-line edits that break it | `packages/devkit/tests/test-claims.test.ts`, `claim-broken.test.ts`; `tools/ide/web/testing-surface/tests/claims-real-path.test.ts` |
 | `orchard` | 5 | the author narrative's beats: derived rule rows, three endings, a three-way fork, seeded authoring mistakes | `scripts/__tests__/narrative-*.test.ts`; `tools/ide/web/testing-surface/tests/derived-real-path.test.ts`, `line-verdict.test.ts` |
-| `quay` | 2 | how a story opens: a prologue, a banner, an opening chapter card and a first room, recorded word for word | `packages/platform-browser/tests/opening-real-path.test.ts`; `scripts/__tests__/opening-baseline.test.ts` |
+| `quay` | 2 | how a story opens: a prologue, a banner, an opening chapter card and a first room, recorded word for word | `packages/platform-browser/tests/opening-real-path.test.ts`; `scripts/__tests__/opening-baseline.test.ts`; `packages/story-loader/tests/opening-block.test.ts` (with the copies under `seeded/`) |
 
 A test finds this directory through its package's test configuration, never by walking up from its own file, so a published package with no test stories skips those tests.
 

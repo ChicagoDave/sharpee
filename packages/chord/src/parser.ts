@@ -45,6 +45,7 @@ import {
   ConfigSetting,
   CreateDecl,
   StartBlockDecl,
+  OpeningBlockDecl,
   Declaration,
   DefineAction,
   ExtendAction,
@@ -195,6 +196,7 @@ import {
   TextValue,
   ValueExpr,
 } from './ast.js';
+import { OPENING_ROUTINE_NAMES, isOpeningRoutineName } from './ast.js';
 import { PRONOUN_CASES, STARTS_STATE_PAIRINGS, TAILED_EVENT_VERBS } from './catalog.js';
 import { DiagnosticBag } from './diagnostics.js';
 import { removedFormMessage } from './removed-forms.js';
@@ -301,6 +303,20 @@ const TOP_KEYWORDS = new Set([
   // ADR-365 D7: `claims … end claims`, the claims fragment's one block.
   'claims',
 ]);
+
+/** The three opening routine names as a diagnostic lists them. */
+const OPENING_ROUTINE_LIST = OPENING_ROUTINE_NAMES.map((name) => `\`${name}\``).join(', ');
+
+/**
+ * Whether a top-level line reads exactly `when the game starts` — the head
+ * of the story's opening block (ADR-404 decision 5).
+ * @param line a top-level line whose first word is `when`
+ * @returns true for the opening block's head, false for any other `when`
+ */
+function isOpeningHead(line: Line): boolean {
+  const words = line.tokens.map((t) => (t.kind === 'word' ? t.text.toLowerCase() : null));
+  return words.length === 4 && words[0] === 'when' && words[1] === 'the' && words[2] === 'game' && words[3] === 'starts';
+}
 
 /**
  * Parse `.story` source into an AST.
@@ -671,9 +687,21 @@ class Parser {
           if (d) declarations.push(d);
           break;
         }
+        case 'show-prologue':
+        case 'show-banner':
+        case 'do-first-look':
+          this.reportOpeningRoutineOutside(line, word);
+          this.recoverToTopLevel(true);
+          break;
         // Ownership-package removals (ratchet 2026-07-11): floating rules
         // are gone — each gets a fix-it naming its owner-attached form.
         case 'when':
+          // ADR-404 decision 5: `when the game starts` is the one `when`
+          // the top level has — the story's opening block.
+          if (isOpeningHead(line)) {
+            declarations.push(this.parseOpeningBlock());
+            break;
+          }
           this.diagnostics.error(
             'parse.removed-when',
             removedFormMessage('parse.removed-when'),
@@ -2358,6 +2386,73 @@ class Parser {
     return { kind: 'start-block', body, span: mergeSpans(lineSpan(headLine), endSpan) };
   }
 
+  // --------------------------------------------------------- opening block
+
+  /**
+   * `when the game starts` … routine lines … `end when` (ADR-404 decisions
+   * 5 and 6). The caller has checked the head with `isOpeningHead`.
+   *
+   * The body is not a statement body. Each line at the body's indent is one
+   * of the three routine names alone on its line, or it is
+   * `parse.opening-statement`; lines indented under a refused line belong
+   * to it and report nothing more, while a line indented under a routine
+   * is refused itself, routine name or not. A routine named twice and a second block
+   * are the analyzer's to refuse, so both still parse here. An empty body
+   * is a complete block.
+   *
+   * @param  none — reads from the parser's line cursor, at the head line
+   * @returns the declaration, with the routine lines that parsed
+   */
+  private parseOpeningBlock(): OpeningBlockDecl {
+    const headLine = this.lines[this.pos++];
+    const routines: OpeningBlockDecl['routines'] = [];
+    let bodyIndent: number | null = null;
+    // Whether the last line at the body's indent was refused.
+    let underRefused = false;
+    while (this.pos < this.lines.length) {
+      const line = this.lines[this.pos];
+      if (line.indent <= headLine.indent) break;
+      if (looksLikeComment(line)) {
+        this.skipCommentInsideBlock(line);
+        continue;
+      }
+      if (bodyIndent === null) bodyIndent = line.indent;
+      this.pos++;
+      // A line under a refused statement is part of it: one report per
+      // statement. A line under a routine is its own refusal, because a
+      // routine has no body to belong to.
+      if (line.indent > bodyIndent && underRefused) continue;
+      const word = firstWord(line);
+      if (line.indent === bodyIndent && line.tokens.length === 1 && isOpeningRoutineName(word)) {
+        routines.push({ name: word, span: lineSpan(line) });
+        underRefused = false;
+        continue;
+      }
+      if (line.indent === bodyIndent) underRefused = true;
+      this.diagnostics.error(
+        'parse.opening-statement',
+        `\`${line.raw.trim()}\` cannot go in a \`when the game starts\` block. The block holds only the opening's routines, each alone on its line: ${OPENING_ROUTINE_LIST}.`,
+        lineSpan(line),
+      );
+    }
+    const endSpan = this.consumeEnd('when', headLine);
+    return { kind: 'opening-block', routines, span: mergeSpans(lineSpan(headLine), endSpan) };
+  }
+
+  /**
+   * `parse.opening-routine-outside`: one of the three routine names written
+   * anywhere but the opening block. Reports only; the caller consumes the line.
+   * @param line the line the name leads
+   * @param name the routine name as written
+   */
+  private reportOpeningRoutineOutside(line: Line, name: string): void {
+    this.diagnostics.error(
+      'parse.opening-routine-outside',
+      `\`${name}\` is a routine of the story's opening. It goes in the \`when the game starts\` block, alone on its line, and nowhere else.`,
+      lineSpan(line),
+    );
+  }
+
   // ---------------------------------------------------------------- create
 
   private parseCreate(): CreateDecl {
@@ -2432,7 +2527,13 @@ class Parser {
       const word = firstWord(line);
       const cur = new Cursor(line.tokens, line);
 
-      if (word === 'aka') {
+      if (isOpeningRoutineName(word) && !sawBlank) {
+        // ADR-404 decision 6: a routine name is not a line of a create
+        // block either. After the first blank line the block is prose, and
+        // prose may say anything.
+        this.reportOpeningRoutineOutside(line, word);
+        this.pos++;
+      } else if (word === 'aka') {
         this.pos++;
         cur.matchWord('aka');
         decl.aka.push(...this.parseCommaWords(cur));
@@ -8964,6 +9065,13 @@ class Parser {
   private parseStatement(line: Line, blockKeyword: string, blockName: string = blockKeyword): Statement | null {
     const word = firstWord(line);
     const c = new Cursor(line.tokens, line);
+
+    // ADR-404 decision 6: the opening's routines are not statements.
+    if (isOpeningRoutineName(word)) {
+      this.reportOpeningRoutineOutside(line, word);
+      this.pos++;
+      return null;
+    }
 
     if (word && ORDINALS[word] !== undefined && c.isWord('time', 1)) {
       return this.parseOrdinalBlock(line, blockKeyword);

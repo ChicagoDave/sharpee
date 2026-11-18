@@ -308,7 +308,8 @@ story-on-clause = on-clause ;                              (* ADR-236 D7 (ratche
                                                               gate, narration broadcasts,
                                                               `it` unbound (compile error
                                                               analysis.story-clause-it) *)
-declaration  = create | start-block | define-condition | define-phrase | define-phrases
+declaration  = create | start-block | opening-block        (* opening-block: ADR-404 *)
+             | define-condition | define-phrase | define-phrases
                                                            (* define-verb REMOVED — ADR-270 D7;
                                                               define-text and define-hatch
                                                               REMOVED — ADR-361 D1 *)
@@ -393,7 +394,8 @@ import-phrasebook   = "import" "phrasebook" STRING NL ;    (* top level; STRING 
    are unaffected. *)
 
 (* Removed from the top level (ownership ratchet 2026-07-11) — parse errors
-   with owner-attached fix-its, so they have no productions: `when` rules,
+   with owner-attached fix-its, so they have no productions: `when` rules
+   (every top-level `when` but the opening block's `when the game starts`),
    `once <condition>` rules, `every N turns` rules, `define flag`,
    `define score`, and `if`/`else`/`end if` anywhere. *)
 
@@ -812,6 +814,40 @@ start-block  = "before" "the" "game" "starts" NL >>> { statement } "end" "before
                                                               `prologue:` is that seam.
                                                               `create the player` is REMOVED
                                                               (parse.removed-create-player) *)
+
+(* ---- opening block (ADR-404) ------------------------------------------- *)
+
+opening-block   = "when" "the" "game" "starts" NL
+                  >>> { opening-routine NL } "end" "when" NL ;
+                                                           (* the story's opening: the
+                                                              routines the engine runs once
+                                                              when a new game begins, in the
+                                                              order written, before the first
+                                                              command and outside any turn.
+                                                              A routine left out is not run;
+                                                              an empty block prints nothing.
+                                                              A story with no block gets
+                                                              show-prologue, show-banner,
+                                                              do-first-look. At most one per
+                                                              story (analysis.duplicate-
+                                                              opening-block, on the second).
+                                                              Any other line in the block is
+                                                              parse.opening-statement. This is
+                                                              the only top-level `when`; any
+                                                              other is parse.removed-when *)
+opening-routine = "show-prologue"                          (* the header's `prologue:` text;
+                                                              analysis.opening-no-prologue
+                                                              when the header has none *)
+                | "show-banner"                            (* the title block *)
+                | "do-first-look" ;                        (* the first look at the starting
+                                                              room; with `use chapters` the
+                                                              opening chapter's card comes
+                                                              immediately before it. Each
+                                                              routine at most once
+                                                              (analysis.opening-routine-
+                                                              repeated); the three names are
+                                                              parse.opening-routine-outside
+                                                              anywhere but this block *)
 
 (* ---- create ------------------------------------------------------------ *)
 

@@ -308,7 +308,8 @@ story-on-clause = on-clause ;                              (* ADR-236 D7 (ratche
                                                               gate, narration broadcasts,
                                                               `it` unbound (compile error
                                                               analysis.story-clause-it) *)
-declaration  = create | start-block | define-condition | define-phrase | define-phrases
+declaration  = create | start-block | opening-block        (* opening-block: ADR-404 *)
+             | define-condition | define-phrase | define-phrases
                                                            (* define-verb REMOVED — ADR-270 D7;
                                                               define-text and define-hatch
                                                               REMOVED — ADR-361 D1 *)
@@ -393,7 +394,8 @@ import-phrasebook   = "import" "phrasebook" STRING NL ;    (* top level; STRING 
    are unaffected. *)
 
 (* Removed from the top level (ownership ratchet 2026-07-11) — parse errors
-   with owner-attached fix-its, so they have no productions: `when` rules,
+   with owner-attached fix-its, so they have no productions: `when` rules
+   (every top-level `when` but the opening block's `when the game starts`),
    `once <condition>` rules, `every N turns` rules, `define flag`,
    `define score`, and `if`/`else`/`end if` anywhere. *)
 
@@ -812,6 +814,40 @@ start-block  = "before" "the" "game" "starts" NL >>> { statement } "end" "before
                                                               `prologue:` is that seam.
                                                               `create the player` is REMOVED
                                                               (parse.removed-create-player) *)
+
+(* ---- opening block (ADR-404) ------------------------------------------- *)
+
+opening-block   = "when" "the" "game" "starts" NL
+                  >>> { opening-routine NL } "end" "when" NL ;
+                                                           (* the story's opening: the
+                                                              routines the engine runs once
+                                                              when a new game begins, in the
+                                                              order written, before the first
+                                                              command and outside any turn.
+                                                              A routine left out is not run;
+                                                              an empty block prints nothing.
+                                                              A story with no block gets
+                                                              show-prologue, show-banner,
+                                                              do-first-look. At most one per
+                                                              story (analysis.duplicate-
+                                                              opening-block, on the second).
+                                                              Any other line in the block is
+                                                              parse.opening-statement. This is
+                                                              the only top-level `when`; any
+                                                              other is parse.removed-when *)
+opening-routine = "show-prologue"                          (* the header's `prologue:` text;
+                                                              analysis.opening-no-prologue
+                                                              when the header has none *)
+                | "show-banner"                            (* the title block *)
+                | "do-first-look" ;                        (* the first look at the starting
+                                                              room; with `use chapters` the
+                                                              opening chapter's card comes
+                                                              immediately before it. Each
+                                                              routine at most once
+                                                              (analysis.opening-routine-
+                                                              repeated); the three names are
+                                                              parse.opening-routine-outside
+                                                              anywhere but this block *)
 
 (* ---- create ------------------------------------------------------------ *)
 
@@ -1803,11 +1839,22 @@ define-asset   = "define" ( "sound" | "image" | "music" )
                  WORD "from" STRING NL                     (* a DATA reference, not code —
                                                               kept when the hatches were
                                                               removed (ADR-361 D1) *)
-               | "define" "sound" WORD NL ;                (* ADR-374 D6: a sound in the
+               | "define" "sound" WORD NL                  (* ADR-374 D6: a sound in the
                                                               world only, played to no
                                                               speaker; an ambient bed
                                                               still needs a file
                                                               (analysis.asset-no-file) *)
+               | "define" "sound" WORD [ "from" STRING ] NL
+                 >>> { sound-line } "end" "sound" NL ;     (* a sound that says what it
+                                                              sounds like; one of each
+                                                              line at most (parse.sound-
+                                                              heard-repeated) *)
+sound-line     = "heard" ":" rest-of-line NL               (* read when the sound is made
+                                                              in the player's room *)
+               | "heard" "from" "afar" ":" rest-of-line NL ; (* read when it reaches the
+                                                              player from elsewhere. A
+                                                              line the sound does not
+                                                              state prints nothing *)
 
 define-family-channel                                      (* ADR-241: a named ambient
                                                               bed / image layer; words
@@ -2120,13 +2167,17 @@ statement    = "refuse" phrase-key { param } NL            (* not in `after` bod
              | "refuse" "when" condition ":" phrase-key NL (* prohibition; not in `after` *)
              | must-line                                   (* not in `after` *)
              | "phrase" phrase-key { param } [ stmt-when ] NL [ inline-prose ]
-             | "emit" phrase-key { phrase-key }
+             | "emit" phrase-key
                [ "with" emit-field { "and" emit-field } ]
                [ stmt-when ] NL                            (* ADR-216 payloaded emit:
-                                                              event segments are dotted
-                                                              keys (media.sound.play);
-                                                              keys pass verbatim into
-                                                              event.data *)
+                                                              the event name is one
+                                                              hyphenated word (media-
+                                                              sound-play), translated to
+                                                              the platform's dotted id at
+                                                              load; a dot is parse.dotted-
+                                                              key, a second word parse.
+                                                              emit-name; field keys pass
+                                                              verbatim into event.data *)
              | media-statement                             (* ADR-216 sugar, below *)
              | "set" value-expr "to" value-expr [ stmt-when ] NL
                                                            (* ADR-375 D4, D7, under `use
@@ -2408,6 +2459,17 @@ unary        = "not" unary
                                                               state ref, only when a
                                                               connective or end-of-condition
                                                               follows *)
+             | "the" "story" "is" [ "not" ] WORD           (* the story object's state,
+                                                              the read that matches
+                                                              `change the story to`; the
+                                                              same test as the bare
+                                                              state word (analysis.
+                                                              undeclared-state). Any
+                                                              other predicate on `the
+                                                              story` is analysis.story-
+                                                              predicate, except a topic
+                                                              or thread read of a topic
+                                                              called `story` *)
              | value-expr predicate ;
 predicate    = "is" [ "not" ] ( ( "a" | "an" ) WORD { WORD }   (* is-a: the classifier is a
                                                                   kind noun (catalog or a

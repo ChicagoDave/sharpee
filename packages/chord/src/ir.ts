@@ -81,6 +81,13 @@ export interface IRIdentity {
   counters: { name: string; owner: string | null }[];
 }
 
+/**
+ * One routine of a story's opening (ADR-404 decision 6), spelled as the
+ * engine's `Story.opening` spells it, so the loader hands the list over
+ * unchanged.
+ */
+export type IROpeningRoutine = 'show-prologue' | 'show-banner' | 'do-first-look';
+
 /** Root of a compiled story. */
 export interface StoryIR {
   format: typeof IR_FORMAT;
@@ -153,6 +160,17 @@ export interface StoryIR {
    * here as a load error rather than a default.
    */
   startBlock: { body: IRStatement[]; span: Span } | null;
+  /**
+   * `when the game starts … end when` (ADR-404 decisions 5, 6 and 10) — the
+   * story's opening, as the ordered routine names the engine runs once when
+   * a new game begins. The list is exactly what the author wrote: a routine
+   * left out is not run, and an empty list prints nothing. Null means the
+   * story has no block and gets the default routine; IR written before the
+   * field existed reads the same way. `validateIR` refuses a list that
+   * repeats a routine, names an unknown one, or names `show-prologue` when
+   * `meta.fields.prologue` is absent.
+   */
+  opening: IROpeningRoutine[] | null;
   conditions: IRNamedCondition[];
   phrases: IRPhrases;
   /**

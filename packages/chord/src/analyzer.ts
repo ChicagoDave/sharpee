@@ -35,6 +35,7 @@ import {
   ConditionNode,
   CreateDecl,
   StartBlockDecl,
+  OpeningBlockDecl,
   CounterDecl,
   DefineCounter,
   DefineAction,
@@ -156,6 +157,7 @@ import {
   IRGrammarRemoval,
   IRScoreDef,
   IRStatement,
+  IROpeningRoutine,
   IRFactDef,
   IRFeelsEntry,
   IRGoalDef,
@@ -1118,6 +1120,8 @@ export class Analyzer {
     { name: 'buildDeclarations', requires: ['createIR', 'buildFacts', 'buildProfiles', 'buildCodes', 'buildTimers'], run: (a) => a.buildDeclarations() },
     // After every entity: `change the player to <name>` may name a character declared anywhere.
     { name: 'buildStartBlock', requires: ['buildDeclarations'], run: (a) => { a.builtIR().startBlock = a.buildStartBlock(); } },
+    // The opening block reads the header's `prologue:` and nothing else.
+    { name: 'buildOpening', requires: ['createIR'], run: (a) => { a.builtIR().opening = a.buildOpening(); } },
     { name: 'buildPhrasebooks', requires: ['createIR', 'collect'], run: (a) => a.buildPhrasebooks() },
     // The implied bed's span is recorded while statements resolve.
     { name: 'emitImpliedMainBed', requires: ['buildDeclarations'], run: (a) => a.emitImpliedMainBed() },
@@ -1312,6 +1316,8 @@ export class Analyzer {
       // ADR-327 D10: resolved after the declaration loop, so its statements
       // see every entity the story declares.
       startBlock: null,
+      // ADR-404: resolved by `buildOpening`; null is "no block".
+      opening: null,
       conditions: [],
       phrases: { defaultLocale: DEFAULT_LOCALE, locales: {} },
       messageOverrides: { defaultLocale: DEFAULT_LOCALE, locales: {} },
@@ -6114,6 +6120,54 @@ export class Analyzer {
       );
     }
     return { body, span: decl.span };
+  }
+
+  /**
+   * Resolve the story's `when the game starts` block to the IR's opening
+   * list (ADR-404 decisions 5, 6 and 10).
+   *
+   * Three gates live here, each on the line or block it is about: a second
+   * block, a routine named twice, and `show-prologue` in a story whose
+   * header has no `prologue:`. A refused line is left out of the list, so
+   * the IR this returns always satisfies `validateIR`'s opening rule and
+   * the rule reports nothing a second time.
+   *
+   * @returns the routine names in the author's order, an empty list for an
+   *   empty block, or null when the story has no block (the default routine)
+   */
+  private buildOpening(): IROpeningRoutine[] | null {
+    const blocks = this.ast.declarations.filter((d): d is OpeningBlockDecl => d.kind === 'opening-block');
+    if (blocks.length === 0) return null;
+    for (const extra of blocks.slice(1)) {
+      this.diagnostics.error(
+        'analysis.duplicate-opening-block',
+        'A story has one `when the game starts` block, and this is the second. Put every routine of the opening in the first.',
+        extra.span,
+      );
+    }
+
+    const hasPrologue = this.ast.header?.fields.prologue !== undefined;
+    const opening: IROpeningRoutine[] = [];
+    for (const routine of blocks[0].routines) {
+      if (opening.includes(routine.name)) {
+        this.diagnostics.error(
+          'analysis.opening-routine-repeated',
+          `\`${routine.name}\` is already in this block. An opening runs each routine once; take this line out.`,
+          routine.span,
+        );
+        continue;
+      }
+      if (routine.name === 'show-prologue' && !hasPrologue) {
+        this.diagnostics.error(
+          'analysis.opening-no-prologue',
+          '`show-prologue` has nothing to show: the story header has no `prologue:` field. Add the field, or take this line out.',
+          routine.span,
+        );
+        continue;
+      }
+      opening.push(routine.name);
+    }
+    return opening;
   }
 
   /**

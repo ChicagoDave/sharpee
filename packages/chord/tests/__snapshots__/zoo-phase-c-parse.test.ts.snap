@@ -5414,6 +5414,7 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
     },
     "title": "Friendly Zoo",
   },
+  "opening": null,
   "phrasebooks": [],
   "phrases": {
     "defaultLocale": "en-US",

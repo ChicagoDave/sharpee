@@ -461,6 +461,8 @@ export type Declaration =
   | RemoveFromAction
   // ADR-327 D10 the start block (David 2026-08-26):
   | StartBlockDecl
+  // ADR-404 the opening block (David 2026-11-18):
+  | OpeningBlockDecl
   // ADR-365 D7 the claims block (David 2026-10-10):
   | ClaimsDecl;
 
@@ -526,6 +528,44 @@ export interface ClaimsDecl {
 export interface StartBlockDecl {
   kind: 'start-block';
   body: Statement[];
+  span: Span;
+}
+
+/**
+ * One routine of a story's opening (ADR-404 decision 6): the header's
+ * prologue text, the title banner, or the first look at the starting room.
+ * The names are hyphenated so they read as neither an ordinary statement
+ * nor the player's `look`.
+ */
+export type OpeningRoutineName = 'show-prologue' | 'show-banner' | 'do-first-look';
+
+/** Every opening routine there is, in the order a story with no block gets. */
+export const OPENING_ROUTINE_NAMES: readonly OpeningRoutineName[] = Object.freeze([
+  'show-prologue',
+  'show-banner',
+  'do-first-look',
+]);
+
+/**
+ * Whether a word is one of the three opening routine names.
+ * @param word a source word, as written
+ * @returns true when the word names an opening routine
+ */
+export function isOpeningRoutineName(word: string | null | undefined): word is OpeningRoutineName {
+  return typeof word === 'string' && (OPENING_ROUTINE_NAMES as readonly string[]).includes(word);
+}
+
+/**
+ * `when the game starts … end when` (ADR-404 decisions 5 and 6) — the
+ * story's opening, as the routines the engine runs once when a new game
+ * begins, in the order written. It holds routine lines and nothing else,
+ * and may hold none. At most one per story; the analyzer refuses a second,
+ * a routine named twice, and `show-prologue` in a story with no prologue.
+ */
+export interface OpeningBlockDecl {
+  kind: 'opening-block';
+  /** The routine lines, in source order, each with its own line's span. */
+  routines: { name: OpeningRoutineName; span: Span }[];
   span: Span;
 }
 

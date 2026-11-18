@@ -19,7 +19,7 @@ import { writeFileSync } from 'node:fs';
 
 const REPO = '/Users/david/repos/sharpee';
 const OUT = '/Volumes/Workspace/sharpee-corpus/retrospective';
-const SEP = ''; // record separator no commit message will contain
+const SEP = '\u0001'; // record separator no commit message will contain
 
 function git(args) {
   return execFileSync('git', ['-C', REPO, ...args], { encoding: 'utf8', maxBuffer: 256 * 1024 * 1024 });

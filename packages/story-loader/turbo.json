@@ -9,7 +9,8 @@
         "$TURBO_ROOT$/packages/extensions/*/src/**",
         "$TURBO_ROOT$/packages/chord/tests/fixtures/**",
         "$TURBO_ROOT$/website/src/app/**",
-        "$TURBO_ROOT$/stories/friendly-zoo/zoo.story"
+        "$TURBO_ROOT$/stories/friendly-zoo/zoo.story",
+        "$TURBO_ROOT$/test-stories/quay/**"
       ]
     }
   }

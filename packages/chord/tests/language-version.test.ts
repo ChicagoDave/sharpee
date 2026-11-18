@@ -283,7 +283,12 @@ const PINNED = {
   // took one or more: a REMOVAL of a form that named an event with spaces
   // in it, now `parse.emit-name`. Both on the unpublished 4.0.3 surface; no
   // bump.
-  ebnfSha256: '098dc617f03f8363de1bc3aff0f8b1c10a92431f5be83770930c76cc84d94230',
+  // Re-pinned 2026-11-18 (session 6d715d, ADR-404, opening-routine Phase 3):
+  // `declaration` gains `opening-block`, `when the game starts … end when`
+  // holding `opening-routine` lines (`show-prologue`, `show-banner`,
+  // `do-first-look`). Additive: no story stops compiling. On the unpublished
+  // 4.0.3 surface; the number is the owner's at the cut.
+  ebnfSha256: '30001285c45c66f953769c387c0ef7dd52c261709f3122cbfa0eb0ff2d64fded',
 };
 
 // Colocated with the version pin it gates (2026-08-14). It previously lived at

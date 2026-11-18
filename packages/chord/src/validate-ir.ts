@@ -5,7 +5,7 @@
  * block that names none, the classifier after `is a` and in a character
  * line's scope (a kind or a story trait), a `define action` that tests its
  * slot for identity with a named thing, composition and trait adjectives with their
- * settings, exits on a non-room, worn items, tool-gated gerunds, listeners,
+ * settings, the opening's routine list, exits on a non-room, worn items, tool-gated gerunds, listeners,
  * conditional deadly exits, every door's connection, and the flag entity
  * that only holds a state for something else (a warning). Each is a fact of
  * the IR alone — no AST, no analyzer state —
@@ -33,8 +33,11 @@ import type { IRActionDef, IREntity, IROnClause, IRTraitDef, StoryIR } from './i
 import { manifestForAdjective, manifestForKindNoun, manifestForMovementType } from './manifests/index.js';
 import type { PatternElement } from '@sharpee/if-domain';
 import { expandReadings, lowerParts, renderPattern, samePatternShape } from './patterns.js';
-import type { Span } from './span.js';
+import { type Span, spanOf } from './span.js';
 import { STDLIB_MANIFEST } from './stdlib-manifest.js';
+
+/** The three routine names an opening list may hold (ADR-404 decision 6). */
+const OPENING_ROUTINES: ReadonlySet<string> = new Set(['show-prologue', 'show-banner', 'do-first-look']);
 
 /**
  * Check every invariant of a finished Story IR.
@@ -157,6 +160,41 @@ export function validateIR(ir: StoryIR): Diagnostic[] {
       'A `define chapters` block needs `use chapters` in the story header — chapters are an extension, on precisely when the header says so.',
       ir.chapters![0].span,
     );
+  }
+  // ADR-404: the opening list names each routine once, names only the three
+  // routines, and names `show-prologue` only when there is a prologue. A
+  // compile refuses each on its own line and leaves the line out of the
+  // list, so this fires for IR that reached a loader without one. The list
+  // carries no span of its own; the story's first line stands in.
+  if (ir.opening !== undefined && ir.opening !== null) {
+    const at = spanOf(1, 1);
+    const seen = new Set<string>();
+    for (const routine of ir.opening as readonly string[]) {
+      if (!OPENING_ROUTINES.has(routine)) {
+        diagnostics.error(
+          'analysis.opening-unknown-routine',
+          `The story's opening names \`${routine}\`, which is not a routine. An opening holds \`show-prologue\`, \`show-banner\` and \`do-first-look\`.`,
+          at,
+        );
+        continue;
+      }
+      if (seen.has(routine)) {
+        diagnostics.error(
+          'analysis.opening-routine-repeated',
+          `The story's opening names \`${routine}\` twice. An opening runs each routine once.`,
+          at,
+        );
+        continue;
+      }
+      seen.add(routine);
+      if (routine === 'show-prologue' && ir.meta.fields.prologue === undefined) {
+        diagnostics.error(
+          'analysis.opening-no-prologue',
+          '`show-prologue` has nothing to show: the story header has no `prologue:` field.',
+          at,
+        );
+      }
+    }
   }
   // ADR-394 D4: an action does not decide what happens by testing which
   // thing the player named; a response that belongs to one thing is written

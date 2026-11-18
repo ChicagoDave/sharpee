@@ -374,5 +374,15 @@
  * re-recorded for the condition form. 4.0.3 is the working number, not a
  * publish: 4.0.2 is published, and the owner publishes next after the
  * manual is written and tested, so changes landing before then join 4.0.3.
+ *
+ * **Pending publish — ADR-404, 2026-11-18 (session 6d715d): the opening
+ * block.** `when the game starts … end when` is a new top-level block
+ * holding the opening's routines, `show-prologue`, `show-banner` and
+ * `do-first-look`, in the order the author wants them printed; the IR
+ * carries the list as `opening`, null when the story has no block. Additive:
+ * no story stops compiling, and `IR_FORMAT` does not move, because IR
+ * without the field reads as a story with no block. ADR-257 D2's ordinary
+ * rule makes an additive construct a minor; the owner sets the number when
+ * the next version is cut, not here. The EBNF hash is re-recorded.
  */
 export const CHORD_LANGUAGE_VERSION = '4.0.3';

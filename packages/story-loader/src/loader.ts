@@ -11,6 +11,7 @@
  * reconciliation (`onWorldRestored`, whose body is `restore.ts` —
  * ADR-388 D5), channels (`registerChannels`), and endings
  * (`triggerEnding`, which lowers to stdlib's `endStory` — ADR-347 D2c).
+ * The IR's `opening` list becomes `Story.opening` unchanged (ADR-404).
  * When-rules, on-clause interceptors, derived properties, and the
  * evaluator bind through the runtime (`runtime.ts`). This file holds the
  * facade, its context, and no step body.
@@ -30,6 +31,7 @@
 import {
   IR_FORMAT,
   type IRChannelReturn,
+  type IROpeningRoutine,
   type IRPhrase,
   type StoryIR,
 } from '@sharpee/chord';
@@ -116,6 +118,13 @@ export class ChordStory implements Story {
    * differs is the reconciler's case (D5). The manifest itself is `ir.identity`.
    */
   readonly identityStamp: string;
+  /**
+   * The story's opening, `ir.opening` handed to the engine unchanged
+   * (ADR-404 decision 10): the routines of its `when the game starts`
+   * block in the author's order. Left undefined when the story has no
+   * block, which the engine reads as the default routine.
+   */
+  readonly opening?: readonly IROpeningRoutine[];
   /** The turn-by-turn runtime (rules, on-clauses, derived properties). */
   readonly runtime: ChordRuntime;
   /** The condition evaluator — shared with the runtime; Z2 gate thunks close over it. */
@@ -172,6 +181,8 @@ export class ChordStory implements Story {
     const invalid = validateIR(ir).find((d) => d.severity === 'error');
     if (invalid) throw new LoadError(invalid.message, invalid.span);
     this.identityStamp = ir.identity.stamp;
+    // Null is "no block"; so is IR written before the field existed.
+    if (ir.opening !== undefined && ir.opening !== null) this.opening = [...ir.opening];
     this.config = {
       id: ir.meta.fields.id ?? ir.meta.title.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
       title: ir.meta.title,
