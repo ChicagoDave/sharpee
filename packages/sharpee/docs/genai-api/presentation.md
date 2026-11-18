@@ -1532,6 +1532,14 @@ export interface BuildInput {
     readonly blocks: readonly ITextBlock[];
     /** Monotonic turn count supplied by the engine. Used for `turn_id`. */
     readonly turn: number;
+    /**
+     * When given, the only channels this build produces, by id. A channel
+     * left out is not asked for a value and its cached previous value is
+     * untouched, so it emits on a later build exactly as if this one had not
+     * happened. The engine's opening sends one packet per routine this way.
+     * Absent, every registered channel is produced.
+     */
+    readonly only?: readonly string[];
 }
 /**
  * The channel-service runtime.
@@ -1575,6 +1583,8 @@ export declare class ChannelService {
      *     decide whether the channel appears in this turn's payload and
      *     what value it carries.
      *  4. Updates the per-channel `prevValue` cache.
+     *
+     * With `input.only`, the walk is limited to the channels named there.
      *
      * Returns a `TurnPacket` whose `payload` contains only the channels
      * that emitted this turn. Sparse channels stay quiet on no-change;

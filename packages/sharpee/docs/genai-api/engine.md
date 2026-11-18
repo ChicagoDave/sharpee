@@ -156,6 +156,14 @@ export declare class GameEngine implements StoryEngine {
     private actionRegistry;
     private textService;
     private turnEvents;
+    /**
+     * Where this engine's opening stands (ADR-404). `pending` until either
+     * `runOpening()` runs it (`run`) or the first input is executed without
+     * it (`missed`); both are final. A fact about the opening, not a
+     * lifecycle phase (ADR-345 D7): the phase still answers every question
+     * about whether the engine may play.
+     */
+    private opening;
     private languageProvider;
     private parser;
     /** The parser as the engine calls it: every engine-facing method present (`adaptParser`). */
@@ -305,12 +313,15 @@ export declare class GameEngine implements StoryEngine {
     private refreshStoryInfoCapability;
     /**
      * Resolve `StoryConfig.prologue` (ADR-298 D3) into the `storyInfo`
-     * capability, once at story start, before the `ChannelService` is
-     * constructed — stdlib's `prologueChannel` projects the resolved text.
+     * capability — stdlib's `prologueChannel` projects the resolved text.
+     * Called by the opening routine at `show-prologue` (ADR-404), and by the
+     * first input on an engine whose opening never ran.
      * A literal (or plain string) is itself; a `phrase-ref` renders through
      * the prose pipeline's phrase machinery, so variants (cycling, randomly,
      * first-time) resolve per their normal semantics. Absent or unresolvable
      * values write nothing (sparse-suppress — the channel skips emission).
+     *
+     * @returns whether any text was written
      */
     private resolvePrologue;
     /**
@@ -369,6 +380,26 @@ export declare class GameEngine implements StoryEngine {
      * @returns true when a stopped engine may run this input
      */
     private acceptsWhileStopped;
+    /**
+     * Run the story's opening: its prologue, its banner and its first look,
+     * in the order the story states (`Story.opening`, or the default), once,
+     * outside the turn cycle (ADR-404).
+     *
+     * A head calls this after `start()` when the game is new: a first load,
+     * a restart's reboot, or a restore that failed and fell back to a new
+     * game. A head that restored a save does not call it. Nothing here costs
+     * a turn: no plugin ticks, the counter does not move, no undo snapshot is
+     * taken and nothing joins the history. Each routine sends one
+     * `channel:packet` carrying only its own channels, stamped turn 0.
+     *
+     * @returns the first look's result; when the opening has no
+     *   `do-first-look`, a successful result with no events and no blocks.
+     *   The prologue and the banner reach a head only as packets.
+     * @throws when the engine is not `playing`, naming the phase it found;
+     *   on a second call in this engine's life; and once any input has been
+     *   executed, since the opening can only come first
+     */
+    runOpening(): Promise<TurnResult>;
     /**
      * Execute a turn
      */
@@ -1305,11 +1336,33 @@ export interface CustomVocabulary {
  * live on the instance (or in closures created during initializeWorld),
  * never at module level. `initializeWorld` runs at most once per instance.
  */
+/**
+ * One routine of a story's opening: the prologue text, the title banner,
+ * or the first look at the starting room.
+ */
+export type OpeningRoutine = 'show-prologue' | 'show-banner' | 'do-first-look';
+/** Every opening routine there is, in the default order. */
+export declare const OPENING_ROUTINES: readonly OpeningRoutine[];
+/**
+ * The opening a story gets when it states none: prologue, banner, look.
+ * `show-prologue` prints nothing for a story whose config has no prologue.
+ */
+export declare const DEFAULT_OPENING: readonly OpeningRoutine[];
 export interface Story {
     /**
      * Story configuration
      */
     config: StoryConfig;
+    /**
+     * The story's opening, as the ordered list of routines the engine runs
+     * once when a new game begins (`GameEngine.runOpening()`), outside the
+     * turn cycle. The list is exactly what is printed: a routine left out is
+     * not run, and an empty list prints nothing. A story that leaves the
+     * field out gets `DEFAULT_OPENING`. The install refuses a list that
+     * repeats a routine, names an unknown one, or names `show-prologue` when
+     * the config has no prologue.
+     */
+    readonly opening?: readonly OpeningRoutine[];
     /**
      * The story's identity stamp (ADR-388 D4): a content hash the story's
      * compiler computed over every identity it can persist a key under. The
@@ -1740,10 +1793,11 @@ export interface EngineSharedData {
 
 ```typescript
 /**
- * The two stage lists a turn can run: `TURN_STAGES` for a regular command
- * and `META_STAGES` for a meta command. The order here IS the turn's
- * contract; each stage's `requires` names what it must follow, and the
- * order test pins both lists and drives each once.
+ * The stage lists the engine runs: `TURN_STAGES` for a regular command,
+ * `META_STAGES` for a meta command, and `OPENING_STAGES` for the first
+ * look of a new game's opening, which is not a turn. The order here IS
+ * the contract; each stage's `requires` names what it must follow, and
+ * the order test pins every list and drives each once.
  *
  * Both lists open with the same routing stages through `parse`, where
  * they part: the regular list executes the command, enriches and emits
@@ -1754,11 +1808,13 @@ export interface EngineSharedData {
  * turn cycle and renders its events at once; that it never touches the
  * turn machinery is readable as the absence of those stages from it.
  *
- * Public interface: `TURN_STAGES`, `META_STAGES`, `SHARED_STAGES`.
+ * Public interface: `TURN_STAGES`, `META_STAGES`, `SHARED_STAGES`,
+ * `OPENING_STAGES`.
  * Owner context: `@sharpee/engine` — the turn cycle.
  *
- * References: ADR-334 D1 (the list), D1a (two lists, shared prefix),
- * D2 (the order pinned by test).
+ * References: ADR-334 D1 (the list), D1a (two lists, shared prefix; a
+ * third for the opening, as amended by ADR-404), D2 (the order pinned by
+ * test).
  */
 import type { TurnStage } from './context.js';
 /** The routing stages both lists open with, through the parse that parts them. */
@@ -1767,6 +1823,28 @@ export declare const SHARED_STAGES: readonly TurnStage[];
 export declare const TURN_STAGES: readonly TurnStage[];
 /** A meta command's run, in run order: the shared routing, then the command and its render. */
 export declare const META_STAGES: readonly TurnStage[];
+/**
+ * The opening's first look, in run order (ADR-404 decisions 3 and 9).
+ *
+ * It is a turn from its execution on, without the three stages that make
+ * a turn cost something: there is no `plugin-tick` (no timer, daemon or
+ * each-turn mechanic steps), no `advance-turn` (the counter and the
+ * session's turn count do not move, and nothing joins the history) and no
+ * `command-history` (nothing for AGAIN to repeat). The routing stages are
+ * absent because there is no typed input to route, `undo-snapshot` among
+ * them, so no snapshot is taken. `turn-complete` is absent because no turn
+ * completed: a listener counting turns must not count this.
+ *
+ * Kept, each checked against its module: the plugins' `onOpening` hook
+ * and the look replace the routing and the typed execution; the events
+ * are enriched and emitted as a turn's are; a sound the look makes is
+ * heard; a `change the player to` a looking clause ran lands; a platform
+ * request is honoured; a death is detected and an ending stops the
+ * engine, as after any action; the prose renders with the prompt; the
+ * packet goes out with the look's channels only, stamped 0; and the
+ * events are cleared so the first command's render starts empty.
+ */
+export declare const OPENING_STAGES: readonly TurnStage[];
 ```
 
 ### turn/context
@@ -1916,6 +1994,13 @@ export interface TurnEngine {
     emit<K extends keyof GameEngineEvents>(event: K, ...args: Parameters<GameEngineEvents[K]>): void;
     /** Emit a game event and store it in the current turn's events (nothing stored before turn one). */
     emitGameEvent(event: ISemanticEvent): void;
+    /**
+     * Resolve the story's prologue to text and write it where the `prologue`
+     * channel reads it. Nothing is written for a story without a prologue,
+     * or one whose prologue phrase does not resolve.
+     * @returns whether any text was written
+     */
+    writePrologue(): boolean;
     /** Make another playable actor the player (ADR-327); throws for a missing or unplayable entity. */
     switchPlayer(entityId: string): void;
     /** Run an input as a turn of its own (command chaining, AGAIN). */

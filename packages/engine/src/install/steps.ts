@@ -3,7 +3,7 @@
  * installation's contract; each step's `requires` names what it must
  * follow, and the order test pins the list and drives it once.
  *
- * The list validates the config and announces the load; resolves the
+ * The list validates the config and the stated opening, and announces the load; resolves the
  * narrative settings; registers concealment ahead of the world build so
  * a story can override it; builds the world, gives it its language's words
  * and names the player, stamping the player's self aliases from those words; refuses a
@@ -24,6 +24,7 @@
 
 import type { InstallStep } from './context.js';
 import { validateConfigStep } from './validate-config.js';
+import { validateOpeningStep } from './validate-opening.js';
 import { emitStoryLoadingStep } from './emit-story-loading.js';
 import { narrativeSettingsStep } from './narrative-settings.js';
 import { concealedVisibilityStep } from './concealed-visibility.js';
@@ -49,6 +50,7 @@ import { customVocabularyStep } from './custom-vocabulary.js';
 /** A story's installation, in run order. */
 export const STORY_INSTALL_STEPS: readonly InstallStep[] = Object.freeze([
   validateConfigStep,
+  validateOpeningStep,
   emitStoryLoadingStep,
   narrativeSettingsStep,
   concealedVisibilityStep,

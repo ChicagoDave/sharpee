@@ -113,6 +113,50 @@ describe('createChaptersPlugin', () => {
   });
 });
 
+describe('the opening hook (onOpening)', () => {
+  /** A world as the loader seeds it before the first turn: the opener current and fired, nothing announced. */
+  function seededWorld() {
+    const world = fakeWorld();
+    world.setStateValue(CHAPTER_CURRENT_KEY, 'market');
+    world.setStateValue(CHAPTER_FIRED_PREFIX + 'market', true);
+    return world;
+  }
+
+  it('announces the seeded opener and writes the announced mark', () => {
+    const world = seededWorld();
+    expect(world.state.get(CHAPTER_ANNOUNCED_KEY)).toBeUndefined();
+
+    const events = createChaptersPlugin(rows).onOpening!(ctx(world, 1, 'r_market'));
+
+    expect(events.map((e) => e.type)).toEqual([CHAPTER_BEGAN_EVENT]);
+    expect(events[0].data).toEqual({ name: 'market', title: 'Chapter I', description: 'An apple.', ordinal: 0 });
+    expect(world.state.get(CHAPTER_ANNOUNCED_KEY)).toBe('market');
+  });
+
+  it('the first command after it prints no second card', () => {
+    const world = seededWorld();
+    const plugin = createChaptersPlugin(rows);
+    plugin.onOpening!(ctx(world, 1, 'r_market'));
+
+    expect(plugin.onAfterAction(ctx(world, 1, 'r_market'))).toEqual([]);
+  });
+
+  it('without the hook call, the card comes with the first command instead, once', () => {
+    const world = seededWorld();
+    const plugin = createChaptersPlugin(rows);
+
+    expect(plugin.onAfterAction(ctx(world, 1, 'r_market')).map((e) => e.type)).toEqual([CHAPTER_BEGAN_EVENT]);
+    expect(plugin.onAfterAction(ctx(world, 2, 'r_market'))).toEqual([]);
+  });
+
+  it('announces nothing, and writes no mark, when no chapter is current', () => {
+    const world = fakeWorld();
+
+    expect(createChaptersPlugin(rows).onOpening!(ctx(world, 1, 'r_market'))).toEqual([]);
+    expect(world.state.get(CHAPTER_ANNOUNCED_KEY)).toBeUndefined();
+  });
+});
+
 describe('chapterChannel', () => {
   it('projects the turn\'s last story.chapter_began event and is silent otherwise', () => {
     const world = fakeWorld();

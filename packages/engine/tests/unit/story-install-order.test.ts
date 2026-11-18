@@ -27,6 +27,7 @@ import { setupTestEngine, setupTestEngineWithStory } from '../test-helpers/setup
 
 const INSTALL_ORDER = [
   'validate-config',
+  'validate-opening',
   'emit-story-loading',
   'narrative-settings',
   'concealed-visibility',

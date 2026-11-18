@@ -266,11 +266,41 @@ export interface CustomVocabulary {
  * live on the instance (or in closures created during initializeWorld),
  * never at module level. `initializeWorld` runs at most once per instance.
  */
+/**
+ * One routine of a story's opening: the prologue text, the title banner,
+ * or the first look at the starting room.
+ */
+export type OpeningRoutine = 'show-prologue' | 'show-banner' | 'do-first-look';
+
+/** Every opening routine there is, in the default order. */
+export const OPENING_ROUTINES: readonly OpeningRoutine[] = Object.freeze([
+  'show-prologue',
+  'show-banner',
+  'do-first-look'
+]);
+
+/**
+ * The opening a story gets when it states none: prologue, banner, look.
+ * `show-prologue` prints nothing for a story whose config has no prologue.
+ */
+export const DEFAULT_OPENING: readonly OpeningRoutine[] = OPENING_ROUTINES;
+
 export interface Story {
   /**
    * Story configuration
    */
   config: StoryConfig;
+
+  /**
+   * The story's opening, as the ordered list of routines the engine runs
+   * once when a new game begins (`GameEngine.runOpening()`), outside the
+   * turn cycle. The list is exactly what is printed: a routine left out is
+   * not run, and an empty list prints nothing. A story that leaves the
+   * field out gets `DEFAULT_OPENING`. The install refuses a list that
+   * repeats a routine, names an unknown one, or names `show-prologue` when
+   * the config has no prologue.
+   */
+  readonly opening?: readonly OpeningRoutine[];
 
   /**
    * The story's identity stamp (ADR-388 D4): a content hash the story's

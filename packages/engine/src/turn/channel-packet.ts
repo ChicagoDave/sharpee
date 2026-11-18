@@ -25,12 +25,15 @@ import type { TurnStage, TurnEngine } from './context.js';
  * @param events the turn's events, as stored
  * @param blocks the turn's rendered blocks
  * @param turn the turn number the packet is stamped with
+ * @param only when given, the only channels the packet may carry, by id
+ *   (the opening's one packet per routine); every channel otherwise
  */
 export function emitChannelPacket(
   engine: TurnEngine,
   events: readonly ISemanticEvent[],
   blocks: readonly ITextBlock[],
   turn: number,
+  only?: readonly string[],
 ): void {
   // No `if (!channelService) return;` here any more (ADR-345 D7). That guard
   // dropped an entire turn's packet in silence — the same shape as the
@@ -43,6 +46,7 @@ export function emitChannelPacket(
     events,
     blocks,
     turn,
+    ...(only ? { only } : {}),
   });
   engine.emit('channel:packet', packet, turn);
 }

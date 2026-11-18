@@ -55,14 +55,14 @@ import {
   type HeldCommand
 } from './types.js';
 import { introspect as introspectEngine, type EngineIntrospection } from './introspection/introspect.js';
-import { Story, type StoryEngine } from './install/story.js';
+import { Story, DEFAULT_OPENING, type StoryEngine } from './install/story.js';
 import type { NarrativeSettings } from './types.js';
 import { buildNarrativeSettings } from './install/narrative/index.js';
 import { runInstallSteps, STORY_INSTALL_STEPS, configureLanguageProviderNarrative } from './install/index.js';
 
 import { CommandExecutor, createCommandExecutor, ParsedCommandTransformer, BeforeActionHookListener } from './command/command-executor.js';
 import { SoundDispatcher } from './sound/index.js';
-import { runTurnStages, TURN_STAGES, META_STAGES, wasRefused, splitChainedInput } from './turn/index.js';
+import { runTurnStages, TURN_STAGES, META_STAGES, wasRefused, splitChainedInput, runOpeningRoutines } from './turn/index.js';
 import { resolveRoute } from './turn/parse.js';
 import type { TurnEngine, TurnStageContext } from './turn/context.js';
 import { adaptParser, type EngineParser } from './ports/parser-interface.js';
@@ -318,6 +318,14 @@ export class GameEngine implements StoryEngine {
   private actionRegistry: StandardActionRegistry;
   private textService: IProsePipeline;
   private turnEvents = new Map<number, ISemanticEvent[]>();
+  /**
+   * Where this engine's opening stands (ADR-404). `pending` until either
+   * `runOpening()` runs it (`run`) or the first input is executed without
+   * it (`missed`); both are final. A fact about the opening, not a
+   * lifecycle phase (ADR-345 D7): the phase still answers every question
+   * about whether the engine may play.
+   */
+  private opening: 'pending' | 'run' | 'missed' = 'pending';
   // `running` and `story` are gone: both were proxies for the lifecycle
   // phase, and both are now read off `this.phase` (ADR-345 D1). `story`
   // survives as a derived getter above for its non-guard readers.
@@ -693,7 +701,9 @@ export class GameEngine implements StoryEngine {
     // The `if (!this.story) return;` these used to carry was dead defence of
     // exactly the kind ADR-345 D3 removes.
     this.refreshStoryInfoCapability(ready.story);
-    this.resolvePrologue();
+    // The prologue is not written here any more (ADR-404): the opening
+    // routine writes it at `show-prologue`, so a story whose opening leaves
+    // that routine out never sends it.
     this.clientCapabilities = options?.capabilities ?? DEFAULT_TEXT_CAPABILITIES;
 
     // ADR-293 (re-cut Phase 3): hand every plugin its session seed before
@@ -778,16 +788,19 @@ export class GameEngine implements StoryEngine {
 
   /**
    * Resolve `StoryConfig.prologue` (ADR-298 D3) into the `storyInfo`
-   * capability, once at story start, before the `ChannelService` is
-   * constructed — stdlib's `prologueChannel` projects the resolved text.
+   * capability — stdlib's `prologueChannel` projects the resolved text.
+   * Called by the opening routine at `show-prologue` (ADR-404), and by the
+   * first input on an engine whose opening never ran.
    * A literal (or plain string) is itself; a `phrase-ref` renders through
    * the prose pipeline's phrase machinery, so variants (cycling, randomly,
    * first-time) resolve per their normal semantics. Absent or unresolvable
    * values write nothing (sparse-suppress — the channel skips emission).
+   *
+   * @returns whether any text was written
    */
-  private resolvePrologue(): void {
+  private resolvePrologue(): boolean {
     const prologue = this.story?.config.prologue;
-    if (!prologue) return;
+    if (!prologue) return false;
     const text =
       typeof prologue === 'string'
         ? prologue
@@ -797,6 +810,7 @@ export class GameEngine implements StoryEngine {
     if (text) {
       this.world.updateCapability('storyInfo', { prologue: text });
     }
+    return Boolean(text);
   }
 
   /**
@@ -969,6 +983,43 @@ export class GameEngine implements StoryEngine {
   }
 
   /**
+   * Run the story's opening: its prologue, its banner and its first look,
+   * in the order the story states (`Story.opening`, or the default), once,
+   * outside the turn cycle (ADR-404).
+   *
+   * A head calls this after `start()` when the game is new: a first load,
+   * a restart's reboot, or a restore that failed and fell back to a new
+   * game. A head that restored a save does not call it. Nothing here costs
+   * a turn: no plugin ticks, the counter does not move, no undo snapshot is
+   * taken and nothing joins the history. Each routine sends one
+   * `channel:packet` carrying only its own channels, stamped turn 0.
+   *
+   * @returns the first look's result; when the opening has no
+   *   `do-first-look`, a successful result with no events and no blocks.
+   *   The prologue and the banner reach a head only as packets.
+   * @throws when the engine is not `playing`, naming the phase it found;
+   *   on a second call in this engine's life; and once any input has been
+   *   executed, since the opening can only come first
+   */
+  async runOpening(): Promise<TurnResult> {
+    if (this.phase.name !== 'playing') {
+      throw this.wrongPhase(
+        'runOpening()',
+        "'playing'",
+        this.phase.name === 'stopped' ? undefined : 'Call start() first.'
+      );
+    }
+    if (this.opening === 'run') {
+      throw new Error('Cannot runOpening(): the opening has already run, and it runs once in an engine\'s life.');
+    }
+    if (this.opening === 'missed') {
+      throw new Error('Cannot runOpening(): a command has already been executed, and the opening can only come before the first one.');
+    }
+    this.opening = 'run';
+    return runOpeningRoutines(this.turnEngine(), this.storyForTurn.opening ?? DEFAULT_OPENING);
+  }
+
+  /**
    * Execute a turn
    */
   async executeTurn(input: string): Promise<TurnResult> {
@@ -988,6 +1039,17 @@ export class GameEngine implements StoryEngine {
           ? 'The game has ended; only meta commands (RESTART, RESTORE, QUIT, UNDO) are accepted — call resume() to continue play.'
           : undefined
       );
+    }
+
+    if (this.opening === 'pending') {
+      // A command arrived on an engine whose opening never ran: a restored
+      // session, or a head that still opens by typing `look`. The opening
+      // can no longer run, and the prologue it would have written is
+      // written here, as `start()` wrote it before the opening existed.
+      // TRANSITIONAL: the write goes when the last head calls
+      // `runOpening()` (the opening-routine plan, Phase 6); the mark stays.
+      this.opening = 'missed';
+      this.resolvePrologue();
     }
 
     const context: TurnStageContext = {
@@ -1050,6 +1112,7 @@ export class GameEngine implements StoryEngine {
       get inputModeHandlers() { return engine.inputModeHandlers; },
       emit: (event, ...args) => this.emit(event, ...args),
       emitGameEvent: (event) => this.emitGameEvent(event),
+      writePrologue: () => this.resolvePrologue(),
       switchPlayer: (entityId) => this.switchPlayer(entityId),
       executeTurn: (input) => this.executeTurn(input),
       holdCommand: (held) => { this.heldCommand = held; },

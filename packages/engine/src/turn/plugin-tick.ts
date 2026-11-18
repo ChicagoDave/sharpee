@@ -11,7 +11,8 @@
  * earned. Sounds a plugin emits land in the same
  * per-turn buffer the action's sounds use.
  *
- * Public interface: `pluginTickStage`, `wasRefused`.
+ * Public interface: `pluginTickStage`, `wasRefused`, `processPluginEvents`
+ * (the opening's plugin stage delivers its hooks' batches the same way).
  * Owner context: `@sharpee/engine` — the turn cycle.
  *
  * References: ADR-120 (the plugin tick), ADR-332 (the bands that order
@@ -33,8 +34,14 @@ import { unappliedOf } from '../events/world-reactions.js';
  * through the execution entry; a Chord acting statement's drained events);
  * those are delivered as they are, never applied again. The world's
  * reactions to the new facts follow the batch.
+ *
+ * @param engine the turn-facing engine surface
+ * @param events the plugin's batch
+ * @param turn the turn whose stored events receive the batch
+ * @param playerLocation the player's location when the batch was produced
+ * @param pluginId the plugin that produced it
  */
-function processPluginEvents(
+export function processPluginEvents(
   engine: TurnEngine,
   events: ISemanticEvent[],
   turn: number,

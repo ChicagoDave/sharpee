@@ -1,8 +1,9 @@
 /**
- * The two stage lists a turn can run: `TURN_STAGES` for a regular command
- * and `META_STAGES` for a meta command. The order here IS the turn's
- * contract; each stage's `requires` names what it must follow, and the
- * order test pins both lists and drives each once.
+ * The stage lists the engine runs: `TURN_STAGES` for a regular command,
+ * `META_STAGES` for a meta command, and `OPENING_STAGES` for the first
+ * look of a new game's opening, which is not a turn. The order here IS
+ * the contract; each stage's `requires` names what it must follow, and
+ * the order test pins every list and drives each once.
  *
  * Both lists open with the same routing stages through `parse`, where
  * they part: the regular list executes the command, enriches and emits
@@ -13,14 +14,16 @@
  * turn cycle and renders its events at once; that it never touches the
  * turn machinery is readable as the absence of those stages from it.
  *
- * Public interface: `TURN_STAGES`, `META_STAGES`, `SHARED_STAGES`.
+ * Public interface: `TURN_STAGES`, `META_STAGES`, `SHARED_STAGES`,
+ * `OPENING_STAGES`.
  * Owner context: `@sharpee/engine` — the turn cycle.
  *
- * References: ADR-334 D1 (the list), D1a (two lists, shared prefix),
- * D2 (the order pinned by test).
+ * References: ADR-334 D1 (the list), D1a (two lists, shared prefix; a
+ * third for the opening, as amended by ADR-404), D2 (the order pinned by
+ * test).
  */
 
-import type { TurnStage } from './context.js';
+import type { TurnStage, TurnStageContext } from './context.js';
 import { chainStage } from './chain.js';
 import { heldCommandStage } from './held-command.js';
 import { exchangeOfferStage } from './exchange-offer.js';
@@ -46,6 +49,9 @@ import { turnCompleteStage } from './turn-complete.js';
 import { endingStage } from './ending.js';
 import { metaCommandStage } from './meta-command.js';
 import { metaRenderStage } from './meta-render.js';
+import { openingPluginsStage } from './opening-plugins.js';
+import { openingLookStage } from './opening-look.js';
+import { openingPacketStage } from './opening-packet.js';
 
 /** The routing stages both lists open with, through the parse that parts them. */
 export const SHARED_STAGES: readonly TurnStage[] = Object.freeze([
@@ -88,4 +94,51 @@ export const META_STAGES: readonly TurnStage[] = Object.freeze([
   ...SHARED_STAGES,
   metaCommandStage,
   metaRenderStage
+]);
+
+/**
+ * A turn stage as the opening's list runs it: the same `run`, with the
+ * `requires` restated for a list that has no parse, no plugin tick and no
+ * advance. The stage's own `requires` names stages the opening leaves
+ * out, so it cannot be checked there; the restated one can, and the order
+ * test checks it as it checks the other two lists.
+ */
+function inOpening(stage: TurnStage, requires: readonly string[]): TurnStage {
+  return Object.freeze({ name: stage.name, requires, run: (context: TurnStageContext) => stage.run(context) });
+}
+
+/**
+ * The opening's first look, in run order (ADR-404 decisions 3 and 9).
+ *
+ * It is a turn from its execution on, without the three stages that make
+ * a turn cost something: there is no `plugin-tick` (no timer, daemon or
+ * each-turn mechanic steps), no `advance-turn` (the counter and the
+ * session's turn count do not move, and nothing joins the history) and no
+ * `command-history` (nothing for AGAIN to repeat). The routing stages are
+ * absent because there is no typed input to route, `undo-snapshot` among
+ * them, so no snapshot is taken. `turn-complete` is absent because no turn
+ * completed: a listener counting turns must not count this.
+ *
+ * Kept, each checked against its module: the plugins' `onOpening` hook
+ * and the look replace the routing and the typed execution; the events
+ * are enriched and emitted as a turn's are; a sound the look makes is
+ * heard; a `change the player to` a looking clause ran lands; a platform
+ * request is honoured; a death is detected and an ending stops the
+ * engine, as after any action; the prose renders with the prompt; the
+ * packet goes out with the look's channels only, stamped 0; and the
+ * events are cleared so the first command's render starts empty.
+ */
+export const OPENING_STAGES: readonly TurnStage[] = Object.freeze([
+  openingPluginsStage,
+  openingLookStage,
+  inOpening(enrichEventsStage, ['opening-look']),
+  emitEventsStage,
+  inOpening(soundDispatchStage, ['emit-events']),
+  inOpening(playerSwitchStage, ['sound-dispatch']),
+  inOpening(platformOperationsStage, ['enrich-events', 'sound-dispatch']),
+  inOpening(detectDeathStage, ['platform-operations']),
+  renderProseStage,
+  openingPacketStage,
+  inOpening(clearTurnEventsStage, ['opening-packet', 'detect-death']),
+  inOpening(endingStage, ['clear-turn-events', 'detect-death', 'emit-events'])
 ]);

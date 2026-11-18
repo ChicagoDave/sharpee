@@ -149,6 +149,13 @@ export interface TurnEngine {
   emit<K extends keyof GameEngineEvents>(event: K, ...args: Parameters<GameEngineEvents[K]>): void;
   /** Emit a game event and store it in the current turn's events (nothing stored before turn one). */
   emitGameEvent(event: ISemanticEvent): void;
+  /**
+   * Resolve the story's prologue to text and write it where the `prologue`
+   * channel reads it. Nothing is written for a story without a prologue,
+   * or one whose prologue phrase does not resolve.
+   * @returns whether any text was written
+   */
+  writePrologue(): boolean;
   /** Make another playable actor the player (ADR-327); throws for a missing or unplayable entity. */
   switchPlayer(entityId: string): void;
   /** Run an input as a turn of its own (command chaining, AGAIN). */

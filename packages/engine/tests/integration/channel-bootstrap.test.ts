@@ -317,16 +317,24 @@ describe('prologue resolution and emission (ADR-298 D3)', () => {
     const packets = capturePackets(engine);
     engine.start({ capabilities: FULL_CAPABILITIES });
 
-    const cap = world.getCapability('storyInfo') as { prologue?: string };
-    expect(cap.prologue).toBe('Long ago, in the Great Underground Empire…');
+    // `start()` writes nothing (ADR-404): the opening's `show-prologue` does.
+    const cap = () => world.getCapability('storyInfo') as { prologue?: string };
+    expect(cap().prologue ?? '').toBe('');
 
+    await engine.runOpening();
+    expect(cap().prologue).toBe('Long ago, in the Great Underground Empire…');
+    expect(packets[0].packet.payload).toEqual({
+      prologue: 'Long ago, in the Great Underground Empire…',
+    });
+
+    // The channel is `always`: once written, a command's packet carries it too.
     await engine.executeTurn('look');
-    expect(packets[0].packet.payload['prologue']).toBe(
+    expect(packets[packets.length - 1].packet.payload['prologue']).toBe(
       'Long ago, in the Great Underground Empire…',
     );
   });
 
-  it('a phrase-ref prologue resolves through the phrase machinery at start', async () => {
+  it('a phrase-ref prologue resolves through the phrase machinery at the opening', async () => {
     const { engine, world, languageProvider } = setupTestEngine();
     languageProvider.addMessage('opening-crawl', 'A cold night falls over Fernhill.');
     const story = new MinimalTestStory();
@@ -336,6 +344,9 @@ describe('prologue resolution and emission (ADR-298 D3)', () => {
     };
     engine.installStory(story);
     engine.start({ capabilities: FULL_CAPABILITIES });
+    expect((world.getCapability('storyInfo') as { prologue?: string }).prologue ?? '').toBe('');
+
+    await engine.runOpening();
 
     const cap = world.getCapability('storyInfo') as { prologue?: string };
     expect(cap.prologue).toBe('A cold night falls over Fernhill.');

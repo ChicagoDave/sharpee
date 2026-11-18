@@ -21,7 +21,8 @@
  * renumbers nothing a save depends on. A stored name no row carries reads as
  * no chapter begun; the restore reconciler reports it (ADR-388 D5). The
  * opening row is seeded current by the loader before the first turn; the
- * plugin's job on turn 1 is only to announce it.
+ * plugin's job is only to announce it: from `onOpening` when a new game's
+ * opening has a first look, otherwise on turn 1.
  *
  * Public interface: createChaptersPlugin, ChapterRow, ChapterRuntimeTrigger,
  * CHAPTERS_PLUGIN_ID, CHAPTER_BEGAN_EVENT, CHAPTER_STALE_EVENT,
@@ -115,6 +116,21 @@ export function createChaptersPlugin(rows: readonly ChapterRow[]): TurnPlugin {
   const ordered = [...rows].sort((a, b) => a.ordinal - b.ordinal);
   /** The ordinal a stored chapter name has in THIS run's rows; -1 for none stored or a name no row carries. */
   const ordinalOf = (stored: unknown): number => (typeof stored === 'string' ? (ordered.find((r) => r.name === stored)?.ordinal ?? -1) : -1);
+  /**
+   * Announce the current chapter once: the `story.chapter_began` event for
+   * `current` when it differs from the announced mark, which is then moved
+   * to it. Nothing when no chapter is current, when it is already
+   * announced, or when no row carries the stored name.
+   */
+  const announce = (world: TurnPluginContext['world'], current: string | undefined): ISemanticEvent[] => {
+    const announced = world.getStateValue(CHAPTER_ANNOUNCED_KEY) as string | undefined;
+    if (current === undefined || announced === current) return [];
+    const row = ordered.find((r) => r.name === current);
+    if (!row) return [];
+    world.setStateValue(CHAPTER_ANNOUNCED_KEY, current);
+    const data: ChapterBeganData = { name: row.name, title: row.title, description: row.description, ordinal: row.ordinal };
+    return [createEvent(CHAPTER_BEGAN_EVENT, data)];
+  };
   return {
     id: CHAPTERS_PLUGIN_ID,
     // Watchers band (ADR-332): a chapter observes the turn's timers and
@@ -143,19 +159,15 @@ export function createChaptersPlugin(rows: readonly ChapterRow[]): TurnPlugin {
           );
         }
       }
-      // Announce the current chapter once — the turn it began, or the first
-      // turn after the loader seeded the opener (D4: the packet rides the
-      // turn's channel output, after that turn's own prose).
-      const announced = world.getStateValue(CHAPTER_ANNOUNCED_KEY) as string | undefined;
-      if (current !== undefined && announced !== current) {
-        const row = ordered.find((r) => r.name === current);
-        if (row) {
-          world.setStateValue(CHAPTER_ANNOUNCED_KEY, current);
-          const data: ChapterBeganData = { name: row.name, title: row.title, description: row.description, ordinal: row.ordinal };
-          out.push(createEvent(CHAPTER_BEGAN_EVENT, data));
-        }
-      }
+      out.push(...announce(world, current));
       return out;
+    },
+    // A new game's opening (ADR-404 decision 8): the opener the loader seeded
+    // is announced just ahead of the first look, outside any tick. It writes
+    // the same announced mark, so the first command's `onAfterAction` finds
+    // the chapter already announced and prints no second card.
+    onOpening(ctx: TurnPluginContext): ISemanticEvent[] {
+      return announce(ctx.world, ctx.world.getStateValue(CHAPTER_CURRENT_KEY) as string | undefined);
     },
   };
 }

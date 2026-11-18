@@ -10,6 +10,7 @@
 
 export type { TurnStage, TurnStageContext, TurnEngine, StageOutcome, TurnRoute } from './context.js';
 export { runTurnStages, requiresOrderViolations, ROUTE_STAGE, type OrderViolation } from './runner.js';
-export { TURN_STAGES, META_STAGES, SHARED_STAGES } from './stages.js';
+export { TURN_STAGES, META_STAGES, SHARED_STAGES, OPENING_STAGES } from './stages.js';
+export { runOpeningRoutines } from './opening.js';
 export { splitChainedInput } from './chain.js';
 export { wasRefused } from './plugin-tick.js';

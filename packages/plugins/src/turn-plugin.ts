@@ -34,4 +34,15 @@ export interface TurnPlugin {
    * simply omit it.
    */
   onSessionSeed?(seed: number): void;
+  /**
+   * Optional: contribute to a new game's opening (ADR-404 decision 8).
+   * The engine calls this once, just before the opening's first look and
+   * outside any tick, on every plugin that has it; the returned events are
+   * rendered with that look. It is not called when the story's opening has
+   * no first look, nor on a restored session. The context carries no
+   * `actionResult` and no `actionEvents`: no action has run yet. A plugin
+   * that announces something here must record that it did, so its
+   * `onAfterAction` does not announce it again on the first command.
+   */
+  onOpening?(context: TurnPluginContext): ISemanticEvent[];
 }

@@ -3,8 +3,8 @@
  *
  * The events are not stored in the turn's list; they are emitted to
  * listeners, rendered through the text service with the prompt block,
- * and carried on a channel packet stamped with the current turn for
- * display. Without a text service, or with nothing to show, the stage
+ * and carried on a channel packet stamped, for display, with the number
+ * of commands that have cost a turn so far. Without a text service, or with nothing to show, the stage
  * does nothing at all.
  *
  * Public interface: `metaRenderStage`.
@@ -37,7 +37,11 @@ export const metaRenderStage: TurnStage = {
     if (blocks.length > 0) {
       engine.emit('text:output', blocks, engine.context.currentTurn);
     }
-    emitChannelPacket(engine, events, blocks, engine.context.currentTurn);
+    // The packet's turn is the number of commands that have cost a turn,
+    // which is what the `turn` channel shows (ADR-404 decision 14). The
+    // counter holds the turn the next command will run as, one past that:
+    // a meta command typed first says 0, and after one command it says 1.
+    emitChannelPacket(engine, events, blocks, engine.context.currentTurn - 1);
     return 'continue';
   }
 };

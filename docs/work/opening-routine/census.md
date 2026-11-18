@@ -119,3 +119,53 @@ The plan's command for the Testing surface, `npx vitest run --config tools/ide/w
 - **The prologue has a fixed place in the browser.** The client puts it in an element of its own, `#sharpee-prologue`, inserted ahead of the main log (`packages/platform-browser/src/BrowserClient.ts:548-554`), and the `prologue` channel's renderer writes there (`packages/platform-browser/src/channels/index.ts:203-204`). It is not appended to the log in arrival order. So one packet per routine (ADR-404 decision 6) will not by itself put the prologue after the room or the banner in a browser page when an author's block asks for that; the client's slot would have to move. That is a client change the ADR's sentence "prints the author's order with no change of its own" did not foresee, and Phase 6 stops on it.
 - **A room's `first time` paragraph replaces its ordinary description** on the first look, so the opening shows only the first-visit paragraph.
 - The build restamped `stories/dungeo/src/version.ts` (`BUILD_DATE` only).
+
+## 9. Phase 2 as built: the opening's stage list and what it showed
+
+Measured 2026-11-18 (session a57d77), after `./repokit build dungeo` (exit 0) on the changed platform.
+
+**The list** (`OPENING_STAGES`, `packages/engine/src/turn/stages.ts`), in run order, with the `requires` each entry states in this list:
+
+| Stage | `requires` here | Source |
+|---|---|---|
+| opening-plugins | (none) | new: each plugin's `onOpening`, once |
+| opening-look | opening-plugins | new: the looking action through `executeAsActor`, as the player |
+| enrich-events | opening-look | the turn's `run`, `requires` restated |
+| emit-events | enrich-events | the turn's stage, unchanged |
+| sound-dispatch | emit-events | the turn's `run`, `requires` restated |
+| player-switch | sound-dispatch | the turn's `run`, `requires` restated |
+| platform-operations | enrich-events, sound-dispatch | the turn's `run`, `requires` restated |
+| detect-death | platform-operations | the turn's `run`, `requires` restated |
+| render-prose | platform-operations, player-switch | the turn's stage, unchanged |
+| opening-packet | render-prose | new: the look's channels only, stamped 0 |
+| clear-turn-events | opening-packet, detect-death | the turn's `run`, `requires` restated |
+| ending | clear-turn-events, detect-death, emit-events | the turn's `run`, `requires` restated |
+
+Left out, beyond the three ADR-404 names (`plugin-tick`, `advance-turn`, `command-history`) and the routing stages: `turn-complete`, because no turn completed and a listener counting `turn:complete` must not count the opening; and `channel-packet`, which `opening-packet` replaces. `requiresOrderViolations(OPENING_STAGES)` is empty, and section 5's five unsatisfiable `requires` are each restated above. ADR-334 D2's check did not change.
+
+**Findings.**
+
+- **Every status channel is `emit: 'always'`, and so is `prologue`** (`packages/stdlib/src/channels/standard.ts`: `prompt`, `location`, `score`, `turn`, `info`, `ifid`, `prologue`). Only `banner` is sparse among the opening's channels. So once the prologue is written, every later full packet carries it, as it did before the change; a story whose opening has no `show-prologue` never has it written.
+- **The engine cannot strip a full packet down to a routine's channels.** `ChannelService.build` caches each channel's value as sent, so a story's sparse channel stripped from one packet would never be sent. `build` takes an `only` list instead (Settle item 2, ruled).
+- **`show-prologue` sends no packet for a story with no prologue.** The default opening names the routine for every story.
+- **The opening's events are stamped with turn 1**, the counter's value, and stored and cleared under it; only the packets and the banner's `text:output` carry 0. `start()`'s pending events (the `game.started` among them) are taken out of that store when the opening begins.
+- **The transitional write.** Until every head calls `runOpening()`, the first input on an engine whose opening never ran writes the prologue (`GameEngine.executeTurn`, marked TRANSITIONAL). Phase 6 removes it.
+- **Seeded streams.** No head calls `runOpening()` yet, so no run in this phase could show a shifted draw: the Dungeo chain is 949 of 949 with the routine present and uncalled. Which streams the look draws from was not traced to the end here: the looking action's files name one selector that can draw, a room snippet's `random` selector (`packages/stdlib/src/actions/standard/looking/snippet-resolver.ts:52`), and a room description's `randomly` phrase or a story's clause on looking can draw too. Phase 4's Dungeo census is where a shifted draw would show, and it is carried there.
+- **Two existing tests moved with Settle item 10.** `packages/engine/tests/integration/channel-bootstrap.test.ts`, "a literal prologue lands on the storyInfo capability and the prologue channel" and "a phrase-ref prologue resolves … at the opening", asserted the write at `start()`; they now assert nothing is written at `start()` and the text is written by `runOpening()` (David: "proceed", 2026-11-18).
+
+**What `mutation-verification` found, and what was done.** Four warnings, all fixed before the counts below were taken. (1) No test sent a non-empty `onOpening` batch through the engine; `opening-routine.test.ts` now has a plugin whose hook returns an event, asserted in the look's packet and absent from the first command's. (2) Two assertions on the first command's `result.events` could not fail; the test now reads the command's rendered blocks, which come from the turn's store. (3) No channel-service test could tell an untouched cache from a reset one; a full, subset, full sequence now does. (4) `show-prologue` sent an empty packet for a prologue phrase that does not resolve; it now sends none, because `writePrologue` reports whether it wrote, and a test pins it.
+
+**Counts on the changed platform**, on the final build, 2026-11-18:
+
+| Gate | Command | Result |
+|---|---|---|
+| engine | `pnpm exec turbo run test:ci` (its engine task) | 917 passed, 0 failures, 7 skipped; Phase 1 had 885 |
+| opening routine | `pnpm --filter '@sharpee/engine' test opening-routine` | 29 passed, 0 failures |
+| stage order, install order, surface | `pnpm --filter '@sharpee/engine' test turn-stage-order story-install-order public-surface` | 25 passed, 0 failures |
+| chapters | `pnpm --filter '@sharpee/ext-chapters' test` | 12 passed, 0 failures |
+| channel service | `pnpm exec turbo run test:ci` (its channel-service task) | 137 passed, 0 failures |
+| Dungeo chain | `node dist/cli/sharpee.js --test --chain stories/dungeo/walkthroughs/wt-*.transcript` | 949 passed, 0 failures, "All tests passed!" |
+| platform-browser | `pnpm --filter '@sharpee/platform-browser' test:ci` | 206 passed, 0 failures (25 files), both opening baselines among them |
+| play baseline | `pnpm test:scripts opening-baseline` | 1 passed, 0 failures |
+| trees | `./sharpee test test-stories/ferry`, `lodge`, `orchard` | exit 0 each |
+| every package | `pnpm exec turbo run test:ci` | 73 tasks successful of 73 |

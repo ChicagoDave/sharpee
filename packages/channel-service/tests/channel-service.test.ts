@@ -480,3 +480,78 @@ function makeChannel(opts: ChannelOpts): IOChannel {
     produce: opts.produce ?? (() => undefined),
   };
 }
+
+// ────────────────────────────────────────────────────────────────────
+//  Subset builds (`only`) — the engine's opening, one packet per routine
+// ────────────────────────────────────────────────────────────────────
+
+describe('ChannelService.build — only the named channels', () => {
+  it('produces the named channels and no other, without asking the others for a value', () => {
+    const reg = new InMemoryRegistry();
+    let scoreAsked = 0;
+    reg.add(makeChannel({ id: 'prologue', mode: 'replace', emit: 'always', produce: () => 'Once.' }));
+    reg.add(makeChannel({ id: 'score', mode: 'replace', emit: 'always', produce: () => { scoreAsked++; return 7; } }));
+    const svc = new ChannelService(reg, FULL_CAPABILITIES);
+
+    const packet = svc.build({ ...makeBuildInput(0), only: ['prologue'] });
+
+    expect(packet.payload).toEqual({ prologue: 'Once.' });
+    expect(scoreAsked).toBe(0);
+  });
+
+  it('a sparse channel left out of a subset build still emits on the next full build', () => {
+    const reg = new InMemoryRegistry();
+    reg.add(makeChannel({ id: 'prologue', mode: 'replace', emit: 'sparse', produce: () => 'Once.' }));
+    reg.add(makeChannel({ id: 'mood', mode: 'replace', emit: 'sparse', produce: () => 'calm' }));
+    const svc = new ChannelService(reg, FULL_CAPABILITIES);
+
+    const subset = svc.build({ ...makeBuildInput(0), only: ['prologue'] });
+    expect(subset.payload).toEqual({ prologue: 'Once.' });
+
+    // `mood` was never cached as sent, so the full build sends it; `prologue`
+    // was, so its unchanged value stays quiet.
+    const full = svc.build(makeBuildInput(1));
+    expect(full.payload).toEqual({ mood: 'calm' });
+  });
+
+  it('a subset build leaves the cached value of a channel it skips: a sparse one stays quiet, an always one re-emits it', () => {
+    const reg = new InMemoryRegistry();
+    let weather: string | undefined = 'fair';
+    reg.add(makeChannel({ id: 'prologue', mode: 'replace', emit: 'sparse', produce: () => 'Once.' }));
+    reg.add(makeChannel({ id: 'mood', mode: 'replace', emit: 'sparse', produce: () => 'calm' }));
+    reg.add(makeChannel({ id: 'weather', mode: 'replace', emit: 'always', produce: () => weather }));
+    const svc = new ChannelService(reg, FULL_CAPABILITIES);
+
+    // Sent and cached by a full build.
+    expect(svc.build(makeBuildInput(1)).payload).toEqual({ prologue: 'Once.', mood: 'calm', weather: 'fair' });
+
+    // The subset build skips `mood` and `weather`.
+    weather = undefined;
+    expect(svc.build({ ...makeBuildInput(1), only: ['prologue'] }).payload).toEqual({});
+
+    // Had the skipped channels' cache been reset or dropped, `mood` would be
+    // sent again as new and `weather` would have no previous value to re-emit.
+    expect(svc.build(makeBuildInput(2)).payload).toEqual({ weather: 'fair' });
+  });
+
+  it('each subset build carries only the channels it names, whatever their mode', () => {
+    const reg = new InMemoryRegistry();
+    const lines = ['The Quay'];
+    reg.add(makeChannel({ id: 'banner', mode: 'replace', emit: 'sparse', produce: () => 'Title' }));
+    reg.add(makeChannel({ id: 'main', mode: 'append', emit: 'sparse', produce: () => [...lines] }));
+    const svc = new ChannelService(reg, FULL_CAPABILITIES);
+
+    expect(svc.build({ ...makeBuildInput(0), only: ['banner'] }).payload).toEqual({ banner: 'Title' });
+    expect(svc.build({ ...makeBuildInput(0), only: ['main'] }).payload).toEqual({ main: ['The Quay'] });
+  });
+
+  it('an empty list produces nothing, and a gated-out channel stays out even when named', () => {
+    const reg = new InMemoryRegistry();
+    reg.add(makeChannel({ id: 'score', mode: 'replace', emit: 'always', produce: () => 7 }));
+    reg.add(makeChannel({ id: 'picture', mode: 'replace', emit: 'always', gatedBy: 'images', produce: () => 'a.png' }));
+    const svc = new ChannelService(reg, TEXT_ONLY_CAPABILITIES);
+
+    expect(svc.build({ ...makeBuildInput(0), only: [] }).payload).toEqual({});
+    expect(svc.build({ ...makeBuildInput(0), only: ['picture', 'score'] }).payload).toEqual({ score: 7 });
+  });
+});
