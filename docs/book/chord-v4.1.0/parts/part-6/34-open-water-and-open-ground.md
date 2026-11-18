@@ -285,8 +285,7 @@ You wait.
 The skiff arrives at the Beacon Isle.
 ```
 
-Arriving at a landmark's position is arriving at the room. The player
-steps out onto the rock.
+Arriving at a landmark's position is arriving at the room.
 
 ## Things adrift
 

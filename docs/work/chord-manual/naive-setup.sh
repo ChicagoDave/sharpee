@@ -18,7 +18,8 @@
 #      the image keeps it.
 #   4. As the run's user (node): points npm's global prefix at ~/.local, and
 #      installs Playwright and its Chromium in ~/tools/playwright.
-#   5. As root: installs the system libraries Chromium needs. Steps 3 and 5
+#   5. As root: installs the system libraries Chromium needs, and (5a) the
+#      PDF tools the reader opens the book with (poppler-utils) and unzip. Steps 3 and 5
 #      need root, and they are the reason this script exists.
 #   6. As node: prints the Claude Code version, launches Chromium once and
 #      closes it, then prints what a run needs to be true.
@@ -69,6 +70,9 @@ step "2. copy the PDF, the companion folders and the brief"
 as_user "mkdir -p ${RUN_HOME}/repos/book-test" || fail "mkdir book-test"
 docker cp "${PDF}" "${NAME}:${RUN_HOME}/repos/book-test/" || fail "copy PDF"
 docker cp "${COMPANION}" "${NAME}:${RUN_HOME}/repos/book-test/companion" || fail "copy companion"
+# The host's companion folders may hold ignored build output (dist/) from an
+# earlier build; the box gets the folders as the site serves them, without it.
+as_root "find ${RUN_HOME}/repos/book-test/companion -type d -name dist -prune -exec rm -rf {} +" || fail "drop build output from companion"
 docker cp "${BRIEF}" "${NAME}:${RUN_HOME}/repos/naive-prompt.txt" || fail "copy brief"
 as_root "chown -R ${RUN_USER}:${RUN_USER} ${RUN_HOME}/repos" || fail "chown repos"
 
@@ -86,9 +90,16 @@ as_user "mkdir -p ${RUN_HOME}/tools/playwright && cd ${RUN_HOME}/tools/playwrigh
 step "5. Chromium's system libraries (as root)"
 as_root "cd ${RUN_HOME}/tools/playwright && npx playwright install-deps chromium" || fail "playwright install-deps"
 
+step "5a. the PDF tools the reader opens the book with, and unzip (as root)"
+# poppler-utils gives pdftoppm, which Claude Code needs to read a PDF's pages,
+# and pdftotext. Chapter 40 unzips the published story with the unzip
+# command. The image has none of these, and the reader cannot install them.
+as_root "apt-get install -y --no-install-recommends poppler-utils unzip" || fail "install poppler-utils and unzip"
+
 step "6. checks (as ${RUN_USER})"
 as_user "claude --version > /dev/null && echo \"claude: \$(claude --version) at \$(command -v claude)\"; if [ -e ${RUN_HOME}/.local/bin/claude ]; then echo 'claude: a second copy sits under ~/.local/bin'; exit 1; fi" || fail "Claude Code check"
 as_user "cd ${RUN_HOME}/tools/playwright && node -e \"const { chromium } = require('playwright'); chromium.launch().then(b => b.close()).then(() => console.log('chromium: launches'));\"" || fail "Chromium launch"
+as_user "command -v pdftoppm > /dev/null && command -v pdftotext > /dev/null && command -v unzip > /dev/null && echo 'pdf tools and unzip: present'" || fail "PDF tools and unzip check"
 as_user "echo \"npm prefix: \$(npm config get prefix)\"; echo \"companion folders: \$(ls ${RUN_HOME}/repos/book-test/companion | wc -l | tr -d ' ')\"; ls ${RUN_HOME}/repos/book-test/*.pdf; ls ${RUN_HOME}/repos/naive-prompt.txt; if command -v sharpee > /dev/null; then echo 'sharpee: INSTALLED (it should not be)'; exit 1; else echo 'sharpee: not installed, as it should be'; fi" || fail "final checks"
 
 echo

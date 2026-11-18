@@ -318,8 +318,9 @@ The verbs leave out `put`, although the winning line types it twice.
 At this edition a `needs verbs` line that names `put` stops `sharpee
 test` from finishing.
 
-The lock is one key on the winning card, written between `id` and
-`type` because a tree file keeps its keys in alphabetical order.
+The lock is one key on the winning card, which is the card `bjhmo3xt` in
+`winning1.json`. It is written between `id` and `type` because a tree
+file keeps its keys in alphabetical order.
 
 ```json
       "command": "spark beacon",
@@ -513,7 +514,12 @@ the witness. Change its `needs rooms` line to the Lodge alone, and see
 it come back unproven. Put the Gate Court back on the line afterwards.
 
 Last, break the story as this chapter did, by taking `change it to
-lifted` out of the `ward` trait, and read the lock's line. Put it back.
+lifted` out of the `ward` trait, and read the lock's line. The chapter
+broke it with one claim in the file. With three, the claims section is
+longer than the one printed under "When a lock breaks": the claim that
+the story can be won is unproven as well, its lock is not held either,
+and the runner walks for each of them, so the run takes about four
+minutes. Put the line back.
 
 The companion folder `chapter-39` holds the story with its three claims.
 

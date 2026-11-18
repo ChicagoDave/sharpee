@@ -206,4 +206,37 @@ export interface Renderer {
    * the caller may mutate freely.
    */
   getStateSnapshot(): ChannelStateStore;
+
+  /**
+   * Put a saved channel state back on screen (the counterpart of
+   * {@link getStateSnapshot}). A restore replaces the world between
+   * turns and runs no turn, so no packet carries the channels'
+   * standing values; the host saves a snapshot with the game and
+   * replays it here.
+   *
+   * For each manifest channel not named in `options.skip`:
+   *  - append: the store entry is reset and `onClear` runs, then the
+   *    snapshot's entries (if any) are stored and delivered in one
+   *    `onValue` call;
+   *  - replace: the snapshot's value is stored and delivered; a
+   *    channel the snapshot does not hold, but which is showing a
+   *    non-null value now, is set to `null` and told so;
+   *  - event: untouched.
+   *
+   * @param snapshot a store previously returned by `getStateSnapshot`
+   * @param options `skip` names channels whose output the host restores
+   *   by other means (a saved transcript, say) and which must not be
+   *   delivered a second time
+   *
+   * Warns and does nothing when no manifest has been applied.
+   */
+  replayState(snapshot: ChannelStateStore, options?: ReplayStateOptions): void;
+}
+
+/**
+ * Options for {@link Renderer.replayState}.
+ */
+export interface ReplayStateOptions {
+  /** Channel ids to leave exactly as they are. */
+  skip?: ReadonlySet<string>;
 }

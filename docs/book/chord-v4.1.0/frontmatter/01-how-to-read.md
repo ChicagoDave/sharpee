@@ -80,6 +80,20 @@ lines of one that the chapter is talking about. The prose says which
 lines are new, and the companion folder for the chapter always has the
 whole story.
 
+In a story file the end of a line means something, and some lines are
+longer than a printed page is wide. When the page has to break such a
+line, the continuation begins with the mark `↪`, set under the start of
+the line it continues.
+
+```chord
+  description: Thirty years after the magic went out of the world, a lamp burns blue.
+```
+
+Type a marked row on the same line as the row above it, with one space
+where the page broke it, and leave the mark out. On a screen the line is
+not broken and there is no mark. Story output is prose, and the page
+wraps it as it wraps any paragraph.
+
 ## Build and try it
 
 Most chapters end with a section called "Build and try it", which gives

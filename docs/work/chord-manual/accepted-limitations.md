@@ -56,11 +56,11 @@ was rewritten after run 1, on the two rulings it quotes.
 8. **The version numbers.** The book quotes `Sharpee 5.7.0 · Chord 4.1.0` and
    `Chord 4.1.0` wherever a command prints its version (chapter 4's
    `--version` line and every `compose:` line). A run on the interim release
-   prints `Sharpee 5.6.2 · Chord 4.0.3` and `Chord 4.0.3` in those places.
+   prints `Sharpee 5.6.3 · Chord 4.0.3` and `Chord 4.0.3` in those places.
    Report only a difference in such a line beyond the two numbers. The same
    holds for the line at the head of each appendix that begins "Generated
    from": the appendices were generated on the interim release, so those
-   lines read `Sharpee 5.6.2 · Chord 4.0.3` while the title page names 5.7.0
+   lines read `Sharpee 5.6.3 · Chord 4.0.3` while the title page names 5.7.0
    and 4.1.0 (David, 2026-11-17, on run 3's one reported issue: "1 a"). The
    appendices are regenerated when that release is published (#755). This item
    and the expected line below go back to 5.7.0 / 4.1.0 when that release is
@@ -69,7 +69,7 @@ was rewritten after run 1, on the two rulings it quotes.
 ## Versions this run expects
 
 `npm install -g @sharpee/devkit` must give a `sharpee` whose `--version` line
-is exactly `Sharpee 5.6.2 · Chord 4.0.3`, the interim release David cut on
+is exactly `Sharpee 5.6.3 · Chord 4.0.3`, the interim release David cut on
 2026-11-17 so the runs need not wait for 5.7.0 / 4.1.0. Anything else is a
 stale registry or a stale container: an environment failure, not a book defect.
 

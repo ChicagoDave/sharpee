@@ -240,7 +240,8 @@ sharpee play .
 ```
 
 Play the winning walk once more with the plain words: `light lamp`, `quiet
-bell`, `fix spectacles`, `repair lens`.
+bell`, `fix spectacles`, `repair lens`. The grille has no plain word, so
+`unbind grille` is typed as before. Leave it until after `fix spectacles`.
 
 ```text
 > quiet bell

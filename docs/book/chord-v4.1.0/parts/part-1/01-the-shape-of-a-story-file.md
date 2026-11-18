@@ -223,7 +223,7 @@ sentence for the player.
 You have not built anything yet, and that is deliberate. Type the story at the
 top of this chapter into a file called `relighting.story`, with spaces for
 indentation, and keep it. Make a new folder called `relighting` for it, with
-nothing else inside. Chapter 2 explains its first block, chapter 3
+nothing else inside. The folder can be anywhere you keep your own work. Chapter 2 explains its first block, chapter 3
 explains Ansel and the block that ends the file, and chapter 4 builds the story
 and plays it. The Lodge waits for chapter 5, though it is already doing its
 work as the one place the story has.

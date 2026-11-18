@@ -349,7 +349,12 @@ It is early yet. The flame has the whole day to make up its mind.
 Come back after reading the page and the flame says something else.
 
 ```text
+> examine blue flame
+Hobb's own lamp, which has burned yellow on that sill for as long as anyone has kept count. The flame is blue this morning, and does not flicker.
+
 It is taller than it was this morning, and it leans toward the Hall.
+
+The bell tolls. You have stopped counting.
 ```
 
 A clause head may use the short form `during morning` where it would
@@ -389,7 +394,8 @@ sharpee play .
 
 Play through the reading of the page and down to the Undercroft with the
 lamp lit, and watch three things run at once: the timer counting, the
-cistern thawing, and the bell beginning.
+cistern thawing, and the bell beginning. Read the mend page the thaw sets
+free, and ask for the score.
 
 ```text
 > score

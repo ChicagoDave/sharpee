@@ -23,6 +23,7 @@ import type {
   ChannelRenderer,
   ChannelStateStore,
   Renderer as RendererInterface,
+  ReplayStateOptions,
   SlotHandle,
 } from './types.js';
 import {
@@ -235,6 +236,54 @@ export class Renderer implements RendererInterface {
    */
   getStateSnapshot(): ChannelStateStore {
     return deepClone(this.state) as ChannelStateStore;
+  }
+
+  /**
+   * Put a saved channel state back on screen — see the interface's
+   * `replayState` for the per-mode contract.
+   *
+   * Manifest order is kept, as in `applyTurnPacket`, so renderers that
+   * depend on one another see values in the order a turn delivers them.
+   */
+  replayState(snapshot: ChannelStateStore, options: ReplayStateOptions = {}): void {
+    if (!this.currentManifest) {
+      this.warn(
+        '[channel-service] replayState called before applyCmgt; ' +
+          'replay ignored. Bootstrap order: cmgt before any value (ADR-163 §11).',
+      );
+      return;
+    }
+    const saved = deepClone(snapshot) as ChannelStateStore;
+
+    for (const channel of this.currentManifest.channels) {
+      if (options.skip?.has(channel.id)) continue;
+      const held = Object.prototype.hasOwnProperty.call(saved, channel.id);
+
+      switch (channel.mode) {
+        case 'append': {
+          delete this.state[channel.id];
+          this.resolveRenderer(channel.id).onClear?.(channel.id);
+          const entries = saved[channel.id];
+          if (held && Array.isArray(entries) && entries.length > 0) {
+            this.applyChannelValue(channel, entries);
+          }
+          break;
+        }
+        case 'replace': {
+          if (held) {
+            this.applyChannelValue(channel, saved[channel.id]);
+          } else if (this.state[channel.id] !== undefined && this.state[channel.id] !== null) {
+            this.applyChannelValue(channel, null);
+          }
+          break;
+        }
+        case 'event': {
+          // Transient by definition (ADR-165 §5): nothing was stored,
+          // so there is nothing to put back.
+          break;
+        }
+      }
+    }
   }
 
   // ────────────────────────────────────────────────────────────────

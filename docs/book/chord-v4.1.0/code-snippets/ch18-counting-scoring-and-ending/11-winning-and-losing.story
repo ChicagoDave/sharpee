@@ -3,11 +3,12 @@ create the Great Lantern
   a container, scenery, light-source, starts unlit
   in the Lantern Gallery
   holds 1
-  score relit worth 15
 
   A drum of brass and glass the height of a door, with a seat inside it
   for a lens and a wick as thick as your arm. Nothing has burned in it
   for thirty years.
+
+  score relit worth 15
 
   on the player lighting
     the spark page must be learned: no-such-word

@@ -210,11 +210,12 @@ create the Great Lantern
   a container, scenery, light-source, starts unlit
   in the Lantern Gallery
   holds 1
-  score relit worth 15
 
   A drum of brass and glass the height of a door, with a seat inside it
   for a lens and a wick as thick as your arm. Nothing has burned in it
   for thirty years.
+
+  score relit worth 15
 
   on the player lighting
     the spark page must be learned: no-such-word
@@ -229,6 +230,9 @@ create the Great Lantern
   end after
 ```
 
+The `score` line stands after the description here, and among the short
+facts on the spark page. Either place will do.
+
 Every line of the `after` clause carries a `when`, and that is not untidy
 writing. A `win` or a `lose` does not stop the clause it is in. The lines
 after it still run. If the `award` line had no condition, a player who had
@@ -241,10 +245,13 @@ There is a difficulty. The Lantern is on the roof, the grille is across the
 stair, and nothing in the story can lift the grille until chapter 24. No
 player can reach either ending yet.
 
-The start block trick from chapter 13 is made for this. In a copy of the
-file, set the world up as it will be late in the game. Keep the copy in a
-folder of its own, since a project holds one story, and check and play it
-there.
+The start block trick from chapter 13 is made for this. Take a copy of the
+file as this chapter leaves it, which is the one "Build and try it" below
+copies in, since the endings are written there. In the copy, set the world
+up as it will be late in the game. Keep the copy, still named
+`relighting.story`, in a new folder beside your project called
+`relighting-endings`. It needs a folder of its own, since a project holds
+one story. Check and play it there.
 
 ```chord
 before the game starts
@@ -275,8 +282,8 @@ For one breath the cracked lens throws two beams, crossed, over the whole valley
 [The story has ended. RESTART, RESTORE or UNDO]
 ```
 
-Add `change the lens to sound` to the start block and the same commands end
-the other way.
+Add `change the lens to sound` as the last line of the start block and the
+same commands end the other way.
 
 ```text
 > light lantern

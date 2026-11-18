@@ -410,3 +410,179 @@ describe('Renderer command pump', () => {
     expect(b).toHaveBeenCalledWith({ kind: 'command', text: 'look' });
   });
 });
+
+// ────────────────────────────────────────────────────────────────────
+//  replayState — a saved store put back on screen after a restore
+// ────────────────────────────────────────────────────────────────────
+
+describe('replayState', () => {
+  const location: ChannelDefinition = { id: 'location', contentType: 'json', mode: 'replace' };
+  const picture: ChannelDefinition = { id: 'picture', contentType: 'text', mode: 'replace' };
+  const workings: ChannelDefinition = { id: 'workings', contentType: 'text', mode: 'append' };
+  const main: ChannelDefinition = { id: 'main', contentType: 'json', mode: 'append' };
+  const cue: ChannelDefinition = { id: 'cue', contentType: 'json', mode: 'event' };
+
+  /** A renderer host with one recorder per channel of the manifest. */
+  function mount(...channels: ChannelDefinition[]) {
+    const r = createRenderer();
+    const recorders = new Map<string, ReturnType<typeof makeRecorderRenderer>>();
+    for (const channel of channels) {
+      const recorder = makeRecorderRenderer();
+      recorders.set(channel.id, recorder);
+      r.registerRenderer(channel.id, recorder.renderer);
+    }
+    r.applyCmgt(makeManifest(...channels));
+    const valuesOf = (id: string) =>
+      recorders
+        .get(id)!
+        .calls.filter((c) => c.method === 'onValue')
+        .map((c) => c.args[0]);
+    const clearsOf = (id: string) =>
+      recorders.get(id)!.calls.filter((c) => c.method === 'onClear').length;
+    /** The value and clear calls a channel's renderer received, in order. */
+    const deliveriesOf = (id: string) =>
+      recorders
+        .get(id)!
+        .calls.filter((c) => c.method === 'onValue' || c.method === 'onClear')
+        .map((c) => c.method);
+    return { r, valuesOf, clearsOf, deliveriesOf };
+  }
+
+  it('a fresh host shows a saved replace value and a saved append list', () => {
+    // The boot path: a page reload, a new host, an empty store.
+    const saved = {
+      location: { text: 'Library' },
+      workings: ['spark: wakes a flame', 'hush: stills a sound'],
+    };
+    const { r, valuesOf } = mount(location, workings);
+    expect(r.getStateSnapshot()).toEqual({});
+
+    r.replayState(saved);
+
+    expect(r.getStateSnapshot()).toEqual(saved);
+    expect(valuesOf('location')).toEqual([{ text: 'Library' }]);
+    // One delivery carrying the whole list, in its saved order.
+    expect(valuesOf('workings')).toEqual([['spark: wakes a flame', 'hush: stills a sound']]);
+  });
+
+  it('a snapshot taken from one host round-trips into another', () => {
+    const first = mount(location, workings);
+    first.r.applyTurnPacket(makeTurn({ location: { text: 'Lodge' }, workings: ['spark'] }));
+    first.r.applyTurnPacket(makeTurn({ location: { text: 'Library' }, workings: ['hush'] }, 2));
+    const saved = first.r.getStateSnapshot();
+
+    const second = mount(location, workings);
+    second.r.replayState(saved);
+
+    expect(second.r.getStateSnapshot()).toEqual(first.r.getStateSnapshot());
+  });
+
+  it('an append channel is cleared before its saved entries are delivered', () => {
+    // The menu path: the session has gone on past the save.
+    const { r, valuesOf, clearsOf, deliveriesOf } = mount(workings);
+    r.applyTurnPacket(makeTurn({ workings: ['spark', 'hush', 'mend'] }));
+    expect(r.getStateSnapshot()).toEqual({ workings: ['spark', 'hush', 'mend'] });
+
+    r.replayState({ workings: ['spark'] });
+
+    // Not ['spark', 'hush', 'mend', 'spark']: the later entries are gone.
+    expect(r.getStateSnapshot()).toEqual({ workings: ['spark'] });
+    expect(clearsOf('workings')).toBe(1);
+    expect(valuesOf('workings')).toEqual([['spark', 'hush', 'mend'], ['spark']]);
+    // The clear comes between the two deliveries: a renderer that appends
+    // would otherwise wipe the saved entries it had just been given.
+    expect(deliveriesOf('workings')).toEqual(['onValue', 'onClear', 'onValue']);
+  });
+
+  it('an append channel the snapshot does not hold is emptied', () => {
+    const { r, valuesOf, clearsOf } = mount(workings);
+    r.applyTurnPacket(makeTurn({ workings: ['spark'] }));
+
+    r.replayState({});
+
+    expect(r.getStateSnapshot()).toEqual({});
+    expect(clearsOf('workings')).toBe(1);
+    // Cleared, and nothing delivered after the clear.
+    expect(valuesOf('workings')).toEqual([['spark']]);
+  });
+
+  it('a replace channel showing a value the snapshot does not hold is told null', () => {
+    const { r, valuesOf } = mount(location, picture);
+    r.applyTurnPacket(makeTurn({ location: { text: 'Roof' }, picture: 'lantern-lit.png' }));
+
+    r.replayState({ location: { text: 'Lodge' } });
+
+    expect(r.getStateSnapshot()).toEqual({ location: { text: 'Lodge' }, picture: null });
+    expect(valuesOf('picture')).toEqual(['lantern-lit.png', null]);
+    expect(valuesOf('location')).toEqual([{ text: 'Roof' }, { text: 'Lodge' }]);
+  });
+
+  it('a replace channel that never had a value is left alone', () => {
+    const { r, valuesOf } = mount(location, picture);
+
+    r.replayState({ location: { text: 'Lodge' } });
+
+    expect(r.getStateSnapshot()).toEqual({ location: { text: 'Lodge' } });
+    expect(valuesOf('picture')).toEqual([]);
+  });
+
+  it('a skipped channel keeps its store entry and hears nothing', () => {
+    const { r, valuesOf, clearsOf } = mount(main, workings);
+    r.applyTurnPacket(makeTurn({ main: ['You are in the Lodge.'], workings: ['spark'] }));
+
+    r.replayState({ main: ['saved prose'], workings: ['spark', 'hush'] }, { skip: new Set(['main']) });
+
+    expect(r.getStateSnapshot()).toEqual({
+      main: ['You are in the Lodge.'],
+      workings: ['spark', 'hush'],
+    });
+    expect(clearsOf('main')).toBe(0);
+    expect(valuesOf('main')).toEqual([['You are in the Lodge.']]);
+  });
+
+  it('a skipped replace channel the snapshot does not hold keeps its value', () => {
+    // The browser's case: the host strips the channels it restores itself
+    // from the save, so at replay they are absent. Skipped, they must not
+    // be taken for values to blank.
+    const { r, valuesOf } = mount(location, picture);
+    r.applyTurnPacket(makeTurn({ location: { text: 'Roof' }, picture: 'lantern-lit.png' }));
+
+    r.replayState({ location: { text: 'Lodge' } }, { skip: new Set(['picture']) });
+
+    expect(r.getStateSnapshot()).toEqual({ location: { text: 'Lodge' }, picture: 'lantern-lit.png' });
+    expect(valuesOf('picture')).toEqual(['lantern-lit.png']);
+  });
+
+  it('an event channel is never delivered, whatever the snapshot says', () => {
+    const { r, valuesOf } = mount(cue);
+
+    r.replayState({ cue: { sound: 'toll' } });
+
+    expect(r.getStateSnapshot()).toEqual({});
+    expect(valuesOf('cue')).toEqual([]);
+  });
+
+  it('the store does not share structure with the snapshot it was given', () => {
+    const { r } = mount(workings);
+    const saved = { workings: ['spark'] };
+
+    r.replayState(saved);
+    saved.workings.push('tampered');
+
+    expect(r.getStateSnapshot()).toEqual({ workings: ['spark'] });
+  });
+
+  it('before any manifest it warns and changes nothing', () => {
+    const warnings: string[] = [];
+    const r = createRenderer({ warn: (m) => warnings.push(m) });
+    const recorder = makeRecorderRenderer();
+    r.registerRenderer('location', recorder.renderer);
+
+    r.replayState({ location: { text: 'Lodge' } });
+
+    expect(recorder.calls).toEqual([]);
+    expect(r.getStateSnapshot()).toEqual({});
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0]).toContain('replayState called before applyCmgt');
+  });
+});

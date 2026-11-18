@@ -87,5 +87,6 @@ export type {
   ChannelRenderer,
   IRenderer,
   ChannelStateStore,
+  ReplayStateOptions,
   SlotHandle,
 } from './renderer/index.js';

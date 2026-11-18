@@ -440,7 +440,9 @@ Tamsin now has two goals. The priority, which is one of `critical`, `high`,
 `medium` and `low`, decides between goals that are active at once. While
 the Hall sleeps only `rounds` is active. When the bell begins to toll,
 `the-grille` becomes active and outranks it, and Tamsin leaves whatever she
-was doing and walks to the foot of the tower.
+was doing and walks to the foot of the tower. She takes a step a turn, so
+what you see depends on when you follow. This is the view two turns after
+she comes through the Cloister.
 
 ```text
 > north
@@ -496,7 +498,9 @@ sharpee play .
 
 Walk to the Refectory and wait a turn or two, then follow Tamsin into the
 Cloister. Read the spark page, light the lamp, and wait in the Cloister
-for the bell. Tamsin comes through on her way to the tower.
+for the bell. Tamsin comes through on her way to the tower. Wait two turns
+more and then go north, and the Bell Stair reads as it does above. Go
+sooner or later and the same lines come on other turns.
 
 ```text
 > wait

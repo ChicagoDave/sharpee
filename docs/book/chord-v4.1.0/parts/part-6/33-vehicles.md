@@ -30,7 +30,8 @@ create the Bell Stair, a room
 ```
 
 A room may have two blocked lines for one direction, each with its own
-condition and its own phrase.
+condition and its own phrase. While the grille stands, the player still
+reads the grille's phrase. With the grille lifted and the lens in hand:
 
 ```text
 > up
@@ -119,6 +120,7 @@ In the book hoist you see a lens.
 
 > put lens in lantern
 (first taking the lens)
+
 You take the lens from the book hoist.
 
 You put the lens in the Great Lantern.
@@ -374,7 +376,8 @@ sharpee compose relighting.story --check
 sharpee play .
 ```
 
-Take the lens from the crate and try the stair with it. Then give it to the
+Take the lens from the crate and try the stair with it: the grille answers
+until it is lifted, and the lens after. Then give the lens to the
 hoist, before and after the grille is lifted, and see where it goes.
 
 ::: under-the-hood

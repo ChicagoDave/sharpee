@@ -1,1 +1,1 @@
-sharpee test . --json --capture-output
+sharpee test . --json --capture-output > records.txt

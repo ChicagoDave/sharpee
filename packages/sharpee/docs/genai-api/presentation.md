@@ -293,6 +293,24 @@ export declare class BrowserClient implements BrowserClientInterface {
     private performSave;
     private getSaveContext;
     /**
+     * The channel state a save carries: everything the renderer host holds
+     * except the channels in {@link RESTORED_ELSEWHERE}.
+     */
+    private channelStateToSave;
+    /**
+     * Put a save's channel state back on screen.
+     *
+     * Called at both restore seams (the boot-time autosave and the Restore
+     * menu), after the engine save and the transcript are applied. A restore
+     * runs between turns and produces no packet, so without this the page
+     * shows the saved world with whatever the channels held before: an
+     * empty status heading and empty story panels after a reload.
+     *
+     * @param saved the envelope's `channelState`; absent on an envelope
+     *   written before the field existed, which restores as it always did
+     */
+    private replayChannels;
+    /**
      * Refresh the score and turn fields of the status line.
      *
      * The location field is deliberately not written here. ADR-349 D3a makes the
@@ -317,6 +335,7 @@ export declare class BrowserClient implements BrowserClientInterface {
  * Types and interfaces for @sharpee/platform-browser
  */
 import type { ISaveData } from '@sharpee/core';
+import type { ChannelStateStore } from '@sharpee/channel-service';
 import type { WorldModel } from '@sharpee/world-model';
 /**
  * Theme configuration
@@ -474,6 +493,14 @@ export interface BrowserSaveEnvelope {
     score: number;
     /** Compressed HTML transcript (innerHTML of #text-content). */
     transcriptHtml?: string;
+    /**
+     * What the channels were showing when the save was made: the latest
+     * value of each replace channel and the accumulated entries of each
+     * append channel. A restore runs no turn, so nothing else would put
+     * them back. The channels the transcript holds are left out. Absent
+     * from an envelope written before the field existed.
+     */
+    channelState?: ChannelStateStore;
 }
 /**
  * Context for save operations
@@ -482,6 +509,8 @@ export interface SaveContext {
     turnCount: number;
     score: number;
     transcriptHtml: string;
+    /** Channel state to put back on restore; see {@link BrowserSaveEnvelope.channelState}. */
+    channelState: ChannelStateStore;
 }
 /**
  * Menu action handlers
@@ -2092,6 +2121,37 @@ export interface Renderer {
      * the caller may mutate freely.
      */
     getStateSnapshot(): ChannelStateStore;
+    /**
+     * Put a saved channel state back on screen (the counterpart of
+     * {@link getStateSnapshot}). A restore replaces the world between
+     * turns and runs no turn, so no packet carries the channels'
+     * standing values; the host saves a snapshot with the game and
+     * replays it here.
+     *
+     * For each manifest channel not named in `options.skip`:
+     *  - append: the store entry is reset and `onClear` runs, then the
+     *    snapshot's entries (if any) are stored and delivered in one
+     *    `onValue` call;
+     *  - replace: the snapshot's value is stored and delivered; a
+     *    channel the snapshot does not hold, but which is showing a
+     *    non-null value now, is set to `null` and told so;
+     *  - event: untouched.
+     *
+     * @param snapshot a store previously returned by `getStateSnapshot`
+     * @param options `skip` names channels whose output the host restores
+     *   by other means (a saved transcript, say) and which must not be
+     *   delivered a second time
+     *
+     * Warns and does nothing when no manifest has been applied.
+     */
+    replayState(snapshot: ChannelStateStore, options?: ReplayStateOptions): void;
+}
+/**
+ * Options for {@link Renderer.replayState}.
+ */
+export interface ReplayStateOptions {
+    /** Channel ids to leave exactly as they are. */
+    skip?: ReadonlySet<string>;
 }
 ```
 
@@ -2113,7 +2173,7 @@ export interface Renderer {
  * @see ADR-165 — Renderer Architecture
  */
 import type { CmgtPacket, CommandPacket, TurnPacket } from '@sharpee/if-domain';
-import type { ChannelRenderer, ChannelStateStore, Renderer as RendererInterface, SlotHandle } from './types.js';
+import type { ChannelRenderer, ChannelStateStore, Renderer as RendererInterface, ReplayStateOptions, SlotHandle } from './types.js';
 import { type FallbackOutputSink, type FallbackWarningSink } from './json-tree-fallback.js';
 /**
  * Optional construction options for the `Renderer`.
@@ -2220,6 +2280,14 @@ export declare class Renderer implements RendererInterface {
      * and ADR-163 AC-12 round-trip.
      */
     getStateSnapshot(): ChannelStateStore;
+    /**
+     * Put a saved channel state back on screen — see the interface's
+     * `replayState` for the per-mode contract.
+     *
+     * Manifest order is kept, as in `applyTurnPacket`, so renderers that
+     * depend on one another see values in the order a turn delivers them.
+     */
+    replayState(snapshot: ChannelStateStore, options?: ReplayStateOptions): void;
     /**
      * Update the state store per mode and invoke the renderer's
      * `onValue`.

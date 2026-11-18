@@ -84,8 +84,9 @@ C6ABD976-A999-4F4F-92A8-B393F82127A6
 ## The version
 
 `story-version:` has stood at `0.7.0` since Part VII. The number is
-yours to count as you please, and the player sees it. The story prints
-it under the title when it opens.
+yours to count as you please, and the player sees it. The published page
+prints it under the title when it opens. The terminal prints the same
+four lines with the version last.
 
 ```text
 The Relighting
@@ -158,6 +159,10 @@ sharpee publish relighting.story
   Generated browser entry from template
   ✓ Embedded the compiled story IR into the bundle
   Bundling game.js...
+
+  dist/web/relighting/game.js  1.9mb ⚠️
+
+⚡ Done in 66ms
   ✓ Built game.js
   ✓ Copied index.html
   ✓ Copied index-testing.html (IDE testing surface — excluded from publish)
@@ -254,11 +259,19 @@ it for the same story, and the version tells the two releases apart.
 
 ## Build and try it
 
-Set `story-version:` to `1.0.0` in your own copy. Decide whether your
-source goes along, and write `publish-source: yes` if it does. Run the
-tree. Then publish, unzip `dist/relighting.zip` into an empty folder,
-serve that folder with `npx serve .` from inside it, and play the story you wrote from the lodge to the
-beacon, as a stranger will.
+Set `story-version:` to `1.0.0` in your own copy. The Relighting ships
+its source, so write `publish-source: yes` in the header; the report and
+the list of files in this chapter are those of a story that has the line.
+Run the
+tree. Then publish, and unzip `dist/relighting.zip` into an empty folder.
+Any unzipping tool will do. From a terminal in the project folder:
+
+```shell
+unzip dist/relighting.zip -d ../relighting-published
+```
+
+Serve that folder with `npx serve .` from inside it, and play the story
+you wrote from the lodge to the beacon, as a stranger will.
 
 ```shell
 sharpee publish relighting.story

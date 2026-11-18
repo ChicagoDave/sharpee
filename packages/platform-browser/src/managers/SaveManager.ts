@@ -263,6 +263,7 @@ export class SaveManager {
         engineSave,
         score: context.score,
         transcriptHtml: compressToUTF16(context.transcriptHtml),
+        channelState: context.channelState,
       };
 
       const key = this.savePrefix + slotName;
@@ -300,6 +301,7 @@ export class SaveManager {
         engineSave,
         score: context.score,
         transcriptHtml: compressToUTF16(context.transcriptHtml),
+        channelState: context.channelState,
       };
 
       const key = this.savePrefix + AUTOSAVE_SLOT;

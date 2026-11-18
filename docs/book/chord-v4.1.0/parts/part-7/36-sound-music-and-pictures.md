@@ -202,7 +202,9 @@ or one open doorway from it, the sound arrives whole and the `heard:` line
 prints. Further off, or through a closed door, it arrives weakened, and
 the `heard from afar:` line prints. Far enough away, nothing prints.
 
-Standing in the Cloister, next to the stair:
+Walking from the Cloister into the Bell Stair on the turn she pushes. That
+one turn is easy to miss. Wait in the Cloister instead and the last line
+prints by itself, after a `wait`.
 
 ```text
 > north

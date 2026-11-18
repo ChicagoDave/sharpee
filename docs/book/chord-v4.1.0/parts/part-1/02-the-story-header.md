@@ -69,7 +69,9 @@ relighting.story:1:1 error [parse.story-title] The story block requires a `title
 
 When a story starts, the player is shown the title, the description if there
 is one, the authors and the version, and then the first room. With the
-smallest header above, the opening looks like this:
+smallest header above, and a first room cut down to one sentence so that
+the header's lines stand out, the opening looks like this. It is here to
+be read. Nothing in this chapter is built.
 
 ```text
 The Relighting

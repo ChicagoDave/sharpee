@@ -116,8 +116,8 @@ line about an `ifid` is chapter 40's subject. It is printed by the first
 build of a story that has no identifier yet.
 
 The folder holds `index.html`, one script called `game.js` with the whole
-story inside it, the stylesheets, and a copy of the `assets` folder from
-chapter 36. Nothing in it needs a server that does more than hand out
+story inside it, the stylesheets, and the `audio` and `img` folders that
+were inside the `assets` folder of chapter 36. Nothing in it needs a server that does more than hand out
 files. To look at it on your own machine, serve the folder and open the
 address it prints.
 
@@ -361,6 +361,11 @@ Play as far as the Library and read the spark page. Then change the
 theme from the Settings menu and reload the page. The theme you chose has
 been remembered. It was filed in the browser under the storage prefix, as
 `relighting-theme`, and the saved games are filed beside it.
+
+The reload also brings the game back from its autosave, with the words
+"Session restored". The status line names the Library again, and the
+`workings` panel is there with its one line, because the page saves what
+its channels were showing along with the game.
 
 ::: under-the-hood
 **Under the Hood: channels** · Story IR `channels`, platform channels `location`, `score`, `turn`

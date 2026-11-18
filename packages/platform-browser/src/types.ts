@@ -3,6 +3,7 @@
  */
 
 import type { ISaveData } from '@sharpee/core';
+import type { ChannelStateStore } from '@sharpee/channel-service';
 import type { WorldModel } from '@sharpee/world-model';
 
 /**
@@ -183,6 +184,14 @@ export interface BrowserSaveEnvelope {
   score: number;
   /** Compressed HTML transcript (innerHTML of #text-content). */
   transcriptHtml?: string;
+  /**
+   * What the channels were showing when the save was made: the latest
+   * value of each replace channel and the accumulated entries of each
+   * append channel. A restore runs no turn, so nothing else would put
+   * them back. The channels the transcript holds are left out. Absent
+   * from an envelope written before the field existed.
+   */
+  channelState?: ChannelStateStore;
 }
 
 /**
@@ -192,6 +201,8 @@ export interface SaveContext {
   turnCount: number;
   score: number;
   transcriptHtml: string;
+  /** Channel state to put back on restore; see {@link BrowserSaveEnvelope.channelState}. */
+  channelState: ChannelStateStore;
 }
 
 /**

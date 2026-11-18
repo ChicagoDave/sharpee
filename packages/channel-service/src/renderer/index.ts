@@ -11,6 +11,7 @@ export type {
   ChannelRenderer,
   Renderer as IRenderer,
   ChannelStateStore,
+  ReplayStateOptions,
   SlotHandle,
 } from './types.js';
 

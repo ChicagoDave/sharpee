@@ -19,7 +19,8 @@ sharpee messages
 ```
 
 The list is long, 885 messages at this edition, and it is printed as data
-for a program to read. Each entry looks like this.
+for a program to read: one line that gives the count, and then the whole
+list as a single very long line. Each entry in that line looks like this.
 
 ```text
 {"id":"if.action.taking.taken","alias":"taking-taken","template":"Taken."}
@@ -28,8 +29,10 @@ for a program to read. Each entry looks like this.
 The `alias` is what you will write. The `template` is the text the platform
 prints, and reading it tells you whether you have found the right message.
 Appendix F is this list, sorted by action, and it is the place to look
-things up. To find a message without the appendix, send the list to a file
-and search the file for a few words of what the game printed.
+things up. To find a message without the appendix, send the list to a
+file, open the file in an editor, and use the editor's search for a few
+words of what the game printed. A search that prints whole matching lines
+will print the entire list, because the list is one line.
 
 ## Overriding one message
 
@@ -297,7 +300,7 @@ It is dark, and the dark here is old and has no interest in you.
 ::: under-the-hood
 **Under the Hood: ids and aliases** · `if.action.going.too_dark`
 
-Each line of `sharpee messages` has an `id` beside the alias. The id is the
+Each entry of `sharpee messages` has an `id` beside the alias. The id is the
 platform's own name for the message, and it shows how the platform is
 arranged: `if.action`, then the action, then the message. The alias is the
 same name made safe for Chord, where a key may not contain a dot. In the

@@ -112,8 +112,10 @@ who has read that and walks east has been warned. A deadly way that the prose
 did not signal is a trap, and players forgive very little less.
 
 Because the stair is sealed, you cannot reach the parapet in the story as it
-stands. To see it work, take out the `up is blocked` line for a moment, walk
-up and step off, and then put the line back.
+stands. To see it work, wait until this chapter's story is in your folder,
+which is the copy in "Build and try it" below. Then take out the
+`up is blocked` line for a moment, walk up and step off, and put the line
+back.
 
 ## A way that is sometimes there
 

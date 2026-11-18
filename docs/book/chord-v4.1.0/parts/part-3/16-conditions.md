@@ -260,7 +260,9 @@ knows it.
 ::: under-the-hood
 **Under the Hood: a condition is a tree** · Story IR `conditions`
 
-Compile to IR and find `lantern-ready` under `conditions`. It is stored as
+Compile to IR with chapter 4's command,
+`sharpee compose relighting.story -o relighting.ir.json`, and find
+`lantern-ready` under `conditions`. It is stored as
 an `and` with two branches, each a test with a subject and an object. Every
 `while`, `when` and `must` in the file holds a tree of the same shape, or
 the name of one. `faded-page` is marked `open`, which is the compiler's word

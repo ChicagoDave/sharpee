@@ -10,7 +10,8 @@ import type { WorldModel } from '@sharpee/world-model';
 import { TraitType, StoryInfoTrait } from '@sharpee/world-model';
 import type { ISaveRestoreHooks, ISaveData, IRestartContext } from '@sharpee/core';
 import type { ClientCapabilities, CmgtPacket, TurnPacket } from '@sharpee/if-domain';
-import { Renderer, type IRenderer } from '@sharpee/channel-service';
+import { PREFERRED_LAYOUT_CHANNEL, PROSE_CHANNEL_IDS } from '@sharpee/if-domain';
+import { Renderer, type ChannelStateStore, type IRenderer } from '@sharpee/channel-service';
 
 import type {
   BrowserClientConfig,
@@ -68,6 +69,28 @@ export const BROWSER_CAPABILITIES: ClientCapabilities = {
   // Author introspection never reaches a player surface (ADR-310 D12).
   authorChannels: false,
 };
+
+/**
+ * Channels a restore puts back by some other means, and which a save's
+ * channel state therefore leaves out and a replay leaves alone:
+ *
+ *  - the prose channels, the layout channel that composes and prints
+ *    them, the banner and the chapter heading are written into the
+ *    transcript, which the envelope saves and restores as HTML, so
+ *    delivering them again would print them twice;
+ *  - `score` and `turn` are the client's own fields, set from the
+ *    envelope and offset against the engine's counter;
+ *  - `story-ending` is read from the restored world at the same seam.
+ */
+const RESTORED_ELSEWHERE: ReadonlySet<string> = new Set<string>([
+  ...PROSE_CHANNEL_IDS,
+  PREFERRED_LAYOUT_CHANNEL,
+  'banner',
+  'story.chapter',
+  'score',
+  'turn',
+  'story-ending',
+]);
 
 export class BrowserClient implements BrowserClientInterface {
   // Configuration
@@ -639,6 +662,7 @@ export class BrowserClient implements BrowserClientInterface {
             );
             this.textDisplay.setHTML(html);
           }
+          this.replayChannels(autosaveEnvelope.channelState);
 
           console.log('[startup] Restored to turn', this.currentTurn, 'score', this.currentScore, 'offset', this.turnOffset);
           this.updateStatusLine();
@@ -899,6 +923,7 @@ export class BrowserClient implements BrowserClientInterface {
       const html = this.saveManager.decompressTranscript(envelope.transcriptHtml);
       this.textDisplay.setHTML(html);
     }
+    this.replayChannels(envelope.channelState);
 
     this.updateStatusLine();
     this.textDisplay.displayText(`[Game restored from "${slotName}"]`);
@@ -1082,7 +1107,35 @@ export class BrowserClient implements BrowserClientInterface {
       turnCount: this.currentTurn,
       score: this.currentScore,
       transcriptHtml: this.textDisplay.getHTML(),
+      channelState: this.channelStateToSave(),
     };
+  }
+
+  /**
+   * The channel state a save carries: everything the renderer host holds
+   * except the channels in {@link RESTORED_ELSEWHERE}.
+   */
+  private channelStateToSave(): ChannelStateStore {
+    const state = this.channelRenderer?.getStateSnapshot() ?? {};
+    for (const id of RESTORED_ELSEWHERE) delete state[id];
+    return state;
+  }
+
+  /**
+   * Put a save's channel state back on screen.
+   *
+   * Called at both restore seams (the boot-time autosave and the Restore
+   * menu), after the engine save and the transcript are applied. A restore
+   * runs between turns and produces no packet, so without this the page
+   * shows the saved world with whatever the channels held before: an
+   * empty status heading and empty story panels after a reload.
+   *
+   * @param saved the envelope's `channelState`; absent on an envelope
+   *   written before the field existed, which restores as it always did
+   */
+  private replayChannels(saved: ChannelStateStore | undefined): void {
+    if (!saved) return;
+    this.channelRenderer?.replayState(saved, { skip: RESTORED_ELSEWHERE });
   }
 
   /**

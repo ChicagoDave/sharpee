@@ -4,7 +4,8 @@
  *
  * Purpose: proves, in headless Chromium, the claims chapters 36 and 37 of the
  * Chord manual make about the built page of The Relighting: the title and boot
- * theme, the theme menu, the workings panel, the three recordings being
+ * theme, the theme menu, the workings panel, the panel and the room name
+ * surviving a reload, the three recordings being
  * fetched, the picture being shown and hidden, the story's own stylesheet, and
  * the storage prefix.
  *
@@ -125,6 +126,7 @@ async function runChecks(webDir, walk, refuseImages) {
         panelTitleVariant: panelTitle ? getComputedStyle(panelTitle).fontVariant : null,
         picture: picture ? { src: picture.getAttribute('src'), shown: shown(picture), natural: picture.naturalWidth } : null,
         storageKeys: Object.keys(localStorage),
+        location: document.querySelector('#location-name') ? document.querySelector('#location-name').textContent.trim() : null,
         prose: document.querySelector('#text-content') ? document.querySelector('#text-content').innerText : '',
       };
     });
@@ -156,6 +158,21 @@ async function runChecks(webDir, walk, refuseImages) {
       sparked.workings.join(' | ') === 'spark: wakes a flame', sparked.workings.join(' | '));
     check('first page read: the story stylesheet styles the panel title',
       sparked.panelTitleVariant === 'small-caps', sparked.panelTitleVariant);
+
+    // A reload restores the game from its autosave. No turn runs, so the
+    // room name and the panel come back only if the page saved what its
+    // channels were showing (GH #798). The walk then goes on in the
+    // restored game, so every later check is also a check of the restore.
+    await page.reload();
+    await page.waitForSelector('#command-input');
+    await page.waitForTimeout(800);
+    const reloaded = await read();
+    check('reload: the session is restored', reloaded.prose.includes('[Session restored]'), reloaded.prose.slice(-80));
+    check('reload: the status line still names the room',
+      Boolean(sparked.location) && reloaded.location === sparked.location, `before: ${sparked.location} | after: ${reloaded.location}`);
+    check('reload: the panel is still shown', reloaded.sidebarShown, `sidebar shown: ${reloaded.sidebarShown}`);
+    check('reload: the panel still lists the spark working',
+      reloaded.workings.join(' | ') === 'spark: wakes a flame', reloaded.workings.join(' | '));
 
     at = await typeThrough(at, 'light lamp');
     check('lamp sparked: audio/catch.mp3 is fetched', fetched('/audio/catch.mp3'), requested.filter((u) => u.startsWith('/audio')).join(', '));

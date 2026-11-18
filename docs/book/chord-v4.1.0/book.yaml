@@ -19,6 +19,11 @@ toc: true
 toc-depth: 2
 number-sections: true
 
+# Marks the rows of a typed listing that the printed page has to break
+# (PDF only; the filter does nothing for HTML and EPUB).
+filters:
+  - filters/mark-wrapped-lines.lua
+
 # Suppress pandoc's auto-generated EPUB title page; the authored
 # frontmatter/00-title-page.md is the single title page for all three formats.
 epub-title-page: false

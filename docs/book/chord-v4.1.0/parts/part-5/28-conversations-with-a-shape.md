@@ -334,7 +334,6 @@ the one a question about brass opens.
 "Door furniture, mostly. Lamp brackets. Nobody was using them."
 
 > wait
-> wait
 You wait. The Hall has had thirty years of practice and is better at it than you are.
 
 > wait

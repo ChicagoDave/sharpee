@@ -97,8 +97,9 @@ The bell tolls again, and the rooks go up off the roof.
 A mood does not stay changed. Left alone, a person settles back to the
 mood they began in over a few turns. That is why Hobb's clause runs on
 every turn the bell tolls: it holds him rattled for as long as there is
-something to be rattled by. Hush the bell, and by the time Ansel has
-walked back to the Lodge he is calm again and turning his kettle.
+something to be rattled by. Hush the bell and he settles. For the first
+few turns afterwards his answers come with no sentence of manner at all,
+and then he is calm again and turning his kettle.
 
 This is worth designing around. A mood is the right tool for how someone
 is taking the present moment. For a change that should last, use a

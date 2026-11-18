@@ -251,7 +251,8 @@ one desert can write it in ten lines and own every word.
 There is no companion snapshot for this chapter. The two examples above
 are complete stories, and you can build them as you built the first story
 in Part I. Each needs a folder of its own, because a folder holds one
-story. Make a folder called `cellar`, type the first example into a file
+story. Make a folder called `cellar` beside your project, and later one
+called `yard` in the same place. Type the first example into a file
 called `cellar.story` inside it, and run these two commands there.
 
 ```shell

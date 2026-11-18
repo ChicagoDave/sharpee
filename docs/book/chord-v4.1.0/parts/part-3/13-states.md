@@ -134,7 +134,9 @@ change the iron grille to lifted
 Statements cannot stand loose in a file. They live inside blocks that say
 when they run, and the block you will use most is the clause of chapter 14.
 There is one such block in the story already, the start block, and it will
-do for an experiment. Add the line to it for a moment.
+do for an experiment. The line needs the grille's `states` line, so try it
+once this chapter's story is in your folder, after the copy in "Build and
+try it" below. Add the line to the start block for a moment.
 
 ```chord
 before the game starts

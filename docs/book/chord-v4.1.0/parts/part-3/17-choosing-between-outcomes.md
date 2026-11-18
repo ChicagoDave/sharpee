@@ -288,8 +288,11 @@ inside the companion folder `chapter-17` and you will see one line for each arm:
 legible", "spark page · on reading · when learned", "iron grille · after
 examining · the third time". For a `select on` the runner puts the thing in
 the arm's state before it types the command, which is something it can do
-only because the states are declared. An arm you never reach in play is
-still exercised here.
+only because the states are declared. An arm you never reach in play can
+still be exercised here. Not every arm is. A line that begins with `◌` is
+an arm the runner could not arrange, with its reason, and the cistern's
+three arms are listed that way in this chapter's story, because the runner
+could not bring the cistern into the player's sight.
 :::
 
 ::: from-another-system

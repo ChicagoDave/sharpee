@@ -2,7 +2,7 @@
 
 Every standard message a story can replace with `override message`: 885 aliases in 78 groups,
 one group per action, each alias beside the text the platform prints by default. A `\n` marks a
-line break in the text. Generated from the output of `sharpee messages` (Sharpee 5.6.2 · Chord 4.0.3, locale en-US) by
+line break in the text. Generated from the output of `sharpee messages` (Sharpee 5.6.3 · Chord 4.0.3, locale en-US) by
 `scripts/generate-chord-appendices.cjs`.
 
 ## `about` {.unnumbered .unlisted}

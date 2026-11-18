@@ -233,6 +233,8 @@ marker `{verbatim:count}` prints it as it stands.
 You cannot see the bell from here, only the dark it hangs in.
 
 By your count that makes 3, and it is not tired.
+
+The tower bell tolls.
 ```
 
 When the value is a thing, the marker can ask for its name in the form the

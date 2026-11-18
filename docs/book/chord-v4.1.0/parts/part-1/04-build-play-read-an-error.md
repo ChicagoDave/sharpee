@@ -47,7 +47,8 @@ write it in.
 
 ## A folder for the story
 
-Make a folder for The Relighting and put `relighting.story` in it. A story's
+Chapter 1 had you make a folder called `relighting` and put
+`relighting.story` in it. A story's
 folder is called its **project**, and a project holds exactly one `.story`
 file. Everything in this book is typed from inside that folder.
 

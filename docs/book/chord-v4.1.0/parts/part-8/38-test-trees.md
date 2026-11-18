@@ -114,8 +114,10 @@ fails.
 
 The layout of the file matters. The keys of every object are in
 alphabetical order, which is why `cards` comes before `id` and `command`
-before `type`. The indentation is two spaces, and each element of a list
-is on a line of its own. A tree file laid out any other way is refused.
+before `type`. The indentation is two spaces, each element of a list is on
+a line of its own, one space follows each colon, and the file ends with
+one newline after its last brace. A tree file laid out any other way is
+refused.
 
 ```text
 test: relighting.tests/ has files not in canonical form (re-save them from the Testing tab):
@@ -128,10 +130,12 @@ To write an expectation you need the story's exact words. Run the tree
 with two options and it will give them to you.
 
 ```shell
-sharpee test . --json --capture-output
+sharpee test . --json --capture-output > records.txt
 ```
 
-The output is one JSON record to a line. The records of type
+The file `records.txt` now holds one JSON record to a line. The report of
+derived tests that every run ends with still prints in the terminal, and
+you can pass over it here. The records of type
 `command-result` are the cards, and each carries the card's output in
 `actualOutput`.
 
@@ -210,6 +214,57 @@ on a platform channel called `info.title`.
     },
 ```
 
+With those three cards changed and the boot card left as it was,
+`mainline.json` is this.
+
+```json
+{
+  "cards": [
+    {
+      "assertions": {
+        "channels": [
+          {
+            "id": "info.title",
+            "is": "The Relighting"
+          }
+        ]
+      },
+      "id": "card0001",
+      "type": "opening"
+    },
+    {
+      "id": "card0002",
+      "skip": true,
+      "type": "boot"
+    },
+    {
+      "assertions": {
+        "exact": [
+          "You take it."
+        ]
+      },
+      "command": "take lamp",
+      "id": "card0003",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "In the oak press you see a library key."
+        ],
+        "states": [
+          "the oak press is open"
+        ]
+      },
+      "command": "open press",
+      "id": "card0004",
+      "type": "turn"
+    }
+  ],
+  "id": "mainline"
+}
+```
+
 Prefer `contains` and `states` together. The text says what the player
 was told, and the state says what became true. A turn that prints the
 right sentence and changes nothing is one of the commonest defects in
@@ -240,8 +295,8 @@ quoted from here on start at the line after it. The boot card is still a
 skip card, and a skipped card is not counted.
 
 The command exits with 0 when everything passes and 1 when anything
-fails. Here is the same tree after the `take lamp` card was made to
-expect `Taken.`, which the story does not say.
+fails. Here is the same tree after the `take lamp` card's `exact` list
+was replaced by `"contains": ["Taken."]`, words the story does not say.
 
 ```text
 Test tree: relighting.tests/ (seed 42, 1 line(s))
@@ -329,6 +384,8 @@ Test tree: relighting.tests/ (seed 42, 2 line(s))
 
 ✓ opening-lodge
 ✓ lodge · eat cake
+6 cards passing, 9 assertions passing
+6 commands (6 authored + 0 replayed), 1 restored at a fork
 ```
 
 The tree now has two **lines**. A line is one path from the opening to an
@@ -402,7 +459,8 @@ the command, and see that the clause's effects happened. These are the
 is one the runner could not arrange, with its reason. A `✗` is a clause
 whose effects did not happen, and it fails the run as a card does.
 
-The report closes with three counts.
+The report closes with three counts. Under the first it lists every branch
+not exercised, 81 lines here, which this page leaves out.
 
 ```text
 Branches exercised: 53 / 134
@@ -423,11 +481,13 @@ an ending in that list is an ending no test has ever seen.
 
 ## Build and try it
 
-Make the folder `relighting.tests` beside your story, and write the
-manifest and the three segments of this chapter into it, with their keys
-in alphabetical order and two spaces of indentation for each level. Run
-`sharpee test .` when the manifest and the first segment are written, and
-again when the other two are. The second and third segments go in
+Make the folder `relighting.tests` beside your story. Write the manifest
+into it, and `mainline.json` with its four skip cards, with their keys in
+alphabetical order and two spaces of indentation for each level. Run the
+command of "Reading what the story says". Then replace `mainline.json`
+with the whole file printed under "What a card can assert", and run
+`sharpee test .`. Write the other two segments, `onward01.json` and
+`thecake1.json`, and run it again. The second and third segments go in
 together, because a segment that continues a line is refused until a
 branch leaves the card it continues from. Then break something on
 purpose. In the story, find the phrase `cake-watched`, which the seed
