@@ -1,19 +1,14 @@
 {
   "cards": [
     {
-      "assertions": {},
-      "id": "orcopen1",
-      "type": "opening"
-    },
-    {
       "assertions": {
         "contains": [
           "Gate",
           "The orchard gate stands open on the lane."
         ]
       },
-      "id": "orcboot1",
-      "type": "boot"
+      "id": "orcopen1",
+      "type": "opening"
     },
     {
       "assertions": {

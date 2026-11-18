@@ -53,6 +53,7 @@ export {
   type PathResolution,
 } from './channel-assert.js';
 export {
+  openNewGame,
   runCommand,
   executeDirective,
   configureRandomInstruments,

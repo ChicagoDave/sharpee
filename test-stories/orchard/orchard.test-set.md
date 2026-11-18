@@ -13,7 +13,7 @@
 - OB-37: END STATE cards are asserted from the engine's ending record; the main line reaches `harvest-home` and the wait branch `stung`; a line that stops short fails at its END STATE card; a removed END STATE card leaves a named gap.
 - OB-38: the story-agnostic beats hold on this story.
 - OB-39: seeded authoring mistakes each fail one named card with its cause and fix; `seeded/orchard-T.story` (the bee smoker never placed), `orchard-U.story` (not wearable), `orchard-Z.story` (correct).
-- OB-40: the boot card pins the room name and opening paragraph, the first move becomes a card with its room name, and the whole main line passes.
+- OB-40: the opening card pins the room name and opening paragraph and is checked as the run's first row, ahead of any command; the first move is turn 1 and becomes a card with its room name; and the whole main line passes.
 - OB-41: the tree is four lines, each opened and closed once; a three-way fork at the Hive Yard starts three branches on one turn; every card has a verdict; two processes replay to the same events.
 - OB-42: a rule yields derived rows nobody authored (the apple tree's five); a row arranges its precondition and types one command; a planted rule that moves the windfall fails exactly the `when laden` row; the tree notices at the card that takes the windfall; the cider press's refusal branch is skipped as a negation.
 - OB-43: the keeper's two topic rows pass, each with the thing asked about brought to the keeper.

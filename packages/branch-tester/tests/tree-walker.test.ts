@@ -34,10 +34,6 @@ const opening = (assertions?: TreeCard['assertions']): TreeCard => ({
   type: 'opening',
   ...(assertions !== undefined ? { assertions } : {}),
 });
-const boot = (assertions?: TreeCard['assertions']): TreeCard => ({
-  type: 'boot',
-  ...(assertions !== undefined ? { assertions } : {}),
-});
 const turn = (command: string, extra?: Partial<TreeCard>): TreeCard => ({
   type: 'turn',
   command,
@@ -46,10 +42,6 @@ const turn = (command: string, extra?: Partial<TreeCard>): TreeCard => ({
 /** A turn whose claim always holds against the stub's `did <command>` output. */
 const okTurn = (command: string, extra?: Partial<TreeCard>): TreeCard =>
   turn(command, { assertions: { contains: [`did ${command}`] }, ...extra });
-/** A boot card whose claim holds. The JSON is the source of truth (David
- *  2026-08-10): a bare card fails the assertion boundary, so every card
- *  these tests expect to pass carries its claim in the document. */
-const okBoot = (): TreeCard => boot({ contains: ['did look'] });
 
 const doc = (cards: TreeCard[]): TreeDocument => ({
   ...emptyTreeDocument('teststory', 42, 'main'),
@@ -87,6 +79,8 @@ interface StubOptions {
   endsOn?: Record<string, { kind: 'victory' | 'defeat'; messageId?: string; cause?: string }>;
   /** The base channel ids the game captures (`capturedChannels`). */
   capturedChannels?: string[];
+  /** The message the game's `runOpening()` throws, on every boot. */
+  openingThrows?: string;
 }
 
 /**
@@ -98,6 +92,8 @@ interface StubOptions {
 function stubHarness(options: StubOptions = {}) {
   const executed: Array<{ command: string; from: string; boot: number }> = [];
   const counters = { boots: 0 };
+  /** One entry per `runOpening()` call: the boot it ran on, and how many commands that boot had already executed. */
+  const openings: Array<{ boot: number; commandsBefore: number }> = [];
 
   const makeGame = (bootNumber: number) => {
     let token = 'fresh';
@@ -140,7 +136,23 @@ function stubHarness(options: StubOptions = {}) {
         return `did ${command}`;
       },
       world,
-      bootChannelValues: { banner: ['Fernhill Manor'] },
+      // Bootstrap's opening surface: pending until run, run once, its
+      // packets and captures kept on the game. The opening is no command, so
+      // it leaves the state token alone and is recorded apart from `executed`.
+      openingPending: true,
+      runOpening: async () => {
+        if (options.openingThrows !== undefined) throw new Error(options.openingThrows);
+        openings.push({ boot: bootNumber, commandsBefore: executed.filter((e) => e.boot === bootNumber).length });
+        game.openingPending = false;
+        game.bootChannelValues = { banner: ['Fernhill Manor'] };
+        game.openingPackets = [
+          { output: '', channelValues: { banner: ['Fernhill Manor'] } },
+          { output: `${room}\nThe opening look.`, channelValues: {} },
+        ];
+        return `${room}\nThe opening look.`;
+      },
+      bootChannelValues: {},
+      openingPackets: [],
       ...(options.channelValues !== undefined ? { lastChannelValues: options.channelValues } : {}),
       ...(options.capturedChannels !== undefined ? { capturedChannels: options.capturedChannels } : {}),
       ...(options.policy !== undefined ? { autoAssertionPolicy: options.policy } : {}),
@@ -151,6 +163,7 @@ function stubHarness(options: StubOptions = {}) {
   return {
     executed,
     counters,
+    openings,
     load: async () => {
       counters.boots += 1;
       return makeGame(counters.boots);
@@ -169,7 +182,6 @@ describe('flattenTreeLines — lines, prefixes, defects', () => {
   it('cuts a branched document into main-then-branches with verbatim prefixes', () => {
     const document = doc([
       opening(),
-      boot(),
       okTurn('north'),
       okTurn('north', { branches: [{ id: 'b3', cards: [okTurn('east')] }] }),
       okTurn('north'),
@@ -181,10 +193,12 @@ describe('flattenTreeLines — lines, prefixes, defects', () => {
 
     const branch = lines[1];
     // The prefix is the exact stream the main line executed through the fork
-    // card: the boot look, then both norths — the third north is after the
-    // fork and is not in it.
-    expect(branch.prefix).toEqual(['look', 'north', 'north']);
-    expect(branch.forkIndex).toBe(3);
+    // card: both norths — the third north is after the fork and is not in
+    // it, and the opening is run by the game, never typed, so it is no part
+    // of the stream.
+    expect(branch.prefix).toEqual(['north', 'north']);
+    expect(branch.prefixTurns).toBe(2);
+    expect(branch.forkIndex).toBe(2);
     expect(branch.parentId).toBe('main');
     // The branch's display position among its fork's branches — not its id.
     expect(branch.ordinal).toBe(1);
@@ -193,7 +207,7 @@ describe('flattenTreeLines — lines, prefixes, defects', () => {
 
   it('orders nested branches depth-first in fork order', () => {
     const document = doc([
-      boot(),
+      opening(),
       okTurn('a', {
         branches: [
           {
@@ -208,20 +222,33 @@ describe('flattenTreeLines — lines, prefixes, defects', () => {
     const { lines } = flattenTreeLines(document);
     expect(lines.map((l) => l.id)).toEqual(['main', 'b1', 'b2', 'b5']);
     // The nested branch's prefix threads through its parent branch's cards.
-    expect(lines[2].prefix).toEqual(['look', 'a', 'b']);
+    expect(lines[2].prefix).toEqual(['a', 'b']);
   });
 
-  it('reports opening/boot cards outside the main line head as defects', () => {
+  it('reports an opening card anywhere but the main line\'s first card as a defect', () => {
     const document = doc([
-      boot(),
-      okTurn('north', { branches: [{ id: 'b1', cards: [boot(), okTurn('east')] }] }),
+      opening(),
+      okTurn('north', { branches: [{ id: 'b1', cards: [opening(), okTurn('east')] }] }),
       opening(),
     ]);
 
     const { defects } = flattenTreeLines(document);
-    expect(defects).toHaveLength(2);
-    expect(defects[0].message).toContain(`'boot' card`);
-    expect(defects[1].message).toContain(`'opening' card`);
+    expect(defects.map((defect) => defect.path)).toEqual(['cards[1].branches[b1].cards[0]', 'cards[2]']);
+    expect(defects.every((defect) => defect.message.includes(`'opening' card`))).toBe(true);
+  });
+
+  it('a fork on the opening card is a line with no prefix: an alternate first command', () => {
+    const document = doc([
+      { ...opening(), branches: [{ id: 'early', cards: [okTurn('east')] }] },
+      okTurn('north'),
+    ]);
+
+    const { lines, defects } = flattenTreeLines(document);
+    expect(defects).toEqual([]);
+    expect(lines.map((l) => [l.id, l.prefix, l.prefixTurns, l.forkIndex])).toEqual([
+      ['main', [], 0, undefined],
+      ['early', [], 0, 0],
+    ]);
   });
 });
 
@@ -233,20 +260,88 @@ describe('runTreeDocument — replay, labels, seams, blocking (ADR-307 D4/D5)', 
   it('runs a linear document once, with no replay share', async () => {
     const harness = stubHarness();
     const run = await runTreeDocument(
-      doc([opening({ contains: ["Fernhill Manor"] }), okBoot(), okTurn("north"), okTurn("take lamp")]),
+      doc([opening({ contains: ["Fernhill Manor", "Iron Gates"] }),okTurn("north"), okTurn("take lamp")]),
       harness.load,
     );
 
     expect(harness.counters.boots).toBe(1);
-    expect(commandsOf(harness)).toEqual(['look', 'north', 'take lamp']);
+    // The game's opening was run once, before any command, and no `look`
+    // was typed for it.
+    expect(harness.openings).toEqual([{ boot: 1, commandsBefore: 0 }]);
+    expect(commandsOf(harness)).toEqual(['north', 'take lamp']);
     expect(run.lines).toHaveLength(1);
     expect(run.lines[0].status).toBe('passed');
     expect(run.lines[0].label).toBe('opening-iron-gates');
     expect(run.lines[0].turnCount).toBe(2);
-    // The opening claim read the boot channel captures (banner).
-    expect(run.lines[0].result?.commands.some((r) => r.command.input === '(opening)' && r.passed)).toBe(true);
-    expect(run.executedCommands).toBe(3);
-    expect(run.authoredCommands).toBe(3);
+    // The opening's row is the first result, and its claims read what the
+    // opening sent: the banner's packet, then the look's prose.
+    const [openingRow] = run.lines[0].result!.commands;
+    expect(openingRow.command.input).toBe('(opening)');
+    expect(openingRow.passed).toBe(true);
+    expect(openingRow.actualOutput).toBe('Fernhill Manor\nIron Gates\nThe opening look.');
+    expect(run.executedCommands).toBe(2);
+    expect(run.authoredCommands).toBe(2);
+  });
+
+  it('the opening row reads the opening alone: a claim only the first command satisfies fails on it', async () => {
+    const harness = stubHarness();
+    const run = await runTreeDocument(
+      doc([opening({ contains: ['did north'] }), okTurn('north')]),
+      harness.load,
+    );
+
+    const [openingRow, north] = run.lines[0].result!.commands;
+    expect(openingRow.command.input).toBe('(opening)');
+    expect(openingRow.passed).toBe(false);
+    expect(north.passed).toBe(true);
+    expect(run.lines[0].status).toBe('failed');
+  });
+
+  it('a tree of one opening card and no turn still checks the opening', async () => {
+    const harness = stubHarness();
+    const passing = await runTreeDocument(doc([opening({ contains: ['Iron Gates'] })]), harness.load);
+    expect(passing.lines[0].status).toBe('passed');
+    expect(passing.lines[0].result!.commands.map((r) => [r.command.input, r.passed])).toEqual([['(opening)', true]]);
+    expect(commandsOf(harness)).toEqual([]);
+
+    const failing = await runTreeDocument(doc([opening({ contains: ['a room the story never opens in'] })]), stubHarness().load);
+    expect(failing.lines[0].status).toBe('failed');
+  });
+
+  it('hands the line observer the opening card as turn 0, after the opening ran and before the first command', async () => {
+    const harness = stubHarness();
+    const seen: Array<[string, number, boolean | undefined, number]> = [];
+    await runTreeDocument(
+      doc([opening(), okTurn('north', { branches: [{ id: 'b1', cards: [okTurn('east')] }] }), okTurn('take lamp')]),
+      harness.load,
+      {
+        lineObserver: {
+          onCard: ({ line, card, turn, game }) => {
+            seen.push([`${line.id}:${card.type}`, turn, game.openingPending, harness.executed.length]);
+          },
+        },
+      },
+    );
+    expect(seen).toEqual([
+      // The opening: turn 0, the game already opened, nothing typed yet.
+      ['main:opening', 0, false, 0],
+      ['main:turn', 1, false, 1],
+      ['main:turn', 2, false, 2],
+      // A branch has no opening card: its first card is the next turn.
+      ['b1:turn', 2, false, 4],
+    ]);
+  });
+
+  it('a story whose opening throws is an error on the line, nothing is typed into it, and its branches are blocked', async () => {
+    const harness = stubHarness({ openingThrows: 'the opening broke' });
+    const run = await runTreeDocument(
+      doc([opening(), okTurn('north', { branches: [{ id: 'b1', cards: [okTurn('east')] }] }), okTurn('north')]),
+      harness.load,
+    );
+
+    expect(run.lines.map((l) => [l.id, l.status])).toEqual([['main', 'error'], ['b1', 'blocked']]);
+    expect(run.lines[0].error).toBe("the story's opening failed: the opening broke");
+    expect(commandsOf(harness)).toEqual([]);
   });
 
   it('every result names its card, the (opening) row included, so no index rule is needed (ADR-357 D9)', async () => {
@@ -254,7 +349,6 @@ describe('runTreeDocument — replay, labels, seams, blocking (ADR-307 D4/D5)', 
     const run = await runTreeDocument(
       doc([
         { ...opening({ contains: ['Fernhill Manor'] }), id: 'c-open' },
-        { ...okBoot(), id: 'c-boot' },
         { ...okTurn('north'), id: 'c-north' },
         { ...okTurn('take lamp'), id: 'c-lamp' },
       ]),
@@ -266,7 +360,6 @@ describe('runTreeDocument — replay, labels, seams, blocking (ADR-307 D4/D5)', 
     // put the exported index rule off by one on the main line.
     expect(rows).toEqual([
       ['(opening)', 'c-open'],
-      ['look', 'c-boot'],
       ['north', 'c-north'],
       ['take lamp', 'c-lamp'],
     ]);
@@ -275,12 +368,12 @@ describe('runTreeDocument — replay, labels, seams, blocking (ADR-307 D4/D5)', 
   it('a card without an id yields a result without a cardId, and an opening without claims names no card', async () => {
     const harness = stubHarness();
     const run = await runTreeDocument(
-      doc([opening(), okBoot(), okTurn('north')]),
+      doc([opening(), okTurn('north')]),
       harness.load,
     );
 
     const rows = run.lines[0].result!.commands;
-    expect(rows.map((r) => r.command.input)).toEqual(['look', 'north']);
+    expect(rows.map((r) => r.command.input)).toEqual(['north']);
     expect(rows.every((r) => r.command.cardId === undefined)).toBe(true);
   });
 
@@ -288,7 +381,7 @@ describe('runTreeDocument — replay, labels, seams, blocking (ADR-307 D4/D5)', 
     const harness = stubHarness({ movesTo: { north: 'Gravel Drive' } });
     const run = await runTreeDocument(
       doc([
-        okBoot(),
+        opening(),
         okTurn('north', { branches: [{ id: 'b1', cards: [okTurn('east')] }] }),
         okTurn('north'),
       ]),
@@ -296,28 +389,29 @@ describe('runTreeDocument — replay, labels, seams, blocking (ADR-307 D4/D5)', 
     );
 
     expect(harness.counters.boots).toBe(2);
-    // Main line continuous, then the branch's fresh boot replays look+north
-    // before its own east.
-    expect(commandsOf(harness)).toEqual(['look', 'north', 'north', 'look', 'north', 'east']);
+    // Main line continuous, then the branch's fresh boot runs its own
+    // opening and replays north before its own east.
+    expect(commandsOf(harness)).toEqual(['north', 'north', 'north', 'east']);
+    expect(harness.openings).toEqual([{ boot: 1, commandsBefore: 0 }, { boot: 2, commandsBefore: 0 }]);
     // The branch's own first command ran against exactly the replayed state.
     const east = harness.executed.find((e) => e.command === 'east')!;
-    expect(east.from).toBe('fresh+look+north');
+    expect(east.from).toBe('fresh+north');
     expect(east.boot).toBe(2);
 
     expect(run.lines.map((l) => [l.id, l.status, l.label])).toEqual([
       ['main', 'passed', 'opening-iron-gates'],
       ['b1', 'passed', 'gravel-drive · east'],
     ]);
-    // 6 executed = 4 authored (boot look + 3 turns) + 2 replayed.
-    expect(run.executedCommands).toBe(6);
-    expect(run.authoredCommands).toBe(4);
+    // 4 executed = 3 authored turns + 1 replayed.
+    expect(run.executedCommands).toBe(4);
+    expect(run.authoredCommands).toBe(3);
   });
 
   it('D4 — a failed assertion is a seam: the line fails, descendants still run', async () => {
     const harness = stubHarness();
     const run = await runTreeDocument(
       doc([
-        okBoot(),
+        opening(),
         turn('north', {
           assertions: { contains: ['prose the story no longer says'] },
           branches: [{ id: 'b1', cards: [okTurn('east')] }],
@@ -338,7 +432,7 @@ describe('runTreeDocument — replay, labels, seams, blocking (ADR-307 D4/D5)', 
     const harness = stubHarness({ throwOn: { explode: 'engine died' } });
     const run = await runTreeDocument(
       doc([
-        okBoot(),
+        opening(),
         okTurn('north', { branches: [{ id: 'b1', cards: [okTurn('east')] }] }),
         turn('explode', { skip: true, branches: [{ id: 'b2', cards: [okTurn('west')] }] }),
         okTurn('south', { branches: [{ id: 'b3', cards: [okTurn('up')] }] }),
@@ -364,7 +458,7 @@ describe('runTreeDocument — replay, labels, seams, blocking (ADR-307 D4/D5)', 
     const harness = stubHarness({ throwOnReplay: { north: 'nondeterminism!' } });
     const run = await runTreeDocument(
       doc([
-        okBoot(),
+        opening(),
         okTurn('north', { branches: [{ id: 'b1', cards: [okTurn('east')] }] }),
       ]),
       harness.load,
@@ -386,7 +480,7 @@ describe('runTreeDocument — replay, labels, seams, blocking (ADR-307 D4/D5)', 
     const harness = stubHarness({ refuseOnReplay: { north: "engine is in the 'stopped' phase" } });
     const run = await runTreeDocument(
       doc([
-        okBoot(),
+        opening(),
         okTurn('north', { branches: [{ id: 'b1', cards: [okTurn('east')] }] }),
       ]),
       harness.load,
@@ -407,7 +501,7 @@ describe('runTreeDocument — replay, labels, seams, blocking (ADR-307 D4/D5)', 
     const harness = stubHarness({ refuseOnReplay: { west: 'unreached' } });
     const run = await runTreeDocument(
       doc([
-        okBoot(),
+        opening(),
         okTurn('north', { branches: [{ id: 'b1', cards: [okTurn('east')] }] }),
       ]),
       harness.load,
@@ -421,12 +515,12 @@ describe('runTreeDocument — replay, labels, seams, blocking (ADR-307 D4/D5)', 
   it('skip cards execute without asserting; the JSON is the whole truth', async () => {
     const harness = stubHarness();
     const run = await runTreeDocument(
-      doc([okBoot(), turn('north', { skip: true }), okTurn('east')]),
+      doc([opening(), turn('north', { skip: true }), okTurn('east')]),
       harness.load,
     );
 
     const rows = run.lines[0].result!.commands;
-    expect(commandsOf(harness)).toEqual(['look', 'north', 'east']);
+    expect(commandsOf(harness)).toEqual(['north', 'east']);
     expect(rows.find((r) => r.command.input === 'north')!.skipped).toBe(true);
     expect(rows.find((r) => r.command.input === 'east')!.passed).toBe(true);
     expect(run.lines[0].status).toBe('passed');
@@ -436,7 +530,7 @@ describe('runTreeDocument — replay, labels, seams, blocking (ADR-307 D4/D5)', 
     const harness = stubHarness();
     const run = await runTreeDocument(
       doc([
-        okBoot(),
+        opening(),
         turn('north'),
         okTurn('south', { branches: [{ id: 'b1', cards: [okTurn('west')] }] }),
       ]),
@@ -447,14 +541,14 @@ describe('runTreeDocument — replay, labels, seams, blocking (ADR-307 D4/D5)', 
     // The boundary stops the run BEFORE executing the bare command; the
     // fork on `south` sits on state the run never validly reached.
     expect(run.lines[1].status).toBe('blocked');
-    expect(commandsOf(harness)).toEqual(['look']);
+    expect(commandsOf(harness)).toEqual([]);
   });
 
   it('a DECLARED policy synthesizes nothing at run time — recording persisted, running reads (David 2026-08-10)', async () => {
     // The engine declares `all-emitted-text`, and the walker still clears it:
     // the bare card fails the boundary rather than inventing an assertion.
     const harness = stubHarness({ policy: 'all-emitted-text' });
-    const run = await runTreeDocument(doc([okBoot(), turn('north')]), harness.load);
+    const run = await runTreeDocument(doc([opening(), turn('north')]), harness.load);
 
     expect(run.lines[0].status).toBe('failed');
     const north = run.lines[0].result!.commands.find((r) => r.command.input === 'north')!;
@@ -465,12 +559,12 @@ describe('runTreeDocument — replay, labels, seams, blocking (ADR-307 D4/D5)', 
   it('card-position defects run nothing', async () => {
     const harness = stubHarness();
     const run = await runTreeDocument(
-      doc([okTurn('north'), boot()]),
+      doc([okTurn('north'), opening()]),
       harness.load,
     );
 
     expect(run.defects).toHaveLength(1);
-    expect(run.defects[0].message).toContain(`'boot' card`);
+    expect(run.defects[0].message).toContain(`'opening' card`);
     expect(run.lines).toEqual([]);
     expect(harness.counters.boots).toBe(0);
     expect(commandsOf(harness)).toEqual([]);
@@ -480,7 +574,7 @@ describe('runTreeDocument — replay, labels, seams, blocking (ADR-307 D4/D5)', 
     const harness = stubHarness({ channelValues: { score: ['42 points'] } });
     const run = await runTreeDocument(
       doc([
-        okBoot(),
+        opening(),
         turn('north', {
           assertions: { channels: [{ id: 'score', contains: ['42 points'] }] },
         }),
@@ -511,7 +605,7 @@ describe('runTreeDocument — replay, labels, seams, blocking (ADR-307 D4/D5)', 
     });
     const run = await runTreeDocument(
       doc([
-        okBoot(),
+        opening(),
         turn('north', {
           assertions: { channels: [{ id: 'story.chapter.title', contains: ['Chapter VI'] }] },
         }),
@@ -533,7 +627,7 @@ describe('runTreeDocument — replay, labels, seams, blocking (ADR-307 D4/D5)', 
     const harness = stubHarness();
     const run = await runTreeDocument(
       doc([
-        okBoot(),
+        opening(),
         turn('north', {
           assertions: { exact: ['did north'], contains: ['never evaluated, would fail'] },
         }),
@@ -553,7 +647,7 @@ describe('formatTreeDocumentRun — rows, tally, replay share', () => {
     const harness = stubHarness({ movesTo: { north: 'Gravel Drive' } });
     const run = await runTreeDocument(
       doc([
-        okBoot(),
+        opening(),
         okTurn('north', {
           branches: [{ id: 'b1', cards: [turn('east', { assertions: { contains: ['nope'] } })] }],
         }),
@@ -569,10 +663,12 @@ describe('formatTreeDocumentRun — rows, tally, replay share', () => {
     // The story's words on the failed turn, indented under the cite
     // (GH #584, #585): what the failed claim was checked against.
     expect(rows[2]).toBe('    did east');
-    // Every assertion counts (David 2026-08-10): main's look + north pass
-    // one claim each; the branch's east fails its one claim.
-    expect(rows[3]).toBe('2 cards passing, 2 assertions passing, 1 card failing, 1 assertion failing');
-    // 4 executed (look, north, look, north... plus east = 5) — replay share shown.
+    // Every assertion counts (David 2026-08-10): main's north passes its one
+    // claim (its opening card claims nothing, so it has no row); the
+    // branch's east fails its one claim.
+    expect(rows[3]).toBe('1 card passing, 1 assertion passing, 1 card failing, 1 assertion failing');
+    // 3 executed (north, then the branch's replayed north and its east) — replay share shown.
+    expect([run.executedCommands, run.authoredCommands]).toEqual([3, 2]);
     // The harness's game exposes no save surface, so the branch replayed its
     // prefix and nothing was restored (ADR-307 D5, amended 2026-11-12).
     expect(rows[4]).toBe(`${run.executedCommands} commands (${run.authoredCommands} authored + ${run.executedCommands - run.authoredCommands} replayed), 0 restored at a fork`);
@@ -604,7 +700,7 @@ describe('END STATE cards — a line ends where the story ends (ADR-356 D4)', ()
   it('AC-6 — the END STATE card passes when the replay reaches its ending', async () => {
     const harness = stubHarness({ endsOn });
     const run = await runTreeDocument(
-      doc([opening(), okBoot(), okTurn('north'), okTurn('open the box', { ending: 'box-opened' })]),
+      doc([opening(), okTurn('north'), okTurn('open the box', { ending: 'box-opened' })]),
       harness.load,
     );
     expect(run.defects).toEqual([]);
@@ -621,7 +717,7 @@ describe('END STATE cards — a line ends where the story ends (ADR-356 D4)', ()
     const harness = stubHarness({ endsOn });
     // The winning command is gone from the line; the declaration stays.
     const run = await runTreeDocument(
-      doc([opening(), okBoot(), okTurn('north', { ending: 'box-opened' })]),
+      doc([opening(), okTurn('north', { ending: 'box-opened' })]),
       harness.load,
     );
     expect(run.lines[0].status).toBe('failed');
@@ -636,7 +732,7 @@ describe('END STATE cards — a line ends where the story ends (ADR-356 D4)', ()
   it('a card that declares one ending while the story reached another fails naming both', async () => {
     const harness = stubHarness({ endsOn: { dig: { kind: 'defeat', cause: 'cave-in' } } });
     const run = await runTreeDocument(
-      doc([opening(), okBoot(), okTurn('dig', { ending: 'box-opened' })]),
+      doc([opening(), okTurn('dig', { ending: 'box-opened' })]),
       harness.load,
     );
     expect(run.lines[0].status).toBe('failed');
@@ -648,7 +744,7 @@ describe('END STATE cards — a line ends where the story ends (ADR-356 D4)', ()
   it('a kill ending is declared by its cause and passes', async () => {
     const harness = stubHarness({ endsOn: { dig: { kind: 'defeat', cause: 'cave-in' } } });
     const run = await runTreeDocument(
-      doc([opening(), okBoot(), okTurn('dig', { ending: 'cave-in' })]),
+      doc([opening(), okTurn('dig', { ending: 'cave-in' })]),
       harness.load,
     );
     expect(run.lines[0].status).toBe('passed');
@@ -657,7 +753,7 @@ describe('END STATE cards — a line ends where the story ends (ADR-356 D4)', ()
   it('skip does not suppress the ending claim — an END STATE card always asserts its ending', async () => {
     const harness = stubHarness({ endsOn });
     const run = await runTreeDocument(
-      doc([opening(), okBoot(), turn('open the box', { skip: true, ending: 'box-opened' })]),
+      doc([opening(),turn('open the box', { skip: true, ending: 'box-opened' })]),
       harness.load,
     );
     expect(run.lines[0].status).toBe('passed');
@@ -669,15 +765,15 @@ describe('END STATE cards — a line ends where the story ends (ADR-356 D4)', ()
   it('cards after an END STATE card never run: the line stops on the ending card and reports the cut-off', async () => {
     const harness = stubHarness({ endsOn });
     const run = await runTreeDocument(
-      doc([opening(), okBoot(), okTurn('open the box', { ending: 'box-opened' }), okTurn('look'), okTurn('wait')]),
+      doc([opening(), okTurn('open the box', { ending: 'box-opened' }), okTurn('look'), okTurn('wait')]),
       harness.load,
     );
     // Not a defect: the document runs (amended 2026-09-27 — the Testing tab
     // stamps the ending it observed, so this shape is a recorded finding).
     expect(run.defects).toEqual([]);
     expect(harness.counters.boots).toBe(1);
-    // The engine saw the boot look and the ending card, and nothing after.
-    expect(commandsOf(harness)).toEqual(['look', 'open the box']);
+    // The engine saw the ending card, and nothing after.
+    expect(commandsOf(harness)).toEqual(['open the box']);
     const [main] = run.lines;
     expect(main.status).toBe('error');
     expect(main.error).toBe(
@@ -685,7 +781,7 @@ describe('END STATE cards — a line ends where the story ends (ADR-356 D4)', ()
     );
     // The cards that did run keep their verdicts — the ending claim held.
     expect(main.result!.status).toBe('error');
-    expect(main.result!.commands.map((c) => c.command.input)).toEqual(['look', 'open the box']);
+    expect(main.result!.commands.map((c) => c.command.input)).toEqual(['open the box']);
     expect(main.result!.commands.at(-1)!.assertionResults[0]).toEqual({
       assertion: { type: 'ending-assert', endingId: 'box-opened' },
       passed: true,
@@ -701,7 +797,6 @@ describe('END STATE cards — a line ends where the story ends (ADR-356 D4)', ()
     const run = await runTreeDocument(
       doc([
         opening(),
-        okBoot(),
         okTurn('open the box', {
           ending: 'box-opened',
           branches: [{ id: 'b1', cards: [okTurn('look')] }],
@@ -723,7 +818,6 @@ describe('END STATE cards — a line ends where the story ends (ADR-356 D4)', ()
     const run = await runTreeDocument(
       doc([
         opening(),
-        okBoot(),
         okTurn('north', { branches: [{ id: 'b1', cards: [okTurn('east')] }] }),
         okTurn('open the box', { ending: 'box-opened' }),
         okTurn('look', { branches: [{ id: 'b2', cards: [okTurn('wait')] }] }),
@@ -743,7 +837,6 @@ describe('END STATE cards — a line ends where the story ends (ADR-356 D4)', ()
     const run = await runTreeDocument(
       doc([
         opening(),
-        okBoot(),
         okTurn('north', { branches: [{ id: 'b1', cards: [okTurn('east'), okTurn('wait')] }] }),
         okTurn('open the box', { ending: 'box-opened' }),
       ]),
@@ -756,7 +849,6 @@ describe('END STATE cards — a line ends where the story ends (ADR-356 D4)', ()
     ]);
     // The branch replayed only through its fork card — never the ending.
     expect(harness.executed.filter((e) => e.boot === 2).map((e) => e.command)).toEqual([
-      'look',
       'north',
       'east',
       'wait',
@@ -766,12 +858,11 @@ describe('END STATE cards — a line ends where the story ends (ADR-356 D4)', ()
   it('an ending no card declares is not revived: the cards after it meet a stopped engine and error', async () => {
     const harness = stubHarness({ endsOn });
     const run = await runTreeDocument(
-      doc([opening(), okBoot(), okTurn('open the box'), okTurn('look'), okTurn('wait')]),
+      doc([opening(), okTurn('open the box'), okTurn('look'), okTurn('wait')]),
       harness.load,
     );
     const rows = run.lines[0].result!.commands;
     expect(rows.map((r) => [r.command.input, r.passed, r.error !== undefined])).toEqual([
-      ['look', true, false],
       ['open the box', true, false],
       ['look', false, true],
       ['wait', false, true],
@@ -789,7 +880,6 @@ describe('rooms entered and endings reached (ADR-356 D5) — what the tree run c
     const run = await runTreeDocument(
       doc([
         opening(),
-        okBoot(),
         okTurn('north', { branches: [{ id: 'b1', cards: [okTurn('east')] }] }),
         okTurn('south'),
         okTurn('open the box', { ending: 'box-opened' }),
@@ -802,21 +892,21 @@ describe('rooms entered and endings reached (ADR-356 D5) — what the tree run c
 
   it('an END STATE card that fails its claim proves nothing', async () => {
     const harness = stubHarness({ endsOn: { dig: { kind: 'defeat', cause: 'cave-in' } } });
-    const run = await runTreeDocument(doc([opening(), okBoot(), okTurn('dig', { ending: 'box-opened' })]), harness.load);
+    const run = await runTreeDocument(doc([opening(), okTurn('dig', { ending: 'box-opened' })]), harness.load);
     expect(run.endingsReached).toEqual([]);
   });
 
   it('a defective document contributes nothing', async () => {
     const harness = stubHarness({ endsOn: { 'open the box': { kind: 'victory', messageId: 'box-opened' } } });
-    // A boot card away from the main line's head is the card-position
+    // An opening card away from the main line's head is the card-position
     // defect that still runs nothing (cards after an END STATE card no
     // longer are — they are the line's own finding, 2026-09-27).
     const run = await runTreeDocument(
-      doc([opening(), okBoot(), okTurn('open the box', { ending: 'box-opened' }), boot()]),
+      doc([opening(), okTurn('open the box', { ending: 'box-opened' }), opening()]),
       harness.load,
     );
     expect(run.defects).toHaveLength(1);
-    expect(run.defects[0].message).toContain(`'boot' card`);
+    expect(run.defects[0].message).toContain(`'opening' card`);
     expect(run.roomsEntered).toEqual([]);
     expect(run.endingsReached).toEqual([]);
   });

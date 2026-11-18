@@ -28,7 +28,7 @@ afterAll(() => {
 
 /**
  * A scratch copy of the claims-tier project with no fragment and a tree of
- * one line: opening, boot, `read note` (turn 1), `north` (turn 2), written
+ * one line: opening, `read note` (turn 1), `north` (turn 2), written
  * by the tree's own writer so the canonical gate passes.
  */
 function project(): string {
@@ -45,8 +45,7 @@ function project(): string {
     seed: 7,
     id: 'mainline',
     cards: [
-      { id: 'card0000', type: 'opening', assertions: {} },
-      { id: 'card0001', type: 'boot', assertions: { states: ['the note is pinned'] } },
+      { id: 'card0000', type: 'opening', assertions: { states: ['the note is pinned'] } },
       { id: 'card0002', type: 'turn', command: 'read note', assertions: { contains: ['Back by dawn.'] } },
       { id: 'card0003', type: 'turn', command: 'north', assertions: { contains: ['landing'] } },
     ],
@@ -111,8 +110,8 @@ describe('sharpee claim — the lock (D2, D4, D5) and the rerun (AC-1, AC-5)', (
     const manifest = JSON.parse(readFileSync(path.join(dir, 'claims-tier.tests', 'manifest.json'), 'utf8'));
     expect(manifest).toEqual({ claims: FRAGMENT, seed: 7, story: 'claims-tier', version: 3 });
     const segment = JSON.parse(readFileSync(path.join(dir, 'claims-tier.tests', 'mainline.json'), 'utf8'));
-    expect(segment.cards[3].locks).toEqual(['the player is in the Landing']);
-    expect(segment.cards[2].locks).toBeUndefined();
+    expect(segment.cards[2].locks).toEqual(['the player is in the Landing']);
+    expect(segment.cards[1].locks).toBeUndefined();
 
     const second = await run(() => runClaimCommand(['mainline', 'the note is read', '--at', '1', '--name', 'the note gets read', dir]));
     expect(second.code).toBe(0);
@@ -120,7 +119,7 @@ describe('sharpee claim — the lock (D2, D4, D5) and the rerun (AC-1, AC-5)', (
     const appended = readFileSync(path.join(dir, FRAGMENT), 'utf8');
     expect(appended.startsWith(fragment.slice(0, fragment.indexOf('end claims')))).toBe(true);
     expect(appended).toContain('\n\n  claim the note gets read\n    the note is read\n    needs rooms: the Hall\n    needs things: the note\n    needs verbs: read\nend claims\n');
-    expect(JSON.parse(readFileSync(path.join(dir, 'claims-tier.tests', 'mainline.json'), 'utf8')).cards[2].locks).toEqual(['the note gets read']);
+    expect(JSON.parse(readFileSync(path.join(dir, 'claims-tier.tests', 'mainline.json'), 'utf8')).cards[1].locks).toEqual(['the note gets read']);
 
     // The rerun: the tree is canonical, both claims are held by the line, no walk runs, exit 0.
     const test = await run(() => runTestCommand([dir]));

@@ -1,18 +1,13 @@
 {
   "cards": [
     {
-      "assertions": {},
-      "id": "fryopen1",
-      "type": "opening"
-    },
-    {
       "assertions": {
         "contains": [
           "A river landing."
         ]
       },
-      "id": "fryboot1",
-      "type": "boot"
+      "id": "fryopen1",
+      "type": "opening"
     },
     {
       "assertions": {

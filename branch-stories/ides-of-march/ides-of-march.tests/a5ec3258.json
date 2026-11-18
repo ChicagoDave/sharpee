@@ -13,20 +13,12 @@
           }
         ],
         "contains": [
-          "By Sharpee Platform"
+          "By Sharpee Platform",
+          "Yard"
         ]
       },
       "id": "ns3dzemu",
       "type": "opening"
-    },
-    {
-      "assertions": {
-        "contains": [
-          "Yard"
-        ]
-      },
-      "id": "dsfzses0",
-      "type": "boot"
     },
     {
       "assertions": {

@@ -19,6 +19,7 @@
  *
  * Public interface: cardAssertionLines(options, ordinal),
  *   openingDefaultClaims(policy, bootCaptures),
+ *   openingAssertionsOf(defaults, look),
  *   recordedTurnAssertions(policy, source), RecordedAssertions,
  *   CardLineOptions, TurnSource, SourceLine, DeleteRef.
  * Owner context: tools/ide — the testing play surface's web bundle.
@@ -100,6 +101,39 @@ export function openingDefaultClaims(
       ? { id, contains: [assertion.value!] }
       : { id, is: String(assertion.channelExpected) };
   });
+}
+
+/**
+ * The claims a fresh opening card records (ADR-404 decision 12): the
+ * opening's default channel claims, then what the policy recorded of the
+ * first look, which the opening holds too. RECORD time only.
+ *
+ * An `exact` block the policy wrote for the look becomes `contains` entries,
+ * one per non-blank line. The opening's row is checked against everything
+ * the opening printed (prologue, banner and room together), so a whole-output
+ * match of the look alone could never hold there.
+ *
+ * @param defaults the opening's default channel claims, possibly empty.
+ * @param look what the policy recorded of the first look, when anything.
+ * @returns the opening card's assertions, or `undefined` when there is nothing to record.
+ */
+export function openingAssertionsOf(
+  defaults: readonly TreeChannelAssertion[],
+  look: TreeAssertions | undefined,
+): TreeAssertions | undefined {
+  const contains = [
+    ...(look?.contains ?? []),
+    ...(look?.exact ?? []).map((line) => line.trim()).filter((line) => line.length > 0),
+  ];
+  const channels = [...defaults, ...(look?.channels ?? [])];
+  const assertions: TreeAssertions = {
+    ...(contains.length > 0 ? { contains } : {}),
+    ...((look?.notContains?.length ?? 0) > 0 ? { notContains: [...look!.notContains!] } : {}),
+    ...((look?.states?.length ?? 0) > 0 ? { states: [...look!.states!] } : {}),
+    ...((look?.events?.length ?? 0) > 0 ? { events: [...look!.events!] } : {}),
+    ...(channels.length > 0 ? { channels } : {}),
+  };
+  return Object.keys(assertions).length > 0 ? assertions : undefined;
 }
 
 /** What recording persists onto an appended card: assertions, or an explicit

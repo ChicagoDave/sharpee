@@ -928,7 +928,7 @@ function commandPlan(
 ): CommandPlan | { kind: 'skip'; shape: string; detail: string } | { kind: 'no-vocabulary'; detail: string } {
   const command = branch.command;
   switch (command.kind) {
-    case 'boot':
+    case 'start':
       return { kind: 'none' };
     case 'any-turn':
       return { kind: 'typed', input: 'wait' };

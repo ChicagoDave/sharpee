@@ -49,7 +49,7 @@ function edit(file: string, anchor: string, replacement: string): void {
 
 /**
  * A scratch claims-tier project with no fragment and a tree of one line:
- * opening, boot, `read note` (turn 1), `north` (turn 2), written by the
+ * opening, `read note` (turn 1), `north` (turn 2), written by the
  * tree's own writer so the canonical gate passes.
  */
 function tierProject(): string {
@@ -65,8 +65,7 @@ function tierProject(): string {
     id: 'mainline',
     cards: [
       // The opening claims the first look's text, so the run has an opening row (GH #585's case).
-      { id: 'card0000', type: 'opening', assertions: { contains: ['A bare hall.'] } },
-      { id: 'card0001', type: 'boot', assertions: { states: ['the note is pinned'] } },
+      { id: 'card0000', type: 'opening', assertions: { contains: ['A bare hall.'], states: ['the note is pinned'] } },
       { id: 'card0002', type: 'turn', command: 'read note', assertions: { contains: ['Back by dawn.'] } },
       { id: 'card0003', type: 'turn', command: 'north', assertions: { contains: ['landing'] } },
     ],
@@ -147,7 +146,7 @@ describe('a broken lock fails its card and the run (ADR-367 D6)', () => {
     // The story's words on that turn, indented under the cite (GH #584).
     expect(stdout[cite + 1]).toMatch(/^ {4}\S/);
     expect(stdout.slice(cite + 1, cite + 6).join('\n')).toContain('A gallery with a landing at one end.');
-    expect(stdout).toContain('3 cards passing, 4 assertions passing, 1 card failing, 1 assertion failing');
+    expect(stdout).toContain('2 cards passing, 4 assertions passing, 1 card failing, 1 assertion failing');
     // The claims tier (D6): no line reaches the claim now, the walk is tried, nothing gates beyond the card.
     expect(stdout).toContain('UNPROVEN  the player is in the Landing — not reached by any line; no reachable state under its set satisfies it (the set of "the player is in the Landing")');
     expect(stdout).toContain('  lock "the player is in the Landing" at line mainline "opening-hall" at turn 2 — NOT held there: the player is in the Gallery');

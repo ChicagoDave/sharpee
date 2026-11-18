@@ -11,8 +11,8 @@
  */
 import { describe, expect, it } from 'vitest';
 import {
-  beginRun, bootLookIndex, commandRowText, createRunState, finishRun, firstFailureText, foldRunLine,
-  resetRun, restatesTextClaim, runRowVisitTarget, runRowsOf, type CommandOutcome,
+  beginRun, commandRowText, createRunState, finishRun, firstFailureText, foldRunLine,
+  resetRun, restatesTextClaim, runRowVisitTarget, runRowsOf,
 } from '../src/run';
 
 let seq = 0;
@@ -158,10 +158,10 @@ describe('foldRunLine', () => {
 
     const failure = state.results.get('opening-den')?.firstFailure;
     expect(failure).toEqual({ message: 'Output does not contain "roses"', command: 0 });
-    expect(firstFailureText(failure!, false)).toBe('Output does not contain "roses"');
+    expect(firstFailureText(failure!)).toBe('Output does not contain "roses"');
   });
 
-  it("the first failure's command index counts the opening row, so the header can tell the boot look (F-13)", () => {
+  it("the first failure's command index counts the opening row, and a typed look is titled as the typed command it is", () => {
     const state = createRunState();
     beginRun(state);
     for (const raw of [
@@ -174,22 +174,15 @@ describe('foldRunLine', () => {
 
     const result = state.results.get('main');
     expect(result?.firstFailure).toEqual({ where: 'turn 1', message: 'Output does not contain "rattles"', command: 1 });
-    expect(bootLookIndex(result!.commands, true)).toBe(1);
-    expect(firstFailureText(result!.firstFailure!, true)).toBe('turn 1 · boot — Output does not contain "rattles"');
-    expect(result!.commands.map((c, i) => commandRowText(c, i === 1))).toEqual(['(opening)', '(boot look)', '> look']);
+    // No row is a first look nobody typed: the walker runs the opening and
+    // types nothing, so the first `look` after the opening row is turn 1.
+    expect(firstFailureText(result!.firstFailure!)).toBe('turn 1 — Output does not contain "rattles"');
+    expect(result!.commands.map((c) => commandRowText(c))).toEqual(['(opening)', '> look', '> look']);
   });
 
-  it('a line with no boot card has no boot look, and the row text is the typed command (F-13)', () => {
-    const commands: CommandOutcome[] = [
-      { input: '(opening)', passed: true, skipped: false, assertions: [] },
-      { input: 'look', passed: true, skipped: false, assertions: [] },
-    ];
-    expect(bootLookIndex(commands, false)).toBeUndefined();
-    expect(bootLookIndex([commands[0]], true)).toBeUndefined();
-    expect(bootLookIndex(commands.slice(1), true)).toBe(0);
-    expect(commandRowText(commands[1], false)).toBe('> look');
-    expect(firstFailureText({ message: 'engine exploded' }, true)).toBe('boot look — engine exploded');
-    expect(firstFailureText({ where: 'turn 3', message: 'no satchel' }, false)).toBe('turn 3 — no satchel');
+  it('a failure with no position is its message alone, and one with a position leads with it', () => {
+    expect(firstFailureText({ message: 'engine exploded' })).toBe('engine exploded');
+    expect(firstFailureText({ where: 'turn 3', message: 'no satchel' })).toBe('turn 3 — no satchel');
   });
 
   it('a replayed execution is never a row, and the authored one still is', () => {

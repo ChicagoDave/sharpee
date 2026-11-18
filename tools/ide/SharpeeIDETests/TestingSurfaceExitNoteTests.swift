@@ -15,10 +15,10 @@ final class TestingSurfaceExitNoteTests: XCTestCase {
     func testANoteCarriesTheExitCodeAndTheDiagnosticsTail() {
         let note = TestingSurfaceViewController.exitNote(
             code: 2,
-            diagnostics: "Tree document is malformed — 1 defect(s); nothing ran.\n  cards[3]: a 'boot' card is only valid at the main line's head\n")
+            diagnostics: "Tree document is malformed — 1 defect(s); nothing ran.\n  cards[3]: an 'opening' card is only valid as the main line's first card\n")
         XCTAssertEqual(
             note,
-            "The run exited 2.\nTree document is malformed — 1 defect(s); nothing ran.\n  cards[3]: a 'boot' card is only valid at the main line's head")
+            "The run exited 2.\nTree document is malformed — 1 defect(s); nothing ran.\n  cards[3]: an 'opening' card is only valid as the main line's first card")
     }
 
     func testANoteWithNoDiagnosticsSaysTheRunEndedBeforeAnyLine() {

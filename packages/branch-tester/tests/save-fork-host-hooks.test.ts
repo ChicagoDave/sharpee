@@ -217,8 +217,8 @@ describe('REAL-PATH — a claims walk leaves the host\'s hooks alone', () => {
 
     expect(games).toHaveLength(1);
     const [hosted] = games;
-    // The opening look and every command the walk tried.
-    expect(hosted.savesBeforeTurn).toHaveLength(run.walks[0].commandsExecuted + 1);
+    // Every command the walk tried, and nothing else: the opening is no turn.
+    expect(hosted.savesBeforeTurn).toHaveLength(run.walks[0].commandsExecuted);
     expect(hosted.savesBeforeTurn.every((accepted) => accepted)).toBe(true);
     expect(hosted.hostSaves).toHaveLength(hosted.savesBeforeTurn.length);
     // The walk's own restores never asked the host.
@@ -243,10 +243,11 @@ describe('REAL-PATH — a claims walk leaves the host\'s hooks alone', () => {
 
     const [hosted] = games;
     expect(run.walks[0].commandsExecuted).toBeGreaterThan(0);
-    // Only the opening look came before the walk's first capture.
-    expect(hosted.savesBeforeTurn[0]).toBe(true);
-    expect(hosted.savesBeforeTurn.slice(1).every((accepted) => !accepted)).toBe(true);
-    expect(hosted.hostSaves).toHaveLength(1);
+    // No turn comes before the walk's first capture (the opening is no
+    // turn), so every save asked before a turn finds the host's hook gone.
+    expect(hosted.savesBeforeTurn.length).toBeGreaterThan(0);
+    expect(hosted.savesBeforeTurn.every((accepted) => !accepted)).toBe(true);
+    expect(hosted.hostSaves).toHaveLength(0);
     expect(hosted.hooksNow()?.onSaveRequested).toBeUndefined();
   }, 60_000);
 });

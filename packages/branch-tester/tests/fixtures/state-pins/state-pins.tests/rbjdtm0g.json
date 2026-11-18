@@ -1,11 +1,6 @@
 {
   "cards": [
     {
-      "assertions": {},
-      "id": "ekivbzw5",
-      "type": "opening"
-    },
-    {
       "assertions": {
         "states": [
           "the brass bell is still",
@@ -15,8 +10,8 @@
           "story.state = calm"
         ]
       },
-      "id": "0agiqkfd",
-      "type": "boot"
+      "id": "ekivbzw5",
+      "type": "opening"
     },
     {
       "assertions": {

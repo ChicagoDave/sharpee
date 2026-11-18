@@ -11,6 +11,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   cardAssertionLines,
+  openingAssertionsOf,
   openingDefaultClaims,
   recordedTurnAssertions,
   type TurnSource,
@@ -183,5 +184,46 @@ describe('the opening claims (open question D: prologue, title, description)', (
     expect(cardAssertionLines({ model }, 0)).toEqual([
       { text: 'no assertions', kind: 'skip' },
     ]);
+  });
+});
+
+describe('openingAssertionsOf — what a fresh opening card records', () => {
+  const defaults = [{ id: 'prologue', contains: ['Night falls.'] }, { id: 'info.title', is: 'Mini' }];
+
+  it('puts the first look\'s families beside the opening\'s default channel claims, defaults first', () => {
+    expect(openingAssertionsOf(defaults, {
+      contains: ['Den'],
+      notContains: ['Garden'],
+      states: ['the lamp is lit'],
+      events: ['if.event.looked'],
+      channels: [{ id: 'room-name', is: 'Den' }],
+    })).toEqual({
+      contains: ['Den'],
+      notContains: ['Garden'],
+      states: ['the lamp is lit'],
+      events: ['if.event.looked'],
+      channels: [...defaults, { id: 'room-name', is: 'Den' }],
+    });
+  });
+
+  it('turns an exact block into contains lines, one per non-blank line, and keeps no exact', () => {
+    const recorded = openingAssertionsOf([], { exact: ['Den', '', '  A small square den.  '], contains: ['first'] });
+    expect(recorded).toEqual({ contains: ['first', 'Den', 'A small square den.'] });
+    expect(recorded).not.toHaveProperty('exact');
+  });
+
+  it('copies the look\'s lists: editing the result leaves the source as it was', () => {
+    const look = { contains: ['Den'], states: ['s'] };
+    const recorded = openingAssertionsOf([], look)!;
+    recorded.states!.push('added');
+    expect(look.states).toEqual(['s']);
+  });
+
+  it('is the defaults alone with no look, the look alone with no defaults, and undefined with neither', () => {
+    expect(openingAssertionsOf(defaults, undefined)).toEqual({ channels: defaults });
+    expect(openingAssertionsOf([], { contains: ['Den'] })).toEqual({ contains: ['Den'] });
+    expect(openingAssertionsOf([], undefined)).toBeUndefined();
+    expect(openingAssertionsOf([], {})).toBeUndefined();
+    expect(openingAssertionsOf([], { contains: [], exact: ['   '] })).toBeUndefined();
   });
 });

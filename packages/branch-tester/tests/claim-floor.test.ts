@@ -53,13 +53,12 @@ const CLAIMS = normalizeClaimSet(
 
 const skip = (command: string, extra?: Partial<TreeCard>): TreeCard => ({ type: 'turn', command, skip: true, ...extra });
 
-/** Main line: boot, `north` (1), `south` (2); a branch at `north`: `read note`?? no — the note is in the Hall, so the branch reads it after `south`. */
+/** Main line: the opening, `north` (1), `south` (2); a branch at `north`: `south` (2), `read note` (3) — the note is in the Hall, so the branch reads it after `south`. */
 function tree(locks?: Partial<Record<'mainNorth' | 'branchRead', string[]>>): TreeDocument {
   return {
     ...emptyTreeDocument('claim-bits-fixture', SEED, 'mainline'),
     cards: [
       { id: 'card0000', type: 'opening' },
-      { id: 'card0001', type: 'boot', skip: true },
       {
         ...skip('north', { id: 'card0002', ...(locks?.mainNorth ? { locks: locks.mainNorth } : {}) }),
         continuation: 'contin00',

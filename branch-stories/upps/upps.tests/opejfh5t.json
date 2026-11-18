@@ -7,20 +7,14 @@
             "id": "info.title",
             "is": "UPPS (United Planetary Postal Service)"
           }
-        ]
-      },
-      "id": "vkl2db7g",
-      "type": "opening"
-    },
-    {
-      "assertions": {
+        ],
         "contains": [
           "Sorting Room",
           "Pigeonholes climb every wall of the depot, each one stencilled with the name of a world: Ceres, Titan, Kepler Station, places you have only seen as postmarks. The sorting machine hums in the middle of the floor. East, the loading dock door is shut."
         ]
       },
-      "id": "qh07ldk5",
-      "type": "boot"
+      "id": "vkl2db7g",
+      "type": "opening"
     },
     {
       "assertions": {

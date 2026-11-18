@@ -7,20 +7,14 @@
             "id": "info.title",
             "is": "The Relighting"
           }
-        ]
-      },
-      "id": "ky16lcda",
-      "type": "opening"
-    },
-    {
-      "assertions": {
+        ],
         "contains": [
           "The Porter's Lodge",
           "The door to the court is north."
         ]
       },
-      "id": "0e8c502n",
-      "type": "boot"
+      "id": "ky16lcda",
+      "type": "opening"
     },
     {
       "assertions": {

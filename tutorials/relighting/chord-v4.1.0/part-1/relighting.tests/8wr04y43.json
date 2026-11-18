@@ -19,20 +19,14 @@
             ],
             "id": "banner"
           }
-        ]
-      },
-      "id": "m6qbmupm",
-      "type": "opening"
-    },
-    {
-      "assertions": {
+        ],
         "contains": [
           "Lodge",
           "On the sill a lamp is burning with a steady blue flame."
         ]
       },
-      "id": "bhqfish7",
-      "type": "boot"
+      "id": "m6qbmupm",
+      "type": "opening"
     },
     {
       "assertions": {

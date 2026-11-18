@@ -42,11 +42,10 @@ import {
   TREE_DOCUMENT_VERSION,
   type TreeAssertions,
   type TreeCard,
-  type TreeChannelAssertion,
   type TreeDocument,
   type TreeFiles,
 } from '@sharpee/branch-tester/tree-document';
-import { openingDefaultClaims, recordedTurnAssertions } from '../src/compose';
+import { openingAssertionsOf, openingDefaultClaims, recordedTurnAssertions } from '../src/compose';
 import { TreeSessionModel } from '../src/model';
 import { beginRun, createRunState, finishRun, foldRunLine, type RunColumnState } from '../src/run';
 
@@ -66,6 +65,8 @@ const { loadAuthorGame } = requireCompiled(
 
 interface RealGame {
   executeCommand(input: string): Promise<string> | string;
+  /** The story's opening, run and never typed (bootstrap's `LoadedGame.runOpening`). */
+  runOpening(): Promise<string>;
   lastChannelValues?: Record<string, unknown[]>;
   bootChannelValues?: Record<string, unknown[]>;
 }
@@ -177,7 +178,32 @@ let ordinal = 0;
  *  (structure is specified explicitly; claim CONTENT is what the real
  *  engine's captures synthesized, and the CLI proves it holds on replay). */
 const recordedLog = new Map<number, TreeAssertions | undefined>();
-let openingLog: TreeChannelAssertion[] = [];
+/** What the opening's record persisted on the opening card. */
+let openingLog: TreeAssertions | undefined;
+
+/**
+ * Runs the real engine's opening and folds its record into the model the way
+ * the tab's feed does: nothing is typed, the record seats the one opening
+ * card, and that card records the opening's default claims followed by what
+ * the policy recorded of the first look (`openingAssertionsOf`, the function
+ * the feed itself calls).
+ */
+async function openReal(model: TreeSessionModel, game: RealGame): Promise<number> {
+  const output = await game.runOpening();
+  ordinal += 1;
+  const captures = game.bootChannelValues ?? {};
+  const room = proseTextLinesOf(captures['room-name']).at(-1);
+  const recorded = recordedTurnAssertions(DEFAULT_AUTO_ASSERTION_POLICY, { output, channelValues: captures });
+  openingLog = openingAssertionsOf(openingDefaultClaims(DEFAULT_AUTO_ASSERTION_POLICY, captures), recorded.assertions);
+  model.addTurn({
+    ordinal,
+    command: '',
+    boot: true,
+    ...(room !== undefined ? { room } : {}),
+    ...(openingLog !== undefined ? { openingAssertions: openingLog } : {}),
+  });
+  return ordinal;
+}
 
 /** Plays one command on the real engine and folds it into the model the way
  *  the tab's feed does — recorded assertions persisted (JSON = truth). */
@@ -185,7 +211,6 @@ async function playReal(
   model: TreeSessionModel,
   game: RealGame,
   command: string,
-  boot = false,
 ): Promise<number> {
   const output = String(await game.executeCommand(command));
   ordinal += 1;
@@ -195,21 +220,13 @@ async function playReal(
     ...(game.lastChannelValues !== undefined ? { channelValues: game.lastChannelValues } : {}),
   });
   recordedLog.set(ordinal, recorded.assertions);
-  const openingClaims = boot
-    ? openingDefaultClaims(DEFAULT_AUTO_ASSERTION_POLICY, {
-        ...(game.lastChannelValues ?? {}),
-        ...(game.bootChannelValues ?? {}),
-      })
-    : [];
-  if (boot) openingLog = openingClaims;
   model.addTurn({
     ordinal,
-    command: boot ? '' : command,
-    boot,
+    command,
+    boot: false,
     ...(room !== undefined ? { room } : {}),
     ...(recorded.assertions !== undefined ? { assertions: recorded.assertions } : {}),
     ...(recorded.skip === true ? { skip: true } : {}),
-    ...(openingClaims.length > 0 ? { openingAssertions: { channels: openingClaims } } : {}),
   });
   return ordinal;
 }
@@ -242,12 +259,12 @@ interface BaseSession {
   expected: TreeDocument;
 }
 
-/** The base session every gesture starts from: boot look, a claimed examine
+/** The base session every gesture starts from: the opening, a claimed examine
  *  (holding a branch with a claimed alternate look), a claimed north. */
 async function buildBase(): Promise<BaseSession> {
   const model = new TreeSessionModel('mini', 42);
   const game = await loadGame();
-  const boot = await playReal(model, game, 'look', true);
+  await openReal(model, game);
   const examined = await playReal(model, game, 'examine the brass lamp');
   model.addContains(examined, 'gleams dully');
   const north = await playReal(model, game, 'north');
@@ -255,7 +272,7 @@ async function buildBase(): Promise<BaseSession> {
 
   const branchId = model.branch(examined, 'look')!;
   const branchGame = await loadGame();
-  await branchGame.executeCommand('look');
+  await branchGame.runOpening();
   await branchGame.executeCommand('examine the brass lamp');
   const alt = await playReal(model, branchGame, 'look');
   model.addContains(alt, 'A small square den');
@@ -278,8 +295,7 @@ async function buildBase(): Promise<BaseSession> {
     seed: 42,
     id: model.mainLine,
     cards: [
-      card('opening', undefined, openingLog.length > 0 ? { channels: openingLog } : undefined),
-      card('boot', undefined, recordedLog.get(boot)),
+      card('opening', undefined, openingLog),
       examineCard,
       card('turn', 'north', withContains(recordedLog.get(north), 'Roses everywhere')),
     ],
@@ -369,8 +385,10 @@ describe('AC-2 — one document, two consumers (tab-authored suite through the r
     expect([...run.state.results.keys()]).toEqual(tabLines);
     expect([...run.state.results.values()].map((result) => result.label)).toEqual(tabLabels);
     for (const lineId of tabLines) expect(run.state.results.get(lineId)?.status).toBe('passed');
+    // The opening is one row (its defaults and the first room together),
+    // then examine and north, then the branch's look.
     expect(run.state.tally).toEqual({
-      cardsPassed: 5,
+      cardsPassed: 4,
       cardsFailed: 0,
       assertionsPassed: 12,
       assertionsFailed: 0,
@@ -385,17 +403,22 @@ describe('AC-2 — one document, two consumers (tab-authored suite through the r
     // carries every assertion's verdict, all passing — including the
     // persisted opening claims.
     const mainDetail = run.state.results.get(model.mainLine)!.commands;
-    expect(mainDetail.length).toBeGreaterThanOrEqual(4); // (opening) + boot + 2 turns
+    expect(mainDetail.map((command) => command.input)).toEqual(['(opening)', 'examine the brass lamp', 'north']);
     expect(mainDetail.every((command) => command.assertions.length > 0)).toBe(true);
     expect(mainDetail.every((command) => command.assertions.every((entry) => entry.passed))).toBe(
       true,
     );
     const openingDetail = mainDetail.find((command) => command.input === '(opening)')!;
-    expect(openingDetail.assertions.map((entry) => entry.description)).toEqual([
+    // The opening card holds the first room the policy recorded, then the
+    // opening's own defaults: one row, one card.
+    const openingClaims = openingDetail.assertions.map((entry) => entry.description);
+    expect(openingClaims.slice(-3)).toEqual([
       'channel prologue contains "Night falls on the den."',
       'channel info.title is "Mini"',
       'channel info.description is "A small square test story."',
     ]);
+    expect(openingClaims.slice(0, -3)).toContain('contains "Den"');
+    expect(openingClaims.slice(0, -3).every((claim) => claim.startsWith('contains "'))).toBe(true);
 
     // The run consumed the tab's files and wrote nothing back.
     expect(readTree()).toEqual(filesBefore);
@@ -405,7 +428,7 @@ describe('AC-2 — one document, two consumers (tab-authored suite through the r
     expect(exitCode).toBe(0);
     expect(report).toContain('✓ opening-den');
     expect(report).toContain('✓ den · look');
-    expect(report).toContain('5 cards passing, 12 assertions passing');
+    expect(report).toContain('4 cards passing, 12 assertions passing');
   }, 600_000);
 
   it('a failing claim is cited identically by the tab fold, the stream, and the report', async () => {
@@ -434,7 +457,7 @@ describe('AC-2 — one document, two consumers (tab-authored suite through the r
     // …the branch is unaffected and the tally counts lines.
     expect(run.state.results.get(branchId)?.status).toBe('passed');
     expect(run.state.tally).toEqual({
-      cardsPassed: 4,
+      cardsPassed: 3,
       cardsFailed: 1,
       assertionsPassed: 12,
       assertionsFailed: 1,
@@ -450,7 +473,7 @@ describe('AC-2 — one document, two consumers (tab-authored suite through the r
     const failLine = report.split('\n').find((line) => line.startsWith('✗ opening-den'));
     expect(failLine).toBeDefined();
     expect(failLine).toContain(message);
-    expect(report).toContain('4 cards passing, 12 assertions passing, 1 card failing, 1 assertion failing');
+    expect(report).toContain('3 cards passing, 12 assertions passing, 1 card failing, 1 assertion failing');
   }, 600_000);
 });
 
@@ -462,7 +485,7 @@ describe('AC-2 — the fresh-start session (no header, nothing hand-authored)', 
     // CLI agrees without assuming anything.
     const model = new TreeSessionModel('mini', 42);
     const game = await loadGame();
-    await playReal(model, game, 'look', true);
+    await openReal(model, game);
     await playReal(model, game, 'examine the brass lamp');
     await playReal(model, game, 'north');
     const text = Object.values(writeTree(model)).join('\n');
@@ -477,7 +500,7 @@ describe('AC-2 — the fresh-start session (no header, nothing hand-authored)', 
     expect(cliLabels(run.events)).toEqual(['opening-den']);
     expect(run.state.results.get(model.mainLine)?.status).toBe('passed');
     expect(run.state.tally).toEqual({
-      cardsPassed: 3,
+      cardsPassed: 2,
       cardsFailed: 0,
       assertionsPassed: 7,
       assertionsFailed: 0,
@@ -524,7 +547,7 @@ describe('AC-3 — each gesture, then a whole-path replay through the real CLI',
     // Exactly the base tree with one BARE `north` after the examine card —
     // the spliced turn was never played, and the JSON says so.
     const bare = JSON.parse(JSON.stringify(expected)) as TreeDocument;
-    bare.cards.splice(3, 0, { type: 'turn', command: 'north' });
+    bare.cards.splice(2, 0, { type: 'turn', command: 'north' });
     expectTree(model, bare);
 
     // The whole-path replay (real commands, real engine) binds the repaired
@@ -532,13 +555,13 @@ describe('AC-3 — each gesture, then a whole-path replay through the real CLI',
     // recorded truth.
     model.beginRebindAll();
     const rebindGame = await loadGame();
-    await playReal(model, rebindGame, 'look', true);
+    await openReal(model, rebindGame);
     await playReal(model, rebindGame, 'examine the brass lamp');
     const splicedOrdinal = await playReal(model, rebindGame, 'north');
     await playReal(model, rebindGame, 'north');
     expect(model.cardAt(splicedOrdinal)?.command).toBe('north');
     const filled = JSON.parse(JSON.stringify(bare)) as TreeDocument;
-    filled.cards[3] = card('turn', 'north', recordedLog.get(splicedOrdinal));
+    filled.cards[2] = card('turn', 'north', recordedLog.get(splicedOrdinal));
     expectTree(model, filled);
 
     const written = writeTree(model);
@@ -564,7 +587,7 @@ describe('AC-3 — each gesture, then a whole-path replay through the real CLI',
 
     model.beginRebindAll();
     const rebindGame = await loadGame();
-    await playReal(model, rebindGame, 'look', true);
+    await openReal(model, rebindGame);
     await playReal(model, rebindGame, 'examine the brass lamp');
     const splicedOrdinal = await playReal(model, rebindGame, 'north');
     await playReal(model, rebindGame, 'north');

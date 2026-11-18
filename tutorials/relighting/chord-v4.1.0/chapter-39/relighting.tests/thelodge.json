@@ -7,20 +7,14 @@
             "id": "info.title",
             "is": "The Relighting"
           }
-        ]
-      },
-      "id": "92764phg",
-      "type": "opening"
-    },
-    {
-      "assertions": {
+        ],
         "contains": [
           "The Porter's Lodge",
           "Hobb is in the doorway with his back to you"
         ]
       },
-      "id": "7fte8dyx",
-      "type": "boot"
+      "id": "92764phg",
+      "type": "opening"
     },
     {
       "assertions": {

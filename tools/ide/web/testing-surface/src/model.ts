@@ -63,11 +63,15 @@ import {
 
 /** One delivered turn as the model folds it in. */
 export interface TurnDelivery {
-  /** The feed ordinal; the session's first record also seats the opening (0). */
+  /** The feed ordinal. The opening's record seats the opening card (0) and no other. */
   ordinal: number;
-  /** The typed command; '' for a boot look. */
+  /** The typed command; '' for the opening's record. */
   command: string;
-  /** True for a fresh boot's automatic first look. */
+  /**
+   * True for the first record after a fresh boot: the story's opening, which
+   * nobody typed. It seats the tree's one `opening` card and never makes a
+   * card of its own (ADR-404 decision 12).
+   */
   boot: boolean;
   /** The room the player is in AFTER this turn (room-name capture). */
   room?: string;
@@ -88,8 +92,9 @@ export interface TurnDelivery {
    *  card becomes an END STATE card. Binds void-fill like `assertions` —
    *  a version-1 document's ending cards gain their id on first replay. */
   ending?: string;
-  /** Opening claims persisted when this delivery seats a FRESH opening card
-   *  (prologue/title/description from the real boot captures). */
+  /** Opening claims persisted when this delivery seats a FRESH opening card:
+   *  the opening's defaults (prologue/title/description from the real boot
+   *  captures) and what the policy recorded of the first look. */
   openingAssertions?: TreeAssertions;
 }
 
@@ -365,17 +370,22 @@ export class TreeSessionModel {
   }
 
   /**
-   * Folds one delivered turn into the ACTIVE line: binds it to the line's
-   * next unbound card when one exists (restore/repair replay), else appends
-   * a new card (always recording, D3). The session's first record on the
-   * main line also seats the opening card (bound as ordinal 0). A branch
-   * line's first landed turn clears its pending command.
+   * Folds one delivered record into the ACTIVE line. A typed turn binds to
+   * the line's next unbound card when one exists (restore/repair replay),
+   * else appends a new card (always recording, D3). The opening's record
+   * (`delivery.boot`) seats the main line's opening card, bound as ordinal 0,
+   * and is done: it types nothing, so it binds no turn card and appends
+   * none, and on a line other than the main line it changes nothing. A typed
+   * turn that finds the main line's opening unseated seats it on the way. A
+   * branch line's first landed turn clears its pending command.
    */
   addTurn(delivery: TurnDelivery): void {
     const cards = this.lineCards.get(this.active);
     if (cards === undefined) return;
-    if (delivery.room !== undefined) this.roomByOrdinal.set(delivery.ordinal, delivery.room);
-    this.pending.delete(this.active);
+    // The room the opening left the player in is the opening card's room.
+    if (delivery.room !== undefined) this.roomByOrdinal.set(delivery.boot ? 0 : delivery.ordinal, delivery.room);
+    if (delivery.boot && this.active !== this.doc.id) return;
+    if (!delivery.boot) this.pending.delete(this.active);
 
     const bind = (card: TreeCard, ordinal: number): void => {
       this.cardByOrdinal.set(ordinal, card);
@@ -419,7 +429,10 @@ export class TreeSessionModel {
         bind(opening, 0);
         cursor = cards.length;
       }
+      this.bindCursor.set(this.active, cursor);
     }
+    // The opening's record is the opening card and nothing more.
+    if (delivery.boot) return;
 
     if (cursor < cards.length) {
       const bound = cards[cursor];
@@ -440,12 +453,10 @@ export class TreeSessionModel {
     }
 
     const recorded = cloneAssertions(delivery.assertions);
-    const card: TreeCard = delivery.boot
-      ? { type: 'boot' }
-      : { type: 'turn', command: delivery.command };
+    const card: TreeCard = { type: 'turn', command: delivery.command };
     if (recorded !== undefined) card.assertions = recorded;
     if (delivery.skip === true) card.skip = true;
-    if (delivery.ending !== undefined && card.type === 'turn') card.ending = delivery.ending;
+    if (delivery.ending !== undefined) card.ending = delivery.ending;
     cards.push(card);
     bind(card, delivery.ordinal);
     this.bindCursor.set(this.active, cards.length);
@@ -489,7 +500,7 @@ export class TreeSessionModel {
   }
 
   /** The commands that replay `id`'s full path live from a fresh boot —
-   *  opening and boot cards excluded (a fresh boot plays its own look). */
+   *  the opening card excluded (a fresh boot runs its own opening). */
   private pathCommands(cards: TreeCard[]): string[] {
     return cards
       .filter((card) => card.type === 'turn')
@@ -584,11 +595,8 @@ export class TreeSessionModel {
   labelOf(id: string): string {
     const meta = this.lineMeta.get(id);
     if (meta === undefined) {
-      const bootCard = this.doc.cards.find((card) => card.type !== 'opening');
-      const room = bootCard !== undefined
-        ? this.roomAtCard(this.doc.id, bootCard)
-        : undefined;
-      return mainLineLabelOf(roomSlugOf(room));
+      // The room the opening left the player in, recorded under ordinal 0.
+      return mainLineLabelOf(roomSlugOf(this.roomByOrdinal.get(0)));
     }
     const room = this.roomAtCard(meta.parentLine, meta.forkCard);
     const firstCommand =
@@ -644,13 +652,13 @@ export class TreeSessionModel {
 
   /**
    * Whether a Branch gesture is offered on this card: it must be bound, on
-   * the active path, not the opening (the boot look is automatic — an
-   * alternate to it is meaningless), and not the path's tip (typing already
-   * continues the recording there).
+   * the active path, and not the path's tip (typing already continues the
+   * recording there). The opening card forks like any other: its branch is
+   * an alternate first command.
    */
   canBranch(ordinal: number): boolean {
     const card = this.cardByOrdinal.get(ordinal);
-    if (card === undefined || card.type === 'opening') return false;
+    if (card === undefined) return false;
     // An END STATE card cannot fork (ADR-356 D4): the story ended on it, so
     // a branch would replay onto a stopped engine. Fork from an earlier card.
     if (card.ending !== undefined) return false;
@@ -738,8 +746,8 @@ export class TreeSessionModel {
   /**
    * Tail-cut (D4/Q-4, the card's ✕): discard the card at `ordinal` and
    * everything after it on its own line — descendants and their branches
-   * included. Only a bound TURN card cuts (the opening and the boot look are
-   * the session's fabric, not authored turns). Returns the cut line and
+   * included. Only a bound TURN card cuts (the opening is the session's
+   * fabric, not an authored turn). Returns the cut line and
    * whether the viewed line survived — the caller replays the line to
    * realign the engine (the session IS a replay of the tree) — or null when
    * the card cannot cut.

@@ -7,20 +7,14 @@
             "id": "info.title",
             "is": "The Relighting"
           }
-        ]
-      },
-      "id": "4j3ylw92",
-      "type": "opening"
-    },
-    {
-      "assertions": {
+        ],
         "contains": [
           "The Porter's Lodge",
           "On the chair you see a seed cake and a cup."
         ]
       },
-      "id": "a9lfmw9i",
-      "type": "boot"
+      "id": "4j3ylw92",
+      "type": "opening"
     },
     {
       "assertions": {

@@ -192,6 +192,44 @@ describe('LoadedGame.runOpening', () => {
   });
 });
 
+describe('LoadedGame.openingEvents', () => {
+  it('is empty until the opening runs, then holds the opening\'s events, and no command\'s events join them', async () => {
+    const game = assembleGame(makeStory('First Night'));
+    expect(game.openingEvents).toEqual([]);
+
+    await game.runOpening();
+    const openingTypes = game.openingEvents.map((event) => event.type);
+    expect(openingTypes.length).toBeGreaterThan(0);
+    // Right after the opening they are the game's last events too.
+    expect(game.lastEvents.map((event) => event.type)).toEqual(openingTypes);
+    const held = game.openingEvents;
+
+    await game.executeCommand('inventory');
+    // The command has events of its own, and the opening's are as they were.
+    expect(game.lastEvents.length).toBeGreaterThan(0);
+    expect(game.lastEvents).not.toBe(held);
+    expect(game.openingEvents).toBe(held);
+    expect(game.openingEvents.map((event) => event.type)).toEqual(openingTypes);
+  });
+
+  it('a RESTART\'s reboot replaces them with the new game\'s opening events, apart from the restart command\'s', async () => {
+    const game = assembleGame(makeStory('First Night'), {
+      freshStory: () => makeStory('Second Night'),
+    });
+    await game.runOpening();
+    const first = game.openingEvents;
+    const firstTypes = first.map((event) => event.type);
+
+    await game.executeCommand('restart');
+
+    expect(game.openingEvents).not.toBe(first);
+    // The same story opens the same way, so the new opening's events are the same kinds.
+    expect(game.openingEvents.map((event) => event.type)).toEqual(firstTypes);
+    // The restart command's own events are its own, not the opening's.
+    expect(game.lastEvents).not.toBe(game.openingEvents);
+  });
+});
+
 describe('the restart reboot and the opening', () => {
   it('runs the rebooted game\'s opening as a new opening, apart from the restart command', async () => {
     const game = assembleGame(makeStory('First Night'), {

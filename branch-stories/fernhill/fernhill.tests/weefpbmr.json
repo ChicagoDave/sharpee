@@ -11,20 +11,14 @@
             "id": "info.description",
             "is": "One cold winter night to find the deed that keeps Fernhill in the family."
           }
-        ]
-      },
-      "id": "komx8o5s",
-      "type": "opening"
-    },
-    {
-      "assertions": {
+        ],
         "contains": [
           "Iron Gates",
           "The cab is already grinding away down the lane, its lamps swallowed by the dark. An auction notice is nailed to the left-hand gate, ruffling in the wind: FERNHILL HOUSE AND GROUNDS, BY ORDER OF THE ESTATE, AT DAWN."
         ]
       },
-      "id": "8g2xbmuh",
-      "type": "boot"
+      "id": "komx8o5s",
+      "type": "opening"
     },
     {
       "assertions": {

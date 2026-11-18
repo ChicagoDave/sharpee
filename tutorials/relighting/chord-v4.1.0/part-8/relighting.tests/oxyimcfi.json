@@ -7,20 +7,14 @@
             "id": "info.title",
             "is": "The Relighting"
           }
-        ]
-      },
-      "id": "p6nzb353",
-      "type": "opening"
-    },
-    {
-      "assertions": {
+        ],
         "contains": [
           "Lodge",
           "On the sill a lamp is burning with a steady blue flame."
         ]
       },
-      "id": "y5mzf5ob",
-      "type": "boot"
+      "id": "p6nzb353",
+      "type": "opening"
     },
     {
       "assertions": {

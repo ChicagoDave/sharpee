@@ -65,7 +65,7 @@ function recordingLoader(): { booted: Booted[]; loadGame: (request: GameLoadRequ
 const skip = (command: string): TreeCard => ({ type: 'turn', command, skip: true });
 const doc = (cards: TreeCard[]): TreeDocument => ({
   ...emptyTreeDocument('outside-set-fixture', SEED, 'main'),
-  cards: [{ type: 'opening' }, { type: 'boot', skip: true }, ...cards],
+  cards: [{ type: 'opening' }, ...cards],
 });
 
 const roomOfCrate = (world: ClaimsWorld): string | undefined => {
@@ -106,7 +106,7 @@ describe('REAL-PATH — a tree line and its undo snapshots', () => {
     const run = await runTreeDocument(doc([skip('north'), skip('north'), skip('take crate'), skip('undo')]), loadGame);
     expect(run.lines.map((line) => line.status)).toEqual(['passed']);
     expect(booted[0].request).toEqual({ undo: true });
-    // One snapshot before each of the three undoable turns; the boot look takes one too.
+    // One snapshot before each of the three undoable turns; the opening takes none.
     expect(booted[0].serializations).toBeGreaterThanOrEqual(3);
     expect(holderOfCrate(booted[0].world)).toBe('shed');
     expect(roomOfCrate(booted[0].world)).toBe('shed');

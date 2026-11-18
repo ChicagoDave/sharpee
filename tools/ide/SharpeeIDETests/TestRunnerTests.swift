@@ -125,8 +125,8 @@ final class TestRunnerTests: XCTestCase {
     // MARK: - Real CLI, real stories (Acceptance 6)
 
     /// The tree the Testing tab would have written — a `mini.tests/`
-    /// directory holding the manifest and one segment (ADR-355): opening + an
-    /// asserted boot look, claiming text the story really prints. The bytes
+    /// directory holding the manifest and one segment (ADR-355): the one
+    /// opening card, claiming text the story's opening really prints. The bytes
     /// are canonical (sorted keys, two-space indent, one trailing newline),
     /// since `sharpee test`'s canonical gate refuses anything else.
     private func writeDocument(claim: String) throws {
@@ -142,17 +142,13 @@ final class TestRunnerTests: XCTestCase {
         {
           "cards": [
             {
-              "id": "card0001",
-              "type": "opening"
-            },
-            {
               "assertions": {
                 "contains": [
                   "\(claim)"
                 ]
               },
-              "id": "card0002",
-              "type": "boot"
+              "id": "card0001",
+              "type": "opening"
             }
           ],
           "id": "root0000"
@@ -178,8 +174,8 @@ final class TestRunnerTests: XCTestCase {
         XCTAssertEqual(all.last?["exitCode"] as? Int, 0)
 
         let commands = all.filter { $0["type"] as? String == "command-result" }
-        XCTAssertEqual(commands.compactMap { $0["input"] as? String }, ["look"],
-                       "the boot card executes as the boot look")
+        XCTAssertEqual(commands.compactMap { $0["input"] as? String }, ["(opening)"],
+                       "the opening card is checked as the opening's row; no look is typed")
         XCTAssertEqual(transcriptEndStatuses(), ["passed"])
     }
 

@@ -15,7 +15,6 @@ function document(extra: Record<string, unknown>): TreeDocument {
     ...emptyTreeDocument('mini', 42, 'root0000'),
     cards: [
       { id: 'card0000', type: 'opening' },
-      { id: 'card0001', type: 'boot' },
       { id: 'card0002', type: 'turn', command: 'north', assertions: { contains: ['Landing'] }, ...extra } as TreeDocument['cards'][number],
     ],
   };
@@ -27,24 +26,24 @@ describe('a card\'s `locks` at rest', () => {
     expect(files['root0000.json']).toContain('"id": "card0002",\n      "locks": [\n        "the Landing is reached",\n        "the note is read"\n      ],\n      "type": "turn"');
     const read = assembleTree(files);
     expect(read.status).toBe('ok');
-    if (read.status === 'ok') expect(read.document.cards[2].locks).toEqual(['the Landing is reached', 'the note is read']);
+    if (read.status === 'ok') expect(read.document.cards[1].locks).toEqual(['the Landing is reached', 'the note is read']);
     expect(JSON.parse(files['manifest.json']).version).toBe(TREE_DOCUMENT_VERSION);
     expect(TREE_DOCUMENT_VERSION).toBe(3);
   });
 
-  it('an empty list, a non-string, and a lock on the boot card are malformed by name', () => {
+  it('an empty list, a non-string, and a lock on the opening card are malformed by name', () => {
     const files = segmentTree(document({}));
     const edit = (replace: (text: string) => string) => assembleTree({ ...files, 'root0000.json': replace(files['root0000.json']) });
 
     const empty = edit((text) => text.replace('"id": "card0002",', '"id": "card0002",\n      "locks": [],'));
     expect(empty.status).toBe('malformed');
-    if (empty.status === 'malformed') expect(empty.message).toMatch(/cards\[2\]\.locks' must be a non-empty array of claim names/);
+    if (empty.status === 'malformed') expect(empty.message).toMatch(/cards\[1\]\.locks' must be a non-empty array of claim names/);
 
     const number = edit((text) => text.replace('"id": "card0002",', '"id": "card0002",\n      "locks": [3],'));
     expect(number.status).toBe('malformed');
 
-    const onBoot = edit((text) => text.replace('"id": "card0001",', '"id": "card0001",\n      "locks": ["x"],'));
-    expect(onBoot.status).toBe('malformed');
-    if (onBoot.status === 'malformed') expect(onBoot.message).toMatch(/cards\[1\]' is type 'boot' and cannot carry 'locks'/);
+    const onOpening = edit((text) => text.replace('"id": "card0000",', '"id": "card0000",\n      "locks": ["x"],'));
+    expect(onOpening.status).toBe('malformed');
+    if (onOpening.status === 'malformed') expect(onOpening.message).toMatch(/cards\[0\]' is type 'opening' and cannot carry 'locks'/);
   });
 });

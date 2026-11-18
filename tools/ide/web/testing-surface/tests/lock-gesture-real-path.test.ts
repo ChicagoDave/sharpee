@@ -50,8 +50,7 @@ function project(): string {
     seed: 7,
     id: 'mainline',
     cards: [
-      { id: 'card0000', type: 'opening', assertions: {} },
-      { id: 'card0001', type: 'boot', assertions: { states: ['the note is pinned'] } },
+      { id: 'card0000', type: 'opening', assertions: { states: ['the note is pinned'] } },
       { id: 'card0002', type: 'turn', command: 'read note', assertions: { contains: ['Back by dawn.'] } },
       { id: 'card0003', type: 'turn', command: 'north', assertions: { contains: ['landing'] } },
     ],

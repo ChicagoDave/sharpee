@@ -57,7 +57,7 @@ const CLAIMS = normalizeClaimSet(
 );
 
 /**
- * Main line: opening (claims the hall), boot, `read note` (turn 1, locks the
+ * Main line: opening (claims the hall), `read note` (turn 1, locks the
  * flag — held), `north` (turn 2, locks the room — held). A branch at `read
  * note`: `north` (turn 2, locks the note's place — NOT held — and a name the
  * fragment lacks), then a skipped `south` (turn 3, locks the room — NOT
@@ -68,7 +68,6 @@ function tree(): TreeDocument {
     ...emptyTreeDocument('claim-bits-fixture', SEED, 'mainline'),
     cards: [
       { id: 'card0000', type: 'opening', assertions: { contains: ['Hall'] } },
-      { id: 'card0001', type: 'boot', skip: true },
       {
         id: 'card0002', type: 'turn', command: 'read note', assertions: { contains: ['Back by dawn.'] }, locks: ['the note has been read'],
         continuation: 'contin00',
@@ -191,6 +190,34 @@ describe('a broken lock is a failed card (D6)', () => {
     expect(rows[2].locks?.[0].message).toBe('the note is in the Hall');
     for (const row of rows) expect(report).toContain(`${claimHeadline(row)} — ${claimSentence(row)}`);
     expect(claimsRatioLine(claimsSummaryRowOf(result))).toBe('claims: 2 of 3 held, 1 unproven (seed 1209)');
+  }, 60_000);
+
+  it('an event claim on the opening card is checked against the events the opening emitted', async () => {
+    // What the real opening emitted, read off a plain run's opening row.
+    const plain = await runTreeDocument(tree(), loadGame, {});
+    const emitted = plain.lines[0].result!.commands[0].actualEvents.map((event) => event.type);
+    expect(emitted.length).toBeGreaterThan(0);
+
+    const withEvents = (events: string[]): TreeDocument => {
+      const document = tree();
+      document.cards[0] = { id: 'card0000', type: 'opening', assertions: { events } };
+      return document;
+    };
+    const held = await runTreeDocument(withEvents([emitted[0]]), loadGame, {});
+    const heldRow = held.lines[0].result!.commands[0];
+    expect(heldRow.command.input).toBe('(opening)');
+    expect(heldRow.passed).toBe(true);
+
+    // The fixture known to fail: an event no opening emits.
+    const missing = await runTreeDocument(withEvents(['if.event.never_emitted_by_an_opening']), loadGame, {});
+    const missingRow = missing.lines[0].result!.commands[0];
+    expect(missingRow.command.input).toBe('(opening)');
+    expect(missingRow.passed).toBe(false);
+    // The first command's events are not the opening's: `read note` emits
+    // events the opening did not, and none of them joined the opening row.
+    const readRow = plain.lines[0].result!.commands[1];
+    expect(readRow.command.input).toBe('read note');
+    expect(readRow.actualEvents.map((event) => event.type)).not.toEqual(emitted);
   }, 60_000);
 
   it('the opening row carries the output its claims read (GH #585)', async () => {

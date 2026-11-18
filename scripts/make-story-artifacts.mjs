@@ -15,8 +15,9 @@
  * the output, and regenerating is the fix for any drift.
  *
  * The tests document is a TREE (ADR-302 shape, the same one Chord Writer's
- * Testing tab records): a spine of `turn` cards under an `opening`/`boot` pair,
- * where a card may carry `branches` — alternate continuations replayed from that
+ * Testing tab records): a spine of `turn` cards under one `opening` card, which
+ * holds what the story's opening printed (ADR-404 decision 12), where a card
+ * may carry `branches` — alternate continuations replayed from that
  * point. Branch prefixes are re-run from the beginning rather than forked in
  * memory, because the engine's state is the authority on what a branch sees.
  *
@@ -43,7 +44,15 @@ import { fileURLToPath } from 'node:url';
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const BUNDLE = resolve(REPO, 'dist/cli/sharpee.js');
 
-/** Drive the real engine and split stdout into [{command, output}]. */
+/**
+ * Drive the real engine and split stdout into the opening and
+ * [{command, output}]. The bundle prints its seed line, then the story's
+ * opening (the engine's routine: prologue, banner, first look, in the
+ * story's order), then each command's echo and reply. Nothing is typed to
+ * get the opening.
+ *
+ * @returns {{ opening: string, blocks: Array<{ command: string, output: string }> }}
+ */
 function run(story, commands, seed) {
   const stdout = execFileSync(
     'node',
@@ -51,6 +60,7 @@ function run(story, commands, seed) {
     { cwd: REPO, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 }
   );
   const blocks = [];
+  const openingLines = [];
   let current = null;
   let buffer = [];
   for (const line of stdout.split('\n')) {
@@ -61,15 +71,18 @@ function run(story, commands, seed) {
       buffer = [];
     } else if (current !== null) {
       buffer.push(line);
+    } else if (!/^Seed: \d+/.test(line)) {
+      openingLines.push(line);
     }
   }
   if (current !== null) blocks.push({ command: current, output: buffer.join('\n').trim() });
-  return blocks;
+  return { opening: openingLines.join('\n').trim(), blocks };
 }
 
 /**
  * The banner (title / version / description / `By …`) precedes the first
- * command's own output. Boot asserts the opening ROOM, so split them apart.
+ * room in the default opening. The opening card asserts the ROOM, so split
+ * them apart.
  */
 function splitBanner(text) {
   const lines = text.split('\n');
@@ -125,35 +138,33 @@ function turnCard(command, output, ambient) {
 
 function buildTests(recipe) {
   const { story, seed, spine } = recipe;
-  // A leading `look` captures the STARTING room, which is what the boot card
-  // asserts — the first spine move has usually left it already. The probe is
-  // not emitted as a card; the runner supplies boot itself.
-  const probed = run(story, ['look', ...spine], seed);
-  const { body } = splitBanner(probed[0].output);
-  const blocks = probed.slice(1);
+  // The run's opening holds the STARTING room, which is what the opening card
+  // asserts. The engine ran it; no `look` is typed to see it.
+  const probed = run(story, spine, seed);
+  const { body } = splitBanner(probed.opening);
+  const blocks = probed.blocks;
 
   // Branches replay the spine prefix for real, then diverge. Replaying rather
   // than forking in memory keeps the engine the authority on what a branch sees.
   const branchRuns = (recipe.branches ?? []).map((branch) => {
     const prefix = spine.slice(0, branch.after + 1);
-    const replayed = run(story, [...prefix, ...branch.commands], seed);
+    const replayed = run(story, [...prefix, ...branch.commands], seed).blocks;
     return { branch, tail: replayed.slice(prefix.length), all: replayed };
   });
 
   // Ambient is judged across EVERY run, not per run. A short branch may see an
   // atmospheric line only once, which would let it escape a per-run filter and
   // then fail on replay at a different turn count.
-  const ambient = ambientLines([...probed, ...branchRuns.flatMap((r) => r.all)]);
+  const ambient = ambientLines([...blocks, ...branchRuns.flatMap((r) => r.all)]);
 
   const cards = [
-    { assertions: {}, type: 'opening' },
-    { assertions: { contains: salient(body, ambient) }, type: 'boot' },
+    { assertions: { contains: salient(body, ambient) }, type: 'opening' },
     ...blocks.map((b) => turnCard(b.command, b.output, ambient)),
   ];
 
   for (const { branch, tail } of branchRuns) {
-    // +2 for the opening/boot pair that precedes the spine's first turn card.
-    const host = cards[branch.after + 2];
+    // +1 for the opening card that precedes the spine's first turn card.
+    const host = cards[branch.after + 1];
     host.branches ??= [];
     host.branches.push({
       branch: host.branches.length + 1,
@@ -166,11 +177,11 @@ function buildTests(recipe) {
 
 function buildWalkthrough(recipe) {
   const { story, seed, spine, title } = recipe;
-  // Same `look` probe as buildTests: without it the opening room would be
-  // printed above the first command, when it is that command's RESULT.
-  const probed = run(story, ['look', ...spine], seed);
-  const { banner, body } = splitBanner(probed[0].output);
-  const blocks = probed.slice(1);
+  // The opening (banner, then the first room) is the run's own, printed
+  // above the first command.
+  const probed = run(story, spine, seed);
+  const { banner, body } = splitBanner(probed.opening);
+  const blocks = probed.blocks;
 
   const out = [];
   out.push(`${title} — walkthrough`);

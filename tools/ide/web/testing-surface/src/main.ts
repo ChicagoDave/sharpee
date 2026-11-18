@@ -47,7 +47,7 @@ import { CardsView } from './cards';
 import { characterRowsOf, explainGroups, type ExplainGroup } from './character';
 import { affordanceGroupsOf, sceneExplainGroups, sceneRowsOf, threadAffordanceGroupsOf } from './scene';
 import {
-  cardAssertionLines, openingDefaultClaims, recordedTurnAssertions,
+  cardAssertionLines, openingAssertionsOf, openingDefaultClaims, recordedTurnAssertions,
   type DeleteRef, type TurnSource,
 } from './compose';
 import { TreeSessionModel, type AuthoringMemento } from './model';
@@ -215,6 +215,16 @@ let storyEnded = false;
 
 
 /** Per-ordinal synthesis source for compose. */
+/**
+ * The feed record behind a card. The opening (ordinal 0) has no ordinal of
+ * its own on the feed: its record is the one that seated it.
+ */
+function recordBehind(ordinal: number): FeedRecord | undefined {
+  return ordinal === 0 && bootRecordOrdinal !== undefined
+    ? records.get(bootRecordOrdinal)
+    : records.get(ordinal);
+}
+
 function turnSource(ordinal: number): TurnSource | undefined {
   const record = records.get(ordinal);
   if (!record || typeof record.output !== 'string') return undefined;
@@ -242,9 +252,7 @@ function assertionLinesFor(ordinal: number) {
  * three channels are author-gated and sparse/empty by design.
  */
 function characterExplainFor(ordinal: number): ExplainGroup[] {
-  const source = ordinal === 0 && bootRecordOrdinal !== undefined
-    ? records.get(bootRecordOrdinal)
-    : records.get(ordinal);
+  const source = recordBehind(ordinal);
   if (!source) return [];
   const captures = capturesOf(source);
   const names = new Map<string, string>();
@@ -358,7 +366,7 @@ const cards = new CardsView(model, {
   onStatePicker(ordinal, anchor) {
     // The unseen slice: entity locations from the digest — never
     // player.location, and only expressions the runner's evaluator accepts.
-    const entities = records.get(ordinal)?.world?.entities ?? [];
+    const entities = recordBehind(ordinal)?.world?.entities ?? [];
     const facts: StateFact[] = entities.map(entity => ({
       label: `${entity.name} — ${entity.location.name}`,
       expression: `${entity.token}.location = ${entity.location.token}`,
@@ -370,8 +378,8 @@ const cards = new CardsView(model, {
     });
   },
   onEventPicker(ordinal, anchor) {
-    const events = records.get(ordinal)?.events ?? [];
-    showListPicker(anchor, 'events this turn emitted', events, event => {
+    const events = recordBehind(ordinal)?.events ?? [];
+    showListPicker(anchor, ordinal === 0 ? 'events the opening emitted' : 'events this turn emitted', events, event => {
       pushUndo();
       if (model.addEvent(ordinal, event)) update();
     });
@@ -395,11 +403,9 @@ const cards = new CardsView(model, {
     postToBridge({ lock: { args: lockArgumentsOf(pendingLock.step) } });
   },
   onChannelPicker(ordinal, anchor) {
-    // The OPENING (ordinal 0) has no record of its own — its channels are
-    // the boot flush, riding the boot record's captures.
-    const source = ordinal === 0 && bootRecordOrdinal !== undefined
-      ? records.get(bootRecordOrdinal)
-      : records.get(ordinal);
+    // The OPENING (ordinal 0) has no ordinal of its own on the feed — its
+    // channels are the captures of the record that seated it.
+    const source = recordBehind(ordinal);
     const captures = source?.captures ?? [];
     const labels = captures.map(capture => {
       const flat = proseTextLinesOf(capture.values).join(' ');
@@ -736,7 +742,12 @@ function installDialogHooks(): void {
 
 // ── feed delivery ─────────────────────────────────────────────────────────
 
-/** True until the next record, which is a boot's automatic first look. */
+/**
+ * True until the next record, which is a fresh boot's opening: nothing was
+ * typed for it. Until the browser client opens with the engine's routine it
+ * is that client's own first `look`, and the surface binds it to the opening
+ * card all the same.
+ */
 let expectBoot = true;
 /** The last folded record's ordinal — the restart-ack strip reads it. */
 let lastDeliveredOrdinal: number | undefined;
@@ -849,26 +860,32 @@ function deliver(raw: unknown): void {
   // says persists into the card. The model applies these only when the
   // delivery APPENDS — a binding replay rebuilds state, never claims.
   const recorded = recordedTurnAssertions(policy, turnSource(record.turn));
+  // The opening's record seats the one opening card (ADR-404 decision 12):
+  // its claims are the opening's defaults followed by what the policy
+  // recorded of the first look, which is part of the opening. Nothing of it
+  // goes to a turn card, because the record makes none.
   const openingClaims =
     boot && currentLine === model.mainLine ? openingDefaultClaims(policy, bootCaptures) : [];
+  const openingAssertions = boot
+    ? openingAssertionsOf(openingClaims, recorded.assertions)
+    : undefined;
   model.addTurn({
     ordinal: record.turn,
     command: record.command ?? '',
     boot,
     ...(room !== undefined ? { room } : {}),
-    ...(recorded.assertions !== undefined ? { assertions: recorded.assertions } : {}),
-    ...(recorded.skip === true ? { skip: true } : {}),
-    ...(endedThisTurn !== undefined ? { ending: endedThisTurn } : {}),
-    ...(openingClaims.length > 0
-      ? { openingAssertions: { channels: openingClaims } }
-      : {}),
+    ...(!boot && recorded.assertions !== undefined ? { assertions: recorded.assertions } : {}),
+    ...(!boot && recorded.skip === true ? { skip: true } : {}),
+    ...(!boot && endedThisTurn !== undefined ? { ending: endedThisTurn } : {}),
+    ...(openingAssertions !== undefined ? { openingAssertions } : {}),
   });
   if (pendingDialogOutcome) {
     const at = model.turnIndexOf(record.turn);
     if (at) dialogOutcomes.set(`${at.lineId}:${at.index}`, pendingDialogOutcome);
     pendingDialogOutcome = null;
   }
-  cards.addTurnCard(record.turn, boot, currentLine !== model.mainLine);
+  if (boot) cards.addOpeningCard(record.turn);
+  else cards.addTurnCard(record.turn, currentLine !== model.mainLine);
   update();
   cards.scrollToLatest();
 

@@ -36,7 +36,7 @@ async function loadGame(): Promise<TreeWalkerGame> {
 const skip = (command: string, extra?: Partial<TreeCard>): TreeCard => ({ type: 'turn', command, skip: true, ...extra });
 const doc = (cards: TreeCard[]): TreeDocument => ({
   ...emptyTreeDocument('end-state', SEED, 'main'),
-  cards: [{ type: 'opening' }, { type: 'boot', skip: true }, ...cards],
+  cards: [{ type: 'opening' }, ...cards],
 });
 
 describe('AC-6 — an END STATE card proves its ending on a real replay', () => {
@@ -88,7 +88,7 @@ describe('AC-6 — an END STATE card proves its ending on a real replay', () => 
     );
     // The ending was really reached on the real engine, and nothing was
     // typed into it afterwards.
-    expect(main.result!.commands.map((c) => c.command.input)).toEqual(['look', 'examine the box']);
+    expect(main.result!.commands.map((c) => c.command.input)).toEqual(['examine the box']);
     expect(main.result!.commands.at(-1)!.ending).toBe('victory');
     expect(run.endingsReached).toEqual(['box-opened']);
   }, 30_000);

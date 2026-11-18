@@ -4,8 +4,9 @@
  * (ADR-307).
  *
  * This file owns the loop: which items run, how the opening is checked (the
- * banner and prologue are said on the way to the first command, so that
- * command's captures carry them), and the run's shape. Everything one command
+ * story's opening routine runs before any command, and its row is checked
+ * against what that routine sent, ahead of the first command; ADR-404
+ * decision 12), and the run's shape. Everything one command
  * needs — session instruments, directives, executing a command and evaluating
  * its claims — is the assertion core in `@sharpee/transcript-tester`
  * (ADR-340 D1), imported here and never copied (D3). Any failed directive
@@ -28,6 +29,7 @@ import {
   errorResult,
   executeDirective,
   forcesFailResult,
+  openNewGame,
   proseTextLinesOf,
   runCommand,
   unfiredForceError,
@@ -112,6 +114,15 @@ export async function runTranscript(
     return errorResult(transcript, startTime, instrumentError);
   }
 
+  // A new game opens before its first command (ADR-404 decision 4): the
+  // runner opens a game it finds pending and leaves any other alone, so a
+  // line the walker already opened, or restored from a fork's save, is not
+  // opened twice.
+  const openingError = await openNewGame(engine);
+  if (openingError) {
+    return errorResult(transcript, startTime, openingError);
+  }
+
   // The tree world's claims may be spelled the way Chord spells them
   // (GH #355); the evaluator reads them through the loader's keys.
   return runAssertion(transcript, engine, { ...options, storyStateKeys: CHORD_STORY_STATE_KEYS }, startTime);
@@ -123,17 +134,20 @@ export async function runTranscript(
  * Carries a synthetic command so it prints in sequence with the real ones; the
  * opening is not something anybody typed, and the label says so.
  *
- * Prose forms read everything the player saw through the first command: every
- * channel captured on it (the banner and the prologue travel on their own
- * channels) plus its main output. They used to check against the empty
- * string — a plain `[OK: contains]` opening claim could never pass, which
- * broke the testing surface's opening card (David, 2026-08-09). Channel
- * forms remain for per-channel precision.
+ * Prose forms read everything the opening routine printed, in the order the
+ * story's opening states: packet by packet, the text of each captured
+ * channel the packet carried (the banner and the prologue travel on their
+ * own channels) and then the packet's composed prose, which for the first
+ * look is the room. Channel forms read the opening's captures by channel id,
+ * and event forms the events the opening emitted. Nothing a command said is
+ * read: the opening is checked before the first command runs.
+ *
+ * A game with no recorded packets (a stub, or a game some other caller
+ * opened without bootstrap) is read from its boot captures alone.
  */
 function openingResult(
   opening: Assertion[],
   engine: GameEngine,
-  firstCommandOutput: string,
   openingCardId?: string
 ): CommandResult {
   // The row names the opening card (ADR-357 D9) so a consumer lands on it
@@ -161,37 +175,37 @@ function openingResult(
     }
     return [];
   };
-  const channelText = [
-    ...Object.values(engine.bootChannelValues ?? {}),
-    ...Object.values(engine.lastChannelValues ?? {}),
-  ]
-    .flatMap((values) => (values ?? []).flatMap(textOfValue))
-    .map((text) => text.trim())
-    .filter((text) => text.length > 0)
-    .join('\n');
-  const openingOutput = [channelText, firstCommandOutput]
+  const textOfChannels = (channels: Record<string, unknown[]>): string[] =>
+    Object.values(channels)
+      .flatMap((values) => (values ?? []).flatMap(textOfValue))
+      .map((text) => text.trim())
+      .filter((text) => text.length > 0);
+  const packets = engine.openingPackets ?? [];
+  const openingOutput = (
+    packets.length > 0
+      ? packets.flatMap((packet) => [...textOfChannels(packet.channelValues), packet.output])
+      : textOfChannels(engine.bootChannelValues ?? {})
+  )
     .filter((text) => text.length > 0)
     .join('\n');
 
-  // Channel-form opening claims read the boot's captures first — the banner
-  // and prologue channels flush at boot, not inside any command.
-  const openingChannels = {
-    ...(engine.lastChannelValues ?? {}),
-    ...(engine.bootChannelValues ?? {}),
-  };
+  const openingChannels = engine.bootChannelValues ?? {};
+  // The assertion core's event shape always carries `data`; an engine event
+  // may have none.
+  const openingEvents = (engine.openingEvents ?? []).map((event) => ({ type: event.type, data: event.data ?? {} }));
   const assertionResults = opening.map((assertion) =>
-    checkAssertion(assertion, openingOutput, '', [], engine.world, openingChannels, CHORD_STORY_STATE_KEYS)
+    checkAssertion(assertion, openingOutput, '', openingEvents, engine.world, openingChannels, CHORD_STORY_STATE_KEYS)
   );
   const passed = assertionResults.every((r) => r.passed);
   const firstFailure = assertionResults.find((r) => !r.passed && r.message)?.message;
 
   // The opening's output IS what its claims read (GH #585): a failed
-  // opening claim shows the banner and prologue it was checked against, in
-  // the tab and the CLI alike, instead of an empty string.
+  // opening claim shows the opening it was checked against, in the tab and
+  // the CLI alike, instead of an empty string.
   return {
     command,
     actualOutput: openingOutput,
-    actualEvents: [],
+    actualEvents: openingEvents,
     passed,
     expectedFailure: false,
     skipped: false,
@@ -205,9 +219,10 @@ function openingResult(
 // ============================================================================
 
 /**
- * The tree runner's loop: every item in order, the opening checked once on
- * the first command's captures (authored claims, else the policy's live
- * defaults), the unfired-force check at the end.
+ * The tree runner's loop: the opening checked once, ahead of every item and
+ * whether or not the transcript has a command (authored claims, else the
+ * policy's live defaults), then every item in order, then the unfired-force
+ * check at the end.
  *
  * @param transcript the transcript to run
  * @param engine the engine wrapper
@@ -230,14 +245,23 @@ async function runAssertion(
     results.push(result);
     options.observer?.onCommandResult?.(result);
   };
-  /** Opening assertions run once, after the first command flushes the opening.
-   *  Authored claims win; with none, the opening's DEFAULTS synthesize live
-   *  from the boot captures under a policy (ADR-307 open question D: prologue,
-   *  title, description) — each piece self-gated on its channel having been
-   *  captured, so sessions that never declared them are unchanged. */
-  let openingChecked = false;
   /** Any command's assertions were policy-written this run → rewrite the file. */
   let policyWroteAssertions = false;
+
+  // The opening's row. Authored claims win; with none, the opening's
+  // DEFAULTS synthesize live from the opening's captures under a policy
+  // (ADR-307 open question D: prologue, title, description) — each piece
+  // self-gated on its channel having been captured, so sessions that never
+  // declared them are unchanged. The opening ran before any command, so its
+  // row is checked here, ahead of the loop: a tree of one opening card and
+  // no turn is still checked.
+  const openingClaims =
+    (transcript.opening?.length ?? 0) > 0
+      ? transcript.opening!
+      : synthesizeOpeningAssertions(engine.autoAssertionPolicy, engine.bootChannelValues ?? {});
+  if (openingClaims.length > 0) {
+    record(openingResult(openingClaims, engine, transcript.openingCardId));
+  }
 
   for (const item of transcript.items ?? []) {
     if (item.type === 'comment') {
@@ -285,26 +309,6 @@ async function runAssertion(
 
     const result = await runCommand(command, engine, options, synthesize);
     if (result.autoAsserted) policyWroteAssertions = true;
-
-    // The banner and the prologue are said on the way to the first command, so
-    // that is the turn whose capture carries them. Checked once, and reported
-    // ahead of the command that flushed them because that is where they read.
-    if (!openingChecked) {
-      openingChecked = true;
-      // Same capture surface as `openingResult`: the banner/prologue/info
-      // flush rides the FIRST command's captures on a real engine (the boot
-      // snapshot is often empty) — merge both, boot values winning.
-      const openingClaims =
-        (transcript.opening?.length ?? 0) > 0
-          ? transcript.opening!
-          : synthesizeOpeningAssertions(engine.autoAssertionPolicy, {
-              ...(engine.lastChannelValues ?? {}),
-              ...(engine.bootChannelValues ?? {}),
-            });
-      if (openingClaims.length > 0) {
-        record(openingResult(openingClaims, engine, result.actualOutput, transcript.openingCardId));
-      }
-    }
 
     record(result);
     await options.afterCommand?.(result);

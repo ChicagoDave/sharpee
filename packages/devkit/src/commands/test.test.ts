@@ -45,8 +45,7 @@ const TREE_DOCUMENT: TreeDocument = {
   seed: 42,
   id: 'root0000',
   cards: [
-    { type: 'opening' },
-    { type: 'boot', assertions: { contains: ['A small square den'] } },
+    { type: 'opening', assertions: { contains: ['A small square den'] } },
   ],
 };
 

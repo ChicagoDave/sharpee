@@ -23,7 +23,6 @@ describe('shared tree-document module (rule 8b wiring)', () => {
       id: 'root0000',
       cards: [
         { id: 'card0001', type: 'opening' },
-        { id: 'card0002', type: 'boot' },
         {
           id: 'card0003',
           type: 'turn',

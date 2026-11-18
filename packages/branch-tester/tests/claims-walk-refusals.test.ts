@@ -44,8 +44,10 @@ interface Recorded {
   saves: boolean[];
   /** Every line the engine ran a turn for, in order. */
   turns: string[];
-  /** Restores and turns in the one order they happened: `restore:<accepted>` and `turn:<line>`. */
+  /** Restores, turns and the opening in the one order they happened: `restore:<accepted>`, `turn:<line>` and `opening`. */
   log: string[];
+  /** How many times the game's opening was run. */
+  openings: number;
 }
 
 /**
@@ -53,7 +55,7 @@ interface Recorded {
  * restore (counted from 1); with neither named it refuses nothing.
  */
 function refusingLoader(refuse: { save?: number; restore?: number } = {}): { recorded: Recorded; loadGame: () => Promise<ClaimsGame> } {
-  const recorded: Recorded = { restores: [], saves: [], turns: [], log: [] };
+  const recorded: Recorded = { restores: [], saves: [], turns: [], log: [], openings: 0 };
   const loadGame = async (): Promise<ClaimsGame> => {
     const loaded = assembleGame(createStory(compileFixture(), { seed: SEED }), {
       seed: SEED,
@@ -80,6 +82,12 @@ function refusingLoader(refuse: { save?: number; restore?: number } = {}): { rec
       recorded.log.push(`turn:${input}`);
       return executeTurn(input);
     }) as typeof engine.executeTurn;
+    const runOpening = loaded.runOpening.bind(loaded);
+    loaded.runOpening = async () => {
+      recorded.openings += 1;
+      recorded.log.push('opening');
+      return runOpening();
+    };
     return loaded as unknown as ClaimsGame;
   };
   return { recorded, loadGame };
@@ -95,6 +103,11 @@ describe('REAL-PATH — a claims walk and an engine that refuses', () => {
     expect(recorded.restores.every((accepted) => accepted)).toBe(true);
     expect(run.walks[0].restores).toBe(recorded.restores.length);
     expect(run.walks[0].saves).toBe(recorded.saves.length);
+    // The walk ran the game's opening once, before its first restore or
+    // command, and typed no `look` to do it.
+    expect(recorded.openings).toBe(1);
+    expect(recorded.log[0]).toBe('opening');
+    expect(recorded.turns).not.toContain('look');
   }, 30_000);
 
   it('a refused first restore stops the walk at its start, before any walked command runs', async () => {
@@ -103,8 +116,9 @@ describe('REAL-PATH — a claims walk and an engine that refuses', () => {
     await expect(runClaims(compileFixture(), claimSet(), loadGame, OPTIONS)).rejects.toThrow(
       'claims walk: the engine refused to restore the state at the walk\'s start, so the walk stopped before reading its commands',
     );
-    // Only the opening look ran: no command was tried on a world that was not restored.
-    expect(recorded.turns).toEqual(['look']);
+    // The opening is the game's routine and no turn, and no command was tried
+    // on a world that was not restored: the engine ran no turn at all.
+    expect(recorded.turns).toEqual([]);
     expect(recorded.restores).toEqual([false]);
   }, 30_000);
 
@@ -117,7 +131,7 @@ describe('REAL-PATH — a claims walk and an engine that refuses', () => {
     );
     expect(failure).toBeInstanceOf(Error);
     expect(failure!.message).toMatch(/^claims walk: the engine refused to restore the state at the walk's start, so the walk stopped before trying ".+"$/);
-    expect(recorded.turns).toEqual(['look']);
+    expect(recorded.turns).toEqual([]);
     expect(recorded.restores).toEqual([true, false]);
   }, 30_000);
 
@@ -148,7 +162,7 @@ describe('REAL-PATH — a claims walk and an engine that refuses', () => {
     await expect(runClaims(compileFixture(), claimSet(), loadGame, OPTIONS)).rejects.toThrow(
       'claims walk: the engine refused to save the state at the walk\'s start, so the walk could not continue from it',
     );
-    expect(recorded.turns).toEqual(['look']);
+    expect(recorded.turns).toEqual([]);
     expect(recorded.restores).toEqual([]);
   }, 30_000);
 

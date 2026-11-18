@@ -1,7 +1,7 @@
 # Test set: quay
 
-**Carries**: OB-46 to OB-52
-**Read by**: `packages/platform-browser/tests/opening-real-path.test.ts`; `scripts/__tests__/opening-baseline.test.ts`; `packages/story-loader/tests/opening-block.test.ts` (the story and every copy under `seeded/`, on the engine alone)
+**Carries**: OB-46 to OB-53
+**Read by**: `packages/platform-browser/tests/opening-real-path.test.ts`; `scripts/__tests__/opening-baseline.test.ts`; `packages/story-loader/tests/opening-block.test.ts` (the story and every copy under `seeded/`, on the engine alone); `./sharpee test test-stories/quay` (the tree `quay.tests`)
 **Seed**: 42
 
 ## Obligations
@@ -13,6 +13,7 @@
 - OB-50: nothing has run when the first command is typed: no timer has stepped, no sequence has counted a turn and no meter has grown; `seeded/quay-clock.story`, where the tide's first line and the hunger's first rung answer the first command and the sequence's step answers the third. Read on the engine.
 - OB-51: the turn count is blank before the first command and 1 after it. No reader yet.
 - OB-52: the opening is printed on a first load, on a restart and when a restore fails, and not on a session restored from a save. No reader yet.
+- OB-53: the story's test tree is one opening card and nothing else, and it is checked: the card claims the prologue, the banner's title, the first room's name and its first-visit paragraph, and the run passes with no command typed; `quay.tests`.
 
 ## What the story's parts are for
 

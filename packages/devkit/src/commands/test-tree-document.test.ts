@@ -62,13 +62,12 @@ end before
 `;
 
 /**
- * The tree a Testing tab session would have written: opening, asserted boot
- * look, an examine turn carrying a branch (an alternate `look`), then a move
- * north. Seed pinned at 42 (D5).
+ * The tree a Testing tab session would have written: the opening, asserting
+ * the first room, an examine turn carrying a branch (an alternate `look`),
+ * then a move north. Seed pinned at 42 (D5).
  */
 const TREE_CARDS: TreeCard[] = [
-    { type: 'opening' },
-    { type: 'boot', assertions: { contains: ['A small square den'] } },
+    { type: 'opening', assertions: { contains: ['A small square den'] } },
     {
       type: 'turn',
       command: 'examine the brass lamp',
@@ -156,14 +155,15 @@ describe('sharpee test --tree over a tree document (ADR-307 Phase 2, REAL-PATH)'
     // branch from its fork room and first command.
     expect(out).toContain('✓ opening-den');
     expect(out).toContain('✓ den · look');
-    // Every assertion counts (David 2026-08-10): boot + examine + north on
+    // Every assertion counts (David 2026-08-10): opening + examine + north on
     // the main line and the branch's look = 4 cards; their claims (incl. the
     // north card's contains + channel pair) = 5 assertions.
     expect(out).toContain('4 cards passing, 5 assertions passing');
     // The branch started from the save at its fork card, on the game the
     // main line ran on: nothing was replayed, and the report says so
     // (ADR-307 D5, amended 2026-11-12).
-    expect(out).toContain('4 commands (4 authored + 0 replayed), 1 restored at a fork');
+    // Three typed commands: the opening is run by the game and is not one.
+    expect(out).toContain('3 commands (3 authored + 0 replayed), 1 restored at a fork');
   }, 60_000);
 
   it('a content edit is a seam: that claim fails, surrounding lines still pass (exit 1, D4)', async () => {
@@ -212,7 +212,6 @@ describe('sharpee test --tree over a tree document (ADR-307 Phase 2, REAL-PATH)'
               ],
             },
           },
-          { type: 'boot', assertions: { contains: ['A small square den'] } },
           { type: 'turn', command: 'north', assertions: { contains: ['Roses everywhere'] } },
         ]),
       );
@@ -265,7 +264,6 @@ describe('sharpee test --tree over a tree document (ADR-307 Phase 2, REAL-PATH)'
             type: 'opening',
             assertions: { channels: [{ id: 'info.title', is: 'Wrong Title' }] },
           },
-          { type: 'boot', assertions: { contains: ['A small square den'] } },
         ]),
       );
       const failed = await muted(() => runTestCommand(['--tree', openingDir]));
@@ -278,7 +276,7 @@ describe('sharpee test --tree over a tree document (ADR-307 Phase 2, REAL-PATH)'
         openingDir,
         treeFilesOf([
           { type: 'opening' },
-          { type: 'boot', assertions: { contains: ['A small square den'] } },
+          { type: 'turn', command: 'look', assertions: { contains: ['A small square den'] } },
         ]),
       );
       const bareOpening: string[] = [];
@@ -311,7 +309,6 @@ describe('sharpee test --tree over a tree document (ADR-307 Phase 2, REAL-PATH)'
         bareDir,
         treeFilesOf([
           { type: 'opening' },
-          { type: 'boot' },
           { type: 'turn', command: 'north' },
         ]),
       );

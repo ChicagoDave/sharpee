@@ -1766,6 +1766,24 @@ export interface GameEngine {
      *  claims read these; per-command resets never see them (bootstrap D-note,
      *  David 2026-08-09). */
     bootChannelValues?: Record<string, unknown[]>;
+    /**
+     * The opening's packets in arrival order — bootstrap's
+     * `LoadedGame.openingPackets`. The tree runner's `(opening)` row reads its
+     * prose from them, in the order the story's opening states (ADR-404
+     * decision 12).
+     */
+    openingPackets?: ReadonlyArray<{
+        output: string;
+        channelValues: Record<string, unknown[]>;
+    }>;
+    /**
+     * The events the opening emitted — bootstrap's `LoadedGame.openingEvents`.
+     * An event claim on the tree's opening card is checked against these.
+     */
+    openingEvents?: ReadonlyArray<{
+        type: string;
+        data?: any;
+    }>;
     world?: WorldModel;
     /**
      * The underlying platform engine. $save/$restore go through its real

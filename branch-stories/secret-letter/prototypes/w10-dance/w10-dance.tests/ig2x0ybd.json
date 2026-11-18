@@ -1,11 +1,6 @@
 {
   "cards": [
     {
-      "assertions": {},
-      "id": "8lyiaokx",
-      "type": "opening"
-    },
-    {
       "assertions": {
         "contains": [
           "first partner, beat 1."
@@ -17,8 +12,8 @@
           "the dance is first"
         ]
       },
-      "id": "u61isc2q",
-      "type": "boot"
+      "id": "8lyiaokx",
+      "type": "opening"
     },
     {
       "assertions": {

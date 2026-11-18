@@ -1,18 +1,13 @@
 {
   "cards": [
     {
-      "assertions": {},
-      "id": "ldgopen1",
-      "type": "opening"
-    },
-    {
       "assertions": {
         "contains": [
           "A porch under a tin roof."
         ]
       },
-      "id": "ldgboot1",
-      "type": "boot"
+      "id": "ldgopen1",
+      "type": "opening"
     },
     {
       "assertions": {

@@ -31,11 +31,16 @@ import { FLAG_SENTENCES, participleOf, writtenName } from './claim-vocabulary.js
 import { irIdOf, readWorldSnapshot, type ClaimsTurnEvent, type ClaimsWorld, type WorldSnapshot } from './claims-game.js';
 import { branchLineLabelOf, mainLineLabelOf, roomSlugOf, type TreeCard, type TreeDocument } from '../tree-document.js';
 import { flattenTreeLines, type TreeLine } from '../tree-walker.js';
+import { openNewGame } from '@sharpee/transcript-tester';
 
 /** The slice of a booted game the lock drives — bootstrap's `LoadedGame` shape. */
 export interface LockGame {
   readonly world: ClaimsWorld;
   executeCommand(input: string): Promise<string> | string;
+  /** Bootstrap's `LoadedGame.openingPending`: the lock opens a game it finds pending. */
+  openingPending?: boolean;
+  /** Bootstrap's `LoadedGame.runOpening`: the story's opening, run and never typed. */
+  runOpening?(): Promise<string>;
   lastEvents?: readonly ClaimsTurnEvent[];
   lastTurnResult?: {
     validatedCommand?: {
@@ -209,6 +214,11 @@ export async function proposeLock(request: LockRequest): Promise<LockProposal> {
   }
 
   const game = await loadGame();
+  // The replay starts where the tree's lines start: after the story's
+  // opening, which the game runs and nobody types. "At boot" below is the
+  // state the opening left, the one a player first sees.
+  const openingError = await openNewGame(game);
+  if (openingError !== undefined) throw new Error(openingError);
   const world = game.world;
   const entityById = new Map(ir.entities.map((entity) => [entity.id, entity]));
   const irById = new Map<string, string>();
@@ -247,29 +257,19 @@ export async function proposeLock(request: LockRequest): Promise<LockProposal> {
     before = after;
   };
 
-  // The main line's boot look is the first prefix command of every branch; a
-  // line's own boot card is its own `look`. Neither is a typed turn.
-  const hasBootCard = document.cards.some((card) => card.type === 'boot');
-  const prefixIsTyped = (index: number) => !(hasBootCard && index === 0);
   const labelRoom = (): string | undefined => {
     const player = world.playerCharacter;
     const room = player && world.getContainingRoom(player.id);
     return room?.name;
   };
   let label = mainLineLabelOf(roomSlugOf(labelRoom()));
-  for (const [index, command] of line.prefix.entries()) {
-    await play(command);
-    if (!prefixIsTyped(index)) turns.pop();
-  }
+  // Every command of the prefix and every typed card is a turn; the opening
+  // card types nothing.
+  for (const command of line.prefix) await play(command);
   if (line.parentId !== undefined) label = branchLineLabelOf(roomSlugOf(labelRoom()), line.ordinal!, line.firstCommand);
   for (let index = 0; index <= target.index; index++) {
     const card = line.cards[index];
-    if (card.type === 'boot') {
-      await play('look');
-      turns.pop();
-    } else if (card.type === 'turn') {
-      await play(card.command!);
-    }
+    if (card.type === 'turn') await play(card.command!);
   }
   if (turns.length !== turn) throw new Error(`replay reached turn ${turns.length} where turn ${turn} was asked for`);
 

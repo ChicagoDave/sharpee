@@ -54,12 +54,22 @@ function insideWorkTree() {
   }
 }
 
-/** The tree directories (repository-relative) holding any of these paths. */
+/**
+ * Directories whose trees the gate never reads (David, 2026-11-18): they are
+ * records of an earlier format, not trees anyone runs.
+ */
+const NOT_LIVE_PREFIXES = ['docs/work/archive/', 'docs/work/chord-primer/'];
+
+/** The live tree directories (repository-relative) holding any of these paths. */
 function treeDirectoriesOf(paths) {
   const directories = new Set();
   for (const path of paths) {
     const directory = dirname(path);
-    if (basename(directory).endsWith('.tests')) directories.add(directory);
+    if (!basename(directory).endsWith('.tests')) continue;
+    // Not live trees: archived evidence stays as it was recorded, and the
+    // Chord primer's example is pinned to the published CLI it was written for.
+    if (NOT_LIVE_PREFIXES.some((prefix) => path.startsWith(prefix))) continue;
+    directories.add(directory);
   }
   return [...directories].sort();
 }

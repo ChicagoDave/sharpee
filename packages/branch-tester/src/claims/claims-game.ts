@@ -61,8 +61,18 @@ export interface ClaimsEngine extends SaveForkPlatform {
 export interface ClaimsGame {
   readonly world: ClaimsWorld;
   readonly engine: ClaimsEngine;
-  /** The wrapper's command entry, used once to settle the opening turn. */
-  executeCommand(input: string): Promise<string> | string;
+  /**
+   * Whether the game's opening can still be run — bootstrap's
+   * `LoadedGame.openingPending`. Required, not optional: a walk handed a
+   * game it cannot open would start from a world no player ever sees.
+   */
+  readonly openingPending: boolean;
+  /**
+   * Run the story's opening outside the turn cycle — bootstrap's
+   * `LoadedGame.runOpening`. The walk calls it once, on a pending game, so
+   * it starts from the state a player first sees (ADR-404 decision 4).
+   */
+  runOpening(): Promise<string>;
 }
 
 /**

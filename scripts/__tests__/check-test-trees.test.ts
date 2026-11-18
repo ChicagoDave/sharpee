@@ -209,6 +209,30 @@ describe('check-test-trees — the pre-commit gate', () => {
     expect(git('log', '--format=%s').trim()).toBe('good tree');
   });
 
+  it('never reads a tree under the archive or the primer, and still refuses the same tree anywhere else', () => {
+    // An unreadable tree: no manifest. Under the two directories it is a
+    // record of an earlier format, not a tree anyone runs.
+    const { ['manifest.json']: _manifest, ...noManifest } = segmentTree(tree());
+    const writeAt = (directory: string): void => {
+      mkdirSync(join(repo, directory), { recursive: true });
+      for (const [name, text] of Object.entries(noManifest)) writeFileSync(join(repo, directory, name), text);
+    };
+    writeAt('docs/work/archive/old/mini.tests');
+    writeAt('docs/work/chord-primer/example/mini.tests');
+    git('add', '.');
+    expect(runChecker()).toEqual({ status: 0, stderr: '' });
+    expect(runChecker('--all')).toEqual({ status: 0, stderr: '' });
+
+    // The fixture known to fail: the same files outside those directories.
+    writeAt('docs/work/live/mini.tests');
+    git('add', '.');
+    const result = runChecker('--all');
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain('docs/work/live/mini.tests/ cannot be read (malformed)');
+    expect(result.stderr).not.toContain('archive');
+    expect(result.stderr).not.toContain('chord-primer');
+  });
+
   it('--all checks every tracked tree, staged change or not', () => {
     const files = segmentTree(tree());
     files['maincont.json'] = files['maincont.json'].trimEnd();

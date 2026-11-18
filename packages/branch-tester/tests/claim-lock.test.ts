@@ -35,7 +35,7 @@ async function loadGame(): Promise<LockGame> {
 }
 
 /**
- * Main line: opening, boot, `read note` (turn 1), `north` (turn 2). A branch
+ * Main line: opening, `read note` (turn 1), `north` (turn 2). A branch
  * at `read note`: `north` (turn 2), `south` (turn 3).
  */
 function tree(): TreeDocument {
@@ -43,7 +43,6 @@ function tree(): TreeDocument {
     ...emptyTreeDocument('claim-bits-fixture', SEED, 'mainline'),
     cards: [
       { id: 'card0000', type: 'opening' },
-      { id: 'card0001', type: 'boot' },
       {
         id: 'card0002', type: 'turn', command: 'read note', continuation: 'contin00',
         branches: [{ id: 'branch01', cards: [{ id: 'card0010', type: 'turn', command: 'north' }, { id: 'card0011', type: 'turn', command: 'south' }] }],
@@ -72,6 +71,35 @@ describe('the offer (D1) — facts true at the card and not at boot', () => {
     expect(proposal.line).toEqual({ id: 'mainline', label: 'opening-hall' });
     expect(proposal.offer.map((o) => o.sentence)).toEqual(['the player is in the Landing', 'the note is read', 'the note has been read']);
     expect(proposal.block).toBeUndefined();
+  });
+
+  it('opens the game it replays on, once, before the first replayed command', async () => {
+    const order: string[] = [];
+    const loadWatched = async (): Promise<LockGame> => {
+      const game = await loadGame();
+      const runOpening = game.runOpening!.bind(game);
+      game.runOpening = async () => { order.push('opening'); return runOpening(); };
+      const executeCommand = game.executeCommand.bind(game);
+      game.executeCommand = async (input: string) => { order.push(input); return executeCommand(input); };
+      return game;
+    };
+    await proposeLock({ ir: IR, document: tree(), line: 'mainline', loadGame: loadWatched, compileCandidate, date: '2026-10-20' });
+    expect(order).toEqual(['opening', 'read note', 'north']);
+  });
+
+  it('a story whose opening throws is refused with the opening\'s error, and nothing is replayed', async () => {
+    const typed: string[] = [];
+    const loadBroken = async (): Promise<LockGame> => {
+      const game = await loadGame();
+      game.runOpening = async () => { throw new Error('the opening broke'); };
+      const executeCommand = game.executeCommand.bind(game);
+      game.executeCommand = async (input: string) => { typed.push(input); return executeCommand(input); };
+      return game;
+    };
+    await expect(
+      proposeLock({ ir: IR, document: tree(), line: 'mainline', loadGame: loadBroken, compileCandidate, date: '2026-10-20' }),
+    ).rejects.toThrow("the story's opening failed: the opening broke");
+    expect(typed).toEqual([]);
   });
 
   it('at turn 1 the room has not changed, so only the note is offered', async () => {
@@ -181,24 +209,23 @@ describe('the writer (D4) and the card\'s lock (D5)', () => {
     const document = tree();
     expect(lockOnCard(document, 'card0003', 'the player is in the Landing')).toBe(true);
     expect(lockOnCard(document, 'card0003', 'the player is in the Landing')).toBe(false);
-    expect(document.cards[3].locks).toEqual(['the player is in the Landing']);
+    expect(document.cards[2].locks).toEqual(['the player is in the Landing']);
     const files = segmentTree(document);
     expect(files['contin00.json']).toContain('"locks": [\n        "the player is in the Landing"\n      ]');
     const read = assembleTree(files);
     expect(read.status).toBe('ok');
-    if (read.status === 'ok') expect(read.document.cards[3].locks).toEqual(['the player is in the Landing']);
+    if (read.status === 'ok') expect(read.document.cards[2].locks).toEqual(['the player is in the Landing']);
     expect(() => lockOnCard(document, 'nocard00', 'x')).toThrow(/no card nocard00/);
   });
 });
 
 describe('turnOfCard — a card\'s turn as a player counts it (ADR-367)', () => {
-  it('counts typed turns from the root through the card on its own line; the boot look and the opening have none', () => {
+  it('counts typed turns from the root through the card on its own line; the opening has none', () => {
     const document = tree();
     expect(turnOfCard(document, 'card0002')).toBe(1);
     expect(turnOfCard(document, 'card0003')).toBe(2);
     expect(turnOfCard(document, 'card0010')).toBe(2);
     expect(turnOfCard(document, 'card0011')).toBe(3);
-    expect(turnOfCard(document, 'card0001')).toBeUndefined();
     expect(turnOfCard(document, 'card0000')).toBeUndefined();
     expect(turnOfCard(document, 'nowhere0')).toBeUndefined();
   });

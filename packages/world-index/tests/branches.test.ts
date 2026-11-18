@@ -454,7 +454,7 @@ describe('clause kinds beyond `on`', () => {
 
   it('the start block is one boot-driven branch', () => {
     const [start] = of('start-block');
-    expect(start.command).toEqual({ kind: 'boot' });
+    expect(start.command).toEqual({ kind: 'start' });
     expect(start.effects.map((e) => e.kind)).toEqual(['change-player']);
     expect(start.span?.line).toBe(lineOf('before the game starts'));
   });

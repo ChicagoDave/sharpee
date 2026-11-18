@@ -107,7 +107,8 @@ function irClaimOf(claim: Claim): IRClaim {
  * The game is consumed: the walk forks it through the engine's save/restore
  * hooks and leaves it in whatever state it last restored.
  *
- * @param game a freshly booted game at the pinned seed
+ * @param game a freshly booted game at the pinned seed; its opening is run
+ *   here when it has not run yet
  * @param ir the compiled story, for the declared vocabulary
  * @param group the set to walk under and the claims to settle
  * @param options budgets and breadth; the defaults are the explorer's
@@ -125,8 +126,10 @@ export async function walkClaims(game: ClaimsGame, ir: StoryIR, group: ClaimGrou
   // once here, before the walk, and read by nothing but the verdict.
   const inertByIndex = new Map(claims.map((claim) => [claim.index, claimCone(ir, irClaimOf(claim), set).inert.length]));
 
-  // The opening turn, so the walk starts from the state a player sees.
-  await game.executeCommand('look');
+  // The story's opening, so the walk starts from the state a player first
+  // sees. It is the game's routine and costs no turn; a game some caller
+  // already opened is left as it is.
+  if (game.openingPending) await game.runOpening();
 
   const vocabulary = deriveCommandVocabulary(ir, engine);
   const nameByIrId = new Map<string, string>();

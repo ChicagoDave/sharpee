@@ -7,20 +7,14 @@
             "id": "info.title",
             "is": "The Relighting"
           }
-        ]
-      },
-      "id": "ikcpb599",
-      "type": "opening"
-    },
-    {
-      "assertions": {
+        ],
         "contains": [
           "The Porter's Lodge",
           "You can see a kettle, a hand lamp, and Hobb here."
         ]
       },
-      "id": "l3zmpr4b",
-      "type": "boot"
+      "id": "ikcpb599",
+      "type": "opening"
     },
     {
       "assertions": {

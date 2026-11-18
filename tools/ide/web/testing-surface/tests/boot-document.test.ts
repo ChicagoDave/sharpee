@@ -25,7 +25,7 @@ const treeAt = (seed: number): TreeFiles =>
     story: 'mini',
     seed,
     id: 'root0000',
-    cards: [{ id: 'card0001', type: 'opening' }, { id: 'card0002', type: 'boot' }],
+    cards: [{ id: 'card0001', type: 'opening' }, { id: 'card0002', type: 'turn', command: 'look' }],
   });
 
 describe('admitBootDocument', () => {

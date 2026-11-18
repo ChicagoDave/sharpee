@@ -13,7 +13,7 @@
  *   gone with the range model (D3). All state changes go through the model;
  *   this layer only renders and forwards gestures.
  *
- * Public interface: CardsView (ensureLayout, addTurnCard, clear, render,
+ * Public interface: CardsView (ensureLayout, addOpeningCard, addTurnCard, clear, render,
  *   scrollToLatest, scrollToCard, scrollToLineTop, focusDerivedRow, setNotice),
  *   CardsDelegate, FailureNavState.
  * Owner context: tools/ide — the testing play surface's web bundle.
@@ -33,7 +33,7 @@ import {
 import { claimBadgeText, claimLockText, claimLockVisit, claimNameText, claimWhyText, claimsCountsOf, claimsHeaderText, type ClaimRow, type ClaimsSummary } from './claims';
 import type { BranchPoint, TreeSessionModel } from './model';
 import {
-  bootLookIndex, commandRowText, firstFailureText, restatesTextClaim, runRowVisitTarget, runRowsOf, type RunVisitTarget,
+  commandRowText, firstFailureText, restatesTextClaim, runRowVisitTarget, runRowsOf, type RunVisitTarget,
   type RunColumnState, type TranscriptRunResult,
 } from './run';
 
@@ -369,44 +369,66 @@ export class CardsView {
   }
 
   /**
-   * Builds the card for a delivered turn by MOVING its `data-turn`-stamped
-   * elements out of the staging pane (the 6f anchor contract — the client
-   * stamps before it posts, so the elements are there by delivery time).
-   * The session's first turn also drains everything staged before it into
-   * the opening card (ordinal 0 — prologue + banner).
+   * Builds the opening card (ordinal 0) from the opening's record by MOVING
+   * what the client staged for it out of the staging pane: everything staged
+   * ahead of the first stamped element (the prologue), then every element
+   * stamped with the record's ordinal (the banner and the first room; the 6f
+   * anchor contract — the client stamps before it posts, so the elements are
+   * there by delivery time). The record makes no card of its own: the opening
+   * is one card, and the first look is part of it (ADR-404 decision 12).
+   * Nothing is built while the model has no opening seated.
+   *
+   * @param recordOrdinal the feed ordinal of the record that seated the opening
    */
-  addTurnCard(ordinal: number, boot: boolean, branch = false): void {
+  addOpeningCard(recordOrdinal: number): void {
+    const staging = this.stagingPane();
+    if (!staging || !this.model.hasOpening) return;
+    const prose = [
+      ...this.unstampedHead(staging),
+      ...[...staging.children].filter(el => el.getAttribute('data-turn') === String(recordOrdinal)),
+    ];
+    const existing = this.cards.get(0);
+    if (existing === undefined) {
+      this.buildRow(0, false, prose);
+      return;
+    }
+    const host = existing.row.querySelector('.ts-prose');
+    for (const el of prose) host?.appendChild(el);
+  }
+
+  /**
+   * Builds the card for a delivered turn by MOVING its `data-turn`-stamped
+   * elements out of the staging pane (the 6f anchor contract). A turn that
+   * finds the opening seated in the model and not yet on the board (a replay
+   * that types the line's commands with its opening's record suppressed)
+   * builds the opening card first, from whatever is staged ahead of the
+   * first stamped element.
+   */
+  addTurnCard(ordinal: number, branch = false): void {
     const staging = this.stagingPane();
     if (!staging) return;
 
-    /** The engine's own banner decoration (ADR-174's published classes). */
-    const isBanner = (el: Element): boolean =>
-      [...el.classList].some(name => name.startsWith('sharpee-banner-'));
-
-    let stamped = [...staging.children]
+    const stamped = [...staging.children]
       .filter(el => el.getAttribute('data-turn') === String(ordinal));
 
     if (!this.cards.has(0) && this.model.hasOpening) {
-      const openingElements: Element[] = [];
-      for (const child of [...staging.children]) {
-        if (child.hasAttribute('data-turn')) break;
-        openingElements.push(child);
-      }
-      // The real client's `game.started` prose — banner + prologue — flushes
-      // INSIDE the boot look's turn bracket, so it arrives stamped with the
-      // boot ordinal rather than as an unstamped head. It is still the
-      // opening (ordinal 0): claim it by its banner classes.
-      if (boot) {
-        openingElements.push(...stamped.filter(isBanner));
-        stamped = stamped.filter(el => !isBanner(el));
-      }
-      this.buildRow(0, false, false, openingElements);
+      this.buildRow(0, false, this.unstampedHead(staging));
     }
 
-    this.buildRow(ordinal, boot, branch, stamped);
+    this.buildRow(ordinal, branch, stamped);
   }
 
-  private buildRow(ordinal: number, boot: boolean, branch: boolean, prose: Element[]): void {
+  /** What the client staged ahead of its first turn-stamped element. */
+  private unstampedHead(staging: HTMLElement): Element[] {
+    const head: Element[] = [];
+    for (const child of [...staging.children]) {
+      if (child.hasAttribute('data-turn')) break;
+      head.push(child);
+    }
+    return head;
+  }
+
+  private buildRow(ordinal: number, branch: boolean, prose: Element[]): void {
     const row = document.createElement('div');
     row.className = 'ts-turn';
     row.setAttribute('data-ts-ordinal', String(ordinal));
@@ -420,7 +442,7 @@ export class CardsView {
     meta.className = 'ts-meta';
     meta.textContent = ordinal === 0
       ? 'opening'
-      : `turn ${ordinal}${boot ? ' · boot' : ''}${branch ? ' · branch' : ''}`;
+      : `turn ${ordinal}${branch ? ' · branch' : ''}`;
     // END STATE (ADR-356 D4): the story ended on this turn. The mark reads
     // the card's own `ending`, filled by render() — a loaded document's
     // ending card shows it before any replay, a live ending the moment it
@@ -437,7 +459,7 @@ export class CardsView {
 
     // Tail-cut (D4/Q-4): the card's hover ✕, armed-then-confirmed — the
     // same two-act destruction idiom as the chip's ✕. Turn cards only: the
-    // opening and the boot look are the session's fabric.
+    // opening is the session's fabric.
     if (this.model.cardAt(ordinal)?.type === 'turn') {
       const cut = document.createElement('button');
       cut.className = 'ts-card-delete';
@@ -508,6 +530,9 @@ export class CardsView {
                  text => this.delegate.onNotContains(ordinal, text)));
     actions.appendChild(notButton);
 
+    // Exact is a typed turn's alone: the opening's row is checked against
+    // everything the opening printed, in no single block a whole-output
+    // match could name.
     let exactButton: HTMLButtonElement | null = null;
     if (ordinal > 0) {
       exactButton = document.createElement('button');
@@ -515,31 +540,37 @@ export class CardsView {
       exactButton.title = 'This turn asserts its whole output — the literal block';
       exactButton.addEventListener('click', () => this.delegate.onToggleExact(ordinal));
       actions.appendChild(exactButton);
+    }
 
-      const stateButton = document.createElement('button');
-      stateButton.textContent = 'State…';
-      stateButton.title = 'Assert something the world holds after this turn';
-      stateButton.addEventListener('click', () =>
-        this.delegate.onStatePicker(ordinal, stateButton));
-      actions.appendChild(stateButton);
+    // State and Event serve the opening too: the first look is part of it,
+    // so the world it left and the events it emitted are the opening's.
+    const stateButton = document.createElement('button');
+    stateButton.textContent = 'State…';
+    stateButton.title = ordinal === 0
+      ? 'Assert something the world holds after the opening'
+      : 'Assert something the world holds after this turn';
+    stateButton.addEventListener('click', () =>
+      this.delegate.onStatePicker(ordinal, stateButton));
+    actions.appendChild(stateButton);
 
-      const eventButton = document.createElement('button');
-      eventButton.textContent = 'Event…';
-      eventButton.title = 'Assert an event this turn emitted';
-      eventButton.addEventListener('click', () =>
-        this.delegate.onEventPicker(ordinal, eventButton));
-      actions.appendChild(eventButton);
+    const eventButton = document.createElement('button');
+    eventButton.textContent = 'Event…';
+    eventButton.title = ordinal === 0
+      ? 'Assert an event the opening emitted'
+      : 'Assert an event this turn emitted';
+    eventButton.addEventListener('click', () =>
+      this.delegate.onEventPicker(ordinal, eventButton));
+    actions.appendChild(eventButton);
 
-      // Lock… (ADR-367 D7): a typed turn's reached state becomes a claim
-      // with its set proposed from the line — through `sharpee claim`.
-      if (this.model.cardAt(ordinal)?.type === 'turn') {
-        const lockButton = document.createElement('button');
-        lockButton.textContent = 'Lock…';
-        lockButton.title = 'Lock a fact true after this turn as a claim, its necessary set proposed from this line';
-        lockButton.addEventListener('click', () =>
-          this.delegate.onLock(ordinal, lockButton));
-        actions.appendChild(lockButton);
-      }
+    // Lock… (ADR-367 D7): a typed turn's reached state becomes a claim
+    // with its set proposed from the line — through `sharpee claim`.
+    if (this.model.cardAt(ordinal)?.type === 'turn') {
+      const lockButton = document.createElement('button');
+      lockButton.textContent = 'Lock…';
+      lockButton.title = 'Lock a fact true after this turn as a claim, its necessary set proposed from this line';
+      lockButton.addEventListener('click', () =>
+        this.delegate.onLock(ordinal, lockButton));
+      actions.appendChild(lockButton);
     }
 
     // The Channel picker serves the OPENING too (David 2026-08-10): its
@@ -548,7 +579,7 @@ export class CardsView {
     const channelButton = document.createElement('button');
     channelButton.textContent = 'Channel…';
     channelButton.title = ordinal === 0
-      ? 'Assert on a channel the boot captured (prologue, banner, …)'
+      ? 'Assert on a channel the opening captured (prologue, banner, …)'
       : 'Assert on a channel this turn captured';
     channelButton.addEventListener('click', () =>
       this.delegate.onChannelPicker(ordinal, channelButton));
@@ -570,18 +601,17 @@ export class CardsView {
     });
     actions.appendChild(characterButton);
 
-    let branchButton: HTMLButtonElement | null = null;
-    if (ordinal > 0) {
-      branchButton = document.createElement('button');
-      branchButton.textContent = 'Branch…';
-      branchButton.title =
-        'Try a different command from this point — what follows becomes a sibling branch';
-      branchButton.style.display = 'none';
-      branchButton.addEventListener('click', () =>
-        promptText('alternate command, e.g. east',
-                   command => this.delegate.onBranch(ordinal, command)));
-      actions.appendChild(branchButton);
-    }
+    // The opening forks too: its branch is an alternate first command.
+    const branchButton = document.createElement('button');
+    branchButton.textContent = 'Branch…';
+    branchButton.title = ordinal === 0
+      ? 'Try a different first command — what follows becomes a sibling branch'
+      : 'Try a different command from this point — what follows becomes a sibling branch';
+    branchButton.style.display = 'none';
+    branchButton.addEventListener('click', () =>
+      promptText('alternate command, e.g. east',
+                 command => this.delegate.onBranch(ordinal, command)));
+    actions.appendChild(branchButton);
     block.appendChild(actions);
 
     column.append(block);
@@ -988,19 +1018,12 @@ export class CardsView {
       results.appendChild(line);
     };
 
-    /** Whether `lineId`'s executed rows include the boot look: only the main
-     *  line plays the boot card, and only when the document has one (F-13). */
-    const hasBootCard = (lineId: string): boolean =>
-      lineId === this.model.mainLine
-      && this.model.document.cards.some((card) => card.type === 'boot');
-
-    /** One command's detail block: the command, then each assertion's verdict.
-     *  The boot look is titled as what it is, not as a second `> look`. */
-    const detail = (result: TranscriptRunResult, bootLook: number | undefined): void => {
-      result.commands.forEach((command, index) => {
+    /** One command's detail block: the command, then each assertion's verdict. */
+    const detail = (result: TranscriptRunResult): void => {
+      result.commands.forEach((command) => {
         const commandRow = document.createElement('div');
         commandRow.className = 'ts-run-cmd';
-        commandRow.textContent = commandRowText(command, index === bootLook);
+        commandRow.textContent = commandRowText(command);
         results.appendChild(commandRow);
         if (command.skipped) {
           const skipRow = document.createElement('div');
@@ -1077,11 +1100,8 @@ export class CardsView {
         continue;
       }
       const result = entry.result;
-      const bootLook = bootLookIndex(result.commands, hasBootCard(entry.lineId));
       const failure = result.firstFailure;
-      const failureText = failure === undefined
-        ? undefined
-        : firstFailureText(failure, failure.command !== undefined && failure.command === bootLook);
+      const failureText = failure === undefined ? undefined : firstFailureText(failure);
       // A stale result keeps its verdict and its detail (ADR-357 D11) — the
       // badge dims and the row says the result is unverified since an edit.
       const staleClass = result.stale ? ' ts-stale' : '';
@@ -1092,7 +1112,7 @@ export class CardsView {
           // No turn count: turns have no meaning unless the author gives
           // them meaning (David 2026-08-10). PASS is the information.
           row('PASS', `ts-pass${staleClass}`, label, why(''));
-          detail(result, bootLook);
+          detail(result);
           break;
         case 'skipped':
           row('—', staleClass.trim(), label, why('no commands — ran as a skip'));
@@ -1103,7 +1123,7 @@ export class CardsView {
         default: {
           const more = result.moreFailures > 0 ? ` +${result.moreFailures} more` : '';
           row('FAIL', `ts-fail${staleClass}`, label, why(`${failureText ?? 'failed'}${more}`), runRowVisitTarget(entry));
-          detail(result, bootLook);
+          detail(result);
         }
       }
     }

@@ -7,21 +7,15 @@
             "id": "info.title",
             "is": "The Relighting"
           }
-        ]
-      },
-      "id": "ig2mmynh",
-      "type": "opening"
-    },
-    {
-      "assertions": {
+        ],
         "contains": [
           "The Porter's Lodge",
           "an oak press hangs on the wall beside it",
           "You can see a kettle, a hand lamp, and Hobb here."
         ]
       },
-      "id": "toi83rs2",
-      "type": "boot"
+      "id": "ig2mmynh",
+      "type": "opening"
     },
     {
       "assertions": {

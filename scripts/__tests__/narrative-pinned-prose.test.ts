@@ -11,7 +11,7 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import { STORY_TREE, commandResults, lineLabel, runOrchardTest, type TestRun } from './support/story-run';
 import { readTree } from './support/scratch-story';
 
-interface Card { type: 'opening' | 'boot' | 'turn'; command?: string; assertions: { contains?: string[]; channels?: Array<{ id: string; is: string }> } }
+interface Card { type: 'opening' | 'turn'; command?: string; assertions: { contains?: string[]; channels?: Array<{ id: string; is: string }> } }
 interface TreeDocument { version: number; seed: number; story: string; cards: Card[] }
 
 let tree: TreeDocument;
@@ -30,31 +30,36 @@ function mainLine() {
   return commandResults(run).filter((result) => lineLabel(run, result.file) === 'opening-gate');
 }
 
-describe('the boot card pins the room name and its description', () => {
-  it('the tree\'s boot card carries "Gate" and the opening paragraph, and the CLI passed both', () => {
-    const boot = tree.cards[1];
-    expect(boot.type).toBe('boot');
-    expect(boot.assertions.contains?.[0]).toBe('Gate');
-    expect(boot.assertions.contains?.[1]).toMatch(/^The orchard gate stands open on the lane/);
+describe('the opening card pins the room name and its description', () => {
+  it('the tree\'s one opening card carries "Gate" and the opening paragraph, and the CLI passed both as its first row', () => {
+    const opening = tree.cards[0];
+    expect(opening.type).toBe('opening');
+    // The opening is one card: no card stands between it and the first move.
+    expect(tree.cards.filter((card) => card.type === 'opening')).toHaveLength(1);
+    expect(opening.assertions.contains?.[0]).toBe('Gate');
+    expect(opening.assertions.contains?.[1]).toMatch(/^The orchard gate stands open on the lane/);
 
-    const look = mainLine().find((result) => result.turn === 1);
-    expect(look?.input).toBe('look');
-    expect(look?.passed).toBe(true);
-    expect(look?.assertionResults?.map((verdict) => verdict.description)).toEqual(
-      boot.assertions.contains!.map((text) => `contains "${text}"`),
+    // The opening's row comes first, is no turn, and nothing was typed for it.
+    const [row] = mainLine();
+    expect(row.input).toBe('(opening)');
+    expect(row.turn).toBeUndefined();
+    expect(mainLine().some((result) => result.input === 'look' && result.turn === 1)).toBe(false);
+    expect(row.passed).toBe(true);
+    expect(row.assertionResults?.map((verdict) => verdict.description)).toEqual(
+      opening.assertions.contains!.map((text) => `contains "${text}"`),
     );
-    expect(look?.assertionResults?.every((verdict) => verdict.passed)).toBe(true);
+    expect(row.assertionResults?.every((verdict) => verdict.passed)).toBe(true);
   });
 });
 
 describe('the first move becomes a card', () => {
-  it('the Rows card carries the room name the default policy pinned, and the CLI evaluated exactly that', () => {
-    const card = tree.cards[2];
+  it('the Rows card carries the room name the default policy pinned, and the CLI evaluated exactly that, as turn 1', () => {
+    const card = tree.cards[1];
     expect(card.type).toBe('turn');
     expect(card.command).toBe('north');
     expect(card.assertions.contains).toEqual(['Rows']);
 
-    const north = mainLine().find((result) => result.turn === 2);
+    const north = mainLine().find((result) => result.turn === 1);
     expect(north?.input).toBe('north');
     expect(north?.passed).toBe(true);
     expect(north?.assertionResults).toEqual([{ description: 'contains "Rows"', passed: true }]);

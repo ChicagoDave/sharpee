@@ -114,18 +114,20 @@ export interface TreeDocument {
   claims?: string;
   /** The root segment's id: the main line's identity (ADR-355 D5). */
   id: string;
-  /** The main line, in play order: opening, boot look, then typed turns. */
+  /** The main line, in play order: the opening, then typed turns. */
   cards: TreeCard[];
 }
 
 /**
- * What a card is: the opening (no command — nothing was typed), the boot
- * look (the automatic first look, its own card), or a typed turn.
+ * What a card is: the opening (no command — nothing was typed; it holds
+ * whatever the story's opening routine printed, the first look included), or
+ * a typed turn. There is no `boot` card: the opening is not a turn, and no
+ * head types an opening `look` (ADR-404 decision 12).
  */
-export type TreeCardType = 'opening' | 'boot' | 'turn';
+export type TreeCardType = 'opening' | 'turn';
 
 /**
- * One node of the tree: a played turn (or the opening/boot look) with its
+ * One node of the tree: a played turn (or the opening) with its
  * authored assertions. A fork lives ON the card branched from — `branches`
  * holds each alternative's own cards, and the parent's remaining `cards`
  * array is the line's continuation (ADR-307 D2).
@@ -938,12 +940,16 @@ function validateCard(value: unknown, path: string): string | undefined {
   if (unknownKey !== undefined) return `unknown key '${unknownKey}' in '${path}'`;
 
   const type = value['type'];
-  if (type !== 'opening' && type !== 'boot' && type !== 'turn') {
-    return `'${path}.type' must be 'opening', 'boot', or 'turn'`;
+  // The refusal names the type it found, so a tree recorded when the first
+  // look was a card of its own is told which card to lose. Nothing is
+  // migrated here (ADR-307 D8, ADR-404 decision 13): the tree is re-recorded.
+  if (type !== 'opening' && type !== 'turn') {
+    const found = typeof type === 'string' ? `'${type}'` : 'missing or not a string';
+    return `'${path}.type' is ${found}; a card's type is 'opening' or 'turn'`;
   }
-  // The opening and the boot look are what the story did unprompted; only a
-  // typed turn carries a command (ADR-307 D2) — and only a typed turn can
-  // have ended the story (ADR-356 D4).
+  // The opening is what the story did unprompted; only a typed turn carries
+  // a command (ADR-307 D2) — and only a typed turn can have ended the story
+  // (ADR-356 D4).
   if (type === 'turn') {
     if (typeof value['command'] !== 'string' || value['command'] === '') {
       return `'${path}' is a turn and must carry a non-empty 'command'`;
@@ -1056,8 +1062,8 @@ function firstUnknownKey(
 
 /**
  * A card's turn number as a player counts it (ADR-367's "turn 41"): the
- * typed turns from the root through the card, the boot look excluded, on
- * whichever line the card sits. Browser-safe — the Testing tab asks it for
+ * typed turns from the root through the card, on whichever line the card
+ * sits. The opening is no turn, so a tree's first typed card is turn 1. Browser-safe — the Testing tab asks it for
  * the `--at` a lock takes, and the lock computes the same number from the
  * line it replays.
  *

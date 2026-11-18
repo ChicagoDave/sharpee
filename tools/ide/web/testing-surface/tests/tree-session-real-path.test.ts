@@ -23,7 +23,7 @@ import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { proseTextLinesOf } from '@sharpee/branch-tester/auto-assertion';
 import { assembleTree, segmentTree, type TreeDocument } from '@sharpee/branch-tester/tree-document';
-import { openingDefaultClaims, recordedTurnAssertions } from '../src/compose';
+import { openingAssertionsOf, openingDefaultClaims, recordedTurnAssertions } from '../src/compose';
 import { TreeSessionModel } from '../src/model';
 
 /**
@@ -74,6 +74,8 @@ const { runTreeDocument } = requireCompiled(
 /** The compiled game surface this test drives (bootstrap's assembled game). */
 interface RealGame {
   executeCommand(input: string): Promise<string> | string;
+  /** The story's opening, run and never typed (bootstrap's `LoadedGame.runOpening`). */
+  runOpening(): Promise<string>;
   lastChannelValues?: Record<string, unknown[]>;
   bootChannelValues?: Record<string, unknown[]>;
 }
@@ -143,7 +145,6 @@ async function playReal(
   model: TreeSessionModel,
   game: RealGame,
   command: string,
-  boot = false,
 ): Promise<number> {
   const output = String(await game.executeCommand(command));
   ordinal += 1;
@@ -152,20 +153,36 @@ async function playReal(
     output,
     ...(game.lastChannelValues !== undefined ? { channelValues: game.lastChannelValues } : {}),
   });
-  const openingClaims = boot
-    ? openingDefaultClaims(POLICY, {
-        ...(game.lastChannelValues ?? {}),
-        ...(game.bootChannelValues ?? {}),
-      })
-    : [];
   model.addTurn({
     ordinal,
-    command: boot ? '' : command,
-    boot,
+    command,
+    boot: false,
     ...(room !== undefined ? { room } : {}),
     ...(recorded.assertions !== undefined ? { assertions: recorded.assertions } : {}),
     ...(recorded.skip === true ? { skip: true } : {}),
-    ...(openingClaims.length > 0 ? { openingAssertions: { channels: openingClaims } } : {}),
+  });
+  return ordinal;
+}
+
+/**
+ * Runs the real game's opening and folds its record into the model the way
+ * the tab's feed does: nothing is typed, the record seats the one opening
+ * card, and the card records the opening's defaults and what the policy
+ * recorded of the first look.
+ */
+async function openReal(model: TreeSessionModel, game: RealGame): Promise<number> {
+  const output = await game.runOpening();
+  ordinal += 1;
+  const captures = game.bootChannelValues ?? {};
+  const room = proseTextLinesOf(captures['room-name']).at(-1);
+  const recorded = recordedTurnAssertions(POLICY, { output, channelValues: captures });
+  const openingAssertions = openingAssertionsOf(openingDefaultClaims(POLICY, captures), recorded.assertions);
+  model.addTurn({
+    ordinal,
+    command: '',
+    boot: true,
+    ...(room !== undefined ? { room } : {}),
+    ...(openingAssertions !== undefined ? { openingAssertions } : {}),
   });
   return ordinal;
 }
@@ -175,16 +192,12 @@ describe('a real play session produces the document, and the real walker consume
     const model = new TreeSessionModel('mini', 42);
     const game = await loadGame();
 
-    // The session as the tab plays it: boot look, examine (with a claim),
+    // The session as the tab plays it: the opening, examine (with a claim),
     // north (with a claim).
-    const bootLook = await playReal(model, game, 'look', true);
-    // The boot flush (banner, prologue, info) rides the boot look's turn
-    // captures on the real engine — exactly what the tab's boot record
-    // carries.
-    const bootCaptures = {
-      ...(game.lastChannelValues ?? {}),
-      ...(game.bootChannelValues ?? {}),
-    };
+    const openingRecord = await openReal(model, game);
+    // The opening's captures (banner, prologue, info, and the first look's
+    // room channels) are the game's boot captures on the real engine.
+    const bootCaptures = game.bootChannelValues ?? {};
     const examined = await playReal(model, game, 'examine the brass lamp');
     model.addContains(examined, 'gleams dully');
     await playReal(model, game, 'north');
@@ -202,14 +215,18 @@ describe('a real play session produces the document, and the real walker consume
     const branchId = model.branch(examined, 'look')!;
     expect(branchId).toMatch(/^[a-z0-9]{8}$/);
     const branchGame = await loadGame();
-    await branchGame.executeCommand('look');
+    await branchGame.runOpening();
     await branchGame.executeCommand('examine the brass lamp');
     const alt = await playReal(model, branchGame, 'look');
     model.addContains(alt, 'A small square den');
 
     expect(model.labelOf(model.mainLine)).toBe('opening-den');
     expect(model.labelOf(branchId)).toBe('den · look');
-    expect(model.cardAt(bootLook)?.type).toBe('boot');
+    // The opening's record made no card of its own: the tree's head is the
+    // one opening card, and it holds the first room the policy recorded.
+    expect(model.cardAt(openingRecord)).toBeUndefined();
+    expect(model.document.cards.map((card) => card.type)).toEqual(['opening', 'turn', 'turn']);
+    expect(model.claimsOf(0)?.contains).toContain('Den');
 
     // The tree's files read back through the shared reader and re-segment
     // byte-identically (ADR-355 AC-6).
@@ -230,13 +247,13 @@ describe('a real play session produces the document, and the real walker consume
   it('a splice repair replays whole: the replay fills the spliced card, the seam is a failed claim, the branch still passes (D4)', async () => {
     const model = new TreeSessionModel('mini', 42);
     const game = await loadGame();
-    await playReal(model, game, 'look', true);
+    await openReal(model, game);
     const examined = await playReal(model, game, 'examine the brass lamp');
     const north = await playReal(model, game, 'north');
     model.addContains(north, 'Roses everywhere');
     const branchId = model.branch(examined, 'look')!;
     const branchGame = await loadGame();
-    await branchGame.executeCommand('look');
+    await branchGame.runOpening();
     await branchGame.executeCommand('examine the brass lamp');
     const alt = await playReal(model, branchGame, 'look');
     model.addContains(alt, 'A small square den');
@@ -252,7 +269,7 @@ describe('a real play session produces the document, and the real walker consume
     model.beginRebindAll();
     ordinal += 10;
     const rebindGame = await loadGame();
-    await playReal(model, rebindGame, 'look', true);
+    await openReal(model, rebindGame);
     await playReal(model, rebindGame, 'examine the brass lamp');
     const splicedOrdinal = await playReal(model, rebindGame, 'north');
     await playReal(model, rebindGame, 'north');
@@ -289,7 +306,7 @@ describe('a real play session produces the document, and the real walker consume
   it('tail-cut leaves a document the walker still runs clean (D4/Q-4)', async () => {
     const model = new TreeSessionModel('mini', 42);
     const game = await loadGame();
-    await playReal(model, game, 'look', true);
+    await openReal(model, game);
     const examined = await playReal(model, game, 'examine the brass lamp');
     const north = await playReal(model, game, 'north');
     model.addContains(north, 'nowhere to be seen');   // a claim that would fail

@@ -34,7 +34,7 @@ function treeText(model: TreeSessionModel): string {
   return Object.values(model.files()).join('\n');
 }
 
-/** A fresh model with the standard opening: boot look in the Den. */
+/** A fresh model with the standard opening: the opening's record, in the Den. */
 function bootedModel(): TreeSessionModel {
   const model = new TreeSessionModel('mini', 42);
   model.addTurn({ ordinal: 1, command: '', boot: true, room: 'Den' });
@@ -50,12 +50,45 @@ function play(model: TreeSessionModel, command: string, room = 'Den'): number {
 }
 
 describe('always recording (D3) — every turn is a card, the document is live', () => {
-  it('the first record seats the opening and the boot look', () => {
+  it('the opening\'s record seats the one opening card and makes no card of its own', () => {
     const model = bootedModel();
     expect(model.hasOpening).toBe(true);
-    expect(model.document.cards.map(c => c.type)).toEqual(['opening', 'boot']);
+    expect(model.document.cards.map(c => c.type)).toEqual(['opening']);
     expect(model.cardAt(0)?.type).toBe('opening');
-    expect(model.cardAt(1)?.type).toBe('boot');
+    // The record's own feed ordinal binds nothing: the opening is ordinal 0.
+    expect(model.cardAt(1)).toBeUndefined();
+    // The room the opening left the player in labels the main line.
+    expect(model.roomOf(0)).toBe('Den');
+    expect(model.labelOf(model.mainLine)).toBe('opening-den');
+  });
+
+  it('a fresh opening card records the claims its record carries; a second opening record changes nothing', () => {
+    const model = new TreeSessionModel('mini', 42);
+    model.addTurn({
+      ordinal: 1, command: '', boot: true, room: 'Den',
+      openingAssertions: { contains: ['A small square den.'], channels: [{ id: 'info.title', is: 'Mini' }] },
+      // A turn's claims on the opening's record go nowhere: it makes no turn card.
+      assertions: { contains: ['never recorded'] },
+    });
+    expect(model.claimsOf(0)).toEqual({ contains: ['A small square den.'], channels: [{ id: 'info.title', is: 'Mini' }] });
+    expect(treeText(model)).not.toContain('never recorded');
+
+    const before = treeText(model);
+    model.addTurn({ ordinal: 2, command: '', boot: true, room: 'Garden', openingAssertions: { contains: ['other'] } });
+    expect(treeText(model)).toBe(before);
+    expect(model.document.cards.map(c => c.type)).toEqual(['opening']);
+  });
+
+  it('an opening record on a branch line changes nothing on that line', () => {
+    const model = bootedModel();
+    const took = play(model, 'take lamp');
+    play(model, 'north', 'Garden');
+    const id = model.branch(took, 'east')!;
+    const before = treeText(model);
+    model.addTurn({ ordinal: 300, command: '', boot: true, room: 'Den' });
+    expect(treeText(model)).toBe(before);
+    // The branch is still waiting for its first typed turn.
+    expect(model.isPending(id)).toBe(true);
   });
 
   it('typed turns append turn cards with their commands', () => {
@@ -64,7 +97,6 @@ describe('always recording (D3) — every turn is a card, the document is live',
     play(model, 'north', 'Garden');
     expect(model.document.cards.map(c => [c.type, c.command])).toEqual([
       ['opening', undefined],
-      ['boot', undefined],
       ['turn', 'take lamp'],
       ['turn', 'north'],
     ]);
@@ -302,7 +334,7 @@ describe('assertion authoring — claims live in the card', () => {
     const before = treeText(model);
 
     model.beginRebindAll();
-    model.addTurn({ ordinal: 90, command: '', boot: true, assertions: { contains: ['boot noise'] } });
+    model.addTurn({ ordinal: 90, command: '', boot: true, openingAssertions: { contains: ['opening noise'] } });
     model.addTurn({
       ordinal: 91,
       command: 'north',
@@ -318,13 +350,14 @@ describe('assertion authoring — claims live in the card', () => {
     });
 
     // The played cards kept their truth; only the spliced void filled. The
-    // boot card was recorded bare (this harness plays without persistence),
-    // so it fills too — a hand-edited or unrecorded void completes the same
-    // way.
+    // opening card was recorded bare (this harness plays without
+    // persistence), so it fills too — a hand-edited or unrecorded void
+    // completes the same way. The opening's record binds no ordinal of its own.
     expect(model.claimsOf(91)).toEqual({ contains: ['Roses everywhere.'] });
     expect(model.claimsOf(92)).toEqual({ contains: ['Time passes.'] });
     expect(treeText(model)).not.toBe(before);
-    expect(model.claimsOf(90)).toEqual({ contains: ['boot noise'] });
+    expect(model.claimsOf(0)).toEqual({ contains: ['opening noise'] });
+    expect(model.cardAt(90)).toBeUndefined();
   });
 
   it('exact captures the literal block and clears back to bare', () => {
@@ -347,13 +380,22 @@ describe('assertion authoring — claims live in the card', () => {
 });
 
 describe('branching (D2/D5) — the fork lives ON the card', () => {
-  it('refuses the opening, the tip, and unbound cards', () => {
+  it('refuses the tip and unbound cards; the opening forks an alternate first command', () => {
+    const lone = bootedModel();
+    expect(lone.canBranch(0)).toBe(false);       // the opening is the tip — typing continues
+
     const model = bootedModel();
     const n = play(model, 'take lamp');
-    expect(model.canBranch(0)).toBe(false);      // opening
     expect(model.canBranch(n)).toBe(false);      // the tip — typing continues
     expect(model.canBranch(999)).toBe(false);    // unbound
-    expect(model.canBranch(1)).toBe(true);       // the boot look — alternate turn 1
+    expect(model.canBranch(1)).toBe(false);      // the opening record's own ordinal binds no card
+    expect(model.canBranch(0)).toBe(true);       // the opening — alternate turn 1
+
+    const id = model.branch(0, 'north')!;
+    expect(model.prefixCommandsOf(id)).toEqual([]);
+    play(model, 'north', 'Garden');
+    expect(model.document.cards[0].branches![0].cards).toEqual([{ type: 'turn', command: 'north' }]);
+    expect(model.labelOf(id)).toBe('den · north');
   });
 
   it('forks on a mid-path card; the alternative records into its own line', () => {
@@ -383,7 +425,7 @@ describe('branching (D2/D5) — the fork lives ON the card', () => {
     const alt = play(model, 'east', 'Shed');
 
     expect(model.isTurnVisible(north)).toBe(false);
-    expect(model.visibleOrdinals()).toEqual([0, 1, took, alt]);
+    expect(model.visibleOrdinals()).toEqual([0, took, alt]);
 
     model.activateLine(model.mainLine);
     expect(model.isTurnVisible(north)).toBe(true);
@@ -498,14 +540,14 @@ describe('derived labels (Q-8) — computed, never persisted', () => {
     expect(model.isTurnVisible(again)).toBe(true);
     expect(model.isTurnVisible(first)).toBe(false);
     // The prefix line kept its bindings — its cards were never redelivered.
-    expect(model.visibleOrdinals()).toEqual([0, 1, took, again, up]);
+    expect(model.visibleOrdinals()).toEqual([0, took, again, up]);
   });
 
   it('beginRebind on an unknown line changes nothing', () => {
     const model = bootedModel();
     const took = play(model, 'take lamp');
     model.beginRebind('nosuchid');
-    expect(model.visibleOrdinals()).toEqual([0, 1, took]);
+    expect(model.visibleOrdinals()).toEqual([0, took]);
   });
 });
 
@@ -546,7 +588,6 @@ describe('branch delete and tail-cut (D4/Q-4)', () => {
     expect(result).toEqual({ lineId: model.mainLine, activeSurvived: true });
     expect(model.document.cards.map(c => [c.type, c.command])).toEqual([
       ['opening', undefined],
-      ['boot', undefined],
       ['turn', 'take lamp'],
     ]);
     expect(model.cardAt(north)).toBeUndefined();
@@ -570,11 +611,12 @@ describe('branch delete and tail-cut (D4/Q-4)', () => {
     expect(model.lineIds()).toEqual([model.mainLine]);
   });
 
-  it('the opening and the boot look never tail-cut', () => {
+  it('the opening never tail-cuts', () => {
     const model = bootedModel();
     play(model, 'take lamp');
+    const before = treeText(model);
     expect(model.tailCut(0)).toBeNull();
-    expect(model.tailCut(1)).toBeNull();
+    expect(treeText(model)).toBe(before);
   });
 });
 
@@ -587,7 +629,7 @@ describe('splice (D4) — repairs validated by whole-path replay', () => {
 
     expect(model.spliceIn(took, 'open door')).toBe(true);
     expect(model.document.cards.map(c => c.command)).toEqual(
-      [undefined, undefined, 'take lamp', 'open door', 'north'],
+      [undefined, 'take lamp', 'open door', 'north'],
     );
 
     // The whole-path replay re-derives every downstream card (D4): rebind
@@ -597,7 +639,7 @@ describe('splice (D4) — repairs validated by whole-path replay', () => {
     model.addTurn({ ordinal: 12, command: 'take lamp', boot: false, room: 'Den' });
     model.addTurn({ ordinal: 13, command: 'open door', boot: false, room: 'Den' });
     model.addTurn({ ordinal: 14, command: 'north', boot: false, room: 'Garden' });
-    expect(model.cardAt(13)).toBe(model.document.cards[3]);
+    expect(model.cardAt(13)).toBe(model.document.cards[2]);
     // The downstream card kept its authored claim through the repair.
     expect(model.claimsOf(14)).toEqual({ contains: ['Roses everywhere'] });
   });
@@ -612,7 +654,7 @@ describe('splice (D4) — repairs validated by whole-path replay', () => {
 
     expect(model.spliceOut(took)).toBe(true);
     expect(model.document.cards.map(c => c.command)).toEqual(
-      [undefined, undefined, 'north'],
+      [undefined, 'north'],
     );
     expect(model.lineIds().includes(id)).toBe(false);
   });
@@ -631,7 +673,6 @@ describe('opening self-heal — a claim-less opening gains the boot claims (GH #
     id: 'root0000',
     cards: [
       { type: 'opening', assertions: {} },
-      { type: 'boot' },
     ],
   };
 
@@ -653,7 +694,6 @@ describe('opening self-heal — a claim-less opening gains the boot claims (GH #
       ...RECORDED,
       cards: [
         { type: 'opening', assertions: { channels: [{ id: 'info.title', is: 'Authored' }] } },
-        { type: 'boot' },
       ],
     } as TreeDocument));
     model.addTurn({
@@ -674,7 +714,6 @@ describe('binding replay — restore re-derives the board from the document', ()
     id: 'root0000',
     cards: [
       { type: 'opening' },
-      { type: 'boot' },
       { type: 'turn', command: 'take lamp', assertions: { contains: ['Taken'] } },
       {
         type: 'turn',
@@ -692,7 +731,7 @@ describe('binding replay — restore re-derives the board from the document', ()
     model.addTurn({ ordinal: 1, command: '', boot: true, room: 'Den' });
     model.addTurn({ ordinal: 2, command: 'take lamp', boot: false, room: 'Den' });
     model.addTurn({ ordinal: 3, command: 'north', boot: false, room: 'Garden' });
-    expect(model.document.cards).toHaveLength(4);
+    expect(model.document.cards).toHaveLength(3);
     expect(model.hasOpening).toBe(true);
     expect(model.claimsOf(2)).toEqual({ contains: ['Taken'] });
 
@@ -700,12 +739,12 @@ describe('binding replay — restore re-derives the board from the document', ()
     model.activateLine('branch01');
     model.addTurn({ ordinal: 7, command: 'east', boot: false, room: 'Shed' });
     expect(model.cardAt(7)?.command).toBe('east');
-    expect(model.document.cards[3].branches![0].cards).toHaveLength(1);
+    expect(model.document.cards[2].branches![0].cards).toHaveLength(1);
 
     // Fully bound: the next delivered turn appends — play continues.
     model.activateLine(model.mainLine);
     model.addTurn({ ordinal: 9, command: 'south', boot: false, room: 'Den' });
-    expect(model.document.cards).toHaveLength(5);
+    expect(model.document.cards).toHaveLength(4);
     expect(model.labelOf('branch01')).toBe('garden · east');
   });
 
@@ -761,7 +800,6 @@ describe('END STATE cards (ADR-356 D4) — the story ended on this turn', () => 
       id: 'root0000',
       cards: [
         { type: 'opening' },
-        { type: 'boot' },
         { type: 'turn', command: 'north' },
         { type: 'turn', command: 'open the box' },
         { type: 'turn', command: 'dig', ending: 'authored' },
@@ -775,8 +813,8 @@ describe('END STATE cards (ADR-356 D4) — the story ended on this turn', () => 
     model.addTurn({ ordinal: 2, command: 'north', boot: false, room: 'Garden' });
     model.addTurn({ ordinal: 3, command: 'open the box', boot: false, room: 'Garden', ending: 'box-opened' });
     model.addTurn({ ordinal: 4, command: 'dig', boot: false, room: 'Garden', ending: 'replayed' });
-    expect(model.document.cards[3]).toEqual({ type: 'turn', command: 'open the box', ending: 'box-opened' });
-    expect(model.document.cards[4]).toEqual({ type: 'turn', command: 'dig', ending: 'authored' });
+    expect(model.document.cards[2]).toEqual({ type: 'turn', command: 'open the box', ending: 'box-opened' });
+    expect(model.document.cards[3]).toEqual({ type: 'turn', command: 'dig', ending: 'authored' });
   });
 
   it('the ending survives the document round trip through the shared reader', () => {
@@ -789,9 +827,10 @@ describe('END STATE cards (ADR-356 D4) — the story ended on this turn', () => 
     expect(read.document.cards.at(-1)?.ending).toBe('box-opened');
   });
 
-  it('a boot delivery never becomes an END STATE card', () => {
+  it('the opening\'s record never makes an END STATE card', () => {
     const model = new TreeSessionModel('mini', 42);
     model.addTurn({ ordinal: 1, command: '', boot: true, room: 'Den', ending: 'instant-death' });
-    expect(model.cardAt(1)).toEqual({ type: 'boot' });
+    expect(model.document.cards).toEqual([{ type: 'opening' }]);
+    expect(treeText(model)).not.toContain('instant-death');
   });
 });

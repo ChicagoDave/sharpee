@@ -281,3 +281,57 @@ Taken 2026-11-18, session 70211a, on `main` at 59e8fbcbe with the Phase 4 change
 | every package | `pnpm exec turbo run test:ci` | 73 tasks successful of 73 |
 | explorer probe | `node --test tools/explorer-probe/tests/*.test.js` | 34 passed, 9 failed, the same 9 as before the phase |
 | the search | `git grep -n -E "execute(Turn\|Command)\(['\"]look['\"]\)" -- packages scripts tools`, tests and archives left out | `packages/platform-browser/src/BrowserClient.ts:677` and `:688` (Phase 6) and `packages/branch-tester/src/claims/claims-walk.ts:129` (Phase 5) |
+
+## 12. Phase 5 as built: the tree's one opening card
+
+Taken 2026-11-18, session 4c696b, on `main` at 19f133b31 with the Phase 5 changes uncommitted, after `./repokit build dungeo` (exit 0, bundle 5397785 bytes).
+
+**The card.** `TreeCardType` is `'opening' | 'turn'` (`packages/branch-tester/src/tree-document.ts`). The reader refuses any other type and names the one it found: `'root0000.cards[1].type' is 'boot'; a card's type is 'opening' or 'turn'`. Nothing is migrated in the reader.
+
+| Consumer | File | What it does now |
+|---|---|---|
+| the walker | `packages/branch-tester/src/tree-walker.ts` | opens every game it boots with the game's `runOpening()`, before that game's first command; types no `look`; a line's prefix is its typed commands only; the opening card is turn 0 for the line observer |
+| the tree runner | `packages/branch-tester/src/runner.ts` | records the `(opening)` row first, ahead of every command and when the line has none; the row reads the opening's packets in arrival order, its captures and its events |
+| the claims walk | `packages/branch-tester/src/claims/claims-walk.ts` | runs the opening when it is pending; no `look` turn |
+| the claim lock | `packages/branch-tester/src/claims/claim-lock.ts` | opens the game it replays on; every prefix command is a typed turn |
+| world-index | `packages/world-index/src/branches.ts`, read at `derived-runner.ts` | the start-block command kind is `start`, not `boot` (Settle item 5; David: "proceed") |
+| make-story-artifacts | `scripts/make-story-artifacts.mjs` | no `look` probe; the opening card asserts the room the run's opening printed |
+| the Testing surface | `tools/ide/web/testing-surface/src/model.ts`, `cards.ts`, `main.ts`, `compose.ts`, `run.ts` | the opening's record seats the one opening card (ordinal 0) and makes no card and no row of its own |
+
+**The migration.** `node scripts/migrate-boot-cards.mjs` moved 50 trees, one root segment each: the first-look card's `contains` and `states` joined the opening card and the card was removed, then each tree was written through `assembleTree` and `segmentTree`. A second run reports "0 tree(s) would be migrated". The 50 are the 7 gating trees, the 37 companion trees under `tutorials/relighting/chord-v4.1.0/`, and the 6 non-gating trees. Not touched: the 4 archived files under `docs/work/archive/` and `docs/work/chord-primer/example/cellar-bell.tests` (Settle item 7; David: "proceed" on leaving it).
+
+**What the phase found.**
+
+- **No gating tree's claims moved.** `ferry`, `lodge` and `orchard` pass on the migrated cards with nothing re-recorded: the room text the first-look card claimed is in the opening, and no claim in them is keyed to a turn the opening used to cost.
+- **`quay.tests` is recorded**: one opening card claiming the prologue, the title, the first-visit paragraph and `info.title`; "1 card passing, 4 assertions passing". OB-53 in the test set.
+- **OB-40 is rewritten** in `test-stories/orchard/orchard.test-set.md`, and `scripts/__tests__/narrative-pinned-prose.test.ts` reads it: the opening card is the run's first row, with no `turn`, and `north` is turn 1.
+- **Three things were added beyond the plan's list.** `LoadedGame.openingEvents` in bootstrap, so an event claim on the opening card has the opening's events to read; `openNewGame` on transcript-tester's barrel, so the walker and the lock open a game the way the transcript runner does; and State…, Event… and Branch… on the surface's opening card, because a branch from the opening is now the only way to record an alternate first command, and the first look's state and events are the opening's.
+- **`check-test-trees.mjs` skips `docs/work/archive/` and `docs/work/chord-primer/`** (David: "proceed"). Without that, `--all` exits 1 on `docs/work/archive/john-chord-samples/no-signal-home.tests` and the primer's tree, which the reader now refuses.
+- **The search for the old card type does not print nothing.** It finds `scripts/migrate-boot-cards.mjs:60`, the constant naming the type the script removes, and after this phase's commit it will also find the fixture line in `scripts/__tests__/migrate-boot-cards.test.ts`, which builds old trees to migrate. The plan's Demonstration says the search prints nothing; it prints nothing in branch-tester, world-index, the Testing surface's source and its built bundle.
+- **An `exact` block cannot sit on the opening card.** The opening's row is checked against everything the opening printed, so the migration refuses a first-look card carrying one (none did), and the surface turns a policy's `exact` for the first look into `contains` lines (`openingAssertionsOf`).
+- **The interim in the IDE, as the plan states it.** The browser client still runs its own first `look` as feed turn 1 until Phase 6. The surface binds that record to the opening card, so the card column reads "opening", "turn 2", "turn 3", one ahead of the command line, until then.
+- **`scripts/make-story-artifacts.mjs` still writes a version-1 single file** (`version: 1`, no card ids, no segments), which the reader has not accepted since ADR-355. Its opening handling is changed here; its output format is as it was. Phase 7 names it for regenerating three recipe stories and will meet this.
+- **Two builds failed before the one above**, both on a type this phase added (`openingEvents` on the runner's game type); each stopped for David and was fixed on his "proceed".
+- **One chained suite run did not finish, and it was not bootstrap's.** A single command running the branch-tester, world-index, bootstrap and transcript-tester suites in turn was still running after 10 minutes with a `node (vitest)` process alive; it had printed world-index's counts and nothing after. This section first blamed the bootstrap suite, which passes alone in under a second. The summary writer then found world-index's `test` script is `vitest` in watch mode: it prints its counts, waits for file changes and never exits, so the chain never reached bootstrap (GH #810). That the chained run stopped there for that reason is the likely cause, not a confirmed one.
+- **The Xcode test build regenerated three docs-tab files** (`docs-index.json`, `chord-writer.html`, `chord__reference__grammar.html` under `tools/ide/SharpeeIDE/Resources/docs-tab/`), which Phase 7 regenerates.
+
+**Gates on the final build.**
+
+| Gate | Command | Result |
+|---|---|---|
+| branch-tester | `pnpm --filter '@sharpee/branch-tester' test` | 473 passed, 0 failures (39 files); 464 before the phase |
+| world-index | `pnpm --filter '@sharpee/world-index' test` | 239 passed, 0 failures, 1 skipped (19 files) |
+| devkit | `pnpm --filter '@sharpee/devkit' test` | 240 passed, 0 failures, 1 skipped (36 files) |
+| bootstrap | `pnpm --filter '@sharpee/bootstrap' test` | 70 passed, 0 failures (7 files); 68 before |
+| transcript-tester | `pnpm --filter '@sharpee/transcript-tester' test` | 385 passed, 0 failures |
+| scripts | `pnpm test:scripts` | 155 passed, 0 failures (23 files); 146 in 21 files before |
+| Testing surface | `npx vitest run`, from `tools/ide/web/testing-surface` | 261 passed, 0 failures (25 files); 255 before; `npx tsc --noEmit -p .` clean |
+| trees | `./sharpee test test-stories/quay`, `ferry`, `lodge`, `orchard` | exit 0 each |
+| canonical gate | `node scripts/check-test-trees.mjs --all`, with the migrated trees staged | exit 0 |
+| Dungeo chain | `node dist/cli/sharpee.js --test --chain stories/dungeo/walkthroughs/wt-*.transcript` | 949 passed, 0 failures, "All tests passed!" |
+| every package | `pnpm exec turbo run test:ci` | 73 tasks successful of 73 |
+| the IDE | `xcodebuild test … -only-testing:SharpeeIDETests/TestingSurfaceRealPathTests`, the pinned invocation | 27 tests, 0 failures, "TEST SUCCEEDED"; `TestRunnerTests` 7 and `TestingSurfaceExitNoteTests` 2 passed in the run before it |
+| no typed opening | `git grep -n "return 'look'" -- packages/branch-tester/src` | prints nothing |
+| no old card type | `git grep -n -E "'boot'\|\"boot\"" -- packages/branch-tester/src packages/world-index/src scripts tools/ide/web/testing-surface/src tools/ide/SharpeeIDE/Resources/testing-surface` | with the new script staged: `scripts/migrate-boot-cards.mjs:60`, the constant naming the type it removes. Its test, `scripts/__tests__/migrate-boot-cards.test.ts`, builds old trees with the type and will be a second line once tracked. Nothing else |
+
+**What `mutation-verification` found, and what was done.** Six warnings, all missing tests and none a mutation that fails to happen; all six were written before the counts above were taken. (1) Nothing read `LoadedGame.openingEvents`; `assemble-opening.test.ts` now asserts it is empty before the opening, holds the opening's events after, is untouched by a command and is replaced by a RESTART's reboot. (2) No event claim on an opening card ran through the real walker; `lock-failed-card.test.ts` now runs one that holds and one that fails on a real `assembleGame` handle. (3) The claims walk's and the lock's tests showed only that no `look` ran; `claims-walk-refusals.test.ts` now counts the opening as run once and first, and `claim-lock.test.ts` asserts the order opening, `read note`, `north`, and that an opening that throws is refused with nothing replayed. (4) Nothing checked the observer's turn-0 call; `tree-walker.test.ts` now does, with the game already opened and nothing typed. (5) `openingAssertionsOf` had no direct test; `compose.test.ts` has four. (6) The three scripts had none: `scripts/__tests__/migrate-boot-cards.test.ts` (new, 6 cases: a tree the reader refuses before the migration and reads after, the merge, a skipped card, a tree it cannot move, the two exclusions, `--check` and the second run), a case in `check-test-trees.test.ts` for the two skipped directories with the same tree refused outside them, and `scripts/__tests__/make-story-artifacts.test.ts` (new, 2 cases over `quay`). The migration script gained `--root <dir>` so its test can point it at a scratch repository. Left untested: the surface's State… and Event… pickers on the opening card (`recordBehind(0)`), and `addOpeningCard`'s branch that appends to an opening row already on the board. The fixes were not re-audited by the agent.

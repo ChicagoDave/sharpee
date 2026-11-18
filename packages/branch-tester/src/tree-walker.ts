@@ -10,6 +10,14 @@
  * inheritance, no per-node reseeds (David's ruling 2026-08-10: v1 is
  * deprecated; the walker is designed on the tree's own terms).
  *
+ * **The opening is run, never typed** (ADR-404 decisions 4 and 12; ADR-357
+ * D9 as amended). Every game the walker boots is opened with the game's own
+ * `runOpening()` before its first command, and the walker types no opening
+ * `look`. The main line's `opening` card holds whatever that routine
+ * printed, and its row is checked against the opening's captures ahead of
+ * the first command. The opening is not a turn: a tree's first typed card is
+ * turn 1.
+ *
  * **Lines, not files.** The main line is the document's top-level cards; each
  * `branches` entry is its own line, recursively. The main line runs once,
  * continuously, on its boot engine. A branch line starts from the engine's
@@ -82,7 +90,7 @@ import {
   TranscriptResult,
   RunnerOptions,
 } from './types.js';
-import { captureWorldSnapshot, type CommandResult } from '@sharpee/transcript-tester';
+import { captureWorldSnapshot, openNewGame, type CommandResult } from '@sharpee/transcript-tester';
 import { captureForkSave, restoreForkSave, type ForkSave, type ForkSaveEngine } from './fork-save.js';
 import type { CommandCause } from '@sharpee/ide-protocol';
 import { CHORD_IR_ID_ATTRIBUTE } from '@sharpee/story-loader';
@@ -104,6 +112,17 @@ import {
  */
 export interface TreeWalkerGame {
   executeCommand(input: string): Promise<string> | string;
+  /**
+   * Whether the game's opening can still be run — bootstrap's
+   * `LoadedGame.openingPending`. The walker opens every game it boots and
+   * finds pending, before that game's first command.
+   */
+  openingPending?: boolean;
+  /**
+   * Run the story's opening outside the turn cycle — bootstrap's
+   * `LoadedGame.runOpening`. A game without it (a stub) is never opened.
+   */
+  runOpening?(): Promise<string>;
   /**
    * The message of the error the last command's turn threw, `undefined` when
    * it completed — bootstrap's `LoadedGame.lastError`, which is the one place
@@ -185,15 +204,15 @@ export interface TreeLine {
   readonly forkIndex?: number;
   /**
    * The verbatim command stream from the root through the fork card — what a
-   * fresh boot replays before this line's own cards. The boot look is in it
-   * (`look`), because it is part of the stream the main line executed and a
-   * replay must match that stream exactly or the pinned seed means nothing.
+   * fresh boot replays, after its opening, before this line's own cards.
+   * Typed commands only: the opening is run by the game, not typed, so it is
+   * no part of the stream.
    */
   readonly prefix: string[];
   /**
-   * Typed turns in the prefix — the boot look excluded. A card's turn number
-   * as a player counts it (ADR-367's "turn 41") is this plus the typed turns
-   * from the line's first card through that card.
+   * Typed turns in the prefix, which is the prefix's length. A card's turn
+   * number as a player counts it (ADR-367's "turn 41") is this plus the typed
+   * turns from the line's first card through that card.
    */
   readonly prefixTurns: number;
   /** The line's own cards. */
@@ -210,7 +229,7 @@ export interface TreeLine {
 
 /**
  * A structural problem the wire validator cannot see (card position): an
- * opening or boot card away from the main line's head. A card after — or a
+ * opening card away from the main line's head. A card after — or a
  * branch from — an END STATE card is not a defect but a run-time outcome
  * (ADR-356 D4, amended 2026-09-27; see the header).
  */
@@ -255,8 +274,10 @@ export interface TreeLineObserver {
    * One of the line's own cards has run and the game is in hand, after its
    * command and before the next (ADR-367 D5's floor reads the world here).
    * `turn` counts typed turns from the root through this card, prefix
-   * included; the boot look is turn 0. Never called for a replayed prefix
-   * command — the owning line already saw that state.
+   * included. The main line's opening card is turn 0: it is handed over once
+   * the opening has run and before the first command, with the game's last
+   * events the opening's. Never called for a replayed prefix command — the
+   * owning line already saw that state.
    *
    * May return the verdict of each lock the card carries (D6): the walker
    * merges them into the card's result as `lock-assert` assertions, and a
@@ -301,15 +322,15 @@ export interface TreeDocumentRunResult {
   readonly lines: TreeLineOutcome[];
   /** Card-position defects. Non-empty means **nothing ran**. */
   readonly defects: TreeLineDefect[];
-  /** Every command sent to an engine: boot looks, replays, line commands. */
+  /** Every command sent to an engine: replays and line commands. An opening is not one. */
   readonly executedCommands: number;
   /** Typed turn cards across all lines — what the author actually played. */
   readonly authoredCommands: number;
   /** Branch lines that started from the save at their fork card, not a replay. */
   readonly forkRestores: number;
   /**
-   * Every room the player stood in during the run — at boot, after each
-   * replayed command, after each card — as IR ids, each once, in first-visit
+   * Every room the player stood in during the run — after each opening,
+   * each replayed command and each card — as IR ids, each once, in first-visit
    * order (ADR-356 D5's rooms ratio, the replayed half).
    */
   readonly roomsEntered: string[];
@@ -324,10 +345,9 @@ export interface TreeDocumentRunResult {
  * Cut a document into its lines, depth-first: the main line, then each
  * branch in fork order, each followed by its own nested branches.
  *
- * Also validates what the wire validator cannot: `opening`/`boot` cards are
- * the main line's head (opening first, boot at most once, directly after),
- * and appear nowhere else — a branch continues a game that has already
- * opened. A defective document produces its defects and no runnable lines.
+ * Also validates what the wire validator cannot: an `opening` card is the
+ * main line's first card and appears nowhere else — a branch continues a
+ * game that has already opened. A defective document produces its defects and no runnable lines.
  * An END STATE card is noted on its line (`endingIndex`) rather than
  * validated: a line ends where the story ends (ADR-356 D4), and the walker
  * enforces that at run time by stopping there.
@@ -374,22 +394,12 @@ export function flattenTreeLines(document: TreeDocument): {
           message: `an 'opening' card is only valid as the main line's first card`,
         });
       }
-      if (
-        card.type === 'boot' &&
-        !(isMain && index <= 1 && cards.slice(0, index).every((c) => c.type === 'opening'))
-      ) {
-        defects.push({
-          path: cardPath,
-          message: `a 'boot' card is only valid at the main line's head, directly after the opening`,
-        });
-      }
       // An END STATE card ends its line (ADR-356 D4). Cards after it and
       // branches from it are still enumerated — the walker reports them as
       // never reached and blocked, so the author sees exactly what the
       // ending cut off, instead of a refused document.
       // The command stream the card contributes: a typed turn its command,
-      // the boot look its `look` (part of what the main line really
-      // executed, so part of what a replay must repeat), the opening nothing.
+      // the opening nothing (the game runs it; nobody types it).
       const command = commandOf(card);
       if (command !== undefined) stream.push(command);
       if (card.type === 'turn') turns += 1;
@@ -520,6 +530,20 @@ export async function runTreeDocument(
       // truth) — the policy governs what RECORDING persists, never what a run
       // invents. Cleared even when declared, through the one code path (D6).
       game.autoAssertionPolicy = undefined;
+      // Every game the walker boots is opened before its first command
+      // (ADR-404 decision 4): the routine runs, nothing is typed. A story
+      // whose opening throws produced no state to play from.
+      const openingError = await openNewGame(game);
+      if (openingError !== undefined) {
+        record(line, {
+          id: line.id,
+          label: blockedLabelOf(line),
+          status: 'error',
+          turnCount: countTurns(line.cards),
+          error: openingError,
+        });
+        continue;
+      }
     }
     gameOf.set(line.id, game);
     const noteRoom = (): void => {
@@ -601,6 +625,14 @@ export async function runTreeDocument(
     // opening row first when the line has one.
     let executedRow = 0;
     let turn = line.prefixTurns;
+    // The opening card is turn 0 (ADR-367 D5's floor reads the world the
+    // opening left, before any command). Only the main line has one, and it
+    // can carry no lock, so any verdicts the observer returns have no card
+    // result to join.
+    const openingIndex = line.cards.findIndex((card) => card.type === 'opening');
+    if (openingIndex !== -1 && options.lineObserver?.onCard) {
+      options.lineObserver.onCard({ line, label, card: line.cards[openingIndex], cardIndex: openingIndex, turn, game });
+    }
     const result = await runTranscript(transcript, game as never, {
       ...options,
       // Awaited by the runner between commands, so the save is the game
@@ -645,9 +677,9 @@ export async function runTreeDocument(
 
     const executedRows = result.commands.filter((row) => row.command.input !== '(opening)');
     executedCommands += executedRows.length;
-    // The line's own contribution to the authored stream: its typed turns
-    // plus its boot look (a card the session played). `executed - authored`
-    // is then exactly the replay share — a linear document shows none.
+    // The line's own contribution to the authored stream: its typed turns.
+    // `executed - authored` is then exactly the replay share — a linear
+    // document shows none.
     authoredCommands += line.cards.filter((card) => commandOf(card) !== undefined).length;
 
     const execErrorIndex = execErrorCardIndexOf(
@@ -696,9 +728,9 @@ const forkSaveKey = (lineId: string, cardIndex: number): string => `${lineId}\0$
  * Not when its own cards type `undo`: a save carries no undo history (the
  * engine clears its undo snapshots on every restore), so an `undo` early on
  * the line could reach back across the fork and find nothing there. And not
- * when no command precedes the fork: the state to start from is the boot
- * itself, whose banner and prologue are said on the way to the first command
- * of a fresh game and would not be said again after a restore.
+ * when no command precedes the fork: no fork card ran, so no save was
+ * captured, and the state to start from is a new game's opening, which a
+ * fresh boot runs.
  *
  * @param line a branch line
  * @returns true when a fork save, if one was captured, is this line's start
@@ -816,11 +848,9 @@ export function formatTreeDocumentRun(run: TreeDocumentRunResult): string[] {
 
 /** The command a card contributes to the executed stream, if any. */
 function commandOf(card: TreeCard): string | undefined {
-  if (card.type === 'turn') return card.command;
-  // The boot look is a real executed command — the automatic first `look`
-  // every session plays. The opening is what the story said unprompted.
-  if (card.type === 'boot') return 'look';
-  return undefined;
+  // The opening is what the story said unprompted, run by the game and
+  // never typed: it contributes no command.
+  return card.type === 'turn' ? card.command : undefined;
 }
 
 /** The line's first typed command, for its derived label. */

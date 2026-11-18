@@ -136,6 +136,14 @@ export interface LoadedGame {
    */
   openingPackets: OpeningPacket[];
   /**
+   * The events the game's opening emitted, in order (ADR-404). Empty until
+   * `runOpening()` is called; a RESTART's reboot replaces them with the new
+   * game's, as it replaces `openingPackets`. A command's `lastEvents` never
+   * joins them, so a test tree's opening card can claim an event of the
+   * opening after commands have run.
+   */
+  openingEvents: ISemanticEvent[];
+  /**
    * Whether the opening can still be run: true from assembly until
    * `runOpening()` or the first `executeCommand`.
    */
@@ -499,6 +507,9 @@ export function assembleGame(
     } finally {
       openingCapture = null;
       game.openingPackets = packets;
+      // The buffer the opening filled: both callers start it fresh for the
+      // opening or leave it holding only what the boot said before it.
+      game.openingEvents = eventBuffer;
     }
   }
 
@@ -521,6 +532,7 @@ export function assembleGame(
     lastChannelValues: {},
     bootChannelValues: {},
     openingPackets: [],
+    openingEvents: [],
     openingPending: true,
 
     getPluginRegistry() {

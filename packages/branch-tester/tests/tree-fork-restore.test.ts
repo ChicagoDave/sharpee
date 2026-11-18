@@ -68,7 +68,6 @@ const doc = (branchCards: TreeCard[]): TreeDocument => ({
   ...emptyTreeDocument('outside-set-fixture', SEED, 'main'),
   cards: [
     { type: 'opening' },
-    { type: 'boot', skip: true },
     skip('north'),
     skip('north', { branches: [{ id: 'branch', cards: branchCards }], continuation: 'main-after' }),
     skip('south'),
@@ -126,7 +125,7 @@ describe('REAL-PATH — a branch line starts from its fork\'s save', () => {
       { id: 'main', replayedCommands: 0, restored: false },
       { id: 'branch', replayedCommands: 0, restored: true },
     ]);
-    expect(formatTreeDocumentRun(run).at(-1)).toBe('6 commands (6 authored + 0 replayed), 1 restored at a fork');
+    expect(formatTreeDocumentRun(run).at(-1)).toBe('5 commands (5 authored + 0 replayed), 1 restored at a fork');
   }, 30_000);
 
   it('a branch line that types undo boots fresh and replays its prefix, and its undo reaches back across the fork', async () => {
@@ -139,10 +138,10 @@ describe('REAL-PATH — a branch line starts from its fork\'s save', () => {
     expect(games).toHaveLength(2);
     expect(requests).toEqual([{ undo: false }, { undo: true }]);
     expect(run.forkRestores).toBe(0);
-    // look, north, north replayed on the second boot.
-    expect(run.executedCommands - run.authoredCommands).toBe(3);
+    // north, north replayed on the second boot, after its own opening.
+    expect(run.executedCommands - run.authoredCommands).toBe(2);
     expect(roomOfPlayer(games[1])).toBe('yard');
-    expect(formatTreeDocumentRun(run).at(-1)).toBe('9 commands (6 authored + 3 replayed), 0 restored at a fork');
+    expect(formatTreeDocumentRun(run).at(-1)).toBe('7 commands (5 authored + 2 replayed), 0 restored at a fork');
   }, 30_000);
 
   it('a branch of a restored line restores too, on the same game', async () => {
@@ -171,8 +170,8 @@ describe('REAL-PATH — a branch line starts from its fork\'s save', () => {
     expect(run.lines.map((line) => line.status)).toEqual(['passed', 'error']);
     expect(run.lines[1].error).toContain('the engine refused the save taken after "north"');
     expect(run.forkRestores).toBe(0);
-    // Only the main line's five commands ran: look, north, north, south, south.
-    expect(run.executedCommands).toBe(5);
+    // Only the main line's four commands ran: north, north, south, south.
+    expect(run.executedCommands).toBe(4);
     // Nothing was restored, so the game is where the main line left it.
     expect(roomOfPlayer(games[0])).toBe('lane');
     // The line never ran: the crate is where the story put it.
@@ -185,7 +184,6 @@ describe('REAL-PATH — a branch line starts from its fork\'s save', () => {
       ...emptyTreeDocument('outside-set-fixture', SEED, 'main'),
       cards: [
         { type: 'opening', branches: [{ id: 'early', cards: [skip('north'), skip('north'), taken] }], continuation: 'main-after' },
-        { type: 'boot', skip: true },
         skip('north'),
       ],
     };
@@ -245,7 +243,6 @@ describe('REAL-PATH — the walker\'s fork hooks do not outlive a capture or a r
       ...emptyTreeDocument('outside-set-fixture', SEED, 'main'),
       cards: [
         { type: 'opening' },
-        { type: 'boot', skip: true },
         skip('north'),
         skip('north', { branches: [{ id: 'branch', cards: [taken] }], continuation: 'main-after' }),
         skip('save'),

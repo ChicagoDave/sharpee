@@ -11,20 +11,14 @@
             "id": "info.description",
             "is": "Six suspects, one hotel, one dead alderman."
           }
-        ]
-      },
-      "id": "xwz7we16",
-      "type": "opening"
-    },
-    {
-      "assertions": {
+        ],
         "contains": [
           "Foyer",
           "The hotel foyer. Marble floors, a cold fireplace with an iron poker on its hook, and the murmur of a hotel pretending nothing has happened. The ballroom doors stand south; the bar is east, the restaurant west, and the grand staircase climbs north."
         ]
       },
-      "id": "ezqzoo99",
-      "type": "boot"
+      "id": "xwz7we16",
+      "type": "opening"
     },
     {
       "assertions": {

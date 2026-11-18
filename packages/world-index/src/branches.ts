@@ -185,7 +185,8 @@ export type BranchCommand =
   | { kind: 'event'; event: string }
   | { kind: 'schedule'; timing: 'at-turn' | 'later' | 'becomes'; turns: number; anchor: { owner: string; state: string } | null }
   | { kind: 'timer-running'; timer: string }
-  | { kind: 'boot' }
+  /** The start block: `before the game starts` runs while the world is built, driven by no command. */
+  | { kind: 'start' }
   /** No player command drives this surface directly (a conversation row, for one). */
   | { kind: 'none'; surface: string };
 
@@ -800,7 +801,7 @@ export function collectClauseBranches(ir: StoryIR): ClauseBranch[] {
   forEachStatementRoot(ir, (root, owner, itBinding) => {
     if (root === startBlock && startBlock) {
       emitClause(
-        { clause: { kind: 'start-block' }, owner, subject: null, command: { kind: 'boot' }, pre: [], body: startBlock.body, span: spanOf(startBlock as unknown as IRNode) },
+        { clause: { kind: 'start-block' }, owner, subject: null, command: { kind: 'start' }, pre: [], body: startBlock.body, span: spanOf(startBlock as unknown as IRNode) },
         branches,
       );
       return;

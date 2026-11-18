@@ -7,19 +7,13 @@
             "id": "info.title",
             "is": "The Relighting"
           }
-        ]
-      },
-      "id": "f2dv7lvt",
-      "type": "opening"
-    },
-    {
-      "assertions": {
+        ],
         "contains": [
           "The Porter's Lodge"
         ]
       },
-      "id": "mrzkcd5r",
-      "type": "boot"
+      "id": "f2dv7lvt",
+      "type": "opening"
     },
     {
       "assertions": {

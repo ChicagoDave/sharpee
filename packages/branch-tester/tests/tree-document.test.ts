@@ -77,7 +77,7 @@ function multiLevelTree(): TreeDocument {
     id: 'root0000',
     cards: [
       { type: 'opening', assertions: { contains: ['The Folly at Fernhill'] } },
-      { type: 'boot', assertions: { contains: ['Iron Gates'] } },
+      turn('look', { assertions: { contains: ['Iron Gates'] } }),
       turn('north', {
         assertions: {
           contains: ['The drive curves'],
@@ -169,7 +169,7 @@ describe('segmentTree — the cut (ADR-355 D2, D4)', () => {
     // The root ends at its fork card, `north`(skip).
     expect(shape('root0000')).toEqual({
       id: 'root0000', parent: undefined, ordinal: undefined,
-      commands: ['opening', 'boot', 'north', 'north'],
+      commands: ['opening', 'look', 'north', 'north'],
     });
     // Branches descend at 1..n in sibling order; the continuation at 0.
     expect(shape('branch01')).toEqual({ id: 'branch01', parent: 'root0000', ordinal: 1, commands: ['east'] });
@@ -603,7 +603,7 @@ describe('the reader refuses or reports — never repairs, never throws', () => 
       /card id 'card0006' appears in both 'branch02' and 'branch11'/,
     ],
     [
-      // root0000's second card (boot, card0002) takes the first's id.
+      // root0000's second card (`look`, card0002) takes the first's id.
       'one card id twice in one segment',
       () => rewrite(base(), 'root0000.json', (s) => ((s['cards'] as Record<string, unknown>[])[1]['id'] = 'card0001')),
       /card id 'card0001' appears twice in 'root0000'/,
@@ -730,7 +730,7 @@ describe('channelIdsReferencedBy — the capture set both consumers derive', () 
       seed: 1,
       id: 'root0000',
       cards: [
-        { type: 'boot', assertions: { channels: [{ id: 'status', contains: ['x'] }] } },
+        { type: 'opening', assertions: { channels: [{ id: 'status', contains: ['x'] }] } },
         {
           type: 'turn',
           command: 'north',
@@ -880,7 +880,7 @@ describe('END STATE cards (ADR-356 D4) — carried through segmentation unchange
       [TREE_MANIFEST_FILE_NAME]: JSON.stringify({ version: TREE_DOCUMENT_VERSION, story: 'mini', seed: 1 }),
       'root0000.json': JSON.stringify({
         id: 'root0000',
-        cards: [{ id: 'card0001', type: 'opening' }, { id: 'card0002', type: 'boot' }, { id: 'card0003', ...card }],
+        cards: [{ id: 'card0001', type: 'opening' }, { id: 'card0002', type: 'turn', command: 'look' }, { id: 'card0003', ...card }],
       }),
     });
 
@@ -889,7 +889,7 @@ describe('END STATE cards (ADR-356 D4) — carried through segmentation unchange
       ...emptyTreeDocument('mini', 1, 'root0000'),
       cards: [
         { type: 'opening' },
-        { type: 'boot', assertions: { contains: ['Den'] } },
+        { type: 'turn', command: 'look', assertions: { contains: ['Den'] } },
         { type: 'turn', command: 'open the box', ending: 'box-opened', assertions: { contains: ['You win'] } },
       ],
     });
@@ -901,9 +901,21 @@ describe('END STATE cards (ADR-356 D4) — carried through segmentation unchange
   });
 
   it('only a typed turn can be an END STATE card', () => {
-    expect(withEnding({ type: 'boot', ending: 'nope' })).toEqual({
+    expect(withEnding({ type: 'opening', ending: 'nope' })).toEqual({
       status: 'malformed',
-      message: `'root0000.cards[2]' is type 'boot' and cannot be an END STATE card`,
+      message: `'root0000.cards[2]' is type 'opening' and cannot be an END STATE card`,
+    });
+  });
+
+  it('a card of the type the first look once had is refused by the name found, and nothing is migrated', () => {
+    // The card a tree recorded before the opening became one card carries.
+    expect(withEnding({ type: 'boot' })).toEqual({
+      status: 'malformed',
+      message: `'root0000.cards[2].type' is 'boot'; a card's type is 'opening' or 'turn'`,
+    });
+    expect(withEnding({ command: 'wait' })).toEqual({
+      status: 'malformed',
+      message: `'root0000.cards[2].type' is missing or not a string; a card's type is 'opening' or 'turn'`,
     });
   });
 
@@ -923,7 +935,6 @@ describe('END STATE cards (ADR-356 D4) — carried through segmentation unchange
       ...emptyTreeDocument('mini', 1, 'root0000'),
       cards: [
         { type: 'opening' },
-        { type: 'boot' },
         {
           type: 'turn',
           command: 'north',

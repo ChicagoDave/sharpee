@@ -852,8 +852,9 @@
     const unknownKey = firstUnknownKey(value, ["id", "type", "command", "assertions", "skip", "ending", "locks"]);
     if (unknownKey !== void 0) return `unknown key '${unknownKey}' in '${path}'`;
     const type = value["type"];
-    if (type !== "opening" && type !== "boot" && type !== "turn") {
-      return `'${path}.type' must be 'opening', 'boot', or 'turn'`;
+    if (type !== "opening" && type !== "turn") {
+      const found = typeof type === "string" ? `'${type}'` : "missing or not a string";
+      return `'${path}.type' is ${found}; a card's type is 'opening' or 'turn'`;
     }
     if (type === "turn") {
       if (typeof value["command"] !== "string" || value["command"] === "") {
@@ -1268,19 +1269,12 @@
   function restatesTextClaim(message) {
     return message.startsWith("Output ");
   }
-  function bootLookIndex(commands, hasBootCard) {
-    if (!hasBootCard) return void 0;
-    const index = commands.findIndex((command) => command.input !== "(opening)");
-    return index < 0 ? void 0 : index;
-  }
-  function commandRowText(command, bootLook) {
+  function commandRowText(command) {
     if (command.input === "(opening)") return "(opening)";
-    if (bootLook) return "(boot look)";
     return `> ${command.input}`;
   }
-  function firstFailureText(failure, bootLook) {
-    const where = failure.where !== void 0 ? `${failure.where}${bootLook ? " \xB7 boot" : ""}` : bootLook ? "boot look" : void 0;
-    return where !== void 0 ? `${where} \u2014 ${failure.message}` : failure.message;
+  function firstFailureText(failure) {
+    return failure.where !== void 0 ? `${failure.where} \u2014 ${failure.message}` : failure.message;
   }
   function createRunState() {
     return {
@@ -1686,32 +1680,59 @@
       return document.getElementById("text-content");
     }
     /**
-     * Builds the card for a delivered turn by MOVING its `data-turn`-stamped
-     * elements out of the staging pane (the 6f anchor contract — the client
-     * stamps before it posts, so the elements are there by delivery time).
-     * The session's first turn also drains everything staged before it into
-     * the opening card (ordinal 0 — prologue + banner).
+     * Builds the opening card (ordinal 0) from the opening's record by MOVING
+     * what the client staged for it out of the staging pane: everything staged
+     * ahead of the first stamped element (the prologue), then every element
+     * stamped with the record's ordinal (the banner and the first room; the 6f
+     * anchor contract — the client stamps before it posts, so the elements are
+     * there by delivery time). The record makes no card of its own: the opening
+     * is one card, and the first look is part of it (ADR-404 decision 12).
+     * Nothing is built while the model has no opening seated.
+     *
+     * @param recordOrdinal the feed ordinal of the record that seated the opening
      */
-    addTurnCard(ordinal, boot, branch = false) {
+    addOpeningCard(recordOrdinal) {
+      const staging = this.stagingPane();
+      if (!staging || !this.model.hasOpening) return;
+      const prose = [
+        ...this.unstampedHead(staging),
+        ...[...staging.children].filter((el) => el.getAttribute("data-turn") === String(recordOrdinal))
+      ];
+      const existing = this.cards.get(0);
+      if (existing === void 0) {
+        this.buildRow(0, false, prose);
+        return;
+      }
+      const host = existing.row.querySelector(".ts-prose");
+      for (const el of prose) host?.appendChild(el);
+    }
+    /**
+     * Builds the card for a delivered turn by MOVING its `data-turn`-stamped
+     * elements out of the staging pane (the 6f anchor contract). A turn that
+     * finds the opening seated in the model and not yet on the board (a replay
+     * that types the line's commands with its opening's record suppressed)
+     * builds the opening card first, from whatever is staged ahead of the
+     * first stamped element.
+     */
+    addTurnCard(ordinal, branch = false) {
       const staging = this.stagingPane();
       if (!staging) return;
-      const isBanner = (el) => [...el.classList].some((name) => name.startsWith("sharpee-banner-"));
-      let stamped = [...staging.children].filter((el) => el.getAttribute("data-turn") === String(ordinal));
+      const stamped = [...staging.children].filter((el) => el.getAttribute("data-turn") === String(ordinal));
       if (!this.cards.has(0) && this.model.hasOpening) {
-        const openingElements = [];
-        for (const child of [...staging.children]) {
-          if (child.hasAttribute("data-turn")) break;
-          openingElements.push(child);
-        }
-        if (boot) {
-          openingElements.push(...stamped.filter(isBanner));
-          stamped = stamped.filter((el) => !isBanner(el));
-        }
-        this.buildRow(0, false, false, openingElements);
+        this.buildRow(0, false, this.unstampedHead(staging));
       }
-      this.buildRow(ordinal, boot, branch, stamped);
+      this.buildRow(ordinal, branch, stamped);
     }
-    buildRow(ordinal, boot, branch, prose) {
+    /** What the client staged ahead of its first turn-stamped element. */
+    unstampedHead(staging) {
+      const head = [];
+      for (const child of [...staging.children]) {
+        if (child.hasAttribute("data-turn")) break;
+        head.push(child);
+      }
+      return head;
+    }
+    buildRow(ordinal, branch, prose) {
       const row = document.createElement("div");
       row.className = "ts-turn";
       row.setAttribute("data-ts-ordinal", String(ordinal));
@@ -1721,7 +1742,7 @@
       block.className = "ts-block";
       const meta = document.createElement("div");
       meta.className = "ts-meta";
-      meta.textContent = ordinal === 0 ? "opening" : `turn ${ordinal}${boot ? " \xB7 boot" : ""}${branch ? " \xB7 branch" : ""}`;
+      meta.textContent = ordinal === 0 ? "opening" : `turn ${ordinal}${branch ? " \xB7 branch" : ""}`;
       const endState = document.createElement("span");
       endState.className = "ts-end-state";
       endState.style.display = "none";
@@ -1792,27 +1813,27 @@
         exactButton.title = "This turn asserts its whole output \u2014 the literal block";
         exactButton.addEventListener("click", () => this.delegate.onToggleExact(ordinal));
         actions.appendChild(exactButton);
-        const stateButton = document.createElement("button");
-        stateButton.textContent = "State\u2026";
-        stateButton.title = "Assert something the world holds after this turn";
-        stateButton.addEventListener("click", () => this.delegate.onStatePicker(ordinal, stateButton));
-        actions.appendChild(stateButton);
-        const eventButton = document.createElement("button");
-        eventButton.textContent = "Event\u2026";
-        eventButton.title = "Assert an event this turn emitted";
-        eventButton.addEventListener("click", () => this.delegate.onEventPicker(ordinal, eventButton));
-        actions.appendChild(eventButton);
-        if (this.model.cardAt(ordinal)?.type === "turn") {
-          const lockButton = document.createElement("button");
-          lockButton.textContent = "Lock\u2026";
-          lockButton.title = "Lock a fact true after this turn as a claim, its necessary set proposed from this line";
-          lockButton.addEventListener("click", () => this.delegate.onLock(ordinal, lockButton));
-          actions.appendChild(lockButton);
-        }
+      }
+      const stateButton = document.createElement("button");
+      stateButton.textContent = "State\u2026";
+      stateButton.title = ordinal === 0 ? "Assert something the world holds after the opening" : "Assert something the world holds after this turn";
+      stateButton.addEventListener("click", () => this.delegate.onStatePicker(ordinal, stateButton));
+      actions.appendChild(stateButton);
+      const eventButton = document.createElement("button");
+      eventButton.textContent = "Event\u2026";
+      eventButton.title = ordinal === 0 ? "Assert an event the opening emitted" : "Assert an event this turn emitted";
+      eventButton.addEventListener("click", () => this.delegate.onEventPicker(ordinal, eventButton));
+      actions.appendChild(eventButton);
+      if (this.model.cardAt(ordinal)?.type === "turn") {
+        const lockButton = document.createElement("button");
+        lockButton.textContent = "Lock\u2026";
+        lockButton.title = "Lock a fact true after this turn as a claim, its necessary set proposed from this line";
+        lockButton.addEventListener("click", () => this.delegate.onLock(ordinal, lockButton));
+        actions.appendChild(lockButton);
       }
       const channelButton = document.createElement("button");
       channelButton.textContent = "Channel\u2026";
-      channelButton.title = ordinal === 0 ? "Assert on a channel the boot captured (prologue, banner, \u2026)" : "Assert on a channel this turn captured";
+      channelButton.title = ordinal === 0 ? "Assert on a channel the opening captured (prologue, banner, \u2026)" : "Assert on a channel this turn captured";
       channelButton.addEventListener("click", () => this.delegate.onChannelPicker(ordinal, channelButton));
       actions.appendChild(channelButton);
       const characterButton = document.createElement("button");
@@ -1826,18 +1847,15 @@
         this.renderCharacter(card, ordinal);
       });
       actions.appendChild(characterButton);
-      let branchButton = null;
-      if (ordinal > 0) {
-        branchButton = document.createElement("button");
-        branchButton.textContent = "Branch\u2026";
-        branchButton.title = "Try a different command from this point \u2014 what follows becomes a sibling branch";
-        branchButton.style.display = "none";
-        branchButton.addEventListener("click", () => promptText(
-          "alternate command, e.g. east",
-          (command) => this.delegate.onBranch(ordinal, command)
-        ));
-        actions.appendChild(branchButton);
-      }
+      const branchButton = document.createElement("button");
+      branchButton.textContent = "Branch\u2026";
+      branchButton.title = ordinal === 0 ? "Try a different first command \u2014 what follows becomes a sibling branch" : "Try a different command from this point \u2014 what follows becomes a sibling branch";
+      branchButton.style.display = "none";
+      branchButton.addEventListener("click", () => promptText(
+        "alternate command, e.g. east",
+        (command) => this.delegate.onBranch(ordinal, command)
+      ));
+      actions.appendChild(branchButton);
       block.appendChild(actions);
       column.append(block);
       row.append(column);
@@ -2190,12 +2208,11 @@
         line.append(badge, name, why_);
         results.appendChild(line);
       };
-      const hasBootCard = (lineId) => lineId === this.model.mainLine && this.model.document.cards.some((card) => card.type === "boot");
-      const detail = (result, bootLook) => {
-        result.commands.forEach((command, index) => {
+      const detail = (result) => {
+        result.commands.forEach((command) => {
           const commandRow = document.createElement("div");
           commandRow.className = "ts-run-cmd";
-          commandRow.textContent = commandRowText(command, index === bootLook);
+          commandRow.textContent = commandRowText(command);
           results.appendChild(commandRow);
           if (command.skipped) {
             const skipRow = document.createElement("div");
@@ -2256,16 +2273,15 @@
           continue;
         }
         const result = entry.result;
-        const bootLook = bootLookIndex(result.commands, hasBootCard(entry.lineId));
         const failure = result.firstFailure;
-        const failureText = failure === void 0 ? void 0 : firstFailureText(failure, failure.command !== void 0 && failure.command === bootLook);
+        const failureText = failure === void 0 ? void 0 : firstFailureText(failure);
         const staleClass = result.stale ? " ts-stale" : "";
         const staleNote = result.stale ? "edited since this run \u2014 unverified" : void 0;
         const why = (text3) => staleNote === void 0 ? text3 : text3.length > 0 ? `${staleNote} \xB7 ${text3}` : staleNote;
         switch (result.status) {
           case "passed":
             row("PASS", `ts-pass${staleClass}`, label, why(""));
-            detail(result, bootLook);
+            detail(result);
             break;
           case "skipped":
             row("\u2014", staleClass.trim(), label, why("no commands \u2014 ran as a skip"));
@@ -2276,7 +2292,7 @@
           default: {
             const more = result.moreFailures > 0 ? ` +${result.moreFailures} more` : "";
             row("FAIL", `ts-fail${staleClass}`, label, why(`${failureText ?? "failed"}${more}`), runRowVisitTarget(entry));
-            detail(result, bootLook);
+            detail(result);
           }
         }
       }
@@ -3053,6 +3069,21 @@
       return assertion.type === "channel-contains" ? { id, contains: [assertion.value] } : { id, is: String(assertion.channelExpected) };
     });
   }
+  function openingAssertionsOf(defaults, look) {
+    const contains = [
+      ...look?.contains ?? [],
+      ...(look?.exact ?? []).map((line) => line.trim()).filter((line) => line.length > 0)
+    ];
+    const channels = [...defaults, ...look?.channels ?? []];
+    const assertions = {
+      ...contains.length > 0 ? { contains } : {},
+      ...(look?.notContains?.length ?? 0) > 0 ? { notContains: [...look.notContains] } : {},
+      ...(look?.states?.length ?? 0) > 0 ? { states: [...look.states] } : {},
+      ...(look?.events?.length ?? 0) > 0 ? { events: [...look.events] } : {},
+      ...channels.length > 0 ? { channels } : {}
+    };
+    return Object.keys(assertions).length > 0 ? assertions : void 0;
+  }
   function recordedTurnAssertions(policy2, source) {
     if (policy2 === void 0 || source === void 0) return {};
     const synthesized = synthesizePolicyAssertions(policy2, source.output, source.channelValues);
@@ -3359,17 +3390,21 @@
       return this.roomByOrdinal.get(ordinal);
     }
     /**
-     * Folds one delivered turn into the ACTIVE line: binds it to the line's
-     * next unbound card when one exists (restore/repair replay), else appends
-     * a new card (always recording, D3). The session's first record on the
-     * main line also seats the opening card (bound as ordinal 0). A branch
-     * line's first landed turn clears its pending command.
+     * Folds one delivered record into the ACTIVE line. A typed turn binds to
+     * the line's next unbound card when one exists (restore/repair replay),
+     * else appends a new card (always recording, D3). The opening's record
+     * (`delivery.boot`) seats the main line's opening card, bound as ordinal 0,
+     * and is done: it types nothing, so it binds no turn card and appends
+     * none, and on a line other than the main line it changes nothing. A typed
+     * turn that finds the main line's opening unseated seats it on the way. A
+     * branch line's first landed turn clears its pending command.
      */
     addTurn(delivery) {
       const cards2 = this.lineCards.get(this.active);
       if (cards2 === void 0) return;
-      if (delivery.room !== void 0) this.roomByOrdinal.set(delivery.ordinal, delivery.room);
-      this.pending.delete(this.active);
+      if (delivery.room !== void 0) this.roomByOrdinal.set(delivery.boot ? 0 : delivery.ordinal, delivery.room);
+      if (delivery.boot && this.active !== this.doc.id) return;
+      if (!delivery.boot) this.pending.delete(this.active);
       const bind = (card2, ordinal) => {
         this.cardByOrdinal.set(ordinal, card2);
         this.ordinalByCard.set(card2, ordinal);
@@ -3395,7 +3430,9 @@
           bind(opening, 0);
           cursor = cards2.length;
         }
+        this.bindCursor.set(this.active, cursor);
       }
+      if (delivery.boot) return;
       if (cursor < cards2.length) {
         const bound = cards2[cursor];
         if (bound.assertions === void 0 && bound.skip !== true) {
@@ -3411,10 +3448,10 @@
         return;
       }
       const recorded = cloneAssertions(delivery.assertions);
-      const card = delivery.boot ? { type: "boot" } : { type: "turn", command: delivery.command };
+      const card = { type: "turn", command: delivery.command };
       if (recorded !== void 0) card.assertions = recorded;
       if (delivery.skip === true) card.skip = true;
-      if (delivery.ending !== void 0 && card.type === "turn") card.ending = delivery.ending;
+      if (delivery.ending !== void 0) card.ending = delivery.ending;
       cards2.push(card);
       bind(card, delivery.ordinal);
       this.bindCursor.set(this.active, cards2.length);
@@ -3454,7 +3491,7 @@
       return path;
     }
     /** The commands that replay `id`'s full path live from a fresh boot —
-     *  opening and boot cards excluded (a fresh boot plays its own look). */
+     *  the opening card excluded (a fresh boot runs its own opening). */
     pathCommands(cards2) {
       return cards2.filter((card) => card.type === "turn").map((card) => card.command).filter((command) => command !== void 0);
     }
@@ -3537,9 +3574,7 @@
     labelOf(id) {
       const meta = this.lineMeta.get(id);
       if (meta === void 0) {
-        const bootCard = this.doc.cards.find((card) => card.type !== "opening");
-        const room2 = bootCard !== void 0 ? this.roomAtCard(this.doc.id, bootCard) : void 0;
-        return mainLineLabelOf(roomSlugOf(room2));
+        return mainLineLabelOf(roomSlugOf(this.roomByOrdinal.get(0)));
       }
       const room = this.roomAtCard(meta.parentLine, meta.forkCard);
       const firstCommand = (this.lineCards.get(id) ?? []).find((card) => card.type === "turn")?.command ?? this.pending.get(id);
@@ -3588,13 +3623,13 @@
     }
     /**
      * Whether a Branch gesture is offered on this card: it must be bound, on
-     * the active path, not the opening (the boot look is automatic — an
-     * alternate to it is meaningless), and not the path's tip (typing already
-     * continues the recording there).
+     * the active path, and not the path's tip (typing already continues the
+     * recording there). The opening card forks like any other: its branch is
+     * an alternate first command.
      */
     canBranch(ordinal) {
       const card = this.cardByOrdinal.get(ordinal);
-      if (card === void 0 || card.type === "opening") return false;
+      if (card === void 0) return false;
       if (card.ending !== void 0) return false;
       const path = this.pathCardsOf(this.active);
       const index = path.indexOf(card);
@@ -3671,8 +3706,8 @@
     /**
      * Tail-cut (D4/Q-4, the card's ✕): discard the card at `ordinal` and
      * everything after it on its own line — descendants and their branches
-     * included. Only a bound TURN card cuts (the opening and the boot look are
-     * the session's fabric, not authored turns). Returns the cut line and
+     * included. Only a bound TURN card cuts (the opening is the session's
+     * fabric, not an authored turn). Returns the cut line and
      * whether the viewed line survived — the caller replays the line to
      * realign the engine (the session IS a replay of the tree) — or null when
      * the card cannot cut.
@@ -4300,6 +4335,9 @@
   var documentWriteLocked = false;
   var lastTreeFiles = {};
   var storyEnded = false;
+  function recordBehind(ordinal) {
+    return ordinal === 0 && bootRecordOrdinal !== void 0 ? records.get(bootRecordOrdinal) : records.get(ordinal);
+  }
   function turnSource(ordinal) {
     const record = records.get(ordinal);
     if (!record || typeof record.output !== "string") return void 0;
@@ -4313,7 +4351,7 @@
     return cardAssertionLines({ model }, ordinal);
   }
   function characterExplainFor(ordinal) {
-    const source = ordinal === 0 && bootRecordOrdinal !== void 0 ? records.get(bootRecordOrdinal) : records.get(ordinal);
+    const source = recordBehind(ordinal);
     if (!source) return [];
     const captures = capturesOf(source);
     const names = /* @__PURE__ */ new Map();
@@ -4410,7 +4448,7 @@
       update();
     },
     onStatePicker(ordinal, anchor) {
-      const entities = records.get(ordinal)?.world?.entities ?? [];
+      const entities = recordBehind(ordinal)?.world?.entities ?? [];
       const facts = entities.map((entity) => ({
         label: `${entity.name} \u2014 ${entity.location.name}`,
         expression: `${entity.token}.location = ${entity.location.token}`,
@@ -4422,8 +4460,8 @@
       });
     },
     onEventPicker(ordinal, anchor) {
-      const events = records.get(ordinal)?.events ?? [];
-      showListPicker(anchor, "events this turn emitted", events, (event) => {
+      const events = recordBehind(ordinal)?.events ?? [];
+      showListPicker(anchor, ordinal === 0 ? "events the opening emitted" : "events this turn emitted", events, (event) => {
         pushUndo();
         if (model.addEvent(ordinal, event)) update();
       });
@@ -4443,7 +4481,7 @@
       postToBridge({ lock: { args: lockArgumentsOf(pendingLock.step) } });
     },
     onChannelPicker(ordinal, anchor) {
-      const source = ordinal === 0 && bootRecordOrdinal !== void 0 ? records.get(bootRecordOrdinal) : records.get(ordinal);
+      const source = recordBehind(ordinal);
       const captures = source?.captures ?? [];
       const labels = captures.map((capture) => {
         const flat = proseTextLinesOf(capture.values).join(" ");
@@ -4752,22 +4790,24 @@
     model.activateLine(currentLine);
     const recorded = recordedTurnAssertions(policy, turnSource(record.turn));
     const openingClaims = boot && currentLine === model.mainLine ? openingDefaultClaims(policy, bootCaptures) : [];
+    const openingAssertions = boot ? openingAssertionsOf(openingClaims, recorded.assertions) : void 0;
     model.addTurn({
       ordinal: record.turn,
       command: record.command ?? "",
       boot,
       ...room !== void 0 ? { room } : {},
-      ...recorded.assertions !== void 0 ? { assertions: recorded.assertions } : {},
-      ...recorded.skip === true ? { skip: true } : {},
-      ...endedThisTurn !== void 0 ? { ending: endedThisTurn } : {},
-      ...openingClaims.length > 0 ? { openingAssertions: { channels: openingClaims } } : {}
+      ...!boot && recorded.assertions !== void 0 ? { assertions: recorded.assertions } : {},
+      ...!boot && recorded.skip === true ? { skip: true } : {},
+      ...!boot && endedThisTurn !== void 0 ? { ending: endedThisTurn } : {},
+      ...openingAssertions !== void 0 ? { openingAssertions } : {}
     });
     if (pendingDialogOutcome) {
       const at = model.turnIndexOf(record.turn);
       if (at) dialogOutcomes.set(`${at.lineId}:${at.index}`, pendingDialogOutcome);
       pendingDialogOutcome = null;
     }
-    cards.addTurnCard(record.turn, boot, currentLine !== model.mainLine);
+    if (boot) cards.addOpeningCard(record.turn);
+    else cards.addTurnCard(record.turn, currentLine !== model.mainLine);
     update();
     cards.scrollToLatest();
     const waiters = nextTurnWaiters;
