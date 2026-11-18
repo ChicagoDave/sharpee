@@ -95,7 +95,9 @@ order, the pinned seed. Consequences:
 `docs/work/testing/sample.json`, normalized): top level carries `version` (1,
 reader refuses newer), `story`, `seed`, and `cards`. A card is
 `{ type: opening|boot|turn, command?, assertions?, skip?, branches? }` —
-the opening carries no command; the boot look is its own card. **The fork
+the opening carries no command; the boot look is its own card. **Amended
+2026-11-18 by ADR-404 (decision 12)**: there is one `opening` card, holding
+whatever the story's opening routine printed, and no `boot` card type. **The fork
 lives ON the card branched from**: `branches: [{ branch: <stable id>,
 cards: [...] }]`, recursively — no positional indices; the hierarchy is the
 position, and the main line's continuation is the parent's remaining cards.

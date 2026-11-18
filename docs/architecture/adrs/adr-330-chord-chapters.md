@@ -202,7 +202,11 @@ title, description (empty when the row has none), ordinal — emitted on the tur
 fires, **before that turn's prose and after the banner** (amended 2026-09-05, David: "the
 chapter title should be announced before the room"; uniformly for every trigger kind —
 game-starts, first-visit, timer-expires, becomes — so the card reads as a heading over the
-turn's output, and the opening card sits between the banner and the opening room). The
+turn's output, and the opening card sits between the banner and the opening room). **Amended 2026-11-18
+by ADR-404 (decision 8)**: the opening chapter's card goes with the first look, immediately
+before it, so in a story whose `when the game starts` block puts `show-banner` after
+`do-first-look` the card comes before the banner; for every later chapter this statement is
+unchanged. The
 original text read "after that turn's prose (the arrival text is `market`'s last words, not
 `commerce`'s first)"; that is reversed. The mechanism is registration order, not a renderer
 rule: `IChannelRegistry.add(channel, { before: 'room-name' })` (ADR-163 §7, amended the same

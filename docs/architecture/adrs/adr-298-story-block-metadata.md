@@ -129,7 +129,10 @@ emitted on a **dedicated prologue channel** (fyrevm/channel-io heritage),
 once at story start, sparse-suppressed when the field is absent — the same
 pattern as `ifidChannel`. Placement before the banner is the platform's
 default client rendering order; authors can restyle per the customizable-
-client architecture. ADR-296's slot machinery is not involved:
+client architecture. **Amended 2026-11-18 by ADR-404 (decision 6)**:
+prologue before banner is the order of the default opening routine, and a
+story's `when the game starts` block may put `show-banner` first or leave
+`show-prologue` out. ADR-296's slot machinery is not involved:
 `beforeEverything` stays platform-only, and turn-narration slots are not
 stretched to cover a one-time story-start emission.
 
