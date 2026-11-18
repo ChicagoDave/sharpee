@@ -128,7 +128,7 @@ and chapter 35 goes through the others.
 An award is declared with a `score` line and paid with `award`.
 
 ```chord
-create the kindle page
+create the spark page
   aka first page, leaf
   a thing, readable
   on the reading desk
@@ -138,11 +138,11 @@ create the kindle page
 
 ```chord
       when legible
-        change the kindle page to learned
+        change the spark page to learned
         change the story to waking
         raise workings by 1
         award first-working
-        phrase kindle-learned
+        phrase spark-learned
 ```
 
 An award is paid once. If the `award` line runs again, nothing is added. The
@@ -217,7 +217,7 @@ create the Great Lantern
   for thirty years.
 
   on the player lighting
-    the kindle page must be learned: no-such-word
+    the spark page must be learned: no-such-word
     the lens must be in the Great Lantern: lantern-empty
   end on
 
@@ -250,7 +250,7 @@ there.
 before the game starts
   change the player to Ansel
   change the iron grille to lifted
-  change the kindle page to learned
+  change the spark page to learned
   move the lens to the Lantern Gallery
 end before
 ```

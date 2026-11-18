@@ -72,7 +72,7 @@
           "there is a seat for a lens with no lens in it."
         ]
       },
-      "command": "kindle lantern",
+      "command": "spark lantern",
       "id": "ecuaaei4",
       "type": "turn"
     },
@@ -96,7 +96,7 @@
           "the story is awake"
         ]
       },
-      "command": "kindle lantern",
+      "command": "spark lantern",
       "ending": "lantern-lit",
       "id": "rswc0biu",
       "type": "turn"

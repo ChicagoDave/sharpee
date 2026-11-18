@@ -56,11 +56,11 @@ At turn 82 of line thelodge "opening-lodge", true now and not at boot:
   the player has the hand lamp
   the player has the library key
   the player has the unbind page
-  the player has the kindle page
+  the player has the spark page
   the player has the hush page
   the story is waking
   the iron grille is lifted
-  the kindle page is learned
+  the spark page is learned
 ```
 
 The list goes on for another twenty-three lines, and it closes by saying
@@ -88,8 +88,8 @@ sharpee claim thelodge "the iron grille is lifted" --at 82 --name "the ward on t
 Locking at turn 82 of line thelodge "opening-lodge": the iron grille is lifted
 
   needs rooms: the Lodge, the Gate Court, the Cloister, the Refectory, the Library, the Bell Stair
-  needs things: Hobb, the kettle, the chair, the spectacles, the hand lamp, the oak press, the library key, Tamsin Vey, the unbind page, the library door, the grimoire, the kindle page, the hush page, the mend page, the wisp, the wax taper, the tower bell, the newspapers, the candles, the iron grille
-  needs verbs: talk to, ask, tell, goodbye, sit on, exit, search, take, examine, open, wait, say, answer, unlock, consult, look up, read, light, kindle, look, inventory, unbind, quiet, hush
+  needs things: Hobb, the kettle, the chair, the spectacles, the hand lamp, the oak press, the library key, Tamsin Vey, the unbind page, the library door, the grimoire, the spark page, the hush page, the mend page, the wisp, the wax taper, the tower bell, the newspapers, the candles, the iron grille
+  needs verbs: talk to, ask, tell, goodbye, sit on, exit, search, take, examine, open, wait, say, answer, unlock, consult, look up, read, light, spark, look, inventory, unbind, quiet, hush
 
 Written: created relighting.claims.chord
 Written: relighting.tests/manifest.json
@@ -151,8 +151,8 @@ claims
   claim the ward on the stair can be lifted
     the iron grille is lifted
     needs rooms: the Lodge, the Gate Court, the Cloister, the Refectory, the Library, the Bell Stair
-    needs things: Hobb, the kettle, the chair, the spectacles, the hand lamp, the oak press, the library key, Tamsin Vey, the unbind page, the library door, the grimoire, the kindle page, the hush page, the mend page, the wisp, the wax taper, the tower bell, the newspapers, the candles, the iron grille
-    needs verbs: talk to, ask, tell, goodbye, sit on, exit, search, take, examine, open, wait, say, answer, unlock, consult, look up, read, light, kindle, look, inventory, unbind, quiet, hush
+    needs things: Hobb, the kettle, the chair, the spectacles, the hand lamp, the oak press, the library key, Tamsin Vey, the unbind page, the library door, the grimoire, the spark page, the hush page, the mend page, the wisp, the wax taper, the tower bell, the newspapers, the candles, the iron grille
+    needs verbs: talk to, ask, tell, goodbye, sit on, exit, search, take, examine, open, wait, say, answer, unlock, consult, look up, read, light, spark, look, inventory, unbind, quiet, hush
 end claims
 ```
 
@@ -310,8 +310,8 @@ line above it.
   claim the story can be won
     the story ends in victory
     needs rooms: the Lodge, the Gate Court, the Cloister, the Refectory, the Library, the Bell Stair, the Undercroft, the Lantern Gallery, the Water Stair, the Beacon Isle
-    needs things: Hobb, the spectacles, the hand lamp, the oak press, the library key, Tamsin Vey, the unbind page, the library door, the kindle page, the hush page, the mend page, the tower bell, the newspapers, the candles, the iron grille, the cistern, the crate, the lens, the book hoist, the shutter crank, the shutter, the Great Lantern, the Mere, the skiff, the beacon
-    needs verbs: talk to, ask, say, take, open, unlock, read, light, kindle, examine, wait, unbind, quiet, fix, repair, turn, push, enter, steer, make sail, exit
+    needs things: Hobb, the spectacles, the hand lamp, the oak press, the library key, Tamsin Vey, the unbind page, the library door, the spark page, the hush page, the mend page, the tower bell, the newspapers, the candles, the iron grille, the cistern, the crate, the lens, the book hoist, the shutter crank, the shutter, the Great Lantern, the Mere, the skiff, the beacon
+    needs verbs: talk to, ask, say, take, open, unlock, read, light, spark, examine, wait, unbind, quiet, fix, repair, turn, push, enter, steer, make sail, exit
 ```
 
 The verbs leave out `put`, although the winning line types it twice.
@@ -322,7 +322,7 @@ The lock is one key on the winning card, written between `id` and
 `type` because a tree file keeps its keys in alphabetical order.
 
 ```json
-      "command": "kindle beacon",
+      "command": "spark beacon",
       "ending": "beacon-lit",
       "id": "bjhmo3xt",
       "locks": [

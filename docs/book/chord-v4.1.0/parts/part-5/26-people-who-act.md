@@ -120,7 +120,7 @@ returning magic that takes a liking to Ansel.
 
 ```chord
 create the wisp
-  aka light, spark
+  aka light
   a person, follower
   pronouns it
 
@@ -130,10 +130,10 @@ create the wisp
 
 A `follower` goes where the player goes. The wisp has no placement line,
 so it begins the game nowhere, and the hand lamp brings it on the first
-time the lamp is kindled.
+time the lamp is sparked.
 
 ```chord
-after the player kindling, once
+after the player sparking, once
   move the wisp here
   phrase wisp-arrives
 end after
@@ -486,7 +486,7 @@ phrases, which the chapter did not print in full. This is the first chapter
 of Part V, and the copy's `story-version` is `0.5.0`. To make the changes by
 hand instead, work from this list and take the rest from that file: add
 `pronouns he` to Hobb, add the `on every turn` clause to the oak press and
-the `after the player kindling, once` clause to the hand lamp, create Tamsin
+the `after the player sparking, once` clause to the hand lamp, create Tamsin
 Vey and the wisp near Hobb, and add their six phrases to the phrases block.
 
 ```shell
@@ -495,7 +495,7 @@ sharpee play .
 ```
 
 Walk to the Refectory and wait a turn or two, then follow Tamsin into the
-Cloister. Read the kindle page, light the lamp, and wait in the Cloister
+Cloister. Read the spark page, light the lamp, and wait in the Cloister
 for the bell. Tamsin comes through on her way to the tower.
 
 ```text

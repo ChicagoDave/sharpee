@@ -1,7 +1,7 @@
 # New verbs
 
 The craft of Lanternhall calls its spells workings. A working is a single
-spoken word: kindle, mend, hush, unbind. Ansel learns one by reading its
+spoken word: spark, mend, hush, unbind. Ansel learns one by reading its
 page, and then says it to a thing. None of those four words is a command the
 platform knows.
 
@@ -50,13 +50,13 @@ named.
 An action may have several patterns, and a pattern may have no slot at all.
 
 ```chord
-define action kindling
+define action sparking
   grammar
-    kindle the target
-    kindle
+    spark the target
+    spark
 ```
 
-Now `kindle lamp` and plain `kindle` are both understood. The second needs a
+Now `spark lamp` and plain `spark` are both understood. The second needs a
 line to say what happens when the thing is missing.
 
 ```chord
@@ -64,7 +64,7 @@ line to say what happens when the thing is missing.
 ```
 
 ```text
-> kindle
+> spark
 A working is said to something. You say it to the air, and the air has heard it all before.
 ```
 
@@ -157,12 +157,12 @@ At the end of this chapter no thing in Lanternhall has an answer to any of
 the four workings. So once the page has been read, every one of them misses.
 
 ```text
-> kindle lamp
+> spark lamp
 There is nothing in that for a flame to stand on.
 
 Somewhere above you, old timber takes a weight it had forgotten.
 
-> kindle grimoire
+> spark grimoire
 There is nothing in that for a flame to stand on.
 
 A slow draught moves through the Hall, one way and then the other.
@@ -170,7 +170,7 @@ A slow draught moves through the Hall, one way and then the other.
 
 The first of those is plainly wrong, and it is wrong in an instructive way.
 The action is complete. The lamp has not yet been told that it answers to
-kindling. Telling it is the whole of the next chapter.
+sparking. Telling it is the whole of the next chapter.
 
 A miss can name the thing the player typed. The slot's name works as a
 marker.
@@ -186,14 +186,14 @@ define phrases en-US
 Here are the other three.
 
 ```chord
-define action kindling
+define action sparking
   grammar
-    kindle the target
-    kindle
+    spark the target
+    spark
   refuse without target: working-wants-a-thing
   the target must be reachable
-  the kindle page must be learned: no-such-word
-  otherwise refuse nothing-to-kindle
+  the spark page must be learned: no-such-word
+  otherwise refuse nothing-to-spark
 
 define action hushing
   grammar
@@ -394,13 +394,13 @@ sharpee play .
 ```
 
 Try each working before and after its page. The lamp still lights with the
-standard `light lamp`, as it has since chapter 15. Kindle is a word now, and
+standard `light lamp`, as it has since chapter 15. Spark is a word now, and
 has nothing to work on.
 
 ::: under-the-hood
 **Under the Hood: an action is data** · Story IR `actions`
 
-In the compiled IR the kindling action is an entry with four lists: its
+In the compiled IR the sparking action is an entry with four lists: its
 `patterns`, each a run of words and slots; its `constraints`, which are the
 `must be reachable` lines; its `musts`, each a condition and a phrase key;
 and its body. There is no code in it. The platform has one piece of

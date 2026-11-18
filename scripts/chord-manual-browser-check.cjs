@@ -149,23 +149,23 @@ async function runChecks(webDir, walk, refuseImages) {
     check('boot: no panel before a working is learned', !boot.sidebarShown, `sidebar shown: ${boot.sidebarShown}`);
     check('boot: no picture', boot.picture === null, JSON.stringify(boot.picture));
 
-    let at = await typeThrough(0, 'read kindle page');
-    const kindled = await read();
-    check('first page read: the panel is shown', kindled.sidebarShown, `sidebar shown: ${kindled.sidebarShown}`);
-    check('first page read: the panel lists the kindle working',
-      kindled.workings.join(' | ') === 'kindle: wakes a flame', kindled.workings.join(' | '));
+    let at = await typeThrough(0, 'read spark page');
+    const sparked = await read();
+    check('first page read: the panel is shown', sparked.sidebarShown, `sidebar shown: ${sparked.sidebarShown}`);
+    check('first page read: the panel lists the spark working',
+      sparked.workings.join(' | ') === 'spark: wakes a flame', sparked.workings.join(' | '));
     check('first page read: the story stylesheet styles the panel title',
-      kindled.panelTitleVariant === 'small-caps', kindled.panelTitleVariant);
+      sparked.panelTitleVariant === 'small-caps', sparked.panelTitleVariant);
 
     at = await typeThrough(at, 'light lamp');
-    check('lamp kindled: audio/catch.mp3 is fetched', fetched('/audio/catch.mp3'), requested.filter((u) => u.startsWith('/audio')).join(', '));
+    check('lamp sparked: audio/catch.mp3 is fetched', fetched('/audio/catch.mp3'), requested.filter((u) => u.startsWith('/audio')).join(', '));
 
     at = await typeThrough(at, 'light lamp with taper');
     check('bell tolling: audio/toll.mp3 is fetched', fetched('/audio/toll.mp3'), requested.filter((u) => u.startsWith('/audio')).join(', '));
 
-    at = await typeThrough(at, 'kindle lantern');
-    at = await typeThrough(at, 'kindle lantern');
-    at = await typeThrough(at, 'kindle lantern');
+    at = await typeThrough(at, 'spark lantern');
+    at = await typeThrough(at, 'spark lantern');
+    at = await typeThrough(at, 'spark lantern');
     const lit = await read();
     check('Lantern lit: the panel lists four workings', lit.workings.length === 4, lit.workings.join(' | '));
     check('Lantern lit: the picture is shown and loaded',
@@ -175,7 +175,7 @@ async function runChecks(webDir, walk, refuseImages) {
     at = await typeThrough(at, 'enter skiff');
     check('skiff entered: audio/lapping.mp3 is fetched', fetched('/audio/lapping.mp3'), requested.filter((u) => u.startsWith('/audio')).join(', '));
 
-    await typeThrough(at, 'kindle beacon');
+    await typeThrough(at, 'spark beacon');
     const won = await read();
     check('beacon lit: the picture is hidden', won.picture === null, JSON.stringify(won.picture));
     check('beacon lit: the winning text is on the page', won.prose.includes('The two lights hold one another.'), won.prose.slice(-160));

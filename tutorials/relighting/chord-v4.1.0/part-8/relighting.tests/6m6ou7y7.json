@@ -65,7 +65,7 @@
       "assertions": {
         "contains": [
           "Library",
-          "a kindle page"
+          "a spark page"
         ]
       },
       "command": "w",

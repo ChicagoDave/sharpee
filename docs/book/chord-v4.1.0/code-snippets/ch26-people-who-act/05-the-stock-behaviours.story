@@ -1,5 +1,5 @@
 create the wisp
-  aka light, spark
+  aka light
   a person, follower
   pronouns it
 

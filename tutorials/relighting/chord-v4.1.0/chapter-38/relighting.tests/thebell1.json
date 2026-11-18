@@ -6,7 +6,7 @@
           "It is burning already, and the word slides off it."
         ]
       },
-      "command": "kindle lamp",
+      "command": "spark lamp",
       "id": "1uhnut1q",
       "type": "turn"
     },
@@ -124,7 +124,7 @@
           "You have risen to the rank of a Second-Year."
         ]
       },
-      "command": "kindle candles",
+      "command": "spark candles",
       "id": "ihemyq7a",
       "type": "turn"
     },

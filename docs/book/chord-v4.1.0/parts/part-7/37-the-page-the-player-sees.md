@@ -128,7 +128,7 @@ npx serve dist/web/relighting
 The page opens on the story's title and prologue, in the paper theme. The
 Settings menu has a Theme entry that lists Classic, Paper and Modern Dark.
 The page has no sound control of its own, so see that your machine's sound
-is up before you kindle the lamp. The first build also writes
+is up before you spark the lamp. The first build also writes
 a small file beside the story, `relighting.config.json`, which chapter 40
 explains.
 
@@ -170,15 +170,15 @@ A story raises an event with `emit`.
 
 ```chord
 on the player reading
-  select on the kindle page's state
+  select on the spark page's state
     when legible
-      change the kindle page to learned
+      change the spark page to learned
       change the story to waking
       start waking
       raise workings by 1
-      emit relighting-working-learned with working "kindle" and gloss "wakes a flame"
+      emit relighting-working-learned with working "spark" and gloss "wakes a flame"
       award first-working
-      phrase kindle-learned
+      phrase spark-learned
 ```
 
 `emit` is a statement. It names the event with one hyphenated word, then
@@ -195,12 +195,12 @@ Each of the four pages emits the same event with its own two strings. The
 channel hears all four.
 
 An event is not prose, and `emit` prints nothing. In a terminal, reading
-the kindle page looks exactly as it did in chapter 13. On the page, a
+the spark page looks exactly as it did in chapter 13. On the page, a
 column opens beside the story.
 
 ```text
 workings
-kindle: wakes a flame
+spark: wakes a flame
 ```
 
 By the time the Lantern is lit the panel holds four lines, in the order
@@ -208,7 +208,7 @@ Ansel read the pages.
 
 ```text
 workings
-kindle: wakes a flame
+spark: wakes a flame
 unbind: releases a ward
 hush: quiets a thing
 mend: makes a broken thing whole
@@ -357,7 +357,7 @@ sharpee build relighting.story
 npx serve dist/web/relighting
 ```
 
-Play as far as the Library and read the kindle page. Then change the
+Play as far as the Library and read the spark page. Then change the
 theme from the Settings menu and reload the page. The theme you chose has
 been remembered. It was filed in the browser under the storage prefix, as
 `relighting-theme`, and the saved games are filed beside it.

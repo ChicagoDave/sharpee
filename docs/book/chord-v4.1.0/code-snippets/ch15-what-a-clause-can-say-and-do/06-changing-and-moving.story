@@ -7,7 +7,7 @@ create the candles
   has put a flame to them since the last supper of the last term.
 
   on the player lighting
-    the kindle page must be learned: no-such-word
+    the spark page must be learned: no-such-word
   end on
 
   after the player lighting

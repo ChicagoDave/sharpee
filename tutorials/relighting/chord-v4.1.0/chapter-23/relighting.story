@@ -88,14 +88,14 @@ end phrasebook
 ## The workings. An action says what the player may type and what must
 ## be true of the player. It never asks which thing was named.
 
-define action kindling
+define action sparking
   grammar
-    kindle the target
-    kindle
+    spark the target
+    spark
   refuse without target: working-wants-a-thing
   the target must be reachable
-  the kindle page must be learned: no-such-word
-  otherwise refuse nothing-to-kindle
+  the spark page must be learned: no-such-word
+  otherwise refuse nothing-to-spark
 
 define action mending
   grammar
@@ -378,7 +378,7 @@ create the hand lamp
   clean, which is Hobb all over.
 
   on the player lighting
-    the kindle page must be learned: no-such-word
+    the spark page must be learned: no-such-word
   end on
 
   phrase detail while the hand lamp is lit:
@@ -474,7 +474,7 @@ create the Great Lantern
   score relit worth 15
 
   on the player lighting
-    the kindle page must be learned: no-such-word
+    the spark page must be learned: no-such-word
     the lens must be in the Great Lantern: lantern-empty
   end on
 
@@ -493,7 +493,7 @@ create the candles
   Stubs of tallow in iron prickets down the middle of each table.
 
   on the player lighting
-    the kindle page must be learned: no-such-word
+    the spark page must be learned: no-such-word
   end on
 
   score supper-lit worth 5
@@ -584,7 +584,7 @@ create the grimoire
     phrase grimoire-half when workings is at least 2
   end after
 
-create the kindle page
+create the spark page
   aka first page, leaf
   a thing, readable
   on the reading desk
@@ -595,19 +595,19 @@ create the kindle page
   complete.
 
   on the player reading
-    select on the kindle page's state
+    select on the spark page's state
       when legible
-        change the kindle page to learned
+        change the spark page to learned
         change the story to waking
         start waking
         raise workings by 1
         award first-working
-        phrase kindle-learned
+        phrase spark-learned
         each faded-page
           change the match to legible
         end each
       when learned
-        phrase kindle-known
+        phrase spark-known
     end select
   end on
 
@@ -795,7 +795,7 @@ define phrases en-US
   library-ink:
     There is a smell in here that was not here thirty years ago, or was
     here and you had forgotten it. It is wet ink.
-  kindle-learned:
+  spark-learned:
     You read the line once, and it reads you back. The word for waking a
     flame settles into the place it left thirty years ago, as if it had
     only stepped out.
@@ -857,7 +857,7 @@ define phrases en-US
   working-wants-a-thing:
     A working is said to something. You say it to the air, and the air
     has heard it all before.
-  nothing-to-kindle:
+  nothing-to-spark:
     There is nothing in that for a flame to stand on.
   nothing-to-mend:
     That was never one thing to begin with.
@@ -903,7 +903,7 @@ define phrases en-US
   hobb-deafened:
     Hobb has his hands over his ears. He says something, and the bell
     says something louder.
-  kindle-known:
+  spark-known:
     You know it. You are not likely to lose it twice.
   page-blank:
     The leaf is blank on both sides. You hold it up to the light, and it

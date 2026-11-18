@@ -98,7 +98,7 @@
           "A working is said to something."
         ]
       },
-      "command": "kindle",
+      "command": "spark",
       "id": "ioqibc7v",
       "type": "turn"
     },
@@ -108,7 +108,7 @@
           "You reach for the word and find only the place where it was."
         ]
       },
-      "command": "kindle lamp",
+      "command": "spark lamp",
       "id": "1vqpu3tm",
       "type": "turn"
     },
@@ -208,7 +208,7 @@
           "The word for waking a flame settles into the place it left thirty years ago"
         ]
       },
-      "command": "read kindle page",
+      "command": "read spark page",
       "id": "h9v3coa8",
       "type": "turn"
     },
@@ -218,7 +218,7 @@
           "There is nothing in that for a flame to stand on."
         ]
       },
-      "command": "kindle lamp",
+      "command": "spark lamp",
       "id": "6ke6npkc",
       "type": "turn"
     },
@@ -228,7 +228,7 @@
           "There is nothing in that for a flame to stand on."
         ]
       },
-      "command": "kindle grimoire",
+      "command": "spark grimoire",
       "id": "fazoicll",
       "type": "turn"
     },

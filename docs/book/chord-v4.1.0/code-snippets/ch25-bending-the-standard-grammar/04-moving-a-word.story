@@ -1,6 +1,6 @@
 remove from action lighting
   light the target
 
-extend action kindling
+extend action sparking
   grammar
     light the target

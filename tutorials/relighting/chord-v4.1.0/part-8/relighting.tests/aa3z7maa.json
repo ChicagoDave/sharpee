@@ -54,7 +54,7 @@
           "the story is awake"
         ]
       },
-      "command": "kindle lantern",
+      "command": "spark lantern",
       "id": "0upq9v6a",
       "locks": [
         "the Hall can be woken"
@@ -199,7 +199,7 @@
           "You have risen to the rank of a Lamplighter."
         ]
       },
-      "command": "kindle beacon",
+      "command": "spark beacon",
       "ending": "beacon-lit",
       "id": "6t38opde",
       "locks": [

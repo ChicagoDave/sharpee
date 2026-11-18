@@ -312,7 +312,7 @@ The Lantern no longer wins the game. Its clause wakes the Hall and says
 what is still to do.
 
 ```chord
-after the player kindling
+after the player sparking
   lose lens-shatters when not lantern-ready
   change the story to awake when lantern-ready
   award relit when lantern-ready
@@ -342,7 +342,7 @@ create the beacon
   An iron basket on a pole, packed with pitch-pine that has had thirty
   years to dry.
 
-  after the player kindling
+  after the player sparking
     award answered
     win beacon-lit
   end after
@@ -353,7 +353,7 @@ word the lamp, the candles and the Lantern answer. The Lantern's score
 drops from 15 to 10 to pay for it, and the total is still 50.
 
 ```text
-> kindle beacon
+> spark beacon
 You say the word. A flame stands up on the wick, blue at first, as if it had been waiting there with its coat on.
 
 You say the word across six feet of air, and the pitch-pine takes it. Behind you, over the water, the white bar of the Lantern swings round and stops, pointing here. The two lights hold one another. Somewhere between them the Mere is full of small blue sparks, coming home.

@@ -369,7 +369,7 @@ Go to the Refectory and ask Tamsin about the page twice, then answer her.
 Play it again and refuse, and find the way back.
 
 The bargain can be struck before the bell has rung, and the page read as
-soon as the kindle page has been. It does not open the stair early. The
+soon as the spark page has been. It does not open the stair early. The
 ward still refuses while the bell is unrung or tolling, as it has since
 chapter 24.
 

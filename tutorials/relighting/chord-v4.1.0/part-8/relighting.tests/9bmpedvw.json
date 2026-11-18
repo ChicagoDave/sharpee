@@ -49,7 +49,7 @@
           "every cold wick takes it"
         ]
       },
-      "command": "kindle candles",
+      "command": "spark candles",
       "id": "ww7dzrep",
       "type": "turn"
     },

@@ -188,8 +188,8 @@ does not ask a book. The player consults it.
 define topics for the grimoire
   about "gnusto":
     phrase grimoire-on-gnusto
-  about "kindle", "kindling", "flame":
-    phrase grimoire-on-kindle
+  about "spark", "sparking", "flame":
+    phrase grimoire-on-spark
 end topics
 ```
 

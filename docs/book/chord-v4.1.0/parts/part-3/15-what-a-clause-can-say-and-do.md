@@ -27,12 +27,12 @@ create the hand lamp
   clean, which is Hobb all over.
 
   on the player lighting
-    the kindle page must be learned: no-such-word
+    the spark page must be learned: no-such-word
   end on
 ```
 
 The line states what must hold, then a colon, then the phrase to print when
-it does not. If the kindle page is `learned`, the line does nothing and the
+it does not. If the spark page is `learned`, the line does nothing and the
 clause goes on. Here there is nothing more in the clause, so the standard
 lighting action runs as usual. If the page is not learned, the action is
 refused with the phrase.
@@ -47,7 +47,7 @@ follows `must`:
 
 | Form | Example |
 | --- | --- |
-| `must be` a state | `the kindle page must be learned` |
+| `must be` a state | `the spark page must be learned` |
 | `must be in` a place | `the lens must be in the Great Lantern` |
 | `must be a` kind | `the crate must be a container` |
 | `must have`, `must hold`, `must wear` | `the player must hold the hand lamp` |
@@ -57,7 +57,7 @@ The Great Lantern has two requirements, and they are checked in order.
 
 ```chord
   on the player lighting
-    the kindle page must be learned: no-such-word
+    the spark page must be learned: no-such-word
     the lens must be in the Great Lantern: lantern-empty
   end on
 ```
@@ -170,7 +170,7 @@ create the candles
   has put a flame to them since the last supper of the last term.
 
   on the player lighting
-    the kindle page must be learned: no-such-word
+    the spark page must be learned: no-such-word
   end on
 
   after the player lighting
@@ -214,24 +214,24 @@ The statement prints nothing by itself. The phrase does the telling.
 Any statement that does something may end with `when` and a condition. The
 statement then runs only if the condition is true.
 
-The kindle page should behave differently the second time it is read. The
+The spark page should behave differently the second time it is read. The
 first reading teaches the word and wakes the Hall. Later readings should
 only say that Ansel knows it.
 
 ```chord
   on the player reading
-    phrase kindle-known when the kindle page is learned
-    phrase kindle-learned when the kindle page is legible
-    change the story to waking when the kindle page is legible
-    change the kindle page to learned
+    phrase spark-known when the spark page is learned
+    phrase spark-learned when the spark page is legible
+    change the story to waking when the spark page is legible
+    change the spark page to learned
   end on
 ```
 
 ```text
 > read page
-(first taking the kindle page)
+(first taking the spark page)
 
-You take the kindle page from the reading desk.
+You take the spark page from the reading desk.
 
 You read the line once, and it reads you back. The word for waking a flame settles into the place it left thirty years ago, as if it had only stepped out.
 
@@ -246,7 +246,7 @@ Each line carries its own condition, so a clause with two outcomes repeats
 the condition on every line.
 
 The lines also run in order, and an earlier one can change what a later one
-tests. The `change the kindle page to learned` line is last for that reason.
+tests. The `change the spark page to learned` line is last for that reason.
 Move it to the top and both phrases would find the page `learned`, and the
 first reading would print the wrong one.
 
@@ -259,7 +259,7 @@ which you have already.
 
 ## It, and its absence
 
-In every clause above, the thing is named in full: `the kindle page`, `the
+In every clause above, the thing is named in full: `the spark page`, `the
 hand lamp`. You might expect to write `it`. In a `create` block you may not.
 
 ```text
@@ -278,7 +278,7 @@ phrases, which the chapter did not print. To make the changes by hand
 instead, work from this list and take the rest from that file: add the
 clauses to the hand lamp, the seed cake, the Great Lantern and the candles,
 give the Lantern and the candles `light-source, starts unlit` and the
-spectacles `wearable`, rewrite the kindle page's clause, add the unbind page,
+spectacles `wearable`, rewrite the spark page's clause, add the unbind page,
 and add the five new phrases.
 
 ```shell

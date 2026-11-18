@@ -1,4 +1,4 @@
-create the kindle page
+create the spark page
   aka first page, leaf
   a thing, readable
   on the reading desk
@@ -8,6 +8,6 @@ create the kindle page
   complete.
 
   on the player reading
-    change the kindle page to learned
-    phrase kindle-learned
+    change the spark page to learned
+    phrase spark-learned
   end on

@@ -2,7 +2,7 @@
 
 A player does not know which words you chose. They will type `fix lens`
 where you wrote `mend`, `sit on chair` where the platform knows `enter`, and
-`light lamp` where the whole point of your story is that lamps are kindled.
+`light lamp` where the whole point of your story is that lamps are sparked.
 A story that answers "I don't understand that" to a reasonable sentence has
 lost a little of the player's trust each time.
 
@@ -114,18 +114,18 @@ By itself that would make the story worse. It is one half of a move.
 The last chapter left a hole and a patch. `light lamp` reached the standard
 lighting action, and the `wick` trait refused it with a sentence about
 matches. That is a fair answer, and a better one is to let the player be
-right. In this story, to light a thing is to kindle it.
+right. In this story, to light a thing is to spark it.
 
 ```chord
 remove from action lighting
   light the target
 
-extend action kindling
+extend action sparking
   grammar
     light the target
 ```
 
-The first block frees the pattern. The second gives it to kindling. Write
+The first block frees the pattern. The second gives it to sparking. Write
 both. An `extend action` block is allowed to add a pattern that a standard
 action also has, and the story would then have two actions claiming one
 command. Removing the pattern first leaves no doubt about which you mean.
@@ -137,7 +137,7 @@ You say the word. A flame stands up on the wick, blue at first, as if it had bee
 Somewhere above you, old timber takes a weight it had forgotten.
 ```
 
-And before the page has been read, `light lamp` is refused by the kindling
+And before the page has been read, `light lamp` is refused by the sparking
 action, in the words the story uses for a working that has not been learned.
 
 ```text
@@ -168,7 +168,7 @@ block.
 
 A few habits help.
 
-Add the plain word beside the coloured one. Your verb is `kindle`, and the
+Add the plain word beside the coloured one. Your verb is `spark`, and the
 player's is `light`. Your verb is `unbind`, and theirs may be `open`. The
 Relighting does not give `open` to unbinding, because the grille has no door
 in it and "open grille" deserves the standard refusal, but it is the kind of
@@ -230,7 +230,7 @@ Copy `relighting.story` and `synonyms.chord` from the companion folder
 `chapter-25` into your project, the first over your own file and the second
 beside it. They are the story with this chapter's changes made. To make the
 changes by hand instead, work from this list: add the `remove from action`
-block, the `extend action kindling` block and the `import` line near the
+block, the `extend action sparking` block and the `import` line near the
 workings, and create `synonyms.chord` beside the story with the three blocks
 above.
 
@@ -256,7 +256,7 @@ given here that is `fix spectacles`.
 
 The compiled IR records these blocks in two lists. `grammarRemovals` has one
 entry, for lighting, holding the pattern that was taken away.
-`grammarExtensions` has four, for kindling, mending, hushing and entering,
+`grammarExtensions` has four, for sparking, mending, hushing and entering,
 and it does not say which file they came from. When the story loads, the
 platform starts from the standard grammar, removes the first list, and adds
 the second and your own actions. The parser that reads the player's command

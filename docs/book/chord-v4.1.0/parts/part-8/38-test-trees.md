@@ -216,9 +216,9 @@ right sentence and changes nothing is one of the commonest defects in
 interactive fiction, and only a state assertion catches it.
 
 The last two kinds are how chapters 36 and 37 are proved without a
-browser. The card that kindles the lamp asserts the event
-`media.sound.play`, and the card that reads the kindle page asserts that
-the channel `workings` contains `kindle: wakes a flame`.
+browser. The card that sparks the lamp asserts the event
+`media.sound.play`, and the card that reads the spark page asserts that
+the channel `workings` contains `spark: wakes a flame`.
 
 ## Running the tree
 
@@ -360,7 +360,7 @@ from chapter 18.
           "media.image.hide"
         ]
       },
-      "command": "kindle beacon",
+      "command": "spark beacon",
       "ending": "beacon-lit",
       "id": "bjhmo3xt",
       "type": "turn"

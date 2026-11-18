@@ -87,7 +87,7 @@ thing's clause sounds in that thing's room. The wisp can be made to notice.
 
 ```chord
 create the wisp
-  aka light, spark
+  aka light
   a person, follower, listener
   pronouns it
 
@@ -143,10 +143,10 @@ catches audibly.
 
 ```chord
 define trait wick
-  on the player kindling
+  on the player sparking
     refuse when it is lit: already-burning
     change it to lit
-    phrase kindled
+    phrase sparked
     play sound catch
   end on
 ```
@@ -263,7 +263,7 @@ that the description of the Mere has not said.
 ## Showing a picture
 
 ```chord
-after the player kindling
+after the player sparking
   lose lens-shatters when not lantern-ready
   change the story to awake when lantern-ready
   award relit when lantern-ready
@@ -278,7 +278,7 @@ picture of the lit Lantern stays up for the crossing of the Mere, and the
 beacon's clause hides it on the last turn.
 
 ```chord
-after the player kindling
+after the player sparking
   award answered
   hide image
   win beacon-lit

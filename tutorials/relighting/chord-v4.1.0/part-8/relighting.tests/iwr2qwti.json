@@ -6,7 +6,7 @@
           "there is a seat for a lens with no lens in it"
         ]
       },
-      "command": "kindle lantern",
+      "command": "spark lantern",
       "id": "x32o78uf",
       "type": "turn"
     },

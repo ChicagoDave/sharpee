@@ -281,11 +281,11 @@
           "The word for waking a flame settles into the place it left thirty years ago"
         ],
         "states": [
-          "the kindle page is learned",
+          "the spark page is learned",
           "the story is waking"
         ]
       },
-      "command": "read kindle page",
+      "command": "read spark page",
       "id": "f2z3aybr",
       "type": "turn"
     },
@@ -295,7 +295,7 @@
           "You know it. You are not likely to lose it twice."
         ]
       },
-      "command": "read kindle page",
+      "command": "read spark page",
       "id": "9zfzvsvc",
       "type": "turn"
     },

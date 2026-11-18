@@ -202,7 +202,7 @@ detail` lines read it. So does the Lantern.
 
 ```chord
 define trait lens-seat
-  on the player kindling
+  on the player sparking
     the lens must be in the Great Lantern: lantern-empty
     the shutter must be drawn: lantern-shuttered
   end on
@@ -210,7 +210,7 @@ end trait
 ```
 
 ```text
-> kindle lantern
+> spark lantern
 The shutters are closed round it. A flame in there would light the inside of a brass bud, and nothing else.
 ```
 
@@ -237,7 +237,7 @@ sharpee play .
 ```
 
 The last room of the winning walk now takes a little longer. Turn the
-crank once before the lens is seated and once after, and try to kindle the
+crank once before the lens is seated and once after, and try to spark the
 Lantern in between.
 
 ::: under-the-hood

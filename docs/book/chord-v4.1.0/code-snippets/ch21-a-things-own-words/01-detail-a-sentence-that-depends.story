@@ -6,7 +6,7 @@ create the hand lamp
   clean, which is Hobb all over.
 
   on the player lighting
-    the kindle page must be learned: no-such-word
+    the spark page must be learned: no-such-word
   end on
 
   phrase detail while the hand lamp is lit:

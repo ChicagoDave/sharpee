@@ -68,12 +68,12 @@ the grille.
 An `on` clause does not have to refuse. If it prints a phrase and lets the
 action go on, the phrase replaces what the action would have said.
 
-The kindle page was `readable with text` in the last chapter, and reading it
+The spark page was `readable with text` in the last chapter, and reading it
 printed the standard sentence followed by that text. Take the text away and
 give the page a clause.
 
 ```chord
-create the kindle page
+create the spark page
   aka first page, leaf
   a thing, readable
   on the reading desk
@@ -83,14 +83,14 @@ create the kindle page
   complete.
 
   on the player reading
-    change the kindle page to learned
-    phrase kindle-learned
+    change the spark page to learned
+    phrase spark-learned
   end on
 ```
 
 ```chord
 define phrases en-US
-  kindle-learned:
+  spark-learned:
     You read the line once, and it reads you back. The word for waking a
     flame settles into the place it left thirty years ago, as if it had
     only stepped out.
@@ -102,9 +102,9 @@ prints a piece of text.
 
 ```text
 > read page
-(first taking the kindle page)
+(first taking the spark page)
 
-You take the kindle page from the reading desk.
+You take the spark page from the reading desk.
 
 You read the line once, and it reads you back. The word for waking a flame settles into the place it left thirty years ago, as if it had only stepped out.
 ```
@@ -275,7 +275,7 @@ create the Library, a room
 Library
 The reading room of Lanternhall, with its desks in rows and its galleries of shelves. The stacks run back to the north, out of the light. The cloister is east.
 
-On the reading desk you see a grimoire and a kindle page.
+On the reading desk you see a grimoire and a spark page.
 
 There is a smell in here that was not here thirty years ago, or was here and you had forgotten it. It is wet ink.
 ```
@@ -331,9 +331,9 @@ Copy `relighting.story` from the companion folder `chapter-14` over your own
 file. It is the story with this chapter's changes made, and it holds the
 phrases, which the chapter did not print in full. To make the changes by hand
 instead, work from this list and take the phrases from that file: add the
-clauses to the kettle, the spectacles, the Library, the kindle page, the bell
+clauses to the kettle, the spectacles, the Library, the spark page, the bell
 rope, the grille, the lens and Ansel, add their eight phrases, and remove
-`with text` and its string from the kindle page.
+`with text` and its string from the spark page.
 
 ```shell
 sharpee compose relighting.story --check

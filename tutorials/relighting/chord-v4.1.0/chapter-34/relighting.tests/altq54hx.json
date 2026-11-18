@@ -171,7 +171,7 @@
           "there is a seat for a lens with no lens in it."
         ]
       },
-      "command": "kindle lantern",
+      "command": "spark lantern",
       "id": "6nggksn2",
       "type": "turn"
     },
@@ -251,7 +251,7 @@
           "The shutters are closed round it."
         ]
       },
-      "command": "kindle lantern",
+      "command": "spark lantern",
       "id": "er8ksu49",
       "type": "turn"
     },
@@ -302,7 +302,7 @@
           "the story is awake"
         ]
       },
-      "command": "kindle lantern",
+      "command": "spark lantern",
       "id": "6j2ki55p",
       "type": "turn"
     },
@@ -458,7 +458,7 @@
           "You have risen to the rank of a Lamplighter."
         ]
       },
-      "command": "kindle beacon",
+      "command": "spark beacon",
       "ending": "beacon-lit",
       "id": "kaakxmr8",
       "type": "turn"

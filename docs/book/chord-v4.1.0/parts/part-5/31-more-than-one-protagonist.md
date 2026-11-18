@@ -281,7 +281,7 @@ sharpee compose relighting.story --check
 sharpee play .
 ```
 
-Read the kindle page and play four more turns. The timer speaks on the
+Read the spark page and play four more turns. The timer speaks on the
 first three, and it expires on the fourth, when the bell begins to toll.
 When you are Hobb, try the
 door, take the kettle because you can, and then look through the

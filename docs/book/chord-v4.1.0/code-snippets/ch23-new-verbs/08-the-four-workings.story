@@ -1,11 +1,11 @@
-define action kindling
+define action sparking
   grammar
-    kindle the target
-    kindle
+    spark the target
+    spark
   refuse without target: working-wants-a-thing
   the target must be reachable
-  the kindle page must be learned: no-such-word
-  otherwise refuse nothing-to-kindle
+  the spark page must be learned: no-such-word
+  otherwise refuse nothing-to-spark
 
 define action hushing
   grammar

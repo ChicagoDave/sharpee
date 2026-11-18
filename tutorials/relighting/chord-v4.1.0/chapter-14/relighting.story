@@ -304,7 +304,7 @@ create the grimoire
   are blank, or were. Here and there a line of ink has come back, as
   frost comes onto a window. Someone has written in one margin.
 
-create the kindle page
+create the spark page
   aka first page, leaf
   a thing, readable
   on the reading desk
@@ -314,8 +314,8 @@ create the kindle page
   complete.
 
   on the player reading
-    change the kindle page to learned
-    phrase kindle-learned
+    change the spark page to learned
+    phrase spark-learned
   end on
 
 create the cistern
@@ -405,7 +405,7 @@ define phrases en-US
   library-ink:
     There is a smell in here that was not here thirty years ago, or was
     here and you had forgotten it. It is wet ink.
-  kindle-learned:
+  spark-learned:
     You read the line once, and it reads you back. The word for waking a
     flame settles into the place it left thirty years ago, as if it had
     only stepped out.

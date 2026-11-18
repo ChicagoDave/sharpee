@@ -1,7 +1,7 @@
 # New kinds of thing
 
 The last chapter ended with four verbs and nothing to use them on. The
-kindling action knows who may kindle. It does not know what a flame does to
+sparking action knows who may spark. It does not know what a flame does to
 a lamp, and it has been forbidden to find out.
 
 That knowledge goes in a **trait**. You have used traits since chapter 6
@@ -13,15 +13,15 @@ them, and at the end of it The Relighting can be won.
 ## A trait that answers a verb
 
 Three things in Lanternhall take a flame: the hand lamp, the refectory
-candles and the Great Lantern. What happens when one of them is kindled is
+candles and the Great Lantern. What happens when one of them is sparked is
 the same in each case, so it is written once.
 
 ```chord
 define trait wick
-  on the player kindling
+  on the player sparking
     refuse when it is lit: already-burning
     change it to lit
-    phrase kindled
+    phrase sparked
   end on
 end trait
 ```
@@ -52,25 +52,25 @@ create the hand lamp
 
 Your trait word sits beside the platform's, and reads the same way. The
 lamp's own `on the player lighting` clause, with its requirement about the
-page, is gone. The kindling action carries that requirement now.
+page, is gone. The sparking action carries that requirement now.
 
 ```text
-> kindle lamp
+> spark lamp
 You say the word. A flame stands up on the wick, blue at first, as if it had been waiting there with its coat on.
 
 Somewhere above you, old timber takes a weight it had forgotten.
 
-> kindle lamp
+> spark lamp
 It is burning already, and the word slides off it.
 
 A slow draught moves through the Hall, one way and then the other.
 ```
 
 Follow the command through, because this is the centre of the language. The
-player types `kindle lamp`. The kindling action checks its own lines: the
+player types `spark lamp`. The sparking action checks its own lines: the
 lamp is reachable and the page has been learned. It then asks the lamp for
 an answer. The lamp has the `wick` trait, and the trait has a clause for
-kindling, so that clause runs with `it` meaning the lamp. Had the player
+sparking, so that clause runs with `it` meaning the lamp. Had the player
 named the grimoire, there would be no such clause, and the action's
 `otherwise refuse` line would speak.
 
@@ -96,22 +96,22 @@ create the candles
 
   Stubs of tallow in iron prickets down the middle of each table.
 
-  after the player kindling
+  after the player sparking
     move the unbind page here
     award supper-lit
     phrase candles-catch
   end after
 ```
 
-The candles' `after` clause used to say `lighting`. It now says `kindling`,
+The candles' `after` clause used to say `lighting`. It now says `sparking`,
 and it is still in the candles' own block. This is the half of the rule that
 the last chapter's error message spelled out. A thing may not answer one of
 your actions with an `on` clause of its own, and it may react to one with an
-`after` clause. The trait says what kindling does to any wick. The candles
+`after` clause. The trait says what sparking does to any wick. The candles
 say what follows when these particular wicks catch.
 
 ```text
-> kindle candles
+> spark candles
 You say the word. A flame stands up on the wick, blue at first, as if it had been waiting there with its coat on.
 
 The flame runs down the length of the table, and every cold wick takes it. In the candlelight there is a leaf of paper under the middle pricket that the daylight did not show.
@@ -130,10 +130,10 @@ do the same for every wick at once.
 
 ```chord
 define trait wick
-  on the player kindling
+  on the player sparking
     refuse when it is lit: already-burning
     change it to lit
-    phrase kindled
+    phrase sparked
   end on
 
   on the player lighting
@@ -151,21 +151,21 @@ The tower bell strikes once, and the sound goes through the stones under your fe
 
 A trait may hold clauses for any actions, standard or your own, and several
 of each kind. The next chapter closes this hole in a better way, by teaching
-the story that `light` means kindle.
+the story that `light` means spark.
 
 ## A trait with one thing
 
 The Great Lantern needs one thing more than the lamp does. It must not be
-kindled without its lens. That used to be a `must` line in the Lantern's own
+sparked without its lens. That used to be a `must` line in the Lantern's own
 `on the player lighting` clause, and a thing's own `on` clause cannot answer
-kindling.
+sparking.
 
 So the requirement becomes a trait, even though only the Lantern will ever
 have it.
 
 ```chord
 define trait lens-seat
-  on the player kindling
+  on the player sparking
     the lens must be in the Great Lantern: lantern-empty
   end on
 end trait
@@ -183,7 +183,7 @@ create the Great Lantern
   for a lens and a wick as thick as your arm. Nothing has burned in it
   for thirty years.
 
-  after the player kindling
+  after the player sparking
     lose lens-shatters when not lantern-ready
     change the story to awake when lantern-ready
     award relit when lantern-ready
@@ -195,7 +195,7 @@ A trait with a single carrier is ordinary in Chord and nothing to be tidied
 away. It is how a thing answers one of your verbs in a way no other thing
 does.
 
-The Lantern has two traits that answer kindling, and both of them answer.
+The Lantern has two traits that answer sparking, and both of them answer.
 Their clauses are taken in the order the trait words stand on the kind line,
 in two passes. First every clause's refusals and requirements are settled.
 Only when none of them refuses does any clause's body run. So an empty
@@ -208,7 +208,7 @@ the command goes through, the bodies run in the same order, and so do their
 phrases.
 
 ```text
-> kindle lantern
+> spark lantern
 There is a wick, and there is a seat for a lens with no lens in it. A flame here would light the roof and nothing else.
 ```
 
@@ -463,7 +463,7 @@ and the Lantern, with `lens-seat` before it on the Lantern. Give `mendable`
 to the lens and the spectacles, `hushable` to the bell and `ward` to the
 grille. Remove the three `on the player lighting` clauses from the lamp, the
 candles and the Lantern, and change the candles' and the Lantern's `after`
-clauses to `kindling`. Remove the lens's `states` line. Lengthen the rank
+clauses to `sparking`. Remove the lens's `states` line. Lengthen the rank
 ladder to its final form: Journeyman at 30, Lamplighter at 50. There are
 nine new phrases.
 
@@ -473,12 +473,12 @@ sharpee play .
 ```
 
 The game can be played to its end for the first time. Read the first page.
-Kindle the lamp and the candles. Find the three other pages and read them.
+Spark the lamp and the candles. Find the three other pages and read them.
 Hush the bell, unbind the grille, mend the lens, carry it to the roof and
 seat it.
 
 ```text
-> kindle lantern
+> spark lantern
 You say the word. A flame stands up on the wick, blue at first, as if it had been waiting there with its coat on.
 
 The lens gathers the flame and sends it out over the valley in one white bar. Down in the Hall, every blank page begins to fill.
@@ -493,7 +493,7 @@ Then play it again and leave the lens cracked.
 ::: under-the-hood
 **Under the Hood: capability** · Story IR `traits`
 
-Find `wick` under `traits` in the compiled IR and look at its kindling
+Find `wick` under `traits` in the compiled IR and look at its sparking
 clause. One of its fields reads `"routing": "capability"`. That is the
 platform's name for what this chapter has been doing. A trait declares that
 it is capable of answering an action, and the action asks every trait of the
@@ -507,8 +507,8 @@ why they sit side by side on a kind line.
 **From another system: kinds and classes**
 
 In Inform 10 you would say "A wick is a kind of thing" and write rules for
-kindling a wick. In TADS 3 you would define a `Wick` class and give it a
-`dobjFor(Kindle)` block, and an object could list several classes. Chord's
+sparking a wick. In TADS 3 you would define a `Wick` class and give it a
+`dobjFor(Spark)` block, and an object could list several classes. Chord's
 trait is nearer to the TADS class used as a mix-in. A thing has exactly one
 kind, such as `a thing` or `a container`, and any number of traits. Traits
 do not inherit from one another. What several traits share, they share by

@@ -219,7 +219,7 @@
           "the story is waking"
         ]
       },
-      "command": "read kindle page",
+      "command": "read spark page",
       "id": "fzjk5vi8",
       "type": "turn"
     },

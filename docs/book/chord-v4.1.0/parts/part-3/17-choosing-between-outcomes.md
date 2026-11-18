@@ -12,20 +12,20 @@ turn, or by chance. One chooses by how many times the clause has run.
 ## Choosing by state: select on
 
 A `select on` block names a thing's state and gives one **arm** for each
-value you care about. Here is the kindle page's clause again.
+value you care about. Here is the spark page's clause again.
 
 ```chord
   on the player reading
-    select on the kindle page's state
+    select on the spark page's state
       when legible
-        change the kindle page to learned
+        change the spark page to learned
         change the story to waking
-        phrase kindle-learned
+        phrase spark-learned
         each faded-page
           change the match to legible
         end each
       when learned
-        phrase kindle-known
+        phrase spark-known
     end select
   end on
 ```
@@ -38,7 +38,7 @@ Exactly one arm runs: the one for the state the page is in when the block
 is reached. That removes both of the costs chapter 15 warned about. No
 condition is repeated, and the order of the statements inside an arm no
 longer matters to the choice, because the choice has been made before any of
-them runs. The `change the kindle page to learned` line can now stand first,
+them runs. The `change the spark page to learned` line can now stand first,
 where a reader expects it.
 
 You do not have to give an arm for every state. A state with no arm does
@@ -269,7 +269,7 @@ Copy `relighting.story` from the companion folder `chapter-17` over your own
 file. It is the story with this chapter's changes made, and it holds the
 phrases and the unbind page's clause, which the chapter did not print. To
 make the changes by hand instead, work from this list and take the rest from
-that file: rewrite the reading clauses of the kindle, hush and unbind pages
+that file: rewrite the reading clauses of the spark, hush and unbind pages
 with `select on`, move the frozen sentence out of the cistern's description
 and give the cistern its clause, and put the `select cycling` block in the
 bell rope's clause and the three counted blocks on the grille. There are
@@ -284,8 +284,8 @@ sharpee play .
 **Under the Hood: a branch is a test** · `sharpee test`
 
 The derived tests of chapter 15 follow the branches. Run `sharpee test .`
-inside the companion folder `chapter-17` and you will see one line for each arm: "kindle page · on reading · when
-legible", "kindle page · on reading · when learned", "iron grille · after
+inside the companion folder `chapter-17` and you will see one line for each arm: "spark page · on reading · when
+legible", "spark page · on reading · when learned", "iron grille · after
 examining · the third time". For a `select on` the runner puts the thing in
 the arm's state before it types the command, which is something it can do
 only because the states are declared. An arm you never reach in play is

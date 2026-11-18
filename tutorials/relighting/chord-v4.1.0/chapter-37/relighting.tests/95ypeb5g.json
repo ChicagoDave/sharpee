@@ -153,7 +153,7 @@
         "channels": [
           {
             "contains": [
-              "kindle: wakes a flame"
+              "spark: wakes a flame"
             ],
             "id": "workings"
           }
@@ -162,7 +162,7 @@
           "The word for waking a flame settles into the place it left thirty years ago"
         ]
       },
-      "command": "read kindle page",
+      "command": "read spark page",
       "id": "6hc6wv54",
       "type": "turn"
     },

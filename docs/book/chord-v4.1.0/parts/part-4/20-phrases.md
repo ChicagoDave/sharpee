@@ -355,7 +355,7 @@ Both ways of declaring a phrase end up in one table in the compiled IR,
 keyed by language and then by phrase key. Each entry has a `strategy`, which
 is empty for a plain phrase, and a list of `variants`, each with its text
 and the markers found in it. Descriptions are in the same table under keys
-the compiler makes up, such as `kindle-page.description`, which is why a
+the compiler makes up, such as `spark-page.description`, which is why a
 description and a phrase can be treated so alike.
 :::
 

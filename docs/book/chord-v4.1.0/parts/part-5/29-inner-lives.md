@@ -302,7 +302,7 @@ sharpee play .
 
 Ask Hobb about the Dimming and then about last night. Then find his
 spectacles, give them to him as they are, and ask again. Do this before you
-read the kindle page. Hobb trusts whoever puts the spectacles on his nose,
+read the spark page. Hobb trusts whoever puts the spectacles on his nose,
 mended or not, and while the Hall is quiet he answers as the blocks above
 show. Once the bell has begun he is rattled, and he answers the same
 questions with one hand over an ear.

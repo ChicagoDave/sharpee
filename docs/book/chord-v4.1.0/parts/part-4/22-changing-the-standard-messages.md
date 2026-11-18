@@ -213,7 +213,7 @@ takes the entry from the first book whose condition holds. A book with no
 It does not so much as rattle.
 ```
 
-After the kindle page has been read:
+After the spark page has been read:
 
 ```text
 > push grille

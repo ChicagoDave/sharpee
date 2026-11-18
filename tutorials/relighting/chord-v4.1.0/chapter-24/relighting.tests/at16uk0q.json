@@ -140,7 +140,7 @@
           "The word for waking a flame settles into the place it left thirty years ago"
         ]
       },
-      "command": "read kindle page",
+      "command": "read spark page",
       "id": "hm9oitx6",
       "type": "turn"
     },
@@ -150,7 +150,7 @@
           "You say the word. A flame stands up on the wick, blue at first"
         ]
       },
-      "command": "kindle lamp",
+      "command": "spark lamp",
       "id": "a53f329s",
       "type": "turn"
     },
@@ -160,7 +160,7 @@
           "It is burning already, and the word slides off it."
         ]
       },
-      "command": "kindle lamp",
+      "command": "spark lamp",
       "id": "1qengioi",
       "type": "turn"
     },
@@ -272,7 +272,7 @@
           "You have risen to the rank of a Second-Year."
         ]
       },
-      "command": "kindle candles",
+      "command": "spark candles",
       "id": "azxbk6r1",
       "type": "turn"
     },

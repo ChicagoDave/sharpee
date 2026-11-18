@@ -78,7 +78,7 @@ create the tower bell
 ```
 
 ```chord
-create the kindle page
+create the spark page
   aka first page, leaf
   a thing, readable with text "One line, in ink that is still wet. It is a single word, and it will not stay in your head."
   on the reading desk
@@ -270,7 +270,7 @@ Copy `relighting.story` from the companion folder `chapter-13` over your own
 file. It is the story with this chapter's changes made. To make the changes
 by hand instead, work from this list and take the rest from that file: add
 the `states` line to the header and to the grille and the lens, add the
-cistern, the tower bell and the kindle page, put the `while` condition on the
+cistern, the tower bell and the spark page, put the `while` condition on the
 Bell Stair's blocked line, and raise `story-version` to `0.3.0`, because this
 is the first chapter of Part III.
 
@@ -285,11 +285,11 @@ and reading it teaches nothing.
 
 ```text
 > read page
-(first taking the kindle page)
+(first taking the spark page)
 
-You take the kindle page from the reading desk.
+You take the spark page from the reading desk.
 
-The kindle page reads:
+The spark page reads:
 One line, in ink that is still wet. It is a single word, and it will not stay in your head.
 ```
 

@@ -6,14 +6,14 @@ claims
   claim the ward on the stair can be lifted
     the iron grille is lifted
     needs rooms: the Lodge, the Gate Court, the Cloister, the Refectory, the Library, the Bell Stair
-    needs things: Hobb, the kettle, the chair, the spectacles, the hand lamp, the oak press, the library key, Tamsin Vey, the unbind page, the library door, the grimoire, the kindle page, the hush page, the mend page, the wisp, the wax taper, the tower bell, the newspapers, the candles, the iron grille
-    needs verbs: talk to, ask, tell, goodbye, sit on, exit, search, take, examine, open, wait, say, answer, unlock, consult, look up, read, light, kindle, look, inventory, unbind, quiet, hush
+    needs things: Hobb, the kettle, the chair, the spectacles, the hand lamp, the oak press, the library key, Tamsin Vey, the unbind page, the library door, the grimoire, the spark page, the hush page, the mend page, the wisp, the wax taper, the tower bell, the newspapers, the candles, the iron grille
+    needs verbs: talk to, ask, tell, goodbye, sit on, exit, search, take, examine, open, wait, say, answer, unlock, consult, look up, read, light, spark, look, inventory, unbind, quiet, hush
 
   claim the story can be won
     the story ends in victory
     needs rooms: the Lodge, the Gate Court, the Cloister, the Refectory, the Library, the Bell Stair, the Undercroft, the Lantern Gallery, the Water Stair, the Beacon Isle
-    needs things: Hobb, the spectacles, the hand lamp, the oak press, the library key, Tamsin Vey, the unbind page, the library door, the kindle page, the hush page, the mend page, the tower bell, the newspapers, the candles, the iron grille, the cistern, the crate, the lens, the book hoist, the shutter crank, the shutter, the Great Lantern, the Mere, the skiff, the beacon
-    needs verbs: talk to, ask, say, take, open, unlock, read, light, kindle, examine, wait, unbind, quiet, fix, repair, turn, push, enter, steer, make sail, exit
+    needs things: Hobb, the spectacles, the hand lamp, the oak press, the library key, Tamsin Vey, the unbind page, the library door, the spark page, the hush page, the mend page, the tower bell, the newspapers, the candles, the iron grille, the cistern, the crate, the lens, the book hoist, the shutter crank, the shutter, the Great Lantern, the Mere, the skiff, the beacon
+    needs verbs: talk to, ask, say, take, open, unlock, read, light, spark, examine, wait, unbind, quiet, fix, repair, turn, push, enter, steer, make sail, exit
 
   claim the cake can be eaten
     the seed cake has been eaten

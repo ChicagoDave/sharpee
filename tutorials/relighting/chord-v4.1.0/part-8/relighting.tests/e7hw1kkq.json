@@ -5,7 +5,7 @@
         "channels": [
           {
             "contains": [
-              "kindle: wakes a flame"
+              "spark: wakes a flame"
             ],
             "id": "workings"
           }
@@ -14,10 +14,10 @@
           "The word for waking a flame settles into the place it left thirty years ago"
         ],
         "states": [
-          "the kindle page is learned"
+          "the spark page is learned"
         ]
       },
-      "command": "read kindle page",
+      "command": "read spark page",
       "id": "yj1eg8of",
       "type": "turn"
     },
@@ -28,7 +28,7 @@
           "Something small and blue comes loose from the flame"
         ]
       },
-      "command": "kindle lamp",
+      "command": "spark lamp",
       "id": "slvmgdd9",
       "type": "turn"
     },

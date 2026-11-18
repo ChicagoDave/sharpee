@@ -1,6 +1,6 @@
   on the player reading
-    phrase kindle-known when the kindle page is learned
-    phrase kindle-learned when the kindle page is legible
-    change the story to waking when the kindle page is legible
-    change the kindle page to learned
+    phrase spark-known when the spark page is learned
+    phrase spark-learned when the spark page is legible
+    change the story to waking when the spark page is legible
+    change the spark page to learned
   end on

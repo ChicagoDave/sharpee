@@ -27,7 +27,7 @@ create the hand lamp
   clean, which is Hobb all over.
 
   on the player lighting
-    the kindle page must be learned: no-such-word
+    the spark page must be learned: no-such-word
   end on
 
   phrase detail while the hand lamp is lit:
@@ -43,7 +43,7 @@ the end of the description.
 A tin hand lamp with a wire handle. Its wick is dry and its glass is clean, which is Hobb all over.
 ```
 
-Read the kindle page, light the lamp and look again. The Hall's waking timer
+Read the spark page, light the lamp and look again. The Hall's waking timer
 is running by then, and it has its say at the end of each turn.
 
 ```text

@@ -6,7 +6,7 @@ create the candles
 
   Stubs of tallow in iron prickets down the middle of each table.
 
-  after the player kindling
+  after the player sparking
     move the unbind page here
     award supper-lit
     phrase candles-catch

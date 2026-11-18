@@ -43,7 +43,7 @@ was rewritten after run 1, on the two rulings it quotes.
 6. **Text that varies on purpose.** Where a chapter teaches a choice that
    cycles, is random, or changes after the first time (chapters 17 and 20, and
    every clause built on them afterwards), the wording differs between turns.
-   Three more cases the book states: after the kindle page is read, every
+   Three more cases the book states: after the spark page is read, every
    turn ends with one line from the waking timer or the bell, and which line
    depends on the turn (chapter 19); a fight under `use combat` is rolled
    afresh by each `sharpee play` (chapter 35); and an empty inventory is
@@ -57,7 +57,12 @@ was rewritten after run 1, on the two rulings it quotes.
    `Chord 4.1.0` wherever a command prints its version (chapter 4's
    `--version` line and every `compose:` line). A run on the interim release
    prints `Sharpee 5.6.2 · Chord 4.0.3` and `Chord 4.0.3` in those places.
-   Report only a difference in such a line beyond the two numbers. This item
+   Report only a difference in such a line beyond the two numbers. The same
+   holds for the line at the head of each appendix that begins "Generated
+   from": the appendices were generated on the interim release, so those
+   lines read `Sharpee 5.6.2 · Chord 4.0.3` while the title page names 5.7.0
+   and 4.1.0 (David, 2026-11-17, on run 3's one reported issue: "1 a"). The
+   appendices are regenerated when that release is published (#755). This item
    and the expected line below go back to 5.7.0 / 4.1.0 when that release is
    published.
 

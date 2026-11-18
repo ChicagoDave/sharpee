@@ -7,7 +7,7 @@ create the beacon
   An iron basket on a pole, packed with pitch-pine that has had thirty
   years to dry.
 
-  after the player kindling
+  after the player sparking
     award answered
     win beacon-lit
   end after

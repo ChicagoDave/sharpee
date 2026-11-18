@@ -166,7 +166,7 @@ create the lens, a thing
 
   A thing.
 
-create the kindle page, a thing
+create the spark page, a thing
   in the Yard
 
   A thing.

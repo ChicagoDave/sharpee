@@ -192,12 +192,12 @@
           "The word for waking a flame settles into the place it left thirty years ago"
         ],
         "states": [
-          "the kindle page is learned",
+          "the spark page is learned",
           "the hush page is legible",
           "the unbind page is legible"
         ]
       },
-      "command": "read kindle page",
+      "command": "read spark page",
       "id": "he1qaxpi",
       "type": "turn"
     },

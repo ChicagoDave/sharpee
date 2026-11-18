@@ -85,7 +85,7 @@
           "there is a seat for a lens with no lens in it."
         ]
       },
-      "command": "kindle lantern",
+      "command": "spark lantern",
       "id": "26gb3k6i",
       "type": "turn"
     },
@@ -150,7 +150,7 @@
           "The shutters are closed round it."
         ]
       },
-      "command": "kindle lantern",
+      "command": "spark lantern",
       "id": "feddgerl",
       "type": "turn"
     },
@@ -201,7 +201,7 @@
           "the story is awake"
         ]
       },
-      "command": "kindle lantern",
+      "command": "spark lantern",
       "ending": "lantern-lit",
       "id": "mahdm0ib",
       "type": "turn"

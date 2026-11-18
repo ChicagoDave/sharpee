@@ -81,7 +81,7 @@ command is answered first, and the cistern is still `thawing` when it is
 examined. Then the every-turn clause runs and the ice goes.
 
 Three lines in that block are not the cistern's. The lamp will not light
-until the kindle page has been read, and reading the page sets the bell
+until the spark page has been read, and reading the page sets the bell
 going, so by the time lamplight reaches the Undercroft the bell is striking
 and tolling. The next section is about that. The last line is chapter 18's
 rank, earned by `award thaw`. If you lit the candles on the way, you had
@@ -120,17 +120,17 @@ a name is printed on the turn the timer reaches it. A name with no text is a
 silent turn.
 
 A timer does nothing until it is started, and it is started with a
-statement. The kindle page starts this one, in the arm for its first
+statement. The spark page starts this one, in the arm for its first
 reading.
 
 ```chord
       when legible
-        change the kindle page to learned
+        change the spark page to learned
         change the story to waking
         start waking
         raise workings by 1
         award first-working
-        phrase kindle-learned
+        phrase spark-learned
 ```
 
 On the turns that follow, the timer speaks, whatever the player is doing.
@@ -193,7 +193,7 @@ and it arrives in chapter 24. Until then Lanternhall is a noisy place to
 test in, which is some encouragement to get there.
 
 It also means that from here to the end of the book, any reply quoted from
-a game in which the kindle page has been read ends with one more line. It
+a game in which the spark page has been read ends with one more line. It
 is one of the timer's three on the first three turns after the reading, and
 one of the bell's three after that, until the bell is hushed. The blocks in
 this book print the line that came when the block was recorded. Yours will

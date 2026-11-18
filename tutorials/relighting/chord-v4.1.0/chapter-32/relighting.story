@@ -1,7 +1,7 @@
 ## The Relighting, as it stands at the end of chapter 32: the Lantern's
 ## shutters are a machine. A crank works them from shut to half to
 ## drawn, the last notch will not go without a lens in the seat, and the
-## Lantern cannot be kindled until they are drawn.
+## Lantern cannot be sparked until they are drawn.
 
 ## A mood of the story's own: nervous, and a shade darker.
 
@@ -103,10 +103,10 @@ end phrasebook
 ## names. Inside a trait, `it` is whichever thing that is.
 
 define trait wick
-  on the player kindling
+  on the player sparking
     refuse when it is lit: already-burning
     change it to lit
-    phrase kindled
+    phrase sparked
   end on
 
   on the player lighting
@@ -115,7 +115,7 @@ define trait wick
 end trait
 
 define trait lens-seat
-  on the player kindling
+  on the player sparking
     the lens must be in the Great Lantern: lantern-empty
     the shutter must be drawn: lantern-shuttered
   end on
@@ -164,14 +164,14 @@ end trait
 ## The workings. An action says what the player may type and what must
 ## be true of the player. It never asks which thing was named.
 
-define action kindling
+define action sparking
   grammar
-    kindle the target
-    kindle
+    spark the target
+    spark
   refuse without target: working-wants-a-thing
   the target must be reachable
-  the kindle page must be learned: no-such-word
-  otherwise refuse nothing-to-kindle
+  the spark page must be learned: no-such-word
+  otherwise refuse nothing-to-spark
 
 define action mending
   grammar
@@ -201,13 +201,13 @@ define action unbinding
   otherwise refuse nothing-to-unbind
 
 ## Bending the standard grammar. `light the lamp` is taken away from the
-## standard lighting action and given to kindling, so the word is the
+## standard lighting action and given to sparking, so the word is the
 ## only way to a flame. The plainer synonyms live in a file of their own.
 
 remove from action lighting
   light the target
 
-extend action kindling
+extend action sparking
   grammar
     light the target
 
@@ -508,7 +508,7 @@ create the hand lamp
   phrase detail while the hand lamp is lit:
     It is burning with a small flame, and the flame is blue.
 
-  after the player kindling, once
+  after the player sparking, once
     move the wisp here
     phrase wisp-arrives
   end after
@@ -610,7 +610,7 @@ create the Great Lantern
   for a lens and a wick as thick as your arm. Nothing has burned in it
   for thirty years.
 
-  after the player kindling
+  after the player sparking
     lose lens-shatters when not lantern-ready
     change the story to awake when lantern-ready
     award relit when lantern-ready
@@ -648,7 +648,7 @@ create the candles
 
   Stubs of tallow in iron prickets down the middle of each table.
 
-  after the player kindling
+  after the player sparking
     award supper-lit
     phrase candles-catch
   end after
@@ -733,7 +733,7 @@ create the grimoire
     phrase grimoire-half when workings is at least 2
   end after
 
-create the kindle page
+create the spark page
   aka first page, leaf
   a thing, readable
   on the reading desk
@@ -744,19 +744,19 @@ create the kindle page
   complete.
 
   on the player reading
-    select on the kindle page's state
+    select on the spark page's state
       when legible
-        change the kindle page to learned
+        change the spark page to learned
         change the story to waking
         start waking
         raise workings by 1
         award first-working
-        phrase kindle-learned
+        phrase spark-learned
         each faded-page
           change the match to legible
         end each
       when learned
-        phrase kindle-known
+        phrase spark-known
     end select
   end on
 
@@ -954,7 +954,7 @@ create Tamsin Vey
   end goal
 
 create the wisp
-  aka light, spark
+  aka light
   a person, follower
   pronouns it
 
@@ -1066,8 +1066,8 @@ end initiative
 define topics for the grimoire
   about "gnusto":
     phrase grimoire-on-gnusto
-  about "kindle", "kindling", "flame":
-    phrase grimoire-on-kindle
+  about "spark", "sparking", "flame":
+    phrase grimoire-on-spark
 end topics
 
 create the travelling coat
@@ -1216,7 +1216,7 @@ define phrases en-US
     You turn to the margin again. The note is all there is: came over
     the water as a working, meaning lost. Whoever wrote it underlined
     "lost" twice.
-  grimoire-on-kindle:
+  grimoire-on-spark:
     The book falls open where the loose leaf came from. The stub of the
     page is there, and nothing is written on the stub.
   wisp-arrives:
@@ -1248,7 +1248,7 @@ define phrases en-US
   library-ink:
     There is a smell in here that was not here thirty years ago, or was
     here and you had forgotten it. It is wet ink.
-  kindle-learned:
+  spark-learned:
     You read the line once, and it reads you back. The word for waking a
     flame settles into the place it left thirty years ago, as if it had
     only stepped out.
@@ -1312,7 +1312,7 @@ define phrases en-US
     has heard it all before.
   already-burning:
     It is burning already, and the word slides off it.
-  kindled:
+  sparked:
     You say the word. A flame stands up on the wick, blue at first, as
     if it had been waiting there with its coat on.
   light-needs-the-word:
@@ -1334,7 +1334,7 @@ define phrases en-US
   ward-lifts:
     You say the word. The grille is not there, in the manner of a thing
     that was never there, and the stair goes up.
-  nothing-to-kindle:
+  nothing-to-spark:
     There is nothing in that for a flame to stand on.
   nothing-to-mend:
     That was never one thing to begin with.
@@ -1380,7 +1380,7 @@ define phrases en-US
   hobb-deafened:
     Hobb has his hands over his ears. He says something, and the bell
     says something louder.
-  kindle-known:
+  spark-known:
     You know it. You are not likely to lose it twice.
   page-blank:
     The leaf is blank on both sides. You hold it up to the light, and it

@@ -1,4 +1,4 @@
-after the player kindling
+after the player sparking
   award answered
   hide image
   win beacon-lit

@@ -6,10 +6,10 @@
           "You reach for the word and find only the place where it was."
         ],
         "states": [
-          "the kindle page is legible"
+          "the spark page is legible"
         ]
       },
-      "command": "kindle lamp",
+      "command": "spark lamp",
       "id": "57nje8c5",
       "type": "turn"
     },

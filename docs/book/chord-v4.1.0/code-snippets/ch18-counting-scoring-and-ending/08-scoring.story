@@ -1,4 +1,4 @@
-create the kindle page
+create the spark page
   aka first page, leaf
   a thing, readable
   on the reading desk

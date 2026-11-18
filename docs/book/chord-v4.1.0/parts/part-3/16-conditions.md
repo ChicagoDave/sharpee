@@ -89,7 +89,7 @@ nothing. It is a name for a question, and the answer is always current.
 
 ## Conditions with a gap: it
 
-The pages of the grimoire did not all come back at once. The kindle page is
+The pages of the grimoire did not all come back at once. The spark page is
 legible this morning. The other pages are still faded, and the ink returns
 to them when the first working is read. So two more pages get a new first
 state.
@@ -158,21 +158,21 @@ written inside a clause. It names an open condition, and its lines run once
 for each thing the condition holds for. Inside the block, the words `the
 match` stand for that thing.
 
-Reading the kindle page is what brings the ink back.
+Reading the spark page is what brings the ink back.
 
 ```chord
   on the player reading
-    phrase kindle-known when the kindle page is learned
-    phrase kindle-learned when the kindle page is legible
-    change the story to waking when the kindle page is legible
-    change the kindle page to learned
+    phrase spark-known when the spark page is learned
+    phrase spark-learned when the spark page is legible
+    change the story to waking when the spark page is legible
+    change the spark page to learned
     each faded-page
       change the match to legible
     end each
   end on
 ```
 
-The block closes with `end each`. When the player reads the kindle page, the
+The block closes with `end each`. When the player reads the spark page, the
 hush page and the unbind page both become `legible`, in the same turn,
 wherever they are. If a later chapter adds a fifth page with a `faded`
 state, this clause will wake it too, and nobody will have to remember to
@@ -199,7 +199,7 @@ A player who goes straight to the stacks finds the page and cannot read it.
 The leaf is blank on both sides. You hold it up to the light, and it is still blank, but the paper has the look of a held breath.
 ```
 
-After the kindle page has been read, the same command works.
+After the spark page has been read, the same command works.
 
 ```text
 > read hush page
@@ -245,7 +245,7 @@ phrases and the unbind page's clause, which the chapter did not print. To
 make the changes by hand instead, work from this list and take the rest from
 that file: add the two `define condition` lines near the top of the file,
 after the header, add the hush page, give the unbind page its states and its
-clause in place of `with text`, and add the `each` block to the kindle page
+clause in place of `with text`, and add the `each` block to the spark page
 and the `after` clause to the grimoire. There are seven new phrases.
 
 ```shell
@@ -254,7 +254,7 @@ sharpee play .
 ```
 
 Walk to the third stack before you read anything, try the hush page, and
-then come back for the kindle page. The order matters now, and the story
+then come back for the spark page. The order matters now, and the story
 knows it.
 
 ::: under-the-hood

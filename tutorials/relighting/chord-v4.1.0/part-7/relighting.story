@@ -1,5 +1,5 @@
 ## The Relighting, as it stands at the end of Part VII: presentation.
-## The bell and the kindling have sounds, the lit Lantern has a picture,
+## The bell and the sparking have sounds, the lit Lantern has a picture,
 ## the Mere has water under it, and a panel beside the story lists the
 ## workings Ansel has read. The header says how the page is dressed.
 
@@ -83,7 +83,7 @@ or
 end phrase
 
 ## The traits. A thing that composes one of these answers the working
-## of the same name; `it` is whichever thing that is. Kindle has none:
+## of the same name; `it` is whichever thing that is. Spark has none:
 ## each thing that takes a flame asks for the word in its own block.
 
 define trait mendable
@@ -125,7 +125,7 @@ end trait
 
 extend action lighting
   grammar
-    kindle the target
+    spark the target
 
 define action mending
   grammar
@@ -155,7 +155,7 @@ extend action entering
   grammar
     sit on or in the portal
 
-## Kindle borrows the standard lighting action, so its words are the
+## Spark borrows the standard lighting action, so its words are the
 ## standard messages, said this story's way.
 
 override message lighting-lit
@@ -398,7 +398,7 @@ create the beacon
   years to dry.
 
   on the player lighting
-    the kindle page must be learned: no-such-word
+    the spark page must be learned: no-such-word
   end on
 
   after the player lighting
@@ -489,7 +489,7 @@ create the hand lamp
   clean, which is Hobb all over.
 
   on the player lighting
-    the kindle page must be learned: no-such-word
+    the spark page must be learned: no-such-word
   end on
 
   after the player lighting
@@ -537,7 +537,7 @@ create the candles
   has put a flame to them since the last supper of the last term.
 
   on the player lighting
-    the kindle page must be learned: no-such-word
+    the spark page must be learned: no-such-word
   end on
 
   after the player lighting
@@ -562,7 +562,7 @@ create the grimoire
   are blank, or were. Here and there a line of ink has come back, as
   frost comes onto a window.
 
-create the kindle page
+create the spark page
   aka first page
   a thing, readable
   on the reading desk
@@ -573,16 +573,16 @@ create the kindle page
   complete, and still a little wet.
 
   on the player reading
-    select on the kindle page's state
+    select on the spark page's state
       when legible
-        change the kindle page to learned
+        change the spark page to learned
         change the story to waking
         start waking
         award first-working
-        phrase kindle-learned
-        emit relighting-working-learned with working "kindle" and gloss "wakes a flame"
+        phrase spark-learned
+        emit relighting-working-learned with working "spark" and gloss "wakes a flame"
       when learned
-        phrase kindle-known
+        phrase spark-known
     end select
   end on
 
@@ -736,7 +736,7 @@ create the Great Lantern
   for a lens and a wick below as thick as a ship's cable.
 
   on the player lighting
-    the kindle page must be learned: no-such-word
+    the spark page must be learned: no-such-word
     the lens must be in the Great Lantern: lantern-empty
     the shutter must be drawn: lantern-shuttered
   end on
@@ -847,7 +847,7 @@ create Tamsin Vey
   end goal
 
 create the wisp
-  aka light, spark
+  aka light
   a person, follower, listener
   pronouns it
 
@@ -1031,11 +1031,11 @@ define phrases en-US
     meet you.
   kettle-is-hobbs:
     Hobb does not look round. "That's mine," he says.
-  kindle-learned:
+  spark-learned:
     You read the line once, and it reads you back. The word for waking a
     flame settles into the place it left thirty years ago, as if it had
     only stepped out. Far above, something in the Hall shifts.
-  kindle-known:
+  spark-known:
     You know it. You are not likely to lose it twice.
   mend-learned:
     The second working is slower to come. It is the word for making a

@@ -9,7 +9,7 @@ create the Great Lantern
   for a lens and a wick as thick as your arm. Nothing has burned in it
   for thirty years.
 
-  after the player kindling
+  after the player sparking
     lose lens-shatters when not lantern-ready
     change the story to awake when lantern-ready
     award relit when lantern-ready

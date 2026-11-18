@@ -239,14 +239,14 @@
     {
       "assertions": {
         "contains": [
-          "(first taking the kindle page)",
+          "(first taking the spark page)",
           "The word for waking a flame settles into the place it left thirty years ago"
         ],
         "notContains": [
-          "The kindle page reads:"
+          "The spark page reads:"
         ],
         "states": [
-          "the kindle page is learned"
+          "the spark page is learned"
         ]
       },
       "command": "read page",

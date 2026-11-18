@@ -281,7 +281,7 @@ create the grimoire
   are blank, or were. Here and there a line of ink has come back, as
   frost comes onto a window.
 
-create the kindle page
+create the spark page
   aka first page
   a thing, readable
   on the reading desk
@@ -292,15 +292,15 @@ create the kindle page
   complete, and still a little wet.
 
   on the player reading
-    select on the kindle page's state
+    select on the spark page's state
       when legible
-        change the kindle page to learned
+        change the spark page to learned
         change the story to waking
         start waking
         award first-working
-        phrase kindle-learned
+        phrase spark-learned
       when learned
-        phrase kindle-known
+        phrase spark-known
     end select
   end on
 
@@ -458,11 +458,11 @@ define phrases en-US
     meet you.
   kettle-is-hobbs:
     Hobb does not look round. "That's mine," he says.
-  kindle-learned:
+  spark-learned:
     You read the line once, and it reads you back. The word for waking a
     flame settles into the place it left thirty years ago, as if it had
     only stepped out. Far above, something in the Hall shifts.
-  kindle-known:
+  spark-known:
     You know it. You are not likely to lose it twice.
   mend-learned:
     The second working is slower to come. It is the word for making a

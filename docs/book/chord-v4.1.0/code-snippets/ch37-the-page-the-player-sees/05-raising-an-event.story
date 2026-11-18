@@ -1,10 +1,10 @@
 on the player reading
-  select on the kindle page's state
+  select on the spark page's state
     when legible
-      change the kindle page to learned
+      change the spark page to learned
       change the story to waking
       start waking
       raise workings by 1
-      emit relighting-working-learned with working "kindle" and gloss "wakes a flame"
+      emit relighting-working-learned with working "spark" and gloss "wakes a flame"
       award first-working
-      phrase kindle-learned
+      phrase spark-learned

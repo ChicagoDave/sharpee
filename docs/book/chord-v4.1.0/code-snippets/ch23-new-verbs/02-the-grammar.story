@@ -1,4 +1,4 @@
-define action kindling
+define action sparking
   grammar
-    kindle the target
-    kindle
+    spark the target
+    spark

@@ -174,7 +174,7 @@ create the hand lamp
   clean, which is Hobb all over.
 
   on the player lighting
-    the kindle page must be learned: no-such-word
+    the spark page must be learned: no-such-word
   end on
 
 create the seed cake
@@ -262,7 +262,7 @@ create the Great Lantern
   for thirty years.
 
   on the player lighting
-    the kindle page must be learned: no-such-word
+    the spark page must be learned: no-such-word
     the lens must be in the Great Lantern: lantern-empty
   end on
 
@@ -275,7 +275,7 @@ create the candles
   has put a flame to them since the last supper of the last term.
 
   on the player lighting
-    the kindle page must be learned: no-such-word
+    the spark page must be learned: no-such-word
   end on
 
   after the player lighting
@@ -352,7 +352,7 @@ create the grimoire
     phrase grimoire-filling when no faded-page
   end after
 
-create the kindle page
+create the spark page
   aka first page, leaf
   a thing, readable
   on the reading desk
@@ -362,16 +362,16 @@ create the kindle page
   complete.
 
   on the player reading
-    select on the kindle page's state
+    select on the spark page's state
       when legible
-        change the kindle page to learned
+        change the spark page to learned
         change the story to waking
-        phrase kindle-learned
+        phrase spark-learned
         each faded-page
           change the match to legible
         end each
       when learned
-        phrase kindle-known
+        phrase spark-known
     end select
   end on
 
@@ -511,7 +511,7 @@ define phrases en-US
   library-ink:
     There is a smell in here that was not here thirty years ago, or was
     here and you had forgotten it. It is wet ink.
-  kindle-learned:
+  spark-learned:
     You read the line once, and it reads you back. The word for waking a
     flame settles into the place it left thirty years ago, as if it had
     only stepped out.
@@ -550,7 +550,7 @@ define phrases en-US
     four feet away. You find you cannot.
   no-such-word:
     You reach for the word and find only the place where it was.
-  kindle-known:
+  spark-known:
     You know it. You are not likely to lose it twice.
   page-blank:
     The leaf is blank on both sides. You hold it up to the light, and it
