@@ -156,7 +156,7 @@ Each is checked on the built platform, not on a stand-in.
 
 ## As built
 
-Built in the eight phases of `docs/work/opening-routine/plan.md`, 2026-11-18, and published as Sharpee 5.6.4 on 2026-11-19. The acceptance criteria were re-run together on that build, and all eleven hold: `docs/work/opening-routine/acceptance.md`. The per-phase record is `docs/work/opening-routine/census.md`, sections 9 to 14. The rulings below are David's, each made in the phase that reached it; where one departs from the Decision text, the code follows the ruling.
+Built in the eight phases of `docs/work/archive/opening-routine/plan.md`, 2026-11-18, and published as Sharpee 5.6.4 on 2026-11-19. The acceptance criteria were re-run together on that build, and all eleven hold: `docs/work/archive/opening-routine/acceptance.md`. The per-phase record is `docs/work/archive/opening-routine/census.md`, sections 9 to 14. The rulings below are David's, each made in the phase that reached it; where one departs from the Decision text, the code follows the ruling.
 
 - **The opening's stage list has its own stage entries.** Six stages of the `do-first-look` list name, in `requires`, stages the opening omits. Each kept module's `run` is reused and its `requires` restated for that list (`inOpening`, `packages/engine/src/turn/stages.ts:106`). ADR-334 D2's check is unchanged, so this needed no ruling.
 - **One packet per routine is built by a subset, not by stripping.** `ChannelService.build` takes an optional `only` list of channel ids and produces only those (`packages/channel-service/src/channel-service.ts:73`). Stripping a full packet in the engine does not hold, because `build` caches every channel's value as sent. This is the `packages/channel-service` change the Scope line now names.
@@ -178,7 +178,7 @@ The workarounds named under Consequences, each with its verdict:
 What the Consequences expected and did not happen:
 
 - **The manual's locked claims did not move.** The claims locked "at turn 82" and "at turn 138" still hold there, because a lock counts the line's typed commands and the first look was never one. Chapter 39 is unedited.
-- **No Dungeo line moved.** The census found no line that differs, so nothing was re-recorded (`docs/work/opening-routine/dungeo-census.md`).
+- **No Dungeo line moved.** The census found no line that differs, so nothing was re-recorded (`docs/work/archive/opening-routine/dungeo-census.md`).
 
 Left open: GH #811 (a failed restore is a new game only when the engine refuses the save before touching the world), GH #812 (the browser's prologue move has had no mutation-verification review and no look in a real browser), GH #813 (non-gating recordings that fail before and after this work), GH #814 (a `.transcript` opening row has no prose to search), and GH #808 (the three recipe stories were not regenerated).
 

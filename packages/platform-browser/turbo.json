@@ -6,8 +6,7 @@
       "inputs": [
         "$TURBO_EXTENDS$",
         "$TURBO_ROOT$/dist/cli/sharpee.js",
-        "$TURBO_ROOT$/test-stories/quay/**",
-        "$TURBO_ROOT$/docs/work/opening-routine/baseline/**"
+        "$TURBO_ROOT$/test-stories/quay/**"
       ]
     }
   }

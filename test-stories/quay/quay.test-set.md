@@ -6,7 +6,7 @@
 
 ## Obligations
 
-- OB-46: a story with no opening block opens with its prologue, its banner, its opening chapter card and its first room, in that order, word for word as recorded in `docs/work/opening-routine/baseline/`.
+- OB-46: a story with no opening block opens with its prologue, its banner, its opening chapter card and its first room, in that order, word for word as recorded in `test-stories/quay/baseline/`.
 - OB-47: a story whose opening block reorders the routines prints them in the block's order; `seeded/quay-reordered.story` (prologue, room, banner). Read on the engine; no reader in a browser page or on the command line yet.
 - OB-48: a story whose opening block leaves a routine out does not print that part, then or on the first command; `seeded/quay-no-look.story`, `quay-no-banner.story`, `quay-no-prologue.story`, and `quay-empty.story`, whose block is empty and prints nothing. Read on the engine; no reader in a browser page or on the command line yet.
 - OB-49: the opening chapter's card is printed once, immediately before the first room, and never a second time on the first command. With no first look in the block, the card comes with the first command instead (`seeded/quay-no-look.story`).

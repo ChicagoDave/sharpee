@@ -485,8 +485,9 @@ cake's refusal prints, and change its last sentence from "You find you
 cannot." to "You decide against it." Run the tree and read the failure.
 Then put the sentence back and run the tree again.
 
-When you have seen a failure and mended it, replace your folder with the
-one from `chapter-38` and run the full tree.
+When you have seen a failure and mended it, replace your `relighting.tests`
+folder with the `relighting.tests` folder from the companion folder
+`chapter-38`, and run the full tree. Your story stays as it is.
 
 ```shell
 sharpee test .

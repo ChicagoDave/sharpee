@@ -25,7 +25,7 @@ import { describe, expect, it } from 'vitest';
 const REPO_ROOT = resolve(__dirname, '..', '..');
 const BUNDLE = join(REPO_ROOT, 'dist', 'cli', 'sharpee.js');
 const STORY = join(REPO_ROOT, 'test-stories', 'quay', 'quay.story');
-const BASELINE = join(REPO_ROOT, 'docs', 'work', 'opening-routine', 'baseline', 'quay-play.txt');
+const BASELINE = join(REPO_ROOT, 'test-stories', 'quay', 'baseline', 'quay-play.txt');
 const recording = process.env.RECORD_OPENING_BASELINE === '1';
 
 /** The last line the bundle prints before the opening. */

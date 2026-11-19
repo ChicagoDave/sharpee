@@ -3,7 +3,7 @@
 Every action the platform ships: 80 actions, 77 of them with typed commands. The
 heading of each entry is the gerund a clause names (`on the player taking`), and the block under it
 is that action's entry in the standard grammar, as shipped. Generated from the standard grammar
-(Sharpee 5.6.3 · Chord 4.0.3) by `scripts/generate-chord-appendices.cjs`.
+(Sharpee 5.6.4 · Chord 4.0.3) by `scripts/generate-chord-appendices.cjs`.
 
 ## Verbs and the actions they reach {.unnumbered .unlisted}
 

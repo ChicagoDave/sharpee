@@ -1,8 +1,8 @@
 # Appendix A. The grammar {.unnumbered}
 
-The Chord grammar in EBNF, as the compiler implements it: 213 rules in 23 sections.
+The Chord grammar in EBNF, as the compiler implements it: 215 rules in 24 sections.
 The grammar file's comments are left out, so this is the productions alone. Generated from
-`chord.ebnf` (Sharpee 5.6.3 · Chord 4.0.3) by `scripts/generate-chord-appendices.cjs`.
+`chord.ebnf` (Sharpee 5.6.4 · Chord 4.0.3) by `scripts/generate-chord-appendices.cjs`.
 
 ```text
 Notation:
@@ -98,7 +98,8 @@ meter-rung-line = WORD "at" NUMBER [ "says" WORD ] NL ;
 hunger-fatal-line = "fatal" "at" NUMBER NL ;
 rank-line    = "rank" STRING "at" NUMBER [ "says" WORD ] NL ;
 story-on-clause = on-clause ;
-declaration  = create | start-block | define-condition | define-phrase | define-phrases
+declaration  = create | start-block | opening-block
+             | define-condition | define-phrase | define-phrases
              | define-trait | define-action
              | define-sequence
              | define-counter
@@ -231,6 +232,16 @@ clause-modifier = "once"
 
 ```ebnf
 start-block  = "before" "the" "game" "starts" NL >>> { statement } "end" "before" NL ;
+```
+
+## Opening block {.unnumbered .unlisted}
+
+```ebnf
+opening-block   = "when" "the" "game" "starts" NL
+                  >>> { opening-routine NL } "end" "when" NL ;
+opening-routine = "show-prologue"
+                | "show-banner"
+                | "do-first-look" ;
 ```
 
 ## Create {.unnumbered .unlisted}

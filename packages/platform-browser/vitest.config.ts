@@ -14,7 +14,7 @@ export default defineConfig({
       // Declared here so the test never walks up from its own file: outside
       // the repository neither is configured and the test skips.
       SHARPEE_TEST_STORIES: resolve(__dirname, '../../test-stories'),
-      SHARPEE_OPENING_BASELINE: resolve(__dirname, '../../docs/work/opening-routine/baseline'),
+      SHARPEE_OPENING_BASELINE: resolve(__dirname, '../../test-stories/quay/baseline'),
     },
   },
   resolve: { alias: workspaceAliases() },

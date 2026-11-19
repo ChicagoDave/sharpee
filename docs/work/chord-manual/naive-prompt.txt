@@ -142,11 +142,11 @@ book fails a literal reader.
 8. **The version numbers.** The book quotes `Sharpee 5.7.0 · Chord 4.1.0` and
    `Chord 4.1.0` wherever a command prints its version (chapter 4's
    `--version` line and every `compose:` line). This run's command prints
-   `Sharpee 5.6.3 · Chord 4.0.3` and `Chord 4.0.3` in those places. Report only
+   `Sharpee 5.6.4 · Chord 4.0.3` and `Chord 4.0.3` in those places. Report only
    a difference in such a line beyond the two numbers. The same holds for the
    line at the head of each appendix that begins "Generated from": the
    appendices were generated on the interim release, so those lines read
-   `Sharpee 5.6.3 · Chord 4.0.3` while the title page names 5.7.0 and 4.1.0.
+   `Sharpee 5.6.4 · Chord 4.0.3` while the title page names 5.7.0 and 4.1.0.
    Do not report that difference.
 
 ## Versions this run expects
@@ -154,7 +154,7 @@ book fails a literal reader.
 The container installs the command with `npm install -g @sharpee/devkit`, as
 chapter 4 instructs, and `sharpee --version` must then print exactly:
 
-    Sharpee 5.6.3 · Chord 4.0.3
+    Sharpee 5.6.4 · Chord 4.0.3
 
 If it prints anything else, stop and report a stale registry or a stale
 container: that is an environment failure, not a book defect. The book's own

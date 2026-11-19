@@ -254,11 +254,24 @@ sail` and `furl the sails`.
 
 Steering alone moved nothing, because the sail was furled. Under sail the
 skiff runs east a unit a turn, and the isle is six units off. Every command
-is a turn, `look` among them. A `look` typed now gives the view of the last
-section, with the stair close by. Two turns after it the view has changed,
-and the turn after that brings the skiff in.
+is a turn, `look` among them. Type `look` now, straight after `make sail`,
+and it gives the view of the last section, with the stair close by. Two
+turns after it the view has changed, and the turn after that brings the
+skiff in. Without that first `look` the skiff is a unit behind what follows.
 
 ```text
+> look
+Mere
+Grey water, wider than it looked from the roof, with a short chop on it.
+
+You can see a skiff here.
+
+In the skiff you see Ansel.
+
+The Water Stair, close by, to the west.
+
+The Beacon Isle, on the horizon, to the east.
+
 > wait
 You wait. The Hall has had thirty years of practice and is better at it than you are.
 
