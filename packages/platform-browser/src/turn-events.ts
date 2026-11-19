@@ -82,12 +82,21 @@ export interface WorldDigest {
   machines: WorldDigestMachine[];
 }
 
-/** What a caller supplies per turn; the lineage fields are stamped here. */
+/**
+ * What a caller supplies per record; the lineage fields are stamped here.
+ *
+ * A record is a typed turn, which carries `command`, or a new game's
+ * opening (ADR-404), which carries `opening` and no command because nobody
+ * typed anything for it. The opening is the first record of every lineage
+ * that began as a new game; a restored session has none.
+ */
 export interface TurnEventPayload {
-  /** Monotonic 1-based ordinal, matching the turn's `data-turn` anchors. */
+  /** Monotonic 1-based ordinal, matching the record's `data-turn` anchors. */
   turn: number;
-  /** The player's typed command (no `> ` prefix). */
-  command: string;
+  /** The player's typed command (no `> ` prefix); absent on the opening. */
+  command?: string;
+  /** Present, and true, only on the opening's record. */
+  opening?: true;
   /**
    * The turn's composed prose — the ENGINE's text, packets joined the way
    * the headless harness joins them (`packetProseText` per packet, then

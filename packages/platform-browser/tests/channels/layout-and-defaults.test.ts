@@ -75,16 +75,36 @@ describe('mountDefaultLayout', () => {
     expect(document.getElementById('sharpee-media')).not.toBeNull();
     expect(document.getElementById('sharpee-notify')).not.toBeNull();
     expect(document.getElementById('sharpee-meta')).not.toBeNull();
-    expect(document.getElementById('sharpee-prologue')).not.toBeNull();
+    // The prologue has no slot of its own: it is a log entry (ADR-404).
+    expect(document.getElementById('sharpee-prologue')).toBeNull();
   });
 
-  it('places the prologue slot before the main region (ADR-298 D3 default order)', () => {
+  it('the default renderers print the prologue into the log where its packet arrives (ADR-404 decision 6)', () => {
     const root = document.createElement('div');
     document.body.appendChild(root);
     const layout = mountDefaultLayout(root);
-    const position = layout.prologue.compareDocumentPosition(layout.main);
-    // main FOLLOWS prologue in document order
-    expect(position & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    const renderer = createRenderer({ fallbackWarn: () => undefined });
+    registerDefaultBrowserRenderers(renderer, layout, { audio: makeMockAudio() });
+    renderer.applyCmgt({
+      kind: 'cmgt',
+      protocol_version: 1,
+      channels: [
+        { id: 'prologue', contentType: 'text', mode: 'replace', emit: 'always' },
+        { id: 'banner', contentType: 'json', mode: 'replace', emit: 'sparse' },
+      ],
+    });
+    const packet = (payload: TurnPacket['payload']): TurnPacket =>
+      ({ kind: 'turn', turn_id: 'turn-0', payload });
+
+    // The banner's packet first, then the prologue's: the log keeps that order.
+    renderer.applyTurnPacket(packet({ banner: { title: 'The Quay' } }));
+    renderer.applyTurnPacket(packet({ prologue: 'Long ago.' }));
+
+    expect(Array.from(layout.main.children).map((el) => el.className)).toEqual([
+      'sharpee-banner-title',
+      'sharpee-prologue',
+    ]);
+    expect(layout.main.lastElementChild?.textContent).toBe('Long ago.');
   });
 
   it('is idempotent — calling twice does not duplicate slots', () => {

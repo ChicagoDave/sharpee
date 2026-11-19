@@ -17,7 +17,7 @@ export type BusyKind = 'line' | 'restore';
  *
  * @param kind a line visit (a pill click, a fork, a cut) or the session restore on open
  * @param done steps that have landed so far
- * @param total steps the replay will type; 0 when only the boot look is awaited
+ * @param total steps the replay will type; 0 when only the opening's record is awaited
  * @returns e.g. `Replaying line — 12 of 40…`, or `Replaying line…` before any step is known
  */
 export function busyLabel(kind: BusyKind, done: number, total: number): string {

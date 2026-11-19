@@ -69,7 +69,7 @@ test.afterAll(async () => {
 async function boot(page: Page): Promise<void> {
   await page.goto(`${origin}/index.html`);
   await page.waitForSelector('#command-input', { state: 'attached' });
-  // The engine boots and runs the initial look; the prose pane fills.
+  // The engine boots and runs the story's opening; the prose pane fills.
   await page.waitForFunction(
     () => (document.getElementById('text-content')?.textContent ?? '').length > 0,
     undefined,

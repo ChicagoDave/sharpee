@@ -79,7 +79,18 @@ enum ChordVersionCheck {
     /// `lexer.ts` has emitted it since GH #361 — the golden had never carried
     /// the character, so the port's divergence went unseen (GH #656). The
     /// highlighter's keyword set gained the six 4.0 block openers.
-    static let supportedLanguageVersion = "4.0.2"
+    ///
+    /// 4.0.3 (2026-11-18, GH #729): the surface that joined after the 4.0.2
+    /// pin. One NEW corpus file, `chord-4-0-3-surface.story`, carries it:
+    /// the `the story is <state>` and `the story is not <state>` conditions
+    /// (GH #705), a `define sound` block with `heard:` and `heard from
+    /// afar:` closed by `end sound`, an `emit` whose name is one word, and
+    /// the `when the game starts … end when` block with `show-prologue`,
+    /// `do-first-look` and `show-banner` (ADR-404). Gate-clean under
+    /// `sharpee compose --check` at 4.0.3; the golden was regenerated over
+    /// it with the nine existing streams unchanged, and `ChordLexer.swift`
+    /// did not move.
+    static let supportedLanguageVersion = "4.0.3"
 
     /// Extracts the Chord version from `sharpee --version` output
     /// ("Sharpee 4.1.1 · Chord 2.1.0" → "2.1.0"). Nil when the shape is foreign.

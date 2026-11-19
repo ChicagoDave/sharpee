@@ -132,7 +132,12 @@ default client rendering order; authors can restyle per the customizable-
 client architecture. **Amended 2026-11-18 by ADR-404 (decision 6)**:
 prologue before banner is the order of the default opening routine, and a
 story's `when the game starts` block may put `show-banner` first or leave
-`show-prologue` out. ADR-296's slot machinery is not involved:
+`show-prologue` out. **Amended again 2026-11-18** (David's ruling "a" on
+Settle item 11 of the opening-routine plan, session 5f2a8f): the browser
+client keeps no region of its own for the prologue ahead of the log. It
+prints the prologue into the log where its packet arrives, so the block's
+order holds in the browser as it does on the command line, and the author
+has that control without editing a page template. ADR-296's slot machinery is not involved:
 `beforeEverything` stays platform-only, and turn-narration slots are not
 stretched to cover a one-time story-start emission.
 

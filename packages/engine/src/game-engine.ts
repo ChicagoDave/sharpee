@@ -789,8 +789,8 @@ export class GameEngine implements StoryEngine {
   /**
    * Resolve `StoryConfig.prologue` (ADR-298 D3) into the `storyInfo`
    * capability — stdlib's `prologueChannel` projects the resolved text.
-   * Called by the opening routine at `show-prologue` (ADR-404), and by the
-   * first input on an engine whose opening never ran.
+   * Called by the opening routine at `show-prologue` (ADR-404) and by
+   * nothing else: an engine whose opening never runs writes no prologue.
    * A literal (or plain string) is itself; a `phrase-ref` renders through
    * the prose pipeline's phrase machinery, so variants (cycling, randomly,
    * first-time) resolve per their normal semantics. Absent or unresolvable
@@ -1043,13 +1043,10 @@ export class GameEngine implements StoryEngine {
 
     if (this.opening === 'pending') {
       // A command arrived on an engine whose opening never ran: a restored
-      // session, or a head that still opens by typing `look`. The opening
-      // can no longer run, and the prologue it would have written is
-      // written here, as `start()` wrote it before the opening existed.
-      // TRANSITIONAL: the write goes when the last head calls
-      // `runOpening()` (the opening-routine plan, Phase 6); the mark stays.
+      // session, whose world already holds whatever its opening wrote. The
+      // opening can no longer run, and nothing is written in its place: the
+      // prologue is the routine's alone to write (`show-prologue`).
       this.opening = 'missed';
-      this.resolvePrologue();
     }
 
     const context: TurnStageContext = {

@@ -8,6 +8,7 @@ import {
   createScoreChannelRenderer,
   createTurnChannelRenderer,
 } from '../../src/channels/status';
+import { StatusLine, scoreTurnsText, turnsText } from '../../src/display/StatusLine';
 import {
   createInfoChannelRenderer,
   createIfidChannelRenderer,
@@ -94,6 +95,33 @@ describe('status renderers', () => {
     expect(turn.textContent).toBe('Turns: 7');
   });
 
+  it('turn writes nothing for 0, and clears a count already shown (ADR-404 decision 14)', () => {
+    const r = createTurnChannelRenderer(turn);
+    r.onValue(0, replaceNum);
+    expect(turn.textContent).toBe('');
+
+    r.onValue(1, replaceNum);
+    // PRECONDITION: a count is on the page.
+    expect(turn.textContent).toBe('Turns: 1');
+    r.onValue(0, replaceNum);
+    expect(turn.textContent).toBe('');
+  });
+
+  it('the combined text drops the count at 0 and keeps the score', () => {
+    expect(scoreTurnsText(5, 0)).toBe('Score: 5');
+    expect(scoreTurnsText(5, 1)).toBe('Score: 5 | Turns: 1');
+    expect(turnsText(0)).toBe('');
+    expect(turnsText(12)).toBe('Turns: 12');
+  });
+
+  it('the status line shows the score alone until a command has cost a turn', () => {
+    const line = new StatusLine({ statusLocation: location, statusScore: score });
+    line.setScoreTurns(3, 0);
+    expect(score.textContent).toBe('Score: 3');
+    line.setScoreTurns(3, 4);
+    expect(score.textContent).toBe('Score: 3 | Turns: 4');
+  });
+
   it('non-matching values are ignored defensively', () => {
     const r = createScoreChannelRenderer(score);
     r.onValue('not an object', replaceJson);
@@ -136,6 +164,30 @@ describe('info / ifid renderers', () => {
     expect(paras.length).toBe(2);
     expect(paras[0].textContent).toBe('Long ago.');
     expect(paras[1].textContent).toBe('Far away.');
+  });
+
+  it('prologue is appended after what the log holds, and a value already printed is not printed again', () => {
+    const earlier = document.createElement('p');
+    earlier.textContent = 'The Quay';
+    meta.appendChild(earlier);
+    const r = createPrologueChannelRenderer(meta);
+
+    r.onValue('Long ago.', replaceText);
+    // The channel sends its value on every packet from here on.
+    r.onValue('Long ago.', replaceText);
+    r.onValue('Long ago.', replaceText);
+
+    expect(Array.from(meta.children).map((el) => el.textContent)).toEqual(['The Quay', 'Long ago.']);
+  });
+
+  it('prologue adopted from a restored log is not printed, and stays unprinted on later packets', () => {
+    const r = createPrologueChannelRenderer(meta);
+    r.adoptPrinted();
+
+    r.onValue('Long ago.', replaceText);
+    r.onValue('Long ago.', replaceText);
+
+    expect(meta.querySelectorAll('p.sharpee-prologue')).toHaveLength(0);
   });
 
   it('prologue ignores empty and non-string values', () => {

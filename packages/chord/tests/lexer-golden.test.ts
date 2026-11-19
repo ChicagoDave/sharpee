@@ -20,7 +20,10 @@
  * story trait read after `is a`, and a name carrying `&`) in
  * `chord-4-surface.story`, with the `claims` block in `chord-4-claims.chord`
  * (a claims block is never part of a story, so that one corpus file is a
- * `.chord` fragment); the golden file
+ * `.chord` fragment), plus the 4.0.3 surface (the `the story is [not]
+ * <state>` conditions, a `define sound` block, a one-word `emit`, and the
+ * `when the game starts` block with its three routines) in
+ * `chord-4-0-3-surface.story`; the golden file
  * (`lexer-golden.json`) records `lex()`'s exact `Line[]` output per corpus
  * file. A `lexer.ts` change that alters the stream turns this test red in
  * the CI that exists today — REGENERATE THE GOLDEN deliberately

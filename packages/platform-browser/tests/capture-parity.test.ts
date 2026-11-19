@@ -64,35 +64,35 @@ const BUNDLE_PRESENT = existsSync(CLI_BUNDLE);
 /**
  * The turns being compared.
  *
- * `look` is deliberately NOT in here even though both sides execute it: the
- * browser client's `start()` runs its own opening `look` through
- * `engine.executeTurn` rather than `client.executeCommand`, so that turn
- * never reaches the bridge and is never blessable. The headless side runs it
- * as its first `--exec` command purely to reach the same world state, and its
- * output is discarded. Everything after it is compared.
+ * Both sides open the game with the engine's opening routine (ADR-404) and
+ * neither types anything for it: the CLI's `--exec` prints the opening ahead
+ * of the first command's echo, and the browser client posts it as the feed's
+ * first record, marked `opening`, with no command. So the typed turns align
+ * one to one, with no priming command on either side.
  */
 const COMMANDS = ['x lectern', 'read notice', 'look'] as const;
-const PRIMING_COMMAND = 'look';
 
 // ────────────────────────────────────────────────────────────────────
 //  Headless side — the real shipped CLI, in its own process
 // ────────────────────────────────────────────────────────────────────
 
 /**
- * Run the fixture through `dist/cli/sharpee.js --exec` and return one entry
- * per command, in order.
+ * Run the fixture through `dist/cli/sharpee.js --exec` and return the
+ * opening and then one entry per command, in order.
  *
- * The CLI prints `> <command>`, then the command's output, then one blank
+ * The CLI prints the opening, then for each command `> <command>`, the
+ * command's output, and one blank
  * line. Blocks are cut on the `> ` markers; the single trailing blank line is
  * the CLI's own separator, not part of the response (a channel-flattened
  * response never ends blank — `joinProseEntries` skips blank entries and joins
  * without a trailing newline).
  *
  * @param commands — commands to run, in order.
- * @returns each command's captured output.
+ * @returns what was printed ahead of the first command, and each command's
+ *          captured output.
  * @throws if the CLI exits non-zero or prints fewer blocks than commands.
  */
-function runHeadless(commands: readonly string[]): string[] {
+function runHeadless(commands: readonly string[]): { opening: string; turns: string[] } {
   const result = spawnSync(
     process.execPath,
     [CLI_BUNDLE, '--exec', commands.join('/'), '--story', FIXTURE],
@@ -116,10 +116,11 @@ function runHeadless(commands: readonly string[]): string[] {
     );
   }
 
-  return markers.map((start, i) => {
+  const turns = markers.map((start, i) => {
     const end = i + 1 < markers.length ? markers[i + 1] : lines.length;
     return lines.slice(start + 1, end).join('\n').replace(/\n+$/, '');
   });
+  return { opening: lines.slice(0, markers[0]).join('\n'), turns };
 }
 
 // ────────────────────────────────────────────────────────────────────
@@ -160,14 +161,16 @@ function mountHostElements(): DOMElements {
  *
  * @param source — the `.story` source both sides share.
  * @param commands — commands to type, in order.
- * @returns each command's recorded response, as the IDE would receive it.
+ * @returns the opening's recorded output, and each command's recorded
+ *          response, as the IDE would receive them.
  * @throws if the fixture fails its Chord load-time gate, or if the bridge
- *         posts a different number of turns than commands typed.
+ *         posts a different number of records than the opening plus the
+ *         commands typed.
  */
 async function runInBrowserClient(
   source: string,
   commands: readonly string[],
-): Promise<string[]> {
+): Promise<{ opening: string; turns: string[] }> {
   const compiled = compile(source);
   if (!compiled.ok) {
     const errors = compiled.diagnostics.filter((d) => d.severity === 'error');
@@ -179,7 +182,7 @@ async function runInBrowserClient(
   const story = createStory(compiled.ir) as unknown as Story;
 
   // The bridge PlayViewController installs. Same shape, same handler name.
-  const posted: Array<{ command: string; response: string }> = [];
+  const posted: Array<{ command?: string; opening?: boolean; output: string }> = [];
   (window as any).webkit = {
     messageHandlers: {
       turnEvents: { postMessage: (body: string) => posted.push(JSON.parse(body)) },
@@ -228,22 +231,23 @@ async function runInBrowserClient(
     await client.executeCommand(command);
   }
 
-  // The boot look is a real feed record now (ADR-305 D3: replay turn numbers
-  // must align with play), so the bridge posts commands.length + 1 records
-  // and the first one is the echo-less boot turn.
+  // The feed's first record is the opening (ADR-404): marked `opening`, with
+  // no command, because nobody typed one. The typed turns follow it.
   if (posted.length !== commands.length + 1) {
     throw new Error(
-      `bridge posted ${posted.length} turns for ${commands.length} commands + boot look: `
-      + JSON.stringify(posted.map((p) => p.command)),
+      `bridge posted ${posted.length} records for the opening + ${commands.length} commands: `
+      + JSON.stringify(posted.map((p) => p.command ?? '(opening)')),
     );
   }
-  expect(posted[0].command).toBe('look');
+  expect(posted[0].opening).toBe(true);
+  expect('command' in posted[0]).toBe(false);
   for (let i = 0; i < commands.length; i += 1) {
     // A misaligned pairing would compare the wrong turns and could pass by
     // accident, so pin the pairing itself rather than assuming it.
     expect(posted[i + 1].command).toBe(commands[i]);
+    expect(posted[i + 1].opening).toBeUndefined();
   }
-  return posted.map((p) => p.output);
+  return { opening: posted[0].output, turns: posted.slice(1).map((p) => p.output) };
 }
 
 // ────────────────────────────────────────────────────────────────────
@@ -256,25 +260,37 @@ describe.skipIf(!BUNDLE_PRESENT)(
   () => {
     let headless: string[];
     let recorded: string[];
+    let headlessOpening: string;
+    let recordedOpening: string;
 
     beforeAll(async () => {
       const source = readFileSync(FIXTURE, 'utf-8');
-      // The priming `look` matches the client's own start()-time look — and
-      // since ADR-305 the bridge records that boot turn too, so both arrays
-      // carry it at index 0 and the typed turns align 1:1 behind it. The boot
-      // turn itself is NOT byte-compared: this harness's runHeadless shim
-      // folds the boot banner into the priming look's slice, which the real
-      // runner does not do (`bootstrap` resets outputBuffer per command) and
-      // the browser prose slot never sees. Alignment of the boot record is
-      // pinned in runInBrowserClient; content parity is a typed-turn claim.
-      headless = runHeadless([PRIMING_COMMAND, ...COMMANDS]);
-      recorded = await runInBrowserClient(source, COMMANDS);
+      // Both sides open with the engine's routine, so the typed turns align
+      // one to one with nothing ahead of them to discard. The opening itself
+      // is not byte-compared: the CLI lays the banner out its own way and
+      // prints a seed line, and the feed's record holds the prose channels'
+      // text. That both sides opened in the same room is pinned below.
+      const cli = runHeadless(COMMANDS);
+      headless = cli.turns;
+      headlessOpening = cli.opening;
+      const browser = await runInBrowserClient(source, COMMANDS);
+      recorded = browser.turns;
+      recordedOpening = browser.opening;
     }, 120_000);
 
     it('records byte-identical text for every compared typed turn', () => {
-      for (let i = 1; i < recorded.length; i += 1) {
-        expect(recorded[i], `turn ${i + 1} (\`${COMMANDS[i - 1]}\`)`).toBe(headless[i]);
+      expect(recorded).toHaveLength(COMMANDS.length);
+      for (let i = 0; i < recorded.length; i += 1) {
+        expect(recorded[i], `turn ${i + 1} (\`${COMMANDS[i]}\`)`).toBe(headless[i]);
       }
+    });
+
+    it('both sides open on the opening, in the same room, with nothing typed', () => {
+      const firstRoom = 'A bare room with a lectern in the middle of it.';
+      expect(recordedOpening).toContain(firstRoom);
+      expect(headlessOpening).toContain(firstRoom);
+      // The opening is not a typed `look`: no echo of one on the command line.
+      expect(headlessOpening).not.toContain('> look');
     });
 
     it('preserves the blank line between paragraphs on both sides', () => {
@@ -283,27 +299,27 @@ describe.skipIf(!BUNDLE_PRESENT)(
       // answers with two paragraphs. If either side collapsed the boundary
       // to a single newline the equality above could still hold while both
       // sides were wrong together, so assert the boundary is really there.
-      const look = recorded[COMMANDS.indexOf('look') + 1];
+      const look = recorded[COMMANDS.indexOf('look')];
       expect(look).toContain('\n\n');
-      expect(look).toBe(headless[COMMANDS.indexOf('look') + 1]);
+      expect(look).toBe(headless[COMMANDS.indexOf('look')]);
     });
 
     it('captures bracket-shaped lines and quotes intact (the fence content)', () => {
       // Acceptance 5's named content shape. These characters are what
       // ADR-287's fences exist for; a capture that mangled them would make
       // the blessed fence unrunnable no matter how the serializer behaves.
-      const notice = recorded[COMMANDS.indexOf('read notice') + 1];
+      const notice = recorded[COMMANDS.indexOf('read notice')];
       expect(notice).toContain('[posted by order of the proving board]');
       expect(notice).toContain('She said "take it" and would not look at you.');
       expect(notice).toContain('[the lamp gutters]');
-      expect(notice).toBe(headless[COMMANDS.indexOf('read notice') + 1]);
+      expect(notice).toBe(headless[COMMANDS.indexOf('read notice')]);
     });
 
     it('spans a multi-packet turn without dropping or reordering text', () => {
       // `read notice` reports an implicit take BEFORE the notice text, so the
       // turn arrives as several packets. Packet-level accumulation is the
       // half of the capture the DOM read used to hide.
-      const notice = recorded[COMMANDS.indexOf('read notice') + 1];
+      const notice = recorded[COMMANDS.indexOf('read notice')];
       expect(notice.indexOf('taking the notice'))
         .toBeLessThan(notice.indexOf('[posted by order of the proving board]'));
       expect(notice.indexOf('[posted by order of the proving board]'))
@@ -311,9 +327,9 @@ describe.skipIf(!BUNDLE_PRESENT)(
     });
 
     it('records no turn as empty — an empty capture would pass equality vacuously', () => {
-      const labels = [PRIMING_COMMAND, ...COMMANDS];
-      for (let i = 0; i < labels.length; i += 1) {
-        expect(recorded[i].trim(), `turn ${i + 1} (\`${labels[i]}\`)`).not.toBe('');
+      expect(recordedOpening.trim(), 'the opening').not.toBe('');
+      for (let i = 0; i < COMMANDS.length; i += 1) {
+        expect(recorded[i].trim(), `turn ${i + 1} (\`${COMMANDS[i]}\`)`).not.toBe('');
       }
     });
   },

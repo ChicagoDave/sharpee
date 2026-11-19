@@ -16,7 +16,8 @@
  *   them: the running engine is the only authority on its own version, so it
  *   is a stamped platform constant its readers import, never a field a build
  *   tool writes onto the world.
- * - `prologue` is neither source's: `resolvePrologue` writes it at start.
+ * - `prologue` is neither source's: `resolvePrologue` writes it when the
+ *   opening routine reaches `show-prologue` (ADR-404), and never otherwise.
  *
  * Only fields that have a value appear in the projection, so applying it
  * as a capability update never blanks a field the schema defaults.

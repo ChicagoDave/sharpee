@@ -43,6 +43,7 @@ import { failureCountText, failureStopsOf, filterStops, narrowedLineIds, stepInd
 import { OutlineView, renderPosition } from './outline-view.js';
 import type { AutoAssertionPolicy } from '@sharpee/branch-tester/types';
 import { admitBootDocument } from './boot-document';
+import { isOpeningRecord } from './feed-record';
 import { CardsView } from './cards';
 import { characterRowsOf, explainGroups, type ExplainGroup } from './character';
 import { affordanceGroupsOf, sceneExplainGroups, sceneRowsOf, threadAffordanceGroupsOf } from './scene';
@@ -74,6 +75,8 @@ interface DigestEntity {
 interface FeedRecord {
   restart?: boolean;
   turn: number;
+  /** True on a new game's opening, which carries no command (ADR-404). */
+  opening?: boolean;
   command?: string;
   output?: string;
   captures?: { channel: string; values: unknown[] }[];
@@ -742,13 +745,6 @@ function installDialogHooks(): void {
 
 // ── feed delivery ─────────────────────────────────────────────────────────
 
-/**
- * True until the next record, which is a fresh boot's opening: nothing was
- * typed for it. Until the browser client opens with the engine's routine it
- * is that client's own first `look`, and the surface binds it to the opening
- * card all the same.
- */
-let expectBoot = true;
 /** The last folded record's ordinal — the restart-ack strip reads it. */
 let lastDeliveredOrdinal: number | undefined;
 /** Resolvers waiting on the next delivered turn (the replay driver). */
@@ -802,7 +798,6 @@ function deliver(raw: unknown): void {
     if (expectDriverFence) {
       // A driver fork/switch boot — a fresh line, never a dead session.
       expectDriverFence = false;
-      expectBoot = true;
       const waiters = fenceWaiters;
       fenceWaiters = [];
       for (const resolve of waiters) resolve();
@@ -824,7 +819,6 @@ function deliver(raw: unknown): void {
     model.beginRebindAll();
     model.activateLine(model.mainLine);
     currentLine = model.mainLine;
-    expectBoot = true;
     pendingDialogOutcome = null;
     bootCaptures = undefined;
     bootRecordOrdinal = undefined;
@@ -834,8 +828,10 @@ function deliver(raw: unknown): void {
   }
 
   if (dropBeforeFence) return;         // the driver's restart ack — swallow
-  const boot = expectBoot;
-  expectBoot = false;
+  // A new game's opening (ADR-404): the client marks its record `opening`
+  // and gives it no command, because nothing was typed for it. It is the
+  // first record of every fresh boot, and it seats the one opening card.
+  const boot = isOpeningRecord(record);
   if (suppressDelivery) {
     // A replayed prefix turn: its card already exists — swallow, but pace
     // the driver's typing loop.
@@ -963,7 +959,7 @@ function prefixSteps(lineId: string): ReplayStep[] {
 /**
  * The fresh-boot primitive every fork, switch, restore branch, and realign
  * rides: storage-clean in-page restart (the fence arrives flagged as the
- * driver's, so nothing clears), the boot look and `replay` steps suppressed
+ * driver's, so nothing clears), the opening's record and `replay` steps suppressed
  * (their cards exist), then `live` steps typed visibly into `line`. Returns
  * false when a turn never arrived — the caller's state stays honest
  * (degraded, never an error).
@@ -1000,7 +996,8 @@ async function driveFreshBoot(
     typeCommand('restart');
     if (!(await awaitFence(15_000))) { trace(`boot line ${line}: no restart fence in 15s`); return 'failed'; }
     suppressDelivery = true;
-    if (!(await awaitNextTurn(15_000))) { trace(`boot line ${line}: no boot look in 15s`); return 'failed'; }
+    // The fresh boot's first record is its opening, which nobody types.
+    if (!(await awaitNextTurn(15_000))) { trace(`boot line ${line}: no opening in 15s`); return 'failed'; }
     for (const step of replay) {
       // A prefix that reaches an Ending cannot be walked any further: the
       // engine is stopped and every command from here returns a refusal that
@@ -1175,8 +1172,8 @@ async function replayTree(activeTarget: string): Promise<void> {
   try {
     currentLine = model.mainLine;
     model.activateLine(model.mainLine);
-    // The root's boot look plays itself — wait for it unless it already
-    // arrived (drained queue, or the fence's reboot landing first).
+    // The engine runs the root's opening itself — wait for its record unless
+    // it already arrived (drained queue, or the fence's reboot landing first).
     if (!model.hasOpening) await awaitNextTurn(15_000);
     let intact = true;
     const mainCommands = model.ownCommandsOf(model.mainLine);
@@ -1250,7 +1247,7 @@ document.addEventListener('keydown', event => {
   void stepFailure(event.shiftKey ? -1 : 1);
 });
 
-// Adopt the persisted tree BEFORE draining the queue, so the boot look binds
+// Adopt the persisted tree BEFORE draining the queue, so the opening's record binds
 // to the tree's cards rather than appending fresh ones.
 let loadedDocument = false;
 const admission = admitBootDocument(bootSession?.tree, seed);

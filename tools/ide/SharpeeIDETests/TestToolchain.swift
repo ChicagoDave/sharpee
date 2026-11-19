@@ -44,9 +44,9 @@ enum TestToolchain {
     /// byte-identical (ADR-282 Acceptance 5, capture half) — without that proof
     /// this substitution would be an assumption.
     ///
-    /// A priming `look` runs first and is dropped: the browser client opens
-    /// with its own `look` outside the recording, so the first captured turn is
-    /// the second turn of the game. Its output also carries the story banner.
+    /// No priming command runs: the CLI and the browser client both open the
+    /// game with the engine's opening routine (ADR-404), which costs no turn,
+    /// so the first command played here is the first turn in both.
     ///
     /// - Parameters:
     ///   - storyFile: the `.story` to run.
@@ -56,7 +56,7 @@ enum TestToolchain {
     /// - Throws: if the CLI cannot be launched, exits non-zero, or prints fewer
     ///   command markers than were asked for.
     static func captureResponses(storyFile: URL, commands: [String]) throws -> [String] {
-        let played = ["look"] + commands
+        let played = commands
 
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
@@ -80,7 +80,7 @@ enum TestToolchain {
         }
 
         let stdout = String(data: data, encoding: .utf8) ?? ""
-        return try blocks(in: stdout, for: played).dropFirst().map { $0 }
+        return try blocks(in: stdout, for: played)
     }
 
     /// Split `--exec` output into one block per command.

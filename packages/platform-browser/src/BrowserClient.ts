@@ -35,13 +35,15 @@ import {
 } from './turn-events.js';
 import { buildWorldDigest } from './world-digest.js';
 import { TextDisplay } from './display/TextDisplay.js';
-import { StatusLine } from './display/StatusLine.js';
+import { StatusLine, scoreTurnsText } from './display/StatusLine.js';
 import { AudioManager } from './audio/AudioManager.js';
 import {
   registerDefaultBrowserRenderers,
   applyStoryEndingToInput,
+  createPrologueChannelRenderer,
   type BrowserDefaultLayout,
 } from './channels/index.js';
+import type { PrologueChannelRenderer } from './channels/info.js';
 
 /**
  * Default `ClientCapabilities` profile for the browser surface — full
@@ -75,16 +77,18 @@ export const BROWSER_CAPABILITIES: ClientCapabilities = {
  * channel state therefore leaves out and a replay leaves alone:
  *
  *  - the prose channels, the layout channel that composes and prints
- *    them, the banner and the chapter heading are written into the
- *    transcript, which the envelope saves and restores as HTML, so
- *    delivering them again would print them twice;
+ *    them, the prologue, the banner and the chapter heading are written
+ *    into the transcript, which the envelope saves and restores as HTML,
+ *    so delivering them again would print them twice;
  *  - `score` and `turn` are the client's own fields, set from the
- *    envelope and offset against the engine's counter;
+ *    envelope: the save's turn count is the number the `turn` channel
+ *    goes on from, so nothing is added to it;
  *  - `story-ending` is read from the restored world at the same seam.
  */
 const RESTORED_ELSEWHERE: ReadonlySet<string> = new Set<string>([
   ...PROSE_CHANNEL_IDS,
   PREFERRED_LAYOUT_CHANNEL,
+  'prologue',
   'banner',
   'story.chapter',
   'score',
@@ -113,7 +117,6 @@ export class BrowserClient implements BrowserClientInterface {
   // Game state
   private currentTurn = 0;
   private currentScore = 0;
-  private turnOffset = 0; // Offset to add to engine turn after restore
   /**
    * The `ISaveData` produced by the engine for the in-flight save
    * request. Set by `onSaveRequested` while the save dialog is open;
@@ -165,6 +168,9 @@ export class BrowserClient implements BrowserClientInterface {
    */
   private channelRenderer?: IRenderer;
   private channelLayout?: BrowserDefaultLayout;
+  /** The `prologue` renderer, held so a restore can tell it the log
+   *  already holds the opening (`adoptPrinted`). Rebuilt per engine. */
+  private prologueRenderer?: PrologueChannelRenderer;
 
   constructor(config: BrowserClientConfig) {
     this.config = {
@@ -393,6 +399,11 @@ export class BrowserClient implements BrowserClientInterface {
       },
     });
 
+    // The prologue's renderer is this client's own instance of the default,
+    // registered over it so the two restore seams can reach it.
+    this.prologueRenderer = createPrologueChannelRenderer(layout.main);
+    this.channelRenderer.registerRenderer('prologue', this.prologueRenderer);
+
     // Prompt override — when the host page provides its own visible
     // prompt label (`.prompt` span etc.), only update that element.
     // The platform-default renderer ALSO sets `input.placeholder`,
@@ -432,7 +443,10 @@ export class BrowserClient implements BrowserClientInterface {
       this.channelRenderer.registerRenderer('turn', {
         onValue: (value) => {
           if (typeof value !== 'number') return;
-          this.currentTurn = value + this.turnOffset;
+          // The channel's value is the count as it stands, on a new game
+          // and on a restored one alike: the engine's restore puts its
+          // counter back, so nothing is added here.
+          this.currentTurn = value;
           this.renderCombinedStatus();
         },
       });
@@ -545,14 +559,6 @@ export class BrowserClient implements BrowserClientInterface {
     if (!media.style.position) media.style.position = 'relative';
     const notify = ensureHidden('sharpee-notify', mainWindow);
     const meta = ensureHidden('sharpee-meta', mainWindow);
-    // ADR-298 D3: prologue precedes the main region on host pages too —
-    // visible (not ensureHidden) and inserted before `main` in the DOM.
-    let prologue = doc.getElementById('sharpee-prologue');
-    if (!prologue) {
-      prologue = doc.createElement('div');
-      prologue.id = 'sharpee-prologue';
-      main.parentElement?.insertBefore(prologue, main);
-    }
 
     return {
       root,
@@ -560,7 +566,6 @@ export class BrowserClient implements BrowserClientInterface {
       statusLocation,
       statusScore,
       statusTurn,
-      prologue,
       main,
       sidebar,
       input,
@@ -603,16 +608,18 @@ export class BrowserClient implements BrowserClientInterface {
    * Render the combined `Score: X | Turns: Y` string into the host
    * page's combined status element. The host's traditional layout
    * uses one element; the score and turn channel renderers feed this
-   * function rather than writing directly.
+   * function rather than writing directly. No turn count is shown until a
+   * command has cost a turn (`scoreTurnsText`).
    */
   private renderCombinedStatus(): void {
     const el = this.elements?.statusScore;
     if (!el) return;
-    el.textContent = `Score: ${this.currentScore} | Turns: ${this.currentTurn}`;
+    el.textContent = scoreTurnsText(this.currentScore, this.currentTurn);
   }
 
   /**
-   * Start the game (check for autosave, show initial look)
+   * Start the game: restore the autosave when there is one, and otherwise
+   * open a new game with the story's opening (`openNewGame`).
    */
   async start(): Promise<void> {
     console.log('=== BROWSER CLIENT START ===');
@@ -652,9 +659,6 @@ export class BrowserClient implements BrowserClientInterface {
           this.engineApplySave(autosaveEnvelope.engineSave);
           this.currentTurn = autosaveEnvelope.engineSave.metadata.turnCount;
           this.currentScore = autosaveEnvelope.score;
-          // Engine's turn counter is now `currentTurn + 1` after the
-          // engine restore; offset keeps the displayed counter aligned.
-          this.turnOffset = this.currentTurn - 1;
 
           if (autosaveEnvelope.transcriptHtml) {
             const html = this.saveManager.decompressTranscript(
@@ -664,7 +668,7 @@ export class BrowserClient implements BrowserClientInterface {
           }
           this.replayChannels(autosaveEnvelope.channelState);
 
-          console.log('[startup] Restored to turn', this.currentTurn, 'score', this.currentScore, 'offset', this.turnOffset);
+          console.log('[startup] Restored to turn', this.currentTurn, 'score', this.currentScore);
           this.updateStatusLine();
 
           // Show restored message
@@ -673,22 +677,16 @@ export class BrowserClient implements BrowserClientInterface {
           this.syncScoreFromWorld();
         } catch (error) {
           console.error('[startup] Failed to restore autosave:', error);
-          // Fall through to new game
-          await this.engine.executeTurn('look');
+          // A restore the engine refused before it touched the world (a
+          // save it cannot read) leaves a new game, and a new game opens.
+          // A restore that throws after the world was replaced is not made
+          // new here: the opening then runs over what was loaded, or the
+          // engine refuses it and the page shows the startup error. That
+          // hazard is older than the opening and is not handled.
+          await this.openNewGame();
         }
       } else {
-        // New game - execute initial look. Recorded as the lineage's FIRST
-        // feed turn (ADR-305 D3): the headless harness boots with no such
-        // turn, so a transcript created from play must carry it — as `[SKIP]`
-        // setup — or every replayed turn number would be off by one (daemons
-        // and fuses key on turn numbers). No echo: the opening reads as the
-        // story speaking, not the player typing.
-        console.log('Executing initial look command...');
-        const stampFrom = this.beginPlayTurn();
-        const bootResult = await this.engine.executeTurn('look');
-        this.turnEventTypes = (bootResult?.events ?? []).map((e) => e.type);
-        this.finishPlayTurn('look', stampFrom);
-        console.log('Initial look complete');
+        await this.openNewGame();
       }
 
       // Focus input
@@ -697,6 +695,31 @@ export class BrowserClient implements BrowserClientInterface {
       console.error('=== STARTUP ERROR ===', error);
       this.textDisplay.displayText(`[Startup Error: ${error}]`);
     }
+  }
+
+  /**
+   * Open a new game: run the story's opening (ADR-404) and post it as the
+   * play feed's first record.
+   *
+   * The engine runs the opening itself, outside the turn cycle, and sends
+   * one packet per routine; the channel renderers print them as they arrive.
+   * Nothing is typed and nothing is echoed. The record carries `opening`
+   * and no command, with the opening's whole output and captures and the
+   * first look's events (the engine returns only the look's result), and
+   * its ordinal stamps what the opening rendered into the log.
+   *
+   * Called for a first load, for a RESTART (whose reboot runs `start()` on
+   * a fresh client and engine), and for a restore that failed. A restored
+   * session never calls it.
+   *
+   * @throws when the engine refuses the opening: it has already run, or a
+   *   command was executed before it
+   */
+  private async openNewGame(): Promise<void> {
+    const stampFrom = this.beginPlayTurn();
+    const opening = await this.engine.runOpening();
+    this.turnEventTypes = (opening?.events ?? []).map((e) => e.type);
+    this.finishPlayTurn(null, stampFrom);
   }
 
   /**
@@ -728,8 +751,12 @@ export class BrowserClient implements BrowserClientInterface {
    * rule). Reading it back off the DOM instead loses the tight/loose
    * distinction, so an `all-emitted-text` assertion written from play would
    * never match headless replay (ADR-282 D2 and its 2026-07-28 amendment).
+   *
+   * @param command the typed command, or `null` for the opening, which
+   *   nobody typed: its record carries `opening` and no command
+   * @param stampFrom the mark `beginPlayTurn` returned
    */
-  private finishPlayTurn(command: string, stampFrom: number): void {
+  private finishPlayTurn(command: string | null, stampFrom: number): void {
     const ordinal = nextPlayTurnOrdinal();
     const slot = this.elements?.textContent;
     if (slot) {
@@ -739,7 +766,7 @@ export class BrowserClient implements BrowserClientInterface {
     }
     emitTurnEvent({
       turn: ordinal,
-      command,
+      ...(command === null ? { opening: true as const } : { command }),
       output: this.turnProseText.join('\n'),
       captures: capturesOf(this.turnCapturePayloads),
       events: this.turnEventTypes,
@@ -817,7 +844,6 @@ export class BrowserClient implements BrowserClientInterface {
     // re-seed these from the fresh engine.
     this.currentScore = 0;
     this.currentTurn = 0;
-    this.turnOffset = 0;
 
     try {
       await this.config.reboot();
@@ -917,7 +943,6 @@ export class BrowserClient implements BrowserClientInterface {
 
     this.currentTurn = envelope.engineSave.metadata.turnCount;
     this.currentScore = envelope.score;
-    this.turnOffset = this.currentTurn - 1;
 
     if (envelope.transcriptHtml) {
       const html = this.saveManager.decompressTranscript(envelope.transcriptHtml);
@@ -1134,6 +1159,10 @@ export class BrowserClient implements BrowserClientInterface {
    *   written before the field existed, which restores as it always did
    */
   private replayChannels(saved: ChannelStateStore | undefined): void {
+    // The transcript just put back holds the saved game's opening, the
+    // prologue with it; the channel will send its value again on the next
+    // packet, and it must not print a second time.
+    this.prologueRenderer?.adoptPrinted();
     if (!saved) return;
     this.channelRenderer?.replayState(saved, { skip: RESTORED_ELSEWHERE });
   }

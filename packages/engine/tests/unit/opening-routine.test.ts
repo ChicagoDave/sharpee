@@ -364,15 +364,21 @@ describe('the turn channel through the opening', () => {
 });
 
 describe('an engine whose opening never ran', () => {
-  it('opens as it did before: the first command\'s packet carries the banner and the prologue', async () => {
+  it('writes no prologue in the opening\'s place: the first command\'s packet carries the banner and no prologue', async () => {
     const { engine, packets } = boot();
+    const world = engine.getWorld();
 
     await engine.executeTurn('look');
 
     expect(packets).toHaveLength(1);
-    expect(packets[0].payload.prologue).toBe(PROLOGUE);
+    // The prologue is the routine's alone to write, and the routine never ran.
+    expect('prologue' in packets[0].payload).toBe(false);
+    // The capability's prologue is the empty string it is created with.
+    expect(world.getCapability('storyInfo')?.prologue ?? '').toBe('');
     expect(packets[0].payload.banner).toMatchObject({ title: 'Minimal Test Story' });
     expect(packets[0].payload.turn).toBe(1);
+    // And the opening can no longer run.
+    await expect(engine.runOpening()).rejects.toThrow('a command has already been executed');
   });
 });
 

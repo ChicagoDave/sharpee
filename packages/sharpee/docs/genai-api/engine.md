@@ -314,8 +314,8 @@ export declare class GameEngine implements StoryEngine {
     /**
      * Resolve `StoryConfig.prologue` (ADR-298 D3) into the `storyInfo`
      * capability — stdlib's `prologueChannel` projects the resolved text.
-     * Called by the opening routine at `show-prologue` (ADR-404), and by the
-     * first input on an engine whose opening never ran.
+     * Called by the opening routine at `show-prologue` (ADR-404) and by
+     * nothing else: an engine whose opening never runs writes no prologue.
      * A literal (or plain string) is itself; a `phrase-ref` renders through
      * the prose pipeline's phrase machinery, so variants (cycling, randomly,
      * first-time) resolve per their normal semantics. Absent or unresolvable

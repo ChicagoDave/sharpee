@@ -174,26 +174,54 @@ export function createChapterChannelRenderer(slot: HTMLElement): ChannelRenderer
   };
 }
 
+/** The `prologue` renderer, with the one thing a restore has to tell it. */
+export interface PrologueChannelRenderer extends ChannelRenderer {
+  /**
+   * Say that the log now on the page already holds this game's opening: a
+   * save's transcript was just put back. The next prologue value is taken
+   * as printed and is not printed again.
+   */
+  adoptPrinted(): void;
+}
+
 /**
- * `prologue` channel — replace, text. Pre-banner prologue prose
- * (ADR-298 D3). Renders the resolved text into the slot as one
- * paragraph per blank-line-separated chunk. The slot is expected to
- * sit before the banner/main region in the platform's default layout
- * (ADR-298's default rendering order); authors restyle or relocate it
- * per the customizable-client architecture.
+ * `prologue` channel — replace, text. The story's prologue (ADR-298 D3),
+ * printed into the prose log where it arrives: one paragraph per
+ * blank-line-separated chunk, appended after whatever the log already
+ * holds. The story's opening decides when its packet comes (ADR-404
+ * decision 6: `show-prologue` may stand anywhere in the block), so the
+ * client prints the author's order and keeps no place of its own for it.
+ *
+ * The channel sends its value on every packet once the prologue is
+ * written, so a value already printed is not printed again. A renderer is
+ * built per engine, so a RESTART's new game prints its prologue afresh.
+ *
+ * @param slot the prose log the paragraphs are appended to
+ * @returns the renderer
  */
-export function createPrologueChannelRenderer(slot: HTMLElement): ChannelRenderer {
+export function createPrologueChannelRenderer(slot: HTMLElement): PrologueChannelRenderer {
+  let printed: string | undefined;
+  let adopting = false;
   return {
     onValue(value: unknown): void {
       if (typeof value !== 'string' || value.length === 0) return;
+      if (adopting) {
+        adopting = false;
+        printed = value;
+        return;
+      }
+      if (value === printed) return;
+      printed = value;
       const doc = slot.ownerDocument;
-      slot.textContent = '';
       for (const para of value.split(/\n{2,}/)) {
         const p = doc.createElement('p');
         p.className = 'sharpee-prologue';
         p.textContent = para;
         slot.appendChild(p);
       }
+    },
+    adoptPrinted(): void {
+      adopting = true;
     },
   };
 }

@@ -183,6 +183,14 @@ describe('BrowserClient — channel renderer drives visible DOM (R5-C)', () => {
       7,
     );
     expect(elements.statusScore.textContent).toBe('Score: 5 | Turns: 7');
+
+    // The opening's packets carry 0, which the page shows as no count.
+    engine.emit(
+      'channel:packet',
+      { kind: 'turn', turn_id: 'turn-0', payload: { turn: 0 } },
+      0,
+    );
+    expect(elements.statusScore.textContent).toBe('Score: 5');
   });
 
   it('location channel writes to statusLocation element', () => {

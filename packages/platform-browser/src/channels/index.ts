@@ -200,8 +200,9 @@ export function registerDefaultBrowserRenderers(
   renderer.registerRenderer('turn', createTurnChannelRenderer(layout.statusTurn));
   renderer.registerRenderer('info', createInfoChannelRenderer(layout.meta));
   renderer.registerRenderer('ifid', createIfidChannelRenderer(layout.meta));
-  renderer.registerSlot('prologue', layout.prologue);
-  renderer.registerRenderer('prologue', createPrologueChannelRenderer(layout.prologue));
+  // The prologue is a log entry, printed where its packet arrives, so the
+  // story's opening block decides its place (ADR-404 decision 6).
+  renderer.registerRenderer('prologue', createPrologueChannelRenderer(layout.main));
   renderer.registerRenderer('banner', createBannerChannelRenderer(layout.main));
   // ADR-330 D4: a chapter beginning is a title card in the prose log; a
   // story without `use chapters` never emits the channel and loses nothing.

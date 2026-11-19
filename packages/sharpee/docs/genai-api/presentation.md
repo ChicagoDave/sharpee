@@ -43,7 +43,6 @@ export declare class BrowserClient implements BrowserClientInterface {
     private world;
     private currentTurn;
     private currentScore;
-    private turnOffset;
     /**
      * The `ISaveData` produced by the engine for the in-flight save
      * request. Set by `onSaveRequested` while the save dialog is open;
@@ -88,6 +87,9 @@ export declare class BrowserClient implements BrowserClientInterface {
      */
     private channelRenderer?;
     private channelLayout?;
+    /** The `prologue` renderer, held so a restore can tell it the log
+     *  already holds the opening (`adoptPrinted`). Rebuilt per engine. */
+    private prologueRenderer?;
     constructor(config: BrowserClientConfig);
     /**
      * Initialize the browser client with DOM elements.
@@ -162,13 +164,34 @@ export declare class BrowserClient implements BrowserClientInterface {
      * Render the combined `Score: X | Turns: Y` string into the host
      * page's combined status element. The host's traditional layout
      * uses one element; the score and turn channel renderers feed this
-     * function rather than writing directly.
+     * function rather than writing directly. No turn count is shown until a
+     * command has cost a turn (`scoreTurnsText`).
      */
     private renderCombinedStatus;
     /**
-     * Start the game (check for autosave, show initial look)
+     * Start the game: restore the autosave when there is one, and otherwise
+     * open a new game with the story's opening (`openNewGame`).
      */
     start(): Promise<void>;
+    /**
+     * Open a new game: run the story's opening (ADR-404) and post it as the
+     * play feed's first record.
+     *
+     * The engine runs the opening itself, outside the turn cycle, and sends
+     * one packet per routine; the channel renderers print them as they arrive.
+     * Nothing is typed and nothing is echoed. The record carries `opening`
+     * and no command, with the opening's whole output and captures and the
+     * first look's events (the engine returns only the look's result), and
+     * its ordinal stamps what the opening rendered into the log.
+     *
+     * Called for a first load, for a RESTART (whose reboot runs `start()` on
+     * a fresh client and engine), and for a restore that failed. A restored
+     * session never calls it.
+     *
+     * @throws when the engine refuses the opening: it has already run, or a
+     *   command was executed before it
+     */
+    private openNewGame;
     /**
      * Open the play feed's bracket around one turn (ADR-305 D4): reset the
      * per-turn accumulators and mark where this turn's rendering will start in
@@ -187,6 +210,10 @@ export declare class BrowserClient implements BrowserClientInterface {
      * rule). Reading it back off the DOM instead loses the tight/loose
      * distinction, so an `all-emitted-text` assertion written from play would
      * never match headless replay (ADR-282 D2 and its 2026-07-28 amendment).
+     *
+     * @param command the typed command, or `null` for the opening, which
+     *   nobody typed: its record carries `opening` and no command
+     * @param stampFrom the mark `beginPlayTurn` returned
      */
     private finishPlayTurn;
     /**
@@ -1004,12 +1031,21 @@ export interface WorldDigest {
     score?: number;
     machines: WorldDigestMachine[];
 }
-/** What a caller supplies per turn; the lineage fields are stamped here. */
+/**
+ * What a caller supplies per record; the lineage fields are stamped here.
+ *
+ * A record is a typed turn, which carries `command`, or a new game's
+ * opening (ADR-404), which carries `opening` and no command because nobody
+ * typed anything for it. The opening is the first record of every lineage
+ * that began as a new game; a restored session has none.
+ */
 export interface TurnEventPayload {
-    /** Monotonic 1-based ordinal, matching the turn's `data-turn` anchors. */
+    /** Monotonic 1-based ordinal, matching the record's `data-turn` anchors. */
     turn: number;
-    /** The player's typed command (no `> ` prefix). */
-    command: string;
+    /** The player's typed command (no `> ` prefix); absent on the opening. */
+    command?: string;
+    /** Present, and true, only on the opening's record. */
+    opening?: true;
     /**
      * The turn's composed prose — the ENGINE's text, packets joined the way
      * the headless harness joins them (`packetProseText` per packet, then
@@ -1257,8 +1293,29 @@ export declare class TextDisplay {
 ```typescript
 /**
  * StatusLine - handles the status bar display (location, score, turns)
+ *
+ * Public interface: `StatusLine`, `scoreTurnsText`, `turnsText`.
+ * Owner context: @sharpee/platform-browser (browser player client).
  */
 import type { StatusElements } from '../types.js';
+/**
+ * The turn count as a status line shows it. The `turn` channel carries the
+ * number of commands that have cost a turn, so it is 0 through the opening;
+ * a client shows 0 as no count at all (ADR-404 decision 14).
+ *
+ * @param turns the `turn` channel's value
+ * @returns `Turns: N`, or the empty string when no command has cost a turn
+ */
+export declare function turnsText(turns: number): string;
+/**
+ * The combined score-and-turns text of the host page's one status element.
+ *
+ * @param score the current score
+ * @param turns the `turn` channel's value
+ * @returns `Score: S | Turns: N`, or `Score: S` alone before the first
+ *   command has cost a turn
+ */
+export declare function scoreTurnsText(score: number, turns: number): string;
 export declare class StatusLine {
     private statusLocation;
     private statusScore;
@@ -1272,7 +1329,8 @@ export declare class StatusLine {
      */
     setLocation(location: string): void;
     /**
-     * Set the score and turns display
+     * Set the score and turns display. A turn count of 0 is shown as no
+     * count (`scoreTurnsText`).
      */
     setScoreTurns(score: number, turns: number): void;
 }

@@ -15,6 +15,8 @@
 
 import type { ChannelRenderer } from '@sharpee/channel-service';
 
+import { turnsText } from '../display/StatusLine.js';
+
 /**
  * `location` channel — replace, json `LocationHeadingValue` (ADR-349 D12).
  *
@@ -59,13 +61,15 @@ export function createScoreChannelRenderer(el: HTMLElement): ChannelRenderer {
 }
 
 /**
- * `turn` channel — replace, number. Writes `Turns: N`.
+ * `turn` channel — replace, number. Writes `Turns: N`, and nothing at all
+ * for 0: the channel sends 0 through the opening, and no count is shown
+ * until a command has cost a turn (ADR-404 decision 14).
  */
 export function createTurnChannelRenderer(el: HTMLElement): ChannelRenderer {
   return {
     onValue(value: unknown): void {
       if (typeof value !== 'number') return;
-      el.textContent = `Turns: ${value}`;
+      el.textContent = turnsText(value);
     },
   };
 }

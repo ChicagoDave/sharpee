@@ -11,8 +11,10 @@
  * Nothing this repository owns is faked: the save is the engine's own, the packets are
  * the channel service's, and the status heading and the side panel are
  * written by the client's own renderers.
- * `channel-restore-seam.test.ts` covers the cases this one cannot reach
- * cheaply (the Restore menu, an envelope without the field).
+ * The turn count is checked here at all three restore seams (the boot-time
+ * autosave, the Restore menu and a typed RESTORE). `channel-restore-seam.test.ts`
+ * covers what this file does not: a Restore-menu restore dropping the panel
+ * entries learned since the save, and an envelope without the field.
  *
  * Owner context: platform-browser tests (the real-path gate for channel
  * state across a restore).
@@ -92,6 +94,7 @@ end before
 interface Page {
   client: BrowserClient;
   statusLocation: HTMLElement;
+  statusScore: HTMLElement;
   transcript: HTMLElement;
 }
 
@@ -164,7 +167,24 @@ async function loadPage(): Promise<Page> {
   engine.installStory(story);
   engine.registerSaveRestoreHooks(client.getSaveRestoreHooks());
   await client.start();
-  return { client, statusLocation: elements.statusLocation, transcript: elements.textContent };
+  return {
+    client,
+    statusLocation: elements.statusLocation,
+    statusScore: elements.statusScore,
+    transcript: elements.textContent,
+  };
+}
+
+/** The client's private restore seam, as these tests reach it. */
+interface RestoreSeam {
+  performSave(slotName: string): void;
+  runRestoreDialog(): Promise<boolean>;
+  dialogManager: { showRestoreDialog(): Promise<string | null> };
+}
+
+/** Reach the client's restore seam, which is private to it. */
+function restoreSeam(client: BrowserClient): RestoreSeam {
+  return client as unknown as RestoreSeam;
 }
 
 /** The text of the side panel, or '' when no panel is shown. */
@@ -237,8 +257,8 @@ describe('a reloaded page shows what the channels were showing (GH #798)', () =>
     expect(saved).toContain('location');
     expect(saved).toContain('findings');
     // What it sent and the save must not keep: the transcript's channels
-    // would print twice, and the client's own fields would be blanked or
-    // set against the wrong turn offset.
+    // would print twice, and the client's own fields, which the envelope
+    // sets, would be blanked.
     for (const id of [
       'room-name',
       'room-description',
@@ -284,5 +304,84 @@ describe('a reloaded page shows what the channels were showing (GH #798)', () =>
     expect(count(panelText(), 'leaf: one line of ink')).toBe(1);
     expect(panelText()).toContain('bell: it has no clapper');
     expect(after.statusLocation.textContent).toBe('Library');
+  });
+
+  it('the turn count survives the reload and goes on by one a command (the boot seam)', async () => {
+    const before = await loadPage();
+    await before.client.executeCommand('north');
+    await before.client.executeCommand('examine leaf');
+    await before.client.executeCommand('examine bell');
+    // PRECONDITION: three commands, three turns.
+    expect(before.statusScore.textContent).toBe('Score: 0 | Turns: 3');
+
+    const after = await loadPage();
+
+    expect(after.transcript.textContent).toContain('[Session restored]');
+    expect(after.statusScore.textContent).toBe('Score: 0 | Turns: 3');
+
+    await after.client.executeCommand('south');
+
+    expect(after.statusScore.textContent).toBe('Score: 0 | Turns: 4');
+  });
+
+  it('a restored session prints no opening after "[Session restored]"', async () => {
+    const before = await loadPage();
+    await before.client.executeCommand('north');
+    // PRECONDITION: the new game opened with its banner, once.
+    expect(count(before.transcript.textContent ?? '', 'Story v0.0.1')).toBe(1);
+
+    const after = await loadPage();
+
+    const log = after.transcript.textContent ?? '';
+    expect(log.trimEnd().endsWith('[Session restored]')).toBe(true);
+    expect(count(log, 'Story v0.0.1')).toBe(1);
+    expect(count(log, 'A small lodge.')).toBe(1);
+  });
+
+  it('the Restore menu puts the turn count back to the save\'s, and it goes on by one a command (the menu seam)', async () => {
+    const page = await loadPage();
+    await page.client.executeCommand('north');
+    await page.client.executeCommand('examine leaf');
+    restoreSeam(page.client).performSave('early');
+    await page.client.executeCommand('examine bell');
+    await page.client.executeCommand('south');
+    // PRECONDITION: the page has played on past the save.
+    expect(page.statusScore.textContent).toBe('Score: 0 | Turns: 4');
+    expect(page.statusLocation.textContent).toBe('Lodge');
+
+    // The dialog waits on a person's click; the choice is the one stand-in.
+    restoreSeam(page.client).dialogManager.showRestoreDialog = async () => 'early';
+    const restored = await restoreSeam(page.client).runRestoreDialog();
+
+    expect(restored).toBe(true);
+    expect(page.statusLocation.textContent).toBe('Library');
+    expect(page.statusScore.textContent).toBe('Score: 0 | Turns: 2');
+
+    await page.client.executeCommand('examine bell');
+
+    expect(page.statusScore.textContent).toBe('Score: 0 | Turns: 3');
+  });
+
+  it('a typed RESTORE puts the turn count back to the save\'s, and it goes on by one a command (the command seam)', async () => {
+    const page = await loadPage();
+    await page.client.executeCommand('north');
+    await page.client.executeCommand('examine leaf');
+    restoreSeam(page.client).performSave('early');
+    await page.client.executeCommand('examine bell');
+    await page.client.executeCommand('south');
+    // PRECONDITION: the page has played on past the save.
+    expect(page.statusScore.textContent).toBe('Score: 0 | Turns: 4');
+
+    // The dialog waits on a person's click; the choice is the one stand-in.
+    restoreSeam(page.client).dialogManager.showRestoreDialog = async () => 'early';
+    await page.client.executeCommand('restore');
+
+    // The command's own packet follows the restore and says the save's count.
+    expect(page.statusLocation.textContent).toBe('Library');
+    expect(page.statusScore.textContent).toBe('Score: 0 | Turns: 2');
+
+    await page.client.executeCommand('examine bell');
+
+    expect(page.statusScore.textContent).toBe('Score: 0 | Turns: 3');
   });
 });

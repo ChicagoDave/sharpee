@@ -994,6 +994,11 @@
     return { document: read.document, writeLocked: false };
   }
 
+  // tools/ide/web/testing-surface/src/feed-record.ts
+  function isOpeningRecord(record) {
+    return record.opening === true;
+  }
+
   // tools/ide/web/testing-surface/src/derived.ts
   var LABEL_SEPARATOR = " \xB7 ";
   function derivedRowOf(event) {
@@ -4712,7 +4717,6 @@
       document.getElementById("startup-new-btn")?.click();
     });
   }
-  var expectBoot = true;
   var lastDeliveredOrdinal;
   var nextTurnWaiters = [];
   var fenceWaiters = [];
@@ -4745,7 +4749,6 @@
       dropBeforeFence = false;
       if (expectDriverFence) {
         expectDriverFence = false;
-        expectBoot = true;
         const waiters2 = fenceWaiters;
         fenceWaiters = [];
         for (const resolve of waiters2) resolve();
@@ -4761,7 +4764,6 @@
       model.beginRebindAll();
       model.activateLine(model.mainLine);
       currentLine = model.mainLine;
-      expectBoot = true;
       pendingDialogOutcome = null;
       bootCaptures = void 0;
       bootRecordOrdinal = void 0;
@@ -4770,8 +4772,7 @@
       return;
     }
     if (dropBeforeFence) return;
-    const boot = expectBoot;
-    expectBoot = false;
+    const boot = isOpeningRecord(record);
     if (suppressDelivery) {
       const waiters2 = nextTurnWaiters;
       nextTurnWaiters = [];
@@ -4885,7 +4886,7 @@
       }
       suppressDelivery = true;
       if (!await awaitNextTurn(15e3)) {
-        trace(`boot line ${line}: no boot look in 15s`);
+        trace(`boot line ${line}: no opening in 15s`);
         return "failed";
       }
       for (const step of replay) {

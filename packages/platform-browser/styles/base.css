@@ -330,16 +330,15 @@ span.sharpee-channel-entry {
   margin-top: 1em;
 }
 
-/* ----- Pre-banner prologue (ADR-298 D3) ----- */
-/* The prologue region sits OUTSIDE the prose pane (before `main`), so it gets
-   only the universal reset — no margins at all. That left its paragraphs
-   collapsed against each other and against whatever followed. */
+/* ----- Prologue (ADR-298 D3; a log entry since ADR-404) ----- */
+/* The prologue is printed into the prose pane where the story's opening
+   puts it: first by default, or after the banner or the first room when
+   the author's block says so. Its paragraphs stand a line apart from each
+   other and from whatever comes before and after them. */
 
-#sharpee-prologue {
-  margin-bottom: 1em;
-}
-
-#sharpee-prologue p.sharpee-prologue + p.sharpee-prologue {
+.sharpee-prose-pane p.sharpee-prologue + p.sharpee-prologue,
+.sharpee-prose-pane p.sharpee-prologue + :not(.sharpee-prologue),
+.sharpee-prose-pane :not(.sharpee-prologue) + p.sharpee-prologue {
   margin-top: 1em;
 }
 

@@ -30,14 +30,15 @@ final class TestingSurfaceRealPathTests: XCTestCase {
     private var documentURL: URL!
     private var surface: TestingSurfaceViewController!
 
-    /// The client's part, in fixture form: an opening (unstamped), a boot
-    /// look whose record carries the boot-flush captures (prologue + info —
-    /// the opening defaults' carriers, exactly as the real client's first
-    /// turn does), and a room graph walked by typed commands — each turn
-    /// stamped into the DOM and posted over the feed exactly as
-    /// `BrowserClient` does. A typed `restart` behind confirm() replays the
-    /// real client's sequence (ack turn → fence → fresh boot look); a typed
-    /// `save` opens a real `<dialog>` that resolves the turn only on close.
+    /// The client's part, in fixture form: a prologue (unstamped), an
+    /// opening whose record is marked `opening`, has no command and carries
+    /// the prologue and info captures (the opening defaults' carriers,
+    /// exactly as the real client's opening record does), and a room graph
+    /// walked by typed commands — each turn stamped into the DOM and posted
+    /// over the feed exactly as `BrowserClient` does. A typed `restart`
+    /// behind confirm() replays the real client's sequence (ack turn → fence
+    /// → the new game's opening); a typed `save` opens a real `<dialog>`
+    /// that resolves the turn only on close.
     private static let fixtureHTML = """
     <html><head><meta charset="utf-8"></head><body>
     <div class="sharpee-window">
@@ -90,27 +91,30 @@ final class TestingSurfaceRealPathTests: XCTestCase {
         var token = current.toLowerCase().replace(/[^a-z0-9]+/g, '-');
         var captures = [{ channel: 'room-name', values: [current] }];
         if (boot) {
-          // The boot flush rides the boot look's record (the real client's
-          // shape): the opening defaults read these captures.
+          // The opening's record carries its prologue and info captures (the
+          // real client's shape): the opening defaults read them.
           captures.push({ channel: 'prologue',
                           values: ['The cab is already grinding away down the lane.'] });
           captures.push({ channel: 'info',
                           values: [{ title: 'Probe', description: 'A fixture estate.' }] });
         }
-        post({ turn: n, command: command,
+        // The opening's record carries `opening` and no command (ADR-404),
+        // as the real client posts it; a typed turn carries its command.
+        var record = boot ? { turn: n, opening: true } : { turn: n, command: command };
+        post(Object.assign(record, {
                output: current + '\\n' + bodyText,
                captures: captures,
                events: ['if.event.actor_moved'],
                world: { entities: [{ kind: 'npc', name: 'Tobias', token: 'tobias',
                                      location: { name: current, token: token } }] },
-               lineage: 1 });
+               lineage: 1 }));
       }
-      function bootLook() { renderTurn('look', false, null, true); }
+      function runOpening() { renderTurn(null, false, null, true); }
       var tc = document.getElementById('text-content');
       var opening = document.createElement('p');
       opening.textContent = 'The cab is already grinding away down the lane.';
       tc.appendChild(opening);
-      bootLook();
+      runOpening();
       var input = document.getElementById('command-input');
       input.addEventListener('keydown', function (e) {
         if (e.key !== 'Enter' || !input.value.trim()) return;
@@ -122,7 +126,7 @@ final class TestingSurfaceRealPathTests: XCTestCase {
           renderTurn(command, true, 'The story restarts.');
           post({ restart: true, turn: n + 1, lineage: 1 });
           current = 'Iron Gates';
-          bootLook();
+          runOpening();
           return;
         }
         if (command === 'save') {
@@ -325,8 +329,8 @@ final class TestingSurfaceRealPathTests: XCTestCase {
     }
 
     /// The opening + two norths — three cards: the opening (0) and the feed's
-    /// turns 2 and 3. The fixture client still posts its own first look as
-    /// turn 1, which seats the opening card and makes no card of its own.
+    /// turns 2 and 3. The fixture client posts its opening as the feed's
+    /// record 1, which seats the opening card and makes no card of its own.
     private func playThreeTurns() async throws {
         try await boot()
         try await type("north")
