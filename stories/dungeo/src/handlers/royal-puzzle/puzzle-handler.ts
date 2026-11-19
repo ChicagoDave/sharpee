@@ -162,7 +162,6 @@ export function handlePuzzleMovement(
         data: {
           messageId: PuzzleHandlerMessages.EXIT_PUZZLE
         },
-        narrate: true
       });
 
       // Show puzzle room description
@@ -181,7 +180,6 @@ export function handlePuzzleMovement(
             includeContents: true,
             verbose: true
           },
-          narrate: true
         });
       }
 
@@ -196,7 +194,6 @@ export function handlePuzzleMovement(
         data: {
           messageId: PuzzleHandlerMessages.CANT_EXIT
         },
-        narrate: true
       });
       return events;
     }
@@ -213,7 +210,6 @@ export function handlePuzzleMovement(
         messageId: PuzzleHandlerMessages.MOVE_BLOCKED,
         direction: 'down'
       },
-      narrate: true
     });
     return events;
   }
@@ -235,7 +231,6 @@ export function handlePuzzleMovement(
         messageId: 'puzzle_move_description',
         message: getPuzzleDescription(state)
       },
-      narrate: true
     });
 
     return events;
@@ -250,7 +245,6 @@ export function handlePuzzleMovement(
         messageId: PuzzleHandlerMessages.MOVE_BLOCKED,
         direction: dir
       },
-      narrate: true
     });
     return events;
   }
@@ -296,7 +290,6 @@ export function handleTakeCard(world: WorldModel): ISemanticEvent[] | null {
       data: {
         messageId: PuzzleHandlerMessages.TAKE_CARD
       },
-      narrate: true
     });
 
     // Also emit a taken event for scoring
@@ -309,7 +302,6 @@ export function handleTakeCard(world: WorldModel): ISemanticEvent[] | null {
         targetId: cardId,
         targetName: 'gold card'
       },
-      narrate: false
     });
 
     return events;
@@ -503,7 +495,6 @@ export function registerRoyalPuzzleHandler(
         data: {
           messageId: PuzzleHandlerMessages.ENTER_PUZZLE
         },
-        narrate: true
       });
 
       // Emit room description with direct message
@@ -517,7 +508,6 @@ export function registerRoyalPuzzleHandler(
           messageId: 'puzzle_entry_description',
           message: getPuzzleDescription(state)
         },
-        narrate: true
       });
 
       return events;

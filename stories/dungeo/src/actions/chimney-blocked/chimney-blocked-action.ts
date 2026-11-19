@@ -65,7 +65,6 @@ export const chimneyBlockedAction: Action = {
         messageId,
         message
       },
-      narrate: true
     }];
   },
 

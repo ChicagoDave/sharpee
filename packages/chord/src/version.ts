@@ -393,5 +393,14 @@
  * re-recorded for the opening block is the 4.1.0 surface. The interim
  * Sharpee releases 5.6.2 to 5.6.4 went to npm reporting Chord 4.0.3, the
  * last of them with the opening block already in it.
+ *
+ * **Pending publish — ADR-405, 2026-11-19 (session 785b7e): a story event
+ * is not prose.** `IR_FORMAT` → `story language 7`: the IR carries the
+ * story-event vocabulary, every event id its `emit` statements name, as
+ * `storyEvents`. No grammar changes and no story stops compiling. What an
+ * author sees change is that an `emit` whose name is also a phrase key, or
+ * whose payload has a field named `message`, `text` or `messageId`, no
+ * longer prints (GH #724). David called the change a patch; the number is
+ * set when the next version is cut, not here.
  */
 export const CHORD_LANGUAGE_VERSION = '4.1.0';

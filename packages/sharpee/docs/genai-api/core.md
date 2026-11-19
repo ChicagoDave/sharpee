@@ -513,10 +513,6 @@ export interface ISemanticEvent {
      */
     priority?: number;
     /**
-     * Whether this event should be narrated
-     */
-    narrate?: boolean;
-    /**
      * Whether the player witnessed this event (ADR-328 D3). Present only on
      * actor-sourced events whose producer stamped `entities.location`; the
      * enrichment funnel computes it against the player at emit time. Absent
@@ -734,7 +730,6 @@ export declare function createEvent(type: string, data?: Record<string, unknown>
 }, metadata?: {
     tags?: string[];
     priority?: number;
-    narrate?: boolean;
     source?: string;
     sessionId?: string;
     [key: string]: unknown;
@@ -784,10 +779,6 @@ export interface CreateEventOptions {
      * Priority of the event (higher = more important).
      */
     priority?: number;
-    /**
-     * Whether this event should be narrated.
-     */
-    narrate?: boolean;
     /**
      * Custom event ID (auto-generated if not provided).
      */

@@ -100,7 +100,6 @@ export function registerTrapdoorHandler(
         data: {
           messageId: TrapdoorMessages.SLAMS_SHUT
         },
-        narrate: true
       });
 
       return events;

@@ -226,7 +226,6 @@ function createSwordGlowDaemon(): Daemon {
             previousLevel: currentGlowLevel,
             newLevel: newGlowLevel
           },
-          narrate: true
         });
 
         // Update current level

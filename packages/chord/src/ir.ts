@@ -29,8 +29,11 @@ import type { Span } from './span.js';
  * clause and every `select-strategy` carries a head-derived id, and the
  * story carries its identity manifest and stamp in `identity`; a loader
  * refuses IR without them rather than keying a save by position.
+ * `story language 7` (ADR-405, 2026-11-19): the story carries its
+ * story-event vocabulary in `storyEvents`; a loader refuses IR without it
+ * rather than letting a story event print as prose.
  */
-export const IR_FORMAT = 'story language 6';
+export const IR_FORMAT = 'story language 7';
 
 /**
  * The key prefix a passage exit carries in `IRExit.direction` (ADR-378 D1):
@@ -171,6 +174,18 @@ export interface StoryIR {
    * `meta.fields.prologue` is absent.
    */
   opening: IROpeningRoutine[] | null;
+  /**
+   * The story-event vocabulary (ADR-405): the event id of every `emit` in
+   * the story, each once, sorted by code unit, in Chord's dotless spelling
+   * (media statements other than `play sound` lower to `emit`, so their
+   * `media-*` ids are here; `play sound` is its own statement and is not). A
+   * story event is a signal for channels and machines and is not prose; the
+   * loader translates this list to runtime event types and hands it to the
+   * engine, whose prose pipeline renders none of them. Recorded by the
+   * analyzer's `emitStoryEvents` pass from `collectStoryEvents`; `validateIR`
+   * refuses a list that disagrees with the story's `emit` statements.
+   */
+  storyEvents: string[];
   conditions: IRNamedCondition[];
   phrases: IRPhrases;
   /**

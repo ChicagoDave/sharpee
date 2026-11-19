@@ -20,7 +20,6 @@ export function createEvent(
   metadata?: {
     tags?: string[];
     priority?: number;
-    narrate?: boolean;
     source?: string;
     sessionId?: string;
     [key: string]: unknown;
@@ -29,14 +28,12 @@ export function createEvent(
   // Extract values from metadata
   const tags = metadata?.tags || [];
   const priority = metadata?.priority ?? 0;
-  const narrate = metadata?.narrate ?? true;
-  
+
   // Clean metadata for storage (remove known properties)
   const cleanMetadata = metadata ? { ...metadata } : undefined;
   if (cleanMetadata) {
     delete cleanMetadata.tags;
     delete cleanMetadata.priority;
-    delete cleanMetadata.narrate;
   }
   
   const event: ISemanticEvent = {
@@ -46,8 +43,7 @@ export function createEvent(
     entities: entities || {},
     data: data || {},
     tags,
-    priority,
-    narrate
+    priority
   };
   
   // Add metadata if provided (excluding extracted properties)

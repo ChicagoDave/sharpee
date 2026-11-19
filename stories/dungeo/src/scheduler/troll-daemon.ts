@@ -134,7 +134,6 @@ function createTrollRecoveryDaemon(trollRoomId: string): Daemon {
               messageId: DungeoSchedulerMessages.TROLL_WAKES_UP,
               daemonId: TROLL_RECOVERY_DAEMON
             },
-            narrate: true
           });
         }
       } else {

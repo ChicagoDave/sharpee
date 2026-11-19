@@ -40,7 +40,6 @@ export const doorBlockedAction: Action = {
         messageId: DoorBlockedMessages.DOOR_LOCKED,
         message: 'The door is locked, and there is no keyhole on this side.'
       },
-      narrate: true
     }];
   },
 

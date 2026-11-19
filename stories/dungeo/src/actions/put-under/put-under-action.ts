@@ -86,7 +86,6 @@ export const putUnderAction: Action = {
       data: {
         messageId: result.error || PutUnderMessages.GENERIC_FAIL
       },
-      narrate: true
     }];
   },
 
@@ -99,7 +98,6 @@ export const putUnderAction: Action = {
       data: {
         messageId: PutUnderMessages.MAT_PLACED
       },
-      narrate: true
     }];
   }
 };

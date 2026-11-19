@@ -776,8 +776,7 @@ export class WorldModel implements IWorldModel {
           ...data
         },
         tags: ['platform', 'world', 'debug'],
-        priority: 0,
-        narrate: false
+        priority: 0
       });
     }
   }

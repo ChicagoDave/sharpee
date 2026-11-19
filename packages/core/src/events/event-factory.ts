@@ -42,11 +42,6 @@ export interface CreateEventOptions {
   priority?: number;
 
   /**
-   * Whether this event should be narrated.
-   */
-  narrate?: boolean;
-
-  /**
    * Custom event ID (auto-generated if not provided).
    */
   id?: string;
@@ -82,8 +77,7 @@ export function createTypedEvent<T extends EventType>(
     data,
     entities: options.entities ?? {},
     tags: options.tags,
-    priority: options.priority,
-    narrate: options.narrate
+    priority: options.priority
   };
 }
 

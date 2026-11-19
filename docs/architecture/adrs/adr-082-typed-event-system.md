@@ -7,6 +7,8 @@
 **Implemented:** 2026-01-01
 **Context:** Beta release preparation exposed type safety gaps in event system
 
+> **Amended 2026-11-19 (ADR-405 Decision 5):** `narrate` is removed from `ISemanticEvent` and from `createTypedEvent`'s options. The samples below still show it as they were written; no event carries a rendering flag.
+
 ## Problem Statement
 
 The current `ISemanticEvent` interface defines `data` as `unknown`:

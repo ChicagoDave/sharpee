@@ -4911,7 +4911,7 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "wears": [],
     },
   ],
-  "format": "story language 6",
+  "format": "story language 7",
   "grammarRemovals": [
     {
       "action": "touching",
@@ -7382,6 +7382,10 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
       "after-hours",
     ],
   },
+  "storyEvents": [
+    "fed",
+    "petted",
+  ],
   "timers": [],
   "traits": [
     {

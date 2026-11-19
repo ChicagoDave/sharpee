@@ -75,11 +75,6 @@ export interface ISemanticEvent {
    * Priority of the event (higher numbers are more important)
    */
   priority?: number;
-  
-  /**
-   * Whether this event should be narrated
-   */
-  narrate?: boolean;
 
   /**
    * Whether the player witnessed this event (ADR-328 D3). Present only on

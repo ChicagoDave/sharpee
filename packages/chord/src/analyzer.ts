@@ -119,6 +119,7 @@ import { entityIdOf, factIdOf, hasAdjectiveDecl, isKindDecl } from './analyzer/d
 import { PHRASEBOOK_REGISTRY } from './phrasebooks.js';
 import { DiagnosticBag } from './diagnostics.js';
 import { buildIdentity, emptyIdentity } from './identity.js';
+import { collectStoryEvents } from './story-events.js';
 import { validateIR } from './validate-ir.js';
 import { CHORD_LANGUAGE_VERSION } from './version.js';
 import {
@@ -1164,6 +1165,16 @@ export class Analyzer {
     { name: 'checkHeaderFields', requires: ['collect'], run: (a) => a.checkHeaderFields() },
     // Return-field cross-check once every `emit` is collected.
     { name: 'checkChannelReturns', requires: ['buildDeclarations'], run: (a) => a.checkChannelReturns(a.builtIR().channels) },
+    // ADR-405: the story-event vocabulary, read off the built IR so every
+    // `emit` is found wherever it sits. It waits for the same passes the
+    // identity manifest does: they are the ones that write statement bodies.
+    {
+      name: 'emitStoryEvents',
+      requires: ['buildDeclarations', 'buildStartBlock', 'applyTopics', 'applyConversations', 'collectRegionMembers', 'applyExitTables'],
+      run: (a) => {
+        a.builtIR().storyEvents = collectStoryEvents(a.builtIR());
+      },
+    },
     // ADR-388 D4: the identity manifest and stamp, over the resolved IR —
     // last, after every pass that writes an entity, exit, clause, select,
     // topic row or start block it enumerates.
@@ -1179,7 +1190,7 @@ export class Analyzer {
     // IR and a rogue story are refused by one rule.
     {
       name: 'validateIR',
-      requires: ['emitIdentity'],
+      requires: ['emitIdentity', 'emitStoryEvents'],
       run: (a) => {
         for (const diagnostic of validateIR(a.builtIR())) a.diagnostics.add(diagnostic);
       },
@@ -1318,6 +1329,8 @@ export class Analyzer {
       startBlock: null,
       // ADR-404: resolved by `buildOpening`; null is "no block".
       opening: null,
+      // ADR-405: filled by `emitStoryEvents` once every statement is built.
+      storyEvents: [],
       conditions: [],
       phrases: { defaultLocale: DEFAULT_LOCALE, locales: {} },
       messageOverrides: { defaultLocale: DEFAULT_LOCALE, locales: {} },

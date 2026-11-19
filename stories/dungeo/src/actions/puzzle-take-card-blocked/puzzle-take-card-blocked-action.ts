@@ -48,7 +48,6 @@ export const puzzleTakeCardBlockedAction: Action & { metadata: ActionMetadata } 
         messageId: PuzzleTakeCardBlockedMessages.CANT_REACH,
         message: "You can see the gold card set in a depression in one of the sandstone walls, but you can't reach it from here."
       },
-      narrate: true
     }];
   },
 

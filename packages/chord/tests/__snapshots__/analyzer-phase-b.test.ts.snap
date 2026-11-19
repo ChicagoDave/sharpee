@@ -491,7 +491,7 @@ exports[`zoo-actions IR (§3.4 + ownership package) > matches the golden IR snap
       "wears": [],
     },
   ],
-  "format": "story language 6",
+  "format": "story language 7",
   "identity": {
     "chapters": [],
     "clauses": [
@@ -888,6 +888,10 @@ exports[`zoo-actions IR (§3.4 + ownership package) > matches the golden IR snap
     "reversible": false,
     "states": [],
   },
+  "storyEvents": [
+    "fed",
+    "petted",
+  ],
   "timers": [],
   "traits": [
     {

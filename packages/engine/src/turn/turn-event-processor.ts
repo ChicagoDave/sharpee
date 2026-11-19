@@ -106,8 +106,7 @@ function normalizeEvent(event: ISemanticEvent): ISemanticEvent {
     entities: event.entities || {},
     data: event.data,
     tags: event.tags,
-    priority: event.priority,
-    narrate: event.narrate
+    priority: event.priority
   };
 }
 

@@ -249,8 +249,7 @@ export class EffectProcessor {
       data: {
         messageId: effect.id,
         ...effect.data
-      },
-      narrate: true
+      }
     };
     this.pendingEmittedEvents.push(messageEvent);
     if (this.emitEvents) {
