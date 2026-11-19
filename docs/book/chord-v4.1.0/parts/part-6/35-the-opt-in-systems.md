@@ -181,11 +181,14 @@ the meter with a name of your choosing. A rung may end with `says` and a
 phrase, and the phrase is printed once, when the meter first reaches the
 rung. `fatal at <n>` is the level at which the player dies.
 
-The meter starts at nothing, and the opening of a story is a turn like any
-other, so the meter stands at one before the player has typed a word. The
-first `wait` takes it to two.
+The meter starts at nothing. The opening of a story is not a turn, so the
+meter still stands at nothing when the player first reads the Yard, and
+each command after that adds one. The second `wait` takes it to two.
 
 ```text
+> wait
+Time passes...
+
 > wait
 Time passes...
 
@@ -200,7 +203,7 @@ Time passes...
 You are hungry now, and thinking about the loaf.
 ```
 
-Left alone, the meter reaches nine on the eighth `wait`.
+Left alone, the meter reaches nine on the ninth `wait`.
 
 ```text
 > wait

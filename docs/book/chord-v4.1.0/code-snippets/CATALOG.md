@@ -2,7 +2,7 @@
 
 Every code and config snippet from *The Sharpee Author and Developer Manual*, extracted verbatim and organized by chapter in reading order.
 
-- **358 snippets** across 41 chapters (357 author, 1 reference).
+- **360 snippets** across 41 chapters (359 author, 1 reference).
 - Game-session transcripts (the `> look` ... output examples) are **not** included; they are example play sessions, not code.
 - **author** snippets are the story code/config a reader writes (assembled in reading order into `src/index.ts` and project files).
 - **reference** snippets are "Under the Hood" excerpts of the platform's own source (interfaces/classes you *import*, not code you write); their filenames carry a `.reference.` infix and are named for the symbol they document.
@@ -52,6 +52,8 @@ Regenerate with `node scripts/extract-book-snippets.cjs` (from `docs/book/`).
 |---|------|---------|------|------|----------|
 | 01 | `01-making-ansel.story` | Making Ansel | chord | author | 13 |
 | 02 | `02-handing-over-the-role.story` | Handing over the role | chord | author | 57 |
+| 03 | `03-the-opening.story` | The opening | chord | author | 114 |
+| 04 | `04-the-opening.story` | The opening | chord | author | 132 |
 
 ## Build, play, read an error
 
@@ -309,9 +311,9 @@ Regenerate with `node scripts/extract-book-snippets.cjs` (from `docs/book/`).
 | 06 | `06-timers.story` | Timers | chord | author | 169 |
 | 07 | `07-more-about-timers.story` | More about timers | chord | author | 217 |
 | 08 | `08-a-sequence.story` | A sequence | chord | author | 249 |
-| 09 | `09-chapters.story` | Chapters | chord | author | 297 |
-| 10 | `10-chapters.story` | Chapters | chord | author | 326 |
-| 11 | `11-build-and-try-it.sh` | Build and try it | shell | author | 390 |
+| 09 | `09-chapters.story` | Chapters | chord | author | 298 |
+| 10 | `10-chapters.story` | Chapters | chord | author | 327 |
+| 11 | `11-build-and-try-it.sh` | Build and try it | shell | author | 391 |
 
 # Part IV. Words
 
@@ -587,9 +589,9 @@ Regenerate with `node scripts/extract-book-snippets.cjs` (from `docs/book/`).
 | 01 | `01-the-opt-in-systems.story` | The opt-in systems | chord | author | 10 |
 | 02 | `02-combat.story` | Combat | chord | author | 68 |
 | 03 | `03-hunger.story` | Hunger | chord | author | 144 |
-| 04 | `04-announcing.story` | Announcing | chord | author | 224 |
-| 05 | `05-build-and-try-it.sh` | Build and try it | shell | author | 258 |
-| 06 | `06-build-and-try-it.sh` | Build and try it | shell | author | 267 |
+| 04 | `04-announcing.story` | Announcing | chord | author | 227 |
+| 05 | `05-build-and-try-it.sh` | Build and try it | shell | author | 261 |
+| 06 | `06-build-and-try-it.sh` | Build and try it | shell | author | 270 |
 
 # Part VII. Presentation
 
@@ -639,9 +641,9 @@ Regenerate with `node scripts/extract-book-snippets.cjs` (from `docs/book/`).
 
 | # | File | Section | Lang | Kind | Src line |
 |---|------|---------|------|------|----------|
-| 01 | `01-reading-what-the-story-says.sh` | Reading what the story says | shell | author | 132 |
-| 02 | `02-running-the-tree.sh` | Running the tree | shell | author | 280 |
-| 03 | `03-build-and-try-it.sh` | Build and try it | shell | author | 501 |
+| 01 | `01-reading-what-the-story-says.sh` | Reading what the story says | shell | author | 129 |
+| 02 | `02-running-the-tree.sh` | Running the tree | shell | author | 271 |
+| 03 | `03-build-and-try-it.sh` | Build and try it | shell | author | 491 |
 
 ## Claims
 

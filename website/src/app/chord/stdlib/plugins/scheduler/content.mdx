@@ -70,6 +70,9 @@ The player sees:
 > wait
 Time passes...
 
+> wait
+Time passes...
+
 The kettle begins to murmur on the range.
 
 > wait
@@ -86,7 +89,8 @@ Steam fogs the little window over the sink.
 Time passes...
 ```
 
-The opening look is turn 1, so `at turn 2` lands on the first `wait`;
+The opening is not a turn, so the first `wait` is turn 1 and `at turn 2`
+lands on the second;
 and the second sequence's `when the story becomes boiling` step fires in
 the very turn the first sequence changes the state.
 

@@ -8,8 +8,13 @@
   &quot;story&quot;: &quot;orchard&quot;,
   &quot;seed&quot;: 42,
   &quot;cards&quot;: [
-    { &quot;type&quot;: &quot;opening&quot;, &quot;assertions&quot;: { &quot;channels&quot;: [{ &quot;id&quot;: &quot;info.title&quot;, &quot;is&quot;: &quot;Orchard&quot; }] } },
-    { &quot;type&quot;: &quot;boot&quot;, &quot;assertions&quot;: { &quot;contains&quot;: [&quot;Landing&quot;, &quot;A quiet place to begin.&quot;] } },
+    {
+      &quot;type&quot;: &quot;opening&quot;,
+      &quot;assertions&quot;: {
+        &quot;channels&quot;: [{ &quot;id&quot;: &quot;info.title&quot;, &quot;is&quot;: &quot;Orchard&quot; }],
+        &quot;contains&quot;: [&quot;Landing&quot;, &quot;A quiet place to begin.&quot;]
+      }
+    },
     {
       &quot;type&quot;: &quot;turn&quot;,
       &quot;command&quot;: &quot;inventory&quot;,
@@ -54,7 +59,7 @@
     }
   ]
 }</code></pre>
-<ul><li><strong><code>seed</code></strong> pins the story's random choices, so a run is deterministic and an exact claim is a claim rather than a coin flip. Chord Writer picks it when the document is created; keep it.</li><li><strong>Cards</strong> are the turns. The <code>opening</code> card has no command (it carries the title banner); the <code>boot</code> card is the first look; every <code>turn</code> card has its typed <code>command</code>.</li><li><strong>Branches</strong> live <em>on the card they fork from</em>. Each branch replays the story to that card and then runs its own cards, so the main line's later cards never see the branch's changes. <code>branch</code> is a stable id, not a position.</li><li><strong><code>skip: true</code></strong> runs the turn and asserts nothing — the way to move the story along without recording a claim.</li></ul>
+<ul><li><strong><code>seed</code></strong> pins the story's random choices, so a run is deterministic and an exact claim is a claim rather than a coin flip. Chord Writer picks it when the document is created; keep it.</li><li><strong>Cards</strong> are the steps of the play-through. The one <code>opening</code> card has no command: it carries everything the story prints before anything is typed (the prologue, the title banner, and the first look), and it is not a turn. Every <code>turn</code> card has its typed <code>command</code>, and the first of them is turn 1.</li><li><strong>Branches</strong> live <em>on the card they fork from</em>. Each branch replays the story to that card and then runs its own cards, so the main line's later cards never see the branch's changes. <code>branch</code> is a stable id, not a position.</li><li><strong><code>skip: true</code></strong> runs the turn and asserts nothing — the way to move the story along without recording a claim.</li></ul>
 <h2 id="the-assertion-families">The assertion families</h2>
 <p>Each family is optional; a card may carry several. Every entry is one claim with its own verdict.</p>
 <table><thead><tr><th>Family</th><th>Claim</th><th>Example</th></tr></thead><tbody><tr><td><code>contains</code></td><td>the turn's prose contains this text</td><td><code>&quot;The lantern glows.&quot;</code></td></tr><tr><td><code>notContains</code></td><td>the prose does <strong>not</strong> contain it</td><td><code>&quot;Landing&quot;</code></td></tr><tr><td><code>exact</code></td><td>the turn's whole output, line by line (supersedes <code>contains</code>)</td><td><code>[&quot;Orchard&quot;, &quot;Rows of apple trees.&quot;]</code></td></tr><tr><td><code>states</code></td><td>a world fact holds after the turn</td><td><code>&quot;the brass lantern is glowing&quot;</code></td></tr><tr><td><code>events</code></td><td>the turn emitted this event type</td><td><code>&quot;if.event.dropped&quot;</code></td></tr><tr><td><code>channels</code></td><td>a channel's value (<code>is</code>) or fragments of it (<code>contains</code>)</td><td><code>{ &quot;id&quot;: &quot;info.title&quot;, &quot;is&quot;: &quot;Orchard&quot; }</code></td></tr></tbody></table>

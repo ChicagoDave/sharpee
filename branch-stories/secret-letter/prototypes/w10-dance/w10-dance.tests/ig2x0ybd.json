@@ -1,6 +1,11 @@
 {
   "cards": [
     {
+      "id": "8lyiaokx",
+      "skip": true,
+      "type": "opening"
+    },
+    {
       "assertions": {
         "contains": [
           "first partner, beat 1."
@@ -12,8 +17,9 @@
           "the dance is first"
         ]
       },
-      "id": "8lyiaokx",
-      "type": "opening"
+      "command": "look",
+      "id": "u61isc2q",
+      "type": "turn"
     },
     {
       "assertions": {

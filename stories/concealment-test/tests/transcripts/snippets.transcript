@@ -2,16 +2,19 @@ title: Room-Description Snippets (ADR-209)
 story: concealment-test
 description: End-to-end splice pass - cycling variants, save/restore counters,
   mentions gate, duplicate markers, initial/standard shared counters
+channels: room-description
 
 ---
 
 # --- AC-9: initialDescription and description share the clock counter ---
-# First look = first visit = initialDescription, clock pick 1.
-> look
-[OK: contains "You step into a quiet study"]
-[OK: contains "A grandfather clock ticks softly in the corner."]
+# The opening's look = first visit = initialDescription, clock pick 1.
+# These two lines sit above the first command, so they are claims on the opening.
+# The opening's row has no prose of its own to search, so the claims read
+# the channel the room's description travels on.
+[CHANNEL: room-description, contains "You step into a quiet study"]
+[CHANNEL: room-description, contains "A grandfather clock ticks softly in the corner."]
 
-# Second look = standard description, clock pick 2 (shared counter advanced).
+# The first typed look = standard description, clock pick 2 (shared counter advanced).
 > look
 [OK: contains "A quiet study with heavy curtains"]
 [OK: contains "The grandfather clock ticks away, unhurried."]

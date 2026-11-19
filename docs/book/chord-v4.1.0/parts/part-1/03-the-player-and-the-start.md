@@ -84,6 +84,97 @@ described. Keep the two apart in your mind: the prologue is what the player
 reads at the start, and the start block is what the story arranges at the
 start.
 
+## The opening
+
+Once the start block has run, the story does three things unasked, before
+the player has typed a word. It prints the prologue. It prints the title
+with the description, the authors and the version, which together are
+called the **banner**. Then it takes a first look at the room the player is
+standing in. These three together are the **opening**.
+
+```text
+You were here for one term, thirty years ago, and you would have said you remembered none of it. Then last week a candle leaned toward your hand, and you started walking.
+
+The Relighting
+Thirty years after the magic went out of the world, a lamp burns blue.
+By The Sharpee Project
+Story v0.1.0
+
+Lodge
+The porter's lodge is one small room built into the thickness of the gate arch. A chair, a kettle and thirty years of newspapers have filled most of it. On the sill a lamp is burning with a steady blue flame.
+```
+
+The opening is not a turn. Nobody typed anything, so nothing that counts
+turns has counted one, and the first command the player types is turn 1.
+That will matter in chapter 19, where the story gets a clock.
+
+Each of the three has a name, and a second block lets you say which of
+them run and in what order.
+
+```chord
+when the game starts
+  show-prologue
+  show-banner
+  do-first-look
+end when
+```
+
+This is the **opening block**. It opens with `when the game starts` and
+closes with `end when`, and between them it holds the names of the
+opening's three **routines**, each alone on its line. The block above is
+the order a story gets when it has no opening block at all, so adding it to
+your file changes nothing.
+
+Change the order of the lines and the opening changes with them. Here the
+banner comes first, in the way of a book that puts its title page before
+its first paragraph.
+
+```chord
+when the game starts
+  show-banner
+  show-prologue
+  do-first-look
+end when
+```
+
+```text
+The Relighting
+Thirty years after the magic went out of the world, a lamp burns blue.
+By The Sharpee Project
+Story v0.1.0
+
+You were here for one term, thirty years ago, and you would have said you remembered none of it. Then last week a candle leaned toward your hand, and you started walking.
+
+Lodge
+The porter's lodge is one small room built into the thickness of the gate arch. A chair, a kettle and thirty years of newspapers have filled most of it. On the sill a lamp is burning with a steady blue flame.
+```
+
+A routine you leave out does not run. A block without `do-first-look`
+prints the prologue and the banner and then waits, and the player reads
+about the Lodge only when they look for themselves. A block with no lines
+in it prints nothing at all.
+
+The block holds routines and nothing else. Each may appear once, and
+`show-prologue` may appear only in a story whose header has a `prologue:`
+field. The compiler refuses a routine written twice, and it refuses any
+other statement:
+
+```text
+relighting.story:36:3 error [analysis.opening-routine-repeated] `show-banner` is already in this block. An opening runs each routine once; take this line out.
+```
+
+```text
+relighting.story:36:3 error [parse.opening-statement] `phrase hello` cannot go in a `when the game starts` block. The block holds only the opening's routines, each alone on its line: `show-prologue`, `show-banner`, `do-first-look`.
+```
+
+A story has at most one opening block, and like the start block it may go
+anywhere in the file after the header. The two are easy to tell apart by
+their first words. `before the game starts` arranges the world and prints
+nothing. `when the game starts` prints the opening and arranges nothing.
+
+The Relighting keeps the usual order, so this book's story has no opening
+block, and you need not add one.
+
 ## When it goes wrong
 
 There are four mistakes to make here, and the compiler catches three of them.

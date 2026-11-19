@@ -400,3 +400,84 @@ The build was run again after the last source edit (the prologue's move, 18:42 C
 4. **The failed-restore fallback is a new game only when the engine refuses the save before touching the world.** The test's spoiled save is refused at the version check. A restore that throws after `world.loadJSON` leaves the loaded world, and the opening then runs over it or the engine refuses it and the page shows `[Startup Error]`. The typed `look` had the same hazard before this phase. Nothing was changed for it; the comment in `start()` now says what holds. It is not handled (GH #811).
 
 Notes: the spoiled-save precondition now checks the spoiled save's own fields; `openNewGame`'s doc says the record's events are the first look's (the engine returns only the look's result); `story-info-projection.ts`'s header no longer says the prologue is written at start; the new restore cases name the client's private seam as a type and use no `any`. Left as it was: the engine test's `?.prologue ?? ''`, which would also pass with no `storyInfo` capability; the packet assertion beside it carries the check. Two of the new cases pass on the old client too (no opening after a restore; no record posted by a restored session) and guard behaviour that did not change. The fixes were not re-audited by the agent.
+
+## 14. Phase 7 as built: the recordings and the manual
+
+Taken 2026-11-18, session 928a2f, on `main` at 21bfb79eb with the Phase 7 changes uncommitted, on the bundle Phase 6 built (5397765 bytes, 18:43 CST). No package source changed in this phase, so nothing was rebuilt.
+
+**The baseline.** Every non-gating recording was run twice: on a scratch worktree at 887aeed2e, the Phase 1 commit and the last one before any platform change (cold-built there: `pnpm install`, `npx tsf build`, the repokit build, `./repokit build dungeo`, bundle 5373622 bytes), and on the working tree. A difference between the two is the opening's; a failure that reads the same on both is not.
+
+**The companion trees** (`tutorials/relighting/chord-v4.1.0/`, 43 directories). `./sharpee test <dir>`, each directory, before any edit:
+
+| Directories | Result |
+|---|---|
+| `chapter-05` to `chapter-18`, `chapter-20` to `chapter-34`, `chapter-36` to `chapter-40`, `part-1`, `part-8` (36) | exit 0, nothing re-recorded |
+| `chapter-19` | exit 1: 2 cards failing, 3 assertions. The warning expected on the branch's 48th `wait` and dusk on its 78th |
+| `part-2` to `part-7` (6) | exit 2: "no test tree found". They hold a story and no tree |
+
+Chapter 19's branch `2nwk7mjg` opens with `examine blue flame` and then waits. The warning's claim moved from the 48th wait to the 49th, which is the line's 50th command, and dusk's claim and its `ending` moved from the 78th wait to a new 79th card (`w8dusk80`), the 80th command. After: "25 cards passing, 44 assertions passing", "101 commands (101 authored + 0 replayed), 1 restored at a fork", exit 0. That is AC-1's two warnings at commands 50 and 80.
+
+**The claims locked "at turn 82" and "at turn 138" did not move.** The plan expected them to. The number a claim's lock prints is the card's place among its line's typed commands, and the first look was never one of them. `./sharpee test tutorials/relighting/chord-v4.1.0/chapter-40` still prints `at turn 82` and `at turn 138`, "claims: 3 of 3 held"; `sharpee claim thelodge --at 82`, run on a scratch copy of `chapter-38`, prints the list chapter 39 quotes. Chapter 39 was not edited. Its first quoted line still reads "true now and not at boot", which is the platform's wording.
+
+**The chapters.** Each number was measured on a scratch tree run with `./sharpee test <dir> --json --capture-output` before the prose was changed.
+
+| Chapter | What moved | Measured |
+|---|---|---|
+| 19, Time | One sentence added: the opening is not a turn, so turn fifty is the fiftieth command. No quoted block and no number changed | the chapter-19 tree above |
+| 35, The opt-in systems | The sentence that the opening is a turn is replaced. The meter is at nothing when the Yard is first read, "You could eat." comes on the second `wait` (it was the first), "You are hungry now" on the fourth, and the meter reaches nine on the ninth `wait` (it was the eighth) | the chapter's own Yard story with nine waits: turns 2, 4 and 9 |
+| 38, Test trees | Two card types, not three. The first segment has three cards, not four. The record line reads `"seq":3`, `"cardId":"card0002"`, `"turn":1`. The fork report reads "5 commands (5 authored + 0 replayed)". The full tree is 182 cards and 181 commands. The sentence about the boot card being a skip card is gone. Card ids renumbered `card0001` to `card0006` | the chapter's three segments built by hand: "3 cards passing, 4 assertions passing"; the wrong-words copy "2 cards passing, 3 assertions passing, 1 card failing, 1 assertion failing"; the fork "6 cards passing, 9 assertions passing"; the layout refusal as quoted; `chapter-38` "182 cards passing, 275 assertions passing", "181 commands" |
+
+Every other chapter was searched for a quoted turn number, a card or command count, a `"turn":` field, the sequence's two lines, and the words boot, first look and opening. Chapters 27 and 33 quote `at turn 70` and `at turn 100` as source, which is unchanged. Nothing else moved.
+
+| Check | Command | Result |
+|---|---|---|
+| snippets | `node ../../../scripts/extract-book-snippets.cjs`, from the edition directory | 358 snippets; only `CATALOG.md`'s line numbers changed |
+| snippet check | `node scripts/check-chord-snippets.cjs docs/book/chord-v4.1.0` | 302 fences in the total row, "snapshots: 43 of 43 load", "every fence is proven" |
+| edition | `./scripts/build-book.sh chord-v4.1.0 html` | `the-chord-manual-4.1.0.html` written, no warning or error line in the log |
+| em-dashes | `grep -rn "—" docs/book/chord-v4.1.0/frontmatter docs/book/chord-v4.1.0/parts` | every hit is quoted platform output |
+
+The appendices were not regenerated.
+
+**The manual teaches the block (Settle item 8, David: "b").** Chapter 3, The player and the start, has a new section, The opening: the three routines, the default block, a reordered block with the banner first, what leaving a routine out does, and two refusals. Each quoted block is the output of `./sharpee play` or `./sharpee compose --check` on a scratch copy of `part-1`'s story with the block added: the default and the explicit default print the same thing; banner-first prints the banner, the prologue, then the Lodge; a block without `do-first-look` prints no room until a typed `look`; an empty block prints nothing; a block placed ahead of the first `create` compiles; a second block is refused (`analysis.duplicate-opening-block`). After it, the checks above were run again: 360 snippets, 304 fences in the total row with the two new ones proven as fragments "top level in the snapshot chapter-40", "snapshots: 43 of 43 load", "every fence is proven", and the HTML edition built with no warning or error line.
+
+**The non-gating trees.** Twelve directories hold a tree; the plan named six.
+
+| Tree | At 887aeed2e | Working tree, before re-recording | After |
+|---|---|---|---|
+| `branch-stories/secret-letter/prototypes/w10-dance` | 15 cards passing, 69 assertions | 15 cards failing, 48 assertions: the dance's first beat came with the first look, so every card was one beat early | re-recorded: the opening card is a skip card and a typed `look` (the old boot card's id, `u61isc2q`) carries its claims. "16 cards passing, 70 assertions passing" |
+| `branch-stories/fernhill` | 86 cards, 107 assertions, claims 8 of 8 | 85 cards, 107 assertions, claims 8 of 8 | unchanged |
+| `stories/expanses`, `sailing`, `vehicles`, `trait-classification-test`, `trait-field-test` | exit 0 each | exit 0 each, the same counts | unchanged |
+| `branch-stories/ides-of-march` | 4 cards failing, 4 assertions | the same 4 lines | not re-recorded (GH #813) |
+| `branch-stories/secret-letter` | 11 cards failing, 13 assertions; 10 derived failures | the same lines | not re-recorded (GH #636) |
+| `branch-stories/upps` | 17 cards failing, 27 assertions; claims 7 of 10 | the same lines | not re-recorded (GH #813) |
+| `branch-stories/wumpus` | 6 cards failing, 9 assertions; claims 3 of 4 | the same lines | not re-recorded (GH #620, #625) |
+| `stories/thealderman/chord` | 1 card failing, 1 derived failure | the same lines; the quoted channel value says `"turn":2` where it said `"turn":3` | not re-recorded (GH #813) |
+
+Where both columns pass, the working tree counts one card fewer: the boot card Phase 5 removed.
+
+**The three recipe stories were not regenerated.** `scripts/make-story-artifacts.mjs` writes a version-1 single file, which the reader refuses (GH #808). `fernhill`, `ides-of-march` and `secret-letter` keep the segment trees Phase 5 migrated.
+
+**The non-Dungeo transcripts** (14 corpora, `node dist/cli/sharpee.js --test`, with `--chain` for the two walkthrough directories).
+
+| Corpus | At 887aeed2e | Working tree, before | After |
+|---|---|---|---|
+| `stories/concealment-test/tests/transcripts` | 38 passed | 36 passed, 2 failed: the first typed `look` no longer shows the first-visit description or the first clock line, and the second `look` no longer shows the second clock line | re-recorded, 38 passed |
+| `stories/friendly-zoo/tests/transcripts` | 80 passed, 2 failed | 79 passed, 3 failed: the first typed `look` no longer shows "Your family piles out of the car" | re-recorded, 80 passed, 2 failed (GH #682) |
+| `cloak-of-darkness`, `eating-removal-test`, `presence-test`, `vehicles`, `counter-demo`, `grammar-alterations`, `hunger-demo`, `friendly-zoo/walkthroughs` | pass: 90, 31, 7, 41, and the single files | the same | unchanged |
+| `stories/channel-service-test/walkthroughs` | did not load on the scratch worktree (the story's own build was missing there) | 6 passed | unchanged |
+| `stories/nautical/tests/transcripts` | 6 passed, 1 failed | the same line | not re-recorded (GH #813) |
+| `stories/character-acceptance/tests/transcripts`, `stories/thealderman/tests/transcripts` | "Could not load story" | the same | not run (GH #813) |
+
+**A transcript's opening row has no prose to search.** The two re-recorded transcripts first had their first-visit claims moved above the first command as `[OK: contains …]`, and both failed with an empty Output box: the runner checks that row against an empty string (`packages/transcript-tester/src/runner.ts:462`). They now declare `channels: room-description` and claim `[CHANNEL: room-description, contains "…"]`, and the first typed `look` that used to carry the claim is gone from each. Filed as GH #814.
+
+**The website and the IDE's docs.**
+
+- `website/src/app/chord/guide/tooling/sharpee-test/content.mdx`: the boot card is gone and its two `contains` lines sit on the opening card; the Cards bullet says one opening card, not a turn. The page still shows a version-1 single-file tree and the name `<story-id>.tests.json`, as it did before.
+- `website/src/app/chord/guide/world/the-story-header/content.mdx`: a new section says the opening is a routine and not a turn, names `when the game starts`, and links the grammar reference, which Phase 3 already wrote.
+- `website/src/app/chord/stdlib/plugins/scheduler/content.mdx`, not in the plan's list: it said "The opening look is turn 1, so `at turn 2` lands on the first `wait`". Run on the page's own story, the murmur comes on the second `wait` and the boil on the fourth. The transcript and the sentence were changed.
+- `bash tools/ide/build-docs-tab.sh`: "167 pages in nav order", Chord 4.0.3; the three pages above and `docs-index.json` changed.
+- `git grep -n -E "'boot'|\"boot\"" -- website/src tools/ide/SharpeeIDE/Resources`: prints nothing.
+
+**Two story pages carried the static `Score: 0 | Turns: 0`** (section 13): `branch-stories/fernhill/browser/index.html` and `tutorials/relighting/chord-v4.1.0/part-8/browser/index.html`. Both now read `Score: 0`. No other story's own page names the status span or the removed prologue element.
+
+**Not touched.** `docs/work/chord-primer/` (Settle item 7, ruled in Phase 5). `node scripts/check-test-trees.mjs --all` prints nothing and exits 0.

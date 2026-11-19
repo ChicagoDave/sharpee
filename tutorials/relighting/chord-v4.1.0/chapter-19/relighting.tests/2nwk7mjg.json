@@ -283,19 +283,19 @@
       "type": "turn"
     },
     {
+      "command": "wait",
+      "id": "sl0fekvv",
+      "skip": true,
+      "type": "turn"
+    },
+    {
       "assertions": {
         "contains": [
           "The light has turned. The shadows in the Hall have begun to lean east."
         ]
       },
       "command": "wait",
-      "id": "sl0fekvv",
-      "type": "turn"
-    },
-    {
-      "command": "wait",
       "id": "1bc8mpsx",
-      "skip": true,
       "type": "turn"
     },
     {
@@ -467,6 +467,12 @@
       "type": "turn"
     },
     {
+      "command": "wait",
+      "id": "87o7mll5",
+      "skip": true,
+      "type": "turn"
+    },
+    {
       "assertions": {
         "contains": [
           "Dusk comes down on Lanternhall and finds the Lantern dark."
@@ -474,7 +480,7 @@
       },
       "command": "wait",
       "ending": "night-falls",
-      "id": "87o7mll5",
+      "id": "w8dusk80",
       "type": "turn"
     }
   ],

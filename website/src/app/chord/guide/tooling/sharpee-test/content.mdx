@@ -25,8 +25,13 @@ what the document says and assumes nothing.
   "story": "orchard",
   "seed": 42,
   "cards": [
-    { "type": "opening", "assertions": { "channels": [{ "id": "info.title", "is": "Orchard" }] } },
-    { "type": "boot", "assertions": { "contains": ["Landing", "A quiet place to begin."] } },
+    {
+      "type": "opening",
+      "assertions": {
+        "channels": [{ "id": "info.title", "is": "Orchard" }],
+        "contains": ["Landing", "A quiet place to begin."]
+      }
+    },
     {
       "type": "turn",
       "command": "inventory",
@@ -76,9 +81,11 @@ what the document says and assumes nothing.
 - **`seed`** pins the story's random choices, so a run is deterministic and
   an exact claim is a claim rather than a coin flip. Chord Writer picks it
   when the document is created; keep it.
-- **Cards** are the turns. The `opening` card has no command (it carries the
-  title banner); the `boot` card is the first look; every `turn` card has
-  its typed `command`.
+- **Cards** are the steps of the play-through. The one `opening` card has
+  no command: it carries everything the story prints before anything is
+  typed (the prologue, the title banner, and the first look), and it is
+  not a turn. Every `turn` card has its typed `command`, and the first of
+  them is turn 1.
 - **Branches** live *on the card they fork from*. Each branch replays the
   story to that card and then runs its own cards, so the main line's later
   cards never see the branch's changes. `branch` is a stable id, not a

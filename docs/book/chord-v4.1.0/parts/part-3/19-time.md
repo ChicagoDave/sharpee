@@ -258,7 +258,8 @@ end sequence
 The first step is anchored to a turn of the game with `at turn`. Each later
 step may be anchored the same way, or set a number of turns after the one
 before it with `turns later`. The statements under a step run when its turn
-comes.
+comes. The opening of a story is not a turn, so turn fifty is the fiftieth
+command the player types.
 
 At turn fifty the player is warned.
 

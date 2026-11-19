@@ -66,7 +66,7 @@ The play-through itself is in **segment** files. A segment is a run of
 turns with no fork in it. Its file is named for its identifier, and the
 identifier is exactly eight lowercase letters or digits.
 
-Here is `mainline.json`, a first segment of four cards.
+Here is `mainline.json`, a first segment of three cards.
 
 ```json
 {
@@ -77,19 +77,14 @@ Here is `mainline.json`, a first segment of four cards.
       "type": "opening"
     },
     {
-      "id": "card0002",
-      "skip": true,
-      "type": "boot"
-    },
-    {
       "command": "take lamp",
-      "id": "card0003",
+      "id": "card0002",
       "skip": true,
       "type": "turn"
     },
     {
       "command": "open press",
-      "id": "card0004",
+      "id": "card0003",
       "skip": true,
       "type": "turn"
     }
@@ -98,10 +93,12 @@ Here is `mainline.json`, a first segment of four cards.
 }
 ```
 
-A **card** is one step. There are three types. The `opening` card is the
-story's title, credits and prologue, before anything is typed. The `boot`
-card is the first look at the first room, which the story takes by itself.
-A `turn` card is a command the player types, given in `command`.
+A **card** is one step. There are two types. The `opening` card is
+everything the story prints before anything is typed: its prologue, its
+title and credits, and the first look at the first room. A tree has
+exactly one, and it is the first card of the first segment. A `turn` card
+is a command the player types, given in `command`. The opening is not a
+turn, so the first `turn` card is turn 1.
 
 Every card has an `id` of its own, again eight lowercase letters or
 digits. The identifiers mean nothing. They only have to be different from
@@ -140,7 +137,7 @@ you can pass over it here. The records of type
 `actualOutput`.
 
 ```text
-{"schemaVersion":2,"seq":4,"elapsedMs":80,"type":"command-result","file":"mainline","line":0,"input":"take lamp","passed":true,"expectedFailure":false,"skipped":true,"cardId":"card0003","actualOutput":"You take it.","turn":2,"assertionResults":[{"description":"[SKIP]","passed":true,"message":"Skipped"}]}
+{"schemaVersion":2,"seq":3,"elapsedMs":80,"type":"command-result","file":"mainline","line":0,"input":"take lamp","passed":true,"expectedFailure":false,"skipped":true,"cardId":"card0002","actualOutput":"You take it.","turn":1,"assertionResults":[{"description":"[SKIP]","passed":true,"message":"Skipped"}]}
 ```
 
 So the working method is this. Add the next few commands as skip cards.
@@ -160,7 +157,7 @@ again, with their `skip` lines replaced.
         ]
       },
       "command": "take lamp",
-      "id": "card0003",
+      "id": "card0002",
       "type": "turn"
     },
     {
@@ -173,7 +170,7 @@ again, with their `skip` lines replaced.
         ]
       },
       "command": "open press",
-      "id": "card0004",
+      "id": "card0003",
       "type": "turn"
     }
 ```
@@ -214,8 +211,7 @@ on a platform channel called `info.title`.
     },
 ```
 
-With those three cards changed and the boot card left as it was,
-`mainline.json` is this.
+With all three cards changed, `mainline.json` is this.
 
 ```json
 {
@@ -233,18 +229,13 @@ With those three cards changed and the boot card left as it was,
       "type": "opening"
     },
     {
-      "id": "card0002",
-      "skip": true,
-      "type": "boot"
-    },
-    {
       "assertions": {
         "exact": [
           "You take it."
         ]
       },
       "command": "take lamp",
-      "id": "card0003",
+      "id": "card0002",
       "type": "turn"
     },
     {
@@ -257,7 +248,7 @@ With those three cards changed and the boot card left as it was,
         ]
       },
       "command": "open press",
-      "id": "card0004",
+      "id": "card0003",
       "type": "turn"
     }
   ],
@@ -291,8 +282,7 @@ Test tree: relighting.tests/ (seed 42, 1 line(s))
 
 The first line names the folder the story was loaded from, as `play` does,
 and yours will name your own. Every report begins with it, and the reports
-quoted from here on start at the line after it. The boot card is still a
-skip card, and a skipped card is not counted.
+quoted from here on start at the line after it.
 
 The command exits with 0 when everything passes and 1 when anything
 fails. Here is the same tree after the `take lamp` card's `exact` list
@@ -337,7 +327,7 @@ After `open press`, the main line goes on to take the key.
         ]
       },
       "command": "take key",
-      "id": "card0005",
+      "id": "card0004",
       "type": "turn"
     }
   ],
@@ -359,7 +349,7 @@ A second segment tries something else from the same position.
         ]
       },
       "command": "eat cake",
-      "id": "card0007",
+      "id": "card0005",
       "type": "turn"
     },
     {
@@ -369,7 +359,7 @@ A second segment tries something else from the same position.
         ]
       },
       "command": "inventory",
-      "id": "card0008",
+      "id": "card0006",
       "type": "turn"
     }
   ],
@@ -385,14 +375,14 @@ Test tree: relighting.tests/ (seed 42, 2 line(s))
 ✓ opening-lodge
 ✓ lodge · eat cake
 6 cards passing, 9 assertions passing
-6 commands (6 authored + 0 replayed), 1 restored at a fork
+5 commands (5 authored + 0 replayed), 1 restored at a fork
 ```
 
 The tree now has two **lines**. A line is one path from the opening to an
 end, and the report names each by the room it starts in and its first
 command. The main line is named for the opening.
 
-The second line did not replay the first four cards. The runner saved the
+The second line did not replay the first three cards. The runner saved the
 story at the fork and restored it, so a deep tree with many branches
 costs little more to run than its cards.
 
@@ -431,7 +421,7 @@ that ending. It is the last card of its line.
 
 The companion folder `chapter-38` holds the story as chapter 37 left it
 and the tree this book has been running since chapter 5, grown to its
-full size: 183 cards on seven lines. The main line is the winning walk.
+full size: 182 cards on seven lines. The main line is the winning walk.
 The six branches are the bargain refused and reopened, Tamsin Vey at the
 grille, the pry bar heard from the Library, the cracked lens and its
 ending, the parapet and its ending, and Hobb's trust.
@@ -446,8 +436,8 @@ Test tree: relighting.tests/ (seed 42, 7 line(s))
 ✓ undercroft · put lens in hoist
 ✓ undercroft · drop lens
 ✓ undercroft · up
-183 cards passing, 275 assertions passing
-182 commands (182 authored + 0 replayed), 6 restored at a fork
+182 cards passing, 275 assertions passing
+181 commands (181 authored + 0 replayed), 6 restored at a fork
 ```
 
 After the cards, the report goes on at length, and the rest of it is not
@@ -482,7 +472,7 @@ an ending in that list is an ending no test has ever seen.
 ## Build and try it
 
 Make the folder `relighting.tests` beside your story. Write the manifest
-into it, and `mainline.json` with its four skip cards, with their keys in
+into it, and `mainline.json` with its three skip cards, with their keys in
 alphabetical order and two spaces of indentation for each level. Run the
 command of "Reading what the story says". Then replace `mainline.json`
 with the whole file printed under "What a card can assert", and run

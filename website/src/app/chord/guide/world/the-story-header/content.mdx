@@ -101,6 +101,16 @@ define phrase garden-opening, verbatim
 end phrase
 ```
 
+### The opening is a routine, not a turn
+
+Before the first command, the story prints its opening: the prologue, the
+banner (title, authors and version), and the first look at the starting
+room, in that order. The opening is a routine the platform runs, and it
+is not a turn. No `on every turn` clause runs for it, no meter rises, and
+the first command the player types is turn 1. The order can be changed
+with a `when the game starts` block, which is set out in
+[the grammar reference](/chord/reference/grammar).
+
 ### Two names per author
 
 Both list fields accept one name inline or a name per indented line:
