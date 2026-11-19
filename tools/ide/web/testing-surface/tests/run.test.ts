@@ -11,7 +11,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import {
-  beginRun, commandRowText, createRunState, finishRun, firstFailureText, foldRunLine,
+  beginRun, commandRowText, commandVisitTarget, createRunState, finishRun, firstFailureText, foldRunLine,
   resetRun, restatesTextClaim, runRowVisitTarget, runRowsOf,
 } from '../src/run';
 
@@ -587,6 +587,33 @@ describe('runRowVisitTarget — the run-column click (ADR-357 D8 step 2, AC-4)',
     const result = state.results.get(FAILED)!;
     expect(result.commands.map((c) => c.cardId)).toEqual(['c-open', 'c-shed', 'c-lamp']);
     expect(result.firstFailure).toEqual({ where: 'turn 2', message: 'no shed', command: 1, cardId: 'c-shed' });
+    const [row] = runRowsOf(state, []);
+    expect(runRowVisitTarget(row)).toEqual({ lineId: FAILED, cardId: 'c-shed' });
+  });
+
+  it('each failed command visits its OWN card; a passed or skipped command is inert', () => {
+    const state = createRunState();
+    beginRun(state);
+    for (const raw of [
+      start(FAILED),
+      command(FAILED, { input: '(opening)', line: 0, passed: true, cardId: 'c-open' }),
+      command(FAILED, { passed: false, turn: 2, failure: 'no shed', cardId: 'c-shed' }),
+      command(FAILED, { passed: true, skipped: true, turn: 3, cardId: 'c-skip' }),
+      command(FAILED, { passed: false, turn: 4, failure: 'no lamp', cardId: 'c-lamp' }),
+      command(FAILED, { passed: false, turn: 5, failure: 'no card named' }),
+      end(FAILED, { status: 'failed', passed: 1, failed: 3 }),
+    ]) foldRunLine(state, raw);
+
+    const targets = state.results.get(FAILED)!.commands.map((c) => commandVisitTarget(FAILED, c));
+    expect(targets).toEqual([
+      undefined,                                // passed
+      { lineId: FAILED, cardId: 'c-shed' },     // the first failure
+      undefined,                                // skipped
+      { lineId: FAILED, cardId: 'c-lamp' },     // a LATER failure, which the header row never reaches
+      { lineId: FAILED },                       // failed, no card named: the line's top
+    ]);
+    // The header row still lands on the first failure only; the later one is
+    // reachable from its own rows and from nowhere else by a click.
     const [row] = runRowsOf(state, []);
     expect(runRowVisitTarget(row)).toEqual({ lineId: FAILED, cardId: 'c-shed' });
   });

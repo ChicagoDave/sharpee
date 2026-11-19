@@ -536,3 +536,20 @@ export function runRowVisitTarget(row: RunColumnRow): RunVisitTarget | undefined
   const cardId = row.result.firstFailure?.cardId;
   return { lineId: row.lineId, ...(cardId !== undefined ? { cardId } : {}) };
 }
+
+/**
+ * Where one command's detail rows visit when clicked: a FAILED command
+ * visits its own card on its line, so every failing card under a line can be
+ * reached from its own rows and not only the first (which is all the line's
+ * header row lands on). A command that passed or was skipped is inert. A
+ * failed command whose card the wire did not name lands at the line's top,
+ * as the header row does.
+ *
+ * @param lineId the line the command ran on
+ * @param command the command's outcome from the run
+ * @returns the visit target, or undefined when the rows are not clickable
+ */
+export function commandVisitTarget(lineId: string, command: CommandOutcome): RunVisitTarget | undefined {
+  if (command.passed || command.skipped) return undefined;
+  return { lineId, ...(command.cardId !== undefined ? { cardId: command.cardId } : {}) };
+}

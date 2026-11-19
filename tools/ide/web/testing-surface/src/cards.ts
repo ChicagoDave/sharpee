@@ -33,7 +33,7 @@ import {
 import { claimBadgeText, claimLockText, claimLockVisit, claimNameText, claimWhyText, claimsCountsOf, claimsHeaderText, type ClaimRow, type ClaimsSummary } from './claims';
 import type { BranchPoint, TreeSessionModel } from './model';
 import {
-  commandRowText, firstFailureText, restatesTextClaim, runRowVisitTarget, runRowsOf, type RunVisitTarget,
+  commandRowText, commandVisitTarget, firstFailureText, restatesTextClaim, runRowVisitTarget, runRowsOf, type RunVisitTarget,
   type RunColumnState, type TranscriptRunResult,
 } from './run';
 
@@ -1018,12 +1018,35 @@ export class CardsView {
       results.appendChild(line);
     };
 
-    /** One command's detail block: the command, then each assertion's verdict. */
-    const detail = (result: TranscriptRunResult): void => {
+    /** One command's detail block: the command, then each assertion's verdict.
+     *  A FAILED command's rows are buttons that visit that command's own
+     *  card, so each failing card under a line is reachable from its own
+     *  error and not only the first one, which is all the header row lands
+     *  on. `mark` makes one row such a button; it does nothing for a command
+     *  that passed. */
+    const detail = (result: TranscriptRunResult, lineId: string): void => {
       result.commands.forEach((command) => {
+        const visit = commandVisitTarget(lineId, command);
+        const mark = (rowEl: HTMLElement, focusable: boolean): void => {
+          if (visit === undefined) return;
+          rowEl.classList.add('ts-run-detail-visit');
+          rowEl.title = 'Visit this card';
+          if (visit.cardId !== undefined) rowEl.dataset.tsVisitCard = visit.cardId;
+          const go = (): void => this.delegate.onVisitFailure(visit);
+          rowEl.addEventListener('click', go);
+          // One tab stop per failed command (its command row); the rows
+          // beneath it are the same target and stay out of the tab order.
+          if (!focusable) return;
+          rowEl.setAttribute('role', 'button');
+          rowEl.tabIndex = 0;
+          rowEl.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); go(); }
+          });
+        };
         const commandRow = document.createElement('div');
         commandRow.className = 'ts-run-cmd';
         commandRow.textContent = commandRowText(command);
+        mark(commandRow, true);
         results.appendChild(commandRow);
         if (command.skipped) {
           const skipRow = document.createElement('div');
@@ -1042,12 +1065,14 @@ export class CardsView {
           const assertRow = document.createElement('div');
           assertRow.className = `ts-run-assert ${assertion.passed ? 'ts-pass' : 'ts-fail'}`;
           assertRow.textContent = `${assertion.passed ? '✓' : '✗'} ${assertion.description}`;
+          if (!assertion.passed) mark(assertRow, false);
           results.appendChild(assertRow);
           if (!assertion.passed && assertion.message !== undefined
               && !(showOutput && restatesTextClaim(assertion.message))) {
             const why = document.createElement('div');
             why.className = 'ts-run-assert-why';
             why.textContent = assertion.message;
+            mark(why, false);
             results.appendChild(why);
           }
         }
@@ -1057,6 +1082,7 @@ export class CardsView {
           const why = document.createElement('div');
           why.className = 'ts-run-assert ts-fail';
           why.textContent = `✗ ${command.failure}`;
+          mark(why, false);
           results.appendChild(why);
         }
         if (printed !== undefined) {
@@ -1112,7 +1138,7 @@ export class CardsView {
           // No turn count: turns have no meaning unless the author gives
           // them meaning (David 2026-08-10). PASS is the information.
           row('PASS', `ts-pass${staleClass}`, label, why(''));
-          detail(result);
+          detail(result, entry.lineId);
           break;
         case 'skipped':
           row('—', staleClass.trim(), label, why('no commands — ran as a skip'));
@@ -1123,7 +1149,7 @@ export class CardsView {
         default: {
           const more = result.moreFailures > 0 ? ` +${result.moreFailures} more` : '';
           row('FAIL', `ts-fail${staleClass}`, label, why(`${failureText ?? 'failed'}${more}`), runRowVisitTarget(entry));
-          detail(result);
+          detail(result, entry.lineId);
         }
       }
     }

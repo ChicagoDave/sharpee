@@ -505,6 +505,10 @@ body.ts-active .sharpee-window { display: none; }
   padding: 1px 0 1px 12px; font-size: 10.5px; color: var(--ts-fg-dim);
   white-space: pre-wrap;
 }
+/* A failed command's rows are buttons that visit its card (the same hover as
+   the line's header row above them). */
+.ts-run-detail-visit { cursor: pointer; border-radius: 4px; }
+.ts-run-detail-visit:hover, .ts-run-detail-visit:focus-visible { background: rgba(127, 127, 127, 0.12); outline: none; }
 .ts-run-assert.ts-pass { color: var(--ts-assert); }
 .ts-run-assert.ts-fail { color: var(--ts-fail); }
 .ts-run-assert-why {

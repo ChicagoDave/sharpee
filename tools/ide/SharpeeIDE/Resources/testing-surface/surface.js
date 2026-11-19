@@ -1495,6 +1495,10 @@
     const cardId = row.result.firstFailure?.cardId;
     return { lineId: row.lineId, ...cardId !== void 0 ? { cardId } : {} };
   }
+  function commandVisitTarget(lineId, command) {
+    if (command.passed || command.skipped) return void 0;
+    return { lineId, ...command.cardId !== void 0 ? { cardId: command.cardId } : {} };
+  }
 
   // tools/ide/web/testing-surface/src/cards.ts
   function escapeHtml(text3) {
@@ -2213,11 +2217,30 @@
         line.append(badge, name, why_);
         results.appendChild(line);
       };
-      const detail = (result) => {
+      const detail = (result, lineId) => {
         result.commands.forEach((command) => {
+          const visit = commandVisitTarget(lineId, command);
+          const mark = (rowEl, focusable) => {
+            if (visit === void 0) return;
+            rowEl.classList.add("ts-run-detail-visit");
+            rowEl.title = "Visit this card";
+            if (visit.cardId !== void 0) rowEl.dataset.tsVisitCard = visit.cardId;
+            const go = () => this.delegate.onVisitFailure(visit);
+            rowEl.addEventListener("click", go);
+            if (!focusable) return;
+            rowEl.setAttribute("role", "button");
+            rowEl.tabIndex = 0;
+            rowEl.addEventListener("keydown", (event) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                go();
+              }
+            });
+          };
           const commandRow = document.createElement("div");
           commandRow.className = "ts-run-cmd";
           commandRow.textContent = commandRowText(command);
+          mark(commandRow, true);
           results.appendChild(commandRow);
           if (command.skipped) {
             const skipRow = document.createElement("div");
@@ -2232,11 +2255,13 @@
             const assertRow = document.createElement("div");
             assertRow.className = `ts-run-assert ${assertion.passed ? "ts-pass" : "ts-fail"}`;
             assertRow.textContent = `${assertion.passed ? "\u2713" : "\u2717"} ${assertion.description}`;
+            if (!assertion.passed) mark(assertRow, false);
             results.appendChild(assertRow);
             if (!assertion.passed && assertion.message !== void 0 && !(showOutput && restatesTextClaim(assertion.message))) {
               const why = document.createElement("div");
               why.className = "ts-run-assert-why";
               why.textContent = assertion.message;
+              mark(why, false);
               results.appendChild(why);
             }
           }
@@ -2244,6 +2269,7 @@
             const why = document.createElement("div");
             why.className = "ts-run-assert ts-fail";
             why.textContent = `\u2717 ${command.failure}`;
+            mark(why, false);
             results.appendChild(why);
           }
           if (printed !== void 0) {
@@ -2286,7 +2312,7 @@
         switch (result.status) {
           case "passed":
             row("PASS", `ts-pass${staleClass}`, label, why(""));
-            detail(result);
+            detail(result, entry.lineId);
             break;
           case "skipped":
             row("\u2014", staleClass.trim(), label, why("no commands \u2014 ran as a skip"));
@@ -2297,7 +2323,7 @@
           default: {
             const more = result.moreFailures > 0 ? ` +${result.moreFailures} more` : "";
             row("FAIL", `ts-fail${staleClass}`, label, why(`${failureText ?? "failed"}${more}`), runRowVisitTarget(entry));
-            detail(result);
+            detail(result, entry.lineId);
           }
         }
       }
