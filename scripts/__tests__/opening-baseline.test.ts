@@ -8,7 +8,10 @@
  *
  * Record mode: `RECORD_OPENING_BASELINE=1` writes the recording instead of
  * comparing against it. It is run once, on the platform as it stood before
- * the change, and never again without a ruling.
+ * the change, and never again without a ruling. One ruling has moved it
+ * since (David, 2026-11-18): the bundle's banner follows `sharpee play`'s
+ * line order, so the credits line now sits above the story version. The
+ * recording's two lines were swapped for that and nothing else.
  *
  * Public interface: none (a test file).
  * Owner context: repo tooling — `scripts/__tests__/` (the real-path suites
@@ -68,7 +71,7 @@ describe('the opening in the bundle\'s play mode, against the recording made bef
     // The recording is of an opening, not of an empty stretch of output: the
     // prologue, the banner and the first room are in it, in that order.
     const prologue = opening.indexOf('The last ferry left an hour ago');
-    const banner = opening.indexOf('The Quay\nStory v0.0.1');
+    const banner = opening.indexOf('The Quay\nBy Test Story\nStory v0.0.1');
     const room = opening.indexOf('You have not stood here since you were a child');
     expect(prologue).toBe(0);
     expect(banner).toBeGreaterThan(prologue);

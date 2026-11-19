@@ -23,7 +23,7 @@ const BUNDLE = join(REPO_ROOT, 'dist', 'cli', 'sharpee.js');
 const SEEDED = join(REPO_ROOT, 'test-stories', 'quay', 'seeded');
 
 const PROLOGUE = 'The last ferry left an hour ago';
-const BANNER = 'The Quay\nStory v0.0.1';
+const BANNER = 'The Quay\nBy Test Story\nStory v0.0.1';
 const ROOM = 'You have not stood here since you were a child';
 const TIDE = 'The water under the quay stops moving.';
 const HUNGER = 'You have not eaten since the morning boat.';

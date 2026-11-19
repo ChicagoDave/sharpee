@@ -337,7 +337,10 @@ Examples:
    *
    * The banner arrives as properties rather than prose, so the order its
    * lines appear in is this surface's choice — a different client is free to
-   * lay the same pieces out differently.
+   * lay the same pieces out differently. This one follows `sharpee play`
+   * (packages/devkit/src/commands/play.ts): title, subtitle, credits, story
+   * version. The platform version, which `sharpee play` does not print,
+   * follows the story's.
    */
   function bannerLines(raw) {
     if (!raw || raw.length === 0) return [];
@@ -350,10 +353,10 @@ Examples:
 
     const lines = [];
     if (banner.title) lines.push(banner.title);
-    if (banner.storyVersion) lines.push(banner.storyVersion);
-    if (banner.platformVersion) lines.push(banner.platformVersion);
     if (banner.subtitle) lines.push(banner.subtitle);
     for (const credit of banner.credits || []) lines.push(credit);
+    if (banner.storyVersion) lines.push(banner.storyVersion);
+    if (banner.platformVersion) lines.push(banner.platformVersion);
     if (banner.tail && banner.tail.length > 0) {
       lines.push('');
       for (const line of banner.tail) lines.push(line);

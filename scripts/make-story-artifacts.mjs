@@ -80,15 +80,21 @@ function run(story, commands, seed) {
 }
 
 /**
- * The banner (title / version / description / `By …`) precedes the first
+ * The banner (title / description / `By …` / version) precedes the first
  * room in the default opening. The opening card asserts the ROOM, so split
  * them apart.
+ *
+ * The bundle prints the banner as one paragraph, with a blank line after it.
+ * The banner is found by its `By …` line and runs to the end of that
+ * paragraph, so the split does not depend on which banner line comes last.
  */
 function splitBanner(text) {
   const lines = text.split('\n');
-  const i = lines.findIndex((l) => l.startsWith('By '));
-  if (i === -1) return { banner: '', body: text };
-  return { banner: lines.slice(0, i + 1).join('\n').trim(), body: lines.slice(i + 1).join('\n').trim() };
+  const by = lines.findIndex((l) => l.startsWith('By '));
+  if (by === -1) return { banner: '', body: text };
+  const blank = lines.findIndex((l, index) => index > by && l.trim() === '');
+  const end = blank === -1 ? lines.length : blank;
+  return { banner: lines.slice(0, end).join('\n').trim(), body: lines.slice(end).join('\n').trim() };
 }
 
 /**
