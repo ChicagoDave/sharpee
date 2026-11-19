@@ -69,7 +69,7 @@
  * Public interface: the CLI above; the pure helpers and checkEdition() are
  * exported for scripts/__tests__/check-chord-snippets.test.ts.
  * Owner context: docs/book authoring toolchain; the Chord manual plan
- * (docs/work/chord-manual/plan.md, Phase 7).
+ * (docs/work/archive/chord-manual/plan.md, Phase 7).
  */
 const fs = require('fs');
 const os = require('os');

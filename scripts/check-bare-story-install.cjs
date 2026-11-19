@@ -34,7 +34,7 @@
  * devkit finds its dependencies by Node's own lookup path, which covers both,
  * but only the hoisted layout is exercised here.
  *
- * Owner context: book tooling and release checks (docs/work/chord-manual).
+ * Owner context: book tooling and release checks (docs/work/archive/chord-manual).
  */
 'use strict';
 

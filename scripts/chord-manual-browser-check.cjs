@@ -23,7 +23,7 @@
  *     picture and clean-load checks FAIL and every other check passes.
  *
  * Owner context: docs/book authoring toolchain, the Chord manual plan
- * (docs/work/chord-manual/plan.md, Phase 5). A local check, never a CI gate.
+ * (docs/work/archive/chord-manual/plan.md, Phase 5). A local check, never a CI gate.
  * Playwright is resolved from packages/platform-browser, which already
  * depends on it.
  */

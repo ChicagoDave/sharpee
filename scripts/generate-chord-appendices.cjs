@@ -35,7 +35,7 @@
  * Public interface: the CLI above; the pure helpers are exported for
  * scripts/__tests__/generate-chord-appendices.test.ts.
  * Owner context: docs/book authoring toolchain; the Chord manual plan
- * (docs/work/chord-manual/plan.md, Phase 6).
+ * (docs/work/archive/chord-manual/plan.md, Phase 6).
  */
 const fs = require('fs');
 const path = require('path');

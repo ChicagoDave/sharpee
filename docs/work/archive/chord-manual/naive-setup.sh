@@ -4,8 +4,8 @@
 # Manual, so the reader never needs sudo and the brief's SETUP is only a check.
 #
 # Public interface:
-#   docs/work/chord-manual/naive-setup.sh <container-name>
-#     e.g. docs/work/chord-manual/naive-setup.sh chord-naive-4
+#   docs/work/archive/chord-manual/naive-setup.sh <container-name>
+#     e.g. docs/work/archive/chord-manual/naive-setup.sh chord-naive-4
 #   Run from the host, from anywhere inside the repository, before the prompt
 #   is given. Exits non-zero, naming the step, if any step fails.
 #
@@ -27,7 +27,7 @@
 # It does not install the `sharpee` command (chapter 4 does that) and does not
 # start the run.
 #
-# Owner context: the Chord manual's Phase 8 (docs/work/chord-manual/plan.md).
+# Owner context: the Chord manual's Phase 8 (docs/work/archive/chord-manual/plan.md).
 
 set -euo pipefail
 
@@ -46,7 +46,7 @@ EDITION="${REPO_ROOT}/docs/book/chord-v4.1.0"
 OUTPUT_NAME="$(tr -d '[:space:]' < "${EDITION}/output-name")"
 PDF="${EDITION}/build/${OUTPUT_NAME}.pdf"
 COMPANION="${REPO_ROOT}/tutorials/relighting/chord-v4.1.0"
-BRIEF="${REPO_ROOT}/docs/work/chord-manual/naive-prompt.txt"
+BRIEF="${REPO_ROOT}/docs/work/archive/chord-manual/naive-prompt.txt"
 
 step() { echo; echo "== $1"; }
 fail() { echo "naive-setup: FAILED at: $1" >&2; exit 1; }

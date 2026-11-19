@@ -14,7 +14,7 @@ Public interface: listed under `filters:` in book.yaml. It changes nothing
          and EPUB editions keep their lines whole and wrap on screen.
 
 Owner:   docs/book authoring toolchain; the Chord manual plan
-         (docs/work/chord-manual/plan.md).
+         (docs/work/archive/chord-manual/plan.md).
 
 Invariants:
   - Only the classes in TYPED are touched; transcripts (`text` fences) are

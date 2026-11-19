@@ -4,9 +4,9 @@
 #          `scripts/build-book.sh` loads this with `pandoc --defaults` and adds
 #          per-format flags (output target, CSS, PDF engine).
 # Owner:   docs/book authoring toolchain; the Chord manual plan
-#          (docs/work/chord-manual/plan.md).
+#          (docs/work/archive/chord-manual/plan.md).
 #
-# Chapter order follows docs/work/chord-manual/chapters.md: Parts I to VIII,
+# Chapter order follows docs/work/archive/chord-manual/chapters.md: Parts I to VIII,
 # the preface and How to read this book, chapters 1 to 40, then appendices A to
 # G. The title page and copyright page are not listed here; they live in frontmatter.yaml and are layered ahead of this
 # body so they precede the table of contents.

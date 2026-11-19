@@ -5,8 +5,8 @@
 # the next run needs no new container and no new login.
 #
 # Public interface:
-#   docs/work/chord-manual/naive-reset.sh <container-name>
-#     e.g. docs/work/chord-manual/naive-reset.sh chord-naive-15
+#   docs/work/archive/chord-manual/naive-reset.sh <container-name>
+#     e.g. docs/work/archive/chord-manual/naive-reset.sh chord-naive-15
 #   Run from the host, from anywhere inside the repository, after a run's log
 #   has been copied out. Exits non-zero, naming the step, if any step fails.
 #
@@ -45,7 +45,7 @@
 #
 # It does not start the run.
 #
-# Owner context: the Chord manual's Phase 8 (docs/work/chord-manual/plan.md).
+# Owner context: the Chord manual's Phase 8 (docs/work/archive/chord-manual/plan.md).
 
 set -euo pipefail
 
@@ -69,7 +69,7 @@ EDITION="${REPO_ROOT}/docs/book/chord-v4.1.0"
 OUTPUT_NAME="$(tr -d '[:space:]' < "${EDITION}/output-name")"
 PDF="${EDITION}/build/${OUTPUT_NAME}.pdf"
 COMPANION="${REPO_ROOT}/tutorials/relighting/chord-v4.1.0"
-BRIEF="${REPO_ROOT}/docs/work/chord-manual/naive-prompt.txt"
+BRIEF="${REPO_ROOT}/docs/work/archive/chord-manual/naive-prompt.txt"
 
 step() { echo; echo "== $1"; }
 fail() { echo "naive-reset: FAILED at: $1" >&2; exit 1; }
